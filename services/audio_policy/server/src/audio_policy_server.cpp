@@ -157,6 +157,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
         case MULTIMODAL_INPUT_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility input service start");
             SubscribeVolumeKeyEvents();
+            SubscribeSafeVolumeEvent();
             break;
 #endif
         case DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID:
@@ -343,6 +344,12 @@ void AudioPolicyServer::SubscribeVolumeKeyEvents()
     }
 }
 #endif
+
+void AudioPolicyServer::SubscribeSafeVolumeEvent()
+{
+    AUDIO_INFO_LOG("SubscribeSafeVolumeEvent enter");
+    audioPolicyService_.SubscribeSafeVolumeEvent();
+}
 
 bool AudioPolicyServer::IsVolumeTypeValid(AudioStreamType streamType)
 {
