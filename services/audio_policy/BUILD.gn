@@ -69,6 +69,9 @@ config("audio_policy_public_config") {
   cflags = [
     "-Wall",
     "-Werror",
+    "-fno-rtti",
+    "-fno-exceptions",
+    "-O1"
   ]
 
   if (target_cpu == "arm") {
@@ -268,7 +271,8 @@ ohos_shared_library("audio_policy_service") {
     defines += [ "FEATURE_DEVICE_MANAGER" ]
     external_deps += [ "device_manager:devicemanagersdk" ]
   }
-
+  
+  version_script = "libaudio_policy_service_export_symbol.map"
   subsystem_name = "multimedia"
   part_name = "audio_framework"
 }

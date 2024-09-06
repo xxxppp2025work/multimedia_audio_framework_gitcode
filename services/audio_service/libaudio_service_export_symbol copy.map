@@ -1,0 +1,14 @@
+{
+  global:
+  extern "C++" {
+    OHOS::AudioStandard::AudioServer::OnAddSystemAbility*;
+    OHOS::AudioStandard::AudioServer::OnRemoveSystemAbility*;
+    OHOS::AudioStandard::AudioServer::OnDump*;
+    OHOS::AudioStandard::AudioServer::OnStop*;
+    OHOS::AudioStandard::AudioServer::OnStart*;
+    OnRemoteRequest;
+    OnRemoteDied;
+  };
+  local:
+    *;
+};
