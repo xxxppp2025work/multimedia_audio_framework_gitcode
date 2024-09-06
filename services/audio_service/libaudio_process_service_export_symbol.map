@@ -1,0 +1,11 @@
+{
+  global:
+  extern "C++" {
+    OHOS::AudioStandard::AudioService*;
+    OHOS::AudioStandard::PolicyHandler*;
+    OHOS::AudioStandard::RendererInServer*;
+    OHOS::AudioStandard::ProcessCbProxy*;
+  };
+  local:
+    *;
+};
