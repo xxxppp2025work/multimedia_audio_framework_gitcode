@@ -575,6 +575,8 @@ public:
 
     int32_t UnsetAudioDeviceAnahsCallback();
 
+    void SendLvmParameter(bool isKeyUp, bool isForceOff);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -1067,6 +1069,7 @@ private:
     int32_t enableDualHalToneSessionId_ = -1;
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     bool isFastControlled_ = false;
+    bool voiceLvmState_ = false;
 
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
 
