@@ -17,13 +17,11 @@
 #endif
 
 #include "audio_policy_server.h"
+#include <dlfcn.h>
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
-
 #endif
-
-#include <dlfcn.h>
 
 #include "privacy_kit.h"
 #include "tokenid_kit.h"
