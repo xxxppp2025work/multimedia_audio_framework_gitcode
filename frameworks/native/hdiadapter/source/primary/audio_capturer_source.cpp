@@ -879,6 +879,7 @@ int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPor
     sink.type = AUDIO_PORT_MIX_TYPE;
     sink.ext.mix.moduleId = 0;
     sink.ext.mix.streamId = PRIMARY_INPUT_STREAM_ID;
+    sink.ext.mix.source = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
     sink.ext.device.desc = (char *)"";
 
     AudioRoute route = {

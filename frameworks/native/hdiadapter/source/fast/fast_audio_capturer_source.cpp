@@ -622,6 +622,7 @@ int32_t FastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, Audi
     sink.ext.mix.moduleId = 0;
     sink.ext.mix.streamId = FAST_INPUT_STREAM_ID;
     sink.ext.device.desc = const_cast<char*>("");
+    sink.ext.mix.source = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
 
     AudioRoute route = {
         .sources = &source,
