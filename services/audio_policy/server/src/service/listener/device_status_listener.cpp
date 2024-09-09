@@ -18,6 +18,7 @@
 
 #include "device_status_listener.h"
 #include <securec.h>
+#include <cstring>
 #include "hdf_device_class.h"
 #include "v4_0/audio_types.h"
 
@@ -212,6 +213,21 @@ int32_t DeviceStatusListener::UnRegisterDeviceStatusListener()
 void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
 {
     CHECK_AND_RETURN_LOG(!info.empty(), "OnPnpDeviceStatusChange invalid info");
+    
+    if (audioDeviceAnahsCb_ != nullptr) {
+        std::string anahsName = "";
+        auto anahsBegin = info.find("ANAHS_NAME=");
+        auto anahsEnd = info.find_first_of(";", anahsBegin);
+        anahsName = info.substr(anahsBegin + std::strlen("ANAHS_NAME="),
+            anahsEnd - anahsBegin - std::strlen("ANAHS_NAME="));
+        if (strncmp(anahsName.c_str(), UEVENT_INSERT, strlen(UEVENT_INSERT)) == 0 ||
+            strncmp(anahsName.c_str(), UEVENT_REMOVE, strlen(UEVENT_REMOVE)) == 0) {
+            AUDIO_INFO_LOG("parse anahsName = %{public}s", anahsName.c_str());
+            audioDeviceAnahsCb_->OnExtPnpDeviceStatusChanged(anahsName);
+            return;
+        }
+    }
+
     PnpDeviceType pnpDeviceType = PNP_DEVICE_UNKNOWN;
     PnpEventType pnpEventType = PNP_EVENT_UNKNOWN;
     std::string name = "";
@@ -263,6 +279,23 @@ void DeviceStatusListener::OnMicrophoneBlocked(const std::string &info)
     AUDIO_INFO_LOG("[device type :%{public}d], [isBlocked :%{public}d]", micBlockedDeviceType, isBlocked);
 
     deviceObserver_.OnMicrophoneBlockedUpdate(micBlockedDeviceType, isBlocked);
+}
+
+int32_t DeviceStatusListener::SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object)
+{
+    sptr<IStandardAudioRoutingManagerListener> listener = iface_cast<IStandardAudioRoutingManagerListener>(object);
+    if (listener != nullptr) {
+        audioDeviceAnahsCb_ = listener;
+        return SUCCESS;
+    } else {
+        return ERROR;
+    }
+}
+
+int32_t DeviceStatusListener::UnsetAudioDeviceAnahsCallback()
+{
+    audioDeviceAnahsCb_ = nullptr;
+    return SUCCESS;
 }
 
 AudioPnpStatusCallback::AudioPnpStatusCallback()

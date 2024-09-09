@@ -189,6 +189,9 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
 
     if (!isNeedCopyVolumeData_ && !isNeedCopyMuteData_ && !isNeedCopyRingerModeData_ && !isNeedCopySystemUrlData_) {
         isAllCopyDone_ = true;
+        if (audioPolicyServerHandler_ != nullptr) {
+            audioPolicyServerHandler_->SendRingerModeUpdatedCallback(ringerMode_);
+        }
     }
 
     if (isAllCopyDone_ && audioPolicyKvStore_ != nullptr) {
@@ -690,14 +693,18 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
 
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     curActiveCount_++;
-    return audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
+    AudioIOHandle ioHandle = audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
+    AUDIO_INFO_LOG("Open %{public}d port end.", static_cast<int32_t>(ioHandle));
+    return ioHandle;
 }
 
 int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     curActiveCount_--;
-    return audioServiceAdapter_->CloseAudioPort(ioHandle);
+    int32_t ret = audioServiceAdapter_->CloseAudioPort(ioHandle);
+    AUDIO_INFO_LOG("Close %{public}d port end.", static_cast<int32_t>(ioHandle));
+    return ret;
 }
 
 int32_t AudioAdapterManager::GetCurActivateCount() const
@@ -1691,6 +1698,10 @@ void AudioAdapterManager::GetVolumePoints(AudioVolumeType streamType, DeviceVolu
 {
     auto streamVolInfo = streamVolumeInfos_.find(streamType);
     auto deviceVolInfo = streamVolInfo->second->deviceVolumeInfos.find(deviceType);
+    if (deviceVolInfo == streamVolInfo->second->deviceVolumeInfos.end()) {
+        AUDIO_ERR_LOG("Cannot find device type %{public}d", deviceType);
+        return;
+    }
     volumePoints = deviceVolInfo->second->volumePoints;
 }
 

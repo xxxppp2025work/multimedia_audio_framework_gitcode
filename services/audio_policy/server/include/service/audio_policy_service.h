@@ -576,6 +576,10 @@ public:
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
+    
+    int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object);
+
+    int32_t UnsetAudioDeviceAnahsCallback();
 
 private:
     AudioPolicyService()
@@ -1048,6 +1052,8 @@ private:
     int32_t SelectOutputDeviceForFastInner(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<sptr<AudioDeviceDescriptor>> selectedDesc);
 
+    void CheckAndNotifyUserSelectedDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
@@ -1163,6 +1169,10 @@ private:
     std::condition_variable loadDefaultDeviceCV_;
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
     std::atomic<bool> isAdapterInfoMap_ = false;
+
+    std::mutex moveDeviceMutex_;
+    std::condition_variable moveDeviceCV_;
+    std::atomic<bool> moveDeviceFinished_ = false;
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
 
