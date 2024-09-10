@@ -1348,10 +1348,7 @@ void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audio
             AUDIO_ERR_LOG("unexpected changeType: %{public}d", changeType);
             return;
     }
-    std::thread setAudioSceneThread([this, audioScene] {
-        this->policyServer_->SetAudioSceneInternal(audioScene);
-    });
-    setAudioSceneThread.detach();
+    policyServer_->SetAudioSceneInternal(audioScene);
 }
 
 std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::SimulateFocusEntry(const int32_t zoneId)
