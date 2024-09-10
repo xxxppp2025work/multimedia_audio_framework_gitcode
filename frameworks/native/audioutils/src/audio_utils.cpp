@@ -1269,6 +1269,20 @@ std::string ConvertNetworkId(const std::string &networkId)
     return networkId;
 }
 
+int32_t ParsePAFormatToByteSize(const std::string &format)
+{
+    if (format == "u8") {
+        return FORMAT_1_BYTE;
+    } else if (format == "s16") {
+        return FORMAT_2_BYTE;
+    } else if (format == "s24") {
+        return FORMAT_3_BYTE;
+    } else if (format == "s32") {
+        return FORMAT_4_BYTE;
+    }
+    return FORMAT_2_BYTE;
+}
+
 AudioDump& AudioDump::GetInstance()
 {
     static AudioDump mAudioDump;

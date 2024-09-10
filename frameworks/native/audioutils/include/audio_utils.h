@@ -60,6 +60,10 @@ const int32_t DECIMAL_EXPONENT = 10;
 const size_t DATE_LENGTH = 17;
 static uint32_t g_sessionToMock = 0;
 const uint32_t STRING_BUFFER_SIZE = 4096;
+const unsigned int FORMAT_1_BYTE = 1;
+const unsigned int FORMAT_2_BYTE = 2;
+const unsigned int FORMAT_3_BYTE = 3;
+const unsigned int FORMAT_4_BYTE = 4;
 
 // Ringer or alarmer dual tone
 const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;
@@ -142,6 +146,7 @@ void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b);
 
 std::string GetEncryptStr(const std::string &str);
 std::string ConvertNetworkId(const std::string &networkId);
+int32_t ParsePAFormatToByteSize(const std::string &format);
 
 enum ConvertHdiFormat {
     SAMPLE_U8_C = 0,
