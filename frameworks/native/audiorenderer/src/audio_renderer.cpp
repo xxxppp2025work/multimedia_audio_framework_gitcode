@@ -1026,6 +1026,7 @@ void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
     switch (interruptEvent.hintType) {
         case INTERRUPT_HINT_PAUSE:
             if (currentState == RUNNING || currentState == PREPARED) {
+                (void)audioStream_->SetDuckVolume(0.0f);
                 (void)audioStream_->PauseAudioStream(); // Just Pause, do not deactivate here
                 (void)audioStream_->SetDuckVolume(1.0f);
                 isForcePaused_ = true;
@@ -1045,6 +1046,7 @@ void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
             NotifyForcePausedToResume(interruptEvent);
             return; // return, sending callback is taken care in NotifyForcePausedToResume
         case INTERRUPT_HINT_STOP:
+            (void)audioStream_->SetDuckVolume(0.0f);
             (void)audioStream_->StopAudioStream();
             (void)audioStream_->SetDuckVolume(1.0f);
             break;

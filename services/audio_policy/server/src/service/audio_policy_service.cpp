@@ -68,7 +68,8 @@ static const int64_t NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS = 300000; // 300ms
 static const unsigned int BUFFER_CALC_20MS = 20;
 static const unsigned int BUFFER_CALC_1000MS = 1000;
 static const int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_MS = 5000; // 5s
-static const int64_t WAIT_OFFLOAD_SET_VOLUME_TIME_US = 40000; // 40ms
+static const int64_t WAIT_SET_MUTE_LATENCY_TIME_US = 80000; // 80ms
+static const int64_t WAIT_START_RING_TIME_US = 40000; // 40ms
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
 static const int64_t WAIT_MOVE_DEVICE_MUTE_TIME_MAX_MS = 5000; // 5s
 
@@ -2470,12 +2471,13 @@ void AudioPolicyService::MuteSinkPort(const std::string &portName, int32_t durat
     if (sinkPortStrToClassStrMap_.count(portName) > 0) {
         // Mute by render sink. (primary、a2dp、usb、dp、offload)
         g_adProxy->SetSinkMuteForSwitchDevice(sinkPortStrToClassStrMap_.at(portName), duration, true);
-        if (portName == OFFLOAD_PRIMARY_SPEAKER) { usleep(WAIT_OFFLOAD_SET_VOLUME_TIME_US); } // sleep fix offload pop.
     } else {
         // Mute by pa.
         audioPolicyManager_.SetSinkMute(portName, true, isSync);
     }
     IPCSkeleton::SetCallingIdentity(identity);
+
+    usleep(WAIT_SET_MUTE_LATENCY_TIME_US); // sleep fix data cache pop.
 
     // Muted and then unmute.
     thread switchThread(&AudioPolicyService::UnmutePortAfterMuteDuration, this, duration, portName, DEVICE_TYPE_NONE);
@@ -2501,6 +2503,7 @@ void AudioPolicyService::MuteSinkPort(const std::string &oldSinkname, const std:
         MuteSinkPort(oldSinkname, muteTime, true);
     } else if (reason.IsOldDeviceUnavaliable() && audioScene_ == AUDIO_SCENE_DEFAULT) {
         MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
+        usleep(OLD_DEVICE_UNAVALIABLE_MUTE_MS); // sleep fix data cache pop.
     } else if (reason == AudioStreamDeviceChangeReason::UNKNOWN &&
         oldSinkname == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {
         // remote cast -> earpiece 300ms fix sound leak
@@ -3544,6 +3547,10 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     }
     if (audioScene_ == AUDIO_SCENE_DEFAULT) {
         ClearScoDeviceSuspendState();
+    }
+    if (lastAudioScene_ == AUDIO_SCENE_DEFAULT &&
+        (audioScene_ == AUDIO_SCENE_RINGING || audioScene_ == AUDIO_SCENE_VOICE_RINGING)) {
+        usleep(WAIT_START_RING_TIME_US);
     }
 
     // fetch input&output device
