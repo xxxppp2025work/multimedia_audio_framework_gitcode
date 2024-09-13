@@ -42,6 +42,7 @@ private:
     };
 
     void OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolumeKeyEventJsCallback> &jsCb);
+    void WorkCallbackVolumeEventInner(AudioVolumeKeyEventJsCallback *event);
 
     std::shared_ptr<AutoRef> audioVolumeKeyEventJsCallback_ = nullptr;
     std::mutex mutex_;

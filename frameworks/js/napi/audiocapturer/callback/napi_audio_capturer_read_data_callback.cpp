@@ -18,6 +18,13 @@
 
 #include "napi_audio_capturer_read_data_callback.h"
 #include "audio_capturer_log.h"
+#ifdef SUPPORT_CONTAINER_SCOPE
+#include "core/common/container_scope.h"
+#endif
+
+#ifdef SUPPORT_CONTAINER_SCOPE
+using OHOS::Ace::ContainerScope;
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -116,7 +123,14 @@ void NapiCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr<
     }
 
     CapturerReadDataJsCallback *event = jsCb.get();
-    auto task = [event]() {
+    auto task = [event
+#ifdef SUPPORT_CONTAINER_SCOPE
+, scopeId = ContainerScope::CurrentId()
+#endif
+        ]() {
+#ifdef SUPPORT_CONTAINER_SCOPE
+            ContainerScope cs(scopeId);
+#endif
         WorkCallbackCapturerReadData(event);
     };
     if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
