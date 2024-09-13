@@ -96,6 +96,17 @@ ohos_shared_library("audio") {
     deps += [ "../../native/toneplayer:audio_toneplayer" ]
   }
 
+  if (defined(build_cross_platform_version) && build_cross_platform_version) {
+    is_cross_platform_version = true
+  } else {
+    is_cross_platform_version = false
+  }
+  if (!is_mingw && !is_mac && !is_linux && is_standard_system &&
+      !is_cross_platform_version) {
+    external_deps += [ "ace_engine:ace_container_scope" ]
+    defines += [ "SUPPORT_CONTAINER_SCOPE" ]
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",

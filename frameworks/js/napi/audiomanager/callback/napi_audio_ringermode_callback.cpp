@@ -22,7 +22,13 @@
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
 #include "napi_audio_enum.h"
+#ifdef SUPPORT_CONTAINER_SCOPE
+#include "core/common/container_scope.h"
+#endif
 
+#ifdef SUPPORT_CONTAINER_SCOPE
+using OHOS::Ace::ContainerScope;
+#endif
 namespace OHOS {
 namespace AudioStandard {
 NapiAudioRingerModeCallback::NapiAudioRingerModeCallback(napi_env env)
@@ -125,7 +131,14 @@ void NapiAudioRingerModeCallback::OnJsCallbackRingerMode(std::unique_ptr<AudioRi
     }
 
     AudioRingerModeJsCallback *event = jsCb.get();
-    auto task = [event]() {
+    auto task = [event
+#ifdef SUPPORT_CONTAINER_SCOPE
+, scopeId = ContainerScope::CurrentId()
+#endif
+        ]() {
+#ifdef SUPPORT_CONTAINER_SCOPE
+            ContainerScope cs(scopeId);
+#endif
         std::shared_ptr<AudioRingerModeJsCallback> context(
             static_cast<AudioRingerModeJsCallback*>(event),
             [](AudioRingerModeJsCallback* ptr) {

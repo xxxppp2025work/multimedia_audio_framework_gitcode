@@ -22,6 +22,13 @@
 #include "audio_capturer_log.h"
 #include "napi_param_utils.h"
 #include "napi_audio_capturer_callbacks.h"
+#ifdef SUPPORT_CONTAINER_SCOPE
+#include "core/common/container_scope.h"
+#endif
+
+#ifdef SUPPORT_CONTAINER_SCOPE
+using OHOS::Ace::ContainerScope;
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -76,7 +83,14 @@ void NapiCapturerPeriodPositionCallback::OnJsCapturerPeriodPositionCallback(
         return;
     }
     CapturerPeriodPositionJsCallback *event = jsCb.get();
-    auto task = [event]() {
+    auto task = [event
+#ifdef SUPPORT_CONTAINER_SCOPE
+, scopeId = ContainerScope::CurrentId()
+#endif
+        ]() {
+#ifdef SUPPORT_CONTAINER_SCOPE
+            ContainerScope cs(scopeId);
+#endif
         std::shared_ptr<CapturerPeriodPositionJsCallback> context(
             static_cast<CapturerPeriodPositionJsCallback*>(event),
             [](CapturerPeriodPositionJsCallback* ptr) {
