@@ -250,6 +250,12 @@ static void GetUsbModuleInfo(string deviceInfo, AudioModuleInfo &moduleInfo)
             sourceFormat_end - sourceFormat_begin - std::strlen("source_format:"));
         moduleInfo.format = ParseAudioFormat(format);
     }
+
+    if (!moduleInfo.rate.empty() && !moduleInfo.format.empty() && !moduleInfo.channels.empty()) {
+        int32_t bufferSize = stoi(moduleInfo.rate) * ParsePAFormatToByteSize(ParseAudioFormat(moduleInfo.format)) *
+            stoi(moduleInfo.channels) * BUFFER_CALC_20MS / BUFFER_CALC_1000MS;
+        moduleInfo.bufferSize = to_string(bufferSize);
+    }
 }
 
 static void GetDPModuleInfo(AudioModuleInfo &moduleInfo, string deviceInfo)
