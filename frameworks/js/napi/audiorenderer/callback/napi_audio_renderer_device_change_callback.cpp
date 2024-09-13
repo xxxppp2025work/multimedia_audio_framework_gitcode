@@ -110,7 +110,14 @@ void NapiAudioRendererDeviceChangeCallback::OnJsCallbackRendererDeviceInfo(napi_
     CHECK_AND_RETURN_LOG(method != nullptr, "OnJsCallbackRendererDeviceInfo method is nullptr");
     AudioRendererDeviceChangeJsCallback *event =
         new AudioRendererDeviceChangeJsCallback {method, env_, deviceInfo};
-    auto task = [event]() {
+    auto task = [event
+#ifdef SUPPORT_CONTAINER_SCOPE
+, scopeId = ContainerScope::CurrentId()
+#endif
+        ]() {
+#ifdef SUPPORT_CONTAINER_SCOPE
+            ContainerScope cs(scopeId);
+#endif
         std::shared_ptr<AudioRendererDeviceChangeJsCallback> context(
             static_cast<AudioRendererDeviceChangeJsCallback*>(event),
             [](AudioRendererDeviceChangeJsCallback* ptr) {
@@ -236,7 +243,14 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::OnJsCallbackOutputDevi
     CHECK_AND_RETURN_LOG(method != nullptr, "OnJsCallbackOutputDeviceInfo method is nullptr");
     AudioRendererOutputDeviceChangeWithInfoJsCallback *event =
         new AudioRendererOutputDeviceChangeWithInfoJsCallback {method, env_, deviceInfo, reason};
-    auto task = [event]() {
+    auto task = [event
+#ifdef SUPPORT_CONTAINER_SCOPE
+, scopeId = ContainerScope::CurrentId()
+#endif
+        ]() {
+#ifdef SUPPORT_CONTAINER_SCOPE
+            ContainerScope cs(scopeId);
+#endif
         std::shared_ptr<AudioRendererOutputDeviceChangeWithInfoJsCallback> context(
             static_cast<AudioRendererOutputDeviceChangeWithInfoJsCallback*>(event),
             [](AudioRendererOutputDeviceChangeWithInfoJsCallback* ptr) {

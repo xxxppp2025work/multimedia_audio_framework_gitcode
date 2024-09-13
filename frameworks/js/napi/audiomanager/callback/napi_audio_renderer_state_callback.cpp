@@ -21,6 +21,13 @@
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
 #include "audio_manager_log.h"
+#ifdef SUPPORT_CONTAINER_SCOPE
+#include "core/common/container_scope.h"
+#endif
+
+#ifdef SUPPORT_CONTAINER_SCOPE
+using OHOS::Ace::ContainerScope;
+#endif
 
 using namespace std;
 
@@ -89,7 +96,14 @@ void NapiAudioRendererStateCallback::OnJsCallbackRendererState(std::unique_ptr<A
     }
 
     AudioRendererStateJsCallback *event = jsCb.get();
-    auto task = [event]() {
+    auto task = [event
+#ifdef SUPPORT_CONTAINER_SCOPE
+, scopeId = ContainerScope::CurrentId()
+#endif
+        ]() {
+#ifdef SUPPORT_CONTAINER_SCOPE
+            ContainerScope cs(scopeId);
+#endif
         std::shared_ptr<AudioRendererStateJsCallback> context(
             static_cast<AudioRendererStateJsCallback*>(event),
             [](AudioRendererStateJsCallback* ptr) {

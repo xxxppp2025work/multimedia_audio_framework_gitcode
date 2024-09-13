@@ -19,6 +19,13 @@
 #include "napi_audio_renderer_write_data_callback.h"
 #include "audio_renderer_log.h"
 #include "napi_audio_enum.h"
+#ifdef SUPPORT_CONTAINER_SCOPE
+#include "core/common/container_scope.h"
+#endif
+
+#ifdef SUPPORT_CONTAINER_SCOPE
+using OHOS::Ace::ContainerScope;
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -131,7 +138,14 @@ void NapiRendererWriteDataCallback::OnJsRendererWriteDataCallback(std::unique_pt
         return;
     }
     RendererWriteDataJsCallback *event = jsCb.get();
-    auto task = [event]() {
+    auto task = [event
+#ifdef SUPPORT_CONTAINER_SCOPE
+, scopeId = ContainerScope::CurrentId()
+#endif
+        ]() {
+#ifdef SUPPORT_CONTAINER_SCOPE
+            ContainerScope cs(scopeId);
+#endif
         std::shared_ptr<RendererWriteDataJsCallback> context(
             static_cast<RendererWriteDataJsCallback*>(event),
             [](RendererWriteDataJsCallback* ptr) {

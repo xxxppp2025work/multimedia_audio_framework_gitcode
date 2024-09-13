@@ -19,6 +19,13 @@
 #include "napi_audio_micstatechange_callback.h"
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
+#ifdef SUPPORT_CONTAINER_SCOPE
+#include "core/common/container_scope.h"
+#endif
+
+#ifdef SUPPORT_CONTAINER_SCOPE
+using OHOS::Ace::ContainerScope;
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -99,7 +106,14 @@ void NapiAudioManagerMicStateChangeCallback::OnJsCallbackMicStateChange
     }
 
     AudioManagerMicStateChangeJsCallback *event = jsCb.get();
-    auto task = [event]() {
+    auto task = [event
+#ifdef SUPPORT_CONTAINER_SCOPE
+, scopeId = ContainerScope::CurrentId()
+#endif
+        ]() {
+#ifdef SUPPORT_CONTAINER_SCOPE
+            ContainerScope cs(scopeId);
+#endif
         std::shared_ptr<AudioManagerMicStateChangeJsCallback> context(
             static_cast<AudioManagerMicStateChangeJsCallback*>(event),
             [](AudioManagerMicStateChangeJsCallback* ptr) {

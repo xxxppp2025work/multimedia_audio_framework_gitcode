@@ -51,6 +51,7 @@ private:
     };
 
     void OnJsCallbackSpatializationEnabled(std::unique_ptr<AudioSpatializationEnabledJsCallback> &jsCb);
+    void WorkCallbackSpatializationEnabledInner(AudioSpatializationEnabledJsCallback *event);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
@@ -79,6 +80,7 @@ private:
     };
 
     void OnJsCallbackHeadTrackingEnabled(std::unique_ptr<AudioHeadTrackingEnabledJsCallback> &jsCb);
+    void WorkCallbackHeadTrackingEnabledInner(AudioHeadTrackingEnabledJsCallback *event);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;

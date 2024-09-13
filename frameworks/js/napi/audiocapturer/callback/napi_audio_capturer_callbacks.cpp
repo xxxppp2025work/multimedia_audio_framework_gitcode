@@ -20,6 +20,13 @@
 #include "napi_param_utils.h"
 #include "audio_errors.h"
 #include "audio_capturer_log.h"
+#ifdef SUPPORT_CONTAINER_SCOPE
+#include "core/common/container_scope.h"
+#endif
+
+#ifdef SUPPORT_CONTAINER_SCOPE
+using OHOS::Ace::ContainerScope;
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -88,7 +95,14 @@ void NapiAudioCapturerCallback::OnJsCallbackInterrupt(std::unique_ptr<AudioCaptu
     }
 
     AudioCapturerJsCallback *event = jsCb.get();
-    auto task = [event]() {
+    auto task = [event
+#ifdef SUPPORT_CONTAINER_SCOPE
+, scopeId = ContainerScope::CurrentId()
+#endif
+        ]() {
+#ifdef SUPPORT_CONTAINER_SCOPE
+            ContainerScope cs(scopeId);
+#endif
         std::shared_ptr<AudioCapturerJsCallback> context(
             static_cast<AudioCapturerJsCallback*>(event),
             [](AudioCapturerJsCallback* ptr) {
@@ -151,7 +165,14 @@ void NapiAudioCapturerCallback::OnJsCallbackStateChange(std::unique_ptr<AudioCap
         return;
     }
     AudioCapturerJsCallback *event = jsCb.get();
-    auto task = [event]() {
+    auto task = [event
+#ifdef SUPPORT_CONTAINER_SCOPE
+, scopeId = ContainerScope::CurrentId()
+#endif
+        ]() {
+#ifdef SUPPORT_CONTAINER_SCOPE
+            ContainerScope cs(scopeId);
+#endif
         std::shared_ptr<AudioCapturerJsCallback> context(
             static_cast<AudioCapturerJsCallback*>(event),
             [](AudioCapturerJsCallback* ptr) {
