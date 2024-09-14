@@ -990,8 +990,9 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFla
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevicesInner(DeviceFlag deviceFlag)
 {
-    if (!PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("only for system app");
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_AUDIO) {
+        AUDIO_ERR_LOG("only for audioUid");
         return {};
     }
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescs = audioPolicyService_.GetDevicesInner(deviceFlag);
@@ -1014,9 +1015,8 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetOutputDevice(
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetInputDevice(
     sptr<AudioCapturerFilter> audioCapturerFilter)
 {
-    auto callerUid = IPCSkeleton::GetCallingUid();
-    if (callerUid != UID_AUDIO) {
-        AUDIO_ERR_LOG("only for audioUid");
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("only for system app");
         return {};
     }
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescs = audioPolicyService_.GetInputDevice(audioCapturerFilter);
