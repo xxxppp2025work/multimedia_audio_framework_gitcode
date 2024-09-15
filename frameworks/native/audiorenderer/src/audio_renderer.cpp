@@ -1444,7 +1444,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
             info.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
         }
         if (targetClass == AUDIO_FLAG_MMAP) {
-            switchResult = audioStream_->ReleaseAudioStream();
+            switchResult = audioStream_->ReleaseAudioStream(true, true);
         }
         std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, info.params,
             info.eStreamType, appInfo_.appPid);
@@ -1455,7 +1455,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         SetSwitchInfo(info, newAudioStream);
 
         if (targetClass != AUDIO_FLAG_MMAP) {
-            switchResult = audioStream_->ReleaseAudioStream();
+            switchResult = audioStream_->ReleaseAudioStream(true, true);
         }
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "release old stream failed.");
 
