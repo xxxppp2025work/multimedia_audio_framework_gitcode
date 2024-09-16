@@ -1005,7 +1005,7 @@ static void SinkRenderMultiChannelInputsDrop(pa_sink *si, pa_mix_info *infoIn, u
 static void CheckAndPushUidToArr(pa_sink_input *sinkIn, int32_t appsUid[MAX_MIX_CHANNELS], size_t *count)
 {
     const char *cstringClientUid = pa_proplist_gets(sinkIn->proplist, "stream.client.uid");
-    if (cstringClientUid && (sinkIn->state == PA_SINK_INPUT_RUNNING)) {
+    if (cstringClientUid && (sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING)) {
         appsUid[(*count)] = atoi(cstringClientUid);
         (*count)++;
     }
@@ -1116,23 +1116,6 @@ static void CheckPrimaryFadeinIsDone(pa_sink *si, pa_sink_input *sinkIn)
 
     if (u->primary.primaryFadingInDone && u->primary.primarySinkInIndex == (int32_t)sinkIn->index) {
         pa_atomic_store(&u->primary.fadingFlagForPrimary, 0);
-    }
-}
-
-static void CheckAndPushUidToArr(pa_sink_input *sinkIn, int32_t appsUid[MAX_MIX_CHANNELS], size_t *count)
-{
-    const char *cstringClientUid = pa_proplist_gets(sinkIn->proplist, "stream.client.uid");
-    if (cstringClientUid && (sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING)) {
-        appsUid[(*count)] = atoi(cstringClientUid);
-        (*count)++;
-    }
-}
-
-static void SafeRendererSinkUpdateAppsUid(struct RendererSinkAdapter *sinkAdapter,
-    const int32_t appsUid[MAX_MIX_CHANNELS], const size_t count)
-{
-    if (sinkAdapter) {
-        sinkAdapter->RendererSinkUpdateAppsUid(sinkAdapter, appsUid, count);
     }
 }
 
@@ -1542,10 +1525,6 @@ static void SinkRenderPrimaryAfterProcess(pa_sink *si, size_t length, pa_memchun
     u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
     void *dst = pa_memblock_acquire_chunk(chunkIn);
     int32_t frameLen = bitSize > 0 ? ((int32_t)length / bitSize) : 0;
-    for (int32_t i = 0; i < frameLen; i++) {
-        u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] > 0.99f ? 0.99f : u->bufferAttr->tempBufOut[i];
-        u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] < -0.99f ? -0.99f : u->bufferAttr->tempBufOut[i];
-    }
     DoSpatializationFading(u->bufferAttr->tempBufOut, u->spatializationFadingState, &u->spatializationFadingCount,
         frameLen / DEFAULT_IN_CHANNEL_NUM, DEFAULT_IN_CHANNEL_NUM);
     ConvertFromFloat(u->format, frameLen, u->bufferAttr->tempBufOut, dst);
@@ -3833,8 +3812,8 @@ static int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userd
         u->multichannel_enable = false;
     }
 
-    if (!strcmp(u->sink->name, "Speaker") || !strcmp(u->sink->name, MCH_SINK_NAME)
-            || !strcmp(u->sink->name, OFFLOAD_SINK_NAME)) {
+    if (!strcmp(u->sink->name, "Speaker") || !strcmp(u->sink->name, MCH_SINK_NAME) ||
+        !strcmp(u->sink->name, OFFLOAD_SINK_NAME)) {
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PUT], PA_HOOK_EARLY,
                 (pa_hook_cb_t)SinkInputPutCb, u);
     }
