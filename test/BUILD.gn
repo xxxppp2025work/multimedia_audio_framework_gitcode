@@ -98,6 +98,7 @@ group("audio_fuzz_test") {
     "fuzztest/audioserverbalance_fuzzer:fuzztest",
     "fuzztest/audioserviceclient_fuzzer:fuzztest",
     "fuzztest/audioservicecommon_fuzzer:fuzztest",
+    "fuzztest/audiostream_fuzzer:fuzztest",
     "fuzztest/audioutils_fuzzer:fuzztest",
   ]
 }
