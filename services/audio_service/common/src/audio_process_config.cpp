@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "ProcessConfig"
-#endif
 
 #include "audio_process_config.h"
 
@@ -52,7 +51,6 @@ static std::map<StreamUsage, std::string> USAGE_TO_STRING_MAP = {
     {STREAM_USAGE_ULTRASONIC, "ULTRASONIC"},
     {STREAM_USAGE_VIDEO_COMMUNICATION, "VIDEO_COMMUNICATION"},
     {STREAM_USAGE_RANGING, "RANGING"},
-    {STREAM_USAGE_VOICE_CALL_ASSISTANT, "VOICE_CALL_ASSISTANT"},
     {STREAM_USAGE_VOICE_MODEM_COMMUNICATION, "VOICE_MODEM_COMMUNICATION"}
 };
 }
@@ -238,6 +236,9 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
     parcel.WriteBool(config.isInnerCapturer);
     parcel.WriteBool(config.isWakeupCapturer);
 
+    // Original session id for re-create stream
+    parcel.WriteUint32(config.originalSessionId);
+
     return SUCCESS;
 }
 
@@ -287,6 +288,9 @@ int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
     // Recorder only
     config.isInnerCapturer = parcel.ReadBool();
     config.isWakeupCapturer = parcel.ReadBool();
+
+    // Original session id for re-create stream
+    config.originalSessionId = parcel.ReadUint32();
     return SUCCESS;
 }
 

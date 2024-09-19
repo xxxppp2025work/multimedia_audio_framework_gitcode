@@ -49,10 +49,10 @@ public:
     void SetPerferredToneRenderDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     // Get media render device selected by the user
-    unique_ptr<AudioDeviceDescriptor> GetPreferredMediaRenderDevice();
+    unique_ptr<AudioDeviceDescriptor> GetPerferredMediaRenderDevice();
 
     // Get call render device selected by the user
-    unique_ptr<AudioDeviceDescriptor> GetPreferredCallRenderDevice();
+    unique_ptr<AudioDeviceDescriptor> GetPerferredCallRenderDevice();
 
     // Get call capture device selected by the user
     unique_ptr<AudioDeviceDescriptor> GetPerferredCallCaptureDevice();

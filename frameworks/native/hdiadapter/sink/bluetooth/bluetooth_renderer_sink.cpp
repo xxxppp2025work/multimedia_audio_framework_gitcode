@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "BluetoothRendererSinkInner"
-#endif
 
 #include "bluetooth_renderer_sink.h"
 
@@ -39,7 +38,6 @@
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "parameters.h"
-#include "media_monitor_manager.h"
 
 using namespace std;
 using namespace OHOS::HDI::Audio_Bluetooth;
@@ -146,6 +144,9 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+    bool signalDetected_ = false;
+    bool latencyMeasEnabled_ = false;
+    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     int32_t initCount_ = 0;
     int32_t logMode_ = 0;
 
@@ -172,13 +173,9 @@ private:
     int64_t last10FrameStartTime_ = 0;
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
-    bool signalDetected_ = false;
-    bool latencyMeasEnabled_ = false;
-    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
     void UnlockRunningLock();
-    void UpdateAppsUid();
 #endif
 
     int32_t CreateRender(struct HDI::Audio_Bluetooth::AudioPort &renderPort);
@@ -188,12 +185,11 @@ private:
     AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     ConvertHdiFormat ConvertToHdiAdapterFormat(AudioFormat format);
     int64_t BytesToNanoTime(size_t lens);
-    void CheckUpdateState(char *frame, uint64_t replyBytes);
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *data, size_t len);
+    void CheckUpdateState(char *frame, uint64_t replyBytes);
     FILE *dumpFile_ = nullptr;
-    std::string dumpFileName_ = "";
 };
 
 BluetoothRendererSinkInner::BluetoothRendererSinkInner(bool isBluetoothLowLatency)
@@ -499,15 +495,14 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Bluetooth Render Handle is nullptr!");
 
     if (audioMonoState_) { AdjustStereoToMono(&data, len); }
+
     if (audioBalanceState_) { AdjustAudioBalance(&data, len); }
 
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
+
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            static_cast<void *>(&data), len);
-    }
     CheckUpdateState(&data, len);
+
     if (suspend_) { return ret; }
 
     Trace trace("BluetoothRendererSinkInner::RenderFrame");
@@ -534,6 +529,7 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
             usleep(RENDER_FRAME_INTERVAL_IN_MICROSECONDS);
             continue;
         }
+
         if (ret != 0) {
             AUDIO_ERR_LOG("A2dp RenderFrame failed ret: %{public}x", ret);
             ret = ERR_WRITE_FAILED;
@@ -543,22 +539,15 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     }
 
 #ifdef FEATURE_POWER_MANAGER
-    UpdateAppsUid();
-#endif
-
-    return ret;
-}
-
-#ifdef FEATURE_POWER_MANAGER
-void BluetoothRendererSinkInner::UpdateAppsUid()
-{
     if (runningLockManager_) {
         runningLockManager_->UpdateAppsUidToPowerMgr();
     } else {
         AUDIO_ERR_LOG("runningLockManager_ is nullptr");
     }
-}
 #endif
+
+    return ret;
+}
 
 ConvertHdiFormat BluetoothRendererSinkInner::ConvertToHdiAdapterFormat(AudioFormat format)
 {
@@ -630,9 +619,7 @@ int32_t BluetoothRendererSinkInner::Start(void)
         AUDIO_ERR_LOG("keepRunningLock is null, playback can not work well!");
     }
 #endif
-    dumpFileName_ = "bluetooth_audiosink_" + std::to_string(attr_.sampleRate) + "_"
-        + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_BLUETOOTH_RENDER_SINK_FILENAME, &dumpFile_);
 
     InitLatencyMeasurement();
 
@@ -644,7 +631,8 @@ int32_t BluetoothRendererSinkInner::Start(void)
             int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
             if (!ret) {
                 started_ = true;
-                CHECK_AND_RETURN_RET_LOG(CheckPositionTime() == SUCCESS, ERR_NOT_STARTED, "CheckPositionTime failed!");
+                CHECK_AND_RETURN_RET_LOG(!isBluetoothLowLatency_ || CheckPositionTime() == SUCCESS,
+                    ERR_NOT_STARTED, "CheckPositionTime failed!");
                 return SUCCESS;
             } else {
                 AUDIO_ERR_LOG("Start failed, remaining %{public}d attempt(s)", tryCount);

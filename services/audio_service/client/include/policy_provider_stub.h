@@ -33,6 +33,7 @@ private:
     int32_t HandleSetCapturer(MessageParcel &data, MessageParcel &reply);
     int32_t HandleWakeupCapturerRemoved(MessageParcel &data, MessageParcel &reply);
     int32_t HandleIsAbsVolumeSupported(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleGetAndSaveClientType(MessageParcel &data, MessageParcel &reply);
 };
 
 class PolicyProviderWrapper : public PolicyProviderStub {
@@ -47,6 +48,7 @@ public:
         uint32_t sessionId) override;
     int32_t NotifyWakeUpCapturerRemoved() override;
     bool IsAbsVolumeSupported() override;
+    int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName) override;
 private:
     IPolicyProvider *policyWorker_;
 };

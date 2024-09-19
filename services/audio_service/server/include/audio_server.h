@@ -47,6 +47,7 @@ public:
     void OnDump() override;
     void OnStart() override;
     void OnStop() override;
+    int32_t OffloadDrain() override;
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
@@ -54,8 +55,7 @@ public:
         std::vector<Effect>& successEffectList) override;
     bool CreatePlaybackCapturerManager() override;
     bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-        std::unordered_map<std::string, std::string> &effectMap,
-        std::unordered_map<std::string, std::string> &enhanceMap) override;
+        const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam) override;
     void SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;
@@ -68,6 +68,7 @@ public:
     void SetAudioParameter(const std::string& key, const std::string& value) override;
     void SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
         const std::string& value) override;
+    bool CheckAndPrintStacktrace(const std::string &key);
     int32_t GetExtraParameters(const std::string &mainKey, const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
     const std::string GetAudioParameter(const std::string &key) override;
@@ -87,10 +88,6 @@ public:
     int32_t GetAsrAecMode(AsrAecMode &asrAecMode) override;
     int32_t SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode) override;
     int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode) override;
-    int32_t SetAsrWhisperDetectionMode(AsrWhisperDetectionMode asrWhisperDetectionMode) override;
-    int32_t GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode) override;
-    int32_t SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on) override;
-    int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on) override;
     int32_t IsWhispering() override;
 
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
@@ -120,6 +117,16 @@ public:
 
     int32_t SetCaptureSilentState(bool state) override;
 
+    int32_t GetCapturePresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
+        int64_t& timeNanoSec) override;
+
+    int32_t GetRenderPresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
+        int64_t& timeNanoSec) override;
+
+    int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
+
+    int32_t OffloadSetBufferSize(uint32_t sizeMs) override;
+
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
 
     int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType) override;
@@ -132,15 +139,15 @@ public:
 
     uint32_t GetEffectLatency(const std::string &sessionId) override;
 
+    void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
+
     float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
+
+    void OnCapturerState(bool isActive, int32_t num);
 
     void ResetAudioEndpoint() override;
 
-    void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
-
     bool GetEffectOffloadEnabled() override;
-
-    void OnCapturerState(bool isActive, int32_t num);
 
     // IAudioServerInnerCall
     int32_t SetSinkRenderEmpty(const std::string &devceClass, int32_t durationUs) final;
@@ -151,6 +158,7 @@ public:
 
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
 
+    void SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag) override;
     void SetRotationToEffect(const uint32_t rotate) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -178,7 +186,6 @@ private:
         BluetoothOffloadState a2dpOffloadFlag);
     int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
         BluetoothOffloadState a2dpOffloadFlag);
-    bool CheckAndPrintStacktrace(const std::string &key);
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter();
     void WriteServiceStartupError();
@@ -186,7 +193,6 @@ private:
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);
     const std::string GetBundleNameFromUid(int32_t uid);
-    bool IsFastBlocked(int32_t uid);
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;

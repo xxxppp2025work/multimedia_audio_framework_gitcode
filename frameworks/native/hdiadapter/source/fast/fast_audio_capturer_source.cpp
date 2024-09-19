@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "FastAudioCapturerSourceInner"
-#endif
 
 #include <string>
 #include <cinttypes>
@@ -113,6 +112,7 @@ private:
     int bufferFd_ = INVALID_FD;
     uint32_t eachReadFrameSize_ = 0;
     std::unique_ptr<ICapturerStateCallback> audioCapturerSourceCallback_ = nullptr;
+    AudioScene currentAudioScene_ = AUDIO_SCENE_DEFAULT;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
@@ -472,12 +472,12 @@ int32_t FastAudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t request
 
 int32_t FastAudioCapturerSourceInner::CheckPositionTime()
 {
-    int32_t tryCount = 10;
+    int32_t tryCount = 20; // max try count is 20
     uint64_t frames = 0;
     int64_t timeSec = 0;
     int64_t timeNanoSec = 0;
-    int64_t maxHandleCost = 10000000; // ns
-    int64_t waitTime = 2000000; // 2ms
+    int64_t maxHandleCost = 10000000; // 10000000ns -> 10ms
+    int64_t waitTime = 2000000; // 2000000ns -> 2ms
     while (tryCount-- > 0) {
         ClockTime::RelativeSleep(waitTime); // us
         int32_t ret = GetMmapHandlePosition(frames, timeSec, timeNanoSec);
@@ -566,7 +566,7 @@ int32_t FastAudioCapturerSourceInner::GetMute(bool &isMute)
 static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
 {
     int32_t ret = SUCCESS;
-
+    AUDIO_ERR_LOG("Input device type %{public}d", inputDevice);
     switch (inputDevice) {
         case DEVICE_TYPE_MIC:
         case DEVICE_TYPE_EARPIECE:
@@ -637,9 +637,64 @@ int32_t FastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, Audi
     return (ret == SUCCESS) ? SUCCESS : ERR_OPERATION_FAILED;
 }
 
+static AudioCategory GetAudioCategory(AudioScene audioScene)
+{
+    AudioCategory audioCategory;
+    switch (audioScene) {
+        case AUDIO_SCENE_PHONE_CALL:
+            audioCategory = AUDIO_IN_CALL;
+            break;
+        case AUDIO_SCENE_PHONE_CHAT:
+            audioCategory = AUDIO_IN_COMMUNICATION;
+            break;
+        case AUDIO_SCENE_RINGING:
+        case AUDIO_SCENE_VOICE_RINGING:
+            audioCategory = AUDIO_IN_RINGTONE;
+            break;
+        case AUDIO_SCENE_DEFAULT:
+            audioCategory = AUDIO_IN_MEDIA;
+            break;
+        default:
+            audioCategory = AUDIO_IN_MEDIA;
+            break;
+    }
+    AUDIO_DEBUG_LOG("Audio category returned is: %{public}d", audioCategory);
+
+    return audioCategory;
+}
+
 int32_t FastAudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
-    return ERR_DEVICE_NOT_SUPPORTED;
+    AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d",
+        audioScene, activeDevice);
+    CHECK_AND_RETURN_RET_LOG(activeDevice == DEVICE_TYPE_BLUETOOTH_SCO, ERR_NOT_SUPPORTED,
+        "Type %{public}d is not supported", activeDevice);
+    CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX,
+        ERR_INVALID_PARAM, "invalid audioScene");
+    CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE,
+        "SetAudioScene failed audioCapture_ handle is null!");
+    AudioPortPin audioSceneInPort = PIN_IN_BLUETOOTH_SCO_HEADSET;
+
+    int32_t ret = SUCCESS;
+    if (audioScene != currentAudioScene_) {
+        struct AudioSceneDescriptor scene;
+        scene.scene.id = GetAudioCategory(audioScene);
+        scene.desc.pins = audioSceneInPort;
+        scene.desc.desc = (char *)"pin_in_bluetooth_sco_headset";
+
+        ret = audioCapture_->SelectScene(audioCapture_, &scene);
+        CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED,
+            "Select scene FAILED: %{public}d", ret);
+        currentAudioScene_ = audioScene;
+    }
+
+    ret = SetInputRoute(activeDevice, audioSceneInPort);
+    if (ret < 0) {
+        AUDIO_WARNING_LOG("Update route FAILED: %{public}d", ret);
+    }
+
+    AUDIO_DEBUG_LOG("Select audio scene SUCCESS: %{public}d", audioScene);
+    return SUCCESS;
 }
 
 std::string FastAudioCapturerSourceInner::GetAudioParameter(const AudioParamKey key,

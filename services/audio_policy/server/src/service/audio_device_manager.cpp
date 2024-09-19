@@ -12,12 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioDeviceManager"
-#endif
 
 #include "audio_device_manager.h"
 
+#include "parameter.h"
+
+#include "audio_errors.h"
+#include "audio_log.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_device_parser.h"
@@ -31,7 +34,6 @@ const int32_t ADDRESS_STR_LEN = 17;
 const int32_t START_POS = 6;
 const int32_t END_POS = 13;
 
-// LCOV_EXCL_START
 std::string GetEncryptAddr(const std::string &addr)
 {
     if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
@@ -303,8 +305,6 @@ void AudioDeviceManager::AddCaptureDevices(const shared_ptr<AudioDeviceDescripto
         capturePrivacyDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, INPUT_DEVICE, ALL_USAGE, "capture public device",
         capturePublicDevices_);
-    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, RECONGNITION, "capture recon privacy device",
-        reconCapturePrivacyDevices_);
 }
 
 void AudioDeviceManager::HandleScoWithDefaultCategory(const shared_ptr<AudioDeviceDescriptor> &devDesc)
@@ -382,6 +382,7 @@ std::string AudioDeviceManager::GetConnDevicesStr(const vector<shared_ptr<AudioD
     std::string devices;
     devices.append("device type:id ");
     for (auto iter : descs) {
+        CHECK_AND_CONTINUE_LOG(iter != nullptr, "iter is nullptr");
         devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
         devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceId_)));
         devices.append(" ");
@@ -399,7 +400,7 @@ void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &d
     };
 
     auto removeBeginIt = std::remove_if(descArray.begin(), descArray.end(), isPresent);
-    size_t deleteNum = descArray.end() - removeBeginIt;
+    size_t deleteNum = static_cast<uint32_t>(descArray.end() - removeBeginIt);
     descArray.erase(removeBeginIt, descArray.end());
 
     AUDIO_INFO_LOG("Remove %{public}zu desc from %{public}s list, and then %{public}s", deleteNum,
@@ -574,18 +575,6 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePublicDe
     return descs;
 }
 
-vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRecongnitionCapturePrivacyDevices()
-{
-    vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (const auto &desc : reconCapturePrivacyDevices_) {
-        if (desc == nullptr) {
-            continue;
-        }
-        descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
-    }
-    return descs;
-}
-// LCOV_EXCL_STOP
 unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCommRenderDefaultDevice(StreamUsage streamUsage)
 {
     if (streamUsage < STREAM_USAGE_UNKNOWN || streamUsage > STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
@@ -613,7 +602,6 @@ unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCaptureDefaultDevice()
     return devDesc;
 }
 
-// LCOV_EXCL_START
 void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage,
     const DevicePrivacyInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &dev,
     std::vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
@@ -963,7 +951,6 @@ void AudioDeviceManager::RemoveCaptureDevices(const AudioDeviceDescriptor &devDe
 {
     RemoveMatchDeviceInArray(devDesc, "capture privacy device", capturePrivacyDevices_);
     RemoveMatchDeviceInArray(devDesc, "capture public device", capturePublicDevices_);
-    RemoveMatchDeviceInArray(devDesc, "capture recon privacy device", reconCapturePrivacyDevices_);
 }
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetDevicesByFilter(DeviceType devType, DeviceRole devRole,
@@ -1041,7 +1028,6 @@ bool AudioDeviceManager::IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDev
         audioDeviceDescriptors->deviceType_, GetEncryptAddr(audioDeviceDescriptors->macAddress_).c_str());
     return false;
 }
-
 
 int32_t AudioDeviceManager::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning)

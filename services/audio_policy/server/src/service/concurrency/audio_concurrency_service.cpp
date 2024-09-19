@@ -14,6 +14,7 @@
  */
 #include "audio_concurrency_service.h"
 #include "audio_concurrency_state_listener_proxy.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

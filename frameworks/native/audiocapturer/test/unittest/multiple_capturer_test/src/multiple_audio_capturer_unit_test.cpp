@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "MultipleAudioCapturerUnitTest"
-#endif
 
 #include "multiple_audio_capturer_unit_test.h"
 #include "audio_capturer.h"
@@ -41,9 +40,7 @@ void MultipleAudioCapturerUnitTest::AudioCapUnitTestFunc(unique_ptr<AudioCapture
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = sourceType;
     audioCapturer = AudioCapturer::Create(capturerOptions);
-    if (audioCapturer == nullptr) {
-        return ;
-    }
+    ASSERT_NE(nullptr, audioCapturer);
 
     cb = make_shared<MultipleAudioCapturerCallbackTest>();
     ASSERT_NE(nullptr, cb);

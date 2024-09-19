@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "NapiAudioManager"
-#endif
 
 #include "napi_audio_manager.h"
 #include "napi_audio_routing_manager.h"
@@ -28,10 +27,8 @@
 #include "audio_errors.h"
 #include "audio_manager_log.h"
 #include "audio_utils.h"
-#ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 #include "xpower_event_js.h"
-#endif
 #endif
 #include "napi_audio_manager_callbacks.h"
 #include "napi_audio_ringermode_callback.h"
@@ -350,10 +347,8 @@ napi_value NapiAudioManager::SetVolume(napi_env env, napi_callback_info info)
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volLevel failed", NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
-#ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     HiviewDFX::ReportXPowerJsStackSysEvent(env, "VOLUME_CHANGE", "SRC=Audio");
-#endif
 #endif
 
     auto executor = [context]() {

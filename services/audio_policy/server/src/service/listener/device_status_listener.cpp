@@ -12,18 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "DeviceStatusListener"
-#endif
 
 #include "device_status_listener.h"
+
 #include <securec.h>
+
 #include "hdf_device_class.h"
 #include "v3_0/audio_types.h"
 #ifdef BLUETOOTH_ENABLE
 #include "audio_bluetooth_manager.h"
 #include "bluetooth_def.h"
 #endif
+
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_info.h"

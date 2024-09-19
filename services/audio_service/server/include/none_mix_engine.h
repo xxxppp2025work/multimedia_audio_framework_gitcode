@@ -47,14 +47,16 @@ private:
     int32_t SinkStopTimeOut();
     void DoFadeinOut(bool isFadeOut, char* buffer, size_t bufferSize);
 
+    int32_t GetDirectFormatByteSize(HdiAdapterFormat format);
+
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate);
     AudioSamplingRate GetDirectVoipSampleRate(AudioSamplingRate sampleRate);
     HdiAdapterFormat GetDirectDeviceFormate(AudioSampleFormat format);
-    int32_t GetDirectFormatByteSize(HdiAdapterFormat format);
 
 private:
     bool isVoip_;
     bool isStart_;
+    bool isPause_;
     bool isInit_;
     DeviceInfo device_;
     std::atomic<uint32_t> failedCount_;

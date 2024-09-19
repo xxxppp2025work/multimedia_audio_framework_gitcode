@@ -12,12 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "VolumeDataMaintainer"
-#endif
 
 #include "volume_data_maintainer.h"
+
+#include <map>
+
 #include "system_ability_definition.h"
+
+#include "audio_errors.h"
 #include "audio_policy_manager_factory.h"
 
 namespace OHOS {
@@ -507,7 +511,7 @@ void VolumeDataMaintainer::RegisterCloned()
         ErrCode result =
             AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID).GetIntValue(SETTINGS_CLONED, value);
         if (!isSettingsCloneHaveStarted_ && (value == SETTINGS_CLONING_STATUS) && (result == SUCCESS)) {
-            AUDIO_INFO_LOG("clone staring");
+            AUDIO_INFO_LOG("clone staring.");
             isSettingsCloneHaveStarted_ = true;
         }
 
@@ -614,7 +618,6 @@ AudioStreamType VolumeDataMaintainer::GetStreamForVolumeMap(AudioStreamType stre
     switch (streamType) {
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_MESSAGE:
-        case STREAM_VOICE_CALL_ASSISTANT:
             return STREAM_VOICE_CALL;
         case STREAM_RING:
         case STREAM_SYSTEM:

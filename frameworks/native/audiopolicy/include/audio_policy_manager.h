@@ -28,6 +28,7 @@
 #include "audio_routing_manager.h"
 #include "audio_routing_manager_listener_stub.h"
 #include "audio_system_manager.h"
+#include "audio_system_manager.h"
 #include "i_standard_client_tracker.h"
 #include "audio_log.h"
 #include "microphone_descriptor.h"
@@ -138,13 +139,15 @@ public:
     int32_t UnsetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
-        const std::shared_ptr<AudioInterruptCallback> &callback, const int32_t zoneID = 0);
+        const std::shared_ptr<AudioInterruptCallback> &callback, uint32_t clientUid, const int32_t zoneID = 0);
 
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID = 0);
 
     int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
+
+    int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
 
     int32_t SetAudioManagerInterruptCallback(const int32_t clientId,
         const std::shared_ptr<AudioInterruptCallback> &callback);
@@ -298,6 +301,8 @@ public:
 
     bool IsAbsVolumeScene();
 
+    bool IsVgsVolumeSupported();
+
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi);
 
     std::vector<std::unique_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
@@ -415,6 +420,7 @@ public:
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
+
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

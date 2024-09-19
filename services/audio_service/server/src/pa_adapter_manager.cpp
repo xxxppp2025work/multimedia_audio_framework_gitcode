@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "PaAdapterManager"
-#endif
 
 #include "pa_adapter_manager.h"
 #include <sstream>
@@ -61,7 +60,6 @@ static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_S
     {STREAM_NAVIGATION, "navigation"},
     {STREAM_VOICE_COMMUNICATION, "voice_call"},
     {STREAM_VOICE_RING, "ring"},
-    {STREAM_VOICE_CALL_ASSISTANT, "voice_call_assistant"},
 };
 
 static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
@@ -99,7 +97,12 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
     AUDIO_DEBUG_LOG("Create renderer start");
     int32_t ret = InitPaContext();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
-    uint32_t sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
+    uint32_t sessionId = 0;
+    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
+        sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
+    } else {
+        sessionId = processConfig.originalSessionId;
+    }
     AUDIO_DEBUG_LOG("Create [%{public}d] type renderer:[%{public}u]", managerType_, sessionId);
 
     // PaAdapterManager is solely responsible for creating paStream objects
@@ -201,7 +204,12 @@ int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::
     CHECK_AND_RETURN_RET_LOG(managerType_ == RECORDER, ERROR, "Invalid managerType:%{public}d", managerType_);
     int32_t ret = InitPaContext();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
-    uint32_t sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
+    uint32_t sessionId = 0;
+    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
+        sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
+    } else {
+        sessionId = processConfig.originalSessionId;
+    }
 
     // PaAdapterManager is solely responsible for creating paStream objects
     // while the PaCapturerStreamImpl has full authority over the subsequent management of the paStream
@@ -420,6 +428,12 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
         ReleasePaStream(paStream);
         return nullptr;
     }
+    if (processConfig.audioMode == AUDIO_MODE_RECORD) {
+        ret = SetStreamAudioEnhanceMode(paStream, enhanceMode_);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("capturer set audio enhance mode failed.");
+        }
+    }
     return paStream;
 }
 
@@ -497,16 +511,9 @@ void PaAdapterManager::SetRecordProplist(pa_proplist *propList, AudioProcessConf
     pa_proplist_sets(propList, "stream.isIpcCapturer", std::to_string(true).c_str());
     pa_proplist_sets(propList, "stream.capturerSource",
         std::to_string(processConfig.capturerInfo.sourceType).c_str());
-    const std::string sceneType = GetEnhanceSceneName(processConfig.capturerInfo.sourceType);
-    AudioEnhanceMode enhanceMode = IsEnhanceMode(processConfig.capturerInfo.sourceType) ?
-        ENHANCE_DEFAULT : ENHANCE_NONE;
-    const std::string sceneMode = GetEnhanceModeName(enhanceMode);
-    std::string upDevice = "DEVICE_TYPE_MIC";
-    std::string downDevice = "DEVICE_TYPE_SPEAKER";
-    pa_proplist_sets(propList, "scene.type", sceneType.c_str());
-    pa_proplist_sets(propList, "scene.mode", sceneMode.c_str());
-    pa_proplist_sets(propList, "device.up", upDevice.c_str());
-    pa_proplist_sets(propList, "device.down", downDevice.c_str());
+    pa_proplist_sets(propList, "scene.type", GetEnhanceSceneName(processConfig.capturerInfo.sourceType).c_str());
+    enhanceMode_ = IsEnhanceMode(processConfig.capturerInfo.sourceType) ? EFFECT_DEFAULT : EFFECT_NONE;
+    pa_proplist_sets(propList, "scene.mode", GetEnhanceModeName(enhanceMode_).c_str());
 }
 
 int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
@@ -537,10 +544,12 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
             : (managerType_ == DUAL_PLAYBACK ? DUAL_TONE_STREAM : NORMAL_STREAM);
         pa_proplist_sets(propList, "stream.mode", streamMode.c_str());
         pa_proplist_sets(propList, "stream.flush", "false");
+        pa_proplist_sets(propList, "spatialization.enabled", "0");
         pa_proplist_sets(propList, "fadeoutPause", "0");
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(processConfig.privacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
         pa_proplist_sets(propList, "scene.type", processConfig.rendererInfo.sceneType.c_str());
+        pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
         pa_proplist_sets(propList, "spatialization.enabled",
             std::to_string(processConfig.rendererInfo.spatializationEnabled).c_str());
         pa_proplist_sets(propList, "headtracking.enabled",
@@ -694,7 +703,7 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
     return SUCCESS;
 }
 
-int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEnhanceMode mode)
+int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEffectMode audioEnhanceMode)
 {
     PaLockGuard lock(mainLoop_);
     pa_proplist *propList = pa_proplist_new();
@@ -702,11 +711,10 @@ int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEn
         AUDIO_ERR_LOG("pa_proplist_new failed.");
         return ERROR;
     }
-    std::string enhanceModeName = AUDIO_ENHANCE_SUPPORTED_SCENE_MODES.find(mode)->second;
     std::string upDevice = "DEVICE_TYPE_MIC";
     std::string downDevice = "DEVICE_TYPE_SPEAKER";
-    pa_proplist_sets(propList, "device.up", upDevice.c_str());
-    pa_proplist_sets(propList, "device.down", downDevice.c_str());
+    std::string upAndDownDevice = upDevice + "_&_" + downDevice;
+    pa_proplist_sets(propList, "device.upAndDown", upAndDownDevice.c_str());
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
     if (updatePropOperation == nullptr) {
@@ -718,18 +726,18 @@ int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEn
     return SUCCESS;
 }
 
-const std::string PaAdapterManager::GetEnhanceModeName(AudioEnhanceMode mode)
+const std::string PaAdapterManager::GetEnhanceModeName(AudioEffectMode audioEnhanceMode)
 {
     std::string name;
-    switch (mode) {
-        case AudioEnhanceMode::ENHANCE_NONE:
-            name = "ENHANCE_NONE";
+    switch (audioEnhanceMode) {
+        case AudioEffectMode::EFFECT_NONE:
+            name = "EFFECT_NONE";
             break;
-        case AudioEnhanceMode::ENHANCE_DEFAULT:
-            name = "ENHANCE_DEFAULT";
+        case AudioEffectMode::EFFECT_DEFAULT:
+            name = "EFFECT_DEFAULT";
             break;
         default:
-            name = "ENHANCE_NONE";
+            name = "EFFECT_DEFAULT";
             break;
     }
     const std::string modeName = name;

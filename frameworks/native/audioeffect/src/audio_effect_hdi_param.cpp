@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioEffectHdiParam"
-#endif
 
 #include "audio_effect.h"
 #include "audio_effect_hdi_param.h"

@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "RendererSinkAdapter"
-#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -68,6 +67,7 @@ int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct 
     adapter->deviceClass = !strcmp(device, DEVICE_CLASS_FILE) ? CLASS_TYPE_FILE : adapter->deviceClass;
     adapter->deviceClass = !strcmp(device, DEVICE_CLASS_REMOTE) ? CLASS_TYPE_REMOTE : adapter->deviceClass;
     adapter->deviceClass = !strcmp(device, DEVICE_CLASS_OFFLOAD) ? CLASS_TYPE_OFFLOAD : adapter->deviceClass;
+    adapter->deviceClass = !strcmp(device, DEVICE_CLASS_MULTICHANNEL) ? CLASS_TYPE_MULTICHANNEL : adapter->deviceClass;
     adapter->deviceClass = !strcmp(device, DEVICE_CLASS_DP) ? CLASS_TYPE_DP : adapter->deviceClass;
 
     adapter->RendererSinkInit = IAudioRendererSinkInit;
@@ -119,6 +119,8 @@ const char *GetDeviceClass(int32_t deviceClass)
         return DEVICE_CLASS_REMOTE;
     } else if (deviceClass == CLASS_TYPE_OFFLOAD) {
         return DEVICE_CLASS_OFFLOAD;
+    } else if (deviceClass == CLASS_TYPE_MULTICHANNEL) {
+        return DEVICE_CLASS_MULTICHANNEL;
     } else if (deviceClass == CLASS_TYPE_DP) {
         return DEVICE_CLASS_DP;
     } else {

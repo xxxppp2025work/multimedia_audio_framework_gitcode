@@ -12,11 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioConcurrencyStateListenerStub"
-#endif
 
-
+#include "audio_errors.h"
 #include "audio_policy_log.h"
 #include "audio_concurrency_state_listener_stub.h"
 

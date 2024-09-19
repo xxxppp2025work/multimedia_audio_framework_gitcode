@@ -57,6 +57,7 @@ public:
     ConnectState connectState_ = CONNECTED;
     bool isScoRealConnected_ = false;
     bool isEnable_ = true;
+    bool isVgsSupported_ = false;
 
     AudioDeviceDescriptor();
     AudioDeviceDescriptor(DeviceType type, DeviceRole role, int32_t interruptGroupId, int32_t volumeGroupId,
@@ -242,6 +243,12 @@ public:
      * @since 8
      */
     virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) = 0;
+};
+
+class AudioQueryClientTypeCallback {
+public:
+    virtual ~AudioQueryClientTypeCallback() = default;
+    virtual bool OnQueryClientType(const std::string &bundleName, uint32_t uid) = 0;
 };
 
 class AudioManagerAvailableDeviceChangeCallback {
@@ -649,7 +656,7 @@ public:
      * @param value The value of the set audio parameter.
      * @since 12
      */
-    int32_t GetAsrAecMode(AsrAecMode &asrAecMode);
+    int32_t GetAsrAecMode(AsrAecMode& asrAecMode);
     /**
      * @brief set audio parameter.
      *
@@ -665,39 +672,7 @@ public:
      * @param value The value of the set audio parameter.
      * @since 12
      */
-    int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode);
-    /**
-     * @brief set audio parameter.
-     *
-     * @parame key The key of the set audio parameter.
-     * @param value The value of the set audio parameter.
-     * @since 12
-     */
-    int32_t SetAsrWhisperDetectionMode(const AsrWhisperDetectionMode asrWhisperDetectionMode);
-    /**
-     * @brief set audio parameter.
-     *
-     * @parame key The key of the set audio parameter.
-     * @param value The value of the set audio parameter.
-     * @since 12
-     */
-    int32_t GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode);
-    /**
-     * @brief set audio parameter.
-     *
-     * @parame key The key of the set audio parameter.
-     * @param value The value of the set audio parameter.
-     * @since 12
-     */
-    int32_t SetAsrVoiceControlMode(const AsrVoiceControlMode asrVoiceControlMode, bool on);
-    /**
-     * @brief set audio parameter.
-     *
-     * @parame key The key of the set audio parameter.
-     * @param value The value of the set audio parameter.
-     * @since 12
-     */
-    int32_t SetAsrVoiceMuteMode(const AsrVoiceMuteMode asrVoiceMuteMode, bool on);
+    int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode);
     /**
      * @brief set audio parameter.
      *
@@ -1150,6 +1125,20 @@ public:
 
     int32_t SetWakeUpSourceCloseCallback(const std::shared_ptr<WakeUpSourceCloseCallback> &callback);
 
+    int32_t OffloadDrain();
+
+    int32_t GetCapturePresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
+        int64_t& timeNanoSec);
+
+    int32_t GetRenderPresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
+        int64_t& timeNanoSec);
+
+    int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec);
+
+    int32_t OffloadSetBufferSize(uint32_t sizeMs);
+
+    int32_t OffloadSetVolume(float volume);
+
     /**
      * @brief Set whether or not absolute volume is supported for the specified Bluetooth device
      *
@@ -1246,6 +1235,10 @@ public:
 
     std::string GetSelfBundleName(int32_t uid);
 
+    std::string GetSelfBundleName();
+
+    int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
+
     /**
      * @brief inject interruption event.
      *
@@ -1292,9 +1285,7 @@ private:
     virtual ~AudioSystemManager();
 
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
-    static void CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> &streamMap);
     int32_t GetCallingPid();
-    std::string GetSelfBundleName();
 
     int32_t RegisterWakeupSourceCallback();
     void OtherDeviceTypeCases(DeviceType deviceType) const;

@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "ProRendererStream"
-#endif
 
 #include "pro_renderer_stream_impl.h"
 #include "audio_errors.h"
@@ -48,6 +47,7 @@ ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, b
       privacyType_(0),
       renderRate_(0),
       streamIndex_(static_cast<uint32_t>(-1)),
+      abortFlag_(0),
       currentRate_(1),
       desSamplingRate_(0),
       desFormat_(AudioSampleFormat::SAMPLE_S32LE),
@@ -118,7 +118,6 @@ AudioSampleFormat ProRendererStreamImpl::GetDirectFormat(AudioSampleFormat forma
 
 int32_t ProRendererStreamImpl::InitParams()
 {
-    Trace trace("ProRendererStreamImpl::InitParams");
     if (status_ != I_STATUS_INVALID) {
         return ERR_ILLEGAL_STATE;
     }
@@ -130,7 +129,6 @@ int32_t ProRendererStreamImpl::InitParams()
     uint32_t desChannels = streamInfo.channels >= STEREO_CHANNEL_COUNT ? STEREO_CHANNEL_COUNT : 1;
     uint32_t desSpanSize = (desSamplingRate_ * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
     if (streamInfo.samplingRate != desSamplingRate_) {
-        Trace::Count("ProRendererStreamImpl::InitParams", streamInfo.samplingRate);
         AUDIO_INFO_LOG("stream need resample, dest:%{public}d", desSamplingRate_);
         isNeedResample_ = true;
         resample_ = std::make_shared<AudioResample>(desChannels, streamInfo.samplingRate, desSamplingRate_,
@@ -144,7 +142,6 @@ int32_t ProRendererStreamImpl::InitParams()
         resample_->ProcessFloatResample(resampleSrcBuffer, resampleDesBuffer);
     }
     if (streamInfo.channels > STEREO_CHANNEL_COUNT) {
-        Trace::Count("ProRendererStreamImpl::InitParams", streamInfo.channels);
         isNeedMcr_ = true;
         if (!isNeedResample_) {
             resampleSrcBuffer.resize(frameSize, 0.f);
@@ -170,7 +167,6 @@ int32_t ProRendererStreamImpl::InitParams()
 
 int32_t ProRendererStreamImpl::Start()
 {
-    Trace trace("ProRendererStreamImpl::Start");
     isBlock_ = false;
     AUDIO_INFO_LOG("Enter");
     if (status_ == I_STATUS_INVALID) {
@@ -180,8 +176,9 @@ int32_t ProRendererStreamImpl::Start()
         return SUCCESS;
     }
     status_ = I_STATUS_STARTED;
-    isFirstFrame_ = true;
+
     isFirstNoUnderrunFrame_ = false;
+
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STARTED);
@@ -189,17 +186,13 @@ int32_t ProRendererStreamImpl::Start()
     return SUCCESS;
 }
 
-int32_t ProRendererStreamImpl::Pause()
+int32_t ProRendererStreamImpl::Pause(bool isStandby)
 {
-    Trace trace("ProRendererStreamImpl::Pause");
     AUDIO_INFO_LOG("Enter");
     if (status_ == I_STATUS_STARTED) {
         status_ = I_STATUS_PAUSED;
     }
     isBlock_ = true;
-    if (isFirstFrame_) {
-        firstFrameSync_.notify_all();
-    }
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_PAUSED);
@@ -209,7 +202,6 @@ int32_t ProRendererStreamImpl::Pause()
 
 int32_t ProRendererStreamImpl::Flush()
 {
-    Trace trace("ProRendererStreamImpl::Flush");
     AUDIO_INFO_LOG("Enter");
     {
         std::lock_guard lock(enqueueMutex);
@@ -234,7 +226,6 @@ int32_t ProRendererStreamImpl::Flush()
 
 int32_t ProRendererStreamImpl::Drain()
 {
-    Trace trace("ProRendererStreamImpl::Drain");
     AUDIO_INFO_LOG("Enter");
     isDrain_ = true;
     if (!readQueue_.empty()) {
@@ -253,13 +244,9 @@ int32_t ProRendererStreamImpl::Drain()
 
 int32_t ProRendererStreamImpl::Stop()
 {
-    Trace trace("ProRendererStreamImpl::Stop");
     AUDIO_INFO_LOG("Enter");
     status_ = I_STATUS_STOPPED;
     isBlock_ = true;
-    if (isFirstFrame_) {
-        firstFrameSync_.notify_all();
-    }
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STOPPED);
@@ -269,7 +256,6 @@ int32_t ProRendererStreamImpl::Stop()
 
 int32_t ProRendererStreamImpl::Release()
 {
-    Trace trace("ProRendererStreamImpl::Release");
     AUDIO_INFO_LOG("Enter");
     status_ = I_STATUS_INVALID;
     isBlock_ = true;
@@ -297,7 +283,6 @@ int32_t ProRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
     timestamp = static_cast<uint64_t>(timeSec * AUDIO_NS_PER_S + timeNsec);
     return SUCCESS;
 }
-
 int32_t ProRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp)
 {
     int64_t timeSec = 0;
@@ -351,7 +336,6 @@ int32_t ProRendererStreamImpl::SetAudioEffectMode(int32_t effectMode)
 {
     return SUCCESS;
 }
-
 int32_t ProRendererStreamImpl::GetAudioEffectMode(int32_t &effectMode)
 {
     return SUCCESS;
@@ -374,7 +358,6 @@ void ProRendererStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusCa
     AUDIO_DEBUG_LOG("enter in");
     statusCallback_ = callback;
 }
-
 void ProRendererStreamImpl::RegisterWriteCallback(const std::weak_ptr<IWriteCallback> &callback)
 {
     AUDIO_DEBUG_LOG("enter in");
@@ -383,7 +366,6 @@ void ProRendererStreamImpl::RegisterWriteCallback(const std::weak_ptr<IWriteCall
 
 BufferDesc ProRendererStreamImpl::DequeueBuffer(size_t length)
 {
-    Trace trace("ProRendererStreamImpl::DequeueBuffer");
     BufferDesc bufferDesc = {nullptr, 0, 0};
     if (status_ != I_STATUS_STARTED) {
         return bufferDesc;
@@ -395,7 +377,6 @@ BufferDesc ProRendererStreamImpl::DequeueBuffer(size_t length)
 
 int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
 {
-    Trace trace("ProRendererStreamImpl::EnqueueBuffer");
     int32_t writeIndex = PopWriteBufferIndex();
     if (writeIndex < 0) {
         AUDIO_ERR_LOG("write index is empty.");
@@ -406,6 +387,7 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
     if (isNeedMcr_ && !isNeedResample_) {
         ConvertSrcToFloat(bufferDesc.buffer, bufferDesc.bufLength, volume);
         downMixer_->Apply(spanSizeInFrame_, resampleSrcBuffer.data(), resampleDesBuffer.data());
+        DumpFileUtil::WriteDumpFile(dumpFile_, resampleDesBuffer.data(), resampleDesBuffer.size() * sizeof(float));
         ConvertFloatToDes(writeIndex);
     } else if (isNeedMcr_ && isNeedResample_) {
         ConvertSrcToFloat(bufferDesc.buffer, bufferDesc.bufLength, volume);
@@ -462,6 +444,11 @@ void ProRendererStreamImpl::SetStreamIndex(uint32_t index)
     streamIndex_ = index;
 }
 
+void ProRendererStreamImpl::AbortCallback(int32_t abortTimes)
+{
+    abortFlag_ += abortTimes;
+}
+
 uint32_t ProRendererStreamImpl::GetStreamIndex()
 {
     return streamIndex_;
@@ -485,7 +472,6 @@ int32_t ProRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timest
 {
     return SUCCESS;
 }
-
 int32_t ProRendererStreamImpl::OffloadSetVolume(float volume)
 {
     return SUCCESS;
@@ -519,7 +505,6 @@ bool ProRendererStreamImpl::GetAudioTime(uint64_t &framePos, int64_t &sec, int64
 
 int32_t ProRendererStreamImpl::Peek(std::vector<char> *audioBuffer, int32_t &index)
 {
-    Trace trace("ProRendererStreamImpl::Peek");
     int32_t result = SUCCESS;
     if (isBlock_) {
         return ERR_WRITE_BUFFER;
@@ -599,7 +584,7 @@ int32_t ProRendererStreamImpl::PopWriteBufferIndex()
 
 void ProRendererStreamImpl::PopSinkBuffer(std::vector<char> *audioBuffer, int32_t &index)
 {
-    if (readQueue_.empty() && isFirstFrame_) {
+    if (readQueue_.empty()) {
         std::unique_lock firstFrameLock(firstFrameMutex);
         firstFrameSync_.wait_for(firstFrameLock, std::chrono::milliseconds(FIRST_FRAME_TIMEOUT_TIME),
             [this] { return (!readQueue_.empty() || isBlock_); });

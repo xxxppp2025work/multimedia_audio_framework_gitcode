@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "IpcStreamInServer"
-#endif
 
 #include <memory>
 #include <cinttypes>
@@ -99,6 +98,16 @@ std::shared_ptr<RendererInServer> IpcStreamInServer::GetRenderer()
         return nullptr;
     }
     return rendererInServer_;
+}
+
+std::shared_ptr<CapturerInServer> IpcStreamInServer::GetCapturer()
+{
+    if (mode_ != AUDIO_MODE_RECORD || capturerInServer_ == nullptr) {
+        AUDIO_ERR_LOG("GetCapturer failed, mode is %{public}s", (mode_ != AUDIO_MODE_RECORD ? " not record" :
+            "record, but capturer is null!"));
+        return nullptr;
+    }
+    return capturerInServer_;
 }
 
 int32_t IpcStreamInServer::ConfigRenderer()

@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "FastAudioRendererSinkInner"
-#endif
 
 #include "fast_audio_renderer_sink.h"
 
@@ -377,7 +376,7 @@ int32_t FastAudioRendererSinkInner::PrepareMmapBuffer()
         "ReqMmapBuffer invalid values: totalBufferFrames[%{public}d] transferFrameSize[%{public}d]",
         desc.totalBufferFrames, desc.transferFrameSize);
     bufferTotalFrameSize_ = static_cast<uint32_t>(desc.totalBufferFrames); // 1440 ~ 3840
-    eachReadFrameSize_ = desc.transferFrameSize; // 240
+    eachReadFrameSize_ = static_cast<uint32_t>(desc.transferFrameSize); // 240
 
     CHECK_AND_RETURN_RET_LOG(frameSizeInByte_ <= ULLONG_MAX / bufferTotalFrameSize_, ERR_OPERATION_FAILED,
         "BufferSize will overflow!");

@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioOpenslesPlayerUnitTest"
-#endif
 
 #include "audio_opensles_player_unit_test.h"
 
@@ -95,12 +94,6 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateOutputMix_002, TestSize
 {
     SLresult result = (*outputMixObject_)->Realize(outputMixObject_, SL_BOOLEAN_FALSE);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
-}
-
-HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateOutputMix_003, TestSize.Level0)
-{
-    SLresult result = (*engineEngine_)->CreateOutputMix(engineEngine_, nullptr, 0, nullptr, nullptr);
-    EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
 }
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_Realize_001, TestSize.Level1)
@@ -1304,12 +1297,6 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_Destroy_004, TestSize.Level0)
     (*engineObject_)->Destroy(engineObject_);
     (*outputMixObject_)->Destroy(outputMixObject_);
     EXPECT_TRUE(true);
-}
-
-HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_Player_Destroy_001, TestSize.Level0)
-{
-    SLresult result = AudioPlayerDestroy(nullptr);
-    EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

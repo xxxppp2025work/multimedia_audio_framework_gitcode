@@ -12,11 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "PublicPriorityRouter"
-#endif
 
 #include "public_priority_router.h"
+#include "audio_log.h"
+
 using namespace std;
 
 namespace OHOS {

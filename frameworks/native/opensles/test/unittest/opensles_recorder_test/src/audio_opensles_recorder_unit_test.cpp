@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioOpenslesRecorderUnitTest"
-#endif
 
 #include "audio_opensles_recorder_unit_test.h"
 
@@ -312,12 +311,6 @@ HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_Destroy_002, TestSi
 {
     (*engineObject_)->Destroy(engineObject_);
     EXPECT_TRUE(true);
-}
-
-HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_Destroy_003, TestSize.Level0)
-{
-    SLresult result = AudioRecorderDestroy(nullptr);
-    EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
 }
 
 HWTEST(AudioOpenslesRecorderUnitTest, Prf_Audio_Opensles_Capture_CreateEngine_001, TestSize.Level0)

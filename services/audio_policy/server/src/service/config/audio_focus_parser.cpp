@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioFocusParser"
-#endif
 
 #include "audio_focus_parser.h"
 #ifdef USE_CONFIG_POLICY
@@ -31,8 +30,6 @@ std::map<std::string, AudioFocusType> AudioFocusParser::audioFocusMap = {
     // stream type for audio interrupt
     {"STREAM_VOICE_CALL",
         {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_INVALID, true}},
-    {"STREAM_VOICE_CALL_ASSISTANT",
-        {AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, SourceType::SOURCE_TYPE_INVALID, true}},
     {"STREAM_VOICE_MESSAGE",
         {AudioStreamType::STREAM_VOICE_MESSAGE, SourceType::SOURCE_TYPE_INVALID, true}},
     {"STREAM_SYSTEM",

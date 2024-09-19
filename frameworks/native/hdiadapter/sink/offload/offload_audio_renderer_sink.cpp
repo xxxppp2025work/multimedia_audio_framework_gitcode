@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "OffloadAudioRendererSinkInner"
-#endif
 
 #include "offload_audio_renderer_sink.h"
 
@@ -35,7 +34,6 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
-#include "media_monitor_manager.h"
 
 using namespace std;
 
@@ -152,16 +150,16 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+    bool signalDetected_ = false;
+    size_t detectedTime_ = 0;
+    bool latencyMeasEnabled_ = false;
+    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     // for get amplitude
     float maxAmplitude_ = 0;
     int64_t lastGetMaxAmplitudeTime_ = 0;
     int64_t last10FrameStartTime_ = 0;
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
-    bool signalDetected_ = false;
-    size_t detectedTime_ = 0;
-    bool latencyMeasEnabled_ = false;
-    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     std::mutex renderMutex_;
 
     int32_t CreateRender(const struct AudioPort &renderPort);
@@ -169,10 +167,10 @@ private:
     AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
-    void CheckUpdateState(char *frame, uint64_t replyBytes);
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *data, size_t len);
+    void CheckUpdateState(char *frame, uint64_t replyBytes);
 
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> offloadRunningLockManager_;
@@ -180,7 +178,6 @@ private:
 #endif
 
     FILE *dumpFile_ = nullptr;
-    std::string dumpFileName_ = "";
 };
     
 OffloadAudioRendererSinkInner::OffloadAudioRendererSinkInner()
@@ -205,7 +202,6 @@ OffloadRendererSink *OffloadRendererSink::GetInstance()
     return &audioRenderer;
 }
 
-// LCOV_EXCL_START
 int32_t OffloadAudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
 {
     std::lock_guard<std::mutex> lock(volumeMutex_);
@@ -654,10 +650,6 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         &writeLen);
     if (ret == 0 && writeLen != 0) {
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
-        if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-                static_cast<void *>(&data), writeLen);
-        }
         CheckUpdateState(&data, len);
     }
 
@@ -724,9 +716,7 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
         return ERR_NOT_STARTED;
     }
 
-    dumpFileName_ = "offload_audiosink_" + std::to_string(attr_.sampleRate) + "_"
-        + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_OFFLOAD_RENDER_SINK_FILENAME, &dumpFile_);
 
     started_ = true;
     renderPos_ = 0;
@@ -1112,6 +1102,5 @@ int32_t OffloadAudioRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> 
     AUDIO_WARNING_LOG("not supported.");
     return SUCCESS;
 }
-// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

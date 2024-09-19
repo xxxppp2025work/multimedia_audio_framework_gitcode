@@ -41,7 +41,6 @@ private:
     };
 
     static void WorkCallbackRendererWriteData(uv_work_t *work, int status);
-    static void WorkCallbackRendererWriteDataInner(uv_work_t *work, int status);
     void OnJsRendererWriteDataCallback(std::unique_ptr<RendererWriteDataJsCallback> &jsCb);
     static void CheckWriteDataCallbackResult(napi_env env, BufferDesc &bufDesc, napi_value result);
 

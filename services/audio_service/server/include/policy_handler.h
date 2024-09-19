@@ -64,6 +64,8 @@ public:
 
     void SetHighResolutionExist(bool isHighResExist);
 
+    int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName);
+
 private:
     PolicyHandler();
     sptr<IPolicyProviderIpc> iPolicyProvider_ = nullptr;

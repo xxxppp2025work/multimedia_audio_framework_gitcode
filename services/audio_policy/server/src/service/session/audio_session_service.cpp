@@ -32,7 +32,6 @@ static const std::unordered_map<AudioStreamType, AudioSessionType> SESSION_TYPE_
     {STREAM_NAVIGATION, AudioSessionType::MEDIA},
     {STREAM_VOICE_MESSAGE, AudioSessionType::MEDIA},
     {STREAM_VOICE_CALL, AudioSessionType::CALL},
-    {STREAM_VOICE_CALL_ASSISTANT, AudioSessionType::CALL},
     {STREAM_VOICE_COMMUNICATION, AudioSessionType::VOIP},
     {STREAM_SYSTEM, AudioSessionType::SYSTEM},
     {STREAM_SYSTEM_ENFORCED, AudioSessionType::SYSTEM},

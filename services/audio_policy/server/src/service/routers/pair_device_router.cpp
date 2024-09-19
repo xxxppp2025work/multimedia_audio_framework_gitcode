@@ -12,12 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "PairDeviceRouter"
-#endif
 
 #include "pair_device_router.h"
-
+#include "audio_device_manager.h"
 #include "audio_policy_service.h"
 
 using namespace std;

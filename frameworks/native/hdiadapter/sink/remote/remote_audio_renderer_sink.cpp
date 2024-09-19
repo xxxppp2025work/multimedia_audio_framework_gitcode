@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "RemoteAudioRendererSinkInner"
-#endif
 
 #include "remote_audio_renderer_sink.h"
 
@@ -107,8 +106,8 @@ public:
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
     void ResetOutputRouteForDisconnect(DeviceType device) override;
-    int32_t SetPriPaPower() override;
     int32_t SetPaPower(int32_t flag) override;
+    int32_t SetPriPaPower() override;
 
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
@@ -270,13 +269,12 @@ int32_t RemoteAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 
     auto audioManager = AudioDeviceManagerFactory::GetInstance().CreatDeviceManager(REMOTE_DEV_MGR);
     CHECK_AND_RETURN_RET_LOG(audioManager != nullptr, ERR_NOT_STARTED, "Init audio manager fail.");
-
     {
         std::lock_guard<std::mutex> lock(audioMangerMutex_);
         audioManager_ = audioManager;
     }
-
     struct AudioAdapterDescriptor *desc = audioManager->GetTargetAdapterDesc(deviceNetworkId_, false);
+
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NOT_STARTED, "Get target adapters descriptor fail.");
     for (uint32_t port = 0; port < desc->ports.size(); port++) {
         if (desc->ports[port].portId == AudioPortPin::PIN_OUT_SPEAKER) {
@@ -444,7 +442,8 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
         return SUCCESS;
     }
 
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_REMOTE_RENDER_SINK_FILENAME, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_REMOTE_RENDER_SINK_FILENAME
+        + '_' + GetTime() + ".pcm", &dumpFile_);
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Start: Audio render is null.");
     int32_t ret = audioRender_->Start();

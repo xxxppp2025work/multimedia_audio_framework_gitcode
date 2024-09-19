@@ -50,6 +50,8 @@ public:
      */
     virtual void OnSpatializationEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) = 0;
+
+    bool useNewApiFlag = false;
 };
 
 class AudioHeadTrackingEnabledChangeCallback {
@@ -72,6 +74,8 @@ public:
      */
     virtual void OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) = 0;
+
+    bool useNewApiFlag = false;
 };
 
 class AudioSpatializationStateChangeCallback {

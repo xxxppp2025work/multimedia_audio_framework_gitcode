@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioEndpointSeparate"
-#endif
 
 #include "audio_endpoint.h"
 
@@ -289,7 +288,6 @@ int32_t AudioEndpointSeparate::PrepareDeviceBuffer(const DeviceInfo &deviceInfo)
     CHECK_AND_RETURN_RET_LOG((dstAudioBuffer_ != nullptr && (dstAudioBuffer_->GetStreamStatus() != nullptr)),
         ERR_ILLEGAL_STATE, "%{public}s create buffer from remote fail.", __func__);
     dstAudioBuffer_->GetStreamStatus()->store(StreamStatus::STREAM_IDEL);
-
     // clear data buffer
     ret = memset_s(dstAudioBuffer_->GetDataBase(), dstAudioBuffer_->GetDataSize(), 0, dstAudioBuffer_->GetDataSize());
     if (ret != EOK) {
@@ -723,6 +721,7 @@ void AudioEndpointSeparate::WriteToProcessBuffers(const BufferDesc &readBuf)
                 __func__, i, processBufferList_[i]->GetStreamStatus()->load());
             continue;
         }
+
         int32_t ret = WriteToSpecialProcBuf(processBufferList_[i], readBuf);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("%{public}s endpoint write to process buffer %{public}zu fail, ret %{public}d.",

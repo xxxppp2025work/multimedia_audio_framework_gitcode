@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioPolicyServerHandler"
-#endif
 
 #include "audio_policy_server_handler.h"
 #include "audio_policy_service.h"
+#include "audio_policy_manager_factory.h"
 #include "audio_utils.h"
 
 namespace OHOS {
@@ -513,6 +513,22 @@ bool AudioPolicyServerHandler::SendHeadTrackingEnabledChangeForAnyDeviceEvent(co
     CHECK_AND_RETURN_RET_LOG(ret, ret, "Send HEAD_TRACKING_ENABLED_CHANGE event failed");
     return ret;
 }
+
+bool AudioPolicyServerHandler::SendKvDataUpdate(const bool &isFirstBoot)
+{
+    auto eventContextObj = std::make_shared<bool>(isFirstBoot);
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = true;
+    if (isFirstBoot) {
+        ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::DATABASE_UPDATE, eventContextObj),
+            MAX_DELAY_TIME);
+    } else {
+        ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::DATABASE_UPDATE, eventContextObj));
+    }
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "SendKvDataUpdate event failed");
+    return ret;
+}
+
 
 bool AudioPolicyServerHandler::SendPipeStreamCleanEvent(AudioPipeType pipeType)
 {
@@ -1033,6 +1049,14 @@ void AudioPolicyServerHandler::HandleHeadTrackingEnabledChangeForAnyDeviceEvent(
     }
 }
 
+void AudioPolicyServerHandler::HandleUpdateKvDataEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<bool> eventContextObj = event->GetSharedObject<bool>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    bool isFristBoot = *eventContextObj;
+    AudioPolicyManagerFactory::GetAudioPolicyManager().HandleKvData(isFristBoot);
+}
+
 void AudioPolicyServerHandler::HandlePipeStreamCleanEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<int32_t> eventContextObj = event->GetSharedObject<int32_t>();
@@ -1094,6 +1118,9 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::RECREATE_CAPTURER_STREAM_EVENT:
             HandleSendRecreateCapturerStreamEvent(event);
+            break;
+        case EventAudioServerCmd::DATABASE_UPDATE:
+            HandleUpdateKvDataEvent(event);
             break;
         case EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT:
             HandlePipeStreamCleanEvent(event);

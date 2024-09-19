@@ -15,25 +15,12 @@
 #ifndef FAST_AUDIO_STREAM_H
 #define FAST_AUDIO_STREAM_H
 
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "RendererInClientInner"
-#endif
 
+#include "futex_tool.h"
 #include "renderer_in_client.h"
 #include "renderer_in_client_private.h"
-
-#include <atomic>
-#include <cinttypes>
-#include <condition_variable>
-#include <sstream>
-#include <string>
-#include <mutex>
-#include <thread>
-
-#include "iservice_registry.h"
-#include "system_ability_definition.h"
-#include "securec.h"
-#include "hisysevent.h"
 
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
@@ -62,7 +49,6 @@
 #include "policy_handler.h"
 
 #include "media_monitor_manager.h"
-
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
 
@@ -236,7 +222,7 @@ void RendererInClientInner::UpdateTracker(const std::string &updateCase)
     }
 }
 
-bool RendererInClientInner::IsHighResolution() const noexcept
+bool RendererInClientInner::IsHightResolution() const noexcept
 {
     return eStreamType_ == STREAM_MUSIC && curStreamParams_.samplingRate >= SAMPLE_RATE_48000 &&
            curStreamParams_.format >= SAMPLE_S24LE;
@@ -289,11 +275,10 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out.pcm";
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
-    if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT || IsHighResolution()) {
+    if (IsHightResolution()) {
         int32_t type = ipcStream_->GetStreamManagerType();
         if (type == AUDIO_DIRECT_MANAGER_TYPE) {
-            rendererInfo_.pipeType = (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) ?
-                PIPE_TYPE_DIRECT_VOIP : PIPE_TYPE_DIRECT_MUSIC;
+            rendererInfo_.pipeType = PIPE_TYPE_DIRECT_MUSIC;
         }
     }
 
@@ -416,8 +401,6 @@ int32_t RendererInClientInner::DeinitIpcStream()
 {
     Trace trace("RendererInClientInner::DeinitIpcStream");
     ipcStream_->Release();
-    // in plan:
-    ipcStream_ = nullptr;
     ringCache_->ResetBuffer();
     return SUCCESS;
 }
@@ -436,6 +419,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
     config.streamInfo.format = static_cast<AudioSampleFormat>(curStreamParams_.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(curStreamParams_.samplingRate);
     config.streamInfo.channelLayout = static_cast<AudioChannelLayout>(curStreamParams_.channelLayout);
+    config.originalSessionId = curStreamParams_.originalSessionId;
 
     config.audioMode = AUDIO_MODE_PLAYBACK;
 
@@ -523,6 +507,7 @@ int32_t RendererInClientInner::InitIpcStream()
     if (resetSilentMode && gServerProxy_ != nullptr && silentModeAndMixWithOthers_) {
         ipcStream_->SetSilentModeAndMixWithOthers(silentModeAndMixWithOthers_);
     }
+
     ret = InitSharedBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitSharedBuffer failed:%{public}d", ret);
 
@@ -602,7 +587,7 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
             std::chrono::system_clock::now().time_since_epoch()).count());
         int64_t deltaTimeStamp = (static_cast<int64_t>(timeNow) - static_cast<int64_t>(timestampHdi)) * AUDIO_NS_PER_US;
         uint64_t paWriteIndexNs = paWriteIndex * AUDIO_NS_PER_US;
-        uint64_t readPosNs = readPos * AUDIO_MS_PER_SECOND / curStreamParams_.samplingRate * AUDIO_US_PER_S;
+        uint64_t readPosNs = readPos * AUDIO_MS_PER_SECOND / streamParams_.samplingRate * AUDIO_US_PER_S;
 
         int64_t deltaPaWriteIndexNs = static_cast<int64_t>(readPosNs) - static_cast<int64_t>(paWriteIndexNs);
         int64_t cacheTimeNow = cacheTime - deltaTimeStamp + deltaPaWriteIndexNs;
@@ -1151,7 +1136,6 @@ int32_t RendererInClientInner::SetAudioEffectMode(AudioEffectMode effectMode)
         AUDIO_INFO_LOG("Set same effect mode");
         return SUCCESS;
     }
-
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
     int32_t ret = ipcStream_->SetAudioEffectMode(effectMode);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Set audio effect mode failed");
@@ -1665,6 +1649,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         AUDIO_ERR_LOG("The stream status is null!");
         return ERR_INVALID_PARAM;
     }
+    
     if (clientBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY) {
         Trace trace2(traceTag_+ " call start to exit stand-by");
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");
@@ -1754,10 +1739,8 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain)
 
     OptResult result = ringCache_->GetReadableSize();
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_OPERATION_FAILED, "ring cache unreadable");
-    if (result.size == 0) {
-        AUDIO_WARNING_LOG("Readable size is already zero");
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET_LOG(result.size != 0, SUCCESS, "Readable size is already zero");
+
     size_t targetSize = isDrain ? std::min(result.size, clientSpanSizeInByte_) : clientSpanSizeInByte_;
 
     int32_t sizeInFrame = clientBuffer_->GetAvailableDataFrames();
@@ -2062,7 +2045,7 @@ int32_t RendererInClientInner::SetChannelBlendMode(ChannelBlendMode blendMode)
 int32_t RendererInClientInner::SetVolumeWithRamp(float volume, int32_t duration)
 {
     CHECK_AND_RETURN_RET_LOG((state_ != RELEASED) && (state_ != INVALID) && (state_ != STOPPED),
-        ERR_ILLEGAL_STATE, "Illegal state %{public}d", state_.load());
+        ERR_ILLEGAL_STATE, "Illegal state state %{public}d", state_.load());
 
     if (FLOAT_COMPARE_EQ(clientVolume_, volume)) {
         AUDIO_INFO_LOG("set same volume %{public}f", volume);

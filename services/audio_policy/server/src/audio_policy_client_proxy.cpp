@@ -12,12 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioPolicyClientProxy"
-#endif
 
 #include "audio_policy_client_proxy.h"
 #include "audio_policy_log.h"
+#include "audio_errors.h"
+#include "audio_utils.h"
+#include "audio_group_handle.h"
 
 namespace OHOS {
 namespace AudioStandard {

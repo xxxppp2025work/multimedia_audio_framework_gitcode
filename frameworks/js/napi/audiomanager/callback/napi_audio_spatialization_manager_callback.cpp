@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "NapiAudioSpatializationMgrCallback"
-#endif
 
 #include "napi_audio_spatialization_manager_callback.h"
 #include "audio_errors.h"
@@ -31,6 +30,7 @@ using namespace std;
 NapiAudioSpatializationEnabledChangeCallback::NapiAudioSpatializationEnabledChangeCallback(napi_env env)
     : env_(env)
 {
+    useNewApiFlag = true;
     AUDIO_DEBUG_LOG("NapiAudioSpatializationEnabledChangeCallback: instance create");
 }
 
@@ -252,6 +252,7 @@ void NapiAudioSpatializationEnabledChangeCallback::OnJsCallbackSpatializationEna
 NapiAudioHeadTrackingEnabledChangeCallback::NapiAudioHeadTrackingEnabledChangeCallback(napi_env env)
     : env_(env)
 {
+    useNewApiFlag = true;
     AUDIO_DEBUG_LOG("NapiAudioHeadTrackingEnabledChangeCallback: instance create");
 }
 

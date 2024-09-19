@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "NapiAudioCapturerDeviceChangeCallback"
-#endif
 
 #include "napi_audio_capturer_device_change_callback.h"
 #include "audio_errors.h"

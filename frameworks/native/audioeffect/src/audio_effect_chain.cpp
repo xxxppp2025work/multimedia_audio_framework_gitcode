@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioEffectChain"
-#endif
 
 #include "audio_effect_chain.h"
 #include "audio_effect_chain_adapter.h"
@@ -23,13 +22,13 @@
 #include "audio_effect_log.h"
 #include "audio_utils.h"
 #include "securec.h"
-#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
 const uint32_t NUM_SET_EFFECT_PARAM = 7;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
+const uint32_t MAX_UINT_VOLUME = 65535;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
 const uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
 
@@ -57,14 +56,16 @@ AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracke
     ioBufferConfig_.outputCfg.format = DATA_FORMAT_F32;
     ioBufferConfig_.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
     headTracker_ = headTracker;
-    dumpNameIn_ = "dump_effect_in_" + scene + "_"
-        + std::to_string(ioBufferConfig_.inputCfg.samplingRate) + "_"
-        + std::to_string(ioBufferConfig_.inputCfg.channels) + "_4.pcm";
-    dumpNameOut_ = "dump_effect_out_" + scene + "_"
-        + std::to_string(ioBufferConfig_.outputCfg.samplingRate) + "_"
-        + std::to_string(ioBufferConfig_.outputCfg.channels) + "_4.pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpNameIn_, &dumpFileInput_);
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpNameOut_, &dumpFileOutput_);
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA,
+        "dump_effect_in_" + scene + "_" + std::to_string(ioBufferConfig_.inputCfg.samplingRate) +
+        "_" + std::to_string(ioBufferConfig_.inputCfg.channels) +
+        "_float.pcm",
+        &dumpFileInput_);
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA,
+        "dump_effect_out_" + scene + "_" + std::to_string(ioBufferConfig_.outputCfg.samplingRate) +
+        "_" + std::to_string(ioBufferConfig_.outputCfg.channels) +
+        "_float.pcm",
+        &dumpFileOutput_);
 }
 #else
 AudioEffectChain::AudioEffectChain(std::string scene)
@@ -81,14 +82,16 @@ AudioEffectChain::AudioEffectChain(std::string scene)
     ioBufferConfig_.outputCfg.channels = DEFAULT_NUM_CHANNEL;
     ioBufferConfig_.outputCfg.format = DATA_FORMAT_F32;
     ioBufferConfig_.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-    dumpNameIn_ = "dump_effect_in_" + scene + "_"
-        + std::to_string(ioBufferConfig_.inputCfg.samplingRate) + "_"
-        + std::to_string(ioBufferConfig_.inputCfg.channels) + "_4.pcm";
-    dumpNameOut_ = "dump_effect_out_" + scene + "_"
-        + std::to_string(ioBufferConfig_.outputCfg.samplingRate) + "_"
-        + std::to_string(ioBufferConfig_.outputCfg.channels) + "_4.pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpNameIn_, &dumpFileInput_);
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpNameOut_, &dumpFileOutput_);
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA,
+        "dump_effect_in_" + scene + "_" + std::to_string(ioBufferConfig_.inputCfg.samplingRate) +
+        "_" + std::to_string(ioBufferConfig_.inputCfg.channels) +
+        "_float.pcm",
+        &dumpFileInput_);
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA,
+        "dump_effect_out_" + scene + "_" + std::to_string(ioBufferConfig_.outputCfg.samplingRate) +
+        "_" + std::to_string(ioBufferConfig_.outputCfg.channels) +
+        "_float.pcm",
+        &dumpFileOutput_);
 }
 #endif
 
@@ -146,9 +149,9 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
 {
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
-    std::vector<uint8_t> paramBuffer(sizeof(AudioEffectParam) + NUM_SET_EFFECT_PARAM * sizeof(int32_t));
     // Set param
-    AudioEffectParam *effectParam = reinterpret_cast<AudioEffectParam*>(paramBuffer.data());
+    AudioEffectParam *effectParam =
+        new AudioEffectParam[sizeof(AudioEffectParam) + NUM_SET_EFFECT_PARAM * sizeof(int32_t)];
     effectParam->status = 0;
     effectParam->paramSize = sizeof(int32_t);
     effectParam->valueSize = 0;
@@ -168,12 +171,9 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     data[3] = 0; // 3:rotation index
 #endif
     AUDIO_DEBUG_LOG("set ap integration rotation: %{public}d", data[3]); // 3:rotation index
-    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
-    if (audioEffectVolume == nullptr) {
-        data[4] = 0; // 4:volume index
-    } else {
-        data[4] = audioEffectVolume->GetApVolume(sceneType_); // 4:volume index
-    }
+    AUDIO_DEBUG_LOG("set ap integration sceneType_ : %{public}s finalVolume_ : %{public}f",
+        sceneType_.c_str(), finalVolume_);
+    data[4] = static_cast<int32_t>(finalVolume_ * MAX_UINT_VOLUME); // 4:volume index
     AUDIO_DEBUG_LOG("set ap integration volume: %{public}d", data[4]); // 4:volume index
     data[5] = extraEffectChainType_; // 5:extra effect chain type index
     AUDIO_DEBUG_LOG("set extra effect chain type: %{public}d", extraEffectChainType_);
@@ -181,6 +181,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     AUDIO_DEBUG_LOG("set ap integration spatial device type: %{public}d", data[6]); // 6:spatial device type index
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
+    delete[] effectParam;
     return ret;
 }
 
@@ -236,13 +237,13 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
 {
     size_t inTotlen = frameLen * ioBufferConfig_.inputCfg.channels * sizeof(float);
     size_t outTotlen = frameLen * ioBufferConfig_.outputCfg.channels * sizeof(float);
+
+    // dump pcm for bufIn
     DumpFileUtil::WriteDumpFile(dumpFileInput_, static_cast<void *>(bufIn), inTotlen);
-    DumpEffectProcessData(dumpNameIn_, static_cast<void *>(bufIn), inTotlen);
 
     if (IsEmptyEffectHandles()) {
         CHECK_AND_RETURN_LOG(memcpy_s(bufOut, outTotlen, bufIn, outTotlen) == 0, "memcpy error in apply effect");
         DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(bufOut), outTotlen);
-        DumpEffectProcessData(dumpNameOut_, static_cast<void *>(bufOut), outTotlen);
         return;
     }
 
@@ -279,8 +280,8 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
         CHECK_AND_RETURN_LOG(memcpy_s(bufOut, outTotlen, bufIn, outTotlen) == 0, "memcpy error when last copy");
     }
 
+    // dump pcm for bufOut
     DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(bufOut), outTotlen);
-    DumpEffectProcessData(dumpNameOut_, static_cast<void *>(bufOut), outTotlen);
 }
 
 bool AudioEffectChain::IsEmptyEffectHandles()
@@ -356,13 +357,6 @@ uint32_t AudioEffectChain::GetLatency()
     return latency_;
 }
 
-void AudioEffectChain::DumpEffectProcessData(std::string fileName, void *buffer, size_t len)
-{
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(fileName, buffer, len);
-    }
-}
-
 #ifdef SENSOR_ENABLE
 void AudioEffectChain::SetHeadTrackingDisabled()
 {
@@ -398,6 +392,16 @@ void AudioEffectChain::InitEffectChain()
         CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_ENABLE fail",
             sceneType_.c_str(), effectMode_.c_str());
     }
+}
+
+void AudioEffectChain::SetFinalVolume(const float volume)
+{
+    finalVolume_ = volume;
+}
+
+float AudioEffectChain::GetFinalVolume()
+{
+    return finalVolume_;
 }
 
 void AudioEffectChain::SetSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)

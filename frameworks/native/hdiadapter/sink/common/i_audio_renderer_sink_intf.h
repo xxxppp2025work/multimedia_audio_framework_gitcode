@@ -33,7 +33,7 @@ typedef struct {
     const char *filePath;
     const char *deviceNetworkId;
     int32_t deviceType;
-    uint64_t channelLayout;
+    unsigned long channelLayout;
 } SinkAttr;
 
 struct RendererSinkAdapter {
@@ -60,7 +60,7 @@ struct RendererSinkAdapter {
     int32_t (*RendererSinkOffloadRunningLockUnlock)(struct RendererSinkAdapter *adapter);
     int32_t (*RendererSinkSetPaPower)(struct RendererSinkAdapter *adapter, int32_t flag);
     int32_t (*RendererSinkSetPriPaPower)(struct RendererSinkAdapter *adapter);
-    int32_t (*RendererSinkUpdateAppsUid) (struct RendererSinkAdapter *adapter, const int32_t appsUid[MAX_MIX_CHANNELS],
+    int32_t (*RendererSinkUpdateAppsUid)(struct RendererSinkAdapter *adapter, const int32_t appsUid[MAX_MIX_CHANNELS],
         const size_t size);
 };
 

@@ -17,6 +17,7 @@
 #define RENDERER_IN_SERVER_H
 
 #include <mutex>
+#include "audio_effect.h"
 #include "i_renderer_stream.h"
 #include "i_stream_listener.h"
 #include "oh_audio_buffer.h"
@@ -70,6 +71,7 @@ public:
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa);
     int32_t OffloadSetVolume(float volume);
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled);
+    void WriterRenderStreamStandbySysEvent();
 
     int32_t Init();
     int32_t ConfigServerBuffer();
@@ -94,15 +96,18 @@ public:
     int32_t GetStreamManagerType() const noexcept;
     int32_t SetSilentModeAndMixWithOthers(bool on);
     int32_t SetClientVolume();
+
+    void SetNonInterruptMute(const bool muteFlag);
 public:
     const AudioProcessConfig processConfig_;
 private:
     void OnStatusUpdateSub(IOperation operation);
-    bool IsHighResolution() const noexcept;
-    void DoFadingOut(BufferDesc& bufferDesc);
+    bool IsHightResolution() const noexcept;
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     void ReportDataToResSched(bool isSilent);
     void OtherStreamEnqueue(const BufferDesc &bufferDesc);
+    void DoFadingOut(BufferDesc& bufferDesc);
+    int32_t SetStreamVolumeInfoForEnhanceChain();
     void StandByCheck();
     bool ShouldEnableStandBy();
 
@@ -114,7 +119,8 @@ private:
     std::string traceTag_;
     IStatus status_ = I_STATUS_IDLE;
     bool offloadEnable_ = false;
-    bool standByEnable_ = false;
+    std::atomic<bool> standByEnable_ = false;
+    std::atomic<bool> muteFlag_ = false;
 
     // for inner-cap
     std::mutex dupMutex_;
@@ -143,20 +149,21 @@ private:
     bool isNeedFade_ = false;
     float oldAppliedVolume_ = MAX_FLOAT_VOLUME;
     std::mutex updateIndexLock_;
+    int64_t startedTime_ = 0;
     uint32_t underrunCount_ = 0;
-    uint32_t standByCounter_ = 0;
+    std::atomic<uint32_t> standByCounter_ = 0;
     int64_t lastWriteTime_ = 0;
     bool resetTime_ = false;
     uint64_t resetTimestamp_ = 0;
     std::mutex writeLock_;
     FILE *dumpC2S_ = nullptr; // client to server dump file
-    std::string dumpFileName_ = "";
     ManagerType managerType_;
-    std::mutex fadeoutLock_;
-    int32_t fadeoutFlag_ = 0;
+    std::atomic<bool> silentModeAndMixWithOthers_ = false;
     std::time_t startMuteTime_ = 0;
     int32_t silentState_ = 1; // 0:silent 1:unsilent
-    std::atomic<bool> silentModeAndMixWithOthers_ = false;
+    std::mutex fadeoutLock_;
+    int32_t fadeoutFlag_ = 0;
+    int32_t effectModeWhenDual_ = EFFECT_DEFAULT;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -186,7 +186,7 @@ public:
     bool IsAudioSessionActivated() override;
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
-        const sptr<IRemoteObject> &object, const int32_t zoneId = 0) override;
+        const sptr<IRemoteObject> &object, uint32_t clientUid, const int32_t zoneId = 0) override;
 
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneId = 0) override;
 
@@ -197,6 +197,8 @@ public:
     int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAudioManagerInterruptCallback(const int32_t clientId) override;
+
+    int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
@@ -287,7 +289,7 @@ public:
         uint32_t appTokenId) override;
 
     int32_t SetCaptureSilentState(bool state) override;
-    
+
     int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc) override;
 
     std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) override;
@@ -297,6 +299,8 @@ public:
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) override;
 
     bool IsAbsVolumeScene() override;
+
+    bool IsVgsVolumeSupported() override;
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi) override;
 
@@ -361,12 +365,12 @@ public:
 
     std::unique_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() override;
 
-    ConverterConfig GetConverterConfig() override;
-
     void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
         const AudioStreamDeviceChangeReasonExt reason) override;
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) override;
+
+    ConverterConfig GetConverterConfig() override;
 
     AudioSpatializationSceneType GetSpatializationSceneType() override;
 
@@ -422,6 +426,7 @@ public:
 
         void PermStateChangeCallback(Security::AccessToken::PermStateChangeInfo& result);
         int32_t getUidByBundleName(std::string bundle_name, int user_id);
+        void UpdateMicPrivacyByCapturerState(bool targetMuteState, uint32_t targetTokenId, int32_t appUid);
 
         bool ready_;
     private:
@@ -505,7 +510,7 @@ private:
 
     // Permission and privacy
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
-    bool VerifyBluetoothPermission();
+
     int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
     int32_t SetAudioSceneInternal(AudioScene audioScene);
 
@@ -582,7 +587,6 @@ private:
     using DumpFunc = void(AudioPolicyServer::*)(std::string &dumpString);
     std::map<std::u16string, DumpFunc> dumpFuncMap;
     pid_t lastMicMuteSettingPid_ = 0;
-    std::string GetBundleName();
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

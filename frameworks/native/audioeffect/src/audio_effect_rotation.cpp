@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioEffectRotation"
-#endif
 
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect_rotation.h"

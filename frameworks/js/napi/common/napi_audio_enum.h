@@ -184,9 +184,6 @@ private:
     static napi_ref spatializationSceneType_;
     static napi_ref asrNoiseSuppressionMode_;
     static napi_ref asrAecMode_;
-    static napi_ref asrWhisperDetectionMode_;
-    static napi_ref asrVoiceControlMode_;
-    static napi_ref asrVoiceMuteMode_;
     static napi_ref policyType_;
     static napi_ref audioDataCallbackResult_;
     static napi_ref concurrencyMode_;
@@ -232,9 +229,6 @@ private:
     static const std::map<std::string, int32_t> spatializationSceneTypeMap;
     static const std::map<std::string, int32_t> asrNoiseSuppressionModeMap;
     static const std::map<std::string, int32_t> asrAecModeMap;
-    static const std::map<std::string, int32_t> asrWhisperDetectionModeMap;
-    static const std::map<std::string, int32_t> asrVoiceControlModeMap;
-    static const std::map<std::string, int32_t> asrVoiceMuteModeMap;
     static const std::map<std::string, int32_t> policyTypeMap;
     static const std::map<std::string, int32_t> audioDataCallbackResultMap;
     static const std::map<std::string, int32_t> concurrencyModeMap;

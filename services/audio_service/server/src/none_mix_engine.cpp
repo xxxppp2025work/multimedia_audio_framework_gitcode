@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "NoneMixEngine"
-#endif
 
 #include "audio_common_converter.h"
 #include "audio_errors.h"
@@ -27,7 +26,7 @@ namespace AudioStandard {
 constexpr int32_t DELTA_TIME = 4000000; // 4ms
 constexpr int32_t PERIOD_NS = 20000000; // 20ms
 constexpr int32_t FADING_MS = 20; // 20ms
-constexpr int32_t MAX_ERROR_COUNT = 50;
+constexpr int32_t MAX_ERROR_COUNT = 5;
 constexpr int16_t STEREO_CHANNEL_COUNT = 2;
 constexpr int16_t HDI_STEREO_CHANNEL_LAYOUT = 3;
 constexpr int16_t HDI_MONO_CHANNEL_LAYOUT = 4;
@@ -40,6 +39,7 @@ const char *SINK_ADAPTER_NAME = "primary";
 NoneMixEngine::NoneMixEngine()
     : isVoip_(false),
       isStart_(false),
+      isPause_(false),
       isInit_(false),
       failedCount_(0),
       writeCount_(0),
@@ -110,6 +110,7 @@ int32_t NoneMixEngine::Start()
         ret = renderSink_->Start();
         isStart_ = true;
     }
+    isPause_ = false;
     if (!playbackThread_->CheckThreadIsRunning()) {
         playbackThread_->Start();
     }
@@ -146,12 +147,8 @@ void NoneMixEngine::PauseAsync()
     // stop thread when failed 5 times,do not add logic inside.
     if (playbackThread_ && playbackThread_->CheckThreadIsRunning()) {
         playbackThread_->PauseAsync();
+        isPause_ = true;
     }
-    int32_t ret = SinkStopTimeOut();
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("sink stop failed.ret:%{public}d", ret);
-    }
-    isStart_ = false;
 }
 
 int32_t NoneMixEngine::SinkStopTimeOut()
@@ -183,8 +180,7 @@ int32_t NoneMixEngine::Pause()
             fadingLock, std::chrono::milliseconds(FADING_MS), [this] { return (!(startFadein_ || startFadeout_)); });
         playbackThread_->Pause();
     }
-    ret = SinkStopTimeOut();
-    isStart_ = false;
+    isPause_ = true;
     return ret;
 }
 
@@ -257,7 +253,7 @@ void NoneMixEngine::MixStreams()
             cvFading_.notify_all();
             return;
         }
-        ClockTime::RelativeSleep(PERIOD_NS);
+        StandbySleep();
         return;
     }
     failedCount_ = 0;
@@ -305,7 +301,7 @@ void NoneMixEngine::RemoveRenderer(const std::shared_ptr<IRendererStream> &strea
 
 bool NoneMixEngine::IsPlaybackEngineRunning() const noexcept
 {
-    return isStart_;
+    return isStart_ && !isPause_;
 }
 
 void NoneMixEngine::StandbySleep()

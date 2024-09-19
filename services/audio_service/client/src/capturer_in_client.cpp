@@ -15,9 +15,8 @@
 #ifndef FAST_AUDIO_STREAM_H
 #define FAST_AUDIO_STREAM_H
 
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "CapturerInClientInner"
-#endif
 
 #include "capturer_in_client.h"
 
@@ -28,15 +27,12 @@
 #include <string>
 #include <mutex>
 #include <thread>
-
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "securec.h"
-
 #include "ipc_stream.h"
 #include "audio_service_log.h"
 #include "audio_errors.h"
-
 #include "audio_manager_base.h"
 #include "audio_ring_cache.h"
 #include "audio_utils.h"
@@ -219,14 +215,14 @@ public:
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
 
+    bool GetOffloadEnable() override;
+    bool GetSpatializationEnabled() override;
+    bool GetHighResolutionEnabled() override;
+
     int32_t RegisterRendererOrCapturerPolicyServiceDiedCB(
         const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback) override;
     int32_t RemoveRendererOrCapturerPolicyServiceDiedCB() override;
     bool RestoreAudioStream() override;
-
-    bool GetOffloadEnable() override;
-    bool GetSpatializationEnabled() override;
-    bool GetHighResolutionEnabled() override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -469,6 +465,7 @@ void CapturerInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTra
         registerTrackerInfo.state = state_;
         registerTrackerInfo.rendererInfo = rendererInfo_;
         registerTrackerInfo.capturerInfo = capturerInfo_;
+        registerTrackerInfo.appTokenId = appTokenId_;
 
         audioStreamTracker_->RegisterTracker(registerTrackerInfo, proxyObj);
         streamTrackerRegistered_ = true;
@@ -725,6 +722,7 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
     config.streamInfo.format = static_cast<AudioSampleFormat>(streamParams_.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
     config.streamInfo.channelLayout = static_cast<AudioChannelLayout>(streamParams_.channelLayout);
+    config.originalSessionId = streamParams_.originalSessionId;
 
     config.audioMode = AUDIO_MODE_RECORD;
 
@@ -1447,7 +1445,7 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner)
 {
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
-        AUDIO_WARNING_LOG("Already release, do nothing");
+        AUDIO_WARNING_LOG("Already released, do nothing");
         return true;
     }
     state_ = RELEASED;
@@ -1610,6 +1608,7 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
             clientBuffer_->GetReadbuffer(clientBuffer_->GetCurReadFrame(), currentOHBuffer_);
             BufferWrap bufferWrap = {currentOHBuffer_.buffer, clientSpanSizeInByte_};
             ringCache_->Enqueue(bufferWrap);
+            memset_s(static_cast<void *>(bufferWrap.dataPtr), bufferWrap.dataSize, 0, bufferWrap.dataSize);
             clientBuffer_->SetCurReadFrame(clientBuffer_->GetCurReadFrame() + spanSizeInFrame_);
         } else {
             if (!isBlockingRead) {

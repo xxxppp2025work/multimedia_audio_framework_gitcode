@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "IpcStreamProxy"
-#endif
 
 #include "ipc_stream_proxy.h"
 #include "audio_service_log.h"
@@ -482,6 +481,7 @@ int32_t IpcStreamProxy::GetStreamManagerType()
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
     return reply.ReadInt32();
 }
+
 int32_t IpcStreamProxy::SetSilentModeAndMixWithOthers(bool on)
 {
     MessageParcel data;
@@ -495,7 +495,6 @@ int32_t IpcStreamProxy::SetSilentModeAndMixWithOthers(bool on)
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
     ret = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
-
     return ret;
 }
 

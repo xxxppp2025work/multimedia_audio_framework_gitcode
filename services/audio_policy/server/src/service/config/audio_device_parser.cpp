@@ -12,11 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioDeviceParser"
-#endif
 
 #include "audio_device_parser.h"
+#include <string>
+#include <iostream>
+#include <vector>
 #include "media_monitor_manager.h"
 
 namespace OHOS {
@@ -253,8 +255,6 @@ void AudioDeviceParser::ParseDeviceUsage(const std::string &deviceUsage, uint32_
             deviceUsageFlag |= DeviceUsage::MEDIA;
         } else if (usage == "voice") {
             deviceUsageFlag |= DeviceUsage::VOICE;
-        } else if (usage == "recongnition") {
-            deviceUsageFlag |= DeviceUsage::RECONGNITION;
         }
     }
 }
