@@ -12,21 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioPolicyProxy"
-#endif
 
-
+#include "audio_policy_manager.h"
 #include "audio_policy_log.h"
 #include "audio_policy_proxy.h"
-
+#include "microphone_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
 int32_t AudioPolicyProxy::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object,
-    const int32_t zoneID)
+    uint32_t clientUid, const int32_t zoneID)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -39,6 +38,7 @@ int32_t AudioPolicyProxy::SetAudioInterruptCallback(const uint32_t sessionID, co
     data.WriteUint32(sessionID);
     (void)data.WriteRemoteObject(object);
     data.WriteInt32(zoneID);
+    data.WriteUint32(clientUid);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACK), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
@@ -102,6 +102,24 @@ int32_t AudioPolicyProxy::UnsetAudioManagerInterruptCallback(const int32_t clien
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
         "unset callback failed, error: %{public}d", error);
 
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetQueryClientTypeCallback(const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT,
+        "SetAudioInterruptCallback object is null");
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_CLIENT_TYPE_CALLBACK), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "set callback failed, error: %{public}d", error);
     return reply.ReadInt32();
 }
 

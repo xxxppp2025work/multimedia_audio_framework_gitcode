@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioAdapterInfo"
-#endif
 
 #include "audio_adapter_info.h"
 #include "audio_effect.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

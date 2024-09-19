@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioStreamManagerUnitTest"
-#endif
 
 #include "audio_stream_manager_unit_test.h"
 
@@ -584,6 +583,8 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
             AudioEncodingType::ENCODING_PCM);
         EXPECT_EQ(true, (*audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.channels.rbegin() >= MONO)
             && ((*audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.channels.begin() <= CHANNEL_8)));
+        EXPECT_EQ(true, (audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.format >= SAMPLE_U8)
+            && ((audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.format <= SAMPLE_F32LE)));
         audioRendererChangeInfos.clear();
     }
 
@@ -1290,6 +1291,8 @@ HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerGetCurrentCapturerC
     EXPECT_EQ(audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo.encoding, AudioEncodingType::ENCODING_PCM);
     EXPECT_EQ(true, (*audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo.channels.rbegin() >= MONO)
         && ((*audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo.channels.begin() <= CHANNEL_8)));
+    EXPECT_EQ(true, (audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo.format >= SAMPLE_U8)
+        && ((audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo.format <= SAMPLE_F32LE)));
 
     bool isStopped = audioCapturer->Stop();
     EXPECT_EQ(true, isStopped);

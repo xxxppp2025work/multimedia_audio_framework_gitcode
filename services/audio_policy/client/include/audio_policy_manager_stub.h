@@ -106,6 +106,7 @@ private:
     void GetAvailableMicrophonesInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceAbsVolumeSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void IsAbsVolumeSceneInternal(MessageParcel &data, MessageParcel &reply);
+    void IsVgsVolumeSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void SetA2dpDeviceVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void WriteAudioFocusInfo(MessageParcel &data,
@@ -152,8 +153,8 @@ private:
     void SetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void TriggerFetchDeviceInternal(MessageParcel &data, MessageParcel &reply);
-    void MoveToNewTypeInternal(MessageParcel &data, MessageParcel &reply);
     void GetDevicesInnerInternal(MessageParcel &data, MessageParcel &reply);
+    void MoveToNewTypeInternal(MessageParcel &data, MessageParcel &reply);
     void SetConcurrencyCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetConcurrencyCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void ActivateAudioConcurrencyInternal(MessageParcel &data, MessageParcel &reply);
@@ -164,6 +165,7 @@ private:
     void DeactivateAudioSessionInternal(MessageParcel &data, MessageParcel &reply);
     void IsAudioSessionActivatedInternal(MessageParcel &data, MessageParcel &reply);
     void SetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void SetQueryClientTypeCallbackInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -191,6 +193,7 @@ private:
         &AudioPolicyManagerStub::IsMicrophoneMuteInternal,
         &AudioPolicyManagerStub::SetInterruptCallbackInternal,
         &AudioPolicyManagerStub::UnsetInterruptCallbackInternal,
+        &AudioPolicyManagerStub::SetQueryClientTypeCallbackInternal,
         &AudioPolicyManagerStub::ActivateInterruptInternal,
         &AudioPolicyManagerStub::DeactivateInterruptInternal,
         &AudioPolicyManagerStub::SetAudioManagerInterruptCbInternal,
@@ -247,6 +250,7 @@ private:
         &AudioPolicyManagerStub::GetAvailableMicrophonesInternal,
         &AudioPolicyManagerStub::SetDeviceAbsVolumeSupportedInternal,
         &AudioPolicyManagerStub::IsAbsVolumeSceneInternal,
+        &AudioPolicyManagerStub::IsVgsVolumeSupportedInternal,
         &AudioPolicyManagerStub::SetA2dpDeviceVolumeInternal,
         &AudioPolicyManagerStub::GetAvailableDevicesInternal,
         &AudioPolicyManagerStub::SetAvailableDeviceChangeCallbackInternal,

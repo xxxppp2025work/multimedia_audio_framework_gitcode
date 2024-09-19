@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioProcessStub"
-#endif
 
 #include "audio_process_stub.h"
 #include "audio_service_log.h"

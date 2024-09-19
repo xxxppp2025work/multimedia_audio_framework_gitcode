@@ -12,14 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioPolicyManagerStub"
-#endif
 
 #include "audio_policy_manager_stub.h"
 
 #include "audio_errors.h"
 #include "audio_policy_log.h"
+#include "audio_policy_ipc_interface_code.h"
 #include "audio_utils.h"
 
 namespace OHOS {
@@ -51,6 +51,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "IS_MICROPHONE_MUTE",
     "SET_CALLBACK",
     "UNSET_CALLBACK",
+    "SET_QUERY_CLIENT_TYPE_CALLBACK",
     "ACTIVATE_INTERRUPT",
     "DEACTIVATE_INTERRUPT",
     "SET_INTERRUPT_CALLBACK",
@@ -107,6 +108,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_AVAILABLE_MICROPHONE_DESCRIPTORS",
     "SET_DEVICE_ABSOLUTE_VOLUME_SUPPORTED",
     "GET_ABS_VOLUME_SCENE",
+    "GET_VGS_VOLUME_SUPPORTED",
     "SET_A2DP_DEVICE_VOLUME",
     "GET_AVAILABLE_DESCRIPTORS",
     "SET_AVAILABLE_DEVICE_CHANGE_CALLBACK",
@@ -560,8 +562,9 @@ void AudioPolicyManagerStub::SetInterruptCallbackInternal(MessageParcel &data, M
     uint32_t sessionID = data.ReadUint32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     uint32_t zoneID = data.ReadUint32();
+    uint32_t clientUid = data.ReadUint32();
     CHECK_AND_RETURN_LOG(object != nullptr, "AudioPolicyManagerStub: AudioInterruptCallback obj is null");
-    int32_t result = SetAudioInterruptCallback(sessionID, object, zoneID);
+    int32_t result = SetAudioInterruptCallback(sessionID, object, clientUid, zoneID);
     reply.WriteInt32(result);
 }
 
@@ -1002,6 +1005,12 @@ void AudioPolicyManagerStub::IsAbsVolumeSceneInternal(MessageParcel &data, Messa
     reply.WriteBool(result);
 }
 
+void AudioPolicyManagerStub::IsVgsVolumeSupportedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool result = IsVgsVolumeSupported();
+    reply.WriteBool(result);
+}
+
 void AudioPolicyManagerStub::SetA2dpDeviceVolumeInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::string macAddress = data.ReadString();
@@ -1272,6 +1281,14 @@ void AudioPolicyManagerStub::SetDefaultOutputDeviceInternal(MessageParcel &data,
     StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
     bool isRunning = data.ReadBool();
     int32_t result = SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetQueryClientTypeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_LOG(object != nullptr, "AudioInterruptCallback obj is null");
+    int32_t result = SetQueryClientTypeCallback(object);
     reply.WriteInt32(result);
 }
 

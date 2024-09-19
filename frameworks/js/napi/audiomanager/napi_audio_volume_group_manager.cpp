@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "NapiAudioVolumeGroupManager"
-#endif
 
 #include "napi_audio_volume_group_manager.h"
 
@@ -26,11 +25,7 @@
 #include "audio_errors.h"
 #include "audio_manager_log.h"
 #include "audio_utils.h"
-#ifdef FEATURE_HIVIEW_ENABLE
-#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 #include "xpower_event_js.h"
-#endif
-#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -312,11 +307,7 @@ napi_value NapiAudioVolumeGroupManager::SetVolume(napi_env env, napi_callback_in
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volLevel failed", NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
-#ifdef FEATURE_HIVIEW_ENABLE
-#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     HiviewDFX::ReportXPowerJsStackSysEvent(env, "VOLUME_CHANGE", "SRC=Audio");
-#endif
-#endif
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
@@ -359,10 +350,8 @@ napi_value NapiAudioVolumeGroupManager::SetVolumeWithFlag(napi_env env, napi_cal
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volFlag failed", NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
-#ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     HiviewDFX::ReportXPowerJsStackSysEvent(env, "VOLUME_CHANGE", "SRC=Audio");
-#endif
 #endif
 
     auto executor = [context]() {
@@ -1301,14 +1290,14 @@ napi_value NapiAudioVolumeGroupManager::GetMaxAmplitudeForOutputDevice(napi_env 
         NapiAudioError::ThrowError(env, "GetMaxAmplitude failed : no memory", NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
-
+ 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         NapiParamUtils::GetAudioDeviceDescriptor(env, context->outputDeviceDescriptor,
             context->outputBArgTransFlag, argv[PARAM0]);
     };
     context->GetCbInfo(env, info, inputParser);
-
+ 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
         auto obj = reinterpret_cast<NapiAudioVolumeGroupManager*>(context->native);
@@ -1326,13 +1315,13 @@ napi_value NapiAudioVolumeGroupManager::GetMaxAmplitudeForOutputDevice(napi_env 
             context->SignError(NAPI_ERR_SYSTEM);
         }
     };
-
+ 
     auto complete = [env, context](napi_value &output) {
         NapiParamUtils::SetValueDouble(env, context->outputMaxAmplitude, output);
     };
     return NapiAsyncWork::Enqueue(env, context, "GetMaxAmplitudeForOutputDevice", executor, complete);
 }
-
+ 
 napi_value NapiAudioVolumeGroupManager::GetMaxAmplitudeForInputDevice(napi_env env, napi_callback_info info)
 {
     AUDIO_DEBUG_LOG("GetMaxAmplitude enter");
@@ -1342,7 +1331,7 @@ napi_value NapiAudioVolumeGroupManager::GetMaxAmplitudeForInputDevice(napi_env e
         NapiAudioError::ThrowError(env, "GetMaxAmplitude failed : no memory", NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
-
+ 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "mandatory parameters are left unspecified",
             NAPI_ERR_INPUT_INVALID);
@@ -1350,7 +1339,7 @@ napi_value NapiAudioVolumeGroupManager::GetMaxAmplitudeForInputDevice(napi_env e
             context->inputBArgTransFlag, argv[PARAM0]);
     };
     context->GetCbInfo(env, info, inputParser);
-
+ 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
         auto obj = reinterpret_cast<NapiAudioVolumeGroupManager*>(context->native);
@@ -1368,7 +1357,7 @@ napi_value NapiAudioVolumeGroupManager::GetMaxAmplitudeForInputDevice(napi_env e
             context->SignError(NAPI_ERR_SYSTEM);
         }
     };
-
+ 
     auto complete = [env, context](napi_value &output) {
         NapiParamUtils::SetValueDouble(env, context->inputMaxAmplitude, output);
     };

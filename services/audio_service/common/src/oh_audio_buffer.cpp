@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "OHAudioBuffer"
-#endif
 
 #include "oh_audio_buffer.h"
 
@@ -609,7 +608,6 @@ int32_t OHAudioBuffer::GetBufferByFrame(uint64_t posInFrame, BufferDesc &bufferD
     deltaToBase = (deltaToBase / spanSizeInFrame_) * spanSizeInFrame_;
     size_t offset = deltaToBase * byteSizePerFrame_;
     CHECK_AND_RETURN_RET_LOG(offset < totalSizeInByte_, ERR_INVALID_PARAM, "invalid deltaToBase:%{public}zu", offset);
-
     bufferDesc.buffer = dataBase_ + offset;
     bufferDesc.bufLength = spanSizeInByte_;
     bufferDesc.dataLength = spanSizeInByte_;

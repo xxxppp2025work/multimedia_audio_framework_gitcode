@@ -59,13 +59,14 @@ public:
     uint32_t GetLatency();
     int32_t UpdateEffectParam();
     void ResetIoBufferConfig();
+    void SetFinalVolume(float volume);
+    float GetFinalVolume();
     void SetSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType);
 
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();
     int32_t SetEffectParamToHandle(AudioEffectHandle handle, int32_t &replyData);
-    void DumpEffectProcessData(std::string fileName, void *buffer, size_t len);
 
     std::mutex reloadMutex_;
     std::string sceneType_ = "";
@@ -80,8 +81,7 @@ private:
     AudioBuffer audioBufOut_ = {};
     FILE *dumpFileInput_ = nullptr;
     FILE *dumpFileOutput_ = nullptr;
-    std::string dumpNameIn_ = "";
-    std::string dumpNameOut_ = "";
+    float finalVolume_ = 1.0f;
     AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };
 
 #ifdef SENSOR_ENABLE

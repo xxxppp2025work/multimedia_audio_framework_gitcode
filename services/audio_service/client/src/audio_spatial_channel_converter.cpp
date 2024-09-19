@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioSpatialChannelConverter"
-#endif
 
 #include "audio_spatial_channel_converter.h"
 
@@ -135,7 +134,7 @@ bool AudioSpatialChannelConverter::AllocateMem()
 void AudioSpatialChannelConverter::GetOutputBufferStream(uint8_t *&buffer, uint32_t &bufferLen)
 {
     buffer = outPcmBuf_.get();
-    bufferLen = static_cast<uint32_t>(GetPcmLength(outChannel_, bps_));
+    bufferLen = GetPcmLength(outChannel_, bps_);
 }
 
 void AudioSpatialChannelConverter::Process(const BufferDesc bufDesc)

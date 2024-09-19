@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "PolicyProviderProxy"
-#endif
 
 #include "policy_provider_proxy.h"
 #include "audio_service_log.h"
@@ -120,6 +119,22 @@ bool PolicyProviderProxy::IsAbsVolumeSupported()
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "failed, error: %{public}d", ret);
 
     return reply.ReadBool();
+}
+
+int32_t PolicyProviderProxy::GetAndSaveClientType(uint32_t uid, const std::string &bundleName)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    data.WriteUint32(uid);
+    data.WriteString(bundleName);
+    int ret = Remote()->SendRequest(IPolicyProviderMsg::GET_AND_SAVE_CLIENT_TYPE, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "failed, error: %{public}d", ret);
+    ret = reply.ReadInt32();
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS

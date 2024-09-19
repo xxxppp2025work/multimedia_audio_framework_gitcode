@@ -120,8 +120,6 @@ public:
 
     float GetMaxStreamVolume(void) const;
 
-    int32_t UpdateSwapDeviceStatus();
-
     bool IsVolumeUnadjustable();
 
     float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType, int32_t volumeLevel);
@@ -145,6 +143,10 @@ public:
     void SetAbsVolumeMute(bool mute);
 
     bool IsAbsVolumeMute() const;
+
+    void SetVgsVolumeSupported(bool isVgsSupported);
+
+    bool IsVgsVolumeSupported() const;
 
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
 
@@ -291,6 +293,7 @@ private:
     bool useNonlinearAlgo_ = false;
     bool isAbsVolumeScene_ = false;
     bool isAbsVolumeMute_ = false;
+    bool isVgsVolumeSupported_ = false;
     bool isNeedCopyVolumeData_ = false;
     bool isNeedCopyMuteData_ = false;
     bool isNeedCopyRingerModeData_ = false;

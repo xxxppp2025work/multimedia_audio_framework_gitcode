@@ -12,12 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioRouterCenter"
-#endif
 
 #include "audio_router_center.h"
 #include "audio_policy_service.h"
+#include "audio_log.h"
+#include "audio_stream_collector.h"
 
 using namespace std;
 

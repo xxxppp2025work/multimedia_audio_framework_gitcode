@@ -12,12 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "StreamFilterRouter"
-#endif
 
 #include "stream_filter_router.h"
-
+#include "audio_log.h"
 #include "audio_policy_service.h"
 
 using namespace std;
@@ -33,7 +32,7 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetMediaRenderDevice(Strea
         sptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
         CastType type = routingInfo.type;
         bool hasDescriptor = false;
-        AUDIO_INFO_LOG("streamUsage %{public}d clientUid %{public}d",
+        AUDIO_INFO_LOG("StreamfilterRouter GetMediaRenderDevice streamUsage %{public}d clientUid %{public}d",
             streamUsage, clientUID);
 
         switch (type) {
@@ -58,7 +57,7 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetMediaRenderDevice(Strea
                 break;
             }
             default: {
-                AUDIO_ERR_LOG("unhandled cast type: %{public}d", type);
+                AUDIO_ERR_LOG("GetMediaRenderDevice unhandled cast type: %{public}d", type);
                 break;
             }
         }
@@ -79,7 +78,7 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallRenderDevice(Stream
         sptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
         CastType type = routingInfo.type;
         bool hasDescriptor = false;
-        AUDIO_INFO_LOG("streamUsage %{public}d clientUid %{public}d",
+        AUDIO_INFO_LOG("StreamfilterRouter GetCallRenderDevice streamUsage %{public}d clientUid %{public}d",
             streamUsage, clientUID);
 
         switch (type) {
@@ -99,7 +98,7 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallRenderDevice(Stream
                 break;
             }
             default: {
-                AUDIO_ERR_LOG("unhandled cast type: %{public}d", type);
+                AUDIO_ERR_LOG("GetCallRenderDevice unhandled cast type: %{public}d", type);
                 break;
             }
         }
@@ -120,7 +119,7 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallCaptureDevice(Sourc
         sptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
         CastType type = routingInfo.type;
         bool hasDescriptor = false;
-        AUDIO_INFO_LOG("sourceType %{public}d clientUid %{public}d",
+        AUDIO_INFO_LOG("StreamfilterRouter GetCallCaptureDevice sourceType %{public}d clientUid %{public}d",
             sourceType, clientUID);
         switch (type) {
             case CAST_TYPE_NULL: {
@@ -139,7 +138,7 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallCaptureDevice(Sourc
                 break;
             }
             default: {
-                AUDIO_ERR_LOG("unhandled cast type: %{public}d", type);
+                AUDIO_ERR_LOG("GetCallCaptureDevice unhandled cast type: %{public}d", type);
                 break;
             }
         }
@@ -168,7 +167,7 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetRecordCaptureDevice(Sou
         CastType type = routingInfo.type;
         bool hasDescriptor = false;
         unique_ptr<AudioDeviceDescriptor> captureDevice;
-        AUDIO_INFO_LOG("sourceType %{public}d clientUid %{public}d",
+        AUDIO_INFO_LOG("StreamfilterRouter GetRecordCaptureDevice sourceType %{public}d clientUid %{public}d",
             sourceType, clientUID);
         switch (type) {
             case CAST_TYPE_NULL: {
@@ -192,7 +191,7 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetRecordCaptureDevice(Sou
                 break;
             }
             default: {
-                AUDIO_ERR_LOG("unhandled cast type: %{public}d", type);
+                AUDIO_ERR_LOG("GetRecordCaptureDevice unhandled cast type: %{public}d", type);
                 break;
             }
         }

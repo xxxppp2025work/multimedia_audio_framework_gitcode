@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "UserSelectRouter"
-#endif
 
 #include "user_select_router.h"
+#include "audio_log.h"
 
 using namespace std;
 
@@ -29,7 +29,7 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
         return make_unique<AudioDeviceDescriptor>();
     }
     unique_ptr<AudioDeviceDescriptor> perDev_ =
-        AudioStateManager::GetAudioStateManager().GetPreferredMediaRenderDevice();
+        AudioStateManager::GetAudioStateManager().GetPerferredMediaRenderDevice();
     vector<unique_ptr<AudioDeviceDescriptor>> mediaDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(MEDIA_OUTPUT_DEVICES);
     if (perDev_->deviceId_ == 0) {
@@ -45,7 +45,7 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
 unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
     unique_ptr<AudioDeviceDescriptor> perDev_ =
-        AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
+        AudioStateManager::GetAudioStateManager().GetPerferredCallRenderDevice();
     vector<unique_ptr<AudioDeviceDescriptor>> callDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_OUTPUT_DEVICES);
     if (perDev_->deviceId_ == 0) {

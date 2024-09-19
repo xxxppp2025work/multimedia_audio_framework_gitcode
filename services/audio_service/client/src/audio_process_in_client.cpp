@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioProcessInClientInner"
-#endif
 
 #include "audio_process_in_client.h"
 
@@ -167,7 +166,7 @@ private:
     static constexpr int64_t RECORD_RESYNC_SLEEP_NANO = 2000000; // 2ms
     static constexpr int64_t RECORD_HANDLE_DELAY_NANO = 3000000; // 3ms
     static constexpr size_t MAX_TIMES = 4; // 4 times spanSizeInFrame_
-    static constexpr size_t DIV = 2; // halt of span
+    static constexpr size_t DIV = 2; // half of span
     static constexpr int64_t MAX_STOP_FADING_DURATION_NANO = 10000000; // 10ms
     static constexpr int64_t WAKE_UP_LATE_COUNT = 20; // late for 20 times
     enum ThreadStatus : uint32_t {

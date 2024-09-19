@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioPolicyServer"
-#endif
 
 #include "audio_policy_server.h"
 
@@ -54,6 +53,7 @@
 #include "parameters.h"
 
 #include "media_monitor_manager.h"
+#include "client_type_manager.h"
 
 using OHOS::Security::AccessToken::PrivacyKit;
 using OHOS::Security::AccessToken::TokenIdKit;
@@ -73,6 +73,7 @@ constexpr uid_t UID_CAST_ENGINE_SA = 5526;
 constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
+constexpr uid_t UID_RESOURCE_SCHEDULE_SERVICE = 1096;
 constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
 constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 
@@ -153,7 +154,6 @@ void AudioPolicyServer::OnStart()
     if (iRes < 0) {
         AUDIO_ERR_LOG("fail to call RegisterPermStateChangeCallback.");
     }
-
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     SubscribeVolumeKeyEvents();
 #endif
@@ -372,7 +372,6 @@ AudioVolumeType AudioPolicyServer::GetVolumeTypeFromStreamType(AudioStreamType s
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_MESSAGE:
         case STREAM_VOICE_COMMUNICATION:
-        case STREAM_VOICE_CALL_ASSISTANT:
             return STREAM_VOICE_CALL;
         case STREAM_RING:
         case STREAM_SYSTEM:
@@ -519,12 +518,9 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
 {
     const AAFwk::Want& want = eventData.GetWant();
     std::string action = want.GetAction();
-    if (action == "usual.event.DATA_SHARE_READY") {
-        RegisterDataObserver();
-        if (isInitMuteState_ == false) {
-            AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
-            InitMicrophoneMute();
-        }
+    if (isInitMuteState_ == false && action == "usual.event.DATA_SHARE_READY") {
+        AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
+        InitMicrophoneMute();
     } else if (action == "usual.event.dms.rotation_changed") {
         uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
         AUDIO_INFO_LOG("Set rotation to audioeffectchainmanager is %{public}d", rotate);
@@ -652,8 +648,8 @@ int32_t AudioPolicyServer::GetSystemVolumeLevelInternal(AudioStreamType streamTy
 int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
-    if (callerUid != UID_FOUNDATION_SA) {
-        AUDIO_ERR_LOG("SetLowPowerVolume callerUid Error: not foundation or component_schedule_service");
+    if (callerUid != UID_FOUNDATION_SA && callerUid != UID_RESOURCE_SCHEDULE_SERVICE) {
+        AUDIO_ERR_LOG("SetLowPowerVolume callerUid Error: not foundation or resource_schedule_service");
         return ERROR;
     }
     return audioPolicyService_.SetLowPowerVolume(streamId, volume);
@@ -964,7 +960,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFla
         }
     }
 
-    bool hasBTPermission = VerifyBluetoothPermission();
+    bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
     if (!hasBTPermission) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);
     }
@@ -1009,7 +1005,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredOutputDe
 {
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescs =
         audioPolicyService_.GetPreferredOutputDeviceDescriptors(rendererInfo);
-    bool hasBTPermission = VerifyBluetoothPermission();
+    bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
     if (!hasBTPermission) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);
     }
@@ -1022,7 +1018,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredInputDev
 {
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescs =
         audioPolicyService_.GetPreferredInputDeviceDescriptors(captureInfo);
-    bool hasBTPermission = VerifyBluetoothPermission();
+    bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
     if (!hasBTPermission) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);
     }
@@ -1275,10 +1271,10 @@ AudioScene AudioPolicyServer::GetAudioScene()
 }
 
 int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object,
-    const int32_t zoneID)
+    uint32_t clientUid, const int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
-        return interruptService_->SetAudioInterruptCallback(zoneID, sessionID, object);
+        return interruptService_->SetAudioInterruptCallback(zoneID, sessionID, object, clientUid);
     }
     return ERR_UNKNOWN;
 }
@@ -1306,6 +1302,11 @@ int32_t AudioPolicyServer::UnsetAudioManagerInterruptCallback(const int32_t /* c
         return interruptService_->UnsetAudioManagerInterruptCallback();
     }
     return ERR_UNKNOWN;
+}
+
+int32_t AudioPolicyServer::SetQueryClientTypeCallback(const sptr<IRemoteObject> &object)
+{
+    return audioPolicyService_.SetQueryClientTypeCallback(object);
 }
 
 int32_t AudioPolicyServer::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
@@ -1410,24 +1411,6 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
     int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permissionName);
     CHECK_AND_RETURN_RET_LOG(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED,
         false, "Permission denied [%{public}s]", permissionName.c_str());
-
-    return true;
-}
-
-bool AudioPolicyServer::VerifyBluetoothPermission()
-{
-#ifdef AUDIO_BUILD_VARIANT_ROOT
-    // root user case for auto test
-    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
-    if (callingUid == ROOT_UID) {
-        return true;
-    }
-#endif
-    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
-
-    int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, USE_BLUETOOTH_PERMISSION);
-    CHECK_AND_RETURN_RET_PRELOG(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED,
-        false, "Permission denied [%{public}s]", USE_BLUETOOTH_PERMISSION.c_str());
 
     return true;
 }
@@ -1596,13 +1579,7 @@ uint32_t AudioPolicyServer::GetSinkLatencyFromXml()
 
 int32_t AudioPolicyServer::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo)
 {
-    std::string bundleName = "";
-    if (rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
-        bundleName = GetBundleName();
-        AUDIO_INFO_LOG("bundleName %{public}s", bundleName.c_str());
-        return audioPolicyService_.GetPreferredOutputStreamType(rendererInfo, bundleName);
-    }
-    return audioPolicyService_.GetPreferredOutputStreamType(rendererInfo, "");
+    return audioPolicyService_.GetPreferredOutputStreamType(rendererInfo);
 }
 
 int32_t AudioPolicyServer::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
@@ -1629,6 +1606,8 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
                 streamChangeInfo.audioRendererChangeInfo.clientUID);
         } else {
             streamChangeInfo.audioCapturerChangeInfo.clientUID = callerUid;
+            streamChangeInfo.audioCapturerChangeInfo.appTokenId = IPCSkeleton::GetCallingTokenID();
+
             AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
                 streamChangeInfo.audioCapturerChangeInfo.clientUID);
         }
@@ -1710,7 +1689,7 @@ void AudioPolicyServer::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamCh
 int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
     std::vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
-    bool hasBTPermission = VerifyBluetoothPermission();
+    bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
     AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos: BT use permission: %{public}d", hasBTPermission);
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos: System use permission: %{public}d", hasSystemPermission);
@@ -1722,7 +1701,7 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
 int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
     std::vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
-    bool hasBTPermission = VerifyBluetoothPermission();
+    bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos: BT use permission: %{public}d", hasBTPermission);
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos: System use permission: %{public}d", hasSystemPermission);
@@ -1964,12 +1943,24 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallba
     } else {
         int32_t streamSet = server_->audioPolicyService_.SetSourceOutputStreamMute(appUid, targetMuteState);
         if (streamSet > 0) {
+            UpdateMicPrivacyByCapturerState(targetMuteState, result.tokenID, appUid);
+        }
+    }
+}
+
+void AudioPolicyServer::PerStateChangeCbCustomizeCallback::UpdateMicPrivacyByCapturerState(
+    bool targetMuteState, uint32_t targetTokenId, int32_t appUid)
+{
+    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
+    server_->audioPolicyService_.GetCurrentCapturerChangeInfos(capturerChangeInfos, true, true);
+    for (auto &info : capturerChangeInfos) {
+        if (info->appTokenId == targetTokenId && info->capturerState == CAPTURER_RUNNING) {
             AUDIO_INFO_LOG("update using mic %{public}d for uid: %{public}d because permission changed",
                 targetMuteState, appUid);
             if (targetMuteState) {
-                PrivacyKit::StopUsingPermission(result.tokenID, MICROPHONE_PERMISSION);
+                PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
             } else {
-                PrivacyKit::StartUsingPermission(result.tokenID, MICROPHONE_PERMISSION);
+                PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
             }
         }
     }
@@ -2142,6 +2133,11 @@ bool AudioPolicyServer::IsAbsVolumeScene()
     return audioPolicyService_.IsAbsVolumeScene();
 }
 
+bool AudioPolicyServer::IsVgsVolumeSupported()
+{
+    return audioPolicyService_.IsVgsVolumeSupported();
+}
+
 int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume,
     const bool updateUi)
 {
@@ -2190,7 +2186,6 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetAvaila
     }
 
     deviceDescs = audioPolicyService_.GetAvailableDevices(usage);
-
     if (!hasSystemPermission) {
         for (auto &desc : deviceDescs) {
             desc->networkId_ = "";
@@ -2204,7 +2199,7 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetAvaila
         deviceDevices.push_back(new(std::nothrow) AudioDeviceDescriptor(*desc));
     }
 
-    bool hasBTPermission = VerifyBluetoothPermission();
+    bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
     if (!hasBTPermission) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDevices);
         deviceDescs.clear();
@@ -2236,7 +2231,7 @@ int32_t AudioPolicyServer::SetAvailableDeviceChangeCallback(const int32_t /*clie
     }
 
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    bool hasBTPermission = VerifyBluetoothPermission();
+    bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
     return audioPolicyService_.SetAvailableDeviceChangeCallback(clientPid, usage, object, hasBTPermission);
 }
 
@@ -2268,7 +2263,7 @@ int32_t AudioPolicyServer::SetDistributedRoutingRoleCallback(const sptr<IRemoteO
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
         "SetDistributedRoutingRoleCallback set listener object is nullptr");
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    bool hasBTPermission = VerifyBluetoothPermission();
+    bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     sptr<IStandardAudioRoutingManagerListener> listener = iface_cast<IStandardAudioRoutingManagerListener>(object);
     if (listener != nullptr && audioPolicyServerHandler_ != nullptr) {
@@ -2364,7 +2359,6 @@ void AudioPolicyServer::UnRegisterSyncHibernateListener()
     if (!ret) {
         AUDIO_WARNING_LOG("unregister sync hibernate callback failed");
     } else {
-        delete syncHibernateListener_;
         syncHibernateListener_ = nullptr;
         AUDIO_INFO_LOG("unregister sync hibernate callback success");
     }
@@ -2537,7 +2531,7 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     AUDIO_DEBUG_LOG("register clientPid: %{public}d", clientPid);
 
-    bool hasBTPermission = VerifyBluetoothPermission();
+    bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
     bool hasSysPermission = PermissionUtil::VerifySystemPermission();
     callback->hasBTPermission_ = hasBTPermission;
     callback->hasSystemPermission_ = hasSysPermission;
@@ -2609,24 +2603,13 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyServer::GetActiveBluetoothDevi
 
     auto btdevice = audioPolicyService_.GetActiveBluetoothDevice();
 
-    bool hasBTPermission = VerifyBluetoothPermission();
+    bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
     if (!hasBTPermission) {
         btdevice->deviceName_ = "";
         btdevice->macAddress_ = "";
     }
 
     return btdevice;
-}
-
-std::string AudioPolicyServer::GetBundleName()
-{
-    AppExecFwk::BundleInfo bundleInfo = GetBundleInfoFromUid();
-    return bundleInfo.name;
-}
-
-ConverterConfig AudioPolicyServer::GetConverterConfig()
-{
-    return audioPolicyService_.GetConverterConfig();
 }
 
 AudioSpatializationSceneType AudioPolicyServer::GetSpatializationSceneType()
@@ -2700,6 +2683,11 @@ int32_t AudioPolicyServer::GetApiTargerVersion()
     // Taking remainder of large integers
     int32_t apiTargetversion = bundleInfo.applicationInfo.apiTargetVersion % API_VERSION_REMAINDER;
     return apiTargetversion;
+}
+
+ConverterConfig AudioPolicyServer::GetConverterConfig()
+{
+    return audioPolicyService_.GetConverterConfig();
 }
 
 bool AudioPolicyServer::IsHighResolutionExist()
@@ -2787,6 +2775,7 @@ int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeTyp
 {
     return audioPolicyService_.ActivateAudioConcurrency(pipeType);
 }
+
 void AudioPolicyServer::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
 {
     audioPolicyService_.OnReceiveBluetoothEvent(macAddress, deviceName);

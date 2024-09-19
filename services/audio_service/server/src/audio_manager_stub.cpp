@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioManagerStub"
-#endif
 
 #include "audio_manager_base.h"
 #include "audio_system_manager.h"
@@ -62,7 +61,12 @@ const char *g_audioServerCodeStrs[] = {
     "UPDATE_SPATIALIZATION_STATE",
     "UPDATE_SPATIAL_DEVICE_TYPE",
     "OFFLOAD_SET_VOLUME",
+    "OFFLOAD_DRAIN",
+    "OFFLOAD_GET_PRESENTATION_POSITION",
+    "OFFLOAD_SET_BUFFER_SIZE",
     "NOTIFY_STREAM_VOLUME_CHANGED",
+    "GET_CAPTURE_PRESENTATION_POSITION",
+    "GET_RENDER_PRESENTATION_POSITION",
     "SET_SPATIALIZATION_SCENE_TYPE",
     "GET_MAX_AMPLITUDE",
     "RESET_AUDIO_ENDPOINT",
@@ -73,10 +77,6 @@ const char *g_audioServerCodeStrs[] = {
     "GET_ASR_AEC_MODE",
     "SET_ASR_NOISE_SUPPRESSION_MODE",
     "GET_ASR_NOISE_SUPPRESSION_MODE",
-    "SET_ASR_WHISPER_DETECTION_MODE",
-    "GET_ASR_WHISPER_DETECTION_MODE",
-    "SET_ASR_VOICE_CONTROL_MODE",
-    "SET_ASR_VOICE_MUTE_MODE",
     "IS_WHISPERING",
     "GET_EFFECT_OFFLOAD_ENABLED",
     "SUSPEND_RENDERSINK",
@@ -84,6 +84,7 @@ const char *g_audioServerCodeStrs[] = {
     "LOAD_HDI_EFFECT_MODEL",
     "UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED",
     "SET_SINK_MUTE_FOR_SWITCH_DEVICE",
+    "SET_SINGLE_STREAM_MUTE",
     "SET_ROTATION_TO_EFFECT",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
@@ -162,41 +163,6 @@ int AudioManagerStub::HandleGetAsrNoiseSuppressionMode(MessageParcel &data, Mess
     int32_t ret = GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
     CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrNoiseSuppression Mode audio parameters failed");
     reply.WriteInt32(int32_t(asrNoiseSuppressionMode));
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleSetAsrWhisperDetectionMode(MessageParcel &data, MessageParcel &reply)
-{
-    AsrWhisperDetectionMode asrWhisperDetectionMode = (static_cast<AsrWhisperDetectionMode>(data.ReadInt32()));
-    int32_t result = SetAsrWhisperDetectionMode(asrWhisperDetectionMode);
-    reply.WriteInt32(result);
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleGetAsrWhisperDetectionMode(MessageParcel &data, MessageParcel &reply)
-{
-    AsrWhisperDetectionMode asrWhisperDetectionMode = (static_cast<AsrWhisperDetectionMode>(data.ReadInt32()));
-    int32_t ret = GetAsrWhisperDetectionMode(asrWhisperDetectionMode);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrWhisperDetection Mode audio parameters failed");
-    reply.WriteInt32(int32_t(asrWhisperDetectionMode));
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleSetAsrVoiceControlMode(MessageParcel &data, MessageParcel &reply)
-{
-    AsrVoiceControlMode asrVoiceControlMode = (static_cast<AsrVoiceControlMode>(data.ReadInt32()));
-    bool on = data.ReadBool();
-    int32_t result = SetAsrVoiceControlMode(asrVoiceControlMode, on);
-    reply.WriteInt32(result);
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleSetAsrVoiceMuteMode(MessageParcel &data, MessageParcel &reply)
-{
-    AsrVoiceMuteMode asrVoiceMuteMode = (static_cast<AsrVoiceMuteMode>(data.ReadInt32()));
-    bool on = data.ReadBool();
-    int32_t result = SetAsrVoiceMuteMode(asrVoiceMuteMode, on);
-    reply.WriteInt32(result);
     return AUDIO_OK;
 }
 
@@ -434,6 +400,38 @@ int AudioManagerStub::HandleRequestThreadPriority(MessageParcel &data, MessagePa
     return AUDIO_OK;
 }
 
+static bool UnmarshellEffectChainMgrParam(EffectChainManagerParam &effectChainMgrParam, MessageParcel &data)
+{
+    effectChainMgrParam.maxExtraNum = static_cast <uint32_t>(data.ReadInt32());
+    effectChainMgrParam.defaultSceneName = data.ReadString();
+
+    int32_t containSize = data.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(containSize >= 0 && containSize <= AUDIO_EFFECT_PRIOR_SCENE_UPPER_LIMIT,
+        false, "Create audio effect prioscene failed, please check log");
+    while (containSize--) {
+        effectChainMgrParam.priorSceneList.emplace_back(data.ReadString());
+    }
+
+    containSize = data.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(containSize >= 0 && containSize <= AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT,
+        false, "Create audio effect chain name map failed, please check log");
+    while (containSize--) {
+        string key = data.ReadString();
+        string value = data.ReadString();
+        effectChainMgrParam.sceneTypeToChainNameMap[key] = value;
+    }
+
+    containSize = data.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(containSize >= 0 && containSize <= AUDIO_EFFECT_COUNT_PROPERTY_UPPER_LIMIT,
+        false, "Create audio effect default property failed, please check log");
+    while (containSize--) {
+        string key = data.ReadString();
+        string value = data.ReadString();
+        effectChainMgrParam.effectDefaultProperty[key] = value;
+    }
+    return true;
+}
+
 int AudioManagerStub::HandleCreateAudioEffectChainManager(MessageParcel &data, MessageParcel &reply)
 {
     int32_t i;
@@ -441,11 +439,11 @@ int AudioManagerStub::HandleCreateAudioEffectChainManager(MessageParcel &data, M
     vector<int32_t> countEffect = {};
     int32_t countChains = data.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(countChains >= 0 && countChains <= AUDIO_EFFECT_CHAIN_COUNT_UPPER_LIMIT,
-        AUDIO_ERR, "Create audio effect chain manager failed, please check log");
+        AUDIO_ERR, "Create audio effect chains failed, invalid countChains");
     for (i = 0; i < countChains; i++) {
         int32_t count = data.ReadInt32();
         CHECK_AND_RETURN_RET_LOG(count >= 0 && count <= AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT,
-            AUDIO_ERR, "Create audio effect chain manager failed, please check log");
+            AUDIO_ERR, "Create audio effect chains failed, invalid count");
         countEffect.emplace_back(count);
     }
 
@@ -458,28 +456,13 @@ int AudioManagerStub::HandleCreateAudioEffectChainManager(MessageParcel &data, M
         effectChains.emplace_back(effectChain);
     }
 
-    unordered_map<string, string> sceneTypeToEffectChainNameMap;
-    int32_t mapSize = data.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(mapSize >= 0 && mapSize <= AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT,
-        AUDIO_ERR, "Create audio effect chain manager failed, please check log");
-    for (i = 0; i < mapSize; i++) {
-        string key = data.ReadString();
-        string value = data.ReadString();
-        sceneTypeToEffectChainNameMap[key] = value;
+    EffectChainManagerParam effectParam;
+    EffectChainManagerParam enhanceParam;
+    if (!UnmarshellEffectChainMgrParam(effectParam, data) || !UnmarshellEffectChainMgrParam(enhanceParam, data)) {
+        return AUDIO_ERR;
     }
 
-    unordered_map<string, string> sceneTypeToEnhanceChainNameMap;
-    mapSize = data.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(mapSize >= 0 && mapSize <= AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT,
-        AUDIO_ERR, "Create audio enhance chain manager failed, please check log");
-    for (i = 0; i < mapSize; i++) {
-        string key = data.ReadString();
-        string value = data.ReadString();
-        sceneTypeToEnhanceChainNameMap[key] = value;
-    }
-
-    bool createSuccess = CreateEffectChainManager(effectChains, sceneTypeToEffectChainNameMap,
-        sceneTypeToEnhanceChainNameMap);
+    bool createSuccess = CreateEffectChainManager(effectChains, effectParam, enhanceParam);
     CHECK_AND_RETURN_RET_LOG(createSuccess, AUDIO_ERR,
         "Create audio effect chain manager failed, please check log");
     return AUDIO_OK;
@@ -570,10 +553,68 @@ int AudioManagerStub::HandleUpdateSpatialDeviceType(MessageParcel& data, Message
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleGetCapturePresentationPosition(MessageParcel &data, MessageParcel &reply)
+{
+    const std::string deviceClass = data.ReadString();
+    uint64_t frames;
+    int64_t timeSec;
+    int64_t timeNanoSec;
+    int32_t result = GetCapturePresentationPosition(deviceClass, frames, timeSec, timeNanoSec);
+    reply.WriteInt32(result);
+    reply.WriteUint64(frames);
+    reply.WriteInt64(timeSec);
+    reply.WriteInt64(timeNanoSec);
+
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleGetRenderPresentationPosition(MessageParcel &data, MessageParcel &reply)
+{
+    const std::string deviceClass = data.ReadString();
+    uint64_t frames;
+    int64_t timeSec;
+    int64_t timeNanoSec;
+    int32_t result = GetRenderPresentationPosition(deviceClass, frames, timeSec, timeNanoSec);
+    reply.WriteInt32(result);
+    reply.WriteUint64(frames);
+    reply.WriteInt64(timeSec);
+    reply.WriteInt64(timeNanoSec);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply)
 {
     const float volume = data.ReadFloat();
     int32_t result = OffloadSetVolume(volume);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleOffloadDrain(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = OffloadDrain();
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleOffloadGetPresentationPosition(MessageParcel &data, MessageParcel &reply)
+{
+    uint64_t frames;
+    int64_t timeSec;
+    int64_t timeNanoSec;
+    int32_t result = OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
+    reply.WriteInt32(result);
+    reply.WriteUint64(frames);
+    reply.WriteInt64(timeSec);
+    reply.WriteInt64(timeNanoSec);
+
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleOffloadSetBufferSize(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sizeMs = data.ReadUint32();
+    int32_t result = OffloadSetBufferSize(sizeMs);
     reply.WriteInt32(result);
     return AUDIO_OK;
 }
@@ -612,6 +653,14 @@ int AudioManagerStub::HandleGetEffectLatency(MessageParcel &data, MessageParcel 
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleUpdateLatencyTimestamp(MessageParcel &data, MessageParcel &reply)
+{
+    std::string timestamp = data.ReadString();
+    bool isRenderer = data.ReadBool();
+    UpdateLatencyTimestamp(timestamp, isRenderer);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleGetMaxAmplitude(MessageParcel &data, MessageParcel &reply)
 {
     bool isOutputDevice = data.ReadBool();
@@ -638,16 +687,30 @@ int AudioManagerStub::HandleSuspendRenderSink(MessageParcel &data, MessageParcel
 int AudioManagerStub::HandleRestoreRenderSink(MessageParcel &data, MessageParcel &reply)
 {
     std::string sinkName = data.ReadString();
-    int32_t ret = RestoreRenderSink(sinkName);
+    int32_t ret = SuspendRenderSink(sinkName);
     reply.WriteInt32(ret);
     return AUDIO_OK;
 }
 
-int AudioManagerStub::HandleUpdateLatencyTimestamp(MessageParcel &data, MessageParcel &reply)
+int AudioManagerStub::HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply)
 {
-    std::string timestamp = data.ReadString();
-    bool isRenderer = data.ReadBool();
-    UpdateLatencyTimestamp(timestamp, isRenderer);
+    LoadHdiEffectModel();
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleUpdateEffectBtOffloadSupported(MessageParcel &data, MessageParcel &reply)
+{
+    UpdateEffectBtOffloadSupported(data.ReadBool());
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetSinkMuteForSwitchDevice(MessageParcel &data, MessageParcel &reply)
+{
+    const std::string deviceClass = data.ReadString();
+    int32_t duration = data.ReadInt32();
+    int32_t mute = data.ReadBool();
+    int32_t result = SetSinkMuteForSwitchDevice(deviceClass, duration, mute);
+    reply.WriteInt32(result);
     return AUDIO_OK;
 }
 
@@ -661,16 +724,12 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
     MessageOption &option)
 {
     switch (code) {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE):
+            return HandleGetAsrAecMode(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_NOISE_SUPPRESSION_MODE):
+            return HandleSetAsrNoiseSuppressionMode(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_NOISE_SUPPRESSION_MODE):
             return HandleGetAsrNoiseSuppressionMode(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_WHISPER_DETECTION_MODE):
-            return HandleSetAsrWhisperDetectionMode(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_WHISPER_DETECTION_MODE):
-            return HandleGetAsrWhisperDetectionMode(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_VOICE_CONTROL_MODE):
-            return HandleSetAsrVoiceControlMode(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_VOICE_MUTE_MODE):
-            return HandleSetAsrVoiceMuteMode(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::IS_WHISPERING):
             return HandleIsWhispering(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GET_EFFECT_OFFLOAD_ENABLED):
@@ -685,6 +744,8 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleUpdateEffectBtOffloadSupported(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SINK_MUTE_FOR_SWITCH_DEVICE):
             return HandleSetSinkMuteForSwitchDevice(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SINGLE_STREAM_MUTE):
+            return HandleSetNonInterruptMute(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ROTATION_TO_EFFECT):
             return HandleSetRotationToEffect(data, reply);
         default:
@@ -697,8 +758,18 @@ int AudioManagerStub::HandleThirdPartCode(uint32_t code, MessageParcel &data, Me
     MessageOption &option)
 {
     switch (code) {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_DRAIN):
+            return HandleOffloadDrain(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_GET_PRESENTATION_POSITION):
+            return HandleOffloadGetPresentationPosition(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_BUFFER_SIZE):
+            return HandleOffloadSetBufferSize(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_STREAM_VOLUME_CHANGED):
             return HandleNotifyStreamVolumeChanged(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_CAPTURE_PRESENTATION_POSITION):
+            return HandleGetCapturePresentationPosition(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_RENDER_PRESENTATION_POSITION):
+            return HandleGetRenderPresentationPosition(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SPATIALIZATION_SCENE_TYPE):
             return HandleSetSpatializationSceneType(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GET_MAX_AMPLITUDE):
@@ -713,10 +784,6 @@ int AudioManagerStub::HandleThirdPartCode(uint32_t code, MessageParcel &data, Me
             return HandleUpdateLatencyTimestamp(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_AEC_MODE):
             return HandleSetAsrAecMode(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE):
-            return HandleGetAsrAecMode(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_NOISE_SUPPRESSION_MODE):
-            return HandleSetAsrNoiseSuppressionMode(data, reply);
         default:
             return HandleFourthPartCode(code, data, reply, option);
     }
@@ -808,25 +875,11 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
     return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
 }
 
-int AudioManagerStub::HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply)
+int AudioManagerStub::HandleSetNonInterruptMute(MessageParcel &data, MessageParcel &reply)
 {
-    LoadHdiEffectModel();
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleUpdateEffectBtOffloadSupported(MessageParcel &data, MessageParcel &reply)
-{
-    UpdateEffectBtOffloadSupported(data.ReadBool());
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleSetSinkMuteForSwitchDevice(MessageParcel &data, MessageParcel &reply)
-{
-    const std::string deviceClass = data.ReadString();
-    int32_t duration = data.ReadInt32();
-    int32_t mute = data.ReadBool();
-    int32_t result = SetSinkMuteForSwitchDevice(deviceClass, duration, mute);
-    reply.WriteInt32(result);
+    uint32_t sessionId = data.ReadUint32();
+    bool muteFlag = data.ReadBool();
+    SetNonInterruptMute(sessionId, muteFlag);
     return AUDIO_OK;
 }
 } // namespace AudioStandard

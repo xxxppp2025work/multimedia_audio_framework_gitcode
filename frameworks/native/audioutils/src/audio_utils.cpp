@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioUtils"
-#endif
 
 #include "audio_utils.h"
 #include <cinttypes>
@@ -23,6 +22,8 @@
 #include <ostream>
 #include <climits>
 #include <string>
+#include <climits>
+#include "audio_utils.h"
 #include "audio_utils_c.h"
 #include "audio_errors.h"
 #include "audio_log.h"
@@ -51,6 +52,7 @@ constexpr int32_t UID_CAAS_SA = 5527;
 constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
+constexpr int32_t UID_AUDIO = 1041;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
 constexpr int32_t TIME_OUT_SECONDS = 10;
 
@@ -69,6 +71,7 @@ const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_DISTRIBUTED_AUDIO_SA,
     UID_FOUNDATION_SA,
     UID_DISTRIBUTED_CALL_SA,
+    UID_AUDIO,
     UID_TELEPHONY_SA // used in distributed communication call
 };
 
@@ -280,12 +283,16 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
     if (!ret) {
         AUDIO_ERR_LOG("failed: not allowed!");
     }
+    AUDIO_INFO_LOG("tokenId:%{public}u fullTokenId:%{public}" PRIu64": %{public}s", tokenId, fullTokenId, (ret ? "true"
+        : "false"));
     return ret;
 }
 
 bool PermissionUtil::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state)
 {
     AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacy", TIME_OUT_SECONDS);
+    AUDIO_INFO_LOG("tokenId:%{public}d notify state is %{public}s", targetTokenId, (state == AUDIO_PERMISSION_START ?
+        "START" : "STOP"));
     if (state == AUDIO_PERMISSION_START) {
         Trace trace("PrivacyKit::StartUsingPermission");
         int res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
@@ -701,6 +708,9 @@ std::string GetTime()
     struct tm *t;
     gettimeofday(&tv, &tz);
     t = localtime(&tv.tv_sec);
+    if (t == nullptr) {
+        return "";
+    }
     curTime += std::to_string(YEAR_BASE + t->tm_year);
     curTime += (1 + t->tm_mon < DECIMAL_EXPONENT ? "0" + std::to_string(1 + t->tm_mon) :
         std::to_string(1 + t->tm_mon));
@@ -802,7 +812,7 @@ bool SignalDetectAgent::DetectSignalData(int32_t *buffer, size_t bufferLen)
             lastPeakSignalPos_ = currentPeakIndex;
         }
         blankHaveOutput_ = false;
-        blankPeriod_ = static_cast<int32_t>(frameCount - rightZeroSignal);
+        blankPeriod_ = static_cast<int32_t>(frameCount) - static_cast<int32_t>(rightZeroSignal);
     }
     int32_t thresholdBlankPeriod = BLANK_THRESHOLD_MS * sampleRate_ / MILLISECOND_PER_SECOND;
     if (blankPeriod_ > thresholdBlankPeriod) {
@@ -826,7 +836,7 @@ bool AudioLatencyMeasurement::MockPcmData(uint8_t *buffer, size_t bufferLen)
     memset_s(buffer, bufferLen, 0, bufferLen);
     int16_t *signal = signalData_.get();
     size_t newlyMocked = bufferLen * MILLISECOND_PER_SECOND /
-        static_cast<size_t>(channelCount_ * sampleRate_ * formatByteSize_);
+        static_cast<uint32_t>(channelCount_ * sampleRate_ * formatByteSize_);
     mockedTime_ += newlyMocked;
     if (mockedTime_ >= MOCK_INTERVAL) {
         mockedTime_ = 0;
@@ -1152,20 +1162,13 @@ std::string GetEncryptStr(const std::string &src)
     return dst;
 }
 
-AudioDump& AudioDump::GetInstance()
+std::string ConvertNetworkId(const std::string &networkId)
 {
-    static AudioDump mAudioDump;
-    return mAudioDump;
-}
+    if (!networkId.empty() && networkId != LOCAL_NETWORK_ID) {
+        return REMOTE_NETWORK_ID;
+    }
 
-void AudioDump::SetVersionType(const std::string& versionType)
-{
-    versionType_ = versionType;
-}
-
-std::string AudioDump::GetVersionType()
-{
-    return versionType_;
+    return networkId;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "FastAudioStream"
-#endif
 
 #include <chrono>
 #include <thread>
@@ -892,11 +891,7 @@ bool FastAudioStream::RestoreAudioStream()
     }
     switch (oldState) {
         case RUNNING:
-            if (eMode_ == AUDIO_MODE_PLAYBACK) {
-                ret = processClient_->SaveDataCallback(spkProcClientCb_);
-            } else if (eMode_ == AUDIO_MODE_RECORD) {
-                ret = processClient_->SaveDataCallback(micProcClientCb_);
-            }
+            ret = processClient_->SaveDataCallback(spkProcClientCb_);
             if (ret != SUCCESS) {
                 goto error;
             }
@@ -916,6 +911,7 @@ bool FastAudioStream::RestoreAudioStream()
         goto error;
     }
     return result;
+
 error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;

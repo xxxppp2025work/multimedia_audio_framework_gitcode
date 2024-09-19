@@ -46,7 +46,6 @@ public:
     static AudioCapturerOptions UTCreateAudioCapturer(SourceType sourceType);
     // Define interrupt func
     static void AudioInterruptUnitTestFunc(StreamUsage streamUsage, SourceType sourceType);
-    static void AudioInterruptDenyIncomingUnitTestFunc(StreamUsage streamUsage, SourceType sourceType);
     static InterruptEvent CaptureinterruptEventTest_;
 };
 } // namespace AudioStandard

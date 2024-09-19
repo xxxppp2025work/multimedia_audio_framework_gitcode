@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioBluetoothManager"
-#endif
 
 #include "audio_bluetooth_manager.h"
 #include "bluetooth_def.h"
@@ -24,6 +23,7 @@
 #include "bluetooth_audio_manager.h"
 #include "bluetooth_device_manager.h"
 #include "bluetooth_device_utils.h"
+#include "bluetooth_hfp_ag.h"
 
 namespace OHOS {
 namespace Bluetooth {
@@ -38,12 +38,11 @@ HandsFreeAudioGateway *AudioHfpManager::hfpInstance_ = nullptr;
 std::shared_ptr<AudioHfpListener> AudioHfpManager::hfpListener_ = std::make_shared<AudioHfpListener>();
 AudioScene AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
 AudioScene AudioHfpManager::sceneFromPolicy_ = AUDIO_SCENE_DEFAULT;
-OHOS::Bluetooth::ScoCategory AudioHfpManager::scoCategory = OHOS::Bluetooth::ScoCategory::SCO_DEFAULT;
 BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
 std::mutex g_activehfpDeviceLock;
 std::mutex g_audioSceneLock;
 std::mutex g_hfpInstanceLock;
-static const int32_t BT_SET_ACTIVE_DEVICE_TIMEOUT = 8; //BtService SetActiveDevice 8s timeout
+static const int32_t BT_SET_ACTIVE_DEVICE_TIMEOUT = 8;
 
 static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioStreamInfo)
 {
@@ -95,7 +94,6 @@ static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioSt
     return true;
 }
 
-// LCOV_EXCL_START
 void AudioA2dpManager::RegisterBluetoothA2dpListener()
 {
     AUDIO_INFO_LOG("AudioA2dpManager::RegisterBluetoothA2dpListener");
@@ -316,40 +314,6 @@ void AudioHfpManager::CheckHfpDeviceReconnect()
     }
 }
 
-int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag, BluetoothRemoteDevice &device)
-{
-    CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
-    bool ret = true;
-    if (handleFlag) {
-        int8_t scoCategory = GetScoCategoryFromScene(scene_);
-        if (scoCategory == ScoCategory::SCO_DEFAULT &&
-            AudioHfpManager::scoCategory != ScoCategory::SCO_RECOGNITION) {
-            AUDIO_INFO_LOG("Recongnition sco connect");
-            ret = hfpInstance_->OpenVoiceRecognition(device);
-            if (ret) {
-                AudioHfpManager::scoCategory = ScoCategory::SCO_RECOGNITION;
-            }
-        } else {
-            AUDIO_INFO_LOG("Sco Connected OR Connecting, No Need to Create");
-        }
-    } else {
-        if (AudioHfpManager::scoCategory == ScoCategory::SCO_RECOGNITION) {
-            AUDIO_INFO_LOG("Recongnition sco close");
-            ret = hfpInstance_->CloseVoiceRecognition(device);
-            if (ret) {
-                AudioHfpManager::scoCategory = ScoCategory::SCO_DEFAULT;
-            }
-        }
-    }
-    CHECK_AND_RETURN_RET_LOG(ret == true, ERROR, "HandleScoWithRecongnition failed, result: %{public}d", ret);
-    return SUCCESS;
-}
-
-ScoCategory AudioHfpManager::GetScoCategory()
-{
-    return scoCategory;
-}
-
 int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
 {
     int32_t XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
@@ -385,10 +349,6 @@ std::string AudioHfpManager::GetActiveHfpDevice()
 
 int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
 {
-    if (scoCategory == ScoCategory::SCO_RECOGNITION) {
-        AUDIO_INFO_LOG("Recognition Sco Connected");
-        return SUCCESS;
-    }
     AUDIO_INFO_LOG("new audioScene is %{public}d, last audioScene is %{public}d", scene, scene_);
     std::lock_guard<std::mutex> sceneLock(g_audioSceneLock);
     int8_t lastScoCategory = GetScoCategoryFromScene(scene_);
@@ -518,7 +478,16 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
             AudioHfpManager::UpdateCurrentActiveHfpDevice(device);
         }
         bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
-        HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected, reason);
+
+        // VGS feature
+        bool isVgsSupported = false;
+        if (isConnected) {
+            HandsFreeAudioGateway *hfpInstance = HandsFreeAudioGateway::GetProfile();
+            CHECK_AND_RETURN_LOG(hfpInstance != nullptr, "Failed to obtain HFP AG profile instance");
+            hfpInstance->IsVgsSupported(device, isVgsSupported);
+        }
+        AUDIO_INFO_LOG("AudioHfpListener::OnScoStateChanged: isVgsSupported: [%{public}d]", isVgsSupported);
+        HfpBluetoothDeviceManager::OnScoStateChanged(device, isVgsSupported, reason);
     }
 }
 
@@ -544,6 +513,5 @@ void AudioHfpListener::OnHfpStackChanged(const BluetoothRemoteDevice &device, in
     AUDIO_INFO_LOG("OnHfpStackChanged, action: %{public}d", action);
     HfpBluetoothDeviceManager::SetHfpStack(device, action);
 }
-// LCOV_EXCL_STOP
 } // namespace Bluetooth
 } // namespace OHOS

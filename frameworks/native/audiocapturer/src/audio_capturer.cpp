@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioCapturer"
-#endif
 
 #include "audio_capturer.h"
 
@@ -126,10 +125,9 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
         return capturer;
     }
     if (!cachePath.empty()) {
-        AUDIO_DEBUG_LOG("Set application cache path");
         capturer->cachePath_ = cachePath;
     }
-    AUDIO_INFO_LOG("Capturer sourceType: %{public}d, uid: %{public}d", sourceType, appInfo.appUid);
+    AUDIO_INFO_LOG("Capturer::Create sourceType: %{public}d, uid: %{public}d", sourceType, appInfo.appUid);
     // InitPlaybackCapturer will be replaced by UpdatePlaybackCaptureConfig.
     capturer->capturerInfo_.sourceType = sourceType;
     capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
@@ -396,7 +394,8 @@ int32_t AudioCapturerPrivate::InitAudioInterruptCallback()
         CHECK_AND_RETURN_RET_LOG(audioInterruptCallback_ != nullptr, ERROR,
             "Failed to allocate memory for audioInterruptCallback_");
     }
-    return AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID_, audioInterruptCallback_);
+    return AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID_, audioInterruptCallback_,
+        appInfo_.appUid);
 }
 
 int32_t AudioCapturerPrivate::SetCapturerCallback(const std::shared_ptr<AudioCapturerCallback> &callback)
@@ -504,7 +503,7 @@ void AudioCapturerPrivate::UnsetCapturerPeriodPositionCallback()
 
 bool AudioCapturerPrivate::Start() const
 {
-    Trace trace("AudioCapturer::Start");
+    Trace trace("AudioCapturer::Start" + std::to_string(sessionID_));
     AUDIO_INFO_LOG("StreamClientState for Capturer::Start. id %{public}u, sourceType: %{public}d",
         sessionID_, audioInterrupt_.audioFocusType.sourceType);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
@@ -553,7 +552,7 @@ bool AudioCapturerPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
 
 bool AudioCapturerPrivate::Pause() const
 {
-    Trace trace("AudioCapturer::Pause");
+    Trace trace("AudioCapturer::Pause" + std::to_string(sessionID_));
     AUDIO_INFO_LOG("StreamClientState for Capturer::Pause. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
@@ -570,7 +569,7 @@ bool AudioCapturerPrivate::Pause() const
 
 bool AudioCapturerPrivate::Stop() const
 {
-    Trace trace("AudioCapturer::Stop");
+    Trace trace("AudioCapturer::Stop" + std::to_string(sessionID_));
     AUDIO_INFO_LOG("StreamClientState for Capturer::Stop. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
@@ -660,6 +659,12 @@ void AudioCapturerInterruptCallbackImpl::SaveCallback(const std::weak_ptr<AudioC
     callback_ = callback;
 }
 
+void AudioCapturerInterruptCallbackImpl::UpdateAudioStream(const std::shared_ptr<IAudioStream> &audioStream)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    audioStream_ = audioStream;
+}
+
 void AudioCapturerInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEvent)
 {
     AUDIO_INFO_LOG("NotifyEvent: Hint: %{public}d, eventType: %{public}d",
@@ -683,21 +688,20 @@ void AudioCapturerInterruptCallbackImpl::NotifyForcePausedToResume(const Interru
 
 void AudioCapturerInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent)
 {
-    InterruptHint hintType = interruptEvent.hintType;
-    AUDIO_DEBUG_LOG("Force handle the event and notify the app,\
-        Hint: %{public}d eventType: %{public}d", interruptEvent.hintType, interruptEvent.eventType);
-
-    switch (hintType) {
+    State currentState = audioStream_->GetState();
+    switch (interruptEvent.hintType) {
         case INTERRUPT_HINT_RESUME:
-            CHECK_AND_RETURN_LOG(audioStream_->GetState() == PAUSED && isForcePaused_ == true,
-                "OnInterrupt state is not paused or not forced paused");
+            CHECK_AND_RETURN_LOG((currentState == PAUSED || currentState == PREPARED) && isForcePaused_ == true,
+                "OnInterrupt state %{public}d or not forced pause %{public}d before", currentState, isForcePaused_);
+            AUDIO_INFO_LOG("set force pause false");
             isForcePaused_ = false;
             NotifyForcePausedToResume(interruptEvent);
             return;
         case INTERRUPT_HINT_PAUSE:
-            CHECK_AND_RETURN_LOG(audioStream_->GetState() == RUNNING,
-                "OnInterrupt state is not running no need to pause");
+            CHECK_AND_RETURN_LOG(currentState == RUNNING || currentState == PREPARED,
+                "OnInterrupt state %{public}d, no need to pause", currentState);
             (void)audioStream_->PauseAudioStream(); // Just Pause, do not deactivate here
+            AUDIO_INFO_LOG("set force pause true");
             isForcePaused_ = true;
             break;
         case INTERRUPT_HINT_STOP:
@@ -713,9 +717,11 @@ void AudioCapturerInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
 
 void AudioCapturerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
+
     cb_ = callback_.lock();
     InterruptForceType forceType = interruptEvent.forceType;
-    AUDIO_DEBUG_LOG("InterruptForceType: %{public}d", forceType);
+    AUDIO_INFO_LOG("InterruptForceType: %{public}d", forceType);
 
     if (forceType != INTERRUPT_FORCE) { // INTERRUPT_SHARE
         AUDIO_DEBUG_LOG("AudioCapturerPrivate ForceType: INTERRUPT_SHARE. Let app handle the event");
@@ -779,17 +785,6 @@ AudioStreamType AudioCapturer::FindStreamTypeBySourceType(SourceType sourceType)
         default:
             return STREAM_MUSIC;
     }
-}
-
-int32_t AudioCapturerPrivate::SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources)
-{
-    if (targetSources.size() <= 0) {
-        AUDIO_ERR_LOG("TargetSources size is 0, set audio source concurrency failed.");
-        return ERR_INVALID_PARAM;
-    }
-    AUDIO_INFO_LOG("Set audio source concurrency success.");
-    audioInterrupt_.currencySources.sourcesTypes = targetSources;
-    return SUCCESS;
 }
 
 int32_t AudioCapturerPrivate::SetCaptureMode(AudioCaptureMode captureMode)
@@ -995,6 +990,7 @@ int32_t AudioCapturerPrivate::UnregisterAudioCapturerEventListener()
         int32_t ret =
             AudioPolicyManager::GetInstance().UnregisterAudioCapturerEventListener(getpid());
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "failed");
+        audioStateChangeCallback_->HandleCapturerDestructor();
         audioStateChangeCallback_ = nullptr;
     }
     return SUCCESS;
@@ -1095,7 +1091,7 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         Trace trace("SwitchToTargetStream");
         isSwitching_ = true;
         CapturerState previousState = GetStatus();
-        AUDIO_INFO_LOG("Previous stream state: %{public}d", previousState);
+        AUDIO_INFO_LOG("Previous stream state: %{public}d, original sessionId: %{public}u", previousState, sessionID_);
         if (previousState == CAPTURER_RUNNING) {
             // stop old stream
             switchResult = audioStream_->StopAudioStream();
@@ -1105,6 +1101,12 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         // switch new stream
         IAudioStream::SwitchInfo info;
         audioStream_->GetSwitchInfo(info);
+        info.params.originalSessionId = sessionID_;
+
+        // release old stream and restart audio stream
+        switchResult = audioStream_->ReleaseAudioStream();
+        CHECK_AND_RETURN_RET_LOG(switchResult, false, "release old stream failed.");
+
         if (targetClass == IAudioStream::VOIP_STREAM) {
             info.capturerInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
         }
@@ -1116,19 +1118,20 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         // set new stream info
         SetSwitchInfo(info, newAudioStream);
 
-        // release old stream and restart audio stream
-        switchResult = audioStream_->ReleaseAudioStream();
-        CHECK_AND_RETURN_RET_LOG(switchResult, false, "release old stream failed.");
-
         if (previousState == CAPTURER_RUNNING) {
             // restart audio stream
             switchResult = newAudioStream->StartAudioStream();
             CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
         }
         audioStream_ = newAudioStream;
+        if (audioInterruptCallback_ != nullptr) {
+            std::shared_ptr<AudioCapturerInterruptCallbackImpl> interruptCbImpl =
+                std::static_pointer_cast<AudioCapturerInterruptCallbackImpl>(audioInterruptCallback_);
+            interruptCbImpl->UpdateAudioStream(audioStream_);
+        }
         isSwitching_ = false;
         audioStream_->GetAudioSessionID(newSessionId);
-        switchResult= true;
+        switchResult = true;
     }
     return switchResult;
 }

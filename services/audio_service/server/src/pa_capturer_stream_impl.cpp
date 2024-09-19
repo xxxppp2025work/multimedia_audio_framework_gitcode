@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "PaCapturerStreamImpl"
-#endif
 
 #include "safe_map.h"
 #include "pa_capturer_stream_impl.h"
@@ -134,7 +133,7 @@ int32_t PaCapturerStreamImpl::Start()
     return SUCCESS;
 }
 
-int32_t PaCapturerStreamImpl::Pause()
+int32_t PaCapturerStreamImpl::Pause(bool isStandby)
 {
     AUDIO_INFO_LOG("Pause");
     PaLockGuard lock(mainloop_);
@@ -355,6 +354,11 @@ void PaCapturerStreamImpl::PAStreamReadCb(pa_stream *stream, size_t length, void
         return;
     }
     auto streamImpl = static_cast<PaCapturerStreamImpl *>(userdata);
+    if (streamImpl->abortFlag_ != 0) {
+        AUDIO_ERR_LOG("PAStreamReadCb: Abort pa stream read callback");
+        streamImpl->abortFlag_--;
+        return ;
+    }
     std::shared_ptr<IReadCallback> readCallback = streamImpl->readCallback_.lock();
     if (readCallback != nullptr) {
         readCallback->OnReadData(length);
@@ -507,6 +511,11 @@ void PaCapturerStreamImpl::SetStreamIndex(uint32_t index)
 uint32_t PaCapturerStreamImpl::GetStreamIndex()
 {
     return streamIndex_;
+}
+
+void PaCapturerStreamImpl::AbortCallback(int32_t abortTimes)
+{
+    abortFlag_ += abortTimes;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -22,6 +22,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
 class OHAudioSessionCallback : public AudioSessionCallback {
 public:
     explicit OHAudioSessionCallback(OH_AudioSession_DeactivatedCallback callback)
@@ -78,6 +79,7 @@ private:
 };
 
 OHAudioSessionManager* OHAudioSessionManager::ohAudioSessionManager_ = nullptr;
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // OH_AUDIO_SESSION_MANAGER_H

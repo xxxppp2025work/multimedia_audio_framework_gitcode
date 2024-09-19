@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioCapturerFileSource"
-#endif
 
 #include "audio_capturer_file_source.h"
 
@@ -182,16 +181,16 @@ int32_t AudioCapturerFileSource::Stop(void)
     return SUCCESS;
 }
 
-float AudioCapturerFileSource::GetMaxAmplitude()
-{
-    AUDIO_WARNING_LOG("getMaxAmplitude in audio cap file not support");
-    return 0;
-}
-
 std::string AudioCapturerFileSource::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     AUDIO_WARNING_LOG("not supported yet");
     return "";
+}
+
+float AudioCapturerFileSource::GetMaxAmplitude()
+{
+    AUDIO_WARNING_LOG("getMaxAmplitude in audio cap file not support");
+    return 0;
 }
 
 int32_t AudioCapturerFileSource::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size)

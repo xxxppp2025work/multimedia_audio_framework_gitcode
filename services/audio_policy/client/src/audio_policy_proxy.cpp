@@ -12,14 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioPolicyProxy"
-#endif
 
-
+#include "audio_policy_manager.h"
 #include "audio_policy_log.h"
 #include "audio_policy_proxy.h"
-
+#include "microphone_descriptor.h"
 
 namespace {
 constexpr int MAX_PID_COUNT = 1000;
@@ -1706,6 +1705,21 @@ bool AudioPolicyProxy::IsAbsVolumeScene()
     return reply.ReadBool();
 }
 
+bool AudioPolicyProxy::IsVgsVolumeSupported()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_VGS_VOLUME_SUPPORTED), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "IsVgsVolumeSupported failed, error: %d", error);
+    return reply.ReadBool();
+}
+
 int32_t AudioPolicyProxy::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume,
     const bool updateUi)
 {
@@ -2226,7 +2240,7 @@ int32_t AudioPolicyProxy::SetHighResolutionExist(bool highResExist)
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-    
+
     data.WriteBool(highResExist);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HIGH_RESOLUTION_EXIST), data, reply, option);

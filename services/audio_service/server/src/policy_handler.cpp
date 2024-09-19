@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "PolicyHandler"
-#endif
 
 #include "policy_handler.h"
 
@@ -115,7 +114,6 @@ AudioVolumeType PolicyHandler::GetVolumeTypeFromStreamType(AudioStreamType strea
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_MESSAGE:
         case STREAM_VOICE_COMMUNICATION:
-        case STREAM_VOICE_CALL_ASSISTANT:
             return STREAM_VOICE_CALL;
         case STREAM_RING:
         case STREAM_SYSTEM:
@@ -219,6 +217,12 @@ bool PolicyHandler::GetHighResolutionExist()
 void PolicyHandler::SetHighResolutionExist(bool isHighResExist)
 {
     isHighResolutionExist_ = isHighResExist;
+}
+
+int32_t PolicyHandler::GetAndSaveClientType(uint32_t uid, const std::string &bundleName)
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    return iPolicyProvider_->GetAndSaveClientType(uid, bundleName);
 }
 } // namespace AudioStandard
 } // namespace OHOS

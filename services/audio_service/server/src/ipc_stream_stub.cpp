@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "IpcStreamStub"
-#endif
 
 #include "ipc_stream_stub.h"
 #include "audio_service_log.h"
@@ -308,7 +307,7 @@ int32_t IpcStreamStub::HandleSetSilentModeAndMixWithOthers(MessageParcel &data, 
 {
     bool on = data.ReadBool();
     reply.WriteInt32(SetSilentModeAndMixWithOthers(on));
-
+		 
     return AUDIO_OK;
 }
 

@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "BluetoothDeviceManager"
-#endif
 
 #include "bluetooth_device_manager.h"
 
@@ -66,7 +65,6 @@ std::vector<BluetoothRemoteDevice> HfpBluetoothDeviceManager::negativeDevices_;
 std::mutex HfpBluetoothDeviceManager::stopVirtualCallHandleLock_;
 BluetoothStopVirtualCallHandle HfpBluetoothDeviceManager::stopVirtualCallHandle_ = { BluetoothRemoteDevice(), false};
 
-// LCOV_EXCL_START
 std::string GetEncryptAddr(const std::string &addr)
 {
     if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
@@ -846,11 +844,18 @@ void HfpBluetoothDeviceManager::OnScoStateChanged(const BluetoothRemoteDevice &d
         desc.connectState_ = reason == HFP_AG_SCO_REMOTE_USER_TERMINATED ?  ConnectState::SUSPEND_CONNECTED
                                                                          :  ConnectState::DEACTIVE_CONNECTED;
     }
+
+    // VGS feature
+    desc.isVgsSupported_ = false;
+    if (desc.connectState_ == ConnectState::CONNECTED) {
+        desc.isVgsSupported_ = isConnected;
+        AUDIO_INFO_LOG("desc.isVgsSupported_: %{public}d", desc.isVgsSupported_);
+    }
+
     std::lock_guard<std::mutex> observerLock(g_observerLock);
     if (g_deviceObserver != nullptr) {
         g_deviceObserver->OnDeviceInfoUpdated(desc, DeviceInfoUpdateCommand::CONNECTSTATE_UPDATE);
     }
 }
-// LCOV_EXCL_STOP
 } // namespace Bluetooth
 } // namespace OHOS

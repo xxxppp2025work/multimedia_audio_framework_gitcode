@@ -27,7 +27,7 @@ public:
     ~PaCapturerStreamImpl();
     int32_t InitParams();
     int32_t Start() override;
-    int32_t Pause() override;
+    int32_t Pause(bool isStandby = false) override;
     int32_t Flush() override;
     int32_t Drain() override { return 0; };
     int32_t Stop() override;
@@ -46,6 +46,7 @@ public:
     void SetStreamIndex(uint32_t index) override;
     uint32_t GetStreamIndex() override;
     int32_t DropBuffer() override;
+    void AbortCallback(int32_t abortTimes) override;
 
 private:
     static void PAStreamReadCb(pa_stream *stream, size_t length, void *userdata);
@@ -77,6 +78,9 @@ private:
     size_t totalBytesRead_ = 0;
 
     FILE *capturerServerDumpFile_ = nullptr;
+
+    // Only for debug
+    int32_t abortFlag_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

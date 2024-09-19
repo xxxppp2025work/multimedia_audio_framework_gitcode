@@ -12,14 +12,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioPnpServer"
-#endif
 
 #include "audio_pnp_server.h"
 
+#include <cctype>
+#include <cstdlib>
+#include <dirent.h>
+#include <fcntl.h>
+#include <linux/input.h>
+#include <linux/netlink.h>
 #include <poll.h>
+#include <pthread.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 
+#include "hdf_base.h"
+#include "hdf_device_object.h"
 #include "osal_time.h"
 #include "securec.h"
 #include "audio_errors.h"
@@ -53,21 +64,6 @@ static std::string GetAudioEventInfo(const AudioEvent audioEvent)
     }
 
     return event;
-}
-
-AudioPnpServer::~AudioPnpServer()
-{
-    AUDIO_INFO_LOG("~AudioPnpServer");
-    g_socketRunThread = false;
-    g_inputRunThread = false;
-
-    if (socketThread_ && socketThread_->joinable()) {
-        socketThread_->detach();
-    }
-
-    if (inputThread_ && inputThread_->joinable()) {
-        inputThread_->detach();
-    }
 }
 
 bool AudioPnpServer::init(void)
@@ -155,7 +151,7 @@ void AudioPnpServer::OpenAndReadWithSocket()
             continue;
         }
 
-        if (((uint32_t)fd.revents & (POLLIN | POLLERR)) != 0) {
+        if (((uint32_t)fd.revents & POLLIN) == POLLIN) {
             memset_s(&msg, sizeof(msg), 0, sizeof(msg));
             rcvLen = AudioSocketThread::AudioPnpReadUeventMsg(socketFd, msg, UEVENT_MSG_LEN);
             if (rcvLen <= 0) {
@@ -168,6 +164,8 @@ void AudioPnpServer::OpenAndReadWithSocket()
             eventInfo_ = GetAudioEventInfo(AudioSocketThread::audioSocketEvent_);
             CHECK_AND_RETURN_LOG(!eventInfo_.empty(), "invalid socket info");
             OnPnpDeviceStatusChanged(eventInfo_);
+        } else if (((uint32_t)fd.revents & POLLERR) == POLLERR) {
+            AUDIO_ERR_LOG("audio event poll error");
         }
     }
     close(socketFd);
@@ -204,6 +202,7 @@ void AudioPnpServer::DetectAudioDevice()
     int32_t ret;
     AudioEvent audioEvent = {0};
 
+    OsalMSleep(AUDIO_DEVICE_WAIT_USB_ONLINE);
     ret = AudioSocketThread::DetectAnalogHeadsetState(&audioEvent);
     if ((ret == SUCCESS) && (audioEvent.eventType == AUDIO_DEVICE_ADD)) {
         AUDIO_INFO_LOG("audio detect analog headset");

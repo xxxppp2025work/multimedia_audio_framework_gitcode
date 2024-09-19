@@ -16,11 +16,25 @@
 #define RENDERER_IN_CLIENT_PRIVATE_H
 
 #include <optional>
+#include <atomic>
+#include <cinttypes>
+#include <condition_variable>
+#include <sstream>
+#include <string>
+#include <mutex>
+#include <thread>
 
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
+#include "securec.h"
+#include "hisysevent.h"
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
 
+#include "audio_errors.h"
+#include "audio_policy_manager.h"
 #include "audio_manager_base.h"
+#include "audio_log.h"
 #include "audio_ring_cache.h"
 #include "audio_channel_blend.h"
 #include "audio_server_death_recipient.h"
@@ -36,6 +50,10 @@
 #include "audio_spatial_channel_converter.h"
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
+#include "policy_handler.h"
+
+#include "media_monitor_manager.h"
+#include "event_bean.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -194,16 +212,14 @@ public:
     void OnSpatializationStateChange(const AudioSpatializationState &spatializationState);
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
 
+    bool GetOffloadEnable() override;
+    bool GetSpatializationEnabled() override;
+    bool GetHighResolutionEnabled() override;
+
     int32_t RegisterRendererOrCapturerPolicyServiceDiedCB(
         const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback) override;
     int32_t RemoveRendererOrCapturerPolicyServiceDiedCB() override;
     bool RestoreAudioStream() override;
-
-    void GetStreamSwitchInfo(SwitchInfo &info);
-
-    bool GetOffloadEnable() override;
-    bool GetSpatializationEnabled() override;
-    bool GetHighResolutionEnabled() override;
 
     void SetSilentModeAndMixWithOthers(bool on) override;
     bool GetSilentModeAndMixWithOthers() override;
@@ -217,6 +233,7 @@ private:
     int32_t InitIpcStream();
 
     const AudioProcessConfig ConstructConfig();
+    void GetStreamSwitchInfo(IAudioStream::SwitchInfo& info);
 
     int32_t InitSharedBuffer();
     int32_t InitCacheBuffer(size_t targetSize);
@@ -245,16 +262,17 @@ private:
 
     void ResetFramePosition();
 
-    int32_t RegisterRendererInClientPolicyServerDiedCb();
-    int32_t UnregisterRendererInClientPolicyServerDiedCb();
+    int32_t SetInnerVolume(float volume);
 
     void ReportDataToResSched();
 
-    int32_t SetInnerVolume(float volume);
-
-    bool IsHighResolution() const noexcept;
+    bool IsHightResolution() const noexcept;
 
     void ProcessWriteInner(BufferDesc &bufferDesc);
+
+    int32_t RegisterRendererInClientPolicyServerDiedCb();
+    int32_t UnregisterRendererInClientPolicyServerDiedCb();
+
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -365,12 +383,11 @@ private:
     size_t bufferSize_ = 0;
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
 
-    std::unique_ptr<AudioSpatialChannelConverter> converter_;
-
     bool offloadEnable_ = false;
     uint64_t offloadStartReadPos_ = 0;
     int64_t offloadStartHandleTime_ = 0;
 
+    std::unique_ptr<AudioSpatialChannelConverter> converter_ = nullptr;
     uint64_t lastFramePosition_ = 0;
     uint64_t lastFrameTimestamp_ = 0;
 
@@ -382,10 +399,11 @@ private:
     std::shared_ptr<SpatializationStateChangeCallbackImpl> spatializationStateChangeCallback_ = nullptr;
     std::time_t startMuteTime_ = 0;
     bool isUpEvent_ = false;
-    std::shared_ptr<RendererInClientPolicyServiceDiedCallbackImpl> policyServiceDiedCB_ = nullptr;
-    std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
 
     uint64_t lastFlushPosition_ = 0;
+
+    std::shared_ptr<RendererInClientPolicyServiceDiedCallbackImpl> policyServiceDiedCB_ = nullptr;
+    std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
 
     enum {
         STATE_CHANGE_EVENT = 0,
@@ -420,9 +438,10 @@ public:
 
     void OnSpatializationStateChange(const AudioSpatializationState &spatializationState) override;
     void SetRendererInClientPtr(std::shared_ptr<RendererInClientInner> rendererInClientPtr);
+
 private:
     std::weak_ptr<RendererInClientInner> rendererInClientPtr_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // RENDERER_IN_SERVER_H
+#endif // RENDERER_IN_CLIENT_PRIVATE_H

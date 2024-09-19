@@ -41,7 +41,6 @@ private:
     };
 
     static void WorkCallbackRendererWriteData(uv_work_t *work, int status);
-    static void WorkCallbackRendererWriteDataInner(uv_work_t *work, int status);
     void OnJsRendererWriteDataCallback(std::unique_ptr<RendererWriteDataJsCallback> &jsCb);
     static void CheckWriteDataCallbackResult(napi_env env, BufferDesc &bufDesc, napi_value result);
 
@@ -50,10 +49,6 @@ private:
     std::shared_ptr<AutoRef> rendererWriteDataCallback_ = nullptr;
     NapiAudioRenderer *napiRenderer_;
     napi_ref callback_ = nullptr;
-
-#if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
-    static vector<NapiAudioRenderer*> activeRenderers_;
-#endif
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

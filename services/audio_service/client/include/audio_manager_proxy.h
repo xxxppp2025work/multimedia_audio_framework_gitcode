@@ -30,7 +30,14 @@ public:
 
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;
+    int32_t GetCapturePresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
+        int64_t& timeNanoSec) override;
+    int32_t GetRenderPresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
+        int64_t& timeNanoSec) override;
     int32_t OffloadSetVolume(float volume) override;
+    int32_t OffloadDrain() override;
+    int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
+    int32_t OffloadSetBufferSize(uint32_t sizeMs) override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
         DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag) override;
     const std::string GetAudioParameter(const std::string &key) override;
@@ -61,8 +68,7 @@ public:
         std::vector<Effect> &successEffects) override;
     void RequestThreadPriority(uint32_t tid, std::string bundleName) override;
     bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-        std::unordered_map<std::string, std::string> &effectMap,
-        std::unordered_map<std::string, std::string> &enhanceMap) override;
+        const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam) override;
     void SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
     bool CreatePlaybackCapturerManager() override;
     int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
@@ -74,22 +80,20 @@ public:
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) override;
     int32_t ResetRouteForDisconnect(DeviceType type) override;
     uint32_t GetEffectLatency(const std::string &sessionId) override;
-    float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
     void ResetAudioEndpoint() override;
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
+    float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
     int32_t SetAsrAecMode(AsrAecMode asrAecMode) override;
     int32_t GetAsrAecMode(AsrAecMode &asrAecMode) override;
     int32_t SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode) override;
     int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode) override;
-    int32_t SetAsrWhisperDetectionMode(AsrWhisperDetectionMode asrWhisperDetectionMode) override;
-    int32_t GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode) override;
-    int32_t SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on) override;
-    int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on) override;
     int32_t IsWhispering() override;
     bool GetEffectOffloadEnabled() override;
     void LoadHdiEffectModel() override;
-    void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
     int32_t SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute) override;
+
+    void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
+    void SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag) override;
     void SetRotationToEffect(const uint32_t rotate) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;

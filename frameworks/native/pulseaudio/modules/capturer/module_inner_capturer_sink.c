@@ -17,9 +17,8 @@
 #include <config.h>
 #endif
 
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "ModuleInnerCapturerSink"
-#endif
 
 #include <stdlib.h>
 #include <stdio.h>

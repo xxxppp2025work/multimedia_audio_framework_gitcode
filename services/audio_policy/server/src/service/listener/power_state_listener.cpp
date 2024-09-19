@@ -12,14 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "PowerStateListener"
-#endif
 
 #include "power_state_listener.h"
 
+#include <chrono>
+#include <thread>
+
 #include "suspend/sync_sleep_callback_ipc_interface_code.h"
 #include "hibernate/sync_hibernate_callback_ipc_interface_code.h"
+
+#include "audio_errors.h"
+#include "audio_log.h"
 #include "audio_policy_server.h"
 
 namespace OHOS {

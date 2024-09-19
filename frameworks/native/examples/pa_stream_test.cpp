@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "PaStreamTest"
-#endif
 
 #include <chrono>
 #include <cstdio>
@@ -588,7 +587,7 @@ void PrintUsage()
     cout << "  105: Stop read." << endl;
     cout << "  106: Release read." << endl;
     cout << "  107: Read data run." << endl;
-    
+
     cout << "  1000: exit demo." << endl;
     cout << " Please input your choice: " << endl;
 }
@@ -898,7 +897,7 @@ int main(int argc, char* argv[])
     cout << "oh pa stream test." << endl;
     std::shared_ptr<PaRendererTest> streamTest = std::make_shared<PaRendererTest>();
     std::shared_ptr<PaCapturerTest> capturerTest = std::make_shared<PaCapturerTest>();
-    
+
     Loop(streamTest, capturerTest);
     streamTest->CloseSpkFile();
     return 0;

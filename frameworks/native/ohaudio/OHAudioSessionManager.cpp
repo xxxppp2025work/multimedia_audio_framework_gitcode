@@ -86,8 +86,10 @@ bool OH_AudioSessionManager_IsAudioSessionActivated(
     return ohAudioSessionManager->IsAudioSessionActivated();
 }
 
+
 namespace OHOS {
 namespace AudioStandard {
+
 OHAudioSessionManager::OHAudioSessionManager()
 {
     AUDIO_INFO_LOG("OHAudioSessionManager created!");
@@ -157,5 +159,6 @@ void OHAudioSessionCallback::OnAudioSessionDeactive(const AudioSessionDeactiveEv
     event.reason = static_cast<OH_AudioSession_DeactivatedReason>(deactiveEvent.deactiveReason);
     callback_(event);
 }
+
 } // namespace AudioStandard
 } // namespace OHOS

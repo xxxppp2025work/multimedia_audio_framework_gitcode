@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "NapiAudioRendererPolicyServiceDiedCallback"
-#endif
 
 #include "napi_audio_renderer_policy_service_died_callback.h"
 

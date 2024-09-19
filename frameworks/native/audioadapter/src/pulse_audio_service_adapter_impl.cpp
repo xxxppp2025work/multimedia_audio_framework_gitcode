@@ -15,9 +15,8 @@
 
 #ifndef ST_PULSEAUDIO_AUDIO_SERVICE_ADAPTER_IMPL_H
 #define ST_PULSEAUDIO_AUDIO_SERVICE_ADAPTER_IMPL_H
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "PulseAudioServiceAdapterImpl"
-#endif
 
 #include "pulse_audio_service_adapter_impl.h"
 
@@ -48,7 +47,6 @@ SafeMap<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sourceIndexSessionIDMa
 static const int32_t PA_SERVICE_IMPL_TIMEOUT = 5; // 5s
 static const unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING_ENUM_MAP = {
     {"voice_call", STREAM_VOICE_CALL},
-    {"voice_call_assistant", STREAM_VOICE_CALL_ASSISTANT},
     {"music", STREAM_MUSIC},
     {"ring", STREAM_RING},
     {"media", STREAM_MEDIA},
@@ -141,8 +139,6 @@ bool PulseAudioServiceAdapterImpl::ConnectToPulseAudio()
         pa_context_unref(mContext);
         mContext = nullptr;
     }
-
-    swapStatus = 0;
     pa_proplist *proplist = pa_proplist_new();
     if (proplist == nullptr) {
         AUDIO_ERR_LOG("Connect to pulseAudio and new proplist return nullptr!");
@@ -150,7 +146,6 @@ bool PulseAudioServiceAdapterImpl::ConnectToPulseAudio()
     }
     pa_proplist_sets(proplist, PA_PROP_APPLICATION_NAME, "PulseAudio Service");
     pa_proplist_sets(proplist, PA_PROP_APPLICATION_ID, "com.ohos.pulseaudio.service");
-    pa_proplist_sets(proplist, "device.swap.status", "0");
     mContext = pa_context_new_with_proplist(pa_threaded_mainloop_get_api(mMainLoop), nullptr, proplist);
     pa_proplist_free(proplist);
 
@@ -898,10 +893,7 @@ void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_
         "Invalid Proplist for sink input (%{public}d).", i->index);
 
     const char *streamMode = pa_proplist_gets(i->proplist, "stream.mode");
-    if (streamMode != nullptr && streamMode == DUP_STREAM) {
-        AUDIO_INFO_LOG("Dup stream dismissed:%{public}u", i->index);
-        return;
-    }
+    if (streamMode != nullptr && streamMode == DUP_STREAM) { return; }
 
     AudioStreamType audioStreamType = STREAM_DEFAULT;
     const char *streamType = pa_proplist_gets(i->proplist, "stream.type");
@@ -1037,28 +1029,6 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
         default:
             break;
     }
-}
-
-int32_t PulseAudioServiceAdapterImpl::UpdateSwapDeviceStatus()
-{
-    CHECK_AND_RETURN_RET_LOG(mContext != nullptr, ERROR, "UpdateClusterModule mContext is nullptr");
-    PaLockGuard palock(mMainLoop);
-
-    swapStatus = 1 - swapStatus;
-    pa_proplist *proplist = pa_proplist_new();
-    if (proplist == nullptr) {
-        AUDIO_ERR_LOG("Update swap status and new proplist return nullptr!");
-        return ERROR;
-    }
-    pa_proplist_sets(proplist, "device.swap.status", std::to_string(swapStatus).c_str());
-    pa_operation *operation = pa_context_proplist_update(mContext, PA_UPDATE_REPLACE, proplist, nullptr, nullptr);
-    if (operation == nullptr) {
-        AUDIO_ERR_LOG("UpdateClusterModule pa_context_proplist_update returned nullptr");
-        return ERROR;
-    }
-
-    pa_operation_unref(operation);
-    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

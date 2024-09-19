@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioManagerProxy"
-#endif
 
 #include "audio_manager_proxy.h"
 
@@ -86,6 +85,124 @@ int32_t AudioManagerProxy::OffloadSetVolume(float volume)
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_VOLUME), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "OffloadSetVolume failed, error: %d", error);
+
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t AudioManagerProxy::OffloadDrain()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_DRAIN), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "OffloadDrain failed, error: %d", error);
+
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t AudioManagerProxy::GetCapturePresentationPosition(const std::string& deviceClass, uint64_t& frames,
+    int64_t& timeSec, int64_t& timeNanoSec)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteString(deviceClass);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_CAPTURE_PRESENTATION_POSITION), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetCapturePresentationPosition failed, error: %d", error);
+        return false;
+    }
+
+    int32_t result = reply.ReadInt32();
+    frames = reply.ReadUint64();
+    timeSec = reply.ReadInt64();
+    timeNanoSec = reply.ReadInt64();
+    AUDIO_DEBUG_LOG("ret %{public}d, frames %{public}" PRIu64 ", sec %{public}" PRId64 ", Nasec %{public}" PRId64,
+        result, frames, timeSec, timeNanoSec);
+    return result;
+}
+
+int32_t AudioManagerProxy::GetRenderPresentationPosition(const std::string& deviceClass, uint64_t& frames,
+    int64_t& timeSec, int64_t& timeNanoSec)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteString(deviceClass);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_RENDER_PRESENTATION_POSITION), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetRenderPresentationPosition failed, error: %d", error);
+        return false;
+    }
+
+    int32_t result = reply.ReadInt32();
+    frames = reply.ReadUint64();
+    timeSec = reply.ReadInt64();
+    timeNanoSec = reply.ReadInt64();
+    AUDIO_DEBUG_LOG("ret %{public}d, frames %{public}" PRIu64 ", sec %{public}" PRId64 ", Nasec %{public}" PRId64,
+        result, frames, timeSec, timeNanoSec);
+    return result;
+}
+
+int32_t AudioManagerProxy::OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_GET_PRESENTATION_POSITION), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "OffloadGetPresentationPosition failed, error: %d", error);
+
+    int32_t result = reply.ReadInt32();
+    frames = reply.ReadUint64();
+    timeSec = reply.ReadInt64();
+    timeNanoSec = reply.ReadInt64();
+    AUDIO_DEBUG_LOG("ret %{public}d, frames %{public}" PRIu64 ", sec %{public}" PRId64 ", Nasec %{public}" PRId64,
+        result, frames, timeSec, timeNanoSec);
+    return result;
+}
+
+int32_t AudioManagerProxy::OffloadSetBufferSize(uint32_t sizeMs)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    data.WriteUint32(sizeMs);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_BUFFER_SIZE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "OffloadSetBufferSize failed, error: %d", error);
 
     int32_t result = reply.ReadInt32();
     return result;
@@ -279,7 +396,7 @@ int32_t AudioManagerProxy::GetAsrAecMode(AsrAecMode &asrAecMode)
         static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
     int32_t result = reply.ReadInt32();
-    asrAecMode = static_cast<AsrAecMode>(result);
+    asrAecMode = static_cast<AsrAecMode> (result);
     return 0;
 }
 
@@ -314,79 +431,8 @@ int32_t AudioManagerProxy::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &a
         static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_NOISE_SUPPRESSION_MODE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
     int32_t result = reply.ReadInt32();
-    asrNoiseSuppressionMode = static_cast<AsrNoiseSuppressionMode>(result);
+    asrNoiseSuppressionMode = static_cast<AsrNoiseSuppressionMode> (result);
     return 0;
-}
-
-int32_t AudioManagerProxy::SetAsrWhisperDetectionMode(AsrWhisperDetectionMode asrWhisperDetectionMode)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-    data.WriteInt32(static_cast<int32_t>(asrWhisperDetectionMode));
-
-    int32_t error = Remote()->SendRequest(static_cast<uint32_t>(
-        AudioServerInterfaceCode::SET_ASR_WHISPER_DETECTION_MODE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
-    int32_t result = reply.ReadInt32();
-    return result;
-}
-
-int32_t AudioManagerProxy::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-    data.WriteInt32(static_cast<int32_t>(asrWhisperDetectionMode));
-
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_WHISPER_DETECTION_MODE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
-    int32_t result = reply.ReadInt32();
-    asrWhisperDetectionMode = static_cast<AsrWhisperDetectionMode>(result);
-    return 0;
-}
-
-int32_t AudioManagerProxy::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-    data.WriteInt32(static_cast<int32_t>(asrVoiceControlMode));
-    data.WriteBool(on);
-
-    int32_t error = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_VOICE_CONTROL_MODE),
-        data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
-    int32_t result = reply.ReadInt32();
-    return result;
-}
-
-int32_t AudioManagerProxy::SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-    data.WriteInt32(static_cast<int32_t>(asrVoiceMuteMode));
-    data.WriteBool(on);
-
-    int32_t error = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_VOICE_MUTE_MODE),
-        data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
-    int32_t result = reply.ReadInt32();
-    return result;
 }
 
 int32_t AudioManagerProxy::IsWhispering()
@@ -705,9 +751,30 @@ void AudioManagerProxy::RequestThreadPriority(uint32_t tid, string bundleName)
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "RequestThreadPriority failed, error: %{public}d", error);
 }
 
+static void MarshellEffectChainMgrParam(const EffectChainManagerParam &effectChainMgrParam, MessageParcel &data)
+{
+    data.WriteInt32(effectChainMgrParam.maxExtraNum);
+    data.WriteString(effectChainMgrParam.defaultSceneName);
+    data.WriteInt32(effectChainMgrParam.priorSceneList.size());
+    for (const auto &prioScene : effectChainMgrParam.priorSceneList) {
+        data.WriteString(prioScene);
+    }
+
+    data.WriteInt32(effectChainMgrParam.sceneTypeToChainNameMap.size());
+    for (const auto &[scene, chain] : effectChainMgrParam.sceneTypeToChainNameMap) {
+        data.WriteString(scene);
+        data.WriteString(chain);
+    }
+
+    data.WriteInt32(effectChainMgrParam.effectDefaultProperty.size());
+    for (const auto &[effect, prop] : effectChainMgrParam.effectDefaultProperty) {
+        data.WriteString(effect);
+        data.WriteString(prop);
+    }
+}
+
 bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-    std::unordered_map<std::string, std::string> &effectMap,
-    std::unordered_map<std::string, std::string> &enhanceMap)
+    const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam)
 {
     int32_t error;
 
@@ -737,16 +804,8 @@ bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effec
         }
     }
 
-    dataParcel.WriteInt32(effectMap.size());
-    for (auto item = effectMap.begin(); item != effectMap.end(); ++item) {
-        dataParcel.WriteString(item->first);
-        dataParcel.WriteString(item->second);
-    }
-    dataParcel.WriteInt32(enhanceMap.size());
-    for (auto item = enhanceMap.begin(); item != enhanceMap.end(); ++item) {
-        dataParcel.WriteString(item->first);
-        dataParcel.WriteString(item->second);
-    }
+    MarshellEffectChainMgrParam(effectParam, dataParcel);
+    MarshellEffectChainMgrParam(enhanceParam, dataParcel);
 
     error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIO_EFFECT_CHAIN_MANAGER),
@@ -949,6 +1008,24 @@ uint32_t AudioManagerProxy::GetEffectLatency(const std::string &sessionId)
     return reply.ReadUint32();
 }
 
+void AudioManagerProxy::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
+{
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+    data.WriteString(timestamp);
+    data.WriteBool(isRenderer);
+
+    error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_LATENCY_TIMESTAMP), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE,
+        "LatencyMeas UpdateLatencyTimestamp failed, error:%{public}d", error);
+}
+
 float AudioManagerProxy::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType)
 {
     int32_t error;
@@ -1018,24 +1095,6 @@ int32_t AudioManagerProxy::RestoreRenderSink(const std::string &sinkName)
     return reply.ReadInt32();
 }
 
-void AudioManagerProxy::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
-{
-    int32_t error;
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
-    data.WriteString(timestamp);
-    data.WriteBool(isRenderer);
-
-    error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_LATENCY_TIMESTAMP), data, reply, option);
-    CHECK_AND_RETURN_LOG(error == ERR_NONE,
-        "LatencyMeas UpdateLatencyTimestamp failed, error:%{public}d", error);
-}
-
 void AudioManagerProxy::LoadHdiEffectModel()
 {
     MessageParcel data;
@@ -1083,7 +1142,7 @@ int32_t AudioManagerProxy::SetSinkMuteForSwitchDevice(const std::string &devceCl
     return reply.ReadInt32();
 }
 
-void AudioManagerProxy::SetRotationToEffect(const uint32_t rotate)
+void AudioManagerProxy::SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1091,8 +1150,23 @@ void AudioManagerProxy::SetRotationToEffect(const uint32_t rotate)
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
-    data.WriteUint32(rotate);
+    data.WriteUint32(sessionId);
+    data.WriteBool(muteFlag);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_SINGLE_STREAM_MUTE), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed, error:%{public}d", error);
+}
 
+void AudioManagerProxy::SetRotationToEffect(const uint32_t rotate)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+ 
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+    data.WriteUint32(rotate);
+ 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_ROTATION_TO_EFFECT), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed, error:%{public}d", error);

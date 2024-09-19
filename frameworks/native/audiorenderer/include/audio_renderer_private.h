@@ -118,16 +118,31 @@ public:
 
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
 
+    bool IsFastRenderer() override;
+
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
-    bool IsFastRenderer() override;
+#ifdef SONIC_ENABLE
+    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize);
+    int32_t ChangeSpeedFor8Bit(uint8_t *buffer, int32_t bufferSize,
+        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
+    int32_t ChangeSpeedFor16Bit(uint8_t *buffer, int32_t bufferSize,
+        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
+    int32_t ChangeSpeedFor24Bit(uint8_t *buffer, int32_t bufferSize,
+        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
+    int32_t ChangeSpeedFor32Bit(uint8_t *buffer, int32_t bufferSize,
+        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
+    int32_t ChangeSpeedForFloat(float *buffer, int32_t bufferSize, float* outBuffer, int32_t &outBufferSize);
+    int32_t WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize);
+#endif
     void ConcedeStream();
 
     void SetSilentModeAndMixWithOthers(bool on) override;
     bool GetSilentModeAndMixWithOthers() override;
 
-    void EnableVoiceModemCommunicationStartStream(bool enable) override;
     int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
+
+    void EnableVoiceModemCommunicationStartStream(bool enable) override;
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
@@ -164,9 +179,10 @@ private:
     int32_t InitAudioStream(AudioStreamParams audioStreamParams);
     int32_t InitAudioConcurrencyCallback();
     void SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
+    void UpdateRendererAudioStream(const std::shared_ptr<IAudioStream> &audioStream);
+    void InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId,
         const AudioStreamDeviceChangeReasonExt reason);
-    void WriteSwitchStreamLogMsg();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     void MockPcmData(uint8_t *buffer, size_t bufferSize) const;
     void ActivateAudioConcurrency(const AudioStreamParams &audioStreamParams,
@@ -174,6 +190,7 @@ private:
     void WriteUnderrunEvent() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
+    void WriteSwitchStreamLogMsg();
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -197,8 +214,8 @@ private:
     mutable AudioRenderMode audioRenderMode_ = RENDER_MODE_NORMAL;
     bool isFastVoipSupported_ = false;
     bool isDirectVoipSupported_ = false;
-    bool isEnableVoiceModemCommunicationStartStream_ = false;
     DeviceType selectedDefaultOutputDevice_ = DEVICE_TYPE_NONE;
+    bool isEnableVoiceModemCommunicationStartStream_ = false;
 
     float speed_ = 1.0;
 
@@ -219,6 +236,7 @@ public:
 
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback);
+    void UpdateAudioStream(const std::shared_ptr<IAudioStream> &audioStream);
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
     void HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
@@ -231,6 +249,7 @@ private:
     bool isForcePaused_ = false;
     bool isForceDucked_ = false;
     uint32_t sessionID_ = INVALID_SESSION_ID;
+    std::mutex mutex_;
 };
 
 class AudioStreamCallbackRenderer : public AudioStreamCallback {

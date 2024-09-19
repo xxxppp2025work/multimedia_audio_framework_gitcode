@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioProcessInServer"
-#endif
 
 #include "audio_process_in_server.h"
 #include "policy_handler.h"
@@ -23,6 +22,7 @@
 
 #include "audio_errors.h"
 #include "audio_service_log.h"
+#include "audio_service.h"
 #include "audio_schedule.h"
 #include "audio_utils.h"
 
@@ -43,7 +43,11 @@ sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig
 AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConfig,
     ProcessReleaseCallback *releaseCallback) : processConfig_(processConfig), releaseCallback_(releaseCallback)
 {
-    sessionId_ = PolicyHandler::GetInstance().GenerateSessionId(processConfig_.appInfo.appUid);
+    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
+        sessionId_ = PolicyHandler::GetInstance().GenerateSessionId(processConfig_.appInfo.appUid);
+    } else {
+        sessionId_ = processConfig.originalSessionId;
+    }
 }
 
 AudioProcessInServer::~AudioProcessInServer()
@@ -58,6 +62,23 @@ int32_t AudioProcessInServer::GetSessionId(uint32_t &sessionId)
 {
     sessionId = sessionId_;
     return SUCCESS;
+}
+
+void AudioProcessInServer::SetNonInterruptMute(const bool muteFlag)
+{
+    muteFlag_ = muteFlag;
+    AUDIO_INFO_LOG("muteFlag_: %{public}d", muteFlag);
+    AudioService::GetInstance()->UpdateMuteControlSet(sessionId_, muteFlag);
+}
+
+bool AudioProcessInServer::GetMuteFlag()
+{
+    return muteFlag_;
+}
+
+uint32_t AudioProcessInServer::GetSessionId()
+{
+    return sessionId_;
 }
 
 int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)

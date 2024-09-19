@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "PaRendererStreamImpl"
-#endif
 
 #ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
@@ -71,9 +70,9 @@ PaRendererStreamImpl::PaRendererStreamImpl(pa_stream *paStream, AudioProcessConf
 PaRendererStreamImpl::~PaRendererStreamImpl()
 {
     AUDIO_DEBUG_LOG("~PaRendererStreamImpl");
+    rendererStreamInstanceMap_.Erase(this);
 
     PaLockGuard lock(mainloop_);
-    rendererStreamInstanceMap_.Erase(this);
     if (paStream_) {
         pa_stream_set_state_callback(paStream_, nullptr, nullptr);
         pa_stream_set_write_callback(paStream_, nullptr, nullptr);
@@ -90,8 +89,8 @@ PaRendererStreamImpl::~PaRendererStreamImpl()
 
 int32_t PaRendererStreamImpl::InitParams()
 {
-    PaLockGuard lock(mainloop_);
     rendererStreamInstanceMap_.Insert(this, weak_from_this());
+    PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
@@ -143,6 +142,7 @@ int32_t PaRendererStreamImpl::InitParams()
     // In plan: Get data from xml
     effectSceneName_ = processConfig_.rendererInfo.sceneType;
 
+    clientVolume_ = 1.0f;
     ResetOffload();
 
     return SUCCESS;
@@ -150,7 +150,7 @@ int32_t PaRendererStreamImpl::InitParams()
 
 int32_t PaRendererStreamImpl::Start()
 {
-    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Start");
+    AUDIO_INFO_LOG("Enter");
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -165,12 +165,19 @@ int32_t PaRendererStreamImpl::Start()
     streamCmdStatus_ = 0;
     operation = pa_stream_cork(paStream_, 0, PAStreamStartSuccessCb, reinterpret_cast<void *>(this));
     pa_operation_unref(operation);
+
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    if (audioEffectVolume != nullptr) {
+        std::string sessionIDTemp = std::to_string(streamIndex_);
+        audioEffectVolume->SetStreamVolume(sessionIDTemp, clientVolume_);
+    }
+
     return SUCCESS;
 }
 
-int32_t PaRendererStreamImpl::Pause()
+int32_t PaRendererStreamImpl::Pause(bool isStandby)
 {
-    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Pause");
+    AUDIO_INFO_LOG("Enter");
     pa_threaded_mainloop_lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         pa_threaded_mainloop_unlock(mainloop_);
@@ -199,16 +206,23 @@ int32_t PaRendererStreamImpl::Pause()
         }
         pa_threaded_mainloop_lock(mainloop_);
     }
-
+    isStandbyPause_ = isStandby;
     operation = pa_stream_cork(paStream_, 1, PAStreamPauseSuccessCb, reinterpret_cast<void *>(this));
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mainloop_);
+
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    if (audioEffectVolume != nullptr) {
+        std::string sessionIDTemp = std::to_string(streamIndex_);
+        audioEffectVolume->StreamVolumeDelete(sessionIDTemp);
+    }
+
     return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::Flush()
 {
-    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Flush");
+    AUDIO_INFO_LOG("Enter");
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -237,7 +251,7 @@ int32_t PaRendererStreamImpl::Flush()
 
 int32_t PaRendererStreamImpl::Drain()
 {
-    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Drain");
+    AUDIO_INFO_LOG("Enter");
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -258,7 +272,7 @@ int32_t PaRendererStreamImpl::Drain()
 
 int32_t PaRendererStreamImpl::Stop()
 {
-    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Stop");
+    AUDIO_INFO_LOG("Enter");
     state_ = STOPPING;
     PaLockGuard lock(mainloop_);
 
@@ -270,11 +284,30 @@ int32_t PaRendererStreamImpl::Stop()
         reinterpret_cast<void *>(this));
     CHECK_AND_RETURN_RET_LOG(operation != nullptr, ERR_OPERATION_FAILED, "pa_stream_cork operation is null");
     pa_operation_unref(operation);
+
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    if (audioEffectVolume != nullptr) {
+        std::string sessionIDTemp = std::to_string(streamIndex_);
+        audioEffectVolume->StreamVolumeDelete(sessionIDTemp);
+    }
+
     return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::Release()
 {
+    AUDIO_INFO_LOG("Enter");
+
+    if (state_ == RUNNING) {
+        PaLockGuard lock(mainloop_);
+        if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+            return ERR_ILLEGAL_STATE;
+        }
+        pa_operation *operation = pa_stream_cork(paStream_, 1, nullptr, nullptr);
+        CHECK_AND_RETURN_RET_LOG(operation != nullptr, ERR_OPERATION_FAILED, "pa_stream_cork operation is null");
+        pa_operation_unref(operation);
+    }
+
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_RELEASED);
@@ -728,7 +761,7 @@ void PaRendererStreamImpl::PAStreamPauseSuccessCb(pa_stream *stream, int32_t suc
     CHECK_AND_RETURN_LOG(streamImpl, "PAStreamWriteCb: userdata is null");
 
     streamImpl->state_ = PAUSED;
-    if (streamImpl->offloadEnable_) {
+    if (streamImpl->offloadEnable_ && !streamImpl->isStandbyPause_) {
         streamImpl->offloadTsLast_ = 0;
         streamImpl->ResetOffload();
     }
@@ -836,7 +869,13 @@ uint32_t PaRendererStreamImpl::GetStreamIndex()
     return streamIndex_;
 }
 
+void PaRendererStreamImpl::AbortCallback(int32_t abortTimes)
+{
+    abortFlag_ += abortTimes;
+}
+
 // offload
+
 size_t PaRendererStreamImpl::GetWritableSize()
 {
     PaLockGuard lock(mainloop_);
@@ -1142,6 +1181,9 @@ int32_t PaRendererStreamImpl::SetClientVolume(float clientVolume)
         AUDIO_ERR_LOG("pa_proplist_new failed");
         return ERR_OPERATION_FAILED;
     }
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    audioEffectChainManager->StreamVolumeUpdate(std::to_string(streamIndex_), clientVolume);
 
     if (clientVolume == MIN_VOLUME) {
         pa_proplist_sets(propList, "clientVolumeIsZero", "true");

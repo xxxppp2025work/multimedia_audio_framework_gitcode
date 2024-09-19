@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioClientTrackerCallbackProxy"
-#endif
 
 #include "audio_policy_log.h"
 #include "audio_client_tracker_callback_proxy.h"

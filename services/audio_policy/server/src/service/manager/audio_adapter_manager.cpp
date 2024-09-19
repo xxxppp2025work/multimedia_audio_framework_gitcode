@@ -12,16 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioAdapterManager"
-#endif
 
 #include "audio_adapter_manager.h"
 
+#include <memory>
+#include <unistd.h>
+#include <string>
 
 #include "parameter.h"
 #include "parameters.h"
+#include "setting_provider.h"
 
+#include "audio_errors.h"
+#include "audio_log.h"
 #include "audio_volume_parser.h"
 #include "audio_utils.h"
 #include "audio_adapter_manager_handler.h"
@@ -84,7 +89,6 @@ static const std::vector<std::string> SYSTEM_SOUND_KEY_LIST = {
     "system_tone_for_notification"
 };
 
-// LCOV_EXCL_START
 bool AudioAdapterManager::Init()
 {
     char testMode[10] = {0}; // 10 for system parameter usage
@@ -249,7 +253,6 @@ int32_t AudioAdapterManager::SetAudioStreamRemovedCallback(AudioStreamRemovedCal
     return SUCCESS;
 }
 
-// LCOV_EXCL_STOP
 int32_t AudioAdapterManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
 {
     CHECK_AND_RETURN_RET_LOG(volumeType >= STREAM_VOICE_CALL && volumeType <= STREAM_TYPE_MAX,
@@ -371,6 +374,13 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
         return SetVolumeDbForVolumeTypeGroup(RINGTONE_VOLUME_TYPE_LIST, volumeDb);
     }
 
+    // VGS feature
+    if (IsVgsVolumeSupported()) {
+        float roundValue = static_cast<int>(1.0 * CONST_FACTOR);
+        volumeDb = static_cast<float>(roundValue) / CONST_FACTOR;
+        AUDIO_INFO_LOG("volumeDb: %{public}f", volumeDb);
+    }
+
     return audioServiceAdapter_->SetVolumeDb(streamType, volumeDb);
 }
 
@@ -428,7 +438,7 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
     if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_ != DEVICE_TYPE_SPEAKER &&
         GetRingerMode() != RINGER_MODE_NORMAL && mute && Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
         AUDIO_INFO_LOG("Dual tone stream type %{public}d, current active device:[%{public}d] is no speaker, dont mute",
-            streamType, mute);
+            streamType, currentActiveDevice_);
         return SUCCESS;
     }
 
@@ -481,7 +491,6 @@ bool AudioAdapterManager::GetStreamMuteInternal(AudioStreamType streamType)
     return volumeDataMaintainer_.GetStreamMute(streamType);
 }
 
-// LCOV_EXCL_START
 vector<SinkInfo> AudioAdapterManager::GetAllSinks()
 {
     if (!audioServiceAdapter_) {
@@ -600,6 +609,12 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
         return;
     }
 
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene()) {
+        SetVolumeDb(STREAM_MUSIC);
+        currentActiveDevice_ = deviceType;
+        return;
+    }
+
     // The same device does not set the volume
     // Except for A2dp, because the currentActiveDevice_ has already been set in Activea2dpdevice.
     if (GetVolumeGroupForDevice(currentActiveDevice_) == GetVolumeGroupForDevice(deviceType) &&
@@ -639,7 +654,6 @@ int32_t AudioAdapterManager::MoveSourceOutputByIndexOrName(uint32_t sourceOutput
     return audioServiceAdapter_->MoveSourceOutputByIndexOrName(sourceOutputId, sourceIndex, sourceName);
 }
 
-// LCOV_EXCL_STOP
 int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
 {
     return SetRingerModeInternal(ringerMode);
@@ -662,7 +676,6 @@ AudioRingerMode AudioAdapterManager::GetRingerMode() const
     return ringerMode_;
 }
 
-// LCOV_EXCL_START
 AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioModuleInfo)
 {
     std::string moduleArgs = GetModuleArgs(audioModuleInfo);
@@ -931,7 +944,6 @@ AudioStreamType AudioAdapterManager::GetStreamForVolumeMap(AudioStreamType strea
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_MESSAGE:
         case STREAM_VOICE_COMMUNICATION:
-        case STREAM_VOICE_CALL_ASSISTANT:
             return STREAM_VOICE_CALL;
         case STREAM_RING:
         case STREAM_SYSTEM:
@@ -1569,13 +1581,6 @@ float AudioAdapterManager::GetMaxStreamVolume() const
     return MAX_STREAM_VOLUME;
 }
 
-int32_t AudioAdapterManager::UpdateSwapDeviceStatus()
-{
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
-        "UpdateSwapDeviceStatus audio adapter null");
-    return audioServiceAdapter_->UpdateSwapDeviceStatus();
-}
-
 bool AudioAdapterManager::IsVolumeUnadjustable()
 {
     return isVolumeUnadjustable_;
@@ -1790,6 +1795,15 @@ void AudioAdapterManager::SafeVolumeDump(std::string &dumpString)
     AppendFormat(dumpString, "  - ActiveBtSafeTime: %lld\n", safeActiveBtTime_);
     AppendFormat(dumpString, "  - ActiveSafeTime: %lld\n", safeActiveTime_);
 }
-// LCOV_EXCL_STOP
+
+void AudioAdapterManager::SetVgsVolumeSupported(bool isVgsSupported)
+{
+    isVgsVolumeSupported_ = isVgsSupported;
+}
+
+bool AudioAdapterManager::IsVgsVolumeSupported() const
+{
+    return isVgsVolumeSupported_;
+}
 } // namespace AudioStandard
 } // namespace OHOS

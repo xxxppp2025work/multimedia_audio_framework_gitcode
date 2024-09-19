@@ -45,7 +45,16 @@ public:
      */
     virtual int32_t SetVoiceVolume(float volume) = 0;
 
+    virtual int32_t GetCapturePresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
+        int64_t& timeNanoSec) = 0;
+
+    virtual int32_t GetRenderPresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
+        int64_t& timeNanoSec) = 0;
+
     virtual int32_t OffloadSetVolume(float volume) = 0;
+    virtual int32_t OffloadDrain() = 0;
+    virtual int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) = 0;
+    virtual int32_t OffloadSetBufferSize(uint32_t sizeMs) = 0;
     virtual int32_t SuspendRenderSink(const std::string &sinkName) = 0;
     virtual int32_t RestoreRenderSink(const std::string &sinkName) = 0;
 
@@ -84,7 +93,7 @@ public:
      * @param value associated with the key for the audio parameter to be set
      * @return none.
      */
-    virtual int32_t GetAsrAecMode(AsrAecMode &asrAecMode) = 0;
+    virtual int32_t GetAsrAecMode(AsrAecMode& asrAecMode) = 0;
 
     /**
      * Set Asr Aec Mode.
@@ -102,43 +111,7 @@ public:
      * @param value associated with the key for the audio parameter to be set
      * @return none.
      */
-    virtual int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode) = 0;
-
-    /**
-     * Set Asr WhisperDetection Mode.
-     *
-     * @param key for the audio parameter to be set
-     * @param value associated with the key for the audio parameter to be set
-     * @return none.
-     */
-    virtual int32_t SetAsrWhisperDetectionMode(AsrWhisperDetectionMode asrWhisperDetectionMode) = 0;
-
-    /**
-     * Get Asr WhisperDetection Mode.
-     *
-     * @param key for the audio parameter to be set
-     * @param value associated with the key for the audio parameter to be set
-     * @return none.
-     */
-    virtual int32_t GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode) = 0;
-
-    /**
-     * Set Voice Control Mode.
-     *
-     * @param key for the audio parameter to be set
-     * @param value associated with the key for the audio parameter to be set
-     * @return none.
-     */
-    virtual int32_t SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on) = 0;
-
-    /**
-     * Set Voice Mute Mode.
-     *
-     * @param key for the audio parameter to be set
-     * @param value associated with the key for the audio parameter to be set
-     * @return none.
-     */
-    virtual int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on) = 0;
+    virtual int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode) = 0;
 
     /**
      * Set Asr Aec Mode.
@@ -303,8 +276,7 @@ public:
      * @return true/false.
      */
     virtual bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-        std::unordered_map<std::string, std::string> &effectMap,
-        std::unordered_map<std::string, std::string> &enhanceMap) = 0;
+        const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam) = 0;
 
     /**
      * Set output device sink for effect chain manager.
@@ -398,6 +370,8 @@ public:
      */
     virtual uint32_t GetEffectLatency(const std::string &sessionId) = 0;
 
+    virtual void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) = 0;
+
     /**
      * Get max amplitude for device.
      *
@@ -412,8 +386,6 @@ public:
      * Release old endpoint and re-create one.
      */
     virtual void ResetAudioEndpoint() = 0;
-
-    virtual void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) = 0;
 
     // Check if the multi-channel sound effect is working on the DSP
     virtual bool GetEffectOffloadEnabled() = 0;
@@ -432,6 +404,11 @@ public:
      * Set Sink Mute For Switch Device.
      */
     virtual int32_t SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute) = 0;
+  
+    /**
+     * Set Non Interrupt Mute
+     */
+    virtual void SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag) = 0;
 
     /**
      * Set Rotation To Effect.
@@ -477,7 +454,12 @@ private:
     int HandleSetCaptureSilentState(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateSpatialDeviceType(MessageParcel& data, MessageParcel& reply);
+    int HandleGetCapturePresentationPosition(MessageParcel &data, MessageParcel &reply);
+    int HandleGetRenderPresentationPosition(MessageParcel &data, MessageParcel &reply);
     int HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply);
+    int HandleOffloadDrain(MessageParcel &data, MessageParcel &reply);
+    int HandleOffloadGetPresentationPosition(MessageParcel &data, MessageParcel &reply);
+    int HandleOffloadSetBufferSize(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyStreamVolumeChanged(MessageParcel &data, MessageParcel &reply);
     int HandleSetSpatializationSceneType(MessageParcel &data, MessageParcel &reply);
     int HandleGetMaxAmplitude(MessageParcel &data, MessageParcel &reply);
@@ -489,10 +471,6 @@ private:
     int HandleGetAsrAecMode(MessageParcel &data, MessageParcel &reply);
     int HandleSetAsrNoiseSuppressionMode(MessageParcel &data, MessageParcel &reply);
     int HandleGetAsrNoiseSuppressionMode(MessageParcel &data, MessageParcel &reply);
-    int HandleSetAsrWhisperDetectionMode(MessageParcel &data, MessageParcel &reply);
-    int HandleGetAsrWhisperDetectionMode(MessageParcel &data, MessageParcel &reply);
-    int HandleSetAsrVoiceControlMode(MessageParcel &data, MessageParcel &reply);
-    int HandleSetAsrVoiceMuteMode(MessageParcel &data, MessageParcel &reply);
     int HandleIsWhispering(MessageParcel &data, MessageParcel &reply);
     int HandleGetEffectOffloadEnabled(MessageParcel &data, MessageParcel &reply);
     int HandleSuspendRenderSink(MessageParcel &data, MessageParcel &reply);
@@ -500,6 +478,7 @@ private:
     int HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateEffectBtOffloadSupported(MessageParcel &data, MessageParcel &reply);
     int HandleSetSinkMuteForSwitchDevice(MessageParcel &data, MessageParcel &reply);
+    int HandleSetNonInterruptMute(MessageParcel &data, MessageParcel &reply);
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

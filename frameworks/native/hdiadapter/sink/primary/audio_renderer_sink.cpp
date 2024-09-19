@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioRendererSinkInner"
-#endif
 
 #include "audio_renderer_sink.h"
 
@@ -26,8 +25,8 @@
 #include <string>
 #include <unistd.h>
 #include <mutex>
-#include "ctime"
 #include <thread>
+#include "ctime"
 
 #include "securec.h"
 #ifdef FEATURE_POWER_MANAGER
@@ -36,12 +35,10 @@
 #include "audio_running_lock_manager.h"
 #endif
 #include "v3_0/iaudio_manager.h"
-
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "parameters.h"
-#include "media_monitor_manager.h"
 
 using namespace std;
 
@@ -63,6 +60,7 @@ const uint32_t PRIMARY_OUTPUT_STREAM_ID = 13; // 13 + 0 * 8
 const uint32_t DIRECT_OUTPUT_STREAM_ID = 69;  // 13 + 7 * 8
 const uint32_t VOIP_OUTPUT_STREAM_ID = 77;    // 13 + 8 * 8
 const uint32_t STEREO_CHANNEL_COUNT = 2;
+const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int BUFFER_CALC_20MS = 20;
 const unsigned int BUFFER_CALC_1000MS = 1000;
 const unsigned int FORMAT_1_BYTE = 1;
@@ -70,7 +68,6 @@ const unsigned int FORMAT_2_BYTE = 2;
 const unsigned int FORMAT_3_BYTE = 3;
 const unsigned int FORMAT_4_BYTE = 4;
 #ifdef FEATURE_POWER_MANAGER
-const unsigned int TIME_OUT_SECONDS = 10;
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
 
@@ -217,16 +214,18 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+    bool signalDetected_ = false;
+    size_t detectedTime_ = 0;
+    bool latencyMeasEnabled_ = false;
+    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     // for get amplitude
     float maxAmplitude_ = 0;
     int64_t lastGetMaxAmplitudeTime_ = 0;
     int64_t last10FrameStartTime_ = 0;
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
-    bool signalDetected_ = false;
-    size_t detectedTime_ = 0;
-    bool latencyMeasEnabled_ = false;
-    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
+    mutable int64_t volumeDataCount_ = 0;
+    std::string logUtilsTag_ = "";
     time_t startTime = time(nullptr);
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
@@ -249,6 +248,7 @@ private:
     int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
     int32_t InitAdapter();
     int32_t InitRender();
+
     void ReleaseRunningLock();
     void CheckUpdateState(char *frame, uint64_t replyBytes);
 
@@ -719,10 +719,6 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     if (audioBalanceState_) {AdjustAudioBalance(&data, len);}
 
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            static_cast<void *>(&data), len);
-    }
     CheckUpdateState(&data, len);
 
     if (renderEmptyFrameCount_ > 0) {
@@ -1122,8 +1118,12 @@ int32_t AudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
     return SUCCESS;
 }
 
-void AudioRendererSinkInner::ReleaseRunningLock()
+int32_t AudioRendererSinkInner::Stop(void)
 {
+    AUDIO_INFO_LOG("sinkName %{public}s", halName_.c_str());
+
+    Trace trace("AudioRendererSinkInner::Stop");
+
 #ifdef FEATURE_POWER_MANAGER
     if (runningLockManager_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock unLock");
@@ -1135,13 +1135,6 @@ void AudioRendererSinkInner::ReleaseRunningLock()
         AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
     }
 #endif
-}
-
-int32_t AudioRendererSinkInner::Stop(void)
-{
-    AUDIO_INFO_LOG("sinkName %{public}s", halName_.c_str());
-
-    Trace trace("AudioRendererSinkInner::Stop");
 
     DeinitLatencyMeasurement();
 
@@ -1322,7 +1315,7 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &dpInfoStr)
     std::string addressStr = dpInfoStr.substr(address_begin + std::strlen("address="),
         address_end - address_begin - std::strlen("address="));
 
-    attr_.sampleRate = stoi(sampleRateStr);
+    attr_.sampleRate = static_cast<uint32_t>(stoi(sampleRateStr));
     attr_.channel = static_cast<uint32_t>(stoi(channeltStr));
     attr_.address = addressStr;
     uint32_t formatByte = 0;
@@ -1332,7 +1325,7 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &dpInfoStr)
         formatByte = static_cast<uint32_t>(stoi(bufferSize)) * BUFFER_CALC_1000MS / BUFFER_CALC_20MS
             / attr_.channel / attr_.sampleRate;
     }
-    
+
     attr_.format = static_cast<HdiAdapterFormat>(ConvertByteToAudioFormat(formatByte));
 
     AUDIO_DEBUG_LOG("UpdateDPAttrs sampleRate %{public}d,format:%{public}d,channelCount:%{public}d,address:%{public}s",
