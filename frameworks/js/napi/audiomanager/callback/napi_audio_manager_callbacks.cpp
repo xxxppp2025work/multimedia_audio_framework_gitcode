@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <thread>
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioManagerCallback"
 #endif
@@ -22,10 +23,12 @@
 #include "napi_param_utils.h"
 #include "audio_errors.h"
 #include "audio_manager_log.h"
+#include "js_native_api.h"
 
 namespace OHOS {
 namespace AudioStandard {
-
+napi_threadsafe_function amMicBlocked_tsfn_ = nullptr;
+napi_threadsafe_function amDevChg_tsfn_ = nullptr;
 bool NapiAudioManagerCallback::IsSameCallback(napi_env env, napi_value callback, napi_ref refCallback)
 {
     bool isEquals = false;

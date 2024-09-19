@@ -12,15 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <thread>
 #ifndef LOG_TAG
 #define LOG_TAG "NapiCapturerReadDataCallback"
 #endif
 
 #include "napi_audio_capturer_read_data_callback.h"
 #include "audio_capturer_log.h"
+#include "js_native_api.h"
 
 namespace OHOS {
 namespace AudioStandard {
+napi_threadsafe_function acReadData_tsfn_ = nullptr;
 static const int32_t READ_CALLBACK_TIMEOUT_IN_MS = 1000; // 1s
 
 NapiCapturerReadDataCallback::NapiCapturerReadDataCallback(napi_env env, NapiAudioCapturer *napiCapturer)
@@ -108,6 +111,8 @@ void NapiCapturerReadDataCallback::OnReadData(size_t length)
     return OnJsCapturerReadDataCallback(cb);
 }
 
+
+
 void NapiCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr<CapturerReadDataJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
@@ -115,15 +120,20 @@ void NapiCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr<
         return;
     }
 
-    CapturerReadDataJsCallback *event = jsCb.get();
-    auto task = [event]() {
-        WorkCallbackCapturerReadData(event);
-    };
-    if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
-        AUDIO_ERR_LOG("OnJsCapturerReadDataCallback: Failed to SendEvent");
-    } else {
-        jsCb.release();
-    }
+    CapturerReadDataJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG(event != nullptr, "OnJsCapturerReadDataCallback: event is nullptr.");
+
+    napi_value cbName;
+    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
+    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event, CaptureReadDataTsfnFinalize, nullptr, SafeJsCallbackCapturerReadDataWork, &acReadData_tsfn_);
+    
+    std::thread safeCallThread([event]() {
+        AUDIO_INFO_LOG("OnJsCapturerReadDataCallback: safe thread start.");
+        napi_acquire_threadsafe_function(acReadData_tsfn_);
+        napi_call_threadsafe_function(acReadData_tsfn_, event, napi_tsfn_blocking);
+    });
+
+    safeCallThread.detach();
 
     if (napiCapturer_ == nullptr) {
         return;
@@ -137,34 +147,40 @@ void NapiCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr<
     readCallbackLock.unlock();
 }
 
-void NapiCapturerReadDataCallback::WorkCallbackCapturerReadData(CapturerReadDataJsCallback *event)
+void NapiCapturerReadDataCallback::CaptureReadDataTsfnFinalize(napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("CaptureReadDataTsfnFinalize: safe thread resource release.");
+}
+
+void NapiCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWork(napi_env env, napi_value js_cb, void* context, void* data)
 {
     // Js Thread
-    std::shared_ptr<CapturerReadDataJsCallback> context(
-        static_cast<CapturerReadDataJsCallback*>(event),
+    std::shared_ptr<CapturerReadDataJsCallback> safeContext(
+        static_cast<CapturerReadDataJsCallback*>(data),
         [](CapturerReadDataJsCallback* ptr) {
+            napi_release_threadsafe_function(acReadData_tsfn_, napi_tsfn_abort);
             delete ptr;
     });
-    WorkCallbackCapturerReadDataInner(event);
-
-    CHECK_AND_RETURN_LOG(event != nullptr, "capturer read data event is nullptr");
+    CapturerReadDataJsCallback *event = reinterpret_cast<CapturerReadDataJsCallback *>(data);
+    SafeJsCallbackCapturerReadDataWorkInner(event);
+    CHECK_AND_RETURN_LOG(event != nullptr, "read data event is nullptr");
     CHECK_AND_RETURN_LOG(event->capturerNapiObj != nullptr, "NapiAudioCapturer object is nullptr");
     event->capturerNapiObj->readCallbackCv_.notify_all();
 }
 
-void NapiCapturerReadDataCallback::WorkCallbackCapturerReadDataInner(CapturerReadDataJsCallback *event)
+void NapiCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWorkInner(CapturerReadDataJsCallback *event)
 {
     CHECK_AND_RETURN_LOG(event != nullptr, "capture read data event is nullptr");
     CHECK_AND_RETURN_LOG(event->readDataCallbackPtr != nullptr, "CapturerReadDataCallback is already released");
     CHECK_AND_RETURN_LOG(event->readDataCallbackPtr->isCallbackInited_, "the callback has been dereferenced");
     std::string request = event->callbackName;
     CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
-    napi_env env = event->callback->env_;
     napi_ref callback = event->callback->cb_;
-
+    napi_env env = event->callback->env_;
     napi_handle_scope scope = nullptr;
     napi_open_handle_scope(env, &scope);
     CHECK_AND_RETURN_LOG(scope != nullptr, "%{public}s scope is nullptr", request.c_str());
+    AUDIO_INFO_LOG("SafeJsCallbackCapturerReadDataWorkInner: capture read data callback working.");
     do {
         napi_value jsCallback = nullptr;
         napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);

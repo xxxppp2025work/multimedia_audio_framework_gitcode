@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <thread>
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioCapturerDeviceChangeCallback"
 #endif
@@ -20,11 +21,13 @@
 #include "audio_errors.h"
 #include "audio_capturer_log.h"
 #include "napi_param_utils.h"
+#include "js_native_api.h"
 
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+napi_threadsafe_function acDevChg_tsfn_ = nullptr;
 NapiAudioCapturerDeviceChangeCallback::NapiAudioCapturerDeviceChangeCallback(napi_env env)
     : env_(env)
 {
@@ -68,23 +71,19 @@ void NapiAudioCapturerDeviceChangeCallback::OnStateChange(const DeviceInfo &devi
     OnJsCallbackCapturerDeviceInfo(callback_, deviceInfo);
 }
 
-void NapiAudioCapturerDeviceChangeCallback::WorkCallbackCompleted(uv_work_t *work, int status)
+void NapiAudioCapturerDeviceChangeCallback::SafeJsCallbackCapturerDeviceInfoWork(napi_env env, napi_value js_cb, void* context, void* data)
 {
-    // Js Thread
-    std::shared_ptr<AudioCapturerDeviceChangeJsCallback> context(
-        static_cast<AudioCapturerDeviceChangeJsCallback*>(work->data),
-        [work](AudioCapturerDeviceChangeJsCallback* ptr) {
+    CHECK_AND_RETURN_LOG(data != nullptr, "data is nullptr.");
+    std::shared_ptr<AudioCapturerDeviceChangeJsCallback> safeContext(
+        static_cast<AudioCapturerDeviceChangeJsCallback*>(data),
+        [](AudioCapturerDeviceChangeJsCallback* ptr) {
+            napi_release_threadsafe_function(acDevChg_tsfn_, napi_tsfn_abort);
             delete ptr;
-            delete work;
     });
-
-    AudioCapturerDeviceChangeJsCallback *event = reinterpret_cast<AudioCapturerDeviceChangeJsCallback*>(work->data);
+    AudioCapturerDeviceChangeJsCallback *event = reinterpret_cast<AudioCapturerDeviceChangeJsCallback *>(data);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback_) != nullptr,
         "OnJsCallbackCapturerDeviceInfo: no memory");
-
-    napi_env env = event->env_;
     napi_ref callback = event->callback_;
-
     napi_handle_scope scope = nullptr;
     napi_open_handle_scope(env, &scope);
     CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
@@ -105,34 +104,35 @@ void NapiAudioCapturerDeviceChangeCallback::WorkCallbackCompleted(uv_work_t *wor
     napi_close_handle_scope(env, scope);
 }
 
+void NapiAudioCapturerDeviceChangeCallback::CaptureDeviceInfoTsfnFinalize(napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("RingModeTsfnFinalize: safe thread resource release.");
+}
+
 void NapiAudioCapturerDeviceChangeCallback::OnJsCallbackCapturerDeviceInfo(napi_ref method,
     const DeviceInfo &deviceInfo)
 {
-    uv_loop_s *loop = nullptr;
-    napi_get_uv_event_loop(env_, &loop);
-    CHECK_AND_RETURN_LOG(loop != nullptr, "Loop is nullptr");
+
     CHECK_AND_RETURN_LOG(method != nullptr, "method is nullptr");
-
-    uv_work_t *work = new(std::nothrow) uv_work_t;
-    CHECK_AND_RETURN_LOG(work != nullptr, "OnJsCallbackCapturerDeviceInfo: no memory");
-
-    work->data = new AudioCapturerDeviceChangeJsCallback {method, env_, deviceInfo};
-    if (work->data == nullptr) {
-        AUDIO_ERR_LOG("work data malloc failed: No memory");
-        delete work;
+    AudioCapturerDeviceChangeJsCallback *event = new AudioCapturerDeviceChangeJsCallback {method, env_, deviceInfo};
+    
+    if (event == nullptr) {
+        AUDIO_ERR_LOG("event data malloc failed: No memory");
         return;
     }
 
-    int ret = uv_queue_work(loop, work, [] (uv_work_t *work) {}, WorkCallbackCompleted);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("Failed to execute libuv work queue");
-        if (work != nullptr) {
-            if (work->data != nullptr) {
-                delete reinterpret_cast<AudioCapturerDeviceChangeJsCallback*>(work->data);
-            }
-            delete work;
-        }
-    }
+    napi_value cbName;
+    event->callbackName = "AudioCapturerDeviceChange";
+    napi_create_string_utf8(event->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
+    napi_create_threadsafe_function(event->env_, nullptr, nullptr, cbName, 0, 1, event, CaptureDeviceInfoTsfnFinalize, nullptr, SafeJsCallbackCapturerDeviceInfoWork, &acDevChg_tsfn_);
+    
+    std::thread safeCallThread([event]() {
+        AUDIO_INFO_LOG("OnJsCallbackCapturerDeviceInfo: safe thread start.");
+        napi_acquire_threadsafe_function(acDevChg_tsfn_);
+        napi_call_threadsafe_function(acDevChg_tsfn_, event, napi_tsfn_blocking);
+    });
+
+    safeCallThread.detach();
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

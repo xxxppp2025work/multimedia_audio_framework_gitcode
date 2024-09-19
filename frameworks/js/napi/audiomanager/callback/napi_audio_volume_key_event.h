@@ -42,6 +42,8 @@ private:
     };
 
     void OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolumeKeyEventJsCallback> &jsCb);
+    static void SafeJsCallbackVolumeEventWork(napi_env env, napi_value js_cb, void* context, void* data);
+    static void VolumeEventTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::shared_ptr<AutoRef> audioVolumeKeyEventJsCallback_ = nullptr;
     std::mutex mutex_;

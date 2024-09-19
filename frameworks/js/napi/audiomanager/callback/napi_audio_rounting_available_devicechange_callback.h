@@ -46,6 +46,8 @@ private:
     };
 
     void OnJsCallbackAvailbleDeviceChange(std::unique_ptr<AudioRountingJsCallback> &jsCb);
+    static void AvailbleDeviceChangeTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackAvailbleDeviceChangeWork(napi_env env, napi_value js_cb, void* context, void* data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
