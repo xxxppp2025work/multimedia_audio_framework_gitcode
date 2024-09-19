@@ -43,6 +43,7 @@ private:
     };
 
     void OnJsCallbackRingerMode(std::unique_ptr<AudioRingerModeJsCallback> &jsCb);
+    static void SafeJsCallbackInterruptWork(napi_env env, napi_value js_cb, void* context, void* data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
