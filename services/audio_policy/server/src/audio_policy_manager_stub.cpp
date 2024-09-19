@@ -529,7 +529,7 @@ void AudioPolicyManagerStub::SelectOutputDeviceInternal(MessageParcel &data, Mes
     }
     std::vector<sptr<AudioDeviceDescriptor>> targetOutputDevice;
     for (int i = 0; i < size; i++) {
-        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingToPtr(data);
         CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
         if (IsArmUsbDevice(*audioDeviceDescriptor)) {
             audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
@@ -561,7 +561,7 @@ void AudioPolicyManagerStub::SelectInputDeviceInternal(MessageParcel &data, Mess
     CHECK_AND_RETURN_LOG(size > 0 && size <= validSize, "SelectInputDevice get invalid device size.");
     std::vector<sptr<AudioDeviceDescriptor>> targetInputDevice;
     for (int i = 0; i < size; i++) {
-        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingToPtr(data);
         CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
         if (IsArmUsbDevice(*audioDeviceDescriptor)) {
             audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
@@ -979,7 +979,7 @@ void AudioPolicyManagerStub::SetCaptureSilentStateInternal(MessageParcel &data, 
 
 void AudioPolicyManagerStub::GetHardwareOutputSamplingRateInternal(MessageParcel &data, MessageParcel &reply)
 {
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingToPtr(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
 
     if (IsArmUsbDevice(*audioDeviceDescriptor)) {
@@ -1064,7 +1064,7 @@ void AudioPolicyManagerStub::UnsetAvailableDeviceChangeCallbackInternal(MessageP
 
 void AudioPolicyManagerStub::ConfigDistributedRoutingRoleInternal(MessageParcel &data, MessageParcel &reply)
 {
-    sptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    sptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::UnmarshallingToPtr(data);
     if (IsArmUsbDevice(*descriptor)) {
         descriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     }
@@ -1109,7 +1109,7 @@ void AudioPolicyManagerStub::SetSpatializationEnabledInternal(MessageParcel &dat
 
 void AudioPolicyManagerStub::SetSpatializationEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingToPtr(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
     if (IsArmUsbDevice(*audioDeviceDescriptor)) {
         audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
@@ -1141,7 +1141,7 @@ void AudioPolicyManagerStub::SetHeadTrackingEnabledInternal(MessageParcel &data,
 
 void AudioPolicyManagerStub::SetHeadTrackingEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingToPtr(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
 
     if (IsArmUsbDevice(*audioDeviceDescriptor)) {
