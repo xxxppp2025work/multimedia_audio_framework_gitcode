@@ -120,10 +120,29 @@ bool AudioSessionService::IsAudioSessionActivated(const int32_t callerPid)
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     if (sessionMap_.count(callerPid) == 0) {
         // The audio session of the callerPid is not existed or has been released.
-        AUDIO_WARNING_LOG("The audio seesion of pid %{public}d is not found!", callerPid);
+        AUDIO_INFO_LOG("The audio seesion of pid %{public}d is not found!", callerPid);
         return false;
     }
     return true;
+}
+
+void AudioSessionService::SetAudioSessionSystemFlag(const int32_t callerPid, const bool systemFlag)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    AUDIO_INFO_LOG("pid %{public}d, systemFlag %{public}d", callerPid, systemFlag);
+    if (sessionMap_.count(callerPid) == 0) {
+        return;
+    }
+    sessionMap_[callerPid]->SetAudioSessionSystemFlag(systemFlag);
+}
+
+bool AudioSessionService::NeedToDeactivateSessionForMovie(const int32_t callerPid)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    if (sessionMap_.count(callerPid) == 0) {
+        return false;
+    }
+    return sessionMap_[callerPid]->NeedToDeactivateSessionForMovie();
 }
 
 int32_t AudioSessionService::SetSessionTimeOutCallback(

@@ -41,6 +41,7 @@ int32_t AudioSession::Activate()
 {
     std::lock_guard<std::mutex> lock(sessionMutex_);
     state_ = AudioSessionState::SESSION_ACTIVE;
+    systemFlag_ = false; // reset systemFlag_ when session is activated.
     AUDIO_INFO_LOG("Audio session state change: pid %{public}d, state %{public}d",
         callerPid_, static_cast<int32_t>(state_));
     return SUCCESS;
@@ -130,6 +131,28 @@ bool AudioSession::IsAudioSessionEmpty()
 {
     std::lock_guard<std::mutex> lock(sessionMutex_);
     return interruptMap_.size() == 0;
+}
+
+void AudioSession::SetAudioSessionSystemFlag(const bool systemFlag)
+{
+    systemFlag_ = systemFlag;
+}
+
+bool AudioSession::NeedToDeactivateSessionForMovie()
+{
+    if (!systemFlag_) {
+        AUDIO_INFO_LOG("The audio session is activated by callerPid. No need to deactivate it.");
+        return false;
+    }
+
+    for (auto iter = interruptMap_.begin(); iter != interruptMap_.end(); ++iter) {
+        AudioStreamType streamType = (iter->second).first.audioFocusType.streamType;
+        if (streamType == STREAM_MOVIE) {
+            AUDIO_INFO_LOG("The audio session has another movie stream. No need to deactivate it.");
+            return false;
+        }
+    }
+    return true;
 }
 } // namespace AudioStandard
 } // namespace OHOS

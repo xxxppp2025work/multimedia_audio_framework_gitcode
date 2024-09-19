@@ -47,6 +47,8 @@ public:
     int32_t RemoveAudioInterrpt(const std::pair<AudioInterrupt, AudioFocuState> interruptPair);
     int32_t RemoveAudioInterrptByStreamId(const uint32_t &streamId);
     bool IsAudioSessionEmpty();
+    void SetAudioSessionSystemFlag(const bool systemFlag);
+    bool NeedToDeactivateSessionForMovie();
 
 private:
     std::mutex sessionMutex_;
@@ -54,6 +56,7 @@ private:
     int32_t callerPid_;
     AudioSessionStrategy strategy_;
     std::shared_ptr<AudioSessionTimer> sessionTimer_;
+    bool systemFlag_ = false; // Identify whether this session is activated by system. (for movie stream)
 
     AudioSessionState state_ = AudioSessionState::SESSION_INVALID;
     std::unordered_map<uint32_t, std::pair<AudioInterrupt, AudioFocuState>> interruptMap_;
