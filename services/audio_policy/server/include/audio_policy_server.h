@@ -585,6 +585,8 @@ private:
     void ArgInfoDump(std::string &dumpString, std::queue<std::u16string> &argQue);
     void InfoDumpHelp(std::string &dumpString);
 
+    static void DeactivateAudioSessionForMovie(std::weak_ptr<AudioInterruptService> interruptPtr, int32_t pid);
+
     int32_t SetRingerModeInner(AudioRingerMode ringMode);
 
     AudioPolicyService& audioPolicyService_;

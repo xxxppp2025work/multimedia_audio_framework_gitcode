@@ -45,6 +45,8 @@ public:
 
     // other public interfaces
     void Init();
+    void SetAudioSessionSystemFlag(const int32_t callerPid, const bool systemFlag);
+    bool NeedToDeactivateSessionForMovie(const int32_t callerPid);
     int32_t SetSessionTimeOutCallback(const std::shared_ptr<SessionTimeOutCallback> &timeOutCallback);
     std::shared_ptr<AudioSession> GetAudioSessionByPid(const int32_t callerPid);
 

@@ -68,6 +68,8 @@ public:
     int32_t ActivateAudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy);
     int32_t DeactivateAudioSession(const int32_t callerPid);
     bool IsAudioSessionActivated(const int32_t callerPid);
+    void SetAudioSessionSystemFlag(const int32_t callerPid, const bool systemFlag);
+    bool NeedToDeactivateSessionForMovie(const int32_t callerPid);
 
     // deprecated interrupt interfaces
     int32_t SetAudioManagerInterruptCallback(const sptr<IRemoteObject> &object);
