@@ -79,6 +79,18 @@ public:
      * @param streamSetStateEventInternal Contains the set even information.
      */
     virtual void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
+    /**
+     * Mute Stream was controlled by system application
+     *
+     * @param streamSetStateEventInternal Contains the set even information.
+     */
+    virtual void MuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
+     /**
+     * Unmute Stream was controlled by system application
+     *
+     * @param streamSetStateEventInternal Contains the set even information.
+     */
+    virtual void UnmuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
     virtual void SetLowPowerVolumeImpl(float volume) {};
     virtual void GetLowPowerVolumeImpl(float &volume) {};
     virtual void GetSingleStreamVolumeImpl(float &volume) {};
