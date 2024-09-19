@@ -22,6 +22,13 @@
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
 #include "napi_audio_manager_callbacks.h"
+#ifdef SUPPORT_CONTAINER_SCOPE
+#include "core/common/container_scope.h"
+#endif
+
+#ifdef SUPPORT_CONTAINER_SCOPE
+using OHOS::Ace::ContainerScope;
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -180,49 +187,60 @@ void NapiAudioSpatializationEnabledChangeCallback::OnJsCallbackSpatializationEna
         return;
     }
     AudioSpatializationEnabledJsCallback *event = jsCb.get();
-    auto task = [event]() {
+    auto task = [this, event
+#ifdef SUPPORT_CONTAINER_SCOPE
+, scopeId = ContainerScope::CurrentId()
+#endif
+        ]() {
+#ifdef SUPPORT_CONTAINER_SCOPE
+            ContainerScope cs(scopeId);
+#endif
         std::shared_ptr<AudioSpatializationEnabledJsCallback> context(
             static_cast<AudioSpatializationEnabledJsCallback*>(event),
             [](AudioSpatializationEnabledJsCallback* ptr) {
                 delete ptr;
         });
-        CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
-        CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
-        napi_env env = event->callback->env_;
-        napi_ref callback = event->callback->cb_;
-        napi_handle_scope scope = nullptr;
-        napi_open_handle_scope(env, &scope);
-        CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-        do {
-            napi_value jsCallback = nullptr;
-            napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "callback get reference value fail");
-            napi_value args[ARGS_ONE] = { nullptr };
-            const size_t argCount = ARGS_ONE;
-            napi_value result = nullptr;
-
-            if (onSpatializationEnabledChangeFlag_) {
-                NapiParamUtils::SetValueBoolean(env, event->enabled, args[PARAM0]);
-                CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr, "fail to convert to jsobj");
-            } else {
-                AudioSpatialEnabledStateForDevice audioSpatialEnabledStateForDevice;
-                audioSpatialEnabledStateForDevice.deviceDescriptor = event->deviceDescriptor;
-                audioSpatialEnabledStateForDevice.enabled = event->enabled;
-                NapiParamUtils::SetAudioSpatialEnabledStateForDevice(env,
-                    audioSpatialEnabledStateForDevice, args[PARAM0]);
-                CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr, "fail to convert to jsobj");
-            }
-
-            nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "Fail to call spatialization enabled callback");
-        } while (0);
-        napi_close_handle_scope(env, scope);
+        WorkCallbackSpatializationEnabledInner(event);
     };
     if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
         AUDIO_ERR_LOG("OnJsCapturerPeriodPositionCallback: Failed to SendEvent");
     } else {
         jsCb.release();
     }
+}
+
+void NapiAudioSpatializationEnabledChangeCallback::WorkCallbackSpatializationEnabledInner(
+    AudioSpatializationEnabledJsCallback *event)
+{
+    CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
+    CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
+    napi_env env = event->callback->env_;
+    napi_ref callback = event->callback->cb_;
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
+    do {
+        napi_value jsCallback = nullptr;
+        napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "callback get reference value fail");
+        napi_value args[ARGS_ONE] = { nullptr };
+        const size_t argCount = ARGS_ONE;
+        napi_value result = nullptr;
+        if (onSpatializationEnabledChangeFlag_) {
+            NapiParamUtils::SetValueBoolean(env, event->enabled, args[PARAM0]);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr, "fail to convert to jsobj");
+        } else {
+            AudioSpatialEnabledStateForDevice audioSpatialEnabledStateForDevice;
+            audioSpatialEnabledStateForDevice.deviceDescriptor = event->deviceDescriptor;
+            audioSpatialEnabledStateForDevice.enabled = event->enabled;
+            NapiParamUtils::SetAudioSpatialEnabledStateForDevice(env,
+                audioSpatialEnabledStateForDevice, args[PARAM0]);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr, "fail to convert to jsobj");
+        }
+        nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "Fail to call spatialization enabled callback");
+    } while (0);
+    napi_close_handle_scope(env, scope);
 }
 
 NapiAudioHeadTrackingEnabledChangeCallback::NapiAudioHeadTrackingEnabledChangeCallback(napi_env env)
@@ -375,51 +393,61 @@ void NapiAudioHeadTrackingEnabledChangeCallback::OnJsCallbackHeadTrackingEnabled
         AUDIO_ERR_LOG("OnJsCallbackVolumeEvent: jsCb.get() is null");
         return;
     }
-
     AudioHeadTrackingEnabledJsCallback *event = jsCb.get();
-    auto task = [event]() {
+    auto task = [this, event
+#ifdef SUPPORT_CONTAINER_SCOPE
+, scopeId = ContainerScope::CurrentId()
+#endif
+        ]() {
+#ifdef SUPPORT_CONTAINER_SCOPE
+            ContainerScope cs(scopeId);
+#endif
         std::shared_ptr<AudioHeadTrackingEnabledJsCallback> context(
             static_cast<AudioHeadTrackingEnabledJsCallback*>(event),
             [](AudioHeadTrackingEnabledJsCallback* ptr) {
                 delete ptr;
         });
-        CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
-        CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
-        napi_env env = event->callback->env_;
-        napi_ref callback = event->callback->cb_;
-        napi_handle_scope scope = nullptr;
-        napi_open_handle_scope(env, &scope);
-        CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-        do {
-            napi_value jsCallback = nullptr;
-            napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "callback get reference value fail");
-            napi_value args[ARGS_ONE] = { nullptr };
-            const size_t argCount = ARGS_ONE;
-            napi_value result = nullptr;
-
-            if (onHeadTrackingEnabledChangeFlag_) {
-                NapiParamUtils::SetValueBoolean(env, event->enabled, args[PARAM0]);
-                CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr, "fail to convert to jsobj");
-            } else {
-                AudioSpatialEnabledStateForDevice audioSpatialEnabledStateForDevice;
-                audioSpatialEnabledStateForDevice.deviceDescriptor = event->deviceDescriptor;
-                audioSpatialEnabledStateForDevice.enabled = event->enabled;
-                NapiParamUtils::SetAudioSpatialEnabledStateForDevice(env,
-                    audioSpatialEnabledStateForDevice, args[PARAM0]);
-                CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr, "fail to convert to jsobj");
-            }
-
-            nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "Fail to call head tracking enabled callback");
-        } while (0);
-        napi_close_handle_scope(env, scope);
+        WorkCallbackHeadTrackingEnabledInner(event);
     };
     if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
         AUDIO_ERR_LOG("OnJsCallbackHeadTrackingEnabled: Failed to SendEvent");
     } else {
         jsCb.release();
     }
+}
+
+void NapiAudioHeadTrackingEnabledChangeCallback::WorkCallbackHeadTrackingEnabledInner(
+    AudioHeadTrackingEnabledJsCallback *event)
+{
+    CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
+    CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
+    napi_env env = event->callback->env_;
+    napi_ref callback = event->callback->cb_;
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
+    do {
+        napi_value jsCallback = nullptr;
+        napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "callback get reference value fail");
+        napi_value args[ARGS_ONE] = { nullptr };
+        const size_t argCount = ARGS_ONE;
+        napi_value result = nullptr;
+        if (onHeadTrackingEnabledChangeFlag_) {
+            NapiParamUtils::SetValueBoolean(env, event->enabled, args[PARAM0]);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr, "fail to convert to jsobj");
+        } else {
+            AudioSpatialEnabledStateForDevice audioSpatialEnabledStateForDevice;
+            audioSpatialEnabledStateForDevice.deviceDescriptor = event->deviceDescriptor;
+            audioSpatialEnabledStateForDevice.enabled = event->enabled;
+            NapiParamUtils::SetAudioSpatialEnabledStateForDevice(env,
+                audioSpatialEnabledStateForDevice, args[PARAM0]);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr, "fail to convert to jsobj");
+        }
+        nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "Fail to call head tracking enabled callback");
+    } while (0);
+    napi_close_handle_scope(env, scope);
 }
 } // namespace AudioStandard
 } // namespace OHOS

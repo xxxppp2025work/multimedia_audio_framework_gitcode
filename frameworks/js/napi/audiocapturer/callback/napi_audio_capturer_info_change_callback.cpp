@@ -73,7 +73,14 @@ void NapiAudioCapturerInfoChangeCallback::OnJsCallbackCapturerChangeInfo(napi_re
     AudioCapturerChangeInfoJsCallback *event =
         new AudioCapturerChangeInfoJsCallback {method, env_, capturerChangeInfo};
 
-    auto task = [event]() {
+    auto task = [event
+#ifdef SUPPORT_CONTAINER_SCOPE
+, scopeId = ContainerScope::CurrentId()
+#endif
+        ]() {
+#ifdef SUPPORT_CONTAINER_SCOPE
+            ContainerScope cs(scopeId);
+#endif
         std::shared_ptr<AudioCapturerChangeInfoJsCallback> context(
             static_cast<AudioCapturerChangeInfoJsCallback*>(event),
             [](AudioCapturerChangeInfoJsCallback* ptr) {

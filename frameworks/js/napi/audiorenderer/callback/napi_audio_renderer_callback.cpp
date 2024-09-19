@@ -19,6 +19,13 @@
 #include "napi_audio_renderer_callback.h"
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
+#ifdef SUPPORT_CONTAINER_SCOPE
+#include "core/common/container_scope.h"
+#endif
+
+#ifdef SUPPORT_CONTAINER_SCOPE
+using OHOS::Ace::ContainerScope;
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -102,7 +109,14 @@ void NapiAudioRendererCallback::OnJsCallbackInterrupt(std::unique_ptr<AudioRende
     }
 
     AudioRendererJsCallback *event = jsCb.get();
-    auto task = [event]() {
+    auto task = [event
+#ifdef SUPPORT_CONTAINER_SCOPE
+, scopeId = ContainerScope::CurrentId()
+#endif
+        ]() {
+#ifdef SUPPORT_CONTAINER_SCOPE
+            ContainerScope cs(scopeId);
+#endif
         std::shared_ptr<AudioRendererJsCallback> context(
             static_cast<AudioRendererJsCallback*>(event),
             [](AudioRendererJsCallback* ptr) {
@@ -151,7 +165,14 @@ void NapiAudioRendererCallback::OnJsCallbackStateChange(std::unique_ptr<AudioRen
     }
 
     AudioRendererJsCallback *event = jsCb.get();
-    auto task = [event]() {
+    auto task = [event
+#ifdef SUPPORT_CONTAINER_SCOPE
+, scopeId = ContainerScope::CurrentId()
+#endif
+        ]() {
+#ifdef SUPPORT_CONTAINER_SCOPE
+            ContainerScope cs(scopeId);
+#endif
         std::shared_ptr<AudioRendererJsCallback> context(
             static_cast<AudioRendererJsCallback*>(event),
             [](AudioRendererJsCallback* ptr) {

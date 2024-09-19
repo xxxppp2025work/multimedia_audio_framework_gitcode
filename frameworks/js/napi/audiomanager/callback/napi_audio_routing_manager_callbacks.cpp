@@ -23,6 +23,13 @@
 #include "audio_errors.h"
 #include "audio_manager_log.h"
 #include "napi_audio_manager_callbacks.h"
+#ifdef SUPPORT_CONTAINER_SCOPE
+#include "core/common/container_scope.h"
+#endif
+
+#ifdef SUPPORT_CONTAINER_SCOPE
+using OHOS::Ace::ContainerScope;
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -115,7 +122,14 @@ void NapiAudioPreferredOutputDeviceChangeCallback::OnJsCallbackActiveOutputDevic
     }
 
     AudioActiveOutputDeviceChangeJsCallback *event = jsCb.get();
-    auto task = [event]() {
+    auto task = [event
+#ifdef SUPPORT_CONTAINER_SCOPE
+, scopeId = ContainerScope::CurrentId()
+#endif
+        ]() {
+#ifdef SUPPORT_CONTAINER_SCOPE
+            ContainerScope cs(scopeId);
+#endif
         std::shared_ptr<AudioActiveOutputDeviceChangeJsCallback> context(
             static_cast<AudioActiveOutputDeviceChangeJsCallback*>(event),
             [](AudioActiveOutputDeviceChangeJsCallback* ptr) {
@@ -241,7 +255,14 @@ void NapiAudioPreferredInputDeviceChangeCallback::OnJsCallbackActiveInputDeviceC
     }
 
     AudioActiveInputDeviceChangeJsCallback *event = jsCb.get();
-    auto task = [event]() {
+    auto task = [event
+#ifdef SUPPORT_CONTAINER_SCOPE
+, scopeId = ContainerScope::CurrentId()
+#endif
+        ]() {
+#ifdef SUPPORT_CONTAINER_SCOPE
+            ContainerScope cs(scopeId);
+#endif
         std::shared_ptr<AudioActiveInputDeviceChangeJsCallback> context(
             static_cast<AudioActiveInputDeviceChangeJsCallback*>(event),
             [](AudioActiveInputDeviceChangeJsCallback* ptr) {
