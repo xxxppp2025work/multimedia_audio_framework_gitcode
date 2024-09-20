@@ -18,6 +18,7 @@
 
 #include "audio_policy_service.h"
 #include <ability_manager_client.h>
+#include <dlfcn.h>
 #include "iservice_registry.h"
 
 #include "audio_utils.h"
@@ -35,6 +36,7 @@
 #include "audio_dialog_ability_connection.h"
 #include "media_monitor_manager.h"
 #include "client_type_manager.h"
+#include "audio_safe_volume_notification.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -68,7 +70,7 @@ static const int64_t NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS = 300000; // 300ms
 static const unsigned int BUFFER_CALC_20MS = 20;
 static const unsigned int BUFFER_CALC_1000MS = 1000;
 static const int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_MS = 5000; // 5s
-static const int64_t WAIT_OFFLOAD_SET_VOLUME_TIME_US = 40000; // 40ms
+static const int64_t WAIT_SET_MUTE_LATENCY_TIME_US = 80000; // 80ms
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
 static const int64_t WAIT_MOVE_DEVICE_MUTE_TIME_MAX_MS = 5000; // 5s
 
@@ -571,6 +573,69 @@ int32_t AudioPolicyService::GetMinVolumeLevel(AudioVolumeType volumeType) const
     return audioPolicyManager_.GetMinVolumeLevel(volumeType);
 }
 
+void SafeVolumeEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData &eventData)
+{
+    if (eventReceiver_ == nullptr) {
+        AUDIO_ERR_LOG("eventReceiver_ is nullptr.");
+        return;
+    }
+    AUDIO_INFO_LOG("receive DATA_SHARE_READY action success.");
+    eventReceiver_(eventData);
+}
+
+void AudioPolicyService::SubscribeSafeVolumeEvent()
+{
+    AUDIO_INFO_LOG("AudioPolicyService::SubscribeSafeVolumeEvent enter.");
+    EventFwk::MatchingSkills matchingSkills;
+    matchingSkills.AddEvent(AUDIO_RESTORE_VOLUME_EVENT);
+    matchingSkills.AddEvent(AUDIO_INCREASE_VOLUME_EVENT);
+    EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
+    auto commonSubscribePtr = std::make_shared<SafeVolumeEventSubscriber>(subscribeInfo,
+        std::bind(&AudioPolicyService::OnReceiveEvent, this, std::placeholders::_1));
+    if (commonSubscribePtr == nullptr) {
+        AUDIO_ERR_LOG("commonSubscribePtr is nullptr");
+        return;
+    }
+    EventFwk::CommonEventManager::SubscribeCommonEvent(commonSubscribePtr);
+}
+
+void AudioPolicyService::OnReceiveEvent(const EventFwk::CommonEventData &eventData)
+{
+    AUDIO_INFO_LOG("AudioPolicyService::OnReceiveEvent enter.");
+    const AAFwk::Want& want = eventData.GetWant();
+    std::string action = want.GetAction();
+    if (action == AUDIO_RESTORE_VOLUME_EVENT) {
+        AUDIO_INFO_LOG("AUDIO_RESTORE_VOLUME_EVENT has been received");
+        std::lock_guard<std::mutex> lock(notifyMutex_);
+        userSelect_ = true;
+        isSelectRestoreVol_ = true;
+        restoreNIsShowing_ = false;
+        CancelSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+        SetDeviceSafeVolumeStatus();
+        SetSystemVolumeLevel(STREAM_MUSIC, streamMusicVol_);
+    } else if (action == AUDIO_INCREASE_VOLUME_EVENT) {
+        AUDIO_INFO_LOG("AUDIO_INCREASE_VOLUME_EVENT has been received");
+        std::lock_guard<std::mutex> lock(notifyMutex_);
+        userSelect_ = true;
+        isSelectIncreaseVol_ = true;
+        increaseNIsShowing_ = false;
+        CancelSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
+        SetDeviceSafeVolumeStatus();
+        SetSystemVolumeLevel(STREAM_MUSIC, audioPolicyManager_.GetSafeVolumeLevel() + 1);
+    }
+}
+
+static void ResetSelectValue(bool &isSelectN1, bool &isSelectN2)
+{
+    AUDIO_INFO_LOG("ResetSelectValue enter");
+    if (isSelectN1) {
+        isSelectN1 = false;
+    }
+    if (isSelectN2) {
+        isSelectN2 = false;
+    }
+}
+
 int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     int32_t result;
@@ -590,7 +655,7 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
 #endif
     }
     int32_t sVolumeLevel = volumeLevel;
-    if (sVolumeLevel > audioPolicyManager_.GetSafeVolumeLevel() &&
+    if (sVolumeLevel > audioPolicyManager_.GetSafeVolumeLevel() && (!isSelectRestoreVol_ && !isSelectIncreaseVol_) &&
         VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC) {
         switch (currentActiveDevice_.deviceType_) {
             case DEVICE_TYPE_BLUETOOTH_A2DP:
@@ -608,6 +673,7 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
                 break;
         }
     }
+    ResetSelectValue(isSelectRestoreVol_, isSelectIncreaseVol_);
     CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERROR, "safevolume did not deal");
     result = audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel);
     if (result == SUCCESS && (streamType == STREAM_VOICE_CALL || streamType == STREAM_VOICE_COMMUNICATION)) {
@@ -1209,7 +1275,7 @@ int32_t AudioPolicyService::ConnectVirtualDevice(sptr<AudioDeviceDescriptor> &se
     int32_t ret = Bluetooth::AudioA2dpManager::Connect(selectedDesc->macAddress_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "A2dp connect failed");
     ret = Bluetooth::AudioHfpManager::Connect(selectedDesc->macAddress_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "A2dp connect failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Hfp connect failed");
     AUDIO_INFO_LOG("Connect virtual device[%{public}s]", GetEncryptAddr(selectedDesc->macAddress_).c_str());
     return SUCCESS;
 }
@@ -2487,12 +2553,12 @@ void AudioPolicyService::MuteSinkPort(const std::string &portName, int32_t durat
     if (sinkPortStrToClassStrMap_.count(portName) > 0) {
         // Mute by render sink. (primary、a2dp、usb、dp、offload)
         g_adProxy->SetSinkMuteForSwitchDevice(sinkPortStrToClassStrMap_.at(portName), duration, true);
-        if (portName == OFFLOAD_PRIMARY_SPEAKER) { usleep(WAIT_OFFLOAD_SET_VOLUME_TIME_US); } // sleep fix offload pop.
     } else {
         // Mute by pa.
         audioPolicyManager_.SetSinkMute(portName, true, isSync);
     }
     IPCSkeleton::SetCallingIdentity(identity);
+    usleep(WAIT_SET_MUTE_LATENCY_TIME_US); // sleep fix data cache pop.
 
     // Muted and then unmute.
     thread switchThread(&AudioPolicyService::UnmutePortAfterMuteDuration, this, duration, portName, DEVICE_TYPE_NONE);
@@ -2518,6 +2584,7 @@ void AudioPolicyService::MuteSinkPort(const std::string &oldSinkname, const std:
         MuteSinkPort(oldSinkname, muteTime, true);
     } else if (reason.IsOldDeviceUnavaliable() && audioScene_ == AUDIO_SCENE_DEFAULT) {
         MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
+        usleep(OLD_DEVICE_UNAVALIABLE_MUTE_MS); // sleep fix data cache pop.
     } else if (reason == AudioStreamDeviceChangeReason::UNKNOWN &&
         oldSinkname == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {
         // remote cast -> earpiece 300ms fix sound leak
@@ -4642,6 +4709,7 @@ void AudioPolicyService::HandleOfflineDistributedDevice()
             const std::string networkId = deviceDesc->networkId_;
             UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
             std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(deviceDesc->deviceType_));
+            MuteDefaultSinkPort();
             ClosePortAndEraseIOHandle(moduleName);
             RemoveDeviceInRouterMap(moduleName);
             RemoveDeviceInFastRouterMap(networkId);
@@ -4691,6 +4759,7 @@ int32_t AudioPolicyService::HandleDistributedDeviceUpdate(DStatusInfo &statusInf
     } else {
         UpdateConnectedDevicesWhenDisconnecting(deviceDesc, descForCb);
         std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(devType));
+        MuteDefaultSinkPort();
         ClosePortAndEraseIOHandle(moduleName);
         RemoveDeviceInRouterMap(moduleName);
         RemoveDeviceInFastRouterMap(networkId);
@@ -5864,6 +5933,8 @@ void AudioPolicyService::CheckBlueToothActiveMusicTime(int32_t safeVolume)
         safeStatusBt_ = SAFE_ACTIVE;
         RestoreSafeVolume(STREAM_MUSIC, safeVolume);
         activeSafeTimeBt_ = 0;
+        PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+        restoreNIsShowing_ = true;
     } else if (currentTime - startSafeTimeBt_ >= ONE_MINUTE) {
         AUDIO_INFO_LOG("safe volume 1 min timeout");
         activeSafeTimeBt_ = audioPolicyManager_.GetCurentDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP);
@@ -5888,6 +5959,8 @@ void AudioPolicyService::CheckWiredActiveMusicTime(int32_t safeVolume)
         safeStatus_ = SAFE_ACTIVE;
         RestoreSafeVolume(STREAM_MUSIC, safeVolume);
         activeSafeTime_ = 0;
+        PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+        restoreNIsShowing_ = true;
     } else if (currentTime - startSafeTime_ >= ONE_MINUTE) {
         AUDIO_INFO_LOG("safe volume 1 min timeout");
         activeSafeTime_ = audioPolicyManager_.GetCurentDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET);
@@ -5935,6 +6008,7 @@ int32_t AudioPolicyService::CheckActiveMusicTime()
     bool isUpSafeVolume = false;
     while (!safeVolumeExit_) {
         isUpSafeVolume = GetSystemVolumeLevel(STREAM_MUSIC) > safeVolume ? true : false;
+        streamMusicVol_ = isUpSafeVolume ? GetSystemVolumeLevel(STREAM_MUSIC) : streamMusicVol_;
         AUDIO_INFO_LOG("deviceType_:%{public}d, isUpSafeVolume:%{public}d",
             currentActiveDevice_.deviceType_, isUpSafeVolume);
         if ((safeStatusBt_ == SAFE_INACTIVE || isUpSafeVolume) &&
@@ -6000,11 +6074,16 @@ int32_t AudioPolicyService::DealWithSafeVolume(const int32_t volumeLevel, bool i
     if ((isA2dpDevice && safeStatusBt_ == SAFE_ACTIVE) ||
         (!isA2dpDevice && safeStatus_ == SAFE_ACTIVE)) {
         sVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
-        if (!isSafeVolumeDialogShowing_.load()) {
-            CreateSafeVolumeDialogThread();
-        } else {
-            AUDIO_INFO_LOG("Safe volume dialog is showing");
+        if (restoreNIsShowing_) {
+            CancelSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+            restoreNIsShowing_ = false;
         }
+        if (increaseNIsShowing_) {
+            CancelSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
+            increaseNIsShowing_ = false;
+        }
+        PublishSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
+        increaseNIsShowing_ = true;
         return sVolumeLevel;
     }
     return sVolumeLevel;
@@ -6434,6 +6513,44 @@ DeviceType AudioPolicyService::GetDeviceTypeFromPin(AudioPin hdiPin)
             break;
     }
     return DeviceType::DEVICE_TYPE_DEFAULT;
+}
+
+void AudioPolicyService::PublishSafeVolumeNotification(int32_t notificationId)
+{
+    void* libHandle = dlopen("libaudio_safe_volume_notification_impl.z.so", RTLD_LAZY);
+    if (libHandle == nullptr) {
+        AUDIO_ERR_LOG("dlopen failed %{public}s", __func__);
+        return;
+    }
+    CreateSafeVolumeNotification* createSafeVolumeNotificationImpl =
+        reinterpret_cast<CreateSafeVolumeNotification*>(dlsym(libHandle, "CreateSafeVolumeNotificationImpl"));
+    if (createSafeVolumeNotificationImpl == nullptr) {
+        AUDIO_ERR_LOG("createSafeVolumeNotificationImpl failed %{public}s", __func__);
+        return;
+    }
+    AudioSafeVolumeNotification* audioSafeVolumeNotificationImpl = createSafeVolumeNotificationImpl();
+    audioSafeVolumeNotificationImpl->PublishSafeVolumeNotification(notificationId);
+    delete audioSafeVolumeNotificationImpl;
+    dlclose(libHandle);
+}
+
+void AudioPolicyService::CancelSafeVolumeNotification(int32_t notificationId)
+{
+    void* libHandle = dlopen("libaudio_safe_volume_notification_impl.z.so", RTLD_LAZY);
+    if (libHandle == nullptr) {
+        AUDIO_ERR_LOG("dlopen failed %{public}s", __func__);
+        return;
+    }
+    CreateSafeVolumeNotification* createSafeVolumeNotificationImpl =
+        reinterpret_cast<CreateSafeVolumeNotification*>(dlsym(libHandle, "CreateSafeVolumeNotificationImpl"));
+    if (createSafeVolumeNotificationImpl == nullptr) {
+        AUDIO_ERR_LOG("createSafeVolumeNotificationImpl failed %{public}s", __func__);
+        return;
+    }
+    AudioSafeVolumeNotification* audioSafeVolumeNotificationImpl = createSafeVolumeNotificationImpl();
+    audioSafeVolumeNotificationImpl->CancelSafeVolumeNotification(notificationId);
+    delete audioSafeVolumeNotificationImpl;
+    dlclose(libHandle);
 }
 
 void AudioPolicyService::SetDefaultDeviceLoadFlag(bool isLoad)
