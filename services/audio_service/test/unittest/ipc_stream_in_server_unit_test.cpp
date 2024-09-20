@@ -25,6 +25,9 @@
 #include <cinttypes>
 #include "audio_service_log.h"
 #include "audio_errors.h"
+#include "ipc_stream.h"
+#include "message_parcel.h"
+#include "parcel.h"
 
 using namespace testing::ext;
 
@@ -170,6 +173,180 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_007, TestSize.Level1)
 
     ret = ipcStreamInServerRet.Stop();
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_008
+ * @tc.desc  : Test IpcStreamInServer interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_008, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
+    IpcStreamInServer ipcStreamInServerRet1(configRet, modeRet);
+    uint64_t framePosRet = 0;
+    uint64_t timestampRet = 0;
+    auto ret1 = ipcStreamInServerRet1.GetAudioPosition(framePosRet, timestampRet);
+    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
+
+    modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet2(configRet, modeRet);
+    ipcStreamInServerRet2.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet2.config_, ipcStreamInServerRet2.streamListenerHolder_);
+    auto ret2 = ipcStreamInServerRet1.GetAudioPosition(framePosRet, timestampRet);
+    EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_009
+ * @tc.desc  : Test IpcStreamInServer interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_009, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    uint64_t latency;
+
+    auto ret = ipcStreamInServerRet.GetLatency(latency);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
+    ret = ipcStreamInServerRet.GetLatency(latency);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    ipcStreamInServerRet.ConfigCapturer();
+    EXPECT_NE(ipcStreamInServerRet.capturerInServer_, nullptr);
+    ret = ipcStreamInServerRet.GetLatency(latency);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_010
+ * @tc.desc  : Test IpcStreamInServer interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_010, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    float volumeRet = 0.5;
+
+    auto ret1 = ipcStreamInServerRet.SetLowPowerVolume(volumeRet);
+    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
+    ipcStreamInServerRet.ConfigRenderer();
+    EXPECT_NE(ipcStreamInServerRet.rendererInServer_, nullptr);
+    auto ret2 = ipcStreamInServerRet.SetLowPowerVolume(volumeRet);
+    EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_011
+ * @tc.desc  : Test IpcStreamInServer interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_011, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    float volumeRet = 0.5;
+
+    auto ret = ipcStreamInServerRet.GetLowPowerVolume(volumeRet);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_  = AUDIO_MODE_PLAYBACK;
+    ret = ipcStreamInServerRet.GetLowPowerVolume(volumeRet);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
+    ipcStreamInServerRet.ConfigRenderer();
+    EXPECT_NE(ipcStreamInServerRet.rendererInServer_, nullptr);
+    ret = ipcStreamInServerRet.GetLowPowerVolume(volumeRet);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_012
+ * @tc.desc  : Test IpcStreamInServer interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_012, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+
+    auto ret1 = ipcStreamInServerRet.SetAudioEffectMode(EFFECT_NONE);
+    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
+    ipcStreamInServerRet.ConfigRenderer();
+    EXPECT_NE(ipcStreamInServerRet.rendererInServer_, nullptr);
+    auto ret2 = ipcStreamInServerRet.SetAudioEffectMode(EFFECT_NONE);
+    EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_013
+ * @tc.desc  : Test IpcStreamInServer interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_013, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    int32_t effectModeRet = EFFECT_NONE;
+
+    auto ret1 = ipcStreamInServerRet.GetAudioEffectMode(effectModeRet);
+    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
+    auto ret2 = ipcStreamInServerRet.GetAudioEffectMode(effectModeRet);
+    EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
+    ipcStreamInServerRet.ConfigRenderer();
+    EXPECT_NE(ipcStreamInServerRet.rendererInServer_, nullptr);
+    auto ret3 = ipcStreamInServerRet.GetAudioEffectMode(effectModeRet);
+    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_014
+ * @tc.desc  : Test IpcStreamInServer interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_014, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    int32_t privacyTypeRet = EFFECT_NONE;
+
+    auto ret1 = ipcStreamInServerRet.SetPrivacyType(privacyTypeRet);
+    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
+    auto ret2 = ipcStreamInServerRet.SetPrivacyType(privacyTypeRet);
+    EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
+    ipcStreamInServerRet.ConfigRenderer();
+    EXPECT_NE(ipcStreamInServerRet.rendererInServer_, nullptr);
+    auto ret3 = ipcStreamInServerRet.SetPrivacyType(privacyTypeRet);
+    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
 }
 }
 }
