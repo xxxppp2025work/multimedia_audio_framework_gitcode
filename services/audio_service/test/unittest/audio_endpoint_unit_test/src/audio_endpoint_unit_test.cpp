@@ -61,7 +61,7 @@ void AudioEndpointUnitTest::TearDown(void)
 HWTEST_F(AudioEndpointUnitTest, EnableCreateEndpoint_001, TestSize.Level1)
 {
     AudioProcessConfig config = {};
-    DeviceInfo deviceInfo = {};
+    AudioDeviceDescriptor deviceInfo = AudioDeviceDescriptor(true);
     deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
     deviceInfo.audioStreamInfo.channels.insert(STEREO);
     deviceInfo.networkId = LOCAL_NETWORK_ID;
@@ -79,7 +79,7 @@ HWTEST_F(AudioEndpointUnitTest, EnableCreateEndpoint_001, TestSize.Level1)
 HWTEST_F(AudioEndpointUnitTest, AudioEndpoCreateEndpoint_002, TestSize.Level1)
 {
     AudioProcessConfig config = {};
-    DeviceInfo deviceInfo = {};
+    AudioDeviceDescriptor deviceInfo = AudioDeviceDescriptor(true);
     deviceInfo.deviceRole = DeviceRole::INPUT_DEVICE;
     deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
     deviceInfo.audioStreamInfo.channels.insert(STEREO);
@@ -98,7 +98,7 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpoCreateEndpoint_002, TestSize.Level1)
 HWTEST_F(AudioEndpointUnitTest, AudioEnableFastInnerCap_001, TestSize.Level1)
 {
     AudioProcessConfig config = {};
-    DeviceInfo deviceInfo = {};
+    AudioDeviceDescriptor deviceInfo = AudioDeviceDescriptor(true);
     deviceInfo.deviceRole = DeviceRole::OUTPUT_DEVICE;
     deviceInfo.audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
     deviceInfo.audioStreamInfo.channels.insert(STEREO);

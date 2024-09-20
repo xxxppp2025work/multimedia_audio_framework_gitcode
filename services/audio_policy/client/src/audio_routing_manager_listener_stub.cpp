@@ -43,7 +43,7 @@ int AudioRoutingManagerListenerStub::OnRemoteRequest(
         -1, "AudioRingerModeUpdateListenerStub: ReadInterfaceToken failed");
     switch (code) {
         case ON_DISTRIBUTED_ROUTING_ROLE_CHANGE: {
-            sptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::Unmarshalling(data);
+            sptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptorFactory::Unmarshalling(data);
             CastType type = static_cast<CastType>(data.ReadInt32());
             OnDistributedRoutingRoleChange(descriptor, type);
             return AUDIO_OK;
@@ -105,7 +105,7 @@ void AudioRoutingManagerListenerStub::OnAudioOutputDeviceRefinedInternal(Message
     int32_t size = data.ReadInt32();
     CHECK_AND_RETURN_LOG(size < PREFERRED_DEVICE_VALID_SIZE, "get invalid size : %{public}d", size);
     for (int32_t i = 0; i < size; i++) {
-        descs.push_back(make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(data)));
+        descs.push_back(make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptorFactory::Unmarshalling(data)));
     }
     RouterType routerType = static_cast<RouterType>(data.ReadInt32());
     StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
@@ -130,7 +130,7 @@ void AudioRoutingManagerListenerStub::OnAudioInputDeviceRefinedInternal(MessageP
     int32_t size = data.ReadInt32();
     CHECK_AND_RETURN_LOG(size < PREFERRED_DEVICE_VALID_SIZE, "get invalid size : %{public}d", size);
     for (int32_t i = 0; i < size; i++) {
-        descs.push_back(make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(data)));
+        descs.push_back(make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptorFactory::Unmarshalling(data)));
     }
     RouterType routerType = static_cast<RouterType>(data.ReadInt32());
     SourceType sourceType = static_cast<SourceType>(data.ReadInt32());

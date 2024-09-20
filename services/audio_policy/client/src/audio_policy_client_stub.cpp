@@ -193,7 +193,7 @@ void AudioPolicyClientStub::HandleDeviceChange(MessageParcel &data, MessageParce
     CHECK_AND_RETURN_LOG(size < DEVICE_CHANGE_VALID_SIZE, "get invalid size : %{public}d", size);
 
     for (int32_t i = 0; i < size; i++) {
-        deviceChange.deviceDescriptors.emplace_back(AudioDeviceDescriptor::Unmarshalling(data));
+        deviceChange.deviceDescriptors.emplace_back(AudioDeviceDescriptorFactory::Unmarshalling(data));
     }
     OnDeviceChange(deviceChange);
 }
@@ -206,7 +206,7 @@ void AudioPolicyClientStub::HandleMicrophoneBlocked(MessageParcel &data, Message
     CHECK_AND_RETURN_LOG(size < MIC_BLOCKED_VALID_SIZE, "get invalid size : %{public}d", size);
 
     for (int32_t i = 0; i < size; i++) {
-        microphoneBlocked.deviceDescriptors.emplace_back(AudioDeviceDescriptor::Unmarshalling(data));
+        microphoneBlocked.deviceDescriptors.emplace_back(AudioDeviceDescriptorFactory::Unmarshalling(data));
     }
     OnMicrophoneBlocked(microphoneBlocked);
 }
@@ -231,7 +231,7 @@ void AudioPolicyClientStub::HandlePreferredOutputDeviceUpdated(MessageParcel &da
     CHECK_AND_RETURN_LOG(size < PREFERRED_DEVICE_VALID_SIZE, "get invalid size : %{public}d", size);
 
     for (int32_t i = 0; i < size; i++) {
-        deviceDescriptor.push_back(AudioDeviceDescriptor::Unmarshalling(data));
+        deviceDescriptor.push_back(AudioDeviceDescriptorFactory::Unmarshalling(data));
     }
     OnPreferredOutputDeviceUpdated(deviceDescriptor);
 }
@@ -243,7 +243,7 @@ void AudioPolicyClientStub::HandlePreferredInputDeviceUpdated(MessageParcel &dat
     CHECK_AND_RETURN_LOG(size < PREFERRED_DEVICE_VALID_SIZE, "get invalid size : %{public}d", size);
 
     for (int32_t i = 0; i < size; i++) {
-        deviceDescriptor.push_back(AudioDeviceDescriptor::Unmarshalling(data));
+        deviceDescriptor.push_back(AudioDeviceDescriptorFactory::Unmarshalling(data));
     }
     OnPreferredInputDeviceUpdated(deviceDescriptor);
 }
@@ -289,7 +289,7 @@ void AudioPolicyClientStub::HandleCapturerStateChange(MessageParcel &data, Messa
 void AudioPolicyClientStub::HandleRendererDeviceChange(MessageParcel &data, MessageParcel &reply)
 {
     const uint32_t sessionId = data.ReadUint32();
-    DeviceInfo deviceInfo;
+    AudioDeviceDescriptor deviceInfo = AudioDeviceDescriptor(true);
     deviceInfo.Unmarshalling(data);
     const AudioStreamDeviceChangeReasonExt reason
         = static_cast<AudioStreamDeviceChangeReasonExt::ExtEnum> (data.ReadInt32());
@@ -338,7 +338,7 @@ void AudioPolicyClientStub::HandleSpatializationEnabledChange(MessageParcel &dat
 
 void AudioPolicyClientStub::HandleSpatializationEnabledChangeForAnyDevice(MessageParcel &data, MessageParcel &reply)
 {
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptorFactory::Unmarshalling(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
     bool enabled = data.ReadBool();
     OnSpatializationEnabledChangeForAnyDevice(audioDeviceDescriptor, enabled);
@@ -352,7 +352,7 @@ void AudioPolicyClientStub::HandleHeadTrackingEnabledChange(MessageParcel &data,
 
 void AudioPolicyClientStub::HandleHeadTrackingEnabledChangeForAnyDevice(MessageParcel &data, MessageParcel &reply)
 {
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptorFactory::Unmarshalling(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
     bool enabled = data.ReadBool();
     OnHeadTrackingEnabledChangeForAnyDevice(audioDeviceDescriptor, enabled);
