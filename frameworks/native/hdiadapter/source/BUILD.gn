@@ -33,9 +33,11 @@ ohos_shared_library("audio_capturer_source") {
     "../../audioutils/include",
     "../../audioeffect/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../services/audio_service/common/include/",
   ]
 
   deps = [
+    "../../../../services/audio_service:audio_common",
     "../../audioeffect:audio_effect",
     "../../audioutils:audio_utils",
   ]
@@ -141,6 +143,7 @@ ohos_shared_library("remote_audio_capturer_source") {
 }
 
 ohos_shared_library("remote_fast_audio_capturer_source") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
