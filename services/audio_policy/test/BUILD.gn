@@ -22,6 +22,7 @@ group("audio_policy_unittest_packages") {
   deps = [
     ":audio_effect_config_parser_test",
     ":audio_interrupt_service_unit_test",
+    ":audio_policy_service_ext_unit_test",
     ":audio_policy_service_unit_test",
   ]
 }
@@ -102,6 +103,8 @@ ohos_unittest("audio_policy_service_unit_test") {
     "../../audio_policy/server/include/service",
     "../../audio_policy/server/include",
   ]
+
+  use_exceptions = true
 
   cflags = [
     "-Wall",
