@@ -164,6 +164,8 @@ int32_t NoneMixEngine::SinkStopTimeOut()
         XcollieFlag);
     if (renderSink_ && renderSink_->IsInited()) {
         ret = renderSink_->Stop();
+    } else {
+        AUDIO_WARNING_LOG("RenderSink is invalid");
     }
     return ret;
 }
