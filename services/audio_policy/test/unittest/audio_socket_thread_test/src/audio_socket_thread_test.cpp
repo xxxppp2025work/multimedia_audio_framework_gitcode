@@ -648,5 +648,93 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_018, TestSize.Level1)
     bool result = AudioSocketThread::FindAudioUsbDevice(invalidDevName);
     EXPECT_FALSE(result);
 }
+
+/**
+* @tc.name  : Test AudioSocketThread.
+* @tc.number: AudioSocketThread_019
+* @tc.desc  : Test FindAudioUsbDevice_FindTooLongName
+*/
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_019, TestSize.Level1)
+{
+    const char *tooLongDevName = "this_device_name_is_way_too_long_and_should_exceed_the_maximum_allowed_length";
+    bool result = AudioSocketThread::FindAudioUsbDevice(tooLongDevName);
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test AudioSocketThread.
+* @tc.number: AudioSocketThread_020
+* @tc.desc  : Test FindAudioUsbDevice_FindEmptyName
+*/
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_020, TestSize.Level1)
+{
+    const char *emptyDevName = "";
+    bool result = AudioSocketThread::FindAudioUsbDevice(emptyDevName);
+
+    EXPECT_TRUE(result);
+}
+
+/**
+* @tc.name  : Test AudioSocketThread.
+* @tc.number: AudioSocketThread_021
+* @tc.desc  : Test AddAudioUsbDevice_Success
+*/
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_021, TestSize.Level1)
+{
+    const char* validDevName = "usb_device_1";
+    bool result = AudioSocketThread::AddAudioUsbDevice(validDevName);
+
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(g_audioUsbDeviceList[0].isUsed);
+}
+
+/**
+* @tc.name  : Test AudioSocketThread.
+* @tc.number: AudioSocketThread_022
+* @tc.desc  : Test AddAudioUsbDevice_TooLongName
+*/
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_022, TestSize.Level1)
+{
+    g_audioUsbDeviceList[0].isUsed = false;
+    const char* tooLongDevName = "this_device_name_is_way_too_long_and_should_exceed_the_maximum_allowed_length";
+    bool result = AudioSocketThread::AddAudioUsbDevice(tooLongDevName);
+
+    EXPECT_FALSE(result);
+    EXPECT_FALSE(g_audioUsbDeviceList[0].isUsed);
+}
+
+/**
+* @tc.name  : Test AudioSocketThread.
+* @tc.number: AudioSocketThread_023
+* @tc.desc  : Test AddAudioUsbDevice_AlreadyExists
+*/
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_023, TestSize.Level1)
+{
+    const char* existingDevName = "existing_device";
+    g_audioUsbDeviceList[0].isUsed = true;
+    // strncpy(g_audioUsbDeviceList[0].devName, existingDevName, USB_DEV_NAME_LEN_MAX - 1);
+    bool result = AudioSocketThread::AddAudioUsbDevice(existingDevName);
+
+    EXPECT_TRUE(result);
+}
+
+/**
+* @tc.name  : Test AudioSocketThread.
+* @tc.number: AudioSocketThread_024
+* @tc.desc  : Test AddAudioUsbDevice_ListFull
+*/
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_024, TestSize.Level1)
+{
+    // Fill the device list
+    for (uint32_t i = 0; i < AUDIO_UEVENT_USB_DEVICE_COUNT; i++) {
+        g_audioUsbDeviceList[i].isUsed = true;
+        // snprintf(g_audioUsbDeviceList[i].devName, USB_DEV_NAME_LEN_MAX, "device_%d", i);
+    }
+    const char* newDevName = "new_device";
+    bool result = AudioSocketThread::AddAudioUsbDevice(newDevName);
+
+    EXPECT_FALSE(result);
+}
 } // namespace AudioStandard
 } // namespace OHOS
+

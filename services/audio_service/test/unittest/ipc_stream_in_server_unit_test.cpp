@@ -350,5 +350,141 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_014, TestSize.Level1)
     auto ret3 = ipcStreamInServerRet.SetPrivacyType(privacyTypeRet);
     EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
 }
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_015
+ * @tc.desc  : Test IpcStreamInServer interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_015, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    int32_t privacyTypeRet = EFFECT_NONE;
+
+    auto ret1 = ipcStreamInServerRet.GetPrivacyType(privacyTypeRet);
+    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
+    auto ret2 = ipcStreamInServerRet.GetPrivacyType(privacyTypeRet);
+    EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
+    ipcStreamInServerRet.ConfigRenderer();
+    auto ret3 = ipcStreamInServerRet.GetPrivacyType(privacyTypeRet);
+    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_016
+ * @tc.desc  : Test IpcStreamInServer interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_016, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    int32_t stateRet = EFFECT_NONE;
+    bool isAppBackRet = false;
+
+    auto ret1 = ipcStreamInServerRet.SetOffloadMode(stateRet, isAppBackRet);
+    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
+    auto ret2 = ipcStreamInServerRet.SetOffloadMode(stateRet, isAppBackRet);
+    EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
+    ipcStreamInServerRet.ConfigRenderer();
+    auto ret3 = ipcStreamInServerRet.SetOffloadMode(stateRet, isAppBackRet);
+    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_017
+ * @tc.desc  : Test IpcStreamInServer interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_017, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+
+    auto ret1 = ipcStreamInServerRet.UnsetOffloadMode();
+    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
+    auto ret2 = ipcStreamInServerRet.UnsetOffloadMode();
+    EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
+    ipcStreamInServerRet.ConfigRenderer();
+    auto ret3 = ipcStreamInServerRet.UnsetOffloadMode();
+    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_018
+ * @tc.desc  : Test IpcStreamInServer interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_018, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    uint64_t timestampRet = EFFECT_NONE;
+    uint64_t paWriteIndexRet = EFFECT_NONE;
+    uint64_t cacheTimeDspRet = EFFECT_NONE;
+    uint64_t cacheTimePaRet = EFFECT_NONE;
+
+    auto ret1 = ipcStreamInServerRet.GetOffloadApproximatelyCacheTime(timestampRet, paWriteIndexRet,
+        cacheTimeDspRet, cacheTimePaRet);
+    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
+    auto ret2 = ipcStreamInServerRet.GetOffloadApproximatelyCacheTime(timestampRet, paWriteIndexRet,
+        cacheTimeDspRet, cacheTimePaRet);
+    EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
+    ipcStreamInServerRet.ConfigRenderer();
+    auto ret3 = ipcStreamInServerRet.GetOffloadApproximatelyCacheTime(timestampRet, paWriteIndexRet,
+        cacheTimeDspRet, cacheTimePaRet);
+    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_019
+ * @tc.desc  : Test IpcStreamInServer interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_019, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    float volumeRet = 0.5;
+
+    auto ret1 = ipcStreamInServerRet.OffloadSetVolume(volumeRet);
+    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
+    auto ret2 = ipcStreamInServerRet.OffloadSetVolume(volumeRet);
+    EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
+    ipcStreamInServerRet.ConfigRenderer();
+    auto ret3 = ipcStreamInServerRet.OffloadSetVolume(volumeRet);
+    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
+}
 }
 }
