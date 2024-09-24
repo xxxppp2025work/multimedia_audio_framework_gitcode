@@ -903,7 +903,7 @@ int AudioManagerStub::HandleGetAudioEffectProperty(MessageParcel &data, MessageP
 {
     AudioEffectPropertyArray propertyArray = {};
     int32_t result = GetAudioEffectProperty(propertyArray);
-    int32_t size = propertyArray.property.size();
+    int32_t size = static_cast<int32_t>(propertyArray.property.size());
     CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
         ERROR_INVALID_PARAM, "Audio enhance property array size invalid");
     reply.WriteInt32(size);
@@ -934,7 +934,7 @@ int AudioManagerStub::HandleGetAudioEnhanceProperty(MessageParcel &data, Message
 {
     AudioEnhancePropertyArray propertyArray = {};
     int32_t result = GetAudioEnhanceProperty(propertyArray);
-    int32_t size = propertyArray.property.size();
+    int32_t size = static_cast<int32_t>(propertyArray.property.size());
     CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
         ERROR_INVALID_PARAM, "Audio enhance property array size invalid");
     reply.WriteInt32(size);
