@@ -24,6 +24,7 @@ group("audio_policy_unittest_packages") {
     ":audio_interrupt_service_unit_test",
     ":audio_policy_service_ext_unit_test",
     ":audio_policy_service_unit_test",
+    ":audio_socket_thread_unit_test",
   ]
 }
 
