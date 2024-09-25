@@ -2612,7 +2612,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             if (IsFastFromA2dpToA2dp(descs.front(), rendererChangeInfo, reason)) { continue; }
             if (descs.front()->isEnable_) {
-                AUDIO_DEBUG_LOG("desc is enabled";
+                AUDIO_INFO_LOG("desc is enabled");
                 int32_t ret = ActivateA2dpDevice(descs.front(), rendererChangeInfos, reason);
                 CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed", encryptMacAddr.c_str());
             }
