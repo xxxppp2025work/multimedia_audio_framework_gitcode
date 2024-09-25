@@ -596,7 +596,10 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
         switch (currentActiveDevice_.deviceType_) {
             case DEVICE_TYPE_BLUETOOTH_A2DP:
             case DEVICE_TYPE_BLUETOOTH_SCO:
-                sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
+                if (currentActiveDevice_.deviceCategory_ != BT_SOUNDBOX &&
+                    currentActiveDevice_.deviceCategory_ != BT_CAR) {
+                    sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
+                }
                 break;
             case DEVICE_TYPE_WIRED_HEADSET:
             case DEVICE_TYPE_WIRED_HEADPHONES:
