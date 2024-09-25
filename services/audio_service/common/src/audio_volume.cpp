@@ -132,7 +132,7 @@ void AudioVolume::AddStreamVolume(uint32_t sessionId, int32_t streamType, int32_
     auto it = streamVolume_.find(sessionId);
     if (it == streamVolume_.end()) {
         streamVolume_.insert(std::make_pair(sessionId, StreamVolume(sessionId, streamType, streamUsage, uid, pid)));
-        historyVolume_.insert(sessionId, 0.0f);
+        historyVolume_.insert(std::make_pair(sessionId, 0.0f));
         monitorVolume_.insert(std::make_pair(sessionId, std::make_pair(0.0f, 0)));
     } else {
         AUDIO_ERR_LOG("stream volume already exist, sessionId:%{public}u", sessionId);
@@ -339,15 +339,15 @@ void AudioVolume::Monitor(uint32_t sessionId, bool isOutput)
             Media::MediaMonitor::AUDIO, Media::MediaMonitor::VOLUME_CHANGE,
             Media::MediaMonitor::BEHAVIOR_EVENT);
         bean->Add("ISOUTPUT", isOutput ? 1 : 0);
-        bean->Add("STREAMID", static_cast<int32_t>(sessionID));
+        bean->Add("STREAMID", static_cast<int32_t>(sessionId));
         bean->Add("APP_UID", streamVolume->second.GetAppUid());
         bean->Add("APP_PID", streamVolume->second.GetAppPid());
         bean->Add("STREAMTYPE", streamVolume->second.GetStreamType());
         bean->Add("STREAM_TYPE", streamVolume->second.GetStreamUsage());
         bean->Add("VOLUME", monVol != monitorVolume_.end() ? monVol->second.first : 0.0f);
         bean->Add("SYSVOLUME", monVol != monitorVolume_.end() ? monVol->second.second : 0);
-        bean->Add("VOLUMEFACTOR", volumeFactor);
-        bean->Add("POWERVOLUMEFACTOR", powerVolumeFactor);
+        bean->Add("VOLUMEFACTOR", streamVolume->second.volume_);
+        bean->Add("POWERVOLUMEFACTOR", streamVolume->second.lowPowerFactor_);
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
     } else {
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
