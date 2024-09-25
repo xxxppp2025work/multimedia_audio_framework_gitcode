@@ -197,7 +197,7 @@ int32_t AudioEffectChain::SetEffectProperty(const std::string &effect, const std
 {
     std::lock_guard<std::mutex> lock(reloadMutex_);
     int32_t ret = 0;
-    int32_t size = standByEffectHandles_.size();
+    int32_t size = static_cast<int32_t>(standByEffectHandles_.size());
     for (int32_t index = 0; index < size; index++) {
         auto &handle = standByEffectHandles_[index];
         auto const &effectName = effectNames_[index];

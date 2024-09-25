@@ -2044,7 +2044,7 @@ void AudioPolicyManagerStub::GetSupportedAudioEnhancePropertyInternal(MessagePar
 {
     AudioEnhancePropertyArray propertyArray = {};
     int32_t result = GetSupportedAudioEnhanceProperty(propertyArray);
-    int32_t size = propertyArray.property.size();
+    int32_t size = static_cast<int32_t>(propertyArray.property.size());
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
         propertyArray.property[i].Marshalling(reply);
@@ -2057,7 +2057,7 @@ void AudioPolicyManagerStub::GetSupportedAudioEffectPropertyInternal(MessageParc
 {
     AudioEffectPropertyArray propertyArray = {};
     int32_t result = GetSupportedAudioEffectProperty(propertyArray);
-    int32_t size = propertyArray.property.size();
+    int32_t size = static_cast<int32_t>(propertyArray.property.size());
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
         propertyArray.property[i].Marshalling(reply);
@@ -2085,7 +2085,7 @@ void AudioPolicyManagerStub::GetAudioEffectPropertyInternal(MessageParcel &data,
 {
     AudioEffectPropertyArray propertyArray = {};
     int32_t result = GetAudioEffectProperty(propertyArray);
-    int32_t size = propertyArray.property.size();
+    int32_t size = static_cast<int32_t>(propertyArray.property.size());
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
         propertyArray.property[i].Marshalling(reply);
@@ -2113,7 +2113,7 @@ void AudioPolicyManagerStub::GetAudioEnhancePropertyInternal(MessageParcel &data
 {
     AudioEnhancePropertyArray propertyArray = {};
     int32_t result = GetAudioEnhanceProperty(propertyArray);
-    int32_t size = propertyArray.property.size();
+    int32_t size = static_cast<int32_t>(propertyArray.property.size());
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
         propertyArray.property[i].Marshalling(reply);

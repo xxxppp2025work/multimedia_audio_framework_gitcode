@@ -138,7 +138,7 @@ int32_t AudioEnhanceChain::SetInputDevice(const std::string &inputDevice)
     algoParam_.preDevice = inputDevice;
     AUDIO_INFO_LOG("update input device %{public}s", inputDevice.c_str());
     std::lock_guard<std::mutex> lock(chainMutex_);
-    int32_t size = standByEnhanceHandles_.size();
+    int32_t size = static_cast<int32_t>(standByEnhanceHandles_.size());
     AudioEffectTransInfo cmdInfo = {};
     AudioEffectTransInfo replyInfo = {};
     for (int32_t index = 0; index < size; index++) {

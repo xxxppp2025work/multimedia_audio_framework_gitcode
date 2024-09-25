@@ -1101,7 +1101,7 @@ napi_status NapiParamUtils::GetEffectPropertyArray(napi_env env, AudioEffectProp
         effectArray.property.push_back(prop);
     }
     
-    int32_t size = effectArray.property.size();
+    int32_t size = static_cast<int32_t>(effectArray.property.size());
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
                              napi_invalid_arg, "Audio effect property array size invalid");
 
