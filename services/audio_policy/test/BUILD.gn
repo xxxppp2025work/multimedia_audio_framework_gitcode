@@ -235,17 +235,44 @@ ohos_unittest("audio_policy_service_ext_unit_test") {
     ]
   }
 
+  defines = []
+
+  if (audio_framework_feature_dtmf_tone) {
+    defines += [ "FEATURE_DTMF_TONE" ]
+  }
+
+  if (audio_framework_feature_support_os_account) {
+    defines += [ "SUPPORT_USER_ACCOUNT" ]
+  }
+
+  if (build_variant == "user") {
+    defines += [ "AUDIO_BUILD_VARIANT_USER" ]
+  } else if (build_variant == "root") {
+    defines += [ "AUDIO_BUILD_VARIANT_ROOT" ]
+  }
+
+  if (appgallery_part_enable == true) {
+    defines += [ "FEATURE_APPGALLERY" ]
+  }
+
   if (bluetooth_part_enable == true) {
     external_deps += [ "bluetooth:btframework" ]
   }
 
   if (audio_framework_feature_input) {
+    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
     external_deps += [ "input:libmmi-client" ]
   }
 
   if (audio_framework_feature_device_manager) {
+    defines += [ "FEATURE_DEVICE_MANAGER" ]
     external_deps += [ "device_manager:devicemanagersdk" ]
   }
+
+  if (audio_framework_feature_double_pnp_detect) {
+    defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
+  }
+
 }
 
 ohos_unittest("audio_effect_config_parser_test") {
