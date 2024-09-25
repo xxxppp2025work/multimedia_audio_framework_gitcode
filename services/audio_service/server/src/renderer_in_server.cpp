@@ -48,6 +48,7 @@ namespace {
     static constexpr int32_t ONE_MINUTE = 60;
     const int32_t MEDIA_UID = 1013;
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
+    const int32_t OFFLOAD_INNER_CAP_PREBUF = 6;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -967,6 +968,15 @@ int32_t RendererInServer::InitDupStream()
     if (status_ == I_STATUS_STARTED) {
         AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dup stream", streamIndex_);
         dupStream_->Start();
+
+        if (offloadEnable_) {
+            auto buffer = std::make_unique<uint8_t []>(spanSizeInByte_);
+            BufferDesc bufferDesc = {buffer.get(), spanSizeInByte_, spanSizeInByte_};
+            memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength);
+            for (int32_t i = 0; i < OFFLOAD_INNER_CAP_PREBUF; i++) {
+                dupStream_->EnqueueBuffer(bufferDesc);
+            }
+        }
     }
     return SUCCESS;
 }
