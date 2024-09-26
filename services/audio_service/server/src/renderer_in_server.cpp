@@ -624,7 +624,7 @@ void RendererInServer::StartDupStreamAndDualToneStream()
 
     if (isDualToneEnabled_) {
         if (dualToneStream_ != nullptr) {
-            AUDIO_INFO_LOG("stream is SetAudioEffectMode: EFFECT_NONE ")
+            AUDIO_INFO_LOG("stream is SetAudioEffectMode: EFFECT_NONE ");
             stream_->GetAudioEffectMode(effectModeWhenDual_);
             stream_->SetAudioEffectMode(EFFECT_NONE);
         }
@@ -1034,7 +1034,7 @@ int32_t RendererInServer::DisableDualTone()
 int32_t RendererInServer::InitDualToneStream()
 {
     if (status_ == I_STATUS_STARTED) {
-        AUDIO_INFO_LOG("stream is SetAudioEffectMode: EFFECT_NONE ")
+        AUDIO_INFO_LOG("stream is SetAudioEffectMode: EFFECT_NONE ");
         stream_->GetAudioEffectMode(effectModeWhenDual_);
         stream_->SetAudioEffectMode(EFFECT_NONE);
     }
