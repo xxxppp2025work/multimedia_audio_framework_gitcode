@@ -303,7 +303,7 @@ void OffloadAudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
         }
         case SAMPLE_S24LE: {
             // this function needs to be further tested for usability
-            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<int8_t *>(data), len);
+            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<uint8_t *>(data), len);
             break;
         }
         case SAMPLE_S32LE: {
@@ -335,7 +335,7 @@ void OffloadAudioRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
         }
         case SAMPLE_S24LE: {
             // this function needs to be further tested for usability
-            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
+            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<uint8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case SAMPLE_S32LE: {
@@ -458,7 +458,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
-    attrs.streamId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_OFFLOAD);
+    attrs.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_OFFLOAD));
     attrs.type = AUDIO_OFFLOAD;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;

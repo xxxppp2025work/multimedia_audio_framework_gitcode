@@ -590,25 +590,7 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
         }
 #endif
     }
-    int32_t sVolumeLevel = volumeLevel;
-    if (sVolumeLevel > audioPolicyManager_.GetSafeVolumeLevel() &&
-        VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC) {
-        switch (currentActiveDevice_.deviceType_) {
-            case DEVICE_TYPE_BLUETOOTH_A2DP:
-            case DEVICE_TYPE_BLUETOOTH_SCO:
-                sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
-                break;
-            case DEVICE_TYPE_WIRED_HEADSET:
-            case DEVICE_TYPE_WIRED_HEADPHONES:
-            case DEVICE_TYPE_USB_HEADSET:
-            case DEVICE_TYPE_USB_ARM_HEADSET:
-                sVolumeLevel = DealWithSafeVolume(volumeLevel, false);
-                break;
-            default:
-                AUDIO_INFO_LOG("unsupport safe volume:%{public}d", currentActiveDevice_.deviceType_);
-                break;
-        }
-    }
+    int32_t sVolumeLevel = SelectDealSafeVolume(streamType, volumeLevel);
     CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERROR, "safevolume did not deal");
     result = audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel);
     if (result == SUCCESS && (streamType == STREAM_VOICE_CALL || streamType == STREAM_VOICE_COMMUNICATION)) {
@@ -623,6 +605,33 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
         SetOffloadVolume(streamType, volumeLevel);
     }
     return result;
+}
+
+int32_t AudioPolicyService::SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel)
+{
+    int32_t sVolumeLevel = volumeLevel;
+    if (sVolumeLevel > audioPolicyManager_.GetSafeVolumeLevel() &&
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC) {
+        switch (currentActiveDevice_.deviceType_) {
+            case DEVICE_TYPE_BLUETOOTH_A2DP:
+            case DEVICE_TYPE_BLUETOOTH_SCO:
+                if (currentActiveDevice_.deviceCategory_ != BT_SOUNDBOX &&
+                    currentActiveDevice_.deviceCategory_ != BT_CAR) {
+                    sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
+                }
+                break;
+            case DEVICE_TYPE_WIRED_HEADSET:
+            case DEVICE_TYPE_WIRED_HEADPHONES:
+            case DEVICE_TYPE_USB_HEADSET:
+            case DEVICE_TYPE_USB_ARM_HEADSET:
+                sVolumeLevel = DealWithSafeVolume(volumeLevel, false);
+                break;
+            default:
+                AUDIO_INFO_LOG("unsupport safe volume:%{public}d", currentActiveDevice_.deviceType_);
+                break;
+        }
+    }
+    return sVolumeLevel;
 }
 
 void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
@@ -1453,15 +1462,24 @@ int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkI
     for (size_t i = 0; i < sinkInputIds.size(); i++) {
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         streamCollector_.GetPipeType(sinkInputIds[i].streamId, pipeType);
-        std::string sinkName = GetSinkPortName(localDeviceDescriptor->deviceType_, pipeType);
+        std::string oldSinkName = GetSinkPortName(localDeviceDescriptor->deviceType_, pipeType);
+        std::string sinkName = CheckStreamMultichannelMode(sinkInputIds[i].streamId) ?
+            MCH_PRIMARY_SPEAKER : oldSinkName;
+        AUDIO_INFO_LOG("oldSinkName: %{public}s sinkName: %{public}s", oldSinkName.c_str(), sinkName.c_str());
         if (sinkName == MCH_PRIMARY_SPEAKER) {
-            sinkName = CheckStreamMultichannelMode(sinkInputIds[i].streamId) ? sinkName : PRIMARY_SPEAKER;
+            if (IOHandles_.find(MCH_PRIMARY_SPEAKER) == IOHandles_.end()) {
+                LoadMchModule();
+            }
+            MuteSinkPort(oldSinkName, sinkName, AudioStreamDeviceChangeReason::OVERRODE);
         }
         AUDIO_INFO_LOG("move for session [%{public}d], portName %{public}s pipeType %{public}d",
             sinkInputIds[i].streamId, sinkName.c_str(), pipeType);
         int32_t ret = audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, sinkName);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
             "move [%{public}d] to local failed", sinkInputIds[i].streamId);
+        if (sinkName == MCH_PRIMARY_SPEAKER) {
+            streamCollector_.UpdateRendererPipeInfo(sinkInputIds[i].streamId, PIPE_TYPE_MULTICHANNEL);
+        }
         std::lock_guard<std::mutex> lock(routerMapMutex_);
         routerMap_[sinkInputIds[i].uid] = std::pair(LOCAL_NETWORK_ID, sinkInputIds[i].pid);
     }
@@ -4015,6 +4033,7 @@ void AudioPolicyService::UpdateActiveA2dpDeviceWhenDisconnecting(const std::stri
     connectedA2dpDeviceMap_.erase(macAddress);
 
     if (connectedA2dpDeviceMap_.size() == 0) {
+        lock.unlock();
         activeBTDevice_ = "";
         ClosePortAndEraseIOHandle(BLUETOOTH_SPEAKER);
         audioPolicyManager_.SetAbsVolumeScene(false);
@@ -4401,6 +4420,7 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
                 AUDIO_DEBUG_LOG("UnLoad existing a2dp module");
                 std::string currentActivePort = GetSinkPortName(currentActiveDevice_.deviceType_);
                 AudioIOHandle activateDeviceIOHandle = IOHandles_[BLUETOOTH_SPEAKER];
+                MuteDefaultSinkPort();
                 audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
                 audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
 
@@ -9019,6 +9039,12 @@ int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const
     int32_t openRet = OpenPortAndInsertIOHandle(moduleName, moudleInfo);
     if (openRet != 0) {
         AUDIO_ERR_LOG("open fail, OpenPortAndInsertIOHandle ret: %{public}d", openRet);
+    }
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    if (gsp != nullptr) {
+        std::string identity = IPCSkeleton::ResetCallingIdentity();
+        gsp->NotifyDeviceInfo(networkId, true);
+        IPCSkeleton::SetCallingIdentity(identity);
     }
     return openRet;
 }

@@ -13,21 +13,16 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_POLICY_SERVICE_UNIT_TEST_H
-#define AUDIO_POLICY_SERVICE_UNIT_TEST_H
+#ifndef AUDIO_INTERRUPT_UNIT_TEST_H
+#define AUDIO_INTERRUPT_UNIT_TEST_H
 
-#include <gtest/gtest.h>
-
-#include "audio_policy_service.h"
+#include "gtest/gtest.h"
 #include "audio_policy_server.h"
-#include "message_parcel.h"
-#include "nativetoken_kit.h"
-#include "token_setproc.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioPolicyServiceUnitTest : public testing::Test {
+class AudioPolicyUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
@@ -40,4 +35,4 @@ public:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_POLICY_SERVICE_UNIT_TEST_H
+#endif // AUDIO_INTERRUPT_UNIT_TEST_H
