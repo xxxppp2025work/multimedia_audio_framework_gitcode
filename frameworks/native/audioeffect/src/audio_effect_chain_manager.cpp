@@ -705,6 +705,7 @@ int32_t AudioEffectChainManager::UpdateMultichannelConfig(const std::string &sce
 
 int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(const std::string &sceneType)
 {
+    AUDIO_INFO_LOG("begin InitAudioEffectChainDynamic");
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
