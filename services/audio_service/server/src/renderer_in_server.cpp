@@ -613,6 +613,32 @@ int32_t RendererInServer::GetSessionId(uint32_t &sessionId)
     return SUCCESS;
 }
 
+void RendererInServer::StartDupStreamAndDualToneStream()
+{
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Start();
+        }
+    }
+
+    if (isDualToneEnabled_) {
+        if (dualToneStream_ != nullptr) {
+            AUDIO_INFO_LOG("stream is SetAudioEffectMode: EFFECT_NONE ")
+            stream_->GetAudioEffectMode(effectModeWhenDual_);
+            stream_->SetAudioEffectMode(EFFECT_NONE);
+        }
+    }
+
+    if (isDualToneEnabled_) {
+        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        if (dualToneStream_ != nullptr) {
+            dualToneStream_->Start();
+        }
+    }
+    return;
+}
+
 int32_t RendererInServer::Start()
 {
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
@@ -648,27 +674,6 @@ int32_t RendererInServer::Start()
     AUDIO_INFO_LOG("Server update position %{public}" PRIu64" time%{public} " PRId64".", currentReadFrame, tempTime);
     resetTime_ = true;
 
-    if (isInnerCapEnabled_) {
-        std::lock_guard<std::mutex> lock(dupMutex_);
-        if (dupStream_ != nullptr) {
-            dupStream_->Start();
-        }
-    }
-
-    if (isDualToneEnabled_) {
-        if (dualToneStream_ != nullptr) {
-            AUDIO_INFO_LOG("stream is SetAudioEffectMode: EFFECT_NONE ")
-            stream_->GetAudioEffectMode(effectModeWhenDual_);
-            stream_->SetAudioEffectMode(EFFECT_NONE);
-        }
-    }
-
-    if (isDualToneEnabled_) {
-        std::lock_guard<std::mutex> lock(dualToneMutex_);
-        if (dualToneStream_ != nullptr) {
-            dualToneStream_->Start();
-        }
-    }
     return SUCCESS;
 }
 
