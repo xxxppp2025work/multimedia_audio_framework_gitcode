@@ -131,6 +131,8 @@ public:
 
     virtual int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object) = 0;
 
+    virtual int32_t SetQueryAppWhiteListCallback(const sptr<IRemoteObject> &object) = 0;
+
     virtual int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) = 0;
 
     virtual int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) = 0;

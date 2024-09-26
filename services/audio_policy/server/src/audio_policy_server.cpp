@@ -1354,6 +1354,22 @@ int32_t AudioPolicyServer::SetQueryClientTypeCallback(const sptr<IRemoteObject> 
     return audioPolicyService_.SetQueryClientTypeCallback(object);
 }
 
+int32_t AudioPolicyServer::SetQueryAppWhiteListCallback(const sptr<IRemoteObject> &object)
+{
+    AUDIO_INFO_LOG("Set query app white list callback");
+    if (!PermissionUtil::VerifyIsAudio()) {
+        AUDIO_ERR_LOG("not audio calling!");
+        return ERR_OPERATION_FAILED;
+    }
+
+    queryAppWhiteListCallback_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
+    if (queryAppWhiteListCallback_ == nullptr) {
+        AUDIO_ERR_LOG("Client type callback is null");
+        return ERR_CALLBACK_NOT_REGISTERED;
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     if (interruptService_ != nullptr) {
@@ -1376,10 +1392,10 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
         AUDIO_ERR_LOG("interruptService_ is nullptr!");
         return ERR_UNKNOWN;
     }
-    if (audioInterrupt.audioFocusType.streamType == STREAM_MOVIE &&
-        // !IsWhiteListApp() &&
+    std::string bundleName = GetBundleName();
+    if (audioInterrupt.audioFocusType.streamType == STREAM_MOVIE && queryAppWhiteListCallback_ != nullptr &&
+        queryAppWhiteListCallback_->OnQueryAppIsInWhiteList(bundleName) &&
         !interruptService_->IsAudioSessionActivated(audioInterrupt.pid)) {
-        // 起播Movie类型，且未使用AudioSession接口，且非白名单应用
         AudioSessionStrategy strategy;
         strategy.concurrencyMode = AudioConcurrencyMode::PAUSE_OTHERS;
         int32_t result = interruptService_->ActivateAudioSession(audioInterrupt.pid, strategy);
@@ -1402,23 +1418,20 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     }
 
     int32_t result = interruptService_->DeactivateAudioInterrupt(zoneID, audioInterrupt);
-
-    if (audioInterrupt.audioFocusType.streamType == STREAM_MOVIE &&
-        // !IsWhiteListApp() &&
+    std::string bundleName = GetBundleName();
+    if (audioInterrupt.audioFocusType.streamType == STREAM_MOVIE && queryAppWhiteListCallback_ != nullptr &&
+        queryAppWhiteListCallback_->OnQueryAppIsInWhiteList(bundleName) &&
         interruptService_->NeedToDeactivateSessionForMovie(audioInterrupt.pid)) {
-        // 停播Movie类型，且有AudioSession为系统激活，没有其他Movie流在活跃状态，且非白名单应用
-        // 发起一个子线程，1s后释放AudioSession
-        AUDIO_ERR_LOG("Make a new thread to deactivate audio session after 1s    11111");
         std::weak_ptr<AudioInterruptService> interruptPtr = interruptService_;
         std::thread(AudioPolicyServer::DeactivateAudioSessionForMovie, interruptPtr, audioInterrupt.pid).detach();
-        AUDIO_ERR_LOG("Make a new thread to deactivate audio session after 1s    22222");
     }
     return result;
 }
 
 void AudioPolicyServer::DeactivateAudioSessionForMovie(std::weak_ptr<AudioInterruptService> interruptPtr, int32_t pid)
 {
-    sleep(1);
+    AUDIO_INFO_LOG("Deactivate audio session after 3 second");
+    sleep(3);
     std::shared_ptr<AudioInterruptService> interruptService = interruptPtr.lock();
     if (interruptService == nullptr) {
         AUDIO_ERR_LOG("interruptPtr is nullptr!");

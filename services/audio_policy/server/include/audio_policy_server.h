@@ -221,6 +221,8 @@ public:
 
     int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object) override;
 
+    int32_t SetQueryAppWhiteListCallback(const sptr<IRemoteObject> &object) override;
+
     int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
     int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
@@ -624,6 +626,7 @@ private:
     pid_t lastMicMuteSettingPid_ = 0;
     std::string GetBundleName();
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
+    sptr<IStandardAudioPolicyManagerListener> queryAppWhiteListCallback_ = nullptr;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

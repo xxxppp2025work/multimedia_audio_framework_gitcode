@@ -619,12 +619,19 @@ int32_t AudioSystemManager::UnsetMicrophoneBlockedCallback(
     return AudioPolicyManager::GetInstance().UnsetMicrophoneBlockedCallback(clientId, callback);
 }
 
-
 int32_t AudioSystemManager::SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback)
 {
     AUDIO_INFO_LOG("In");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
     return AudioPolicyManager::GetInstance().SetQueryClientTypeCallback(callback);
+}
+
+int32_t AudioSystemManager::SetQueryAppWhiteListCallback(
+    const std::shared_ptr<AudioQueryAppWhiteListCallback> &callback)
+{
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetQueryAppWhiteListCallback(callback);
 }
 
 int32_t AudioSystemManager::SetRingerModeCallback(const int32_t clientId,

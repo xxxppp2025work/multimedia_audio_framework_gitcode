@@ -30,6 +30,7 @@ public:
     virtual void OnAvailableDeviceChange(const AudioDeviceUsage usage,
         const DeviceChangeAction &deviceChangeAction) = 0;
     virtual bool OnQueryClientType(const std::string &bundleName, uint32_t uid) = 0;
+    virtual bool OnQueryAppIsInWhiteList(const std::string &bundleName) = 0;
 
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;
@@ -39,6 +40,7 @@ public:
         ON_INTERRUPT,
         ON_AVAILABLE_DEVICE_CAHNGE,
         ON_QUERY_CLIENT_TYPE,
+        ON_QUERY_APP_WHITE_LIST,
     };
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioManagerListener");
 };
