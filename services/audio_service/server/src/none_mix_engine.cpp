@@ -126,9 +126,16 @@ int32_t NoneMixEngine::Stop()
         return ret;
     }
 
+    bool isTimeout =false;
+
+    auto timeoutHandler = [this, &isTimeout]() {
+        isTimeout = true;
+        AUDIO_ERR_LOG("%{ppublic}d stop timeout".isVoip){
+        }
+    }
     AudioXCollie audioXCollie(
         "NoneMixEngine::Stop", DIRECT_STOP_TIMEOUT_IN_SEC,
-        [this](void *) { AUDIO_ERR_LOG("%{public}d stop timeout", isVoip_); }, nullptr, XCOLLIE_FLAG_DEFAULT);
+        timeoutHandler, nullptr, XCOLLIE_FLAG_DEFAULT);
 
     writeCount_ = 0;
     failedCount_ = 0;
