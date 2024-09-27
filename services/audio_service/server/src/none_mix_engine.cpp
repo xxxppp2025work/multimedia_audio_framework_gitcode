@@ -130,7 +130,7 @@ int32_t NoneMixEngine::Stop()
 
     auto timeoutHandler = [this, &isTimeout]() {
         isTimeout = true;
-        AUDIO_ERR_LOG("%{public}d stop timeout", isVoip) {
+        AUDIO_ERR_LOG("%{public}d stop timeout", isVoip_) {
         }
     }
     AudioXCollie audioXCollie(
