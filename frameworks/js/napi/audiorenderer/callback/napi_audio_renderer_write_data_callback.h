@@ -41,6 +41,8 @@ private:
     };
 
     static void WorkCallbackRendererWriteDataInner(RendererWriteDataJsCallback *event);
+    static void SafeJsCallbackWriteDataWork(napi_env env, napi_value js_cb, void* context, void* data);
+    static void WriteDataTsfnFinalize(napi_env env, void *data, void *hint);
     void OnJsRendererWriteDataCallback(std::unique_ptr<RendererWriteDataJsCallback> &jsCb);
     static void CheckWriteDataCallbackResult(napi_env env, BufferDesc &bufDesc, napi_value result);
 

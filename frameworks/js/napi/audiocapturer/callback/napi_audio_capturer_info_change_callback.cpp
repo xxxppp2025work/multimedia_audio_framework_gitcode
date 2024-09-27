@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <thread>
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioCapturerInfoChangeCallback"
 #endif
@@ -20,9 +21,11 @@
 #include "audio_errors.h"
 #include "audio_capturer_log.h"
 #include "napi_param_utils.h"
+#include "js_native_api.h"
 
 namespace OHOS {
 namespace AudioStandard {
+napi_threadsafe_function acInfoChg_tsfn_ = nullptr;
 NapiAudioCapturerInfoChangeCallback::NapiAudioCapturerInfoChangeCallback(napi_env env)
     : env_(env)
 {
@@ -66,6 +69,48 @@ void NapiAudioCapturerInfoChangeCallback::OnStateChange(const AudioCapturerChang
     OnJsCallbackCapturerChangeInfo(callback_, capturerChangeInfo);
 }
 
+void NapiAudioCapturerInfoChangeCallback::SafeJsCallbackCapturerChangeInfoWork(
+    napi_env env, napi_value js_cb, void* context, void* data)
+{
+    CHECK_AND_RETURN_LOG(data != nullptr, "data is nullptr.");
+    std::shared_ptr<AudioCapturerChangeInfoJsCallback> safeContext(
+        static_cast<AudioCapturerChangeInfoJsCallback*>(data),
+        [](AudioCapturerChangeInfoJsCallback* ptr) {
+            delete ptr;
+    });
+    AudioCapturerChangeInfoJsCallback *event = reinterpret_cast<AudioCapturerChangeInfoJsCallback *>(data);
+    if (event == nullptr || event->callback_ == nullptr) {
+        AUDIO_ERR_LOG("OnJsCallbackCapturerChangeInfo: no memory");
+        return;
+    }
+    napi_ref callback = event->callback_;
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
+    AUDIO_INFO_LOG("SafeJsCallbackCapturerChangeInfoWork: safe capture change info callback working.");
+    do {
+        napi_value jsCallback = nullptr;
+        napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "Callback get reference value fail");
+        // Call back function
+        napi_value args[ARGS_ONE] = { nullptr };
+        NapiParamUtils::SetAudioCapturerChangeInfoDescriptors(env, event->capturerChangeInfo_, args[0]);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
+            "Fail to convert to jsobj");
+
+        const size_t argCount = ARGS_ONE;
+        napi_value result = nullptr;
+        nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "Fail to call capturer callback");
+    } while (0);
+    napi_close_handle_scope(env, scope);
+}
+
+void NapiAudioCapturerInfoChangeCallback::CapturerChangeInfoTsfnFinalize(napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("CapturerChangeInfoTsfnFinalize: safe thread resource release.");
+}
+
 void NapiAudioCapturerInfoChangeCallback::OnJsCallbackCapturerChangeInfo(napi_ref method,
     const AudioCapturerChangeInfo &capturerChangeInfo)
 {
@@ -73,41 +118,19 @@ void NapiAudioCapturerInfoChangeCallback::OnJsCallbackCapturerChangeInfo(napi_re
     AudioCapturerChangeInfoJsCallback *event =
         new AudioCapturerChangeInfoJsCallback {method, env_, capturerChangeInfo};
 
-    auto task = [event]() {
-        std::shared_ptr<AudioCapturerChangeInfoJsCallback> context(
-            static_cast<AudioCapturerChangeInfoJsCallback*>(event),
-            [](AudioCapturerChangeInfoJsCallback* ptr) {
-                delete ptr;
-        });
-        if (event == nullptr || event->callback_ == nullptr) {
-            AUDIO_ERR_LOG("OnJsCallbackCapturerChangeInfo: no memory");
-            return;
-        }
-        napi_env env = event->env_;
-        napi_ref callback = event->callback_;
-        napi_handle_scope scope = nullptr;
-        napi_open_handle_scope(env, &scope);
-        CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-        do {
-            napi_value jsCallback = nullptr;
-            napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "Callback get reference value fail");
-            // Call back function
-            napi_value args[ARGS_ONE] = { nullptr };
-            NapiParamUtils::SetAudioCapturerChangeInfoDescriptors(env, event->capturerChangeInfo_, args[0]);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
-                "Fail to convert to jsobj");
+    napi_value cbName;
+    event->callbackName = "AudioCapturerChangeInfo";
+    napi_create_string_utf8(event->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
+    napi_create_threadsafe_function(event->env_, nullptr, nullptr, cbName, 0, 1, event, CapturerChangeInfoTsfnFinalize,
+        nullptr, SafeJsCallbackCapturerChangeInfoWork, &acInfoChg_tsfn_);
+    
+    std::thread safeCallThread([event]() {
+        AUDIO_INFO_LOG("OnJsCallbackCapturerChangeInfo: safe thread start.");
+        napi_acquire_threadsafe_function(acInfoChg_tsfn_);
+        napi_call_threadsafe_function(acInfoChg_tsfn_, event, napi_tsfn_blocking);
+    });
 
-            const size_t argCount = ARGS_ONE;
-            napi_value result = nullptr;
-            nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "Fail to call capturer callback");
-        } while (0);
-        napi_close_handle_scope(env, scope);
-    };
-    if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
-        AUDIO_ERR_LOG("OnJsCallbackCapturerChangeInfo: Failed to SendEvent");
-    }
+    safeCallThread.detach();
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
