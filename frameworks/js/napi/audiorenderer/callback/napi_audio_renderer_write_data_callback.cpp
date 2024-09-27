@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <thread>
 #ifndef LOG_TAG
 #define LOG_TAG "NapiRendererWriteDataCallback"
 #endif
@@ -19,9 +20,12 @@
 #include "napi_audio_renderer_write_data_callback.h"
 #include "audio_renderer_log.h"
 #include "napi_audio_enum.h"
+#include "js_native_api.h"
 
 namespace OHOS {
 namespace AudioStandard {
+napi_threadsafe_function arWriteData_tsfn_ = nullptr;
+
 static const int32_t WRITE_CALLBACK_TIMEOUT_IN_MS = 1000; // 1s
 
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
@@ -127,27 +131,25 @@ void NapiRendererWriteDataCallback::OnWriteData(size_t length)
 void NapiRendererWriteDataCallback::OnJsRendererWriteDataCallback(std::unique_ptr<RendererWriteDataJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsRendererDaOnJsRendererWriteDataCallbacktaRequestCallback: jsCb.get() is null");
+        AUDIO_ERR_LOG("OnJsRendererWriteDataCallback: jsCb.get() is null");
         return;
     }
-    RendererWriteDataJsCallback *event = jsCb.get();
-    auto task = [event]() {
-        std::shared_ptr<RendererWriteDataJsCallback> context(
-            static_cast<RendererWriteDataJsCallback*>(event),
-            [](RendererWriteDataJsCallback* ptr) {
-                delete ptr;
-        });
-        WorkCallbackRendererWriteDataInner(event);
 
-        CHECK_AND_RETURN_LOG(event != nullptr, "renderer write data event is nullptr");
-        CHECK_AND_RETURN_LOG(event->rendererNapiObj != nullptr, "NapiAudioRenderer object is nullptr");
-        event->rendererNapiObj->writeCallbackCv_.notify_all();
-    };
-    if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
-        AUDIO_ERR_LOG("OnJsRendererWriteDataCallback: Failed to SendEvent");
-    } else {
-        jsCb.release();
-    }
+    RendererWriteDataJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr.");
+
+    napi_value cbName;
+    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
+    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
+        WriteDataTsfnFinalize, nullptr, SafeJsCallbackWriteDataWork, &arWriteData_tsfn_);
+    
+    std::thread safeCallThread([event]() {
+        AUDIO_INFO_LOG("OnJsRendererWriteDataCallback: safe thread start.");
+        napi_acquire_threadsafe_function(arWriteData_tsfn_);
+        napi_call_threadsafe_function(arWriteData_tsfn_, event, napi_tsfn_blocking);
+    });
+
+    safeCallThread.detach();
 
     if (napiRenderer_ == nullptr) {
         return;
@@ -176,14 +178,33 @@ void NapiRendererWriteDataCallback::CheckWriteDataCallbackResult(napi_env env, B
     }
 }
 
+void NapiRendererWriteDataCallback::SafeJsCallbackWriteDataWork(
+    napi_env env, napi_value js_cb, void* context, void* data)
+{
+    CHECK_AND_RETURN_LOG(data != nullptr, "data is nullptr.");
+    std::shared_ptr<RendererWriteDataJsCallback> safeContext(
+        static_cast<RendererWriteDataJsCallback*>(data),
+        [](RendererWriteDataJsCallback* ptr) {
+            napi_release_threadsafe_function(arWriteData_tsfn_, napi_tsfn_abort);
+            delete ptr;
+    });
+    RendererWriteDataJsCallback *event = reinterpret_cast<RendererWriteDataJsCallback *>(data);
+    CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr.");
+    WorkCallbackRendererWriteDataInner(event);
+}
+
+void NapiRendererWriteDataCallback::WriteDataTsfnFinalize(napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("WriteDataTsfnFinalize: safe thread resource release.");
+}
+
 void NapiRendererWriteDataCallback::WorkCallbackRendererWriteDataInner(RendererWriteDataJsCallback *event)
 {
     CHECK_AND_RETURN_LOG(event != nullptr, "renderer write data event is nullptr");
     std::string request = event->callbackName;
-    CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
-    napi_env env = event->callback->env_;
+    CHECK_AND_RETURN_LOG(event->callback != nullptr, "callback is nullptr");
     napi_ref callback = event->callback->cb_;
-
+    napi_env env = event->callback->env_;
     napi_handle_scope scope = nullptr;
     napi_open_handle_scope(env, &scope);
     CHECK_AND_RETURN_LOG(scope != nullptr, "%{public}s scope is nullptr", request.c_str());

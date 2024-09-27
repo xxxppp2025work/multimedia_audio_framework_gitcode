@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <thread>
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioManagerCallback"
 #endif
@@ -22,10 +23,12 @@
 #include "napi_param_utils.h"
 #include "audio_errors.h"
 #include "audio_manager_log.h"
+#include "js_native_api.h"
 
 namespace OHOS {
 namespace AudioStandard {
-
+napi_threadsafe_function amMicBlocked_tsfn_ = nullptr;
+napi_threadsafe_function amDevChg_tsfn_ = nullptr;
 bool NapiAudioManagerCallback::IsSameCallback(napi_env env, napi_value callback, napi_ref refCallback)
 {
     bool isEquals = false;
@@ -256,49 +259,110 @@ void NapiAudioManagerCallback::RemoveAllAudioManagerDeviceChangeCb()
     AUDIO_INFO_LOG("RemoveAllCallbacks: remove all js callbacks success");
 }
 
+void NapiAudioManagerCallback::SafeJsCallbackDeviceChangeWork(napi_env env, napi_value js_cb, void* context, void* data)
+{
+    CHECK_AND_RETURN_LOG(data != nullptr, "data is nullptr.");
+    std::shared_ptr<AudioManagerJsCallback> safeContext(
+        static_cast<AudioManagerJsCallback*>(data),
+        [](AudioManagerJsCallback* ptr) {
+            napi_release_threadsafe_function(amDevChg_tsfn_, napi_tsfn_abort);
+            delete ptr;
+    });
+    AudioManagerJsCallback *event = reinterpret_cast<AudioManagerJsCallback *>(data);
+    CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
+    std::string request = event->callbackName;
+    CHECK_AND_RETURN_LOG(event->callback != nullptr, "callback is nullptr");
+    napi_ref callback = event->callback->cb_;
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
+    AUDIO_INFO_LOG("SafeJsCallbackDeviceChangeWork: safe device change callback working.");
+
+    do {
+        napi_value jsCallback = nullptr;
+        napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
+            request.c_str());
+        napi_value args[ARGS_ONE] = { nullptr };
+        NapiParamUtils::SetValueDeviceChangeAction(env, event->deviceChangeAction, args[PARAM0]);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[0] != nullptr,
+            "%{public}s fail to create DeviceChange callback", request.c_str());
+        const size_t argCount = ARGS_ONE;
+        napi_value result = nullptr;
+        nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call DeviceChange callback",
+            request.c_str());
+    } while (0);
+    napi_close_handle_scope(env, scope);
+}
+
+void NapiAudioManagerCallback::DeviceChangeTsfnFinalize(napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("DeviceChangeTsfnFinalize: safe thread resource release.");
+}
+
 void NapiAudioManagerCallback::OnJsCallbackDeviceChange(std::unique_ptr<AudioManagerJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("NapiAudioManagerCallback: OnJsCallbackDeviceChange: jsCb.get() is null");
         return;
     }
-    AudioManagerJsCallback *event = jsCb.get();
-    auto task = [event]() {
-        std::shared_ptr<AudioManagerJsCallback> context(
-            static_cast<AudioManagerJsCallback*>(event),
-            [](AudioManagerJsCallback* ptr) {
-                delete ptr;
-        });
-        CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
-        std::string request = event->callbackName;
-        CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
-        napi_env env = event->callback->env_;
-        napi_ref callback = event->callback->cb_;
-        napi_handle_scope scope = nullptr;
-        napi_open_handle_scope(env, &scope);
-        CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-        do {
-            napi_value jsCallback = nullptr;
-            napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
-                request.c_str());
-            napi_value args[ARGS_ONE] = { nullptr };
-            NapiParamUtils::SetValueDeviceChangeAction(env, event->deviceChangeAction, args[PARAM0]);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[0] != nullptr,
-                "%{public}s fail to create DeviceChange callback", request.c_str());
-            const size_t argCount = ARGS_ONE;
-            napi_value result = nullptr;
-            nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call DeviceChange callback",
-                request.c_str());
-        } while (0);
-        napi_close_handle_scope(env, scope);
-    };
-    if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
-        AUDIO_ERR_LOG("OnJsCallbackDeviceChange: Failed to SendEvent");
-    } else {
-        jsCb.release();
-    }
+    AudioManagerJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr.");
+
+    napi_value cbName;
+    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
+    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
+        DeviceChangeTsfnFinalize, nullptr, SafeJsCallbackDeviceChangeWork, &amDevChg_tsfn_);
+    
+    std::thread safeCallThread([event]() {
+        AUDIO_INFO_LOG("OnJsCallbackRingerMode: safe thread start.");
+        napi_acquire_threadsafe_function(amDevChg_tsfn_);
+        napi_call_threadsafe_function(amDevChg_tsfn_, event, napi_tsfn_blocking);
+    });
+
+    safeCallThread.detach();
+}
+
+void NapiAudioManagerCallback::SafeJsCallbackMicrophoneBlockedWork(
+    napi_env env, napi_value js_cb, void* context, void* data)
+{
+    CHECK_AND_RETURN_LOG(data != nullptr, "data is nullptr.");
+    std::shared_ptr<AudioManagerJsCallback> safeContext(
+        static_cast<AudioManagerJsCallback*>(data),
+        [](AudioManagerJsCallback* ptr) {
+            napi_release_threadsafe_function(amMicBlocked_tsfn_, napi_tsfn_abort);
+            delete ptr;
+    });
+    AudioManagerJsCallback *event = reinterpret_cast<AudioManagerJsCallback *>(data);
+    CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
+    std::string request = event->callbackName;
+    CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
+    napi_ref callback = event->callback->cb_;
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
+    do {
+        napi_value jsCallback = nullptr;
+        napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
+            request.c_str());
+        napi_value args[ARGS_ONE] = { nullptr };
+        NapiParamUtils::SetValueBlockedDeviceAction(env, event->microphoneBlockedInfo, args[PARAM0]);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[0] != nullptr,
+            "%{public}s fail to create microphoneBlocked callback", request.c_str());
+        const size_t argCount = ARGS_ONE;
+        napi_value result = nullptr;
+        nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call microphoneBlocked callback",
+            request.c_str());
+    } while (0);
+    napi_close_handle_scope(env, scope);
+}
+
+void NapiAudioManagerCallback::MicrophoneBlockedTsfnFinalize(napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("RingModeTsfnFinalize: safe thread resource release.");
 }
 
 void NapiAudioManagerCallback::OnJsCallbackMicrophoneBlocked(std::unique_ptr<AudioManagerJsCallback> &jsCb)
@@ -307,44 +371,22 @@ void NapiAudioManagerCallback::OnJsCallbackMicrophoneBlocked(std::unique_ptr<Aud
         AUDIO_ERR_LOG("jsCb.get() is null");
         return;
     }
-    AudioManagerJsCallback *event = jsCb.get();
-    auto task = [event]() {
-        std::shared_ptr<AudioManagerJsCallback> context(
-            static_cast<AudioManagerJsCallback*>(event),
-            [](AudioManagerJsCallback* ptr) {
-                delete ptr;
-        });
-        CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
-        std::string request = event->callbackName;
-        CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
-        napi_env env = event->callback->env_;
-        napi_ref callback = event->callback->cb_;
-        napi_handle_scope scope = nullptr;
-        napi_open_handle_scope(env, &scope);
-        CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-        do {
-            napi_value jsCallback = nullptr;
-            napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
-                request.c_str());
-            napi_value args[ARGS_ONE] = { nullptr };
-            NapiParamUtils::SetValueBlockedDeviceAction(env, event->microphoneBlockedInfo, args[PARAM0]);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[0] != nullptr,
-                "%{public}s fail to create microphoneBlocked callback", request.c_str());
-            const size_t argCount = ARGS_ONE;
-            napi_value result = nullptr;
-            nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call microphoneBlocked callback",
-                request.c_str());
-        } while (0);
-        napi_close_handle_scope(env, scope);
-    };
-    if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
-        AUDIO_ERR_LOG("Failed to sendEvent");
-    } else {
-        jsCb.release();
-    }
-}
 
+    AudioManagerJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr.");
+
+    napi_value cbName;
+    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
+    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
+        MicrophoneBlockedTsfnFinalize, nullptr, SafeJsCallbackMicrophoneBlockedWork, &amMicBlocked_tsfn_);
+    
+    std::thread safeCallThread([event]() {
+        AUDIO_INFO_LOG("OnJsCallbackMicrophoneBlocked: safe thread start.");
+        napi_acquire_threadsafe_function(amMicBlocked_tsfn_);
+        napi_call_threadsafe_function(amMicBlocked_tsfn_, event, napi_tsfn_blocking);
+    });
+
+    safeCallThread.detach();
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -45,6 +45,8 @@ private:
     };
 
     void OnJsCallbackActiveOutputDeviceChange(std::unique_ptr<AudioActiveOutputDeviceChangeJsCallback> &jsCb);
+    static void SafeJsCallbackActiveOutputDeviceChangeWork(napi_env env, napi_value js_cb, void* context, void* data);
+    static void ActiveOutputDeviceChangeTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
@@ -69,6 +71,8 @@ private:
     };
 
     void OnJsCallbackActiveInputDeviceChange(std::unique_ptr<AudioActiveInputDeviceChangeJsCallback> &jsCb);
+    static void SafeJsCallbackActiveInputDeviceChangeWork(napi_env env, napi_value js_cb, void* context, void* data);
+    static void ActiveInputDeviceChangeTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::mutex preferredInputListMutex_;
     napi_env env_ = nullptr;

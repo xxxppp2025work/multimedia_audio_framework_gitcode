@@ -39,6 +39,8 @@ private:
         AudioRendererDataInfo audioRendererDataInfo;
     };
     void OnJsRendererDataRequestCallback(std::unique_ptr<RendererDataRequestJsCallback> &jsCb);
+    static void DataRequestTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackDataRequestWork(napi_env env, napi_value js_cb, void* context, void* data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;

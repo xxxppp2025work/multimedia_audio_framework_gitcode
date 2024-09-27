@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <thread>
 #ifndef LOG_TAG
 #define LOG_TAG "NapiRendererDataRequestCallback"
 #endif
@@ -20,12 +21,14 @@
 
 #include "audio_errors.h"
 #include "audio_renderer_log.h"
+#include "js_native_api.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace {
     const std::string RENDERER_DATA_REQUEST_CALLBACK_NAME = "dataRequest";
 }
+napi_threadsafe_function arDataReq_tsfn_ = nullptr;
 
 NapiRendererDataRequestCallback::NapiRendererDataRequestCallback(napi_env env, NapiAudioRenderer *napiRenderer)
     : env_(env), napiRenderer_(napiRenderer)
@@ -83,6 +86,48 @@ void NapiRendererDataRequestCallback::OnWriteData(size_t length)
     return OnJsRendererDataRequestCallback(cb);
 }
 
+void NapiRendererDataRequestCallback::SafeJsCallbackDataRequestWork(
+    napi_env env, napi_value js_cb, void* context, void* data)
+{
+    CHECK_AND_RETURN_LOG(data != nullptr, "data is nullptr.");
+    std::shared_ptr<RendererDataRequestJsCallback> safeContext(
+        static_cast<RendererDataRequestJsCallback*>(data),
+        [](RendererDataRequestJsCallback* ptr) {
+            napi_release_threadsafe_function(arDataReq_tsfn_, napi_tsfn_abort);
+            delete ptr;
+    });
+    RendererDataRequestJsCallback *event = reinterpret_cast<RendererDataRequestJsCallback *>(data);
+    CHECK_AND_RETURN_LOG(event != nullptr, "WorkCallbackRendererDataRequest event is nullptr");
+    std::string request = event->callbackName;
+    CHECK_AND_RETURN_LOG(event->callback != nullptr, "event->callback is nullptr");
+    napi_ref callback = event->callback->cb_;
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
+    do {
+        napi_value jsCallback = nullptr;
+        napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
+            request.c_str());
+
+        napi_value args[ARGS_ONE] = { nullptr };
+        NapiParamUtils::SetNativeAudioRendererDataInfo(env, event->audioRendererDataInfo, args[0]);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
+            "%{public}s fail to create position callback", request.c_str());
+        const size_t argCount = 1;
+        napi_value result = nullptr;
+        nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+        event->rendererNapiObj->audioRenderer_->Enqueue(event->bufDesc_);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call position callback", request.c_str());
+    } while (0);
+    napi_close_handle_scope(env, scope);
+}
+
+void NapiRendererDataRequestCallback::DataRequestTsfnFinalize(napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("DataRequestTsfnFinalize: safe thread resource release.");
+}
+
 void NapiRendererDataRequestCallback::OnJsRendererDataRequestCallback(
     std::unique_ptr<RendererDataRequestJsCallback> &jsCb)
 {
@@ -90,46 +135,22 @@ void NapiRendererDataRequestCallback::OnJsRendererDataRequestCallback(
         AUDIO_ERR_LOG("OnJsRendererDataRequestCallback: jsCb.get() is null");
         return;
     }
-    RendererDataRequestJsCallback *event = jsCb.get();
-    auto task = [event]() {
-        std::shared_ptr<RendererDataRequestJsCallback> context(
-            static_cast<RendererDataRequestJsCallback*>(event),
-            [](RendererDataRequestJsCallback* ptr) {
-                delete ptr;
-        });
-        CHECK_AND_RETURN_LOG(event != nullptr, "WorkCallbackRendererDataRequest event is nullptr");
-        std::string request = event->callbackName;
+    
+    RendererDataRequestJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr.");
 
-        CHECK_AND_RETURN_LOG(event->callback != nullptr, "event->callback is nullptr");
-        napi_env env = event->callback->env_;
-        napi_ref callback = event->callback->cb_;
+    napi_value cbName;
+    napi_create_string_utf8(event->callback->env_, event->callbackName.c_str(), event->callbackName.length(), &cbName);
+    napi_create_threadsafe_function(event->callback->env_, nullptr, nullptr, cbName, 0, 1, event,
+        DataRequestTsfnFinalize, nullptr, SafeJsCallbackDataRequestWork, &arDataReq_tsfn_);
+    
+    std::thread safeCallThread([event]() {
+        AUDIO_INFO_LOG("OnJsRendererDataRequestCallback: safe thread start.");
+        napi_acquire_threadsafe_function(arDataReq_tsfn_);
+        napi_call_threadsafe_function(arDataReq_tsfn_, event, napi_tsfn_blocking);
+    });
 
-        napi_handle_scope scope = nullptr;
-        napi_open_handle_scope(env, &scope);
-        CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-        do {
-            napi_value jsCallback = nullptr;
-            napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
-                request.c_str());
-
-            napi_value args[ARGS_ONE] = { nullptr };
-            NapiParamUtils::SetNativeAudioRendererDataInfo(env, event->audioRendererDataInfo, args[0]);
-            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
-                "%{public}s fail to create position callback", request.c_str());
-            const size_t argCount = 1;
-            napi_value result = nullptr;
-            nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
-            event->rendererNapiObj->audioRenderer_->Enqueue(event->bufDesc_);
-                CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call position callback", request.c_str());
-        } while (0);
-        napi_close_handle_scope(env, scope);
-    };
-    if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
-        AUDIO_ERR_LOG("OnJsRendererDataRequestCallback: Failed to SendEvent");
-    } else {
-        jsCb.release();
-    }
+    safeCallThread.detach();
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
