@@ -7214,6 +7214,7 @@ void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dp
         std::vector<int32_t> allSessions;
         GetAllRunningStreamSession(allSessions);
         OffloadStartPlaying(allSessions);
+        UpdateEffectBtOffloadSupported(true);
     }
 }
 #endif
