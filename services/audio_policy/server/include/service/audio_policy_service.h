@@ -38,11 +38,6 @@
 #include "audio_tone_parser.h"
 #endif
 
-#ifdef ACCESSIBILITY_ENABLE
-#include "accessibility_config_listener.h"
-#else
-#include "iaudio_accessibility_config_observer.h"
-#endif
 #include "device_status_listener.h"
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
@@ -74,8 +69,7 @@ enum A2dpOffloadConnectionState : int32_t {
 
 class AudioA2dpOffloadManager;
 
-class AudioPolicyService : public IPortObserver, public IDeviceStatusObserver,
-    public IAudioAccessibilityConfigObserver, public IPolicyProvider {
+class AudioPolicyService : public IPortObserver, public IDeviceStatusObserver, public IPolicyProvider {
 public:
     static AudioPolicyService& GetAudioPolicyService()
     {
@@ -382,8 +376,6 @@ public:
 
     void UnregisterBluetoothListener();
 
-    void SubscribeAccessibilityConfigObserver();
-
     void RegisterRemoteDevStatusCallback();
 
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(AudioRendererInfo &rendererInfo,
@@ -602,9 +594,6 @@ private:
         audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
         audioPnpServer_(AudioPnpServer::GetAudioPnpServer())
     {
-#ifdef ACCESSIBILITY_ENABLE
-        accessibilityConfigListener_ = std::make_shared<AccessibilityConfigListener>(*this);
-#endif
         deviceStatusListener_ = std::make_unique<DeviceStatusListener>(*this);
     }
 
@@ -815,6 +804,12 @@ private:
     std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelperInstance();
 
     void RegisterNameMonitorHelper();
+
+    void RegisterAccessibilityMonitorHelper();
+
+    void RegisterAccessiblilityBalance();
+
+    void RegisterAccessiblilityMono();
 
     bool IsConnectedOutputDevice(const sptr<AudioDeviceDescriptor> &desc);
 
@@ -1120,9 +1115,6 @@ private:
 #endif
     AudioStreamCollector& streamCollector_;
     AudioRouterCenter& audioRouterCenter_;
-#ifdef ACCESSIBILITY_ENABLE
-    std::shared_ptr<AccessibilityConfigListener> accessibilityConfigListener_;
-#endif
     std::unique_ptr<DeviceStatusListener> deviceStatusListener_;
     std::vector<sptr<AudioDeviceDescriptor>> connectedDevices_;
     std::vector<sptr<MicrophoneDescriptor>> connectedMicrophones_;
