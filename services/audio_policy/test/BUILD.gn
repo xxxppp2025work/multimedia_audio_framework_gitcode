@@ -13,7 +13,6 @@
 
 import("//build/ohos.gni")
 import("//build/test.gni")
-import("../../../accessibility.gni")
 import("../../../appgallery.gni")
 import("../../../bluetooth_part.gni")
 import("../../../config.gni")
@@ -79,13 +78,6 @@ ohos_unittest("audio_interrupt_service_unit_test") {
 
   deps = [ "../../audio_policy:audio_policy_service" ]
 
-  if (accessibility_enable == true) {
-    external_deps += [
-      "accessibility:accessibility_common",
-      "accessibility:accessibilityconfig",
-    ]
-  }
-
   if (bluetooth_part_enable == true) {
     external_deps += [ "bluetooth:btframework" ]
   }
@@ -114,10 +106,6 @@ ohos_unittest("audio_policy_service_unit_test") {
     "-Werror",
     "-Wno-macro-redefined",
   ]
-
-  if (accessibility_enable == true) {
-    cflags += [ "-DACCESSIBILITY_ENABLE" ]
-  }
 
   if (bluetooth_part_enable == true) {
     cflags += [ "-DBLUETOOTH_ENABLE" ]
@@ -161,13 +149,6 @@ ohos_unittest("audio_policy_service_unit_test") {
     "../../audio_policy:audio_policy_service",
     "../../audio_service:audio_client",
   ]
-
-  if (accessibility_enable == true) {
-    external_deps += [
-      "accessibility:accessibility_common",
-      "accessibility:accessibilityconfig",
-    ]
-  }
 
   if (bluetooth_part_enable == true) {
     external_deps += [ "bluetooth:btframework" ]
@@ -234,13 +215,6 @@ ohos_unittest("audio_policy_service_ext_unit_test") {
     "../../audio_policy:audio_policy_service",
     "../../audio_service:audio_client",
   ]
-
-  if (accessibility_enable == true) {
-    external_deps += [
-      "accessibility:accessibility_common",
-      "accessibility:accessibilityconfig",
-    ]
-  }
 
   defines = []
 
@@ -423,13 +397,6 @@ ohos_unittest("audio_policy_server_unit_test") {
   sources = [ "./unittest/audio_interrupt_service_test/src/audio_policy_server_unit_test.cpp" ]
 
   deps = [ "../../audio_policy:audio_policy_service" ]
-
-  if (accessibility_enable == true) {
-    external_deps += [
-      "accessibility:accessibility_common",
-      "accessibility:accessibilityconfig",
-    ]
-  }
 
   if (bluetooth_part_enable == true) {
     external_deps += [ "bluetooth:btframework" ]
