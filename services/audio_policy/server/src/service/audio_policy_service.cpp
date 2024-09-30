@@ -4705,7 +4705,7 @@ void AudioPolicyService::RegisterAccessiblilityMono()
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     AudioSettingObserver::UpdateFunc updateFuncMono = [&](const std::string &key) {
         AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-        int32_t value;
+        int32_t value = 0;
         ErrCode ret = settingProvider.GetIntValue(CONFIG_AUDIO_MONO_KEY, value, "secure");
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "update mono value failed");
         OnMonoAudioConfigChanged(value != 0);
