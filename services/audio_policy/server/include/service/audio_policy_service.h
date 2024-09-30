@@ -56,6 +56,7 @@
 #include "audio_pnp_server.h"
 #include "audio_policy_server_handler.h"
 #include "audio_affinity_manager.h"
+#include "audio_ec_info.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_server_death_recipient.h"
@@ -1016,6 +1017,30 @@ private:
 
     void UpdateRoute(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices);
+    
+    void GetTargetSourceTypeAndMatchingFlag(SourceType source, SourceType &targetSource, bool &useMatchingProInfo);
+    int32_t GetAudioMoudleInfoByName(const std::string &halName, const std::string &moduleName, AudioModuleInfo &audioMoudleInfo);
+    std::string GetHalNameForDevice(const std::string &role, const DeviceType deviceType);
+    std::string GetPipeNameByDeviceForEc(const std::string &role, const DeviceType deviceType);
+    int32_t GetPipeInfoByDeviceTypeForEc(const std::string &role, const DeviceType deviceType, PipeInfo &pipeInfo);
+
+    EcType GetEcType(const DeviceType inputDevice, const DeviceType outputDevice);
+    std::string GetEcSamplingRate(const std::string &halName, StreamPropInfo &outModuleInfo);
+    std::string GetEcFormat(const std::string &halName, StreamPropInfo &outModuleInfo);
+    std::string GetEcChannels(const std::string &halName, StreamPropInfo &outModuleInfo);
+    AuidoEcInfo GetAudioEcInfo();
+    std::string GetEcChannels(const std::string &halName, StreamPropInfo &stramPropInfo);
+    std:string ShouldOpenMicRef(SourceType source);
+    void UpadateEcAndQcFeatureState();
+    void UpadateStreamCommonInfo(AudioModuleInfo &moudleInfo, StreamPropInfo &targetInfo, SourceType source);
+    void UpdateStreamEcInfo(AudioModuleInfo &moudleInfo, SourceType sourceType);
+    void UpdateStreamMicRefInfo(AudioModuleInfo &moudleInfo, SourceType sourceType);
+    void UpdateAudioEcInfo(const DeviceType inputDevice, const DeviceType outputDevice);
+    void UpdateModuleInfoForEc(AudioModuleInfo &moudleInfo);
+    void UpdateModuleInfoForMicRef(AudioModuleInfo &moudleInfo, SourceType source);
+    int32_t UnLoadSourceModuleForEc();
+    int32_t LoadSourceModuleForEc();
+    int32_t ReLoadSourceModuleForEc(const DeviceType inputDevice, const DeviceType outputDevice, bool isForceReload);
 
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
 
@@ -1071,6 +1096,12 @@ private:
     void CancelSafeVolumeNotification(int32_t notificationId);
 
     void CheckAndNotifyUserSelectedDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+
+    void PrepareAndOpenNormalSource(SessionInfo &sessionInfo, StreamPropInfo stramProInfo, SourceType targetSource);
+
+    void CloseNormalSource();
+
+    void HandleRamainingSource();
 
     bool GetAudioEffectOffloadFlag();
 
@@ -1199,6 +1230,8 @@ private:
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
 
+    SourceType normalSourceOpened_ = SOURCE_TYPE_INVALID;
+
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,
         .type = CAST_TYPE_NULL
@@ -1229,6 +1262,17 @@ private:
     bool safeVolumeExit_ = false;
     bool isAbsBtFirstBoot_ = true;
     bool normalVoipFlag_ = false;
+
+    static std::map<DeviceType, std::string> ecDeviceToPipeName;
+    bool isEcFeatureEnable_ = false;
+    bool isQcFeatureEnable_ = false;
+    bool isQcSwitchOn_ = false;
+    bool isRecoredNrOn_ = false;
+    std::mutex audioEcInfoMutex_;
+    AudioEcInfo audioEcInfo_;
+    AudioModuleInfo usbSinkMoudleInfo_ = {};
+    AudioModuleInfo usbSourceMoudleInfo_ = {};
+    AudioModuleInfo dpSinkMoudleInfo_ = {};
 
     std::mutex dialogMutex_;
     std::atomic<bool> isDialogSelectDestroy_ = false;
