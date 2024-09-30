@@ -18,9 +18,14 @@
 
 #include <memory>
 
-#include "audio_info.h"
 #include "microphone_descriptor.h"
 #include "timestamp.h"
+
+#include "audio_device_info.h"
+#include "audio_interrupt_info.h"
+#include "audio_stream_info.h"
+#include "audio_capturer_info.h"
+#include "audio_source_type.h"
 
 namespace OHOS {
 namespace AudioStandard {

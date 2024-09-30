@@ -32,9 +32,6 @@
 #include "audio_device_info.h"
 #include "audio_policy_info.h"
 
-//temp include
-//#include "audio_info.h"
-
 namespace OHOS {
 namespace AudioStandard {
 /**

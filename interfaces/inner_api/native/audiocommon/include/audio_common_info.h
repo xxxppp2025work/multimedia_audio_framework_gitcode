@@ -20,6 +20,7 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t ROOT_UID = 0;
 constexpr int32_t INVALID_UID = -1;
+constexpr int32_t EMPTY_UID = 0;
 
 constexpr int32_t AUDIO_FLAG_INVALID = -1;
 constexpr int32_t AUDIO_FLAG_NORMAL = 0;
