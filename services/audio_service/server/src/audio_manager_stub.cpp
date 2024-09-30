@@ -23,6 +23,7 @@
 #include "audio_effect_server.h"
 #include "audio_asr.h"
 #include "audio_utils.h"
+#include "audio_error.h"
 
 using namespace std;
 

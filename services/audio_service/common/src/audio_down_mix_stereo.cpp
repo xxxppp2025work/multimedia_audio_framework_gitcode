@@ -20,6 +20,7 @@
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include <dlfcn.h>
+#include <unistd.h>
 #include <cinttypes>
 
 namespace OHOS {

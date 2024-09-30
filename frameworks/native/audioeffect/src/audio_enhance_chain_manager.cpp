@@ -24,6 +24,7 @@
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_effect.h"
+#include "audio_volume_info.h"
 #include "audio_enhance_chain.h"
 #include "audio_enhance_chain_adapter.h"
 

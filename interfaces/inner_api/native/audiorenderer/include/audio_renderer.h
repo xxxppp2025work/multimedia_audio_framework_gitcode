@@ -24,6 +24,16 @@
 #include <timestamp.h>
 #include <mutex>
 #include "audio_effect.h"
+#include "audio_errors.h"
+
+#include "audio_stream_info.h"
+#include "audio_renderer_info.h"
+#include "audio_interrupt_info.h"
+#include "audio_device_info.h"
+#include "audio_policy_info.h"
+
+//temp include
+//#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
