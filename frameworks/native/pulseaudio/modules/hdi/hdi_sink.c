@@ -1721,14 +1721,40 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
     }
 }
 
-static void PrimaryEffectProcess(struct Userdata *u, pa_memchunk *chunkIn, char *sinkSceneType)
+static void SampleEffectToSink(const char* sceneType, struct Userdata *u) {
+    CHECK_AND_RETURN_LOG(sceneType != NULL, "SampleEffectToSink: sceneType is NULL!");
+    CHECK_AND_RETURN_LOG(u != NULL, "SampleEffectToSink: u is null!");
+    pa_resampler* resampler = (pa_resampler *)pa_hashmap_get(u->sceneToResamplerMap, sceneType);
+    if (resampler == NULL) { 
+        return;
+    }
+    size_t bufferLen = u->bufferAttr->frameLen * u->bufferAttr->numChanOut * sizeof(float);
+    pa_memchunk unsampledChunk;
+    pa_memchunk sampledChunk;
+    unsampledChunk.length = bufferLen;
+    unsampledChunk.memblock = pa_memblock_new(u->core->mempool, unsampledChunk.length);
+    void *dst = pa_memblock_acquire(unsampledChunk.memblock);
+    pa_assert(p);
+    // 1. u->bufferAttr->tmpBufferout -> convertFromFloat (put the data into unsampledChunk)
+    ConvertFromFloat(u->format, u->bufferAttr->frameLen * u->bufferAttr->numChanOut, u->bufferAttr->BufOut, dst);
+    pa_memblock_release(unsampledChunk.memblock);
+    // 2. run pa_resampler
+    pa_resampler_run(resampler, &unsampledChunk, &sampledChunk);
+    // 3. copy the data from sampledChunk back to tmpBufferOut
+    void *src = pa_memblock_acquire(sampledChunk.memblock);
+    pa_assert(src);
+    ConvertToFloat(u->format, u->bufferAttr->frameLen * u->sink->sample_spec.channels, src, u->bufferAttr->BufOut);
+    pa_memblock_release(sampledChunk.memblock);
+}
+
+static void PrimaryEffectProcess(struct Userdata *u, char *sinkSceneType, const char *sceneType)
 {
     AUTO_CTRACE("hdi_sink::EffectChainManagerProcess:%s", sinkSceneType);
     EffectChainManagerProcess(sinkSceneType, u->bufferAttr);
-    for (int32_t k = 0; k < u->bufferAttr->frameLen * u->bufferAttr->numChanOut; k++) {
+    SampleEffectToSink(sceneType, u);
+    for (int32_t k = 0; k < u->bufferAttr->frameLen * u->sink->sample_spec.channels; k++) {
         u->bufferAttr->tempBufOut[k] += u->bufferAttr->bufOut[k];
     }
-    pa_memblock_release(chunkIn->memblock);
     u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
 }
 
@@ -1825,32 +1851,6 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
     }
 }
 
-static void SampleEffectToSink(const char* sceneType, struct Userdata *u) {
-    CHECK_AND_RETURN_LOG(sceneType != NULL, "SampleEffectToSink: sceneType is NULL!");
-    CHECK_AND_RETURN_LOG(u != NULL, "SampleEffectToSink: u is null!");
-    pa_resampler* resampler = (pa_resampler *)pa_hashmap_get(u->sceneToResamplerMap, sceneType);
-    if (resampler == NULL) { 
-        return;
-    }
-    size_t bufferLen = u->bufferAttr->frameLen * u->bufferAttr->numChanOut * sizeof(float);
-    pa_memchunk unsampledChunk;
-    pa_memchunk sampledChunk;
-    unsampledChunk.length = bufferLen;
-    unsampledChunk.memblock = pa_memblock_new(u->core->mempool, unsampledChunk.length);
-    void *dst = pa_memblock_acquire(unsampledChunk.memblock);
-    pa_assert(p);
-    // 1. u->bufferAttr->tmpBufferout -> convertFromFloat (put the data into unsampledChunk)
-    ConvertFromFloat(u->format, u->bufferAttr->frameLen, u->bufferAttr->tempBufOut, dst);
-    pa_memblock_release(unsampledChunk.memblock);
-    // 2. run pa_resampler
-    pa_resampler_run(resampler, &unsampledChunk, &sampledChunk);
-    // 3. copy the data from sampledChunk back to tmpBufferOut
-    void *src = pa_memblock_acquire(sampledChunk.memblock);
-    pa_assert(src);
-    ConvertToFloat(u->format, u->bufferAttr->frameLen * u->sink->sample_spec.channels, src, u->bufferAttr->tempBufOut);
-    pa_memblock_release(sampledChunk.memblock);
-}
-
 static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *chunkIn)
 {
     if (GetInnerCapturerState()) {
@@ -1900,9 +1900,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         u->bufferAttr->numChanIn = (int32_t)processChannels;
         u->bufferAttr->frameLen = frameLen / u->bufferAttr->numChanIn;
         PrimaryEffectProcess(u, chunkIn, sinkSceneType);
-        // to do run resampler
-        SampleEffectToSink(sceneType, u);
-        
+        pa_memblock_release(chunkIn->memblock);
     }
     if (g_effectProcessFrameCount == PRINT_INTERVAL_FRAME_COUNT) { g_effectProcessFrameCount = 0; }
     CheckAndDealSpeakerPaZeroVolume(u, currentTime);
