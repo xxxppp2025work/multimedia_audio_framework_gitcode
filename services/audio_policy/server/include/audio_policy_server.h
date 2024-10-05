@@ -574,7 +574,6 @@ private:
     void ConnectServiceAdapter();
     void LoadEffectLibrary();
     void RegisterBluetoothListener();
-    void SubscribeAccessibilityConfigObserver();
     void RegisterDataObserver();
     void RegisterPowerStateListener();
     void UnRegisterPowerStateListener();

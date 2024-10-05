@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("../../accessibility.gni")
 import("../../appgallery.gni")
 import("../../bluetooth_part.gni")
 import("../../config.gni")
@@ -74,10 +73,6 @@ config("audio_policy_public_config") {
 
   if (target_cpu == "arm") {
     cflags += [ "-DBINDER_IPC_32BIT" ]
-  }
-
-  if (accessibility_enable == true) {
-    cflags += [ "-DACCESSIBILITY_ENABLE" ]
   }
 
   if (bluetooth_part_enable == true) {
@@ -240,15 +235,6 @@ ohos_shared_library("audio_policy_service") {
   if (audio_framework_config_policy_enable) {
     defines += [ "USE_CONFIG_POLICY" ]
     external_deps += [ "config_policy:configpolicy_util" ]
-  }
-
-  if (accessibility_enable == true) {
-    sources +=
-        [ "server/src/service/listener/accessibility_config_listener.cpp" ]
-    external_deps += [
-      "accessibility:accessibility_common",
-      "accessibility:accessibilityconfig",
-    ]
   }
 
   if (appgallery_part_enable == true) {
