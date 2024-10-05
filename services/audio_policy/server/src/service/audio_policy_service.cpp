@@ -4688,7 +4688,7 @@ void AudioPolicyService::RegisterAccessiblilityBalance()
         AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
         float balance = 0;
         int32_t ret = settingProvider.GetFloatValue(CONFIG_AUDIO_BALANACE_KEY, balance, "secure");
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get balance value failed");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get mono balance failed");
         if (balance < -1.0f || balance > 1.0f) {
             AUDIO_WARNING_LOG("AccessibilityConfigListener: audioBalance value is out of range [-1.0, 1.0]");
         } else {
