@@ -13,7 +13,6 @@
 
 import("//build/config/features.gni")
 import("//build/test.gni")
-import("../../../accessibility.gni")
 import("../../../config.gni")
 
 ohos_fuzztest("AudioPolicyAnotherFuzzTest") {
@@ -71,12 +70,6 @@ ohos_fuzztest("AudioPolicyAnotherFuzzTest") {
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
   ]
-  if (accessibility_enable == true) {
-    external_deps += [
-      "accessibility:accessibility_common",
-      "accessibility:accessibilityconfig",
-    ]
-  }
 }
 
 group("fuzztest") {

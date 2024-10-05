@@ -179,8 +179,8 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
         case ACCESSIBILITY_MANAGER_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility accessibility service start");
-            SubscribeAccessibilityConfigObserver();
             InitKVStore();
+            RegisterDataObserver();
             break;
         case POWER_MANAGER_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility power manager service start");
@@ -2114,12 +2114,6 @@ void AudioPolicyServer::RegisterBluetoothListener()
 {
     AUDIO_INFO_LOG("OnAddSystemAbility bluetooth service start");
     audioPolicyService_.RegisterBluetoothListener();
-}
-
-void AudioPolicyServer::SubscribeAccessibilityConfigObserver()
-{
-    AUDIO_INFO_LOG("SubscribeAccessibilityConfigObserver");
-    audioPolicyService_.SubscribeAccessibilityConfigObserver();
 }
 
 bool AudioPolicyServer::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
