@@ -13,7 +13,6 @@
 
 import("//build/config/features.gni")
 import("//build/test.gni")
-import("../../../accessibility.gni")
 import("../../../config.gni")
 
 ohos_fuzztest("AudioAdaptorBluetoothFuzzTest") {
@@ -75,12 +74,6 @@ ohos_fuzztest("AudioAdaptorBluetoothFuzzTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  if (accessibility_enable == true) {
-    external_deps += [
-      "accessibility:accessibility_common",
-      "accessibility:accessibilityconfig",
-    ]
-  }
 }
 
 group("fuzztest") {
