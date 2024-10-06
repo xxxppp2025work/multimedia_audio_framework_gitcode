@@ -278,7 +278,11 @@ config("audio_service_config") {
     "../../interfaces/inner_api/native/audiomanager/include",
   ]
 
-  cflags = []
+  cflags = [
+    "-fno-rtti",
+    "-fno-exceptions",
+    "-O1"
+  ]
 
   if (target_cpu == "arm") {
     cflags += [ "-DBINDER_IPC_32BIT" ]
@@ -376,6 +380,7 @@ ohos_shared_library("audio_process_service") {
     defines += [ "RESSCHE_ENABLE" ]
   }
 
+  version_script = "libaudio_process_service_export_symbol.map"
   subsystem_name = "multimedia"
   part_name = "audio_framework"
 }
@@ -469,6 +474,7 @@ ohos_shared_library("audio_service") {
     defines += [ "TEST_COVERAGE" ]
   }
 
+  version_script = "libaudio_service_export_symbol_copy.map"
   subsystem_name = "multimedia"
   part_name = "audio_framework"
 }
