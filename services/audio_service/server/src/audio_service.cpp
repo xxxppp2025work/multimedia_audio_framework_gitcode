@@ -34,6 +34,8 @@ namespace AudioStandard {
 static uint64_t g_id = 1;
 static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME = 10000; // 10s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
+static const int32_t INVALID_APP_UID = -1;
+static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = -1;
 
 AudioService *AudioService::GetInstance()
 {
@@ -787,6 +789,16 @@ void AudioService::Dump(std::string &dumpString)
             }
         }
     }
+
+    // dump appUseNumMap and currentRendererStreamCnt_
+    {
+        std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
+        AppendFormat(dumpString, " - currentRendererStreamCnt is %d\n", currentRendererStreamCnt_);
+        for (auto it : appUseNumMap) {
+            AppendFormat(dumpString, "  - appUseNumMap appUid: %d\n", it.first);
+            AppendFormat(dumpString, "  - appUseNumMap appUid created stream: %d\n", it.second);
+        }
+    }
     PolicyHandler::GetInstance().Dump(dumpString);
     AudioVolume::GetInstance()->Dump(dumpString);
 }
@@ -918,6 +930,57 @@ int32_t AudioService::UpdateSourceType(SourceType sourceType)
     CHECK_AND_RETURN_RET_LOG(audioCapturerSourceInstance != nullptr, ERROR, "source is null");
 
     return audioCapturerSourceInstance->UpdateSourceType(sourceType);
+}
+
+void AudioService::SetIncMaxRendererStreamCnt(AudioMode audioMode)
+{
+    if (audioMode == AUDIO_MODE_PLAYBACK) {
+        currentRendererStreamCnt_++;
+    }
+}
+
+void AudioService::CleanUpStream(int32_t callingUid)
+{
+    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
+    currentRendererStreamCnt_--;
+    auto appUseNum = appUseNumMap.find(callingUid);
+    if (appUseNum != appUseNumMap.end()) {
+        appUseNumMap[callingUid] = --appUseNum->second;
+    }
+}
+
+int32_t AudioService::GetCurrentRendererStreamCnt()
+{
+    return currentRendererStreamCnt_;
+}
+
+// need call with streamLifeCycleMutex_ lock
+bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t maxStreamCntPerUid)
+{
+    auto appUseNum = appUseNumMap.find(callingUid);
+    if (appUseNum != appUseNumMap.end()) {
+        ++appUseNum->second;
+    } else {
+        int32_t initValue = 1;
+        appUseNumMap.emplace(callingUid, initValue);
+    }
+
+    if (appUseNumMap[callingUid] > maxStreamCntPerUid) {
+        --appUseNumMap[callingUid]; // actual created stream num is stream num decrease one
+        return true;
+    }
+    return false;
+}
+
+int32_t AudioService::GetCreatedAudioStreamMostUid()
+{
+    int32_t mostAppUid = INVALID_APP_UID;
+    int32_t mostAppNum = INVALID_APP_CREATED_AUDIO_STREAM_NUM;
+    for (auto it = appUseNumMap.begin(); it != appUseNumMap.end(); it++) {
+        mostAppNum = it->second > mostAppNum ? it->second : mostAppNum;
+        mostAppUid = it->first;
+    }
+    return mostAppUid;
 }
 } // namespace AudioStandard
 } // namespace OHOS

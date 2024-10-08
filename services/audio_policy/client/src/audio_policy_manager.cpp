@@ -169,13 +169,14 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
     {
         std::lock_guard<std::mutex> lockCbMap(g_cBDiedMapMutex);
         if (audioStreamCBMap_.size() != 0) {
-            for (auto it = audioStreamCBMap_.begin(); it != audioStreamCBMap_.end(); ++it) {
+            for (auto it = audioStreamCBMap_.begin(); it != audioStreamCBMap_.end();) {
                 auto cb = (*it).lock();
                 if (cb == nullptr) {
                     it = audioStreamCBMap_.erase(it);
                     continue;
                 }
                 cb->OnAudioPolicyServiceDied();
+                ++it;
             }
         }
     }
@@ -293,6 +294,13 @@ AudioScene AudioPolicyManager::GetAudioScene()
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_SCENE_DEFAULT, "audio policy manager proxy is NULL.");
     return gsp->GetAudioScene();
+}
+
+AudioStreamType AudioPolicyManager::GetSystemActiveVolumeType()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, STREAM_DEFAULT, "audio policy manager proxy is NULL.");
+    return gsp->GetSystemActiveVolumeType();
 }
 
 int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType)
