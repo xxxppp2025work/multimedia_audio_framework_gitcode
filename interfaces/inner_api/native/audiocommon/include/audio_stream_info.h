@@ -169,6 +169,8 @@ enum AudioStreamType {
     STREAM_ALL = 100
 };
 
+typedef AudioStreamType AudioVolumeType;
+
 /**
 * Enumerates the stream usage.
 */
@@ -669,6 +671,66 @@ struct AudioStreamData {
     int32_t volumeEnd;
     bool isInnerCaped = false;
 };
+
+/**
+ * @brief Enumerates the rendering states of the current device.
+ */
+enum RendererState {
+    /** INVALID state */
+    RENDERER_INVALID = -1,
+    /** Create New Renderer instance */
+    RENDERER_NEW,
+    /** Reneder Prepared state */
+    RENDERER_PREPARED,
+    /** Rendere Running state */
+    RENDERER_RUNNING,
+    /** Renderer Stopped state */
+    RENDERER_STOPPED,
+    /** Renderer Released state */
+    RENDERER_RELEASED,
+    /** Renderer Paused state */
+    RENDERER_PAUSED
+};
+
+/**
+ * @brief Enumerates the capturing states of the current device.
+ */
+enum CapturerState {
+    /** Capturer INVALID state */
+    CAPTURER_INVALID = -1,
+    /** Create new capturer instance */
+    CAPTURER_NEW,
+    /** Capturer Prepared state */
+    CAPTURER_PREPARED,
+    /** Capturer Running state */
+    CAPTURER_RUNNING,
+    /** Capturer Stopped state */
+    CAPTURER_STOPPED,
+    /** Capturer Released state */
+    CAPTURER_RELEASED,
+    /** Capturer Paused state */
+    CAPTURER_PAUSED
+};
+
+enum State {
+    /** INVALID */
+    INVALID = -1,
+    /** New */
+    NEW,
+    /** Prepared */
+    PREPARED,
+    /** Running */
+    RUNNING,
+    /** Stopped */
+    STOPPED,
+    /** Released */
+    RELEASED,
+    /** Paused */
+    PAUSED,
+    /** Stopping */
+    STOPPING
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_STREAM_INFO_H

@@ -25,6 +25,7 @@
 
 #include "audio_effect.h"
 #include "audio_enhance_chain.h"
+#include "audio_stream_info.h"
 
 namespace OHOS {
 namespace AudioStandard {

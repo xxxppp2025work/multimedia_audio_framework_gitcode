@@ -203,8 +203,6 @@ enum ConnectType {
     CONNECT_TYPE_DISTRIBUTED
 };
 
-typedef AudioStreamType AudioVolumeType;
-
 enum VolumeFlag {
     /**
      * Show system volume bar
@@ -632,64 +630,7 @@ enum AudioServiceIndex {
     AUDIO_SERVICE_INDEX
 };
 
-/**
- * @brief Enumerates the rendering states of the current device.
- */
-enum RendererState {
-    /** INVALID state */
-    RENDERER_INVALID = -1,
-    /** Create New Renderer instance */
-    RENDERER_NEW,
-    /** Reneder Prepared state */
-    RENDERER_PREPARED,
-    /** Rendere Running state */
-    RENDERER_RUNNING,
-    /** Renderer Stopped state */
-    RENDERER_STOPPED,
-    /** Renderer Released state */
-    RENDERER_RELEASED,
-    /** Renderer Paused state */
-    RENDERER_PAUSED
-};
 
-/**
- * @brief Enumerates the capturing states of the current device.
- */
-enum CapturerState {
-    /** Capturer INVALID state */
-    CAPTURER_INVALID = -1,
-    /** Create new capturer instance */
-    CAPTURER_NEW,
-    /** Capturer Prepared state */
-    CAPTURER_PREPARED,
-    /** Capturer Running state */
-    CAPTURER_RUNNING,
-    /** Capturer Stopped state */
-    CAPTURER_STOPPED,
-    /** Capturer Released state */
-    CAPTURER_RELEASED,
-    /** Capturer Paused state */
-    CAPTURER_PAUSED
-};
-
-enum State {
-    /** INVALID */
-    INVALID = -1,
-    /** New */
-    NEW,
-    /** Prepared */
-    PREPARED,
-    /** Running */
-    RUNNING,
-    /** Stopped */
-    STOPPED,
-    /** Released */
-    RELEASED,
-    /** Paused */
-    PAUSED,
-    /** Stopping */
-    STOPPING
-};
 
 struct AudioRegisterTrackerInfo {
     uint32_t sessionId;

@@ -24,6 +24,7 @@
 #include <timestamp.h>
 #include <mutex>
 #include "audio_effect.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {

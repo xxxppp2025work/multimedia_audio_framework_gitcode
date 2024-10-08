@@ -23,7 +23,9 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "audio_info.h"
+
+#include "audio_device_info.h"
+#include "audio_stream_info.h"
 
 #define AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR "AELI"
 #define EFFECT_STRING_LEN_MAX 64
