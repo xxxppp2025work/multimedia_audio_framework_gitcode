@@ -633,6 +633,11 @@ struct BufferDesc {
     size_t metaLength;
 };
 
+struct BufferQueueState {
+    uint32_t numBuffers;
+    uint32_t currentIndex;
+};
+
 class AudioStreamInfo {
 public:
     AudioSamplingRate samplingRate;
@@ -669,6 +674,34 @@ struct AudioStreamData {
     int32_t volumeEnd;
     bool isInnerCaped = false;
 };
+
+/**
+ * Enumerates audio stream privacy type for playback capture.
+ */
+enum AudioPrivacyType {
+    PRIVACY_TYPE_PUBLIC = 0,
+    PRIVACY_TYPE_PRIVATE = 1
+};
+
+enum ChannelBlendMode {
+    /**
+     * No channel process.
+     */
+    MODE_DEFAULT = 0,
+    /**
+     * Blend left and right channel.
+     */
+    MODE_BLEND_LR = 1,
+    /**
+     * Replicate left to right channel.
+     */
+    MODE_ALL_LEFT = 2,
+    /**
+     * Replicate right to left channel.
+     */
+    MODE_ALL_RIGHT = 3,
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_STREAM_INFO_H

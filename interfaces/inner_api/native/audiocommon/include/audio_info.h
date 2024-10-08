@@ -41,19 +41,12 @@ constexpr int32_t RENDERER_STREAM_USAGE_SHIFT = 16;
 constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
 constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 constexpr int32_t MIN_SERVICE_COUNT = 2;
-constexpr int32_t ROOT_UID = 0;
-constexpr int32_t INVALID_UID = -1;
+
 constexpr int32_t INTELL_VOICE_SERVICR_UID = 1042;
 constexpr int32_t NETWORK_ID_SIZE = 80;
 constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
 constexpr int32_t DEFAULT_VOLUME_INTERRUPT_ID = 1;
-constexpr int32_t AUDIO_FLAG_INVALID = -1;
-constexpr int32_t AUDIO_FLAG_NORMAL = 0;
-constexpr int32_t AUDIO_FLAG_MMAP = 1;
-constexpr int32_t AUDIO_FLAG_VOIP_FAST = 2;
-constexpr int32_t AUDIO_FLAG_DIRECT = 3;
-constexpr int32_t AUDIO_FLAG_VOIP_DIRECT = 4;
-constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
+
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
 constexpr int32_t AUDIO_USAGE_VOIP = 1;
 constexpr uint32_t STREAM_FLAG_NORMAL = 0;
@@ -61,7 +54,7 @@ constexpr uint32_t STREAM_FLAG_FAST = 1;
 constexpr uint32_t STREAM_FLAG_DIRECT = 2;
 constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
 constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
-constexpr int32_t EMPTY_UID = 0;
+
 constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
 constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
 
@@ -173,24 +166,7 @@ enum VolumeAdjustType {
     VOLUME_DOWN = 1,
 };
 
-enum ChannelBlendMode {
-    /**
-     * No channel process.
-     */
-    MODE_DEFAULT = 0,
-    /**
-     * Blend left and right channel.
-     */
-    MODE_BLEND_LR = 1,
-    /**
-     * Replicate left to right channel.
-     */
-    MODE_ALL_LEFT = 2,
-    /**
-     * Replicate right to left channel.
-     */
-    MODE_ALL_RIGHT = 3,
-};
+
 
 enum ConnectType {
     /**
@@ -238,24 +214,6 @@ enum FocusType {
     FOCUS_TYPE_RECORDING = 0,
 };
 
-enum AudioErrors {
-    /**
-     * Common errors.
-     */
-    ERROR_INVALID_PARAM = 6800101,
-    ERROR_NO_MEMORY     = 6800102,
-    ERROR_ILLEGAL_STATE = 6800103,
-    ERROR_UNSUPPORTED   = 6800104,
-    ERROR_TIMEOUT       = 6800105,
-    /**
-     * Audio specific errors.
-     */
-    ERROR_STREAM_LIMIT  = 6800201,
-    /**
-     * Default error.
-     */
-    ERROR_SYSTEM        = 6800301
-};
 
 // Ringer Mode
 enum AudioRingerMode {
@@ -264,22 +222,9 @@ enum AudioRingerMode {
     RINGER_MODE_NORMAL = 2
 };
 
-/**
- * Enumerates audio stream privacy type for playback capture.
- */
-enum AudioPrivacyType {
-    PRIVACY_TYPE_PUBLIC = 0,
-    PRIVACY_TYPE_PRIVATE = 1
-};
 
-/**
-* Enumerates the renderer playback speed.
-*/
-enum AudioRendererRate {
-    RENDER_RATE_NORMAL = 0,
-    RENDER_RATE_DOUBLE = 1,
-    RENDER_RATE_HALF = 2,
-};
+
+
 
 /**
 * media safe volume status
@@ -334,109 +279,12 @@ struct A2dpDeviceConfigInfo {
     bool mute = false;
 };
 
-struct AudioRendererInfo {
-    ContentType contentType = CONTENT_TYPE_UNKNOWN;
-    StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
-    int32_t rendererFlags = AUDIO_FLAG_NORMAL;
-    std::string sceneType = "";
-    bool spatializationEnabled = false;
-    bool headTrackingEnabled = false;
-    int32_t originalFlag = AUDIO_FLAG_NORMAL;
-    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-    AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
-    uint8_t encodingType = 0;
-    uint64_t channelLayout = 0ULL;
-    AudioSampleFormat format = SAMPLE_S16LE;
-    bool isOffloadAllowed = true;
-    bool isSatellite = false;
 
-    bool Marshalling(Parcel &parcel) const
-    {
-        return parcel.WriteInt32(static_cast<int32_t>(contentType))
-            && parcel.WriteInt32(static_cast<int32_t>(streamUsage))
-            && parcel.WriteInt32(rendererFlags)
-            && parcel.WriteInt32(originalFlag)
-            && parcel.WriteString(sceneType)
-            && parcel.WriteBool(spatializationEnabled)
-            && parcel.WriteBool(headTrackingEnabled)
-            && parcel.WriteInt32(static_cast<int32_t>(pipeType))
-            && parcel.WriteInt32(static_cast<int32_t>(samplingRate))
-            && parcel.WriteUint8(encodingType)
-            && parcel.WriteUint64(channelLayout)
-            && parcel.WriteInt32(format)
-            && parcel.WriteBool(isOffloadAllowed);
-    }
-    void Unmarshalling(Parcel &parcel)
-    {
-        contentType = static_cast<ContentType>(parcel.ReadInt32());
-        streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
-        rendererFlags = parcel.ReadInt32();
-        originalFlag = parcel.ReadInt32();
-        sceneType = parcel.ReadString();
-        spatializationEnabled = parcel.ReadBool();
-        headTrackingEnabled = parcel.ReadBool();
-        pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
-        samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
-        encodingType = parcel.ReadUint8();
-        channelLayout = parcel.ReadUint64();
-        format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
-        isOffloadAllowed = parcel.ReadBool();
-    }
-};
 
-class AudioCapturerInfo {
-public:
-    SourceType sourceType = SOURCE_TYPE_INVALID;
-    int32_t capturerFlags = 0;
-    int32_t originalFlag = AUDIO_FLAG_NORMAL;
-    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-    AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
-    uint8_t encodingType = 0;
-    uint64_t channelLayout = 0ULL;
-    std::string sceneType = "";
 
-    AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
-        capturerFlags(capturerFlags_) {}
-    AudioCapturerInfo(const AudioCapturerInfo &audioCapturerInfo)
-    {
-        *this = audioCapturerInfo;
-    }
-    AudioCapturerInfo() = default;
-    ~AudioCapturerInfo()= default;
-    bool Marshalling(Parcel &parcel) const
-    {
-        return parcel.WriteInt32(static_cast<int32_t>(sourceType)) &&
-            parcel.WriteInt32(capturerFlags) &&
-            parcel.WriteInt32(originalFlag) &&
-            parcel.WriteInt32(static_cast<int32_t>(pipeType)) &&
-            parcel.WriteInt32(static_cast<int32_t>(samplingRate)) &&
-            parcel.WriteUint8(encodingType) &&
-            parcel.WriteUint64(channelLayout) &&
-            parcel.WriteString(sceneType);
-    }
-    void Unmarshalling(Parcel &parcel)
-    {
-        sourceType = static_cast<SourceType>(parcel.ReadInt32());
-        capturerFlags = parcel.ReadInt32();
-        originalFlag = parcel.ReadInt32();
-        pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
-        samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
-        encodingType = parcel.ReadUint8();
-        channelLayout = parcel.ReadUint64();
-        sceneType = parcel.ReadString();
-    }
-};
 
-struct AudioRendererDesc {
-    ContentType contentType = CONTENT_TYPE_UNKNOWN;
-    StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
-};
 
-struct AudioRendererOptions {
-    AudioStreamInfo streamInfo;
-    AudioRendererInfo rendererInfo;
-    AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
-};
+
 
 struct MicStateChangeEvent {
     bool mute;
@@ -536,56 +384,15 @@ enum AudioDeviceUsage : uint32_t {
     D_ALL_DEVICES = 15,
 };
 
-enum FilterMode : uint32_t {
-    INCLUDE = 0,
-    EXCLUDE,
-    MAX_FILTER_MODE
-};
 
-// 1.If the size of usages or pids is 0, FilterMode will not work.
-// 2.Filters will only works with FileterMode INCLUDE or EXCLUDE while the vector size is not zero.
-// 3.If usages and pids are both not empty, the result is the intersection of the two Filter.
-// 4.If usages.size() == 0, defalut usages will be filtered with FilterMode::INCLUDE.
-// 5.Default usages are MEDIA MUSIC MOVIE GAME and BOOK.
-struct CaptureFilterOptions {
-    std::vector<StreamUsage> usages;
-    FilterMode usageFilterMode {FilterMode::INCLUDE};
-    std::vector<int32_t> pids;
-    FilterMode pidFilterMode {FilterMode::INCLUDE};
-};
 
-struct AudioPlaybackCaptureConfig {
-    CaptureFilterOptions filterOptions;
-    bool silentCapture {false}; // To be deprecated since 12
-};
 
-struct AudioCapturerOptions {
-    AudioStreamInfo streamInfo;
-    AudioCapturerInfo capturerInfo;
-    AudioPlaybackCaptureConfig playbackCaptureConfig;
-};
 
-struct AppInfo {
-    int32_t appUid { INVALID_UID };
-    uint32_t appTokenId { 0 };
-    int32_t appPid { 0 };
-    uint64_t appFullTokenId { 0 };
-};
 
-struct BufferQueueState {
-    uint32_t numBuffers;
-    uint32_t currentIndex;
-};
 
-enum AudioRenderMode {
-    RENDER_MODE_NORMAL,
-    RENDER_MODE_CALLBACK
-};
 
-enum AudioCaptureMode {
-    CAPTURE_MODE_NORMAL,
-    CAPTURE_MODE_CALLBACK
-};
+
+
 
 struct SinkInfo {
     uint32_t sinkId; // sink id
@@ -632,45 +439,8 @@ enum AudioServiceIndex {
     AUDIO_SERVICE_INDEX
 };
 
-/**
- * @brief Enumerates the rendering states of the current device.
- */
-enum RendererState {
-    /** INVALID state */
-    RENDERER_INVALID = -1,
-    /** Create New Renderer instance */
-    RENDERER_NEW,
-    /** Reneder Prepared state */
-    RENDERER_PREPARED,
-    /** Rendere Running state */
-    RENDERER_RUNNING,
-    /** Renderer Stopped state */
-    RENDERER_STOPPED,
-    /** Renderer Released state */
-    RENDERER_RELEASED,
-    /** Renderer Paused state */
-    RENDERER_PAUSED
-};
 
-/**
- * @brief Enumerates the capturing states of the current device.
- */
-enum CapturerState {
-    /** Capturer INVALID state */
-    CAPTURER_INVALID = -1,
-    /** Create new capturer instance */
-    CAPTURER_NEW,
-    /** Capturer Prepared state */
-    CAPTURER_PREPARED,
-    /** Capturer Running state */
-    CAPTURER_RUNNING,
-    /** Capturer Stopped state */
-    CAPTURER_STOPPED,
-    /** Capturer Released state */
-    CAPTURER_RELEASED,
-    /** Capturer Paused state */
-    CAPTURER_PAUSED
-};
+
 
 enum State {
     /** INVALID */
@@ -701,10 +471,7 @@ struct AudioRegisterTrackerInfo {
     uint32_t appTokenId;
 };
 
-enum StateChangeCmdType {
-    CMD_FROM_CLIENT = 0,
-    CMD_FROM_SYSTEM = 1
-};
+
 
 enum AudioMode {
     AUDIO_MODE_PLAYBACK,
@@ -849,67 +616,7 @@ public:
     }
 };
 
-class AudioCapturerChangeInfo {
-public:
-    int32_t createrUID;
-    int32_t clientUID;
-    int32_t sessionId;
-    int32_t callerPid;
-    int32_t clientPid;
-    AudioCapturerInfo capturerInfo;
-    CapturerState capturerState;
-    DeviceInfo inputDeviceInfo;
-    bool muted;
-    uint32_t appTokenId;
 
-    AudioCapturerChangeInfo(const AudioCapturerChangeInfo &audioCapturerChangeInfo)
-    {
-        *this = audioCapturerChangeInfo;
-    }
-    AudioCapturerChangeInfo() = default;
-    ~AudioCapturerChangeInfo() = default;
-    bool Marshalling(Parcel &parcel) const
-    {
-        return parcel.WriteInt32(createrUID)
-            && parcel.WriteInt32(clientUID)
-            && parcel.WriteInt32(sessionId)
-            && parcel.WriteInt32(callerPid)
-            && parcel.WriteInt32(clientPid)
-            && capturerInfo.Marshalling(parcel)
-            && parcel.WriteInt32(static_cast<int32_t>(capturerState))
-            && inputDeviceInfo.Marshalling(parcel)
-            && parcel.WriteBool(muted)
-            && parcel.WriteUint32(appTokenId);
-    }
-
-    bool Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion) const
-    {
-        return parcel.WriteInt32(createrUID)
-            && parcel.WriteInt32(hasSystemPermission ? clientUID : EMPTY_UID)
-            && parcel.WriteInt32(sessionId)
-            && parcel.WriteInt32(callerPid)
-            && parcel.WriteInt32(clientPid)
-            && capturerInfo.Marshalling(parcel)
-            && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(capturerState) : CAPTURER_INVALID)
-            && inputDeviceInfo.Marshalling(parcel, hasBTPermission, hasSystemPermission, apiVersion)
-            && parcel.WriteBool(muted)
-            && parcel.WriteUint32(appTokenId);
-    }
-
-    void Unmarshalling(Parcel &parcel)
-    {
-        createrUID = parcel.ReadInt32();
-        clientUID = parcel.ReadInt32();
-        sessionId = parcel.ReadInt32();
-        callerPid = parcel.ReadInt32();
-        clientPid = parcel.ReadInt32();
-        capturerInfo.Unmarshalling(parcel);
-        capturerState = static_cast<CapturerState>(parcel.ReadInt32());
-        inputDeviceInfo.Unmarshalling(parcel);
-        muted = parcel.ReadBool();
-        appTokenId = parcel.ReadUint32();
-    }
-};
 
 struct AudioStreamChangeInfo {
     AudioRendererChangeInfo audioRendererChangeInfo;
@@ -978,27 +685,7 @@ enum AudioPermissionState {
     AUDIO_PERMISSION_STOP = 1,
 };
 
-class AudioRendererPolicyServiceDiedCallback {
-public:
-    virtual ~AudioRendererPolicyServiceDiedCallback() = default;
 
-    /**
-     * Called when audio policy service died.
-     * @since 10
-     */
-    virtual void OnAudioPolicyServiceDied() = 0;
-};
-
-class AudioStreamPolicyServiceDiedCallback {
-public:
-    virtual ~AudioStreamPolicyServiceDiedCallback() = default;
-
-    /**
-     * Called when audio policy service died.
-     * @since 11
-     */
-    virtual void OnAudioPolicyServiceDied() = 0;
-};
 
 /**
  * Describes three-dimensional value.
@@ -1168,18 +855,7 @@ enum RenderMode {
     LOW_LATENCY,
 };
 
-enum WriteDataCallbackType {
-    /**
-     * Use OH_AudioRenderer_Callbacks.OH_AudioRenderer_OnWriteData
-     * @since 12
-     */
-    WRITE_DATA_CALLBACK_WITHOUT_RESULT = 0,
-    /**
-     * Use OH_AudioRenderer_OnWriteDataCallback.
-     * @since 12
-     */
-    WRITE_DATA_CALLBACK_WITH_RESULT = 1
-};
+
 
 enum PolicyType {
     EDM_POLICY_TYPE = 0,
