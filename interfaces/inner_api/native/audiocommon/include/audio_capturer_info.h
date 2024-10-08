@@ -46,6 +46,7 @@ enum AudioCaptureMode {
     CAPTURE_MODE_CALLBACK
 };
 
+
 class AudioCapturerInfo {
 public:
     SourceType sourceType = SOURCE_TYPE_INVALID;
