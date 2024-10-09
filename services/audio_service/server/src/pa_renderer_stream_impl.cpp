@@ -204,7 +204,7 @@ int32_t PaRendererStreamImpl::Pause()
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mainloop_);
 
-    if (effectMode_ = EFFECT_DEFAULT) {
+    if (effectMode_ == EFFECT_DEFAULT) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager != nullptr) {
             audioEffectChainManager->InitAudioEffectChainDynamic(effectSceneName_);
@@ -235,7 +235,7 @@ int32_t PaRendererStreamImpl::Flush()
         return ERR_OPERATION_FAILED;
     }
     Trace trace("PaRendererStreamImpl::InitAudioEffectChainDynamic");
-    if (effectMode_ = EFFECT_DEFAULT) {
+    if (effectMode_ == EFFECT_DEFAULT) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager != nullptr) {
             audioEffectChainManager->InitAudioEffectChainDynamic(effectSceneName_);
@@ -280,7 +280,7 @@ int32_t PaRendererStreamImpl::Stop()
         reinterpret_cast<void *>(this));
     CHECK_AND_RETURN_RET_LOG(operation != nullptr, ERR_OPERATION_FAILED, "pa_stream_cork operation is null");
     pa_operation_unref(operation);
-    if (effectMode_ = EFFECT_DEFAULT) {
+    if (effectMode_ == EFFECT_DEFAULT) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager != nullptr) {
             audioEffectChainManager->InitAudioEffectChainDynamic(effectSceneName_);
@@ -297,7 +297,7 @@ int32_t PaRendererStreamImpl::Release()
     }
     state_ = RELEASED;
 
-    if (effectMode_ = EFFECT_DEFAULT) {
+    if (effectMode_ == EFFECT_DEFAULT) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager != nullptr) {
             audioEffectChainManager->InitAudioEffectChainDynamic(effectSceneName_);
