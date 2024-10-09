@@ -33,7 +33,6 @@
 #include "audio_affinity_manager.h"
 #include "audio_spatialization_service.h"
 #include "audio_converter_parser.h"
-#include "audio_dialog_ability_connection.h"
 #include "media_monitor_manager.h"
 #include "client_type_manager.h"
 #include "audio_safe_volume_notification.h"
@@ -145,6 +144,8 @@ static const std::string USER_DEFINED_STRING = "settings.general.user_defined_de
 static const std::string EARPIECE_TYPE_NAME = "DEVICE_TYPE_EARPIECE";
 static const std::string FLAG_MMAP_STRING = "AUDIO_FLAG_MMAP";
 static const std::string USAGE_VOIP_STRING = "AUDIO_USAGE_VOIP";
+static const std::string CONFIG_AUDIO_BALANACE_KEY = "master_balance";
+static const std::string CONFIG_AUDIO_MONO_KEY = "master_mono";
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
@@ -504,7 +505,7 @@ void AudioPolicyService::Deinit(void)
     IOHandles_.clear();
     ioHandleLock.unlock();
 #ifdef ACCESSIBILITY_ENABLE
-    accessibilityConfigListener_->UnsubscribeObserver();
+    UnregisterAccessibilityMonitorHelper();
 #endif
     deviceStatusListener_->UnRegisterDeviceStatusListener();
     audioPnpServer_.StopPnpServer();
@@ -1968,7 +1969,7 @@ void AudioPolicyService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescrip
     Trace trace("AudioPolicyService::OnPreferredOutputDeviceUpdated:" + std::to_string(deviceDescriptor.deviceType_));
     AUDIO_INFO_LOG("Start");
 
-    if (audioPolicyServerHandler_ != nullptr && (ringerModeMute_ ||
+    if (audioPolicyServerHandler_ != nullptr && (ringerModeMute_.load() ||
         (audioScene_ != AUDIO_SCENE_RINGING && audioScene_ != AUDIO_SCENE_VOICE_RINGING))) {
         audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
     }
@@ -4674,6 +4675,83 @@ bool AudioPolicyService::IsDataShareReady()
     }
 }
 
+void AudioPolicyService::RegisterAccessibilityMonitorHelper()
+{
+    RegisterAccessiblilityBalance();
+    RegisterAccessiblilityMono();
+}
+
+void AudioPolicyService::RegisterAccessiblilityBalance()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncBalance = [&](const std::string &key) {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        float balance = 0;
+        int32_t ret = settingProvider.GetFloatValue(CONFIG_AUDIO_BALANACE_KEY, balance, "secure");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get balance value failed");
+        if (balance < -1.0f || balance > 1.0f) {
+            AUDIO_WARNING_LOG("audioBalance value is out of range [-1.0, 1.0]");
+        } else {
+            OnAudioBalanceChanged(balance);
+        }
+    };
+    sptr observer = settingProvider.CreateObserver(CONFIG_AUDIO_BALANACE_KEY, updateFuncBalance);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterObserver balance failed");
+    }
+}
+
+void AudioPolicyService::RegisterAccessiblilityMono()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncMono = [&](const std::string &key) {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        int32_t value = 0;
+        ErrCode ret = settingProvider.GetIntValue(CONFIG_AUDIO_MONO_KEY, value, "secure");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get mono value failed");
+        OnMonoAudioConfigChanged(value != 0);
+    };
+    sptr observer = settingProvider.CreateObserver(CONFIG_AUDIO_MONO_KEY, updateFuncMono);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterObserver mono failed");
+    }
+}
+
+void AudioPolicyService::UnregisterAccessibilityMonitorHelper()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncBalance = [&](const std::string &key) {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        float balance = 0;
+        int32_t ret = settingProvider.GetFloatValue(CONFIG_AUDIO_BALANACE_KEY, balance, "secure");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get balance value failed");
+        if (balance < -1.0f || balance > 1.0f) {
+            AUDIO_WARNING_LOG("audioBalance value is out of range [-1.0, 1.0]");
+        } else {
+            OnAudioBalanceChanged(balance);
+        }
+    };
+    sptr observer = settingProvider.CreateObserver(CONFIG_AUDIO_BALANACE_KEY, updateFuncBalance);
+    ErrCode ret = settingProvider.UnregisterObserver(observer, "secure");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("UnregisterObserver balance failed");
+    }
+    AudioSettingObserver::UpdateFunc updateFuncMono = [&](const std::string &key) {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        int32_t value = 0;
+        ErrCode ret = settingProvider.GetIntValue(CONFIG_AUDIO_MONO_KEY, value, "secure");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get mono value failed");
+        OnMonoAudioConfigChanged(value != 0);
+    };
+    observer = settingProvider.CreateObserver(CONFIG_AUDIO_MONO_KEY, updateFuncMono);
+    ret = settingProvider.UnregisterObserver(observer, "secure");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("UnregisterObserver mono failed");
+    }
+}
+
 void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor)
 {
     if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
@@ -5391,6 +5469,7 @@ void AudioPolicyService::HandleAudioCaptureState(AudioMode &mode, AudioStreamCha
          streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_STOPPED)) {
         if (streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
             BluetoothScoDisconectForRecongnition();
+            Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
         }
         audioAffinityManager_.DelSelectCapturerDevice(streamChangeInfo.audioCapturerChangeInfo.clientUID);
         audioCaptureMicrophoneDescriptor_.erase(streamChangeInfo.audioCapturerChangeInfo.sessionId);
@@ -6044,25 +6123,6 @@ void AudioPolicyService::CreateCheckMusicActiveThread()
     }
 }
 
-void AudioPolicyService::CreateSafeVolumeDialogThread()
-{
-    std::lock_guard<std::mutex> safeVolumeLock(safeVolumeMutex_);
-    AUDIO_INFO_LOG("enter");
-    if (safeVolumeDialogThrd_ != nullptr && safeVolumeDialogThrd_->joinable()) {
-        AUDIO_INFO_LOG("safeVolumeDialogThread exit begin");
-        safeVolumeDialogThrd_->join();
-        safeVolumeDialogThrd_.reset();
-        safeVolumeDialogThrd_ = nullptr;
-        AUDIO_INFO_LOG("safeVolumeDialogThread exit end");
-    }
-
-    AUDIO_INFO_LOG("create thread begin");
-    safeVolumeDialogThrd_ = std::make_unique<std::thread>([this] { this->ShowDialog(); });
-    pthread_setname_np(safeVolumeDialogThrd_->native_handle(), "OS_AudioSafeDialog");
-    isSafeVolumeDialogShowing_.store(true);
-    AUDIO_INFO_LOG("create thread end");
-}
-
 int32_t AudioPolicyService::DealWithSafeVolume(const int32_t volumeLevel, bool isA2dpDevice)
 {
     if (isA2dpDevice) {
@@ -6097,47 +6157,6 @@ int32_t AudioPolicyService::DealWithSafeVolume(const int32_t volumeLevel, bool i
         return sVolumeLevel;
     }
     return sVolumeLevel;
-}
-
-int32_t AudioPolicyService::ShowDialog()
-{
-    auto abilityMgrClient = AAFwk::AbilityManagerClient::GetInstance();
-    if (abilityMgrClient == nullptr) {
-        isSafeVolumeDialogShowing_.store(false);
-        AUDIO_INFO_LOG("abilityMgrClient malloc failed");
-        return ERROR;
-    }
-    sptr<OHOS::AAFwk::IAbilityConnection> dialogConnectionCallback = new (std::nothrow)AudioDialogAbilityConnection();
-    if (dialogConnectionCallback == nullptr) {
-        isSafeVolumeDialogShowing_.store(false);
-        AUDIO_INFO_LOG("dialogConnectionCallback malloc failed");
-        return ERROR;
-    }
-
-    AAFwk::Want want;
-    std::string bundleName = "com.ohos.sceneboard";
-    std::string abilityName = "com.ohos.sceneboard.systemdialog";
-    want.SetElementName(bundleName, abilityName);
-    ErrCode result = abilityMgrClient->ConnectAbility(want, dialogConnectionCallback,
-        AppExecFwk::Constants::INVALID_USERID);
-    if (result != SUCCESS) {
-        isSafeVolumeDialogShowing_.store(false);
-        AUDIO_INFO_LOG("ConnectAbility failed");
-        return result;
-    }
-
-    AUDIO_INFO_LOG("show safe Volume Dialog");
-    std::unique_lock<std::mutex> lock(dialogMutex_);
-    isSafeVolumeDialogShowing_.store(true);
-    if (!isDialogSelectDestroy_.load()) {
-        auto status = dialogSelectCondition_.wait_for(lock, std::chrono::seconds(WAIT_DIALOG_CLOSE_TIME_S),
-            [this] () { return isDialogSelectDestroy_.load() || !isSafeVolumeDialogShowing_.load(); });
-        if (!status) {
-            AUDIO_ERR_LOG("user cancel or not select.");
-        }
-        isDialogSelectDestroy_.store(false);
-    }
-    return result;
 }
 
 int32_t AudioPolicyService::HandleAbsBluetoothVolume(const std::string &macAddress, const int32_t volumeLevel)
@@ -7137,7 +7156,7 @@ void AudioPolicyService::UnregisterBluetoothListener()
 void AudioPolicyService::SubscribeAccessibilityConfigObserver()
 {
 #ifdef ACCESSIBILITY_ENABLE
-    accessibilityConfigListener_->SubscribeObserver();
+    RegisterAccessibilityMonitorHelper();
     AUDIO_INFO_LOG("Subscribe accessibility config observer successfully");
 #endif
 }
@@ -7427,9 +7446,6 @@ void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
     }
 
     if (sessionWithNormalSourceType_.count(sessionID) > 0) {
-        if (sessionWithNormalSourceType_[sessionID].sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
-            BluetoothScoDisconectForRecongnition();
-        }
         sessionWithNormalSourceType_.erase(sessionID);
         if (!sessionWithNormalSourceType_.empty()) {
             return;
@@ -7895,6 +7911,7 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     AUDIO_INFO_LOG("[%{public}s] type[%{public}d] command: %{public}d category[%{public}d] connectState[%{public}d] " \
         "isEnable[%{public}d]", GetEncryptAddr(desc.macAddress_).c_str(), desc.deviceType_,
         command, desc.deviceCategory_, desc.connectState_, desc.isEnable_);
+    DeviceUpdateClearRecongnitionStatus(desc);
     if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
         if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             ClearScoDeviceSuspendState(desc.macAddress_);
@@ -7925,6 +7942,15 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     FetchDevice(true, reason);
     FetchDevice(false);
     UpdateA2dpOffloadFlagForAllStream();
+}
+
+void AudioPolicyService::DeviceUpdateClearRecongnitionStatus(AudioDeviceDescriptor &desc)
+{
+    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE ||
+        desc.connectState_ == DEACTIVE_CONNECTED || !desc.isEnable_)) {
+        BluetoothScoDisconectForRecongnition();
+        Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
+    }
 }
 
 void AudioPolicyService::CheckForA2dpSuspend(AudioDeviceDescriptor &desc)
