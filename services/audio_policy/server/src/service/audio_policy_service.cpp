@@ -102,48 +102,48 @@ static const std::vector<DeviceType> MIC_REF_DEVICES = {
     DEVICE_TYPE_USB_ARM_HEADSET
 };
 
-static const std::map<std::pair<DeviceType, EcType> DEVICE_TO_TYPE = {
+static const std::map<std::pair<DeviceType, DeviceType> DEVICE_TO_EC_TYPE = {
     {{DEVICE_TYPE_MIC, DEVICE_TYPE_SPEAKER}, EC_TYPE_SAME_ADAPTER},
     {{DEVICE_TYPE_MIC, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_SAME_ADAPTER},
     {{DEVICE_TYPE_MIC, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_SAME_ADAPTER},
     {{DEVICE_TYPE_MIC, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_DIFF_ADAPTER},
     {{DEVICE_TYPE_MIC, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_MIC, DEVICE_TYPE_DP}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_MIC, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
 
     {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_SPEAKER}, EC_TYPE_SAME_ADAPTER},
     {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_SAME_ADAPTER},
     {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_SAME_ADAPTER},
     {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_DIFF_ADAPTER},
-    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_DP}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
 
     {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_SPEAKER}, EC_TYPE_SAME_ADAPTER},
     {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_SAME_ADAPTER},
     {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_SAME_ADAPTER},
     {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_DIFF_ADAPTER},
-    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_DP}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
 
-    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_SPEAKER}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_DIFF_ADAPTER},
-    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_DP}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_SPEAKER}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
 
     {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_SPEAKER}, EC_TYPE_SAME_ADAPTER},
     {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_SAME_ADAPTER},
     {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_SAME_ADAPTER},
     {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_DIFF_ADAPTER},
     {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_SAME_ADAPTER},
-    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_DP}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
 };
 
 std::map<std::string, AudioSampleFormat> AudioPolicyService::formatStrToEnum = {
     {"s8", SAMPLE_U8},
     {"s16", SAMPLE_S16LE},
     {"s24", SAMPLE_S24LE},
-    {"s32", SAMPLE_S32LE}
+    {"s32", SAMPLE_S32LE}，
 };
 
 std::map<std::string, uint32_t> AudioPolicyService::formatStrToEnum = {
@@ -186,13 +186,14 @@ std::map<std::string, std::string> AudioPolicyService::sinkPortStrToClassStrMap_
     {OFFLOAD_PRIMARY_SPEAKER, OFFLOAD_CLASS},
 };
 
-std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
-    // form high to low
+static::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
+    // from high to low
     {SOURCE_TYPE_VOICE_CALL, 5},
     {SOURCE_TYPE_VOICE_COMMUNICATION, 4},
     {SOURCE_TYPE_VOICE_TRANSCRIPTION, 3},
     {SOURCE_TYPE_MIC, 2},
     {SOURCE_TYPE_VOICE_RECOGNITION, 1},
+    {SOURCE_TYPE_INVALID, 0}
 };
 
 static const std::string SETTINGS_DATA_BASE_URI =
@@ -233,8 +234,8 @@ const int32_t DATA_LINK_CONNECTING = 10;
 const int32_t DATA_LINK_CONNECTED = 11;
 const int32_t A2DP_PLAYING = 2;
 const int32_t A2DP_STOPPED = 1;
-const unint32_t PC_MiC_CHANNEL_NUM = 4;
-const unint32_t HEADPHONE_CHANNEL_NUM = 4;
+const uint32_t PC_MIC_CHANNEL_NUM = 4;
+const uint32_t HEADPHONE_CHANNEL_NUM = 2;
 std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 #ifdef BLUETOOTH_ENABLE
@@ -375,9 +376,9 @@ static uint32_t PcmFormatToBits(AudioSampleFormat format)
 
 static bool IsHigherPrioritySource(SourceType newSource, SourceType currentSource)
 {
-    if (NORMAL_SOURCE_PRIORITY.count(newSource) == 8) ||
+    if (NORMAL_SOURCE_PRIORITY.count(newSource) == 0) ||
         NORMAL_SOURCE_PRIORITY.count(currentSource) == 0) {
-            return false;
+        return false;
     }
     return NORMAL_SOURCE_PRIORITY[newSource] > NORMAL_SOURCE_PRIORITY[currentSource];
 }
@@ -442,8 +443,8 @@ bool AudioPolicyService::Init(void)
 
     int32_t ecEnableState = system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0);
     int32_t qcEnableState = system::GetBoolParameter("const.multimedia.audio.fwk_pnr.enable", 0);
-    isEcFeatureEnable_ = ecEnableState;
-    isQcFeatureEnable_ = qcEnableState;
+    isEcFeatureEnable_ != ecEnableState;
+    isQcFeatureEnable_ != qcEnableState;
 
     AUDIO_INFO_LOG("Audio policy service init end");
     
@@ -2059,7 +2060,7 @@ void AudioPolicyService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescrip
     }
     UpdateEffectDefaultSink(deviceDescriptor.deviceType_);
     AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(deviceDescriptor.macAddress_);
-    ReLoadSourceModuleForEc(DEVICE_TYPE_DEFAULT, deviceDescriptor.deviceType_, false);
+    ReloadSourceForDeviceChange(DEVICE_TYPE_DEFAULT, deviceDescriptor.deviceType_, false);
 }
 
 void AudioPolicyService::OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId)
@@ -2069,7 +2070,7 @@ void AudioPolicyService::OnPreferredInputDeviceUpdated(DeviceType deviceType, st
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendPreferredInputDeviceUpdated();
     }
-    ReLoadSourceModuleForEc(deviceType, DEVICE_TYPE_DEFAULT, false);
+    ReloadSourceForDeviceChange(deviceType, DEVICE_TYPE_DEFAULT, false);
 }
 
 void AudioPolicyService::OnPreferredDeviceUpdated(const AudioDeviceDescriptor& activeOutputDevice,
@@ -3385,10 +3386,10 @@ int32_t AudioPolicyService::LoadUsbModule(string deviceInfo, DeviceRole deviceRo
                 int32_t ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
                 CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
                     "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
-                usbSinkMoudleInfo_ = moduleInfo;
+                usbSinkModuleInfo_ = moduleInfo;
             } else {
                 AUDIO_INFO_LOG("just save arm usb source module info");
-                usbSourceMoudleInfo_ = moduleInfo;
+                usbSourceModuleInfo_ = moduleInfo;
             }
         } else {
             int32_t ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
@@ -3420,7 +3421,7 @@ int32_t AudioPolicyService::LoadDpModule(string deviceInfo)
         if (IOHandles_.find(moduleInfo.name) == IOHandles_.end()) {
             GetDPModuleInfo(moduleInfo, deviceInfo);
             if (moduleInfo.role == ROLE_SINK) {
-               AUDIO_INFO_LOG("save dp sink moduleInfo for param");
+                AUDIO_INFO_LOG("save dp sink module info for cust param");
                 dpSinkMoudleInfo_ = moduleInfo;
             }
             return OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
@@ -3449,15 +3450,14 @@ int32_t AudioPolicyService::LoadDefaultUsbModule(DeviceRole deviceRole)
         if (configRole != deviceRole) {continue;}
         if (isEcFeatureEnable_) {
             if (deviceRole == OUTPUT_DEVICE) {
-                usbSinkMoudleInfo_ = moduleInfo;
+                usbSinkModuleInfo_ = moduleInfo;
                 int32_t ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
                 CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
                     "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
             } else {
                 AUDIO_INFO_LOG("just save arm usb source module info");
-                usbSourceMoudleInfo_ = moduleInfo;
+                usbSourceModuleInfo_ = moduleInfo;
             }
-            
         } else {
             int32_t ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
@@ -4167,8 +4167,7 @@ int32_t AudioPolicyService::HandleLocalDeviceDisconnected(const AudioDeviceDescr
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     g_adProxy->ResetRouteForDisconnect(updatedDesc.deviceType_);
     IPCSkeleton::SetCallingIdentity(identity);
-    AUDIO_INFO_LOG("get value %{public}s form hal when usb device connect", value.c_str());
-
+    
     return SUCCESS;
 }
 
