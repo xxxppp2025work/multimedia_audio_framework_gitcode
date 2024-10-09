@@ -1018,29 +1018,26 @@ private:
     void UpdateRoute(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices);
     
-    void GetTargetSourceTypeAndMatchingFlag(SourceType source, SourceType &targetSource, bool &useMatchingProInfo);
-    int32_t GetAudioMoudleInfoByName(const std::string &halName, const std::string &moduleName, AudioModuleInfo &audioMoudleInfo);
+    void GetTargetSourceTypeAndMatchingFlag(SourceType source, SourceType &targetSource, bool &useMatchingPropInfo);
+    int32_t GetAudioModuleInfoByName(const std::string &halName, const std::string &moduleName, AudioModuleInfo &moudleInfo);
     std::string GetHalNameForDevice(const std::string &role, const DeviceType deviceType);
     std::string GetPipeNameByDeviceForEc(const std::string &role, const DeviceType deviceType);
     int32_t GetPipeInfoByDeviceTypeForEc(const std::string &role, const DeviceType deviceType, PipeInfo &pipeInfo);
-
     EcType GetEcType(const DeviceType inputDevice, const DeviceType outputDevice);
-    std::string GetEcSamplingRate(const std::string &halName, StreamPropInfo &outModuleInfo);
-    std::string GetEcFormat(const std::string &halName, StreamPropInfo &outModuleInfo);
-    std::string GetEcChannels(const std::string &halName, StreamPropInfo &outModuleInfo);
-    AuidoEcInfo GetAudioEcInfo();
-    std::string GetEcChannels(const std::string &halName, StreamPropInfo &stramPropInfo);
-    std:string ShouldOpenMicRef(SourceType source);
-    void UpadateEcAndQcFeatureState();
-    void UpadateStreamCommonInfo(AudioModuleInfo &moudleInfo, StreamPropInfo &targetInfo, SourceType source);
-    void UpdateStreamEcInfo(AudioModuleInfo &moudleInfo, SourceType sourceType);
-    void UpdateStreamMicRefInfo(AudioModuleInfo &moudleInfo, SourceType sourceType);
+    std::string GetEcSamplingRate(const std::string &halName, StreamPropInfo &streamPropInfo);
+    std::string GetEcFormat(const std::string &halName, StreamPropInfo &streamPropInfo);
+    std::string GetEcChannels(const std::string &halName, StreamPropInfo &streamPropInfo);
+    AudidoEcInfo GetAudioEcInfo();
+    std::string ShouldOpenMicRef(SourceType source);
+    void UpdateEcAndQcFeatureState();
+    void UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamPropInfo &targetInfo, SourceType source);
+    void UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void UpdateAudioEcInfo(const DeviceType inputDevice, const DeviceType outputDevice);
-    void UpdateModuleInfoForEc(AudioModuleInfo &moudleInfo);
-    void UpdateModuleInfoForMicRef(AudioModuleInfo &moudleInfo, SourceType source);
-    int32_t UnLoadSourceModuleForEc();
-    int32_t LoadSourceModuleForEc();
-    int32_t ReLoadSourceModuleForEc(const DeviceType inputDevice, const DeviceType outputDevice, bool isForceReload);
+    void UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo);
+    void UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, SourceType source);
+    void ReLoadSourceModuleForEc(const DeviceType inputDevice, const DeviceType outputDevice, bool isForceReload);
+    void ReLoadSourceModuleForSession(SessionInfo sessionInfo);
 
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
 
@@ -1241,7 +1238,7 @@ private:
     std::unordered_map<uint32_t, SessionInfo> sessionWithSpecialSourceType_;
 
     static std::map<std::string, std::string> sinkPortStrToClassStrMap_;
-    static std::map<std::string, uint32_t> formatStrToEnum;
+    static std::map<std::string, AudioSampleFormat> formatStrToEnum;
     static std::map<std::string, ClassType> classStrToEnum;
     static std::map<std::string, ClassType> portStrToEnum;
 
@@ -1267,12 +1264,12 @@ private:
     bool isEcFeatureEnable_ = false;
     bool isQcFeatureEnable_ = false;
     bool isQcSwitchOn_ = false;
-    bool isRecoredNrOn_ = false;
+    bool isRecordNrOn_ = false;
     std::mutex audioEcInfoMutex_;
     AudioEcInfo audioEcInfo_;
-    AudioModuleInfo usbSinkMoudleInfo_ = {};
-    AudioModuleInfo usbSourceMoudleInfo_ = {};
-    AudioModuleInfo dpSinkMoudleInfo_ = {};
+    AudioModuleInfo usbSinkModuleInfo_ = {};
+    AudioModuleInfo usbSourceModuleInfo_ = {};
+    AudioModuleInfo dpSinkModuleInfo_ = {};
 
     std::mutex dialogMutex_;
     std::atomic<bool> isDialogSelectDestroy_ = false;
