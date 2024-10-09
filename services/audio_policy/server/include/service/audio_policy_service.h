@@ -1019,7 +1019,8 @@ private:
         vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices);
     
     void GetTargetSourceTypeAndMatchingFlag(SourceType source, SourceType &targetSource, bool &useMatchingPropInfo);
-    int32_t GetAudioModuleInfoByName(const std::string &halName, const std::string &moduleName, AudioModuleInfo &moudleInfo);
+    int32_t GetAudioModuleInfoByName(const std::string &halName, const std::string &moduleName,
+        AudioModuleInfo &moudleInfo);
     std::string GetHalNameForDevice(const std::string &role, const DeviceType deviceType);
     std::string GetPipeNameByDeviceForEc(const std::string &role, const DeviceType deviceType);
     int32_t GetPipeInfoByDeviceTypeForEc(const std::string &role, const DeviceType deviceType, PipeInfo &pipeInfo);
@@ -1027,17 +1028,17 @@ private:
     std::string GetEcSamplingRate(const std::string &halName, StreamPropInfo &streamPropInfo);
     std::string GetEcFormat(const std::string &halName, StreamPropInfo &streamPropInfo);
     std::string GetEcChannels(const std::string &halName, StreamPropInfo &streamPropInfo);
-    AudidoEcInfo GetAudioEcInfo();
+    AudioEcInfo GetAudioEcInfo();
     std::string ShouldOpenMicRef(SourceType source);
     void UpdateEcAndQcFeatureState();
-    void UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamPropInfo &targetInfo, SourceType source);
+    void UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamPropInfo &targetInfo, SourceType sourceType);
     void UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void UpdateAudioEcInfo(const DeviceType inputDevice, const DeviceType outputDevice);
     void UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo);
-    void UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, SourceType source);
-    void ReLoadSourceModuleForEc(const DeviceType inputDevice, const DeviceType outputDevice, bool isForceReload);
-    void ReLoadSourceModuleForSession(SessionInfo sessionInfo);
+    void UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void ReloadSourceForDeviceChange(const DeviceType inputDevice, const DeviceType outputDevice, bool isForceReload);
+    void ReloadSourceForSession(SessionInfo sessionInfo);
 
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
 
@@ -1094,11 +1095,11 @@ private:
 
     void CheckAndNotifyUserSelectedDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
-    void PrepareAndOpenNormalSource(SessionInfo &sessionInfo, StreamPropInfo stramProInfo, SourceType targetSource);
+    void PrepareAndOpenNormalSource(SessionInfo &sessionInfo, StreamPropInfo &targetInfo, SourceType targetSource);
 
     void CloseNormalSource();
 
-    void HandleRamainingSource();
+    void HandleRemainingSource();
 
     bool GetAudioEffectOffloadFlag();
 
