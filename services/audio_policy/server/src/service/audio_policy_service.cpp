@@ -7564,20 +7564,20 @@ int32_t AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessi
 
 void AudioPolicyService::HandleRemainingSource()
 {
-    SourceType highestSource = SOURCE_TYPE_MIC;
+    SourceType highestSource = SOURCE_TYPE_INVALID;
     uint32_t highestSession = 0;
-    // find highestSource in remaining session
+    // find highest source in remaining session
     for (const auto &iter : sessionWithNormalSourceType_) {
         if (IsHigherPrioritySource(iter.second.sourceType, highestSource)) {
             highestSession = iter.first;
             highestSource = iter.second.sourceType;
         }
     }
-    // if remaining sources are all lower than current one, reload with the highest source in remaining
+    // if remaining sources are all lower than current removeed one, reload with the highest source in remaining
     if (highestSource != SOURCE_TYPE_INVALID && IsHigherPrioritySource(normalSourceOpened_, highestSource)) {
-        AUDIO_INFO_LOG("reload source %{pblic}d becacuse higher source removed", highestSource);
+        AUDIO_INFO_LOG("reload source %{pblic}d because higher source removed", highestSource);
         ReloadSourceForSession(sessionWithNormalSourceType_[highestSession]);
-        sessionIdUsedToOpenSource_ [highestSession]);
+        sessionIdUsedToOpenSource_ = highestSession;
     }
 }
 
@@ -7633,6 +7633,7 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
         int32_t res = FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSource);
         CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res,
             "fetch target source info error");
+            
         if (normalSourceOpened_ == SOURCE_TYPE_INVALID) {
             // normal source is not opened before
             PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
