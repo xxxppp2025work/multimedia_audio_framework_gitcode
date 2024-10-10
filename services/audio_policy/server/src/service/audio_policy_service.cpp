@@ -7637,7 +7637,7 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
             // normal source is not opened before
             PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
             sessionIdUsedToOpenSource_ = sessionID;
-        } else if(IsHigherPrioritySource(targetSource, normalSourceOpened_)) {
+        } else if (IsHigherPrioritySource(targetSource, normalSourceOpened_)) {
             // reload if higher source come
             CloseNormalSource();
             PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
@@ -7662,13 +7662,13 @@ void AudioPolicyService::PrepareAndOpenNormalSource(SessionInfo &sessionInfo,
     UpdateStreamEcInfo(moduleInfo, targetSource);
     UpdateStreamMicRefInfo(moduleInfo, targetSource);
 
-    AUDIO_INFO_LOG("rate:%{public}s, channels:%{public}s, bufferSize:%{public}s, formate:%{public}s, "\
-    "sourceType: %{public}s",
-    moduleInfo.rate.c_str(), moduleInfo.channels.c_str(), moduleInfo.bufferSize.c_str(),
-    moduleInfo.format.c_str(), moduleInfo.sourceType.c_str());
+    AUDIO_INFO_LOG("rate:%{public}s, channels:%{public}s, bufferSize:%{public}s, formate:%{public}s, "
+        "sourceType: %{public}s",
+        moduleInfo.rate.c_str(), moduleInfo.channels.c_str(), moduleInfo.bufferSize.c_str(),
+        moduleInfo.format.c_str(), moduleInfo.sourceType.c_str());
 
-    OpenPortAndInsertIOHandle(moudleInfo.name, moduleInfo);
-    audioPolicyManager_.SetDeviceActive(GetCurrentInputDeviceType(), moudleInfo.name, true, INPUT_DEVICES_FLAG);
+    OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+    audioPolicyManager_.SetDeviceActive(GetCurrentInputDeviceType(), moduleInfo.name, true, INPUT_DEVICES_FLAG);
 
     normalSourceOpened_ = targetSource;
 }
@@ -7704,8 +7704,8 @@ void AudioPolicyService::UpdateEcAndQcFeatureState()
     isQcSwitchOn_ = qcSwitchState != 0;
     isRecordNrOn_ = recordProp == "NRON";
 
-    AUDIO_INFO_LOG("ecEnableState: %{public}d, qcEnableState: %{public}d, qcSwitchState: %{public}d",
-        isEcFeatureEnable_, isQcFeatureEnable_, qcSwitchState);
+    AUDIO_INFO_LOG("ecEnableState: %{public}d, qcEnableState: %{public}d," 
+    "qcSwitchState: %{public}d,", isEcFeatureEnable_, isQcFeatureEnable_, qcSwitchState);
 }
 
 EcType AudioPolicyService::GetEcType(const DeviceType inputDevice, const DeviceType outputDevice)
@@ -7745,7 +7745,6 @@ std::string AudioPolicyService::ShouldOpenMicRef(SourceType source)
         AUDIO_INFO_LOG("isQcFeatureEnable_ is off");
         return shouldOpen;
     }
-
     auto iter = std::find(MIC_REF_DEVICES.begin(), MIC_REF_DEVICES.end(), inputDesc->deviceType_);
     if (source == SOURCE_TYPE_VOICE_COMMUNICATION) {
         if (isQcSwitchOn_ && iter != MIC_REF_DEVICES.end()) {
@@ -7758,6 +7757,7 @@ std::string AudioPolicyService::ShouldOpenMicRef(SourceType source)
     } else {
         shouldOpen = "0";
     }
+
     AUDIO_INFO_LOG("enable: %{public}d, switch: %{public}d, device: %{public}d",
         isQcFeatureEnable_, isQcSwitchOn_, inputDesc->deviceType_);
     return shouldOpen;
@@ -7770,14 +7770,14 @@ std::string AudioPolicyService::GetPipeNameByDeviceForEc(const std::string &role
             return PIPE_PRIMARY_OUTPUT;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_BLUETOOTH_SC:O
+        case DEVICE_TYPE_BLUETOOTH_SCO:
             if (role == ROLE_SOURCE) {
                 return PIPE_PRIMARY_INPUT;
             }
             return PIPE_PRIMARY_OUTPUT;
         case DEVICE_TYPE_MIC:
             return PIPE_PRIMARY_INPUT;
-        case DEVICE_TYPE_USB_ARM_HEADSET
+        case DEVICE_TYPE_USB_ARM_HEADSET:
             if (role == ROLE_SOURCE) {
                 return PIPE_USB_ARM_INPUT;
             }
@@ -7808,13 +7808,13 @@ int32_t AudioPolicyService::GetPipeInfoByDeviceTypeForEc(const std::string &role
     std::string pipeName = GetPipeNameByDeviceForEc(role, deviceType);
     auto pipe = it->second.GetPipeByName(pipeName);
     if (pipe == nullptr) {
-        AUDIO_ERR_LOG("no pipe info found for pipeName: %{public}s, deviceType: %{public}d, partName: %{public}s",
+        AUDIO_ERR_LOG("no pipe info found for pipeName: %{public}s, deviceType: %{public}d, portName: %{public}s",
             pipeName.c_str(), deviceType, portName.c_str());
         return ERROR;
     }
     pipeInfo = *pipe;
     AUDIO_INFO_LOG("pipe name: %{public}s, moduleName: %{public}s found for device: %{public}d",
-        pipeInfo.name_.c_str(), pipeInfo.moduleName_.c_str(), deviceType;
+        pipeInfo.name_.c_str(), pipeInfo.moduleName_.c_str(), deviceType);
     return SUCCESS;
 }
 
@@ -7824,7 +7824,7 @@ int32_t AudioPolicyService::GetAudioModuleInfoByName(const std::string &halName,
     auto deviceClass = deviceClassInfo_.find(classStrToEnum[halName]);
     if (deviceClass != deviceClassInfo_.end()) {
         auto moduleInfoList = deviceClass->second;
-        for (auto &moduleInfo : moduleInfoList) {
+        for (const auto &moduleInfo : moduleInfoList) {
             if (moduleInfo.name == moduleName) {
                 audioMoudleInfo = moduleInfo;
                 return SUCCESS;
@@ -7839,6 +7839,7 @@ int32_t AudioPolicyService::GetAudioModuleInfoByName(const std::string &halName,
 void AudioPolicyService::ReLoadSourceModuleForEc()
 {
     AUDIO_INFO_LOG("reload source for session");
+
     StreamPropInfo targetInfo;
     SourceType targetSource = sessionInfo.sourceType;
     int32_t res = FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSource);
@@ -7849,25 +7850,24 @@ void AudioPolicyService::ReLoadSourceModuleForEc()
     UpdateActiveDeviceRoute(GetCurrentInputDeviceType(), DeviceFlag::INPUT_DEVICES_FLAG);
 }
 
- void AudioPolicyService::ReloadSourceForDeviceChange(const DeviceType inputDevice, const DeviceType outputDevice,
+void AudioPolicyService::ReloadSourceForDeviceChange(const DeviceType inputDevice, const DeviceType outputDevice,
     bool isForceReload)
- {
+{
     if (!isEcFeatureEnable_) {
         AUDIO_INFO_LOG("reload ignore for feature not enable");
         return;
     }
-    
     if (normalSourceOpened_ != SOURCE_TYPE_VOICE_COMMUNICATION && normalSourceOpened_ != SOURCE_TYPE_MIC) {
         AUDIO_INFO_LOG("reload ignore for source not voip or mic");
         return;
     }
 
-    if ( normalSourceOpened_ == SOURCE_TYPE_VOICE_COMMUNICATION) {
+    if (normalSourceOpened_ == SOURCE_TYPE_VOICE_COMMUNICATION) {
         DeviceType realInputDevice = inputDevice;
         DeviceType realOutputDevice = outputDevice;
-        if (realInputDevice == DEVICE_TYPE_DEFAULT) {
+        if (realOutputDevice == DEVICE_TYPE_DEFAULT) {
             unique_ptr<AudioDeviceDescriptor> inputDesc =
-                audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
+                audioRouterCenter_.FetchInputDevice(SOURCE_USAGE_VOICE_COMMUNICATION, -1);
             if (inputDesc != nullptr) {
                 realInputDevice = inputDese->deviceType_;
             }
@@ -7876,17 +7876,17 @@ void AudioPolicyService::ReLoadSourceModuleForEc()
             vector<std::unique_ptr<AudioDeviceDescriptor>> outputDescs =
                 audioRouterCenter_.FetchOutputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
             if (outputDescs.size() > 0 && outputDescs.front() != nullptr) {
-                realOutputDevice = outputDescs.front->deviceType_;
+                realOutputDevice = outputDescs.front()->deviceType_;
             }
         }
         AudioEcInfo lastEcInfo = GetAudioEcInfo();
         if (lastEcInfo.inputDevice == realInputDevice && lastEcInfo.outputDevice == realOutputDevice &&
             !isForceReload) {
-            AUDIO_INFO_LOG("voice source reload ignore for device not change")
+            AUDIO_INFO_LOG("voice source reload ignore for device not change");
             return;
         }
     } else if (normalSourceOpened_ == SOURCE_TYPE_MIC && inputDevice == DEVICE_TYPE_DEFAULT) {
-        AUDIO_INFO_LOG("mic souece reload ignor for output device change");
+        AUDIO_ERR_LOG("mic source reload ignor for output device change");
         return;
     }
 
@@ -7896,7 +7896,7 @@ void AudioPolicyService::ReLoadSourceModuleForEc()
         return;
     }
     ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
- }
+}
 
 std::string AudioPolicyService::GetEcSamplingRate(const std::string &halName, StreamPropInfo &outModuleInfo)
 {
@@ -7905,7 +7905,7 @@ std::string AudioPolicyService::GetEcSamplingRate(const std::string &halName, St
             AUDIO_INFO_LOG("use dp cust param");
             return dpSinkModuleInfo_.rate;
         }
-        return std::to_string(outModuleInfo.sampleRate_);
+        return outModuleInfo.sampleRate_;
     } else if (halName == USB_CLASS) {
         if (!usbSinkModuleInfo_.rate.empty()) {
             AUDIO_INFO_LOG("use arm usb cust param");
@@ -7936,7 +7936,7 @@ std::string AudioPolicyService::GetEcFormat(const std::string &halName, StreamPr
     }
 }
 
-std::string GetEcChannels(const std::string &halName, StreamPropInfo &outModuleInfo)
+std::string AudioPolicyService::GetEcChannels(const std::string &halName, StreamPropInfo &outModuleInfo)
 {
     if (halName == DP_CLASS) {
         if (!dpSinkModuleInfo_.channels.empty()) {
@@ -7972,7 +7972,7 @@ void AudioPolicyService::UpdateAudioEcInfo(const DeviceType inputDevice, const D
         return;
     }
     std::lock_guard<std::mutex> lock(audioEcInfoMutex_);
-    if (audioEcInfo_.inputDevice == inputDevice && audioEcInfo.outputDevice == outputDevice) {
+    if (audioEcInfo_.inputDevice == inputDevice && audioEcInfo_.outputDevice == outputDevice) {
         AUDIO_INFO_LOG("UpdateModuleForEc abort, no device changed");
         return;
     }
@@ -7988,21 +7988,21 @@ void AudioPolicyService::UpdateAudioEcInfo(const DeviceType inputDevice, const D
     audioEcInfo_.samplingRate = GetEcSamplingRate(audioEcInfo_.ecOutputAdapter, pipeInfo.streamPropInfos_.front());
     audioEcInfo_.format = GetEcFormat(audioEcInfo_.ecOutputAdapter, pipeInfo.streamPropInfos_.front());
     audioEcInfo_.channels = GetEcChannels(audioEcInfo_.ecOutputAdapter, pipeInfo.streamPropInfos_.front());
-    AUDIO_INFO_LOG("inputDevice: %{public}d, outputDevice: %{public}d, ecType: %{public}d, ecInputAdapter: %{public}s" \
-        "ecOutputAdapter: %{public}s, samplelingRate: %{public}s, format: %{public}s, channels: %{public}s",
-        audioEcInfo_.inputDevice, audioEcInfo_.ecOutputAdapter, audioEcInfo_.ecType, audioEcInfo_.ecInputAdapter.c_str()
-        audioEcInfo_.ecOutputAdapter.c_str(), audioEcInfo_.samplelingRate.c_str(), audioEcInfo_.format.c_str(),
+    AUDIO_INFO_LOG("inputDevice: %{public}d, outputDevice: %{public}d, ecType: %{public}d, ecInputAdapter: %{public}s"
+        "ecOutputAdapter: %{public}s, samplingRate: %{public}s, format: %{public}s, channels: %{public}s",
+        audioEcInfo_.inputDevice, audioEcInfo_.outputDevice, audioEcInfo_.ecType, audioEcInfo_.ecInputAdapter.c_str()
+        audioEcInfo_.ecOutputAdapter.c_str(), audioEcInfo_.samplingRate.c_str(), audioEcInfo_.format.c_str(),
         audioEcInfo_.channls.c_str());
 }
 
 void AudioPolicyService::UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo)
 {
-    str::lock_guard<std::mutex> lock(audioEcInfoMutex_);
+    std::lock_guard<std::mutex> lock(audioEcInfoMutex_);
     moduleInfo.ecType = std::to_string(audioEcInfo_.ecType);
     moduleInfo.ecAdapter = audioEcInfo_.ecOutputAdapter;
-    moduleInfo.ecSamplelingRate = audioEcInfo_.samplingRate;
+    moduleInfo.ecSamplingRate = audioEcInfo_.samplingRate;
     moduleInfo.ecFormat = audioEcInfo_.format;
-    moduleInfo.ecChannels = audioEcInf_o.channels;
+    moduleInfo.ecChannels = audioEcInfo_.channels;
 }
 
 void AudioPolicyService::UpdateModuleInfoForMicRef(AudioModuleInfo &moudleInfo, SourceType source)
@@ -8012,7 +8012,7 @@ void AudioPolicyService::UpdateModuleInfoForMicRef(AudioModuleInfo &moudleInfo, 
     // currnetly only one device support mic ref, this can be changed to use profile in config
     moduleInfo.micRefRate = "48000";
     moduleInfo.micRefFormat = "s16le";
-    moduleInfo.micRefFormat = "4";
+    moduleInfo.micRefChannels = "4";
 }
 
 void AudioPolicyService::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamPropInfo &targetInfo,
@@ -8020,12 +8020,12 @@ void AudioPolicyService::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, Str
 {
     if (!isEcFeatureEnable_) {
         moduleInfo = primaryMicModuleInfo_;
-        // currnetly layout represents the number of channel. This will need to be modify in the future.
+        // currnet layout represents the number of channel. This will need to be modify in the future.
         moduleInfo.channels = std::to_string(targetInfo.channelLayout_);
         moduleInfo.rate = std::to_string(targetInfo.sampleRate_);
         moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
         moduleInfo.format = targetInfo.format_;
-        moduleInfo.sourceType = std::to_string(SourceType);
+        moduleInfo.sourceType = std::to_string(sourceType);
     } else {
         unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
         if (inputDesc != nullptr && inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
@@ -8052,10 +8052,11 @@ void AudioPolicyService::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceT
         AUDIO_INFO_LOG("sourceType: %{public}d not need ec data", sourceType);
         return;
     }
+
     vector<std::unique_ptr<AudioDeviceDescriptor>> outputDesc =
-        audioRouterCenter_.FetchOutputDevices(SOURCE_USAGE_VOICE_COMMUNICATION, -1);
+        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1);
     unique_ptr<AudioDeviceDescriptor> inputDesc =
-        audioRouterCenter_.FetchInputDevices(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
+        audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
     UpdateAudioEcInfo(inputDesc->deviceType_, outputDesc.front()->deviceType_);
     UpdateModuleInfoForEc(moduleInfo);
 }
@@ -8066,6 +8067,7 @@ void AudioPolicyService::UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, Sou
         AUDIO_INFO_LOG("sourceType: %{public}d not need micref data", sourceType);
         return;
     }
+    
     UpdateModuleInfoForMicRef(moduleInfo, sourceType);
 }
 
