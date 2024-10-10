@@ -7494,19 +7494,19 @@ void AudioPolicyService::RemoveAudioCapturerMicrophoneDescriptor(int32_t uid)
 }
 
 void AudioPolicyService::GetTargetSourceTypeAndMatchingFlag(SourceType source,
-    SourceType &targetSource, bool &useMatchingProInfo)
+    SourceType &targetSource, bool &useMatchingPropInfo)
 {
     switch (source) {
         case SOURCE_TYPE_VOICE_RECOGNITION:
             targetSource = SOURCE_TYPE_VOICE_RECOGNITION;
-            useMatchingProInfo = true;
+            useMatchingPropInfo = true;
             break;
         case SOURCE_TYPE_VOICE_COMMUNICATION:
         case SOURCE_TYPE_VOICE_TRANSCRIPTION:
             targetSource = SOURCE_TYPE_VOICE_COMMUNICATION;
-            useMatchingProInfo = isEcFeatureEnable_ ? false : true;
+            useMatchingPropInfo = isEcFeatureEnable_ ? false : true;
             break;
-        case  SOURCE_TYPE_VOICE_CALL:
+        case SOURCE_TYPE_VOICE_CALL:
             targetSource = SOURCE_TYPE_VOICE_CALL;
             break;
         default:
@@ -7564,20 +7564,20 @@ int32_t AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessi
 
 void AudioPolicyService::HandleRemainingSource()
 {
-    SourceType highestSource - SOURCE_TYPE_MIC;
+    SourceType highestSource = SOURCE_TYPE_MIC;
     uint32_t highestSession = 0;
-    // find highestSource in remaining session    
+    // find highestSource in remaining session
     for (const auto &iter : sessionWithNormalSourceType_) {
         if (IsHigherPrioritySource(iter.second.sourceType, highestSource)) {
             highestSession = iter.first;
             highestSource = iter.second.sourceType;
         }
     }
-    // if remaining soueces are all lower than current one, reload with the highest source in remaining
+    // if remaining sources are all lower than current one, reload with the highest source in remaining
     if (highestSource != SOURCE_TYPE_INVALID && IsHigherPrioritySource(normalSourceOpened_, highestSource)) {
-        AUDIO_INFO_LOG("reload souece %{pblic}d beacuse higher source removed", highestSource);
+        AUDIO_INFO_LOG("reload source %{pblic}d becacuse higher source removed", highestSource);
         ReloadSourceForSession(sessionWithNormalSourceType_[highestSession]);
-        sessionWithUsedToOpenSource_ [highestSession;
+        sessionIdUsedToOpenSource_ [highestSession]);
     }
 }
 
@@ -7600,7 +7600,6 @@ void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
             audioEcInfo_.inputDevice = DEVICE_TYPE_NONE;
             audioEcInfo_.outputDevice = DEVICE_TYPE_NONE;
         }
-        
         sessionWithNormalSourceType_.erase(sessionID);
         if (!sessionWithNormalSourceType_.empty()) {
             HandleRemainingSource();
@@ -7618,9 +7617,10 @@ void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
 int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo,
     AudioStreamInfo streamInfo)
 {
-    AUDIO_INFO_LOG("sessionID:%{public}" PRIu64 " source : %{public}d, sessionID, sessionInfo.sourceType);
+    AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " source: %{public}d", sessionID, sessionInfo.sourceType);
     CHECK_AND_RETURN_RET_LOG(isPolicyConfigParsered_ && isPrimaryMicModuleInfoLoaded_, ERROR,
         "policyConfig not loaded");
+
     if (sessionIdisRemovedSet_.count(sessionID) > 0) {
         sessionIdisRemovedSet_.erase(sessionID);
         AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " had already been removed earlier", sessionID);
@@ -7638,7 +7638,7 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
             PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
             sessionIdUsedToOpenSource_ = sessionID;
         } else if(IsHigherPrioritySource(targetSource, normalSourceOpened_)) {
-            // reload id higher source come
+            // reload if higher source come
             CloseNormalSource();
             PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
             sessionIdUsedToOpenSource_ = sessionID;
