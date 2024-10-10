@@ -102,7 +102,7 @@ static const std::vector<DeviceType> MIC_REF_DEVICES = {
     DEVICE_TYPE_USB_ARM_HEADSET
 };
 
-static const std::map<std::pair<DeviceType, DeviceType> DEVICE_TO_EC_TYPE = {
+static const std::map<std::pair<DeviceType, DeviceType>, EcType> DEVICE_TO_EC_TYPE = {
     {{DEVICE_TYPE_MIC, DEVICE_TYPE_SPEAKER}, EC_TYPE_SAME_ADAPTER},
     {{DEVICE_TYPE_MIC, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_SAME_ADAPTER},
     {{DEVICE_TYPE_MIC, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_SAME_ADAPTER},
@@ -143,7 +143,7 @@ std::map<std::string, AudioSampleFormat> AudioPolicyService::formatStrToEnum = {
     {"s8", SAMPLE_U8},
     {"s16", SAMPLE_S16LE},
     {"s24", SAMPLE_S24LE},
-    {"s32", SAMPLE_S32LE}，
+    {"s32", SAMPLE_S32LE},
 };
 
 std::map<std::string, uint32_t> AudioPolicyService::formatStrToEnum = {
@@ -186,14 +186,14 @@ std::map<std::string, std::string> AudioPolicyService::sinkPortStrToClassStrMap_
     {OFFLOAD_PRIMARY_SPEAKER, OFFLOAD_CLASS},
 };
 
-static::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
+static std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
     // from high to low
     {SOURCE_TYPE_VOICE_CALL, 5},
     {SOURCE_TYPE_VOICE_COMMUNICATION, 4},
     {SOURCE_TYPE_VOICE_TRANSCRIPTION, 3},
     {SOURCE_TYPE_MIC, 2},
     {SOURCE_TYPE_VOICE_RECOGNITION, 1},
-    {SOURCE_TYPE_INVALID, 0}
+    {SOURCE_TYPE_INVALID, 0},
 };
 
 static const std::string SETTINGS_DATA_BASE_URI =
@@ -443,8 +443,8 @@ bool AudioPolicyService::Init(void)
 
     int32_t ecEnableState = system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0);
     int32_t qcEnableState = system::GetBoolParameter("const.multimedia.audio.fwk_pnr.enable", 0);
-    isEcFeatureEnable_ != ecEnableState;
-    isQcFeatureEnable_ != qcEnableState;
+    isEcFeatureEnable_ = ecEnableState != 0;
+    isQcFeatureEnable_ = qcEnableState != 0;
 
     AUDIO_INFO_LOG("Audio policy service init end");
     
@@ -3396,10 +3396,6 @@ int32_t AudioPolicyService::LoadUsbModule(string deviceInfo, DeviceRole deviceRo
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
                 "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
         }
-        
-        int32_t ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
-            "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
     }
 
     return SUCCESS;
@@ -3422,7 +3418,7 @@ int32_t AudioPolicyService::LoadDpModule(string deviceInfo)
             GetDPModuleInfo(moduleInfo, deviceInfo);
             if (moduleInfo.role == ROLE_SINK) {
                 AUDIO_INFO_LOG("save dp sink module info for cust param");
-                dpSinkMoudleInfo_ = moduleInfo;
+                dpSinkModuleInfo_ = moduleInfo;
             }
             return OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
         }
