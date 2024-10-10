@@ -7837,7 +7837,7 @@ int32_t AudioPolicyService::GetAudioModuleInfoByName(const std::string &halName,
     return ERROR;
 }
 
-void AudioPolicyService::ReloadSourceForSession()
+void AudioPolicyService::ReloadSourceForSession(SessionInfo sessionInfo)
 {
     AUDIO_INFO_LOG("reload source for session");
 
@@ -7867,7 +7867,7 @@ void AudioPolicyService::ReloadSourceForDeviceChange(const DeviceType inputDevic
     if (normalSourceOpened_ == SOURCE_TYPE_VOICE_COMMUNICATION) {
         DeviceType realInputDevice = inputDevice;
         DeviceType realOutputDevice = outputDevice;
-        if (realIntputDevice == DEVICE_TYPE_DEFAULT) {
+        if (realInputDevice == DEVICE_TYPE_DEFAULT) {
             unique_ptr<AudioDeviceDescriptor> inputDesc =
                 audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
             if (inputDesc != nullptr) {
@@ -7876,7 +7876,7 @@ void AudioPolicyService::ReloadSourceForDeviceChange(const DeviceType inputDevic
         }
         if (realOutputDevice == DEVICE_TYPE_DEFAULT) {
             vector<std::unique_ptr<AudioDeviceDescriptor>> outputDescs =
-                audioRouterCenter_.FetchOutputDevice(STREAM_USAGE_VOICE_COMMUNICATION, -1);
+                audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1);
             if (outputDescs.size() > 0 && outputDescs.front() != nullptr) {
                 realOutputDevice = outputDescs.front()->deviceType_;
             }
@@ -7888,7 +7888,7 @@ void AudioPolicyService::ReloadSourceForDeviceChange(const DeviceType inputDevic
             return;
         }
     } else if (normalSourceOpened_ == SOURCE_TYPE_MIC && inputDevice == DEVICE_TYPE_DEFAULT) {
-        AUDIO_INFO_LOG("mic source reload ignor for output device change");
+        AUDIO_INFO_LOG("mic source reload ignore for output device change");
         return;
     }
 
@@ -8022,7 +8022,7 @@ void AudioPolicyService::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, Str
 {
     if (!isEcFeatureEnable_) {
         moduleInfo = primaryMicModuleInfo_;
-        // currnet layout represents the number of channel. This will need to be modify in the future.
+        // current layout represents the number of channel. This will need to be modify in the future.
         moduleInfo.channels = std::to_string(targetInfo.channelLayout_);
         moduleInfo.rate = std::to_string(targetInfo.sampleRate_);
         moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
@@ -8069,6 +8069,7 @@ void AudioPolicyService::UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, Sou
         AUDIO_INFO_LOG("sourceType: %{public}d not need micref data", sourceType);
         return;
     }
+    
     UpdateModuleInfoForMicRef(moduleInfo, sourceType);
 }
 
