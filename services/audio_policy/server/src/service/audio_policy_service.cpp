@@ -2478,7 +2478,16 @@ void AudioPolicyService::MuteSinkPortForSwtichDevice(shared_ptr<AudioRendererCha
     MuteSinkPort(oldSinkName, newSinkName, reason);
 }
 
-void AudioPolicyService::MoveToNewOutputDevice(shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+void AudioPolicyService::NotifyMoveDeviceFinished()
+{
+    Trace trace("AudioPolicyService::NotifyMoveDeviceFinished");
+    AUDIO_INFO_LOG("In");
+    std::unique_lock<std::mutex> lock(moveDeviceMutex_);
+    moveDeviceFinished_ = true;
+    moveDeviceCV_.notify_all();
+}
+
+void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
     vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioPolicyService::MoveToNewOutputDevice");
@@ -2514,9 +2523,6 @@ void AudioPolicyService::MoveToNewOutputDevice(shared_ptr<AudioRendererChangeInf
         UpdateEffectDefaultSink(oldDevice);
         AUDIO_ERR_LOG("Move sink input %{public}d to device %{public}d failed!",
             rendererChangeInfo->sessionId, outputDevices.front()->deviceType_);
-        std::unique_lock<std::mutex> lock(moveDeviceMutex_);
-        moveDeviceFinished_ = true;
-        moveDeviceCV_.notify_all();
         return;
     }
 
@@ -2531,9 +2537,6 @@ void AudioPolicyService::MoveToNewOutputDevice(shared_ptr<AudioRendererChangeInf
     streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
         rendererChangeInfo->outputDeviceInfo);
     ResetOffloadAndMchMode(rendererChangeInfo, outputDevices);
-    std::unique_lock<std::mutex> lock(moveDeviceMutex_);
-    moveDeviceFinished_ = true;
-    moveDeviceCV_.notify_all();
 }
 
 void AudioPolicyService::MoveToNewInputDevice(shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
@@ -2810,12 +2813,11 @@ void AudioPolicyService::FetchOutputDevice(vector<shared_ptr<AudioRendererChange
         if (NotifyRecreateRendererStream(descs.front(), rendererChangeInfo, reason)) { continue; }
         MoveToNewOutputDevice(rendererChangeInfo, descs, reason);
     }
+    NotifyMoveDeviceFinished();
     if (isUpdateActiveDevice) {
         OnPreferredOutputDeviceUpdated(GetCurrentOutputDevice());
     }
-    if (runningStreamCount == 0) {
-        FetchOutputDeviceWhenNoRunningStream();
-    }
+    if (runningStreamCount == 0) FetchOutputDeviceWhenNoRunningStream();
 }
 
 int32_t AudioPolicyService::ActivateA2dpDeviceWhenDescEnabled(unique_ptr<AudioDeviceDescriptor> &desc,
