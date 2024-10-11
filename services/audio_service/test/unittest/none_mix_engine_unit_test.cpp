@@ -49,7 +49,8 @@ void NoneMixEngineUnitTest::SetUp(void)
 {
     DeviceInfo deviceInfo;
     deviceInfo.deviceType = DEVICE_TYPE_USB_HEADSET;
-    playbackEngine_ = std::make_unique<NoneMixEngine>(deviceInfo, false);
+    playbackEngine_ = std::make_unique<NoneMixEngine>();
+    playbackEngine_->Init(deviceInfo, false);
 }
 
 void NoneMixEngineUnitTest::TearDown(void)
@@ -293,10 +294,10 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_003, TestSize
     config.deviceType = DEVICE_TYPE_WIRED_HEADSET;
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
     rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
     ret = rendererStream->Stop();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Release();
@@ -316,10 +317,10 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_004, TestSize
     config.deviceType = DEVICE_TYPE_USB_HEADSET;
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
     rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
     ret = rendererStream->Stop();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Release();
@@ -385,10 +386,10 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_007, TestSize
     config.deviceType = DEVICE_TYPE_WIRED_HEADSET;
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
     rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
     ret = rendererStream->Stop();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Release();
@@ -408,10 +409,10 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_008, TestSize
     config.deviceType = DEVICE_TYPE_USB_HEADSET;
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
     rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
     ret = rendererStream->Stop();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Release();
@@ -477,10 +478,10 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_011, TestSize
     config.deviceType = DEVICE_TYPE_WIRED_HEADSET;
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
     rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
     ret = rendererStream->Stop();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Release();
@@ -500,14 +501,215 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_012, TestSize
     config.deviceType = DEVICE_TYPE_USB_HEADSET;
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
     rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
     ret = rendererStream->Stop();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Release();
     EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_001
+ * @tc.desc  : Test NoneMixEngine interface.
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_001, TestSize.Level1)
+{
+    NoneMixEngine noneMixEngineRet;
+    DeviceInfo deviceRet;
+    bool isVoipRet = true;
+    noneMixEngineRet.isInit_ = true;
+    deviceRet.deviceType = DEVICE_TYPE_INVALID;
+    noneMixEngineRet.device_.deviceType = DEVICE_TYPE_NONE;
+    noneMixEngineRet.renderSink_ = nullptr;
+
+    auto ret = noneMixEngineRet.Init(deviceRet, isVoipRet);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = noneMixEngineRet.Init(deviceRet, isVoipRet);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_002
+ * @tc.desc  : Test NoneMixEngine interface.
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_002, TestSize.Level1)
+{
+    NoneMixEngine noneMixEngineRet;
+    DeviceInfo deviceRet;
+    bool isVoipRet = true;
+    noneMixEngineRet.isInit_ = true;
+    deviceRet.deviceType = DEVICE_TYPE_INVALID;
+    noneMixEngineRet.device_.deviceType = DEVICE_TYPE_INVALID;
+    noneMixEngineRet.renderSink_ = nullptr;
+
+    auto ret = noneMixEngineRet.Init(deviceRet, isVoipRet);
+    EXPECT_EQ(ret, SUCCESS);
+
+    deviceRet.deviceType = DEVICE_TYPE_NONE;
+    ret = noneMixEngineRet.Init(deviceRet, isVoipRet);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_003
+ * @tc.desc  : Test NoneMixEngine interface.
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_003, TestSize.Level1)
+{
+    NoneMixEngine noneMixEngineRet;
+    noneMixEngineRet.playbackThread_ = nullptr;
+    noneMixEngineRet.isStart_ = true;
+
+    auto ret = noneMixEngineRet.Stop();
+    EXPECT_EQ(ret, SUCCESS);
+
+    noneMixEngineRet.PauseAsync();
+    ret = noneMixEngineRet.StopAudioSink();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_004
+ * @tc.desc  : Test NoneMixEngine interface.
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_004, TestSize.Level1)
+{
+    NoneMixEngine noneMixEngineRet;
+    noneMixEngineRet.playbackThread_ = nullptr;
+    noneMixEngineRet.isStart_ = true;
+
+    noneMixEngineRet.Flush();
+    noneMixEngineRet.MixStreams();
+    auto ret = noneMixEngineRet.Pause();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_005
+ * @tc.desc  : Test NoneMixEngine interface.
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_005, TestSize.Level1)
+{
+    NoneMixEngine noneMixEngineRet;
+    noneMixEngineRet.playbackThread_ = nullptr;
+    noneMixEngineRet.isStart_ = true;
+    uint32_t indexRet1 = 0;
+    uint32_t indexRet2 = 1;
+    AudioProcessConfig configRet;
+    std::shared_ptr<ProRendererStreamImpl> rendererStream1 = std::make_shared<ProRendererStreamImpl>(configRet, true);
+    rendererStream1->SetStreamIndex(indexRet1);
+    noneMixEngineRet.stream_ = rendererStream1;
+
+    auto ret = noneMixEngineRet.AddRenderer(rendererStream1);
+    EXPECT_EQ(ret, SUCCESS);
+
+    std::shared_ptr<ProRendererStreamImpl> rendererStream2 = std::make_shared<ProRendererStreamImpl>(configRet, true);
+    rendererStream2->SetStreamIndex(indexRet2);
+    ret = noneMixEngineRet.AddRenderer(rendererStream2);
+    EXPECT_EQ(ret, ERROR_UNSUPPORTED);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_006
+ * @tc.desc  : Test NoneMixEngine interface.
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_006, TestSize.Level1)
+{
+    NoneMixEngine noneMixEngineRet;
+    noneMixEngineRet.playbackThread_ = nullptr;
+    noneMixEngineRet.isStart_ = true;
+    uint32_t indexRet1 = 0;
+    uint32_t indexRet2 = 1;
+    AudioProcessConfig configRet;
+    std::shared_ptr<ProRendererStreamImpl> rendererStream1 = std::make_shared<ProRendererStreamImpl>(configRet, true);
+    rendererStream1->SetStreamIndex(indexRet1);
+
+    EXPECT_EQ(noneMixEngineRet.stream_, nullptr);
+    noneMixEngineRet.RemoveRenderer(rendererStream1);
+    noneMixEngineRet.stream_ = rendererStream1;
+
+    std::shared_ptr<ProRendererStreamImpl> rendererStream2 = std::make_shared<ProRendererStreamImpl>(configRet, true);
+    rendererStream2->SetStreamIndex(indexRet2);
+    EXPECT_NE(noneMixEngineRet.stream_->GetStreamIndex(), rendererStream2->GetStreamIndex());
+    noneMixEngineRet.RemoveRenderer(rendererStream2);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_007
+ * @tc.desc  : Test NoneMixEngine interface.
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_007, TestSize.Level1)
+{
+    NoneMixEngine noneMixEngineRet;
+    AudioSamplingRate sampleRateRet = AudioSamplingRate::SAMPLE_RATE_44100;
+    auto ret = noneMixEngineRet.GetDirectSampleRate(sampleRateRet);
+    EXPECT_EQ(ret, AudioSamplingRate::SAMPLE_RATE_48000);
+
+    sampleRateRet = AudioSamplingRate::SAMPLE_RATE_88200;
+    ret = noneMixEngineRet.GetDirectSampleRate(sampleRateRet);
+    EXPECT_EQ(ret, AudioSamplingRate::SAMPLE_RATE_96000);
+
+    sampleRateRet = AudioSamplingRate::SAMPLE_RATE_176400;
+    ret = noneMixEngineRet.GetDirectSampleRate(sampleRateRet);
+    EXPECT_EQ(ret, AudioSamplingRate::SAMPLE_RATE_192000);
+
+    sampleRateRet = AudioSamplingRate::SAMPLE_RATE_8000;
+    ret = noneMixEngineRet.GetDirectSampleRate(sampleRateRet);
+    EXPECT_EQ(ret, AudioSamplingRate::SAMPLE_RATE_8000);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_008
+ * @tc.desc  : Test NoneMixEngine interface.
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_008, TestSize.Level1)
+{
+    NoneMixEngine noneMixEngineRet;
+    AudioSamplingRate sampleRateRet = AudioSamplingRate::SAMPLE_RATE_8000;
+    auto ret = noneMixEngineRet.GetDirectVoipSampleRate(sampleRateRet);
+    EXPECT_EQ(ret, AudioSamplingRate::SAMPLE_RATE_16000);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_009
+ * @tc.desc  : Test NoneMixEngine interface.
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_009, TestSize.Level1)
+{
+    NoneMixEngine noneMixEngineRet;
+    AudioSampleFormat formatRet = AudioSampleFormat::SAMPLE_S32LE;
+    auto ret = noneMixEngineRet.GetDirectDeviceFormate(formatRet);
+    EXPECT_EQ(ret, HdiAdapterFormat::SAMPLE_S32);
+
+    formatRet = AudioSampleFormat::SAMPLE_F32LE;
+    ret = noneMixEngineRet.GetDirectDeviceFormate(formatRet);
+    EXPECT_EQ(ret, HdiAdapterFormat::SAMPLE_F32);
+
+    formatRet = AudioSampleFormat::INVALID_WIDTH;
+    ret = noneMixEngineRet.GetDirectDeviceFormate(formatRet);
+    EXPECT_EQ(ret, HdiAdapterFormat::SAMPLE_S16);
 }
 } // namespace AudioStandard
 } // namespace OHOS
