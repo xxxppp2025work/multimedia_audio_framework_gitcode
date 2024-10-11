@@ -2272,6 +2272,11 @@ static void PaSinkRenderIntoOffload(pa_sink *s, pa_mix_info *infoInputs, unsigne
         pa_sink_input *i = infoInputs[ii].userdata;
         pa_sink_input_assert_ref(i);
         AUTO_CTRACE("hdi_sink::Offload:pa_sink_input_peek:%u len:%zu", i->index, length);
+        const char *fadingFlag = pa_proplist_gets(i->proplist, "fadeoutPause");
+        if (!strcmp(fadingFlag, "1")) {
+            AUDIO_WARNING_LOG("Do Fading out, don't need peek");
+            continue;
+        }
         pa_sink_input_peek(i, length, &info[n].chunk, &info[n].volume);
         if (mixlength == 0 || info[n].chunk.length < mixlength)
             mixlength = info[n].chunk.length;
