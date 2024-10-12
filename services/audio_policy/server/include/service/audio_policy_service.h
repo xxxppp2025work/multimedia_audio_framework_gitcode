@@ -573,7 +573,7 @@ public:
 
     AudioScene GetLastAudioScene() const;
     void SetRotationToEffect(const uint32_t rotate);
-    void FetchStreamForA2dpOffload();
+    void FetchStreamForA2dpOffload(const bool &requireReset);
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
     bool getFastControlParam();
 

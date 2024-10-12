@@ -2732,7 +2732,8 @@ int32_t AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererCha
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "activate a2dp [%{public}s] failed", encryptMacAddr.c_str());
         } else if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             int32_t ret = HandleScoOutputDeviceFetched(descs.front(), rendererChangeInfos);
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "sco [%{public}s] is not connected yet", encryptMacAddr.c_str());
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "sco [%{public}s] is not connected yet",
+                encryptMacAddr.c_str());
         }
         if (needUpdateActiveDevice) {
             isUpdateActiveDevice = UpdateDevice(descs.front(), reason, rendererChangeInfo);
@@ -2894,7 +2895,7 @@ void AudioPolicyService::FetchStreamForA2dpMchStream(std::unique_ptr<AudioRender
     }
 }
 
-void AudioPolicyService::FetchStreamForA2dpOffload()
+void AudioPolicyService::FetchStreamForA2dpOffload(const bool &requireReset)
 {
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
@@ -2910,15 +2911,10 @@ void AudioPolicyService::FetchStreamForA2dpOffload()
         if (descs.front()->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
             continue;
         }
-        sptr<AudioDeviceDescriptor> deviceDesc = new AudioDeviceDescriptor(*(descs.front()));
-        int32_t ret = SwitchActiveA2dpDevice(deviceDesc);
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("Active A2DP [%{public}s] failed", GetEncryptAddr(descs.front()->macAddress_).c_str());
-            deviceDesc->exceptionFlag_ = true;
-            audioDeviceManager_.UpdateDevicesListInfo(deviceDesc, EXCEPTION_FLAG_UPDATE);
-            int32_t ret = FetchOutputDevice(rendererChangeInfos);
-            while (ret != SUCCESS) {
-                ret = FetchOutputDevice(rendererChangeInfos);
+        if (requireReset && (ActivateA2dpDevice(descs.front(), rendererChangeInfos) != SUCCESS)) {
+            int32_t retsult = FetchOutputDevice(rendererChangeInfos);
+            while (retsult != SUCCESS) {
+                retsult = FetchOutputDevice(rendererChangeInfos);
             }
             return;
         }
@@ -3067,7 +3063,8 @@ int32_t AudioPolicyService::BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> 
         ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_);
     } else {
         ret = HandleScoInputDeviceFetched(desc, capturerChangeInfos);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "sco [%{public}s] is not connected yet", GetEncryptAddr(desc->macAddress_).c_str());
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "sco [%{public}s] is not connected yet",
+            GetEncryptAddr(desc->macAddress_).c_str());
     }
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("sco [%{public}s] is not connected yet", GetEncryptAddr(desc->macAddress_).c_str());
@@ -8389,7 +8386,7 @@ int32_t AudioPolicyService::HandleA2dpDeviceOutOffload(BluetoothOffloadState a2d
     UpdateEffectDefaultSink(dev);
     AUDIO_INFO_LOG("Handle A2dpDevice Out Offload");
 
-    FetchStreamForA2dpOffload();
+    FetchStreamForA2dpOffload(true);
 
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         return HandleActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP);
@@ -8418,7 +8415,7 @@ int32_t AudioPolicyService::HandleA2dpDeviceInOffload(BluetoothOffloadState a2dp
 
     if (IsA2dpOffloadConnected()) {
         AUDIO_INFO_LOG("A2dpOffload has been connected, Fetch stream");
-        FetchStreamForA2dpOffload();
+        FetchStreamForA2dpOffload(true);
     }
 
     std::string activePort = BLUETOOTH_SPEAKER;
