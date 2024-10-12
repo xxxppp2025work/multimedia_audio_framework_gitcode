@@ -121,6 +121,8 @@ void NapiRendererWriteDataCallback::OnWriteData(size_t length)
         cb->bufDesc.dataLength = length;
     }
 
+    auto obj = static_cast<NapiAudioRenderer *>(napiRenderer_);
+    ObjectRefMap<NapiAudioRenderer>::IncreaseRef(obj);
     return OnJsRendererWriteDataCallback(cb);
 }
 
@@ -139,9 +141,16 @@ void NapiRendererWriteDataCallback::OnJsRendererWriteDataCallback(std::unique_pt
         });
         WorkCallbackRendererWriteDataInner(event);
 
-        CHECK_AND_RETURN_LOG(event != nullptr, "renderer write data event is nullptr");
+        if (event == nullptr) {
+            AUDIO_ERR_LOG("renderer write data event is nullptr");
+            auto obj = static_cast<NapiAudioRenderer *>(event->rendererNapiObj);
+            ObjectRefMap<NapiAudioRenderer>::DecreaseRef(obj);
+            return;
+        }
         CHECK_AND_RETURN_LOG(event->rendererNapiObj != nullptr, "NapiAudioRenderer object is nullptr");
         event->rendererNapiObj->writeCallbackCv_.notify_all();
+        auto obj = static_cast<NapiAudioRenderer *>(event->rendererNapiObj);
+        ObjectRefMap<NapiAudioRenderer>::DecreaseRef(obj);
     };
     if (napi_status::napi_ok != napi_send_event(env_, task, napi_eprio_immediate)) {
         AUDIO_ERR_LOG("OnJsRendererWriteDataCallback: Failed to SendEvent");
