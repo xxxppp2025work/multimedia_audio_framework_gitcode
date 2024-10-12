@@ -701,7 +701,7 @@ private:
     int32_t HandleScoOutputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
 
-    void FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
+    int32_t FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     bool IsFastFromA2dpToA2dp(const std::unique_ptr<AudioDeviceDescriptor> &desc,
@@ -716,13 +716,13 @@ private:
     int32_t HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
 
-    void FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
+    int32_t FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     int32_t HandleDeviceChangeForFetchInputDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
 
-    void BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> &desc,
+    int32_t BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType);
 
     void BluetoothScoDisconectForRecongnition();
