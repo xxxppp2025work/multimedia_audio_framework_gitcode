@@ -941,27 +941,6 @@ public:
     virtual void OnAudioPolicyServiceDied() = 0;
 };
 
-/**
- * Describes three-dimensional value.
- * @since 11
- */
-struct Vector3D {
-    /**
-     * X-axis value.
-     * @since 11
-     */
-    float x;
-    /**
-     * Y-axis value.
-     * @since 11
-     */
-    float y;
-    /**
-     * Z-axis value.
-     * @since 11
-     */
-    float z;
-};
 
 struct SessionInfo {
     SourceType sourceType;
