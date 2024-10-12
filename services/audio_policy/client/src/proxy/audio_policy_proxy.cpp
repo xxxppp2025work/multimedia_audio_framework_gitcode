@@ -264,7 +264,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices(DeviceFlag
 
     int32_t size = reply.ReadInt32();
     for (int32_t i = 0; i < size; i++) {
-        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+        deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingToPtr(reply));
     }
 
     return deviceInfo;
@@ -286,7 +286,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevicesInner(Devic
 
     int32_t size = reply.ReadInt32();
     for (int32_t i = 0; i < size; i++) {
-        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+        deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingToPtr(reply));
     }
 
     return deviceInfo;
@@ -312,7 +312,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredOutputDev
 
     int32_t size = reply.ReadInt32();
     for (int32_t i = 0; i < size; i++) {
-        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+        deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingToPtr(reply));
     }
 
     return deviceInfo;
@@ -338,7 +338,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredInputDevi
 
     int32_t size = reply.ReadInt32();
     for (int32_t i = 0; i < size; i++) {
-        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+        deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingToPtr(reply));
     }
 
     return deviceInfo;
@@ -364,7 +364,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetOutputDevice(
 
     int32_t size = reply.ReadInt32();
     for (int32_t i = 0; i < size; i++) {
-        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+        deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingToPtr(reply));
     }
 
     return deviceInfo;
@@ -390,7 +390,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetInputDevice(
 
     int32_t size = reply.ReadInt32();
     for (int32_t i = 0; i < size; i++) {
-        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+        deviceInfo.push_back(AudioDeviceDescriptor::UnmarshallingToPtr(reply));
     }
 
     return deviceInfo;
@@ -1327,7 +1327,7 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetAvailab
     int32_t size = reply.ReadInt32();
     for (int32_t i = 0; i < size; i++) {
         std::unique_ptr<AudioDeviceDescriptor> desc =
-            std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(reply));
+            std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingToPtr(reply));
         audioDeviceDescriptors.push_back(move(desc));
     }
     return audioDeviceDescriptors;
@@ -1690,7 +1690,7 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyProxy::GetActiveBluetoothDevic
         "GetActiveBluetoothDevice failed, error: %d", error);
 
     std::unique_ptr<AudioDeviceDescriptor> desc =
-        std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(reply));
+        std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingToPtr(reply));
     return desc;
 }
 
@@ -1740,7 +1740,7 @@ bool AudioPolicyProxy::IsHighResolutionExist()
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HIGH_RESOLUTION_EXIST), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERR_TRANSACTION_FAILED, "SendRequest failed, error: %d", error);
-    
+
     bool replyReadBool = reply.ReadBool();
     return replyReadBool;
 }
@@ -1753,7 +1753,7 @@ int32_t AudioPolicyProxy::SetHighResolutionExist(bool highResExist)
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-    
+
     data.WriteBool(highResExist);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HIGH_RESOLUTION_EXIST), data, reply, option);
