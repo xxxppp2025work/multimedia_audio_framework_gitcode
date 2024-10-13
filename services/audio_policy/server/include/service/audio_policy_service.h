@@ -853,9 +853,11 @@ private:
 
     void FetchInputDeviceWhenNoRunningStream();
 
-    void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag);
+    void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag,
+        const std::string deviceName = "");
 
-    void UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices);
+    void UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices,
+        const std::string deviceName = "");
 
     void UpdateDualToneState(const bool &enable, const int32_t &sessionId);
 

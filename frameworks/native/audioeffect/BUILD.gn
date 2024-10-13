@@ -71,15 +71,21 @@ ohos_shared_library("audio_effect") {
     "src/audio_head_tracker.cpp",
   ]
 
-  deps = [ "../audioutils:audio_utils" ]
+  deps = [
+    "../audioutils:audio_utils",
+    "../../../services/audio_policy:audio_policy_service",
+  ]
 
   external_deps = [
     "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
     "drivers_interface_audio:libeffect_proxy_1.0",
     "hdf_core:libhdf_utils",
     "hilog:libhilog",
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
+    "os_account:os_account_innerkits",
     "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]
