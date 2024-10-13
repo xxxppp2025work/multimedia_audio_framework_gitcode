@@ -261,6 +261,9 @@ void AudioPnpServer::DetectAudioDevice()
         OnPnpDeviceStatusChanged(eventInfo_);
     }
 #endif
+
+    DetectAudioDpDevice();
+
     AUDIO_INFO_LOG("Done");
 }
 
@@ -274,6 +277,20 @@ void AudioPnpServer::StopPnpServer()
 
     if (inputThread_ && inputThread_->joinable()) {
         inputThread_->detach();
+    }
+}
+
+void AudioPnpServer::DetectAudioDpDevice()
+{
+    AudioEvent audioEvent = {0};
+    int32_t ret = AudioSocketThread::DetectDPState(&audioEvent);
+    if ((ret == SUCCESS) && (audioEvent.eventType == AUDIO_DEVICE_ADD)) {
+        AUDIO_INFO_LOG("audio detect analog headset");
+        AudioSocketThread::UpdateDeviceState(audioEvent);
+
+        eventInfo_ = GetAudioEventInfo(AudioSocketThread::audioSocketEvent_);
+        CHECK_AND_RETURN_LOG(!eventInfo_.empty(), "invalid detect info");
+        OnPnpDeviceStatusChanged(eventInfo_);
     }
 }
 } // namespace AudioStandard
