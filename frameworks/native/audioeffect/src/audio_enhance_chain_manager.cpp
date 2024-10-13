@@ -698,14 +698,14 @@ int32_t AudioEnhanceChainManager::SetStreamVolumeInfo(const uint32_t &sessionId,
 int32_t AudioEnhanceChainManager::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)
 {
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
-    std::string inputDeviceStr = "";
-    GetDeviceTypeName(inputDeviceStr);
-    if (inputDeviceStr == "") {
-        AUDIO_ERR_LOG("get input device name failed");
-        return ERR_OPERATION_FAILED;
-    }
     for (const auto &property : propertyArray.property) {
         enhancePropertyMap_.insert_or_assign(property.enhanceClass, property.enhanceProp);
+        std::string inputDeviceStr = "";
+        GetDeviceTypeName(inputDeviceStr);
+        if (inputDeviceStr == "") {
+            AUDIO_ERR_LOG("get input device name failed");
+            return ERR_OPERATION_FAILED;
+        }
         std::string key = property.enhanceClass + "_&_" + inputDeviceStr;
         WriteEnhancePropertyToDb(key, property.enhanceProp);
         SetAudioEnhancePropertyToChains(property);

@@ -194,9 +194,9 @@ private:
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
     int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-        BluetoothOffloadState a2dpOffloadFlag);
+        BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName = "");
     int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
-        BluetoothOffloadState a2dpOffloadFlag);
+        BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName = "");
     bool CheckAndPrintStacktrace(const std::string &key);
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter();

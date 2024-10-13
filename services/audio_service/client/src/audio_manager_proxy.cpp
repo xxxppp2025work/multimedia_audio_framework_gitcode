@@ -513,7 +513,7 @@ int32_t AudioManagerProxy::UpdateActiveDevicesRoute(std::vector<std::pair<Device
         data.WriteInt32(static_cast<int32_t>(it->second));
     }
     data.WriteInt32(static_cast<int32_t>(a2dpOffloadFlag));
-    data.WriteInt32(deviceName);
+    data.WriteString(deviceName);
 
     auto error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_ROUTES_REQ), data, reply, option);
