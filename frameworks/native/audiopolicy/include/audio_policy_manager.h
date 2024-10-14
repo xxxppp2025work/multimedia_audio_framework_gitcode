@@ -430,7 +430,6 @@ private:
     std::atomic<bool> isAudioPolicyClientRegisted_ = false;
 
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
-    static sptr<AudioPolicyClientStubImpl> audioStaticPolicyClientStubCB_;
     static std::vector<std::shared_ptr<AudioStreamPolicyServiceDiedCallback>> audioStreamCBMap_;
 
     bool isAudioRendererEventListenerRegistered = false;
