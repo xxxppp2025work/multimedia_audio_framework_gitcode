@@ -54,7 +54,7 @@ static bool convertToUnsignedLong(const std::string& str, unsigned long& value)
     char* end;
     errno = 0;
     int base = 10;
-    value = std::strtoul(str.c_str(), &end,base);
+    value = std::strtoul(str.c_str(), &end, base);
     if (end == str.c_str()) {
         return false;
     }
@@ -588,7 +588,7 @@ void AudioSpatializationService::UpdateDeviceSpatialInfo(const uint32_t deviceID
     if (!convertToInt(token, intValue)) {
         AUDIO_ERR_LOG("Token String to Int Fail");
     }
-    addressToSpatialDeviceStateMap_[address].spatialDeviceType = static_cast<AudioSpatialDeviceType>(intValue));
+    addressToSpatialDeviceStateMap_[address].spatialDeviceType = static_cast<AudioSpatialDeviceType>(intValue);
 }
 
 void AudioSpatializationService::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
