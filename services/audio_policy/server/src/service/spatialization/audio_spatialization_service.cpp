@@ -17,6 +17,9 @@
 #endif
 
 #include <openssl/sha.h>
+#include <cerrno>
+#include <climits>
+#include <charconv>
 #include "audio_spatialization_service.h"
 
 #include "iservice_registry.h"
@@ -45,6 +48,33 @@ enum SpatializationStateOffset {
     SPATIALIZATION_OFFSET,
     HEADTRACKING_OFFSET
 };
+
+static bool convertToUnsignedLong(const std::string& str, unsigned long& value)
+{
+    char* end;
+    errno = 0;
+    int base = 10;
+    value = std::strtoul(str.c_str(), &end, base);
+    if (end == str.c_str()) {
+        return false;
+    }
+    if (errno == ERANGE && (value == ULONG_MAX)) {
+        return false;
+    }
+    if (*end != '\0') {
+        return false;
+    }
+    return true;
+}
+
+static bool convertToInt(const std::string& str, int& value)
+{
+    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), value);
+    if (!(ec == std::errc{} && ptr == str.data() + str.size())) {
+        return false;
+    }
+    return true;
+}
 
 static void UnpackSpatializationState(uint32_t pack, AudioSpatializationState &state)
 {
@@ -530,19 +560,35 @@ void AudioSpatializationService::UpdateDeviceSpatialInfo(const uint32_t deviceID
     std::stringstream ss(deviceSpatialInfo);
     std::string token;
     std::string address;
+    int intValue = 0;
     std::getline(ss, address, '|');
     addressToDeviceSpatialInfoMap_[address] = deviceSpatialInfo;
     addressToDeviceIDMap_[address] = deviceID;
     std::getline(ss, token, '|');
-    addressToSpatialEnabledMap_[address].spatializationEnabled = std::stoi(token);
+    if (!convertToInt(token, intValue)) {
+        AUDIO_ERR_LOG("Token String to Int Fail");
+    }
+    addressToSpatialEnabledMap_[address].spatializationEnabled = intValue;
     std::getline(ss, token, '|');
-    addressToSpatialEnabledMap_[address].headTrackingEnabled = std::stoi(token);
+    if (!convertToInt(token, intValue)) {
+        AUDIO_ERR_LOG("Token String to Int Fail");
+    }
+    addressToSpatialEnabledMap_[address].headTrackingEnabled = intValue;
     std::getline(ss, token, '|');
-    addressToSpatialDeviceStateMap_[address].isSpatializationSupported = std::stoi(token);
+    if (!convertToInt(token, intValue)) {
+        AUDIO_ERR_LOG("Token String to Int Fail");
+    }
+    addressToSpatialDeviceStateMap_[address].isSpatializationSupported = intValue;
     std::getline(ss, token, '|');
-    addressToSpatialDeviceStateMap_[address].isHeadTrackingSupported = std::stoi(token);
+    if (!convertToInt(token, intValue)) {
+        AUDIO_ERR_LOG("Token String to Int Fail");
+    }
+    addressToSpatialDeviceStateMap_[address].isHeadTrackingSupported = intValue;
     std::getline(ss, token, '|');
-    addressToSpatialDeviceStateMap_[address].spatialDeviceType = static_cast<AudioSpatialDeviceType>(std::stoi(token));
+    if (!convertToInt(token, intValue)) {
+        AUDIO_ERR_LOG("Token String to Int Fail");
+    }
+    addressToSpatialDeviceStateMap_[address].spatialDeviceType = static_cast<AudioSpatialDeviceType>(intValue);
 }
 
 void AudioSpatializationService::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
@@ -776,10 +822,16 @@ std::string AudioSpatializationService::RemoveOldestDevice()
 {
     std::string oldestAddr = "";
     std::string oldestTimestamp = "";
+    unsigned long currTimestampValue = 0;
+    unsigned long oldestTimestampValue = 0;
     for (const auto& entry : addressToDeviceSpatialInfoMap_) {
         std::string currTimestamp = ExtractTimestamp(entry.second);
-        if (oldestTimestamp.empty() || std::stoul(currTimestamp) < std::stoul(oldestTimestamp)) {
+        if (!convertToUnsignedLong(currTimestamp, currTimestampValue)) {
+            AUDIO_ERR_LOG("CurrTimestamp String to Unsigned Long fail");
+        }
+        if (oldestTimestamp.empty() || currTimestampValue < oldestTimestampValue) {
             oldestTimestamp = currTimestamp;
+            oldestTimestampValue = currTimestampValue;
             oldestAddr = entry.first;
         }
     }

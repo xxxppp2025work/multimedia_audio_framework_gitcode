@@ -16,6 +16,8 @@
 #define LOG_TAG "AudioGroupManager"
 #endif
 
+#include <charconv>
+
 #include "audio_errors.h"
 #include "audio_manager_proxy.h"
 #include "audio_policy_manager.h"
@@ -91,7 +93,12 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
         std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
         CHECK_AND_RETURN_RET_LOG(!value.empty(), 0,
             "[AudioGroupManger]: invalid value %{public}s", value.c_str());
-        return std::stoi(value);
+        int intValue = 0;
+        auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), intValue);
+        if (!(ec == std::errc{} && ptr == value.data() + value.size())) {
+            AUDIO_ERR_LOG("Value String to Int Fail");
+        }
+        return static_cast<int32_t>(intValue);
     }
 
     switch (volumeType) {
