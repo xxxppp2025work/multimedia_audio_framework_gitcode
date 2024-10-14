@@ -26,6 +26,7 @@
 #include <string>
 #include <unistd.h>
 #include <mutex>
+#include <charconv>
 
 #include "securec.h"
 #ifdef FEATURE_POWER_MANAGER
@@ -215,6 +216,14 @@ static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, const s
     }
     AUDIO_ERR_LOG("switch adapter render fail");
     return ERR_INVALID_INDEX;
+}
+
+static bool convertToInt (const std::string& str, int& value){
+    auto [ptr,ec] = std::from_chars(str.data(),str.data() + str.size(), value);
+    if (!(ec == std::errc{} && ptr == str.data() + str.size())) {
+        return false;
+    }
+    return true;
 }
 
 
@@ -1070,7 +1079,11 @@ int32_t MultiChannelRendererSinkInner::UpdateUsbAttrs(const std::string &usbInfo
         sinkFormat_end - sinkFormat_begin - std::strlen("sink_format:"));
 
     // usb default config
-    attr_.sampleRate = static_cast<uint32_t>((stoi(sampleRateStr)));
+    int SampleRateStrIntValue = 0;
+    if (!convertToInt(sampleRateStr, SampleRateStrIntValue)) {
+        AUDIO_ERR_LOG("SampleRateStr String to Int Fail");
+    }
+    attr_.sampleRate = static_cast<uint32_t>(SampleRateStrIntValue);
     attr_.channel = STEREO_CHANNEL_COUNT;
     attr_.format = ParseAudioFormat(formatStr);
 

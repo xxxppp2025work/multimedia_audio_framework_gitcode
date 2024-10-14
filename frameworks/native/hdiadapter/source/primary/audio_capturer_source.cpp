@@ -24,6 +24,7 @@
 #include <cinttypes>
 #include <thread>
 #include <future>
+#include <charconv>
 
 #include "securec.h"
 #ifdef FEATURE_POWER_MANAGER
@@ -55,6 +56,14 @@ const int32_t BYTE_SIZE_SAMPLE_S16 = 2;
 const int32_t BYTE_SIZE_SAMPLE_S24 = 3;
 const int32_t BYTE_SIZE_SAMPLE_S32 = 4;
 } // namespace
+
+static bool convertToInt (const std::string& str, int& value){
+    auto [ptr,ec] = std::from_chars(str.data(),str.data() + str.size(), value);
+    if (!(ec == std::errc{} && ptr == str.data() + str.size())) {
+        return false;
+    }
+    return true;
+}
 
 static int32_t GetByteSizeByFormat(HdiAdapterFormat format)
 {
@@ -1496,7 +1505,11 @@ int32_t AudioCapturerSourceInner::UpdateUsbAttrs(const std::string &usbInfoStr)
         sourceFormat_end - sourceFormat_begin - std::strlen("source_format:"));
 
     // usb default config
-    attr_.sampleRate = static_cast<uint32_t>(stoi(sampleRateStr));
+    int SampleRateStrIntValue = 0;
+    if (!convertToInt(sampleRateStr, SampleRateStrIntValue)) {
+        AUDIO_ERR_LOG("SampleRateStr String to Int Fail");
+    }
+    attr_.sampleRate = static_cast<uint32_t>(SampleRateStrIntValue);
     attr_.channel = STEREO_CHANNEL_COUNT;
     attr_.format = ParseAudioFormat(formatStr);
     attr_.isBigEndian = false;

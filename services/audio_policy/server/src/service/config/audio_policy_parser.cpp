@@ -20,6 +20,7 @@
 #include "audio_policy_parser.h"
 
 #include <sstream>
+#include <charconv>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,6 +33,14 @@ constexpr uint32_t LAYOUT_7POINT1_CHANNEL_ENUM = 8;
 constexpr uint32_t S16LE_TO_BYTE = 2;
 constexpr uint32_t S24LE_TO_BYTE = 3;
 constexpr uint32_t S32LE_TO_BYTE = 4;
+
+static bool convertToInt (const std::string& str, int& value){
+    auto [ptr,ec] = std::from_chars(str.data(),str.data() + str.size(), value);
+    if (!(ec == std::errc{} && ptr == str.data() + str.size())) {
+        return false;
+    }
+    return true;
+}
 
 static std::map<std::string, uint32_t> layoutStrToChannels = {
     {"CH_LAYOUT_MONO", LAYOUT_MONO_CHANNEL_ENUM},
@@ -413,19 +422,27 @@ void AudioPolicyParser::ParseStreamProps(xmlNode &node, PipeInfo &pipeInfo)
 {
     xmlNode *currNode = node.xmlChildrenNode;
     std::list<StreamPropInfo> streamPropInfos;
-
+    int sampleRateStrIntValue = 0;
+    int periodInMsStrIntValue = 0;
+    int bufferSizeStrIntValue = 0;
     while (currNode != nullptr) {
         if (currNode->type == XML_ELEMENT_NODE) {
             StreamPropInfo streamPropInfo = {};
             streamPropInfo.format_ = ExtractPropertyValue("format", *currNode);
             std::string sampleRateStr = ExtractPropertyValue("sampleRates", *currNode);
             if (sampleRateStr != "") {
-                streamPropInfo.sampleRate_ = (uint32_t)std::stoi(sampleRateStr);
+                if (!convertToInt(sampleRateStr, sampleRateStrIntValue)) {
+                    AUDIO_ERR_LOG("SampleRateStr String to Int Fail");
+                }
+                streamPropInfo.sampleRate_ = (uint32_t)sampleRateStrIntValue;
                 pipeInfo.sampleRates_.push_back(streamPropInfo.sampleRate_);
             }
             std::string periodInMsStr = ExtractPropertyValue("periodInMs", *currNode);
             if (periodInMsStr != "") {
-                streamPropInfo.periodInMs_ = (uint32_t)std::stoi(periodInMsStr);
+                if (!convertToInt(periodInMsStr, periodInMsStrIntValue)) {
+                    AUDIO_ERR_LOG("PeriodInMsStr String to Int Fail");
+                }
+                streamPropInfo.periodInMs_ = (uint32_t)periodInMsStrIntValue;
             }
             std::string channelLayoutStr = ExtractPropertyValue("channelLayout", *currNode);
             if (channelLayoutStr != "") {
@@ -435,7 +452,10 @@ void AudioPolicyParser::ParseStreamProps(xmlNode &node, PipeInfo &pipeInfo)
 
             std::string bufferSizeStr = ExtractPropertyValue("bufferSize", *currNode);
             if (bufferSizeStr != "") {
-                streamPropInfo.bufferSize_ = (uint32_t)std::stoi(bufferSizeStr);
+                if (!convertToInt(bufferSizeStr, bufferSizeStrIntValue)) {
+                    AUDIO_ERR_LOG("BufferSizeStr String to Int Fail");
+                }
+                streamPropInfo.bufferSize_ = (uint32_t)bufferSizeStrIntValue;
             } else {
                 streamPropInfo.bufferSize_ = formatStrToEnum[streamPropInfo.format_] * streamPropInfo.sampleRate_ *
                     streamPropInfo.periodInMs_ * streamPropInfo.channelLayout_ / AUDIO_MS_PER_S;
@@ -609,19 +629,21 @@ void AudioPolicyParser::ParsePAConfigs(xmlNode &node)
 {
     xmlNode *currNode = nullptr;
     currNode = node.xmlChildrenNode;
-
+    int intValue = 0;
     while (currNode != nullptr) {
         if (currNode->type == XML_ELEMENT_NODE) {
             std::string name = ExtractPropertyValue("name", *currNode);
             std::string value = ExtractPropertyValue("value", *currNode);
-
+            if (!convertToInt(value, intValue)) {
+                AUDIO_ERR_LOG("value String to Int Fail");
+            }
             switch (GetPaConfigType(name)) {
                 case PAConfigType::AUDIO_LATENCY:
-                    portObserver_.OnAudioLatencyParsed((uint64_t)std::stoi(value));
+                    portObserver_.OnAudioLatencyParsed((uint64_t)intValue);
                     globalConfigs_.globalPaConfigs_.audioLatency_ = value;
                     break;
                 case PAConfigType::SINK_LATENCY:
-                    portObserver_.OnSinkLatencyParsed((uint64_t)std::stoi(value));
+                    portObserver_.OnSinkLatencyParsed((uint64_t)intValue);
                     globalConfigs_.globalPaConfigs_.sinkLatency_ = value;
                     break;
                 default:
