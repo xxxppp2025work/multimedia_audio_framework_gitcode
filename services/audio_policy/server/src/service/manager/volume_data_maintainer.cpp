@@ -141,7 +141,14 @@ bool VolumeDataMaintainer::SaveVolume(DeviceType type, AudioStreamType streamTyp
 bool VolumeDataMaintainer::GetVolume(DeviceType deviceType, AudioStreamType streamType)
 {
     std::lock_guard<std::mutex> lock(volumeForDbMutex_);
-    return GetVolumeInternal(deviceType, streamType);
+    bool getVolumeResult = GetVolumeInternal(deviceType, streamType);
+    if (getVolumeResult) {
+        AUDIO_INFO_LOG("Get streamType %{public}d volumeValue %{public}d",
+            streamType, volumeLevelMap_[streamType]);
+    } else {
+        AUDIO_ERR_LOG("Get streamType %{public}d volumeValue Filed", streamType);
+    }
+    return getVolumeResult;
 }
 
 bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamType streamType)
