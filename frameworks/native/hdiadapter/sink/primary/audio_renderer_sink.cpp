@@ -1396,7 +1396,7 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &dpInfoStr)
     if (!sampleRateStr.empty() && convertToInt(sampleRateStr, sampleRateStrIntValue)) {
         attr_.sampleRate = static_cast<uint32_t>(sampleRateStrIntValue);
     }
-    if (!channeltStr.empty() && convertToInt(channeltStr, channeltStrIntValue)) {  
+    if (!channeltStr.empty() && convertToInt(channeltStr, channeltStrIntValue)) {
         attr_.channel = static_cast<uint32_t>(channeltStrIntValue);
     }
     attr_.address = addressStr;
