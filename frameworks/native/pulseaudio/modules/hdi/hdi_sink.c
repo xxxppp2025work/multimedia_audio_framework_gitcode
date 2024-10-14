@@ -1737,16 +1737,11 @@ static void SampleEffectToSink(const char* sinkSceneType, struct Userdata *u)
     unsampledChunk.memblock = pa_memblock_new(u->core->mempool, unsampledChunk.length);
     void *dst = pa_memblock_acquire(unsampledChunk.memblock);
     pa_assert(dst);
-    // 1. u->bufferAttr->tmpBufferout -> convertFromFloat (put the data into unsampledChunk)
-    // ConvertFromFloat(u->format, u->bufferAttr->frameLen * u->bufferAttr->numChanOut, u->bufferAttr->bufOut, dst);
     memcpy_s(dst, bufferLen, u->bufferAttr->bufOut, bufferLen);
     pa_memblock_release(unsampledChunk.memblock);
-    // 2. run pa_resampler
     pa_resampler_run(resampler, &unsampledChunk, &sampledChunk);
-    // 3. copy the data from sampledChunk back to tmpBufferOut
     void *src = pa_memblock_acquire(sampledChunk.memblock);
     pa_assert(src);
-    // ConvertToFloat(u->format, u->bufferAttr->frameLen * u->sink->sample_spec.channels, src, u->bufferAttr->bufOut);
     memcpy_s(u->bufferAttr->bufOut, bufferLen, src, bufferLen);
     pa_memblock_release(sampledChunk.memblock);
     pa_memblock_unref(unsampledChunk.memblock);
@@ -1796,7 +1791,6 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
     pa_sample_spec sink_spec = si->sample_spec;
     pa_channel_map sink_channelmap = si->channel_map;
     sink_spec.format = PA_SAMPLE_FLOAT32LE;
-    // loop through each sceneToCountMap
     const void* sceneType = NULL;
     void* count = NULL;
     while ((pa_hashmap_iterate(sceneToCountMap, &count, &sceneType))) {
@@ -1809,9 +1803,7 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
         ispec.channels = processChannels;
         pa_resampler* resampler = NULL;
         resampler = (pa_resampler*)pa_hashmap_get(sceneToResamplerMap, sceneType);
-        // if scene not in sceneToResamplerMap
         if (resampler == NULL) {
-            // add new sceneType and the corresponding resampler
             // for now, use sample_spec from sink
             resampler = pa_resampler_new(
                 si->core->mempool,
@@ -1822,9 +1814,6 @@ static void UpdateSceneToResamplerMap(pa_hashmap *sceneToResamplerMap, pa_hashma
             char* newSceneType = strdup(sceneType);
             pa_hashmap_put(sceneToResamplerMap, newSceneType, resampler);
         } else {
-            // if scene is in the resampler map
-            // check if output resampler needs to be changed
-            // if output channelmap change or output spec change
             if (resampler->i_ss.rate != sink_spec.rate) {
                 pa_resampler_set_input_rate(resampler, sink_spec.rate);
             } else if (resampler->o_ss.rate != sink_spec.rate) {
