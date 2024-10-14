@@ -818,8 +818,6 @@ private:
 
     void RegisterAccessiblilityMono();
 
-    void UnregisterAccessibilityMonitorHelper();
-
     bool IsConnectedOutputDevice(const sptr<AudioDeviceDescriptor> &desc);
 
     void AddMicrophoneDescriptor(sptr<AudioDeviceDescriptor> &deviceDescriptor);
@@ -903,9 +901,6 @@ private:
 
     std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
 
-    void RectifyModuleInfo(AudioModuleInfo &moduleInfo, std::list<AudioModuleInfo> &moduleInfoList,
-        SourceInfo &targetInfo);
-
     void ClearScoDeviceSuspendState(string macAddress = "");
 
     PipeInfo& GetPipeInfoByPipeName(std::string &supportPipe, AudioAdapterInfo &adapterInfo);
@@ -936,6 +931,8 @@ private:
 
     void CheckWiredActiveMusicTime(int32_t safeVolume);
 
+    bool CheckMixActiveMusicTime(int32_t safeVolume);
+
     void RestoreSafeVolume(AudioStreamType streamType, int32_t safeVolume);
 
     void SetSafeVolumeCallback(AudioStreamType streamType);
@@ -953,7 +950,7 @@ private:
         std::string &networkId);
 
     int32_t GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType, int32_t flags,
-        std::string &networkId);
+        const std::string &networkId);
 
     bool NotifyRecreateRendererStream(std::unique_ptr<AudioDeviceDescriptor> &desc,
         const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
@@ -1018,8 +1015,6 @@ private:
         vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices);
     
     void GetTargetSourceTypeAndMatchingFlag(SourceType source, SourceType &targetSource, bool &useMatchingPropInfo);
-    int32_t GetAudioModuleInfoByName(const std::string &halName, const std::string &moduleName,
-        AudioModuleInfo &moudleInfo);
     std::string GetHalNameForDevice(const std::string &role, const DeviceType deviceType);
     std::string GetPipeNameByDeviceForEc(const std::string &role, const DeviceType deviceType);
     int32_t GetPipeInfoByDeviceTypeForEc(const std::string &role, const DeviceType deviceType, PipeInfo &pipeInfo);

@@ -54,7 +54,6 @@ static const std::vector<DeviceType> DEVICE_TYPE_LIST = {
 static const std::vector<AudioStreamType> VOICE_CALL_VOLUME_TYPE_LIST = {
     // all stream types for voice call volume type
     STREAM_VOICE_CALL,
-    STREAM_VOICE_MESSAGE,
     STREAM_VOICE_COMMUNICATION
 };
 
@@ -74,7 +73,8 @@ static const std::vector<AudioStreamType> MEDIA_VOLUME_TYPE_LIST = {
     STREAM_MOVIE,
     STREAM_GAME,
     STREAM_SPEECH,
-    STREAM_NAVIGATION
+    STREAM_NAVIGATION,
+    STREAM_VOICE_MESSAGE
 };
 
 static const std::vector<std::string> SYSTEM_SOUND_KEY_LIST = {
@@ -1011,6 +1011,7 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
     } else if (audioModuleInfo.lib == HDI_SOURCE) {
         UpdateCommonArgs(audioModuleInfo, args);
         UpdateSourceArgs(audioModuleInfo, args);
+        UpdateEcAndMicRefArgs(audioModuleInfo, args);
     } else if (audioModuleInfo.lib == PIPE_SINK) {
         if (!audioModuleInfo.fileName.empty()) {
             args = "file=";
