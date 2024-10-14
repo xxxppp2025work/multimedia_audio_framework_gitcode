@@ -16,6 +16,8 @@
 #define LOG_TAG "AudioGroupManager"
 #endif
 
+#include <charconv>
+
 #include "audio_errors.h"
 #include "audio_manager_proxy.h"
 #include "audio_policy_manager.h"
