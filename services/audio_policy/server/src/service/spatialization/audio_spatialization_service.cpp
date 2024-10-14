@@ -54,7 +54,7 @@ static bool convertToUnsignedLong(const std::string& str, unsigned long& value)
     char* end;
     errno = 0;
     int base = 10;
-    value = std::strtoul(str.c_str(),&end,base);
+    value = std::strtoul(str.c_str(), &end,base);
     if (end == str.c_str()) {
         return false;
     }
@@ -67,8 +67,9 @@ static bool convertToUnsignedLong(const std::string& str, unsigned long& value)
     return true;
 }
 
-static bool convertToInt (const std::string& str, int& value){
-    auto [ptr,ec] = std::from_chars(str.data(),str.data() + str.size(), value);
+static bool convertToInt(const std::string& str, int& value)
+{
+    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), value);
     if (!(ec == std::errc{} && ptr == str.data() + str.size())) {
         return false;
     }
@@ -825,7 +826,7 @@ std::string AudioSpatializationService::RemoveOldestDevice()
     unsigned long oldestTimestampValue = 0;
     for (const auto& entry : addressToDeviceSpatialInfoMap_) {
         std::string currTimestamp = ExtractTimestamp(entry.second);
-        if (!convertToUnsignedLong(currTimestamp,currTimestampValue)) {
+        if (!convertToUnsignedLong(currTimestamp, currTimestampValue)) {
             AUDIO_ERR_LOG("CurrTimestamp String to Unsigned Long fail");
         }
         if (oldestTimestamp.empty() || currTimestampValue < oldestTimestampValue) {

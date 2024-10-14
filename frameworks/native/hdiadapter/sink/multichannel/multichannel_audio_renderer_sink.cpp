@@ -218,8 +218,9 @@ static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, const s
     return ERR_INVALID_INDEX;
 }
 
-static bool convertToInt (const std::string& str, int& value){
-    auto [ptr,ec] = std::from_chars(str.data(),str.data() + str.size(), value);
+static bool convertToInt(const std::string& str, int& value)
+{
+    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), value);
     if (!(ec == std::errc{} && ptr == str.data() + str.size())) {
         return false;
     }

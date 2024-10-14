@@ -57,8 +57,9 @@ const int32_t BYTE_SIZE_SAMPLE_S24 = 3;
 const int32_t BYTE_SIZE_SAMPLE_S32 = 4;
 } // namespace
 
-static bool convertToInt (const std::string& str, int& value){
-    auto [ptr,ec] = std::from_chars(str.data(),str.data() + str.size(), value);
+static bool convertToInt(const std::string& str, int& value)
+{
+    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), value);
     if (!(ec == std::errc{} && ptr == str.data() + str.size())) {
         return false;
     }

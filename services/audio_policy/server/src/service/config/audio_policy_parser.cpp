@@ -34,8 +34,9 @@ constexpr uint32_t S16LE_TO_BYTE = 2;
 constexpr uint32_t S24LE_TO_BYTE = 3;
 constexpr uint32_t S32LE_TO_BYTE = 4;
 
-static bool convertToInt (const std::string& str, int& value){
-    auto [ptr,ec] = std::from_chars(str.data(),str.data() + str.size(), value);
+static bool convertToInt(const std::string& str, int& value)
+{
+    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), value);
     if (!(ec == std::errc{} && ptr == str.data() + str.size())) {
         return false;
     }
@@ -430,18 +431,18 @@ void AudioPolicyParser::ParseStreamProps(xmlNode &node, PipeInfo &pipeInfo)
             StreamPropInfo streamPropInfo = {};
             streamPropInfo.format_ = ExtractPropertyValue("format", *currNode);
             std::string sampleRateStr = ExtractPropertyValue("sampleRates", *currNode);
+            if (!convertToInt(sampleRateStr, sampleRateStrIntValue)) {
+                AUDIO_ERR_LOG("SampleRateStr String to Int Fail");
+            }
             if (sampleRateStr != "") {
-                if (!convertToInt(sampleRateStr, sampleRateStrIntValue)) {
-                    AUDIO_ERR_LOG("SampleRateStr String to Int Fail");
-                }
                 streamPropInfo.sampleRate_ = (uint32_t)sampleRateStrIntValue;
                 pipeInfo.sampleRates_.push_back(streamPropInfo.sampleRate_);
             }
             std::string periodInMsStr = ExtractPropertyValue("periodInMs", *currNode);
+            if (!convertToInt(periodInMsStr, periodInMsStrIntValue)) {
+                AUDIO_ERR_LOG("PeriodInMsStr String to Int Fail");
+            }
             if (periodInMsStr != "") {
-                if (!convertToInt(periodInMsStr, periodInMsStrIntValue)) {
-                    AUDIO_ERR_LOG("PeriodInMsStr String to Int Fail");
-                }
                 streamPropInfo.periodInMs_ = (uint32_t)periodInMsStrIntValue;
             }
             std::string channelLayoutStr = ExtractPropertyValue("channelLayout", *currNode);
@@ -451,10 +452,10 @@ void AudioPolicyParser::ParseStreamProps(xmlNode &node, PipeInfo &pipeInfo)
             }
 
             std::string bufferSizeStr = ExtractPropertyValue("bufferSize", *currNode);
+            if (!convertToInt(bufferSizeStr, bufferSizeStrIntValue)) {
+                AUDIO_ERR_LOG("BufferSizeStr String to Int Fail");
+            }
             if (bufferSizeStr != "") {
-                if (!convertToInt(bufferSizeStr, bufferSizeStrIntValue)) {
-                    AUDIO_ERR_LOG("BufferSizeStr String to Int Fail");
-                }
                 streamPropInfo.bufferSize_ = (uint32_t)bufferSizeStrIntValue;
             } else {
                 streamPropInfo.bufferSize_ = formatStrToEnum[streamPropInfo.format_] * streamPropInfo.sampleRate_ *

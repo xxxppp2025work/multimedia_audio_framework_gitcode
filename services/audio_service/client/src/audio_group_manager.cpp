@@ -92,7 +92,7 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
         CHECK_AND_RETURN_RET_LOG(!value.empty(), 0,
             "[AudioGroupManger]: invalid value %{public}s", value.c_str());
         int intValue = 0;
-        auto [ptr,ec] = std::from_chars(value.data(),value.data() + value.size(), intValue);
+        auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), intValue);
         if (!(ec == std::errc{} && ptr == value.data() + value.size())) {
             AUDIO_ERR_LOG("Value String to Int Fail");
         }

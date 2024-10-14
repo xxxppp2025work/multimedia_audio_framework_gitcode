@@ -91,8 +91,9 @@ const std::string PRIMARY_LOCK_NAME_BASE = "AudioBackgroundPlay";
 #endif
 }
 
-static bool convertToInt (const std::string& str, int& value){
-    auto [ptr,ec] = std::from_chars(str.data(),str.data() + str.size(), value);
+static bool convertToInt(const std::string& str, int& value)
+{
+    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), value);
     if (!(ec == std::errc{} && ptr == str.data() + str.size())) {
         return false;
     }
@@ -1392,21 +1393,12 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &dpInfoStr)
     int sampleRateStrIntValue = 0;
     int channeltStrIntValue = 0;
     int bufferSizePtrIntValue = 0;
-    if (!sampleRateStr.empty()) {
-        if (!convertToInt(sampleRateStr, sampleRateStrIntValue)) {
-            AUDIO_ERR_LOG("SampleRateStr String to Int Fail");
-        }
+    if (!sampleRateStr.empty() && convertToInt(sampleRateStr, sampleRateStrIntValue)) {
         attr_.sampleRate = static_cast<uint32_t>(sampleRateStrIntValue);
     }
-
-    if (!channeltStr.empty()) {  
-        if (!convertToInt(channeltStr, channeltStrIntValue)) {
-            AUDIO_ERR_LOG("ChanneltStr String to Int Fail");
-        }
-         attr_.channel = static_cast<uint32_t>(channeltStrIntValue);
+    if (!channeltStr.empty() && convertToInt(channeltStr, channeltStrIntValue)) {  
+        attr_.channel = static_cast<uint32_t>(channeltStrIntValue);
     }
-    
-   
     attr_.address = addressStr;
     uint32_t formatByte = 0;
     if (attr_.channel <= 0 || attr_.sampleRate <= 0) {
