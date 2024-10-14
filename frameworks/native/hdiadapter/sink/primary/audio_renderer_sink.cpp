@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <mutex>
 #include <thread>
+#include <charconv>
 #include "ctime"
 
 #include "securec.h"
@@ -88,6 +89,15 @@ const std::string PRIMARY_HAL_NAME = "primary";
 #ifdef FEATURE_POWER_MANAGER
 const std::string PRIMARY_LOCK_NAME_BASE = "AudioBackgroundPlay";
 #endif
+}
+
+static bool convertToInt(const std::string& str, int& value)
+{
+    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), value);
+    if (!(ec == std::errc{} && ptr == str.data() + str.size())) {
+        return false;
+    }
+    return true;
 }
 
 int32_t ConvertByteToAudioFormat(int32_t format)
@@ -1342,7 +1352,11 @@ int32_t AudioRendererSinkInner::UpdateUsbAttrs(const std::string &usbInfoStr)
         sinkFormat_end - sinkFormat_begin - std::strlen("sink_format:"));
 
     // usb default config
-    attr_.sampleRate = static_cast<uint32_t>(stoi(sampleRateStr));
+    int SampleRateStrIntValue = 0;
+    if (!convertToInt(sampleRateStr, SampleRateStrIntValue)) {
+        AUDIO_ERR_LOG("SampleRateStr String to Int Fail");
+    }
+    attr_.sampleRate = static_cast<uint32_t>(SampleRateStrIntValue);
     attr_.channel = STEREO_CHANNEL_COUNT;
     attr_.format = ParseAudioFormat(formatStr);
 
@@ -1375,15 +1389,25 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &dpInfoStr)
     auto address_end = dpInfoStr.find_first_of(" ", address_begin);
     std::string addressStr = dpInfoStr.substr(address_begin + std::strlen("address="),
         address_end - address_begin - std::strlen("address="));
-
-    if (!sampleRateStr.empty()) attr_.sampleRate = stoi(sampleRateStr);
-    if (!channeltStr.empty()) attr_.channel = static_cast<uint32_t>(stoi(channeltStr));
+    
+    int sampleRateStrIntValue = 0;
+    int channeltStrIntValue = 0;
+    int bufferSizePtrIntValue = 0;
+    if (!sampleRateStr.empty() && convertToInt(sampleRateStr, sampleRateStrIntValue)) {
+        attr_.sampleRate = static_cast<uint32_t>(sampleRateStrIntValue);
+    }
+    if (!channeltStr.empty() && convertToInt(channeltStr, channeltStrIntValue)) {  
+        attr_.channel = static_cast<uint32_t>(channeltStrIntValue);
+    }
     attr_.address = addressStr;
     uint32_t formatByte = 0;
     if (attr_.channel <= 0 || attr_.sampleRate <= 0) {
         AUDIO_ERR_LOG("check attr failed channel[%{public}d] sampleRate[%{public}d]", attr_.channel, attr_.sampleRate);
     } else {
-        formatByte = static_cast<uint32_t>(stoi(bufferSize)) * BUFFER_CALC_1000MS / BUFFER_CALC_20MS
+        if (!convertToInt(bufferSize, bufferSizePtrIntValue)) {
+            AUDIO_ERR_LOG("BufferSize String to Int Fail");
+        }
+        formatByte = static_cast<uint32_t>(bufferSizePtrIntValue) * BUFFER_CALC_1000MS / BUFFER_CALC_20MS
             / attr_.channel / attr_.sampleRate;
     }
     
