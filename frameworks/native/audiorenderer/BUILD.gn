@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("../../../config.gni")
+import("../../../av_session.gni")
 
 config("audio_renderer_config") {
   include_dirs = [
@@ -30,6 +31,9 @@ config("audio_renderer_config") {
   ]
   if (sonic_enable == true) {
     cflags += [ "-DSONIC_ENABLE" ]
+  }
+  if (avsession_part_enable == true) {
+    cflags += [ "-DAVSESSION_ENABLE" ]
   }
 }
 
@@ -56,10 +60,19 @@ ohos_shared_library("audio_renderer") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "samgr:samgr_proxy",
+    "samgr:samgr_proxy",  
   ]
 
   public_configs = [ ":audio_external_library_config" ]
+
+  if (avsession_part_enable == true) {
+    external_deps = [
+      "ability_runtime:wantagent_innerkits",
+      "ability_base:want",
+      "av_session:avsession_client",
+      "input:libmmi-client",
+    ]
+  }
 
   version_script = "../../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]

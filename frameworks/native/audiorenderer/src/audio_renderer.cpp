@@ -410,6 +410,26 @@ IAudioStream::StreamClass AudioRendererPrivate::GetPreferredStreamClass(AudioStr
     return IAudioStream::PA_STREAM;
 }
 
+bool AudioRendererPrivate::IsAllowedStartBackgroud()
+{
+    bool ret = false;
+#ifdef AVSESSION_ENABLE
+    ret = OHOS::AVSession::AVSessionManager::GetInstance().IsAudioPlaybackAllowed(appInfo_.appUid, appInfo_.appPid);
+    if (ret) {
+        AUDIO_INFO_LOG("AVSession IsAudioPlaybackAllowed is: %{public}d", ret);
+        return ret;
+    }
+    if (std::count(EXEMPT_MUTE_STREAM_USAGE.begin(), EXEMPT_MUTE_STREAM_USAGE.end(), rendererInfo_.streamUsage) != 0) {
+        ret =true;
+        AUDIO_INFO_LOG("%{public}d is EXEMPT_MUTE_STREAM_USAGE", rendererInfo_.streamUsage);
+        return ret;
+    }
+#else
+    ret = true;
+#endif
+    return ret;
+}
+
 bool AudioRendererPrivate::IsDirectVoipParams(const AudioStreamParams &audioStreamParams)
 {
     // VoIP derect only supports 16K and 48K sampling rate.
@@ -611,7 +631,8 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
         "interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.mode);
-
+    CHECK_AND_RETURN_RET_LOG(IsAllowedStartBackgroud(), false,
+        "Start failed. IsAllowedStartBackgroud is:%{public}d", IsAllowedStartBackgroud());
     RendererState state = GetStatus();
     CHECK_AND_RETURN_RET_LOG((state == RENDERER_PREPARED) || (state == RENDERER_STOPPED) || (state == RENDERER_PAUSED),
         false, "Start failed. Illegal state:%{public}u", state);
