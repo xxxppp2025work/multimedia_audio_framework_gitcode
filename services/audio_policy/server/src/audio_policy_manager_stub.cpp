@@ -1880,6 +1880,9 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::LOAD_SPLIT_MODULE):
                 LoadSplitModuleInternal(data, reply);
                 break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_TRANSPARENT_CAPTURER):
+                IsTransparentCapture(data, reply);
+                break;
             default:
                 OnMiddlesRemoteRequest(code, data, reply, option);
                 break;
@@ -2175,6 +2178,14 @@ void AudioPolicyManagerStub::GetInputDeviceInternal(MessageParcel &data, Message
     for (int i = 0; i < size; i++) {
         devices[i]->Marshalling(reply);
     }
+}
+
+void AudioPolicyManagerStub::IsTransparentCapture(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t pid = data.ReadInt32();
+    int32_t sessionId = data.ReadUint32();
+    bool result = IsTransparentCapture(pid, sessionId);
+    reply.WriteBool(result);
 }
 
 } // namespace audio_policy
