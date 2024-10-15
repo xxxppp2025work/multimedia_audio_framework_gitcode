@@ -262,7 +262,7 @@ int32_t PaRendererStreamImpl::Stop()
 {
     AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Stop");
     state_ = STOPPING;
-    PaLockGuard palock(mainloop_);
+    PaLockGuard lock(mainloop_);
 
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
