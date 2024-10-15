@@ -115,12 +115,6 @@ private:
     void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
     int32_t SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin);
     int32_t DoSetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin);
-
-    void CaptureThreadLoop();
-    void CaptureFrameEcInternal(const RingBuffer &ringBuf);
-    int32_t StartNonblockingCapture();
-    int32_t StopNonblockingCapture();
-
     int32_t DoStop();
 
     IAudioSourceAttr attr_ = {};
