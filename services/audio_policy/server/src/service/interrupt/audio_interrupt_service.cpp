@@ -260,9 +260,29 @@ bool AudioInterruptService::IsAudioSessionActivated(const int32_t callerPid)
     std::lock_guard<std::mutex> lock(mutex_);
     if (sessionService_ == nullptr) {
         AUDIO_ERR_LOG("sessionService_ is nullptr!");
-        return ERR_UNKNOWN;
+        return false;
     }
     return sessionService_->IsAudioSessionActivated(callerPid);
+}
+
+void AudioInterruptService::SetAudioSessionSystemFlag(const int32_t callerPid, const bool systemFlag)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (sessionService_ == nullptr) {
+        AUDIO_ERR_LOG("sessionService_ is nullptr!");
+        return;
+    }
+    return sessionService_->SetAudioSessionSystemFlag(callerPid, systemFlag);
+}
+
+bool AudioInterruptService::NeedToDeactivateSessionForMovie(const int32_t callerPid)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (sessionService_ == nullptr) {
+        AUDIO_ERR_LOG("sessionService_ is nullptr!");
+        return false;
+    }
+    return sessionService_->NeedToDeactivateSessionForMovie(callerPid);
 }
 
 bool AudioInterruptService::CanMixForSession(const AudioInterrupt &incomingInterrupt,

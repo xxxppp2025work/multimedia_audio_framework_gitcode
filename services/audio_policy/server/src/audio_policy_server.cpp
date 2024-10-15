@@ -1390,6 +1390,22 @@ int32_t AudioPolicyServer::SetQueryClientTypeCallback(const sptr<IRemoteObject> 
     return audioPolicyService_.SetQueryClientTypeCallback(object);
 }
 
+int32_t AudioPolicyServer::SetQueryAppWhiteListCallback(const sptr<IRemoteObject> &object)
+{
+    AUDIO_INFO_LOG("Set query app white list callback");
+    if (!PermissionUtil::VerifyIsAudio()) {
+        AUDIO_ERR_LOG("not audio calling!");
+        return ERR_OPERATION_FAILED;
+    }
+
+    queryAppWhiteListCallback_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
+    if (queryAppWhiteListCallback_ == nullptr) {
+        AUDIO_ERR_LOG("Client type callback is null");
+        return ERR_CALLBACK_NOT_REGISTERED;
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     if (interruptService_ != nullptr) {
@@ -1408,18 +1424,60 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const Audio
 
 int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
-    if (interruptService_ != nullptr) {
-        return interruptService_->ActivateAudioInterrupt(zoneID, audioInterrupt);
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("interruptService_ is nullptr!");
+        return ERR_UNKNOWN;
     }
-    return ERR_UNKNOWN;
+    std::string bundleName = GetBundleName();
+    if (audioInterrupt.audioFocusType.streamType == STREAM_MOVIE && queryAppWhiteListCallback_ != nullptr &&
+        queryAppWhiteListCallback_->OnQueryAppIsInWhiteList(bundleName) &&
+        !interruptService_->IsAudioSessionActivated(audioInterrupt.pid)) {
+        AudioSessionStrategy strategy;
+        strategy.concurrencyMode = AudioConcurrencyMode::PAUSE_OTHERS;
+        int32_t result = interruptService_->ActivateAudioSession(audioInterrupt.pid, strategy);
+        if (result == SUCCESS) {
+            AUDIO_INFO_LOG("Activate audio session with PAUSE_OTHERS for pid %{public}d", audioInterrupt.pid);
+        } else {
+            AUDIO_WARNING_LOG("Failed to activate audio session for pid %{public}d", audioInterrupt.pid);
+        }
+        interruptService_->SetAudioSessionSystemFlag(audioInterrupt.pid, true);
+    }
+
+    return interruptService_->ActivateAudioInterrupt(zoneID, audioInterrupt);
 }
 
 int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
-    if (interruptService_ != nullptr) {
-        return interruptService_->DeactivateAudioInterrupt(zoneID, audioInterrupt);
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("interruptService_ is nullptr!");
+        return ERR_UNKNOWN;
     }
-    return ERR_UNKNOWN;
+
+    int32_t result = interruptService_->DeactivateAudioInterrupt(zoneID, audioInterrupt);
+    std::string bundleName = GetBundleName();
+    if (audioInterrupt.audioFocusType.streamType == STREAM_MOVIE && queryAppWhiteListCallback_ != nullptr &&
+        queryAppWhiteListCallback_->OnQueryAppIsInWhiteList(bundleName) &&
+        interruptService_->NeedToDeactivateSessionForMovie(audioInterrupt.pid)) {
+        std::weak_ptr<AudioInterruptService> interruptPtr = interruptService_;
+        std::thread(AudioPolicyServer::DeactivateAudioSessionForMovie, interruptPtr, audioInterrupt.pid).detach();
+    }
+    return result;
+}
+
+void AudioPolicyServer::DeactivateAudioSessionForMovie(std::weak_ptr<AudioInterruptService> interruptPtr, int32_t pid)
+{
+    AUDIO_INFO_LOG("Deactivate audio session after 3 second");
+    sleep(3);
+    std::shared_ptr<AudioInterruptService> interruptService = interruptPtr.lock();
+    if (interruptService == nullptr) {
+        AUDIO_ERR_LOG("interruptPtr is nullptr!");
+        return;
+    }
+    if (interruptService->NeedToDeactivateSessionForMovie(pid)) {
+        interruptService->DeactivateAudioSession(pid);
+    } else {
+        AUDIO_INFO_LOG("No need to deactivate audio session after 1s of sleep");
+    }
 }
 
 void AudioPolicyServer::OnAudioStreamRemoved(const uint64_t sessionID)

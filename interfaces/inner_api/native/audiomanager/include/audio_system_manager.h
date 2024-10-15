@@ -261,6 +261,12 @@ public:
     virtual bool OnQueryClientType(const std::string &bundleName, uint32_t uid) = 0;
 };
 
+class AudioQueryAppWhiteListCallback {
+public:
+    virtual ~AudioQueryAppWhiteListCallback() = default;
+    virtual bool OnQueryAppIsInWhiteList(const std::string &bundleName) = 0;
+};
+
 class AudioManagerAvailableDeviceChangeCallback {
 public:
     virtual ~AudioManagerAvailableDeviceChangeCallback() = default;
@@ -1305,6 +1311,8 @@ public:
     std::string GetSelfBundleName(int32_t uid);
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
+
+    int32_t SetQueryAppWhiteListCallback(const std::shared_ptr<AudioQueryAppWhiteListCallback> &callback);
 
     /**
      * @brief inject interruption event.
