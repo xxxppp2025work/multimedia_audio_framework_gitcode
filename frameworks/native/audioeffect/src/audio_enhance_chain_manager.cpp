@@ -161,7 +161,7 @@ void AudioEnhanceChainManager::GetEnhancePropertyFromDb(DeviceType deviceType)
     std::string deviceTypeName = "";
     GetDeviceTypeName(deviceTypeName, deviceType);
     AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    for (const auto &[ehance, prop] : enhancePropertyMap_) {
+    for (const auto &[enhance, prop] : enhancePropertyMap_) {
         std::string property = "";
         if (deviceTypeName == "") {
             AUDIO_ERR_LOG("DeviceTypeName Null");
