@@ -1211,7 +1211,7 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
         CHECK_AND_RETURN_RET_LOG(focusCfgMap_.find(audioFocusTypePair) != focusCfgMap_.end(), ERR_INVALID_PARAM,
             "audio focus type pair is invalid");
         AudioFocusEntry focusEntry = focusCfgMap_[audioFocusTypePair];
-        IsRejectFocusEntry(focusEntry, incomingInterrupt, incomingConcurrentSources);
+        CheckIncommingFoucsValidity(focusEntry, incomingInterrupt, incomingConcurrentSources);
         if (focusEntry.actionOn == CURRENT || iterActive->second == PLACEHOLDER ||
             CanMixForSession(incomingInterrupt, iterActive->first, focusEntry)) { continue; }
         if (((focusEntry.actionOn == INCOMING && focusEntry.hintType == INTERRUPT_HINT_PAUSE) || focusEntry.isReject)
@@ -1246,8 +1246,7 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
 bool AudioInterruptService::IsLowestPriorityRecording(const AudioInterrupt &audioInterrupt)
 {
     if (audioInterrupt.currencySources.sourcesTypes.size() == 1 &&
-        audioInterrupt.currencySources.sourcesTypes[0] == SOURCE_TYPE_INVALID &&
-        (audioInterrupt.sessionId == THP_EXTRA_SA_UID || audioInterrupt.sessionId == MEDIA_SA_UID)) {
+        audioInterrupt.currencySources.sourcesTypes[0] == SOURCE_TYPE_INVALID) {
         AUDIO_INFO_LOG("PEELING AUDIO IsLowestPriorityRecording:%{public}d", audioInterrupt.sessionId);
         return true;
     }
@@ -1259,7 +1258,7 @@ bool AudioInterruptService::IsRecordingInterruption(const AudioInterrupt &audioI
     return audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID ? true : false;
 }
 
-void AudioInterruptService::IsRejectFocusEntry(AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
+void AudioInterruptService::CheckIncommingFoucsValidity(AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
     std::vector<SourceType> incomingConcurrentSources)
 {
     if (IsRecordingInterruption(incomingInterrupt) && incomingConcurrentSources.size() != 0 &&

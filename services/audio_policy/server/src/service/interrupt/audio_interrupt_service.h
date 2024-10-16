@@ -221,7 +221,7 @@ private:
 
     bool IsLowestPriorityRecording(const AudioInterrupt &audioInterrupt);
     bool IsRecordingInterruption(const AudioInterrupt &audioInterrupt);
-    void IsRejectFocusEntry(AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
+    void CheckIncommingFoucsValidity(AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
         std::vector<SourceType> incomingConcurrentSources);
 
     // interrupt members
