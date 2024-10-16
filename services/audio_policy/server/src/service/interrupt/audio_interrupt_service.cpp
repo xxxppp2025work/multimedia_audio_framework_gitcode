@@ -1246,8 +1246,7 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
 bool AudioInterruptService::IsLowestPriorityRecording(const AudioInterrupt &audioInterrupt)
 {
     if (audioInterrupt.currencySources.sourcesTypes.size() == 1 &&
-        audioInterrupt.currencySources.sourcesTypes[0] == SOURCE_TYPE_INVALID &&
-        (audioInterrupt.sessionId == THP_EXTRA_SA_UID || audioInterrupt.sessionId == MEDIA_SA_UID)) {
+        audioInterrupt.currencySources.sourcesTypes[0] == SOURCE_TYPE_INVALID) {
         AUDIO_INFO_LOG("PEELING AUDIO IsLowestPriorityRecording:%{public}d", audioInterrupt.sessionId);
         return true;
     }
