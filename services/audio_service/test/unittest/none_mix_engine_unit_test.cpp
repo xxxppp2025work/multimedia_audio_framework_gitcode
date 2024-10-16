@@ -297,7 +297,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_003, TestSize
     EXPECT_EQ(SUCCESS, ret);
     rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
     ret = rendererStream->Stop();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Release();
@@ -320,7 +320,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_004, TestSize
     EXPECT_EQ(SUCCESS, ret);
     rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
     ret = rendererStream->Stop();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Release();
@@ -389,7 +389,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_007, TestSize
     EXPECT_EQ(SUCCESS, ret);
     rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
     ret = rendererStream->Stop();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Release();
@@ -412,7 +412,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_008, TestSize
     EXPECT_EQ(SUCCESS, ret);
     rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
     ret = rendererStream->Stop();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Release();
@@ -481,7 +481,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_011, TestSize
     EXPECT_EQ(SUCCESS, ret);
     rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
     ret = rendererStream->Stop();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Release();
@@ -504,7 +504,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_012, TestSize
     EXPECT_EQ(SUCCESS, ret);
     rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
     ret = rendererStream->Stop();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Release();
