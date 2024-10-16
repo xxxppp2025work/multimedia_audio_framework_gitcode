@@ -26,8 +26,15 @@ namespace OHOS {
 namespace AudioStandard {
 extern "C" {
 // Audio Volumne Group Manager
-int32_t FfiMMAGetMaxVolume(int32_t volumeType, int32_t *errorCode)
+int32_t FfiMMAGetMaxVolume(int64_t id, int32_t volumeType, int32_t *errorCode)
 {
-    
+    auto inst = FFIData::GetData<MMAAudioCapturerImpl>(id);
+    if (!inst) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("Get MMAAudioCapturerImpl error");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    *errorCode = SUCCESS_CODE;
+    return inst->GetMaxVolume(volumeType);
 
 }
