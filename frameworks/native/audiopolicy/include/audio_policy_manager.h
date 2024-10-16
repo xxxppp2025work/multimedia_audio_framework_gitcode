@@ -216,7 +216,7 @@ public:
 
     int32_t RegisterDeviceChangeWithInfoCallback(
         const uint32_t sessionID, const std::weak_ptr<DeviceChangeWithInfoCallback> &callback);
-
+    
     int32_t UnregisterDeviceChangeWithInfoCallback(const uint32_t sessionID);
 
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
@@ -428,7 +428,7 @@ public:
 
     int32_t SetMicrophoneBlockedCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback);
-    
+
     int32_t UnsetMicrophoneBlockedCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback);
 
