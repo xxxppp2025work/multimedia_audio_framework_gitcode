@@ -1051,13 +1051,14 @@ void AudioManagerProxy::UpdateLatencyTimestamp(std::string &timestamp, bool isRe
         "LatencyMeas UpdateLatencyTimestamp failed, error:%{public}d", error);
 }
 
-int32_t AudioManagerProxy::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
+int32_t AudioManagerProxy::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray, DeviceType deviceType)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     bool res = data.WriteInterfaceToken(GetDescriptor());
+    data.WriteInt32(deviceType);
     CHECK_AND_RETURN_RET_LOG(res, ERR_INVALID_OPERATION, "WriteInterfaceToken failed");
 
     int32_t error = Remote()->SendRequest(
@@ -1097,7 +1098,8 @@ int32_t AudioManagerProxy::GetAudioEffectProperty(AudioEffectPropertyArray &prop
     return AUDIO_OK;
 }
 
-int32_t AudioManagerProxy::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)
+int32_t AudioManagerProxy::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
+    DeviceType deviceType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1112,6 +1114,7 @@ int32_t AudioManagerProxy::SetAudioEnhanceProperty(const AudioEnhancePropertyArr
         // write and read must keep same order
         propertyArray.property[i].Marshalling(data);
     }
+    data.WriteInt32(deviceType);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_ENHANCE_PROPERTY), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
