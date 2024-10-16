@@ -329,7 +329,8 @@ int AudioManagerStub::HandleUpdateActiveDevicesRoute(MessageParcel &data, Messag
         activeDevices.push_back(std::make_pair(deviceType, deviceFlag));
     }
     BluetoothOffloadState a2dpOffloadFlag =  static_cast<BluetoothOffloadState>(data.ReadInt32());
-    int32_t ret = UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag);
+    std::string deviceName = data.ReadString();
+    int32_t ret = UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag, deviceName);
     reply.WriteInt32(ret);
     return AUDIO_OK;
 }
