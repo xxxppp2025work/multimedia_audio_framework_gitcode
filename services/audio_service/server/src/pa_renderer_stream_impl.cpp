@@ -191,13 +191,15 @@ int32_t PaRendererStreamImpl::Pause()
         pa_proplist_free(propList);
         pa_operation_unref(updatePropOperation);
         AUDIO_INFO_LOG("pa_stream_proplist_update done");
-        pa_threaded_mainloop_unlock(mainloop_);
-        {
-            std::unique_lock<std::mutex> lock(fadingMutex_);
-            const int32_t WAIT_TIME_MS = 40;
-            fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
+        if (!offloadEnable_) {
+            pa_threaded_mainloop_unlock(mainloop_);
+            {
+                std::unique_lock<std::mutex> lock(fadingMutex_);
+                const int32_t WAIT_TIME_MS = 40;
+                fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
+            }
+            pa_threaded_mainloop_lock(mainloop_);
         }
-        pa_threaded_mainloop_lock(mainloop_);
     }
 
     operation = pa_stream_cork(paStream_, 1, PAStreamPauseSuccessCb, reinterpret_cast<void *>(this));
