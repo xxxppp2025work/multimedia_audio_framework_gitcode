@@ -28,6 +28,8 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
+constexpr uint32_t THP_EXTRA_SA_UID = 5000;
+
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::streamTypeMap_ =
     AudioStreamCollector::CreateStreamMap();
 
@@ -241,7 +243,7 @@ void AudioStreamCollector::SendCapturerInfoEvent(std::vector<std::unique_ptr<Aud
 {
     auto itr = audioCapturerChangeInfo.begin();
     while (itr != audioCapturerChangeInfo.end()) {
-        if (IsTransparentCapture((*itr)->clientPid, (*itr)->sessionId)) {
+        if (IsTransparentCapture((*itr)->clientUID)) {
             itr = audioCapturerChangeInfos_.erase(itr);
             AUDIO_INFO_LOG("audioCapturerChangeInfos_ erase pid:%{public}d", (*itr)->clientPid);
         } else {
@@ -254,9 +256,12 @@ void AudioStreamCollector::SendCapturerInfoEvent(std::vector<std::unique_ptr<Aud
     audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
 }
 
-bool AudioStreamCollector::IsTransparentCapture(const int32_t pid, const uint32_t sessionId)
+bool AudioStreamCollector::IsTransparentCapture(const uint32_t clientUid)
 {
-    return audioSystemMgr_->IsTransparentCapture(pid, sessionId);
+    if (clientUid == THP_EXTRA_SA_UID) {
+        return true;
+    }
+    return false;
 }
 
 int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
@@ -731,7 +736,7 @@ int32_t AudioStreamCollector::GetCurrentCapturerChangeInfos(
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos");
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioCapturerChangeInfos_) {
-        if (!IsTransparentCapture(changeInfo->clientPid, changeInfo->sessionId)) {
+        if (!IsTransparentCapture(changeInfo->clientUID)) {
             capturerChangeInfos.push_back(make_unique<AudioCapturerChangeInfo>(*changeInfo));
         } else {
             AUDIO_INFO_LOG("GetCurrentCapturerChangeInfos remove pid:%{public}d", changeInfo->clientPid);

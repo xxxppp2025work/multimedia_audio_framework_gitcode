@@ -111,7 +111,7 @@ private:
     void SendCapturerInfoEvent(std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfo);
     bool CheckRendererStateInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
     bool CheckRendererInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
-    bool IsTransparentCapture(const int32_t pid, const uint32_t sesiionId);
+    bool IsTransparentCapture(const uint32_t clientUid);
     bool IsCallStreamUsage(StreamUsage usage);
     AudioSystemManager *audioSystemMgr_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
