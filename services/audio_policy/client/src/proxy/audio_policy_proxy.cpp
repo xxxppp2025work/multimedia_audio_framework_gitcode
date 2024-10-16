@@ -325,7 +325,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredInputDevi
     MessageParcel reply;
     MessageOption option;
     std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
-
+    
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, deviceInfo, "WriteInterfaceToken failed");
 
@@ -1740,7 +1740,7 @@ bool AudioPolicyProxy::IsHighResolutionExist()
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HIGH_RESOLUTION_EXIST), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERR_TRANSACTION_FAILED, "SendRequest failed, error: %d", error);
-    
+
     bool replyReadBool = reply.ReadBool();
     return replyReadBool;
 }
@@ -1753,7 +1753,7 @@ int32_t AudioPolicyProxy::SetHighResolutionExist(bool highResExist)
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-    
+
     data.WriteBool(highResExist);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HIGH_RESOLUTION_EXIST), data, reply, option);
