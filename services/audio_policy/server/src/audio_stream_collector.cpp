@@ -28,6 +28,8 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
+constexpr uint32_t THP_EXTRA_SA_UID = 5000;
+
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::streamTypeMap_ =
     AudioStreamCollector::CreateStreamMap();
 
@@ -256,7 +258,10 @@ void AudioStreamCollector::SendCapturerInfoEvent(std::vector<std::unique_ptr<Aud
 
 bool AudioStreamCollector::IsTransparentCapture(const int32_t pid, const uint32_t sessionId)
 {
-    return audioSystemMgr_->IsTransparentCapture(pid, sessionId);
+    if (sessionId == THP_EXTRA_SA_UID) {
+        return true;
+    }
+    return false;
 }
 
 int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
