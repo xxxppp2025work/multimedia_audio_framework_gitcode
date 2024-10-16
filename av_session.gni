@@ -12,7 +12,7 @@
 # limitations under the License.
 
 if (!defined(global_parts_info) ||
-    defined(global_parts_info.avsession_client)) {
+    defined(global_parts_info.multimedia_av_session)) {
   avsession_part_enable = true
 } else {
   avsession_part_enable = false
