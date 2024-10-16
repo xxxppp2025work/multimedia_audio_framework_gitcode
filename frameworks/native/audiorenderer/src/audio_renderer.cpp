@@ -44,6 +44,7 @@ static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
 };
 static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_UNDERRUN_NUM = 100;
+constexpr int32_t TIME_OUT_SECONDS = 10;
 
 static AudioRendererParams SetStreamInfoToParams(const AudioStreamInfo &streamInfo)
 {
@@ -216,6 +217,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->privacyType_ = rendererOptions.privacyType;
+    audioRenderer->strategy_ = rendererOptions.strategy;
     AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
         AUDIO_ERR_LOG("SetParams failed in renderer");
@@ -292,6 +294,7 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback()
     sessionID_ = audioInterrupt_.sessionId;
     audioInterrupt_.streamUsage = rendererInfo_.streamUsage;
     audioInterrupt_.contentType = rendererInfo_.contentType;
+    audioInterrupt_.sessionStrategy = strategy_;
 
     AUDIO_INFO_LOG("interruptMode %{public}d, streamType %{public}d, sessionID %{public}d",
         audioInterrupt_.mode, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.sessionId);
@@ -759,6 +762,7 @@ bool AudioRendererPrivate::Unmute(StateChangeCmdType cmdType) const
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
 {
     Trace trace("AudioRenderer::Pause");
+    AudioXCollie audioXCollie("AudioRenderer::Pause", TIME_OUT_SECONDS);
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
 
     AUDIO_INFO_LOG("StreamClientState for Renderer::Pause. id: %{public}u", sessionID_);

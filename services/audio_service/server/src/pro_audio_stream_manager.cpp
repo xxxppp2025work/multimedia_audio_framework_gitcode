@@ -137,10 +137,10 @@ int32_t ProAudioStreamManager::ReleaseRender(uint32_t streamIndex)
         currentRender = rendererStreamMap_[streamIndex];
         rendererStreamMap_[streamIndex] = nullptr;
         rendererStreamMap_.erase(streamIndex);
-    }
-    if (playbackEngine_) {
-        playbackEngine_->Stop();
-        playbackEngine_->RemoveRenderer(currentRender);
+        if (playbackEngine_) {
+            playbackEngine_->Stop();
+            playbackEngine_->RemoveRenderer(currentRender);
+        }
     }
     if (currentRender->Release() < 0) {
         AUDIO_WARNING_LOG("Release stream %{public}d failed", streamIndex);
@@ -207,5 +207,12 @@ int32_t ProAudioStreamManager::ReleaseCapturer(uint32_t streamIndex)
     AUDIO_ERR_LOG("Unsupported operation: ReleaseCapturer");
     return SUCCESS;
 }
+
+int32_t ProAudioStreamManager::AddUnprocessStream(int32_t appUid)
+{
+    AUDIO_ERR_LOG("Unsupported operation: AddUnprocessStream");
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
