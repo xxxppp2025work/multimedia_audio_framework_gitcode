@@ -1997,7 +1997,6 @@ int32_t AudioPolicyProxy::GetAudioEffectProperty(AudioEffectPropertyArray &prope
     }
     return AUDIO_OK;
 }
-
 int32_t AudioPolicyProxy::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)
 {
     MessageParcel data;
