@@ -337,11 +337,9 @@ public:
 
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
 
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray
-        DeviceType deviceType = DEVICE_TYPE_NONE) override;
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) override;
 
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
-        DeviceType deviceType = DEVICE_TYPE_NONE) override;
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
