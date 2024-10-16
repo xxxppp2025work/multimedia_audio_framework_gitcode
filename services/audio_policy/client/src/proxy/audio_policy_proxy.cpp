@@ -325,7 +325,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredInputDevi
     MessageParcel reply;
     MessageOption option;
     std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
-
+    
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, deviceInfo, "WriteInterfaceToken failed");
 
