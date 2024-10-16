@@ -722,7 +722,7 @@ int32_t AudioEnhanceChainManager::SetAudioEnhancePropertyToChains(AudioEnhancePr
     for (const auto &[sceneType, enhanceChain] : sceneTypeToEnhanceChainMap_) {
         if (enhanceChain) {
             ret = enhanceChain->SetEnhanceProperty(property.enhanceClass, property.enhanceProp);
-            CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "set property failed");    
+            CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "set property failed");
         }
     }
     return 0;

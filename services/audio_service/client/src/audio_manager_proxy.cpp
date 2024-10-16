@@ -1058,9 +1058,8 @@ int32_t AudioManagerProxy::GetAudioEnhanceProperty(AudioEnhancePropertyArray &pr
     MessageOption option;
 
     bool res = data.WriteInterfaceToken(GetDescriptor());
-    data.WriteInt32(deviceType);
     CHECK_AND_RETURN_RET_LOG(res, ERR_INVALID_OPERATION, "WriteInterfaceToken failed");
-
+    data.WriteInt32(deviceType);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_ENHANCE_PROPERTY), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Get Audio Enhance Property, error: %d", error);

@@ -7797,10 +7797,11 @@ void AudioPolicyService::CloseNormalSource()
     normalSourceOpened_ = SOURCE_TYPE_INVALID;
 }
 
-void AudioPolicyService::UpdateEnhanceEffectState()
+void AudioPolicyService::UpdateEnhanceEffectState(SourceType source)
 {
     AudioEnhancePropertyArray enhancePropertyArray = {};
-    int32_t ret = GetAudioEnhanceProperty(enhancePropertyArray);
+    unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source,-1);
+    int32_t ret = GetAudioEnhancePropertyByDevice(enhancePropertyArray, inputDesc->deviceType_);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("get enhance property fail, ret: %{public}d", ret);
         return;
@@ -8188,6 +8189,7 @@ void AudioPolicyService::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceT
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1);
     unique_ptr<AudioDeviceDescriptor> inputDesc =
         audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
+    SetCurrenInputDevice(*inputDesc);
     UpdateAudioEcInfo(inputDesc->deviceType_, outputDesc.front()->deviceType_);
     UpdateModuleInfoForEc(moduleInfo);
 }
@@ -9768,7 +9770,7 @@ int32_t AudioPolicyService::SetAudioEnhanceProperty(const AudioEnhancePropertyAr
         IPCSkeleton::SetCallingIdentity(identity);
         return ret;
     }
-    ret = gsp->SetAudioEnhanceProperty(propertyArray);
+    ret = gsp->SetAudioEnhanceProperty(propertyArray, GetCurrentInputDevice());
     IPCSkeleton::SetCallingIdentity(identity);
     ReloadSourceForEffect(oldPropertyArray, propertyArray);
     return ret;
@@ -9784,7 +9786,7 @@ int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEnhancePropertyArray &p
     return ret;
 }
 
-int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+int32_t AudioPolicyService::GetAudioEnhancePropertyByDevice(AudioEnhancePropertyArray &propertyArray,
     DeviceType deviceType)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();

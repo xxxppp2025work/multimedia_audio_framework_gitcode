@@ -138,7 +138,7 @@ int32_t AudioServer::GetAudioEffectProperty(AudioEffectPropertyArray &propertyAr
     return audioEffectChainManager->GetAudioEffectProperty(propertyArray);
 }
 
-int32_t AudioServer::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray
+int32_t AudioServer::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
     DeviceType deviceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
