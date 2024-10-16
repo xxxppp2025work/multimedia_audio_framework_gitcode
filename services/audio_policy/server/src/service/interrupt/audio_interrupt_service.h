@@ -219,6 +219,11 @@ private:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
     bool ShouldCallbackToClient(uint32_t uid, int32_t sessionId, InterruptHint hintType);
 
+    bool IsLowestPriorityRecording(const AudioInterrupt &audioInterrupt);
+    bool IsRecordingInterruption(const AudioInterrupt &audioInterrupt);
+    void IsRejectFocusEntry(AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
+        std::vector<SourceType> incomingConcurrentSources);
+
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
     std::shared_ptr<AudioPolicyServerHandler> handler_;
