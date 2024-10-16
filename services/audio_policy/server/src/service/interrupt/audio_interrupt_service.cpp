@@ -1258,8 +1258,8 @@ bool AudioInterruptService::IsRecordingInterruption(const AudioInterrupt &audioI
     return audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID ? true : false;
 }
 
-void AudioInterruptService::CheckIncommingFoucsValidity(AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
-    std::vector<SourceType> incomingConcurrentSources)
+void AudioInterruptService::CheckIncommingFoucsValidity(AudioFocusEntry &focusEntry,
+    const AudioInterrupt &incomingInterrupt, std::vector<SourceType> incomingConcurrentSources)
 {
     if (IsRecordingInterruption(incomingInterrupt) && incomingConcurrentSources.size() != 0 &&
         (incomingInterrupt.sessionId == THP_EXTRA_SA_UID || incomingInterrupt.sessionId == MEDIA_SA_UID)) {
