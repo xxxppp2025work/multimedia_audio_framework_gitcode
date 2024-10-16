@@ -56,8 +56,9 @@ public:
     int32_t SetMicrophoneMuteInfo(const bool &isMute);
     int32_t SetStreamVolumeInfo(const uint32_t &sessionId, const float &streamVol);
 
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE);
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE);
     void ResetInfo();  // use for unit test
     int32_t ApplyAudioEnhanceChainDefault(const uint32_t captureId, uint32_t length);
     void GetEnhancePropertyFromDb(DeviceType deviceType);

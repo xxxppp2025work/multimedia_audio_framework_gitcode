@@ -7771,7 +7771,7 @@ void AudioPolicyService::PrepareAndOpenNormalSource(SessionInfo &sessionInfo,
     StreamPropInfo &targetInfo, SourceType targetSource)
 {
     AudioModuleInfo moduleInfo;
-    UpdateEnhanceEffectState();
+    UpdateEnhanceEffectState(targetSource);
     UpdateStreamCommonInfo(moduleInfo, targetInfo, targetSource);
     UpdateStreamEcInfo(moduleInfo, targetSource);
     UpdateStreamMicRefInfo(moduleInfo, targetSource);
@@ -9780,6 +9780,17 @@ int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEnhancePropertyArray &p
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "get audio enhance property: gsp null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     int32_t ret = gsp->GetAudioEnhanceProperty(propertyArray);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return ret;
+}
+
+int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+    DeviceType deviceType)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "get audio enhance property: gsp null");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t ret = gsp->GetAudioEnhanceProperty(propertyArray, deviceType);
     IPCSkeleton::SetCallingIdentity(identity);
     return ret;
 }

@@ -928,7 +928,8 @@ int AudioManagerStub::HandleSetAudioEnhanceProperty(MessageParcel &data, Message
         prop.Unmarshalling(data);
         propertyArray.property.push_back(prop);
     }
-    int32_t result = SetAudioEnhanceProperty(propertyArray);
+    DeviceType deviceType = static_cast<int32_t>(data.ReadInt32());
+    int32_t result = SetAudioEnhanceProperty(propertyArray, deviceType);
     reply.WriteInt32(result);
     return AUDIO_OK;
 }
@@ -936,7 +937,8 @@ int AudioManagerStub::HandleSetAudioEnhanceProperty(MessageParcel &data, Message
 int AudioManagerStub::HandleGetAudioEnhanceProperty(MessageParcel &data, MessageParcel &reply)
 {
     AudioEnhancePropertyArray propertyArray = {};
-    int32_t result = GetAudioEnhanceProperty(propertyArray);
+    DeviceType deviceType = static_cast<int32_t>(data.ReadInt32());
+    int32_t result = GetAudioEnhanceProperty(propertyArray, deviceType);
     int32_t size = static_cast<int32_t>(propertyArray.property.size());
     CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
         ERROR_INVALID_PARAM, "Audio enhance property array size invalid");
