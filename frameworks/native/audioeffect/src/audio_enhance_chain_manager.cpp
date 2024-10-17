@@ -656,7 +656,7 @@ int32_t AudioEnhanceChainManager::SetInputDevice(const uint32_t &captureId, cons
             }
         }
     }
-    AUDIO_INFO_LOG("success, captureId: %{public}d, inputDevice: %{public}d deviceName:%{public}c",
+    AUDIO_INFO_LOG("success, captureId: %{public}d, inputDevice: %{public}d deviceName:%{public}s",
         captureId, inputDevice, deviceName.c_str());
     return SUCCESS;
 }
