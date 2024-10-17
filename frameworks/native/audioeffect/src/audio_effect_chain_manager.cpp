@@ -160,7 +160,7 @@ void AudioEffectChainManager::SetSpkOffloadState()
             spkOffloadEnabled_ = false;
         }
 
-        if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && (!spatializationEnabled_ || btOffloadEnabled_)) {
+        if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && btOffloadEnabled_) {
             return;
         }
 
@@ -986,19 +986,6 @@ int32_t AudioEffectChainManager::SetSpatializationSceneType(AudioSpatializationS
     if (!spatializationEnabled_ || (GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP")) {
         return SUCCESS;
     }
-
-    effectHdiInput_[0] = HDI_ROOM_MODE;
-    AudioEffectScene lastSceneType = static_cast<AudioEffectScene>(GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES,
-        maxSessionIDToSceneType_));
-    AudioEffectScene sceneType = GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(lastSceneType));
-    effectHdiInput_[1] = static_cast<int32_t>(sceneType);
-    if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
-        AUDIO_WARNING_LOG("set hdi room mode failed");
-    }
-    AUDIO_DEBUG_LOG("set spatialization scene type to hdi: %{public}d", effectHdiInput_[1]);
-
-    UpdateEffectChainParams(sceneType);
-
     effectHdiInput_[0] = HDI_SPATIALIZATION_SCENE_TYPE;
     effectHdiInput_[1] = static_cast<int32_t>(spatializationSceneType_);
     if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
@@ -1008,22 +995,6 @@ int32_t AudioEffectChainManager::SetSpatializationSceneType(AudioSpatializationS
     SetSpatializationSceneTypeToChains();
 
     return SUCCESS;
-}
-
-AudioEffectScene AudioEffectChainManager::GetSceneTypeFromSpatializationSceneType(AudioEffectScene sceneType)
-{
-    if (spatializationSceneType_ == SPATIALIZATION_SCENE_TYPE_DEFAULT) {
-        return sceneType;
-    } else if (spatializationSceneType_ == SPATIALIZATION_SCENE_TYPE_MUSIC) {
-        return SCENE_MUSIC;
-    } else if (spatializationSceneType_ == SPATIALIZATION_SCENE_TYPE_MOVIE) {
-        return SCENE_MOVIE;
-    } else if (spatializationSceneType_ == SPATIALIZATION_SCENE_TYPE_AUDIOBOOK) {
-        return SCENE_SPEECH;
-    } else {
-        AUDIO_WARNING_LOG("wrong spatialization scene type: %{public}d", spatializationSceneType_);
-    }
-    return sceneType;
 }
 
 void AudioEffectChainManager::UpdateExtraSceneType(const std::string &mainkey, const std::string &subkey,
@@ -1059,22 +1030,6 @@ void AudioEffectChainManager::UpdateExtraSceneType(const std::string &mainkey, c
     }
 }
 
-void AudioEffectChainManager::UpdateEffectChainParams(AudioEffectScene sceneType)
-{
-    AUDIO_INFO_LOG("Update param: %{public}d to effect chain", sceneType);
-    for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
-        auto audioEffectChain = it->second;
-        if (audioEffectChain == nullptr) {
-            continue;
-        }
-        audioEffectChain->SetEffectCurrSceneType(sceneType);
-        if (audioEffectChain->UpdateEffectParam() != SUCCESS) {
-            AUDIO_WARNING_LOG("Update param to effect chain failed");
-            continue;
-        }
-    }
-}
-
 void AudioEffectChainManager::SetSpatializationSceneTypeToChains()
 {
     for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
@@ -1097,11 +1052,7 @@ void AudioEffectChainManager::SetSpatializationEnabledToChains()
         if (audioEffectChain == nullptr) {
             continue;
         }
-        audioEffectChain->SetSpatializationEnabled(spatializationEnabled_);
-        if (audioEffectChain->UpdateEffectParam() != SUCCESS) {
-            AUDIO_WARNING_LOG("Update param to effect chain failed");
-            continue;
-        }
+        audioEffectChain->SetSpatializationEnabledForFading(spatializationEnabled_);
     }
 }
 
@@ -1195,12 +1146,7 @@ bool AudioEffectChainManager::CheckSceneTypeMatch(const std::string &sinkSceneTy
 
 void AudioEffectChainManager::UpdateCurrSceneType(AudioEffectScene &currSceneType, const std::string &sceneType)
 {
-    if (!spatializationEnabled_ || (GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP")) {
-        currSceneType = static_cast<AudioEffectScene>(GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType));
-    } else {
-        currSceneType = GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(
-            GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType)));
-    }
+    currSceneType = static_cast<AudioEffectScene>(GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType));
 }
 
 void AudioEffectChainManager::FindMaxEffectChannels(const std::string &sceneType,
@@ -1304,7 +1250,6 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (!btOffloadSupported_)) {
             AUDIO_INFO_LOG("A2dp-hal, enter ARM processing");
             btOffloadEnabled_ = false;
-            RecoverAllChains();
             SetSpatializationEnabledToChains();
             return;
         }
@@ -1313,7 +1258,6 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("set hdi init failed, enter route of escape in ARM");
             btOffloadEnabled_ = false;
-            RecoverAllChains();
         } else {
             AUDIO_INFO_LOG("set hdi init succeeded, normal spatialization entered");
             btOffloadEnabled_ = true;
@@ -1327,7 +1271,6 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         }
         if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             AUDIO_INFO_LOG("delete all chains if device type is bt.");
-            DeleteAllChains();
         }
         btOffloadEnabled_ = false;
     }
