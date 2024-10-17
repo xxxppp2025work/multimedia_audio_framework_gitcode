@@ -9770,7 +9770,7 @@ int32_t AudioPolicyService::SetAudioEnhanceProperty(const AudioEnhancePropertyAr
         IPCSkeleton::SetCallingIdentity(identity);
         return ret;
     }
-    ret = gsp->SetAudioEnhanceProperty(propertyArray, GetCurrentInputDevice());
+    ret = gsp->SetAudioEnhanceProperty(propertyArray, GetCurrentInputDeviceType());
     IPCSkeleton::SetCallingIdentity(identity);
     ReloadSourceForEffect(oldPropertyArray, propertyArray);
     return ret;
