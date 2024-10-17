@@ -370,6 +370,8 @@ int32_t FastAudioStream::Enqueue(const BufferDesc &bufDesc)
 
 void FastAudioStream::SetPreferredFrameSize(int32_t frameSize)
 {
+    std::lock_guard<std::mutex> lockSetPreferredFrameSize(setPreferredFrameSizeMutex_);
+    userSettedPreferredFrameSize_ = frameSize;
     CHECK_AND_RETURN_LOG(processClient_ != nullptr, "process client is null.");
     processClient_->SetPreferredFrameSize(frameSize);
 }
@@ -747,6 +749,11 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 
     info.underFlowCount = GetUnderflowCount();
     info.overFlowCount = GetOverflowCount();
+
+    {
+        std::lock_guard<std::mutex> lock(setPreferredFrameSizeMutex_);
+        info.userSettedPreferredFrameSize = userSettedPreferredFrameSize_;
+    }
 
     if (spkProcClientCb_) {
         info.rendererWriteCallback = spkProcClientCb_->GetRendererWriteCallback();
