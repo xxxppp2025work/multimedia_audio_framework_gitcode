@@ -34,7 +34,7 @@ void AudioSpatializationServiceFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
 
-    std::shared_ptr<AudioSpatializationService> audioSpatializationService = 
+    std::shared_ptr<AudioSpatializationService> audioSpatializationService =
         std::make_shared<AudioSpatializationService>();
     AudioSpatialDeviceState audioSpatialDeviceState;
     audioSpatializationService->UpdateSpatialDeviceState(audioSpatialDeviceState);
