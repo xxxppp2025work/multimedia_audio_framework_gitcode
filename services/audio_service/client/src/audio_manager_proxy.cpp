@@ -1059,7 +1059,7 @@ int32_t AudioManagerProxy::GetAudioEnhanceProperty(AudioEnhancePropertyArray &pr
 
     bool res = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(res, ERR_INVALID_OPERATION, "WriteInterfaceToken failed");
-    data.WriteInt32(deviceType);
+    data.WriteInt32(static_cast<int32_t>(deviceType));
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_ENHANCE_PROPERTY), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Get Audio Enhance Property, error: %d", error);
@@ -1113,7 +1113,7 @@ int32_t AudioManagerProxy::SetAudioEnhanceProperty(const AudioEnhancePropertyArr
         // write and read must keep same order
         propertyArray.property[i].Marshalling(data);
     }
-    data.WriteInt32(deviceType);
+    data.WriteInt32(static_cast<int32_t>(deviceType));
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_ENHANCE_PROPERTY), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
