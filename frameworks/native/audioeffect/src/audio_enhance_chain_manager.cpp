@@ -168,7 +168,7 @@ void AudioEnhanceChainManager::GetEnhancePropertyFromDb(DeviceType deviceType)
             return;
         }
         std::string key = enhance + "_&_" + deviceTypeName;
-        Errcode ret = settingProvider.GetStringValue(key, property);
+        ErrCode ret = settingProvider.GetStringValue(key, property);
         if (ret == SUCCESS) {
             enhancePropertyMap_.insert_or_assign(enhance, property);
             AUDIO_INFO_LOG("Get Effect_&_DeviceType:%{public}s is Property:%{public}s",
@@ -740,7 +740,7 @@ int32_t AudioEnhanceChainManager::WriteEnhancePropertyToDb(const std::string &ke
 
 void AudioEnhanceChainManager::GetDeviceTypeName(std::string &deviceName, DeviceType deviceType)
 {
-    auto item = SUPPORTED_DEVICE_TYPE.find(deviceType_);
+    auto item = SUPPORTED_DEVICE_TYPE.find(deviceType);
     if (item != SUPPORTED_DEVICE_TYPE.end()) {
         deviceName = item->second;
     }
