@@ -218,7 +218,6 @@ private:
     std::vector<uint32_t> usedSessionId_ = {};
     std::mutex silentModeAndMixWithOthersMutex_;
     std::mutex setStreamCallbackMutex_;
-    std::mutex setParamsMutex_;
     int64_t framesAlreadyWritten_ = 0;
 };
 

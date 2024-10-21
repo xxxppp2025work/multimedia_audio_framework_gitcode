@@ -452,8 +452,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     Trace trace("AudioRenderer::SetParams");
     AUDIO_INFO_LOG("StreamClientState for Renderer::SetParams.");
 
-    std::shared_lock<std::shared_mutex> lockShared(rendererMutex_);
-    std::lock_guard<std::mutex> lock(setParamsMutex_);
+    std::lock_guard lock(rendererMutex_);
     AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
 
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererInfo_.contentType, rendererInfo_.streamUsage);
@@ -1170,6 +1169,7 @@ std::vector<AudioEncodingType> AudioRenderer::GetSupportedEncodingTypes()
 int32_t AudioRendererPrivate::SetRenderMode(AudioRenderMode renderMode)
 {
     AUDIO_INFO_LOG("Render mode: %{public}d", renderMode);
+    std::lock_guard lock(rendererMutex_);
     audioRenderMode_ = renderMode;
     if (renderMode == RENDER_MODE_CALLBACK && rendererInfo_.originalFlag != AUDIO_FLAG_FORCED_NORMAL &&
         (rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
@@ -1204,6 +1204,7 @@ int32_t AudioRendererPrivate::SetRenderMode(AudioRenderMode renderMode)
 
 AudioRenderMode AudioRendererPrivate::GetRenderMode() const
 {
+    std::shared_lock lock(rendererMutex_);
     return audioStream_->GetRenderMode();
 }
 
