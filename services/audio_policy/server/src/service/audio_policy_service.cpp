@@ -7650,6 +7650,7 @@ int32_t AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessi
         if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
             tmpSourceType = SOURCE_TYPE_MIC;
         }
+        
         unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(tmpSourceType, -1);
         if (inputDesc != nullptr && inputDesc->deviceType_ != DEVICE_TYPE_MIC &&
             targetInfo.channelLayout_ == PC_MIC_CHANNEL_NUM) {
