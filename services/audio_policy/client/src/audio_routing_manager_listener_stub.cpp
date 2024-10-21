@@ -161,6 +161,5 @@ int32_t AudioRoutingManagerListenerStub::OnAudioInputDeviceRefined(
     return audioDeviceRefinerCallback->OnAudioInputDeviceRefined(descs, routerType,
         sourceType, clientUid, audioPipeType);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

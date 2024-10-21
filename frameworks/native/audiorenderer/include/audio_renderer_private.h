@@ -17,6 +17,7 @@
 #define AUDIO_RENDERER_PRIVATE_H
 
 #include <shared_mutex>
+#include <optional>
 
 #include "audio_interrupt_callback.h"
 #include "audio_concurrency_callback.h"
@@ -49,9 +50,11 @@ public:
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool Drain() const override;
-    bool PauseTransitent(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
-    bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
-    bool Stop() const override;
+    bool PauseTransitent(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
+    bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
+    bool Mute(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
+    bool Unmute(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
+    bool Stop() override;
     bool Flush() const override;
     bool Release() override;
     int32_t GetBufferSize(size_t &bufferSize) const override;
@@ -128,6 +131,8 @@ public:
 
     void EnableVoiceModemCommunicationStartStream(bool enable) override;
 
+    bool IsNoStreamRenderer() const override;
+
     int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
@@ -146,9 +151,11 @@ public:
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
     AudioRendererInfo rendererInfo_ = {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC, 0};
     AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };
+    AudioSessionStrategy originalStrategy_ = { AudioConcurrencyMode::INVALID };
     std::string cachePath_;
     std::shared_ptr<IAudioStream> audioStream_;
     bool abortRestore_ = false;
+    mutable bool isStillMuted_ = false;
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
 
@@ -178,6 +185,8 @@ private:
     void WriteUnderrunEvent() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
+    void UpdateAudioInterruptStrategy(float volume) const;
+    bool IsAllowedStartBackgroud();
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -192,18 +201,19 @@ private:
     std::mutex audioRendererErrCallbackMutex_;
     std::shared_ptr<OutputDeviceChangeWithInfoCallbackImpl> outputDeviceChangeCallback_ = nullptr;
     mutable std::shared_ptr<RendererPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
-    DeviceInfo currentDeviceInfo_ = {};
     bool isFastRenderer_ = false;
     bool latencyMeasEnabled_ = false;
     std::shared_ptr<AudioLatencyMeasurement> latencyMeasurement_ = nullptr;
     bool isSwitching_ = false;
-    mutable std::shared_mutex switchStreamMutex_;
+    mutable std::shared_mutex rendererMutex_;
     mutable AudioRenderMode audioRenderMode_ = RENDER_MODE_NORMAL;
     bool isFastVoipSupported_ = false;
     bool isDirectVoipSupported_ = false;
     bool isEnableVoiceModemCommunicationStartStream_ = false;
+    DeviceType selectedDefaultOutputDevice_ = DEVICE_TYPE_NONE;
+    RendererState state_ = RENDERER_INVALID;
 
-    float speed_ = 1.0;
+    std::optional<float> speed_ = std::nullopt;
 
     std::shared_ptr<AudioRendererPolicyServiceDiedCallback> policyServiceDiedCallback_ = nullptr;
     std::mutex policyServiceDiedCallbackMutex_;
@@ -212,6 +222,7 @@ private:
     std::mutex silentModeAndMixWithOthersMutex_;
     std::mutex setStreamCallbackMutex_;
     std::mutex setParamsMutex_;
+    int64_t framesAlreadyWritten_ = 0;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

@@ -26,6 +26,8 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
+#include <dlfcn.h>
+#include <format>
 
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
@@ -42,15 +44,13 @@
 #include "audio_manager_listener_proxy.h"
 #include "audio_service.h"
 #include "audio_schedule.h"
+#include "audio_info.h"
 #include "audio_utils.h"
 #include "i_audio_capturer_source.h"
 #include "i_audio_renderer_sink.h"
 #include "audio_renderer_sink.h"
 #include "i_standard_audio_server_manager_listener.h"
-#include "audio_effect_chain_manager.h"
-#include "audio_enhance_chain_manager.h"
 #include "playback_capturer_manager.h"
-#include "policy_handler.h"
 #include "config/audio_param_parser.h"
 #include "media_monitor_manager.h"
 
@@ -65,6 +65,10 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+
+constexpr int32_t SYSTEM_STATUS_START = 1;
+constexpr int32_t SYSTEM_STATUS_STOP = 0;
+constexpr int32_t SYSTEM_PROCESS_TYPE = 1;
 uint32_t AudioServer::paDaemonTid_;
 std::map<std::string, std::string> AudioServer::audioParameters;
 std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> AudioServer::audioParameterKeys;
@@ -72,9 +76,12 @@ const string DEFAULT_COOKIE_PATH = "/data/data/.pulse_dir/state/cookie";
 const std::string CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 constexpr const char *TEL_SATELLITE_SUPPORT = "const.telephony.satellite.supported";
 const std::string SATEMODEM_PARAMETER = "usedmodem=satemodem";
+const std::string PCM_DUMP_KEY = "PCM_DUMP";
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int SCHEDULE_REPORT_TIME_OUT_SECONDS = 2;
+static const int32_t INVALID_APP_UID = -1;
+static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = -1;
 static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
     STREAM_USAGE_SYSTEM,
     STREAM_USAGE_DTMF,
@@ -88,6 +95,8 @@ static constexpr int32_t VM_MANAGER_UID = 7700;
 static const int32_t FAST_DUMPINFO_LEN = 2;
 static const int32_t BUNDLENAME_LENGTH_LIMIT = 1024;
 constexpr int32_t UID_CAMERA = 1047;
+constexpr int32_t MAX_RENDERER_STREAM_CNT_PER_UID = 40;
+const int32_t DEFAULT_MAX_RENDERER_INSTANCES = 128;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
     UID_CAMERA
@@ -110,7 +119,8 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
     SOURCE_TYPE_VIRTUAL_CAPTURE,
     SOURCE_TYPE_VOICE_MESSAGE,
     SOURCE_TYPE_REMOTE_CAST,
-    SOURCE_TYPE_VOICE_TRANSCRIPTION
+    SOURCE_TYPE_VOICE_TRANSCRIPTION,
+    SOURCE_TYPE_CAMCORDER
 };
 
 
@@ -189,6 +199,16 @@ static const std::map<bool, std::string> RES_MAP_VERSE = {
     {true, "true"},
     {false, "false"},
 };
+
+static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
+{
+    for (const auto& item : STREAMS_NEED_VERIFY_SYSTEM_PERMISSION) {
+        if (streamUsage == item) {
+            return true;
+        }
+    }
+    return false;
+}
 
 class CapturerStateOb final : public ICapturerStateCallback {
 public:
@@ -280,9 +300,18 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
     return write(fd, dumpString.c_str(), dumpString.size());
 }
 
+void AudioServer::InitMaxRendererStreamCntPerUid()
+{
+    bool result = GetSysPara("const.multimedia.audio.stream_cnt_uid", maxRendererStreamCntPerUid_);
+    if (!result || maxRendererStreamCntPerUid_ <= 0) {
+        maxRendererStreamCntPerUid_ = MAX_RENDERER_STREAM_CNT_PER_UID;
+    }
+}
+
 void AudioServer::OnStart()
 {
     AUDIO_INFO_LOG("OnStart uid:%{public}d", getuid());
+    InitMaxRendererStreamCntPerUid();
     AudioInnerCall::GetInstance()->RegisterAudioServer(this);
     bool res = Publish(this);
     if (!res) {
@@ -296,6 +325,7 @@ void AudioServer::OnStart()
     }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
+    AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
 #ifdef PA
     int32_t ret = pthread_create(&m_paDaemonThread, nullptr, AudioServer::paDaemonThread, nullptr);
     pthread_setname_np(m_paDaemonThread, "OS_PaDaemon");
@@ -340,26 +370,55 @@ void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string&
             AUDIO_INFO_LOG("ressched service start");
             OnAddResSchedService(getpid());
             break;
+        case MEMORY_MANAGER_SA_ID:
+            NotifyProcessStatus(true);
+            break;
         default:
             AUDIO_ERR_LOG("unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
     }
 }
 
+void AudioServer::NotifyProcessStatus(bool isStart)
+{
+    int pid = getpid();
+    void *libMemMgrClientHandle = dlopen("libmemmgrclient.z.so", RTLD_NOW);
+    if (!libMemMgrClientHandle) {
+        AUDIO_ERR_LOG("dlopen libmemmgrclient library failed");
+        return;
+    }
+    void *notifyProcessStatusFunc = dlsym(libMemMgrClientHandle, "notify_process_status");
+    if (!notifyProcessStatusFunc) {
+        AUDIO_ERR_LOG("dlsm notify_process_status failed");
+        dlclose(libMemMgrClientHandle);
+        return;
+    }
+    auto notifyProcessStatus = reinterpret_cast<int(*)(int, int, int, int)>(notifyProcessStatusFunc);
+    if (isStart) {
+        AUDIO_ERR_LOG("notify to memmgr when audio_server is started");
+        // 1 indicates the service is started
+        notifyProcessStatus(pid, SYSTEM_PROCESS_TYPE, SYSTEM_STATUS_START, AUDIO_DISTRIBUTED_SERVICE_ID);
+    } else {
+        AUDIO_ERR_LOG("notify to memmgr when audio_server is stopped");
+        // 0 indicates the service is stopped
+        notifyProcessStatus(pid, SYSTEM_PROCESS_TYPE, SYSTEM_STATUS_STOP, AUDIO_DISTRIBUTED_SERVICE_ID);
+    }
+    dlclose(libMemMgrClientHandle);
+}
+
 void AudioServer::OnStop()
 {
     AUDIO_DEBUG_LOG("OnStop");
+    NotifyProcessStatus(false);
 }
 
-void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
-    const std::string &extraSceneType)
+bool AudioServer::SetPcmDumpParameter(const std::vector<std::pair<std::string, std::string>> &params)
 {
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    if (audioEffectChainManager == nullptr) {
-        AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
-        return;
-    }
-    audioEffectChainManager->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
+    bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "set audiodump parameters failed: no permission.");
+    int32_t res = Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(params);
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "MediaMonitor SetMediaParameters failed.");
+    return true;
 }
 
 int32_t AudioServer::SetExtraParameters(const std::string& key,
@@ -370,11 +429,10 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
     ret = VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "set extra parameters failed: no permission.");
 
-    if (key == "PCM_DUMP") {
-        ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
-        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "set audiodump parameters failed: no permission.");
-        ret = Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(kvpairs);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetMediaParameters failed.");
+    if (key == PCM_DUMP_KEY) {
+        ret = SetPcmDumpParameter(kvpairs);
+        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set audiodump parameters failed");
+        return SUCCESS;
     }
 
     if (audioParameterKeys.empty()) {
@@ -394,6 +452,12 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
         auto subKeyIt = subKeyMap.find(it->first);
         if (subKeyIt != subKeyMap.end()) {
             value += it->first + "=" + it->second + ";";
+            if (it->first == "unprocess_audio_effect") {
+                int appUid = IPCSkeleton::GetCallingUid();
+                AUDIO_INFO_LOG("add unprocess UID [%{public}d]", appUid);
+                IStreamManager::GetRecorderManager().AddUnprocessStream(appUid);
+                continue;
+            }
             auto valueIter = subKeyIt->second.find("effect");
             if (valueIter != subKeyIt->second.end()) {
                 RecognizeAudioEffectType(key, it->first, it->second);
@@ -403,9 +467,7 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
             break;
         }
     }
-    if (!match) {
-        return ERR_INVALID_PARAM;
-    }
+    if (!match) { return ERR_INVALID_PARAM; }
 
     IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
@@ -766,9 +828,25 @@ void AudioServer::SetAudioParameter(const std::string& networkId, const AudioPar
     audioRendererSinkInstance->SetAudioParameter(key, condition, value);
 }
 
+bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
+    std::vector<std::pair<std::string, std::string>> &result)
+{
+    bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "get audiodump parameters no permission");
+    int32_t res = Media::MediaMonitor::MediaMonitorManager::GetInstance().GetMediaParameters(subKeys, result);
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "MediaMonitor GetMediaParameters failed");
+    return true;
+}
+
 int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
     const std::vector<std::string> &subKeys, std::vector<std::pair<std::string, std::string>> &result)
 {
+    if (mainKey == PCM_DUMP_KEY) {
+        bool ret = GetPcmDumpParameter(subKeys, result);
+        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "get audiodump parameters failed");
+        return SUCCESS;
+    }
+
     if (audioParameterKeys.empty()) {
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
         return ERROR;
@@ -976,34 +1054,6 @@ bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries,
     return loadSuccess;
 }
 
-bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-    const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam)
-{
-    if (!PermissionUtil::VerifyIsAudio()) {
-        AUDIO_ERR_LOG("not audio calling!");
-        return false;
-    }
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    audioEffectChainManager->InitAudioEffectChainManager(effectChains, effectParam,
-        audioEffectServer_->GetEffectEntries());
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    audioEnhanceChainManager->InitAudioEnhanceChainManager(effectChains, enhanceParam,
-        audioEffectServer_->GetEffectEntries());
-    return true;
-}
-
-void AudioServer::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
-{
-    Trace trace("AudioServer::SetOutputDeviceSink:" + std::to_string(deviceType) + " sink:" + sinkName);
-    if (!PermissionUtil::VerifyIsAudio()) {
-        AUDIO_ERR_LOG("not audio calling!");
-        return;
-    }
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    audioEffectChainManager->SetOutputDeviceSink(deviceType, sinkName);
-    return;
-}
-
 int32_t AudioServer::SetMicrophoneMute(bool isMute)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -1016,6 +1066,10 @@ int32_t AudioServer::SetMicrophoneMute(bool isMute)
         (*it)->SetMute(isMute);
     }
 
+    int32_t ret = SetMicrophoneMuteForEnhanceChain(isMute);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("SetMicrophoneMuteForEnhanceChain failed.");
+    }
     return SUCCESS;
 }
 
@@ -1089,7 +1143,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
 }
 
 int32_t  AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-    BluetoothOffloadState a2dpOffloadFlag)
+    BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName)
 {
     CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "Invalid audio devices.");
@@ -1101,13 +1155,14 @@ int32_t  AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>>
         AUDIO_INFO_LOG("SetIORoutes device type:%{public}d", activeDevice.first);
         deviceTypes.push_back(activeDevice.first);
     }
-    AUDIO_INFO_LOG("SetIORoutes 1st deviceType: %{public}d, flag: %{public}d", type, flag);
-    int32_t ret = SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag);
+    AUDIO_INFO_LOG("SetIORoutes 1st deviceType: %{public}d, flag: %{public}d deviceName:%{public}s",
+        type, flag, deviceName.c_str());
+    int32_t ret = SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
     return ret;
 }
 
 int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
-    BluetoothOffloadState a2dpOffloadFlag)
+    BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName)
 {
     IAudioCapturerSource *audioCapturerSourceInstance;
     IAudioRendererSink *audioRendererSinkInstance;
@@ -1131,9 +1186,9 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
     if (flag == DeviceFlag::INPUT_DEVICES_FLAG) {
         if (audioScene_ != AUDIO_SCENE_DEFAULT) {
-            audioCapturerSourceInstance->SetAudioScene(audioScene_, type);
+            audioCapturerSourceInstance->SetAudioScene(audioScene_, type, deviceName);
         } else {
-            audioCapturerSourceInstance->SetInputRoute(type);
+            audioCapturerSourceInstance->SetInputRoute(type, deviceName);
         }
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
         if (audioScene_ != AUDIO_SCENE_DEFAULT) {
@@ -1144,10 +1199,10 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
         if (audioScene_ != AUDIO_SCENE_DEFAULT) {
-            audioCapturerSourceInstance->SetAudioScene(audioScene_, type);
+            audioCapturerSourceInstance->SetAudioScene(audioScene_, type, deviceName);
             audioRendererSinkInstance->SetAudioScene(audioScene_, deviceTypes);
         } else {
-            audioCapturerSourceInstance->SetInputRoute(type);
+            audioCapturerSourceInstance->SetInputRoute(type, deviceName);
             audioRendererSinkInstance->SetOutputRoutes(deviceTypes);
         }
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
@@ -1169,16 +1224,16 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag, B
 }
 
 int32_t AudioServer::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-    BluetoothOffloadState a2dpOffloadFlag)
+    BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
-    return SetIORoutes(activeDevices, a2dpOffloadFlag);
+    return SetIORoutes(activeDevices, a2dpOffloadFlag, deviceName);
 }
 
 void AudioServer::SetAudioMonoState(bool audioMono)
 {
-    AUDIO_DEBUG_LOG("audioMono = %{public}s", audioMono? "true": "false");
+    AUDIO_INFO_LOG("AudioMonoState = [%{public}s]", audioMono ? "true": "false");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
     // Set mono for audio_renderer_sink (primary)
@@ -1224,11 +1279,11 @@ void AudioServer::SetAudioMonoState(bool audioMono)
 
 void AudioServer::SetAudioBalanceValue(float audioBalance)
 {
+    AUDIO_INFO_LOG("AudioBalanceValue = [%{public}f]", audioBalance);
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
     CHECK_AND_RETURN_LOG(audioBalance >= -1.0f && audioBalance <= 1.0f,
         "audioBalance value %{public}f is out of range [-1.0, 1.0]", audioBalance);
-    AUDIO_DEBUG_LOG("audioBalance = %{public}f", audioBalance);
 
     // Set balance for audio_renderer_sink (primary)
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
@@ -1339,12 +1394,17 @@ void AudioServer::ResetRecordConfig(AudioProcessConfig &config)
     if (config.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         config.isInnerCapturer = true;
         config.innerCapMode = LEGACY_INNER_CAP;
-        if (config.callerUid == MEDIA_SERVICE_UID) {
+        if (PermissionUtil::VerifyPermission(CAPTURE_PLAYBACK_PERMISSION, IPCSkeleton::GetCallingTokenID())) {
+            AUDIO_INFO_LOG("CAPTURE_PLAYBACK permission granted");
+            config.innerCapMode = MODERN_INNER_CAP;
+        } else if (config.callerUid == MEDIA_SERVICE_UID || config.callerUid == VASSISTANT_UID) {
             config.innerCapMode = MODERN_INNER_CAP;
         } else if (GetHapBuildApiVersion(config.callerUid) >= MODERN_INNER_API_VERSION) { // check build api-version
             config.innerCapMode = LEGACY_MUTE_CAP;
         }
+        AUDIO_INFO_LOG("callerUid %{public}d, innerCapMode %{public}d", config.callerUid, config.innerCapMode);
     } else {
+        AUDIO_INFO_LOG("CAPTURE_PLAYBACK permission denied");
         config.isInnerCapturer = false;
     }
 #ifdef AUDIO_BUILD_VARIANT_ROOT
@@ -1492,7 +1552,73 @@ bool AudioServer::IsFastBlocked(int32_t uid)
     return result == "true";
 }
 
-sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config)
+void AudioServer::SendRendererCreateErrorInfo(const StreamUsage &sreamUsage,
+    const int32_t &errorCode)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_STREAM_CREATE_ERROR_STATS,
+        Media::MediaMonitor::FREQUENCY_AGGREGATION_EVENT);
+    bean->Add("IS_PLAYBACK", 1);
+    bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
+    bean->Add("STREAM_TYPE", sreamUsage);
+    bean->Add("ERROR_CODE", errorCode);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+int32_t AudioServer::CheckParam(const AudioProcessConfig &config)
+{
+    ContentType contentType = config.rendererInfo.contentType;
+    if (contentType < CONTENT_TYPE_UNKNOWN || contentType > CONTENT_TYPE_ULTRASONIC) {
+        SendRendererCreateErrorInfo(config.rendererInfo.streamUsage,
+            ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("Invalid content type");
+        return ERR_INVALID_PARAM;
+    }
+
+    StreamUsage streamUsage = config.rendererInfo.streamUsage;
+    if (streamUsage < STREAM_USAGE_UNKNOWN || streamUsage > STREAM_USAGE_MAX) {
+        SendRendererCreateErrorInfo(config.rendererInfo.streamUsage,
+            ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("Invalid stream usage");
+        return ERR_INVALID_PARAM;
+    }
+
+    if (contentType == CONTENT_TYPE_ULTRASONIC || IsNeedVerifyPermission(streamUsage)) {
+        if (!PermissionUtil::VerifySystemPermission()) {
+            SendRendererCreateErrorInfo(config.rendererInfo.streamUsage,
+                ERR_PERMISSION_DENIED);
+            AUDIO_ERR_LOG("CreateAudioRenderer failed! CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM or "\
+                "STREAM_USAGE_VOICE_MODEM_COMMUNICATION: No system permission");
+            return ERR_PERMISSION_DENIED;
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioServer::CheckMaxRendererInstances()
+{
+    int32_t maxRendererInstances = PolicyHandler::GetInstance().GetMaxRendererInstances();
+    if (maxRendererInstances <= 0) {
+        maxRendererInstances = DEFAULT_MAX_RENDERER_INSTANCES;
+    }
+
+    if (AudioService::GetInstance()->GetCurrentRendererStreamCnt() >= maxRendererInstances) {
+        int32_t mostAppUid = INVALID_APP_UID;
+        int32_t mostAppNum = INVALID_APP_CREATED_AUDIO_STREAM_NUM;
+        AudioService::GetInstance()->GetCreatedAudioStreamMostUid(mostAppUid, mostAppNum);
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_EXHAUSTED_STATS,
+            Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
+        bean->Add("CLIENT_UID", mostAppUid);
+        bean->Add("TIMES", mostAppNum);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+        AUDIO_ERR_LOG("Current audio renderer stream num is greater than the maximum num of configured instances");
+        return ERR_EXCEED_MAX_STREAM_CNT;
+    }
+    return SUCCESS;
+}
+
+sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode)
 {
     Trace trace("AudioServer::CreateAudioProcess");
     AudioProcessConfig resetConfig = ResetProcessConfig(config);
@@ -1500,7 +1626,23 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         ":%{public}s", ProcessConfig::DumpProcessConfig(resetConfig).c_str());
     CHECK_AND_RETURN_RET_LOG(PermissionChecker(resetConfig), nullptr, "Create audio process failed, no permission");
 
+    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
+    int32_t ret = CheckParam(config);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Check params failed");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
+    if (resetConfig.audioMode == AUDIO_MODE_PLAYBACK) {
+        errorCode = CheckMaxRendererInstances();
+        if (errorCode != SUCCESS) {
+            return nullptr;
+        }
+        if (AudioService::GetInstance()->IsExceedingMaxStreamCntPerUid(callingUid, resetConfig.appInfo.appUid,
+            maxRendererStreamCntPerUid_)) {
+            errorCode = ERR_EXCEED_MAX_STREAM_CNT_PER_UID;
+            AUDIO_ERR_LOG("Current audio renderer stream num exceeds maxRendererStreamCntPerUid");
+            return nullptr;
+        }
+    }
+
     if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && callingUid == UID_FOUNDATION_SA
         && config.rendererInfo.isSatellite) {
         bool isSupportSate = OHOS::system::GetBoolParameter(TEL_SATELLITE_SUPPORT, false);
@@ -1513,17 +1655,20 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         GetBundleNameFromUid(resetConfig.appInfo.appUid));
 #endif
 
+    AudioMode audioMode = resetConfig.audioMode;
     if (IsNormalIpcStream(resetConfig) || (isFastControlled_ && IsFastBlocked(resetConfig.appInfo.appUid))) {
         AUDIO_INFO_LOG("Create normal ipc stream, isFastControlled: %{public}d", isFastControlled_);
         int32_t ret = 0;
         sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(resetConfig, ret);
         CHECK_AND_RETURN_RET_LOG(ipcStream != nullptr, nullptr, "GetIpcStream failed.");
+        AudioService::GetInstance()->SetIncMaxRendererStreamCnt(audioMode);
         sptr<IRemoteObject> remoteObject= ipcStream->AsObject();
         return remoteObject;
     }
 
     sptr<IAudioProcess> process = AudioService::GetInstance()->GetAudioProcess(resetConfig);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "GetAudioProcess failed.");
+    AudioService::GetInstance()->SetIncMaxRendererStreamCnt(audioMode);
     sptr<IRemoteObject> remoteObject= process->AsObject();
     return remoteObject;
 }
@@ -1651,7 +1796,11 @@ void AudioServer::OnCapturerState(bool isActive, int32_t num)
     }
 
     CHECK_AND_RETURN_LOG(callback != nullptr, "OnCapturerState callback is nullptr.");
+    Trace traceCb("callbackToIntelligentVoice");
+    int64_t stamp = ClockTime::GetCurNano();
     callback->OnCapturerState(isActive);
+    stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
+    AUDIO_INFO_LOG("isActive:%{public}d num:%{public}d cb cost[%{public}" PRId64 "]", isActive, num, stamp);
 }
 
 int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
@@ -1832,7 +1981,7 @@ bool AudioServer::CheckVoiceCallRecorderPermission(Security::AccessToken::Access
     return true;
 }
 
-void AudioServer::AudioServerDied(pid_t pid)
+void AudioServer::AudioServerDied(pid_t pid, pid_t uid)
 {
     AUDIO_INFO_LOG("Policy server died: restart pulse audio");
     _Exit(0);
@@ -1842,13 +1991,14 @@ void AudioServer::RegisterPolicyServerDeathRecipient()
 {
     AUDIO_INFO_LOG("Register policy server death recipient");
     pid_t pid = IPCSkeleton::GetCallingPid();
-    sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
+    pid_t uid = IPCSkeleton::GetCallingUid();
+    sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid, uid);
     if (deathRecipient_ != nullptr) {
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         CHECK_AND_RETURN_LOG(samgr != nullptr, "Failed to obtain system ability manager");
         sptr<IRemoteObject> object = samgr->GetSystemAbility(OHOS::AUDIO_POLICY_SERVICE_ID);
         CHECK_AND_RETURN_LOG(object != nullptr, "Policy service unavailable");
-        deathRecipient_->SetNotifyCb([this] (pid_t pid) { this->AudioServerDied(pid); });
+        deathRecipient_->SetNotifyCb([this] (pid_t pid, pid_t uid) { this->AudioServerDied(pid, uid); });
         bool result = object->AddDeathRecipient(deathRecipient_);
         if (!result) {
             AUDIO_ERR_LOG("Failed to add deathRecipient");
@@ -1900,12 +2050,15 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
 
     IAudioCapturerSource* primaryAudioCapturerSourceInstance =
         IAudioCapturerSource::GetInstance("primary", nullptr, SOURCE_TYPE_MIC);
-
     IAudioCapturerSource *usbAudioCapturerSinkInstance = IAudioCapturerSource::GetInstance("usb", "");
+    IAudioCapturerSource *fastAudioCapturerSourceInstance = FastAudioCapturerSource::GetInstance();
+    IAudioCapturerSource *voipFastAudioCapturerSourceInstance = FastAudioCapturerSource::GetVoipInstance();
 
     for (auto audioCapturerSourceInstance : {
         primaryAudioCapturerSourceInstance,
-        usbAudioCapturerSinkInstance
+        usbAudioCapturerSinkInstance,
+        fastAudioCapturerSourceInstance,
+        voipFastAudioCapturerSourceInstance
     }) {
         if (audioCapturerSourceInstance != nullptr) {
             audioCapturerSourceInstance->RegisterAudioCapturerSourceCallback(make_unique<CapturerStateOb>(
@@ -1928,29 +2081,6 @@ int32_t AudioServer::SetCaptureSilentState(bool state)
     return SUCCESS;
 }
 
-int32_t AudioServer::UpdateSpatializationState(AudioSpatializationState spatializationState)
-{
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    if (audioEffectChainManager == nullptr) {
-        AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
-        return ERROR;
-    }
-    return audioEffectChainManager->UpdateSpatializationState(spatializationState);
-}
-
-int32_t AudioServer::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
-{
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
-
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
-
-    return audioEffectChainManager->UpdateSpatialDeviceType(spatialDeviceType);
-}
-
 int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -1961,50 +2091,15 @@ int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float
 
     SetSystemVolumeToEffect(streamType, volume);
 
-    return AudioService::GetInstance()->NotifyStreamVolumeChanged(streamType, volume);
-}
-
-int32_t AudioServer::SetSystemVolumeToEffect(const AudioStreamType streamType, float volume)
-{
-    std::string sceneType;
-    switch (streamType) {
-        case STREAM_RING:
-        case STREAM_ALARM:
-            sceneType = "SCENE_RING";
-            break;
-        case STREAM_VOICE_ASSISTANT:
-            sceneType = "SCENE_SPEECH";
-            break;
-        case STREAM_MUSIC:
-            sceneType = "SCENE_MUSIC";
-            break;
-        case STREAM_ACCESSIBILITY:
-            sceneType = "SCENE_OTHERS";
-            break;
-        default:
-            return SUCCESS;
+    int32_t ret = AudioService::GetInstance()->NotifyStreamVolumeChanged(streamType, volume);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("NotifyStreamVolumeChanged failed");
     }
-
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
-    AUDIO_INFO_LOG("streamType : %{public}d , systemVolume : %{public}f", streamType, volume);
-    audioEffectChainManager->SetSceneTypeSystemVolume(sceneType, volume);
-    
-    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
-    audioEffectChainManager->EffectVolumeUpdate(audioEffectVolume);
-
+    ret = SetVolumeInfoForEnhanceChain(streamType);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("SetVolumeInfoForEnhanceChain failed");
+    }
     return SUCCESS;
-}
-
-int32_t AudioServer::SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType)
-{
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
-
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
-    return audioEffectChainManager->SetSpatializationSceneType(spatializationSceneType);
 }
 
 int32_t AudioServer::ResetRouteForDisconnect(DeviceType type)
@@ -2022,13 +2117,6 @@ int32_t AudioServer::ResetRouteForDisconnect(DeviceType type)
     // todo reset capturer
 
     return SUCCESS;
-}
-
-uint32_t AudioServer::GetEffectLatency(const std::string &sessionId)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
-    return audioEffectChainManager->GetLatency(sessionId);
 }
 
 float AudioServer::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType)
@@ -2083,16 +2171,6 @@ void AudioServer::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer
     }
 }
 
-bool AudioServer::GetEffectOffloadEnabled()
-{
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
-
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
-    return audioEffectChainManager->GetOffloadEnabled();
-}
-
 int32_t AudioServer::UpdateDualToneState(bool enable, int32_t sessionId)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -2125,45 +2203,10 @@ int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &devceClass, i
     if (durationUs <= 0) {
         return SUCCESS;
     }
-    if (devceClass == "offload") {
-        IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
-        CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-        return audioRendererSinkInstance->SetSinkMuteForSwitchDevice(mute);
-    }
 
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance(devceClass.c_str(), "");
     CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-    return audioRendererSinkInstance->SetRenderEmpty(durationUs);
-}
-
-void AudioServer::LoadHdiEffectModel()
-{
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "load hdi effect model refused for %{public}d", callingUid);
-
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
-    audioEffectChainManager->InitHdiState();
-}
-
-void AudioServer::UpdateEffectBtOffloadSupported(const bool &isSupported)
-{
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
-
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
-    audioEffectChainManager->UpdateEffectBtOffloadSupported(isSupported);
-}
-
-void AudioServer::SetRotationToEffect(const uint32_t rotate)
-{
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "set rotation to effect refused for %{public}d", callingUid);
-
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
-    audioEffectChainManager->EffectRotationUpdate(rotate);
+    return audioRendererSinkInstance->SetSinkMuteForSwitchDevice(mute);
 }
 
 void AudioServer::UpdateSessionConnectionState(const int32_t &sessionId, const int32_t &state)
@@ -2188,6 +2231,31 @@ void AudioServer::SetNonInterruptMute(const uint32_t sessionId, const bool muteF
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "Refused for %{public}d", callingUid);
     AudioService::GetInstance()->SetNonInterruptMute(sessionId, muteFlag);
+}
+
+void AudioServer::RestoreSession(const int32_t &sessionID, bool isOutput)
+{
+    AUDIO_INFO_LOG("restore output: %{public}d, sessionID: %{public}d", isOutput, sessionID);
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(),
+        "Update session connection state refused for %{public}d", callingUid);
+    if (isOutput) {
+        std::shared_ptr<RendererInServer> renderer =
+            AudioService::GetInstance()->GetRendererBySessionID(static_cast<uint32_t>(sessionID));
+        if (renderer == nullptr) {
+            AUDIO_ERR_LOG("No render in server has sessionID");
+            return;
+        }
+        renderer->RestoreSession();
+    } else {
+        std::shared_ptr<CapturerInServer> capturer =
+            AudioService::GetInstance()->GetCapturerBySessionID(static_cast<uint32_t>(sessionID));
+        if (capturer == nullptr) {
+            AUDIO_ERR_LOG("No capturer in server has sessionID");
+            return;
+        }
+        capturer->RestoreSession();
+    }
 }
 
 int32_t AudioServer::SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack)

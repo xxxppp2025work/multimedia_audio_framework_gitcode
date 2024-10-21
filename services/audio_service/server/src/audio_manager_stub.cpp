@@ -84,11 +84,16 @@ const char *g_audioServerCodeStrs[] = {
     "SUSPEND_RENDERSINK",
     "RESTORE_RENDERSINK",
     "LOAD_HDI_EFFECT_MODEL",
+    "GET_AUDIO_ENHANCE_PROPERTY",
+    "GET_AUDIO_EFFECT_PROPERTY",
+    "SET_AUDIO_ENHANCE_PROPERTY",
+    "SET_AUDIO_EFFECT_PROPERTY",
     "UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED",
     "SET_SINK_MUTE_FOR_SWITCH_DEVICE",
     "SET_ROTATION_TO_EFFECT",
     "UPDATE_SESSION_CONNECTION_STATE",
     "SET_SINGLE_STREAM_MUTE",
+    "RESTORE_SESSION",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -324,7 +329,8 @@ int AudioManagerStub::HandleUpdateActiveDevicesRoute(MessageParcel &data, Messag
         activeDevices.push_back(std::make_pair(deviceType, deviceFlag));
     }
     BluetoothOffloadState a2dpOffloadFlag =  static_cast<BluetoothOffloadState>(data.ReadInt32());
-    int32_t ret = UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag);
+    std::string deviceName = data.ReadString();
+    int32_t ret = UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag, deviceName);
     reply.WriteInt32(ret);
     return AUDIO_OK;
 }
@@ -421,10 +427,12 @@ int AudioManagerStub::HandleCreateAudioProcess(MessageParcel &data, MessageParce
 {
     AudioProcessConfig config;
     ProcessConfig::ReadConfigFromParcel(config, data);
-    sptr<IRemoteObject> process = CreateAudioProcess(config);
+    int32_t errorCode = 0;
+    sptr<IRemoteObject> process = CreateAudioProcess(config, errorCode);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, AUDIO_ERR,
         "CREATE_AUDIOPROCESS AudioManagerStub CreateAudioProcess failed");
     reply.WriteRemoteObject(process);
+    reply.WriteInt32(errorCode);
     return AUDIO_OK;
 }
 
@@ -456,14 +464,14 @@ int AudioManagerStub::HandleRequestThreadPriority(MessageParcel &data, MessagePa
     return AUDIO_OK;
 }
 
-static bool UnmarshellEffectChainMgrParam(EffectChainManagerParam &effectChainMgrParam, MessageParcel &data)
+static bool UnmarshallEffectChainMgrParam(EffectChainManagerParam &effectChainMgrParam, MessageParcel &data)
 {
-    effectChainMgrParam.maxExtraNum = data.ReadInt32();
+    effectChainMgrParam.maxExtraNum = static_cast<uint32_t>(data.ReadInt32());
     effectChainMgrParam.defaultSceneName = data.ReadString();
 
     int32_t containSize = data.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(containSize >= 0 && containSize <= AUDIO_EFFECT_PRIOR_SCENE_UPPER_LIMIT,
-        false, "Create audio effect prioscene failed, please check log");
+        false, "Create audio effect priorscene failed, please check log");
     while (containSize--) {
         effectChainMgrParam.priorSceneList.emplace_back(data.ReadString());
     }
@@ -499,7 +507,7 @@ int AudioManagerStub::HandleCreateAudioEffectChainManager(MessageParcel &data, M
     for (i = 0; i < countChains; i++) {
         int32_t count = data.ReadInt32();
         CHECK_AND_RETURN_RET_LOG(count >= 0 && count <= AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT,
-            AUDIO_ERR, "Create audio effect chains failed, invalid countChains");
+            AUDIO_ERR, "Create audio effect chains failed, effect countChains");
         countEffect.emplace_back(count);
     }
 
@@ -514,7 +522,7 @@ int AudioManagerStub::HandleCreateAudioEffectChainManager(MessageParcel &data, M
 
     EffectChainManagerParam effectParam;
     EffectChainManagerParam enhanceParam;
-    if (!UnmarshellEffectChainMgrParam(effectParam, data) || !UnmarshellEffectChainMgrParam(enhanceParam, data)) {
+    if (!UnmarshallEffectChainMgrParam(effectParam, data) || !UnmarshallEffectChainMgrParam(enhanceParam, data)) {
         return AUDIO_ERR;
     }
     bool createSuccess = CreateEffectChainManager(effectChains, effectParam, enhanceParam);
@@ -695,6 +703,14 @@ int AudioManagerStub::HandleSetRotationToEffect(MessageParcel &data, MessageParc
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleRestoreSession(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t sessionID = data.ReadInt32();
+    int32_t isOutput = data.ReadBool();
+    RestoreSession(sessionID, isOutput);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply,
     MessageOption &option)
 {
@@ -729,6 +745,8 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleUpdateSessionConnectionState(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SINGLE_STREAM_MUTE):
             return HandleSetNonInterruptMute(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::RESTORE_SESSION):
+            return HandleRestoreSession(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -763,6 +781,14 @@ int AudioManagerStub::HandleThirdPartCode(uint32_t code, MessageParcel &data, Me
             return HandleSetOffloadMode(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UNSET_OFFLOAD_MODE):
             return HandleUnsetOffloadMode(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_ENHANCE_PROPERTY):
+            return HandleGetAudioEnhanceProperty(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_EFFECT_PROPERTY):
+            return HandleGetAudioEffectProperty(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_ENHANCE_PROPERTY):
+            return HandleSetAudioEnhanceProperty(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY):
+            return HandleSetAudioEffectProperty(data, reply);
         default:
             return HandleFourthPartCode(code, data, reply, option);
     }
@@ -860,6 +886,70 @@ int AudioManagerStub::HandleLoadHdiEffectModel(MessageParcel &data, MessageParce
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleSetAudioEffectProperty(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "Audio enhance property array size invalid");
+    AudioEffectPropertyArray propertyArray = {};
+    for (int32_t i = 0; i < size; i++) {
+        AudioEffectProperty prop = {};
+        prop.Unmarshalling(data);
+        propertyArray.property.push_back(prop);
+    }
+    int32_t result = SetAudioEffectProperty(propertyArray);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleGetAudioEffectProperty(MessageParcel &data, MessageParcel &reply)
+{
+    AudioEffectPropertyArray propertyArray = {};
+    int32_t result = GetAudioEffectProperty(propertyArray);
+    int32_t size = static_cast<int32_t>(propertyArray.property.size());
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "Audio enhance property array size invalid");
+    reply.WriteInt32(size);
+    for (int32_t i = 0; i < size; i++)    {
+        propertyArray.property[i].Marshalling(reply);
+    }
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetAudioEnhanceProperty(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "Audio enhance property array size invalid");
+    AudioEnhancePropertyArray propertyArray = {};
+    for (int32_t i = 0; i < size; i++) {
+        AudioEnhanceProperty prop = {};
+        prop.Unmarshalling(data);
+        propertyArray.property.push_back(prop);
+    }
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    int32_t result = SetAudioEnhanceProperty(propertyArray, deviceType);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleGetAudioEnhanceProperty(MessageParcel &data, MessageParcel &reply)
+{
+    AudioEnhancePropertyArray propertyArray = {};
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    int32_t result = GetAudioEnhanceProperty(propertyArray, deviceType);
+    int32_t size = static_cast<int32_t>(propertyArray.property.size());
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "Audio enhance property array size invalid");
+    reply.WriteInt32(size);
+    for (int32_t i = 0; i < size; i++) {
+        propertyArray.property[i].Marshalling(reply);
+    }
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleUpdateEffectBtOffloadSupported(MessageParcel &data, MessageParcel &reply)
 {
     UpdateEffectBtOffloadSupported(data.ReadBool());
@@ -886,7 +976,7 @@ int AudioManagerStub::HandleUpdateSessionConnectionState(MessageParcel &data, Me
 
 int AudioManagerStub::HandleSetNonInterruptMute(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t sessionId = data.ReadUint32();
+    uint32_t sessionId = data.ReadUint32();
     bool muteFlag = data.ReadBool();
     SetNonInterruptMute(sessionId, muteFlag);
     return AUDIO_OK;

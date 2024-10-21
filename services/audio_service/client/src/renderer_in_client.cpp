@@ -87,8 +87,6 @@ static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MEDIA_SERVICE_UID = 1013;
-const int32_t CONTINUE_DOWN_BARRIER = 5;
-const float DOWN_BARRIER_VOLUME = 0.31f;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -118,6 +116,7 @@ RendererInClientInner::~RendererInClientInner()
         runnerReleased_ = true;
         callbackHandler_ = nullptr;
     }
+    UnregisterSpatializationStateEventListener(spatializationRegisteredSessionID_);
     AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
@@ -134,14 +133,20 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         offloadEnable_ = static_cast<bool>(result);
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
         return SUCCESS;
+    } else if (operation == DATA_LINK_CONNECTING) {
+        isDataLinkConnected_ = false;
+        return SUCCESS;
+    } else if (operation == DATA_LINK_CONNECTED) {
+        isDataLinkConnected_ = true;
+        dataConnectionCV_.notify_all();
+        return SUCCESS;
     }
 
-    if (operation == DATA_LINK_CONNECTING || operation == DATA_LINK_CONNECTED) {
-        if (operation == DATA_LINK_CONNECTING) {
-            isDataLinkConnected_ = false;
-        } else {
-            isDataLinkConnected_ = true;
-            dataConnectionCV_.notify_all();
+    if (operation == RESTORE_SESSION) {
+        // fix it when restoreAudioStream work right
+        if (audioStreamTracker_ && audioStreamTracker_.get()) {
+            audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_,
+                state_, clientPid_, rendererInfo_, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
         }
         return SUCCESS;
     }
@@ -190,15 +195,13 @@ int32_t RendererInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCa
 void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
-    if (rendererInfo_.streamUsage == STREAM_USAGE_SYSTEM ||
-        rendererInfo_.streamUsage == STREAM_USAGE_DTMF ||
-        rendererInfo_.streamUsage == STREAM_USAGE_ENFORCED_TONE ||
-        rendererInfo_.streamUsage == STREAM_USAGE_ULTRASONIC ||
-        rendererInfo_.streamUsage == STREAM_USAGE_NAVIGATION ||
-        rendererInfo_.streamUsage == STREAM_USAGE_NOTIFICATION) {
+
+    rendererInfo_.sceneType = GetEffectSceneName(rendererInfo_.streamUsage);
+
+    if (rendererInfo_.sceneType == AUDIO_SUPPORTED_SCENE_TYPES.find(SCENE_OTHERS)->second) {
         effectMode_ = EFFECT_NONE;
     }
-    rendererInfo_.sceneType = GetEffectSceneName(rendererInfo_.streamUsage);
+
     AUDIO_PRERELEASE_LOGI("SetRendererInfo with flag %{public}d, sceneType %{public}s", rendererInfo_.rendererFlags,
         rendererInfo_.sceneType.c_str());
     AudioSpatializationState spatializationState =
@@ -298,7 +301,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out.pcm";
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
-    logUtilsTag_ = "IpcClientPlay::" + std::to_string(sessionId_);
+    logUtilsTag_ = "[" + std::to_string(sessionId_) + "]NormalRenderer";
     InitDirectPipeType();
 
     proxyObj_ = proxyObj;
@@ -344,9 +347,10 @@ const sptr<IStandardAudioService> RendererInClientInner::GetAudioServerProxy()
         }
 
         // register death recipent to restore proxy
-        sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
+        sptr<AudioServerDeathRecipient> asDeathRecipient =
+            new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb([] (pid_t pid) { AudioServerDied(pid); });
+            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) { AudioServerDied(pid, uid); });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
                 AUDIO_ERR_LOG("GetAudioServerProxy: failed to add deathRecipient");
@@ -357,7 +361,7 @@ const sptr<IStandardAudioService> RendererInClientInner::GetAudioServerProxy()
     return gasp;
 }
 
-void RendererInClientInner::AudioServerDied(pid_t pid)
+void RendererInClientInner::AudioServerDied(pid_t pid, pid_t uid)
 {
     AUDIO_INFO_LOG("audio server died clear proxy, will restore proxy in next call");
     std::lock_guard<std::mutex> lock(g_serverProxyMutex);
@@ -451,6 +455,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
     config.streamInfo.format = static_cast<AudioSampleFormat>(curStreamParams_.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(curStreamParams_.samplingRate);
     config.streamInfo.channelLayout = static_cast<AudioChannelLayout>(curStreamParams_.channelLayout);
+    config.originalSessionId = curStreamParams_.originalSessionId;
 
     config.audioMode = AUDIO_MODE_PLAYBACK;
 
@@ -525,7 +530,8 @@ int32_t RendererInClientInner::InitIpcStream()
     bool resetSilentMode = (gServerProxy_ == nullptr) ? true : false;
     sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
-    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config); // in plan next: add ret
+    int32_t errorCode = 0;
+    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config, errorCode);
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
     ipcStream_ = iface_cast<IpcStream>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "failed when iface_cast.");
@@ -723,11 +729,13 @@ int32_t RendererInClientInner::SetInnerVolume(float volume)
 {
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
     clientBuffer_->SetStreamVolume(volume);
+    bool isStreamVolumeChange = true;
+    bool isMediaServiceAndOffloadEnable = (getuid() == MEDIA_SERVICE_UID) && offloadEnable_;
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->SetClientVolume();
+    int32_t ret = ipcStream_->SetClientVolume(isStreamVolumeChange, isMediaServiceAndOffloadEnable);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Set Client Volume failed:%{public}u", ret);
-        return -1;
+        return ERROR;
     }
     AUDIO_PRERELEASE_LOGI("SetClientVolume success, volume: %{public}f", volume);
     return SUCCESS;
@@ -745,24 +753,12 @@ int32_t RendererInClientInner::SetVolume(float volume)
     if (volumeRamp_.IsActive()) {
         volumeRamp_.Terminate();
     }
-    float historyVolume = clientVolume_;
     clientVolume_ = volume;
-    if (getuid() == MEDIA_SERVICE_UID) {
-        if (offloadEnable_) {
-            SetInnerVolume(MAX_FLOAT_VOLUME); // so volume will not change in RendererInServer
-            CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
-            ipcStream_->OffloadSetVolume(volume);
-            return SUCCESS;
-        }
-        if (volume >= historyVolume) {
-            continueDownCount_ = 0;
-        } else {
-            continueDownCount_++;
-        }
-        if (continueDownCount_ > CONTINUE_DOWN_BARRIER && volume < DOWN_BARRIER_VOLUME) {
-            AUDIO_INFO_LOG("sessionId:%{public}d set acturally volume:0.0", sessionId_);
-            return SetInnerVolume(MIN_FLOAT_VOLUME);
-        }
+    if (offloadEnable_) {
+        SetInnerVolume(MAX_FLOAT_VOLUME); // so volume will not change in RendererInServer
+        CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
+        ipcStream_->OffloadSetVolume(duckVolume_ * volume);
+        return SUCCESS;
     }
 
     return SetInnerVolume(volume);
@@ -772,6 +768,25 @@ float RendererInClientInner::GetVolume()
 {
     Trace trace("RendererInClientInner::GetVolume:" + std::to_string(clientVolume_));
     return clientVolume_;
+}
+
+int32_t RendererInClientInner::SetMute(bool mute)
+{
+    Trace trace("RendererInClientInner::SetMute:" + std::to_string(mute));
+    AUDIO_INFO_LOG("sessionId:%{public}d SetDuck:%{public}d", sessionId_, mute);
+    muteVolume_ = mute ? 0.0f : 1.0f;
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
+    clientBuffer_->SetMuteFactor(muteVolume_);
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->SetMute(mute);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Set Mute failed:%{public}u", ret);
+        return ERROR;
+    }
+    if (offloadEnable_) {
+        ipcStream_->OffloadSetVolume(mute ? 0.0f : clientVolume_ * duckVolume_);
+    }
+    return SUCCESS;
 }
 
 int32_t RendererInClientInner::SetDuckVolume(float volume)
@@ -784,6 +799,13 @@ int32_t RendererInClientInner::SetDuckVolume(float volume)
     }
     duckVolume_ = volume;
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
+    if (offloadEnable_) {
+        clientBuffer_->SetDuckFactor(MAX_FLOAT_VOLUME);
+        CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
+        ipcStream_->OffloadSetVolume(clientVolume_ * volume);
+        return SUCCESS;
+    }
+
     clientBuffer_->SetDuckFactor(volume);
     return SUCCESS;
 }
@@ -1363,8 +1385,9 @@ bool RendererInClientInner::StopAudioStream()
     return true;
 }
 
-bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
+bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool destoryAtOnce)
 {
+    (void)destoryAtOnce;
     AUDIO_PRERELEASE_LOGI("Enter");
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
@@ -2196,6 +2219,9 @@ void RendererInClientInner::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_ = on;
     ipcStream_->SetSilentModeAndMixWithOthers(on);
+    if (offloadEnable_) {
+        ipcStream_->OffloadSetVolume(on ? 0.0f : clientVolume_ * duckVolume_);
+    }
     return;
 }
 

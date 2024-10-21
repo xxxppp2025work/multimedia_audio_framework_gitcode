@@ -25,6 +25,9 @@
 #include "napi_audio_manager_callbacks.h"
 #include "napi_audio_rounting_available_devicechange_callback.h"
 #include "napi_audio_routing_manager_callbacks.h"
+#if !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
+#include "parameters.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -106,6 +109,9 @@ napi_value NapiAudioRoutingManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getAvailableDevices", GetAvailableDevices),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
+#if !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
+        DECLARE_NAPI_FUNCTION("isMicBlockDetectionSupported", IsMicBlockDetectionSupported),
+#endif
     };
 
     status = napi_define_class(env, NAPI_AUDIO_ROUTING_MANAGER_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,
@@ -634,50 +640,35 @@ napi_value NapiAudioRoutingManager::GetPreferredOutputDeviceForRendererInfoSync(
 
 napi_value NapiAudioRoutingManager::GetPreferredOutputDeviceByFilter(napi_env env, napi_callback_info info)
 {
-    napi_value result = nullptr;
-    size_t argc = ARGS_ONE;
-    napi_value argv[ARGS_ONE] = {};
-    auto *napiAudioRoutingManager = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argCount invalid");
-
-    napi_valuetype valueType = napi_undefined;
-    napi_typeof(env, argv[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of filter must be object"),
-        "valueType invalid");
-
-    bool bArgTransFlag = true;
-    sptr<AudioRendererFilter> rendererFilter = nullptr;
-    if (NapiParamUtils::GetAudioRendererFilter(env, rendererFilter, bArgTransFlag, argv[PARAM0]) != napi_ok) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
-            "incorrect parameter types: The type of filter must be interface AudioRendererFilter");
-        return result;
-    }
-    CHECK_AND_RETURN_RET_LOG(rendererFilter != nullptr, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of filter must be AudioRendererFilter"),
-        "valueType invalid");
-
-    AudioRendererInfo rendererInfo = rendererFilter->rendererInfo;
-
-    if (rendererInfo.streamUsage == StreamUsage::STREAM_USAGE_INVALID) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
-            "parameter verification failed: The param of usage invalid");
-        return result;
+    auto context = std::make_shared<AudioRoutingManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("GetPreferredOutputDeviceByFilter failed : no memory");
+        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    vector<sptr<AudioDeviceDescriptor>> outDeviceDescriptors;
-    CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager != nullptr &&
-        napiAudioRoutingManager->audioRoutingMngr_ != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE,
-        "GetPreferredOutputDeviceByFilter napiAudioRoutingManager or audioRoutingMngr is nullptr"),
-        "GetPreferredOutputDeviceByFilter napiAudioRoutingManager or audioRoutingMngr is nullptr");
-    napiAudioRoutingManager->audioRoutingMngr_->GetPreferredOutputDeviceForRendererInfo(
-        rendererInfo, outDeviceDescriptors);
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetAudioRendererFilter(env, context->audioRendererFilter,
+            context->bArgTransFlag, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get AudioRendererFilter failed",
+            NAPI_ERR_INVALID_PARAM);
+    };
+    context->GetCbInfo(env, info, inputParser);
 
-    NapiParamUtils::SetDeviceDescriptors(env, outDeviceDescriptors, result);
-
-    return result;
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioRoutingManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioRoutingManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioRoutingManagerStatus(napiAudioRoutingManager, context),
+            "context object state is error.");
+        context->deviceDescriptors = napiAudioRoutingManager->audioMngr_->GetOutputDevice(context->audioRendererFilter);
+    };
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetDeviceDescriptors(env, context->deviceDescriptors, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetPreferredOutputDeviceByFilter", executor, complete);
 }
 
 napi_value NapiAudioRoutingManager::GetPreferredInputDeviceForCapturerInfo(napi_env env, napi_callback_info info)
@@ -764,44 +755,35 @@ napi_value NapiAudioRoutingManager::GetPreferredInputDeviceForCapturerInfoSync(n
 
 napi_value NapiAudioRoutingManager::GetPreferredInputDeviceByFilter(napi_env env, napi_callback_info info)
 {
-    napi_value result = nullptr;
-    size_t argc = ARGS_ONE;
-    napi_value argv[ARGS_ONE] = {};
-    auto *napiAudioRoutingManager = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "argCount invalid");
+    auto context = std::make_shared<AudioRoutingManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("GetPreferredInputDeviceByFilter failed : no memory");
+        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
 
-    napi_valuetype valueType = napi_undefined;
-    napi_typeof(env, argv[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_object,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of capturerInfo must be object"), "valueType invalid");
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetAudioCapturerFilter(env, context->audioCapturerFilter,
+            argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get GetAudioCapturerFilter failed",
+            NAPI_ERR_INVALID_PARAM);
+    };
+    context->GetCbInfo(env, info, inputParser);
 
-    sptr<AudioCapturerFilter> capturerFilter = nullptr;
-    napi_status status = NapiParamUtils::GetAudioCapturerFilter(env, capturerFilter, argv[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG((capturerFilter != nullptr) && (status == napi_ok),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "parameter verification failed: The param of capturerFilter must be interface AudioCapturerFilter"),
-        "sourceType invalid");
-    
-    AudioCapturerInfo capturerInfo = capturerFilter->capturerInfo;
-    CHECK_AND_RETURN_RET_LOG(capturerInfo.sourceType != SourceType::SOURCE_TYPE_INVALID,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "parameter verification failed: The param of capturerFilter.capturerInfo must be interface AudioCapturerInfo"),
-        "sourceType invalid");
-
-    vector<sptr<AudioDeviceDescriptor>> outDeviceDescriptors;
-    CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager != nullptr &&
-        napiAudioRoutingManager->audioRoutingMngr_ != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE,
-        "GetPreferredInputDeviceByFilter napiAudioRoutingManager or audioRoutingMngr is nullptr"),
-        "GetPreferredInputDeviceByFilter napiAudioRoutingManager or audioRoutingMngr is nullptr");
-    napiAudioRoutingManager->audioRoutingMngr_->GetPreferredInputDeviceForCapturerInfo(
-        capturerInfo, outDeviceDescriptors);
-
-    NapiParamUtils::SetDeviceDescriptors(env, outDeviceDescriptors, result);
-
-    return result;
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioRoutingManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioRoutingManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioRoutingManagerStatus(napiAudioRoutingManager, context),
+            "context object state is error.");
+        context->deviceDescriptors = napiAudioRoutingManager->audioMngr_->GetInputDevice(context->audioCapturerFilter);
+    };
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetDeviceDescriptors(env, context->deviceDescriptors, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetPreferredInputDeviceByFilter", executor, complete);
 }
 
 napi_value NapiAudioRoutingManager::GetAvailableMicrophones(napi_env env, napi_callback_info info)
@@ -884,6 +866,8 @@ napi_value NapiAudioRoutingManager::RegisterCallback(napi_env env, napi_value js
         RegisterPreferredInputDeviceChangeCallback(env, argc, args, cbName, napiRoutingMgr);
     } else if (!cbName.compare(AVAILABLE_DEVICE_CHANGE_CALLBACK_NAME)) {
         RegisterAvaiableDeviceChangeCallback(env, argc, args, cbName, napiRoutingMgr);
+    } else if (!cbName.compare(MICROPHONE_BLOCKED_CALLBACK_NAME)) {
+        RegisterMicrophoneBlockedCallback(env, argc, args, cbName, napiRoutingMgr);
     } else {
         AUDIO_ERR_LOG("NapiAudioRoutingManager::No such supported");
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
@@ -1045,6 +1029,27 @@ void NapiAudioRoutingManager::RegisterAvaiableDeviceChangeCallback(napi_env env,
     cb->SaveRoutingAvailbleDeviceChangeCbRef(usage, args[PARAM2]);
 }
 
+void NapiAudioRoutingManager::RegisterMicrophoneBlockedCallback(napi_env env, size_t argc, napi_value *args,
+    const std::string &cbName, NapiAudioRoutingManager *napiRoutingMgr)
+{
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM1], &valueType);
+    if (valueType != napi_function) {
+        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of deviceFlag must be enum DeviceFlag");
+    }
+    if (!napiRoutingMgr->microphoneBlockedCallbackNapi_) {
+        napiRoutingMgr->microphoneBlockedCallbackNapi_ = std::make_shared<NapiAudioManagerCallback>(env);
+    }
+    int32_t ret = napiRoutingMgr->audioMngr_->SetMicrophoneBlockedCallback(
+        napiRoutingMgr->microphoneBlockedCallbackNapi_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowError(env, ret),
+        "Registering micro phone blocked Callback Failed %{public}d", ret);
+    std::shared_ptr<NapiAudioManagerCallback> cb =
+        std::static_pointer_cast<NapiAudioManagerCallback>(napiRoutingMgr->microphoneBlockedCallbackNapi_);
+    cb->SaveMicrophoneBlockedCallbackReference(args[PARAM1]);
+}
+
 napi_value NapiAudioRoutingManager::On(napi_env env, napi_callback_info info)
 {
     const size_t requireArgc = ARGS_TWO;
@@ -1099,6 +1104,8 @@ napi_value NapiAudioRoutingManager::UnregisterCallback(napi_env env, napi_value 
         UnregisterPreferredInputDeviceChangeCallback(env, callback, napiRoutingMgr);
     } else if (!callbackName.compare(AVAILABLE_DEVICE_CHANGE_CALLBACK_NAME)) {
         UnregisterAvailableDeviceChangeCallback(env, callback, napiRoutingMgr);
+    } else if (!callbackName.compare(MICROPHONE_BLOCKED_CALLBACK_NAME)) {
+        UnregisterMicrophoneBlockedCallback(env, callback, napiRoutingMgr);
     } else {
         AUDIO_ERR_LOG("off no such supported");
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
@@ -1198,6 +1205,28 @@ void NapiAudioRoutingManager::UnregisterAvailableDeviceChangeCallback(napi_env e
     }
 }
 
+void NapiAudioRoutingManager::UnregisterMicrophoneBlockedCallback(napi_env env, napi_value callback,
+    NapiAudioRoutingManager *napiRoutingMgr)
+{
+    if (napiRoutingMgr->microphoneBlockedCallbackNapi_ != nullptr) {
+        std::shared_ptr<NapiAudioManagerCallback> cb =
+            std::static_pointer_cast<NapiAudioManagerCallback>(
+            napiRoutingMgr->microphoneBlockedCallbackNapi_);
+        if (callback == nullptr || cb->GetMicrophoneBlockedCbListSize() == 0) {
+            int32_t ret = napiRoutingMgr->audioMngr_->UnsetMicrophoneBlockedCallback(
+                napiRoutingMgr->microphoneBlockedCallbackNapi_);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnsetMicrophoneBlockedCallback Failed");
+            napiRoutingMgr->microphoneBlockedCallbackNapi_.reset();
+            napiRoutingMgr->microphoneBlockedCallbackNapi_ = nullptr;
+            cb->RemoveAllMicrophoneBlockedCallback();
+            return;
+        }
+        cb->RemoveMicrophoneBlockedCallbackReference(env, callback);
+    } else {
+        AUDIO_ERR_LOG("microphoneBlockedCallbackNapi_ is null");
+    }
+}
+
 napi_value NapiAudioRoutingManager::Off(napi_env env, napi_callback_info info)
 {
     napi_value undefinedResult = nullptr;
@@ -1237,5 +1266,32 @@ napi_value NapiAudioRoutingManager::Off(napi_env env, napi_callback_info info)
 
     return UnregisterCallback(env, jsThis, callbackName, args[PARAM1]);
 }
+
+int32_t NapiAudioManagerCallback::GetMicrophoneBlockedCbListSize()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return microphoneBlockedCbList_.size();
+}
+
+#if !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
+napi_value NapiAudioRoutingManager::IsMicBlockDetectionSupported(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRoutingManagerAsyncContext>();
+    context->GetCbInfo(env, info);
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        context->supported = OHOS::system::GetBoolParameter("const.multimedia.audio.mic_block_detection", false);
+        if (context->supported == true) {
+        AUDIO_INFO_LOG("mic block detection supported");
+        } else {
+        AUDIO_ERR_LOG("mic block detection is not supported");
+        }
+    };
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueBoolean(env, context->supported, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "IsMicBlockDetectionSupported", executor, complete);
+}
+#endif
 }  // namespace AudioStandard
 }  // namespace OHOS

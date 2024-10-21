@@ -75,6 +75,7 @@ public:
     int32_t SetVolume(float volume) override;
     float GetVolume() override;
     int32_t SetDuckVolume(float volume) override;
+    int32_t SetMute(bool mute) override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
@@ -118,7 +119,7 @@ public:
         AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN) override;
     bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     bool StopAudioStream() override;
-    bool ReleaseAudioStream(bool releaseRunner = true) override;
+    bool ReleaseAudioStream(bool releaseRunner = true, bool destoryAtOnce = false) override;
     bool FlushAudioStream() override;
 
     // Playback related APIs
@@ -160,7 +161,7 @@ public:
     IAudioStream::StreamClass GetStreamClass() override;
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
-    static void AudioServerDied(pid_t pid);
+    static void AudioServerDied(pid_t pid, pid_t uid);
 
     void OnHandle(uint32_t code, int64_t data) override;
     void InitCallbackHandler();
@@ -307,9 +308,9 @@ private:
     Operation notifiedOperation_ = MAX_OPERATION_CODE;
     int64_t notifiedResult_ = 0;
 
-    int32_t continueDownCount_ = 0;
     float lowPowerVolume_ = 1.0;
     float duckVolume_ = 1.0;
+    float muteVolume_ = 1.0;
     float clientVolume_ = 1.0;
     bool silentModeAndMixWithOthers_ = false;
 

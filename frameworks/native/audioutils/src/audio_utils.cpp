@@ -53,12 +53,23 @@ constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
+constexpr int32_t UID_THPEXTRA_SA = 5000;
 constexpr int32_t TIME_OUT_SECONDS = 10;
+
+const uint32_t UNIQUE_ID_INTERVAL = 8;
 
 constexpr size_t FIRST_CHAR = 1;
 constexpr size_t MIN_LEN = 8;
 constexpr size_t HEAD_STR_LEN = 2;
 constexpr size_t TAIL_STR_LEN = 5;
+
+const int32_t DATA_INDEX_0 = 0;
+const int32_t DATA_INDEX_1 = 1;
+const int32_t DATA_INDEX_2 = 2;
+const int32_t DATA_INDEX_3 = 3;
+const int32_t DATA_INDEX_4 = 4;
+const int32_t DATA_INDEX_5 = 5;
+const int32_t STEREO_CHANNEL_COUNT = 2;
 
 const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
 #ifdef AUDIO_BUILD_VARIANT_ROOT
@@ -70,6 +81,7 @@ const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_DISTRIBUTED_AUDIO_SA,
     UID_FOUNDATION_SA,
     UID_DISTRIBUTED_CALL_SA,
+    UID_THPEXTRA_SA,
     UID_TELEPHONY_SA // used in distributed communication call
 };
 
@@ -78,7 +90,37 @@ const std::set<SourceType> NO_BACKGROUND_CHECK_SOURCE_TYPE = {
     SOURCE_TYPE_VOICE_CALL,
     SOURCE_TYPE_REMOTE_CAST
 };
-}
+} // namespace
+
+static std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_NAME_MAP = {
+    {STREAM_VOICE_ASSISTANT, "VOICE_ASSISTANT"},
+    {STREAM_VOICE_CALL, "VOICE_CALL"},
+    {STREAM_SYSTEM, "SYSTEM"},
+    {STREAM_RING, "RING"},
+    {STREAM_MUSIC, "MUSIC"},
+    {STREAM_ALARM, "ALARM"},
+    {STREAM_NOTIFICATION, "NOTIFICATION"},
+    {STREAM_BLUETOOTH_SCO, "BLUETOOTH_SCO"},
+    {STREAM_DTMF, "DTMF"},
+    {STREAM_TTS, "TTS"},
+    {STREAM_ACCESSIBILITY, "ACCESSIBILITY"},
+    {STREAM_ULTRASONIC, "ULTRASONIC"},
+    {STREAM_WAKEUP, "WAKEUP"},
+    {STREAM_CAMCORDER, "CAMCORDER"},
+    {STREAM_ENFORCED_AUDIBLE, "ENFORCED_AUDIBLE"},
+    {STREAM_MOVIE, "MOVIE"},
+    {STREAM_GAME, "GAME"},
+    {STREAM_SPEECH, "SPEECH"},
+    {STREAM_SYSTEM_ENFORCED, "SYSTEM_ENFORCED"},
+    {STREAM_VOICE_MESSAGE, "VOICE_MESSAGE"},
+    {STREAM_NAVIGATION, "NAVIGATION"},
+    {STREAM_INTERNAL_FORCE_STOP, "INTERNAL_FORCE_STOP"},
+    {STREAM_SOURCE_VOICE_CALL, "SOURCE_VOICE_CALL"},
+    {STREAM_VOICE_COMMUNICATION, "VOICE_COMMUNICATION"},
+    {STREAM_VOICE_RING, "VOICE_RING"},
+    {STREAM_VOICE_CALL_ASSISTANT, "VOICE_CALL_ASSISTANT"},
+};
+
 int64_t ClockTime::GetCurNano()
 {
     int64_t result = -1; // -1 for bad result.
@@ -357,9 +399,31 @@ void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len)
     }
 }
 
-void AdjustStereoToMonoForPCM24Bit(int8_t *data, uint64_t len)
+void AdjustStereoToMonoForPCM24Bit(uint8_t *data, uint64_t len)
 {
-    // 24bit is not supported for audio balance.
+    uint64_t count = len / STEREO_CHANNEL_COUNT / 3; // 3: the bit depth of PCM24Bit is 24 bits (3 bytes)
+
+    while (count > 0) {
+        uint32_t leftData = (static_cast<uint32_t>(data[DATA_INDEX_2]) << BIT_16) |
+            (static_cast<uint32_t>(data[DATA_INDEX_1]) << BIT_8) |
+            (static_cast<uint32_t>(data[DATA_INDEX_0]));
+        uint32_t rightData = (static_cast<uint32_t>(data[DATA_INDEX_5]) << BIT_16) |
+            (static_cast<uint32_t>(data[DATA_INDEX_4]) << BIT_8) |
+            (static_cast<uint32_t>(data[DATA_INDEX_3]));
+
+        leftData = static_cast<uint32_t>(static_cast<int32_t>(leftData << BIT_8) / STEREO_CHANNEL_COUNT +
+            static_cast<int32_t>(rightData << BIT_8) / STEREO_CHANNEL_COUNT) >> BIT_8;
+        rightData = leftData;
+
+        data[DATA_INDEX_0] = static_cast<uint8_t>(leftData);
+        data[DATA_INDEX_1] = static_cast<uint8_t>(leftData >> BIT_8);
+        data[DATA_INDEX_2] = static_cast<uint8_t>(leftData >> BIT_16);
+        data[DATA_INDEX_3] = static_cast<uint8_t>(rightData);
+        data[DATA_INDEX_4] = static_cast<uint8_t>(rightData >> BIT_8);
+        data[DATA_INDEX_5] = static_cast<uint8_t>(rightData >> BIT_16);
+        data += 6; // 6: 2 channels, 24 bits (3 bytes), 2 * 3 = 6
+        count--;
+    }
 }
 
 void AdjustStereoToMonoForPCM32Bit(int32_t *data, uint64_t len)
@@ -406,9 +470,33 @@ void AdjustAudioBalanceForPCM16Bit(int16_t *data, uint64_t len, float left, floa
     }
 }
 
-void AdjustAudioBalanceForPCM24Bit(int8_t *data, uint64_t len, float left, float right)
+void AdjustAudioBalanceForPCM24Bit(uint8_t *data, uint64_t len, float left, float right)
 {
-    // 24bit is not supported for audio balance.
+    uint64_t count = len / STEREO_CHANNEL_COUNT / 3; // 3: the bit depth of PCM24Bit is 24 bits (3 bytes)
+
+    while (count > 0) {
+        uint32_t leftData = (static_cast<uint32_t>(data[DATA_INDEX_2]) << BIT_16) |
+            (static_cast<uint32_t>(data[DATA_INDEX_1]) << BIT_8) |
+            (static_cast<uint32_t>(data[DATA_INDEX_0]));
+        int32_t leftTemp = static_cast<int32_t>(leftData << BIT_8);
+        leftTemp *= left;
+        leftData = static_cast<uint32_t>(leftTemp) >> BIT_8;
+        data[DATA_INDEX_0] = static_cast<uint8_t>(leftData);
+        data[DATA_INDEX_1] = static_cast<uint8_t>(leftData >> BIT_8);
+        data[DATA_INDEX_2] = static_cast<uint8_t>(leftData >> BIT_16);
+
+        uint32_t rightData = (static_cast<uint32_t>(data[DATA_INDEX_5]) << BIT_16) |
+            (static_cast<uint32_t>(data[DATA_INDEX_4]) << BIT_8) |
+            (static_cast<uint32_t>(data[DATA_INDEX_3]));
+        int32_t rightTemp = static_cast<int32_t>(rightData << BIT_8);
+        rightTemp *= right;
+        rightData = static_cast<uint32_t>(rightTemp) >> BIT_8;
+        data[DATA_INDEX_3] = static_cast<uint8_t>(rightData);
+        data[DATA_INDEX_4] = static_cast<uint8_t>(rightData >> BIT_8);
+        data[DATA_INDEX_5] = static_cast<uint8_t>(rightData >> BIT_16);
+        data += 6; // 6: 2 channels, 24 bits (3 bytes), 2 * 3 = 6
+        count--;
+    }
 }
 
 void AdjustAudioBalanceForPCM32Bit(int32_t *data, uint64_t len, float left, float right)
@@ -986,92 +1074,12 @@ void LatencyMonitor::ShowBluetoothTimestamp()
 const std::string AudioInfoDumpUtils::GetStreamName(AudioStreamType streamType)
 {
     std::string name;
-    switch (streamType) {
-        case STREAM_VOICE_ASSISTANT:
-            name = "VOICE_ASSISTANT";
-            break;
-        case STREAM_VOICE_CALL:
-            name = "VOICE_CALL";
-            break;
-        case STREAM_SYSTEM:
-            name = "SYSTEM";
-            break;
-        case STREAM_RING:
-            name = "RING";
-            break;
-        case STREAM_MUSIC:
-            name = "MUSIC";
-            break;
-        case STREAM_ALARM:
-            name = "ALARM";
-            break;
-        case STREAM_NOTIFICATION:
-            name = "NOTIFICATION";
-            break;
-        case STREAM_BLUETOOTH_SCO:
-            name = "BLUETOOTH_SCO";
-            break;
-        case STREAM_DTMF:
-            name = "DTMF";
-            break;
-        case STREAM_TTS:
-            name = "TTS";
-            break;
-        case STREAM_ACCESSIBILITY:
-            name = "ACCESSIBILITY";
-            break;
-        case STREAM_ULTRASONIC:
-            name = "ULTRASONIC";
-            break;
-        case STREAM_WAKEUP:
-            name = "WAKEUP";
-            break;
-        default:
-            name = GetStreamNameExt(streamType);
-    }
-
-    const std::string streamName = name;
-    return streamName;
-}
-
-const std::string AudioInfoDumpUtils::GetStreamNameExt(AudioStreamType streamType)
-{
-    std::string name;
-    switch (streamType) {
-        case STREAM_ENFORCED_AUDIBLE:
-            name = "ENFORCED_AUDIBLE";
-        case STREAM_MOVIE:
-            name = "MOVIE";
-            break;
-        case STREAM_GAME:
-            name = "GAME";
-            break;
-        case STREAM_SPEECH:
-            name = "SPEECH";
-            break;
-        case STREAM_SYSTEM_ENFORCED:
-            name = "SYSTEM_ENFORCED";
-            break;
-        case STREAM_VOICE_MESSAGE:
-            name = "VOICE_MESSAGE";
-            break;
-        case STREAM_NAVIGATION:
-            name = "NAVIGATION";
-            break;
-        case STREAM_INTERNAL_FORCE_STOP:
-            name = "INTERNAL_FORCE_STOP";
-        case STREAM_SOURCE_VOICE_CALL:
-            name = "SOURCE_VOICE_CALL";
-        case STREAM_VOICE_COMMUNICATION:
-            name = "VOICE_COMMUNICATION";
-        case STREAM_VOICE_RING:
-            name = "VOICE_RING";
-            break;
-        case STREAM_VOICE_CALL_ASSISTANT:
-            name = "VOICE_CALL_ASSISTANT";
-            break;
-        default:
-            name = "UNKNOWN";
+    std::unordered_map<AudioStreamType, std::string> map = STREAM_TYPE_NAME_MAP;
+    auto it = map.find(streamType);
+    if (it != map.end()) {
+        name = it->second;
+    } else {
+        name = "UNKNOWN";
     }
 
     const std::string streamName = name;
@@ -1148,6 +1156,9 @@ const std::string AudioInfoDumpUtils::GetSourceName(SourceType sourceType)
         case SOURCE_TYPE_MIC:
             name = "MIC";
             break;
+        case SOURCE_TYPE_CAMCORDER:
+            name = "CAMCORDER";
+            break;
         case SOURCE_TYPE_VOICE_RECOGNITION:
             name = "VOICE_RECOGNITION";
             break;
@@ -1189,9 +1200,10 @@ const std::string AudioInfoDumpUtils::GetDeviceVolumeTypeName(DeviceVolumeType d
     return deviceTypeName;
 }
 
+bool VolumeUtils::isPCVolumeEnable_ = false;
+
 std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeMap_ = {
     {STREAM_VOICE_CALL, STREAM_VOICE_CALL},
-    {STREAM_VOICE_MESSAGE, STREAM_VOICE_CALL},
     {STREAM_VOICE_COMMUNICATION, STREAM_VOICE_CALL},
     {STREAM_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL},
 
@@ -1208,6 +1220,8 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_GAME, STREAM_MUSIC},
     {STREAM_SPEECH, STREAM_MUSIC},
     {STREAM_NAVIGATION, STREAM_MUSIC},
+    {STREAM_CAMCORDER, STREAM_MUSIC},
+    {STREAM_VOICE_MESSAGE, STREAM_MUSIC},
 
     {STREAM_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT},
     {STREAM_ALARM, STREAM_ALARM},
@@ -1216,9 +1230,50 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_ALL, STREAM_ALL},
 };
 
+std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeMap_ = {
+    {STREAM_VOICE_CALL, STREAM_MUSIC},
+    {STREAM_VOICE_CALL_ASSISTANT, STREAM_MUSIC},
+    {STREAM_VOICE_MESSAGE, STREAM_MUSIC},
+    {STREAM_VOICE_ASSISTANT, STREAM_MUSIC},
+    {STREAM_VOICE_COMMUNICATION, STREAM_MUSIC},
+    {STREAM_DTMF, STREAM_MUSIC},
+    {STREAM_MUSIC, STREAM_MUSIC},
+    {STREAM_MEDIA, STREAM_MUSIC},
+    {STREAM_MOVIE, STREAM_MUSIC},
+    {STREAM_GAME, STREAM_MUSIC},
+    {STREAM_SPEECH, STREAM_MUSIC},
+    {STREAM_RECORDING, STREAM_MUSIC},
+    {STREAM_NAVIGATION, STREAM_MUSIC},
+    {STREAM_ACCESSIBILITY, STREAM_MUSIC},
+    {STREAM_ALL, STREAM_ALL},
+
+    {STREAM_RING, STREAM_RING},
+    {STREAM_VOICE_RING, STREAM_RING},
+    {STREAM_SYSTEM, STREAM_RING},
+    {STREAM_NOTIFICATION, STREAM_RING},
+    {STREAM_SYSTEM_ENFORCED, STREAM_RING},
+    {STREAM_ALARM, STREAM_RING},
+
+    {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
+};
+
 std::unordered_map<AudioStreamType, AudioVolumeType>& VolumeUtils::GetVolumeMap()
 {
-    return defaultVolumeMap_;
+    if (isPCVolumeEnable_) {
+        return audioPCVolumeMap_;
+    } else {
+        return defaultVolumeMap_;
+    }
+}
+
+void VolumeUtils::SetPCVolumeEnable(const bool& isPCVolumeEnable)
+{
+    isPCVolumeEnable_ = isPCVolumeEnable;
+}
+
+bool VolumeUtils::IsPCVolumeEnable()
+{
+    return isPCVolumeEnable_;
 }
 
 AudioVolumeType VolumeUtils::GetVolumeTypeFromStreamType(AudioStreamType streamType)
@@ -1263,6 +1318,11 @@ std::string ConvertNetworkId(const std::string &networkId)
     }
 
     return networkId;
+}
+
+uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset)
+{
+    return base + offset * UNIQUE_ID_INTERVAL;
 }
 
 AudioDump& AudioDump::GetInstance()

@@ -29,7 +29,7 @@ class ProcessReleaseCallback {
 public:
     virtual ~ProcessReleaseCallback() = default;
 
-    virtual int32_t OnProcessRelease(IAudioProcessStream *process) = 0;
+    virtual int32_t OnProcessRelease(IAudioProcessStream *process, bool destoryAtOnce = false) = 0;
 };
 class AudioProcessInServer;
 class ProcessDeathRecipient : public IRemoteObject::DeathRecipient {
@@ -64,7 +64,7 @@ public:
 
     int32_t RequestHandleInfo(bool isAsync) override;
 
-    int32_t Release() override;
+    int32_t Release(bool destoryAtOnce = false) override;
 
     int32_t RegisterProcessCb(sptr<IRemoteObject> object) override;
 
@@ -73,6 +73,7 @@ public:
     AudioStreamInfo GetStreamInfo() override;
     uint32_t GetAudioSessionId() override;
     AudioStreamType GetAudioStreamType() override;
+    AudioProcessConfig GetAudioProcessConfig() override;
 
     int Dump(int fd, const std::vector<std::u16string> &args) override;
     void Dump(std::string &dumpString);
@@ -103,7 +104,7 @@ private:
     void WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby);
 
 private:
-    bool muteFlag_ = false;
+    std::atomic<bool> muteFlag_ = false;
     bool isInnerCapped_ = false;
     ProcessReleaseCallback *releaseCallback_ = nullptr;
 

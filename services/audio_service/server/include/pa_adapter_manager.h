@@ -17,6 +17,7 @@
 #define PA_ADAPTER_MANAGER_H
 
 #include <map>
+#include <set>
 #include <mutex>
 #include <pulse/pulseaudio.h>
 #include <pulse/thread-mainloop.h>
@@ -69,6 +70,7 @@ public:
     int32_t TriggerStartIfNecessary() override;
     int32_t CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream) override;
     int32_t ReleaseCapturer(uint32_t streamIndex_) override;
+    int32_t AddUnprocessStream(int32_t appUid) override;
     uint32_t ConvertChLayoutToPaChMap(const uint64_t &channelLayout, pa_channel_map &paMap);
 
 private:
@@ -99,7 +101,6 @@ private:
         SourceType source, const std::string &deviceName);
 
     int32_t SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEnhanceMode mode);
-    const std::string GetEnhanceModeName(AudioEnhanceMode mode);
     const std::string GetEnhanceSceneName(SourceType sourceType);
 
     // Callbacks to be implemented
@@ -113,7 +114,7 @@ private:
 
     int32_t GetDeviceNameForConnect(AudioProcessConfig processConfig,
         uint32_t sessionId, std::string &deviceName);
-    
+
     void SetHighResolution(pa_proplist *propList, AudioProcessConfig &processConfig, uint32_t sessionId);
     bool CheckHighResolution(const AudioProcessConfig &processConfig);
     void SetRecordProplist(pa_proplist *propList, AudioProcessConfig &processConfig);
@@ -131,6 +132,7 @@ private:
     bool waitConnect_ = true;
     uint32_t highResolutionIndex_ = 0;
     bool isHighResolutionExist_ = false;
+    std::set<int32_t> unprocessAppUidSet_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

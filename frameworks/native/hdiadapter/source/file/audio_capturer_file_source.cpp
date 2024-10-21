@@ -59,7 +59,7 @@ int32_t AudioCapturerFileSource::GetMute(bool &isMute)
     return SUCCESS;
 }
 
-int32_t AudioCapturerFileSource::SetInputRoute(DeviceType inputDevice)
+int32_t AudioCapturerFileSource::SetInputRoute(DeviceType inputDevice, const std::string deviceName)
 {
     return SUCCESS;
 }
@@ -79,7 +79,8 @@ void AudioCapturerFileSource::RegisterParameterCallback(IAudioSourceCallback *ca
     AUDIO_WARNING_LOG("RegisterParameterCallback in file mode is not supported!");
 }
 
-int32_t AudioCapturerFileSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t AudioCapturerFileSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice,
+    const std::string deviceName)
 {
     return SUCCESS;
 }
@@ -168,6 +169,14 @@ int32_t AudioCapturerFileSource::CaptureFrame(char *frame, uint64_t requestBytes
     return SUCCESS;
 }
 
+int32_t AudioCapturerFileSource::CaptureFrameWithEc(
+    FrameDesc *fdesc, uint64_t &replyBytes,
+    FrameDesc *fdescEc, uint64_t &replyBytesEc)
+{
+    AUDIO_ERR_LOG("not supported!");
+    return ERR_DEVICE_NOT_SUPPORTED;
+}
+
 int32_t AudioCapturerFileSource::Start(void)
 {
     return SUCCESS;
@@ -182,16 +191,16 @@ int32_t AudioCapturerFileSource::Stop(void)
     return SUCCESS;
 }
 
-float AudioCapturerFileSource::GetMaxAmplitude()
-{
-    AUDIO_WARNING_LOG("getMaxAmplitude in audio cap file not support");
-    return 0;
-}
-
 std::string AudioCapturerFileSource::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     AUDIO_WARNING_LOG("not supported yet");
     return "";
+}
+
+float AudioCapturerFileSource::GetMaxAmplitude()
+{
+    AUDIO_WARNING_LOG("getMaxAmplitude in audio cap file not support");
+    return 0;
 }
 
 int32_t AudioCapturerFileSource::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size)
@@ -201,6 +210,12 @@ int32_t AudioCapturerFileSource::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTP
 }
 
 int32_t AudioCapturerFileSource::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t AudioCapturerFileSource::GetCaptureId(uint32_t &captureId) const
 {
     AUDIO_WARNING_LOG("not supported.");
     return ERR_NOT_SUPPORTED;

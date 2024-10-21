@@ -110,9 +110,10 @@ public:
 
     virtual int32_t SetSinkMuteForSwitchDevice(bool mute)
     {
-        // Only operate on offload for now
         return 0;
     }
+
+    virtual int32_t GetRenderId(uint32_t &renderId) const = 0;
 };
 
 class IMmapAudioRendererSink : public IAudioRendererSink {

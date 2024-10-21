@@ -24,6 +24,7 @@
 #include <cstring>
 #include <dlfcn.h>
 #include <list>
+#include <mutex>
 #include <string>
 #include <unistd.h>
 
@@ -55,10 +56,9 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
-const uint32_t FAST_OUTPUT_STREAM_ID = 21; // 13 + 1 * 8
-const uint32_t FAST_VOIP_OUTPUT_STREAM_ID = 93; // 13 + 10 * 8
 const int64_t SECOND_TO_NANOSECOND = 1000000000;
 const int INVALID_FD = -1;
+const unsigned int XCOLLIE_TIME_OUT_SECONDS = 10;
 }
 
 class FastAudioRendererSinkInner : public FastAudioRendererSink {
@@ -105,6 +105,7 @@ public:
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+    int32_t GetRenderId(uint32_t &renderId) const override;
 
     FastAudioRendererSinkInner();
     ~FastAudioRendererSinkInner();
@@ -147,6 +148,7 @@ private:
     int bufferFd_ = INVALID_FD;
     uint32_t frameSizeInByte_ = 1;
     uint32_t eachReadFrameSize_ = 0;
+    std::mutex mutex_;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
@@ -233,7 +235,9 @@ void FastAudioRendererSinkInner::InitAttrs(struct AudioSampleAttributes &attrs)
     /* Initialization of audio parameters for playback */
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.interleaved = true;
-    attrs.streamId = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? FAST_VOIP_OUTPUT_STREAM_ID : FAST_OUTPUT_STREAM_ID;
+    attrs.streamId = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ?
+        static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_VOIP_FAST)) :
+        static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_FAST));
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
     attrs.isSignedData = true;
@@ -622,7 +626,9 @@ int32_t FastAudioRendererSinkInner::CheckPositionTime()
 
 int32_t FastAudioRendererSinkInner::Start(void)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     Trace trace("FastAudioRendererSinkInner::Start");
+    AudioXCollie sourceXCollie("FastAudioRendererSinkInner::Start", XCOLLIE_TIME_OUT_SECONDS);
     AUDIO_INFO_LOG("FastAudioRendererSinkInner::Start");
     int64_t stamp = ClockTime::GetCurNano();
     int32_t ret;
@@ -804,7 +810,9 @@ int32_t FastAudioRendererSinkInner::GetLatency(uint32_t *latency)
 
 int32_t FastAudioRendererSinkInner::Stop(void)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     Trace trace("FastAudioRendererSinkInner::Stop");
+    AudioXCollie sourceXCollie("FastAudioRendererSinkInner::Stop", XCOLLIE_TIME_OUT_SECONDS);
     AUDIO_INFO_LOG("Stop.");
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -927,5 +935,10 @@ int32_t FastAudioRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &ap
     return SUCCESS;
 }
 
+int32_t FastAudioRendererSinkInner::GetRenderId(uint32_t &renderId) const
+{
+    renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_FAST);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

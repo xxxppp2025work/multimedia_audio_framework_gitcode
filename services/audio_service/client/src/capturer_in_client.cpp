@@ -36,7 +36,7 @@
 #include "ipc_stream.h"
 #include "audio_service_log.h"
 #include "audio_errors.h"
-
+#include "audio_log_utils.h"
 #include "audio_manager_base.h"
 #include "audio_ring_cache.h"
 #include "audio_utils.h"
@@ -61,6 +61,7 @@ const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t DEFAULT_BUF_DURATION_IN_USEC = 20000; // 20ms
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const int64_t INVALID_FRAME_SIZE = -1;
+static const int32_t HALF_FACTOR = 2;
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
 }
@@ -98,6 +99,7 @@ public:
     float GetVolume() override;
     int32_t SetVolume(float volume) override;
     int32_t SetDuckVolume(float volume) override;
+    int32_t SetMute(bool mute) override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
@@ -139,7 +141,7 @@ public:
     bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     bool StopAudioStream() override;
     bool FlushAudioStream() override;
-    bool ReleaseAudioStream(bool releaseRunner = true) override;
+    bool ReleaseAudioStream(bool releaseRunner = true, bool destoryAtOnce = false) override;
 
     // Playback related APIs
     bool DrainAudioStream(bool stopFlag = false) override;
@@ -189,7 +191,7 @@ public:
 
     bool GetSilentModeAndMixWithOthers() override;
 
-    static void AudioServerDied(pid_t pid);
+    static void AudioServerDied(pid_t pid, pid_t uid);
 
     void OnHandle(uint32_t code, int64_t data) override;
     void InitCallbackHandler();
@@ -236,6 +238,7 @@ private:
     bool WaitForRunning();
 
     int32_t HandleCapturerRead(size_t &readSize, size_t &userSize, uint8_t &buffer, bool isBlockingRead);
+    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
     int32_t RegisterCapturerInClientPolicyServerDiedCb();
     int32_t UnregisterCapturerInClientPolicyServerDiedCb();
 private:
@@ -247,7 +250,7 @@ private:
     uint32_t appTokenId_ = 0;
     uint64_t fullTokenId_ = 0;
 
-    uint32_t readLogTimes_ = 0;
+    std::atomic<uint32_t> readLogTimes_ = 0;
 
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_ = nullptr;
     bool streamTrackerRegistered_ = false;
@@ -324,6 +327,9 @@ private:
     int64_t capturerPeriodRead_ = 0;
     std::shared_ptr<CapturerPeriodPositionCallback> capturerPeriodPositionCallback_ = nullptr;
 
+    mutable int64_t volumeDataCount_ = 0;
+    std::string logUtilsTag_ = "";
+
     // Event handler
     bool runnerReleased_ = false;
     std::mutex runnerMutex_;
@@ -372,6 +378,7 @@ CapturerInClientInner::~CapturerInClientInner()
 {
     AUDIO_INFO_LOG("~CapturerInClientInner()");
     CapturerInClientInner::ReleaseAudioStream(true);
+    AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
 int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t result)
@@ -388,6 +395,13 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
         AUDIO_WARNING_LOG("recv overflow %{public}d", overflowCount_);
         // in plan next: do more to reduce overflow
         readDataCV_.notify_all();
+        return SUCCESS;
+    }
+
+    if (operation == RESTORE_SESSION) {
+        if (audioStreamTracker_ && audioStreamTracker_.get()) {
+            audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, state_, clientPid_, capturerInfo_);
+        }
         return SUCCESS;
     }
 
@@ -497,6 +511,7 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     int32_t initRet = InitIpcStream();
     CHECK_AND_RETURN_RET_LOG(initRet == SUCCESS, initRet, "Init stream failed: %{public}d", initRet);
     state_ = PREPARED;
+    logUtilsTag_ = "[" + std::to_string(sessionId_) + "]NormalCapturer";
 
     proxyObj_ = proxyObj;
     RegisterTracker(proxyObj);
@@ -526,9 +541,10 @@ const sptr<IStandardAudioService> CapturerInClientInner::GetAudioServerProxy()
         }
 
         // register death recipent to restore proxy
-        sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
+        sptr<AudioServerDeathRecipient> asDeathRecipient =
+            new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb([] (pid_t pid) { AudioServerDied(pid); });
+            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) { AudioServerDied(pid, uid); });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
                 AUDIO_ERR_LOG("GetAudioServerProxy: failed to add deathRecipient");
@@ -539,7 +555,7 @@ const sptr<IStandardAudioService> CapturerInClientInner::GetAudioServerProxy()
     return gasp;
 }
 
-void CapturerInClientInner::AudioServerDied(pid_t pid)
+void CapturerInClientInner::AudioServerDied(pid_t pid, pid_t uid)
 {
     AUDIO_INFO_LOG("audio server died clear proxy, will restore proxy in next call");
     std::lock_guard<std::mutex> lock(g_serverMutex);
@@ -707,6 +723,7 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
     config.streamInfo.format = static_cast<AudioSampleFormat>(streamParams_.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
     config.streamInfo.channelLayout = static_cast<AudioChannelLayout>(streamParams_.channelLayout);
+    config.originalSessionId = streamParams_.originalSessionId;
 
     config.audioMode = AUDIO_MODE_RECORD;
 
@@ -777,7 +794,9 @@ int32_t CapturerInClientInner::InitIpcStream()
 
     sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
-    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config); // in plan: add ret
+    int32_t errorCode = 0;
+    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config, errorCode);
+    CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, errorCode, "failed with create audio stream fail.");
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
     ipcStream_ = iface_cast<IpcStream>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "failed when iface_cast.");
@@ -917,6 +936,12 @@ float CapturerInClientInner::GetVolume()
 {
     AUDIO_WARNING_LOG("GetVolume is only for renderer");
     return 0.0;
+}
+
+int32_t CapturerInClientInner::SetMute(bool mute)
+{
+    AUDIO_WARNING_LOG("only for renderer");
+    return ERROR;
 }
 
 int32_t CapturerInClientInner::SetDuckVolume(float volume)
@@ -1422,8 +1447,9 @@ bool CapturerInClientInner::StopAudioStream()
     return true;
 }
 
-bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner)
+bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool destoryAtOnce)
 {
+    (void)destoryAtOnce;
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
         AUDIO_WARNING_LOG("Already release, do nothing");
@@ -1435,7 +1461,6 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner)
     Trace trace("CapturerInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
     if (ipcStream_ != nullptr) {
         ipcStream_->Release();
-        ipcStream_ = nullptr;
     } else {
         AUDIO_WARNING_LOG("Release while ipcStream is null");
     }
@@ -1616,12 +1641,10 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     CHECK_AND_RETURN_RET_LOG(userSize < MAX_CLIENT_READ_SIZE && userSize > 0,
         ERR_INVALID_PARAM, "invalid size %{public}zu", userSize);
 
-    std::lock_guard<std::mutex> lock(readMutex_);
-
     std::unique_lock<std::mutex> statusLock(statusMutex_); // status check
     if (state_ != RUNNING) {
         if (readLogTimes_ < LOGLITMITTIMES) {
-            readLogTimes_++;
+            readLogTimes_.fetch_add(1);
             AUDIO_ERR_LOG("Illegal state:%{public}u", state_.load());
         } else {
             AUDIO_DEBUG_LOG("Illegal state:%{public}u", state_.load());
@@ -1633,6 +1656,7 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
 
     statusLock.unlock();
 
+    std::lock_guard<std::mutex> lock(readMutex_);
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_) {
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is null");
@@ -1644,8 +1668,21 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     size_t readSize = 0;
     int32_t res = HandleCapturerRead(readSize, userSize, buffer, isBlockingRead);
     CHECK_AND_RETURN_RET_LOG(res >= 0, ERROR, "HandleCapturerRead err : %{public}d", res);
+    BufferDesc tmpBuffer = {reinterpret_cast<uint8_t *>(&buffer), userSize, userSize};
+    DfxOperation(tmpBuffer, clientConfig_.streamInfo.format, clientConfig_.streamInfo.channels);
     HandleCapturerPositionChanges(readSize);
     return readSize;
+}
+
+void CapturerInClientInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
+{
+    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
+    if (channel == MONO) {
+        Trace::Count(logUtilsTag_, vols.volStart[0]);
+    } else {
+        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+    }
+    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 void CapturerInClientInner::HandleCapturerPositionChanges(size_t bytesRead)

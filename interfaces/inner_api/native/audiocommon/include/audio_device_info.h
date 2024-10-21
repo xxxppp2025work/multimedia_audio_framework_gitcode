@@ -226,6 +226,11 @@ inline bool IsOutputDevice(DeviceType deviceType, DeviceRole deviceRole)
     }
 }
 
+enum DeviceBlockStatus {
+    DEVICE_UNBLOCKED = 0,
+    DEVICE_BLOCKED = 1,
+};
+
 enum DeviceChangeType {
     CONNECT = 0,
     DISCONNECT = 1,
@@ -316,6 +321,16 @@ struct DevicePrivacyInfo {
     DeviceRole deviceRole;
     DeviceCategory deviceCategory;
     DeviceUsage deviceUsage;
+};
+
+struct AffinityDeviceInfo {
+    std::string groupName;
+    DeviceType deviceType;
+    DeviceFlag deviceFlag;
+    std::string networkID;
+    uint64_t chooseTimeStamp;
+    bool isPrimary;
+    bool SupportedConcurrency;
 };
 
 template<typename T> bool MarshallingSetInt32(const std::set<T> &value, Parcel &parcel)

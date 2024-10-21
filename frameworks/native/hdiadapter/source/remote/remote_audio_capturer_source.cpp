@@ -54,7 +54,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
-}
+} // namespace
 
 class RemoteAudioCapturerSourceInner : public RemoteAudioCapturerSource, public IAudioDeviceAdapterCallback {
 public:
@@ -72,12 +72,15 @@ public:
     int32_t Pause(void) override;
     int32_t Resume(void) override;
     int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) override;
+    int32_t CaptureFrameWithEc(
+        FrameDesc *fdesc, uint64_t &replyBytes,
+        FrameDesc *fdescEc, uint64_t &replyBytesEc) override;
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
     int32_t SetMute(bool isMute) override;
     int32_t GetMute(bool &isMute) override;
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
-    int32_t SetInputRoute(DeviceType inputDevice) override;
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice, const std::string deviceName = "") override;
+    int32_t SetInputRoute(DeviceType inputDevice, const std::string deviceName = "") override;
     uint64_t GetTransactionId() override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
@@ -89,6 +92,7 @@ public:
         const std::string &value) override;
     
     float GetMaxAmplitude() override;
+    int32_t GetCaptureId(uint32_t &captureId) const override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
@@ -101,7 +105,6 @@ private:
     void CheckUpdateState(char *frame, uint64_t replyBytes);
 
 private:
-    static constexpr uint32_t REMOTE_INPUT_STREAM_ID = 30; // 14 + 2 * 8
     const uint32_t maxInt32 = 0x7fffffff;
     const uint32_t audioBufferSize = 16 * 1024;
     const uint32_t deepBufferCapturePeriodSize = 4096;
@@ -310,7 +313,7 @@ int32_t RemoteAudioCapturerSourceInner::CreateCapture(const struct AudioPort &ca
     struct AudioSampleAttributes param;
     param.type = AudioCategory::AUDIO_IN_MEDIA;
     param.period = deepBufferCapturePeriodSize;
-    param.streamId = REMOTE_INPUT_STREAM_ID;
+    param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_REMOTE));
     param.isSignedData = true;
     param.stopThreshold = maxInt32;
     param.silenceThreshold = audioBufferSize;
@@ -365,6 +368,14 @@ int32_t RemoteAudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t reque
     CheckUpdateState(frame, requestBytes);
 
     return SUCCESS;
+}
+
+int32_t RemoteAudioCapturerSourceInner::CaptureFrameWithEc(
+    FrameDesc *fdesc, uint64_t &replyBytes,
+    FrameDesc *fdescEc, uint64_t &replyBytesEc)
+{
+    AUDIO_ERR_LOG("not supported!");
+    return ERR_DEVICE_NOT_SUPPORTED;
 }
 
 void RemoteAudioCapturerSourceInner::CheckUpdateState(char *frame, uint64_t replyBytes)
@@ -577,7 +588,7 @@ int32_t RemoteAudioCapturerSourceInner::SetInputPortPin(DeviceType inputDevice, 
     return ret;
 }
 
-int32_t RemoteAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice)
+int32_t RemoteAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, const std::string deviceName)
 {
     AudioRouteNode source = {};
     AudioRouteNode sink = {};
@@ -594,7 +605,8 @@ int32_t RemoteAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice)
     sink.role = AudioPortRole::AUDIO_PORT_SINK_ROLE;
     sink.type = AudioPortType::AUDIO_PORT_MIX_TYPE;
     sink.ext.mix.moduleId = 0;
-    sink.ext.mix.streamId = REMOTE_INPUT_STREAM_ID;
+    sink.ext.mix.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE,
+        HDI_CAPTURE_OFFSET_REMOTE));
 
     AudioRoute route;
     route.sources.push_back(source);
@@ -638,7 +650,8 @@ AudioCategory RemoteAudioCapturerSourceInner::GetAudioCategory(AudioScene audioS
     return audioCategory;
 }
 
-int32_t RemoteAudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t RemoteAudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice,
+    const std::string deviceName)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "SetAudioScene: Audio capture is null.");
     struct AudioSceneDescriptor scene;
@@ -727,6 +740,11 @@ int32_t RemoteAudioCapturerSourceInner::UpdateAppsUid(const std::vector<int32_t>
     AUDIO_WARNING_LOG("not supported.");
     return ERR_NOT_SUPPORTED;
 }
+
+int32_t RemoteAudioCapturerSourceInner::GetCaptureId(uint32_t &captureId) const
+{
+    captureId = GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_REMOTE);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namesapce OHOS
-

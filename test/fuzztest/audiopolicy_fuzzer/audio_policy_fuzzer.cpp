@@ -38,7 +38,8 @@ const int32_t SHIFT_LEFT_24 = 24;
 const uint32_t LIMIT_ONE = 0;
 const uint32_t LIMIT_TWO = 30;
 const uint32_t LIMIT_THREE = 60;
-const uint32_t LIMIT_FOUR = static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX);
+const uint32_t LIMIT_FOUR = 90;
+const uint32_t LIMIT_FIVE = static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX);
 bool g_hasServerInit = false;
 
 AudioPolicyServer* GetServerPtr()
@@ -50,9 +51,7 @@ AudioPolicyServer* GetServerPtr()
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
         server.OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
 #endif
-        server.OnAddSystemAbility(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, "");
         server.OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
-        server.OnAddSystemAbility(ACCESSIBILITY_MANAGER_SERVICE_ID, "");
         server.OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
         server.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
         server.audioPolicyService_.SetDefaultDeviceLoadFlag(true);
@@ -171,6 +170,30 @@ void AudioPolicyFuzzThirdLimitTest(const uint8_t *rawData, size_t size)
 
     GetServerPtr()->OnRemoteRequest(code, data, reply, option);
 }
+
+void AudioPolicyFuzzFouthLimitTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    uint32_t code = Convert2Uint32(rawData) % (LIMIT_FIVE - LIMIT_FOUR + 1) + LIMIT_FOUR;
+
+    rawData = rawData + OFFSET;
+    size = size - OFFSET;
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    data.WriteBuffer(rawData, size);
+    data.RewindRead(0);
+
+    MessageParcel reply;
+    MessageOption option;
+    if (code == static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ALLOWED_PLAYBACK)) {
+        return;
+    }
+
+    GetServerPtr()->OnRemoteRequest(code, data, reply, option);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -187,5 +210,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioPolicyFuzzFirstLimitTest(data, size);
     OHOS::AudioStandard::AudioPolicyFuzzSecondLimitTest(data, size);
     OHOS::AudioStandard::AudioPolicyFuzzThirdLimitTest(data, size);
+    OHOS::AudioStandard::AudioPolicyFuzzFouthLimitTest(data, size);
     return 0;
 }

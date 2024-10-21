@@ -38,6 +38,10 @@ typedef struct {
     int32_t deviceType;
     int32_t sourceType;
     uint64_t channelLayout;
+    bool hasEcConfig;
+    enum HdiAdapterFormat formatEc;
+    uint32_t sampleRateEc;
+    uint32_t channelEc;
 } SourceAttr;
 
 struct CapturerSourceAdapter {
@@ -50,10 +54,13 @@ struct CapturerSourceAdapter {
     bool (*CapturerSourceIsMuteRequired)(void *wapper);
     int32_t (*CapturerSourceStop)(void *wapper);
     int32_t (*CapturerSourceFrame)(void *wapper, char *frame, uint64_t requestBytes, uint64_t *replyBytes);
+    int32_t (*CapturerSourceFrameWithEc)(void *wapper, FrameDesc *fdesc, uint64_t *replyBytes,
+        FrameDesc *fdescEc, uint64_t *replyBytesEc);
     int32_t (*CapturerSourceSetVolume)(void *wapper, float left, float right);
     int32_t (*CapturerSourceGetVolume)(void *wapper, float *left, float *right);
-    int32_t (*CapturerSourceAppsUid) (void *wapper, const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE],
+    int32_t (*CapturerSourceAppsUid)(void *wapper, const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE],
         const size_t size);
+    int32_t (*CapturerSourceGetCaptureId)(void *wapper, uint32_t *captureId);
 };
 
 int32_t FillinSourceWapper(const char *deviceClass, const char *deviceNetworkId,
@@ -63,12 +70,15 @@ void IAudioCapturerSourceDeInit(void *wapper);
 int32_t IAudioCapturerSourceStart(void *wapper);
 int32_t IAudioCapturerSourceStop(void *wapper);
 int32_t IAudioCapturerSourceFrame(void *wapper, char *frame, uint64_t requestBytes, uint64_t *replyBytes);
+int32_t IAudioCapturerSourceFrameWithEc(void *wapper, FrameDesc *fdesc, uint64_t *replyBytes,
+    FrameDesc *fdescEc, uint64_t *replyBytesEc);
 int32_t IAudioCapturerSourceSetVolume(void *wapper, float left, float right);
 bool IAudioCapturerSourceIsMuteRequired(void *wapper);
 int32_t IAudioCapturerSourceSetMute(void *wapper, bool isMute);
 int32_t IAudioCapturerSourceGetVolume(void *wapper, float *left, float *right);
 int32_t IAudioCapturerSourceUpdateAppsUid(void *wapper, const int32_t appsUid[MAX_MIX_CHANNELS],
     const size_t size);
+int32_t IAudioCapturerSourceGetCaptureId(void *wapper, uint32_t *captureId);
 
 #ifdef __cplusplus
 }

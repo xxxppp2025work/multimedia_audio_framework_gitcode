@@ -27,6 +27,7 @@
 #include "audio_policy_client_stub_impl.h"
 #include "audio_routing_manager.h"
 #include "audio_routing_manager_listener_stub.h"
+#include "audio_anahs_manager_listener_stub.h"
 #include "audio_system_manager.h"
 #include "i_standard_client_tracker.h"
 #include "audio_log.h"
@@ -84,6 +85,10 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
 
+    std::vector<sptr<AudioDeviceDescriptor>> GetOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
+
+    std::vector<sptr<AudioDeviceDescriptor>> GetInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter);
+
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
     bool IsDeviceActive(InternalDeviceType deviceType);
@@ -115,7 +120,7 @@ public:
     bool GetPersistentMicMuteState();
 
     bool IsMicrophoneMuteLegacy();
-    
+
     bool IsMicrophoneMute();
 
     AudioScene GetAudioScene();
@@ -144,9 +149,12 @@ public:
 
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID = 0);
 
-    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
+    int32_t ActivateAudioInterrupt(
+        const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0, const bool isUpdatedAudioStrategy = false);
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
+
+    int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
 
     int32_t SetAudioManagerInterruptCallback(const int32_t clientId,
         const std::shared_ptr<AudioInterruptCallback> &callback);
@@ -209,7 +217,7 @@ public:
 
     int32_t RegisterDeviceChangeWithInfoCallback(
         const uint32_t sessionID, const std::weak_ptr<DeviceChangeWithInfoCallback> &callback);
-    
+
     int32_t UnregisterDeviceChangeWithInfoCallback(const uint32_t sessionID);
 
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
@@ -254,7 +262,7 @@ public:
 
     int32_t UnregisterFocusInfoChangeCallback(const int32_t clientId);
 
-    static void AudioPolicyServerDied(pid_t pid);
+    static void AudioPolicyServerDied(pid_t pid, pid_t uid);
 
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri);
 
@@ -404,6 +412,10 @@ public:
 
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
 
+    int32_t SetAudioDeviceAnahsCallback(const std::shared_ptr<AudioDeviceAnahs> &callback);
+
+    int32_t UnsetAudioDeviceAnahsCallback();
+
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
 
     int32_t SetAudioConcurrencyCallback(const uint32_t sessionID,
@@ -415,11 +427,25 @@ public:
 
     int32_t InjectInterruption(const std::string networkId, InterruptEvent &event);
 
+    int32_t SetMicrophoneBlockedCallback(const int32_t clientId,
+        const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback);
+
+    int32_t UnsetMicrophoneBlockedCallback(const int32_t clientId,
+        const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback);
+
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
+
+    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid);
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
 
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
+    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}
@@ -435,7 +461,6 @@ private:
     std::atomic<bool> isAudioPolicyClientRegisted_ = false;
 
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
-    static sptr<AudioPolicyClientStubImpl> audioStaticPolicyClientStubCB_;
     static std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> audioStreamCBMap_;
 
     bool isAudioRendererEventListenerRegistered = false;

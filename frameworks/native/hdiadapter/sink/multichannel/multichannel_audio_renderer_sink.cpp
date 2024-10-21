@@ -55,7 +55,6 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
-const uint32_t MULTICHANNEL_OUTPUT_STREAM_ID = 61; // 13 + 6 * 8
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 
@@ -108,6 +107,7 @@ public:
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+    int32_t GetRenderId(uint32_t &renderId) const override;
 
     explicit MultiChannelRendererSinkInner(const std::string &halName = "multichannel");
     ~MultiChannelRendererSinkInner();
@@ -162,6 +162,8 @@ private:
     int32_t InitRender();
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
+
+    void InitAudioRouteNode(AudioRouteNode &source, AudioRouteNode &sink);
 
     FILE *dumpFile_ = nullptr;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
@@ -303,7 +305,7 @@ void MultiChannelRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
         }
         case SAMPLE_S24: {
             // this function needs to be further tested for usability
-            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<int8_t *>(data), len);
+            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<uint8_t *>(data), len);
             break;
         }
         case SAMPLE_S32: {
@@ -338,7 +340,7 @@ void MultiChannelRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
         }
         case SAMPLE_S24LE: {
             // this function needs to be further tested for usability
-            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
+            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<uint8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case SAMPLE_S32LE: {
@@ -393,7 +395,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.channelCount = CHANNEL_6;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
-    attrs.streamId = MULTICHANNEL_OUTPUT_STREAM_ID;
+    attrs.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_MULTICHANNEL));
     attrs.type = AUDIO_MULTI_CHANNEL;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
@@ -789,18 +791,8 @@ int32_t MultiChannelRendererSinkInner::SetOutputRoute(DeviceType outputDevice, A
 
     outputPortPin = sink.ext.device.type;
     AUDIO_INFO_LOG("Output PIN is: 0x%{public}X", outputPortPin);
-    source.portId = 0;
-    source.role = AUDIO_PORT_SOURCE_ROLE;
-    source.type = AUDIO_PORT_MIX_TYPE;
-    source.ext.mix.moduleId = 0;
-    source.ext.mix.streamId = MULTICHANNEL_OUTPUT_STREAM_ID;
-    source.ext.device.desc = (char *)"";
 
-    sink.portId = static_cast<int32_t>(audioPort_.portId);
-    sink.role = AUDIO_PORT_SINK_ROLE;
-    sink.type = AUDIO_PORT_DEVICE_TYPE;
-    sink.ext.device.moduleId = 0;
-    sink.ext.device.desc = (char *)"";
+    InitAudioRouteNode(source, sink);
 
     AudioRoute route = {
         .sources = &source,
@@ -830,6 +822,23 @@ int32_t MultiChannelRendererSinkInner::SetOutputRoute(DeviceType outputDevice, A
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UpdateAudioRoute failed");
 
     return SUCCESS;
+}
+
+void MultiChannelRendererSinkInner::InitAudioRouteNode(AudioRouteNode &source, AudioRouteNode &sink)
+{
+    source.portId = 0;
+    source.role = AUDIO_PORT_SOURCE_ROLE;
+    source.type = AUDIO_PORT_MIX_TYPE;
+    source.ext.mix.moduleId = 0;
+    source.ext.mix.streamId = static_cast<int32_t>(
+        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_MULTICHANNEL));
+    source.ext.device.desc = (char *)"";
+
+    sink.portId = static_cast<int32_t>(audioPort_.portId);
+    sink.role = AUDIO_PORT_SINK_ROLE;
+    sink.type = AUDIO_PORT_DEVICE_TYPE;
+    sink.ext.device.moduleId = 0;
+    sink.ext.device.desc = (char *)"";
 }
 
 int32_t MultiChannelRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
@@ -1038,7 +1047,7 @@ static HdiAdapterFormat ParseAudioFormat(const std::string &format)
 {
     if (format == "AUDIO_FORMAT_PCM_16_BIT") {
         return HdiAdapterFormat::SAMPLE_S16;
-    } else if (format == "AUDIO_FORMAT_PCM_24_BIT") {
+    } else if (format == "AUDIO_FORMAT_PCM_24_BIT" || format == "AUDIO_FORMAT_PCM_24_BIT_PACKED") {
         return HdiAdapterFormat::SAMPLE_S24;
     } else if (format == "AUDIO_FORMAT_PCM_32_BIT") {
         return HdiAdapterFormat::SAMPLE_S32;
@@ -1170,6 +1179,12 @@ int32_t MultiChannelRendererSinkInner::UpdateAppsUid(const int32_t appsUid[MAX_M
 int32_t MultiChannelRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
     AUDIO_WARNING_LOG("not supported.");
+    return SUCCESS;
+}
+
+int32_t MultiChannelRendererSinkInner::GetRenderId(uint32_t &renderId) const
+{
+    renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_MULTICHANNEL);
     return SUCCESS;
 }
 // LCOV_EXCL_STOP

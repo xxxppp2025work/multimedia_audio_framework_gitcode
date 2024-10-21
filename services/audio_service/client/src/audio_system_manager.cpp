@@ -171,9 +171,10 @@ inline const sptr<IStandardAudioService> GetAudioSystemManagerProxy()
         xcollieGetSystemAbility.CancelXCollieTimer();
 
         // register death recipent to restore proxy
-        sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
+        sptr<AudioServerDeathRecipient> asDeathRecipient =
+            new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb([] (pid_t pid) { AudioSystemManager::AudioServerDied(pid); });
+            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) { AudioSystemManager::AudioServerDied(pid, uid); });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
                 AUDIO_ERR_LOG("failed to add deathRecipient");
@@ -184,7 +185,7 @@ inline const sptr<IStandardAudioService> GetAudioSystemManagerProxy()
     return gasp;
 }
 
-void AudioSystemManager::AudioServerDied(pid_t pid)
+void AudioSystemManager::AudioServerDied(pid_t pid, pid_t uid)
 {
     AUDIO_INFO_LOG("audio server died, will restore proxy in next call");
     lock_guard<mutex> lock(g_asProxyMutex);
@@ -297,6 +298,7 @@ bool AudioSystemManager::IsStreamActive(AudioVolumeType volumeType) const
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_RING:
+        case STREAM_CAMCORDER:
             break;
         case STREAM_ULTRASONIC:{
             bool ret = PermissionUtil::VerifySelfPermission();
@@ -600,6 +602,32 @@ int32_t AudioSystemManager::UnsetDeviceChangeCallback(DeviceFlag flag,
     return AudioPolicyManager::GetInstance().UnsetDeviceChangeCallback(clientId, flag, cb);
 }
 
+int32_t AudioSystemManager::SetMicrophoneBlockedCallback(
+    const std::shared_ptr<AudioManagerMicrophoneBlockedCallback>& callback)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    int32_t clientId = GetCallingPid();
+    return AudioPolicyManager::GetInstance().SetMicrophoneBlockedCallback(clientId, callback);
+}
+
+int32_t AudioSystemManager::UnsetMicrophoneBlockedCallback(
+    const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> callback)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    int32_t clientId = GetCallingPid();
+    return AudioPolicyManager::GetInstance().UnsetMicrophoneBlockedCallback(clientId, callback);
+}
+
+
+int32_t AudioSystemManager::SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback)
+{
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetQueryClientTypeCallback(callback);
+}
+
 int32_t AudioSystemManager::SetRingerModeCallback(const int32_t clientId,
                                                   const std::shared_ptr<AudioRingerModeCallback> &callback)
 {
@@ -741,6 +769,17 @@ int32_t AudioSystemManager::GetPreferredInputDeviceDescriptors()
     return SUCCESS;
 }
 
+std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetOutputDevice(
+    sptr<AudioRendererFilter> audioRendererFilter)
+{
+    return AudioPolicyManager::GetInstance().GetOutputDevice(audioRendererFilter);
+}
+
+std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetInputDevice(
+    sptr<AudioCapturerFilter> audioCapturerFilter)
+{
+    return AudioPolicyManager::GetInstance().GetInputDevice(audioCapturerFilter);
+}
 
 int32_t AudioSystemManager::GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
@@ -1052,6 +1091,7 @@ int32_t AudioSystemManager::GetVolumeGroups(std::string networkId, std::vector<s
 
 std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t groupId)
 {
+    std::lock_guard<std::mutex> lock(groupManagerMapMutex_);
     std::vector<std::shared_ptr<AudioGroupManager>>::iterator iter = groupManagerMap_.begin();
     while (iter != groupManagerMap_.end()) {
         if ((*iter)->GetGroupId() == groupId) {

@@ -72,7 +72,6 @@ const uint32_t DEEP_BUFFER_RENDER_PERIOD_SIZE = 4096;
 const uint32_t INT_32_MAX = 0x7fffffff;
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
-const uint32_t REMOTE_OUTPUT_STREAM_ID = 29; // 13 + 2 * 8
 
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 
@@ -126,12 +125,13 @@ public:
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+    int32_t GetRenderId(uint32_t &renderId) const override;
 
     std::string GetNetworkId();
     IAudioSinkCallback* GetParamCallback();
 
 private:
-    int32_t CreateRender(const struct AudioPort &renderPort, AudioCategory trpe, uint32_t &renderId);
+    int32_t CreateRender(const struct AudioPort &renderPort, AudioCategory type, uint32_t &renderId);
     void InitAttrs(struct AudioSampleAttributes &attrs);
     void splitStreamInit(const char *splitStreamString, vector<string> &splitStreamVector);
     int32_t RenderFrameLogic(char &data, uint64_t len, uint64_t &writeLen, const char *streamType);
@@ -308,7 +308,6 @@ int32_t RemoteAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 
     struct AudioAdapterDescriptor *desc = audioManager->GetTargetAdapterDesc(deviceNetworkId_, false);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NOT_STARTED, "Get target adapters descriptor fail.");
-    AUDIO_INFO_LOG("splitStreamVector size is %{public}u", splitStreamVector.size());
     auto splitStreamTypeIter = splitStreamVector.begin();
     for (uint32_t port = 0; port < desc->ports.size(); port++) {
         if (desc->ports[port].portId == AudioPortPin::PIN_OUT_SPEAKER) {
@@ -400,7 +399,7 @@ void RemoteAudioRendererSinkInner::InitAttrs(struct AudioSampleAttributes &attrs
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = 0;
-    attrs.streamId = REMOTE_OUTPUT_STREAM_ID;
+    attrs.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_REMOTE));
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
     attrs.isSignedData = true;
@@ -516,12 +515,6 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
     Trace trace("RemoteAudioRendererSinkInner::Start");
     AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::Start");
     std::lock_guard<std::mutex> lock(createRenderMutex_);
-    for (const auto &audioPort : audioPortMap_) {
-        FILE *dumpFile = nullptr;
-        DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_REMOTE_RENDER_SINK_FILENAME
-            + std::to_string(audioPort.first) + ".pcm", &dumpFile);
-        dumpFileMap_[audioPort.first] = dumpFile;
-    }
     auto renderId = renderIdVector_.begin();
     if (!isRenderCreated_.load()) {
         for (const auto &audioPort : audioPortMap_) {
@@ -534,6 +527,13 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
     if (started_.load()) {
         AUDIO_INFO_LOG("Remote render is already started.");
         return SUCCESS;
+    }
+
+    for (const auto &audioPort : audioPortMap_) {
+        FILE *dumpFile = nullptr;
+        DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_REMOTE_RENDER_SINK_FILENAME
+            + std::to_string(audioPort.first) + '_' + GetTime() + ".pcm", &dumpFile);
+        dumpFileMap_[audioPort.first] = dumpFile;
     }
 
     for (const auto &audioRender : audioRenderMap_) {
@@ -755,7 +755,8 @@ int32_t RemoteAudioRendererSinkInner::OpenOutput(DeviceType outputDevice)
     source.role = AudioPortRole::AUDIO_PORT_SOURCE_ROLE;
     source.type = AudioPortType::AUDIO_PORT_MIX_TYPE;
     source.ext.mix.moduleId = 0;
-    source.ext.mix.streamId = REMOTE_OUTPUT_STREAM_ID;
+    source.ext.mix.streamId = static_cast<int32_t>(
+        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_REMOTE));
 
     if (audioPortMap_.find(AudioCategory::AUDIO_IN_MEDIA) == audioPortMap_.end()) {
         AUDIO_WARNING_LOG("audioPortMap_ is null, ret %{public}d.", ret);
@@ -967,6 +968,12 @@ void RemoteAudioRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleF
         Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
     }
     AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
+}
+
+int32_t RemoteAudioRendererSinkInner::GetRenderId(uint32_t &renderId) const
+{
+    renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_REMOTE);
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

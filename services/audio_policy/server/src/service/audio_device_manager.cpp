@@ -58,11 +58,13 @@ static int64_t GetCurrentTimeMS()
 
 void AudioDeviceManager::ParseDeviceXml()
 {
+    AUDIO_INFO_LOG("In");
     unique_ptr<AudioDeviceParser> audioDeviceParser = make_unique<AudioDeviceParser>(this);
     if (audioDeviceParser->LoadConfiguration()) {
         AUDIO_INFO_LOG("Audio device manager load configuration successfully.");
         audioDeviceParser->Parse();
     }
+    AUDIO_INFO_LOG("Out");
 }
 
 void AudioDeviceManager::OnXmlParsingCompleted(
@@ -221,9 +223,10 @@ void AudioDeviceManager::MakePairedDefaultDeviceImpl(const shared_ptr<AudioDevic
 
 bool AudioDeviceManager::IsArmUsbDevice(const AudioDeviceDescriptor &desc)
 {
-    auto isPresent = [&desc] (auto &connDesc) {
+    auto isPresent = [&desc] (const auto &connDesc) {
         return connDesc->deviceId_ == desc.deviceId_;
     };
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
     if (itr == connectedDevices_.end()) {
         return false;
@@ -379,6 +382,7 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
     int32_t audioId = deviceDescriptor->deviceId_;
     AUDIO_INFO_LOG("add type:id %{public}d:%{public}d", deviceDescriptor->getType(), audioId);
 
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     RemoveVirtualConnectedDevice(devDesc);
     if (UpdateExistDeviceDescriptor(deviceDescriptor)) {
         AUDIO_INFO_LOG("The device has been added and will not be added again.");
@@ -401,6 +405,7 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
 
 std::string AudioDeviceManager::GetConnDevicesStr()
 {
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     return GetConnDevicesStr(connectedDevices_);
 }
 
@@ -444,6 +449,7 @@ void AudioDeviceManager::RemoveNewDevice(const sptr<AudioDeviceDescriptor> &devD
     int32_t audioId = devDesc->deviceId_;
     AUDIO_INFO_LOG("remove type:id %{public}d:%{public}d ", devDesc->getType(), audioId);
 
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     RemoveConnectedDevices(make_shared<AudioDeviceDescriptor>(devDesc));
     RemoveRemoteDevices(devDesc);
     RemoveCommunicationDevices(devDesc);
@@ -758,10 +764,9 @@ void AudioDeviceManager::GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usag
 
 std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableDevicesByUsage(AudioDeviceUsage usage)
 {
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     std::vector<unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
-
     GetDefaultAvailableDevicesByUsage(usage, audioDeviceDescriptors);
-
     for (const auto &dev : connectedDevices_) {
         for (const auto &devicePrivacy : devicePrivacyMaps_) {
             list<DevicePrivacyInfo> deviceInfos = devicePrivacy.second;
@@ -782,6 +787,7 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableB
 {
     std::vector<unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
 
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     for (const auto &desc : connectedDevices_) {
         if (desc->deviceType_ == devType && desc->macAddress_ == macAddress) {
             audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(*desc));
@@ -792,6 +798,7 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableB
 
 void AudioDeviceManager::UpdateScoState(const std::string &macAddress, bool isConnnected)
 {
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     for (const auto &desc : connectedDevices_) {
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->macAddress_ == macAddress) {
             desc->isScoRealConnected_ = isConnnected;
@@ -801,6 +808,7 @@ void AudioDeviceManager::UpdateScoState(const std::string &macAddress, bool isCo
 
 bool AudioDeviceManager::GetScoState()
 {
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     for (const auto &desc : connectedDevices_) {
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->connectState_ == CONNECTED) {
             return true;
@@ -814,6 +822,7 @@ void AudioDeviceManager::UpdateDevicesListInfo(const sptr<AudioDeviceDescriptor>
 {
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(d);
     bool ret = false;
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     switch (updateCommand) {
         case CATEGORY_UPDATE:
             ret = UpdateDeviceCategory(d);
@@ -1002,8 +1011,8 @@ void AudioDeviceManager::RemoveCaptureDevices(const AudioDeviceDescriptor &devDe
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetDevicesByFilter(DeviceType devType, DeviceRole devRole,
     const string &macAddress, const string &networkId, ConnectState connectState)
 {
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
-
     for (const auto &desc : connectedDevices_) {
         if ((devType == DEVICE_TYPE_NONE || devType == desc->deviceType_) &&
             (devRole == DEVICE_ROLE_NONE || devRole == desc->deviceRole_) &&
@@ -1047,6 +1056,7 @@ DeviceUsage AudioDeviceManager::GetDeviceUsage(const AudioDeviceDescriptor &desc
 
 void AudioDeviceManager::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
 {
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     for (auto device : connectedDevices_) {
         if (device->macAddress_ == macAddress) {
             device->deviceName_ = deviceName;
@@ -1056,6 +1066,7 @@ void AudioDeviceManager::OnReceiveBluetoothEvent(const std::string macAddress, c
 
 bool AudioDeviceManager::IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDeviceDescriptors)
 {
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     size_t connectedDevicesNum = connectedDevices_.size();
     for (size_t i = 0; i < connectedDevicesNum; i++) {
         if (connectedDevices_[i] != nullptr) {
@@ -1248,6 +1259,13 @@ int32_t AudioDeviceManager::UpdateDefaultOutputDeviceWhenStopping(const uint32_t
             selectedCallDefaultOutputDevice_, currDeviceType, sessionID);
         selectedCallDefaultOutputDevice_ = currDeviceType;
     }
+    return SUCCESS;
+}
+
+int32_t AudioDeviceManager::RemoveSelectedDefaultOutputDevice(const uint32_t sessionID)
+{
+    std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
+    selectedDefaultOutputDeviceInfo_.erase(sessionID);
     return SUCCESS;
 }
 

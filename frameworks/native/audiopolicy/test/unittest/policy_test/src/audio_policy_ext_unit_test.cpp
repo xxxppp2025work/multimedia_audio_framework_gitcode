@@ -353,7 +353,7 @@ HWTEST(AudioPolicyExtUnitTest, RecoverAudioPolicyCallbackClient_002, TestSize.Le
     ret = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(AudioVolumeType::STREAM_MUSIC);
     EXPECT_EQ(volumeLevel, ret);
 
-    AudioPolicyManager::GetInstance().audioStaticPolicyClientStubCB_ = nullptr;
+    AudioPolicyManager::GetInstance().audioPolicyClientStubCB_ = nullptr;
     AudioPolicyManager::GetInstance().RecoverAudioPolicyCallbackClient();
 
     ret = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(AudioVolumeType::STREAM_MUSIC);
@@ -368,7 +368,8 @@ HWTEST(AudioPolicyExtUnitTest, RecoverAudioPolicyCallbackClient_002, TestSize.Le
 HWTEST(AudioPolicyExtUnitTest, AudioPolicyServerDied_001, TestSize.Level1)
 {
     int32_t pid = getpid();
-    AudioPolicyManager::GetInstance().AudioPolicyServerDied(pid);
+    int32_t uid = getuid();
+    AudioPolicyManager::GetInstance().AudioPolicyServerDied(pid, uid);
 
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors =
         AudioPolicyManager::GetInstance().GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);

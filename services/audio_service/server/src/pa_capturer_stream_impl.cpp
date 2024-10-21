@@ -56,13 +56,15 @@ PaCapturerStreamImpl::~PaCapturerStreamImpl()
 
     PaLockGuard lock(mainloop_);
     if (paStream_) {
-        pa_stream_set_state_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_read_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_latency_update_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_started_callback(paStream_, nullptr, nullptr);
-        pa_stream_disconnect(paStream_);
+        if (!releasedFlag_) {
+            pa_stream_set_state_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_read_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_latency_update_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
+            pa_stream_set_started_callback(paStream_, nullptr, nullptr);
+            pa_stream_disconnect(paStream_);
+        }
         pa_stream_unref(paStream_);
         paStream_ = nullptr;
     }
@@ -84,6 +86,8 @@ int32_t PaCapturerStreamImpl::InitParams()
 
     // Get byte size per frame
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
+    CHECK_AND_RETURN_RET_LOG(sampleSpec != nullptr, ERR_OPERATION_FAILED,
+        "pa_sample_spec sampleSpec is nullptr");
     if (sampleSpec->channels != processConfig_.streamInfo.channels) {
         AUDIO_WARNING_LOG("Unequal channels, in server: %{public}d, in client: %{public}d", sampleSpec->channels,
             processConfig_.streamInfo.channels);
@@ -117,7 +121,7 @@ int32_t PaCapturerStreamImpl::InitParams()
 
 int32_t PaCapturerStreamImpl::Start()
 {
-    AUDIO_INFO_LOG("Enter PaCapturerStreamImpl::Start");
+    AUDIO_INFO_LOG("Start");
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -136,7 +140,7 @@ int32_t PaCapturerStreamImpl::Start()
 
 int32_t PaCapturerStreamImpl::Pause(bool isStandby)
 {
-    AUDIO_INFO_LOG("Enter PaCapturerStreamImpl::Pause");
+    AUDIO_INFO_LOG("Pause");
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -212,7 +216,7 @@ int32_t PaCapturerStreamImpl::GetLatency(uint64_t &latency)
 
     // Get PA latency
     while (true) {
-        pa_operation *operation = pa_stream_update_timing_info(paStream_, NULL, NULL);
+        pa_operation *operation = pa_stream_update_timing_info(paStream_, PAStreamUpdateTimingInfoSuccessCb, NULL);
         if (operation != nullptr) {
             pa_operation_unref(operation);
         } else {
@@ -242,7 +246,7 @@ int32_t PaCapturerStreamImpl::GetLatency(uint64_t &latency)
 
 int32_t PaCapturerStreamImpl::Flush()
 {
-    AUDIO_INFO_LOG("Enter PaCapturerStreamImpl::Flush");
+    AUDIO_INFO_LOG("Flush");
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -266,7 +270,7 @@ int32_t PaCapturerStreamImpl::Flush()
 
 int32_t PaCapturerStreamImpl::Stop()
 {
-    AUDIO_INFO_LOG("Enter PaCapturerStreamImpl::Stop");
+    AUDIO_INFO_LOG("Stop");
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -284,6 +288,18 @@ int32_t PaCapturerStreamImpl::Stop()
 
 int32_t PaCapturerStreamImpl::Release()
 {
+    AUDIO_INFO_LOG("Enter");
+
+    if (state_ == RUNNING) {
+        PaLockGuard lock(mainloop_);
+        if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+            return ERR_ILLEGAL_STATE;
+        }
+        pa_operation *operation = pa_stream_cork(paStream_, 1, nullptr, nullptr);
+        CHECK_AND_RETURN_RET_LOG(operation != nullptr, ERR_OPERATION_FAILED, "pa_stream_cork operation is null");
+        pa_operation_unref(operation);
+    }
+
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_RELEASED);
@@ -291,6 +307,18 @@ int32_t PaCapturerStreamImpl::Release()
     state_ = RELEASED;
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_WAKEUP) {
         PolicyHandler::GetInstance().NotifyWakeUpCapturerRemoved();
+    }
+
+    PaLockGuard lock(mainloop_);
+    if (paStream_) {
+        pa_stream_set_state_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_read_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_latency_update_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_started_callback(paStream_, nullptr, nullptr);
+        pa_stream_disconnect(paStream_);
+        releasedFlag_ = true;
     }
     return SUCCESS;
 }
@@ -342,7 +370,13 @@ void PaCapturerStreamImpl::PAStreamReadCb(pa_stream *stream, size_t length, void
         AUDIO_ERR_LOG("PAStreamReadCb: userdata is null");
         return;
     }
-    auto streamImpl = static_cast<PaCapturerStreamImpl *>(userdata);
+    std::weak_ptr<PaCapturerStreamImpl> paCapturerStreamWeakPtr;
+    if (!paCapturerMap_.Find(userdata, paCapturerStreamWeakPtr)) {
+        AUDIO_ERR_LOG("streamImpl is null");
+        return;
+    }
+    auto streamImpl = paCapturerStreamWeakPtr.lock();
+    CHECK_AND_RETURN_LOG(streamImpl, "PAStreamWriteCb: userdata is null");
     std::shared_ptr<IReadCallback> readCallback = streamImpl->readCallback_.lock();
     if (readCallback != nullptr) {
         readCallback->OnReadData(length);
@@ -375,7 +409,13 @@ void PaCapturerStreamImpl::PAStreamUnderFlowCb(pa_stream *stream, void *userdata
         return;
     }
 
-    PaCapturerStreamImpl *streamImpl = static_cast<PaCapturerStreamImpl *>(userdata);
+    std::weak_ptr<PaCapturerStreamImpl> paCapturerStreamWeakPtr;
+    if (!paCapturerMap_.Find(userdata, paCapturerStreamWeakPtr)) {
+        AUDIO_ERR_LOG("streamImpl is null");
+        return;
+    }
+    auto streamImpl = paCapturerStreamWeakPtr.lock();
+    CHECK_AND_RETURN_LOG(streamImpl, "PAStreamWriteCb: userdata is null");
     streamImpl->underFlowCount_++;
 
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
@@ -426,7 +466,13 @@ void PaCapturerStreamImpl::PAStreamPauseSuccessCb(pa_stream *stream, int32_t suc
         return;
     }
 
-    PaCapturerStreamImpl *streamImpl = static_cast<PaCapturerStreamImpl *>(userdata);
+    std::weak_ptr<PaCapturerStreamImpl> paCapturerStreamWeakPtr;
+    if (!paCapturerMap_.Find(userdata, paCapturerStreamWeakPtr)) {
+        AUDIO_ERR_LOG("streamImpl is null");
+        return;
+    }
+    auto streamImpl = paCapturerStreamWeakPtr.lock();
+    CHECK_AND_RETURN_LOG(streamImpl, "PAStreamWriteCb: userdata is null");
     streamImpl->state_ = PAUSED;
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
     if (statusCallback != nullptr) {
@@ -441,7 +487,13 @@ void PaCapturerStreamImpl::PAStreamFlushSuccessCb(pa_stream *stream, int32_t suc
         AUDIO_ERR_LOG("PAStreamFlushSuccessCb: userdata is null");
         return;
     }
-    PaCapturerStreamImpl *streamImpl = static_cast<PaCapturerStreamImpl *>(userdata);
+    std::weak_ptr<PaCapturerStreamImpl> paCapturerStreamWeakPtr;
+    if (!paCapturerMap_.Find(userdata, paCapturerStreamWeakPtr)) {
+        AUDIO_ERR_LOG("streamImpl is null");
+        return;
+    }
+    auto streamImpl = paCapturerStreamWeakPtr.lock();
+    CHECK_AND_RETURN_LOG(streamImpl, "PAStreamWriteCb: userdata is null");
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_FLUSHED);
@@ -496,5 +548,13 @@ uint32_t PaCapturerStreamImpl::GetStreamIndex()
 {
     return streamIndex_;
 }
+
+void PaCapturerStreamImpl::PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, int32_t success, void *userdata)
+{
+    PaCapturerStreamImpl *capturerStreamImpl = (PaCapturerStreamImpl *)userdata;
+    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)capturerStreamImpl->mainloop_;
+    pa_threaded_mainloop_signal(mainLoop, 0);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

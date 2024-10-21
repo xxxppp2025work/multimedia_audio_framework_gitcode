@@ -19,6 +19,7 @@
 #include "audio_policy_client_stub.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
+#include "audio_utils.h"
 
 using namespace std;
 namespace OHOS {
@@ -27,13 +28,40 @@ namespace AudioStandard {
 static const int32_t FOCUS_INFO_VALID_SIZE = 128;
 static const int32_t DEVICE_CHANGE_VALID_SIZE = 128;
 static const int32_t PREFERRED_DEVICE_VALID_SIZE = 128;
-static const int32_t STATE_VALID_SIZE = 128;
+static const int32_t STATE_VALID_SIZE = 1024;
+static const int32_t MIC_BLOCKED_VALID_SIZE = 128;
 
 AudioPolicyClientStub::AudioPolicyClientStub()
 {}
 
 AudioPolicyClientStub::~AudioPolicyClientStub()
 {}
+
+void AudioPolicyClientStub::OnFirMaxRemoteRequest(uint32_t updateCode, MessageParcel &data, MessageParcel &reply)
+{
+    switch (updateCode) {
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_HEAD_TRACKING_DEVICE_CHANGE):
+            HandleHeadTrackingDeviceChange(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_SPATIALIZATION_ENABLED_CHANGE):
+            HandleSpatializationEnabledChange(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE):
+            HandleSpatializationEnabledChangeForAnyDevice(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_HEAD_TRACKING_ENABLED_CHANGE):
+            HandleHeadTrackingEnabledChange(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICE):
+            HandleHeadTrackingEnabledChangeForAnyDevice(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_AUDIO_SESSION_DEACTIVE):
+            HandleAudioSessionCallback(data, reply);
+            break;
+        default:
+            break;
+    }
+}
 
 void AudioPolicyClientStub::OnMaxRemoteRequest(uint32_t updateCode, MessageParcel &data, MessageParcel &reply)
 {
@@ -65,24 +93,8 @@ void AudioPolicyClientStub::OnMaxRemoteRequest(uint32_t updateCode, MessageParce
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_RECREATE_CAPTURER_STREAM_EVENT):
             HandleRecreateCapturerStreamEvent(data, reply);
             break;
-        case static_cast<uint32_t>(AudioPolicyClientCode::ON_HEAD_TRACKING_DEVICE_CHANGE):
-            HandleHeadTrackingDeviceChange(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyClientCode::ON_SPATIALIZATION_ENABLED_CHANGE):
-            HandleSpatializationEnabledChange(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyClientCode::ON_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE):
-            HandleSpatializationEnabledChangeForAnyDevice(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyClientCode::ON_HEAD_TRACKING_ENABLED_CHANGE):
-            HandleHeadTrackingEnabledChange(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyClientCode::ON_HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICE):
-            HandleHeadTrackingEnabledChangeForAnyDevice(data, reply);
-        case static_cast<uint32_t>(AudioPolicyClientCode::ON_AUDIO_SESSION_DEACTIVE):
-            HandleAudioSessionCallback(data, reply);
-            break;
         default:
+            OnFirMaxRemoteRequest(updateCode, data, reply);
             break;
     }
 }
@@ -115,6 +127,9 @@ int AudioPolicyClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data, M
                     break;
                 case static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE):
                     HandleDeviceChange(data, reply);
+                    break;
+                case static_cast<uint32_t>(AudioPolicyClientCode::ON_MICRO_PHONE_BLOCKED):
+                    HandleMicrophoneBlocked(data, reply);
                     break;
                 default:
                     OnMaxRemoteRequest(updateCode, data, reply);
@@ -184,6 +199,19 @@ void AudioPolicyClientStub::HandleDeviceChange(MessageParcel &data, MessageParce
     OnDeviceChange(deviceChange);
 }
 
+void AudioPolicyClientStub::HandleMicrophoneBlocked(MessageParcel &data, MessageParcel &reply)
+{
+    MicrophoneBlockedInfo microphoneBlocked;
+    microphoneBlocked.blockStatus = static_cast<DeviceBlockStatus>(data.ReadUint32());
+    int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size < MIC_BLOCKED_VALID_SIZE, "get invalid size : %{public}d", size);
+
+    for (int32_t i = 0; i < size; i++) {
+        microphoneBlocked.devices.emplace_back(AudioDeviceDescriptor::Unmarshalling(data));
+    }
+    OnMicrophoneBlocked(microphoneBlocked);
+}
+
 void AudioPolicyClientStub::HandleRingerModeUpdated(MessageParcel &data, MessageParcel &reply)
 {
     AudioRingerMode ringMode = static_cast<AudioRingerMode>(data.ReadInt32());
@@ -225,6 +253,7 @@ void AudioPolicyClientStub::HandleRendererStateChange(MessageParcel &data, Messa
 {
     std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRenderChangeInfo;
     int32_t size = data.ReadInt32();
+    Trace trace("HandleRendererStateChange size:" + std::to_string(size));
     CHECK_AND_RETURN_LOG(size < STATE_VALID_SIZE, "get invalid size : %{public}d", size);
 
     while (size > 0) {

@@ -24,6 +24,7 @@ namespace Bluetooth {
 constexpr int32_t WEAR_ENABLED = 1;
 const int32_t BT_VIRTUAL_DEVICE_ADD = 0;
 const int32_t BT_VIRTUAL_DEVICE_REMOVE = 1;
+constexpr const uint8_t CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG = 0x03;
 
 enum BluetoothDeviceAction : int32_t {
     WEAR_ACTION = 0,
@@ -34,7 +35,8 @@ enum BluetoothDeviceAction : int32_t {
     DISABLE_WEAR_DETECTION_ACTION,
     USER_SELECTION_ACTION,
     STOP_VIRTUAL_CALL,
-    CONNECT_ACTION = 100,
+    CONNECTING_ACTION = 100,
+    CONNECT_ACTION,
     DISCONNECT_ACTION,
     VIRTUAL_DEVICE_ADD_ACTION,
     VIRTUAL_DEVICE_REMOVE_ACTION,
@@ -58,6 +60,13 @@ enum ScoCategory : int32_t {
     SCO_CALLULAR = 0,
     SCO_VIRTUAL = 1,
     SCO_RECOGNITION = 2,
+};
+
+enum RecognitionStatus : int32_t {
+    RECOGNITION_CONNECTING = 0,
+    RECOGNITION_CONNECTED = 1,
+    RECOGNITION_DISCONNECTING = 2,
+    RECOGNITION_DISCONNECTED = 3,
 };
 } // namespace Bluetooth
 } // namespace OHOS

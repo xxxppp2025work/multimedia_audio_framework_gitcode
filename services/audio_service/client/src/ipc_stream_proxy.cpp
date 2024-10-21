@@ -482,6 +482,7 @@ int32_t IpcStreamProxy::GetStreamManagerType()
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
     return reply.ReadInt32();
 }
+
 int32_t IpcStreamProxy::SetSilentModeAndMixWithOthers(bool on)
 {
     MessageParcel data;
@@ -499,7 +500,7 @@ int32_t IpcStreamProxy::SetSilentModeAndMixWithOthers(bool on)
     return ret;
 }
 
-int32_t IpcStreamProxy::SetClientVolume()
+int32_t IpcStreamProxy::SetClientVolume(bool isStreamVolumeChange, bool isMediaServiceAndOffloadEnable)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -507,8 +508,24 @@ int32_t IpcStreamProxy::SetClientVolume()
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
 
+    data.WriteBool(isStreamVolumeChange);
+    data.WriteBool(isMediaServiceAndOffloadEnable);
     int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_CLIENT_VOLUME, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set client volume failed, ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
+
+int32_t IpcStreamProxy::SetMute(bool isMute)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    data.WriteBool(isMute);
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_MUTE, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set mute failed, ipc error: %{public}d", ret);
     return reply.ReadInt32();
 }
 

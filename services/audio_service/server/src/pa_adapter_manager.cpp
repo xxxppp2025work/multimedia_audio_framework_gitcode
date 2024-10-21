@@ -35,7 +35,7 @@ const uint32_t CHECK_UTIL_SUCCESS = 0;
 const uint64_t BUF_LENGTH_IN_MSEC = 20;
 static const uint32_t PA_RECORD_MAX_LENGTH_NORMAL = 4;
 static const uint32_t PA_RECORD_MAX_LENGTH_WAKEUP = 30;
-static const int32_t CONNECT_STREAM_TIMEOUT_IN_SEC = 8; // 8S
+static const int32_t CONNECT_STREAM_TIMEOUT_IN_SEC = 5; // 5S
 static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_STRING_MAP = {
     {STREAM_VOICE_CALL, "voice_call"},
     {STREAM_MUSIC, "music"},
@@ -62,6 +62,7 @@ static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_S
     {STREAM_VOICE_COMMUNICATION, "voice_call"},
     {STREAM_VOICE_RING, "ring"},
     {STREAM_VOICE_CALL_ASSISTANT, "voice_call_assistant"},
+    {STREAM_CAMCORDER, "camcorder"},
 };
 
 static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
@@ -72,15 +73,6 @@ static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
         }
     } while (false);
     return CHECK_UTIL_SUCCESS;
-}
-
-static bool IsEnhanceMode(SourceType sourceType)
-{
-    if (sourceType == SOURCE_TYPE_MIC || sourceType == SOURCE_TYPE_VOICE_COMMUNICATION ||
-        sourceType == SOURCE_TYPE_VOICE_CALL) {
-        return true;
-    }
-    return false;
 }
 
 PaAdapterManager::PaAdapterManager(ManagerType type)
@@ -99,7 +91,12 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
     AUDIO_DEBUG_LOG("Create renderer start");
     int32_t ret = InitPaContext();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
-    uint32_t sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
+    uint32_t sessionId = 0;
+    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
+        sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
+    } else {
+        sessionId = processConfig.originalSessionId;
+    }
     AUDIO_DEBUG_LOG("Create [%{public}d] type renderer:[%{public}u]", managerType_, sessionId);
 
     // PaAdapterManager is solely responsible for creating paStream objects
@@ -201,7 +198,12 @@ int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::
     CHECK_AND_RETURN_RET_LOG(managerType_ == RECORDER, ERROR, "Invalid managerType:%{public}d", managerType_);
     int32_t ret = InitPaContext();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
-    uint32_t sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
+    uint32_t sessionId = 0;
+    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
+        sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
+    } else {
+        sessionId = processConfig.originalSessionId;
+    }
 
     // PaAdapterManager is solely responsible for creating paStream objects
     // while the PaCapturerStreamImpl has full authority over the subsequent management of the paStream
@@ -236,6 +238,12 @@ int32_t PaAdapterManager::ReleaseCapturer(uint32_t streamIndex)
     if (capturerStreamMap_.size() == 0) {
         AUDIO_INFO_LOG("Release the last stream");
     }
+    return SUCCESS;
+}
+
+int32_t PaAdapterManager::AddUnprocessStream(int32_t appUid)
+{
+    unprocessAppUidSet_.insert(appUid);
     return SUCCESS;
 }
 
@@ -317,10 +325,11 @@ int32_t PaAdapterManager::InitPaContext()
 
 int32_t PaAdapterManager::HandleMainLoopStart()
 {
-    PaLockGuard lock(mainLoop_);
     if (pa_threaded_mainloop_start(mainLoop_) < 0) {
         return ERR_DEVICE_INIT;
     }
+
+    PaLockGuard lock(mainLoop_);
     isMainLoopStarted_ = true;
 
     while (true) {
@@ -390,8 +399,11 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     }
     const std::string streamName = GetStreamName(processConfig.streamType);
     pa_channel_map map;
-    CHECK_AND_RETURN_RET_LOG(SetPaProplist(propList, map, processConfig, streamName, sessionId) == 0, nullptr,
-        "set pa proplist failed");
+    if (SetPaProplist(propList, map, processConfig, streamName, sessionId) != 0) {
+        AUDIO_ERR_LOG("set pa proplist failed");
+        pa_proplist_free(propList);
+        return nullptr;
+    }
 
     pa_stream *paStream = pa_stream_new_with_proplist(context_, streamName.c_str(), &sampleSpec,
         isRecording ? nullptr : &map, propList);
@@ -498,15 +510,11 @@ void PaAdapterManager::SetRecordProplist(pa_proplist *propList, AudioProcessConf
     pa_proplist_sets(propList, "stream.capturerSource",
         std::to_string(processConfig.capturerInfo.sourceType).c_str());
     const std::string sceneType = GetEnhanceSceneName(processConfig.capturerInfo.sourceType);
-    AudioEnhanceMode enhanceMode = IsEnhanceMode(processConfig.capturerInfo.sourceType) ?
-        ENHANCE_DEFAULT : ENHANCE_NONE;
-    const std::string sceneMode = GetEnhanceModeName(enhanceMode);
-    std::string upDevice = "DEVICE_TYPE_MIC";
-    std::string downDevice = "DEVICE_TYPE_SPEAKER";
     pa_proplist_sets(propList, "scene.type", sceneType.c_str());
-    pa_proplist_sets(propList, "scene.mode", sceneMode.c_str());
-    pa_proplist_sets(propList, "device.up", upDevice.c_str());
-    pa_proplist_sets(propList, "device.down", downDevice.c_str());
+    if (unprocessAppUidSet_.find(processConfig.appInfo.appUid) != unprocessAppUidSet_.end()) {
+        AUDIO_INFO_LOG("ByPass UID is [%{public}d]", processConfig.appInfo.appUid);
+        pa_proplist_sets(propList, "scene.bypass", "scene.bypass");
+    }
 }
 
 int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
@@ -619,14 +627,13 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
         }
         if (!PA_STREAM_IS_GOOD(state)) {
             int32_t error = pa_context_errno(context_);
-            AUDIO_ERR_LOG("connection to stream error: %{public}d", error);
+            AUDIO_ERR_LOG("connection to stream error: %{public}s, state: %{public}d", pa_strerror(error), state);
             return ERR_INVALID_OPERATION;
         }
         AudioXCollie audioXCollie("PaAdapterManager::ConnectStreamToPA", CONNECT_STREAM_TIMEOUT_IN_SEC,
             [this](void *) {
-                AUDIO_ERR_LOG("ConnectStreamToPA timeout, trigger signal");
+                AUDIO_ERR_LOG("ConnectStreamToPA timeout");
                 waitConnect_ = false;
-                pa_threaded_mainloop_signal(this->mainLoop_, 0);
             }, nullptr, XcollieFlag);
         pa_threaded_mainloop_wait(mainLoop_);
     }
@@ -703,7 +710,6 @@ int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEn
         AUDIO_ERR_LOG("pa_proplist_new failed.");
         return ERROR;
     }
-    std::string enhanceModeName = AUDIO_ENHANCE_SUPPORTED_SCENE_MODES.find(mode)->second;
     std::string upDevice = "DEVICE_TYPE_MIC";
     std::string downDevice = "DEVICE_TYPE_SPEAKER";
     pa_proplist_sets(propList, "device.up", upDevice.c_str());
@@ -717,24 +723,6 @@ int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEn
     pa_proplist_free(propList);
     pa_operation_unref(updatePropOperation);
     return SUCCESS;
-}
-
-const std::string PaAdapterManager::GetEnhanceModeName(AudioEnhanceMode mode)
-{
-    std::string name;
-    switch (mode) {
-        case AudioEnhanceMode::ENHANCE_NONE:
-            name = "ENHANCE_NONE";
-            break;
-        case AudioEnhanceMode::ENHANCE_DEFAULT:
-            name = "ENHANCE_DEFAULT";
-            break;
-        default:
-            name = "ENHANCE_NONE";
-            break;
-    }
-    const std::string modeName = name;
-    return modeName;
 }
 
 void PaAdapterManager::PAStreamUpdateStreamIndexSuccessCb(pa_stream *stream, int32_t success, void *userdata)
@@ -868,11 +856,18 @@ const std::string PaAdapterManager::GetEnhanceSceneName(SourceType sourceType)
     std::string name;
     switch (sourceType) {
         case SOURCE_TYPE_MIC:
+        case SOURCE_TYPE_CAMCORDER:
             name = "SCENE_RECORD";
             break;
         case SOURCE_TYPE_VOICE_CALL:
         case SOURCE_TYPE_VOICE_COMMUNICATION:
-            name = "SCENE_VOIP_3A";
+            name = "SCENE_VOIP_UP";
+            break;
+        case SOURCE_TYPE_VOICE_TRANSCRIPTION:
+            name = "SCENE_PRE_ENHANCE";
+            break;
+        case SOURCE_TYPE_VOICE_MESSAGE:
+            name = "SCENE_VOICE_MESSAGE";
             break;
         default:
             name = "SCENE_OTHERS";

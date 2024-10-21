@@ -27,6 +27,7 @@ group("audio_service_packages") {
 }
 
 ohos_shared_library("audio_common") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -50,6 +51,7 @@ ohos_shared_library("audio_common") {
     "common/src/audio_resample.cpp",
     "common/src/audio_ring_cache.cpp",
     "common/src/audio_thread_task.cpp",
+    "common/src/audio_volume.cpp",
     "common/src/format_converter.cpp",
     "common/src/futex_tool.cpp",
     "common/src/linear_pos_time_model.cpp",
@@ -75,6 +77,9 @@ ohos_shared_library("audio_common") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "samgr:samgr_proxy",
   ]
 
   if (sonic_enable == true) {
@@ -89,6 +94,11 @@ ohos_shared_library("audio_common") {
 
   cflags_cc = cflags
   cflags_cc += [ "-std=c++20" ]
+
+  defines = []
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
 
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
@@ -144,9 +154,10 @@ config("audio_sasdk_public_config") {
 }
 
 ohos_shared_library("audio_client") {
-  stack_protector_ret = false
+  branch_protector_ret = "pac_ret"
   install_enable = true
   sources = [
+    "client/src/audio_anahs_manager.cpp",
     "client/src/audio_device_descriptor.cpp",
     "client/src/audio_group_manager.cpp",
     "client/src/audio_manager_listener_stub.cpp",
@@ -211,6 +222,10 @@ ohos_shared_library("audio_client") {
     defines += [ "FEATURE_POWER_MANAGER" ]
   }
 
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
+
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
 
@@ -227,7 +242,11 @@ ohos_prebuilt_etc("audio_server_init") {
 
 config("audio_service_config") {
   visibility = [ ":*" ]
-  visibility += [ "../../test/fuzztest/*" ]
+  visibility += [
+    "../../services/audio_service/test/unittest/audio_endpoint_unit_test",
+    "../../services/audio_service/test/unittest/audio_server_unit_test",
+    "../../test/fuzztest/*",
+  ]
 
   include_dirs = [
     "common/include",
@@ -238,6 +257,7 @@ config("audio_service_config") {
     "../../frameworks/native/audioeffect/include",
     "../../frameworks/native/audioinnercall/include",
     "../../frameworks/native/audiopolicy/include",
+    "../../frameworks/native/audioqosmanager/include",
     "../../frameworks/native/audioschedule/include",
     "../../frameworks/native/audioutils/include",
     "../../frameworks/native/playbackcapturer/include",
@@ -274,6 +294,7 @@ config("audio_service_config") {
 }
 
 ohos_shared_library("audio_process_service") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -311,12 +332,14 @@ ohos_shared_library("audio_process_service") {
   deps = [
     ":audio_common",
     "../../frameworks/native/audioeffect:audio_effect",
+    "../../frameworks/native/audioqosmanager:audio_qosmanager",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
+    "../../frameworks/native/hdiadapter/source:audio_capturer_source",
     "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
     "../../frameworks/native/playbackcapturer:playback_capturer",
   ]
@@ -374,6 +397,7 @@ ohos_shared_library("audio_service") {
     "server/src/audio_manager_stub.cpp",
     "server/src/audio_server.cpp",
     "server/src/audio_server_dump.cpp",
+    "server/src/audio_server_effect.cpp",
     "server/src/config/audio_param_parser.cpp",
   ]
 
@@ -440,6 +464,10 @@ ohos_shared_library("audio_service") {
 
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
+  }
+
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
   }
 
   subsystem_name = "multimedia"

@@ -154,6 +154,21 @@ bool AudioPolicyServerHandler::SendDeviceChangedCallback(const std::vector<sptr<
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendMicrophoneBlockedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc,
+    DeviceBlockStatus status)
+{
+    Trace trace("AudioPolicyServerHandler::SendMicrophoneBlockedCallback");
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->microphoneBlockedInfo.blockStatus = status;
+    eventContextObj->microphoneBlockedInfo.devices = desc;
+
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::MICROPHONE_BLOCKED, eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "SendMicrophoneBlockedCallback event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendAvailableDeviceChange(const std::vector<sptr<AudioDeviceDescriptor>> &desc,
     bool isConnected)
 {
@@ -271,6 +286,7 @@ bool AudioPolicyServerHandler::SendInterruptEventWithSessionIdCallback(const Int
     eventContextObj->interruptEvent = interruptEvent;
     eventContextObj->sessionId = sessionId;
     lock_guard<mutex> runnerlock(runnerMutex_);
+    AUDIO_INFO_LOG("Send interrupt event with sessionId callback");
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::INTERRUPT_EVENT_WITH_SESSIONID,
         eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "Send INTERRUPT_EVENT_WITH_SESSIONID event failed");
@@ -554,6 +570,20 @@ void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::Inn
     }
 }
 
+void AudioPolicyServerHandler::HandleMicrophoneBlockedCallback(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        if (it->second && eventContextObj->microphoneBlockedInfo.devices.size() > 0) {
+            MicrophoneBlockedInfo microphoneBlockedInfo = eventContextObj->microphoneBlockedInfo;
+            it->second->OnMicrophoneBlocked(microphoneBlockedInfo);
+        }
+    }
+}
+
 void AudioPolicyServerHandler::HandleAvailableDeviceChange(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -561,14 +591,15 @@ void AudioPolicyServerHandler::HandleAvailableDeviceChange(const AppExecFwk::Inn
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = availableDeviceChangeCbsMap_.begin(); it != availableDeviceChangeCbsMap_.end(); ++it) {
         AudioDeviceUsage usage = it->first.second;
-        eventContextObj->deviceChangeAction.deviceDescriptors = AudioPolicyService::GetAudioPolicyService().
-            DeviceFilterByUsageInner(it->first.second, eventContextObj->deviceChangeAction.deviceDescriptors);
-        if (it->second && eventContextObj->deviceChangeAction.deviceDescriptors.size() > 0) {
+        DeviceChangeAction deviceChangeAction = eventContextObj->deviceChangeAction;
+        deviceChangeAction.deviceDescriptors = AudioPolicyService::GetAudioPolicyService().
+            DeviceFilterByUsageInner(it->first.second, deviceChangeAction.deviceDescriptors);
+        if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {
             if (!(it->second->hasBTPermission_)) {
                 AudioPolicyService::GetAudioPolicyService().
-                    UpdateDescWhenNoBTPermission(eventContextObj->deviceChangeAction.deviceDescriptors);
+                    UpdateDescWhenNoBTPermission(deviceChangeAction.deviceDescriptors);
             }
-            it->second->OnAvailableDeviceChange(usage, eventContextObj->deviceChangeAction);
+            it->second->OnAvailableDeviceChange(usage, deviceChangeAction);
         }
     }
 }
@@ -1030,6 +1061,7 @@ void AudioPolicyServerHandler::HandleConcurrencyEventWithSessionID(const AppExec
     }
 }
 
+// Run with event-runner mutex hold, lock any mutex that SendSyncEvent-calling holds may cause dead lock.
 void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
     const AppExecFwk::InnerEvent::Pointer &event)
 {
@@ -1094,6 +1126,9 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::AUDIO_SESSION_DEACTIVE_EVENT:
             HandleAudioSessionDeactiveCallback(event);
+            break;
+        case EventAudioServerCmd::MICROPHONE_BLOCKED:
+            HandleMicrophoneBlockedCallback(event);
             break;
         default:
             break;

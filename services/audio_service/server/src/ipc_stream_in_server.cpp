@@ -75,6 +75,11 @@ IpcStreamInServer::IpcStreamInServer(const AudioProcessConfig &config, AudioMode
 IpcStreamInServer::~IpcStreamInServer()
 {
     AUDIO_INFO_LOG("~IpcStreamInServer(), uid: %{public}d", config_.appInfo.appUid); // waiting for review: add uid.
+    // avoid unexpected release in proRenderStreamImpl working thread
+    if (rendererInServer_ && (rendererInServer_->GetActualStreamManagerType() == DIRECT_PLAYBACK ||
+        rendererInServer_->GetActualStreamManagerType() == VOIP_PLAYBACK)) {
+        rendererInServer_->Release();
+    }
 }
 
 int32_t IpcStreamInServer::Config()
@@ -433,10 +438,19 @@ int32_t IpcStreamInServer::SetSilentModeAndMixWithOthers(bool on)
     return rendererInServer_->SetSilentModeAndMixWithOthers(on);
 }
 
-int32_t IpcStreamInServer::SetClientVolume()
+int32_t IpcStreamInServer::SetClientVolume(bool isStreamVolumeChange, bool isMediaServiceAndOffloadEnable)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
-        return rendererInServer_->SetClientVolume();
+        return rendererInServer_->SetClientVolume(isStreamVolumeChange, isMediaServiceAndOffloadEnable);
+    }
+    AUDIO_ERR_LOG("mode is not playback or renderer is null");
+    return ERR_OPERATION_FAILED;
+}
+
+int32_t IpcStreamInServer::SetMute(bool isMute)
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->SetMute(isMute);
     }
     AUDIO_ERR_LOG("mode is not playback or renderer is null");
     return ERR_OPERATION_FAILED;

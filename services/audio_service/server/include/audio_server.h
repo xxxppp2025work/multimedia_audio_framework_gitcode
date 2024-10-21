@@ -34,6 +34,8 @@
 #include "i_audio_capturer_source.h"
 #include "audio_effect_server.h"
 #include "audio_asr.h"
+#include "audio_utils.h"
+#include "policy_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -75,7 +77,7 @@ public:
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag, BluetoothOffloadState a2dpOffloadFlag) override;
     int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-        BluetoothOffloadState a2dpOffloadFlag) override;
+        BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName = "") override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
@@ -92,11 +94,20 @@ public:
     int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on) override;
     int32_t IsWhispering() override;
 
+    // for effect
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
+    // for enhance
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE) override;
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE) override;
+
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
 
     int32_t CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice) override;
 
-    sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config) override;
+    sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode) override;
 
     // ISinkParameterCallback
     void OnAudioSinkParamChange(const std::string &netWorkId, const AudioParamKey key,
@@ -150,6 +161,8 @@ public:
 
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
 
+    void RestoreSession(const int32_t &sessionID, bool isOutput) override;
+
     void SetRotationToEffect(const uint32_t rotate) override;
 
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state) override;
@@ -178,13 +191,14 @@ private:
     bool CheckConfigFormat(const AudioProcessConfig &config);
     int32_t GetHapBuildApiVersion(int32_t callerUid);
 
-    void AudioServerDied(pid_t pid);
+    void NotifyProcessStatus(bool isStart);
+    void AudioServerDied(pid_t pid, pid_t uid);
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
     int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-        BluetoothOffloadState a2dpOffloadFlag);
+        BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName = "");
     int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
-        BluetoothOffloadState a2dpOffloadFlag);
+        BluetoothOffloadState a2dpOffloadFlag, const std::string deviceName = "");
     bool CheckAndPrintStacktrace(const std::string &key);
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter();
@@ -195,9 +209,19 @@ private:
     int32_t SetSystemVolumeToEffect(const AudioStreamType streamType, float volume);
     const std::string GetBundleNameFromUid(int32_t uid);
     bool IsFastBlocked(int32_t uid);
-
+    int32_t SetVolumeInfoForEnhanceChain(const AudioStreamType &streamType);
+    int32_t SetMicrophoneMuteForEnhanceChain(const bool &isMute);
+    void InitMaxRendererStreamCntPerUid();
+    int32_t CheckParam(const AudioProcessConfig &config);
+    void SendRendererCreateErrorInfo(const StreamUsage &sreamUsage,
+        const int32_t &errorCode);
+    int32_t CheckMaxRendererInstances();
+    bool SetPcmDumpParameter(const std::vector<std::pair<std::string, std::string>> &params);
+    bool GetPcmDumpParameter(const std::vector<std::string> &subKeys,
+        std::vector<std::pair<std::string, std::string>> &result);
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
+    static constexpr int32_t VASSISTANT_UID = 3001;
     static constexpr int32_t MAX_VOLUME = 15;
     static constexpr int32_t MIN_VOLUME = 0;
     static uint32_t paDaemonTid_;
@@ -221,6 +245,8 @@ private:
     std::mutex audioSceneMutex_;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
     bool isFastControlled_ = false;
+    int32_t maxRendererStreamCntPerUid_ = 0;
+    std::mutex streamLifeCycleMutex_ {};
 };
 } // namespace AudioStandard
 } // namespace OHOS

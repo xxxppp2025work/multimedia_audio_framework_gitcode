@@ -72,7 +72,7 @@ public:
 
     virtual int32_t Stop() = 0;
 
-    virtual int32_t Release() = 0;
+    virtual int32_t Release(bool destoryAtOnce = false) = 0;
 
     // methods for support IAudioStream
     virtual int32_t GetSessionID(uint32_t &sessionID) = 0;
@@ -90,6 +90,8 @@ public:
     virtual float GetVolume() = 0;
 
     virtual int32_t SetDuckVolume(float vol) = 0;
+
+    virtual int32_t SetMute(bool mute) = 0;
 
     virtual uint32_t GetUnderflowCount() = 0;
 

@@ -53,9 +53,11 @@ private:
 class AudioSettingProvider : public NoCopyable {
 public:
     static AudioSettingProvider& GetInstance(int32_t systemAbilityId);
+    static int32_t GetCurrentUserId();
     ErrCode GetStringValue(const std::string &key, std::string &value, std::string tableType = "");
     ErrCode GetIntValue(const std::string &key, int32_t &value, std::string tableType = "");
     ErrCode GetLongValue(const std::string &key, int64_t &value, std::string tableType = "");
+    ErrCode GetFloatValue(const std::string &key, float &value, std::string tableType = "");
     ErrCode GetBoolValue(const std::string &key, bool &value, std::string tableType = "");
     ErrCode PutStringValue(const std::string &key, const std::string &value,
         std::string tableType = "", bool needNotify = true);
@@ -65,8 +67,8 @@ public:
     bool IsValidKey(const std::string &key);
     sptr<AudioSettingObserver> CreateObserver(const std::string &key, AudioSettingObserver::UpdateFunc &func);
     static void ExecRegisterCb(const sptr<AudioSettingObserver> &observer);
-    ErrCode RegisterObserver(const sptr<AudioSettingObserver> &observer);
-    ErrCode UnregisterObserver(const sptr<AudioSettingObserver> &observer);
+    ErrCode RegisterObserver(const sptr<AudioSettingObserver> &observer, std::string tableType = "");
+    ErrCode UnregisterObserver(const sptr<AudioSettingObserver> &observer, std::string tableType = "");
 
 protected:
     ~AudioSettingProvider() override;
@@ -76,7 +78,6 @@ private:
     static std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelper(std::string tableType = "");
     static bool ReleaseDataShareHelper(std::shared_ptr<DataShare::DataShareHelper> &helper);
     static Uri AssembleUri(const std::string &key, std::string tableType = "");
-    static int32_t GetCurrentUserId();
 
     static AudioSettingProvider *instance_;
     static std::mutex mutex_;

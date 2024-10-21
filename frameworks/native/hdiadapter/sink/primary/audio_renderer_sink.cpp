@@ -42,6 +42,7 @@
 #include "audio_utils.h"
 #include "parameters.h"
 #include "media_monitor_manager.h"
+#include "audio_enhance_chain_manager.h"
 
 #include "audio_log_utils.h"
 
@@ -61,9 +62,6 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
-const uint32_t PRIMARY_OUTPUT_STREAM_ID = 13; // 13 + 0 * 8
-const uint32_t DIRECT_OUTPUT_STREAM_ID = 69;  // 13 + 7 * 8
-const uint32_t VOIP_OUTPUT_STREAM_ID = 77;    // 13 + 8 * 8
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 const unsigned int BUFFER_CALC_20MS = 20;
 const unsigned int BUFFER_CALC_1000MS = 1000;
@@ -135,7 +133,7 @@ static HdiAdapterFormat ParseAudioFormat(const std::string &format)
 {
     if (format == "AUDIO_FORMAT_PCM_16_BIT") {
         return HdiAdapterFormat::SAMPLE_S16;
-    } else if (format == "AUDIO_FORMAT_PCM_24_BIT") {
+    } else if (format == "AUDIO_FORMAT_PCM_24_BIT" || format == "AUDIO_FORMAT_PCM_24_BIT_PACKED") {
         return HdiAdapterFormat::SAMPLE_S24;
     } else if (format == "AUDIO_FORMAT_PCM_32_BIT") {
         return HdiAdapterFormat::SAMPLE_S32;
@@ -195,12 +193,13 @@ public:
     float GetMaxAmplitude() override;
     int32_t SetPaPower(int32_t flag) override;
     int32_t SetPriPaPower() override;
+    int32_t GetRenderId(uint32_t &renderId) const override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS],
         const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
-    int32_t SetRenderEmpty(int32_t durationUs) final;
+    int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
     std::string GetDPDeviceAttrInfo(const std::string &condition);
 
@@ -249,7 +248,9 @@ private:
     std::string audioAttrInfo_ = "";
 
     // for device switch
-    std::atomic<int32_t> renderEmptyFrameCount_ = 0;
+    std::mutex switchDeviceMutex_;
+    int32_t muteCount_ = 0;
+    std::atomic<bool> switchDeviceMute_ = false;
 
 private:
     int32_t CreateRender(const struct AudioPort &renderPort);
@@ -276,6 +277,7 @@ private:
 
     AudioPortPin GetAudioPortPin() const noexcept;
     int32_t SetAudioRoute(DeviceType outputDevice, AudioRoute route);
+    int32_t SetAudioRouteInfoForEnhanceChain(const DeviceType &outputDevice);
 
     // use static because only register once for primary hal
     static struct HdfRemoteService *hdfRemoteService_;
@@ -506,7 +508,7 @@ void AudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
             break;
         }
         case SAMPLE_S24: {
-            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<int8_t *>(data), len);
+            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<uint8_t *>(data), len);
             break;
         }
         case SAMPLE_S32: {
@@ -539,7 +541,7 @@ void AudioRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
         }
         case SAMPLE_S24LE: {
             // this function needs to be further tested for usability
-            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
+            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<uint8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case SAMPLE_S32LE: {
@@ -592,7 +594,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
-    attrs.streamId = PRIMARY_OUTPUT_STREAM_ID;
+    attrs.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY));
     attrs.type = AUDIO_IN_MEDIA;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
@@ -682,10 +684,10 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
         param.type = AUDIO_DP;
     } else if (halName_ == DIRECT_HAL_NAME) {
         param.type = AUDIO_DIRECT;
-        param.streamId = DIRECT_OUTPUT_STREAM_ID;
+        param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_DIRECT));
     } else if (halName_ == VOIP_HAL_NAME) {
         param.type = AUDIO_IN_COMMUNICATION;
-        param.streamId = VOIP_OUTPUT_STREAM_ID;
+        param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_VOIP));
     }
     param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
@@ -704,6 +706,8 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     AUDIO_INFO_LOG("Create render sinkName:%{public}s, rate:%{public}u channel:%{public}u format:%{public}u, " \
         "devicePin:%{public}u",
         halName_.c_str(), param.sampleRate, param.channelCount, param.format, deviceDesc.pins);
+    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE,
+        "CreateRender failed, audioAdapter_ is null");
     int32_t ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioDeviceCreateRender failed.");
@@ -759,13 +763,12 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     }
     CheckUpdateState(&data, len);
 
-    if (renderEmptyFrameCount_ > 0) {
+    if (switchDeviceMute_) {
         Trace traceEmpty("AudioRendererSinkInner::RenderFrame::renderEmpty");
         if (memset_s(reinterpret_cast<void*>(&data), static_cast<size_t>(len), 0,
             static_cast<size_t>(len)) != EOK) {
             AUDIO_WARNING_LOG("call memset_s failed");
         }
-        renderEmptyFrameCount_--;
     }
 
     Trace::CountVolume("AudioRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
@@ -1062,13 +1065,15 @@ int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<std::pair<DeviceType
         std::to_string(outputDevice));
     currentActiveDevice_ = outputDevice;
     currentDevicesSize_ = static_cast<int32_t>(outputDevices.size());
+    SetAudioRouteInfoForEnhanceChain(currentActiveDevice_);
 
     AudioRouteNode source = {};
     source.portId = static_cast<int32_t>(0);
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_MIX_TYPE;
     source.ext.mix.moduleId = static_cast<int32_t>(0);
-    source.ext.mix.streamId = PRIMARY_OUTPUT_STREAM_ID;
+    source.ext.mix.streamId = static_cast<int32_t>(
+        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY));
     source.ext.device.desc = (char *)"";
 
     int32_t sinksSize = static_cast<int32_t>(outputDevices.size());
@@ -1097,12 +1102,12 @@ int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<std::pair<DeviceType
     route.sinks = sinks;
     route.sinksLen = static_cast<uint32_t>(sinksSize);
 
-    int32_t ret = SetAudioRoute(outputDevice, route);
+    int32_t result = SetAudioRoute(outputDevice, route);
     if (sinks != nullptr) {
         delete [] sinks;
         sinks = nullptr;
     }
-    return ret;
+    return result;
 }
 
 int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
@@ -1371,8 +1376,8 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &dpInfoStr)
     std::string addressStr = dpInfoStr.substr(address_begin + std::strlen("address="),
         address_end - address_begin - std::strlen("address="));
 
-    attr_.sampleRate = stoi(sampleRateStr);
-    attr_.channel = static_cast<uint32_t>(stoi(channeltStr));
+    if (!sampleRateStr.empty()) attr_.sampleRate = stoi(sampleRateStr);
+    if (!channeltStr.empty()) attr_.channel = static_cast<uint32_t>(stoi(channeltStr));
     attr_.address = addressStr;
     uint32_t formatByte = 0;
     if (attr_.channel <= 0 || attr_.sampleRate <= 0) {
@@ -1460,7 +1465,7 @@ int32_t AudioRendererSinkInner::InitRender()
         } else if (halName_ == "dp") {
             outputDevices.push_back(DEVICE_TYPE_DP);
             ret = SetOutputRoutes(outputDevices);
-        } else {
+        } else if (halName_ == PRIMARY_HAL_NAME) {
             DeviceType type = static_cast<DeviceType>(attr_.deviceType);
             if (type == DEVICE_TYPE_INVALID) {
                 type = DEVICE_TYPE_SPEAKER;
@@ -1566,7 +1571,7 @@ int32_t AudioRendererSinkInner::GetCurDeviceParam(char *keyValueList, size_t len
             break;
         case DEVICE_TYPE_BLUETOOTH_SCO:
             ret = snprintf_s(keyValueList, len, len - 1,
-                "zero_volume=true;routing=10");
+                "zero_volume=true;routing=16");
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
             ret = snprintf_s(keyValueList, len, len - 1,
@@ -1666,11 +1671,64 @@ int32_t AudioRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &appsUi
     return SUCCESS;
 }
 
-int32_t AudioRendererSinkInner::SetRenderEmpty(int32_t durationUs)
+// LCOV_EXCL_START
+int32_t AudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
 {
-    int32_t emptyCount = durationUs / 1000 / BUFFER_CALC_20MS; // 1000 us->ms
-    AUDIO_INFO_LOG("%{public}s render %{public}d empty", halName_.c_str(), emptyCount);
-    CasWithCompare(renderEmptyFrameCount_, emptyCount, std::less<int32_t>());
+    std::lock_guard<std::mutex> lock(switchDeviceMutex_);
+    AUDIO_INFO_LOG("set %{public}s mute %{public}d", halName_.c_str(), mute);
+
+    if (mute) {
+        muteCount_++;
+        if (switchDeviceMute_) {
+            AUDIO_INFO_LOG("%{public}s already muted", halName_.c_str());
+            return SUCCESS;
+        }
+        switchDeviceMute_ = true;
+    } else {
+        muteCount_--;
+        if (muteCount_ > 0) {
+            AUDIO_WARNING_LOG("%{public}s not all unmuted", halName_.c_str());
+            return SUCCESS;
+        }
+        switchDeviceMute_ = false;
+        muteCount_ = 0;
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioRendererSinkInner::GetRenderId(uint32_t &renderId) const
+{
+    if (halName_ == "usb") {
+        renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_USB);
+    } else if (halName_ == "dp") {
+        renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_DP);
+    } else if (halName_ == VOIP_HAL_NAME) {
+        renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_VOIP);
+    } else if (halName_ == DIRECT_HAL_NAME) {
+        renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_DIRECT);
+    } else {
+        renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioRendererSinkInner::SetAudioRouteInfoForEnhanceChain(const DeviceType &outputDevice)
+{
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
+    uint32_t renderId = 0;
+    int32_t ret = GetRenderId(renderId);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("GetRenderId failed");
+    }
+    if (halName_ == "usb") {
+        audioEnhanceChainManager->SetOutputDevice(renderId, DEVICE_TYPE_USB_ARM_HEADSET);
+    } else if (halName_ == "dp") {
+        audioEnhanceChainManager->SetOutputDevice(renderId, DEVICE_TYPE_DP);
+    } else {
+        audioEnhanceChainManager->SetOutputDevice(renderId, outputDevice);
+    }
     return SUCCESS;
 }
 } // namespace AudioStandard

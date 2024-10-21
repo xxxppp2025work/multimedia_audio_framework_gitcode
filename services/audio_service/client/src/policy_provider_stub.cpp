@@ -56,6 +56,8 @@ int PolicyProviderStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Mess
             return HandleOffloadGetRenderPosition(data, reply);
         case GET_AND_SAVE_CLIENT_TYPE:
             return HandleGetAndSaveClientType(data, reply);
+        case GET_MAX_RENDERER_INSTANCES:
+            return HandleGetMaxRendererInstances(data, reply);
         default:
             AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -67,8 +69,9 @@ int32_t PolicyProviderStub::HandleGetProcessDeviceInfo(MessageParcel &data, Mess
     AudioProcessConfig config;
     int32_t ret = ProcessConfig::ReadConfigFromParcel(config, data);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ReadConfigFromParcel failed %{public}d", ret);
+    bool flag = data.ReadBool();
     DeviceInfo deviceInfo;
-    ret = GetProcessDeviceInfo(config, deviceInfo);
+    ret = GetProcessDeviceInfo(config, flag, deviceInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetProcessDeviceInfo failed %{public}d", ret);
     deviceInfo.Marshalling(reply);
     return AUDIO_OK;
@@ -147,6 +150,13 @@ int32_t PolicyProviderStub::HandleGetAndSaveClientType(MessageParcel &data, Mess
     return AUDIO_OK;
 }
 
+int32_t PolicyProviderStub::HandleGetMaxRendererInstances(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t ret = GetMaxRendererInstances();
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
 PolicyProviderWrapper::~PolicyProviderWrapper()
 {
     policyWorker_ = nullptr;
@@ -156,10 +166,11 @@ PolicyProviderWrapper::PolicyProviderWrapper(IPolicyProvider *policyWorker) : po
 {
 }
 
-int32_t PolicyProviderWrapper::GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
+int32_t PolicyProviderWrapper::GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
+    DeviceInfo &deviceInfo)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
-    return policyWorker_->GetProcessDeviceInfo(config, deviceInfo);
+    return policyWorker_->GetProcessDeviceInfo(config, lockFlag, deviceInfo);
 }
 
 int32_t PolicyProviderWrapper::InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer)
@@ -204,6 +215,12 @@ int32_t PolicyProviderWrapper::GetAndSaveClientType(uint32_t uid, const std::str
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->GetAndSaveClientType(uid, bundleName);
+}
+
+int32_t PolicyProviderWrapper::GetMaxRendererInstances()
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->GetMaxRendererInstances();
 }
 } // namespace AudioStandard
 } // namespace OHOS

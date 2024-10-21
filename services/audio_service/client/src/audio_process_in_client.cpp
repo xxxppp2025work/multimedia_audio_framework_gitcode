@@ -76,7 +76,7 @@ public:
 
     int32_t Stop() override;
 
-    int32_t Release() override;
+    int32_t Release(bool destoryAtOnce = false) override;
 
     // methods for support IAudioStream
     int32_t GetSessionID(uint32_t &sessionID) override;
@@ -94,6 +94,8 @@ public:
     float GetVolume() override;
 
     int32_t SetDuckVolume(float vol) override;
+
+    int32_t SetMute(bool mute) override;
 
     uint32_t GetUnderflowCount() override;
 
@@ -116,7 +118,7 @@ public:
     bool Init(const AudioProcessConfig &config);
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
-    static void AudioServerDied(pid_t pid);
+    static void AudioServerDied(pid_t pid, pid_t uid);
     static constexpr AudioStreamInfo g_targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
 
 private:
@@ -207,6 +209,7 @@ private:
 
     float volumeInFloat_ = 1.0f;
     float duckVolumeInFloat_ = 1.0f;
+    float muteVolumeInFloat_ = 1.0f;
     int32_t processVolume_ = PROCESS_VOLUME_MAX; // 0 ~ 65536
     LinearPosTimeModel handleTimeModel_;
 
@@ -278,9 +281,10 @@ const sptr<IStandardAudioService> AudioProcessInClientInner::GetAudioServerProxy
         CHECK_AND_RETURN_RET_LOG(gAudioServerProxy != nullptr, nullptr, "get audio service proxy failed");
 
         // register death recipent to restore proxy
-        sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
+        sptr<AudioServerDeathRecipient> asDeathRecipient =
+            new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb([] (pid_t pid) { AudioServerDied(pid); });
+            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) { AudioServerDied(pid, uid); });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
                 AUDIO_WARNING_LOG("failed to add deathRecipient");
@@ -295,7 +299,7 @@ const sptr<IStandardAudioService> AudioProcessInClientInner::GetAudioServerProxy
  * When AudioServer died, all stream in client should be notified. As they were proxy stream ,the stub stream
  * has been destoried in server.
 */
-void AudioProcessInClientInner::AudioServerDied(pid_t pid)
+void AudioProcessInClientInner::AudioServerDied(pid_t pid, pid_t uid)
 {
     AUDIO_INFO_LOG("audio server died, will restore proxy in next call");
     std::lock_guard<std::mutex> lock(g_audioServerProxyMutex);
@@ -319,7 +323,10 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     } else {
         isVoipMmap = true;
     }
-    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(resetConfig);
+
+    int32_t errorCode = 0;
+    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(resetConfig, errorCode);
+    CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, nullptr, "failed with create audio stream fail.");
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, nullptr, "Create failed with null ipcProxy.");
     sptr<IAudioProcess> iProcessProxy = iface_cast<IAudioProcess>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(iProcessProxy != nullptr, nullptr, "Create failed when iface_cast.");
@@ -415,6 +422,12 @@ int32_t AudioProcessInClientInner::SetVolume(float vol)
 float AudioProcessInClientInner::GetVolume()
 {
     return volumeInFloat_;
+}
+
+int32_t AudioProcessInClientInner::SetMute(bool mute)
+{
+    muteVolumeInFloat_ = mute ? 0.0f : 1.0f;
+    return SUCCESS;
 }
 
 int32_t AudioProcessInClientInner::SetDuckVolume(float vol)
@@ -808,7 +821,8 @@ void AudioProcessInClientInner::CopyWithVolume(const BufferDesc &srcDesc, const 
     for (size_t pos = 0; len > 0; len--) {
         int32_t sum = 0;
         int16_t *srcPtr = reinterpret_cast<int16_t *>(srcDesc.buffer) + pos;
-        sum += (*srcPtr * static_cast<int64_t>(processVolume_ * duckVolumeInFloat_)) >> VOLUME_SHIFT_NUMBER; // 1/65536
+        sum += (*srcPtr * static_cast<int64_t>(processVolume_ * duckVolumeInFloat_ *
+            muteVolumeInFloat_)) >> VOLUME_SHIFT_NUMBER; // 1/65536
         pos++;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
     }
@@ -822,7 +836,8 @@ void AudioProcessInClientInner::ProcessVolume(const AudioStreamData &targetData)
     int16_t *dstPtr = reinterpret_cast<int16_t *>(targetData.bufferDesc.buffer);
     for (; len > 0; len--) {
         int32_t sum = 0;
-        sum += (*dstPtr * static_cast<int64_t>(processVolume_ * duckVolumeInFloat_)) >> VOLUME_SHIFT_NUMBER;
+        sum += (*dstPtr * static_cast<int64_t>(processVolume_ * duckVolumeInFloat_ *
+            muteVolumeInFloat_)) >> VOLUME_SHIFT_NUMBER;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
     }
 }
@@ -1070,7 +1085,7 @@ int32_t AudioProcessInClientInner::Stop()
     return SUCCESS;
 }
 
-int32_t AudioProcessInClientInner::Release()
+int32_t AudioProcessInClientInner::Release(bool destoryAtOnce)
 {
     Trace traceRelease("AudioProcessInClient::Release");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
@@ -1089,7 +1104,7 @@ int32_t AudioProcessInClientInner::Release()
         AUDIO_WARNING_LOG("Release in currentStatus:%{public}s", GetStatusInfo(currentStatus).c_str());
     }
 
-    if (processProxy_->Release() != SUCCESS) {
+    if (processProxy_->Release(destoryAtOnce) != SUCCESS) {
         AUDIO_ERR_LOG("Release may failed in server");
         threadStatusCV_.notify_all(); // avoid thread blocking with status RUNNING
         return ERR_OPERATION_FAILED;
@@ -1514,8 +1529,8 @@ bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t &curWritePos, int64
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false,
         "SetCurWriteFrame %{public}" PRIu64" failed, ret:%{public}d", curWritePos, ret);
     tempSpan->writeDoneTime = ClockTime::GetCurNano();
-    tempSpan->volumeStart = static_cast<int32_t>(processVolume_ * duckVolumeInFloat_);
-    tempSpan->volumeEnd = static_cast<int32_t>(processVolume_ * duckVolumeInFloat_);
+    tempSpan->volumeStart = static_cast<int32_t>(processVolume_ * duckVolumeInFloat_ * muteVolumeInFloat_);
+    tempSpan->volumeEnd = static_cast<int32_t>(processVolume_ * duckVolumeInFloat_ * muteVolumeInFloat_);
     clientWriteCost = tempSpan->writeDoneTime - tempSpan->writeStartTime;
 
     return true;

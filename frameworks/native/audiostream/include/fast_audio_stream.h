@@ -86,6 +86,7 @@ public:
     int32_t GetLatency(uint64_t &latency) override;
     int32_t SetAudioStreamType(AudioStreamType audioStreamType) override;
     int32_t SetVolume(float volume) override;
+    int32_t SetMute(bool mute) override;
     float GetVolume() override;
     int32_t SetDuckVolume(float volume) override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
@@ -128,7 +129,7 @@ public:
         AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN) override;
     bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     bool StopAudioStream() override;
-    bool ReleaseAudioStream(bool releaseRunner = true) override;
+    bool ReleaseAudioStream(bool releaseRunner = true, bool destoryAtOnce = false) override;
     bool FlushAudioStream() override;
 
     // Playback related APIs
@@ -184,6 +185,7 @@ public:
 
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
+    int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);
 
     AudioStreamType eStreamType_;
     AudioMode eMode_;

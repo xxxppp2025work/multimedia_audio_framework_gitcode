@@ -34,7 +34,7 @@ namespace AudioStandard {
 class AudioPolicyParser : public Parser {
 public:
     static constexpr char CHIP_PROD_CONFIG_FILE[] = "/chip_prod/etc/audio/audio_policy_config.xml";
-    static constexpr char CONFIG_FILE[] = "vendor/etc/audio/audio_policy_config.xml";
+    static constexpr char CONFIG_FILE[] = "/vendor/etc/audio/audio_policy_config.xml";
 
     bool LoadConfiguration() final;
     bool Parse() final;
@@ -79,6 +79,7 @@ private:
     void ParseCommonConfigs(xmlNode& node);
 
     void HandleUpdateRouteSupportParsed(std::string &value);
+    void HandleUpdateAnahsSupportParsed(std::string &value);
     PAConfigType GetPaConfigType(std::string &name);
 
     void SplitStringToList(std::string &str, std::list<std::string> &result);

@@ -53,7 +53,6 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
-const uint32_t OFFLOAD_OUTPUT_STREAM_ID = 53; // 13+5*8
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
@@ -121,6 +120,7 @@ public:
     float GetMaxAmplitude() override;
     int32_t SetPaPower(int32_t flag) override;
     int32_t SetPriPaPower() override;
+    int32_t GetRenderId(uint32_t &renderId) const override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
@@ -303,7 +303,7 @@ void OffloadAudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
         }
         case SAMPLE_S24LE: {
             // this function needs to be further tested for usability
-            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<int8_t *>(data), len);
+            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<uint8_t *>(data), len);
             break;
         }
         case SAMPLE_S32LE: {
@@ -335,7 +335,7 @@ void OffloadAudioRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
         }
         case SAMPLE_S24LE: {
             // this function needs to be further tested for usability
-            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
+            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<uint8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case SAMPLE_S32LE: {
@@ -398,7 +398,9 @@ int32_t OffloadAudioRendererSinkInner::RenderEventCallback(struct IAudioCallback
         AUDIO_ERR_LOG("impl invalid, %{public}d, %{public}d, %{public}d",
             impl->registered, impl->cookie == nullptr, impl->renderCallback == nullptr);
     }
+    CHECK_AND_RETURN_RET_LOG(impl->cookie != nullptr, ERROR, "The impl->cookie is null");
     auto *sink = reinterpret_cast<OffloadAudioRendererSinkInner *>(impl->cookie);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "sink is null");
     if (!sink->started_ || sink->isFlushing_) {
         AUDIO_DEBUG_LOG("invalid renderCallback call, started_ %d, isFlushing_ %d", sink->started_, sink->isFlushing_);
         return 0;
@@ -434,6 +436,7 @@ void OffloadAudioRendererSinkInner::DeInit()
 {
     Trace trace("OffloadSink::DeInit");
     std::lock_guard<std::mutex> lock(renderMutex_);
+    std::lock_guard<std::mutex> lockVolume(volumeMutex_);
     AUDIO_INFO_LOG("DeInit.");
     started_ = false;
     rendererInited_ = false;
@@ -456,7 +459,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
-    attrs.streamId = OFFLOAD_OUTPUT_STREAM_ID;
+    attrs.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_OFFLOAD));
     attrs.type = AUDIO_OFFLOAD;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
@@ -722,7 +725,7 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
         return ERR_NOT_STARTED;
     }
 
-    dumpFileName_ = "offload_audiosink_" + std::to_string(attr_.sampleRate) + "_"
+    dumpFileName_ = "offload_audiosink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_"
         + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
@@ -1108,6 +1111,12 @@ int32_t OffloadAudioRendererSinkInner::UpdateAppsUid(const int32_t appsUid[MAX_M
 int32_t OffloadAudioRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
     AUDIO_WARNING_LOG("not supported.");
+    return SUCCESS;
+}
+
+int32_t OffloadAudioRendererSinkInner::GetRenderId(uint32_t &renderId) const
+{
+    renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_OFFLOAD);
     return SUCCESS;
 }
 // LCOV_EXCL_STOP

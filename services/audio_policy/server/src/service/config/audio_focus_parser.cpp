@@ -69,9 +69,13 @@ std::map<std::string, AudioFocusType> AudioFocusParser::audioFocusMap = {
         {AudioStreamType::STREAM_VOICE_COMMUNICATION, SourceType::SOURCE_TYPE_INVALID, true}},
     {"STREAM_VOICE_RING",
         {AudioStreamType::STREAM_VOICE_RING, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_CAMCORDER",
+        {AudioStreamType::STREAM_CAMCORDER, SourceType::SOURCE_TYPE_INVALID, true}},
     // source type for audio interrupt
     {"SOURCE_TYPE_MIC",
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_MIC, false}},
+    {"SOURCE_TYPE_CAMCORDER",
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_CAMCORDER, false}},
     {"SOURCE_TYPE_VOICE_RECOGNITION",
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_VOICE_RECOGNITION, false}},
     {"SOURCE_TYPE_WAKEUP",
@@ -155,7 +159,6 @@ int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioFocusType, AudioFoc
         AUDIO_ERR_LOG("Missing tag - focus_policy in : %s", AUDIO_FOCUS_CONFIG_FILE);
         WriteConfigErrorEvent();
         xmlFreeDoc(doc);
-        xmlCleanupParser();
         return ERROR;
     }
     if (currNode->children) {
@@ -163,7 +166,6 @@ int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioFocusType, AudioFoc
     } else {
         AUDIO_ERR_LOG("Missing child: %s", AUDIO_FOCUS_CONFIG_FILE);
         xmlFreeDoc(doc);
-        xmlCleanupParser();
         return ERROR;
     }
     while (currNode != nullptr) {
@@ -176,7 +178,6 @@ int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioFocusType, AudioFoc
         }
     }
     xmlFreeDoc(doc);
-    xmlCleanupParser();
     return SUCCESS;
 }
 

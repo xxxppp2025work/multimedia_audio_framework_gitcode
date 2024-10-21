@@ -15,6 +15,7 @@ import("//build/ohos.gni")
 import("../../../../config.gni")
 
 ohos_shared_library("audio_renderer_sink") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -33,12 +34,14 @@ ohos_shared_library("audio_renderer_sink") {
     "common",
     "../common/include",
     "../../audioutils/include",
+    "../../audioeffect/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../services/audio_service/common/include/",
   ]
 
   deps = [
     "../../../../services/audio_service:audio_common",
+    "../../audioeffect:audio_effect",
     "../../audioutils:audio_utils",
   ]
 
@@ -51,6 +54,7 @@ ohos_shared_library("audio_renderer_sink") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
+    "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]
   defines = []
@@ -64,6 +68,7 @@ ohos_shared_library("audio_renderer_sink") {
 }
 
 ohos_shared_library("fast_audio_renderer_sink") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -102,6 +107,7 @@ ohos_shared_library("fast_audio_renderer_sink") {
 }
 
 ohos_shared_library("bluetooth_renderer_sink") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -149,11 +155,16 @@ ohos_shared_library("bluetooth_renderer_sink") {
     defines += [ "FEATURE_POWER_MANAGER" ]
   }
 
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
+
   part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
 
 ohos_shared_library("remote_audio_renderer_sink") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -200,6 +211,7 @@ ohos_shared_library("remote_audio_renderer_sink") {
 }
 
 ohos_shared_library("remote_fast_audio_renderer_sink") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -246,6 +258,7 @@ ohos_shared_library("remote_fast_audio_renderer_sink") {
 }
 
 ohos_shared_library("audio_renderer_file_sink") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -277,6 +290,7 @@ ohos_shared_library("audio_renderer_file_sink") {
 }
 
 ohos_shared_library("offload_audio_renderer_sink") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -322,6 +336,7 @@ ohos_shared_library("offload_audio_renderer_sink") {
 }
 
 ohos_shared_library("multichannel_audio_renderer_sink") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -364,6 +379,7 @@ ohos_shared_library("multichannel_audio_renderer_sink") {
 }
 
 ohos_shared_library("renderer_sink_adapter") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true

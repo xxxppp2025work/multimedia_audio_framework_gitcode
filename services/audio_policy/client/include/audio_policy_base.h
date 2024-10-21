@@ -64,6 +64,12 @@ public:
 
     virtual std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) = 0;
 
+    virtual std::vector<sptr<AudioDeviceDescriptor>> GetOutputDevice(
+        sptr<AudioRendererFilter> audioRendererFilter) = 0;
+
+    virtual std::vector<sptr<AudioDeviceDescriptor>> GetInputDevice(
+        sptr<AudioCapturerFilter> audioCapturerFilter) = 0;
+
     virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) = 0;
 
     virtual int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
@@ -116,7 +122,8 @@ public:
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
     virtual int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt,
-        const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
+        const int32_t zoneID = 0 /* default value: 0 -- local device */,
+        const bool isUpdatedAudioStrategy = false /* default value: false -- is update audio strategy */) = 0;
 
     virtual int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
@@ -124,6 +131,8 @@ public:
     virtual int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetAudioManagerInterruptCallback(const int32_t clientId) = 0;
+
+    virtual int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) = 0;
 
@@ -318,6 +327,10 @@ public:
 
     virtual int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason) = 0;
 
+    virtual int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnsetAudioDeviceAnahsCallback() = 0;
+
     virtual int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID) = 0;
@@ -330,8 +343,22 @@ public:
 
     virtual int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) = 0;
 
+    virtual bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid) = 0;
+
     virtual int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning) = 0;
+
+    virtual int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray) = 0;
+
+    virtual int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) = 0;
+
+    virtual int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) = 0;
+
+    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) = 0;
+
+    virtual int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) = 0;
+
+    virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) = 0;
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");

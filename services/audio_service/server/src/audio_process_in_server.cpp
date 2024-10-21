@@ -23,6 +23,7 @@
 
 #include "audio_errors.h"
 #include "audio_service_log.h"
+#include "audio_service.h"
 #include "audio_schedule.h"
 #include "audio_utils.h"
 #include "media_monitor_manager.h"
@@ -44,7 +45,11 @@ sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig
 AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConfig,
     ProcessReleaseCallback *releaseCallback) : processConfig_(processConfig), releaseCallback_(releaseCallback)
 {
-    sessionId_ = PolicyHandler::GetInstance().GenerateSessionId(processConfig_.appInfo.appUid);
+    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
+        sessionId_ = PolicyHandler::GetInstance().GenerateSessionId(processConfig_.appInfo.appUid);
+    } else {
+        sessionId_ = processConfig.originalSessionId;
+    }
 }
 
 AudioProcessInServer::~AudioProcessInServer()
@@ -63,8 +68,9 @@ int32_t AudioProcessInServer::GetSessionId(uint32_t &sessionId)
 
 void AudioProcessInServer::SetNonInterruptMute(const bool muteFlag)
 {
-    AUDIO_INFO_LOG("muteFlag_: %{public}d", muteFlag_);
     muteFlag_ = muteFlag;
+    AUDIO_INFO_LOG("muteFlag_: %{public}d", muteFlag);
+    AudioService::GetInstance()->UpdateMuteControlSet(sessionId_, muteFlag);
 }
 
 bool AudioProcessInServer::GetMuteFlag()
@@ -205,7 +211,7 @@ int32_t AudioProcessInServer::Stop()
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::Release()
+int32_t AudioProcessInServer::Release(bool destoryAtOnce)
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited or already released");
     UnscheduleReportData(processConfig_.appInfo.appPid, clientTid_, clientBundleName_.c_str());
@@ -218,7 +224,7 @@ int32_t AudioProcessInServer::Release()
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
         PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_STOP);
     }
-    int32_t ret = releaseCallback_->OnProcessRelease(this);
+    int32_t ret = releaseCallback_->OnProcessRelease(this, destoryAtOnce);
     AUDIO_INFO_LOG("notify service release result: %{public}d", ret);
     return SUCCESS;
 }
@@ -309,6 +315,11 @@ uint32_t AudioProcessInServer::GetAudioSessionId()
 AudioStreamType AudioProcessInServer::GetAudioStreamType()
 {
     return processConfig_.streamType;
+}
+
+AudioProcessConfig AudioProcessInServer::GetAudioProcessConfig()
+{
+    return processConfig_;
 }
 
 inline uint32_t PcmFormatToBits(AudioSampleFormat format)

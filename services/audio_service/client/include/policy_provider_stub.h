@@ -35,6 +35,7 @@ private:
     int32_t HandleIsAbsVolumeSupported(MessageParcel &data, MessageParcel &reply);
     int32_t HandleOffloadGetRenderPosition(MessageParcel &data, MessageParcel &reply);
     int32_t HandleGetAndSaveClientType(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleGetMaxRendererInstances(MessageParcel &data, MessageParcel &reply);
 };
 
 class PolicyProviderWrapper : public PolicyProviderStub {
@@ -42,7 +43,7 @@ public:
     ~PolicyProviderWrapper();
     PolicyProviderWrapper(IPolicyProvider *policyWorker);
 
-    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo) override;
+    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo) override;
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) override;
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) override;
     int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
@@ -51,6 +52,7 @@ public:
     bool IsAbsVolumeSupported() override;
     int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp) override;
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName) override;
+    int32_t GetMaxRendererInstances() override;
 private:
     IPolicyProvider *policyWorker_;
 };

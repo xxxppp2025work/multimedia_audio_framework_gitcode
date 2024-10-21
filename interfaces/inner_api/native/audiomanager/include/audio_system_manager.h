@@ -163,6 +163,16 @@ struct DeviceChangeAction {
 };
 
 /**
+ * Describes the mic phone blocked device information.
+ *
+ * @since 13
+ */
+struct MicrophoneBlockedInfo {
+    DeviceBlockStatus blockStatus;
+    std::vector<sptr<AudioDeviceDescriptor>> devices;
+};
+
+/**
  * @brief AudioRendererFilter is used for select speficed AudioRenderer.
  */
 class AudioRendererFilter;
@@ -245,6 +255,12 @@ public:
     virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) = 0;
 };
 
+class AudioQueryClientTypeCallback {
+public:
+    virtual ~AudioQueryClientTypeCallback() = default;
+    virtual bool OnQueryClientType(const std::string &bundleName, uint32_t uid) = 0;
+};
+
 class AudioManagerAvailableDeviceChangeCallback {
 public:
     virtual ~AudioManagerAvailableDeviceChangeCallback() = default;
@@ -257,6 +273,19 @@ public:
      */
     virtual void OnAvailableDeviceChange(const AudioDeviceUsage usage,
         const DeviceChangeAction &deviceChangeAction) = 0;
+};
+
+class AudioManagerMicrophoneBlockedCallback {
+public:
+    virtual ~AudioManagerMicrophoneBlockedCallback() = default;
+    /**
+     * Called when micro phone is blocked.
+     *
+     * @param microphoneBlockedInfo Indicates the MisPhoneBlockedInfo information needed by client.
+     * For details, refer MisPhoneBlockedInfo struct
+     * @since 13
+     */
+    virtual void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) = 0;
 };
 
 class VolumeKeyEventCallback {
@@ -400,6 +429,13 @@ public:
         RouterType routerType, StreamUsage streamUsage, int32_t clientUid, AudioPipeType audioPipeType) = 0;
     virtual int32_t OnAudioInputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
         RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType) = 0;
+};
+
+class AudioDeviceAnahs {
+public:
+    virtual ~AudioDeviceAnahs() = default;
+
+    virtual int32_t OnExtPnpDeviceStatusChanged(std::string anahsStatus, std::string anahsShowType) = 0;
 };
 
 /**
@@ -616,6 +652,24 @@ public:
      * @since 12
      */
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
+
+    /**
+     * @brief Get the audio output device according to the filter conditions.
+     *
+     * @param AudioRendererFilter filter conditions.
+     * @return Returns the device list is obtained.
+     * @since 12
+     */
+    std::vector<sptr<AudioDeviceDescriptor>> GetOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
+
+    /**
+     * @brief Get the audio input device according to the filter conditions.
+     *
+     * @param AudioCapturerFilter filter conditions.
+     * @return Returns the device list is obtained.
+     * @since 12
+     */
+    std::vector<sptr<AudioDeviceDescriptor>> GetInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter);
 
     /**
      * @brief Get audio parameter.
@@ -1243,9 +1297,14 @@ public:
      */
     int32_t DisableSafeMediaVolume();
 
-    static void AudioServerDied(pid_t pid);
+    static void AudioServerDied(pid_t pid, pid_t uid);
+
+    int32_t SetMicrophoneBlockedCallback(const std::shared_ptr<AudioManagerMicrophoneBlockedCallback>& callback);
+    int32_t UnsetMicrophoneBlockedCallback(std::shared_ptr<AudioManagerMicrophoneBlockedCallback> callback = nullptr);
 
     std::string GetSelfBundleName(int32_t uid);
+
+    int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
 
     /**
      * @brief inject interruption event.
@@ -1321,6 +1380,7 @@ private:
     std::shared_ptr<AudioDistributedRoutingRoleCallback> audioDistributedRoutingRoleCallback_ = nullptr;
     std::vector<std::shared_ptr<AudioGroupManager>> groupManagerMap_;
     std::mutex ringerModeCallbackMutex_;
+    std::mutex groupManagerMapMutex_;
 
     std::shared_ptr<AudioCapturerSourceCallback> audioCapturerSourceCallback_ = nullptr;
     std::shared_ptr<WakeUpSourceCloseCallback> audioWakeUpSourceCloseCallback_ = nullptr;

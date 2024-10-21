@@ -51,7 +51,7 @@ public:
 
     sptr<AudioProcessInServer> GetAudioProcess(const AudioProcessConfig &config);
     // override for ProcessReleaseCallback, do release process work.
-    int32_t OnProcessRelease(IAudioProcessStream *process) override;
+    int32_t OnProcessRelease(IAudioProcessStream *process, bool destoryAtOnce = false) override;
 
     DeviceInfo GetDeviceInfoForProcess(const AudioProcessConfig &config);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(DeviceInfo &deviceInfo,
@@ -71,7 +71,15 @@ public:
     int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack);
     int32_t UnsetOffloadMode(uint32_t sessionId);
     std::shared_ptr<RendererInServer> GetRendererBySessionID(const uint32_t &session);
+    std::shared_ptr<CapturerInServer> GetCapturerBySessionID(const uint32_t &session);
     void SetNonInterruptMute(const uint32_t SessionId, const bool muteFlag);
+    void UpdateMuteControlSet(uint32_t sessionId, bool muteFlag);
+    int32_t UpdateSourceType(SourceType sourceType);
+    void SetIncMaxRendererStreamCnt(AudioMode audioMode);
+    int32_t GetCurrentRendererStreamCnt();
+    void CleanUpStream(int32_t appUid);
+    bool IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t appUid, int32_t maxStreamCntPerUid);
+    void GetCreatedAudioStreamMostUid(int32_t &mostAppUid, int32_t &mostAppNum);
 
 private:
     AudioService();
@@ -89,6 +97,11 @@ private:
     int32_t OnInitInnerCapList(); // for first InnerCap filter take effect.
     int32_t OnUpdateInnerCapList(); // for some InnerCap filter has already take effect.
     bool IsEndpointTypeVoip(const AudioProcessConfig &config, DeviceInfo &deviceInfo);
+    void RemoveIdFromMuteControlSet(uint32_t sessionId);
+    void CheckRenderSessionMuteState(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
+    void CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
+    void CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProcessInServer> process);
+    int32_t GetReleaseDelayTime(DeviceType deviceType, bool destoryAtOnce);
 
 private:
     std::mutex processListMutex_;
@@ -112,6 +125,12 @@ private:
     std::map<uint32_t, std::weak_ptr<CapturerInServer>> allCapturerMap_ = {};
 
     std::vector<std::weak_ptr<RendererInServer>> filteredDualToneRendererMap_ = {};
+
+    std::mutex mutedSessionsMutex_;
+    std::set<uint32_t> mutedSessions_ = {};
+    int32_t currentRendererStreamCnt_ = 0;
+    std::mutex streamLifeCycleMutex_ {};
+    std::map<int32_t, std::int32_t> appUseNumMap;
 };
 } // namespace AudioStandard
 } // namespace OHOS

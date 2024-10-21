@@ -142,6 +142,7 @@ public:
     virtual int32_t SetVolume(float volume) = 0;
     virtual float GetVolume() = 0;
     virtual int32_t SetDuckVolume(float volume) = 0;
+    virtual int32_t SetMute(bool mute) = 0;
     virtual int32_t SetRenderRate(AudioRendererRate renderRate) = 0;
     virtual AudioRendererRate GetRenderRate() = 0;
     virtual int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) = 0;
@@ -189,7 +190,7 @@ public:
         AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN) = 0;
     virtual bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
     virtual bool StopAudioStream() = 0;
-    virtual bool ReleaseAudioStream(bool releaseRunner = true) = 0;
+    virtual bool ReleaseAudioStream(bool releaseRunner = true, bool destroyAtOnce = false) = 0;
     virtual bool FlushAudioStream() = 0;
 
     // Playback related APIs

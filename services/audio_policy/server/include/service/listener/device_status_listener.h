@@ -21,6 +21,12 @@
 #include "audio_adapter_info.h"
 #include "idevice_status_observer.h"
 #include "audio_pnp_server.h"
+#include "ipc_types.h"
+#include "iremote_broker.h"
+#include "iremote_proxy.h"
+#include "iremote_stub.h"
+#include "i_standard_audio_routing_manager_listener.h"
+#include "i_standard_audio_anahs_manager_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -35,12 +41,19 @@ public:
 
     IDeviceStatusObserver &deviceObserver_;
     void OnPnpDeviceStatusChanged(const std::string &info);
+    void OnMicrophoneBlocked(const std::string &info);
+
+    int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object);
+    int32_t UnsetAudioDeviceAnahsCallback();
+    void UpdateAnahsPlatformType(std::string anahsShowType);
 
 private:
     AudioPnpServer *audioPnpServer_;
     std::shared_ptr<AudioPnpStatusCallback> pnpDeviceCB_ = nullptr;
     struct HDIServiceManager *hdiServiceManager_;
     struct ServiceStatusListener *listener_;
+    sptr<IStandardAudioAnahsManagerListener> audioDeviceAnahsCb_;
+    std::string anahsShowType_ = "Dialog";
 };
 
 class AudioPnpStatusCallback : public AudioPnpDeviceChangeCallback {
@@ -50,6 +63,8 @@ public:
     virtual ~AudioPnpStatusCallback();
 
     void OnPnpDeviceStatusChanged(const std::string &info);
+
+    void OnMicrophoneBlocked(const std::string &info);
 
     void SetDeviceStatusListener(DeviceStatusListener *listener);
 private:

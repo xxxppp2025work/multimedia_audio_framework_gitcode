@@ -65,6 +65,9 @@ constexpr int32_t EMPTY_UID = 0;
 constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
 constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
 
+constexpr uint32_t MIN_SESSIONID = 100000;
+constexpr uint32_t MAX_SESSIONID = UINT32_MAX - MIN_SESSIONID;
+
 const float MIN_FLOAT_VOLUME = 0.0f;
 const float MAX_FLOAT_VOLUME = 1.0f;
 
@@ -80,6 +83,7 @@ const std::string RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_C
 const std::string MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
 const std::string CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
 const std::string DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
+const std::string CAPTURE_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
 
 const std::string LOCAL_NETWORK_ID = "LocalDevice";
 const std::string REMOTE_NETWORK_ID = "RemoteDevice";
@@ -296,13 +300,17 @@ enum CallbackChange : int32_t {
     CALLBACK_MAX,
 };
 
-constexpr std::array<CallbackChange, CALLBACK_MAX> CALLBACK_ENUMS = {
+constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_UNKNOWN,
     CALLBACK_FOCUS_INFO_CHANGE,
     CALLBACK_RENDERER_STATE_CHANGE,
     CALLBACK_CAPTURER_STATE_CHANGE,
     CALLBACK_MICMUTE_STATE_CHANGE,
+    CALLBACK_AUDIO_SESSION,
 };
+
+static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
+    "check CALLBACK_ENUMS");
 
 struct VolumeEvent {
     AudioVolumeType volumeType;
@@ -739,6 +747,8 @@ struct AudioProcessConfig {
 
     bool isWakeupCapturer = false;
 
+    uint32_t originalSessionId = 0;
+
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
 
     InnerCapMode innerCapMode {InnerCapMode::INVALID_CAP_MODE};
@@ -752,7 +762,9 @@ struct Volume {
 
 enum StreamSetState {
     STREAM_PAUSE,
-    STREAM_RESUME
+    STREAM_RESUME,
+    STREAM_MUTE,
+    STREAM_UNMUTE
 };
 
 struct StreamSetStateEventInternal {
@@ -1038,6 +1050,7 @@ class AudioPnpDeviceChangeCallback {
 public:
     virtual ~AudioPnpDeviceChangeCallback() = default;
     virtual void OnPnpDeviceStatusChanged(const std::string &info) = 0;
+    virtual void OnMicrophoneBlocked(const std::string &info) = 0;
 };
 
 struct SourceInfo {
@@ -1065,10 +1078,10 @@ enum DeviceGroup {
 static const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
     {DEVICE_TYPE_EARPIECE, DEVICE_GROUP_BUILT_IN},
     {DEVICE_TYPE_SPEAKER, DEVICE_GROUP_BUILT_IN},
+    {DEVICE_TYPE_DP, DEVICE_GROUP_BUILT_IN},
     {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED},
     {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED},
     {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED},
-    {DEVICE_TYPE_DP, DEVICE_GROUP_WIRED},
     {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
     {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS},
     {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
@@ -1129,6 +1142,12 @@ enum RouterType {
      * @since 12
      */
     ROUTER_TYPE_USER_SELECT,
+
+    /**
+     * App select router.
+     * @since 12
+     */
+    ROUTER_TYPE_APP_SELECT,
 };
 
 enum RenderMode {
@@ -1171,6 +1190,13 @@ enum PolicyType {
     EDM_POLICY_TYPE = 0,
     PRIVACY_POLCIY_TYPE = 1,
     TEMPORARY_POLCIY_TYPE = 2,
+};
+
+static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
+    SOURCE_TYPE_WAKEUP,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_REMOTE_CAST
 };
 } // namespace AudioStandard
 } // namespace OHOS

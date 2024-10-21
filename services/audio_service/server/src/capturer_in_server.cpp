@@ -45,7 +45,7 @@ CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_p
 
 CapturerInServer::~CapturerInServer()
 {
-    if (status_ != I_STATUS_RELEASED && status_ != I_STATUS_IDLE) {
+    if (status_ != I_STATUS_RELEASED) {
         Release();
     }
     DumpFileUtil::CloseDumpFile(&dumpS2C_);
@@ -313,6 +313,8 @@ int32_t CapturerInServer::Start()
             "NotifyPrivacy failed!");
     }
 
+    AudioService::GetInstance()->UpdateSourceType(processConfig_.capturerInfo.sourceType);
+
     status_ = I_STATUS_STARTING;
     int ret = stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
@@ -533,6 +535,14 @@ void CapturerInServer::SetNonInterruptMute(const bool muteFlag)
 {
     AUDIO_INFO_LOG("muteFlag: %{public}d", muteFlag);
     muteFlag_ = muteFlag;
+    AudioService::GetInstance()->UpdateMuteControlSet(streamIndex_, muteFlag);
+}
+
+void CapturerInServer::RestoreSession()
+{
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
+    stateListener->OnOperationHandled(RESTORE_SESSION, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

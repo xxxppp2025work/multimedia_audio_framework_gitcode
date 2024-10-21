@@ -25,7 +25,7 @@ public:
     explicit PolicyProviderProxy(const sptr<IRemoteObject>& impl);
     virtual ~PolicyProviderProxy();
 
-    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo) override;
+    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo) override;
 
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) override;
 
@@ -41,6 +41,8 @@ public:
     int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp) override;
 
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName) override;
+
+    int32_t GetMaxRendererInstances() override;
 
 private:
     static inline BrokerDelegator<PolicyProviderProxy> delegator_;

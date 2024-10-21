@@ -41,6 +41,8 @@ private:
     void IsDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
     void GetActiveOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void GetActiveInputDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void GetOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void GetInputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetRingerModeLegacyInternal(MessageParcel &data, MessageParcel &reply);
     void SetRingerModeInternal(MessageParcel &data, MessageParcel &reply);
     void GetRingerModeInternal(MessageParcel &data, MessageParcel &reply);
@@ -154,6 +156,8 @@ private:
     void SetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void TriggerFetchDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAudioDeviceAnahsCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void UnsetAudioDeviceAnahsCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void MoveToNewTypeInternal(MessageParcel &data, MessageParcel &reply);
     void GetDevicesInnerInternal(MessageParcel &data, MessageParcel &reply);
     void SetConcurrencyCallbackInternal(MessageParcel &data, MessageParcel &reply);
@@ -162,13 +166,22 @@ private:
     void SetRingerStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
     void GetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
+    void GetSupportedAudioEnhancePropertyInternal(MessageParcel &data, MessageParcel &reply);
+    void GetSupportedAudioEffectPropertyInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAudioEffectPropertyInternal(MessageParcel &data, MessageParcel &reply);
+    void GetAudioEffectPropertyInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAudioEnhancePropertyInternal(MessageParcel &data, MessageParcel &reply);
+    void GetAudioEnhancePropertyInternal(MessageParcel &data, MessageParcel &reply);
     void InjectInterruptionInternal(MessageParcel &data, MessageParcel &reply);
     void ActivateAudioSessionInternal(MessageParcel &data, MessageParcel &reply);
     void DeactivateAudioSessionInternal(MessageParcel &data, MessageParcel &reply);
     void IsAudioSessionActivatedInternal(MessageParcel &data, MessageParcel &reply);
     void LoadSplitModuleInternal(MessageParcel &data, MessageParcel &reply);
+    void IsAllowedPlaybackInternal(MessageParcel &data, MessageParcel &reply);
     void SetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void SetQueryClientTypeCallbackInternal(MessageParcel &data, MessageParcel &reply);
 
+    void OnMiddleTenRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleNinRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleEigRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleSevRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

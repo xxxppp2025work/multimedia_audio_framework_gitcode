@@ -124,13 +124,16 @@ public:
 
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID = 0) override;
 
-    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0) override;
+    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0,
+        const bool isUpdatedAudioStrategy = false) override;
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0) override;
 
     int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAudioManagerInterruptCallback(const int32_t clientId) override;
+
+    int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
@@ -181,6 +184,10 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) override;
+
+    std::vector<sptr<AudioDeviceDescriptor>> GetOutputDevice(sptr<AudioRendererFilter> audioRendererFilter) override;
+
+    std::vector<sptr<AudioDeviceDescriptor>> GetInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter) override;
 
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable) override;
 
@@ -304,6 +311,10 @@ public:
 
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason) override;
 
+    int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetAudioDeviceAnahsCallback() override;
+
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) override;
 
     int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) override;
@@ -316,8 +327,22 @@ public:
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
 
+    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid) override;
+
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning) override;
+
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
+
+    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
+
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
+
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
+
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) override;
+
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
@@ -328,3 +353,4 @@ private:
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_POLICY_PROXY_H
+ 

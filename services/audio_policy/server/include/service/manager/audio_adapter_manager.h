@@ -26,6 +26,7 @@
 #include "iaudio_policy_interface.h"
 #include "types.h"
 #include "audio_policy_log.h"
+#include "audio_policy_server_handler.h"
 #include "audio_volume_config.h"
 #include "volume_data_maintainer.h"
 #include "audio_utils.h"
@@ -183,6 +184,8 @@ public:
     void HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN);
 
     void HandleRingerMode(AudioRingerMode ringerMode);
+
+    void SetAudioServerProxy(sptr<IStandardAudioService> gsp);
 private:
     friend class PolicyCallbackImpl;
 
@@ -207,6 +210,7 @@ private:
     AudioAdapterManager()
         : ringerMode_(RINGER_MODE_NORMAL),
           audioPolicyKvStore_(nullptr),
+          audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
           volumeDataMaintainer_(VolumeDataMaintainer::GetVolumeDataMaintainer())
     {
         InitVolumeMapIndex();
@@ -231,6 +235,8 @@ private:
     void SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);
     int32_t SetVolumeDbForVolumeTypeGroup(const std::vector<AudioStreamType> &volumeTypeGroup, float volumeDb);
+    void SetAudioVolume(AudioStreamType streamType, float volumeDb);
+    void SetOffloadVolume(AudioStreamType streamType, float volumeDb);
     bool GetStreamMuteInternal(AudioStreamType streamType);
     int32_t SetRingerModeInternal(AudioRingerMode ringerMode);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
@@ -245,6 +251,7 @@ private:
     void ConvertSafeTime(void);
     void UpdateSafeVolume();
     void CheckAndDealMuteStatus(const DeviceType &deviceType, const AudioStreamType &streamType);
+    void SetVolumeCallbackAfterClone();
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
     {
@@ -285,11 +292,12 @@ private:
     std::shared_ptr<AudioAdapterManagerHandler> handler_ = nullptr;
 
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;
+    std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     AudioStreamRemovedCallback *sessionCallback_ = nullptr;
     VolumeDataMaintainer &volumeDataMaintainer_;
     bool isVolumeUnadjustable_ = false;
     bool testModeOn_ {false};
-    float getSystemVolumeInDb_ = 0.0f;
+    std::atomic<float> getSystemVolumeInDb_  {0.0f};
     bool useNonlinearAlgo_ = false;
     bool isAbsVolumeScene_ = false;
     bool isAbsVolumeMute_ = false;
@@ -300,6 +308,7 @@ private:
     bool isLoaded_ = false;
     bool isAllCopyDone_ = false;
     bool isNeedConvertSafeTime_ = false;
+    sptr<IStandardAudioService> audioServerProxy_ = nullptr;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
@@ -322,7 +331,7 @@ public:
         bool isAbsVolumeScene = audioAdapterManager_->IsAbsVolumeScene();
         DeviceType activeDevice = audioAdapterManager_->GetActiveDevice();
         if (streamForVolumeMap == STREAM_MUSIC && activeDevice == DEVICE_TYPE_BLUETOOTH_A2DP && isAbsVolumeScene) {
-            int32_t vol = audioAdapterManager_->IsAbsVolumeMute() ? 0.0f : 1.0f;
+            float vol = audioAdapterManager_->IsAbsVolumeMute() ? 0.0f : 0.63957f; // 0.63957 = -4dB
             return {vol, volumeLevel};
         }
 
@@ -352,8 +361,30 @@ public:
         }
     }
 
+    void OnSetVolumeDbCb()
+    {
+        if (!isFirstBoot_) {
+            return;
+        }
+        isFirstBoot_ = false;
+        static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
+            STREAM_VOICE_CALL,
+            STREAM_RING,
+            STREAM_MUSIC,
+            STREAM_VOICE_ASSISTANT,
+            STREAM_ALARM,
+            STREAM_ACCESSIBILITY,
+            STREAM_ULTRASONIC,
+            STREAM_ALL
+        };
+        for (auto &volumeType : VOLUME_TYPE_LIST) {
+            audioAdapterManager_->SetVolumeDb(volumeType);
+        }
+    }
+
 private:
     AudioAdapterManager *audioAdapterManager_;
+    bool isFirstBoot_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -48,16 +48,19 @@ public:
     int32_t Pause(void) override;
     int32_t Resume(void) override;
     int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) override;
+    int32_t CaptureFrameWithEc(
+        FrameDesc *fdesc, uint64_t &replyBytes,
+        FrameDesc *fdescEc, uint64_t &replyBytesEc) override;
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
     int32_t SetMute(bool isMute) override;
     int32_t GetMute(bool &isMute) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice, const std::string deviceName = "") override;
 
     int32_t SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin);
 
-    int32_t SetInputRoute(DeviceType inputDevice) override;
+    int32_t SetInputRoute(DeviceType inputDevice, const std::string deviceName = "") override;
 
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     uint64_t GetTransactionId() override;
@@ -70,6 +73,7 @@ public:
         uint32_t &byteSizePerFrame) override;
     int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
     float GetMaxAmplitude() override;
+    int32_t GetCaptureId(uint32_t &captureId) const override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE],
         const size_t size) final;
@@ -90,7 +94,6 @@ private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
     static constexpr uint32_t INT_32_MAX = 0x7fffffff;
-    static constexpr uint32_t FAST_INPUT_STREAM_ID = 22; // 14 + 1 * 8
     int32_t routeHandle_ = -1;
 
     IAudioSourceAttr attr_ = {};
@@ -112,6 +115,7 @@ private:
 
     int bufferFd_ = INVALID_FD;
     uint32_t eachReadFrameSize_ = 0;
+    std::unique_ptr<ICapturerStateCallback> audioCapturerSourceCallback_ = nullptr;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
@@ -157,7 +161,11 @@ bool FastAudioCapturerSourceInner::IsInited(void)
 
 void FastAudioCapturerSourceInner::DeInit()
 {
-    started_ = false;
+    AUDIO_INFO_LOG("Deinit, flag %{public}d", attr_.audioStreamFlag);
+    if (started_) {
+        Stop();
+        started_ = false;
+    }
     capturerInited_ = false;
 
     if (audioAdapter_ != nullptr) {
@@ -170,6 +178,10 @@ void FastAudioCapturerSourceInner::DeInit()
     }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
+
+    if (audioCapturerSourceCallback_ != nullptr) {
+        audioCapturerSourceCallback_->OnCapturerState(false);
+    }
 }
 
 void FastAudioCapturerSourceInner::InitAttrsCapture(struct AudioSampleAttributes &attrs)
@@ -178,7 +190,7 @@ void FastAudioCapturerSourceInner::InitAttrsCapture(struct AudioSampleAttributes
     attrs.format = AUDIO_FORMAT_TYPE_PCM_16_BIT;
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.interleaved = true;
-    attrs.streamId = FAST_INPUT_STREAM_ID;
+    attrs.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_FAST));
     attrs.period = 0;
     attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
     attrs.isBigEndian = false;
@@ -275,6 +287,9 @@ static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceTy
             break;
         case SOURCE_TYPE_VOICE_CALL:
             hdiAudioInputType = AUDIO_INPUT_VOICE_CALL_TYPE;
+            break;
+        case SOURCE_TYPE_CAMCORDER:
+            hdiAudioInputType = AUDIO_INPUT_CAMCORDER_TYPE;
             break;
         default:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
@@ -416,6 +431,7 @@ int32_t FastAudioCapturerSourceInner::PrepareMmapBuffer()
 
 int32_t FastAudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 {
+    AUDIO_INFO_LOG("Init, flag %{public}d", attr.audioStreamFlag);
     CHECK_AND_RETURN_RET_LOG(InitAudioManager() == 0, ERR_INVALID_HANDLE, "Init audio manager Fail");
     attr_ = attr;
     int32_t ret;
@@ -460,13 +476,21 @@ int32_t FastAudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t request
     return ERR_DEVICE_NOT_SUPPORTED;
 }
 
+int32_t FastAudioCapturerSourceInner::CaptureFrameWithEc(
+    FrameDesc *fdesc, uint64_t &replyBytes,
+    FrameDesc *fdescEc, uint64_t &replyBytesEc)
+{
+    AUDIO_ERR_LOG("not supported!");
+    return ERR_DEVICE_NOT_SUPPORTED;
+}
+
 int32_t FastAudioCapturerSourceInner::CheckPositionTime()
 {
-    int32_t tryCount = 10;
+    int32_t tryCount = 50; // max try count
     uint64_t frames = 0;
     int64_t timeSec = 0;
     int64_t timeNanoSec = 0;
-    int64_t maxHandleCost = 10000000; // ns
+    int64_t maxHandleCost = 10000000; // 10ms
     int64_t waitTime = 2000000; // 2ms
     while (tryCount-- > 0) {
         ClockTime::RelativeSleep(waitTime); // us
@@ -506,13 +530,25 @@ int32_t FastAudioCapturerSourceInner::Start(void)
 #endif
 
     if (!started_) {
+        if (audioCapturerSourceCallback_ != nullptr) {
+            audioCapturerSourceCallback_->OnCapturerState(true);
+        }
+
         int32_t ret = audioCapture_->Start(audioCapture_);
         if (ret < 0) {
+            if (audioCapturerSourceCallback_ != nullptr) {
+                audioCapturerSourceCallback_->OnCapturerState(false);
+            }
             return ERR_NOT_STARTED;
         }
         int32_t err = CheckPositionTime();
-        CHECK_AND_RETURN_RET_LOG(err == SUCCESS, ERR_NOT_STARTED,
-            "CheckPositionTime failed!");
+        if (err != SUCCESS) {
+            if (audioCapturerSourceCallback_ != nullptr) {
+                audioCapturerSourceCallback_->OnCapturerState(false);
+            }
+            AUDIO_ERR_LOG("CheckPositionTime failed!");
+            return ERR_NOT_STARTED;
+        }
         started_ = true;
     }
 
@@ -572,7 +608,7 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
     return ret;
 }
 
-int32_t FastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice)
+int32_t FastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, const std::string deviceName)
 {
     AudioPortPin inputPortPin = PIN_IN_MIC;
     return SetInputRoute(inputDevice, inputPortPin);
@@ -598,7 +634,9 @@ int32_t FastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, Audi
     sink.role = AUDIO_PORT_SINK_ROLE;
     sink.type = AUDIO_PORT_MIX_TYPE;
     sink.ext.mix.moduleId = 0;
-    sink.ext.mix.streamId = FAST_INPUT_STREAM_ID;
+    sink.ext.mix.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE,
+        HDI_CAPTURE_OFFSET_FAST));
+    sink.ext.mix.source = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
     sink.ext.device.desc = const_cast<char*>("");
 
     AudioRoute route = {
@@ -615,7 +653,8 @@ int32_t FastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, Audi
     return (ret == SUCCESS) ? SUCCESS : ERR_OPERATION_FAILED;
 }
 
-int32_t FastAudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t FastAudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice,
+    const std::string deviceName)
 {
     return ERR_DEVICE_NOT_SUPPORTED;
 }
@@ -653,7 +692,8 @@ void FastAudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallb
 
 void FastAudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback)
 {
-    AUDIO_ERR_LOG("RegisterAudioCapturerSourceCallback FAILED");
+    AUDIO_INFO_LOG("Register AudioCapturerSource Callback");
+    audioCapturerSourceCallback_ = std::move(callback);
 }
 
 void FastAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallback *callback)
@@ -675,6 +715,9 @@ int32_t FastAudioCapturerSourceInner::Stop(void)
 
     if (started_ && audioCapture_ != nullptr) {
         int32_t ret = audioCapture_->Stop(audioCapture_);
+        if (audioCapturerSourceCallback_ != nullptr) {
+            audioCapturerSourceCallback_->OnCapturerState(false);
+        }
         CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "Stop capture Failed");
     }
     started_ = false;
@@ -686,6 +729,9 @@ int32_t FastAudioCapturerSourceInner::Pause(void)
 {
     if (started_ && audioCapture_ != nullptr) {
         int32_t ret = audioCapture_->Pause(audioCapture_);
+        if (audioCapturerSourceCallback_ != nullptr) {
+            audioCapturerSourceCallback_->OnCapturerState(false);
+        }
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "pause capture Failed");
     }
     paused_ = true;
@@ -697,6 +743,9 @@ int32_t FastAudioCapturerSourceInner::Resume(void)
 {
     if (paused_ && audioCapture_ != nullptr) {
         int32_t ret = audioCapture_->Resume(audioCapture_);
+        if (audioCapturerSourceCallback_ != nullptr) {
+            audioCapturerSourceCallback_->OnCapturerState(true);
+        }
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "resume capture Failed");
     }
     paused_ = false;
@@ -753,6 +802,12 @@ int32_t FastAudioCapturerSourceInner::UpdateAppsUid(const std::vector<int32_t> &
     runningLockManager_->UpdateAppsUidToPowerMgr();
 #endif
 
+    return SUCCESS;
+}
+
+int32_t FastAudioCapturerSourceInner::GetCaptureId(uint32_t &captureId) const
+{
+    captureId = GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_FAST);
     return SUCCESS;
 }
 } // namespace AudioStandard

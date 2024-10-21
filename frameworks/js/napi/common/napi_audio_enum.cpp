@@ -185,6 +185,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
 const std::map<std::string, int32_t> NapiAudioEnum::sourceTypeMap = {
     {"SOURCE_TYPE_INVALID", SOURCE_TYPE_INVALID},
     {"SOURCE_TYPE_MIC", SOURCE_TYPE_MIC},
+    {"SOURCE_TYPE_CAMCORDER", SOURCE_TYPE_CAMCORDER},
     {"SOURCE_TYPE_WAKEUP", SOURCE_TYPE_WAKEUP},
     {"SOURCE_TYPE_VOICE_RECOGNITION", SOURCE_TYPE_VOICE_RECOGNITION},
     {"SOURCE_TYPE_PLAYBACK_CAPTURE", SOURCE_TYPE_PLAYBACK_CAPTURE},
@@ -1217,7 +1218,6 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
     int32_t result = MEDIA;
     switch (volumeType) {
         case AudioStreamType::STREAM_VOICE_CALL:
-        case AudioStreamType::STREAM_VOICE_MESSAGE:
         case AudioStreamType::STREAM_VOICE_COMMUNICATION:
         case AudioStreamType::STREAM_VOICE_CALL_ASSISTANT:
             result = NapiAudioEnum::VOICE_CALL;
@@ -1235,6 +1235,8 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
         case AudioStreamType::STREAM_GAME:
         case AudioStreamType::STREAM_SPEECH:
         case AudioStreamType::STREAM_NAVIGATION:
+        case AudioStreamType::STREAM_CAMCORDER:
+        case AudioStreamType::STREAM_VOICE_MESSAGE:
             result = NapiAudioEnum::MEDIA;
             break;
         case AudioStreamType::STREAM_ALARM:
@@ -1320,6 +1322,7 @@ bool NapiAudioEnum::IsValidSourceType(int32_t intValue)
         case SourceType::SOURCE_TYPE_VOICE_MESSAGE:
         case SourceType::SOURCE_TYPE_REMOTE_CAST:
         case SourceType::SOURCE_TYPE_VOICE_TRANSCRIPTION:
+        case SourceType::SOURCE_TYPE_CAMCORDER:
             return true;
         default:
             return false;

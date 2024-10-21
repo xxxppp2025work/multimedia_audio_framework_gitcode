@@ -26,6 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 constexpr int MAX_PID_COUNT = 1000;
+const unsigned int ON_REMOTE_REQUEST_TIMEOUT_SEC = 20;
 const char *g_audioPolicyCodeStrs[] = {
     "GET_MAX_VOLUMELEVEL",
     "GET_MIN_VOLUMELEVEL",
@@ -52,6 +53,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "IS_MICROPHONE_MUTE",
     "SET_CALLBACK",
     "UNSET_CALLBACK",
+    "SET_QUERY_CLIENT_TYPE_CALLBACK",
     "ACTIVATE_INTERRUPT",
     "DEACTIVATE_INTERRUPT",
     "SET_INTERRUPT_CALLBACK",
@@ -158,12 +160,23 @@ const char *g_audioPolicyCodeStrs[] = {
     "ACTIVATE_AUDIO_CONCURRENCY",
     "SET_MICROPHONE_MUTE_PERSISTENT",
     "GET_MICROPHONE_MUTE_PERSISTENT",
+    "GET_SUPPORT_AUDIO_ENHANCE_PROPERTY",
+    "GET_SUPPORT_AUDIO_EFFECT_PROPERTY",
+    "GET_AUDIO_ENHANCE_PROPERTY",
+    "GET_AUDIO_EFFECT_PROPERTY",
+    "SET_AUDIO_ENHANCE_PROPERTY",
+    "SET_AUDIO_EFFECT_PROPERTY",
     "INJECT_INTERRUPTION",
     "ACTIVATE_AUDIO_SESSION",
     "DEACTIVATE_AUDIO_SESSION",
     "IS_AUDIO_SESSION_ACTIVATED",
     "LOAD_SPLIT_MODULE",
     "SET_DEFAULT_OUTPUT_DEVICE",
+    "GET_OUTPUT_DEVICE",
+    "GET_INPUT_DEVICE",
+    "SET_AUDIO_DEVICE_ANAHS_CALLBACK",
+    "UNSET_AUDIO_DEVICE_ANAHS_CALLBACK",
+    "IS_ALLOWED_PLAYBACK",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -592,9 +605,10 @@ void AudioPolicyManagerStub::UnsetInterruptCallbackInternal(MessageParcel &data,
 void AudioPolicyManagerStub::ActivateInterruptInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t zoneID = data.ReadInt32();
+    bool isUpdatedAudioStrategy = data.ReadBool();
     AudioInterrupt audioInterrupt = {};
     AudioInterrupt::Unmarshalling(data, audioInterrupt);
-    int32_t result = ActivateAudioInterrupt(audioInterrupt, zoneID);
+    int32_t result = ActivateAudioInterrupt(audioInterrupt, zoneID, isUpdatedAudioStrategy);
     reply.WriteInt32(result);
 }
 
@@ -1304,10 +1318,41 @@ void AudioPolicyManagerStub::SetDefaultOutputDeviceInternal(MessageParcel &data,
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SetQueryClientTypeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_LOG(object != nullptr, "SetQueryClientTypeCallback is null");
+    int32_t result = SetQueryClientTypeCallback(object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_DEVICE_ANAHS_CALLBACK):
+            SetAudioDeviceAnahsCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_AUDIO_DEVICE_ANAHS_CALLBACK):
+            UnsetAudioDeviceAnahsCallbackInternal(data, reply);
+            break;
+        default:
+            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
+            IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            break;
+    }
+}
+
 void AudioPolicyManagerStub::OnMiddleNinRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_OUTPUT_DEVICE):
+            GetOutputDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_INPUT_DEVICE):
+            GetInputDeviceInternal(data, reply);
+            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_SPATIALIZATION_ENABLED_FOR_DEVICE):
             IsSpatializationEnabledForDeviceInternal(data, reply);
             break;
@@ -1323,9 +1368,29 @@ void AudioPolicyManagerStub::OnMiddleNinRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEFAULT_OUTPUT_DEVICE):
             SetDefaultOutputDeviceInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_CLIENT_TYPE_CALLBACK):
+            SetQueryClientTypeCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SUPPORT_AUDIO_ENHANCE_PROPERTY):
+            GetSupportedAudioEnhancePropertyInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SUPPORT_AUDIO_EFFECT_PROPERTY):
+            GetSupportedAudioEffectPropertyInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_ENHANCE_PROPERTY):
+            GetAudioEnhancePropertyInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_EFFECT_PROPERTY):
+            GetAudioEffectPropertyInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_ENHANCE_PROPERTY):
+            SetAudioEnhancePropertyInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_EFFECT_PROPERTY):
+            SetAudioEffectPropertyInternal(data, reply);
+            break;
         default:
-            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
-            IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            OnMiddleTenRemoteRequest(code, data, reply, option);
             break;
     }
 }
@@ -1777,6 +1842,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 {
     CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(), -1, "ReadInterfaceToken failed");
     Trace trace(code >= codeNums ? "invalid audio policy code" : g_audioPolicyCodeStrs[code]);
+    AudioXCollie audioXCollie("AudioPolicy::ProcessIPC", ON_REMOTE_REQUEST_TIMEOUT_SEC);
     if (code <= static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX)) {
         switch (code) {
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_VOLUMELEVEL):
@@ -1817,6 +1883,9 @@ int AudioPolicyManagerStub::OnRemoteRequest(
                 break;
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::LOAD_SPLIT_MODULE):
                 LoadSplitModuleInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ALLOWED_PLAYBACK):
+                IsAllowedPlaybackInternal(data, reply);
                 break;
             default:
                 OnMiddlesRemoteRequest(code, data, reply, option);
@@ -1925,6 +1994,19 @@ void AudioPolicyManagerStub::TriggerFetchDeviceInternal(MessageParcel &data, Mes
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SetAudioDeviceAnahsCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    int32_t result = SetAudioDeviceAnahsCallback(object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnsetAudioDeviceAnahsCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = UnsetAudioDeviceAnahsCallback();
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::MoveToNewTypeInternal(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t sessionId = data.ReadUint32();
@@ -1976,6 +2058,88 @@ void AudioPolicyManagerStub::GetMicrophoneMutePersistentInternal(MessageParcel &
     reply.WriteBool(result);
 }
 
+void AudioPolicyManagerStub::GetSupportedAudioEnhancePropertyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioEnhancePropertyArray propertyArray = {};
+    int32_t result = GetSupportedAudioEnhanceProperty(propertyArray);
+    int32_t size = propertyArray.property.size();
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        propertyArray.property[i].Marshalling(reply);
+    }
+    reply.WriteInt32(result);
+    return;
+}
+
+void AudioPolicyManagerStub::GetSupportedAudioEffectPropertyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioEffectPropertyArray propertyArray = {};
+    int32_t result = GetSupportedAudioEffectProperty(propertyArray);
+    int32_t size = propertyArray.property.size();
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        propertyArray.property[i].Marshalling(reply);
+    }
+    reply.WriteInt32(result);
+    return;
+}
+
+void AudioPolicyManagerStub::SetAudioEffectPropertyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        "set audio effect property size upper limit.");
+    AudioEffectPropertyArray propertyArray = {};
+    for (int i = 0; i < size; i++) {
+        AudioEffectProperty prop = {};
+        prop.Unmarshalling(data);
+        propertyArray.property.push_back(prop);
+    }
+    int32_t result = SetAudioEffectProperty(propertyArray);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetAudioEffectPropertyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioEffectPropertyArray propertyArray = {};
+    int32_t result = GetAudioEffectProperty(propertyArray);
+    int32_t size = propertyArray.property.size();
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        propertyArray.property[i].Marshalling(reply);
+    }
+    reply.WriteInt32(result);
+    return;
+}
+
+void AudioPolicyManagerStub::SetAudioEnhancePropertyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        "set audio enhance property size upper limit.");
+    AudioEnhancePropertyArray propertyArray = {};
+    for (int i = 0; i < size; i++) {
+        AudioEnhanceProperty prop = {};
+        prop.Unmarshalling(data);
+        propertyArray.property.push_back(prop);
+    }
+    int32_t result = SetAudioEnhanceProperty(propertyArray);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetAudioEnhancePropertyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioEnhancePropertyArray propertyArray = {};
+    int32_t result = GetAudioEnhanceProperty(propertyArray);
+    int32_t size = propertyArray.property.size();
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        propertyArray.property[i].Marshalling(reply);
+    }
+    reply.WriteInt32(result);
+    return;
+}
+
 void AudioPolicyManagerStub::InjectInterruptionInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::string networkId = data.ReadString();
@@ -1994,6 +2158,38 @@ void AudioPolicyManagerStub::LoadSplitModuleInternal(MessageParcel &data, Messag
     std::string netWorkId = data.ReadString();
     int32_t result = LoadSplitModule(splitArgs, netWorkId);
     reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::IsAllowedPlaybackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t uid = data.ReadInt32();
+    int32_t pid = data.ReadInt32();
+    bool result = IsAllowedPlayback(uid, pid);
+    reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::GetOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<AudioRendererFilter> audioRendererFilter = AudioRendererFilter::Unmarshalling(data);
+    CHECK_AND_RETURN_LOG(audioRendererFilter != nullptr, "AudioRendererFilter unmarshall fail.");
+    std::vector<sptr<AudioDeviceDescriptor>> devices = GetOutputDevice(audioRendererFilter);
+    int32_t size = static_cast<int32_t>(devices.size());
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        devices[i]->Marshalling(reply);
+    }
+}
+
+void AudioPolicyManagerStub::GetInputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<AudioCapturerFilter> audioCapturerFilter = AudioCapturerFilter::Unmarshalling(data);
+    CHECK_AND_RETURN_LOG(audioCapturerFilter != nullptr, "AudioCapturerFilter unmarshall fail.");
+    std::vector<sptr<AudioDeviceDescriptor>> devices = GetInputDevice(audioCapturerFilter);
+    int32_t size = static_cast<int32_t>(devices.size());
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        devices[i]->Marshalling(reply);
+    }
 }
 
 } // namespace audio_policy

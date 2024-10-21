@@ -35,6 +35,7 @@ private:
     void HandleAudioFocusRequested(MessageParcel &data, MessageParcel &reply);
     void HandleAudioFocusAbandoned(MessageParcel &data, MessageParcel &reply);
     void HandleDeviceChange(MessageParcel &data, MessageParcel &reply);
+    void HandleMicrophoneBlocked(MessageParcel &data, MessageParcel &reply);
     void HandleRingerModeUpdated(MessageParcel &data, MessageParcel &reply);
     void HandleMicStateChange(MessageParcel &data, MessageParcel &reply);
     void HandlePreferredOutputDeviceUpdated(MessageParcel &data, MessageParcel &reply);
@@ -52,6 +53,7 @@ private:
     void HandleAudioSessionCallback(MessageParcel &data, MessageParcel &reply);
 
     void OnMaxRemoteRequest(uint32_t updateCode, MessageParcel &data, MessageParcel &reply);
+    void OnFirMaxRemoteRequest(uint32_t updateCode, MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

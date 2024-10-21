@@ -60,6 +60,35 @@ class AudioPolicyServerHandler;
 class AudioSessionService;
 class BluetoothEventSubscriber;
 
+// for phone
+const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
+    STREAM_MUSIC,
+    STREAM_VOICE_CALL,
+    STREAM_RING,
+    STREAM_VOICE_ASSISTANT,
+    STREAM_ALARM,
+    STREAM_ACCESSIBILITY,
+    STREAM_ULTRASONIC
+};
+
+// for PC
+const std::vector<AudioStreamType> GET_PC_STREAM_RING_VOLUME_TYPES {
+    STREAM_RING,
+    STREAM_VOICE_RING,
+    STREAM_SYSTEM,
+    STREAM_SYSTEM_ENFORCED,
+    STREAM_ALARM,
+    STREAM_NOTIFICATION
+};
+
+const std::vector<AudioStreamType> GET_PC_STREAM_ALL_VOLUME_TYPES {
+    STREAM_MUSIC,
+    STREAM_VOICE_CALL,
+    STREAM_VOICE_ASSISTANT,
+    STREAM_ACCESSIBILITY,
+    STREAM_ULTRASONIC
+};
+
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyManagerStub,
                           public AudioStreamRemovedCallback {
@@ -71,16 +100,6 @@ public:
     enum DeathRecipientId {
         TRACKER_CLIENT = 0,
         LISTENER_CLIENT
-    };
-
-    const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
-        STREAM_MUSIC,
-        STREAM_VOICE_CALL,
-        STREAM_RING,
-        STREAM_VOICE_ASSISTANT,
-        STREAM_ALARM,
-        STREAM_ACCESSIBILITY,
-        STREAM_ULTRASONIC
     };
 
     explicit AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate = true);
@@ -194,13 +213,16 @@ public:
 
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneId = 0) override;
 
-    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;
+    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneId = 0,
+        const bool isUpdatedAudioStrategy = false) override;
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;
 
     int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAudioManagerInterruptCallback(const int32_t clientId) override;
+
+    int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
@@ -249,16 +271,25 @@ public:
 
     void RegisterClientDeathRecipient(const sptr<IRemoteObject> &object, DeathRecipientId id);
 
-    void RegisteredTrackerClientDied(int uid);
+    void RegisteredTrackerClientDied(int pid, int uid);
 
-    void RegisteredStreamListenerClientDied(int pid);
+    void RegisteredStreamListenerClientDied(int pid, int uid);
 
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) override;
+
+    int32_t ResumeStreamState();
 
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
         StreamUsage streamUsage) override;
 
     int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) override;
+
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
+    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) override;
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
@@ -267,6 +298,10 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) override;
+
+    std::vector<sptr<AudioDeviceDescriptor>> GetOutputDevice(sptr<AudioRendererFilter> audioRendererFilter) override;
+
+    std::vector<sptr<AudioDeviceDescriptor>> GetInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter) override;
 
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable) override;
 
@@ -291,7 +326,7 @@ public:
         uint32_t appTokenId) override;
 
     int32_t SetCaptureSilentState(bool state) override;
-    
+
     int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc) override;
 
     std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) override;
@@ -389,6 +424,10 @@ public:
     int32_t TriggerFetchDevice(
         AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN) override;
 
+    int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetAudioDeviceAnahsCallback() override;
+
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) override;
 
     int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) override;
@@ -400,6 +439,8 @@ public:
     int32_t InjectInterruption(const std::string networkId, InterruptEvent &event) override;
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
+
+    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid) override;
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning) override;
@@ -455,7 +496,7 @@ public:
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
-
+    void OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string& deviceId);
     void RegisterParamCallback();
 
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -492,7 +533,7 @@ private:
     // offload session
     void OffloadStreamCheck(int64_t activateSessionId, int64_t deactivateSessionId);
     void CheckSubscribePowerStateChange();
-
+    void NotifyProcessStatus(bool isStart);
     void CheckStreamMode(const int64_t activateSessionId);
     bool CheckAudioSessionStrategy(const AudioSessionStrategy &sessionStrategy);
 
@@ -542,7 +583,10 @@ private:
     void UnRegisterPowerStateListener();
     void RegisterSyncHibernateListener();
     void UnRegisterSyncHibernateListener();
+    void AddRemoteDevstatusCallback();
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
+    void SubscribeSafeVolumeEvent();
+    void SubscribeCommonEventExecute();
 
     void InitPolicyDumpMap();
     void PolicyDataDump(std::string &dumpString);
@@ -576,7 +620,6 @@ private:
 
     AudioSpatializationService& audioSpatializationService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
-    bool isAvSessionSetVoipStart = false;
     bool volumeApplyToAll_ = false;
 
     bool isHighResolutionExist_ = false;

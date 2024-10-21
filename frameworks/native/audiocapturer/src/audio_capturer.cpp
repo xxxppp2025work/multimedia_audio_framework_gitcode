@@ -37,6 +37,7 @@ static constexpr int32_t AUDIO_SOURCE_TYPE_INVALID_5 = 5;
 std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
     {AudioStreamType::STREAM_MEDIA, SourceType::SOURCE_TYPE_MIC},
+    {AudioStreamType::STREAM_CAMCORDER, SourceType::SOURCE_TYPE_CAMCORDER},
     {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_COMMUNICATION},
     {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_ULTRASONIC},
     {AudioStreamType::STREAM_WAKEUP, SourceType::SOURCE_TYPE_WAKEUP},
@@ -514,9 +515,15 @@ void AudioCapturerPrivate::UnsetCapturerPeriodPositionCallback()
 
 bool AudioCapturerPrivate::Start() const
 {
+    std::lock_guard lock(switchStreamMutex_);
     Trace trace("AudioCapturer::Start");
     AUDIO_INFO_LOG("StreamClientState for Capturer::Start. id %{public}u, sourceType: %{public}d",
         sessionID_, audioInterrupt_.audioFocusType.sourceType);
+
+    CapturerState state = GetStatus();
+    CHECK_AND_RETURN_RET_LOG((state == CAPTURER_PREPARED) || (state == CAPTURER_STOPPED) || (state == CAPTURER_PAUSED),
+        false, "Start failed. Illegal state %{public}u.", state);
+
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
     CHECK_AND_RETURN_RET(audioInterrupt_.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
@@ -563,6 +570,7 @@ bool AudioCapturerPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
 
 bool AudioCapturerPrivate::Pause() const
 {
+    std::lock_guard lock(switchStreamMutex_);
     Trace trace("AudioCapturer::Pause");
     AUDIO_INFO_LOG("StreamClientState for Capturer::Pause. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
@@ -580,6 +588,7 @@ bool AudioCapturerPrivate::Pause() const
 
 bool AudioCapturerPrivate::Stop() const
 {
+    std::lock_guard lock(switchStreamMutex_);
     Trace trace("AudioCapturer::Stop");
     AUDIO_INFO_LOG("StreamClientState for Capturer::Stop. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
@@ -605,6 +614,7 @@ bool AudioCapturerPrivate::Flush() const
 bool AudioCapturerPrivate::Release()
 {
     AUDIO_INFO_LOG("StreamClientState for Capturer::Release. id %{public}u", sessionID_);
+    std::lock_guard<std::mutex> lockCapture(captureMutex_);
 
     abortRestore_ = true;
     std::lock_guard<std::mutex> lock(lock_);
@@ -793,6 +803,8 @@ AudioStreamType AudioCapturer::FindStreamTypeBySourceType(SourceType sourceType)
             return STREAM_WAKEUP;
         case SOURCE_TYPE_VOICE_CALL:
             return STREAM_SOURCE_VOICE_CALL;
+        case SOURCE_TYPE_CAMCORDER:
+            return STREAM_CAMCORDER;
         default:
             return STREAM_MUSIC;
     }
@@ -1114,9 +1126,10 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     bool switchResult = false;
     if (audioStream_) {
         Trace trace("SwitchToTargetStream");
+        std::lock_guard<std::mutex> lockCapture(captureMutex_);
         isSwitching_ = true;
         CapturerState previousState = GetStatus();
-        AUDIO_INFO_LOG("Previous stream state: %{public}d", previousState);
+        AUDIO_INFO_LOG("Previous stream state: %{public}d, original sessionId: %{public}u", previousState, sessionID_);
         if (previousState == CAPTURER_RUNNING) {
             // stop old stream
             switchResult = audioStream_->StopAudioStream();
@@ -1126,6 +1139,12 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         // switch new stream
         IAudioStream::SwitchInfo info;
         audioStream_->GetSwitchInfo(info);
+        info.params.originalSessionId = sessionID_;
+
+        // release old stream and restart audio stream
+        switchResult = audioStream_->ReleaseAudioStream();
+        CHECK_AND_RETURN_RET_LOG(switchResult, false, "release old stream failed.");
+
         if (targetClass == IAudioStream::VOIP_STREAM) {
             info.capturerInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
         }
@@ -1136,10 +1155,6 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
 
         // set new stream info
         SetSwitchInfo(info, newAudioStream);
-
-        // release old stream and restart audio stream
-        switchResult = audioStream_->ReleaseAudioStream();
-        CHECK_AND_RETURN_RET_LOG(switchResult, false, "release old stream failed.");
 
         if (previousState == CAPTURER_RUNNING) {
             // restart audio stream

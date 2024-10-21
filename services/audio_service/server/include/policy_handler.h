@@ -37,7 +37,7 @@ public:
     // would be called only once
     bool ConfigPolicyProvider(const sptr<IPolicyProviderIpc> policyProvider);
 
-    bool GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo);
+    bool GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo);
 
     bool InitVolumeMap();
 
@@ -65,6 +65,7 @@ public:
 
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName);
 
+    int32_t GetMaxRendererInstances();
 private:
     PolicyHandler();
     sptr<IPolicyProviderIpc> iPolicyProvider_ = nullptr;
@@ -72,6 +73,7 @@ private:
 private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
+    volatile bool *sharedAbsVolumeScene_ = nullptr;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     bool isHighResolutionExist_ = false;
 };

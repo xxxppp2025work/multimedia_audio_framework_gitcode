@@ -62,7 +62,7 @@ namespace {
 }
 class IPolicyProvider {
 public:
-    virtual int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo) = 0;
+    virtual int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo) = 0;
 
     virtual int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) = 0;
 
@@ -78,6 +78,8 @@ public:
     virtual int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp) = 0;
 
     virtual int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName) = 0;
+
+    virtual int32_t GetMaxRendererInstances() = 0;
 
     virtual ~IPolicyProvider() = default;
 

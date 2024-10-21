@@ -95,22 +95,26 @@ public:
 
     int32_t GetStreamManagerType() const noexcept;
     int32_t SetSilentModeAndMixWithOthers(bool on);
-    int32_t SetClientVolume();
-    
-    void OnDataLinkConnectionUpdate(IOperation operation);
+    int32_t SetClientVolume(bool isStreamVolumeChange, bool isMediaServiceAndOffloadEnable);
+    int32_t SetMute(bool isMute);
 
+    void OnDataLinkConnectionUpdate(IOperation operation);
+    int32_t GetActualStreamManagerType() const noexcept;
+    
     bool Dump(std::string &dumpString);
     void SetNonInterruptMute(const bool muteFlag);
+    void RestoreSession();
 
 public:
     const AudioProcessConfig processConfig_;
 private:
     void OnStatusUpdateSub(IOperation operation);
     bool IsHighResolution() const noexcept;
-    void DoFadingOut(BufferDesc& bufferDesc);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     void ReportDataToResSched(bool isSilent);
     void OtherStreamEnqueue(const BufferDesc &bufferDesc);
+    void DoFadingOut(BufferDesc& bufferDesc);
+    int32_t SetStreamVolumeInfoForEnhanceChain();
     void StandByCheck();
     bool ShouldEnableStandBy();
 
@@ -123,7 +127,7 @@ private:
     IStatus status_ = I_STATUS_IDLE;
     bool offloadEnable_ = false;
     std::atomic<bool> standByEnable_ = false;
-    bool muteFlag_ = false;
+    std::atomic<bool> muteFlag_ = false;
 
     // for inner-cap
     std::mutex dupMutex_;
@@ -146,7 +150,7 @@ private:
     bool isBufferConfiged_  = false;
     std::atomic<bool> isInited_ = false;
     std::shared_ptr<OHAudioBuffer> audioServerBuffer_ = nullptr;
-    size_t needForceWrite_ = 0;
+    std::atomic<size_t> needForceWrite_ = 0;
     bool afterDrain = false;
     float lowPowerVolume_ = 1.0f;
     bool isNeedFade_ = false;
@@ -154,7 +158,7 @@ private:
     std::mutex updateIndexLock_;
     int64_t startedTime_ = 0;
     uint32_t underrunCount_ = 0;
-    uint32_t standByCounter_ = 0;
+    std::atomic<uint32_t> standByCounter_ = 0;
     int64_t lastWriteTime_ = 0;
     bool resetTime_ = false;
     uint64_t resetTimestamp_ = 0;
@@ -168,6 +172,7 @@ private:
     int32_t silentState_ = 1; // 0:silent 1:unsilent
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
     int32_t effectModeWhenDual_ = EFFECT_DEFAULT;
+    int32_t renderEmptyCountForInnerCap_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
