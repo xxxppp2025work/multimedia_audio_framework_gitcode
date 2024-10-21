@@ -353,12 +353,14 @@ int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
             std::lock_guard<std::mutex> lock(keyEventMutex_);
             AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
             if (volumeApplyToAll_) {
-                streamInFocus = AudioStreamType::STREAM_ALL;
+                bool isMuted = GetStreamMuteInternal(STREAM_ALL);
+                SetStreamMuteInternal(STREAM_ALL, !isMuted, true);
+                SetStreamMuteInternal(STREAM_RING, !isMuted, true);
             } else {
                 streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
+                bool isMuted = GetStreamMuteInternal(streamInFocus);
+                SetStreamMuteInternal(streamInFocus, !isMuted, true);
             }
-            bool isMuted = GetStreamMuteInternal(streamInFocus);
-            SetStreamMuteInternal(streamInFocus, !isMuted, true);
         });
     if (muteKeySubId < 0) {
         AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for mute failed ");
