@@ -517,6 +517,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
     auto audioEffectChain = it->second;
     AudioEffectProcInfo procInfo = {headTrackingEnabled_, btOffloadEnabled_};
     audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen, procInfo);
+    audioEffectChain->UpdateBufferConfig(&bufferAttr->outChannels, &bufferAttr->outChannelLayout);
     return SUCCESS;
 }
 
