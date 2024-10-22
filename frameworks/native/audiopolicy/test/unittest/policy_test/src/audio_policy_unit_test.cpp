@@ -1498,7 +1498,7 @@ HWTEST(AudioPolicyUnitTest, SetAudioScene_002, TestSize.Level1)
 HWTEST(AudioPolicyUnitTest, SetAudioScene_003, TestSize.Level1)
 {
     int32_t ret = AudioPolicyManager::GetInstance().SetAudioScene(AudioScene::AUDIO_SCENE_CALL_START);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
 /**
@@ -1509,7 +1509,7 @@ HWTEST(AudioPolicyUnitTest, SetAudioScene_003, TestSize.Level1)
 HWTEST(AudioPolicyUnitTest, SetAudioScene_004, TestSize.Level1)
 {
     int32_t ret = AudioPolicyManager::GetInstance().SetAudioScene(AudioScene::AUDIO_SCENE_CALL_END);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
 /**
@@ -1605,7 +1605,7 @@ HWTEST(AudioPolicyUnitTest, UpdateTracker_003, TestSize.Level1)
 {
     AudioMode audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
     AudioStreamChangeInfo streamChangeInfo;
-    std::shared_ptr<AudioClientTracker> clientTrackerObj = std::make_shared<AudioClientTrackerTest>();
+    std::shared_ptr<AudioClientTracker> clientTrackerObj = std::make_shared<AudioClientTrackerTest>();;
     int32_t ret = AudioPolicyManager::GetInstance().RegisterTracker(audioMode, streamChangeInfo, clientTrackerObj);
     EXPECT_EQ(SUCCESS, ret);
     ret = AudioPolicyManager::GetInstance().UpdateTracker(audioMode, streamChangeInfo);
@@ -1621,11 +1621,12 @@ HWTEST(AudioPolicyUnitTest, UpdateTracker_004, TestSize.Level1)
 {
     AudioMode audioMode = AudioMode::AUDIO_MODE_RECORD;
     AudioStreamChangeInfo streamChangeInfo;
-    std::shared_ptr<AudioClientTracker> clientTrackerObj = std::make_shared<AudioClientTrackerTest>();
+    std::shared_ptr<AudioClientTracker> clientTrackerObj = std::make_shared<AudioClientTrackerTest>();;
     int32_t ret = AudioPolicyManager::GetInstance().RegisterTracker(audioMode, streamChangeInfo, clientTrackerObj);
     EXPECT_EQ(SUCCESS, ret);
     ret = AudioPolicyManager::GetInstance().UpdateTracker(audioMode, streamChangeInfo);
     EXPECT_EQ(SUCCESS, ret);
 }
+
 } // namespace AudioStandard
 } // namespace OHOS

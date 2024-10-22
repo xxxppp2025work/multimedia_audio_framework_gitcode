@@ -110,10 +110,13 @@ public:
 
     int32_t SetClientVolume() override;
 
+    int32_t SetMute(bool isMute) override;
+
     int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) override;
 
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();
+    std::shared_ptr<CapturerInServer> GetCapturer();
 
 private:
     int32_t ConfigRenderer();

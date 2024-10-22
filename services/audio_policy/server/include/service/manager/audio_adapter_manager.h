@@ -20,14 +20,16 @@
 #include <unordered_map>
 #include <cinttypes>
 
+#include "audio_adapter_manager_handler.h"
 #include "audio_service_adapter.h"
 #include "distributed_kv_data_manager.h"
 #include "iaudio_policy_interface.h"
 #include "types.h"
 #include "audio_policy_log.h"
-#include "audio_policy_server_handler.h"
 #include "audio_volume_config.h"
+#include "audio_policy_server_handler.h"
 #include "volume_data_maintainer.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -37,6 +39,7 @@ class AudioOsAccountInfo;
 
 class AudioAdapterManager : public IAudioPolicyInterface {
 public:
+    static constexpr std::string_view SPLIT_STREAM_SINK = "libmodule-split-stream-sink.z.so";
     static constexpr std::string_view HDI_SINK = "libmodule-hdi-sink.z.so";
     static constexpr std::string_view HDI_SOURCE = "libmodule-hdi-source.z.so";
     static constexpr std::string_view PIPE_SINK = "libmodule-pipe-sink.z.so";
@@ -121,8 +124,6 @@ public:
 
     float GetMaxStreamVolume(void) const;
 
-    int32_t UpdateSwapDeviceStatus();
-
     bool IsVolumeUnadjustable();
 
     float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType, int32_t volumeLevel);
@@ -146,6 +147,10 @@ public:
     void SetAbsVolumeMute(bool mute);
 
     bool IsAbsVolumeMute() const;
+
+    void SetVgsVolumeSupported(bool isVgsSupported);
+
+    bool IsVgsVolumeSupported() const;
 
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
 
@@ -183,6 +188,8 @@ public:
     void HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN);
 
     void HandleRingerMode(AudioRingerMode ringerMode);
+
+    void SetAudioServerProxy(sptr<IStandardAudioService> gsp);
 private:
     friend class PolicyCallbackImpl;
 
@@ -214,7 +221,6 @@ private:
     }
 
     AudioStreamType GetStreamIDByType(std::string streamType);
-    AudioStreamType GetStreamForVolumeMap(AudioStreamType streamType);
     int32_t ReInitKVStore();
     bool InitAudioPolicyKvStore(bool& isFirstBoot);
     void InitVolumeMap(bool isFirstBoot);
@@ -233,6 +239,8 @@ private:
     void SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);
     int32_t SetVolumeDbForVolumeTypeGroup(const std::vector<AudioStreamType> &volumeTypeGroup, float volumeDb);
+    void SetAudioVolume(AudioStreamType streamType, float volumeDb);
+    void SetOffloadVolume(AudioStreamType streamType, float volumeDb);
     bool GetStreamMuteInternal(AudioStreamType streamType);
     int32_t SetRingerModeInternal(AudioRingerMode ringerMode);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
@@ -285,6 +293,8 @@ private:
     bool isBtFirstSetVolume_ = true;
     int32_t curActiveCount_ = 0;
 
+    std::shared_ptr<AudioAdapterManagerHandler> handler_ = nullptr;
+
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     AudioStreamRemovedCallback *sessionCallback_ = nullptr;
@@ -295,6 +305,7 @@ private:
     bool useNonlinearAlgo_ = false;
     bool isAbsVolumeScene_ = false;
     bool isAbsVolumeMute_ = false;
+    bool isVgsVolumeSupported_ = false;
     bool isNeedCopyVolumeData_ = false;
     bool isNeedCopyMuteData_ = false;
     bool isNeedCopyRingerModeData_ = false;
@@ -302,6 +313,7 @@ private:
     bool isLoaded_ = false;
     bool isAllCopyDone_ = false;
     bool isNeedConvertSafeTime_ = false;
+    sptr<IStandardAudioService> audioServerProxy_ = nullptr;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
@@ -318,7 +330,7 @@ public:
 
     virtual std::pair<float, int32_t> OnGetVolumeDbCb(AudioStreamType streamType)
     {
-        AudioStreamType streamForVolumeMap = audioAdapterManager_->GetStreamForVolumeMap(streamType);
+        AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
         int32_t volumeLevel = audioAdapterManager_->GetStreamVolume(streamForVolumeMap);
 
         bool isAbsVolumeScene = audioAdapterManager_->IsAbsVolumeScene();
@@ -354,8 +366,30 @@ public:
         }
     }
 
+    void OnSetVolumeDbCb()
+    {
+        if (!isFirstBoot_) {
+            return;
+        }
+        isFirstBoot_ = false;
+        static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
+            STREAM_VOICE_CALL,
+            STREAM_RING,
+            STREAM_MUSIC,
+            STREAM_VOICE_ASSISTANT,
+            STREAM_ALARM,
+            STREAM_ACCESSIBILITY,
+            STREAM_ULTRASONIC,
+            STREAM_ALL
+        };
+        for (auto &volumeType : VOLUME_TYPE_LIST) {
+            audioAdapterManager_->SetVolumeDb(volumeType);
+        }
+    }
+
 private:
     AudioAdapterManager *audioAdapterManager_;
+    bool isFirstBoot_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS

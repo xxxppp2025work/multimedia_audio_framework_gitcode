@@ -75,6 +75,11 @@ IpcStreamInServer::IpcStreamInServer(const AudioProcessConfig &config, AudioMode
 IpcStreamInServer::~IpcStreamInServer()
 {
     AUDIO_INFO_LOG("~IpcStreamInServer(), uid: %{public}d", config_.appInfo.appUid); // waiting for review: add uid.
+    // avoid unexpected release in proRenderStreamImpl working thread
+    if (rendererInServer_ && (rendererInServer_->GetActualStreamManagerType() == DIRECT_PLAYBACK ||
+        rendererInServer_->GetActualStreamManagerType() == VOIP_PLAYBACK)) {
+        rendererInServer_->Release();
+    }
 }
 
 int32_t IpcStreamInServer::Config()
@@ -99,6 +104,16 @@ std::shared_ptr<RendererInServer> IpcStreamInServer::GetRenderer()
         return nullptr;
     }
     return rendererInServer_;
+}
+
+std::shared_ptr<CapturerInServer> IpcStreamInServer::GetCapturer()
+{
+    if (mode_ != AUDIO_MODE_RECORD || capturerInServer_ == nullptr) {
+        AUDIO_ERR_LOG("GetCapturer failed, mode is %{public}s", (mode_ != AUDIO_MODE_RECORD ? " not record" :
+            "record, but capturer is null!"));
+        return nullptr;
+    }
+    return capturerInServer_;
 }
 
 int32_t IpcStreamInServer::ConfigRenderer()
@@ -427,6 +442,15 @@ int32_t IpcStreamInServer::SetClientVolume()
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->SetClientVolume();
+    }
+    AUDIO_ERR_LOG("mode is not playback or renderer is null");
+    return ERR_OPERATION_FAILED;
+}
+
+int32_t IpcStreamInServer::SetMute(bool isMute)
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->SetMute(isMute);
     }
     AUDIO_ERR_LOG("mode is not playback or renderer is null");
     return ERR_OPERATION_FAILED;

@@ -19,6 +19,7 @@
 #include "audio_policy_client_stub.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
+#include "audio_utils.h"
 
 using namespace std;
 namespace OHOS {
@@ -27,13 +28,75 @@ namespace AudioStandard {
 static const int32_t FOCUS_INFO_VALID_SIZE = 128;
 static const int32_t DEVICE_CHANGE_VALID_SIZE = 128;
 static const int32_t PREFERRED_DEVICE_VALID_SIZE = 128;
-static const int32_t STATE_VALID_SIZE = 128;
+static const int32_t STATE_VALID_SIZE = 1024;
 
 AudioPolicyClientStub::AudioPolicyClientStub()
 {}
 
 AudioPolicyClientStub::~AudioPolicyClientStub()
 {}
+
+void AudioPolicyClientStub::OnFirMaxRemoteRequest(uint32_t updateCode, MessageParcel &data, MessageParcel &reply)
+{
+    switch (updateCode) {
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_HEAD_TRACKING_DEVICE_CHANGE):
+            HandleHeadTrackingDeviceChange(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_SPATIALIZATION_ENABLED_CHANGE):
+            HandleSpatializationEnabledChange(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE):
+            HandleSpatializationEnabledChangeForAnyDevice(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_HEAD_TRACKING_ENABLED_CHANGE):
+            HandleHeadTrackingEnabledChange(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICE):
+            HandleHeadTrackingEnabledChangeForAnyDevice(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_AUDIO_SESSION_DEACTIVE):
+            HandleAudioSessionCallback(data, reply);
+            break;
+        default:
+            break;
+    }
+}
+
+void AudioPolicyClientStub::OnMaxRemoteRequest(uint32_t updateCode, MessageParcel &data, MessageParcel &reply)
+{
+    switch (updateCode) {
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_RINGERMODE_UPDATE):
+            HandleRingerModeUpdated(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_MIC_STATE_UPDATED):
+            HandleMicStateChange(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_ACTIVE_OUTPUT_DEVICE_UPDATED):
+            HandlePreferredOutputDeviceUpdated(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_ACTIVE_INPUT_DEVICE_UPDATED):
+            HandlePreferredInputDeviceUpdated(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_RENDERERSTATE_CHANGE):
+            HandleRendererStateChange(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_CAPTURERSTATE_CHANGE):
+            HandleCapturerStateChange(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_RENDERER_DEVICE_CHANGE):
+            HandleRendererDeviceChange(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_RECREATE_RENDERER_STREAM_EVENT):
+            HandleRecreateRendererStreamEvent(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_RECREATE_CAPTURER_STREAM_EVENT):
+            HandleRecreateCapturerStreamEvent(data, reply);
+            break;
+        default:
+            OnFirMaxRemoteRequest(updateCode, data, reply);
+            break;
+    }
+}
 
 int AudioPolicyClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
     MessageOption &option)
@@ -48,7 +111,26 @@ int AudioPolicyClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data, M
             if (updateCode > static_cast<uint32_t>(AudioPolicyClientCode::AUDIO_POLICY_CLIENT_CODE_MAX)) {
                 return -1;
             }
-            (this->*handlers[updateCode])(data, reply);
+            switch (updateCode) {
+                case static_cast<uint32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT):
+                    HandleVolumeKeyEvent(data, reply);
+                    break;
+                case static_cast<uint32_t>(AudioPolicyClientCode::ON_FOCUS_INFO_CHANGED):
+                    HandleAudioFocusInfoChange(data, reply);
+                    break;
+                case static_cast<uint32_t>(AudioPolicyClientCode::ON_FOCUS_REQUEST_CHANGED):
+                    HandleAudioFocusRequested(data, reply);
+                    break;
+                case static_cast<uint32_t>(AudioPolicyClientCode::ON_FOCUS_ABANDON_CHANGED):
+                    HandleAudioFocusAbandoned(data, reply);
+                    break;
+                case static_cast<uint32_t>(AudioPolicyClientCode::ON_DEVICE_CHANGE):
+                    HandleDeviceChange(data, reply);
+                    break;
+                default:
+                    OnMaxRemoteRequest(updateCode, data, reply);
+                    break;
+            }
             break;
         }
         default: {
@@ -154,6 +236,7 @@ void AudioPolicyClientStub::HandleRendererStateChange(MessageParcel &data, Messa
 {
     std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRenderChangeInfo;
     int32_t size = data.ReadInt32();
+    Trace trace("HandleRendererStateChange size:" + std::to_string(size));
     CHECK_AND_RETURN_LOG(size < STATE_VALID_SIZE, "get invalid size : %{public}d", size);
 
     while (size > 0) {

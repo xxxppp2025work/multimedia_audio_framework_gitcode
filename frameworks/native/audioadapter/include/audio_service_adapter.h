@@ -38,6 +38,8 @@ public:
 
     virtual void OnAudioStreamRemoved(const uint64_t sessionID) = 0;
 
+    virtual void OnSetVolumeDbCb() = 0;
+
     virtual ~AudioServiceAdapterCallback() {}
 };
 
@@ -193,8 +195,6 @@ public:
      * @return int32_t the result.
      */
     virtual int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName) = 0;
-
-    virtual int32_t UpdateSwapDeviceStatus() = 0;
 
     virtual ~AudioServiceAdapter();
 };

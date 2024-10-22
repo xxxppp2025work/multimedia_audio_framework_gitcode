@@ -29,7 +29,7 @@ class ProcessReleaseCallback {
 public:
     virtual ~ProcessReleaseCallback() = default;
 
-    virtual int32_t OnProcessRelease(IAudioProcessStream *process) = 0;
+    virtual int32_t OnProcessRelease(IAudioProcessStream *process, bool destroyAtOnce = false) = 0;
 };
 class AudioProcessInServer;
 class ProcessDeathRecipient : public IRemoteObject::DeathRecipient {
@@ -64,13 +64,14 @@ public:
 
     int32_t RequestHandleInfo(bool isAsync) override;
 
-    int32_t Release() override;
+    int32_t Release(bool destroyAtOnce = false) override;
 
     int32_t RegisterProcessCb(sptr<IRemoteObject> object) override;
 
     // override for IAudioProcessStream, used in endpoint
     std::shared_ptr<OHAudioBuffer> GetStreamBuffer() override;
     AudioStreamInfo GetStreamInfo() override;
+    uint32_t GetAudioSessionId() override;
     AudioStreamType GetAudioStreamType() override;
 
     int Dump(int fd, const std::vector<std::u16string> &args) override;
@@ -81,6 +82,10 @@ public:
 
     int32_t AddProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
     int32_t RemoveProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
+
+    void SetNonInterruptMute(const bool muteFlag);
+    bool GetMuteFlag() override;
+    uint32_t GetSessionId();
 
     // for inner-cap
     void SetInnerCapState(bool isInnerCapped) override;
@@ -95,8 +100,10 @@ public:
 private:
     AudioProcessInServer(const AudioProcessConfig &processConfig, ProcessReleaseCallback *releaseCallback);
     int32_t InitBufferStatus();
+    void WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby);
 
 private:
+    std::atomic<bool> muteFlag_ = false;
     bool isInnerCapped_ = false;
     ProcessReleaseCallback *releaseCallback_ = nullptr;
 

@@ -23,6 +23,7 @@
 #include "audio_stream_removed_callback.h"
 #include "audio_volume_config.h"
 #include "volume_data_maintainer.h"
+#include "audio_manager_base.h"
 
 #include <memory>
 #include <string>
@@ -34,6 +35,8 @@ public:
     virtual ~IAudioPolicyInterface() {}
 
     virtual bool Init() = 0;
+
+    virtual void Deinit(void) = 0;
 
     virtual void InitKVStore() = 0;
 
@@ -100,8 +103,6 @@ public:
 
     virtual float GetMaxStreamVolume() const = 0;
 
-    virtual int32_t UpdateSwapDeviceStatus() = 0;
-
     virtual bool IsVolumeUnadjustable() = 0;
 
     virtual void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
@@ -114,7 +115,15 @@ public:
 
     virtual bool IsAbsVolumeMute() const = 0;
 
+    virtual void SetVgsVolumeSupported(bool isVgsVolumeSupported) = 0;
+
+    virtual bool IsVgsVolumeSupported() const = 0;
+
     virtual float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) = 0;
+
+    virtual void SetActiveDevice(DeviceType deviceType) = 0;
+
+    virtual DeviceType GetActiveDevice() = 0;
 
     virtual std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const = 0;
 
@@ -134,13 +143,9 @@ public:
 
     virtual int32_t GetSafeVolumeTimeout() const = 0;
 
-    virtual void SafeVolumeDump(std::string &dumpString) = 0;
-
-    virtual void SetActiveDevice(DeviceType deviceType) = 0;
-
-    virtual DeviceType GetActiveDevice() = 0;
-
     virtual void NotifyAccountsChanged(const int &id) = 0;
+
+    virtual void SafeVolumeDump(std::string &dumpString) = 0;
 
     virtual int32_t GetCurActivateCount() const = 0;
 
@@ -156,6 +161,8 @@ public:
         StreamUsage streamUsage = STREAM_USAGE_UNKNOWN) = 0;
 
     virtual void HandleRingerMode(AudioRingerMode ringerMode) = 0;
+
+    virtual void SetAudioServerProxy(sptr<IStandardAudioService> gsp) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
