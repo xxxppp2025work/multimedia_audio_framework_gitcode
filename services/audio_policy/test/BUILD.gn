@@ -151,6 +151,7 @@ ohos_unittest("audio_policy_service_all_unit_test") {
 
   sources = [
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_first_unit_test.cpp",
+    "./unittest/audio_policy_service_unit_test/src/audio_policy_service_fourth_unit_test.cpp",
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_second_unit_test.cpp",
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_third_unit_test.cpp",
   ]
