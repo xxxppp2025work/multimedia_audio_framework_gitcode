@@ -2520,7 +2520,8 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
         return;
     }
 
-    if (isUpdateRouteSupported_ && outputDevices.front()->networkId_ == LOCAL_NETWORK_ID) {
+    if (isUpdateRouteSupported_ && outputDevices.front()->networkId_ == LOCAL_NETWORK_ID &&
+        !reason.isSetAudioScene()) {
         UpdateRoute(rendererChangeInfo, outputDevices);
     }
 
@@ -3817,7 +3818,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     }
 
     // fetch input&output device
-    FetchDevice(true);
+    FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
     FetchDevice(false);
 
     std::vector<DeviceType> activeOutputDevices;
@@ -7646,7 +7647,11 @@ int32_t AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessi
     targetInfo = targetStreamPropInfo;
 
     if (isEcFeatureEnable_) {
-        unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(targetSourceType, -1);
+        SourceType tmpSourceType = targetSourceType;
+        if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
+            tmpSourceType = SOURCE_TYPE_MIC;
+        }
+        unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(tmpSourceType, -1);
         if (inputDesc != nullptr && inputDesc->deviceType_ != DEVICE_TYPE_MIC &&
             targetInfo.channelLayout_ == PC_MIC_CHANNEL_NUM) {
             // only built-in mic can use 4 channel, update later by using xml to describe
