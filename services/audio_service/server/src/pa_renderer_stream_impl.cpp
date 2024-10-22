@@ -251,6 +251,12 @@ int32_t PaRendererStreamImpl::Flush()
         AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(effectSceneName_);
     }
     pa_operation_unref(operation);
+    if (effectMode_ == EFFECT_DEFAULT) {
+        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+        if (audioEffectChainManager != nullptr) {
+            audioEffectChainManager->InitAudioEffectChainDynamic(effectSceneName_);
+        }
+    }
     return SUCCESS;
 }
 
