@@ -381,6 +381,8 @@ void RendererInClientInner::OnHandle(uint32_t code, int64_t data)
         case RENDERER_PERIOD_REACHED_EVENT:
             HandleRenderPeriodReachedEvent(data);
             break;
+        case FIRST_WRITE_CALLBACK_EVENT:
+            HandleFirstWriteEvent(data);
         default:
             break;
     }
@@ -415,6 +417,20 @@ void RendererInClientInner::HandleRenderPeriodReachedEvent(int64_t rendererPerio
     if (rendererPeriodPositionCallback_) {
         rendererPeriodPositionCallback_->OnPeriodReached(rendererPeriodNumber);
     }
+}
+
+void RendererInClientInner::HandleFirstWriteEvent(int64_t data)
+{
+    AUDIO_DEBUG_LOG("In");
+    std::shared_ptr<AudioRendererFirstFrameWritingCallback> cb = nullptr;
+    {
+        std::lock_guard lock(firstFrameWritingMutex_);
+        CHECK_AND_RETURN_LOG(firstFrameWritingCb_!= nullptr, "firstFrameWritingCb_ is null.");
+        cb = firstFrameWritingCb_;
+    }
+    uint64_t latency = static_cast<uint64_t>(data);
+    AUDIO_DEBUG_LOG("OnFirstFrameWriting: latency %{public}" PRIu64 "", latency);
+    cb->OnFirstFrameWriting(latency);
 }
 
 void RendererInClientInner::SafeSendCallbackEvent(uint32_t eventCode, int64_t data)
@@ -875,17 +891,15 @@ int32_t RendererInClientInner::SetRendererFirstFrameWritingCallback(
 {
     AUDIO_INFO_LOG("SetRendererFirstFrameWritingCallback in.");
     CHECK_AND_RETURN_RET_LOG(callback, ERR_INVALID_PARAM, "callback is nullptr");
+    std::lock_guard lock(firstFrameWritingMutex_);
     firstFrameWritingCb_ = callback;
     return SUCCESS;
 }
 
 void RendererInClientInner::OnFirstFrameWriting()
 {
-    hasFirstFrameWrited_ = true;
-    CHECK_AND_RETURN_LOG(firstFrameWritingCb_!= nullptr, "firstFrameWritingCb_ is null.");
     uint64_t latency = AUDIO_FIRST_FRAME_LATENCY;
-    AUDIO_DEBUG_LOG("OnFirstFrameWriting: latency %{public}" PRIu64 "", latency);
-    firstFrameWritingCb_->OnFirstFrameWriting(latency);
+    SafeSendCallbackEvent(FIRST_WRITE_CALLBACK_EVENT, static_cast<int64_t>(latency));
 }
 
 void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
@@ -1637,13 +1651,12 @@ int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSi
 void RendererInClientInner::FirstFrameProcess()
 {
     // if first call, call set thread priority. if thread tid change recall set thread priority
-    if (needSetThreadPriority_) {
+    if (needSetThreadPriority_.exchange(false)) {
         ipcStream_->RegisterThreadPriority(gettid(),
             AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid));
-        needSetThreadPriority_ = false;
     }
 
-    if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }
+    if (!hasFirstFrameWrited_.exchange(true)) { OnFirstFrameWriting(); }
 }
 
 int32_t RendererInClientInner::WriteRingCache(uint8_t *buffer, size_t bufferSize, bool speedCached,
@@ -1711,6 +1724,9 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         int32_t ret = ipcStream_->Start();
         AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
     }
+
+    FirstFrameProcess();
+
     std::lock_guard<std::mutex> lock(writeMutex_);
 
     size_t oriBufferSize = bufferSize;
@@ -1720,8 +1736,6 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     }
 
     WriteMuteDataSysEvent(buffer, bufferSize);
-
-    FirstFrameProcess();
 
     CHECK_AND_RETURN_RET_PRELOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
         "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);

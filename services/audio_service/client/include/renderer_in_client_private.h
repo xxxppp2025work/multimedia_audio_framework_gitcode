@@ -176,6 +176,7 @@ public:
     void HandleStateChangeEvent(int64_t data);
     void HandleRenderMarkReachedEvent(int64_t rendererMarkPosition);
     void HandleRenderPeriodReachedEvent(int64_t rendererPeriodNumber);
+    void HandleFirstWriteEvent(int64_t data)
 
     void OnSpatializationStateChange(const AudioSpatializationState &spatializationState);
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
@@ -253,7 +254,7 @@ private:
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
     bool streamTrackerRegistered_ = false;
 
-    bool needSetThreadPriority_ = true;
+    std::atomic<bool> needSetThreadPriority_ = true;
 
     AudioStreamParams curStreamParams_ = {0}; // in plan next: replace it with AudioRendererParams
     AudioStreamParams streamParams_ = {0};
@@ -279,7 +280,8 @@ private:
     std::string logUtilsTag_ = "";
 
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> firstFrameWritingCb_ = nullptr;
-    bool hasFirstFrameWrited_ = false;
+    std::mutex firstFrameWritingMutex_;
+    std::atomic<bool> hasFirstFrameWrited_ = false;
 
     // callback mode releated
     AudioRenderMode renderMode_ = RENDER_MODE_NORMAL;
@@ -377,6 +379,7 @@ private:
         RENDERER_PERIOD_REACHED_EVENT,
         CAPTURER_PERIOD_REACHED_EVENT,
         CAPTURER_MARK_REACHED_EVENT,
+        FIRST_WRITE_CALLBACK_EVENT,
     };
 
     // note that the starting elements should remain the same as the enum State
