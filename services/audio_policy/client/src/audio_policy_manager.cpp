@@ -1246,6 +1246,10 @@ int32_t AudioPolicyManager::RegisterAudioPolicyServerDiedCb(const int32_t client
     const std::weak_ptr<AudioRendererPolicyServiceDiedCallback> &callback)
 {
     std::lock_guard<std::mutex> lockCbMap(g_cBMapMutex);
+    //Check if clientPid already exists, prevent secondary anomalies
+    if (rendererCBMap_.find(clientPid) != rendererCBMap_.end()) {
+        return ERROR;
+    }
     rendererCBMap_[clientPid] = callback;
     return SUCCESS;
 }
