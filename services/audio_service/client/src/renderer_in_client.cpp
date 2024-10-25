@@ -1029,7 +1029,11 @@ void RendererInClientInner::WriteCallbackFunc()
         BufferDesc temp;
         while (cbBufferQueue_.PopNotWait(temp)) {
             Trace traceQueuePop("RendererInClientInner::QueueWaitPop");
-            if (state_ != RUNNING) { cbBufferQueue_.Push(temp); break; }
+            if (state_ != RUNNING) {
+                cbBufferQueue_.Push(temp);
+                AUDIO_INFO_LOG("Repush left buffer in queue");
+                break;
+            }
             traceQueuePop.End();
             // call write here.
             int32_t result = ProcessWriteInner(temp);
@@ -1037,6 +1041,7 @@ void RendererInClientInner::WriteCallbackFunc()
                 BufferDesc tmpBuf = { temp.buffer + result, temp.bufLength - static_cast<size_t>(result),
                     temp.dataLength - static_cast<size_t>(result) };
                 cbBufferQueue_.Push(tmpBuf);
+                AUDIO_INFO_LOG("Repush %{public}zu bytes in queue", temp.dataLength - static_cast<size_t>(result));
                 break;
             }
         }
