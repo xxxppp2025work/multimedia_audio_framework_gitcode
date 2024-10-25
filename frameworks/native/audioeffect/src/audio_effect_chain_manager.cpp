@@ -528,7 +528,7 @@ int32_t AudioEffectChainManager::UpdatePriorApVolume(std::shared_ptr<AudioEffect
             }
             isNeedSendVolume = true;
             float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*s);
-            float systemVolumeTemp = audioEffectVolume->GetSystemVolume(specialSceneType);
+            float systemVolumeTemp = audioEffectVolume->GetSystemVolume(priorSceneType);
             volumeMax = (streamVolumeTemp * systemVolumeTemp) > volumeMax ?
                 (streamVolumeTemp * systemVolumeTemp) : volumeMax;
         }
@@ -562,9 +562,9 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
 {
     AUDIO_INFO_LOG("send volume to ap.");
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
-    UpdateDfaultApVolume(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
-    UpdateSpecialApVolume(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
-    UpdatePirorApVolume(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
+    UpdateDfaultApVolume(audioEffectVolume);
+    UpdateSpecialApVolume(audioEffectVolume);
+    UpdatePirorApVolume(audioEffectVolume);
     return SUCCESS;
 }
 
