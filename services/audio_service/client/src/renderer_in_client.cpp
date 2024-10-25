@@ -65,7 +65,7 @@ using namespace OHOS::AppExecFwk;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-const uint64_t OLD_BUF_DURATION_IN_USEC = 92880; // This value is used for compatibility purposes.
+const uint64_t OLD_BUF_DURATION_IN_USEC = 20000; // 20ms
 const uint64_t AUDIO_US_PER_MS = 1000;
 const uint64_t AUDIO_NS_PER_US = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
