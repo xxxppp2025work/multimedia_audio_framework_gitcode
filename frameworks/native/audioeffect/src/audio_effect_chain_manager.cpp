@@ -555,7 +555,9 @@ int32_t AudioEffectChainManager::SendApFinalVolume(const float volume, const std
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap volume failed");
         AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, finalVolume changed to %{public}f",
             sendSceneType.c_str(), audioEffectChain->GetLatency(), volume);
+        return SUCCESS;
     }
+    return SUCCESS;
 }
 
 int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume)
@@ -564,7 +566,7 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     UpdateDfaultApVolume(audioEffectVolume);
     UpdateSpecialApVolume(audioEffectVolume);
-    UpdatePirorApVolume(audioEffectVolume);
+    UpdatePriorApVolume(audioEffectVolume);
     return SUCCESS;
 }
 
