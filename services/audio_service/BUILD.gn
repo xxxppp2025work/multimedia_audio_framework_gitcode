@@ -169,6 +169,7 @@ ohos_shared_library("audio_client") {
     "client/src/audio_spatial_channel_converter.cpp",
     "client/src/audio_spatialization_manager.cpp",
     "client/src/audio_stream_manager.cpp",
+    "client/src/audio_effect_manager.cpp",
     "client/src/audio_stream_tracker.cpp",
     "client/src/audio_system_manager.cpp",
     "client/src/callback_handler.cpp",

@@ -1065,8 +1065,8 @@ void AudioManagerProxy::UpdateLatencyTimestamp(std::string &timestamp, bool isRe
         "LatencyMeas UpdateLatencyTimestamp failed, error:%{public}d", error);
 }
 
-int32_t AudioManagerProxy::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
-    DeviceType deviceType)
+int32_t AudioManagerProxy::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray,
+    const DeviceType& deviceType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1075,45 +1075,24 @@ int32_t AudioManagerProxy::GetAudioEnhanceProperty(AudioEnhancePropertyArray &pr
     bool res = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(res, ERR_INVALID_OPERATION, "WriteInterfaceToken failed");
     data.WriteInt32(static_cast<int32_t>(deviceType));
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_ENHANCE_PROPERTY), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Get Audio Enhance Property, error: %d", error);
-
-    int32_t size = reply.ReadInt32();
-    for (int32_t i = 0; i < size; i++) {
-        // write and read must keep same order
-        AudioEnhanceProperty prop = {};
-        prop.Unmarshalling(reply);
-        propertyArray.property.push_back(prop);
-    }
-    return AUDIO_OK;
-}
-
-int32_t AudioManagerProxy::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool res = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(res, ERR_INVALID_OPERATION, "WriteInterfaceToken failed");
-
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_EFFECT_PROPERTY), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Get Audio Effect Property, error: %d", error);
 
     int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "get audio effect property size invalid.");
     for (int32_t i = 0; i < size; i++) {
+        // write and read must keep same order
         AudioEffectProperty prop = {};
         prop.Unmarshalling(reply);
-        // write and read must keep same order
         propertyArray.property.push_back(prop);
     }
     return AUDIO_OK;
 }
 
-int32_t AudioManagerProxy::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
-    DeviceType deviceType)
+int32_t AudioManagerProxy::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray,
+    const DeviceType& deviceType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1123,32 +1102,14 @@ int32_t AudioManagerProxy::SetAudioEnhanceProperty(const AudioEnhancePropertyArr
     CHECK_AND_RETURN_RET_LOG(ret, ERR_INVALID_OPERATION, "WriteInterfaceToken failed");
 
     int32_t size = static_cast<int32_t>(propertyArray.property.size());
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "set audio effect property size invalid.");
     data.WriteInt32(size);
     for (int32_t i = 0; i < size; i++) {
         // write and read must keep same order
         propertyArray.property[i].Marshalling(data);
     }
     data.WriteInt32(static_cast<int32_t>(deviceType));
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_ENHANCE_PROPERTY), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
-    return reply.ReadInt32();
-}
-
-int32_t AudioManagerProxy::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_INVALID_OPERATION, "WriteInterfaceToken failed");
-
-    int32_t size = static_cast<int32_t>(propertyArray.property.size());
-    data.WriteInt32(size);
-    for (int32_t i = 0; i < size; i++) {
-        propertyArray.property[i].Marshalling(data);
-    }
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
