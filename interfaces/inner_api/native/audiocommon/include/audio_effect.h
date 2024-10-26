@@ -268,46 +268,33 @@ const std::unordered_map<DeviceType, std::string> SUPPORTED_DEVICE_TYPE {
     {DEVICE_TYPE_DEFAULT, "DEVICE_TYPE_DEFAULT"},
 };
 
-struct AudioEnhanceProperty {
-    std::string enhanceClass;
-    std::string enhanceProp;
-    friend bool operator==(const AudioEnhanceProperty &lhs, const AudioEnhanceProperty &rhs)
-    {
-        return lhs.enhanceClass == rhs.enhanceClass && lhs.enhanceProp == rhs.enhanceProp;
-    }
-    bool Marshalling(Parcel &parcel) const
-    {
-        return parcel.WriteString(enhanceClass)&&
-            parcel.WriteString(enhanceProp);
-    }
-    void Unmarshalling(Parcel &parcel)
-    {
-        enhanceClass = parcel.ReadString();
-        enhanceProp = parcel.ReadString();
-    }
-};
-
-struct AudioEnhancePropertyArray {
-    std::vector<AudioEnhanceProperty> property;
-};
+enum EffectFlag { RENDER_EFFECT_FLAG = 0, CAPTURE_EFFECT_FLAG = 1};
 
 struct AudioEffectProperty {
-    std::string effectClass;
-    std::string effectProp;
+    std::string name;
+    std::string category;
+    EffectFlag flag;
     friend bool operator==(const AudioEffectProperty &lhs, const AudioEffectProperty &rhs)
     {
-        return lhs.effectClass == rhs.effectClass && lhs.effectProp == rhs.effectProp;
-    }
+        return (lhs.category == rhs.category && lhs.name == rhs.name && lhs.flag == rhs.flag);
+    };
+    friend bool operator<(const AudioEffectProperty &lhs, const AudioEffectProperty &rhs)
+    {
+        return ((lhs.name == rhs.name) || (lhs.name == rhs.name && lhs.category < rhs.category)
+            || (lhs.name == rhs.name && lhs.category == rhs.category && lhs.flag < rhs.flag));
+    };
     bool Marshalling(Parcel &parcel) const
     {
-        return parcel.WriteString(effectClass)&&
-            parcel.WriteString(effectProp);
-    }
+        return parcel.WriteString(name)&&
+            parcel.WriteString(category)&&
+            parcel.WriteInt32(flag);
+    };
     void Unmarshalling(Parcel &parcel)
     {
-        effectClass = parcel.ReadString();
-        effectProp = parcel.ReadString();
-    }
+        name = parcel.ReadString();
+        category = parcel.ReadString();
+        flag = static_cast<EffectFlag>(parcel.ReadInt32());
+    };
 };
 
 struct AudioEffectPropertyArray {

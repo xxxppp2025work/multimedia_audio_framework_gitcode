@@ -1076,120 +1076,85 @@ napi_status NapiParamUtils::SetExtraAudioParametersInfo(const napi_env &env,
     return status;
 }
 
-napi_status NapiParamUtils::GetEffectPropertyArray(napi_env env, AudioEffectPropertyArray &effectArray,
+int32_t NapiParamUtils::UniqueEffectPropertyData(AudioEffectPropertyArray &propertyArray)
+{
+    int32_t propSize = static_cast<int32_t>(propertyArray.property.size());
+    std::set<std::string> classSet;
+    for (int32_t i = 0; i < propSize; i++)    {
+        if (propertyArray.property[i].category != "" && propertyArray.property[i]).name != "") {
+                classSet.insert(propertyArray.property[i].name);
+            }
+    }
+    return static_cast<int32_t>(classSet.size());
+}
+
+napi_status NapiParamUtils::GetEffectPropertyArray(napi_env env, AudioEffectPropertyArray &propertyArray,
     napi_value in)
 {
     uint32_t arrayLen = 0;
     napi_status status = napi_get_array_length(env, in, &arrayLen);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get subKeys length failed");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && arrayLen > 0, status, "get array length invalid");
 
-    for (size_t i = 0; i < arrayLen; i++) {
+    AudioEffectPropertyArray effectArray;
+    AudioEffectPropertyArray enhanceArray;
+    for (uint32_t i = 0; i < arrayLen; i++) {
         napi_value element = nullptr;
         napi_get_element(env, in, i, &element);
 
         AudioEffectProperty prop;
         napi_value propValue = nullptr;
 
-        status = napi_get_named_property(env, element, "effectClass", &propValue);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Get effectClass failed");
-        prop.effectClass = GetStringArgument(env, propValue);
+        status = napi_get_named_property(env, element, "name", &propValue);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get name failed");
+        prop.name = GetStringArgument(env, propValue);
+		
+        status = napi_get_named_property(env, element, "category", &propValue);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get category failed");
+        prop.category = GetStringArgument(env, propValue);
 
-        status = napi_get_named_property(env, element, "effectProp", &propValue);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Get effectProp failed");
-        prop.effectProp = GetStringArgument(env, propValue);
+        int32_t effectFlag = {-1};
+        status = GetValueInt32(env, "flag", effecctFlag, element);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get flag failed");
+        prop.flag = static_cast<EffectFlag>(effectFlag);
 
-        effectArray.property.push_back(prop);
-    }
-    
-    int32_t size = effectArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-                             napi_invalid_arg, "Audio effect property array size invalid");
-
-    std::set<std::string> classSet;
-    for (int32_t i = 0; i < size; i++) {
-        if (effectArray.property[i].effectClass != "" && effectArray.property[i].effectProp != "") {
-            classSet.insert(effectArray.property[i].effectClass);
+        propertyArray.property.push_back(prop);
+        if (prop.flag == RENDER_EFFECT_FLAG) {
+            effectArray.property.push_back(prop);
+        } else if (prop.flag == CAPTUE_EFFECT_FLAG) {
+            enhanceArray.property.push_back(prop);
         }
     }
-    CHECK_AND_RETURN_RET_LOG(size == static_cast<int32_t>(classSet.size()), napi_invalid_arg,
-        "Audio enhance property array exist duplicate data");
 
-    return napi_ok;
-}
+    int32_t effectSize = UniqueEffectPropertyData(effectArray);
+    CHECK_AND_RETURN_RET_LOG(effectSize == static_cast<int32_t>(effectArray.size()),
+        napi_invalid_arg, "audio effect property array exist duplicate data");
 
-napi_status NapiParamUtils::GetEnhancePropertyArray(napi_env env, AudioEnhancePropertyArray &enhanceArray,
-    napi_value in)
-{
-    uint32_t arrayLen = 0;
-    napi_status status = napi_get_array_length(env, in, &arrayLen);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get subKeys length failed");
+    int32_t enhanceSize = UniqueEffectPropertyData(enhanceArray);
+    CHECK_AND_RETURN_RET_LOG(size == static_cast<int32_t>(enhanceArray.size()),
+        napi_invalid_arg, "audio enhance property array exist duplicate data");
 
-    for (size_t i = 0; i < arrayLen; i++) {
-        napi_value element = nullptr;
-        napi_get_element(env, in, i, &element);
-
-        AudioEnhanceProperty prop;
-        napi_value propValue = nullptr;
-
-        status = napi_get_named_property(env, element, "enhanceClass", &propValue);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Get enhanceClass failed");
-        prop.enhanceClass = GetStringArgument(env, propValue);
-
-        status = napi_get_named_property(env, element, "enhanceProp", &propValue);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Get enhanceProp failed");
-        prop.enhanceProp = GetStringArgument(env, propValue);
-
-        enhanceArray.property.push_back(prop);
-    }
-    
-    int32_t size = enhanceArray.property.size();
+    int32_t size = static_cast<int32_t>(propertyArray.property.size());
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-                             napi_invalid_arg, "Audio enhance property array size invalid");
-
-    std::set<std::string> classSet;
-    for (int32_t i = 0; i < size; i++) {
-        if (enhanceArray.property[i].enhanceClass != "" && enhanceArray.property[i].enhanceProp != "") {
-            classSet.insert(enhanceArray.property[i].enhanceClass);
-        }
-    }
-    CHECK_AND_RETURN_RET_LOG(size == static_cast<int32_t>(classSet.size()), napi_invalid_arg,
-        "Audio enhance property array exist duplicate data");
+        napi_invalid_arg, "Audio enhance property array size invalid");
 
     return napi_ok;
 }
 
-napi_status NapiParamUtils::SetEnhanceProperty(const napi_env &env, const AudioEnhancePropertyArray &enhanceArray,
-    napi_value &result)
-{
-    int32_t position = 0;
-    napi_value jsEnhanceInfoObj = nullptr;
-    napi_status status = napi_create_array_with_length(env, enhanceArray.property.size(), &result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get create array failed");
-    for (const auto &property : enhanceArray.property) {
-        napi_create_object(env, &jsEnhanceInfoObj);
-        status = SetValueString(env, "enhanceClass", property.enhanceClass, jsEnhanceInfoObj);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set enhanceClass failed");
-        status = SetValueString(env, "enhanceProp", property.enhanceProp, jsEnhanceInfoObj);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set enhanceProp failed");
-        napi_set_element(env, result, position, jsEnhanceInfoObj);
-        position++;
-    }
-    return napi_ok;
-}
-
-napi_status NapiParamUtils::SetEffectProperty(const napi_env &env, const AudioEffectPropertyArray &effectArray,
+napi_status NapiParamUtils::SetEffectProperty(const napi_env &env, const AudioEffectPropertyArray &propertyArray,
     napi_value &result)
 {
     int32_t position = 0;
     napi_value jsEffectInfoObj = nullptr;
-    napi_status status = napi_create_array_with_length(env, effectArray.property.size(), &result);
+    napi_status status = napi_create_array_with_length(env, propertyArray.property.size(), &result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get create array failed");
-    for (const auto &property : effectArray.property) {
+    for (const auto &property : propertyArray.property) {
         napi_create_object(env, &jsEffectInfoObj);
-        status = SetValueString(env, "effectClass", property.effectClass, jsEffectInfoObj);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set effectClass failed");
-        status = SetValueString(env, "effectProp", property.effectProp, jsEffectInfoObj);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set effectProp failed");
+        status = SetValueString(env, "name", property.name, jsEffectInfoObj);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set name failed");
+        status = SetValueString(env, "category", property.category, jsEffectInfoObj);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set category failed");
+        status = SetValueInt32(env, "flag", property.name, jsEffectInfoObj);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set flag failed");
         napi_set_element(env, result, position, jsEffectInfoObj);
         position++;
     }

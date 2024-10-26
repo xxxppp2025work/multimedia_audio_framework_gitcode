@@ -1200,14 +1200,17 @@ void AudioEffectChainManager::UpdateEffectBtOffloadSupported(const bool &isSuppo
     return;
 }
 
-int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
+int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectProperty &property)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
+    int32_t ret = AUDIO_OK;
     for (const auto &property : propertyArray.property) {
-        effectPropertyMap_.insert_or_assign(property.effectClass, property.effectProp);
+        effectPropertyMap_.insert_or_assign(property.name, property.category);
         for (const auto &[sceneType, effectChain] : sceneTypeToEffectChainMap_) {
             if (effectChain) {
-                effectChain->SetEffectProperty(property.effectClass, property.effectProp);
+                AUDIO_INFO_LOG("effect %{public}s prop %{public}s ", property.name.c_str(), property.category.c_str());
+                ret = effectChain->SetEffectProperty(property.name, property.category);
+                CHECK_AND_CONTINUE_LOG(ret = AUDIO_OK, "set property failed[%{public}d]", ret);
             }
         }
     }
@@ -1220,7 +1223,8 @@ int32_t AudioEffectChainManager::GetAudioEffectProperty(AudioEffectPropertyArray
     propertyArray.property.clear();
     for (const auto &[effect, prop] : effectPropertyMap_) {
         if (!prop.empty()) {
-            propertyArray.property.emplace_back(AudioEffectProperty{effect, prop});
+            AUDIO_INFO_LOG("effect %{public}s prop %{public}s ", property.name.c_str(), property.category.c_str());
+            propertyArray.property.emplace_back(AudioEffectProperty{effect, prop, RENDER_EFFECT_FLAG});
         }
     }
     return AUDIO_OK;

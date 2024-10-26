@@ -273,7 +273,7 @@ void AudioEnhanceChainManagerFuzzTest(const uint8_t* rawData, size_t size,
         return;
     }
     audioEnhanceChainMananger->InitEnhanceBuffer();
-    AudioEnhancePropertyArray propertyArray;
+    AudioEffectPropertyArray propertyArray;
     AudioVolumeType volumeType = STREAM_MUSIC;
     audioEnhanceChainMananger->SetVolumeInfo(volumeType, SYSTEM_VOLINFO);
     bool isMute = true;

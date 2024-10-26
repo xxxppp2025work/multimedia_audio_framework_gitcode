@@ -85,9 +85,7 @@ const char *g_audioServerCodeStrs[] = {
     "SUSPEND_RENDERSINK",
     "RESTORE_RENDERSINK",
     "LOAD_HDI_EFFECT_MODEL",
-    "GET_AUDIO_ENHANCE_PROPERTY",
     "GET_AUDIO_EFFECT_PROPERTY",
-    "SET_AUDIO_ENHANCE_PROPERTY",
     "SET_AUDIO_EFFECT_PROPERTY",
     "UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED",
     "SET_SINK_MUTE_FOR_SWITCH_DEVICE",
@@ -789,12 +787,8 @@ int AudioManagerStub::HandleThirdPartCode(uint32_t code, MessageParcel &data, Me
             return HandleSetOffloadMode(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UNSET_OFFLOAD_MODE):
             return HandleUnsetOffloadMode(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_ENHANCE_PROPERTY):
-            return HandleGetAudioEnhanceProperty(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_EFFECT_PROPERTY):
             return HandleGetAudioEffectProperty(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_ENHANCE_PROPERTY):
-            return HandleSetAudioEnhanceProperty(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY):
             return HandleSetAudioEffectProperty(data, reply);
         default:
@@ -900,7 +894,7 @@ int AudioManagerStub::HandleSetAudioEffectProperty(MessageParcel &data, MessageP
 {
     int32_t size = data.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        ERROR_INVALID_PARAM, "Audio enhance property array size invalid");
+        ERROR_INVALID_PARAM, "audio enhance property array size invalid");
     AudioEffectPropertyArray propertyArray = {};
     for (int32_t i = 0; i < size; i++) {
         AudioEffectProperty prop = {};
@@ -918,40 +912,7 @@ int AudioManagerStub::HandleGetAudioEffectProperty(MessageParcel &data, MessageP
     int32_t result = GetAudioEffectProperty(propertyArray);
     int32_t size = static_cast<int32_t>(propertyArray.property.size());
     CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        ERROR_INVALID_PARAM, "Audio enhance property array size invalid");
-    reply.WriteInt32(size);
-    for (int32_t i = 0; i < size; i++)    {
-        propertyArray.property[i].Marshalling(reply);
-    }
-    reply.WriteInt32(result);
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleSetAudioEnhanceProperty(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t size = data.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        ERROR_INVALID_PARAM, "Audio enhance property array size invalid");
-    AudioEnhancePropertyArray propertyArray = {};
-    for (int32_t i = 0; i < size; i++) {
-        AudioEnhanceProperty prop = {};
-        prop.Unmarshalling(data);
-        propertyArray.property.push_back(prop);
-    }
-    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
-    int32_t result = SetAudioEnhanceProperty(propertyArray, deviceType);
-    reply.WriteInt32(result);
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleGetAudioEnhanceProperty(MessageParcel &data, MessageParcel &reply)
-{
-    AudioEnhancePropertyArray propertyArray = {};
-    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
-    int32_t result = GetAudioEnhanceProperty(propertyArray, deviceType);
-    int32_t size = static_cast<int32_t>(propertyArray.property.size());
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        ERROR_INVALID_PARAM, "Audio enhance property array size invalid");
+        ERROR_INVALID_PARAM, "audio enhance property array size invalid");
     reply.WriteInt32(size);
     for (int32_t i = 0; i < size; i++) {
         propertyArray.property[i].Marshalling(reply);

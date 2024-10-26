@@ -42,7 +42,7 @@
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
 #include "audio_policy_parser_factory.h"
-#include "audio_effect_manager.h"
+#include "audio_effect_service.h"
 #include "audio_volume_config.h"
 #include "policy_provider_stub.h"
 #include "audio_device_manager.h"
@@ -468,7 +468,7 @@ public:
     void GetCapturerStreamDump(std::string &dumpString);
     void GetSafeVolumeDump(std::string &dumpString);
     void GetOffloadStatusDump(std::string &dumpString);
-    void EffectManagerInfoDump(std::string &dumpString);
+    void EffectServiceInfoDump(std::string &dumpString);
     void MicrophoneMuteInfoDump(std::string &dumpString);
 
     int32_t GetCurActivateCount();
@@ -488,15 +488,13 @@ public:
     bool IsRingerModeMute();
 
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
-    // for effect
-    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
+   
+    void GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-    // for enhance
-    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-    int32_t GetAudioEnhancePropertyByDevice(DeviceType deviceType, AudioEnhancePropertyArray &propertyArray);
+
+    int32_t FinalSetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
+    int32_t GetAudioEnhancePropertyByDevice(const DeviceType& deviceType, AudioEffectPropertyArray &propertyArray);
 
     AudioScene GetLastAudioScene() const;
     void FetchStreamForA2dpOffload(const bool &requireReset);
@@ -525,7 +523,7 @@ private:
         audioPolicyConfigParser_(AudioPolicyParserFactory::GetInstance().CreateParser(*this)),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
-        audioEffectManager_(AudioEffectManager::GetAudioEffectManager()),
+        audioEffectService_(AudioEffectManager::GetAudioEffectService()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
@@ -536,6 +534,9 @@ private:
     }
 
     ~AudioPolicyService();
+
+    void GetSupportedEffectProperty(AudioEffectPropertyArray &propertyArray);
+    void GetSupportedEnhanceProperty(AudioEffectPropertyArray &propertyArray);
 
     void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &desc, bool hasBTPermission,
         bool hasSystemPermission);
@@ -962,8 +963,8 @@ private:
     void UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo);
     void UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void ReloadSourceForDeviceChange(const DeviceType inputDevice, const DeviceType outputDevice, bool isForceReload);
-    void ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
-        const AudioEnhancePropertyArray &newPropertyArray);
+    void ReloadSourceForEffect(const AudioEffectPropertyArray &oldPropertyArray,
+        const AudioEffectPropertyArray &newPropertyArray);
     void ReloadSourceForSession(SessionInfo sessionInfo);
 
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
@@ -1208,7 +1209,7 @@ private:
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;
     GlobalConfigs globalConfigs_;
-    AudioEffectManager& audioEffectManager_;
+    AudioEffectService& audioEffectService_;
 
     bool isMicrophoneMuteTemporary_ = false;
 

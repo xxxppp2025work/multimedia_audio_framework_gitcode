@@ -61,6 +61,7 @@ ohos_shared_library("audio") {
       "audiomanager/napi_audio_session_manager.cpp",
       "audiomanager/napi_audio_spatialization_manager.cpp",
       "audiomanager/napi_audio_stream_manager.cpp",
+      "audiomanager/napi_audio_effect_manager.cpp",
       "audiomanager/napi_audio_volume_group_manager.cpp",
       "audiomanager/napi_audio_volume_manager.cpp",
       "audiorenderer/callback/napi_audio_renderer_callback.cpp",
