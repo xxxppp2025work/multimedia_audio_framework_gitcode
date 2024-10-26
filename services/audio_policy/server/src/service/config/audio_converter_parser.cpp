@@ -96,6 +96,7 @@ static std::map<std::string, AudioChannelLayout> str2layout = {
 
 static void WriteConverterConfigError()
 {
+    OutputTimeout putTimeout;
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
         Media::MediaMonitor::FAULT_EVENT);

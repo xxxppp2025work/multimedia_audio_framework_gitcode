@@ -186,6 +186,7 @@ void AudioFocusParser::WriteConfigErrorEvent()
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR, Media::MediaMonitor::FAULT_EVENT);
     bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_INTERRUPT_POLICY_CONFIG);
+    OutputTimeout putTimeout;
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 

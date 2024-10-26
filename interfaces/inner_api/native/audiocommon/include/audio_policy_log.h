@@ -16,8 +16,34 @@
 #ifndef OHOS_AUDIO_POLICY_LOG_H
 #define OHOS_AUDIO_POLICY_LOG_H
 
+#include <chrono>
 #include "audio_log.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
+#define MAX_TIMEOUT_MILLISECONDS 800
+class OutputTimeout {
+public:
+    OutputTimeout() {
+            maxTimeoutMills_ = MAX_TIMEOUT_MILLISECONDS;
+            startTime_ = std::chrono::high_resolution_clock::now();
+    }
+    OutputTimeout(unsigned long long maxTimeoutMills)
+    {
+        maxTimeoutMills_ = maxTimeoutMills;
+        startTime_ = std::chrono::high_resolution_clock::now();
+    }
+    ~OutputTimeout()
+    {
+        auto endTime = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime_).count();
+        if (duration > maxTimeoutMills_) {
+            AUDIO_INFO_LOG("The current function execution time is:%llu milliseconds",
+                static_cast<unsigned long long>(duration));
+        }
+    }
+private:
+    std::chrono::high_resolution_clock::time_point  startTime_ = 0;
+    unsigned long long maxTimeoutMills_ = 0;
+};
 #endif // OHOS_AUDIO_POLICY_LOG_H

@@ -105,6 +105,7 @@ const sptr<IStandardAudioService> AudioSpatializationService::GetAudioServerProx
     lock_guard<mutex> lock(g_adSpatializationProxyMutex);
 
     if (g_adProxy == nullptr) {
+        OutputTimeout putTimeout;
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr,
             "[Spatialization Service] Get samgr failed.");
