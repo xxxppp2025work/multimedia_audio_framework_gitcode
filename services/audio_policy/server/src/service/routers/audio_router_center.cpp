@@ -32,9 +32,10 @@ const string RING_RENDER_ROUTERS = "RingRenderRouters";
 const string TONE_RENDER_ROUTERS = "ToneRenderRouters";
 
 unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
-    StreamUsage streamUsage, int32_t clientUID, RouterType &routerType)
+    StreamUsage streamUsage, int32_t clientUID, RouterType &routerType, const RouterType &bypassType)
 {
     for (auto &router : mediaRenderRouters_) {
+        if (router->GetRouterType == bypassType) continue;
         unique_ptr<AudioDeviceDescriptor> desc = router->GetMediaRenderDevice(streamUsage, clientUID);
         if (desc->deviceType_ != DEVICE_TYPE_NONE) {
             routerType = router->GetRouterType();
@@ -45,9 +46,10 @@ unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
 }
 
 unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(
-    StreamUsage streamUsage, int32_t clientUID, RouterType &routerType)
+    StreamUsage streamUsage, int32_t clientUID, RouterType &routerType, const RouterType &bypassType)
 {
     for (auto &router : callRenderRouters_) {
+        if (router->GetRouterType == bypassType) continue;
         unique_ptr<AudioDeviceDescriptor> desc = router->GetCallRenderDevice(streamUsage, clientUID);
         if (desc->deviceType_ != DEVICE_TYPE_NONE) {
             routerType = router->GetRouterType();
@@ -106,7 +108,7 @@ bool AudioRouterCenter::HasScoDevice()
 }
 
 std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevices(StreamUsage streamUsage,
-    int32_t clientUID)
+    int32_t clientUID, const RouterType &bypassType)
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
     RouterType routerType = ROUTER_TYPE_NONE;
@@ -129,10 +131,10 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
                     AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
                 AUDIO_INFO_LOG("Media follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
                     callStreamUsage);
-                desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType);
+                desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType, bypassType);
             }
         } else {
-            desc = FetchMediaRenderDevice(streamUsage, clientUID, routerType);
+            desc = FetchMediaRenderDevice(streamUsage, clientUID, routerType, bypassType);
         }
         descs.push_back(move(desc));
     } else if (renderConfigMap_[streamUsage] == RING_RENDER_ROUTERS) {
