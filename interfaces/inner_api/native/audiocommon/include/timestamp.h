@@ -20,7 +20,11 @@
 #include <stdint.h>
 #endif // __MUSL__
 #include <unistd.h>
+#include <chrono>
 
+#include "audio_log.h"
+
+#define MAX_TIMEOUT_MILLISECONDS 800
 namespace OHOS {
 namespace AudioStandard {
 /**
@@ -45,6 +49,31 @@ public:
         /** Monotonically increasing time, excluding the system sleep time */
         MONOTONIC = 0
     };
+};
+class OutputTimeout {
+public:
+    OutputTimeout()
+    {
+        maxTimeoutMills_ = MAX_TIMEOUT_MILLISECONDS;
+        startTime_ = std::chrono::high_resolution_clock::now();
+    }
+    OutputTimeout(unsigned long long maxTimeoutMills)
+    {
+        maxTimeoutMills_ = maxTimeoutMills;
+        startTime_ = std::chrono::high_resolution_clock::now();
+    }
+    ~OutputTimeout()
+    {
+        auto endTime = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime_).count();
+        if (static_cast<unsigned long long>(duration) > maxTimeoutMills_) {
+            AUDIO_INFO_LOG("The current function execution time is:%llu milliseconds",
+                static_cast<unsigned long long>(duration));
+        }
+    }
+private:
+    std::chrono::high_resolution_clock::time_point startTime_ = {};
+    unsigned long long maxTimeoutMills_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

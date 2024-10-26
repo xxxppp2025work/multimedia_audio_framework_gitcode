@@ -29,6 +29,7 @@ bool AudioDeviceParser::LoadConfiguration()
             Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
             Media::MediaMonitor::FAULT_EVENT);
         bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_DEVICE_PRIVACY);
+        OutputTimeout putTimeout;
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
     }
     CHECK_AND_RETURN_RET_LOG(mDoc_ != nullptr, false,

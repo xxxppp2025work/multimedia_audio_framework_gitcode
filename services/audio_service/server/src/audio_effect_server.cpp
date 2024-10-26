@@ -100,6 +100,7 @@ static void LoadLibraries(const std::vector<Library> &libs, std::vector<std::sha
                 Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_EFFECT_ENGINE_ERROR,
                 Media::MediaMonitor::FAULT_EVENT);
             bean->Add("ENGINE_TYPE", Media::MediaMonitor::AUDIO_EFFECT_PROCESS_ENGINE);
+            OutputTimeout putTimeout;
             Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 
             continue;

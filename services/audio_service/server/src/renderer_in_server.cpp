@@ -191,6 +191,7 @@ void RendererInServer::WriterRenderStreamStandbySysEvent()
         Media::MediaMonitor::BEHAVIOR_EVENT);
     bean->Add("STREAMID", static_cast<int32_t>(streamIndex_));
     bean->Add("STANDBY", standByEnable_ ? 1 : 0);
+    OutputTimeout putTimeout;
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -406,6 +407,7 @@ void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
 void RendererInServer::ReportDataToResSched(bool isSilent)
 {
     #ifdef RESSCHE_ENABLE
+    OutputTimeout putTimeout;
     std::unordered_map<std::string, std::string> payload;
     payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
     payload["sessionId"] = std::to_string(streamIndex_);
@@ -486,6 +488,7 @@ int32_t RendererInServer::WriteData()
         stream_->EnqueueBuffer(bufferDesc);
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+            OutputTimeout putTimeout;
             Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
                 static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         }

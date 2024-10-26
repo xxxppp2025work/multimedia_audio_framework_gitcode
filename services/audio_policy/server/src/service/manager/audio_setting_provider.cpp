@@ -211,6 +211,7 @@ ErrCode AudioSettingProvider::UnregisterObserver(const sptr<AudioSettingObserver
 
 void AudioSettingProvider::Initialize(int32_t systemAbilityId)
 {
+    OutputTimeout putTimeout;
     auto sam = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (sam == nullptr) {
         AUDIO_ERR_LOG("GetSystemAbilityManager return nullptr");
