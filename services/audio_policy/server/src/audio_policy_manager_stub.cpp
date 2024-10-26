@@ -1871,6 +1871,7 @@ void AudioPolicyManagerStub::OnMidRemoteRequest(
         default:
             OnMiddlesRemoteRequest(code, data, reply, option);
             break;
+    }
 }
 
 int AudioPolicyManagerStub::OnRemoteRequest(
