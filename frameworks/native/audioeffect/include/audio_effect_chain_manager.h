@@ -139,7 +139,7 @@ public:
     void UpdateSceneTypeList(const std::string &sceneType, SceneTypeOperation operation);
     uint32_t GetSceneTypeToChainCount(const std::string &sceneType);
 
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
+    int32_t SetAudioEffectProperty(const AudioEffectProperty &property);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     void UpdateStreamUsage();
 private:

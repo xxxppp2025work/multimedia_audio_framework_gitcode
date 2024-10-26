@@ -2316,23 +2316,12 @@ HWTEST(AudioEffectChainManagerUnitTest, FindMaxSessionID_002, TestSize.Level1)
 */
 HWTEST(AudioEffectChainManagerUnitTest, SetAudioEffectProperty_001, TestSize.Level1)
 {
-    AudioEffectProperty  audioEffectProperty1 = {
-        .effectClass = "testClass1",
-        .effectProp = "testProp1",
-    };
-
-    AudioEffectProperty  audioEffectProperty2 = {
-        .effectClass = "testClass2",
-        .effectProp = "testProp2",
-    };
-
-    AudioEffectPropertyArray audioEffectPropertyArray = {};
-    audioEffectPropertyArray.property.push_back(audioEffectProperty1);
-    audioEffectPropertyArray.property.push_back(audioEffectProperty2);
+    AudioEffectProperty  audioEffectProperty1 = {"testClass1", "testProp1", RENDER_EFFECT_FLAG};
+    AudioEffectProperty  audioEffectProperty2 = {"testClass2", "testProp2", RENDER_EFFECT_FLAG};
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    int32_t ret = AudioEffectChainManager::GetInstance()->SetAudioEffectProperty(audioEffectPropertyArray);
+    int32_t ret = AudioEffectChainManager::GetInstance()->SetAudioEffectProperty(audioEffectProperty1);
     EXPECT_EQ(AUDIO_OK, ret);
     const char *sceneType = "SCENE_MUSIC";
     std::string sceneTypeAndDeviceKey = "SCENE_MUSIC_&_DEVICE_TYPE_SPEAKER";
@@ -2342,7 +2331,7 @@ HWTEST(AudioEffectChainManagerUnitTest, SetAudioEffectProperty_001, TestSize.Lev
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
     int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(SUCCESS, result);
-    ret = AudioEffectChainManager::GetInstance()->SetAudioEffectProperty(audioEffectPropertyArray);
+    ret = AudioEffectChainManager::GetInstance()->SetAudioEffectProperty(audioEffectProperty2);
     EXPECT_EQ(AUDIO_OK, ret);
 }
 

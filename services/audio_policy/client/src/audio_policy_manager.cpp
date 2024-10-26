@@ -2046,13 +2046,6 @@ int32_t AudioPolicyManager::GetSupportedAudioEffectProperty(AudioEffectPropertyA
     return gsp->GetSupportedAudioEffectProperty(propertyArray);
 }
 
-int32_t AudioPolicyManager::GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
-    return gsp->GetSupportedAudioEnhanceProperty(propertyArray);
-}
-
 int32_t AudioPolicyManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -2065,20 +2058,6 @@ int32_t AudioPolicyManager::GetAudioEffectProperty(AudioEffectPropertyArray &pro
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
     return gsp->GetAudioEffectProperty(propertyArray);
-}
-
-int32_t AudioPolicyManager::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
-    return gsp->SetAudioEnhanceProperty(propertyArray);
-}
-
-int32_t AudioPolicyManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
-    return gsp->GetAudioEnhanceProperty(propertyArray);
 }
 
 int32_t AudioPolicyManager::InjectInterruption(const std::string networkId, InterruptEvent &event)
