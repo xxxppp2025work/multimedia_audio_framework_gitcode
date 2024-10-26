@@ -1837,6 +1837,42 @@ void AudioPolicyManagerStub::OnMiddlesRemoteRequest(
     }
 }
 
+void AudioPolicyManagerStub::OnMidRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_VOLUMELEVEL):
+            GetSystemVolumeLevelInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STREAM_MUTE_LEGACY):
+            SetStreamMuteLegacyInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STREAM_MUTE):
+            SetStreamMuteInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_MUTE):
+            GetStreamMuteInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_STREAM_ACTIVE):
+            IsStreamActiveInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_ACTIVE):
+            SetDeviceActiveInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_DEVICE_ACTIVE):
+            IsDeviceActiveInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::LOAD_SPLIT_MODULE):
+            LoadSplitModuleInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ALLOWED_PLAYBACK):
+            IsAllowedPlaybackInternal(data, reply);
+            break;
+        default:
+            OnMiddlesRemoteRequest(code, data, reply, option);
+            break;
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -1861,35 +1897,8 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_ACTIVEVOLUME_TYPE):
                 GetSystemActiveVolumeTypeInternal(data, reply);
                 break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_VOLUMELEVEL):
-                GetSystemVolumeLevelInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STREAM_MUTE_LEGACY):
-                SetStreamMuteLegacyInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STREAM_MUTE):
-                SetStreamMuteInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_MUTE):
-                GetStreamMuteInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_STREAM_ACTIVE):
-                IsStreamActiveInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_ACTIVE):
-                SetDeviceActiveInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_DEVICE_ACTIVE):
-                IsDeviceActiveInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::LOAD_SPLIT_MODULE):
-                LoadSplitModuleInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ALLOWED_PLAYBACK):
-                IsAllowedPlaybackInternal(data, reply);
-                break;
             default:
-                OnMiddlesRemoteRequest(code, data, reply, option);
+                OnMidRemoteRequest(code, data, reply, option);
                 break;
         }
         return AUDIO_OK;
