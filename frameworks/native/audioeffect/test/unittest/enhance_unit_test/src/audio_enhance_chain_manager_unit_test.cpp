@@ -547,7 +547,7 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhanceProperty_001, TestSize
     uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
     manager_->CreateAudioEnhanceChainDynamic(validSceneKeyCode, deviceAttr);
 
-    AudioEnhancePropertyArray propertyArray;
+    AudioEffectPropertyArray propertyArray;
     int32_t result = manager_->SetAudioEnhanceProperty(propertyArray);
     EXPECT_EQ(result, 0);
 }
@@ -562,8 +562,8 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhanceProperty_002, TestSize
     uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
     manager_->CreateAudioEnhanceChainDynamic(validSceneKeyCode, deviceAttr);
 
-    AudioEnhancePropertyArray propertyArray;
-    propertyArray.property.push_back({"record", "123"});
+    AudioEffectPropertyArray propertyArray;
+    propertyArray.property.push_back({"record", "123", CAPTURE_EFFECT_FLAG});
     manager_->SetAudioEnhanceProperty(propertyArray);
 }
 
@@ -577,8 +577,8 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhanceProperty_003, TestSize
     uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
     manager_->CreateAudioEnhanceChainDynamic(validSceneKeyCode, deviceAttr);
 
-    AudioEnhancePropertyArray propertyArray;
-    propertyArray.property.push_back({"invalidEffect", "property1"});
+    AudioEffectPropertyArray propertyArray;
+    propertyArray.property.push_back({"invalidEffect", "property1", CAPTURE_EFFECT_FLAG});
     int32_t result = manager_->SetAudioEnhanceProperty(propertyArray);
     EXPECT_EQ(result, 0);
 }
@@ -593,8 +593,8 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhanceProperty_004, TestSize
     uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
     manager_->CreateAudioEnhanceChainDynamic(validSceneKeyCode, deviceAttr);
 
-    AudioEnhancePropertyArray propertyArray;
-    propertyArray.property.push_back({"effect1", "property1"});
+    AudioEffectPropertyArray propertyArray;
+    propertyArray.property.push_back({"effect1", "property1", CAPTURE_EFFECT_FLAG});
     int32_t result = manager_->SetAudioEnhanceProperty(propertyArray);
     EXPECT_EQ(result, 0);
 }
@@ -606,7 +606,7 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhanceProperty_004, TestSize
  */
 HWTEST_F(AudioEnhanceChainManagerUnitTest, GetAudioEnhanceProperty_001, TestSize.Level1)
 {
-    AudioEnhancePropertyArray propertyArray;
+    AudioEffectPropertyArray propertyArray;
     int32_t result = manager_->GetAudioEnhanceProperty(propertyArray);
     EXPECT_EQ(propertyArray.property.size(), 3);
     EXPECT_EQ(result, AUDIO_OK);
@@ -619,18 +619,14 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, GetAudioEnhanceProperty_001, TestSize
  */
 HWTEST_F(AudioEnhanceChainManagerUnitTest, GetAudioEnhanceProperty_002, TestSize.Level1)
 {
-    AudioEnhancePropertyArray propertiesToSet;
-    propertiesToSet.property.push_back({"effect1", "property4"});
-    propertiesToSet.property.push_back({"effect2", "property5"});
+    AudioEffectProperty property1 = {"effect1", "property4", CAPTURE_EFFECT_FLAG};
+    manager_->SetAudioEnhanceProperty(property1);
 
-    manager_->SetAudioEnhanceProperty(propertiesToSet);
-    AudioEnhancePropertyArray propertyArray;
+    AudioEffectPropertyArray propertyArray;
     int32_t result = manager_->GetAudioEnhanceProperty(propertyArray);
-    EXPECT_EQ(propertyArray.property.size(), 3);
-    EXPECT_EQ(propertyArray.property[0].enhanceClass, "effect1");
-    EXPECT_EQ(propertyArray.property[0].enhanceProp, "property4");
-    EXPECT_EQ(propertyArray.property[1].enhanceClass, "effect2");
-    EXPECT_EQ(propertyArray.property[1].enhanceProp, "property5");
+    EXPECT_EQ(propertyArray.property.size(), 2);
+    EXPECT_EQ(propertyArray.property[0].name, "effect1");
+    EXPECT_EQ(propertyArray.property[0].category, "property4");
     EXPECT_EQ(result, AUDIO_OK);
 }
 
@@ -641,7 +637,7 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, GetAudioEnhanceProperty_002, TestSize
  */
 HWTEST_F(AudioEnhanceChainManagerUnitTest, ApplyAudioEnhanceChainDefault_001, TestSize.Level1)
 {
-    AudioEnhancePropertyArray propertiesToSet;
+    AudioEffectPropertyArray propertiesToSet;
     uint32_t validSceneKeyCode = VALID_SCENEKEY_CODE;
     manager_->CreateAudioEnhanceChainDynamic(validSceneKeyCode, deviceAttr);
     manager_->InitEnhanceBuffer();
@@ -664,7 +660,7 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, ApplyAudioEnhanceChainDefault_001, Te
  */
 HWTEST_F(AudioEnhanceChainManagerUnitTest, InitEnhanceBuffer_002, TestSize.Level1)
 {
-    AudioEnhancePropertyArray propertiesToSet;
+    AudioEffectPropertyArray propertiesToSet;
     uint32_t validKeyCode = VALID_SCENEKEY_CODE;
     manager_->CreateAudioEnhanceChainDynamic(validKeyCode, deviceAttr);
     manager_->SetAudioEnhanceProperty(propertiesToSet);
