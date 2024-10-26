@@ -56,9 +56,10 @@ public:
     int32_t SetMicrophoneMuteInfo(const bool &isMute);
     int32_t SetStreamVolumeInfo(const uint32_t &sessionId, const float &streamVol);
 
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
-        DeviceType deviceType = DEVICE_TYPE_NONE);
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE);
+    int32_t SetAudioEnhanceProperty(const AudioEffectProperty &property,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE);
+    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE);
     void ResetInfo();  // use for unit test
     int32_t ApplyAudioEnhanceChainDefault(const uint32_t captureId, uint32_t length);
 
@@ -76,7 +77,7 @@ private:
     int32_t UpdatePropertyAndSendToAlgo(const DeviceType &inputDevice);
     void UpdateEnhancePropertyMapFromDb(DeviceType deviceType);
     int32_t WriteEnhancePropertyToDb(const std::string &key, const std::string &property);
-    int32_t SetAudioEnhancePropertyToChains(AudioEnhanceProperty property);
+    int32_t SetAudioEnhancePropertyToChains(AudioEffectProperty property);
     void GetDeviceTypeName(DeviceType deviceType, std::string &deviceName);
     void GetDeviceNameByCaptureId(const uint32_t captureId, std::string &deviceName);
     // construct when init
