@@ -35,7 +35,7 @@ unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
     StreamUsage streamUsage, int32_t clientUID, RouterType &routerType, const RouterType &bypassType)
 {
     for (auto &router : mediaRenderRouters_) {
-        if (router->GetRouterType == bypassType) continue;
+        if (router->GetRouterType() == bypassType) continue;
         unique_ptr<AudioDeviceDescriptor> desc = router->GetMediaRenderDevice(streamUsage, clientUID);
         if (desc->deviceType_ != DEVICE_TYPE_NONE) {
             routerType = router->GetRouterType();
@@ -49,7 +49,7 @@ unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(
     StreamUsage streamUsage, int32_t clientUID, RouterType &routerType, const RouterType &bypassType)
 {
     for (auto &router : callRenderRouters_) {
-        if (router->GetRouterType == bypassType) continue;
+        if (router->GetRouterType() == bypassType) continue;
         unique_ptr<AudioDeviceDescriptor> desc = router->GetCallRenderDevice(streamUsage, clientUID);
         if (desc->deviceType_ != DEVICE_TYPE_NONE) {
             routerType = router->GetRouterType();
