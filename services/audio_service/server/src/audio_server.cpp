@@ -355,6 +355,7 @@ void AudioServer::WriteServiceStartupError()
         Media::MediaMonitor::FAULT_EVENT);
     bean->Add("SERVICE_ID", static_cast<int32_t>(Media::MediaMonitor::AUDIO_SERVER_ID));
     bean->Add("ERROR_CODE", static_cast<int32_t>(Media::MediaMonitor::AUDIO_SERVER));
+    OutputTimeout putTimeout;
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -1367,6 +1368,7 @@ int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
         GET_BUNDLE_TIME_OUT_SECONDS);
     std::string bundleName {""};
     AppExecFwk::BundleInfo bundleInfo;
+    OutputTimeout putTimeout;
     auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     CHECK_AND_RETURN_RET_LOG(saManager != nullptr, 0, "failed: saManager is nullptr");
 
@@ -1531,6 +1533,7 @@ const std::string AudioServer::GetBundleNameFromUid(int32_t uid)
     AudioXCollie audioXCollie("AudioServer::GetBundleNameFromUid",
         GET_BUNDLE_TIME_OUT_SECONDS);
     std::string bundleName {""};
+    OutputTimeout putTimeout;
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, "", "systemAbilityManager is nullptr");
 
@@ -1562,6 +1565,7 @@ void AudioServer::SendRendererCreateErrorInfo(const StreamUsage &sreamUsage,
     bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
     bean->Add("STREAM_TYPE", sreamUsage);
     bean->Add("ERROR_CODE", errorCode);
+    OutputTimeout putTimeout;
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -1611,6 +1615,7 @@ int32_t AudioServer::CheckMaxRendererInstances()
             Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
         bean->Add("CLIENT_UID", mostAppUid);
         bean->Add("TIMES", mostAppNum);
+        OutputTimeout putTimeout;
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         AUDIO_ERR_LOG("Current audio renderer stream num is greater than the maximum num of configured instances");
         return ERR_EXCEED_MAX_STREAM_CNT;
@@ -2014,6 +2019,7 @@ void AudioServer::RegisterPolicyServerDeathRecipient()
     pid_t uid = IPCSkeleton::GetCallingUid();
     sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid, uid);
     if (deathRecipient_ != nullptr) {
+        OutputTimeout putTimeout;
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         CHECK_AND_RETURN_LOG(samgr != nullptr, "Failed to obtain system ability manager");
         sptr<IRemoteObject> object = samgr->GetSystemAbility(OHOS::AUDIO_POLICY_SERVICE_ID);
@@ -2128,10 +2134,7 @@ int32_t AudioServer::ResetRouteForDisconnect(DeviceType type)
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    if (audioRendererSinkInstance == nullptr) {
-        AUDIO_ERR_LOG("audioRendererSinkInstance is null!");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_LOG(audioRendererSinkInstance != nullptr, "audioRendererSinkInstance is null!");
     audioRendererSinkInstance->ResetOutputRouteForDisconnect(type);
 
     // todo reset capturer
@@ -2238,10 +2241,7 @@ void AudioServer::UpdateSessionConnectionState(const int32_t &sessionId, const i
     std::shared_ptr<RendererInServer> renderer =
         AudioService::GetInstance()->GetRendererBySessionID(static_cast<uint32_t>(sessionId));
 
-    if (renderer == nullptr) {
-        AUDIO_ERR_LOG("No render in server has sessionID");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(renderer != nullptr, "No render in server has sessionID");
     renderer->OnDataLinkConnectionUpdate(static_cast<IOperation>(state));
 }
 
@@ -2262,18 +2262,12 @@ void AudioServer::RestoreSession(const int32_t &sessionID, bool isOutput)
     if (isOutput) {
         std::shared_ptr<RendererInServer> renderer =
             AudioService::GetInstance()->GetRendererBySessionID(static_cast<uint32_t>(sessionID));
-        if (renderer == nullptr) {
-            AUDIO_ERR_LOG("No render in server has sessionID");
-            return;
-        }
+        CHECK_AND_RETURN_LOG(renderer != nullptr, "No render in server has sessionID");
         renderer->RestoreSession();
     } else {
         std::shared_ptr<CapturerInServer> capturer =
             AudioService::GetInstance()->GetCapturerBySessionID(static_cast<uint32_t>(sessionID));
-        if (capturer == nullptr) {
-            AUDIO_ERR_LOG("No capturer in server has sessionID");
-            return;
-        }
+        CHECK_AND_RETURN_LOG(capturer != nullptr, "No capturer in server has sessionID");
         capturer->RestoreSession();
     }
 }

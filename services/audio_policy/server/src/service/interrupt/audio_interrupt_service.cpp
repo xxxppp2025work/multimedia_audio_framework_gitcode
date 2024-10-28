@@ -133,6 +133,7 @@ const sptr<IStandardAudioService> AudioInterruptService::GetAudioServerProxy()
     lock_guard<mutex> lock(audioServerProxyMutex_);
 
     if (g_adProxy == nullptr) {
+        OutputTimeout putTimeout;
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "Get samgr failed.");
 
@@ -425,6 +426,7 @@ void AudioInterruptService::WriteServiceStartupError()
         Media::MediaMonitor::FAULT_EVENT);
     bean->Add("SERVICE_ID", static_cast<int32_t>(Media::MediaMonitor::AUDIO_POLICY_SERVICE_ID));
     bean->Add("ERROR_CODE", static_cast<int32_t>(Media::MediaMonitor::AUDIO_INTERRUPT_SERVER));
+    OutputTimeout putTimeout;
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -1931,6 +1933,7 @@ void AudioInterruptService::WriteFocusMigrateEvent(const int32_t &toZoneId)
     bean->Add("CLIENT_UID", static_cast<int32_t>(uid));
     bean->Add("MIGRATE_DIRECTION", toZoneId);
     bean->Add("DEVICE_DESC", (toZoneId == 1) ? REMOTE_NETWORK_ID : LOCAL_NETWORK_ID);
+    OutputTimeout putTimeout;
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 

@@ -1559,6 +1559,7 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
             DumpFileUtil::WriteDumpFile(dumpDcp_, static_cast<void *>(streamData.bufferDesc.buffer),
                 streamData.bufferDesc.bufLength);
             if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+                OutputTimeout putTimeout;
                 Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpDcpName_,
                     static_cast<void *>(streamData.bufferDesc.buffer), streamData.bufferDesc.bufLength);
             }
@@ -1607,6 +1608,7 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
     DfxOperation(dstStreamData.bufferDesc, dstStreamInfo_.format, dstStreamInfo_.channels);
 
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+        OutputTimeout putTimeout;
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpHdiName_,
             static_cast<void *>(dstStreamData.bufferDesc.buffer), dstStreamData.bufferDesc.bufLength);
     }
@@ -2039,6 +2041,7 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
     DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(readBuf.buffer), readBuf.bufLength);
     DfxOperation(readBuf, dstStreamInfo_.format, dstStreamInfo_.channels);
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+        OutputTimeout putTimeout;
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpHdiName_,
             static_cast<void *>(readBuf.buffer), readBuf.bufLength);
     }
@@ -2256,6 +2259,7 @@ void AudioEndpointInner::WriterRenderStreamStandbySysEvent(uint32_t sessionId, i
         Media::MediaMonitor::BEHAVIOR_EVENT);
     bean->Add("STREAMID", static_cast<int32_t>(sessionId));
     bean->Add("STANDBY", standby);
+    OutputTimeout putTimeout;
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 

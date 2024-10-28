@@ -29,6 +29,7 @@ bool AudioUsageStrategyParser::LoadConfiguration()
             Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
             Media::MediaMonitor::FAULT_EVENT);
         bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_USAGE_STRATEGY);
+        OutputTimeout putTimeout;
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
     }
     CHECK_AND_RETURN_RET_LOG(doc_ != nullptr, false, "xmlReadFile failed");
