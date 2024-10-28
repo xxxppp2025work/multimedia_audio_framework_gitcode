@@ -471,6 +471,7 @@ void AudioProcessInServer::WriterRenderStreamStandbySysEvent(uint32_t sessionId,
         Media::MediaMonitor::BEHAVIOR_EVENT);
     bean->Add("STREAMID", static_cast<int32_t>(sessionId));
     bean->Add("STANDBY", standby);
+    OutputTimeout putTimeout;
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 } // namespace AudioStandard

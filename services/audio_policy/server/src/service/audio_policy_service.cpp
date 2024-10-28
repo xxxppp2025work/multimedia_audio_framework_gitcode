@@ -452,6 +452,7 @@ const sptr<IStandardAudioService> AudioPolicyService::GetAudioServerProxy()
     lock_guard<mutex> lock(g_adProxyMutex);
 
     if (g_adProxy == nullptr) {
+        OutputTimeout putTimeout;
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "[Policy Service] Get samgr failed.");
 
@@ -489,6 +490,7 @@ void AudioPolicyService::RecoveryPreferredDevices()
         std::shared_ptr<Media::MediaMonitor::MonitorDeviceInfo>> preferredDevices;
     usleep(firstSleepTime);
     while (result != SUCCESS && tryCounter-- > 0) {
+        OutputTimeout putTimeout;
         Media::MediaMonitor::MediaMonitorManager::GetInstance().GetAudioRouteMsg(preferredDevices);
         if (preferredDevices.size() == 0) {
             continue;
@@ -677,6 +679,7 @@ void AudioPolicyService::SubscribeSafeVolumeEvent()
         AUDIO_ERR_LOG("commonSubscribePtr is nullptr");
         return;
     }
+    OutputTimeout putTimeout;
     EventFwk::CommonEventManager::SubscribeCommonEvent(commonSubscribePtr);
 }
 
@@ -720,6 +723,7 @@ static void ResetSelectValue(bool &isSelectN1, bool &isSelectN2)
 int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     int32_t result;
+    OutputTimeout putTimeout;
     DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
     if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC &&
         curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -878,6 +882,7 @@ void AudioPolicyService::SetOffloadMode()
         *offloadSessionID_, static_cast<int32_t>(currentPowerState_), currentOffloadSessionIsBackground_);
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    OutputTimeout putTimeout;
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->SetOffloadMode(*offloadSessionID_, static_cast<int32_t>(currentPowerState_),
         currentOffloadSessionIsBackground_);
@@ -953,6 +958,7 @@ void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
 
 void AudioPolicyService::OffloadStreamReleaseCheck(uint32_t sessionId)
 {
+    OutputTimeout putTimeout;
     if (!GetOffloadAvailableFromXml()) {
         AUDIO_INFO_LOG("Offload not available, skipped for release");
         return;
@@ -987,6 +993,7 @@ void AudioPolicyService::OffloadStreamReleaseCheck(uint32_t sessionId)
 
 void AudioPolicyService::RemoteOffloadStreamRelease(uint32_t sessionId)
 {
+    OutputTimeout putTimeout;
     std::lock_guard<std::mutex> lock(offloadMutex_);
     if (offloadSessionID_.has_value() && ((*offloadSessionID_) == sessionId)) {
         AUDIO_DEBUG_LOG("Doing unset offload mode!");
@@ -1054,6 +1061,7 @@ float AudioPolicyService::GetSingleStreamVolume(int32_t streamId) const
 int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage)
 {
     int32_t result = SUCCESS;
+    OutputTimeout putTimeout;
     DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
     if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC &&
         curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -1267,6 +1275,7 @@ int32_t AudioPolicyService::DeviceParamsCheck(DeviceRole targetRole,
 void AudioPolicyService::NotifyUserSelectionEventToBt(sptr<AudioDeviceDescriptor> audioDeviceDescriptor)
 {
     Trace trace("AudioPolicyService::NotifyUserSelectionEventToBt");
+    OutputTimeout putTimeout;
     if (audioDeviceDescriptor == nullptr) {
         return;
     }
@@ -1320,6 +1329,7 @@ int32_t AudioPolicyService::SetRenderDeviceForUsage(StreamUsage streamUsage, spt
 
 int32_t AudioPolicyService::ConnectVirtualDevice(sptr<AudioDeviceDescriptor> &selectedDesc)
 {
+    OutputTimeout putTimeout;
     int32_t ret = Bluetooth::AudioA2dpManager::Connect(selectedDesc->macAddress_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "A2dp connect failed");
     ret = Bluetooth::AudioHfpManager::Connect(selectedDesc->macAddress_);
@@ -1330,6 +1340,7 @@ int32_t AudioPolicyService::ConnectVirtualDevice(sptr<AudioDeviceDescriptor> &se
 
 void AudioPolicyService::RestoreSession(const int32_t &sessionID, bool isOutput)
 {
+    OutputTimeout putTimeout;
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable: gsp null");
 
@@ -1443,6 +1454,7 @@ void AudioPolicyService::WriteSelectOutputSysEvents(const std::vector<sptr<Audio
     bean->Add("DEVICE_NAME", curOutputDeviceDesc.deviceName_);
     bean->Add("ADDRESS", curOutputDeviceDesc.macAddress_);
     bean->Add("IS_PLAYBACK", 1);
+    OutputTimeout putTimeout;
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -1528,6 +1540,7 @@ int32_t AudioPolicyService::RememberRoutingInfo(sptr<AudioRendererFilter> audioR
 {
     AUDIO_INFO_LOG("Start for uid[%{public}d] device[%{public}s]", audioRendererFilter->uid,
         GetEncryptStr(deviceDescriptor->networkId_).c_str());
+    OutputTimeout putTimeout;
     if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
         std::lock_guard<std::mutex> lock(routerMapMutex_);
         routerMap_[audioRendererFilter->uid] = std::pair(LOCAL_NETWORK_ID, G_UNKNOWN_PID);
@@ -1744,6 +1757,7 @@ void AudioPolicyService::WriteSelectInputSysEvents(const std::vector<sptr<AudioD
     bean->Add("ADDRESS", selectedDesc[0]->macAddress_);
     bean->Add("AUDIO_SCENE", scene);
     bean->Add("IS_PLAYBACK", 0);
+    OutputTimeout putTimeout;
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -2389,6 +2403,7 @@ void AudioPolicyService::UpdateActiveDevicesRoute(std::vector<std::pair<Internal
     &activeDevices, const std::string &deviceName)
 {
     CHECK_AND_RETURN_LOG(!activeDevices.empty(), "activeDevices is empty.");
+    OutputTimeout putTimeout;
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "UpdateActiveDevicesRoute, Audio Server Proxy is null");
     auto ret = SUCCESS;
@@ -2408,6 +2423,7 @@ void AudioPolicyService::UpdateActiveDevicesRoute(std::vector<std::pair<Internal
 
 void AudioPolicyService::UpdateDualToneState(const bool &enable, const int32_t &sessionId)
 {
+    OutputTimeout putTimeout;
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "UpdateDualToneState, Audio Server Proxy is null");
     AUDIO_INFO_LOG("update dual tone state, enable:%{public}d, sessionId:%{public}d", enable, sessionId);
@@ -2448,6 +2464,7 @@ std::string AudioPolicyService::GetSinkName(const AudioDeviceDescriptor &desc, i
 void AudioPolicyService::SetVoiceCallMuteForSwitchDevice()
 {
     Trace trace("SetVoiceMuteForSwitchDevice");
+    OutputTimeout putTimeout;
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "SetVoiceMuteForSwitchDevice, Audio Server Proxy is null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
@@ -2582,6 +2599,7 @@ void AudioPolicyService::FetchOutputDeviceWhenNoRunningStream()
 void AudioPolicyService::FetchInputDeviceWhenNoRunningStream()
 {
     unique_ptr<AudioDeviceDescriptor> desc;
+    OutputTimeout putTimeout;
     AudioDeviceDescriptor tempDesc = GetCurrentInputDevice();
     if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         (Bluetooth::AudioHfpManager::GetScoCategory() == Bluetooth::ScoCategory::SCO_RECOGNITION ||
@@ -2625,6 +2643,7 @@ int32_t AudioPolicyService::HandleScoOutputDeviceFetched(unique_ptr<AudioDeviceD
     const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioPolicyService::HandleScoOutputDeviceFetched");
+    OutputTimeout putTimeout;
 #ifdef BLUETOOTH_ENABLE
         int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
         if (ret != SUCCESS) {
@@ -2666,6 +2685,7 @@ bool AudioPolicyService::NeedRehandleA2DPDevice(unique_ptr<AudioDeviceDescriptor
 
 void AudioPolicyService::MuteSinkPort(const std::string &portName, int32_t duration, bool isSync)
 {
+    OutputTimeout putTimeout;
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "MuteSinkPort, Audio Server Proxy is null");
 
@@ -2854,6 +2874,7 @@ void AudioPolicyService::WriteOutputRouteChangeEvent(unique_ptr<AudioDeviceDescr
     bean->Add("TIMESTAMP", static_cast<uint64_t>(timeStamp));
     bean->Add("DEVICE_TYPE_BEFORE_CHANGE", curOutputDeviceType);
     bean->Add("DEVICE_TYPE_AFTER_CHANGE", desc->deviceType_);
+    OutputTimeout putTimeout;
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -3023,6 +3044,7 @@ int32_t AudioPolicyService::HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDe
     vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos)
 {
 #ifdef BLUETOOTH_ENABLE
+    OutputTimeout putTimeout;
     int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch input device");
@@ -3117,6 +3139,7 @@ void AudioPolicyService::BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> &de
     vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType)
 {
     Trace trace("AudioPolicyService::BluetoothScoFetch");
+    OutputTimeout putTimeout;
     int32_t ret;
     if (sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
         int32_t activeRet = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
@@ -3138,6 +3161,7 @@ void AudioPolicyService::BluetoothScoFetch(unique_ptr<AudioDeviceDescriptor> &de
 void AudioPolicyService::BluetoothScoDisconectForRecongnition()
 {
     AudioDeviceDescriptor tempDesc = GetCurrentInputDevice();
+    OutputTimeout putTimeout;
     AUDIO_INFO_LOG("Recongnition scoCategory: %{public}d, deviceType: %{public}d, scoState: %{public}d",
         Bluetooth::AudioHfpManager::GetScoCategory(), tempDesc.deviceType_,
         audioDeviceManager_.GetScoState());
@@ -3159,6 +3183,7 @@ void AudioPolicyService::WriteInputRouteChangeEvent(unique_ptr<AudioDeviceDescri
     bean->Add("TIMESTAMP", static_cast<uint64_t>(timeStamp));
     bean->Add("DEVICE_TYPE_BEFORE_CHANGE", GetCurrentInputDeviceType());
     bean->Add("DEVICE_TYPE_AFTER_CHANGE", desc->deviceType_);
+    OutputTimeout putTimeout;
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -3219,6 +3244,7 @@ void AudioPolicyService::FetchDevice(bool isOutputDevice, const AudioStreamDevic
 int32_t AudioPolicyService::SetMicrophoneMute(bool isMute)
 {
     AUDIO_DEBUG_LOG("state[%{public}d]", isMute);
+    OutputTimeout putTimeout;
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
 
@@ -3237,6 +3263,7 @@ int32_t AudioPolicyService::SetMicrophoneMutePersistent(const bool isMute)
 {
     AUDIO_DEBUG_LOG("state[%{public}d]", isMute);
     isMicrophoneMutePersistent_ = isMute;
+    OutputTimeout putTimeout;
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
@@ -3261,6 +3288,7 @@ bool AudioPolicyService::GetPersistentMicMuteState()
 
 int32_t AudioPolicyService::InitPersistentMicrophoneMuteState(bool &isMute)
 {
+    OutputTimeout putTimeout;
     int32_t ret = audioPolicyManager_.GetPersistMicMuteState(isMute);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("GetPersistMicMuteState failed.");
@@ -3297,6 +3325,7 @@ std::string AudioPolicyService::GetSystemSoundUri(const std::string &key)
 
 int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    OutputTimeout putTimeout;
     auto iter = connectedA2dpDeviceMap_.find(deviceDescriptor->macAddress_);
     CHECK_AND_RETURN_RET_LOG(iter != connectedA2dpDeviceMap_.end(), ERR_INVALID_PARAM,
         "the target A2DP device doesn't exist.");
@@ -3547,6 +3576,7 @@ int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType, DeviceRole
 {
     Trace trace("AudioPolicyService::HandleArmUsbDevice");
 
+    OutputTimeout putTimeout;
     if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
         string deviceInfo = "";
         const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
@@ -3628,6 +3658,7 @@ int32_t AudioPolicyService::GetModuleInfo(ClassType classType, std::string &modu
 int32_t AudioPolicyService::HandleDpDevice(DeviceType deviceType, const std::string &address)
 {
     Trace trace("AudioPolicyService::HandleDpDevice");
+    OutputTimeout putTimeout;
     if (deviceType == DEVICE_TYPE_DP) {
         std::string defaulyDPInfo = "";
         std::string getDPInfo = "";
@@ -3701,6 +3732,7 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
+    OutputTimeout putTimeout;
     AUDIO_INFO_LOG("Device type[%{public}d] flag[%{public}d]", deviceType, active);
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
@@ -3799,6 +3831,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
+    OutputTimeout putTimeout;
     AUDIO_INFO_LOG("start %{public}d", audioScene);
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
@@ -4216,6 +4249,7 @@ int32_t AudioPolicyService::HandleLocalDeviceConnected(AudioDeviceDescriptor &up
 
 int32_t AudioPolicyService::HandleLocalDeviceDisconnected(const AudioDeviceDescriptor &updatedDesc)
 {
+    OutputTimeout putTimeout;
     if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         UpdateActiveA2dpDeviceWhenDisconnecting(updatedDesc.macAddress_);
     }
@@ -4247,6 +4281,7 @@ void AudioPolicyService::UpdateActiveA2dpDeviceWhenDisconnecting(const std::stri
     }
 
     if (flag) {
+        OutputTimeout putTimeout;
         activeBTDevice_ = "";
         ClosePortAndEraseIOHandle(BLUETOOTH_SPEAKER);
         audioPolicyManager_.SetAbsVolumeScene(false);
@@ -4382,6 +4417,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
             GetPreferredOutputDeviceDescInner(rendererInfo);
         if (preferredDeviceList.size() > 0 &&
             preferredDeviceList[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            OutputTimeout putTimeout;
             Bluetooth::AudioHfpManager::SetActiveHfpDevice(preferredDeviceList[0]->macAddress_);
         }
     }
@@ -4416,6 +4452,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDes
 
     AudioStreamInfo streamInfo = {};
 #ifdef BLUETOOTH_ENABLE
+    OutputTimeout putTimeout;
     if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && isActualConnection && isConnected) {
         int32_t ret = Bluetooth::AudioA2dpManager::GetA2dpDeviceStreamInfo(macAddress, streamInfo);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "Get a2dp device stream info failed!");
@@ -4518,6 +4555,7 @@ void AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(
     std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnableMap, DeviceType deviceType)
 {
 #ifdef BLUETOOTH_ENABLE
+    OutputTimeout putTimeout;
     vector<Bluetooth::A2dpStreamInfo> allSessionInfos;
     Bluetooth::A2dpStreamInfo a2dpStreamInfo;
     vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
@@ -4550,6 +4588,7 @@ int32_t AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(DeviceType deviceT
 {
     int32_t activeSessionsSize = 0;
 #ifdef BLUETOOTH_ENABLE
+    OutputTimeout putTimeout;
     vector<Bluetooth::A2dpStreamInfo> allSessionInfos;
     Bluetooth::A2dpStreamInfo a2dpStreamInfo;
     vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
@@ -4703,6 +4742,7 @@ void AudioPolicyService::RegisterRemoteDevStatusCallback()
 {
 #ifdef FEATURE_DEVICE_MANAGER
     std::shared_ptr<DistributedHardware::DmInitCallback> initCallback = std::make_shared<DeviceInitCallBack>();
+    OutputTimeout putTimeout;
     int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(AUDIO_SERVICE_PKG, initCallback);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Init device manage failed");
     std::shared_ptr<DistributedHardware::DeviceStatusCallback> callback = std::make_shared<DeviceStatusCallbackImpl>();
@@ -4713,6 +4753,7 @@ void AudioPolicyService::RegisterRemoteDevStatusCallback()
 
 std::shared_ptr<DataShare::DataShareHelper> AudioPolicyService::CreateDataShareHelperInstance()
 {
+    OutputTimeout putTimeout;
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "[Policy Service] Get samgr failed.");
 
@@ -4747,6 +4788,7 @@ std::shared_ptr<DataShare::DataShareHelper> AudioPolicyService::CreateDataShareH
 
 int32_t AudioPolicyService::GetDefaultDeviceNameFromDataShareHelper(std::string &deviceName)
 {
+    OutputTimeout putTimeout;
     lock_guard<mutex> lock(g_dataShareHelperMutex);
     std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = CreateDataShareHelperInstance();
     CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "dataShareHelper is NULL");
@@ -4786,6 +4828,7 @@ int32_t AudioPolicyService::GetDefaultDeviceNameFromDataShareHelper(std::string 
 
 int32_t AudioPolicyService::GetUserSetDeviceNameFromDataShareHelper(std::string &deviceName)
 {
+    OutputTimeout putTimeout;
     std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = CreateDataShareHelperInstance();
     CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "dataShareHelper is NULL");
 
@@ -4844,6 +4887,7 @@ std::string AudioPolicyService::GetDeviceNameFromDataShare()
 
 bool AudioPolicyService::IsDataShareReady()
 {
+    OutputTimeout putTimeout;
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     CHECK_AND_RETURN_RET_LOG(samgr != nullptr, false, "[Policy Service] Get samgr failed.");
     sptr<IRemoteObject> remoteObject = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
@@ -4916,6 +4960,7 @@ void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDes
         deviceDescriptor->displayName_ = devicesName;
     } else {
 #ifdef FEATURE_DEVICE_MANAGER
+        OutputTimeout putTimeout;
         std::shared_ptr<DistributedHardware::DmInitCallback> callback = std::make_shared<DeviceInitCallBack>();
         int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(AUDIO_SERVICE_PKG, callback);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "init device failed");
@@ -5622,6 +5667,7 @@ void AudioPolicyService::HandleAudioCaptureState(AudioMode &mode, AudioStreamCha
         (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED ||
          streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_STOPPED)) {
         if (streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+            OutputTimeout putTimeout;
             BluetoothScoDisconectForRecongnition();
             Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
         }
@@ -5895,6 +5941,7 @@ void AudioPolicyService::WriteDeviceChangedSysEvents(const vector<sptr<AudioDevi
                 bean->Add("HASMIC", 1);
                 bean->Add("ISCONNECT", isConnected ? 1 : 0);
                 bean->Add("DEVICETYPE", deviceDescriptor->deviceType_);
+                OutputTimeout putTimeout;
                 Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
             }
 
@@ -5939,6 +5986,7 @@ void AudioPolicyService::WriteOutDeviceChangedSysEvents(const sptr<AudioDeviceDe
     bean->Add("ADDRESS", GetEncryptAddr(deviceDescriptor->macAddress_));
     bean->Add("DEVICE_NAME", deviceDescriptor->deviceName_);
     bean->Add("BT_TYPE", deviceDescriptor->deviceCategory_);
+    OutputTimeout putTimeout;
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -5956,6 +6004,7 @@ void AudioPolicyService::WriteInDeviceChangedSysEvents(const sptr<AudioDeviceDes
     bean->Add("ADDRESS", GetEncryptAddr(deviceDescriptor->macAddress_));
     bean->Add("DEVICE_NAME", deviceDescriptor->deviceName_);
     bean->Add("BT_TYPE", deviceDescriptor->deviceCategory_);
+    OutputTimeout putTimeout;
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -6345,6 +6394,7 @@ int32_t AudioPolicyService::DealWithSafeVolume(const int32_t volumeLevel, bool i
 int32_t AudioPolicyService::HandleAbsBluetoothVolume(const std::string &macAddress, const int32_t volumeLevel)
 {
     int32_t sVolumeLevel = volumeLevel;
+    OutputTimeout putTimeout;
     if (isAbsBtFirstBoot_) {
         sVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
         isAbsBtFirstBoot_ = false;
@@ -6815,6 +6865,7 @@ std::vector<sptr<VolumeGroupInfo>> AudioPolicyService::GetVolumeGroupInfos()
 void AudioPolicyService::RegiestPolicy()
 {
     AUDIO_INFO_LOG("Start");
+    OutputTimeout putTimeout;
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "RegiestPolicy, Audio Server Proxy is null");
     audioPolicyManager_.SetAudioServerProxy(gsp);
@@ -7290,6 +7341,7 @@ const sptr<IStandardAudioService> RegisterBluetoothDeathCallback()
 {
     lock_guard<mutex> lock(g_btProxyMutex);
     if (g_btProxy == nullptr) {
+        OutputTimeout putTimeout;
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr,
             "get sa manager failed");
@@ -7321,6 +7373,7 @@ void AudioPolicyService::BluetoothServiceCrashedCallback(pid_t pid, pid_t uid)
 {
     AUDIO_INFO_LOG("Bluetooth sa crashed, will restore proxy in next call");
     lock_guard<mutex> lock(g_btProxyMutex);
+    OutputTimeout putTimeout;
     g_btProxy = nullptr;
     isBtListenerRegistered = false;
     Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSink();
@@ -7331,6 +7384,7 @@ void AudioPolicyService::BluetoothServiceCrashedCallback(pid_t pid, pid_t uid)
 void AudioPolicyService::RegisterBluetoothListener()
 {
 #ifdef BLUETOOTH_ENABLE
+    OutputTimeout putTimeout;
     AUDIO_INFO_LOG("Enter");
     Bluetooth::RegisterDeviceObserver(deviceStatusListener_->deviceObserver_);
     if (isBtListenerRegistered) {
@@ -7351,6 +7405,7 @@ void AudioPolicyService::RegisterBluetoothListener()
 void AudioPolicyService::UnregisterBluetoothListener()
 {
 #ifdef BLUETOOTH_ENABLE
+    OutputTimeout putTimeout;
     AUDIO_INFO_LOG("Enter");
     Bluetooth::UnregisterDeviceObserver();
     Bluetooth::AudioA2dpManager::UnregisterBluetoothA2dpListener();
@@ -7401,6 +7456,7 @@ int32_t AudioPolicyService::QueryEffectManagerSceneMode(SupportedEffectConfig& s
 
 void AudioPolicyService::RegisterDataObserver()
 {
+    OutputTimeout putTimeout;
     std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = CreateDataShareHelperInstance();
     CHECK_AND_RETURN_LOG(dataShareHelper != nullptr, "dataShareHelper is NULL");
 
@@ -7416,6 +7472,7 @@ void AudioPolicyService::RegisterDataObserver()
 
 int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config)
 {
+    OutputTimeout putTimeout;
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED,
         "SetPlaybackCapturerFilterInfos, Audio Server Proxy is null");
@@ -8254,6 +8311,7 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetAvailableD
 int32_t AudioPolicyService::OffloadStartPlaying(const std::vector<int32_t> &sessionIds)
 {
 #ifdef BLUETOOTH_ENABLE
+    OutputTimeout putTimeout;
     AUDIO_INFO_LOG("OffloadStartPlaying, a2dpOffloadFlag_: %{public}d, sessionIds: %{public}zu",
         a2dpOffloadFlag_, sessionIds.size());
     if (a2dpOffloadFlag_ != A2DP_OFFLOAD || sessionIds.size() == 0) {
@@ -8276,6 +8334,7 @@ int32_t AudioPolicyService::OffloadStartPlaying(const std::vector<int32_t> &sess
 int32_t AudioPolicyService::OffloadStopPlaying(const std::vector<int32_t> &sessionIds)
 {
 #ifdef BLUETOOTH_ENABLE
+    OutputTimeout putTimeout;
     AUDIO_PRERELEASE_LOGI("OffloadStopPlaying, a2dpOffloadFlag_: %{public}d, sessionIds: %{public}zu",
         a2dpOffloadFlag_, sessionIds.size());
     if (a2dpOffloadFlag_ != A2DP_OFFLOAD || sessionIds.size() == 0) {
@@ -8291,6 +8350,7 @@ int32_t AudioPolicyService::OffloadGetRenderPosition(uint32_t &delayValue, uint6
 {
     Trace trace("AudioPolicyService::OffloadGetRenderPosition");
 #ifdef BLUETOOTH_ENABLE
+    OutputTimeout putTimeout;
     DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
     AUDIO_DEBUG_LOG("GetRenderPosition, deviceType: %{public}d, a2dpOffloadFlag_: %{public}d",
         a2dpOffloadFlag_, curOutputDeviceType);
@@ -8320,6 +8380,7 @@ int32_t AudioPolicyService::GetAndSaveClientType(uint32_t uid, const std::string
 void AudioPolicyService::GetA2dpOffloadCodecAndSendToDsp()
 {
 #ifdef BLUETOOTH_ENABLE
+    OutputTimeout putTimeout;
     if (GetCurrentOutputDeviceType() != DEVICE_TYPE_BLUETOOTH_A2DP) {
         return;
     }
@@ -8364,6 +8425,7 @@ void AudioPolicyService::GetA2dpOffloadCodecAndSendToDsp()
 void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions,
     DeviceType deviceType)
 {
+    OutputTimeout putTimeout;
     if (allActiveSessions.size() == 0) {
         AUDIO_PRERELEASE_LOGI("no active sessions");
         return;
@@ -8589,6 +8651,7 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
 void AudioPolicyService::CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc)
 {
     if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && !audioDeviceManager_.GetScoState()) {
+        OutputTimeout putTimeout;
         Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc.macAddress_);
     }
 }
@@ -8638,6 +8701,7 @@ void AudioPolicyService::DeviceUpdateClearRecongnitionStatus(AudioDeviceDescript
 {
     if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE ||
         desc.connectState_ == DEACTIVE_CONNECTED || !desc.isEnable_)) {
+        OutputTimeout putTimeout;
         BluetoothScoDisconectForRecongnition();
         Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
     }
@@ -8676,6 +8740,7 @@ void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()
 int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
+    OutputTimeout putTimeout;
 
     AUDIO_INFO_LOG("Device type[%{public}d] flag[%{public}d] address[%{public}s]",
         deviceType, active, GetEncryptAddr(address).c_str());
@@ -9448,6 +9513,7 @@ void AudioPolicyService::WriteServiceStartupError(string reason)
         Media::MediaMonitor::EventType::FAULT_EVENT);
     bean->Add("SERVICE_ID", static_cast<int32_t>(Media::MediaMonitor::AUDIO_POLICY_SERVICE_ID));
     bean->Add("ERROR_CODE", static_cast<int32_t>(Media::MediaMonitor::AUDIO_POLICY_SERVER));
+    OutputTimeout putTimeout;
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -9466,6 +9532,7 @@ bool AudioPolicyService::LoadToneDtmfConfig()
             Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::LOAD_CONFIG_ERROR,
             Media::MediaMonitor::EventType::FAULT_EVENT);
         bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_TONE_DTMF_CONFIG);
+        OutputTimeout putTimeout;
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         WriteServiceStartupError("Audio Tone Load Configuration failed");
         AUDIO_ERR_LOG("Audio Tone Load Configuration failed");
@@ -9803,6 +9870,7 @@ void AudioPolicyService::UpdateEffectBtOffloadSupported(const bool &isSupported)
 int32_t AudioPolicyService::ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
     ConnectState connectState)
 {
+    OutputTimeout putTimeout;
     if (handleFlag && connectState != DEACTIVE_CONNECTED) {
         return SUCCESS;
     }
@@ -9873,6 +9941,7 @@ int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const
 bool  AudioPolicyService::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
 {
 #ifdef AVSESSION_ENABLE
+    OutputTimeout putTimeout;
     return OHOS::AVSession::AVSessionManager::GetInstance().IsAudioPlaybackAllowed(uid, pid);
 #endif
     return true;
@@ -9942,6 +10011,7 @@ int32_t AudioPolicyService::ErasePreferredDeviceByType(const PreferredType prefe
         return SUCCESS;
     }
     auto type = static_cast<Media::MediaMonitor::PerferredType>(preferredType);
+    OutputTimeout putTimeout;
     int32_t ret = Media::MediaMonitor::MediaMonitorManager::GetInstance().ErasePreferredDeviceByType(type);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Erase preferredType %{public}d failed, ret: %{public}d", preferredType, ret);

@@ -247,6 +247,7 @@ void CapturerInServer::ReadData(size_t length)
     ringCache_->Dequeue({dstBuffer.buffer, dstBuffer.bufLength});
     DumpFileUtil::WriteDumpFile(dumpS2C_, static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+        OutputTimeout putTimeout;
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
             static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
     }

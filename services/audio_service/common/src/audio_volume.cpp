@@ -375,6 +375,7 @@ void AudioVolume::Monitor(uint32_t sessionId, bool isOutput)
         bean->Add("SYSVOLUME", monVol != monitorVolume_.end() ? monVol->second.second : 0);
         bean->Add("VOLUMEFACTOR", streamVolume->second.volume_);
         bean->Add("POWERVOLUMEFACTOR", streamVolume->second.lowPowerFactor_);
+        OutputTimeout putTimeout;
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
     } else {
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);

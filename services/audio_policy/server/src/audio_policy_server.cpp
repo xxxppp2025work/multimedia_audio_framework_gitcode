@@ -121,6 +121,7 @@ void AudioPolicyServer::OnStart()
 #endif
     bool res = Publish(this);
     if (!res) {
+        OutputTimeout putTimeout;
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_SERVICE_STARTUP_ERROR,
             Media::MediaMonitor::EventType::FAULT_EVENT);
@@ -291,6 +292,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
     AUDIO_INFO_LOG("RegisterVolumeKeyEvents: volume key: %{public}s.",
         (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
 
+    OutputTimeout putTimeout;
     MMI::InputManager *im = MMI::InputManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(im != nullptr, ERR_INVALID_PARAM, "Failed to obtain INPUT manager");
 
@@ -337,6 +339,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
 int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
 {
     AUDIO_INFO_LOG("RegisterVolumeKeyMuteEvents: volume key: mute");
+    OutputTimeout putTimeout;
     MMI::InputManager *im = MMI::InputManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(im != nullptr, ERR_INVALID_PARAM, "Failed to obtain INPUT manager");
 
@@ -480,6 +483,7 @@ void AudioPolicyServer::SubscribePowerStateChangeEvents()
         return;
     }
 
+    OutputTimeout putTimeout;
     bool RegisterSuccess = PowerMgr::PowerMgrClient::GetInstance().RegisterPowerStateCallback(powerStateCallback_);
     if (!RegisterSuccess) {
         AUDIO_ERR_LOG("register power state callback failed");
@@ -2090,6 +2094,7 @@ int32_t AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName
 {
     AudioXCollie audioXCollie("AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName",
         GET_BUNDLE_TIME_OUT_SECONDS);
+    OutputTimeout putTimeout;
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (systemAbilityManager == nullptr) {
         return ERR_INVALID_PARAM;
@@ -2416,6 +2421,7 @@ void AudioPolicyServer::RegisterPowerStateListener()
         return;
     }
 
+    OutputTimeout putTimeout;
     auto& powerMgrClient = OHOS::PowerMgr::PowerMgrClient::GetInstance();
     bool ret = powerMgrClient.RegisterSyncSleepCallback(powerStateListener_, SleepPriority::HIGH);
     if (!ret) {
@@ -2432,6 +2438,7 @@ void AudioPolicyServer::UnRegisterPowerStateListener()
         return;
     }
 
+    OutputTimeout putTimeout;
     auto& powerMgrClient = OHOS::PowerMgr::PowerMgrClient::GetInstance();
     bool ret = powerMgrClient.UnRegisterSyncSleepCallback(powerStateListener_);
     if (!ret) {
@@ -2453,6 +2460,7 @@ void AudioPolicyServer::RegisterSyncHibernateListener()
         return;
     }
 
+    OutputTimeout putTimeout;
     auto& powerMgrClient = OHOS::PowerMgr::PowerMgrClient::GetInstance();
     bool ret = powerMgrClient.RegisterSyncHibernateCallback(syncHibernateListener_);
     if (!ret) {
@@ -2469,6 +2477,7 @@ void AudioPolicyServer::UnRegisterSyncHibernateListener()
         return;
     }
 
+    OutputTimeout putTimeout;
     auto& powerMgrClient = OHOS::PowerMgr::PowerMgrClient::GetInstance();
     bool ret = powerMgrClient.UnRegisterSyncHibernateCallback(syncHibernateListener_);
     if (!ret) {
@@ -2779,6 +2788,7 @@ AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid()
         GET_BUNDLE_TIME_OUT_SECONDS);
     std::string bundleName {""};
     AppExecFwk::BundleInfo bundleInfo;
+    OutputTimeout putTimeout;
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, bundleInfo, "systemAbilityManager is nullptr");
 
