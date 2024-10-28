@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef ST_AUDIO_EFFECT_MANAGER_H
-#define ST_AUDIO_EFFECT_MANAGER_H
+#ifndef ST_AUDIO_EFFECT_SERVICE_H
+#define ST_AUDIO_EFFECT_SERVICE_H
 
 #include "audio_policy_log.h"
 #include "audio_effect.h"
@@ -22,16 +22,16 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioEffectManager {
+class AudioEffectService {
 public:
-    explicit AudioEffectManager();
-    ~AudioEffectManager();
-    static AudioEffectManager& GetAudioEffectManager()
+    explicit AudioEffectService();
+    ~AudioEffectService();
+    static AudioEffectService& GetAudioEffectService()
     {
-        static AudioEffectManager audioEffectManager;
-        return audioEffectManager;
+        static AudioEffectService audioEffectService;
+        return audioEffectService;
     }
-    void EffectManagerInit();
+    void EffectServiceInit();
     void GetOriginalEffectConfig(OriginalEffectConfig &oriEffectConfig);
     void GetAvailableEffects(std::vector<Effect> &availableEffects);
     void UpdateAvailableEffects(std::vector<Effect> &newAvailableEffects);
@@ -42,10 +42,10 @@ public:
     bool CanLoadEffectSinks();
     void ConstructEffectChainManagerParam(EffectChainManagerParam &effectChainMgrParam);
     void ConstructEnhanceChainManagerParam(EffectChainManagerParam &enhanceChainMgrParam);
-    int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
-    int32_t AddSupportedAudioEffectPropertyByDevice(const DeviceType& deviceType,
+    int32_t QueryEffectServiceSceneMode(SupportedEffectConfig &supportedEffectConfig);
+    void AddSupportedAudioEffectPropertyByDevice(const DeviceType& deviceType,
         std::set<std::pair<std::string, std::string>> &mergedSet);
-    int32_t AddSupportedAudioEnhancePropertyByDevice(const DeviceType& deviceType,
+    void AddSupportedAudioEnhancePropertyByDevice(const DeviceType& deviceType,
         std::set<std::pair<std::string, std::string>> &mergedSet);
 
 private:
@@ -75,7 +75,7 @@ private:
     void UpdateDuplicateProcessNew(std::vector<std::string> &availableLayout, ProcessNew &processNew);
     void ConstructDefaultEffectProperty(const std::string &chainName,
         std::unordered_map<std::string, std::string> &defaultProperty);
-    int32_t AddSupportedPropertyByDeviceInner(const DeviceType& deviceType,
+    void AddSupportedPropertyByDeviceInner(const DeviceType& deviceType,
         std::set<std::pair<std::string, std::string>> &mergedSet,
         const std::unordered_map<std::string, std::set<std::pair<std::string, std::string>>> &device2PropertySet);
 };

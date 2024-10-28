@@ -1566,7 +1566,7 @@ void AudioPolicyServer::InitPolicyDumpMap()
     dumpFuncMap[u"-apc"] = &AudioPolicyServer::AudioPolicyParserDump;
     dumpFuncMap[u"-s"] = &AudioPolicyServer::AudioStreamDump;
     dumpFuncMap[u"-xp"] = &AudioPolicyServer::XmlParsedDataMapDump;
-    dumpFuncMap[u"-e"] = &AudioPolicyServer::EffectManagerInfoDump;
+    dumpFuncMap[u"-e"] = &AudioPolicyServer::EffectServiceInfoDump;
     dumpFuncMap[u"-ms"] = &AudioPolicyServer::MicrophoneMuteInfoDump;
 }
 
@@ -1579,7 +1579,7 @@ void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
     AudioPolicyParserDump(dumpString);
     AudioStreamDump(dumpString);
     XmlParsedDataMapDump(dumpString);
-    EffectManagerInfoDump(dumpString);
+    EffectServiceInfoDump(dumpString);
     MicrophoneMuteInfoDump(dumpString);
 }
 
@@ -1618,9 +1618,9 @@ void AudioPolicyServer::XmlParsedDataMapDump(std::string &dumpString)
     audioPolicyService_.XmlParsedDataMapDump(dumpString);
 }
 
-void AudioPolicyServer::EffectManagerInfoDump(std::string &dumpString)
+void AudioPolicyServer::EffectServiceInfoDump(std::string &dumpString)
 {
-    audioPolicyService_.EffectManagerInfoDump(dumpString);
+    audioPolicyService_.EffectServiceInfoDump(dumpString);
 }
 
 void AudioPolicyServer::MicrophoneMuteInfoDump(std::string &dumpString)
@@ -2923,34 +2923,21 @@ int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyAr
 {
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
     return audioPolicyService_.GetSupportedAudioEffectProperty(propertyArray);
-}
-
-int32_t AudioPolicyServer::GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
-{
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
-    return audioPolicyService_.GetSupportedAudioEnhanceProperty(propertyArray);
-}
-
-int32_t AudioPolicyServer::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
-{
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
-    return audioPolicyService_.GetAudioEnhanceProperty(propertyArray);
-}
-
-int32_t AudioPolicyServer::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)
-{
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
-    return audioPolicyService_.SetAudioEnhanceProperty(propertyArray);
 }
 
 int32_t AudioPolicyServer::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
     return audioPolicyService_.SetAudioEffectProperty(propertyArray);
 }
 
@@ -2958,6 +2945,10 @@ int32_t AudioPolicyServer::GetAudioEffectProperty(AudioEffectPropertyArray &prop
 {
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
     return audioPolicyService_.GetAudioEffectProperty(propertyArray);
 }
 

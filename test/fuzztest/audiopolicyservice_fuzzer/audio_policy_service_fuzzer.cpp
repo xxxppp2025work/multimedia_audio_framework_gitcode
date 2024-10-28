@@ -133,7 +133,7 @@ void AudioPolicyServiceDumpTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->audioPolicyService_.GetCapturerStreamDump(dumpStr);
     GetServerPtr()->audioPolicyService_.GetSafeVolumeDump(dumpStr);
     GetServerPtr()->audioPolicyService_.GetOffloadStatusDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.EffectManagerInfoDump(dumpStr);
+    GetServerPtr()->audioPolicyService_.EffectServiceInfoDump(dumpStr);
     GetServerPtr()->audioPolicyService_.MicrophoneMuteInfoDump(dumpStr);
     GetServerPtr()->audioPolicyService_.GetVolumeConfigDump(dumpStr);
     GetServerPtr()->audioPolicyService_.GetVolumeConfigDump(dumpStr);

@@ -392,7 +392,7 @@ bool AudioPolicyService::Init(void)
 {
     serviceFlag_.reset();
     audioPolicyManager_.Init();
-    audioEffectManager_.EffectManagerInit();
+    audioEffectService_.EffectServiceInit();
     audioDeviceManager_.ParseDeviceXml();
     audioAffinityManager_.ParseAffinityXml();
     audioPnpServer_.init();
@@ -5101,7 +5101,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         for (auto it = pnpDeviceList_.begin(); it != pnpDeviceList_.end(); ++it) {
             OnPnpDeviceStatusUpdated((*it).first, (*it).second);
         }
-        audioEffectManager_.SetMasterSinkAvailable();
+        audioEffectService_.SetMasterSinkAvailable();
     }
     // load inner-cap-sink
     LoadModernInnerCapSink();
@@ -5255,7 +5255,7 @@ void AudioPolicyService::LoadEffectLibrary()
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "LoadEffectLibrary, Audio Server Proxy is null");
     OriginalEffectConfig oriEffectConfig = {};
-    audioEffectManager_.GetOriginalEffectConfig(oriEffectConfig);
+    audioEffectService_.GetOriginalEffectConfig(oriEffectConfig);
     vector<Effect> successLoadedEffects;
 
     std::string identity = IPCSkeleton::ResetCallingIdentity();
@@ -5268,16 +5268,16 @@ void AudioPolicyService::LoadEffectLibrary()
         AUDIO_ERR_LOG("Load audio effect failed, please check log");
     }
 
-    audioEffectManager_.UpdateAvailableEffects(successLoadedEffects);
-    audioEffectManager_.BuildAvailableAEConfig();
+    audioEffectService_.UpdateAvailableEffects(successLoadedEffects);
+    audioEffectService_.BuildAvailableAEConfig();
 
     // Initialize EffectChainManager in audio service through IPC
     SupportedEffectConfig supportedEffectConfig;
-    audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig);
+    audioEffectService_.GetSupportedEffectConfig(supportedEffectConfig);
     EffectChainManagerParam effectChainManagerParam;
     EffectChainManagerParam enhanceChainManagerParam;
-    audioEffectManager_.ConstructEffectChainManagerParam(effectChainManagerParam);
-    audioEffectManager_.ConstructEnhanceChainManagerParam(enhanceChainManagerParam);
+    audioEffectService_.ConstructEffectChainManagerParam(effectChainManagerParam);
+    audioEffectService_.ConstructEnhanceChainManagerParam(enhanceChainManagerParam);
 
     identity = IPCSkeleton::ResetCallingIdentity();
     bool ret = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains,
@@ -5286,14 +5286,14 @@ void AudioPolicyService::LoadEffectLibrary()
 
     CHECK_AND_RETURN_LOG(ret, "EffectChainManager create failed");
 
-    audioEffectManager_.SetEffectChainManagerAvailable();
+    audioEffectService_.SetEffectChainManagerAvailable();
     AudioSpatializationService::GetAudioSpatializationService().Init(supportedEffectConfig.effectChains);
 }
 
-void AudioPolicyService::GetEffectManagerInfo()
+void AudioPolicyService::GetEffectServiceInfo()
 {
     converterConfig_ = GetConverterConfig();
-    audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig_);
+    audioEffectService_.GetSupportedEffectConfig(supportedEffectConfig_);
 }
 
 void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDeviceType devType)
@@ -7392,9 +7392,9 @@ float AudioPolicyService::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_
     return audioPolicyManager_.GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
 }
 
-int32_t AudioPolicyService::QueryEffectManagerSceneMode(SupportedEffectConfig& supportedEffectConfig)
+int32_t AudioPolicyService::QueryEffectServiceSceneMode(SupportedEffectConfig& supportedEffectConfig)
 {
-    int32_t ret = audioEffectManager_.QueryEffectManagerSceneMode(supportedEffectConfig);
+    int32_t ret = audioEffectService_.QueryEffectServiceSceneMode(supportedEffectConfig);
     return ret;
 }
 
@@ -7801,7 +7801,7 @@ void AudioPolicyService::CloseNormalSource()
 
 void AudioPolicyService::UpdateEnhanceEffectState(SourceType source)
 {
-    AudioEnhancePropertyArray enhancePropertyArray = {};
+    AudioEffectPropertyArray enhancePropertyArray = {};
     unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source,-1);
     int32_t ret = GetAudioEnhancePropertyByDevice(inputDesc->deviceType_, enhancePropertyArray);
     if (ret != SUCCESS) {
@@ -7810,12 +7810,12 @@ void AudioPolicyService::UpdateEnhanceEffectState(SourceType source)
     }
     std::string recordProp = "";
     std::string voipUpProp = "";
-    for (const AudioEnhanceProperty &prop : enhancePropertyArray.property) {
-        if (prop.enhanceClass == "record") {
-            recordProp = prop.enhanceProp;
+    for (const AudioEffectProperty &prop : enhancePropertyArray.property) {
+        if (prop.name == "record") {
+            recordProp = prop.category;
         }
-        if (prop.enhanceClass == "voip_up") {
-            voipUpProp = prop.enhanceProp;
+        if (prop.name == "voip_up") {
+            voipUpProp = prop.category;
         }
     }
     isMicRefRecordOn_ = (recordProp == "NRON");
@@ -7945,8 +7945,8 @@ void AudioPolicyService::ReloadSourceForSession(SessionInfo sessionInfo)
     UpdateActiveDeviceRoute(GetCurrentInputDeviceType(), DeviceFlag::INPUT_DEVICES_FLAG);
 }
 
-void AudioPolicyService::ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
-    const AudioEnhancePropertyArray &newPropertyArray)
+void AudioPolicyService::ReloadSourceForEffect(const AudioEffectPropertyArray &oldPropertyArray,
+    const AudioEffectPropertyArray &newPropertyArray)
 {
     if (!isMicRefFeatureEnable_) {
         AUDIO_INFO_LOG("reload ignore for feature not enable");
@@ -7961,20 +7961,20 @@ void AudioPolicyService::ReloadSourceForEffect(const AudioEnhancePropertyArray &
     std::string oldVoipUpProp = "";
     std::string newRecordProp = "";
     std::string newVoipUpProp = "";
-    for (const AudioEnhanceProperty &prop : oldPropertyArray.property) {
-        if (prop.enhanceClass == "record") {
-            oldRecordProp = prop.enhanceProp;
+    for (const AudioEffectProperty &prop : oldPropertyArray.property) {
+        if (prop.name == "record") {
+            oldRecordProp = prop.category;
         }
-        if (prop.enhanceClass == "voip_up") {
-            oldVoipUpProp = prop.enhanceProp;
+        if (prop.name == "voip_up") {
+            oldVoipUpProp = prop.category;
         }
     }
-    for (const AudioEnhanceProperty &prop : newPropertyArray.property) {
-        if (prop.enhanceClass == "record") {
-            newRecordProp = prop.enhanceProp;
+    for (const AudioEffectProperty &prop : newPropertyArray.property) {
+        if (prop.name == "record") {
+            newRecordProp = prop.category;
         }
-        if (prop.enhanceClass == "voip_up") {
-            newVoipUpProp = prop.enhanceProp;
+        if (prop.name == "voip_up") {
+            newVoipUpProp = prop.category;
         }
     }
     if ((normalSourceOpened_ == SOURCE_TYPE_MIC && oldRecordProp != newRecordProp) ||
@@ -9212,10 +9212,10 @@ static void StreamEffectSceneInfoDump(string &dumpString, const ProcessNew &proc
     }
 }
 
-void AudioPolicyService::EffectManagerInfoDump(string &dumpString)
+void AudioPolicyService::EffectServiceInfoDump(string &dumpString)
 {
     int32_t count = 0;
-    GetEffectManagerInfo();
+    GetEffectServiceInfo();
     GetAudioAdapterInfos(adapterInfoMap_);
 
     dumpString += "==== Audio Effect Manager INFO ====\n";
@@ -9679,13 +9679,30 @@ void AudioPolicyService::LoadHdiEffectModel()
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
-int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
+void AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
+{
+    AudioEffectPropertyArray effectPropertyArray = {};
+    GetSupportedEffectProperty(effectPropertyArray);
+    for (auto &effectItem : effectPropertyArray.property) {
+        effectItem.flag = RENDER_EFFECT_FLAG;
+        propertyArray.property.push_back(effectItem);
+    }
+    AudioEffectPropertyArray enhancePropertyArray = {};
+    GetSupportedEnhanceProperty(enhancePropertyArray);
+    for (auto &enhanceItem : enhancePropertyArray.property) {
+        enhanceItem.flag = CAPTURE_EFFECT_FLAG;
+        propertyArray.property.push_back(enhanceItem);
+    }
+    return;
+}
+
+void AudioPolicyService::GetSupportedEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     std::set<std::pair<std::string, std::string>> mergedSet = {};
-    audioEffectManager_.AddSupportedAudioEffectPropertyByDevice(DEVICE_TYPE_INVALID, mergedSet);
+    audioEffectService_.AddSupportedAudioEffectPropertyByDevice(DEVICE_TYPE_INVALID, mergedSet);
     std::vector<sptr<AudioDeviceDescriptor>> descriptor = GetDevices(OUTPUT_DEVICES_FLAG);
     for (auto &item : descriptor) {
-        audioEffectManager_.AddSupportedAudioEffectPropertyByDevice(item->getType(), mergedSet);
+        audioEffectService_.AddSupportedAudioEffectPropertyByDevice(item->getType(), mergedSet);
     }
     propertyArray.property.reserve(mergedSet.size());
     std::transform(mergedSet.begin(), mergedSet.end(), std::back_inserter(propertyArray.property),
@@ -9695,37 +9712,62 @@ int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyA
     return AUDIO_OK;
 }
 
-int32_t AudioPolicyService::GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
+void AudioPolicyService::GetSupportedEnhanceProperty(AudioEffectPropertyArray &propertyArray)
 {
     std::set<std::pair<std::string, std::string>> mergedSet = {};
-    audioEffectManager_.AddSupportedAudioEnhancePropertyByDevice(DEVICE_TYPE_INVALID, mergedSet);
+    audioEffectService_.AddSupportedAudioEnhancePropertyByDevice(DEVICE_TYPE_INVALID, mergedSet);
     std::vector<sptr<AudioDeviceDescriptor>> descriptor = GetDevices(INPUT_DEVICES_FLAG);
     for (auto &item : descriptor) {
-        audioEffectManager_.AddSupportedAudioEnhancePropertyByDevice(item->getType(), mergedSet);
+        audioEffectService_.AddSupportedAudioEnhancePropertyByDevice(item->getType(), mergedSet);
     }
     propertyArray.property.reserve(mergedSet.size());
     std::transform(mergedSet.begin(), mergedSet.end(), std::back_inserter(propertyArray.property),
         [](const std::pair<std::string, std::string>& p) {
-            return AudioEnhanceProperty{p.first, p.second};
+            return AudioEffectProperty{p.first, p.second};
         });
     return AUDIO_OK;
 }
 
 int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
-    AudioEffectPropertyArray supportPropertyArray;
-    std::vector<AudioEffectProperty>::iterator oIter;
-    (void)GetSupportedAudioEffectProperty(supportPropertyArray);
+    int32_t ret = AUDIO_OK;
+    AudioEffectPropertyArray supportPropertyArray = {};
+    GetSupportedAudioEffectProperty(supportPropertyArray);
+    AudioEffectPropertyArray effectPropertyArray = {};
+    AudioEffectPropertyArray enhancePropertyArray = {};
     for (auto &item : propertyArray.property) {
-        oIter = std::find(supportPropertyArray.property.begin(), supportPropertyArray.property.end(), item);
+        std::vector<AudioEffectProperty>::iterator oIter =
+            std::find(supportPropertyArray.property.begin(), supportPropertyArray.property.end(), item);
         CHECK_AND_RETURN_RET_LOG(oIter != supportPropertyArray.property.end(),
-            ERR_INVALID_PARAM, "set audio effect property not valid %{public}s:%{public}s",
-            item.effectClass.c_str(), item.effectProp.c_str());
+            ERR_INVALID_PARAM, "set audio effect property not valid %{public}s:%{public}s:%{public}d",
+            item.name.c_str(), item.category.c_str(), item.flag);
+        if (item.flag == CAPTURE_EFFECT_FLAG) {
+            enhancePropertyArray.property.push_back(item);
+        } else {
+            effectPropertyArray.property.push_back(item);
+        }
     }
+    if (enhancePropertyArray.property.size() > 0) {
+        AudioEffectPropertyArray oldPropertyArray = {};
+        ret = GetAudioEffectProperty(oldPropertyArray);
+        CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "get audio effect property failed.");
+        ret = FinalSetAudioEffectProperty(AudioEffectPropertyArray & propertyArray);
+        CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "final set audio effect property failed.");
+        ReloadSourceForEffect(oldPropertyArray, enhancePropertyArray);
+    } 
+    if (effectPropertyArray.property.size() > 0) {
+        ret = FinalSetAudioEffectProperty(AudioEffectPropertyArray & propertyArray);
+        CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "final set audio effect property failed.");
+    }
+    return ret;
+}
+
+int32_t AudioPolicyService::FinalSetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
+{
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "set audio effect property: gsp null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->SetAudioEffectProperty(propertyArray);
+    int32_t ret = gsp->setAudioEffectProperty(propertyArray, GetCurrentInputDeviceType());
     IPCSkeleton::SetCallingIdentity(identity);
     return ret;
 }
@@ -9740,50 +9782,13 @@ int32_t AudioPolicyService::GetAudioEffectProperty(AudioEffectPropertyArray &pro
     return ret;
 }
 
-int32_t AudioPolicyService::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)
-{
-    AudioEnhancePropertyArray supportPropertyArray;
-    std::vector<AudioEnhanceProperty>::iterator oIter;
-    (void)GetSupportedAudioEnhanceProperty(supportPropertyArray);
-    for (auto &item : propertyArray.property) {
-        oIter = std::find(supportPropertyArray.property.begin(), supportPropertyArray.property.end(), item);
-        CHECK_AND_RETURN_RET_LOG(oIter != supportPropertyArray.property.end(),
-            ERR_INVALID_PARAM, "set audio enhance property not valid %{public}s:%{public}s",
-            item.enhanceClass.c_str(), item.enhanceProp.c_str());
-    }
-    AudioEnhancePropertyArray oldPropertyArray = {};
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "set audio enhance property: gsp null");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->GetAudioEnhanceProperty(oldPropertyArray);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("get audio enhance property fail");
-        IPCSkeleton::SetCallingIdentity(identity);
-        return ret;
-    }
-    ret = gsp->SetAudioEnhanceProperty(propertyArray, GetCurrentInputDeviceType());
-    IPCSkeleton::SetCallingIdentity(identity);
-    ReloadSourceForEffect(oldPropertyArray, propertyArray);
-    return ret;
-}
-
-int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
+int32_t AudioPolicyService::GetAudioEnhancePropertyByDevice(const DeviceType& deviceType,
+    AudioEffectPropertyArray &propertyArray)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "get audio enhance property: gsp null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->GetAudioEnhanceProperty(propertyArray);
-    IPCSkeleton::SetCallingIdentity(identity);
-    return ret;
-}
-
-int32_t AudioPolicyService::GetAudioEnhancePropertyByDevice(DeviceType deviceType,
-    AudioEnhancePropertyArray &propertyArray)
-{
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "get audio enhance property: gsp null");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->GetAudioEnhanceProperty(propertyArray, deviceType);
+    int32_t ret = gsp->GetAudioEffectProperty(propertyArray, deviceType);
     IPCSkeleton::SetCallingIdentity(identity);
     return ret;
 }
