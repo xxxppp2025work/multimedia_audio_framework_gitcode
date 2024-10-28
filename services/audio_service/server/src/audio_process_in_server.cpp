@@ -113,7 +113,7 @@ int32_t AudioProcessInServer::Start()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
-    std::lock_guard<std::mutex> lock(statusLock_);
+    std::lock_guard lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STARTING || streamStatus_->load() == STREAM_STAND_BY,
         ERR_ILLEGAL_STATE, "Start failed, invalid status.");
 
@@ -125,10 +125,20 @@ int32_t AudioProcessInServer::Start()
     if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(processConfig_.appInfo.appTokenId,
             processConfig_.appInfo.appFullTokenId), ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacy(processConfig_.appInfo.appTokenId,
-            AUDIO_PERMISSION_START), ERR_PERMISSION_DENIED, "NotifyPrivacy failed!");
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyStart(processConfig_.appInfo.appTokenId, sessionId_),
+            ERR_PERMISSION_DENIED, "NotifyPrivacy failed!");
     }
 
+    HandleNotifyStartListeners();
+
+    processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
+
+    AUDIO_INFO_LOG("Start in server success!");
+    return SUCCESS;
+}
+
+void AudioProcessInServer::HandleNotifyStartListeners()
+{
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
     }
@@ -138,11 +148,8 @@ int32_t AudioProcessInServer::Start()
         WriterRenderStreamStandbySysEvent(sessionId_, 0);
         streamStatus_->store(STREAM_STARTING);
     }
-    processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
-
-    AUDIO_INFO_LOG("Start in server success!");
-    return SUCCESS;
 }
+
 
 int32_t AudioProcessInServer::Pause(bool isFlush)
 {
@@ -154,7 +161,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
         ERR_ILLEGAL_STATE, "Pause failed, invalid status.");
     if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_STOP);
+        PermissionUtil::NotifyStop(tokenId, sessionId_);
     }
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this);
@@ -180,7 +187,7 @@ int32_t AudioProcessInServer::Resume()
         uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId), ERR_OPERATION_FAILED,
             "VerifyBackgroundCapture failed!");
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_START), ERR_PERMISSION_DENIED,
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyStart(tokenId, sessionId_), ERR_PERMISSION_DENIED,
             "NotifyPrivacy failed!");
     }
 
@@ -201,7 +208,7 @@ int32_t AudioProcessInServer::Stop()
         ERR_ILLEGAL_STATE, "Stop failed, invalid status.");
     if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_STOP);
+        PermissionUtil::NotifyStop(tokenId, sessionId_);
     }
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this); // notify endpoint?
@@ -222,7 +229,7 @@ int32_t AudioProcessInServer::Release(bool destoryAtOnce)
 
     if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_STOP);
+        PermissionUtil::NotifyStop(tokenId, sessionId_);
     }
     int32_t ret = releaseCallback_->OnProcessRelease(this, destoryAtOnce);
     AUDIO_INFO_LOG("notify service release result: %{public}d", ret);
