@@ -285,11 +285,8 @@ public:
     int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) override;
 
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
-    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) override;
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
@@ -491,7 +488,7 @@ public:
     void AudioStreamDump(std::string &dumpString);
     void OffloadStatusDump(std::string &dumpString);
     void XmlParsedDataMapDump(std::string &dumpString);
-    void EffectManagerInfoDump(std::string &dumpString);
+    void EffectServiceInfoDump(std::string &dumpString);
     void MicrophoneMuteInfoDump(std::string &dumpString);
 
 protected:

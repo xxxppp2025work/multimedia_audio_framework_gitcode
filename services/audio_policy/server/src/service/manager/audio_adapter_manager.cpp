@@ -107,13 +107,14 @@ bool AudioAdapterManager::Init()
     char currentVolumeValue[3] = {0};
     auto ret = GetParameter("persist.multimedia.audio.ringtonevolume", "7",
         currentVolumeValue, sizeof(currentVolumeValue));
-    if (ret > 0) {
+    if (ret > 0 && !VolumeUtils::IsPCVolumeEnable()) {
         int32_t ringtoneVolumeLevel = atoi(currentVolumeValue);
         volumeDataMaintainer_.SetStreamVolume(STREAM_RING, ringtoneVolumeLevel);
         AUDIO_INFO_LOG("Init: Get ringtone volume to map success %{public}d",
             volumeDataMaintainer_.GetStreamVolume(STREAM_RING));
     } else {
-        AUDIO_ERR_LOG("Init: Get volume parameter failed %{public}d", ret);
+        AUDIO_INFO_LOG("Init: Get volume parameter default %{public}d",
+            volumeDataMaintainer_.GetStreamVolume(STREAM_RING));
     }
 
     std::string defaultSafeVolume = std::to_string(GetMaxVolumeLevel(STREAM_MUSIC));

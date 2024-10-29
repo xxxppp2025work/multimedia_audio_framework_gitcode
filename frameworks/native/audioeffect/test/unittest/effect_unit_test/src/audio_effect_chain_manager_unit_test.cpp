@@ -2317,13 +2317,15 @@ HWTEST(AudioEffectChainManagerUnitTest, FindMaxSessionID_002, TestSize.Level1)
 HWTEST(AudioEffectChainManagerUnitTest, SetAudioEffectProperty_001, TestSize.Level1)
 {
     AudioEffectProperty  audioEffectProperty1 = {
-        .effectClass = "testClass1",
-        .effectProp = "testProp1",
+        name = "testClass1",
+        category = "testProp1",
+        flag = 0,
     };
 
     AudioEffectProperty  audioEffectProperty2 = {
-        .effectClass = "testClass2",
-        .effectProp = "testProp2",
+        name = "testClass2",
+        category = "testProp2",
+        flag = 0,
     };
 
     AudioEffectPropertyArray audioEffectPropertyArray = {};
