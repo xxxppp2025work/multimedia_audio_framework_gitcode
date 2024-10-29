@@ -34,10 +34,10 @@ AudioCapturerAdapter* AudioCapturerAdapter::GetInstance()
     return &audioCapturerAdapter_;
 }
 
-AudioCapturer *AudioCapturerAdapter::GetAudioCapturerById(SLuint32 id)
+shared_ptr<AudioCapturer> AudioCapturerAdapter::GetAudioCapturerById(SLuint32 id)
 {
     AUDIO_INFO_LOG("AudioCapturerAdapter::GetAudioCapturerById: %{public}lu", id);
-    return captureMap_.find(id)->second.get();
+    return captureMap_.find(id)->second;
 }
 
 void AudioCapturerAdapter::EraseAudioCapturerById(SLuint32 id)
@@ -75,7 +75,7 @@ SLresult AudioCapturerAdapter::CreateAudioCapturerAdapter(SLuint32 id, SLDataSou
 SLresult AudioCapturerAdapter::SetCaptureStateAdapter(SLuint32 id, SLuint32 state)
 {
     AUDIO_INFO_LOG("AudioCapturerAdapter::SetCaptureStateAdapter state: %{public}lu.", state);
-    AudioCapturer *audioCapturer = GetAudioCapturerById(id);
+    shared_ptr<AudioCapturer> audioCapturer = GetAudioCapturerById(id);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, SL_RESULT_RESOURCE_ERROR,
         "invalid id.");
 
@@ -108,7 +108,7 @@ SLresult AudioCapturerAdapter::SetCaptureStateAdapter(SLuint32 id, SLuint32 stat
 
 SLresult AudioCapturerAdapter::GetCaptureStateAdapter(SLuint32 id, SLuint32 *state)
 {
-    AudioCapturer *audioCapturer = GetAudioCapturerById(id);
+    shared_ptr<AudioCapturer> audioCapturer = GetAudioCapturerById(id);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, SL_RESULT_RESOURCE_ERROR,
         "invalid id.");
 
@@ -133,7 +133,7 @@ SLresult AudioCapturerAdapter::GetCaptureStateAdapter(SLuint32 id, SLuint32 *sta
 
 SLresult AudioCapturerAdapter::EnqueueAdapter(SLuint32 id, const void *buffer, SLuint32 size)
 {
-    AudioCapturer *audioCapturer = GetAudioCapturerById(id);
+    shared_ptr<AudioCapturer> audioCapturer = GetAudioCapturerById(id);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, SL_RESULT_RESOURCE_ERROR,
         "invalid id.");
 
@@ -148,7 +148,7 @@ SLresult AudioCapturerAdapter::EnqueueAdapter(SLuint32 id, const void *buffer, S
 
 SLresult AudioCapturerAdapter::ClearAdapter(SLuint32 id)
 {
-    AudioCapturer *audioCapturer = GetAudioCapturerById(id);
+    shared_ptr<AudioCapturer> audioCapturer = GetAudioCapturerById(id);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, SL_RESULT_RESOURCE_ERROR,
         "invalid id.");
 
@@ -158,7 +158,7 @@ SLresult AudioCapturerAdapter::ClearAdapter(SLuint32 id)
 
 SLresult AudioCapturerAdapter::GetStateAdapter(SLuint32 id, SLOHBufferQueueState *state)
 {
-    AudioCapturer *audioCapturer = GetAudioCapturerById(id);
+    shared_ptr<AudioCapturer> audioCapturer = GetAudioCapturerById(id);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, SL_RESULT_RESOURCE_ERROR,
         "invalid id.");
 
@@ -171,7 +171,7 @@ SLresult AudioCapturerAdapter::GetStateAdapter(SLuint32 id, SLOHBufferQueueState
 
 SLresult AudioCapturerAdapter::GetBufferAdapter(SLuint32 id, SLuint8 **buffer, SLuint32 *size)
 {
-    AudioCapturer *audioCapturer = GetAudioCapturerById(id);
+    shared_ptr<AudioCapturer> audioCapturer = GetAudioCapturerById(id);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, SL_RESULT_RESOURCE_ERROR,
         "invalid id.");
 
@@ -186,7 +186,7 @@ SLresult AudioCapturerAdapter::RegisterCallbackAdapter(SLOHBufferQueueItf itf,
     SlOHBufferQueueCallback callback, void *pContext)
 {
     IOHBufferQueue *thiz = (IOHBufferQueue *)itf;
-    AudioCapturer *audioCapturer = GetAudioCapturerById(thiz->mId);
+    shared_ptr<AudioCapturer> audioCapturer = GetAudioCapturerById(thiz->mId);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, SL_RESULT_RESOURCE_ERROR,
         "invalid id.");
 

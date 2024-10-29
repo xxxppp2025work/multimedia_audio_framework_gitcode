@@ -34,26 +34,20 @@ AudioPlayerAdapter* AudioPlayerAdapter::GetInstance()
     return &audioPlayerAdapter_;
 }
 
-AudioRenderer* AudioPlayerAdapter::GetAudioRenderById(SLuint32 id)
+shared_ptr<AudioRenderer> AudioPlayerAdapter::GetAudioRenderById(SLuint32 id)
 {
     auto it = renderMap_.find(id);
     if (it == renderMap_.end()) {
         return nullptr;
     }
-    return it->second.get();
+    return it->second;
 }
 
 void AudioPlayerAdapter::EraseAudioRenderById(SLuint32 id)
 {
     AUDIO_INFO_LOG("AudioPlayerAdapter::EraseAudioRenderById: %{public}lu", id);
-    AudioRenderer* pRender = GetAudioRenderById(id);
     renderMap_.erase(id);
     callbackMap_.erase(id);
-    if (pRender) {
-        pRender->Release();
-        delete pRender;
-        pRender = nullptr;
-    }
     return;
 }
 
@@ -86,7 +80,7 @@ SLresult AudioPlayerAdapter::CreateAudioPlayerAdapter
 
 SLresult AudioPlayerAdapter::SetPlayStateAdapter(SLuint32 id, SLuint32 state)
 {
-    AudioRenderer* pRender = GetAudioRenderById(id);
+    shared_ptr<AudioRenderer> pRender = GetAudioRenderById(id);
     if (pRender == nullptr) {
         AUDIO_ERR_LOG("AudioPlayerAdapter::SetPlayStateAdapter invalid id.");
         return SL_RESULT_RESOURCE_ERROR;
@@ -119,7 +113,7 @@ SLresult AudioPlayerAdapter::SetPlayStateAdapter(SLuint32 id, SLuint32 state)
 
 SLresult AudioPlayerAdapter::GetPlayStateAdapter(SLuint32 id, SLuint32 *state)
 {
-    AudioRenderer* pRender = GetAudioRenderById(id);
+    shared_ptr<AudioRenderer> pRender = GetAudioRenderById(id);
     if (pRender == nullptr) {
         AUDIO_ERR_LOG("AudioPlayerAdapter::GetPlayStateAdapter invalid id.");
         return SL_RESULT_RESOURCE_ERROR;
@@ -145,7 +139,7 @@ SLresult AudioPlayerAdapter::GetPlayStateAdapter(SLuint32 id, SLuint32 *state)
 
 SLresult AudioPlayerAdapter::SetVolumeLevelAdapter(SLuint32 id, SLmillibel level)
 {
-    AudioRenderer *audioRenderer = GetAudioRenderById(id);
+    shared_ptr<AudioRenderer> audioRenderer = GetAudioRenderById(id);
     if (audioRenderer == nullptr) {
         AUDIO_ERR_LOG("AudioPlayerAdapter::SetVolumeLevelAdapter invalid id.");
         return SL_RESULT_RESOURCE_ERROR;
@@ -160,7 +154,7 @@ SLresult AudioPlayerAdapter::SetVolumeLevelAdapter(SLuint32 id, SLmillibel level
 
 SLresult AudioPlayerAdapter::GetVolumeLevelAdapter(SLuint32 id, SLmillibel *level)
 {
-    AudioRenderer *audioRenderer = GetAudioRenderById(id);
+    shared_ptr<AudioRenderer> audioRenderer = GetAudioRenderById(id);
     if (audioRenderer == nullptr) {
         AUDIO_ERR_LOG("AudioPlayerAdapter::GetVolumeLevelAdapter invalid id.");
         return SL_RESULT_RESOURCE_ERROR;
@@ -180,7 +174,7 @@ SLresult AudioPlayerAdapter::GetMaxVolumeLevelAdapter(SLuint32 id, SLmillibel *l
 
 SLresult AudioPlayerAdapter::EnqueueAdapter(SLuint32 id, const void *buffer, SLuint32 size)
 {
-    AudioRenderer *audioRenderer = GetAudioRenderById(id);
+    shared_ptr<AudioRenderer> audioRenderer = GetAudioRenderById(id);
     if (audioRenderer == nullptr) {
         AUDIO_ERR_LOG("AudioPlayerAdapter::EnqueueAdapter invalid id.");
         return SL_RESULT_RESOURCE_ERROR;
@@ -196,7 +190,7 @@ SLresult AudioPlayerAdapter::EnqueueAdapter(SLuint32 id, const void *buffer, SLu
 
 SLresult AudioPlayerAdapter::ClearAdapter(SLuint32 id)
 {
-    AudioRenderer *audioRenderer = GetAudioRenderById(id);
+    shared_ptr<AudioRenderer> audioRenderer = GetAudioRenderById(id);
     if (audioRenderer == nullptr) {
         AUDIO_ERR_LOG("AudioPlayerAdapter::ClearAdapter invalid id.");
         return SL_RESULT_RESOURCE_ERROR;
@@ -208,7 +202,7 @@ SLresult AudioPlayerAdapter::ClearAdapter(SLuint32 id)
 
 SLresult AudioPlayerAdapter::GetStateAdapter(SLuint32 id, SLOHBufferQueueState *state)
 {
-    AudioRenderer *audioRenderer = GetAudioRenderById(id);
+    shared_ptr<AudioRenderer> audioRenderer = GetAudioRenderById(id);
     if (audioRenderer == nullptr) {
         AUDIO_ERR_LOG("AudioPlayerAdapter::GetStateAdapter invalid id.");
         return SL_RESULT_RESOURCE_ERROR;
@@ -223,7 +217,7 @@ SLresult AudioPlayerAdapter::GetStateAdapter(SLuint32 id, SLOHBufferQueueState *
 
 SLresult AudioPlayerAdapter::GetBufferAdapter(SLuint32 id, SLuint8 **buffer, SLuint32 *size)
 {
-    AudioRenderer *audioRenderer = GetAudioRenderById(id);
+    shared_ptr<AudioRenderer> audioRenderer = GetAudioRenderById(id);
     if (audioRenderer == nullptr) {
         AUDIO_ERR_LOG("AudioPlayerAdapter::GetBufferAdapter invalid id.");
         return SL_RESULT_RESOURCE_ERROR;
@@ -240,7 +234,7 @@ SLresult AudioPlayerAdapter::RegisterCallbackAdapter
     (SLOHBufferQueueItf itf, SlOHBufferQueueCallback callback, void *pContext)
 {
     IOHBufferQueue *thiz = (IOHBufferQueue *)itf;
-    AudioRenderer *audioRenderer = GetAudioRenderById(thiz->mId);
+    shared_ptr<AudioRenderer> audioRenderer = GetAudioRenderById(thiz->mId);
     if (audioRenderer == nullptr) {
         AUDIO_ERR_LOG("AudioPlayerAdapter::RegisterCallbackAdapter invalid id.");
         return SL_RESULT_RESOURCE_ERROR;

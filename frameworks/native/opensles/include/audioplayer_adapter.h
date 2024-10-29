@@ -29,7 +29,7 @@ namespace AudioStandard {
 class AudioPlayerAdapter {
 public:
     static AudioPlayerAdapter* GetInstance();
-    AudioRenderer *GetAudioRenderById(SLuint32 id);
+    std::shared_ptr<AudioRenderer> GetAudioRenderById(SLuint32 id);
     void EraseAudioRenderById(SLuint32 id);
     SLresult CreateAudioPlayerAdapter
         (SLuint32 id, SLDataSource *dataSource, SLDataSink *dataSink, AudioStreamType streamType);
