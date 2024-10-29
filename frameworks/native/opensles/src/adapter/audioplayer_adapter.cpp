@@ -40,7 +40,7 @@ AudioRenderer* AudioPlayerAdapter::GetAudioRenderById(SLuint32 id)
     if (it == renderMap_.end()) {
         return nullptr;
     }
-    return it->second;
+    return it->second.get();
 }
 
 void AudioPlayerAdapter::EraseAudioRenderById(SLuint32 id)
@@ -72,18 +72,15 @@ SLresult AudioPlayerAdapter::CreateAudioPlayerAdapter
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_NEW;
-    string cachePath = "/data/storage/el2/base/cache";
-    unique_ptr<AudioRenderer> rendererHolder = AudioRenderer::Create(cachePath.c_str(), rendererOptions);
+    shared_ptr<AudioRenderer> rendererHolder = AudioRenderer::CreateRenderer(rendererOptions);
     if (!rendererHolder) {
         AUDIO_ERR_LOG("AudioPlayerAdapter::CreateAudioPlayer fail, ID: %{public}lu", id);
         return SL_RESULT_RESOURCE_ERROR;
     }
-    // use release to get raw pointer, so need to delete explicitly when destory object
-    AudioRenderer *renderer = rendererHolder.release();
     AUDIO_INFO_LOG("AudioPlayerAdapter::CreateAudioPlayer ID: %{public}lu", id);
-    renderer->SetRenderMode(RENDER_MODE_CALLBACK);
-    renderer->SetOffloadAllowed(false);
-    renderMap_.insert(make_pair(id, renderer));
+    rendererHolder->SetRenderMode(RENDER_MODE_CALLBACK);
+    rendererHolder->SetOffloadAllowed(false);
+    renderMap_.insert(make_pair(id, rendererHolder));
     return SL_RESULT_SUCCESS;
 }
 

@@ -48,7 +48,7 @@ private:
     AudioPlayerAdapter();
     ~AudioPlayerAdapter();
     const float MAGNIFICATION = 2000;
-    std::map<SLuint32, AudioRenderer*> renderMap_;
+    std::map<SLuint32, std::shared_ptr<AudioRenderer>> renderMap_;
     std::shared_ptr<ReadOrWriteCallbackAdapter> callbackPtr_;
     std::map<SLuint32, std::shared_ptr<ReadOrWriteCallbackAdapter>> callbackMap_;
 

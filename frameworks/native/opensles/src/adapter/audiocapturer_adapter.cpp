@@ -37,7 +37,7 @@ AudioCapturerAdapter* AudioCapturerAdapter::GetInstance()
 AudioCapturer *AudioCapturerAdapter::GetAudioCapturerById(SLuint32 id)
 {
     AUDIO_INFO_LOG("AudioCapturerAdapter::GetAudioCapturerById: %{public}lu", id);
-    return captureMap_.find(id)->second;
+    return captureMap_.find(id)->second.get();
 }
 
 void AudioCapturerAdapter::EraseAudioCapturerById(SLuint32 id)
@@ -62,15 +62,13 @@ SLresult AudioCapturerAdapter::CreateAudioCapturerAdapter(SLuint32 id, SLDataSou
     capturerOptions.streamInfo.channels = capturerParams.audioChannel;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = 0;
-    string cachePath = "/data/storage/el2/base/cache";
-    unique_ptr<AudioCapturer> capturerHolder = AudioCapturer::Create(capturerOptions, cachePath.c_str());
+    shared_ptr<AudioCapturer> capturerHolder = AudioCapturer::CreateCapturer(capturerOptions);
     CHECK_AND_RETURN_RET_LOG(capturerHolder, SL_RESULT_RESOURCE_ERROR,
         "CreateAudioCapturerAdapter fail, ID: %{public}lu", id);
     capturerHolder->SetParams(capturerParams);
-    AudioCapturer *capturer = capturerHolder.release();
+    capturerHolder->SetCaptureMode(CAPTURE_MODE_CALLBACK);
     AUDIO_INFO_LOG("CreateAudioCapturerAdapter ID: %{public}lu", id);
-    capturer->SetCaptureMode(CAPTURE_MODE_CALLBACK);
-    captureMap_.insert(make_pair(id, capturer));
+    captureMap_.insert(make_pair(id, capturerHolder));
     return SL_RESULT_SUCCESS;
 }
 
