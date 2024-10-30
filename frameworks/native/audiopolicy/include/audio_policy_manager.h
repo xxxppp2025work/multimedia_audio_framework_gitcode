@@ -424,6 +424,8 @@ public:
         const StreamUsage streamUsage, bool isRunning);
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
+
+    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

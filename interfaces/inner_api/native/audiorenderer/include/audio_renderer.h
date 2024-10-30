@@ -939,6 +939,22 @@ public:
      */
     virtual int32_t SetDefaultOutputDevice(DeviceType deviceType) { return 0; };
 
+    /**
+     * @brief Mute audio rendering.
+     *
+     * @return Returns <b>true</b> if the rendering is successfully Paused; returns <b>false</b> otherwise.
+     * @since 12
+     */
+    virtual bool Mute(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const {return false;};
+ 
+    /**
+     * @brief Unmute audio rendering.
+     *
+     * @return Returns <b>true</b> if the rendering is successfully Paused; returns <b>false</b> otherwise.
+     * @since 12
+     */
+    virtual bool Unmute(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const {return false;};
+ 
 private:
     static int32_t CreateCheckParam(const AudioRendererOptions &rendererOptions,
         const AppInfo &appInfo);
