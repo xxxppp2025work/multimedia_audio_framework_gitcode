@@ -1807,7 +1807,7 @@ int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
             break;
         default:
             AUDIO_INFO_LOG("UpdateStreamState:streamSetState value is error");
-            break; 
+            break;
     }
     StreamSetStateEventInternal setStateEvent = {};
     setStateEvent.streamSetState = setState;
