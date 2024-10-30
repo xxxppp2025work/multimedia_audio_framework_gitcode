@@ -750,12 +750,12 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_013, TestSize.Level1)
 * @tc.name  : Test HandleThirdPartCode API
 * @tc.type  : FUNC
 * @tc.number: HandleThirdPartCode_014
-* @tc.desc  : Test HandleThirdPartCode interface. Set code value to SET_AUDIO_ENHANCE_PROPERTY
+* @tc.desc  : Test HandleThirdPartCode interface. Set code value to SET_AUDIO_EFFECT_PROPERTY
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_014, TestSize.Level1)
 {
     std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_ENHANCE_PROPERTY);
+    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY);
     MessageParcel data;
     data.WriteInt32(2);
     MessageParcel reply;
@@ -789,19 +789,19 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_015, TestSize.Level1)
 * @tc.name  : Test HandleThirdPartCode API
 * @tc.type  : FUNC
 * @tc.number: HandleThirdPartCode_016
-* @tc.desc  : Test HandleThirdPartCode interface. Set code value to GET_AUDIO_ENHANCE_PROPERTY
+* @tc.desc  : Test HandleThirdPartCode interface. Set code value to GET_AUDIO_EFFECT_PROPERTY
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_016, TestSize.Level1)
 {
     std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_ENHANCE_PROPERTY);
+    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY);
     MessageParcel data;
     data.WriteInt32(2);
     MessageParcel reply;
     MessageOption option;
     auto ret = audioServer->HandleThirdPartCode(format, data, reply, option);
     EXPECT_EQ(AUDIO_OK, ret);
-    format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_ENHANCE_PROPERTY);
+    format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_EFFECT_PROPERTY);
     ret = audioServer->HandleThirdPartCode(format, data, reply, option);
     EXPECT_EQ(AUDIO_OK, ret);
 }
