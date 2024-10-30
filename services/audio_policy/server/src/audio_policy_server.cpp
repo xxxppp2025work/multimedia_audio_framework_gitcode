@@ -213,9 +213,6 @@ void AudioPolicyServer::HandleKvDataShareEvent()
 void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
 {
     AUDIO_DEBUG_LOG("AudioPolicyServer::OnRemoveSystemAbility systemAbilityId:%{public}d removed", systemAbilityId);
-    if (systemAbilityId == AVSESSION_SERVICE_ID) {
-        ResumeStreamState();
-    }
 }
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
