@@ -78,7 +78,7 @@ public:
      *
      * @param streamSetStateEventInternal Contains the set even information.
      */
-    virtual void UnmuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};    
+    virtual void UnmuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {}; 
     /**
      * Paused Stream was controlled by system application
      *
