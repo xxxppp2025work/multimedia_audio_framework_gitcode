@@ -198,6 +198,25 @@ enum StreamUsage {
 };
 
 /**
+* background mute StreamUsage type.
+*/
+const std::vector<StreamUsage> BACKGROUND_MUTE_STREAM_USAGE {
+    STREAM_USAGE_MUSIC,
+    STREAM_USAGE_MOVIE,
+    STREAM_USAGE_GAME,
+    STREAM_USAGE_AUDIOBOOK
+};
+ 
+/**
+* background not playback StreamUsage type.
+*/
+const std::vector<StreamUsage> BACKGROUND_NOSTART_STREAM_USAGE {
+    STREAM_USAGE_MUSIC,
+    STREAM_USAGE_MOVIE,
+    STREAM_USAGE_AUDIOBOOK
+};
+
+/**
 * Enumerates the audio content type.
 */
 enum ContentType {
