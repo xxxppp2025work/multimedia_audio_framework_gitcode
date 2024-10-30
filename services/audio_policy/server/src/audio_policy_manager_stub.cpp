@@ -166,6 +166,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "IS_AUDIO_SESSION_ACTIVATED",
     "LOAD_SPLIT_MODULE",
     "SET_DEFAULT_OUTPUT_DEVICE",
+    "IS_ALLOWED_PLAYBACK",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -522,10 +523,7 @@ void AudioPolicyManagerStub::SelectOutputDeviceInternal(MessageParcel &data, Mes
 
     int validSize = 20; // Use 20 as limit.
     int size = data.ReadInt32();
-    if (size <= 0 || size > validSize) {
-        AUDIO_ERR_LOG("SelectOutputDevice get invalid device size.");
-        return;
-    }
+    CHECK_AND_RETURN_LOG((size > 0 && size <= validSize), "SelectOutputDevice get invalid device size.");
     std::vector<sptr<AudioDeviceDescriptor>> targetOutputDevice;
     for (int i = 0; i < size; i++) {
         sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
@@ -1838,6 +1836,9 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::LOAD_SPLIT_MODULE):
                 LoadSplitModuleInternal(data, reply);
                 break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ALLOWED_PLAYBACK):
+                IsAllowedPlaybackInternal(data, reply);
+                break;
             default:
                 OnMiddlesRemoteRequest(code, data, reply, option);
                 break;
@@ -2006,6 +2007,14 @@ void AudioPolicyManagerStub::InjectInterruptionInternal(MessageParcel &data, Mes
 
     int32_t result = InjectInterruption(networkId, event);
     reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::IsAllowedPlaybackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t uid = data.ReadInt32();
+    int32_t pid = data.ReadInt32();
+    bool result = IsAllowedPlayback(uid, pid);
+    reply.WriteBool(result);
 }
 
 void AudioPolicyManagerStub::LoadSplitModuleInternal(MessageParcel &data, MessageParcel &reply)
