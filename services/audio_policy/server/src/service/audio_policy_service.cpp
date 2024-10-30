@@ -35,6 +35,8 @@
  
 #include "media_monitor_manager.h"
 #include "client_type_manager.h"
+#include "avsession_manager.h"
+#include "audio_setting_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -6188,7 +6190,10 @@ void AudioPolicyService::UpdateInputDeviceInfo(DeviceType deviceType)
     SetCurrentInputDeviceType(curType);
     AUDIO_DEBUG_LOG("Input device updated to %{public}d", curType);
 }
-
+int32_t AudioPolicyService::ResumeStreamState()
+{
+    return streamCollector_.ResumeStreamState();
+}
 int32_t AudioPolicyService::UpdateStreamState(int32_t clientUid,
     StreamSetStateEventInternal &streamSetStateEventInternal)
 {
