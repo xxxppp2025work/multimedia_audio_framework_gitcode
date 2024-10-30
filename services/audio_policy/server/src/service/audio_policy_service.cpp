@@ -8779,6 +8779,14 @@ int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const
     return openRet;
 }
 
+bool AudioPolicyService::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
+{
+#ifdef AVSESSION_ENABLE
+    return OHOS::AVSession::AVSessionManager::GetInstance().IsAudioPlaybackAllowed(uid, pid);
+#endif
+    return true;
+}
+
 int32_t AudioPolicyService::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning)
 {
