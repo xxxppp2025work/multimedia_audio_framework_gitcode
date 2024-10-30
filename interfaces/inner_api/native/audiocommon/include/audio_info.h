@@ -758,7 +758,6 @@ struct Volume {
 enum StreamSetState {
     STREAM_PAUSE,
     STREAM_RESUME,
-    STREAM_RESUME,
     STREAM_MUTE,
     STREAM_UNMUTE
 };
