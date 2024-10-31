@@ -633,7 +633,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     AUDIO_INFO_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
         "interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.mode);
 
-    if(state_ == RENDERER_RUNNING)
+    if (state_ == RENDERER_RUNNING)
         return true;
     CHECK_AND_RETURN_RET_LOG(IsAllowedStartBackgroud(), false, "Start failed. IsAllowedStartBackgroud is false");
     RendererState state = GetStatus();
@@ -742,7 +742,7 @@ bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType)
     Trace trace("AudioRenderer::PauseTransitent");
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::PauseTransitent. id: %{public}u", sessionID_);
-    if(state_ == RENDERER_PAUSED)
+    if (state_ == RENDERER_PAUSED)
         return true;
 
     if (IsNoStreamRenderer()) {
@@ -793,7 +793,7 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
 
     AUDIO_INFO_LOG("StreamClientState for Renderer::Pause. id: %{public}u", sessionID_);
 
-    if(state_ == RENDERER_PAUSED)
+    if (state_ == RENDERER_PAUSED)
         return true;
     if (IsNoStreamRenderer()) {
         // When the cellular call stream is pausing, only need to deactivate audio interrupt.
@@ -826,7 +826,8 @@ bool AudioRendererPrivate::Stop()
 {
     AUDIO_INFO_LOG("StreamClientState for Renderer::Stop. id: %{public}u", sessionID_);
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
-    if(state_ == RENDERER_STOPPED)
+
+    if (state_ == RENDERER_STOPPED)
         return true;
     if (IsNoStreamRenderer()) {
         // When the cellular call stream is stopping, only need to deactivate audio interrupt.
