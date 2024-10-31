@@ -2153,7 +2153,8 @@ void AudioPolicyService::MuteSinkPortForSwtichDevice(unique_ptr<AudioRendererCha
 
     moveDeviceFinished_ = false;
 
-    if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
+    if (audioScene_ == AUDIO_SCENE_PHONE_CALL &&
+        rendererChangeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
         return SetVoiceCallMuteForSwitchDevice();
     }
 
