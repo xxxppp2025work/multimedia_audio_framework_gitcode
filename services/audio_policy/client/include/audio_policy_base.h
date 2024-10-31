@@ -25,6 +25,7 @@
 #include "audio_system_manager.h"
 #include "audio_effect.h"
 #include "microphone_descriptor.h"
+#include "audio_tone_info.h"
 
 namespace OHOS {
 namespace AudioStandard {

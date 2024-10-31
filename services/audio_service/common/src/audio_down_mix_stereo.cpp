@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include <dlfcn.h>
 #include <cinttypes>
+#include <unistd.h>
 
 namespace OHOS {
 namespace AudioStandard {

@@ -17,10 +17,32 @@
 
 #include <parcel.h>
 #include "audio_device_info.h"
-#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+/**
+ * Describes three-dimensional value.
+ * @since 11
+ */
+struct Vector3D {
+    /**
+     * X-axis value.
+     * @since 11
+     */
+    float x;
+    /**
+     * Y-axis value.
+     * @since 11
+     */
+    float y;
+    /**
+     * Z-axis value.
+     * @since 11
+     */
+    float z;
+};
+
 class MicrophoneDescriptor;
 class MicrophoneDescriptor : public Parcelable {
     friend class AudioSystemManager;
