@@ -8845,7 +8845,7 @@ float AudioPolicyService::GetMaxAmplitude(const int32_t deviceId)
         IPCSkeleton::SetCallingIdentity(identity);
         return inputMaxAmplitude;
     }
-
+    AUDIO_INFO_LOG("Incoming device type: %{public}d", deviceId);
     return 0;
 }
 

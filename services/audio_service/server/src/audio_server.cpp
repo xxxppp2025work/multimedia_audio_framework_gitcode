@@ -2160,7 +2160,7 @@ float AudioServer::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType)
             return (normalMaxAmplitude > fastMaxAmplitude) ? normalMaxAmplitude : fastMaxAmplitude;
         }
     }
-
+    AUDIO_INFO_LOG("Currently used device type: %{public}d", deviceType);
     return 0;
 }
 
