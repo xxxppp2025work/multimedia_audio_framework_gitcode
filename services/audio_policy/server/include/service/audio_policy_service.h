@@ -628,7 +628,7 @@ private:
 
     int32_t HandleScoOutputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
-        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
+        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE);
 
     void FetchOutputDevice(vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
