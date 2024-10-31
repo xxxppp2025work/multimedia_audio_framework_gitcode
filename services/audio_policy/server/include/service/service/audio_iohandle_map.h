@@ -1,0 +1,64 @@
+#ifndef ST_AUDIO_IOHANDLE_MAP_H
+#define ST_AUDIO_IOHANDLE_MAP_H
+
+#include <bitset>
+#include <list>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <mutex>
+#include "singleton.h"
+#include "audio_group_handle.h"
+#include "audio_info.h"
+#include "audio_manager_base.h"
+#include "audio_module_info.h"
+
+namespace OHOS {
+namespace AudioStandard {
+
+class AudioIOHandleMap {
+public:
+    static AudioIOHandleMap& GetInstance()
+    {
+        static AudioIOHandleMap instance;
+        return instance;
+    }
+
+    void DeInit();
+    std::unordered_map<std::string, AudioIOHandle> GetCopy();
+    bool GetModuleIdByKey(std::string moduleName, AudioIOHandle& moduleId);
+    void DelIOHanleInfo(std::string moduleName);
+    void AddIOHanleInfo(std::string moduleName, const AudioIOHandle& moduleId);
+    AudioIOHandle GetSinkIOHandle(DeviceType deviceType);
+    AudioIOHandle GetSourceIOHandle(DeviceType deviceType);
+    bool CheckIOHandleExist(std::string moduleName);
+
+    int32_t OpenPortAndInsertIOHandle(const std::string &moduleName, const AudioModuleInfo &moduleInfo);
+    int32_t ClosePortAndEraseIOHandle(const std::string &moduleName);
+
+    void NotifyUnmutePort();
+    void MuteSinkPort(const std::string &portName, int32_t duration, bool isSync);
+    void SetMoveFinish(bool flag);
+    void MuteDefaultSinkPort(std::string sinkName);
+private:
+    AudioIOHandleMap() {}
+    ~AudioIOHandleMap() {}
+    
+    void UnmutePortAfterMuteDuration(int32_t muteDuration, std::string portName, DeviceType deviceType);
+    std::string GetHalNameForDevice(const std::string &role, const DeviceType deviceType);
+private:
+    std::mutex ioHandlesMutex_;
+    std::unordered_map<std::string, AudioIOHandle> IOHandles_ = {};
+
+    std::mutex moveDeviceMutex_;
+    std::condition_variable moveDeviceCV_;
+    std::atomic<bool> moveDeviceFinished_ = false;
+
+    static std::map<std::string, std::string> sinkPortStrToClassStrMap_;
+};
+
+
+}
+}
+
+#endif
