@@ -321,7 +321,7 @@ public:
     void RegiestPolicy();
 
     // override for IPolicyProvider
-    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, DeviceInfo &deviceInfo);
+    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, AudioDeviceDescriptor &deviceInfo);
 
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
 
@@ -499,7 +499,7 @@ public:
     bool getFastControlParam();
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
-    
+
     bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid);
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
@@ -531,8 +531,8 @@ private:
 
     ~AudioPolicyService();
 
-    void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &desc, bool hasBTPermission,
-        bool hasSystemPermission);
+    void UpdateDeviceInfo(AudioDeviceDescriptor &deviceInfo, const sptr<AudioDeviceDescriptor> &desc,
+        bool hasBTPermission, bool hasSystemPermission);
 
     std::string GetSinkPortName(InternalDeviceType deviceType, AudioPipeType pipeType = PIPE_TYPE_UNKNOWN);
 
@@ -656,6 +656,8 @@ private:
 
     void UpdateConnectedDevicesWhenConnecting(const AudioDeviceDescriptor& updatedDesc,
         std::vector<sptr<AudioDeviceDescriptor>>& descForCb);
+
+    void RemoveOfflineDevice(const AudioDeviceDescriptor& updatedDesc);
 
     void UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& updatedDesc,
         std::vector<sptr<AudioDeviceDescriptor>> &descForCb);
@@ -785,7 +787,7 @@ private:
     int32_t ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
-    
+
     int32_t ActivateA2dpDeviceWhenDescEnabled(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -798,7 +800,7 @@ private:
     void UpdateConnectedDevicesWhenConnectingForInputDevice(const AudioDeviceDescriptor &updatedDesc,
         std::vector<sptr<AudioDeviceDescriptor>> &descForCb);
 
-    bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo);
+    bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceInfo);
 
     bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceDesc);
 
@@ -815,8 +817,6 @@ private:
 
     void MuteSinkPortForSwtichDevice(shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason);
-
-    std::string GetSinkName(const DeviceInfo& desc, int32_t sessionId);
 
     std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
 
@@ -854,7 +854,7 @@ private:
 
     int32_t CheckActiveMusicTime();
 
-    int32_t GetVoipDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo, int32_t type,
+    int32_t GetVoipDeviceInfo(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo, int32_t type,
         std::vector<sptr<AudioDeviceDescriptor>> &preferredDeviceList);
 
     int32_t GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType, int32_t flags,
@@ -924,7 +924,7 @@ private:
 
     void UpdateRoute(shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices);
-    
+
     void GetTargetSourceTypeAndMatchingFlag(SourceType source, SourceType &targetSource, bool &useMatchingPropInfo);
     std::string GetHalNameForDevice(const std::string &role, const DeviceType deviceType);
     std::string GetPipeNameByDeviceForEc(const std::string &role, const DeviceType deviceType);
@@ -1221,7 +1221,7 @@ private:
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
     SourceType normalSourceOpened_ = SOURCE_TYPE_INVALID;
     uint64_t sessionIdUsedToOpenSource_ = 0;
-    
+
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,
         .type = CAST_TYPE_NULL
