@@ -270,7 +270,7 @@ static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, Channe
         volMaps.volEnd[index] = 0;
     }
     uint8_t *raw8 = buffer.buffer;
-    for (size_t frameIndex = 0; frameIndex < frameSize; frameIndex += split) {
+    for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
         for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
             volMaps.volStart[channelIdx] += (*raw8 >= UINT8_SHIFT ? *raw8 - UINT8_SHIFT : UINT8_SHIFT - *raw8);
             raw8++;
@@ -304,7 +304,7 @@ static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         volMaps.volEnd[index] = 0;
     }
     int16_t *raw16 = reinterpret_cast<int16_t *>(buffer.buffer);
-    for (size_t frameIndex = 0; frameIndex < frameSize; frameIndex += split) {
+    for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
         for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
             volMaps.volStart[channelIdx] += (*raw16 >= 0 ? *raw16: (-*raw16));
             raw16++;
@@ -338,7 +338,7 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         volMaps.volEnd[index] = 0;
     }
     uint8_t *raw8 = buffer.buffer;
-    for (size_t frameIndex = 0; frameIndex < frameSize; frameIndex += split) {
+    for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
         for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
             int32_t sample = static_cast<int32_t>(ReadInt24LE(raw8));
             volMaps.volStart[channelIdx] += (sample >= 0 ? sample: (-sample));
@@ -373,7 +373,7 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         volSums[index] = 0;
     }
     int32_t *raw32 = reinterpret_cast<int32_t *>(buffer.buffer);
-    for (size_t frameIndex = 0; frameIndex < frameSize; frameIndex += split) {
+    for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
         for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
             volSums[channelIdx] += (*raw32 >= 0 ? *raw32: (-*raw32));
             raw32++;
@@ -408,7 +408,7 @@ static void CountF32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         volSums[index] = 0.0;
     }
     float *raw32 = reinterpret_cast<float *>(buffer.buffer);
-    for (size_t frameIndex = 0; frameIndex < frameSize; frameIndex += split) {
+    for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
         for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
             volSums[channelIdx] += (*raw32 >= 0 ? *raw32: (-*raw32));
             raw32++;
