@@ -1,5 +1,17 @@
-
-
+/*
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #ifndef LOG_TAG
 #define LOG_TAG "AudioIOHandleMap"
 #endif
@@ -125,8 +137,8 @@ int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleNam
     const AudioModuleInfo &moduleInfo)
 {
     AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo);
-    CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_INVALID_HANDLE, "OpenAudioPort failed %{public}d",
-        ioHandle);
+    CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_INVALID_HANDLE,
+        "OpenAudioPort failed %{public}d", ioHandle);
 
     AddIOHanleInfo(moduleName, ioHandle);
     return SUCCESS;
@@ -149,7 +161,8 @@ void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duratio
 {
     if (sinkPortStrToClassStrMap_.count(portName) > 0) {
         // Mute by render sink. (primary、a2dp、usb、dp、offload)
-        AudioServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(sinkPortStrToClassStrMap_.at(portName), duration, true);
+        AudioServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(sinkPortStrToClassStrMap_.at(portName),
+            duration, true);
     } else {
         // Mute by pa.
         AudioPolicyManagerFactory::GetAudioPolicyManager().SetSinkMute(portName, true, isSync);
@@ -157,7 +170,8 @@ void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duratio
     usleep(WAIT_SET_MUTE_LATENCY_TIME_US); // sleep fix data cache pop.
 
     // Muted and then unmute.
-    std::thread switchThread(&AudioIOHandleMap::UnmutePortAfterMuteDuration, this, duration, portName, DEVICE_TYPE_NONE);
+    std::thread switchThread(&AudioIOHandleMap::UnmutePortAfterMuteDuration, this, duration, portName,
+        DEVICE_TYPE_NONE);
     switchThread.detach();
 }
 
@@ -199,15 +213,12 @@ void AudioIOHandleMap::UnmutePortAfterMuteDuration(int32_t muteDuration, std::st
 
     usleep(muteDuration);
     if (sinkPortStrToClassStrMap_.count(portName) > 0) {
-        AudioServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(sinkPortStrToClassStrMap_.at(portName), muteDuration, false);
+        AudioServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(sinkPortStrToClassStrMap_.at(portName),
+            muteDuration, false);
     } else {
         AudioPolicyManagerFactory::GetAudioPolicyManager().SetSinkMute(portName, false);
     }
 }
-
-
-
-
 
 }
 }

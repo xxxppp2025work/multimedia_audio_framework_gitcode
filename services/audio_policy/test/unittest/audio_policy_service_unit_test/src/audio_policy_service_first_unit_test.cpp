@@ -596,11 +596,16 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSelectedDeviceInfo_001, TestSize.Level1)
     GetServerPtr()->audioPolicyService_.connectedDevices_.push_back(audioDeviceDescriptor);
     GetServerPtr()->audioPolicyService_.isOffloadAvailable_ = true;
 
-    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID1] = std::pair(LOCAL_NETWORK_ID, (G_UNKNOWN_PID - 1));
-    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID2] = std::pair(LOCAL_NETWORK_ID, G_UNKNOWN_PID);
-    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID3] = std::pair(REMOTE_NETWORK_ID, (G_UNKNOWN_PID + 1));
-    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID4] = std::pair(REMOTE_NETWORK_ID, (G_UNKNOWN_PID + 2));
-    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID5] = std::pair(REMOTE_NETWORK_ID, G_UNKNOWN_PID);
+    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID1]
+        = std::pair(LOCAL_NETWORK_ID, (G_UNKNOWN_PID - 1));
+    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID2]
+        = std::pair(LOCAL_NETWORK_ID, G_UNKNOWN_PID);
+    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID3]
+        = std::pair(REMOTE_NETWORK_ID, (G_UNKNOWN_PID + 1));
+    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID4]
+        = std::pair(REMOTE_NETWORK_ID, (G_UNKNOWN_PID + 2));
+    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID5]
+        = std::pair(REMOTE_NETWORK_ID, G_UNKNOWN_PID);
 
     GetServerPtr()->audioPolicyService_.GetSelectedDeviceInfo(ROUTER_MAP_ID0, G_UNKNOWN_PID, STREAM_MUSIC);
     GetServerPtr()->audioPolicyService_.GetSelectedDeviceInfo(ROUTER_MAP_ID1, (G_UNKNOWN_PID - 1), STREAM_MUSIC);
@@ -2272,10 +2277,14 @@ HWTEST_F(AudioPolicyServiceUnitTest, RemoveDeviceInRouterMap_001, TestSize.Level
     GetServerPtr()->audioPolicyService_.audioRouteMap_.RemoveDeviceInFastRouterMap(networkId);
 
     // dummy data
-    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID1] = std::pair(LOCAL_NETWORK_ID, G_UNKNOWN_PID);
-    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID2] = std::pair(REMOTE_NETWORK_ID, G_UNKNOWN_PID);
-    GetServerPtr()->audioPolicyService_.audioRouteMap_.fastRouterMap_[ROUTER_MAP_ID1] = std::pair(LOCAL_NETWORK_ID, INPUT_DEVICE);
-    GetServerPtr()->audioPolicyService_.audioRouteMap_.fastRouterMap_[ROUTER_MAP_ID1] = std::pair(REMOTE_NETWORK_ID, OUTPUT_DEVICE);
+    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID1]
+        = std::pair(LOCAL_NETWORK_ID, G_UNKNOWN_PID);
+    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID2]
+        = std::pair(REMOTE_NETWORK_ID, G_UNKNOWN_PID);
+    GetServerPtr()->audioPolicyService_.audioRouteMap_.fastRouterMap_[ROUTER_MAP_ID1]
+        = std::pair(LOCAL_NETWORK_ID, INPUT_DEVICE);
+    GetServerPtr()->audioPolicyService_.audioRouteMap_.fastRouterMap_[ROUTER_MAP_ID1]
+        = std::pair(REMOTE_NETWORK_ID, OUTPUT_DEVICE);
 
     // call RemoveDeviceInRouterMap() twice using LOCAL_NETWORK_ID
     GetServerPtr()->audioPolicyService_.audioRouteMap_.RemoveDeviceInRouterMap(networkId);

@@ -2272,7 +2272,8 @@ void AudioPolicyService::UpdateActiveDevicesRoute(std::vector<std::pair<Internal
     }
 
     Trace trace("AudioPolicyService::UpdateActiveDevicesRoute DeviceTypes:" + deviceTypesInfo);
-    ret = AudioServerProxy::GetInstance().UpdateActiveDevicesRouteProxy(activeDevices, GetA2dpOffloadFlag(), deviceName);
+    ret = AudioServerProxy::GetInstance().UpdateActiveDevicesRouteProxy(activeDevices, GetA2dpOffloadFlag(),
+        deviceName);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}s", deviceTypesInfo.c_str());
 }
 
@@ -2500,7 +2501,8 @@ bool AudioPolicyService::IsRendererStreamRunning(shared_ptr<AudioRendererChangeI
 
 bool AudioPolicyService::NeedRehandleA2DPDevice(unique_ptr<AudioDeviceDescriptor> &desc)
 {
-    if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && audioIOHandleMap_.CheckIOHandleExist(BLUETOOTH_SPEAKER) == false) {
+    if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP
+        && audioIOHandleMap_.CheckIOHandleExist(BLUETOOTH_SPEAKER) == false) {
         AUDIO_INFO_LOG("A2DP module is not loaded, need rehandle");
         return true;
     }
@@ -2760,7 +2762,8 @@ void AudioPolicyService::FetchStreamForA2dpMchStream(std::shared_ptr<AudioRender
         if (pipeType == PIPE_TYPE_MULTICHANNEL) {
             std::string currentActivePort = MCH_PRIMARY_SPEAKER;
             AudioIOHandle activateDeviceIOHandle;
-            CHECK_AND_RETURN_LOG(audioIOHandleMap_.GetModuleIdByKey(currentActivePort, activateDeviceIOHandle), "Can not find port MCH_PRIMARY_SPEAKER in io map");
+            CHECK_AND_RETURN_LOG(audioIOHandleMap_.GetModuleIdByKey(currentActivePort, activateDeviceIOHandle),
+                "Can not find port MCH_PRIMARY_SPEAKER in io map");
             audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
             audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
             audioIOHandleMap_.DelIOHanleInfo(currentActivePort);
@@ -3054,7 +3057,8 @@ int32_t AudioPolicyService::SetMicrophoneMutePersistent(const bool isMute)
 {
     AUDIO_DEBUG_LOG("state[%{public}d]", isMute);
     isMicrophoneMutePersistent_ = isMute;
-    int32_t ret = AudioServerProxy::GetInstance().SetMicrophoneMuteProxy(isMicrophoneMuteTemporary_ | isMicrophoneMutePersistent_);
+    bool muteFlag = isMicrophoneMuteTemporary_ | isMicrophoneMutePersistent_;
+    int32_t ret = AudioServerProxy::GetInstance().SetMicrophoneMuteProxy(muteFlag);
     if (ret == SUCCESS) {
         AUDIO_INFO_LOG("UpdateCapturerInfoMuteStatus when set mic mute state persistent.");
         streamCollector_.UpdateCapturerInfoMuteStatus(0, isMicrophoneMuteTemporary_|isMicrophoneMutePersistent_);
@@ -3163,7 +3167,7 @@ int32_t AudioPolicyService::LoadA2dpModule(DeviceType deviceType)
             moduleInfo.name.c_str(), deviceRole, configRole);
         if (configRole != deviceRole) {continue;}
         AudioStreamInfo audioStreamInfo = {};
-        GetActiveDeviceStreamInfo(deviceType, audioStreamInfo);   
+        GetActiveDeviceStreamInfo(deviceType, audioStreamInfo);
         if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name) == false) {
             // a2dp device connects for the first time
             GetA2dpModuleInfo(moduleInfo, audioStreamInfo);
@@ -3358,12 +3362,14 @@ int32_t AudioPolicyService::HandleActiveDevice(DeviceType deviceType)
     return SUCCESS;
 }
 
-int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType, DeviceRole deviceRole, const std::string &address)
+int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType, DeviceRole deviceRole,
+    const std::string &address)
 {
     Trace trace("AudioPolicyService::HandleArmUsbDevice");
 
     if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
-        string deviceInfo = AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE, address);
+        string deviceInfo = AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE,
+            address);
         int32_t ret;
         if (!deviceInfo.empty()) {
             ret = LoadUsbModule(deviceInfo, deviceRole);
@@ -3599,11 +3605,11 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     DealAudioSceneOutputDevices(audioScene, activeOutputDevices, haveArmUsbDevice);
     int32_t result = SUCCESS;
     if (haveArmUsbDevice) {
-        result = AudioServerProxy::GetInstance().SetAudioSceneProxy(audioScene, activeOutputDevices, DEVICE_TYPE_USB_ARM_HEADSET,
-            GetA2dpOffloadFlag());
+        result = AudioServerProxy::GetInstance().SetAudioSceneProxy(audioScene, activeOutputDevices,
+            DEVICE_TYPE_USB_ARM_HEADSET, GetA2dpOffloadFlag());
     } else {
-        result = AudioServerProxy::GetInstance().SetAudioSceneProxy(audioScene, activeOutputDevices, GetCurrentInputDeviceType(),
-            GetA2dpOffloadFlag());
+        result = AudioServerProxy::GetInstance().SetAudioSceneProxy(audioScene, activeOutputDevices,
+            GetCurrentInputDeviceType(), GetA2dpOffloadFlag());
     }
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "failed [%{public}d]", result);
 
@@ -4969,8 +4975,7 @@ void AudioPolicyService::LoadEffectLibrary()
     vector<Effect> successLoadedEffects;
 
     bool loadSuccess = AudioServerProxy::GetInstance().LoadAudioEffectLibrariesProxy(oriEffectConfig.libraries,
-                                                     oriEffectConfig.effects,
-                                                     successLoadedEffects);
+        oriEffectConfig.effects, successLoadedEffects);
     if (!loadSuccess) {
         AUDIO_ERR_LOG("Load audio effect failed, please check log");
     }
@@ -6485,7 +6490,8 @@ void AudioPolicyService::RegiestPolicy()
 }
 
 /*
- * lockFlag is use to determinewhether GetPreferredOutputDeviceDescriptor or GetPreferredOutputDeviceDescInner is invoked.
+ * lockFlag is use to determinewhether GetPreferredOutputDeviceDescriptor or
+*  GetPreferredOutputDeviceDescInner is invoked.
  * If deviceStatusUpdateSharedMutex_ write lock is not invoked at the outer layer, lockFlag can be set to true.
  * When deviceStatusUpdateSharedMutex_ write lock has been invoked, lockFlag must be set to false.
  */
@@ -7312,9 +7318,9 @@ void AudioPolicyService::HandleRemainingSource()
 
     // if remaining sources are all lower than current removeed one, reload with the highest source in remaining
     if (highestSourceInHdi != SOURCE_TYPE_INVALID && IsHigherPrioritySource(normalSourceOpened_, highestSourceInHdi)) {
-        AUDIO_INFO_LOG("reload source %{pblic}d because higher source removed , normalSourceOpened_：%{pblic}d ,highestSourceInHdi：%{pblic}d ",
-            highestSource, normalSourceOpened_, highestSourceInHdi);
-        AUDIO_INFO_LOG("reload source %{pblic}d because higher source removed", highestSource);
+        AUDIO_INFO_LOG("reload source %{public}d because higher source removed, normalSourceOpened_: %{public}d, "
+            "highestSourceInHdi：%{public}d ", highestSource, normalSourceOpened_, highestSourceInHdi);
+        AUDIO_INFO_LOG("reload source %{public}d because higher source removed", highestSource);
         ReloadSourceForSession(sessionWithNormalSourceType_[highestSession]);
         sessionIdUsedToOpenSource_ = highestSession;
     }
@@ -7426,7 +7432,7 @@ void AudioPolicyService::CloseNormalSource()
 void AudioPolicyService::UpdateEnhanceEffectState(SourceType source)
 {
     AudioEnhancePropertyArray enhancePropertyArray = {};
-    unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source,-1);
+    unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1);
     int32_t ret = AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(enhancePropertyArray, inputDesc->deviceType_);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("get enhance property fail, ret: %{public}d", ret);
@@ -8387,12 +8393,14 @@ void AudioPolicyService::ClearScoDeviceSuspendState(string macAddress)
 float AudioPolicyService::GetMaxAmplitude(const int32_t deviceId)
 {
     if (deviceId == GetCurrentOutputDevice().deviceId_) {
-        float outputMaxAmplitude = AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(true, GetCurrentOutputDeviceType());
+        float outputMaxAmplitude = AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(true,
+            GetCurrentOutputDeviceType());
         return outputMaxAmplitude;
     }
 
     if (deviceId == GetCurrentInputDevice().deviceId_) {
-        float inputMaxAmplitude = AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(false, GetCurrentInputDeviceType());
+        float inputMaxAmplitude = AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(false,
+            GetCurrentInputDeviceType());
         return inputMaxAmplitude;
     }
 
@@ -9511,7 +9519,8 @@ void AudioPolicyService::FetchStreamForSpkMchStream(std::shared_ptr<AudioRendere
                 AUDIO_INFO_LOG("unload multichannel module");
                 std::string currentActivePort = MCH_PRIMARY_SPEAKER;
                 AudioIOHandle activateDeviceIOHandle;
-                CHECK_AND_RETURN_LOG(audioIOHandleMap_.GetModuleIdByKey(currentActivePort, activateDeviceIOHandle), "Can not find port MCH_PRIMARY_SPEAKER in io map");
+                CHECK_AND_RETURN_LOG(audioIOHandleMap_.GetModuleIdByKey(currentActivePort, activateDeviceIOHandle),
+                    "Can not find port MCH_PRIMARY_SPEAKER in io map");
                 audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
                 audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
                 audioIOHandleMap_.DelIOHanleInfo(currentActivePort);

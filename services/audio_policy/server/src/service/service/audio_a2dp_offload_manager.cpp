@@ -1,4 +1,17 @@
-
+/*
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #ifndef LOG_TAG
 #define LOG_TAG "AudioA2dpOffloadManager"
 #endif
@@ -49,7 +62,8 @@ void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &devic
                 "from %{public}d to %{public}d", state, CONNECTION_STATUS_CONNECTED);
 
             for (int32_t sessionId : connectionTriggerSessionIds_) {
-                AudioPolicyService::GetAudioPolicyService().UpdateSessionConnectionState(sessionId, DATA_LINK_CONNECTED);
+                AudioPolicyService::GetAudioPolicyService().UpdateSessionConnectionState(sessionId,
+                    DATA_LINK_CONNECTED);
             }
             std::vector<int32_t>().swap(connectionTriggerSessionIds_);
             connectionCV_.notify_all();
@@ -69,7 +83,8 @@ void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &devic
     }
 }
 
-void AudioA2dpOffloadManager::ConnectA2dpOffload(const std::string &deviceAddress, const std::vector<int32_t> &sessionIds)
+void AudioA2dpOffloadManager::ConnectA2dpOffload(const std::string &deviceAddress,
+    const std::vector<int32_t> &sessionIds)
 {
     AUDIO_INFO_LOG("start connecting a2dpOffload for MacAddr:%{public}s.", GetEncryptAddr(deviceAddress).c_str());
     A2dpOffloadConnectionState state = audioA2dpOffloadFlag_.GetCurrentOffloadConnectedState();
@@ -77,7 +92,8 @@ void AudioA2dpOffloadManager::ConnectA2dpOffload(const std::string &deviceAddres
     connectionTriggerSessionIds_.assign(sessionIds.begin(), sessionIds.end());
 
     for (int32_t sessionId : connectionTriggerSessionIds_) {
-        AudioPolicyService::GetAudioPolicyService().UpdateSessionConnectionState(sessionId, DATA_LINK_CONNECTING);
+        AudioPolicyService::GetAudioPolicyService().UpdateSessionConnectionState(sessionId,
+            DATA_LINK_CONNECTING);
     }
 
     if (state == CONNECTION_STATUS_CONNECTED || state == CONNECTION_STATUS_CONNECTING) {
@@ -165,8 +181,6 @@ BluetoothOffloadState AudioA2dpOffloadManager::GetA2dpOffloadFlag()
 {
     return audioA2dpOffloadFlag_.GetA2dpOffloadFlag();
 }
-
-
 
 }
 }
