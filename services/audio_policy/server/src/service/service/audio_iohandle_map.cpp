@@ -10,7 +10,7 @@
 #include "audio_utils.h"
 #include "audio_policy_manager_factory.h"
 
-#include "audio_policy_serverproxy.h"
+#include "audio_server_proxy.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -149,7 +149,7 @@ void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duratio
 {
     if (sinkPortStrToClassStrMap_.count(portName) > 0) {
         // Mute by render sink. (primary、a2dp、usb、dp、offload)
-        AudioPolicyServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(sinkPortStrToClassStrMap_.at(portName), duration, true);
+        AudioServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(sinkPortStrToClassStrMap_.at(portName), duration, true);
     } else {
         // Mute by pa.
         AudioPolicyManagerFactory::GetAudioPolicyManager().SetSinkMute(portName, true, isSync);
@@ -199,7 +199,7 @@ void AudioIOHandleMap::UnmutePortAfterMuteDuration(int32_t muteDuration, std::st
 
     usleep(muteDuration);
     if (sinkPortStrToClassStrMap_.count(portName) > 0) {
-        AudioPolicyServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(sinkPortStrToClassStrMap_.at(portName), muteDuration, false);
+        AudioServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(sinkPortStrToClassStrMap_.at(portName), muteDuration, false);
     } else {
         AudioPolicyManagerFactory::GetAudioPolicyManager().SetSinkMute(portName, false);
     }

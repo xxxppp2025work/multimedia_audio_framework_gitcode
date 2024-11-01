@@ -35,9 +35,9 @@ public:
     float GetMaxAmplitudeProxy(bool flag, DeviceType type);
     void UpdateEffectBtOffloadSupportedProxy(const bool &isSupported);
     void SetOutputDeviceSinkProxy(DeviceType deviceType, std::string sinkName);
-    bool GetAudioEffectOffloadFlagProxy();
-    int32_t UpdateActiveDevicesRouteProxy(
-        std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices, BluetoothOffloadState state);
+    bool GetEffectOffloadEnabledProxy();
+    int32_t UpdateActiveDevicesRouteProxy(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
+        BluetoothOffloadState state, const std::string &deviceName = "");
     int32_t UpdateDualToneStateProxy(const bool &enable, const int32_t &sessionId);
     void UpdateSessionConnectionStateProxy(const int32_t &sessionID, const int32_t &state);
     int32_t CheckRemoteDeviceStateProxy(std::string networkId, DeviceRole deviceRole, bool isStartDevice);
@@ -49,7 +49,10 @@ public:
     void UnsetOffloadModeProxy(uint32_t sessionId);
     void SetOffloadModeProxy(uint32_t sessionId, int32_t state, bool isAppBack);
     void RestoreSessionProxy(const int32_t &sessionID, bool isOutput);
-    int32_t GetAudioEnhancePropertyProxy(AudioEnhancePropertyArray &propertyArray);
+    int32_t GetAudioEnhancePropertyProxy(AudioEnhancePropertyArray &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE);
+    int32_t SetAudioEnhancePropertyProxy(const AudioEnhancePropertyArray &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE);
     void SetSinkMuteForSwitchDeviceProxy(const std::string &devceClass, int32_t durationUs, bool mute);
     int32_t SetMicrophoneMuteProxy(bool isMute);
     void SuspendRenderSinkProxy(const std::string &sinkName);
@@ -60,6 +63,20 @@ public:
     std::string GetAudioParameterProxy(const std::string& networkId, const AudioParamKey key,
         const std::string& condition);
     void ResetRouteForDisconnectProxy(DeviceType type);
+    bool CreatePlaybackCapturerManagerProxy();
+    bool LoadAudioEffectLibrariesProxy(const std::vector<Library> libraries, const std::vector<Effect> effects,
+        std::vector<Effect>& successEffectList);
+    bool CreateEffectChainManagerProxy(std::vector<EffectChain> &effectChains,
+    const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam);
+    int32_t RegiestPolicyProviderProxy(const sptr<IRemoteObject> &object);
+    void SetParameterCallbackProxy(const sptr<IRemoteObject>& object);
+    int32_t SetAudioEffectPropertyProxy(const AudioEffectPropertyArray &propertyArray);
+    int32_t GetAudioEffectPropertyProxy(AudioEffectPropertyArray &propertyArray);
+    void SetRotationToEffectProxy(const uint32_t rotate);
+    void SetAudioMonoStateProxy(bool audioMono);
+    void SetAudioBalanceValueProxy(float audioBalance);
+    int32_t SetSupportStreamUsageProxy(std::vector<int32_t> usage);
+    int32_t SetCaptureSilentStateProxy(bool state);
 private:
     AudioServerProxy() {}
     ~AudioServerProxy() {}

@@ -459,7 +459,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_004, TestSize.Level1
         GetServerPtr()->audioPolicyService_.SelectFastOutputDevice(audioRendererFilter, audioDeviceDescriptorSptr);
         GetServerPtr()->audioPolicyService_.FilterSinkInputs(TEST_SESSIONID);
         GetServerPtr()->audioPolicyService_.FilterSourceOutputs(TEST_SESSIONID);
-        GetServerPtr()->audioPolicyService_.RememberRoutingInfo(audioRendererFilter, audioDeviceDescriptorSptr);
         for (const auto& isConnected :isConnecteds) {
             GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(audioDeviceDescriptor, isConnected);
         }
@@ -787,58 +786,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, FilterSinkInputs_002, TestSize.Level1)
     audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
     bool moveAll = false;
     GetServerPtr()->audioPolicyService_.FilterSinkInputs(audioRendererFilter, moveAll);
-}
-
-/**
-* @tc.name  : Test RememberRoutingInfo.
-* @tc.number: RememberRoutingInfo_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, RememberRoutingInfo_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest RememberRoutingInfo_001 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
-    ASSERT_NE(nullptr, audioRendererFilter) << "audioRendererFilter is nullptr.";
-    audioRendererFilter->uid = getuid();
-    audioRendererFilter->rendererInfo.rendererFlags = STREAM_FLAG_NORMAL;
-    audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
-    ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
-    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
-
-    int32_t result = GetServerPtr()->audioPolicyService_.RememberRoutingInfo(
-        audioRendererFilter, audioDeviceDescriptor);
-    EXPECT_EQ(SUCCESS, result);
-}
-
-/**
-* @tc.name  : Test RememberRoutingInfo.
-* @tc.number: RememberRoutingInfo_002
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, RememberRoutingInfo_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest RememberRoutingInfo_002 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
-    ASSERT_NE(nullptr, audioRendererFilter) << "audioRendererFilter is nullptr.";
-    audioRendererFilter->uid = getuid();
-    audioRendererFilter->rendererInfo.rendererFlags = STREAM_FLAG_NORMAL;
-    audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
-    ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
-    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID + "xyz";
-
-    int32_t result = GetServerPtr()->audioPolicyService_.RememberRoutingInfo(
-        audioRendererFilter, audioDeviceDescriptor);
-    EXPECT_EQ(ERR_INVALID_PARAM, result);
 }
 
 /**

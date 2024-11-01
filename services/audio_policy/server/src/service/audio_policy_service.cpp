@@ -40,6 +40,8 @@
 #include "avsession_manager.h"
 #include "audio_setting_provider.h"
 
+#include "audio_server_proxy.h"
+
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -73,9 +75,7 @@ static const int64_t SET_BT_ABS_SCENE_DELAY_MS = 120000; // 120ms
 static const int64_t NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS = 300000; // 300ms
 static const unsigned int BUFFER_CALC_20MS = 20;
 static const int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_MS = 5000; // 5s
-static const int64_t WAIT_SET_MUTE_LATENCY_TIME_US = 80000; // 80ms
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
-static const int64_t WAIT_MOVE_DEVICE_MUTE_TIME_MAX_MS = 5000; // 5s
 static const int64_t WAIT_RINGER_MODE_MUTE_RESET_TIME_MS = 500; // 500ms
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
@@ -170,14 +170,6 @@ std::map<std::string, ClassType> AudioPolicyService::portStrToEnum = {
     {REMOTE_CLASS, TYPE_REMOTE_AUDIO},
 };
 
-std::map<std::string, std::string> AudioPolicyService::sinkPortStrToClassStrMap_ = {
-    {PRIMARY_SPEAKER, PRIMARY_CLASS},
-    {BLUETOOTH_SPEAKER, A2DP_CLASS},
-    {USB_SPEAKER, USB_CLASS},
-    {DP_SINK, DP_CLASS},
-    {OFFLOAD_PRIMARY_SPEAKER, OFFLOAD_CLASS},
-};
-
 static std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
     // from high to low
     {SOURCE_TYPE_VOICE_CALL, 5},
@@ -224,19 +216,15 @@ const int RECORD_CAPTURE_ID = 3;
 const int32_t ONE_MINUTE = 60;
 constexpr int32_t MS_PER_S = 1000;
 constexpr int32_t NS_PER_MS = 1000000;
-const int32_t DATA_LINK_CONNECTING = 10;
 const int32_t DATA_LINK_CONNECTED = 11;
-const int32_t A2DP_PLAYING = 2;
-const int32_t A2DP_STOPPED = 1;
 const uint32_t PC_MIC_CHANNEL_NUM = 4;
 const uint32_t HEADPHONE_CHANNEL_NUM = 2;
-static sptr<IStandardAudioService> g_adProxy = nullptr;
+
 #ifdef BLUETOOTH_ENABLE
 static sptr<IStandardAudioService> g_btProxy = nullptr;
 #endif
 static int32_t startDeviceId = 1;
 static int32_t startMicrophoneId = 1;
-mutex g_adProxyMutex;
 mutex g_dataShareHelperMutex;
 #ifdef BLUETOOTH_ENABLE
 const unsigned int BLUETOOTH_TIME_OUT_SECONDS = 8;
@@ -397,7 +385,7 @@ bool AudioPolicyService::Init(void)
     audioDeviceManager_.ParseDeviceXml();
     audioAffinityManager_.ParseAffinityXml();
     audioPnpServer_.init();
-    audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>(this);
+    audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
     if (audioA2dpOffloadManager_ != nullptr) {audioA2dpOffloadManager_->Init();}
 
     bool ret = audioPolicyConfigParser_.LoadConfiguration();
@@ -445,27 +433,6 @@ bool AudioPolicyService::Init(void)
     isEcFeatureEnable_ = ecEnableState != 0;
     isMicRefFeatureEnable_ = micRefEnableState != 0;
     return true;
-}
-
-const sptr<IStandardAudioService> AudioPolicyService::GetAudioServerProxy()
-{
-    AUDIO_DEBUG_LOG("[Policy Service] Start get audio policy service proxy.");
-    lock_guard<mutex> lock(g_adProxyMutex);
-
-    if (g_adProxy == nullptr) {
-        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "[Policy Service] Get samgr failed.");
-
-        sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-        CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr,
-            "[Policy Service] audio service remote object is NULL.");
-
-        g_adProxy = iface_cast<IStandardAudioService>(object);
-        CHECK_AND_RETURN_RET_LOG(g_adProxy != nullptr, nullptr,
-            "[Policy Service] init g_adProxy is NULL.");
-    }
-    const sptr<IStandardAudioService> gsp = g_adProxy;
-    return gsp;
 }
 
 void AudioPolicyService::CreateRecoveryThread()
@@ -577,15 +544,12 @@ bool AudioPolicyService::ConnectServiceAdapter()
 void AudioPolicyService::Deinit(void)
 {
     AUDIO_WARNING_LOG("Policy service died. closing active ports");
-
-    std::unique_lock<std::mutex> ioHandleLock(ioHandlesMutex_);
-    std::for_each(IOHandles_.begin(), IOHandles_.end(), [&](std::pair<std::string, AudioIOHandle> handle) {
+    std::unordered_map<std::string, AudioIOHandle> mapCopy = audioIOHandleMap_.GetCopy();
+    std::for_each(mapCopy.begin(), mapCopy.end(), [&](std::pair<std::string, AudioIOHandle> handle) {
         audioPolicyManager_.CloseAudioPort(handle.second);
     });
     audioPolicyManager_.Deinit();
 
-    IOHandles_.clear();
-    ioHandleLock.unlock();
     deviceStatusListener_->UnRegisterDeviceStatusListener();
     audioPnpServer_.StopPnpServer();
 
@@ -786,13 +750,9 @@ void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
     Trace trace("AudioPolicyService::SetVoiceCallVolume" + std::to_string(volumeLevel));
     // set voice volume by the interface from hdi.
     CHECK_AND_RETURN_LOG(volumeLevel != 0, "SetVoiceVolume: volume of voice_call cannot be set to 0");
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "SetVoiceVolume: gsp null");
     float volumeDb = static_cast<float>(volumeLevel) /
         static_cast<float>(audioPolicyManager_.GetMaxVolumeLevel(STREAM_VOICE_CALL));
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->SetVoiceVolume(volumeDb);
-    IPCSkeleton::SetCallingIdentity(identity);
+    AudioServerProxy::GetInstance().SetVoiceVolumeProxy(volumeDb);
     AUDIO_INFO_LOG("SetVoiceVolume: %{public}f", volumeDb);
 }
 
@@ -877,12 +837,8 @@ void AudioPolicyService::SetOffloadMode()
 
     AUDIO_INFO_LOG("sessionId: %{public}d, PowerState: %{public}d, isAppBack: %{public}d",
         *offloadSessionID_, static_cast<int32_t>(currentPowerState_), currentOffloadSessionIsBackground_);
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->SetOffloadMode(*offloadSessionID_, static_cast<int32_t>(currentPowerState_),
+    AudioServerProxy::GetInstance().SetOffloadModeProxy(*offloadSessionID_, static_cast<int32_t>(currentPowerState_),
         currentOffloadSessionIsBackground_);
-    IPCSkeleton::SetCallingIdentity(identity);
 }
 
 void AudioPolicyService::ResetOffloadMode(int32_t sessionId)
@@ -963,11 +919,7 @@ void AudioPolicyService::OffloadStreamReleaseCheck(uint32_t sessionId)
 
     if (((*offloadSessionID_) == sessionId) && offloadSessionID_.has_value()) {
         AUDIO_DEBUG_LOG("Doing unset offload mode!");
-        const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-        CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
-        std::string identity = IPCSkeleton::ResetCallingIdentity();
-        gsp->UnsetOffloadMode(*offloadSessionID_);
-        IPCSkeleton::SetCallingIdentity(identity);
+        AudioServerProxy::GetInstance().UnsetOffloadModeProxy(*offloadSessionID_);
         AudioPipeType normalPipe = PIPE_TYPE_NORMAL_OUT;
         MoveToNewPipe(sessionId, normalPipe);
         streamCollector_.UpdateRendererPipeInfo(sessionId, normalPipe);
@@ -991,11 +943,7 @@ void AudioPolicyService::RemoteOffloadStreamRelease(uint32_t sessionId)
     std::lock_guard<std::mutex> lock(offloadMutex_);
     if (offloadSessionID_.has_value() && ((*offloadSessionID_) == sessionId)) {
         AUDIO_DEBUG_LOG("Doing unset offload mode!");
-        const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-        CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
-        std::string identity = IPCSkeleton::ResetCallingIdentity();
-        gsp->UnsetOffloadMode(*offloadSessionID_);
-        IPCSkeleton::SetCallingIdentity(identity);
+        AudioServerProxy::GetInstance().UnsetOffloadModeProxy(*offloadSessionID_);
         AudioPipeType normalPipe = PIPE_TYPE_UNKNOWN;
         MoveToNewPipe(sessionId, normalPipe);
         streamCollector_.UpdateRendererPipeInfo(sessionId, normalPipe);
@@ -1012,7 +960,7 @@ bool AudioPolicyService::CheckActiveOutputDeviceSupportOffload()
         return false;
     }
 
-    return dev == DEVICE_TYPE_SPEAKER || (dev == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag_ == A2DP_OFFLOAD) ||
+    return dev == DEVICE_TYPE_SPEAKER || (dev == DEVICE_TYPE_BLUETOOTH_A2DP && GetA2dpOffloadFlag() == A2DP_OFFLOAD) ||
         dev == DEVICE_TYPE_USB_HEADSET;
 }
 
@@ -1143,21 +1091,9 @@ std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, 
 {
     (void)streamType;
 
-    std::lock_guard<std::mutex> lock(routerMapMutex_);
-    if (!routerMap_.count(uid)) {
-        AUDIO_INFO_LOG("no such uid[%{public}d]", uid);
-        return "";
-    }
-    std::string selectedDevice = "";
-    if (routerMap_[uid].second == pid) {
-        selectedDevice = routerMap_[uid].first;
-    } else if (routerMap_[uid].second == G_UNKNOWN_PID) {
-        routerMap_[uid].second = pid;
-        selectedDevice = routerMap_[uid].first;
-    } else {
-        AUDIO_INFO_LOG("uid[%{public}d] changed pid, get local as defalut", uid);
-        routerMap_.erase(uid);
-        selectedDevice = LOCAL_NETWORK_ID;
+    std::string selectedDevice = audioRouteMap_.GetDeviceInfoByUidAndPid(uid, pid);
+    if (selectedDevice == "") {
+        return selectedDevice;
     }
 
     if (LOCAL_NETWORK_ID == selectedDevice) {
@@ -1177,7 +1113,7 @@ std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, 
         AUDIO_INFO_LOG("result[%{public}s]", selectedDevice.c_str());
         return selectedDevice;
     } else {
-        routerMap_.erase(uid);
+        audioRouteMap_.DelRouteMapInfoByKey(uid);
         AUDIO_INFO_LOG("device already disconnected.");
         return "";
     }
@@ -1326,12 +1262,7 @@ int32_t AudioPolicyService::ConnectVirtualDevice(sptr<AudioDeviceDescriptor> &se
 
 void AudioPolicyService::RestoreSession(const int32_t &sessionID, bool isOutput)
 {
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable: gsp null");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->RestoreSession(sessionID, isOutput);
-    IPCSkeleton::SetCallingIdentity(identity);
+    AudioServerProxy::GetInstance().RestoreSessionProxy(sessionID, isOutput);
 }
 
 int32_t AudioPolicyService::SelectOutputDeviceByFilterInner(sptr<AudioRendererFilter> audioRendererFilter,
@@ -1351,7 +1282,7 @@ int32_t AudioPolicyService::SelectOutputDeviceByFilterInner(sptr<AudioRendererFi
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
     for (auto &changeInfo : rendererChangeInfos) {
         if (changeInfo->clientUID == audioRendererFilter->uid && changeInfo->sessionId != 0) {
-            RestoreSession(changeInfo->sessionId, true);
+            AudioServerProxy::GetInstance().RestoreSessionProxy(changeInfo->sessionId, true);
         }
     }
     return SUCCESS;
@@ -1451,8 +1382,7 @@ int32_t AudioPolicyService::SelectFastOutputDevice(sptr<AudioRendererFilter> aud
     // if is running, call moveProcessToEndpoint.
 
     // otherwises, keep router info in the map
-    std::lock_guard<std::mutex> lock(routerMapMutex_);
-    fastRouterMap_[audioRendererFilter->uid] = std::make_pair(deviceDescriptor->networkId_, OUTPUT_DEVICE);
+    audioRouteMap_.AddFastRouteMapInfo(audioRendererFilter->uid, deviceDescriptor->networkId_, OUTPUT_DEVICE);
     return SUCCESS;
 }
 
@@ -1480,8 +1410,8 @@ std::vector<SourceOutput> AudioPolicyService::FilterSourceOutputs(int32_t sessio
     std::vector<SourceOutput> targetSourceOutputs = {};
     std::vector<SourceOutput> sourceOutputs;
     {
-        std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-        if (std::any_of(IOHandles_.cbegin(), IOHandles_.cend(), [](const auto &pair) {
+        std::unordered_map<std::string, AudioIOHandle> mapCopy = audioIOHandleMap_.GetCopy();
+        if (std::any_of(mapCopy.cbegin(), mapCopy.cend(), [](const auto &pair) {
                 return std::find(SourceNames.cbegin(), SourceNames.cend(), pair.first) != SourceNames.cend();
             })) {
             sourceOutputs = audioPolicyManager_.GetAllSourceOutputs();
@@ -1519,37 +1449,6 @@ std::vector<SinkInput> AudioPolicyService::FilterSinkInputs(sptr<AudioRendererFi
     return targetSinkInputs;
 }
 
-int32_t AudioPolicyService::RememberRoutingInfo(sptr<AudioRendererFilter> audioRendererFilter,
-    sptr<AudioDeviceDescriptor> deviceDescriptor)
-{
-    AUDIO_INFO_LOG("Start for uid[%{public}d] device[%{public}s]", audioRendererFilter->uid,
-        GetEncryptStr(deviceDescriptor->networkId_).c_str());
-    if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
-        std::lock_guard<std::mutex> lock(routerMapMutex_);
-        routerMap_[audioRendererFilter->uid] = std::pair(LOCAL_NETWORK_ID, G_UNKNOWN_PID);
-        return SUCCESS;
-    }
-    // remote device.
-    std::string networkId = deviceDescriptor->networkId_;
-    DeviceRole deviceRole = deviceDescriptor->deviceRole_;
-
-    std::string moduleName = GetRemoteModuleName(networkId, deviceRole);
-    CHECK_AND_RETURN_RET_LOG(IOHandles_.count(moduleName), ERR_INVALID_PARAM,
-        "Device error: no such device:%{public}s", networkId.c_str());
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->CheckRemoteDeviceState(networkId, deviceRole, true);
-    IPCSkeleton::SetCallingIdentity(identity);
-
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "remote device state is invalid!");
-
-    std::lock_guard<std::mutex> lock(routerMapMutex_);
-    routerMap_[audioRendererFilter->uid] = std::pair(moduleName, G_UNKNOWN_PID);
-    return SUCCESS;
-}
-
 int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkInputIds,
     sptr<AudioDeviceDescriptor> localDeviceDescriptor)
 {
@@ -1573,8 +1472,7 @@ int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkI
         int32_t ret = audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, sinkName);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
             "move [%{public}d] to local failed", sinkInputIds[i].streamId);
-        std::lock_guard<std::mutex> lock(routerMapMutex_);
-        routerMap_[sinkInputIds[i].uid] = std::pair(LOCAL_NETWORK_ID, sinkInputIds[i].pid);
+        audioRouteMap_.AddRouteMapInfo(sinkInputIds[i].uid, LOCAL_NETWORK_ID, sinkInputIds[i].pid);
     }
 
     isCurrentRemoteRenderer = false;
@@ -1587,7 +1485,7 @@ int32_t AudioPolicyService::OpenRemoteAudioDevice(std::string networkId, DeviceR
     // open the test device. We should open it when device is online.
     std::string moduleName = GetRemoteModuleName(networkId, deviceRole);
     AudioModuleInfo remoteDeviceInfo = ConstructRemoteAudioModuleInfo(networkId, deviceRole, deviceType);
-    OpenPortAndInsertIOHandle(moduleName, remoteDeviceInfo);
+    audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleName, remoteDeviceInfo);
 
     // If device already in list, remove it else do not modify the list.
     auto isPresent = [&deviceType, &networkId] (const sptr<AudioDeviceDescriptor> &descriptor) {
@@ -1617,8 +1515,9 @@ int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<SinkInput> sink
 
     uint32_t sinkId = -1; // invalid sink id, use sink name instead.
     std::string moduleName = GetRemoteModuleName(networkId, deviceRole);
-    if (IOHandles_.count(moduleName)) {
-        IOHandles_[moduleName]; // mIOHandle is module id, not equal to sink id.
+    AudioIOHandle moduleId;
+    if (audioIOHandleMap_.GetModuleIdByKey(moduleName, moduleId)) {
+        (void)moduleId; // mIOHandle is module id, not equal to sink id.
     } else {
         AUDIO_ERR_LOG("no such device.");
         if (!isOpenRemoteDevice) {
@@ -1627,22 +1526,14 @@ int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<SinkInput> sink
             return OpenRemoteAudioDevice(networkId, deviceRole, deviceType, remoteDeviceDescriptor);
         }
     }
-
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t res = gsp->CheckRemoteDeviceState(networkId, deviceRole, true);
-    IPCSkeleton::SetCallingIdentity(identity);
-
+    int32_t res = AudioServerProxy::GetInstance().CheckRemoteDeviceStateProxy(networkId, deviceRole, true);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERR_OPERATION_FAILED, "remote device state is invalid!");
 
     // start move.
     for (size_t i = 0; i < sinkInputIds.size(); i++) {
         int32_t ret = audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, moduleName);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "move [%{public}d] failed", sinkInputIds[i].streamId);
-        std::lock_guard<std::mutex> lock(routerMapMutex_);
-        routerMap_[sinkInputIds[i].uid] = std::pair(moduleName, sinkInputIds[i].pid);
+        audioRouteMap_.AddRouteMapInfo(sinkInputIds[i].uid, moduleName, sinkInputIds[i].pid);
     }
 
     if (deviceType != DeviceType::DEVICE_TYPE_DEFAULT) {
@@ -1660,8 +1551,7 @@ int32_t AudioPolicyService::SelectFastInputDevice(sptr<AudioCapturerFilter> audi
     // if is running, call moveProcessToEndpoint.
 
     // otherwises, keep router info in the map
-    std::lock_guard<std::mutex> lock(routerMapMutex_);
-    fastRouterMap_[audioCapturerFilter->uid] = std::make_pair(deviceDescriptor->networkId_, INPUT_DEVICE);
+    audioRouteMap_.AddFastRouteMapInfo(audioCapturerFilter->uid, deviceDescriptor->networkId_, INPUT_DEVICE);
     AUDIO_INFO_LOG("Success for uid[%{public}d] device[%{public}s]", audioCapturerFilter->uid,
         GetEncryptStr(deviceDescriptor->networkId_).c_str());
     return SUCCESS;
@@ -1696,7 +1586,7 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
         streamCollector_.GetCurrentCapturerChangeInfos(capturerChangeInfos);
         for (auto &changeInfo : capturerChangeInfos) {
             if (changeInfo->clientUID == audioCapturerFilter->uid && changeInfo->sessionId != 0) {
-                RestoreSession(changeInfo->sessionId, false);
+                AudioServerProxy::GetInstance().RestoreSessionProxy(changeInfo->sessionId, false);
             }
         }
         return SUCCESS;
@@ -1779,12 +1669,10 @@ int32_t AudioPolicyService::MoveToRemoteInputDevice(std::vector<SourceOutput> so
     uint32_t sourceId = -1; // invalid sink id, use sink name instead.
     std::string moduleName = GetRemoteModuleName(networkId, deviceRole);
 
-    std::unique_lock<std::mutex> ioHandleLock(ioHandlesMutex_);
-    if (IOHandles_.count(moduleName)) {
-        IOHandles_[moduleName]; // mIOHandle is module id, not equal to sink id.
-        ioHandleLock.unlock();
+    AudioIOHandle moduleId;
+    if (audioIOHandleMap_.GetModuleIdByKey(moduleName, moduleId)) {
+        (void)moduleId; // mIOHandle is module id, not equal to sink id.
     } else {
-        ioHandleLock.unlock();
         AUDIO_ERR_LOG("no such device.");
         if (!isOpenRemoteDevice) {
             return ERR_INVALID_PARAM;
@@ -1792,14 +1680,7 @@ int32_t AudioPolicyService::MoveToRemoteInputDevice(std::vector<SourceOutput> so
             return OpenRemoteAudioDevice(networkId, deviceRole, deviceType, remoteDeviceDescriptor);
         }
     }
-
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t res = gsp->CheckRemoteDeviceState(networkId, deviceRole, true);
-    IPCSkeleton::SetCallingIdentity(identity);
-
+    int32_t res = AudioServerProxy::GetInstance().CheckRemoteDeviceStateProxy(networkId, deviceRole, true);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERR_OPERATION_FAILED, "remote device state is invalid!");
 
     // start move.
@@ -1849,7 +1730,7 @@ std::string AudioPolicyService::GetSinkPortName(InternalDeviceType deviceType, A
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
             // BTH tells us that a2dpoffload is OK
-            if (a2dpOffloadFlag_ == A2DP_OFFLOAD) {
+            if (GetA2dpOffloadFlag() == A2DP_OFFLOAD) {
                 if (pipeType == PIPE_TYPE_OFFLOAD) {
                     portName = OFFLOAD_PRIMARY_SPEAKER;
                 } else if (pipeType == PIPE_TYPE_MULTICHANNEL) {
@@ -1973,8 +1854,7 @@ int32_t AudioPolicyService::MoveToOutputDevice(uint32_t sessionId, std::string p
         int32_t ret = audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, portName);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
             "move [%{public}d] to local failed", sinkInputIds[i].streamId);
-        std::lock_guard<std::mutex> lock(routerMapMutex_);
-        routerMap_[sinkInputIds[i].uid] = std::pair(LOCAL_NETWORK_ID, sinkInputIds[i].pid);
+        audioRouteMap_.AddRouteMapInfo(sinkInputIds[i].uid, LOCAL_NETWORK_ID, sinkInputIds[i].pid);
     }
     return SUCCESS;
 }
@@ -2061,7 +1941,7 @@ void AudioPolicyService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescrip
 
     if (deviceDescriptor.macAddress_ !=
         AudioSpatializationService::GetAudioSpatializationService().GetCurrentDeviceAddress()) {
-        UpdateEffectBtOffloadSupported(false);
+        AudioServerProxy::GetInstance().UpdateEffectBtOffloadSupportedProxy(false);
     }
     UpdateEffectDefaultSink(deviceDescriptor.deviceType_);
     AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(deviceDescriptor.macAddress_);
@@ -2093,7 +1973,7 @@ int32_t AudioPolicyService::SetWakeUpAudioCapturer(InternalAudioCapturerOptions 
         AUDIO_ERR_LOG("failed to construct wakeup audio module info");
         return ERROR;
     }
-    OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+    audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
 
     AUDIO_DEBUG_LOG("set wakeup audio capturer end");
     return SUCCESS;
@@ -2128,17 +2008,7 @@ bool AudioPolicyService::IsAbsVolumeSupported()
 int32_t AudioPolicyService::CloseWakeUpAudioCapturer()
 {
     AUDIO_INFO_LOG("close wakeup audio capturer start");
-    std::lock_guard<std::mutex> lck(ioHandlesMutex_);
-    auto ioHandleIter = IOHandles_.find(std::string(PRIMARY_WAKEUP));
-    if (ioHandleIter == IOHandles_.end()) {
-        AUDIO_ERR_LOG("close wakeup audio capturer failed");
-        return ERROR;
-    }
-
-    auto ioHandle = ioHandleIter->second;
-    IOHandles_.erase(ioHandleIter);
-    audioPolicyManager_.CloseAudioPort(ioHandle);
-    return SUCCESS;
+    return audioIOHandleMap_.ClosePortAndEraseIOHandle(std::string(PRIMARY_WAKEUP));
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFlag deviceFlag)
@@ -2393,8 +2263,6 @@ void AudioPolicyService::UpdateActiveDevicesRoute(std::vector<std::pair<Internal
     &activeDevices, const std::string &deviceName)
 {
     CHECK_AND_RETURN_LOG(!activeDevices.empty(), "activeDevices is empty.");
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "UpdateActiveDevicesRoute, Audio Server Proxy is null");
     auto ret = SUCCESS;
     std::string deviceTypesInfo = "";
     for (size_t i = 0; i < activeDevices.size(); i++) {
@@ -2404,26 +2272,19 @@ void AudioPolicyService::UpdateActiveDevicesRoute(std::vector<std::pair<Internal
     }
 
     Trace trace("AudioPolicyService::UpdateActiveDevicesRoute DeviceTypes:" + deviceTypesInfo);
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    ret = g_adProxy->UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag_, deviceName);
-    IPCSkeleton::SetCallingIdentity(identity);
+    ret = AudioServerProxy::GetInstance().UpdateActiveDevicesRouteProxy(activeDevices, GetA2dpOffloadFlag(), deviceName);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}s", deviceTypesInfo.c_str());
 }
 
 void AudioPolicyService::UpdateDualToneState(const bool &enable, const int32_t &sessionId)
 {
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "UpdateDualToneState, Audio Server Proxy is null");
     AUDIO_INFO_LOG("update dual tone state, enable:%{public}d, sessionId:%{public}d", enable, sessionId);
     enableDualHalToneState_ = enable;
     if (enableDualHalToneState_) {
         enableDualHalToneSessionId_ = sessionId;
     }
-    auto ret = SUCCESS;
     Trace trace("AudioPolicyService::UpdateDualToneState sessionId:" + std::to_string(sessionId));
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    ret = gsp->UpdateDualToneState(enable, sessionId);
-    IPCSkeleton::SetCallingIdentity(identity);
+    auto ret = AudioServerProxy::GetInstance().UpdateDualToneStateProxy(enable, sessionId);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the dual tone state for sessionId:%{public}d", sessionId);
 }
 
@@ -2452,11 +2313,7 @@ std::string AudioPolicyService::GetSinkName(const AudioDeviceDescriptor &desc, i
 void AudioPolicyService::SetVoiceCallMuteForSwitchDevice()
 {
     Trace trace("SetVoiceMuteForSwitchDevice");
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "SetVoiceMuteForSwitchDevice, Audio Server Proxy is null");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->SetVoiceVolume(0);
-    IPCSkeleton::SetCallingIdentity(identity);
+    AudioServerProxy::GetInstance().SetVoiceVolumeProxy(0);
 
     AUDIO_INFO_LOG("%{public}" PRId64" us for modem call update route", WAIT_MODEM_CALL_SET_VOLUME_TIME_US);
     usleep(WAIT_MODEM_CALL_SET_VOLUME_TIME_US);
@@ -2470,7 +2327,7 @@ void AudioPolicyService::MuteSinkPortForSwtichDevice(shared_ptr<AudioRendererCha
     if (outputDevices.size() != 1) return;
     if (outputDevices.front()->isSameDevice(rendererChangeInfo->outputDeviceInfo)) return;
 
-    moveDeviceFinished_ = false;
+    audioIOHandleMap_.SetMoveFinish(false);
 
     if (audioScene_ == AUDIO_SCENE_PHONE_CALL &&
         rendererChangeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
@@ -2519,9 +2376,7 @@ void AudioPolicyService::MoveToNewOutputDevice(shared_ptr<AudioRendererChangeInf
         UpdateEffectDefaultSink(oldDevice);
         AUDIO_ERR_LOG("Move sink input %{public}d to device %{public}d failed!",
             rendererChangeInfo->sessionId, outputDevices.front()->deviceType_);
-        std::unique_lock<std::mutex> lock(moveDeviceMutex_);
-        moveDeviceFinished_ = true;
-        moveDeviceCV_.notify_all();
+        audioIOHandleMap_.NotifyUnmutePort();
         return;
     }
 
@@ -2536,9 +2391,7 @@ void AudioPolicyService::MoveToNewOutputDevice(shared_ptr<AudioRendererChangeInf
     streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
         rendererChangeInfo->outputDeviceInfo);
     ResetOffloadAndMchMode(rendererChangeInfo, outputDevices);
-    std::unique_lock<std::mutex> lock(moveDeviceMutex_);
-    moveDeviceFinished_ = true;
-    moveDeviceCV_.notify_all();
+    audioIOHandleMap_.NotifyUnmutePort();
 }
 
 void AudioPolicyService::MoveToNewInputDevice(shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
@@ -2658,33 +2511,11 @@ bool AudioPolicyService::IsRendererStreamRunning(shared_ptr<AudioRendererChangeI
 
 bool AudioPolicyService::NeedRehandleA2DPDevice(unique_ptr<AudioDeviceDescriptor> &desc)
 {
-    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-    if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && IOHandles_.find(BLUETOOTH_SPEAKER) == IOHandles_.end()) {
+    if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && audioIOHandleMap_.CheckIOHandleExist(BLUETOOTH_SPEAKER) == false) {
         AUDIO_INFO_LOG("A2DP module is not loaded, need rehandle");
         return true;
     }
     return false;
-}
-
-void AudioPolicyService::MuteSinkPort(const std::string &portName, int32_t duration, bool isSync)
-{
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "MuteSinkPort, Audio Server Proxy is null");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    if (sinkPortStrToClassStrMap_.count(portName) > 0) {
-        // Mute by render sink. (primary、a2dp、usb、dp、offload)
-        gsp->SetSinkMuteForSwitchDevice(sinkPortStrToClassStrMap_.at(portName), duration, true);
-    } else {
-        // Mute by pa.
-        audioPolicyManager_.SetSinkMute(portName, true, isSync);
-    }
-    IPCSkeleton::SetCallingIdentity(identity);
-    usleep(WAIT_SET_MUTE_LATENCY_TIME_US); // sleep fix data cache pop.
-
-    // Muted and then unmute.
-    thread switchThread(&AudioPolicyService::UnmutePortAfterMuteDuration, this, duration, portName, DEVICE_TYPE_NONE);
-    switchThread.detach();
 }
 
 void AudioPolicyService::MuteSinkPort(const std::string &oldSinkname, const std::string &newSinkName,
@@ -2696,33 +2527,24 @@ void AudioPolicyService::MuteSinkPort(const std::string &oldSinkname, const std:
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkname == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = SELECT_OFFLOAD_DEVICE_MUTE_MS;
         }
-        MuteSinkPort(newSinkName, SELECT_DEVICE_MUTE_MS, true);
-        MuteSinkPort(oldSinkname, muteTime, true);
+        audioIOHandleMap_.MuteSinkPort(newSinkName, SELECT_DEVICE_MUTE_MS, true);
+        audioIOHandleMap_.MuteSinkPort(oldSinkname, muteTime, true);
     } else if (reason == AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE) {
         int64_t muteTime = NEW_DEVICE_AVALIABLE_MUTE_MS;
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkname == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = NEW_DEVICE_AVALIABLE_OFFLOAD_MUTE_MS;
         }
-        MuteSinkPort(newSinkName, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
-        MuteSinkPort(oldSinkname, muteTime, true);
+        audioIOHandleMap_.MuteSinkPort(newSinkName, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
+        audioIOHandleMap_.MuteSinkPort(oldSinkname, muteTime, true);
     } else if (reason.IsOldDeviceUnavaliable() && ((audioScene_ == AUDIO_SCENE_DEFAULT) || 
         ((audioScene_ == AUDIO_SCENE_RINGING || audioScene_ == AUDIO_SCENE_VOICE_RINGING) &&
         ringermode != RINGER_MODE_NORMAL))) {
-        MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
+        audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
         usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
     } else if (reason == AudioStreamDeviceChangeReason::UNKNOWN &&
         oldSinkname == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {
         // remote cast -> earpiece 300ms fix sound leak
-        MuteSinkPort(newSinkName, NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS, true);
-    }
-}
-
-void AudioPolicyService::MuteDefaultSinkPort()
-{
-    DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
-    if (GetSinkPortName(curOutputDeviceType) != PRIMARY_CLASS) {
-        // PA may move the sink to default when unloading module.
-        MuteSinkPort(PRIMARY_SPEAKER, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
+        audioIOHandleMap_.MuteSinkPort(newSinkName, NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS, true);
     }
 }
 
@@ -2948,12 +2770,11 @@ void AudioPolicyService::FetchStreamForA2dpMchStream(std::shared_ptr<AudioRender
         streamCollector_.GetPipeType(rendererChangeInfo->sessionId, pipeType);
         if (pipeType == PIPE_TYPE_MULTICHANNEL) {
             std::string currentActivePort = MCH_PRIMARY_SPEAKER;
-            auto ioHandleIter = IOHandles_.find(currentActivePort);
-            CHECK_AND_RETURN_LOG(ioHandleIter != IOHandles_.end(), "Can not find port MCH_PRIMARY_SPEAKER in io map");
-            AudioIOHandle activateDeviceIOHandle = ioHandleIter->second;
+            AudioIOHandle activateDeviceIOHandle;
+            CHECK_AND_RETURN_LOG(audioIOHandleMap_.GetModuleIdByKey(currentActivePort, activateDeviceIOHandle), "Can not find port MCH_PRIMARY_SPEAKER in io map");
             audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
             audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
-            IOHandles_.erase(currentActivePort);
+            audioIOHandleMap_.DelIOHanleInfo(currentActivePort);
             streamCollector_.UpdateRendererPipeInfo(rendererChangeInfo->sessionId, PIPE_TYPE_NORMAL_OUT);
         }
         ResetOffloadMode(rendererChangeInfo->sessionId);
@@ -2981,11 +2802,7 @@ void AudioPolicyService::FetchStreamForA2dpOffload(const bool &requireReset)
                     GetEncryptAddr(descs.front()->macAddress_).c_str());
             }
             if (rendererChangeInfo->rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
-                const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-                CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
-                std::string identity = IPCSkeleton::ResetCallingIdentity();
-                gsp->ResetAudioEndpoint();
-                IPCSkeleton::SetCallingIdentity(identity);
+                AudioServerProxy::GetInstance().ResetAudioEndpointProxy();
             }
             FetchStreamForA2dpMchStream(rendererChangeInfo, descs);
         }
@@ -2998,9 +2815,9 @@ bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, D
         desc->macAddress_ == deviceInfo.macAddress && desc->connectState_ == deviceInfo.connectState) {
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
             // switch to A2dp
-            ((deviceInfo.a2dpOffloadFlag == A2DP_OFFLOAD && a2dpOffloadFlag_ != A2DP_OFFLOAD) ||
+            ((deviceInfo.a2dpOffloadFlag == A2DP_OFFLOAD && GetA2dpOffloadFlag() != A2DP_OFFLOAD) ||
             // switch to A2dp offload
-            (deviceInfo.a2dpOffloadFlag != A2DP_OFFLOAD && a2dpOffloadFlag_ == A2DP_OFFLOAD))) {
+            (deviceInfo.a2dpOffloadFlag != A2DP_OFFLOAD && GetA2dpOffloadFlag() == A2DP_OFFLOAD))) {
             return false;
         }
         return true;
@@ -3233,13 +3050,7 @@ void AudioPolicyService::FetchDevice(bool isOutputDevice, const AudioStreamDevic
 int32_t AudioPolicyService::SetMicrophoneMute(bool isMute)
 {
     AUDIO_DEBUG_LOG("state[%{public}d]", isMute);
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->SetMicrophoneMute(isMute | isMicrophoneMutePersistent_);
-    IPCSkeleton::SetCallingIdentity(identity);
-
+    int32_t ret = AudioServerProxy::GetInstance().SetMicrophoneMuteProxy(isMute | isMicrophoneMutePersistent_);
     if (ret == SUCCESS) {
         isMicrophoneMuteTemporary_ = isMute;
         streamCollector_.UpdateCapturerInfoMuteStatus(0, isMicrophoneMuteTemporary_ | isMicrophoneMutePersistent_);
@@ -3251,11 +3062,7 @@ int32_t AudioPolicyService::SetMicrophoneMutePersistent(const bool isMute)
 {
     AUDIO_DEBUG_LOG("state[%{public}d]", isMute);
     isMicrophoneMutePersistent_ = isMute;
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->SetMicrophoneMute(isMicrophoneMuteTemporary_ | isMicrophoneMutePersistent_);
-    IPCSkeleton::SetCallingIdentity(identity);
+    int32_t ret = AudioServerProxy::GetInstance().SetMicrophoneMuteProxy(isMicrophoneMuteTemporary_ | isMicrophoneMutePersistent_);
     if (ret == SUCCESS) {
         AUDIO_INFO_LOG("UpdateCapturerInfoMuteStatus when set mic mute state persistent.");
         streamCollector_.UpdateCapturerInfoMuteStatus(0, isMicrophoneMuteTemporary_|isMicrophoneMutePersistent_);
@@ -3282,11 +3089,7 @@ int32_t AudioPolicyService::InitPersistentMicrophoneMuteState(bool &isMute)
     }
     // Ensure persistent mic mute state takes effect when first startup
     isMicrophoneMutePersistent_ = isMute;
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    ret = gsp->SetMicrophoneMute(isMicrophoneMutePersistent_);
-    IPCSkeleton::SetCallingIdentity(identity);
+    ret = AudioServerProxy::GetInstance().SetMicrophoneMuteProxy(isMicrophoneMutePersistent_);
     if (ret == SUCCESS) {
         AUDIO_INFO_LOG("UpdateCapturerInfoMuteStatus when audio service restart.");
         streamCollector_.UpdateCapturerInfoMuteStatus(0, isMicrophoneMutePersistent_);
@@ -3323,9 +3126,8 @@ int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescrip
     audioPolicyManager_.SetActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP);
 
     {
-        std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
         if (Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDescriptor->macAddress_ &&
-            IOHandles_.find(BLUETOOTH_SPEAKER) != IOHandles_.end()) {
+            audioIOHandleMap_.CheckIOHandleExist(BLUETOOTH_SPEAKER)) {
             AUDIO_INFO_LOG("a2dp device [%{public}s] is already active",
                 GetEncryptAddr(deviceDescriptor->macAddress_).c_str());
             return SUCCESS;
@@ -3349,8 +3151,8 @@ int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescrip
 
 void AudioPolicyService::UnloadA2dpModule()
 {
-    MuteDefaultSinkPort();
-    ClosePortAndEraseIOHandle(BLUETOOTH_SPEAKER);
+    audioIOHandleMap_.MuteDefaultSinkPort(GetSinkPortName(GetCurrentOutputDeviceType()));
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(BLUETOOTH_SPEAKER);
 }
 
 int32_t AudioPolicyService::LoadA2dpModule(DeviceType deviceType)
@@ -3370,14 +3172,13 @@ int32_t AudioPolicyService::LoadA2dpModule(DeviceType deviceType)
         if (configRole != deviceRole) {continue;}
         AudioStreamInfo audioStreamInfo = {};
         GetActiveDeviceStreamInfo(deviceType, audioStreamInfo);   
-        std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-        if (IOHandles_.find(moduleInfo.name) == IOHandles_.end()) {
+        if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name) == false) {
             // a2dp device connects for the first time
             GetA2dpModuleInfo(moduleInfo, audioStreamInfo);
             AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
             CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
                 "OpenAudioPort failed %{public}d", ioHandle);
-            IOHandles_[moduleInfo.name] = ioHandle;
+            audioIOHandleMap_.AddIOHanleInfo(moduleInfo.name, ioHandle);
         } else {
             // At least one a2dp device is already connected. A new a2dp device is connecting.
             // Need to reload a2dp module when switching to a2dp device.
@@ -3394,7 +3195,7 @@ int32_t AudioPolicyService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Dev
 {
     AUDIO_INFO_LOG("switch device from a2dp to another a2dp, reload a2dp module");
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        MuteDefaultSinkPort();
+        audioIOHandleMap_.MuteDefaultSinkPort(GetSinkPortName(GetCurrentOutputDeviceType()));
     }
 
     // Firstly, unload the existing a2dp sink or source.
@@ -3402,7 +3203,8 @@ int32_t AudioPolicyService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Dev
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
         portName = BLUETOOTH_MIC;
     }
-    AudioIOHandle activateDeviceIOHandle = IOHandles_[portName];
+    AudioIOHandle activateDeviceIOHandle;
+    audioIOHandleMap_.GetModuleIdByKey(portName, activateDeviceIOHandle);
     int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
         "CloseAudioPort failed %{public}d", result);
@@ -3412,7 +3214,7 @@ int32_t AudioPolicyService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Dev
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
     CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
         "OpenAudioPort failed %{public}d", ioHandle);
-    IOHandles_[moduleInfo.name] = ioHandle;
+    audioIOHandleMap_.AddIOHanleInfo(moduleInfo.name, ioHandle);
     return SUCCESS;
 }
 
@@ -3455,7 +3257,7 @@ int32_t AudioPolicyService::LoadUsbModule(string deviceInfo, DeviceRole deviceRo
             moduleInfo.bufferSize = std::to_string(bufferSize);
             AUDIO_INFO_LOG("update arm usb buffer size: %{public}s", moduleInfo.bufferSize.c_str());
             if (deviceRole == OUTPUT_DEVICE) {
-                int32_t ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+                int32_t ret = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
                 CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
                     "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
                 usbSinkModuleInfo_ = moduleInfo;
@@ -3464,7 +3266,7 @@ int32_t AudioPolicyService::LoadUsbModule(string deviceInfo, DeviceRole deviceRo
                 usbSourceModuleInfo_ = moduleInfo;
             }
         } else {
-            int32_t ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+            int32_t ret = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
                 "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
         }
@@ -3486,13 +3288,13 @@ int32_t AudioPolicyService::LoadDpModule(string deviceInfo)
     }
     for (auto &moduleInfo : moduleInfoList) {
         AUDIO_INFO_LOG("[module_load]::load module[%{public}s]", moduleInfo.name.c_str());
-        if (IOHandles_.find(moduleInfo.name) == IOHandles_.end()) {
+        if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name) == false) {
             GetDPModuleInfo(moduleInfo, deviceInfo);
             if (moduleInfo.role == ROLE_SINK) {
                 AUDIO_INFO_LOG("save dp sink module info for cust param");
                 dpSinkModuleInfo_ = moduleInfo;
             }
-            return OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+            return audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
         }
     }
 
@@ -3519,7 +3321,7 @@ int32_t AudioPolicyService::LoadDefaultUsbModule(DeviceRole deviceRole)
         if (isEcFeatureEnable_) {
             if (deviceRole == OUTPUT_DEVICE) {
                 usbSinkModuleInfo_ = moduleInfo;
-                int32_t ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+                int32_t ret = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
                 CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
                     "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
             } else {
@@ -3527,7 +3329,7 @@ int32_t AudioPolicyService::LoadDefaultUsbModule(DeviceRole deviceRole)
                 usbSourceModuleInfo_ = moduleInfo;
             }
         } else {
-            int32_t ret = OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+            int32_t ret = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
                 "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
         }
@@ -3552,11 +3354,11 @@ int32_t AudioPolicyService::HandleActiveDevice(DeviceType deviceType)
         return ERR_OPERATION_FAILED;
     }
     if (sinkPortName != PORT_NONE) {
-        GetSinkIOHandle(deviceType);
+        audioIOHandleMap_.GetSinkIOHandle(deviceType);
         audioPolicyManager_.SuspendAudioDevice(sinkPortName, false);
     }
     if (sourcePortName != PORT_NONE) {
-        GetSourceIOHandle(deviceType);
+        audioIOHandleMap_.GetSourceIOHandle(deviceType);
         audioPolicyManager_.SuspendAudioDevice(sourcePortName, false);
     }
     UpdateInputDeviceInfo(deviceType);
@@ -3569,14 +3371,7 @@ int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType, DeviceRole
     Trace trace("AudioPolicyService::HandleArmUsbDevice");
 
     if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
-        string deviceInfo = "";
-        const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-        if (gsp != nullptr) {
-            std::string identity = IPCSkeleton::ResetCallingIdentity();
-            deviceInfo = gsp->GetAudioParameter(LOCAL_NETWORK_ID, USB_DEVICE, address);
-            IPCSkeleton::SetCallingIdentity(identity);
-            AUDIO_INFO_LOG("device info from usb hal is %{public}s", deviceInfo.c_str());
-        }
+        string deviceInfo = AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE, address);
         int32_t ret;
         if (!deviceInfo.empty()) {
             ret = LoadUsbModule(deviceInfo, deviceRole);
@@ -3654,15 +3449,12 @@ int32_t AudioPolicyService::HandleDpDevice(DeviceType deviceType, const std::str
         std::string getDPInfo = "";
         GetModuleInfo(ClassType::TYPE_DP, defaulyDPInfo);
         CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
-        const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-        if (gsp != nullptr) {
-            std::string identity = IPCSkeleton::ResetCallingIdentity();
-            getDPInfo = gsp->GetAudioParameter(LOCAL_NETWORK_ID, GET_DP_DEVICE_INFO,
-                defaulyDPInfo + " address=" + address + " ");
-            IPCSkeleton::SetCallingIdentity(identity);
-            AUDIO_DEBUG_LOG("device info from dp hal is \n defaulyDPInfo:%{public}s \n getDPInfo:%{public}s",
-                defaulyDPInfo.c_str(), getDPInfo.c_str());
-        }
+
+        getDPInfo = AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, GET_DP_DEVICE_INFO,
+            defaulyDPInfo + " address=" + address + " ");
+        AUDIO_DEBUG_LOG("device info from dp hal is \n defaulyDPInfo:%{public}s \n getDPInfo:%{public}s",
+            defaulyDPInfo.c_str(), getDPInfo.c_str());
+
         getDPInfo = getDPInfo.empty() ? defaulyDPInfo : getDPInfo;
         int32_t ret = LoadDpModule(getDPInfo);
         if (ret != SUCCESS) {
@@ -3679,41 +3471,12 @@ int32_t AudioPolicyService::HandleDpDevice(DeviceType deviceType, const std::str
     return SUCCESS;
 }
 
-void AudioPolicyService::UnmutePortAfterMuteDuration(int32_t muteDuration, std::string portName, DeviceType deviceType)
-{
-    Trace trace("UnmutePortAfterMuteDuration:" + portName + " for " + std::to_string(muteDuration) + "us");
-
-    if (!moveDeviceFinished_.load()) {
-        std::unique_lock<std::mutex> lock(moveDeviceMutex_);
-        bool loadWaiting = moveDeviceCV_.wait_for(lock,
-            std::chrono::milliseconds(WAIT_MOVE_DEVICE_MUTE_TIME_MAX_MS),
-            [this] { return moveDeviceFinished_.load(); }
-        );
-        if (!loadWaiting) {
-            AUDIO_ERR_LOG("move device time out");
-        }
-    }
-    AUDIO_INFO_LOG("%{public}d us for device type[%{public}s]", muteDuration, portName.c_str());
-
-    usleep(muteDuration);
-    if (sinkPortStrToClassStrMap_.count(portName) > 0) {
-        const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-        if (gsp != nullptr) {
-            std::string identity = IPCSkeleton::ResetCallingIdentity();
-            gsp->SetSinkMuteForSwitchDevice(sinkPortStrToClassStrMap_.at(portName), muteDuration, false);
-            IPCSkeleton::SetCallingIdentity(identity);
-        }
-    } else {
-        audioPolicyManager_.SetSinkMute(portName, false);
-    }
-}
-
 int32_t AudioPolicyService::ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote)
 {
     if (isRemote) {
         AudioModuleInfo moduleInfo = ConstructRemoteAudioModuleInfo(networkId, GetDeviceRole(deviceType), deviceType);
         std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(deviceType));
-        OpenPortAndInsertIOHandle(moduleName, moduleInfo);
+        audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleName, moduleInfo);
     }
     return SUCCESS;
 }
@@ -3821,9 +3584,6 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
     AUDIO_INFO_LOG("start %{public}d", audioScene);
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
-
     lastAudioScene_ = audioScene_;
     audioScene_ = audioScene;
     Bluetooth::AudioHfpManager::SetAudioSceneFromPolicy(audioScene_);
@@ -3846,15 +3606,13 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     bool haveArmUsbDevice = false;
     DealAudioSceneOutputDevices(audioScene, activeOutputDevices, haveArmUsbDevice);
     int32_t result = SUCCESS;
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
     if (haveArmUsbDevice) {
-        result = gsp->SetAudioScene(audioScene, activeOutputDevices, DEVICE_TYPE_USB_ARM_HEADSET,
-            a2dpOffloadFlag_);
+        result = AudioServerProxy::GetInstance().SetAudioSceneProxy(audioScene, activeOutputDevices, DEVICE_TYPE_USB_ARM_HEADSET,
+            GetA2dpOffloadFlag());
     } else {
-        result = gsp->SetAudioScene(audioScene, activeOutputDevices, GetCurrentInputDeviceType(),
-            a2dpOffloadFlag_);
+        result = AudioServerProxy::GetInstance().SetAudioSceneProxy(audioScene, activeOutputDevices, GetCurrentInputDeviceType(),
+            GetA2dpOffloadFlag());
     }
-    IPCSkeleton::SetCallingIdentity(identity);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "failed [%{public}d]", result);
 
     if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
@@ -4123,7 +3881,7 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
     RemoveMicrophoneDescriptor(devDesc);
     if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
         GetCurrentOutputDeviceMacAddr() == updatedDesc.macAddress_) {
-        a2dpOffloadFlag_ = NO_A2DP_DEVICE;
+        SetA2dpOffloadFlag(NO_A2DP_DEVICE);
     }
 }
 
@@ -4136,9 +3894,6 @@ void AudioPolicyService::OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, b
         pnpDeviceList_.push_back({pnpDesc, isConnected});
         return;
     }
-    if (g_adProxy == nullptr) {
-        GetAudioServerProxy();
-    }
     AudioStreamInfo streamInfo = {};
     OnDeviceStatusUpdated(desc.deviceType_, isConnected, desc.macAddress_, desc.deviceName_, streamInfo);
 }
@@ -4146,9 +3901,6 @@ void AudioPolicyService::OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, b
 void AudioPolicyService::OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status)
 {
     CHECK_AND_RETURN_LOG(devType != DEVICE_TYPE_NONE, "devType is none type");
-    if (g_adProxy == nullptr) {
-        GetAudioServerProxy();
-    }
     OnBlockedStatusUpdated(devType, status);
 }
 
@@ -4233,21 +3985,16 @@ int32_t AudioPolicyService::HandleLocalDeviceDisconnected(const AudioDeviceDescr
         std::unique_lock<std::mutex> lock(a2dpInDeviceMapMutex_);
         connectedA2dpInDeviceMap_.erase(updatedDesc.macAddress_);
         if (connectedA2dpInDeviceMap_.size() == 0) {
-            ClosePortAndEraseIOHandle(BLUETOOTH_MIC);
+            audioIOHandleMap_.ClosePortAndEraseIOHandle(BLUETOOTH_MIC);
         }
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-        ClosePortAndEraseIOHandle(USB_SPEAKER);
-        ClosePortAndEraseIOHandle(USB_MIC);
+        audioIOHandleMap_.ClosePortAndEraseIOHandle(USB_SPEAKER);
+        audioIOHandleMap_.ClosePortAndEraseIOHandle(USB_MIC);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {
-        ClosePortAndEraseIOHandle(DP_SINK);
+        audioIOHandleMap_.ClosePortAndEraseIOHandle(DP_SINK);
     }
 
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "UpdateActiveDevicesRoute, Audio Server Proxy is null");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->ResetRouteForDisconnect(updatedDesc.deviceType_);
-    IPCSkeleton::SetCallingIdentity(identity);
-
+    AudioServerProxy::GetInstance().ResetRouteForDisconnectProxy(updatedDesc.deviceType_);
     return SUCCESS;
 }
 
@@ -4262,7 +4009,7 @@ void AudioPolicyService::UpdateActiveA2dpDeviceWhenDisconnecting(const std::stri
 
     if (flag) {
         activeBTDevice_ = "";
-        ClosePortAndEraseIOHandle(BLUETOOTH_SPEAKER);
+        audioIOHandleMap_.ClosePortAndEraseIOHandle(BLUETOOTH_SPEAKER);
         audioPolicyManager_.SetAbsVolumeScene(false);
         SetSharedAbsVolumeScene(false);
 #ifdef BLUETOOTH_ENABLE
@@ -4292,17 +4039,12 @@ int32_t AudioPolicyService::HandleSpecialDeviceType(DeviceType &devType, bool &i
 {
     // usb device needs to be distinguished form arm or hifi
     if (devType == DEVICE_TYPE_USB_HEADSET || devType == DEVICE_TYPE_USB_ARM_HEADSET) {
-        const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "HandleSpecialDeviceType, Audio server Proxy is null");
         AUDIO_INFO_LOG("has hifi:%{public}d, has arm:%{public}d", hasHifiUsbDevice_, hasArmUsbDevice_);
-        std::string identity = IPCSkeleton::ResetCallingIdentity();
 
         // Hal only support one HiFi device, If HiFi is already online, the following devices should be ARM.
         // But when the second usb device went online, the return value of this interface was not accurate.
         // So special handling was done when usb device was connected and disconnected.
-        const std::string value = gsp->GetAudioParameter("need_change_usb_device");
-
-        IPCSkeleton::SetCallingIdentity(identity);
+        const std::string value = AudioServerProxy::GetInstance().GetAudioParameterProxy("need_change_usb_device");
         AUDIO_INFO_LOG("get value %{public}s  from hal when usb device connect", value.c_str());
         if (isConnected) {
             bool isArmConnect = (value == "false" || hasHifiUsbDevice_);
@@ -4611,10 +4353,10 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
     if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(activeBTDevice_)
         && IsDeviceActive(deviceType)) {
         auto activeSessionsSize = UpdateA2dpOffloadFlagForAllStream();
-        AUDIO_DEBUG_LOG("streamInfo.sampleRate: %{public}d, a2dpOffloadFlag_: %{public}d",
-            streamInfo.samplingRate, a2dpOffloadFlag_);
+        AUDIO_DEBUG_LOG("streamInfo.sampleRate: %{public}d, a2dpOffloadFlag: %{public}d",
+            streamInfo.samplingRate, GetA2dpOffloadFlag());
         if (!IsConfigurationUpdated(deviceType, streamInfo) ||
-            (activeSessionsSize > 0 && a2dpOffloadFlag_ == A2DP_OFFLOAD)) {
+            (activeSessionsSize > 0 && GetA2dpOffloadFlag() == A2DP_OFFLOAD)) {
             AUDIO_DEBUG_LOG("Audio configuration same");
             return;
         }
@@ -4639,8 +4381,7 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
     if (a2dpModulesPos != deviceClassInfo_.end()) {
         auto moduleInfoList = a2dpModulesPos->second;
         for (auto &moduleInfo : moduleInfoList) {
-            std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-            if (IOHandles_.find(moduleInfo.name) != IOHandles_.end()) {
+            if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name)) {
                 moduleInfo.channels = to_string(streamInfo.channels);
                 moduleInfo.rate = to_string(streamInfo.samplingRate);
                 moduleInfo.format = ConvertToHDIAudioFormat(streamInfo.format);
@@ -4651,8 +4392,9 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
                 // First unload the existing bt sink
                 AUDIO_DEBUG_LOG("UnLoad existing a2dp module");
                 std::string currentActivePort = GetSinkPortName(GetCurrentOutputDeviceType());
-                AudioIOHandle activateDeviceIOHandle = IOHandles_[BLUETOOTH_SPEAKER];
-                MuteDefaultSinkPort();
+                AudioIOHandle activateDeviceIOHandle;
+                audioIOHandleMap_.GetModuleIdByKey(BLUETOOTH_SPEAKER, activateDeviceIOHandle);
+                audioIOHandleMap_.MuteDefaultSinkPort(GetSinkPortName(GetCurrentOutputDeviceType()));
                 audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
                 audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
 
@@ -4660,7 +4402,7 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
                 AUDIO_DEBUG_LOG("Reload a2dp module [%{public}s]", moduleInfo.name.c_str());
                 AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
                 CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
-                IOHandles_[moduleInfo.name] = ioHandle;
+                audioIOHandleMap_.AddIOHanleInfo(moduleInfo.name, ioHandle);
                 std::string portName = GetSinkPortName(deviceType);
                 audioPolicyManager_.SetDeviceActive(deviceType, portName, true);
                 audioPolicyManager_.SuspendAudioDevice(portName, false);
@@ -4677,32 +4419,6 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
 
                 break;
             }
-        }
-    }
-}
-
-void AudioPolicyService::RemoveDeviceInRouterMap(std::string networkId)
-{
-    std::lock_guard<std::mutex> lock(routerMapMutex_);
-    std::unordered_map<int32_t, std::pair<std::string, int32_t>>::iterator it;
-    for (it = routerMap_.begin();it != routerMap_.end();) {
-        if (it->second.first == networkId) {
-            routerMap_.erase(it++);
-        } else {
-            it++;
-        }
-    }
-}
-
-void AudioPolicyService::RemoveDeviceInFastRouterMap(std::string networkId)
-{
-    std::lock_guard<std::mutex> lock(routerMapMutex_);
-    std::unordered_map<int32_t, std::pair<std::string, DeviceRole>>::iterator it;
-    for (it = fastRouterMap_.begin();it != fastRouterMap_.end();) {
-        if (it->second.first == networkId) {
-            fastRouterMap_.erase(it++);
-        } else {
-            it++;
         }
     }
 }
@@ -4963,10 +4679,10 @@ void AudioPolicyService::HandleOfflineDistributedDevice()
             const std::string networkId = deviceDesc->networkId_;
             UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
             std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(deviceDesc->deviceType_));
-            MuteDefaultSinkPort();
-            ClosePortAndEraseIOHandle(moduleName);
-            RemoveDeviceInRouterMap(moduleName);
-            RemoveDeviceInFastRouterMap(networkId);
+            audioIOHandleMap_.MuteDefaultSinkPort(GetSinkPortName(GetCurrentOutputDeviceType()));
+            audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
+            audioRouteMap_.RemoveDeviceInRouterMap(moduleName);
+            audioRouteMap_.RemoveDeviceInFastRouterMap(networkId);
             if (GetDeviceRole(deviceDesc->deviceType_) == DeviceRole::INPUT_DEVICE) {
                 remoteCapturerSwitch_ = true;
             }
@@ -5004,19 +4720,16 @@ int32_t AudioPolicyService::HandleDistributedDeviceUpdate(DStatusInfo &statusInf
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "DEVICE online but open audio device failed.");
         UpdateConnectedDevicesWhenConnecting(deviceDesc, descForCb);
 
-        const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-        if (gsp != nullptr && statusInfo.connectType == ConnectType::CONNECT_TYPE_DISTRIBUTED) {
-            std::string identity = IPCSkeleton::ResetCallingIdentity();
-            gsp->NotifyDeviceInfo(networkId, true);
-            IPCSkeleton::SetCallingIdentity(identity);
+        if (statusInfo.connectType == ConnectType::CONNECT_TYPE_DISTRIBUTED) {
+            AudioServerProxy::GetInstance().NotifyDeviceInfoProxy(networkId, true);
         }
     } else {
         UpdateConnectedDevicesWhenDisconnecting(deviceDesc, descForCb);
         std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(devType));
-        MuteDefaultSinkPort();
-        ClosePortAndEraseIOHandle(moduleName);
-        RemoveDeviceInRouterMap(moduleName);
-        RemoveDeviceInFastRouterMap(networkId);
+        audioIOHandleMap_.MuteDefaultSinkPort(GetSinkPortName(GetCurrentOutputDeviceType()));
+        audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
+        audioRouteMap_.RemoveDeviceInRouterMap(moduleName);
+        audioRouteMap_.RemoveDeviceInFastRouterMap(networkId);
     }
     return SUCCESS;
 }
@@ -5055,7 +4768,7 @@ bool AudioPolicyService::OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo 
 {
     auto devType = GetDeviceType(moduleInfo.name);
     if (devType != DEVICE_TYPE_MIC) {
-        OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+        audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
 
         if (devType == DEVICE_TYPE_SPEAKER) {
             auto result = audioPolicyManager_.SetDeviceActive(devType, moduleInfo.name, true);
@@ -5168,21 +4881,13 @@ void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::s
 void AudioPolicyService::OnMonoAudioConfigChanged(bool audioMono)
 {
     AUDIO_DEBUG_LOG("audioMono = %{public}s", audioMono? "true": "false");
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "OnMonoAudioConfigChanged, Audio Server Proxy is null");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->SetAudioMonoState(audioMono);
-    IPCSkeleton::SetCallingIdentity(identity);
+    AudioServerProxy::GetInstance().SetAudioMonoStateProxy(audioMono);
 }
 
 void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
 {
     AUDIO_DEBUG_LOG("audioBalance = %{public}f", audioBalance);
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "OnMonoAudioConfigChanged, Audio Server Proxy is null");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->SetAudioBalanceValue(audioBalance);
-    IPCSkeleton::SetCallingIdentity(identity);
+    AudioServerProxy::GetInstance().SetAudioBalanceValueProxy(audioBalance);
 }
 
 void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
@@ -5199,14 +4904,8 @@ void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {
-            const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-            CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
             std::string sinkName = GetSinkPortName(deviceType);
-
-            std::string identity = IPCSkeleton::ResetCallingIdentity();
-            gsp->SetOutputDeviceSink(deviceType, sinkName);
-            IPCSkeleton::SetCallingIdentity(identity);
-
+            AudioServerProxy::GetInstance().SetOutputDeviceSinkProxy(deviceType, sinkName);
             break;
         }
         default:
@@ -5219,14 +4918,7 @@ void AudioPolicyService::LoadSinksForCapturer()
     AUDIO_INFO_LOG("Start");
     AudioStreamInfo streamInfo;
     LoadInnerCapturerSink(INNER_CAPTURER_SINK_LEGACY, streamInfo);
-
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "LoadSinksForCapturer, Audio Server Proxy is null");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    bool ret = gsp->CreatePlaybackCapturerManager();
-    IPCSkeleton::SetCallingIdentity(identity);
-
+    bool ret = AudioServerProxy::GetInstance().CreatePlaybackCapturerManagerProxy();
     CHECK_AND_RETURN_LOG(ret, "PlaybackCapturerManager create failed");
 }
 
@@ -5245,12 +4937,12 @@ void AudioPolicyService::LoadInnerCapturerSink(string moduleName, AudioStreamInf
     moduleInfo.rate = std::to_string(streamInfo.samplingRate);
     moduleInfo.bufferSize = std::to_string(bufferSize);
 
-    OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+    audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
 }
 
 void AudioPolicyService::UnloadInnerCapturerSink(string moduleName)
 {
-    ClosePortAndEraseIOHandle(moduleName);
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
 }
 
 void AudioPolicyService::LoadModernInnerCapSink()
@@ -5265,24 +4957,19 @@ void AudioPolicyService::LoadModernInnerCapSink()
     moduleInfo.rate = "48000";
     moduleInfo.bufferSize = "3840"; // 20ms
 
-    OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+    audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
 }
 
 void AudioPolicyService::LoadEffectLibrary()
 {
     // IPC -> audioservice load library
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "LoadEffectLibrary, Audio Server Proxy is null");
     OriginalEffectConfig oriEffectConfig = {};
     audioEffectManager_.GetOriginalEffectConfig(oriEffectConfig);
     vector<Effect> successLoadedEffects;
 
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    bool loadSuccess = gsp->LoadAudioEffectLibraries(oriEffectConfig.libraries,
+    bool loadSuccess = AudioServerProxy::GetInstance().LoadAudioEffectLibrariesProxy(oriEffectConfig.libraries,
                                                      oriEffectConfig.effects,
                                                      successLoadedEffects);
-    IPCSkeleton::SetCallingIdentity(identity);
-
     if (!loadSuccess) {
         AUDIO_ERR_LOG("Load audio effect failed, please check log");
     }
@@ -5298,11 +4985,8 @@ void AudioPolicyService::LoadEffectLibrary()
     audioEffectManager_.ConstructEffectChainManagerParam(effectChainManagerParam);
     audioEffectManager_.ConstructEnhanceChainManagerParam(enhanceChainManagerParam);
 
-    identity = IPCSkeleton::ResetCallingIdentity();
-    bool ret = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains,
+    bool ret = AudioServerProxy::GetInstance().CreateEffectChainManagerProxy(supportedEffectConfig.effectChains,
         effectChainManagerParam, enhanceChainManagerParam);
-    IPCSkeleton::SetCallingIdentity(identity);
-
     CHECK_AND_RETURN_LOG(ret, "EffectChainManager create failed");
 
     audioEffectManager_.SetEffectChainManagerAvailable();
@@ -5545,7 +5229,7 @@ void AudioPolicyService::UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<Aud
     deviceInfo.connectState = desc->connectState_;
 
     if (deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        deviceInfo.a2dpOffloadFlag = a2dpOffloadFlag_;
+        deviceInfo.a2dpOffloadFlag = GetA2dpOffloadFlag();
     }
 
     if (hasBTPermission) {
@@ -5791,7 +5475,7 @@ int32_t AudioPolicyService::ReconfigureAudioChannel(const uint32_t &channelCount
         return ERROR;
     }
 
-    ClosePortAndEraseIOHandle(module);
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(module);
 
     auto fileClass = deviceClassInfo_.find(ClassType::TYPE_FILE_IO);
     if (fileClass != deviceClassInfo_.end()) {
@@ -5799,70 +5483,13 @@ int32_t AudioPolicyService::ReconfigureAudioChannel(const uint32_t &channelCount
         for (auto &moduleInfo : moduleInfoList) {
             if (module == moduleInfo.name) {
                 moduleInfo.channels = to_string(channelCount);
-                OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+                audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
                 audioPolicyManager_.SetDeviceActive(deviceType, module, true);
             }
         }
     }
 
     return SUCCESS;
-}
-
-// private methods
-AudioIOHandle AudioPolicyService::GetSinkIOHandle(InternalDeviceType deviceType)
-{
-    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-    AudioIOHandle ioHandle;
-    switch (deviceType) {
-        case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
-        case InternalDeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
-        case InternalDeviceType::DEVICE_TYPE_USB_HEADSET:
-        case InternalDeviceType::DEVICE_TYPE_EARPIECE:
-        case InternalDeviceType::DEVICE_TYPE_SPEAKER:
-        case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
-            ioHandle = IOHandles_[PRIMARY_SPEAKER];
-            break;
-        case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
-            ioHandle = IOHandles_[USB_SPEAKER];
-            break;
-        case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
-            ioHandle = IOHandles_[BLUETOOTH_SPEAKER];
-            break;
-        case InternalDeviceType::DEVICE_TYPE_FILE_SINK:
-            ioHandle = IOHandles_[FILE_SINK];
-            break;
-        case InternalDeviceType::DEVICE_TYPE_DP:
-            ioHandle = IOHandles_[DP_SINK];
-            break;
-        default:
-            ioHandle = IOHandles_[PRIMARY_SPEAKER];
-            break;
-    }
-    return ioHandle;
-}
-
-AudioIOHandle AudioPolicyService::GetSourceIOHandle(InternalDeviceType deviceType)
-{
-    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-    AudioIOHandle ioHandle;
-    switch (deviceType) {
-        case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
-            ioHandle = IOHandles_[USB_MIC];
-            break;
-        case InternalDeviceType::DEVICE_TYPE_MIC:
-            ioHandle = IOHandles_[PRIMARY_MIC];
-            break;
-        case InternalDeviceType::DEVICE_TYPE_FILE_SOURCE:
-            ioHandle = IOHandles_[FILE_SOURCE];
-            break;
-        case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN:
-            ioHandle = IOHandles_[BLUETOOTH_MIC];
-            break;
-        default:
-            ioHandle = IOHandles_[PRIMARY_MIC];
-            break;
-    }
-    return ioHandle;
 }
 
 InternalDeviceType AudioPolicyService::GetDeviceType(const std::string &deviceName)
@@ -5931,8 +5558,8 @@ void AudioPolicyService::WriteDeviceChangedSysEvents(const vector<sptr<AudioDevi
             } else if (deviceDescriptor->deviceRole_ == INPUT_DEVICE) {
                 vector<SourceOutput> sourceOutputs;
                 {
-                    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-                    if (std::any_of(IOHandles_.cbegin(), IOHandles_.cend(), [](const auto &pair) {
+                    std::unordered_map<std::string, AudioIOHandle> mapCopy = audioIOHandleMap_.GetCopy();
+                    if (std::any_of(mapCopy.cbegin(), mapCopy.cend(), [](const auto &pair) {
                             return std::find(SourceNames.cbegin(), SourceNames.cend(), pair.first) != SourceNames.end();
                         })) {
                         sourceOutputs = audioPolicyManager_.GetAllSourceOutputs();
@@ -6522,12 +6149,7 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
         rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_);
     if (isFastControlled_ && (flag == AUDIO_FLAG_MMAP || flag == AUDIO_FLAG_VOIP_FAST)) {
         std::string bundleNamePre = CHECK_FAST_BLOCK_PREFIX + bundleName;
-        const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_NORMAL,
-            "GetPreferredOutputStreamType, Audio server Proxy is null");
-        std::string identity = IPCSkeleton::ResetCallingIdentity();
-        std::string result = gsp->GetAudioParameter(bundleNamePre);
-        IPCSkeleton::SetCallingIdentity(identity);
+        std::string result = AudioServerProxy::GetInstance().GetAudioParameterProxy(bundleNamePre);
         if (result == "true") {
             AUDIO_INFO_LOG("%{public}s not in fast list", bundleName.c_str());
             return AUDIO_FLAG_NORMAL;
@@ -6848,7 +6470,7 @@ std::vector<sptr<VolumeGroupInfo>> AudioPolicyService::GetVolumeGroupInfos()
 void AudioPolicyService::RegiestPolicy()
 {
     AUDIO_INFO_LOG("Start");
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    const sptr<IStandardAudioService> gsp = AudioServerProxy::GetInstance().GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "RegiestPolicy, Audio Server Proxy is null");
     audioPolicyManager_.SetAudioServerProxy(gsp);
 
@@ -6857,10 +6479,7 @@ void AudioPolicyService::RegiestPolicy()
     sptr<IRemoteObject> object = wrapper->AsObject();
     CHECK_AND_RETURN_LOG(object != nullptr, "RegiestPolicy AsObject is nullptr");
 
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->RegiestPolicyProvider(object);
-    IPCSkeleton::SetCallingIdentity(identity);
-
+    int32_t ret = AudioServerProxy::GetInstance().RegiestPolicyProviderProxy(object);
     AUDIO_DEBUG_LOG("result:%{public}d", ret);
 }
 
@@ -6915,13 +6534,9 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
     AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO}; // note: read from xml
     deviceInfo.audioStreamInfo = targetStreamInfo;
     deviceInfo.deviceName = "mmap_device";
-    std::lock_guard<std::mutex> lock(routerMapMutex_);
-    if (fastRouterMap_.count(config.appInfo.appUid) &&
-        fastRouterMap_[config.appInfo.appUid].second == deviceInfo.deviceRole) {
-        deviceInfo.networkId = fastRouterMap_[config.appInfo.appUid].first;
-        AUDIO_INFO_LOG("use networkid in fastRouterMap_ :%{public}s ", GetEncryptStr(deviceInfo.networkId).c_str());
-    }
-    deviceInfo.a2dpOffloadFlag = a2dpOffloadFlag_;
+
+    audioRouteMap_.GetNetworkIDInFastRouterMap(config.appInfo.appUid, deviceInfo.deviceRole, deviceInfo.networkId);
+    deviceInfo.a2dpOffloadFlag = GetA2dpOffloadFlag();
     return SUCCESS;
 }
 
@@ -6946,13 +6561,8 @@ int32_t AudioPolicyService::GetVoipDeviceInfo(const AudioProcessConfig &config, 
             deviceInfo.deviceType);
         return SUCCESS;
     }
-    std::lock_guard<std::mutex> lock(routerMapMutex_);
-    if (fastRouterMap_.count(config.appInfo.appUid) &&
-        fastRouterMap_[config.appInfo.appUid].second == deviceInfo.deviceRole) {
-        deviceInfo.networkId = fastRouterMap_[config.appInfo.appUid].first;
-        AUDIO_INFO_LOG("use networkid in fastRouterMap_ :%{public}s ", GetEncryptStr(deviceInfo.networkId).c_str());
-    }
-    deviceInfo.a2dpOffloadFlag = a2dpOffloadFlag_;
+    audioRouteMap_.GetNetworkIDInFastRouterMap(config.appInfo.appUid, deviceInfo.deviceRole, deviceInfo.networkId);
+    deviceInfo.a2dpOffloadFlag = GetA2dpOffloadFlag();
     deviceInfo.isLowLatencyDevice = true;
     return SUCCESS;
 }
@@ -7005,13 +6615,7 @@ bool AudioPolicyService::SetSharedVolume(AudioVolumeType streamType, DeviceType 
     volumeVector_[index].volumeFloat = vol.volumeFloat;
     volumeVector_[index].volumeInt = vol.volumeInt;
 
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "SetSharedVolume, Audio server Proxy is null");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->NotifyStreamVolumeChanged(streamType, vol.volumeFloat);
-    IPCSkeleton::SetCallingIdentity(identity);
-
+    AudioServerProxy::GetInstance().NotifyStreamVolumeChangedProxy(streamType, vol.volumeFloat);
     return true;
 }
 
@@ -7021,8 +6625,6 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     sptr<AudioManagerListenerStub> parameterChangeCbStub = new(std::nothrow) AudioManagerListenerStub();
     CHECK_AND_RETURN_LOG(parameterChangeCbStub != nullptr,
         "parameterChangeCbStub null");
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "SetParameterCallback, Audio Server Proxy is null");
     parameterChangeCbStub->SetParameterCallback(callback);
 
     sptr<IRemoteObject> object = parameterChangeCbStub->AsObject();
@@ -7031,10 +6633,7 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
         return;
     }
     AUDIO_DEBUG_LOG("done");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->SetParameterCallback(object);
-    IPCSkeleton::SetCallingIdentity(identity);
+    AudioServerProxy::GetInstance().SetParameterCallbackProxy(object);
 }
 
 bool AudioPolicyService::CheckStreamOffloadMode(int64_t activateSessionId, AudioStreamType streamType)
@@ -7123,14 +6722,14 @@ int32_t AudioPolicyService::LoadOffloadModule()
     offloadCloseCondition_.notify_all();
     {
         std::lock_guard<std::mutex> lock(offloadOpenMutex_);
-        if (IOHandles_.find(OFFLOAD_PRIMARY_SPEAKER) != IOHandles_.end()) {
+        if (audioIOHandleMap_.CheckIOHandleExist(OFFLOAD_PRIMARY_SPEAKER)) {
             AUDIO_INFO_LOG("offload is open");
             return SUCCESS;
         }
 
         DeviceType deviceType = DEVICE_TYPE_SPEAKER;
         AudioModuleInfo moduleInfo = ConstructOffloadAudioModuleInfo(deviceType);
-        return OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+        return audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
     }
     return SUCCESS;
 }
@@ -7149,7 +6748,7 @@ int32_t AudioPolicyService::UnloadOffloadModule()
             AUDIO_INFO_LOG("offload restart");
             return ERROR;
         }
-        ClosePortAndEraseIOHandle(OFFLOAD_PRIMARY_SPEAKER);
+        audioIOHandleMap_.ClosePortAndEraseIOHandle(OFFLOAD_PRIMARY_SPEAKER);
     }
     return SUCCESS;
 }
@@ -7202,14 +6801,14 @@ int32_t AudioPolicyService::LoadMchModule()
     AUDIO_INFO_LOG("load multichannel mode");
     DeviceType deviceType = DEVICE_TYPE_SPEAKER;
     AudioModuleInfo moduleInfo = ConstructMchAudioModuleInfo(deviceType);
-    OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+    audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
     return SUCCESS;
 }
 
 int32_t AudioPolicyService::UnloadMchModule()
 {
     AUDIO_INFO_LOG("unload multichannel module");
-    return ClosePortAndEraseIOHandle(MCH_PRIMARY_SPEAKER);
+    return audioIOHandleMap_.ClosePortAndEraseIOHandle(MCH_PRIMARY_SPEAKER);
 }
 
 void AudioPolicyService::CheckStreamMode(const int64_t activateSessionId)
@@ -7284,7 +6883,7 @@ int32_t AudioPolicyService::MoveToNewPipeInner(uint32_t sessionId, AudioPipeType
             if (!CheckStreamMultichannelMode(sessionId)) {
                 return ERROR;
             }
-            if (IOHandles_.find(MCH_PRIMARY_SPEAKER) == IOHandles_.end()) {
+            if (audioIOHandleMap_.CheckIOHandleExist(MCH_PRIMARY_SPEAKER) == false) {
                 // load moudle and move into new sink
                 LoadMchModule();
             }
@@ -7450,14 +7049,7 @@ void AudioPolicyService::RegisterDataObserver()
 
 int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config)
 {
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED,
-        "SetPlaybackCapturerFilterInfos, Audio Server Proxy is null");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->SetCaptureSilentState(config.silentCapture);
-    IPCSkeleton::SetCallingIdentity(identity);
-
+    int32_t ret = AudioServerProxy::GetInstance().SetCaptureSilentStateProxy(config.silentCapture);
     CHECK_AND_RETURN_RET_LOG(!ret, ERR_OPERATION_FAILED, "SetCaptureSilentState failed");
 
     std::vector<int32_t> targetUsages;
@@ -7468,23 +7060,12 @@ int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCa
         }
     }
 
-    identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t res = gsp->SetSupportStreamUsage(targetUsages);
-    IPCSkeleton::SetCallingIdentity(identity);
-
-    return res;
+    return AudioServerProxy::GetInstance().SetSupportStreamUsageProxy(targetUsages);
 }
 
 int32_t AudioPolicyService::SetCaptureSilentState(bool state)
 {
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "SetCaptureSilentState, Audio server Proxy is null");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t res = gsp->SetCaptureSilentState(state);
-    IPCSkeleton::SetCallingIdentity(identity);
-
-    return res;
+    return AudioServerProxy::GetInstance().SetCaptureSilentStateProxy(state);
 }
 
 bool AudioPolicyService::IsConnectedOutputDevice(const sptr<AudioDeviceDescriptor> &desc)
@@ -7826,7 +7407,7 @@ void AudioPolicyService::PrepareAndOpenNormalSource(SessionInfo &sessionInfo,
         moduleInfo.rate.c_str(), moduleInfo.channels.c_str(), moduleInfo.bufferSize.c_str(),
         moduleInfo.format.c_str(), moduleInfo.sourceType.c_str());
 
-    OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+    audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
     audioPolicyManager_.SetDeviceActive(GetCurrentInputDeviceType(), moduleInfo.name, true, INPUT_DEVICES_FLAG);
 
     normalSourceOpened_ = targetSource;
@@ -7835,9 +7416,9 @@ void AudioPolicyService::PrepareAndOpenNormalSource(SessionInfo &sessionInfo,
 void AudioPolicyService::CloseNormalSource()
 {
     AUDIO_INFO_LOG("close all sources");
-    ClosePortAndEraseIOHandle(PRIMARY_MIC);
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(PRIMARY_MIC);
     if (isEcFeatureEnable_) {
-        ClosePortAndEraseIOHandle(USB_MIC);
+        audioIOHandleMap_.ClosePortAndEraseIOHandle(USB_MIC);
     }
     normalSourceOpened_ = SOURCE_TYPE_INVALID;
 }
@@ -7846,7 +7427,7 @@ void AudioPolicyService::UpdateEnhanceEffectState(SourceType source)
 {
     AudioEnhancePropertyArray enhancePropertyArray = {};
     unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source,-1);
-    int32_t ret = GetAudioEnhancePropertyByDevice(inputDesc->deviceType_, enhancePropertyArray);
+    int32_t ret = AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(enhancePropertyArray, inputDesc->deviceType_);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("get enhance property fail, ret: %{public}d", ret);
         return;
@@ -8296,37 +7877,23 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetAvailableD
 int32_t AudioPolicyService::OffloadStartPlaying(const std::vector<int32_t> &sessionIds)
 {
 #ifdef BLUETOOTH_ENABLE
-    AUDIO_INFO_LOG("OffloadStartPlaying, a2dpOffloadFlag_: %{public}d, sessionIds: %{public}zu",
-        a2dpOffloadFlag_, sessionIds.size());
-    if (a2dpOffloadFlag_ != A2DP_OFFLOAD || sessionIds.size() == 0) {
-        return SUCCESS;
+    if (audioA2dpOffloadManager_) {
+        return audioA2dpOffloadManager_->OffloadStartPlaying(sessionIds);
     }
-    int32_t ret = Bluetooth::AudioA2dpManager::OffloadStartPlaying(sessionIds);
-    if (audioA2dpOffloadManager_ != nullptr) {
-        A2dpOffloadConnectionState state = audioA2dpOffloadManager_->GetA2dOffloadConnectionState();
-        if (ret == SUCCESS && (state != CONNECTION_STATUS_CONNECTED)) {
-            audioA2dpOffloadManager_->ConnectA2dpOffload(
-                Bluetooth::AudioA2dpManager::GetActiveA2dpDevice(), sessionIds);
-        }
-    }
-    return ret;
-#else
-    return SUCCESS;
+    AUDIO_WARNING_LOG("Null audioA2dpOffloadManager");
 #endif
+    return SUCCESS;
 }
 
 int32_t AudioPolicyService::OffloadStopPlaying(const std::vector<int32_t> &sessionIds)
 {
 #ifdef BLUETOOTH_ENABLE
-    AUDIO_PRERELEASE_LOGI("OffloadStopPlaying, a2dpOffloadFlag_: %{public}d, sessionIds: %{public}zu",
-        a2dpOffloadFlag_, sessionIds.size());
-    if (a2dpOffloadFlag_ != A2DP_OFFLOAD || sessionIds.size() == 0) {
-        return SUCCESS;
+    if (audioA2dpOffloadManager_) {
+        return audioA2dpOffloadManager_->OffloadStopPlaying(sessionIds);
     }
-    return Bluetooth::AudioA2dpManager::OffloadStopPlaying(sessionIds);
-#else
-    return SUCCESS;
+    AUDIO_WARNING_LOG("Null audioA2dpOffloadManager");
 #endif
+    return SUCCESS;
 }
 
 int32_t AudioPolicyService::OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp)
@@ -8334,11 +7901,11 @@ int32_t AudioPolicyService::OffloadGetRenderPosition(uint32_t &delayValue, uint6
     Trace trace("AudioPolicyService::OffloadGetRenderPosition");
 #ifdef BLUETOOTH_ENABLE
     DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
-    AUDIO_DEBUG_LOG("GetRenderPosition, deviceType: %{public}d, a2dpOffloadFlag_: %{public}d",
-        a2dpOffloadFlag_, curOutputDeviceType);
+    AUDIO_DEBUG_LOG("GetRenderPosition, deviceType: %{public}d, a2dpOffloadFlag: %{public}d",
+        GetA2dpOffloadFlag(), curOutputDeviceType);
     int32_t ret = SUCCESS;
     if (curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP &&
-        GetCurrentOutputDeviceNetworkId() == LOCAL_NETWORK_ID && a2dpOffloadFlag_ == A2DP_OFFLOAD) {
+        GetCurrentOutputDeviceNetworkId() == LOCAL_NETWORK_ID && GetA2dpOffloadFlag() == A2DP_OFFLOAD) {
         ret = Bluetooth::AudioA2dpManager::GetRenderPosition(delayValue, sendDataSize, timeStamp);
     } else {
         delayValue = 0;
@@ -8393,11 +7960,7 @@ void AudioPolicyService::GetA2dpOffloadCodecAndSendToDsp()
         + std::to_string(offloadCodeStatus.offloadInfo.codecSpecific6) + ","
         + std::to_string(offloadCodeStatus.offloadInfo.codecSpecific7) + ";";
 
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->SetAudioParameter(key, value);
-    IPCSkeleton::SetCallingIdentity(identity);
-
+    AudioServerProxy::GetInstance().SetAudioParameterProxy(key, value);
     AUDIO_INFO_LOG("update offloadcodec[%{public}s]", value.c_str());
 #endif
 }
@@ -8422,27 +7985,27 @@ void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dp
 
     std::lock_guard<std::mutex> lock(switchA2dpOffloadMutex_);
     AUDIO_PRERELEASE_LOGI("deviceType: %{public}d, currentActiveDevice_: %{public}d, allActiveSessions: %{public}zu, "
-        "a2dpOffloadFlag_: %{public}d, receiveOffloadFlag: %{public}d",
-        deviceType, GetCurrentOutputDeviceType(), allActiveSessions.size(), a2dpOffloadFlag_,
+        "a2dpOffloadFlag: %{public}d, receiveOffloadFlag: %{public}d",
+        deviceType, GetCurrentOutputDeviceType(), allActiveSessions.size(), GetA2dpOffloadFlag(),
         receiveOffloadFlag);
 
     if (receiveOffloadFlag == NO_A2DP_DEVICE) {
         UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
-    } else if (receiveOffloadFlag != a2dpOffloadFlag_) {
-        if (a2dpOffloadFlag_ == A2DP_OFFLOAD) {
+    } else if (receiveOffloadFlag != GetA2dpOffloadFlag()) {
+        if (GetA2dpOffloadFlag() == A2DP_OFFLOAD) {
             HandleA2dpDeviceOutOffload(receiveOffloadFlag);
         } else if (receiveOffloadFlag == A2DP_OFFLOAD) {
             HandleA2dpDeviceInOffload(receiveOffloadFlag);
         } else {
-            AUDIO_INFO_LOG("a2dpOffloadFlag_ change from %{public}d to %{public}d", a2dpOffloadFlag_,
+            AUDIO_INFO_LOG("a2dpOffloadFlag change from %{public}d to %{public}d", GetA2dpOffloadFlag(),
                 receiveOffloadFlag);
-            a2dpOffloadFlag_ = receiveOffloadFlag;
+            SetA2dpOffloadFlag(receiveOffloadFlag);
         }
-    } else if (a2dpOffloadFlag_ == A2DP_OFFLOAD) {
+    } else if (GetA2dpOffloadFlag() == A2DP_OFFLOAD) {
         std::vector<int32_t> allSessions;
         GetAllRunningStreamSession(allSessions);
         OffloadStartPlaying(allSessions);
-        UpdateEffectBtOffloadSupported(true);
+        AudioServerProxy::GetInstance().UpdateEffectBtOffloadSupportedProxy(true);
         ResetOffloadModeOnSpatializationChanged(allSessions);
         GetA2dpOffloadCodecAndSendToDsp();
         std::string activePort = BLUETOOTH_SPEAKER;
@@ -8472,11 +8035,11 @@ void AudioPolicyService::ResetOffloadModeOnSpatializationChanged(std::vector<int
 int32_t AudioPolicyService::HandleA2dpDeviceOutOffload(BluetoothOffloadState a2dpOffloadFlag)
 {
 #ifdef BLUETOOTH_ENABLE
-    AUDIO_INFO_LOG("a2dpOffloadFlag_ change from %{public}d to %{public}d", a2dpOffloadFlag_, a2dpOffloadFlag);
+    AUDIO_INFO_LOG("a2dpOffloadFlag change from %{public}d to %{public}d", GetA2dpOffloadFlag(), a2dpOffloadFlag);
     std::vector<int32_t> allSessions;
     GetAllRunningStreamSession(allSessions);
     OffloadStopPlaying(allSessions);
-    a2dpOffloadFlag_ = a2dpOffloadFlag;
+    SetA2dpOffloadFlag(a2dpOffloadFlag);
 
     DeviceType dev = GetActiveOutputDevice();
     UpdateEffectDefaultSink(dev);
@@ -8497,8 +8060,8 @@ int32_t AudioPolicyService::HandleA2dpDeviceOutOffload(BluetoothOffloadState a2d
 int32_t AudioPolicyService::HandleA2dpDeviceInOffload(BluetoothOffloadState a2dpOffloadFlag)
 {
 #ifdef BLUETOOTH_ENABLE
-    AUDIO_INFO_LOG("a2dpOffloadFlag_ change from %{public}d to %{public}d", a2dpOffloadFlag_, a2dpOffloadFlag);
-    a2dpOffloadFlag_ = a2dpOffloadFlag;
+    AUDIO_INFO_LOG("a2dpOffloadFlag change from %{public}d to %{public}d", GetA2dpOffloadFlag(), a2dpOffloadFlag);
+    SetA2dpOffloadFlag(a2dpOffloadFlag);
     GetA2dpOffloadCodecAndSendToDsp();
     std::vector<int32_t> allSessions;
     GetAllRunningStreamSession(allSessions);
@@ -8507,7 +8070,7 @@ int32_t AudioPolicyService::HandleA2dpDeviceInOffload(BluetoothOffloadState a2dp
     DeviceType dev = GetActiveOutputDevice();
     UpdateEffectDefaultSink(dev);
     AUDIO_INFO_LOG("Handle A2dpDevice In Offload");
-    UpdateEffectBtOffloadSupported(true);
+    AudioServerProxy::GetInstance().UpdateEffectBtOffloadSupportedProxy(true);
 
     if (IsA2dpOffloadConnected()) {
         AUDIO_INFO_LOG("A2dpOffload has been connected, Fetch stream");
@@ -8690,26 +8253,20 @@ void AudioPolicyService::CheckForA2dpSuspend(AudioDeviceDescriptor &desc)
     if (desc.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
         return;
     }
-
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
     if (audioDeviceManager_.GetScoState()) {
-        gsp->SuspendRenderSink("a2dp");
+        AudioServerProxy::GetInstance().SuspendRenderSinkProxy("a2dp");
     } else {
-        gsp->RestoreRenderSink("a2dp");
+        AudioServerProxy::GetInstance().RestoreRenderSinkProxy("a2dp");
     }
-    IPCSkeleton::SetCallingIdentity(identity);
 }
 
 void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()
 {
-    AUDIO_PRERELEASE_LOGI("a2dpOffloadFlag_ change from %{public}d to %{public}d", a2dpOffloadFlag_, NO_A2DP_DEVICE);
+    AUDIO_PRERELEASE_LOGI("a2dpOffloadFlag change from %{public}d to %{public}d", GetA2dpOffloadFlag(), NO_A2DP_DEVICE);
     std::vector<int32_t> allSessions;
     GetAllRunningStreamSession(allSessions);
     OffloadStopPlaying(allSessions);
-    a2dpOffloadFlag_ = NO_A2DP_DEVICE;
+    SetA2dpOffloadFlag(NO_A2DP_DEVICE);
     for (auto it = allSessions.begin(); it != allSessions.end(); ++it) {
         ResetOffloadMode(*it);
     }
@@ -8829,54 +8386,17 @@ void AudioPolicyService::ClearScoDeviceSuspendState(string macAddress)
 
 float AudioPolicyService::GetMaxAmplitude(const int32_t deviceId)
 {
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, 0, "Service proxy unavailable");
-
     if (deviceId == GetCurrentOutputDevice().deviceId_) {
-        std::string identity = IPCSkeleton::ResetCallingIdentity();
-        float outputMaxAmplitude = gsp->GetMaxAmplitude(true, GetCurrentOutputDeviceType());
-        IPCSkeleton::SetCallingIdentity(identity);
+        float outputMaxAmplitude = AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(true, GetCurrentOutputDeviceType());
         return outputMaxAmplitude;
     }
 
     if (deviceId == GetCurrentInputDevice().deviceId_) {
-        std::string identity = IPCSkeleton::ResetCallingIdentity();
-        float inputMaxAmplitude = gsp->GetMaxAmplitude(false, GetCurrentInputDeviceType());
-        IPCSkeleton::SetCallingIdentity(identity);
+        float inputMaxAmplitude = AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(false, GetCurrentInputDeviceType());
         return inputMaxAmplitude;
     }
 
     return 0;
-}
-
-int32_t AudioPolicyService::OpenPortAndInsertIOHandle(const std::string &moduleName,
-    const AudioModuleInfo &moduleInfo)
-{
-    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-    CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_INVALID_HANDLE, "OpenAudioPort failed %{public}d",
-        ioHandle);
-
-    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-    IOHandles_[moduleName] = ioHandle;
-
-    return SUCCESS;
-}
-
-int32_t AudioPolicyService::ClosePortAndEraseIOHandle(const std::string &moduleName)
-{
-    AudioIOHandle ioHandle;
-    {
-        std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-        auto ioHandleIter = IOHandles_.find(moduleName);
-        CHECK_AND_RETURN_RET_LOG(ioHandleIter != IOHandles_.end(), ERROR,
-            "can not find %{public}s in io map", moduleName.c_str());
-        ioHandle = ioHandleIter->second;
-        IOHandles_.erase(moduleName);
-    }
-    AUDIO_INFO_LOG("[close-module] %{public}s,id:%{public}d", moduleName.c_str(), ioHandle);
-    int32_t result = audioPolicyManager_.CloseAudioPort(ioHandle);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
-    return SUCCESS;
 }
 
 void AudioPolicyService::HandleRemoteCastDevice(bool isConnected, AudioStreamInfo streamInfo)
@@ -9471,7 +8991,7 @@ void AudioPolicyService::GetOffloadStatusDump(std::string &dumpString)
     dumpString += "\nA2DP offload\n";
     if (dev == DEVICE_TYPE_BLUETOOTH_A2DP) {
         AppendFormat(dumpString, " - A2DP deviceType: %d\n", dev);
-        AppendFormat(dumpString, " - A2DP offloadstatus : %d\n", a2dpOffloadFlag_);
+        AppendFormat(dumpString, " - A2DP offloadstatus : %d\n", GetA2dpOffloadFlag());
     } else {
         AppendFormat(dumpString, " - current device is not A2DP\n");
     }
@@ -9715,12 +9235,7 @@ void AudioPolicyService::OnReceiveBluetoothEvent(const std::string macAddress, c
 
 void AudioPolicyService::LoadHdiEffectModel()
 {
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "error for g_adProxy null");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->LoadHdiEffectModel();
-    IPCSkeleton::SetCallingIdentity(identity);
+    return AudioServerProxy::GetInstance().LoadHdiEffectModelProxy();
 }
 
 int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
@@ -9766,22 +9281,13 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
             ERR_INVALID_PARAM, "set audio effect property not valid %{public}s:%{public}s",
             item.effectClass.c_str(), item.effectProp.c_str());
     }
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "set audio effect property: gsp null");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->SetAudioEffectProperty(propertyArray);
-    IPCSkeleton::SetCallingIdentity(identity);
+    int32_t ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(propertyArray);
     return ret;
 }
 
 int32_t AudioPolicyService::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "get audio effect property: gsp null");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->GetAudioEffectProperty(propertyArray);
-    IPCSkeleton::SetCallingIdentity(identity);
-    return ret;
+    return AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
 }
 
 int32_t AudioPolicyService::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)
@@ -9796,50 +9302,30 @@ int32_t AudioPolicyService::SetAudioEnhanceProperty(const AudioEnhancePropertyAr
             item.enhanceClass.c_str(), item.enhanceProp.c_str());
     }
     AudioEnhancePropertyArray oldPropertyArray = {};
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "set audio enhance property: gsp null");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->GetAudioEnhanceProperty(oldPropertyArray);
+    int32_t ret = AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(oldPropertyArray);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("get audio enhance property fail");
-        IPCSkeleton::SetCallingIdentity(identity);
         return ret;
     }
-    ret = gsp->SetAudioEnhanceProperty(propertyArray, GetCurrentInputDeviceType());
-    IPCSkeleton::SetCallingIdentity(identity);
+    ret = AudioServerProxy::GetInstance().SetAudioEnhancePropertyProxy(propertyArray, GetCurrentInputDeviceType());
     ReloadSourceForEffect(oldPropertyArray, propertyArray);
     return ret;
 }
 
 int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
 {
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "get audio enhance property: gsp null");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->GetAudioEnhanceProperty(propertyArray);
-    IPCSkeleton::SetCallingIdentity(identity);
-    return ret;
+    return AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(propertyArray);
 }
 
 int32_t AudioPolicyService::GetAudioEnhancePropertyByDevice(DeviceType deviceType,
     AudioEnhancePropertyArray &propertyArray)
 {
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "get audio enhance property: gsp null");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->GetAudioEnhanceProperty(propertyArray, deviceType);
-    IPCSkeleton::SetCallingIdentity(identity);
-    return ret;
+    return AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(propertyArray, deviceType);
 }
 
 void AudioPolicyService::UpdateEffectBtOffloadSupported(const bool &isSupported)
 {
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "error for g_adProxy null");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->UpdateEffectBtOffloadSupported(isSupported);
-    IPCSkeleton::SetCallingIdentity(identity);
+    AudioServerProxy::GetInstance().UpdateEffectBtOffloadSupportedProxy(isSupported);
     return;
 }
 
@@ -9855,32 +9341,21 @@ int32_t AudioPolicyService::ScoInputDeviceFetchedForRecongnition(bool handleFlag
 
 void AudioPolicyService::SetRotationToEffect(const uint32_t rotate)
 {
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "error for g_adProxy null");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->SetRotationToEffect(rotate);
-    IPCSkeleton::SetCallingIdentity(identity);
+    AudioServerProxy::GetInstance().SetRotationToEffectProxy(rotate);
 }
 
 bool AudioPolicyService::IsA2dpOffloadConnected()
 {
-    if (audioA2dpOffloadManager_ == nullptr) {
-        AUDIO_WARNING_LOG("Null audioA2dpOffloadManager");
-        return true;
+    if (audioA2dpOffloadManager_) {
+        return audioA2dpOffloadManager_->IsA2dpOffloadConnected();
     }
-    A2dpOffloadConnectionState state = audioA2dpOffloadManager_->GetA2dOffloadConnectionState();
-    return state == CONNECTION_STATUS_CONNECTED;
+    AUDIO_WARNING_LOG("Null audioA2dpOffloadManager");
+    return true;
 }
 
 void AudioPolicyService::UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state)
 {
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "error for g_adProxy null");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->UpdateSessionConnectionState(sessionID, state);
-    IPCSkeleton::SetCallingIdentity(identity);
+    AudioServerProxy::GetInstance().UpdateSessionConnectionStateProxy(sessionID, state);
 }
 
 int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
@@ -9894,22 +9369,17 @@ int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const
     }
     std::string moduleName = GetRemoteModuleName(networkId, OUTPUT_DEVICE);
 
-    ClosePortAndEraseIOHandle(moduleName);
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
 
     AudioModuleInfo moudleInfo = ConstructRemoteAudioModuleInfo(networkId, OUTPUT_DEVICE, DEVICE_TYPE_SPEAKER);
     moudleInfo.lib = "libmodule-split-stream-sink.z.so";
     moudleInfo.extra = splitArgs;
 
-    int32_t openRet = OpenPortAndInsertIOHandle(moduleName, moudleInfo);
+    int32_t openRet = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleName, moudleInfo);
     if (openRet != 0) {
         AUDIO_ERR_LOG("open fail, OpenPortAndInsertIOHandle ret: %{public}d", openRet);
     }
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    if (gsp != nullptr) {
-        std::string identity = IPCSkeleton::ResetCallingIdentity();
-        gsp->NotifyDeviceInfo(networkId, true);
-        IPCSkeleton::SetCallingIdentity(identity);
-    }
+    AudioServerProxy::GetInstance().NotifyDeviceInfoProxy(networkId, true);
     return openRet;
 }
 
@@ -9993,117 +9463,10 @@ int32_t AudioPolicyService::ErasePreferredDeviceByType(const PreferredType prefe
     return SUCCESS;
 }
 
-void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState)
-{
-    AUDIO_INFO_LOG("OnA2dpPlayingStateChanged current A2dpOffload MacAddr:%{public}s, incoming MacAddr:%{public}s, "
-        "currentStatus:%{public}d, incommingState:%{public}d", GetEncryptAddr(a2dpOffloadDeviceAddress_).c_str(),
-        GetEncryptAddr(deviceAddress).c_str(), currentOffloadConnectionState_, playingState);
-    if (deviceAddress != a2dpOffloadDeviceAddress_) {
-        if (playingState == A2DP_STOPPED && currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTED) {
-            return;
-        }
-        // below is A2dp(not offload scenario)
-        currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
-        return;
-    }
-
-    // deviceAddress matched
-    if (playingState == A2DP_PLAYING) {
-        if (currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTING) {
-            AUDIO_INFO_LOG("OnA2dpPlayingStateChanged currentOffloadConnectionState_ change "
-                "from %{public}d to %{public}d", currentOffloadConnectionState_, CONNECTION_STATUS_CONNECTED);
-
-            for (int32_t sessionId : connectionTriggerSessionIds_) {
-                audioPolicyService_->UpdateSessionConnectionState(sessionId, DATA_LINK_CONNECTED);
-            }
-            std::vector<int32_t>().swap(connectionTriggerSessionIds_);
-            connectionCV_.notify_all();
-        }
-        currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
-    } else if (playingState == A2DP_STOPPED) {
-        AUDIO_INFO_LOG("OnA2dpPlayingStateChanged currentOffloadConnectionState_ change "
-            "from %{public}d to %{public}d", currentOffloadConnectionState_, CONNECTION_STATUS_DISCONNECTED);
-
-        currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
-        a2dpOffloadDeviceAddress_ = "";
-        std::vector<int32_t>().swap(connectionTriggerSessionIds_);
-    } else {
-        // at the current moment, we only handle the PLAYING and STOPPED state,
-        // will handle other state in the future
-        AUDIO_INFO_LOG("OnA2dpPlayingStateChanged currentOffloadConnectionState_: %{public}d, "
-            "received unexpected state:%{public}d", currentOffloadConnectionState_, playingState);
-    }
-}
-
-void AudioA2dpOffloadManager::ConnectA2dpOffload(const std::string &deviceAddress, const vector<int32_t> &sessionIds)
-{
-    AUDIO_INFO_LOG("start connecting a2dpOffload for MacAddr:%{public}s.", GetEncryptAddr(deviceAddress).c_str());
-    a2dpOffloadDeviceAddress_ = deviceAddress;
-    connectionTriggerSessionIds_.assign(sessionIds.begin(), sessionIds.end());
-
-    for (int32_t sessionId : connectionTriggerSessionIds_) {
-        audioPolicyService_->UpdateSessionConnectionState(sessionId, DATA_LINK_CONNECTING);
-    }
-
-    if (currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTED ||
-        currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTING) {
-        AUDIO_INFO_LOG("currentOffloadConnectionState_ already in %{public}d, "
-            "status, no need to trigger another waiting", currentOffloadConnectionState_);
-        return;
-    }
-
-    std::thread switchThread(&AudioA2dpOffloadManager::WaitForConnectionCompleted, this);
-    switchThread.detach();
-    AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
-        currentOffloadConnectionState_, CONNECTION_STATUS_CONNECTING);
-    currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTING;
-}
-
-void AudioA2dpOffloadManager::WaitForConnectionCompleted()
-{
-    std::unique_lock<std::mutex> waitLock(connectionMutex_);
-    bool connectionCompleted = connectionCV_.wait_for(waitLock,
-        std::chrono::milliseconds(AudioA2dpOffloadManager::CONNECTION_TIMEOUT_IN_MS), [this] {
-            return currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTED;
-        });
-    // a2dp connection timeout, anyway we should notify client dataLink OK in order to allow the data flow begin
-    AUDIO_INFO_LOG("WaitForConnectionCompleted unblocked, connectionCompleted is %{public}d", connectionCompleted);
-
-    if (!connectionCompleted) {
-        AUDIO_INFO_LOG("currentOffloadConnectionState_ change from %{public}d to %{public}d",
-            currentOffloadConnectionState_, CONNECTION_STATUS_TIMEOUT);
-        currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
-        for (int32_t sessionId : connectionTriggerSessionIds_) {
-            audioPolicyService_->UpdateSessionConnectionState(sessionId, DATA_LINK_CONNECTED);
-        }
-        std::vector<int32_t>().swap(connectionTriggerSessionIds_);
-    }
-    waitLock.unlock();
-    audioPolicyService_->FetchStreamForA2dpOffload(false);
-    return;
-}
-
-bool AudioA2dpOffloadManager::IsA2dpOffloadConnecting(int32_t sessionId)
-{
-    if (currentOffloadConnectionState_ == CONNECTION_STATUS_CONNECTING) {
-        if (std::find(connectionTriggerSessionIds_.begin(), connectionTriggerSessionIds_.end(), sessionId) !=
-            connectionTriggerSessionIds_.end()) {
-            return true;
-        }
-    }
-    return false;
-}
-
 bool AudioPolicyService::GetAudioEffectOffloadFlag()
 {
     // check if audio effect offload
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "gsp null");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    bool effectOffloadFlag = gsp->GetEffectOffloadEnabled();
-    IPCSkeleton::SetCallingIdentity(identity);
-    return effectOffloadFlag;
+    return AudioServerProxy::GetInstance().GetEffectOffloadEnabledProxy();
 }
 
 bool AudioPolicyService::CheckSpatializationAndEffectState()
@@ -10118,8 +9481,7 @@ void AudioPolicyService::JudgeIfLoadMchModule()
 {
     bool isNeedLoadMchModule = false;
     {
-        std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-        if (IOHandles_.find(MCH_PRIMARY_SPEAKER) == IOHandles_.end()) {
+        if (audioIOHandleMap_.CheckIOHandleExist(MCH_PRIMARY_SPEAKER) == false) {
             isNeedLoadMchModule = true;
         }
     }
@@ -10145,16 +9507,14 @@ void AudioPolicyService::FetchStreamForSpkMchStream(std::shared_ptr<AudioRendere
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         streamCollector_.GetPipeType(rendererChangeInfo->sessionId, pipeType);
         if (pipeType == PIPE_TYPE_MULTICHANNEL) {
-            std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
             {
                 AUDIO_INFO_LOG("unload multichannel module");
                 std::string currentActivePort = MCH_PRIMARY_SPEAKER;
-                auto ioHandleIter = IOHandles_.find(currentActivePort);
-                CHECK_AND_RETURN_LOG(ioHandleIter != IOHandles_.end(), "Can not find port MCH_PRIMARY_SPEAKER in io map");
-                AudioIOHandle activateDeviceIOHandle = ioHandleIter->second;
+                AudioIOHandle activateDeviceIOHandle;
+                CHECK_AND_RETURN_LOG(audioIOHandleMap_.GetModuleIdByKey(currentActivePort, activateDeviceIOHandle), "Can not find port MCH_PRIMARY_SPEAKER in io map");
                 audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
                 audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
-                IOHandles_.erase(currentActivePort);
+                audioIOHandleMap_.DelIOHanleInfo(currentActivePort);
             }
         }
         ResetOffloadMode(rendererChangeInfo->sessionId);
@@ -10173,5 +9533,21 @@ void AudioPolicyService::ResetOffloadAndMchMode(std::shared_ptr<AudioRendererCha
         ResetOffloadMode(rendererChangeInfo->sessionId);
     }
 }
+
+void AudioPolicyService::SetA2dpOffloadFlag(BluetoothOffloadState state)
+{
+    if (audioA2dpOffloadManager_) {
+        audioA2dpOffloadManager_->SetA2dpOffloadFlag(state);
+    }
+}
+
+BluetoothOffloadState AudioPolicyService::GetA2dpOffloadFlag()
+{
+    if (audioA2dpOffloadManager_) {
+        return audioA2dpOffloadManager_->GetA2dpOffloadFlag();
+    }
+    return NO_A2DP_DEVICE;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
