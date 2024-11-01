@@ -279,7 +279,7 @@ static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, Channe
     }
     // Calculate the average value
     for (size_t index = 0; index < channel; index++) {
-        volMaps.volStart[index] /= (static_cast<int32_t>(frameSize) * split);
+        volMaps.volStart[index] /= (static_cast<int32_t>(frameSize) / split);
     }
     return;
 }
@@ -313,7 +313,7 @@ static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     }
     // Calculate the average value
     for (size_t index = 0; index < channel; index++) {
-        volMaps.volStart[index] /= (static_cast<int32_t>(frameSize) * split);
+        volMaps.volStart[index] /= (static_cast<int32_t>(frameSize) / split);
     }
     return;
 }
@@ -348,7 +348,7 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     }
     // Calculate the average value
     for (size_t index = 0; index < channel; index++) {
-        volMaps.volStart[index] /= (static_cast<int32_t>(frameSize) * split);
+        volMaps.volStart[index] /= (static_cast<int32_t>(frameSize) / split);
     }
     return;
 }
@@ -382,7 +382,7 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     }
     // Calculate the average value
     for (size_t index = 0; index < channel; index++) {
-        volSums[index] /= (static_cast<int32_t>(frameSize) * split);
+        volSums[index] /= (static_cast<int32_t>(frameSize) / split);
         volMaps.volStart[index] = volSums[index];
     }
     return;
@@ -417,7 +417,7 @@ static void CountF32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     }
     // Calculate the average value
     for (size_t index = 0; index < channel; index++) {
-        volSums[index] /= (frameSize * split);
+        volSums[index] /= (frameSize / split);
         volMaps.volStart[index] = static_cast<int32_t>(volSums[index]);
     }
     return;
