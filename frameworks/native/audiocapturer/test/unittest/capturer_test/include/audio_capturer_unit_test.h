@@ -99,6 +99,21 @@ public:
     virtual void OnStateChange(const AudioCapturerChangeInfo &capturerChangeInfo) override {};
 };
 
+class TestCapturerPositionCallback : public CapturerPositionCallback, public CapturerPeriodPositionCallback {
+public:
+    void OnMarkReached(const int64_t &framePosition) override {
+        std::cout << "Capturer position reached: " << framePosition << std::endl;
+    }
+
+    void OnPeriodReached(const int64_t &frameNumber) override {
+        std::cout << "Capturer period reached: " << frameNumber << std::endl;
+    }
+
+    void OnCapturerPeriodPositionChanged(int64_t position) {
+        std::cout << "Capturer period position changed: " << position << std::endl;
+    }
+};
+
 class AudioCapturerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases

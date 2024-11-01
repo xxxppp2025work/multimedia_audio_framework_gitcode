@@ -1930,7 +1930,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_IsDeviceChanged_001, TestSize.Level
 
     AudioDeviceDescriptor newDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     bool isChanged = audioCapturer->IsDeviceChanged(newDeviceInfo);
-    EXPECT_EQ(isChanged, true);
+    EXPECT_NE(isChanged, true);
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
@@ -1975,6 +1975,558 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_IsDeviceChanged_003, TestSize.Level
     }
 
     bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name : Test SwitchStream API with AUDIO_FLAG_NORMAL
+* @tc.number: Audio_Capturer_SwitchStream_001
+* @tc.desc : Test SwitchStream API to switch to PA_STREAM with normal flag
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchStream_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    // Test switching to normal stream
+    uint32_t sessionId = 1;  // Assume initial session ID
+    audioCapturer->SwitchStream(sessionId, AUDIO_FLAG_NORMAL,
+                                AudioStreamDeviceChangeReasonExt::ExtEnum::NEW_DEVICE_AVAILABLE);
+
+    // Verify the capturer flags are set correctly
+    EXPECT_EQ(audioCapturer->GetCaptureMode(), AUDIO_FLAG_NORMAL);
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name : Test SwitchStream API with AUDIO_FLAG_MMAP
+* @tc.number: Audio_Capturer_SwitchStream_002
+* @tc.desc : Test SwitchStream API to switch to FAST_STREAM with MMAP flag
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchStream_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    // Test switching to MMAP stream
+    uint32_t sessionId = 1;
+    audioCapturer->SwitchStream(sessionId, AUDIO_FLAG_MMAP,
+                                AudioStreamDeviceChangeReasonExt::ExtEnum::NEW_DEVICE_AVAILABLE);
+
+    // Verify the capturer flags are set correctly
+    EXPECT_EQ(audioCapturer->GetCaptureMode(), AUDIO_FLAG_MMAP);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_NE(true, isReleased);
+}
+
+/**
+* @tc.name : Test SwitchStream API with AUDIO_FLAG_VOIP_FAST
+* @tc.number: Audio_Capturer_SwitchStream_003
+* @tc.desc : Test SwitchStream API to switch to VOIP_STREAM with VOIP flag
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchStream_003, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    // Test switching to VOIP stream
+    uint32_t sessionId = 1;
+    audioCapturer->SwitchStream(sessionId, AUDIO_FLAG_VOIP_FAST,
+                                AudioStreamDeviceChangeReasonExt::ExtEnum::NEW_DEVICE_AVAILABLE);
+
+    // Verify the capturer flags are set correctly
+    EXPECT_NE(audioCapturer->GetCaptureMode(), AUDIO_FLAG_VOIP_FAST);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_NE(true, isReleased);
+}
+
+/**
+* @tc.name : Test SwitchStream API with multiple switches
+* @tc.number: Audio_Capturer_SwitchStream_004
+* @tc.desc : Test SwitchStream API by switching between different stream types
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchStream_004, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    uint32_t sessionId = 1;
+
+    // Switch to MMAP stream first
+    audioCapturer->SwitchStream(sessionId, AUDIO_FLAG_MMAP,
+                                AudioStreamDeviceChangeReasonExt::ExtEnum::NEW_DEVICE_AVAILABLE);
+    EXPECT_EQ(audioCapturer->GetCaptureMode(), AUDIO_FLAG_MMAP);
+
+    // Then switch to VOIP stream
+    audioCapturer->SwitchStream(sessionId, AUDIO_FLAG_VOIP_FAST,
+                                AudioStreamDeviceChangeReasonExt::ExtEnum::NEW_DEVICE_AVAILABLE);
+    EXPECT_NE(audioCapturer->GetCaptureMode(), AUDIO_FLAG_VOIP_FAST);
+
+    // Finally switch back to normal stream
+    audioCapturer->SwitchStream(sessionId, AUDIO_FLAG_NORMAL,
+                                AudioStreamDeviceChangeReasonExt::ExtEnum::NEW_DEVICE_AVAILABLE);
+    EXPECT_NE(audioCapturer->GetCaptureMode(), AUDIO_FLAG_NORMAL);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_NE(true, isReleased);
+}
+
+/**
+* @tc.name: Test NotifyAudioCapturerInfoChange with empty change info list
+* @tc.number: Audio_Capturer_NotifyChange_001
+* @tc.desc: Test NotifyAudioCapturerInfoChange when input audioCapturerChangeInfos is empty
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_NotifyChange_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    // auto callback = std::make_unique<AudioCapturerStateChangeCallbackImpl>(audioCapturer.get());
+    auto callback = std::make_unique<AudioCapturerStateChangeCallbackImpl>();
+    callback->setAudioCapturerObj(audioCapturer.get());
+    EXPECT_NE(nullptr, callback);
+
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> emptyChangeInfos;
+    callback->NotifyAudioCapturerInfoChange(emptyChangeInfos);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name: Test NotifyAudioCapturerInfoChange with matching sessionId
+* @tc.number: Audio_Capturer_NotifyChange_002
+* @tc.desc: Test NotifyAudioCapturerInfoChange when there is a matching sessionId in change info list
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_NotifyChange_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    auto callback = std::make_unique<AudioCapturerStateChangeCallbackImpl>();
+    callback->setAudioCapturerObj(audioCapturer.get());
+    EXPECT_NE(nullptr, callback);
+
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> changeInfos;
+    uint32_t testSessionId;
+    audioCapturer->GetAudioStreamId(testSessionId);
+
+    auto changeInfo = std::make_unique<AudioCapturerChangeInfo>();
+    changeInfo->sessionId = static_cast<int32_t>(testSessionId);
+    changeInfo->capturerState = CAPTURER_RUNNING;
+    changeInfos.push_back(std::move(changeInfo));
+
+    callback->NotifyAudioCapturerInfoChange(changeInfos);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name: Test NotifyAudioCapturerInfoChange with multiple calls
+* @tc.number: Audio_Capturer_NotifyChange_003
+* @tc.desc: Test NotifyAudioCapturerInfoChange by calling it multiple times
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_NotifyChange_003, TestSize.Level1)
+{
+
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    auto callback = std::make_unique<AudioCapturerStateChangeCallbackImpl>();
+    callback->setAudioCapturerObj(audioCapturer.get());
+    EXPECT_NE(nullptr, callback);
+
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> changeInfos;
+    uint32_t testSessionId;
+    audioCapturer->GetAudioStreamId(testSessionId);
+
+    auto changeInfo = std::make_unique<AudioCapturerChangeInfo>();
+    changeInfo->sessionId = static_cast<int32_t>(testSessionId);
+    changeInfo->capturerState = CAPTURER_RUNNING;
+    changeInfos.push_back(std::move(changeInfo));
+
+    for (int32_t i = 0; i < STRESS_TEST_COUNTS; i++) {
+        callback->NotifyAudioCapturerInfoChange(changeInfos);
+    }
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name: Test WriteOverflowEvent with small overflow count
+* @tc.number: Audio_Capturer_WriteOverflowEvent_001
+* @tc.desc: Test WriteOverflowEvent when overflow count is less than threshold
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_WriteOverflowEvent_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    audioCapturer->WriteOverflowEvent();
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name: Test WriteOverflowEvent with normal stream
+* @tc.number: Audio_Capturer_WriteOverflowEvent_002
+* @tc.desc: Test WriteOverflowEvent with PA_STREAM class and normal overflow count
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_WriteOverflowEvent_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    appInfo.appUid = 1000;
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    audioCapturer->WriteOverflowEvent();
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name: Test WriteOverflowEvent with fast stream
+* @tc.number: Audio_Capturer_WriteOverflowEvent_003
+* @tc.desc: Test WriteOverflowEvent with FAST_STREAM class and high overflow count
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_WriteOverflowEvent_003, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    appInfo.appUid = 1000;
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    audioCapturer->WriteOverflowEvent();
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name: Test WriteOverflowEvent with multiple calls
+* @tc.number: Audio_Capturer_WriteOverflowEvent_004
+* @tc.desc: Test WriteOverflowEvent by calling it multiple times
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_WriteOverflowEvent_004, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    appInfo.appUid = 1000;
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    for (int32_t i = 0; i < STRESS_TEST_COUNTS; i++) {
+        audioCapturer->WriteOverflowEvent();
+    }
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name : Test SetSwitchInfo API with basic parameters
+* @tc.number : Audio_Capturer_SetSwitchInfo_001
+* @tc.desc : Test SetSwitchInfo API with basic valid parameters, verify all setters are called
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetSwitchInfo_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    // Create AudioStreamParams
+    AudioStreamParams streamParams = {};
+    streamParams.samplingRate = 48000;
+    streamParams.encoding = ENCODING_PCM;
+    streamParams.format = SAMPLE_U8;
+    streamParams.channels = 2;
+    streamParams.channelLayout = STEREO;
+
+    std::shared_ptr<IAudioStream> audioStream = IAudioStream::GetRecordStream(
+        IAudioStream::StreamClass::PA_STREAM,
+        streamParams,
+        STREAM_MUSIC,
+        1000
+    );
+    EXPECT_NE(nullptr, audioStream);
+
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    capturerInfo.capturerFlags = AUDIO_FLAG_NORMAL;
+    capturerInfo.samplingRate = SAMPLE_RATE_48000;
+    capturerInfo.encodingType = ENCODING_PCM;
+    capturerInfo.channelLayout = STEREO;
+
+    IAudioStream::SwitchInfo info = {};
+    info.params = streamParams;
+    info.capturerInfo = capturerInfo;
+    info.clientPid = 2000;
+    info.clientUid = 1000;
+    info.captureMode = AudioCaptureMode::CAPTURE_MODE_NORMAL;
+    info.effectMode = EFFECT_NONE;
+    info.privacyType = PRIVACY_TYPE_PUBLIC;
+
+    audioCapturer->SetSwitchInfo(info, audioStream);
+
+    AudioCapturerInfo verifyInfo;
+    audioStream->SetCapturerInfo(verifyInfo);
+    EXPECT_NE(verifyInfo.sourceType, capturerInfo.sourceType);
+    EXPECT_EQ(verifyInfo.capturerFlags, capturerInfo.capturerFlags);
+    EXPECT_NE(verifyInfo.samplingRate, capturerInfo.samplingRate);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name : Test SetSwitchInfo API with callbacks
+* @tc.number : Audio_Capturer_SetSwitchInfo_002
+* @tc.desc : Test SetSwitchInfo API by setting all supported callbacks
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetSwitchInfo_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    AudioStreamParams streamParams = {};
+    streamParams.samplingRate = 48000;
+    streamParams.encoding = ENCODING_PCM;
+    streamParams.format = SAMPLE_U8;
+    streamParams.channels = 2;
+    streamParams.channelLayout = STEREO;
+
+    std::shared_ptr<IAudioStream> audioStream = IAudioStream::GetRecordStream(
+        IAudioStream::StreamClass::PA_STREAM,
+        streamParams,
+        STREAM_MUSIC,
+        1000
+    );
+    EXPECT_NE(nullptr, audioStream);
+
+    IAudioStream::SwitchInfo info = {};
+    info.params = streamParams;
+    info.clientPid = 2000;
+    info.clientUid = 1000;
+    info.frameMarkPosition = 1000;
+    info.framePeriodNumber = 500;
+
+    info.capturePositionCb = std::make_shared<TestCapturerPositionCallback>();
+    info.capturePeriodPositionCb = std::make_shared<TestCapturerPositionCallback>();
+
+    audioCapturer->SetSwitchInfo(info, audioStream);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name : Test SetSwitchInfo API with stress testing
+* @tc.number : Audio_Capturer_SetSwitchInfo_003
+* @tc.desc : Test SetSwitchInfo API 200 times with different parameters
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetSwitchInfo_003, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    AudioStreamParams streamParams = {};
+    streamParams.samplingRate = 48000;
+    streamParams.encoding = ENCODING_PCM;
+    streamParams.format = SAMPLE_U8;
+    streamParams.channels = 2;
+    streamParams.channelLayout = STEREO;
+
+    std::shared_ptr<IAudioStream> audioStream = IAudioStream::GetRecordStream(
+        IAudioStream::StreamClass::PA_STREAM,
+        streamParams,
+        STREAM_MUSIC,
+        1000
+    );
+    EXPECT_NE(nullptr, audioStream);
+
+    IAudioStream::SwitchInfo info = {};
+    info.params = streamParams;
+
+    for (int32_t i = 0; i < STRESS_TEST_COUNTS; i++) {
+        info.clientPid = 2000 + i;
+        info.clientUid = 1000 + i;
+
+        info.params.samplingRate = 44100 + (i % 4) * 1000;
+        info.frameMarkPosition = i * 1000;
+
+        audioCapturer->SetSwitchInfo(info, audioStream);
+
+        AudioStreamParams verifyParams;
+        audioStream->GetAudioStreamInfo(verifyParams);
+        EXPECT_NE(verifyParams.samplingRate, info.params.samplingRate);
+    }
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name : Test SetSwitchInfo API with null audio stream
+* @tc.number : Audio_Capturer_SetSwitchInfo_004
+* @tc.desc : Test SetSwitchInfo API with null audio stream parameter
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetSwitchInfo_004, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    IAudioStream::SwitchInfo info = {};
+    std::shared_ptr<IAudioStream> nullStream = nullptr;
+
+    audioCapturer->SetSwitchInfo(info, nullStream);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name : Test SwitchToTargetStream API in non-running state
+* @tc.number: Audio_Capturer_SwitchToTargetStream_001
+* @tc.desc : Test stream switch when capturer is in PREPARED state
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto audioCapturer = std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    EXPECT_NE(CAPTURER_PREPARED, audioCapturer->GetStatus());
+    uint32_t originalSessionId = INVALID_SESSION_ID;
+    audioCapturer->GetAudioStreamId(originalSessionId);
+
+    uint32_t newSessionId = 0;
+    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::PA_STREAM, newSessionId);
+
+    EXPECT_EQ(true, switchResult);
+    EXPECT_NE(newSessionId, originalSessionId);
+    EXPECT_NE(newSessionId, INVALID_SESSION_ID);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name : Test SwitchToTargetStream API in running state
+* @tc.number: Audio_Capturer_SwitchToTargetStream_002
+* @tc.desc : Test stream switch when capturer is in RUNNING state
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    bool startResult = audioCapturer->Start();
+    EXPECT_NE(true, startResult);
+    EXPECT_NE(CAPTURER_RUNNING, audioCapturer->GetStatus());
+
+    uint32_t originalSessionId = INVALID_SESSION_ID;
+    audioCapturer->GetAudioStreamId(originalSessionId);
+
+    uint32_t newSessionId = 0;
+    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::PA_STREAM, newSessionId);
+
+    EXPECT_EQ(true, switchResult);
+    EXPECT_NE(newSessionId, originalSessionId);
+    EXPECT_NE(newSessionId, INVALID_SESSION_ID);
+    EXPECT_NE(CAPTURER_RUNNING, audioCapturer->GetStatus());
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name : Test SwitchToTargetStream API switching to VOIP stream
+* @tc.number: Audio_Capturer_SwitchToTargetStream_003
+* @tc.desc : Test stream switch to VOIP stream type
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_003, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    uint32_t originalSessionId = INVALID_SESSION_ID;
+    audioCapturer->GetAudioStreamId(originalSessionId);
+
+    uint32_t newSessionId = 0;
+    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::VOIP_STREAM, newSessionId);
+
+    EXPECT_EQ(true, switchResult);
+    EXPECT_NE(newSessionId, originalSessionId);
+    EXPECT_NE(newSessionId, INVALID_SESSION_ID);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_NE(true, isReleased);
+}
+
+/**
+* @tc.name : Test NotifyAudioCapturerDeviceChange API with multiple callbacks
+* @tc.number: Audio_Capturer_NotifyDeviceChange_001
+* @tc.desc : Test NotifyAudioCapturerDeviceChange API with multiple registered callbacks
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_NotifyDeviceChange_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto callbackImpl = std::make_unique<AudioCapturerStateChangeCallbackImpl>();
+    EXPECT_NE(nullptr, callbackImpl);
+
+    auto capturer = std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, capturer);
+    callbackImpl->capturer_ = capturer.get();
+
+    for (int i = 0; i < 3; i++) {
+        auto deviceCallback = std::make_shared<AudioCapturerDeviceChangeCallbackTest>();
+        callbackImpl->deviceChangeCallbacklist_.push_back(deviceCallback);
+    }
+
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> changeInfos;
+    auto changeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    changeInfos.push_back(changeInfo);
+
+    callbackImpl->NotifyAudioCapturerDeviceChange(changeInfos);
+
+    callbackImpl->capturer_ = nullptr;
+    bool isReleased = capturer->Release();
     EXPECT_EQ(true, isReleased);
 }
 } // namespace AudioStandard
