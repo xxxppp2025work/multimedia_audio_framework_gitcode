@@ -772,6 +772,11 @@ int32_t AudioCapturerSourceInner::InitWithoutAttr()
     attr.deviceNetworkId = "LocalDevice";
     attr.deviceType = hdiAttr_->deviceType;
     attr.sourceType = hdiAttr_->sourceType;
+    if (attr.sourceType == SOURCE_TYPE_EC) {
+        attr.formatEc = hdiAttr_->format;
+        attr.sampleRateEc = hdiAttr_->sampleRate;
+        attr.channelEc = hdiAttr_->channelCount;
+    }
 
     Init(attr);
 
@@ -908,13 +913,12 @@ void AudioCapturerSourceInner::CaptureFrameEcInternal(const RingBuffer &ringBuf)
 
 void AudioCapturerSourceInner::CaptureThreadLoop()
 {
-    AUDIO_INFO_LOG("non blocking capture thread start");
-
     if (ringBuffer_ == nullptr) {
         AUDIO_ERR_LOG("ring buffer not init");
         return;
     }
 
+    AUDIO_INFO_LOG("non blocking capture thread start, source type: %{public}d", attr_.sourceType);
     while (threadRunning_) {
         Trace trace("CaptureRefInput");
         RingBuffer buffer = ringBuffer_->DequeueInputBuffer();
@@ -932,6 +936,7 @@ void AudioCapturerSourceInner::CaptureThreadLoop()
         }
         ringBuffer_->EnqueueInputBuffer(buffer);
     }
+    AUDIO_INFO_LOG("non blocking capture thread exit, source type: %{public}d", attr_.sourceType);
 }
 
 void AudioCapturerSourceInner::CheckUpdateState(char *frame, uint64_t replyBytes)
@@ -1698,6 +1703,7 @@ int32_t AudioCapturerSourceInner::UpdateSourceType(SourceType sourceType)
     }
 
     attr_.sourceType = sourceType;
+    AUDIO_INFO_LOG("change source type to %{public}d", attr_.sourceType);
     AudioPortPin inputPortPin = PIN_IN_MIC;
     return DoSetInputRoute(currentActiveDevice_, inputPortPin);
 }
