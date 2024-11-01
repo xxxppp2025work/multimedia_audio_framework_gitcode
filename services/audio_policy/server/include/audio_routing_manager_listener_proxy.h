@@ -26,7 +26,8 @@ public:
     explicit AudioRoutingManagerListenerProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioRoutingManagerListenerProxy();
     DISALLOW_COPY_AND_MOVE(AudioRoutingManagerListenerProxy);
-    void OnDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> desciptor, const CastType type) override;
+    void OnDistributedRoutingRoleChange(
+        const std::shared_ptr<AudioDeviceDescriptor> desciptor, const CastType type) override;
     int32_t OnAudioOutputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         RouterType routerType, StreamUsage streamUsage, int32_t clientUid, AudioPipeType audioPipeType) override;
     int32_t OnAudioInputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,

@@ -85,9 +85,11 @@ public:
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetOutputDevice(
+        sptr<AudioRendererFilter> audioRendererFilter);
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(
+        sptr<AudioCapturerFilter> audioCapturerFilter);
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
@@ -240,9 +242,11 @@ public:
 
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo);
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(AudioRendererInfo &rendererInfo);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
+        AudioRendererInfo &rendererInfo);
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(AudioCapturerInfo &captureInfo);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
+        AudioCapturerInfo &captureInfo);
 
     int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId,
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback);
@@ -323,7 +327,8 @@ public:
 
     int32_t SetSpatializationEnabled(const bool enable);
 
-    int32_t SetSpatializationEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
+    int32_t SetSpatializationEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
 
     bool IsHeadTrackingEnabled();
 
@@ -331,7 +336,8 @@ public:
 
     int32_t SetHeadTrackingEnabled(const bool enable);
 
-    int32_t SetHeadTrackingEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
+    int32_t SetHeadTrackingEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
 
     int32_t RegisterSpatializationEnabledEventListener(
         const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback);

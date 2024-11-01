@@ -1553,7 +1553,8 @@ int32_t AudioPolicyManager::UnsetAvailableDeviceChangeCallback(const int32_t cli
     return gsp->UnsetAvailableDeviceChangeCallback(clientId, usage);
 }
 
-int32_t AudioPolicyManager::ConfigDistributedRoutingRole(std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
+int32_t AudioPolicyManager::ConfigDistributedRoutingRole(
+    std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
@@ -1986,7 +1987,8 @@ int32_t AudioPolicyManager::UnsetAudioSessionCallback()
     return result;
 }
 
-int32_t AudioPolicyManager::UnsetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback)
+int32_t AudioPolicyManager::UnsetAudioSessionCallback(
+    const std::shared_ptr<AudioSessionCallback> &audioSessionCallback)
 {
     if (audioPolicyClientStubCB_ == nullptr) {
         AUDIO_ERR_LOG("audioPolicyClientStubCB_ is null");

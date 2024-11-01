@@ -354,7 +354,8 @@ public:
      * For details, refer AudioDeviceDescriptor in audio_system_manager.h
      * @since 9
      */
-    virtual void OnDistributedRoutingRoleChange(const AudioDeviceDescriptor *descriptor, const CastType type) = 0;
+    virtual void OnDistributedRoutingRoleChange(
+        std::shared_ptr<AudioDeviceDescriptor>descriptor, const CastType type) = 0;
     std::mutex cbMutex_;
 };
 
@@ -370,7 +371,8 @@ public:
      * For details, refer AudioDeviceDescriptor in audio_system_manager.h
      * @since 9
      */
-    void OnDistributedRoutingRoleChange(const AudioDeviceDescriptor *descriptor, const CastType type) override;
+    void OnDistributedRoutingRoleChange(
+        std::shared_ptr<AudioDeviceDescriptor>descriptor, const CastType type) override;
     void SaveCallback(const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback);
     void RemoveCallback(const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback);
 private:
@@ -1203,7 +1205,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 11
      */
-    int32_t ConfigDistributedRoutingRole(AudioDeviceDescriptor *desciptor, CastType type);
+    int32_t ConfigDistributedRoutingRole(std::shared_ptr<AudioDeviceDescriptor> desciptor, CastType type);
 
     /**
      * @brief Registers the descriptor Change callback listener.

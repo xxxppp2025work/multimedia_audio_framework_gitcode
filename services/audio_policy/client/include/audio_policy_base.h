@@ -241,7 +241,8 @@ public:
 
     virtual int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage) = 0;
 
-    virtual int32_t ConfigDistributedRoutingRole(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type) = 0;
+    virtual int32_t ConfigDistributedRoutingRole(
+        const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type) = 0;
 
     virtual int32_t SetDistributedRoutingRoleCallback(const sptr<IRemoteObject> &object) = 0;
 

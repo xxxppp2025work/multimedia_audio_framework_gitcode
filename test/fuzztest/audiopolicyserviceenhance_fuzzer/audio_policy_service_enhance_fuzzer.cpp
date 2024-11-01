@@ -134,8 +134,10 @@ void AudioPolicyServiceEnhanceOneFuzzTest(const uint8_t *rawData, size_t size)
 
     int32_t callerPid = *reinterpret_cast<const uint32_t*>(rawData);
     int32_t streamFlag = *reinterpret_cast<const uint32_t*>(rawData);
-    GetServerPtr()->audioPolicyService_.TriggerRecreateCapturerStreamCallback(callerPid, sessionId, streamFlag, reason);
-    GetServerPtr()->audioPolicyService_.TriggerRecreateRendererStreamCallback(callerPid, sessionId, streamFlag, reason);
+    GetServerPtr()->audioPolicyService_.TriggerRecreateCapturerStreamCallback(
+        callerPid, sessionId, streamFlag, reason);
+    GetServerPtr()->audioPolicyService_.TriggerRecreateRendererStreamCallback(
+        callerPid, sessionId, streamFlag, reason);
 }
 
 void AudioPolicyServiceEnhanceTwoFuzzTest(const uint8_t *rawData, size_t size)
@@ -530,7 +532,7 @@ void AudioPolicyServiceEnhanceNineFuzzTest(const uint8_t *rawData, size_t size)
 
     std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     SourceOutput sourceOutput;
-    GetServerPtr()->audioPolicyService_.WriteInDeviceChangedSysEvents(deviceDescriptor, sourceOutput);
+    GetServerPtr()->audioPolicyService_.WriteInputDeviceChangedSysEvents(deviceDescriptor, sourceOutput);
 
     int32_t notificationId = *reinterpret_cast<const int32_t*>(rawData);
     GetServerPtr()->audioPolicyService_.CancelSafeVolumeNotification(notificationId);

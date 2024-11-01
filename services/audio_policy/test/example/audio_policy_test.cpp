@@ -94,7 +94,8 @@ static void PrintUsage(void)
     cout << "\tWritten by OpenHarmony AudioFramework Team." << endl << endl;
 }
 
-static void ShowAudioDeviceDescriptorsVector(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector)
+static void ShowAudioDeviceDescriptorsVector(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector)
 {
     int vectorLen = audioDeviceDescriptorsVector.size();
     for (int i = 0; i < vectorLen; i ++) {
@@ -132,7 +133,8 @@ static void HandleGetDevices(int argc, char *argv[], char option)
     ShowAudioDeviceDescriptorsVector(audioDeviceDescriptorsVector);
 }
 
-static void CallSelectOutputDevice(char option, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector,
+static void CallSelectOutputDevice(char option,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector,
     sptr<AudioRendererFilter> audioRendererFilter)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
@@ -194,7 +196,8 @@ static void HandleSelectOutputDevice(int argc, char* argv[], char opt)
     }
 }
 
-static void CallSelectInputDevice(char option, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector,
+static void CallSelectInputDevice(char option,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector,
     sptr<AudioCapturerFilter> audioCapturerFilter)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();

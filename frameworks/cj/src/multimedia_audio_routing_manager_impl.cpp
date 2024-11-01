@@ -54,7 +54,8 @@ int32_t MMAAudioRoutingManagerImpl::SetCommunicationDevice(int32_t deviceType, b
 
 CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetDevices(int32_t flags, int32_t *errorCode)
 {
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors = audioMgr_->GetDevices(static_cast<DeviceFlag>(flags));
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors =
+        audioMgr_->GetDevices(static_cast<DeviceFlag>(flags));
     if (deviceDescriptors.empty()) {
         *errorCode = CJ_ERR_SYSTEM;
         return CArrDeviceDescriptor();

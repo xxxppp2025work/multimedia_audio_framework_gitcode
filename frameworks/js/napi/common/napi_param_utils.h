@@ -181,10 +181,11 @@ public:
         const std::vector<sptr<VolumeGroupInfo>> &volumeGroupInfos, napi_value &result);
     static napi_status SetValueVolumeEvent(const napi_env& env, const VolumeEvent &volumeEvent,
         napi_value &result);
-    static napi_status GetAudioDeviceDescriptor(const napi_env &env, std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
-        bool &argTransFlag, napi_value in);
+    static napi_status GetAudioDeviceDescriptor(const napi_env &env,
+        std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &argTransFlag, napi_value in);
     static napi_status GetAudioDeviceDescriptorVector(const napi_env &env,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescriptorsVector, bool &argTransFlag, napi_value in);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescriptorsVector,
+        bool &argTransFlag, napi_value in);
     static napi_status GetAudioCapturerFilter(const napi_env &env, sptr<AudioCapturerFilter> &audioCapturerFilter,
         napi_value in);
     static napi_status GetAudioCapturerInfo(const napi_env &env, AudioCapturerInfo *capturerInfo, napi_value in);

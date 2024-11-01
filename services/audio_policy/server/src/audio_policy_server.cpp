@@ -1068,7 +1068,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetOutput
         AUDIO_ERR_LOG("only for system app");
         return {};
     }
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs = audioPolicyService_.GetOutputDevice(audioRendererFilter);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs =
+        audioPolicyService_.GetOutputDevice(audioRendererFilter);
     return deviceDescs;
 }
 
@@ -1079,7 +1080,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetInputD
         AUDIO_ERR_LOG("only for system app");
         return {};
     }
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs = audioPolicyService_.GetInputDevice(audioCapturerFilter);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs =
+        audioPolicyService_.GetInputDevice(audioCapturerFilter);
     return deviceDescs;
 }
 
@@ -1093,7 +1095,8 @@ int32_t AudioPolicyServer::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, A
     return audioPolicyService_.NotifyCapturerAdded(capturerInfo, streamInfo, sessionId);
 }
 
-int32_t AudioPolicyServer::VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId)
+int32_t AudioPolicyServer::VerifyVoiceCallPermission(
+    uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId)
 {
     bool hasSystemPermission = TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
     CHECK_AND_RETURN_RET_LOG(hasSystemPermission, ERR_PERMISSION_DENIED, "No system permission");
@@ -2391,7 +2394,8 @@ int32_t AudioPolicyServer::OffloadStopPlaying(const AudioInterrupt &audioInterru
     return audioPolicyService_.OffloadStopPlaying(std::vector<int32_t>(1, audioInterrupt.sessionId));
 }
 
-int32_t AudioPolicyServer::ConfigDistributedRoutingRole(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
+int32_t AudioPolicyServer::ConfigDistributedRoutingRole(
+    const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("No system permission");

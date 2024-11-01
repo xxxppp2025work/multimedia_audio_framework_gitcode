@@ -202,8 +202,8 @@ void AudioPolicyServiceSecondTest(const uint8_t* rawData, size_t size, AudioStre
     GetServerPtr()->audioPolicyService_.GetSourceIOHandle(DEVICE_TYPE_DP);
     SinkInput sinkInput = {};
     SourceOutput sourceOutput = {};
-    GetServerPtr()->audioPolicyService_.WriteOutDeviceChangedSysEvents(remoteDeviceDescriptor, sinkInput);
-    GetServerPtr()->audioPolicyService_.WriteInDeviceChangedSysEvents(remoteDeviceDescriptor, sourceOutput);
+    GetServerPtr()->audioPolicyService_.WriteOutputDeviceChangedSysEvents(remoteDeviceDescriptor, sinkInput);
+    GetServerPtr()->audioPolicyService_.WriteInputDeviceChangedSysEvents(remoteDeviceDescriptor, sourceOutput);
 }
 
 void AudioPolicyServiceThirdTest(const uint8_t* rawData, size_t size)

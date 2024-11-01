@@ -205,11 +205,11 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, ReconfigureAudioChannel_001, TestSize.Le
 }
 
 /**
- * @tc.name  : Test WriteDeviceChangedSysEvents.
- * @tc.number: WriteDeviceChangedSysEvents_001
- * @tc.desc  : Test WriteDeviceChangedSysEvents interfaces.
+ * @tc.name  : Test WriteAllDeviceSysEvents.
+ * @tc.number: WriteAllDeviceSysEvents_001
+ * @tc.desc  : Test WriteAllDeviceSysEvents interfaces.
  */
-HWTEST_F(AudioPolicyServiceExtUnitTest, WriteDeviceChangedSysEvents_001, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, WriteAllDeviceSysEvents_001, TestSize.Level1)
 {
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
@@ -217,7 +217,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, WriteDeviceChangedSysEvents_001, TestSiz
 
     isConnected = false;
     desc = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::ALL_DEVICES_FLAG);
-    server->audioPolicyService_.WriteDeviceChangedSysEvents(desc, isConnected);
+    server->audioPolicyService_.WriteAllDeviceSysEvents(desc, isConnected);
     EXPECT_EQ(isConnected, false);
 }
 

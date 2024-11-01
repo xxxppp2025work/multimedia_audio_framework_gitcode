@@ -278,8 +278,8 @@ napi_status NapiParamUtils::CreateArrayBuffer(const napi_env &env, const size_t 
     return status;
 }
 
-void NapiParamUtils::ConvertDeviceInfoToAudioDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
-    const AudioDeviceDescriptor &deviceInfo)
+void NapiParamUtils::ConvertDeviceInfoToAudioDeviceDescriptor(
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor, const AudioDeviceDescriptor &deviceInfo)
 {
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
     audioDeviceDescriptor->deviceRole_ = deviceInfo.deviceRole_;

@@ -159,8 +159,8 @@ int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable)
     return SPATIALIZATION_SERVICE_OK;
 }
 
-int32_t AudioSpatializationService::SetSpatializationEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
-    const bool enable)
+int32_t AudioSpatializationService::SetSpatializationEnabled(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable)
 {
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     std::string address = selectedAudioDevice->macAddress_;
@@ -219,8 +219,8 @@ int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable)
     return SPATIALIZATION_SERVICE_OK;
 }
 
-int32_t AudioSpatializationService::SetHeadTrackingEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
-    const bool enable)
+int32_t AudioSpatializationService::SetHeadTrackingEnabled(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable)
 {
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     std::string address = selectedAudioDevice->macAddress_;
@@ -266,8 +266,8 @@ void AudioSpatializationService::HandleHeadTrackingEnabledChange(const bool &ena
     }
 }
 
-void AudioSpatializationService::HandleHeadTrackingEnabledChange(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
-    const bool &enabled)
+void AudioSpatializationService::HandleHeadTrackingEnabledChange(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled)
 {
     AUDIO_INFO_LOG("device Head tracking enabled callback is triggered: state is %{public}d", enabled);
     if (audioPolicyServerHandler_ != nullptr) {
@@ -653,13 +653,15 @@ void AudioSpatializationService::WriteSpatializationStateToDb(WriteToDbOperation
         case WRITE_SPATIALIZATION_STATE: {
             ErrCode ret = settingProvider.PutIntValue(
                 SPATIALIZATION_STATE_SETTINGKEY, PackSpatializationState(spatializationStateFlag_));
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to write spatialization_state to setting db: %{public}d", ret);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS,
+                "Failed to write spatialization_state to setting db: %{public}d", ret);
             break;
         }
         case WRITE_SPATIALIZATION_SCENE: {
             ErrCode ret = settingProvider.PutIntValue(
                 SPATIALIZATION_SCENE_SETTINGKEY, static_cast<uint32_t>(spatializationSceneType_));
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to write spatialization_scene to setting db: %{public}d", ret);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS,
+                "Failed to write spatialization_scene to setting db: %{public}d", ret);
             break;
         }
         case WRITE_DEVICESPATIAL_INFO: {
@@ -712,7 +714,8 @@ void AudioSpatializationService::UpdateHeadTrackingDeviceState(bool outputDevice
     HandleHeadTrackingDeviceChange(headTrackingDeviceChangeInfo);
 }
 
-void AudioSpatializationService::HandleHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo)
+void AudioSpatializationService::HandleHeadTrackingDeviceChange(
+    const std::unordered_map<std::string, bool> &changeInfo)
 {
     AUDIO_DEBUG_LOG("callback is triggered, change info size is %{public}zu", changeInfo.size());
 

@@ -267,7 +267,8 @@ OHAudioRoutingManager::~OHAudioRoutingManager()
     AUDIO_INFO_LOG("OHAudioRoutingManager destroyed!");
 }
 
-OH_AudioDeviceDescriptorArray *OHAudioRoutingManager::ConvertDesc(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+OH_AudioDeviceDescriptorArray *OHAudioRoutingManager::ConvertDesc(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     size_t size = desc.size();
     if (size == 0 || size >= MAX_VALID_SIZE) {
@@ -310,7 +311,8 @@ OH_AudioDeviceDescriptorArray* OHAudioRoutingManager::GetDevices(DeviceFlag devi
 {
     CHECK_AND_RETURN_RET_LOG(audioSystemManager_ != nullptr,
         nullptr, "failed, audioSystemManager is null");
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = audioSystemManager_->GetDevices(deviceFlag);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors =
+        audioSystemManager_->GetDevices(deviceFlag);
     uint32_t size = audioDeviceDescriptors.size();
     if (size <= 0) {
         AUDIO_ERR_LOG("audioDeviceDescriptors is null");

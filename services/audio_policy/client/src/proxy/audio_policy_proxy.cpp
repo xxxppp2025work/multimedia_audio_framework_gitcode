@@ -579,7 +579,8 @@ int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::ConfigDistributedRoutingRole(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
+int32_t AudioPolicyProxy::ConfigDistributedRoutingRole(
+    const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
     MessageParcel data;
     MessageParcel reply;

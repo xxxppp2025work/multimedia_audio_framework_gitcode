@@ -83,7 +83,8 @@ public:
 
     int32_t SetRingerMode(AudioRingerMode ringMode) override;
 
-    int32_t ConfigDistributedRoutingRole(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type) override;
+    int32_t ConfigDistributedRoutingRole(
+        const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type) override;
 
     int32_t SetDistributedRoutingRoleCallback(const sptr<IRemoteObject> &object) override;
 
@@ -185,9 +186,11 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) override;
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetOutputDevice(sptr<AudioRendererFilter> audioRendererFilter) override;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetOutputDevice(
+        sptr<AudioRendererFilter> audioRendererFilter) override;
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter) override;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(
+        sptr<AudioCapturerFilter> audioCapturerFilter) override;
 
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable) override;
 
@@ -252,7 +255,8 @@ public:
 
     int32_t SetHeadTrackingEnabled(const bool enable) override;
 
-    int32_t SetHeadTrackingEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable) override;
+    int32_t SetHeadTrackingEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable) override;
 
     AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage) override;
 
@@ -350,7 +354,8 @@ private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,
         const AudioStreamChangeInfo &streamChangeInfo);
-    void ReadAudioFocusInfo(MessageParcel &reply, std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
+    void ReadAudioFocusInfo(
+        MessageParcel &reply, std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
 };
 } // namespace AudioStandard
 } // namespace OHOS

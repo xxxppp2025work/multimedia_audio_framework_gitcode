@@ -175,11 +175,11 @@ public:
     void AddAudioDeviceRefinerCb(const sptr<IStandardAudioRoutingManagerListener> &callback);
     int32_t RemoveAudioDeviceRefinerCb();
     bool SendSpatializatonEnabledChangeEvent(const bool &enabled);
-    bool SendSpatializatonEnabledChangeForAnyDeviceEvent(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
-        const bool &enabled);
+    bool SendSpatializatonEnabledChangeForAnyDeviceEvent(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
     bool SendHeadTrackingEnabledChangeEvent(const bool &enabled);
-    bool SendHeadTrackingEnabledChangeForAnyDeviceEvent(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
-    const bool &enabled);
+    bool SendHeadTrackingEnabledChangeForAnyDeviceEvent(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
     bool SendPipeStreamCleanEvent(AudioPipeType pipeType);
     bool SendConcurrencyEventWithSessionIDCallback(const uint32_t sessionID);
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);

@@ -341,17 +341,17 @@ public:
 
     void RegisterRemoteDevStatusCallback();
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(AudioRendererInfo &rendererInfo,
-        std::string networkId = LOCAL_NETWORK_ID);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
+        AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(AudioCapturerInfo &captureInfo,
-        std::string networkId = LOCAL_NETWORK_ID);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
+        AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(AudioRendererInfo &rendererInfo,
-        std::string networkId = LOCAL_NETWORK_ID);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
+        AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(AudioCapturerInfo &captureInfo,
-        std::string networkId = LOCAL_NETWORK_ID);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
+        AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
 
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
 
@@ -395,7 +395,8 @@ public:
 
     std::vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
 
-    void TriggerAvailableDeviceChangedCallback(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
+    void TriggerAvailableDeviceChangedCallback(
+        const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
 
     void OffloadStreamSetCheck(uint32_t sessionId);
 
@@ -673,16 +674,22 @@ private:
     void UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& updatedDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
 
-    void TriggerDeviceChangedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
+    void TriggerDeviceChangedCallback(
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
 
     void GetAllRunningStreamSession(std::vector<int32_t> &allSessions, bool doStop = false);
 
-    void WriteDeviceChangedSysEvents(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
+    void WriteHeadsetConnectedSysEvent(const std::shared_ptr<AudioDeviceDescriptor> &desc, bool isConnected);
 
-    void WriteOutDeviceChangedSysEvents(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
+    void WriteDeviceChangeSysEvents(const std::shared_ptr<AudioDeviceDescriptor> &desc);
+
+    void WriteAllDeviceSysEvents(
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs, bool isConnected);
+
+    void WriteOutputDeviceChangedSysEvents(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const SinkInput &sinkInput);
 
-    void WriteInDeviceChangedSysEvents(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
+    void WriteInputDeviceChangedSysEvents(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const SourceOutput &sourceOutput);
 
     void WriteSelectOutputSysEvents(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &selectedDesc,
@@ -728,6 +735,8 @@ private:
     void RemoveDeviceInFastRouterMap(std::string networkId);
 
     void UpdateDisplayName(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+
+    void UpdateRemoteDisplayName(std::shared_ptr<AudioDeviceDescriptor> &desc);
 
     void UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
         const std::string& deviceName, const DeviceStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc);

@@ -391,7 +391,8 @@ size_t AudioPolicyClientStubImpl::GetPreferredOutputDeviceChangeCallbackSize() c
     return preferredOutputDeviceCallbackList_.size();
 }
 
-void AudioPolicyClientStubImpl::OnPreferredOutputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+void AudioPolicyClientStubImpl::OnPreferredOutputDeviceUpdated(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     std::lock_guard<std::mutex> lockCbMap(pOutputDeviceChangeMutex_);
     for (auto it = preferredOutputDeviceCallbackList_.begin(); it != preferredOutputDeviceCallbackList_.end(); ++it) {
@@ -420,7 +421,8 @@ size_t AudioPolicyClientStubImpl::GetPreferredInputDeviceChangeCallbackSize() co
     return preferredInputDeviceCallbackList_.size();
 }
 
-void AudioPolicyClientStubImpl::OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+void AudioPolicyClientStubImpl::OnPreferredInputDeviceUpdated(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     std::lock_guard<std::mutex> lockCbMap(pInputDeviceChangeMutex_);
     for (auto it = preferredInputDeviceCallbackList_.begin(); it != preferredInputDeviceCallbackList_.end(); ++it) {
@@ -686,8 +688,8 @@ void AudioPolicyClientStubImpl::OnSpatializationEnabledChange(const bool &enable
     }
 }
 
-void AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor>
-    &deviceDescriptor, const bool &enabled)
+void AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForAnyDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled)
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
     for (const auto &callback : spatializationEnabledChangeCallbackList_) {
@@ -724,8 +726,8 @@ void AudioPolicyClientStubImpl::OnHeadTrackingEnabledChange(const bool &enabled)
     }
 }
 
-void AudioPolicyClientStubImpl::OnHeadTrackingEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor>
-    &deviceDescriptor, const bool &enabled)
+void AudioPolicyClientStubImpl::OnHeadTrackingEnabledChangeForAnyDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled)
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
     for (const auto &callback : headTrackingEnabledChangeCallbackList_) {

@@ -102,7 +102,8 @@ void AudioRoutingManagerFuzzTest(const uint8_t* data, size_t size)
     shared_ptr<AudioPreferredInputDeviceChangeCallbackFuzz> preferredInputCallbackFuzz =
         std::make_shared<AudioPreferredInputDeviceChangeCallbackFuzz>();
     AudioRoutingManager::GetInstance()->GetPreferredInputDeviceForCapturerInfo(capturerInfo, desc);
-    AudioRoutingManager::GetInstance()->SetPreferredInputDeviceChangeCallback(capturerInfo, preferredInputCallbackFuzz);
+    AudioRoutingManager::GetInstance()->SetPreferredInputDeviceChangeCallback(
+        capturerInfo, preferredInputCallbackFuzz);
     AudioRoutingManager::GetInstance()->UnsetPreferredInputDeviceChangeCallback();
     AudioRoutingManager::GetInstance()->GetAvailableMicrophones();
 }
@@ -129,7 +130,8 @@ void AudioStreamManagerFuzzTest(const uint8_t* data, size_t size)
     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 
-    std::shared_ptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioStandard::AudioDeviceDescriptor>();
+    std::shared_ptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor =
+        std::make_shared<AudioStandard::AudioDeviceDescriptor>();
     deviceDescriptor->deviceType_ = *reinterpret_cast<const DeviceType *>(data);
     deviceDescriptor->deviceRole_ = *reinterpret_cast<const DeviceRole *>(data);
     AudioStreamManager::GetInstance()->GetHardwareOutputSamplingRate(deviceDescriptor);

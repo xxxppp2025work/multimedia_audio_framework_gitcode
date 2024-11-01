@@ -198,7 +198,8 @@ void AudioPolicyClientProxy::OnMicStateUpdated(const MicStateChangeEvent &micSta
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::OnPreferredOutputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+void AudioPolicyClientProxy::OnPreferredOutputDeviceUpdated(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -222,7 +223,8 @@ void AudioPolicyClientProxy::OnPreferredOutputDeviceUpdated(const std::vector<st
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+void AudioPolicyClientProxy::OnPreferredInputDeviceUpdated(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     MessageParcel data;
     MessageParcel reply;

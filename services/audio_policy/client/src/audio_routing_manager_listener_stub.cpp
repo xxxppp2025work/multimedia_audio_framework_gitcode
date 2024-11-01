@@ -63,8 +63,8 @@ int AudioRoutingManagerListenerStub::OnRemoteRequest(
     }
 }
 
-void AudioRoutingManagerListenerStub::OnDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor,
-    const CastType type)
+void AudioRoutingManagerListenerStub::OnDistributedRoutingRoleChange(
+    const std::shared_ptr<AudioDeviceDescriptor> descriptor, const CastType type)
 {
     std::shared_ptr<AudioDistributedRoutingRoleCallback> audioDistributedRoutingRoleCallback =
         audioDistributedRoutingRoleCallback_.lock();

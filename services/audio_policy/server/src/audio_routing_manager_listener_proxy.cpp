@@ -34,8 +34,8 @@ AudioRoutingManagerListenerProxy::~AudioRoutingManagerListenerProxy()
     AUDIO_DEBUG_LOG("~AudioRoutingManagerListenerProxy: Instance destroy");
 }
 
-void AudioRoutingManagerListenerProxy::OnDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> desciptor,
-    const CastType type)
+void AudioRoutingManagerListenerProxy::OnDistributedRoutingRoleChange(
+    const std::shared_ptr<AudioDeviceDescriptor> desciptor, const CastType type)
 {
     AUDIO_DEBUG_LOG("AudioRoutingManagerListenerProxy: OnDistributedRoutingRoleChange as listener proxy");
     MessageParcel data;

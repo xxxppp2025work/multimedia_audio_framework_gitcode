@@ -114,8 +114,8 @@ public:
      * @since 11
      */
     virtual void OnSpatializationEnabledChange(const bool &enabled) {};
-    virtual void OnSpatializationEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
-        const bool &enabled) {};
+    virtual void OnSpatializationEnabledChangeForAnyDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) {};
 };
 
 class AudioHeadTrackingEnabledChangeCallbackTest : public AudioHeadTrackingEnabledChangeCallback {
@@ -128,8 +128,8 @@ public:
      * @since 11
      */
     virtual void OnHeadTrackingEnabledChange(const bool &enabled){};
-    virtual void OnHeadTrackingEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
-        const bool &enabled) {};
+    virtual void OnHeadTrackingEnabledChangeForAnyDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) {};
 };
 
 class AudioClientTrackerTest : public AudioClientTracker {

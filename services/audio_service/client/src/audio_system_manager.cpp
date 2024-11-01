@@ -174,7 +174,9 @@ inline const sptr<IStandardAudioService> GetAudioSystemManagerProxy()
         sptr<AudioServerDeathRecipient> asDeathRecipient =
             new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) { AudioSystemManager::AudioServerDied(pid, uid); });
+            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) {
+                AudioSystemManager::AudioServerDied(pid, uid);
+            });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
                 AUDIO_ERR_LOG("failed to add deathRecipient");
@@ -658,7 +660,8 @@ bool AudioSystemManager::IsMicrophoneMute()
     return groupManager->IsMicrophoneMuteLegacy();
 }
 
-int32_t AudioSystemManager::SelectOutputDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+int32_t AudioSystemManager::SelectOutputDevice(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() == 1 && audioDeviceDescriptors[0] != nullptr,
         ERR_INVALID_PARAM, "invalid parameter");
@@ -676,7 +679,8 @@ int32_t AudioSystemManager::SelectOutputDevice(std::vector<std::shared_ptr<Audio
     return ret;
 }
 
-int32_t AudioSystemManager::SelectInputDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+int32_t AudioSystemManager::SelectInputDevice(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() == 1 && audioDeviceDescriptors[0] != nullptr,
         ERR_INVALID_PARAM, "invalid parameter");
@@ -1025,7 +1029,8 @@ int32_t AudioSystemManager::SetAudioManagerInterruptCallback(const std::shared_p
     CHECK_AND_RETURN_RET_LOG(audioInterruptCallback_ != nullptr, ERROR,
         "Failed to allocate memory for audioInterruptCallback");
 
-    int32_t ret = AudioPolicyManager::GetInstance().SetAudioManagerInterruptCallback(clientId, audioInterruptCallback_);
+    int32_t ret =
+        AudioPolicyManager::GetInstance().SetAudioManagerInterruptCallback(clientId, audioInterruptCallback_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Failed set callback");
 
     std::shared_ptr<AudioManagerInterruptCallbackImpl> cbInterrupt =
@@ -1368,7 +1373,8 @@ int32_t AudioSystemManager::RegisterWakeupSourceCallback()
     return gasp->SetWakeupSourceCallback(object);
 }
 
-int32_t AudioSystemManager::SetAudioCapturerSourceCallback(const std::shared_ptr<AudioCapturerSourceCallback> &callback)
+int32_t AudioSystemManager::SetAudioCapturerSourceCallback(
+    const std::shared_ptr<AudioCapturerSourceCallback> &callback)
 {
     audioCapturerSourceCallback_ = callback;
     return RegisterWakeupSourceCallback();
@@ -1395,7 +1401,8 @@ int32_t AudioSystemManager::UnsetAvailableDeviceChangeCallback(AudioDeviceUsage 
     return AudioPolicyManager::GetInstance().UnsetAvailableDeviceChangeCallback(clientId, usage);
 }
 
-int32_t AudioSystemManager::ConfigDistributedRoutingRole(AudioDeviceDescriptor *descriptor, CastType type)
+int32_t AudioSystemManager::ConfigDistributedRoutingRole(
+    std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
     if (descriptor == nullptr) {
         AUDIO_ERR_LOG("ConfigDistributedRoutingRole: invalid parameter");
@@ -1495,7 +1502,7 @@ void AudioDistributedRoutingRoleCallbackImpl::RemoveCallback(
 }
 
 void AudioDistributedRoutingRoleCallbackImpl::OnDistributedRoutingRoleChange(
-    const AudioDeviceDescriptor *descriptor, const CastType type)
+    std::shared_ptr<AudioDeviceDescriptor>descriptor, const CastType type)
 {
     std::vector<std::shared_ptr<AudioDistributedRoutingRoleCallback>> temp_;
     std::unique_lock<mutex> cbListLock(cbListMutex_);
