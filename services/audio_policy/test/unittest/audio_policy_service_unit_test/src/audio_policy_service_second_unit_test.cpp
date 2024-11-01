@@ -1107,15 +1107,15 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadStartPlaying_001, TestSize.Level1
     std::vector<int32_t> sessionIds = {0};
     int32_t ret;
 
-    server->audioPolicyService_.a2dpOffloadFlag_ = BluetoothOffloadState::A2DP_OFFLOAD;
+    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::A2DP_OFFLOAD);
     ret = server->audioPolicyService_.OffloadStartPlaying(sessionIds);
     EXPECT_EQ(ret, ERROR);
 
-    server->audioPolicyService_.a2dpOffloadFlag_ = BluetoothOffloadState::NO_A2DP_DEVICE;
+    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::NO_A2DP_DEVICE);
     ret = server->audioPolicyService_.OffloadStartPlaying(sessionIds);
     EXPECT_EQ(ret, SUCCESS);
 
-    server->audioPolicyService_.a2dpOffloadFlag_ = BluetoothOffloadState::A2DP_OFFLOAD;
+    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::A2DP_OFFLOAD);
     sessionIds.clear();
     ret = server->audioPolicyService_.OffloadStartPlaying(sessionIds);
     EXPECT_EQ(ret, SUCCESS);
@@ -1132,15 +1132,15 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadStopPlaying_001, TestSize.Level1)
     std::vector<int32_t> sessionIds = {0};
     int32_t ret;
 
-    server->audioPolicyService_.a2dpOffloadFlag_ = BluetoothOffloadState::A2DP_OFFLOAD;
+    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::A2DP_OFFLOAD);
     ret = server->audioPolicyService_.OffloadStopPlaying(sessionIds);
     EXPECT_EQ(ret, ERROR);
 
-    server->audioPolicyService_.a2dpOffloadFlag_ = BluetoothOffloadState::NO_A2DP_DEVICE;
+    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::NO_A2DP_DEVICE);
     ret = server->audioPolicyService_.OffloadStopPlaying(sessionIds);
     EXPECT_EQ(ret, SUCCESS);
 
-    server->audioPolicyService_.a2dpOffloadFlag_ = BluetoothOffloadState::A2DP_OFFLOAD;
+    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::A2DP_OFFLOAD);
     sessionIds.clear();
     ret = server->audioPolicyService_.OffloadStopPlaying(sessionIds);
     EXPECT_EQ(ret, SUCCESS);
@@ -1161,25 +1161,25 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadGetRenderPosition_001, TestSize.L
 
     server->audioPolicyService_.currentActiveDevice_.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
     server->audioPolicyService_.currentActiveDevice_.networkId_ = LOCAL_NETWORK_ID;
-    server->audioPolicyService_.a2dpOffloadFlag_ = BluetoothOffloadState::A2DP_OFFLOAD;
+    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::A2DP_OFFLOAD);
     ret = server->audioPolicyService_.OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
     EXPECT_EQ(ret, ERROR);
 
     server->audioPolicyService_.currentActiveDevice_.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
     server->audioPolicyService_.currentActiveDevice_.networkId_ = LOCAL_NETWORK_ID;
-    server->audioPolicyService_.a2dpOffloadFlag_ = BluetoothOffloadState::NO_A2DP_DEVICE;
+    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::NO_A2DP_DEVICE);
     ret = server->audioPolicyService_.OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
     EXPECT_EQ(ret, SUCCESS);
 
     server->audioPolicyService_.currentActiveDevice_.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
     server->audioPolicyService_.currentActiveDevice_.networkId_ = REMOTE_NETWORK_ID;
-    server->audioPolicyService_.a2dpOffloadFlag_ = BluetoothOffloadState::NO_A2DP_DEVICE;
+    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::NO_A2DP_DEVICE);
     ret = server->audioPolicyService_.OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
     EXPECT_EQ(ret, SUCCESS);
 
     server->audioPolicyService_.currentActiveDevice_.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
     server->audioPolicyService_.currentActiveDevice_.networkId_ = REMOTE_NETWORK_ID;
-    server->audioPolicyService_.a2dpOffloadFlag_ = BluetoothOffloadState::NO_A2DP_DEVICE;
+    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::NO_A2DP_DEVICE);
     ret = server->audioPolicyService_.OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
     EXPECT_EQ(ret, SUCCESS);
 }
