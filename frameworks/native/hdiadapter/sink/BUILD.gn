@@ -314,7 +314,7 @@ ohos_shared_library("offload_audio_renderer_sink") {
     "../../../../services/audio_service/common/include/",
   ]
 
-  deps = [ 
+  deps = [
     "../../../../services/audio_service:audio_common",
     "../../audioutils:audio_utils",
   ]
