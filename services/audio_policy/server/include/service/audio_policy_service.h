@@ -231,10 +231,7 @@ public:
 
     int32_t HandleSpecialDeviceType(DeviceType &devType, bool &isConnected, const std::string &address);
 
-    void OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected);
-
-    void OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected,
-        const std::string &name, const std::string &adderess);
+    void OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
 
     void OnDeviceConfigurationChanged(DeviceType deviceType,
         const std::string &macAddress, const std::string &deviceName,
@@ -1014,7 +1011,7 @@ private:
     DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
     AudioDeviceDescriptor currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     AudioDeviceDescriptor currentActiveInputDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
-    std::vector<std::pair<DeviceType, bool>> pnpDeviceList_;
+    std::vector<std::pair<AudioDeviceDescriptor, bool>> pnpDeviceList_;
 
     std::mutex routerMapMutex_; // unordered_map is not concurrently-secure
     mutable std::mutex a2dpDeviceMapMutex_;
