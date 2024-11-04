@@ -70,6 +70,7 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest/audio_server_dump_unit_test:audio_server_dump_unit_test",
     "../services/audio_service/test/unittest/audio_server_unit_test:audio_server_unit_test",
     "../services/audio_service/test/unittest/renderer_in_server_unit_test:renderer_in_server_unit_test",
+    "../services/audio_policy/test:audio_policy_manager_unit_test",
   ]
 
   if (audio_framework_feature_opensl_es) {
