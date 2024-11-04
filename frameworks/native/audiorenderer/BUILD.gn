@@ -46,9 +46,11 @@ ohos_shared_library("audio_renderer") {
 
   deps = [
     "../../../services/audio_policy:audio_policy_client",
-    "../../../services/audio_service:audio_client",
     "../audioutils:audio_utils",
   ]
+
+  public_deps = [ "../../../services/audio_service:audio_client" ]
+
   external_deps = [
     "c_utils:utils",
     "eventhandler:libeventhandler",
