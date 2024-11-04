@@ -98,7 +98,8 @@
               "//foundation/multimedia/audio_framework/frameworks/cj:cj_multimedia_audio_ffi",
               "//foundation/multimedia/audio_framework/frameworks/native/ohaudio:ohaudio",
               "//foundation/multimedia/audio_framework/frameworks/native/opensles:opensles",
-              "//foundation/multimedia/audio_framework/services/audio_service:audio_sasdk"
+              "//foundation/multimedia/audio_framework/services/audio_service:audio_sasdk",
+              "//foundation/multimedia/audio_framework/services/audio_service:audio_client"
             ],
             "service_group": [
               "//foundation/multimedia/audio_framework/sa_profile:audio_service_sa_profile",

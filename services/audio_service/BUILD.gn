@@ -120,23 +120,20 @@ config("audio_client_public_config") {
     "../../interfaces/inner_api/native/audiorenderer/include",
   ]
 
-  cflags = [
-    "-Wall",
-    "-Werror",
-  ]
+  cflags = []
 
   if (sonic_enable == true) {
     cflags += [ "-DSONIC_ENABLE" ]
+  }
+
+  if (target_cpu == "arm") {
+    cflags += [ "-DBINDER_IPC_32BIT" ]
   }
 
   external_deps = []
 
   if (sonic_enable == true) {
     external_deps += [ "pulseaudio:sonic" ]
-  }
-
-  if (target_cpu == "arm") {
-    cflags += [ "-DBINDER_IPC_32BIT" ]
   }
 }
 
@@ -185,6 +182,11 @@ ohos_shared_library("audio_client") {
   ]
 
   public_configs = [ ":audio_client_public_config" ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
 
   deps = [
     ":audio_common",
@@ -591,6 +593,11 @@ ohos_executable("audio_faststream_playback_test") {
   sources = [ "test/example/audio_stream_playback_test.cpp" ]
 
   configs = [ ":audio_client_public_config" ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
 
   deps = [
     ":audio_client",

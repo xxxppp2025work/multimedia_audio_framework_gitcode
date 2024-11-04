@@ -59,9 +59,10 @@ ohos_shared_library("audio_capturer") {
 
   deps = [
     "../../../services/audio_policy:audio_policy_client",
-    "../../../services/audio_service:audio_client",
     "../audioutils:audio_utils",
   ]
+
+  public_deps = [ "../../../services/audio_service:audio_client" ]
 
   public_configs = [ ":audio_external_library_config" ]
 
