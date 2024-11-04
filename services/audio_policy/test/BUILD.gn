@@ -28,6 +28,7 @@ group("audio_policy_unittest_packages") {
     ":audio_effect_manager_test",
     ":audio_interrupt_service_unit_test",
     ":audio_policy_client_stub_impl_test",
+    ":audio_policy_manager_unit_test",
     ":audio_policy_server_handler_unit_test",
     ":audio_policy_server_unit_test",
     ":audio_policy_service_all_unit_test",
@@ -1118,4 +1119,35 @@ ohos_unittest("volume_data_maintainer_unit_test") {
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../audio_policy:audio_policy_service",
   ]
+}
+
+ohos_unittest("audio_policy_manager_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "./unittest/audio_policy_manager_unit_test/include",
+    "../../../../frameworks/native/audiopolicy/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "samgr:samgr_proxy",
+  ]
+
+  sources = [ "./unittest/audio_policy_manager_unit_test/src/audio_policy_manager_unit_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_client" ]
 }
