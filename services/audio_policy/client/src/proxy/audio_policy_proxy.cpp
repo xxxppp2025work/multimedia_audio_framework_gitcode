@@ -444,6 +444,21 @@ bool AudioPolicyProxy::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
     return reply.ReadBool();
 }
 
+bool AudioPolicyProxy::ShouldCallbackToApp(const uint32_t sessionID)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteUint32(sessionID);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SHOULD_CALLBACK_TO_APP), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "ShouldCallbackToApp failed, error: %{public}d", error);
+    return reply.ReadBool();
+}
+
 bool AudioPolicyProxy::IsDeviceActive(InternalDeviceType deviceType)
 {
     MessageParcel data;

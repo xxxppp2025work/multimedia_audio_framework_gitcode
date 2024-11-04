@@ -345,6 +345,8 @@ public:
 
     virtual bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid) = 0;
 
+    virtual bool ShouldCallbackToApp(const uint32_t sessionID) = 0;
+
     virtual int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning) = 0;
 

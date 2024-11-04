@@ -7011,7 +7011,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_HandleAndNotifyForcedEvent_001, Tes
     AudioInterrupt audioInterrupt;
     auto audioInterruptCallback = std::make_shared<AudioRendererInterruptCallbackImpl>(audioStream, audioInterrupt);
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_PAUSE, 20.0f};
-    audioInterruptCallback->HandleAndNotifyForcedEvent(interruptEvent);
+    audioInterruptCallback->HandleAndNotifyForcedEvent(interruptEvent, true);
     EXPECT_FALSE(audioInterruptCallback->isForcePaused_);
 }
 
@@ -7028,7 +7028,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_HandleAndNotifyForcedEvent_002, Tes
     AudioInterrupt audioInterrupt;
     auto audioInterruptCallback = std::make_shared<AudioRendererInterruptCallbackImpl>(audioStream, audioInterrupt);
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_RESUME, 20.0f};
-    audioInterruptCallback->HandleAndNotifyForcedEvent(interruptEvent);
+    audioInterruptCallback->HandleAndNotifyForcedEvent(interruptEvent, true);
     EXPECT_FALSE(audioInterruptCallback->isForcePaused_);
 }
 
@@ -7045,7 +7045,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_HandleAndNotifyForcedEvent_003, Tes
     AudioInterrupt audioInterrupt;
     auto audioInterruptCallback = std::make_shared<AudioRendererInterruptCallbackImpl>(audioStream, audioInterrupt);
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_DUCK, 20.0f};
-    audioInterruptCallback->HandleAndNotifyForcedEvent(interruptEvent);
+    audioInterruptCallback->HandleAndNotifyForcedEvent(interruptEvent, true);
     EXPECT_FALSE(audioInterruptCallback->isForcePaused_);
 }
 
@@ -7062,7 +7062,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_HandleAndNotifyForcedEvent_004, Tes
     AudioInterrupt audioInterrupt;
     auto audioInterruptCallback = std::make_shared<AudioRendererInterruptCallbackImpl>(audioStream, audioInterrupt);
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_UNDUCK, 20.0f};
-    audioInterruptCallback->HandleAndNotifyForcedEvent(interruptEvent);
+    audioInterruptCallback->HandleAndNotifyForcedEvent(interruptEvent, true);
     EXPECT_FALSE(audioInterruptCallback->isForcePaused_);
 }
 
@@ -7079,7 +7079,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_HandleAndNotifyForcedEvent_005, Tes
     AudioInterrupt audioInterrupt;
     auto audioInterruptCallback = std::make_shared<AudioRendererInterruptCallbackImpl>(audioStream, audioInterrupt);
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_NONE, 20.0f};
-    audioInterruptCallback->HandleAndNotifyForcedEvent(interruptEvent);
+    audioInterruptCallback->HandleAndNotifyForcedEvent(interruptEvent, true);
     EXPECT_FALSE(audioInterruptCallback->isForcePaused_);
 }
 

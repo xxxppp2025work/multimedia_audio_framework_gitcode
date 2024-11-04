@@ -2249,6 +2249,13 @@ bool AudioPolicyManager::IsAllowedPlayback(const int32_t &uid, const int32_t &pi
     return gsp->IsAllowedPlayback(uid, pid);
 }
 
+bool AudioPolicyManager::ShouldCallbackToApp(const uint32_t sessionID)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->ShouldCallbackToApp(sessionID);
+}
+
 int32_t AudioPolicyManager::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning)
 {
