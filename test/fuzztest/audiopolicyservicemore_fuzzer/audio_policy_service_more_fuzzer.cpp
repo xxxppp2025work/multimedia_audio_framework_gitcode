@@ -347,14 +347,14 @@ void AudioPolicyServiceTestII(const uint8_t* rawData, size_t size)
     GetServerPtr()->audioPolicyService_.CheckSpatializationAndEffectState();
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->IsA2dpOffloadConnecting(MOD_NUM_TWO);
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->a2dpOffloadDeviceAddress_ = "A2dpMacAddress";
-    GetServerPtr()->
-        audioPolicyService_.audioA2dpOffloadManager_->audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
+    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->audioA2dpOffloadFlag_.currentOffloadConnectionState_
+        = CONNECTION_STATUS_CONNECTED;
     GetServerPtr()->
         audioPolicyService_.audioA2dpOffloadManager_->OnA2dpPlayingStateChanged("A2dpMacAddressS", A2DP_STOPPED);
     GetServerPtr()->
         audioPolicyService_.audioA2dpOffloadManager_->OnA2dpPlayingStateChanged("A2dpMacAddressS", A2DP_PLAYING);
-    GetServerPtr()->
-        audioPolicyService_.audioA2dpOffloadManager_->audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTING;
+    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->audioA2dpOffloadFlag_.currentOffloadConnectionState_
+            = CONNECTION_STATUS_CONNECTING;
     GetServerPtr()->
         audioPolicyService_.audioA2dpOffloadManager_->OnA2dpPlayingStateChanged("A2dpMacAddress", A2DP_PLAYING);
     GetServerPtr()->

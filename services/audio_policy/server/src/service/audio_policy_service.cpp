@@ -2537,7 +2537,7 @@ void AudioPolicyService::MuteSinkPort(const std::string &oldSinkname, const std:
     } else if (reason.IsOldDeviceUnavaliableExt() && ((audioScene_ == AUDIO_SCENE_DEFAULT) ||
         ((audioScene_ == AUDIO_SCENE_RINGING || audioScene_ == AUDIO_SCENE_VOICE_RINGING) &&
         ringermode != RINGER_MODE_NORMAL))) {
-        MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS, true);
+        audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS, true);
         usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
     } else if (reason == AudioStreamDeviceChangeReason::UNKNOWN &&
         oldSinkname == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {
@@ -3155,7 +3155,8 @@ int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescrip
 
 void AudioPolicyService::UnloadA2dpModule()
 {
-    audioIOHandleMap_.MuteDefaultSinkPort(GetCurrentOutputDeviceNetworkId(), GetSinkPortName(GetCurrentOutputDeviceType()));
+    audioIOHandleMap_.MuteDefaultSinkPort(GetCurrentOutputDeviceNetworkId(),
+        GetSinkPortName(GetCurrentOutputDeviceType()));
     audioIOHandleMap_.ClosePortAndEraseIOHandle(BLUETOOTH_SPEAKER);
 }
 
@@ -4409,7 +4410,8 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
                 std::string currentActivePort = GetSinkPortName(GetCurrentOutputDeviceType());
                 AudioIOHandle activateDeviceIOHandle;
                 audioIOHandleMap_.GetModuleIdByKey(BLUETOOTH_SPEAKER, activateDeviceIOHandle);
-                audioIOHandleMap_.MuteDefaultSinkPort(GetCurrentOutputDeviceNetworkId(), GetSinkPortName(GetCurrentOutputDeviceType()));
+                audioIOHandleMap_.MuteDefaultSinkPort(GetCurrentOutputDeviceNetworkId(),
+                    GetSinkPortName(GetCurrentOutputDeviceType()));
                 audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
                 audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
 
@@ -4694,7 +4696,8 @@ void AudioPolicyService::HandleOfflineDistributedDevice()
             const std::string networkId = deviceDesc->networkId_;
             UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
             std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(deviceDesc->deviceType_));
-            audioIOHandleMap_.MuteDefaultSinkPort(GetCurrentOutputDeviceNetworkId(), GetSinkPortName(GetCurrentOutputDeviceType()));
+            audioIOHandleMap_.MuteDefaultSinkPort(GetCurrentOutputDeviceNetworkId(),
+                GetSinkPortName(GetCurrentOutputDeviceType()));
             audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
             audioRouteMap_.RemoveDeviceInRouterMap(moduleName);
             audioRouteMap_.RemoveDeviceInFastRouterMap(networkId);
@@ -7343,8 +7346,8 @@ void AudioPolicyService::HandleRemainingSource()
 
     // if remaining sources are all lower than current removeed one, reload with the highest source in remaining
     if (highestSource != SOURCE_TYPE_INVALID && IsHigherPrioritySource(normalSourceOpened_, highestSourceInHdi)) {
-        AUDIO_INFO_LOG("reload source %{pblic}d because higher source removed, normalSourceOpened_：%{public}d, highestSourceInHdi：%{public}d ",
-            highestSource, normalSourceOpened_, highestSourceInHdi);
+        AUDIO_INFO_LOG("reload source %{pblic}d because higher source removed, normalSourceOpened_：%{public}d, "
+            "highestSourceInHdi：%{public}d ", highestSource, normalSourceOpened_, highestSourceInHdi);
         ReloadSourceForSession(sessionWithNormalSourceType_[highestSession]);
         sessionIdUsedToOpenSource_ = highestSession;
     }
@@ -7457,7 +7460,8 @@ void AudioPolicyService::UpdateEnhanceEffectState(SourceType source)
 {
     AudioEnhancePropertyArray enhancePropertyArray = {};
     unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1);
-    int32_t ret = AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(enhancePropertyArray, inputDesc->deviceType_);
+    int32_t ret = AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(enhancePropertyArray,
+        inputDesc->deviceType_);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("get enhance property fail, ret: %{public}d", ret);
         return;
