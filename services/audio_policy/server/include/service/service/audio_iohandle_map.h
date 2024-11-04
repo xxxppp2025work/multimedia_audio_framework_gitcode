@@ -27,8 +27,8 @@ public:
     void DeInit();
     std::unordered_map<std::string, AudioIOHandle> GetCopy();
     bool GetModuleIdByKey(std::string moduleName, AudioIOHandle& moduleId);
-    void DelIOHanleInfo(std::string moduleName);
-    void AddIOHanleInfo(std::string moduleName, const AudioIOHandle& moduleId);
+    void DelIOHandleInfo(std::string moduleName);
+    void AddIOHandleInfo(std::string moduleName, const AudioIOHandle& moduleId);
     AudioIOHandle GetSinkIOHandle(DeviceType deviceType);
     AudioIOHandle GetSourceIOHandle(DeviceType deviceType);
     bool CheckIOHandleExist(std::string moduleName);
@@ -39,7 +39,7 @@ public:
     void NotifyUnmutePort();
     void MuteSinkPort(const std::string &portName, int32_t duration, bool isSync);
     void SetMoveFinish(bool flag);
-    void MuteDefaultSinkPort(std::string sinkName);
+    void MuteDefaultSinkPort(std::string networkID, std::string sinkName);
 private:
     AudioIOHandleMap() {}
     ~AudioIOHandleMap() {}

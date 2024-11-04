@@ -67,13 +67,13 @@ bool AudioIOHandleMap::CheckIOHandleExist(std::string moduleName)
     return (IOHandles_.find(moduleName) != IOHandles_.end());
 }
 
-void AudioIOHandleMap::DelIOHanleInfo(std::string moduleName)
+void AudioIOHandleMap::DelIOHandleInfo(std::string moduleName)
 {
     std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
     IOHandles_.erase(moduleName);
 }
 
-void AudioIOHandleMap::AddIOHanleInfo(std::string moduleName, const AudioIOHandle& moduleId)
+void AudioIOHandleMap::AddIOHandleInfo(std::string moduleName, const AudioIOHandle& moduleId)
 {
     std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
     IOHandles_[moduleName] = moduleId;
@@ -140,7 +140,7 @@ int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleNam
     CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_INVALID_HANDLE,
         "OpenAudioPort failed %{public}d", ioHandle);
 
-    AddIOHanleInfo(moduleName, ioHandle);
+    AddIOHandleInfo(moduleName, ioHandle);
     return SUCCESS;
 }
 
@@ -149,7 +149,7 @@ int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleNam
     AudioIOHandle ioHandle;
     CHECK_AND_RETURN_RET_LOG(GetModuleIdByKey(moduleName, ioHandle), ERROR,
         "can not find %{public}s in io map", moduleName.c_str());
-    DelIOHanleInfo(moduleName);
+    DelIOHandleInfo(moduleName);
 
     AUDIO_INFO_LOG("[close-module] %{public}s,id:%{public}d", moduleName.c_str(), ioHandle);
     int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle);
@@ -175,9 +175,9 @@ void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duratio
     switchThread.detach();
 }
 
-void AudioIOHandleMap::MuteDefaultSinkPort(std::string sinkName)
+void AudioIOHandleMap::MuteDefaultSinkPort(std::string networkID, std::string sinkName)
 {
-    if (sinkName != PRIMARY_CLASS) {
+    if (networkID != LOCAL_NETWORK_ID || (networkID == LOCAL_NETWORK_ID && sinkName != PRIMARY_SPEAKER)) {
         // PA may move the sink to default when unloading module.
         MuteSinkPort(PRIMARY_SPEAKER, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
     }

@@ -152,6 +152,11 @@ bool AudioA2dpOffloadManager::IsA2dpOffloadConnected()
 int32_t AudioA2dpOffloadManager::OffloadStartPlaying(const std::vector<int32_t> &sessionIds)
 {
 #ifdef BLUETOOTH_ENABLE
+    AUDIO_INFO_LOG("OffloadStartPlaying, a2dpOffloadFlag_: %{public}d, sessionIds: %{public}zu",
+        GetA2dpOffloadFlag(), sessionIds.size());
+    if (GetA2dpOffloadFlag() != A2DP_OFFLOAD || sessionIds.size() == 0) {
+        return SUCCESS;
+    }
     int32_t ret = audioA2dpOffloadFlag_.OffloadStartPlaying(sessionIds);
     A2dpOffloadConnectionState state = audioA2dpOffloadFlag_.GetCurrentOffloadConnectedState();
     if (ret == SUCCESS && (state != CONNECTION_STATUS_CONNECTED)) {
@@ -166,6 +171,11 @@ int32_t AudioA2dpOffloadManager::OffloadStartPlaying(const std::vector<int32_t> 
 int32_t AudioA2dpOffloadManager::OffloadStopPlaying(const std::vector<int32_t> &sessionIds)
 {
 #ifdef BLUETOOTH_ENABLE
+    AUDIO_PRERELEASE_LOGI("OffloadStopPlaying, a2dpOffloadFlag_: %{public}d, sessionIds: %{public}zu",
+        GetA2dpOffloadFlag(), sessionIds.size());
+    if (GetA2dpOffloadFlag() != A2DP_OFFLOAD || sessionIds.size() == 0) {
+        return SUCCESS;
+    }
     return audioA2dpOffloadFlag_.OffloadStopPlaying(sessionIds);
 #else
     return SUCCESS;

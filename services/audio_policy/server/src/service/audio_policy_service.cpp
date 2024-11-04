@@ -66,6 +66,7 @@ std::string PIPE_WAKEUP_INPUT = "wakeup_input";
 static const int64_t CALL_IPC_COST_TIME_MS = 20000000; // 20ms
 static const int32_t WAIT_OFFLOAD_CLOSE_TIME_S = 10; // 10s
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
+static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS = 300000; // 300ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS = 150000; // 150ms
 static const int64_t SELECT_DEVICE_MUTE_MS = 200000; // 200ms
 static const int64_t SELECT_OFFLOAD_DEVICE_MUTE_MS = 400000; // 400ms
@@ -549,6 +550,7 @@ void AudioPolicyService::Deinit(void)
         audioPolicyManager_.CloseAudioPort(handle.second);
     });
     audioPolicyManager_.Deinit();
+    audioIOHandleMap_.DeInit();
 
     deviceStatusListener_->UnRegisterDeviceStatusListener();
     audioPnpServer_.StopPnpServer();
@@ -2532,6 +2534,11 @@ void AudioPolicyService::MuteSinkPort(const std::string &oldSinkname, const std:
         ringermode != RINGER_MODE_NORMAL))) {
         audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
         usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
+    } else if (reason.IsOldDeviceUnavaliableExt() && ((audioScene_ == AUDIO_SCENE_DEFAULT) ||
+        ((audioScene_ == AUDIO_SCENE_RINGING || audioScene_ == AUDIO_SCENE_VOICE_RINGING) &&
+        ringermode != RINGER_MODE_NORMAL))) {
+        MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS, true);
+        usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
     } else if (reason == AudioStreamDeviceChangeReason::UNKNOWN &&
         oldSinkname == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {
         // remote cast -> earpiece 300ms fix sound leak
@@ -2690,7 +2697,8 @@ bool AudioPolicyService::NotifyRecreateRendererStream(std::unique_ptr<AudioDevic
     if ((strcmp(oldDevicePortName.c_str(), GetSinkPortName(desc->deviceType_).c_str())) ||
         (isOldDeviceLocal ^ isNewDeviceLocal)) {
         int32_t streamClass = GetPreferredOutputStreamTypeInner(rendererChangeInfo->rendererInfo.streamUsage,
-            desc->deviceType_, rendererChangeInfo->rendererInfo.originalFlag, desc->networkId_);
+            desc->deviceType_, rendererChangeInfo->rendererInfo.originalFlag, desc->networkId_,
+            rendererChangeInfo->rendererInfo.samplingRate);
         TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid,
             rendererChangeInfo->sessionId, streamClass, reason);
         return true;
@@ -2766,7 +2774,7 @@ void AudioPolicyService::FetchStreamForA2dpMchStream(std::shared_ptr<AudioRender
                 "Can not find port MCH_PRIMARY_SPEAKER in io map");
             audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
             audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
-            audioIOHandleMap_.DelIOHanleInfo(currentActivePort);
+            audioIOHandleMap_.DelIOHandleInfo(currentActivePort);
             streamCollector_.UpdateRendererPipeInfo(rendererChangeInfo->sessionId, PIPE_TYPE_NORMAL_OUT);
         }
         ResetOffloadMode(rendererChangeInfo->sessionId);
@@ -3005,7 +3013,7 @@ bool AudioPolicyService::NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
         (GetCurrentInputDevice().networkId_ == LOCAL_NETWORK_ID))) {
         int32_t streamClass = GetPreferredInputStreamTypeInner(capturerChangeInfo->capturerInfo.sourceType,
             GetCurrentInputDeviceType(), capturerChangeInfo->capturerInfo.originalFlag,
-            GetCurrentInputDevice().networkId_);
+            GetCurrentInputDevice().networkId_, capturerChangeInfo->capturerInfo.samplingRate);
         TriggerRecreateCapturerStreamCallback(capturerChangeInfo->callerPid,
             capturerChangeInfo->sessionId, streamClass, reason);
         return true;
@@ -3147,7 +3155,7 @@ int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescrip
 
 void AudioPolicyService::UnloadA2dpModule()
 {
-    audioIOHandleMap_.MuteDefaultSinkPort(GetSinkPortName(GetCurrentOutputDeviceType()));
+    audioIOHandleMap_.MuteDefaultSinkPort(GetCurrentOutputDeviceNetworkId(), GetSinkPortName(GetCurrentOutputDeviceType()));
     audioIOHandleMap_.ClosePortAndEraseIOHandle(BLUETOOTH_SPEAKER);
 }
 
@@ -3174,7 +3182,7 @@ int32_t AudioPolicyService::LoadA2dpModule(DeviceType deviceType)
             AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
             CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
                 "OpenAudioPort failed %{public}d", ioHandle);
-            audioIOHandleMap_.AddIOHanleInfo(moduleInfo.name, ioHandle);
+            audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
         } else {
             // At least one a2dp device is already connected. A new a2dp device is connecting.
             // Need to reload a2dp module when switching to a2dp device.
@@ -3191,7 +3199,7 @@ int32_t AudioPolicyService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Dev
 {
     AUDIO_INFO_LOG("switch device from a2dp to another a2dp, reload a2dp module");
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        audioIOHandleMap_.MuteDefaultSinkPort(GetSinkPortName(GetCurrentOutputDeviceType()));
+        audioIOHandleMap_.MuteDefaultSinkPort(GetCurrentOutputDeviceNetworkId(), GetSinkPortName(GetCurrentOutputDeviceType()));
     }
 
     // Firstly, unload the existing a2dp sink or source.
@@ -3210,7 +3218,7 @@ int32_t AudioPolicyService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Dev
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
     CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
         "OpenAudioPort failed %{public}d", ioHandle);
-    audioIOHandleMap_.AddIOHanleInfo(moduleInfo.name, ioHandle);
+    audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
     return SUCCESS;
 }
 
@@ -4401,7 +4409,7 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
                 std::string currentActivePort = GetSinkPortName(GetCurrentOutputDeviceType());
                 AudioIOHandle activateDeviceIOHandle;
                 audioIOHandleMap_.GetModuleIdByKey(BLUETOOTH_SPEAKER, activateDeviceIOHandle);
-                audioIOHandleMap_.MuteDefaultSinkPort(GetSinkPortName(GetCurrentOutputDeviceType()));
+                audioIOHandleMap_.MuteDefaultSinkPort(GetCurrentOutputDeviceNetworkId(), GetSinkPortName(GetCurrentOutputDeviceType()));
                 audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
                 audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
 
@@ -4409,7 +4417,7 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
                 AUDIO_DEBUG_LOG("Reload a2dp module [%{public}s]", moduleInfo.name.c_str());
                 AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
                 CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
-                audioIOHandleMap_.AddIOHanleInfo(moduleInfo.name, ioHandle);
+                audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
                 std::string portName = GetSinkPortName(deviceType);
                 audioPolicyManager_.SetDeviceActive(deviceType, portName, true);
                 audioPolicyManager_.SuspendAudioDevice(portName, false);
@@ -4686,7 +4694,7 @@ void AudioPolicyService::HandleOfflineDistributedDevice()
             const std::string networkId = deviceDesc->networkId_;
             UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
             std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(deviceDesc->deviceType_));
-            audioIOHandleMap_.MuteDefaultSinkPort(GetSinkPortName(GetCurrentOutputDeviceType()));
+            audioIOHandleMap_.MuteDefaultSinkPort(GetCurrentOutputDeviceNetworkId(), GetSinkPortName(GetCurrentOutputDeviceType()));
             audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
             audioRouteMap_.RemoveDeviceInRouterMap(moduleName);
             audioRouteMap_.RemoveDeviceInFastRouterMap(networkId);
@@ -4733,7 +4741,6 @@ int32_t AudioPolicyService::HandleDistributedDeviceUpdate(DStatusInfo &statusInf
     } else {
         UpdateConnectedDevicesWhenDisconnecting(deviceDesc, descForCb);
         std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(devType));
-        audioIOHandleMap_.MuteDefaultSinkPort(GetSinkPortName(GetCurrentOutputDeviceType()));
         audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
         audioRouteMap_.RemoveDeviceInRouterMap(moduleName);
         audioRouteMap_.RemoveDeviceInFastRouterMap(networkId);
@@ -6152,7 +6159,7 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
     }
 
     int32_t flag = GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage, preferredDeviceList[0]->deviceType_,
-        rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_);
+        rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_, rendererInfo.samplingRate);
     if (isFastControlled_ && (flag == AUDIO_FLAG_MMAP || flag == AUDIO_FLAG_VOIP_FAST)) {
         std::string bundleNamePre = CHECK_FAST_BLOCK_PREFIX + bundleName;
         std::string result = AudioServerProxy::GetInstance().GetAudioParameterProxy(bundleNamePre);
@@ -6169,10 +6176,14 @@ void AudioPolicyService::SetNormalVoipFlag(const bool &normalVoipFlag)
     normalVoipFlag_ = normalVoipFlag;
 }
 
-int32_t AudioPolicyService::GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId)
+int32_t AudioPolicyService::GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
+    const AudioSamplingRate &samplingRate)
 {
     // VoIP stream has three mode for different products.
     if (enableFastVoip_ && (sinkPortName == PRIMARY_SPEAKER || networkId != LOCAL_NETWORK_ID)) {
+        if (samplingRate != SAMPLE_RATE_48000 && samplingRate != SAMPLE_RATE_16000) {
+            return AUDIO_FLAG_NORMAL;
+        }
         return AUDIO_FLAG_VOIP_FAST;
     } else if (!normalVoipFlag_ && (sinkPortName == PRIMARY_SPEAKER) && (networkId == LOCAL_NETWORK_ID)) {
         AUDIO_INFO_LOG("Direct VoIP mode is supported for the device");
@@ -6183,14 +6194,20 @@ int32_t AudioPolicyService::GetVoipRendererFlag(const std::string &sinkPortName,
 }
 
 int32_t AudioPolicyService::GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType,
-    int32_t flags, std::string &networkId)
+    int32_t flags, std::string &networkId, AudioSamplingRate &samplingRate)
 {
     AUDIO_INFO_LOG("Device type: %{public}d, stream usage: %{public}d, flag: %{public}d",
         deviceType, streamUsage, flags);
     std::string sinkPortName = GetSinkPortName(deviceType);
     if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION || streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
+        // Avoid two voip stream existing
+        if (streamCollector_.HasVoipRendererStream()) {
+            AUDIO_WARNING_LOG("Voip Change To Normal");
+            return AUDIO_FLAG_NORMAL;
+        }
+
         // VoIP stream. Need to judge whether it is fast or direct mode.
-        int32_t flag = GetVoipRendererFlag(sinkPortName, networkId);
+        int32_t flag = GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
         if (flag == AUDIO_FLAG_VOIP_FAST || flag == AUDIO_FLAG_VOIP_DIRECT) {
             return flag;
         }
@@ -6236,18 +6253,24 @@ int32_t AudioPolicyService::GetPreferredInputStreamType(AudioCapturerInfo &captu
         return AUDIO_FLAG_NORMAL;
     }
     return GetPreferredInputStreamTypeInner(capturerInfo.sourceType, preferredDeviceList[0]->deviceType_,
-        capturerInfo.originalFlag, preferredDeviceList[0]->networkId_);
+        capturerInfo.originalFlag, preferredDeviceList[0]->networkId_, capturerInfo.samplingRate);
 }
 
 int32_t AudioPolicyService::GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType,
-    int32_t flags, const std::string &networkId)
+    int32_t flags, const std::string &networkId, const AudioSamplingRate &samplingRate)
 {
     AUDIO_INFO_LOG("Device type: %{public}d, source type: %{public}d, flag: %{public}d",
         deviceType, sourceType, flags);
+    
+    // Avoid two voip stream existing
+    if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION && streamCollector_.HasVoipCapturerStream()) {
+        AUDIO_WARNING_LOG("Voip Change To Normal");
+        return AUDIO_FLAG_NORMAL;
+    }
     std::string sourcePortName = GetSourcePortName(deviceType);
     if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
         (sourcePortName == PRIMARY_MIC || networkId != LOCAL_NETWORK_ID)) {
-        if (enableFastVoip_) {
+        if (enableFastVoip_ && (samplingRate == SAMPLE_RATE_48000 || samplingRate == SAMPLE_RATE_16000)) {
             return AUDIO_FLAG_VOIP_FAST;
         }
         return AUDIO_FLAG_NORMAL;
@@ -6508,7 +6531,8 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
                 (lockFlag ? GetPreferredOutputDeviceDescriptors(rendererInfo, LOCAL_NETWORK_ID)
                           : GetPreferredOutputDeviceDescInner(rendererInfo, LOCAL_NETWORK_ID));
             int32_t type = GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage,
-                preferredDeviceList[0]->deviceType_, rendererInfo.originalFlag, preferredDeviceList[0]->networkId_);
+                preferredDeviceList[0]->deviceType_, rendererInfo.originalFlag, preferredDeviceList[0]->networkId_,
+                rendererInfo.samplingRate);
             deviceInfo.deviceRole_ = OUTPUT_DEVICE;
             return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
         }
@@ -6524,7 +6548,8 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
                 (lockFlag ? GetPreferredInputDeviceDescriptors(capturerInfo, LOCAL_NETWORK_ID)
                           : GetPreferredInputDeviceDescInner(capturerInfo, LOCAL_NETWORK_ID));
             int32_t type = GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
-                preferredDeviceList[0]->deviceType_, capturerInfo.originalFlag, preferredDeviceList[0]->networkId_);
+                preferredDeviceList[0]->deviceType_, capturerInfo.originalFlag, preferredDeviceList[0]->networkId_,
+                capturerInfo.samplingRate);
             deviceInfo.deviceRole_ = INPUT_DEVICE;
             return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
         }
@@ -8430,11 +8455,16 @@ void AudioPolicyService::HandleRemoteCastDevice(bool isConnected, AudioStreamInf
         FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT);
         UnloadInnerCapturerSink(REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
     }
-    TriggerFetchDevice();
+    FetchDevice(true);
+    FetchDevice(false);
+
+    // update a2dp offload
+    UpdateA2dpOffloadFlagForAllStream();
 }
 
 int32_t AudioPolicyService::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
+    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
     FetchDevice(true, reason);
     FetchDevice(false, reason);
 
@@ -9522,7 +9552,7 @@ void AudioPolicyService::FetchStreamForSpkMchStream(std::shared_ptr<AudioRendere
                     "Can not find port MCH_PRIMARY_SPEAKER in io map");
                 audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
                 audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
-                audioIOHandleMap_.DelIOHanleInfo(currentActivePort);
+                audioIOHandleMap_.DelIOHandleInfo(currentActivePort);
             }
         }
         ResetOffloadMode(rendererChangeInfo->sessionId);

@@ -952,7 +952,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSinkPortName_001, TestSize.Level1)
     retPortName = GetServerPtr()->audioPolicyService_.GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(BLUETOOTH_SPEAKER, retPortName);
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest GetSinkPortName_001 aaa");
-    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_ = nullptr;
+    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest GetSinkPortName_001 bbb");
     pipeType = PIPE_TYPE_OFFLOAD;
     retPortName = GetServerPtr()->audioPolicyService_.GetSinkPortName(deviceType, pipeType);

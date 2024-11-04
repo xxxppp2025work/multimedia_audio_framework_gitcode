@@ -218,6 +218,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     audioRenderer->rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
     audioRenderer->rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
     audioRenderer->rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
+    audioRenderer->rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->privacyType_ = rendererOptions.privacyType;
@@ -464,9 +465,8 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     // When the fast stream creation fails, a normal stream is created
     if (ret != SUCCESS && streamClass == IAudioStream::FAST_STREAM) {
         AUDIO_INFO_LOG("Create fast Stream fail, play by normal stream.");
-        streamClass = IAudioStream::PA_STREAM;
         isFastRenderer_ = false;
-        audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType,
+        audioStream_ = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, audioStreamParams, audioStreamType,
             appInfo_.appUid);
         CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr,
             ERR_INVALID_PARAM, "SetParams GetPlayBackStream failed when create normal stream.");
@@ -631,15 +631,17 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 {
     Trace trace("AudioRenderer::Start");
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+
     AUDIO_INFO_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
         "interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.mode);
+    if (state_ == RENDERER_RUNNING) {
+        AUDIO_INFO_LOG("Already Start.");
+        return true;
+    }
     CHECK_AND_RETURN_RET_LOG(IsAllowedStartBackgroud(), false, "Start failed. IsAllowedStartBackgroud is false");
     RendererState state = GetStatus();
     CHECK_AND_RETURN_RET_LOG((state == RENDERER_PREPARED) || (state == RENDERER_STOPPED) || (state == RENDERER_PAUSED),
         false, "Start failed. Illegal state:%{public}u", state);
-
-    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
-        "Start failed. Switching state: %{public}d", isSwitching_);
 
     if (audioInterrupt_.audioFocusType.streamType == STREAM_DEFAULT ||
         audioInterrupt_.sessionId == INVALID_SESSION_ID) {
@@ -742,12 +744,12 @@ bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType)
 {
     Trace trace("AudioRenderer::PauseTransitent");
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
-    AUDIO_INFO_LOG("StreamClientState for Renderer::PauseTransitent. id: %{public}u", sessionID_);
-    if (isSwitching_) {
-        AUDIO_ERR_LOG("failed. Switching state: %{public}d", isSwitching_);
-        return false;
-    }
 
+    AUDIO_INFO_LOG("StreamClientState for Renderer::PauseTransitent. id: %{public}u", sessionID_);
+    if (state_ == RENDERER_PAUSED) {
+        AUDIO_INFO_LOG("Already PauseTransitent.");
+        return true;
+    }
     if (IsNoStreamRenderer()) {
         // no stream renderer don't need to change audio stream state
         state_ = RENDERER_PAUSED;
@@ -795,9 +797,10 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
 
     AUDIO_INFO_LOG("StreamClientState for Renderer::Pause. id: %{public}u", sessionID_);
-
-    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Pause failed. Switching state: %{public}d", isSwitching_);
-
+    if (state_ == RENDERER_PAUSED) {
+        AUDIO_INFO_LOG("Already Pause.");
+        return true;
+    }
     if (IsNoStreamRenderer()) {
         // When the cellular call stream is pausing, only need to deactivate audio interrupt.
         if (AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_) != 0) {
@@ -827,10 +830,13 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
 
 bool AudioRendererPrivate::Stop()
 {
-    AUDIO_INFO_LOG("StreamClientState for Renderer::Stop. id: %{public}u", sessionID_);
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
-    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
-        "AudioRenderer::Stop failed. Switching state: %{public}d", isSwitching_);
+
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Stop. id: %{public}u", sessionID_);
+    if (state_ == RENDERER_STOPPED) {
+        AUDIO_INFO_LOG("Already Stop.");
+        return true;
+    }
     if (IsNoStreamRenderer()) {
         // When the cellular call stream is stopping, only need to deactivate audio interrupt.
         if (AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_) != 0) {
@@ -1409,16 +1415,17 @@ int32_t AudioRendererPrivate::UnregisterOutputDeviceChangeWithInfoCallback(
     return SUCCESS;
 }
 
-void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
+int32_t AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
 {
-    CHECK_AND_RETURN_LOG(audioStream, "stream is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioStream, ERROR, "stream is nullptr");
 
     audioStream->SetStreamTrackerState(false);
     audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
     audioStream->SetPrivacyType(info.privacyType);
     audioStream->SetRendererInfo(info.rendererInfo);
     audioStream->SetCapturerInfo(info.capturerInfo);
-    audioStream->SetAudioStreamInfo(info.params, rendererProxyObj_);
+    int32_t res = audioStream->SetAudioStreamInfo(info.params, rendererProxyObj_);
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "SetAudioStreamInfo failed");
     audioStream->SetRenderMode(info.renderMode);
     audioStream->SetAudioEffectMode(info.effectMode);
     audioStream->SetVolume(info.volume);
@@ -1455,6 +1462,7 @@ void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetRendererWriteCallback(info.rendererWriteCallback);
 
     audioStream->SetRendererFirstFrameWritingCallback(info.rendererFirstFrameWritingCallback);
+    return SUCCESS;
 }
 
 void AudioRendererPrivate::UpdateRendererAudioStream(const std::shared_ptr<IAudioStream> &audioStream)
@@ -1492,7 +1500,6 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     if (audioStream_) {
         Trace trace("SwitchToTargetStream");
         std::lock_guard<std::shared_mutex> lock(rendererMutex_);
-        isSwitching_ = true;
         RendererState previousState = GetStatus();
         AUDIO_INFO_LOG("Previous stream state: %{public}d, original sessionId: %{public}u", previousState, sessionID_);
         if (previousState == RENDERER_RUNNING) {
@@ -1515,7 +1522,16 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         AUDIO_INFO_LOG("Get new stream success!");
 
         // set new stream info
-        SetSwitchInfo(info, newAudioStream);
+        int32_t initResult = SetSwitchInfo(info, newAudioStream);
+        if (initResult != SUCCESS && info.rendererInfo.originalFlag != AUDIO_FLAG_NORMAL) {
+            AUDIO_ERR_LOG("Re-create stream failed, crate normal ipc stream");
+            isFastRenderer_ = false;
+            newAudioStream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, info.params,
+                info.eStreamType, appInfo_.appPid);
+            CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "Get ipc stream failed");
+            initResult = SetSwitchInfo(info, newAudioStream);
+            CHECK_AND_RETURN_RET_LOG(initResult == SUCCESS, false, "Init ipc strean failed");
+        }
 
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "release old stream failed.");
 
@@ -1526,7 +1542,6 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         }
         audioStream_ = newAudioStream;
         UpdateRendererAudioStream(audioStream_);
-        isSwitching_ = false;
         audioStream_->GetAudioSessionID(newSessionId);
         switchResult = true;
         SetDefaultOutputDevice(selectedDefaultOutputDevice_);

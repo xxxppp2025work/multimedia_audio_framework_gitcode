@@ -210,7 +210,7 @@ private:
     bool CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos);
     void WaitAllProcessReady(uint64_t curWritePos);
     bool ProcessToEndpointDataHandle(uint64_t curWritePos);
-    void ProcessToDupStream(std::vector<AudioStreamData> &audioDataList, AudioStreamData &dstStreamData);
+    void ProcessToDupStream(const std::vector<AudioStreamData> &audioDataList, AudioStreamData &dstStreamData);
     void GetAllReadyProcessData(std::vector<AudioStreamData> &audioDataList);
 
     std::string GetStatusStr(EndpointStatus status);
@@ -1271,7 +1271,7 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
         endpointStatus_ = UNLINKED;
     }
 
-    AUDIO_DEBUG_LOG("UnlinkProcessStream end, %{public}s the process.", (isFind ? "find and remove" : "not find"));
+    AUDIO_INFO_LOG("UnlinkProcessStream end, %{public}s the process.", (isFind ? "find and remove" : "not find"));
     return SUCCESS;
 }
 
@@ -1610,7 +1610,8 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
     return true;
 }
 
-void AudioEndpointInner::ProcessToDupStream(std::vector<AudioStreamData> &audioDataList, AudioStreamData &dstStreamData)
+void AudioEndpointInner::ProcessToDupStream(const std::vector<AudioStreamData> &audioDataList,
+    AudioStreamData &dstStreamData)
 {
     Trace trace("AudioEndpointInner::ProcessToDupStream");
     if (endpointType_ == TYPE_VOIP_MMAP) {
