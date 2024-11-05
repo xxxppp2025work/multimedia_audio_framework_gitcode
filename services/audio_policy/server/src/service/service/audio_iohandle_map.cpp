@@ -219,7 +219,6 @@ void AudioIOHandleMap::UnmutePortAfterMuteDuration(int32_t muteDuration, std::st
         AudioPolicyManagerFactory::GetAudioPolicyManager().SetSinkMute(portName, false);
     }
 }
-
 }
 }
 

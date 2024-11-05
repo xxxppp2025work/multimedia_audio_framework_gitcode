@@ -3200,7 +3200,8 @@ int32_t AudioPolicyService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Dev
 {
     AUDIO_INFO_LOG("switch device from a2dp to another a2dp, reload a2dp module");
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        audioIOHandleMap_.MuteDefaultSinkPort(GetCurrentOutputDeviceNetworkId(), GetSinkPortName(GetCurrentOutputDeviceType()));
+        audioIOHandleMap_.MuteDefaultSinkPort(GetCurrentOutputDeviceNetworkId(),
+            GetSinkPortName(GetCurrentOutputDeviceType()));
     }
 
     // Firstly, unload the existing a2dp sink or source.
