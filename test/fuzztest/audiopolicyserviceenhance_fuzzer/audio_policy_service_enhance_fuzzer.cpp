@@ -431,8 +431,8 @@ void AudioPolicyServiceEnhanceSevenFuzzTest(const uint8_t *rawData, size_t size)
     vector<int32_t> sessionIds = {0};
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->ConnectA2dpOffload(deviceAddress, sessionIds);
 
-    GetServerPtr()->
-        audioPolicyService_.audioA2dpOffloadManager_->SetCurrentOffloadConnectedState(CONNECTION_STATUS_CONNECTING);
+    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->
+        audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(CONNECTION_STATUS_CONNECTING);
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->IsA2dpOffloadConnecting(MOD_NUM_TWO);
 
     EventFwk::CommonEventData eventData;
@@ -601,8 +601,8 @@ void AudioPolicyServiceEnhanceElevenFuzzTest(const uint8_t *rawData, size_t size
     GetServerPtr()->
         audioPolicyService_.audioA2dpOffloadManager_->OnA2dpPlayingStateChanged(deviceAddressEnmpy, playingStateTwo);
     int32_t playingStateThree = A2DP_PLAYING;
-    GetServerPtr()->
-        audioPolicyService_.audioA2dpOffloadManager_->SetCurrentOffloadConnectedState(CONNECTION_STATUS_CONNECTING);
+    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->
+        audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(CONNECTION_STATUS_CONNECTING);
     GetServerPtr()->
         audioPolicyService_.audioA2dpOffloadManager_->OnA2dpPlayingStateChanged(deviceAddressEnmpy, playingStateThree);
 }
