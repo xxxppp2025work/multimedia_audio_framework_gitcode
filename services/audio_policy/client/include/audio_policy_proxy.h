@@ -331,6 +331,8 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
 
+    bool ShouldCallbackToApp(const uint32_t sessionID) override;
+
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning) override;
 

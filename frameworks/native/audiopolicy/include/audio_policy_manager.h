@@ -439,6 +439,8 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute);
 
+    bool ShouldCallbackToApp(const uint32_t sessionID);
+
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
 

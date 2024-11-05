@@ -180,6 +180,7 @@ private:
     void LoadSplitModuleInternal(MessageParcel &data, MessageParcel &reply);
     void IsAllowedPlaybackInternal(MessageParcel &data, MessageParcel &reply);
     void SetVoiceRingtoneMuteInternal(MessageParcel &data, MessageParcel &reply);
+    void ShouldCallbackToAppInternal(MessageParcel &data, MessageParcel &reply);
     void SetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryClientTypeCallbackInternal(MessageParcel &data, MessageParcel &reply);
 
