@@ -23,6 +23,7 @@
 #include "audio_interrupt_info.h"
 #include "audio_device_info.h"
 #include "napi_param_utils.h"
+#include "audio_utils.h"
 #include "audio_asr.h"
 
 using namespace std;
@@ -1132,6 +1133,7 @@ bool NapiAudioEnum::IsLegalInputArgumentVolType(int32_t inputType)
         case AudioJsVolumeType::VOICE_CALL:
         case AudioJsVolumeType::VOICE_ASSISTANT:
         case AudioJsVolumeType::ALARM:
+        case AudioJsVolumeType::SYSTEM:
         case AudioJsVolumeType::ACCESSIBILITY:
         case AudioJsVolumeType::ULTRASONIC:
         case AudioJsVolumeType::ALL:
@@ -1224,9 +1226,6 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
             result = NapiAudioEnum::VOICE_CALL;
             break;
         case AudioStreamType::STREAM_RING:
-        case AudioStreamType::STREAM_SYSTEM:
-        case AudioStreamType::STREAM_NOTIFICATION:
-        case AudioStreamType::STREAM_SYSTEM_ENFORCED:
         case AudioStreamType::STREAM_DTMF:
             result = NapiAudioEnum::RINGTONE;
             break;
@@ -1251,6 +1250,13 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
             break;
         case AudioStreamType::STREAM_ULTRASONIC:
             result = NapiAudioEnum::ULTRASONIC;
+            break;
+        case AudioStreamType::STREAM_SYSTEM:
+        case AudioStreamType::STREAM_NOTIFICATION:
+        case AudioStreamType::STREAM_SYSTEM_ENFORCED:
+        case AudioStreamType::STREAM_ENFORCED_AUDIBLE:
+            result = (VolumeUtils::IsPCVolumeEnable())?
+                NapiAudioEnum::SYSTEM : NapiAudioEnum::RINGTONE;
             break;
         default:
             result = NapiAudioEnum::MEDIA;
@@ -1430,6 +1436,9 @@ AudioVolumeType NapiAudioEnum::GetNativeAudioVolumeType(int32_t volumeType)
             break;
         case NapiAudioEnum::ULTRASONIC:
             result = STREAM_ULTRASONIC;
+            break;
+        case NapiAudioEnum::SYSTEM:
+            result = STREAM_SYSTEM;
             break;
         case NapiAudioEnum::ALL:
             result = STREAM_ALL;
