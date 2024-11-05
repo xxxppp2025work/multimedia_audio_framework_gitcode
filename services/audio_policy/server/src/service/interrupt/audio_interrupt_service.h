@@ -102,6 +102,7 @@ public:
     void AudioInterruptZoneDump(std::string &dumpString);
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
     ClientType GetClientTypeBySessionId(int32_t sessionId);
+    bool ShouldCallbackToApp(const uint32_t sessionID);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;

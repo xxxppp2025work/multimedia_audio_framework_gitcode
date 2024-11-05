@@ -1897,11 +1897,26 @@ ClientType AudioInterruptService::GetClientTypeBySessionId(int32_t sessionId)
 #endif
 }
 
+bool AudioInterruptService::ShouldCallbackToApp(const uint32_t sessionID)
+{
+#ifdef FEATURE_APPGALLERY
+    if (GetClientTypeBySessionId(sessionID) == CLIENT_TYPE_GAME) {
+        return false;
+    }
+    return true;
+#else
+    return true;
+#endif
+}
+
 bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t sessionId, InterruptHint hintType)
 {
     AUDIO_INFO_LOG("uid: %{public}u, sessionId: %{public}d, hintType: %{public}d", uid, sessionId, hintType);
     ClientType clientType = ClientTypeManager::GetInstance()->GetClientTypeByUid(uid);
     if (clientType != CLIENT_TYPE_GAME) {
+        return true;
+    }
+    if (hintType == INTERRUPT_HINT_DUCK || hintType == INTERRUPT_HINT_UNDUCK) {
         return true;
     }
 

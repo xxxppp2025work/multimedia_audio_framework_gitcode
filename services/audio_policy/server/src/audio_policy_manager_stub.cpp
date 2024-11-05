@@ -177,6 +177,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_AUDIO_DEVICE_ANAHS_CALLBACK",
     "UNSET_AUDIO_DEVICE_ANAHS_CALLBACK",
     "IS_ALLOWED_PLAYBACK",
+    "SHOULD_CALLBACK_TO_APP",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1846,6 +1847,8 @@ void AudioPolicyManagerStub::OnMidRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ALLOWED_PLAYBACK):
             IsAllowedPlaybackInternal(data, reply);
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SHOULD_CALLBACK_TO_APP):
+            ShouldCallbackToAppInternal(data, reply);
             break;
         default:
             OnMiddlesRemoteRequest(code, data, reply, option);
@@ -2155,6 +2158,13 @@ void AudioPolicyManagerStub::IsAllowedPlaybackInternal(MessageParcel &data, Mess
     int32_t uid = data.ReadInt32();
     int32_t pid = data.ReadInt32();
     bool result = IsAllowedPlayback(uid, pid);
+    reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::ShouldCallbackToAppInternal(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sessionID = data.ReadUint32();
+    bool result = ShouldCallbackToApp(sessionID);
     reply.WriteBool(result);
 }
 
