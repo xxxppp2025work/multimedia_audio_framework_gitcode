@@ -1241,7 +1241,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetDevices_001, TestSize.Level1)
     DeviceFlag deviceFlag = OUTPUT_DEVICES_FLAG;
     sptr ptr(new AudioDeviceDescriptor());
     ptr = nullptr;
-    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.audioConnectedDevice_.connectedDevices_.push_back(ptr);
+    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(ptr);
     GetServerPtr()->audioPolicyService_.GetDevices(deviceFlag);
 
     // case deviceType_ is DEVICE_TYPE_REMOTE_CAST
@@ -1255,10 +1255,10 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetDevices_001, TestSize.Level1)
         for (const auto& deviceRole : deviceRolesTmp) {
             audioDeviceDescriptor->deviceRole_ = deviceRole;
             audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
-            GetServerPtr()->audioPolicyService_.audioConnectedDevice_.audioConnectedDevice_.connectedDevices_.push_back(audioDeviceDescriptor);
+            GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(audioDeviceDescriptor);
             GetServerPtr()->audioPolicyService_.GetDevices(deviceFlag);
             audioDeviceDescriptor->networkId_ = REMOTE_NETWORK_ID;
-            GetServerPtr()->audioPolicyService_.audioConnectedDevice_.audioConnectedDevice_.connectedDevices_.push_back(audioDeviceDescriptor);
+            GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(audioDeviceDescriptor);
             GetServerPtr()->audioPolicyService_.GetDevices(deviceFlag);
         }
     }
