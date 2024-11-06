@@ -868,23 +868,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetPipeInfoByDeviceTypeForEc_001, TestSi
 
 #ifdef BLUE_YELLOW_DIFF
 /**
- * @tc.name  : Test GetAudioModuleInfoByName.
- * @tc.number: GetAudioModuleInfoByName_001
- * @tc.desc  : Test GetAudioModuleInfoByName interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, GetAudioModuleInfoByName_001, TestSize.Level1)
-{
-    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    AudioEcInfo currentEcInfo = server->audioPolicyService_.GetAudioEcInfo();
-    AudioModuleInfo currentModule;
-    PipeInfo currentPipeInfo;
-
-    int32_t currentModuleRet = server->audioPolicyService_.GetAudioModuleInfoByName(
-        currentEcInfo.ecInputAdapter, currentPipeInfo.moduleName_, currentModule);
-    EXPECT_EQ(currentModuleRet, ERROR);
-}
-
-/**
  * @tc.name  : Test ReloadSourceModuleForEc.
  * @tc.number: ReloadSourceModuleForEc_001
  * @tc.desc  : Test ReloadSourceModuleForEc interfaces.

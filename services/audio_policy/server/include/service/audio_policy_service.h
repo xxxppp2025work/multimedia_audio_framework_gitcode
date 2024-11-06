@@ -214,11 +214,11 @@ public:
     bool IsDataShareReady();
 
     int32_t ResumeStreamState();
-
+#ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones();
 
     std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype);
-
+#endif
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo);
