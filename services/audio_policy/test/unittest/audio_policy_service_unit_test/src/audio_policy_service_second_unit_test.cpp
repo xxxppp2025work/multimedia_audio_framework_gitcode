@@ -478,47 +478,47 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipRendererFlag_001, TestSize.Level1
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
     int32_t ret;
 
-    server->audioPolicyService_.normalVoipFlag_ = false;
-    server->audioPolicyService_.enableFastVoip_ = false;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    server->audioPolicyService_.audioConfigManager_.normalVoipFlag_ = false;
+    server->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(false);
+    ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 
     networkId = LOCAL_NETWORK_ID;
-    server->audioPolicyService_.normalVoipFlag_ = true;
-    server->audioPolicyService_.enableFastVoip_ = true;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    server->audioPolicyService_.audioConfigManager_.normalVoipFlag_ = true;
+    server->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(true);
+    ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 
     sinkPortName = PRIMARY_SPEAKER;
     networkId = REMOTE_NETWORK_ID;
-    server->audioPolicyService_.enableFastVoip_ = false;
-    server->audioPolicyService_.normalVoipFlag_ = false;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    server->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(false);
+    server->audioPolicyService_.audioConfigManager_.normalVoipFlag_ = false;
+    ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 
     sinkPortName = BLUETOOTH_SPEAKER;
     networkId = REMOTE_NETWORK_ID;
-    server->audioPolicyService_.enableFastVoip_ = false;
-    server->audioPolicyService_.normalVoipFlag_ = false;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    server->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(false);
+    server->audioPolicyService_.audioConfigManager_.normalVoipFlag_ = false;
+    ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 
     sinkPortName = PRIMARY_SPEAKER;
     networkId = LOCAL_NETWORK_ID;
-    server->audioPolicyService_.enableFastVoip_ = true;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    server->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(true);
+    ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 
     sinkPortName = USB_SPEAKER;
     networkId = REMOTE_NETWORK_ID;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 
     sinkPortName = PRIMARY_SPEAKER;
     networkId = LOCAL_NETWORK_ID;
-    server->audioPolicyService_.enableFastVoip_ = false;
-    server->audioPolicyService_.normalVoipFlag_ = false;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    server->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(false);
+    server->audioPolicyService_.audioConfigManager_.normalVoipFlag_ = false;
+    ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_VOIP_DIRECT);
 }
 
@@ -537,37 +537,37 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipRendererFlag_002, TestSize.Level1
 
     sinkPortName = PRIMARY_SPEAKER;
     networkId = LOCAL_NETWORK_ID;
-    server->audioPolicyService_.enableFastVoip_ = true;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    server->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(true);
+    ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_VOIP_FAST);
 
     sinkPortName = USB_SPEAKER;
     networkId = REMOTE_NETWORK_ID;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_VOIP_FAST);
 
     samplingRate = SAMPLE_RATE_48000;
     sinkPortName = PRIMARY_SPEAKER;
     networkId = LOCAL_NETWORK_ID;
-    server->audioPolicyService_.enableFastVoip_ = true;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    server->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(true);
+    ret = server->audioPolicyService_.audioConfigManager_GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_VOIP_FAST);
 
     sinkPortName = USB_SPEAKER;
     networkId = REMOTE_NETWORK_ID;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_VOIP_FAST);
 
     samplingRate = SAMPLE_RATE_44100;
     sinkPortName = PRIMARY_SPEAKER;
     networkId = LOCAL_NETWORK_ID;
-    server->audioPolicyService_.enableFastVoip_ = true;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    server->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(true);
+    ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 
     sinkPortName = USB_SPEAKER;
     networkId = REMOTE_NETWORK_ID;
-    ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
+    ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 
 }
@@ -867,23 +867,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetPipeInfoByDeviceTypeForEc_001, TestSi
 }
 
 #ifdef BLUE_YELLOW_DIFF
-/**
- * @tc.name  : Test GetAudioModuleInfoByName.
- * @tc.number: GetAudioModuleInfoByName_001
- * @tc.desc  : Test GetAudioModuleInfoByName interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, GetAudioModuleInfoByName_001, TestSize.Level1)
-{
-    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    AudioEcInfo currentEcInfo = server->audioPolicyService_.GetAudioEcInfo();
-    AudioModuleInfo currentModule;
-    PipeInfo currentPipeInfo;
-
-    int32_t currentModuleRet = server->audioPolicyService_.GetAudioModuleInfoByName(
-        currentEcInfo.ecInputAdapter, currentPipeInfo.moduleName_, currentModule);
-    EXPECT_EQ(currentModuleRet, ERROR);
-}
-
 /**
  * @tc.name  : Test ReloadSourceModuleForEc.
  * @tc.number: ReloadSourceModuleForEc_001
