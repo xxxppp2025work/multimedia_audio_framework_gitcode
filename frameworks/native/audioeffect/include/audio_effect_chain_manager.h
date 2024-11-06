@@ -133,7 +133,7 @@ public:
     void ResetInfo();  // Use for testing temporarily.
     void UpdateDefaultAudioEffect();
     bool CheckSceneTypeMatch(const std::string &sinkSceneType, const std::string &sceneType);
-    void UpdateParamExtra(const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType);
+    void UpdateParamExtra(const std::string &mainkey, const std::string &subkey, const std::string &value);
     void InitHdiState();
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
     void UpdateSceneTypeList(const std::string &sceneType, SceneTypeOperation operation);
