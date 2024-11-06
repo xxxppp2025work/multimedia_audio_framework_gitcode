@@ -34,7 +34,7 @@ constexpr int32_t DEFAULT_BUFFER_MICROSECOND = 20000000;
 constexpr uint32_t DOUBLE_VALUE = 2;
 constexpr int32_t DEFAULT_RESAMPLE_QUANTITY = 2;
 constexpr int32_t STEREO_CHANNEL_COUNT = 2;
-constexpr int32_t DEFAULT_TOTAL_SPAN_COUNT = 4;
+constexpr int32_t DEFAULT_TOTAL_SPAN_COUNT = 2;
 constexpr int32_t DRAIN_WAIT_TIMEOUT_TIME = 100;
 constexpr int32_t FIRST_FRAME_TIMEOUT_TIME = 500;
 const std::string DUMP_DIRECT_STREAM_FILE = "dump_direct_audio_stream.pcm";
@@ -302,7 +302,7 @@ int32_t ProRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
     return SUCCESS;
 }
 
-int32_t ProRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp)
+int32_t ProRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency)
 {
     int64_t timeSec = 0;
     int64_t timeNsec = 0;
@@ -311,6 +311,7 @@ int32_t ProRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint6
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
     timestamp = static_cast<uint64_t>(tm.tv_sec) * AUDIO_NS_PER_S + static_cast<uint64_t>(tm.tv_nsec);
+    latency = 0;
     return SUCCESS;
 }
 
