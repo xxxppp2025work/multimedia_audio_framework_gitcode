@@ -144,10 +144,6 @@ static const std::string PREDICATES_STRING = "settings.general.device_name";
 static const std::string EARPIECE_TYPE_NAME = "DEVICE_TYPE_EARPIECE";
 static const std::string FLAG_MMAP_STRING = "AUDIO_FLAG_MMAP";
 static const std::string USAGE_VOIP_STRING = "AUDIO_USAGE_VOIP";
-const uint32_t PCM_8_BIT = 8;
-const uint32_t PCM_16_BIT = 16;
-const uint32_t PCM_24_BIT = 24;
-const uint32_t PCM_32_BIT = 32;
 const int32_t DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES = 128;
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 const uint32_t ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS = 10000;
@@ -199,22 +195,6 @@ static string ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat)
     }
 }
 
-static uint32_t GetSampleFormatValue(AudioSampleFormat sampleFormat)
-{
-    switch (sampleFormat) {
-        case SAMPLE_U8:
-            return PCM_8_BIT;
-        case SAMPLE_S16LE:
-            return PCM_16_BIT;
-        case SAMPLE_S24LE:
-            return PCM_24_BIT;
-        case SAMPLE_S32LE:
-            return PCM_32_BIT;
-        default:
-            return PCM_16_BIT;
-    }
-}
-
 static string ParseAudioFormat(string format)
 {
     if (format == "AUDIO_FORMAT_PCM_16_BIT") {
@@ -225,6 +205,25 @@ static string ParseAudioFormat(string format)
         return "s32";
     } else {
         return "";
+    }
+}
+
+static uint32_t PcmFormatToBytes(AudioSampleFormat format)
+{
+    // AudioSampleFormat / PCM_8_BIT
+    switch (format) {
+        case SAMPLE_U8:
+            return 1; // 1 byte
+        case SAMPLE_S16LE:
+            return 2; // 2 byte
+        case SAMPLE_S24LE:
+            return 3; // 3 byte
+        case SAMPLE_S32LE:
+            return 4; // 4 byte
+        case SAMPLE_F32LE:
+            return 4; // 4 byte
+        default:
+            return 2; // 2 byte
     }
 }
 
@@ -286,24 +285,6 @@ static int64_t GetCurrentTimeMS()
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
     return tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
-}
-
-static uint32_t PcmFormatToBits(AudioSampleFormat format)
-{
-    switch (format) {
-        case SAMPLE_U8:
-            return 1; // 1 byte
-        case SAMPLE_S16LE:
-            return 2; // 2 byte
-        case SAMPLE_S24LE:
-            return 3; // 3 byte
-        case SAMPLE_S32LE:
-            return 4; // 4 byte
-        case SAMPLE_F32LE:
-            return 4; // 4 byte
-        default:
-            return 2; // 2 byte
-    }
 }
 
 AudioPolicyService::~AudioPolicyService()
@@ -3108,8 +3089,8 @@ int32_t AudioPolicyService::LoadA2dpModule(DeviceType deviceType)
             AUDIO_DEBUG_LOG("Load a2dp module [%{public}s]", moduleInfo.name.c_str());
             AudioStreamInfo audioStreamInfo = {};
             GetActiveDeviceStreamInfo(deviceType, audioStreamInfo);
-            uint32_t bufferSize = (audioStreamInfo.samplingRate * GetSampleFormatValue(audioStreamInfo.format) *
-                audioStreamInfo.channels) / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
+            uint32_t bufferSize = audioStreamInfo.samplingRate * PcmFormatToBytes(audioStreamInfo.format) *
+                audioStreamInfo.channels / BT_BUFFER_ADJUSTMENT_FACTOR;
             AUDIO_INFO_LOG("a2dp rate: %{public}d, format: %{public}d, channel: %{public}d",
                 audioStreamInfo.samplingRate, audioStreamInfo.format, audioStreamInfo.channels);
             moduleInfo.channels = to_string(audioStreamInfo.channels);
@@ -3148,8 +3129,8 @@ int32_t AudioPolicyService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo)
     // Load a2dp sink module again with the configuration of active a2dp device.
     AudioStreamInfo audioStreamInfo = {};
     GetActiveDeviceStreamInfo(DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo);
-    uint32_t bufferSize = (audioStreamInfo.samplingRate * GetSampleFormatValue(audioStreamInfo.format) *
-        audioStreamInfo.channels) / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
+    uint32_t bufferSize = audioStreamInfo.samplingRate * PcmFormatToBytes(audioStreamInfo.format) *
+        audioStreamInfo.channels / BT_BUFFER_ADJUSTMENT_FACTOR;
     AUDIO_DEBUG_LOG("ReloadA2dpAudioPort: a2dp rate: %{public}d, format: %{public}d, channel: %{public}d",
         audioStreamInfo.samplingRate, audioStreamInfo.format, audioStreamInfo.channels);
     moduleInfo.channels = to_string(audioStreamInfo.channels);
@@ -4277,8 +4258,8 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
 void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, const std::string &macAddress,
     const std::string &deviceName, const AudioStreamInfo &streamInfo)
 {
-    uint32_t bufferSize = (streamInfo.samplingRate * GetSampleFormatValue(streamInfo.format)
-        * streamInfo.channels) / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
+    uint32_t bufferSize = streamInfo.samplingRate * PcmFormatToBytes(streamInfo.format) *
+        streamInfo.channels / BT_BUFFER_ADJUSTMENT_FACTOR;
     AUDIO_DEBUG_LOG("Updated buffer size: %{public}d", bufferSize);
 
     auto a2dpModulesPos = deviceClassInfo_.find(ClassType::TYPE_A2DP);
@@ -4796,8 +4777,8 @@ void AudioPolicyService::LoadSinksForCapturer()
 void AudioPolicyService::LoadInnerCapturerSink(string moduleName, AudioStreamInfo streamInfo)
 {
     AUDIO_INFO_LOG("Start");
-    uint32_t bufferSize = (streamInfo.samplingRate * GetSampleFormatValue(streamInfo.format)
-        * streamInfo.channels) / PCM_8_BIT * RENDER_FRAME_INTERVAL_IN_SECONDS;
+    uint32_t bufferSize = streamInfo.samplingRate * PcmFormatToBytes(streamInfo.format) *
+        streamInfo.channels * RENDER_FRAME_INTERVAL_IN_SECONDS;
 
     AudioModuleInfo moduleInfo = {};
     moduleInfo.lib = "libmodule-inner-capturer-sink.z.so";
@@ -7273,7 +7254,7 @@ void AudioPolicyService::RectifyModuleInfo(AudioModuleInfo &moduleInfo, std::lis
             CHECK_AND_CONTINUE_LOG(adapterModuleInfo.supportedChannels_.count(targetChannels) > 0, "channels unmatch.");
             moduleInfo.rate = std::to_string(targetRate);
             moduleInfo.channels = std::to_string(targetChannels);
-            uint32_t sampleFormatBits = PcmFormatToBits(static_cast<AudioSampleFormat>(
+            uint32_t sampleFormatBits = PcmFormatToBytes(static_cast<AudioSampleFormat>(
                 formatFromParserStrToEnum[moduleInfo.format]));
             uint32_t bufferSize = (targetRate * targetChannels * sampleFormatBits / BUFFER_CALC_1000MS)
                 * BUFFER_CALC_20MS;
@@ -8885,7 +8866,12 @@ void AudioPolicyService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
 int32_t AudioPolicyService::SetPreferredDevice(const PreferredType preferredType,
     const sptr<AudioDeviceDescriptor> &desc)
 {
+    if (desc == nullptr) {
+        AUDIO_ERR_LOG("desc is null");
+        return ERR_INVALID_PARAM;
+    }
     int32_t ret = SUCCESS;
+    AUDIO_INFO_LOG("preferredType:%{public}d, deviceType:%{public}d", preferredType, desc->deviceType_);
     switch (preferredType) {
         case AUDIO_MEDIA_RENDER:
             audioStateManager_.SetPreferredMediaRenderDevice(desc);
@@ -8909,7 +8895,7 @@ int32_t AudioPolicyService::SetPreferredDevice(const PreferredType preferredType
             ret = ERR_INVALID_PARAM;
             break;
     }
-    if (desc == nullptr || desc->deviceType_ == DEVICE_TYPE_NONE) {
+    if (desc->deviceType_ == DEVICE_TYPE_NONE) {
         ErasePreferredDeviceByType(preferredType);
     }
     if (ret != SUCCESS) {
