@@ -827,35 +827,51 @@ int32_t AudioEffectChainManager::SetSpatializationSceneType(AudioSpatializationS
     return SUCCESS;
 }
 
+void AudioEffectChainManager::SendAudioParamToHDI(HdiSetParamCommandCode code, const std::string &value, DeviceType device)
+{
+    int32_t ret{ SUCCESS };
+    effectHdiInput_[0] = code;
+    effectHdiInput_[1] = static_cast<int8_t>(std::stoi(value));
+    ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, device);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("set hdi parameter failed for code %{public}d and value %{public}s", code, value.c_str());
+    }
+}
 
-void AudioEffectChainManager::UpdateExtraSceneType(const std::string &mainkey, const std::string &subkey,
-    const std::string &extraSceneType)
+void AudioEffectChainManager::SendAudioParamToARM(HdiSetParamCommandCode code, const std::string &value)
+{
+    for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
+        auto audioEffectChain = it->second;
+        if (audioEffectChain == nullptr) {
+            continue;
+        }
+        if (code == HDI_EXTRA_SCENE_TYPE) {
+            audioEffectChain->SetExtraSceneType(value);
+        } else if (code == HDI_FOLD_TYPE) {
+            audioEffectChain->SetFoldState(value);
+        }
+
+        if (audioEffectChain->UpdateEffectParam() != SUCCESS) {
+            AUDIO_WARNING_LOG("Update scene type to effect chain failed");
+    }
+}
+
+void AudioEffectChainManager::UpdateParamExtra(const std::string &mainkey, const std::string &subkey,
+    const std::string &value)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     if (mainkey == "audio_effect" && subkey == "update_audio_effect_type") {
-        AUDIO_INFO_LOG("Set scene type: %{public}s to hdi", extraSceneType.c_str());
-        int32_t ret{ SUCCESS };
-        effectHdiInput_[0] = HDI_EXTRA_SCENE_TYPE;
-        effectHdiInput_[1] = static_cast<int32_t>(std::stoi(extraSceneType));
-        ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_SPEAKER);
-        if (ret != SUCCESS) {
-            AUDIO_WARNING_LOG("set hdi update rss scene type failed");
-        }
-        AUDIO_INFO_LOG("Set scene type: %{public}s to arm", extraSceneType.c_str());
-        extraSceneType_ = extraSceneType;
-        for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
-            auto audioEffectChain = it->second;
-            if (audioEffectChain == nullptr) {
-                continue;
-            }
-            audioEffectChain->SetExtraSceneType(extraSceneType);
-            if (audioEffectChain->UpdateEffectParam() != SUCCESS) {
-                AUDIO_WARNING_LOG("Update scene type to effect chain failed");
-                continue;
-            }
-        }
+        AUDIO_INFO_LOG("Set scene type: %{public}s to hdi and arm", value.c_str());
+        extraSceneType_ = value;
+        SendAudioParamToHDI(HDI_EXTRA_SCENE_TYPE, value, DEVICE_TYPE_SPEAKER);
+        SendAudioParamToARM(HDI_EXTRA_SCENE_TYPE, value);
+    } else if (mainkey == "device_status" && subkey == "fold_state") {
+        AUDIO_INFO_LOG("Set scene type: %{public}s to hdi and arm", value.c_str());
+        foldState_ = value;
+        SendAudioParamToHDI(HDI_FOLD_TYPE, value, DEVICE_TYPE_SPEAKER);
+        SendAudioParamToARM(HDI_FOLD_TYPE, value);
     } else {
-        AUDIO_INFO_LOG("UpdateExtraSceneType failed, mainkey is %{public}s, subkey is %{public}s, "
+        AUDIO_INFO_LOG("UpdateParamExtra failed, mainkey is %{public}s, subkey is %{public}s, "
             "extraSceneType is %{public}s", mainkey.c_str(), subkey.c_str(), extraSceneType.c_str());
         return;
     }
