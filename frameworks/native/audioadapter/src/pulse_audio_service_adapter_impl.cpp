@@ -583,6 +583,10 @@ vector<SinkInput> PulseAudioServiceAdapterImpl::GetAllSinkInputs()
 
 vector<SourceOutput> PulseAudioServiceAdapterImpl::GetAllSourceOutputs()
 {
+    AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::GetAllSourceOutputs", PA_SERVICE_IMPL_TIMEOUT,
+            [](void *) {
+                AUDIO_ERR_LOG("GetAllSourceOutputs timeout");
+            }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     Trace trace("PulseAudioServiceAdapterImpl::GetAllSourceOutputs");
 
@@ -603,10 +607,6 @@ vector<SourceOutput> PulseAudioServiceAdapterImpl::GetAllSourceOutputs()
     }
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-        AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::GetAllSourceOutputs", PA_SERVICE_IMPL_TIMEOUT,
-            [](void *) {
-                AUDIO_ERR_LOG("GetAllSourceOutputs timeout");
-            }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
         pa_threaded_mainloop_wait(mMainLoop);
     }
 
