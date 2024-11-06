@@ -866,7 +866,7 @@ void AudioEffectChainManager::UpdateParamExtra(const std::string &mainkey, const
         SendAudioParamToHDI(HDI_EXTRA_SCENE_TYPE, value, DEVICE_TYPE_SPEAKER);
         SendAudioParamToARM(HDI_EXTRA_SCENE_TYPE, value);
     } else if (mainkey == "device_status" && subkey == "fold_state") {
-        AUDIO_INFO_LOG("Set scene type: %{public}s to hdi and arm", value.c_str());
+        AUDIO_INFO_LOG("Set fold state: %{public}s to hdi and arm", value.c_str());
         foldState_ = value;
         SendAudioParamToHDI(HDI_FOLD_TYPE, value, DEVICE_TYPE_SPEAKER);
         SendAudioParamToARM(HDI_FOLD_TYPE, value);
