@@ -1,5 +1,19 @@
-#ifndef ST_AUDIO_POLICY_COMMON_H
-#define ST_AUDIO_POLICY_COMMON_H
+/*
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#ifndef ST_AUDIO_POLICY_UTILS_H
+#define ST_AUDIO_POLICY_UTILS_H
 
 #include <bitset>
 #include <list>
@@ -20,63 +34,18 @@
 namespace OHOS {
 namespace AudioStandard {
 
-using InternalDeviceType = DeviceType;
-
-class AudioPolicyCommon {
+class AudioPolicyUtils {
 public:
-    static AudioPolicyCommon& GetInstance()
+    static AudioPolicyUtils& GetInstance()
     {
-        static AudioPolicyCommon instance;
+        static AudioPolicyUtils instance;
         return instance;
     }
-    int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
-    void RegisterNameMonitorHelper();
-    bool IsDataShareReady();
-
-    bool IsWiredHeadSet(const DeviceType &deviceType);
-    DeviceRole GetDeviceRole(DeviceType deviceType) const;
-    DeviceRole GetDeviceRole(const std::string &role);
-    DeviceRole GetDeviceRole(AudioPin pin) const;
-    std::string ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat);
-    uint32_t GetSampleFormatValue(AudioSampleFormat sampleFormat);
-    std::string ParseAudioFormat(std::string format);
-    int64_t GetCurrentTimeMS();
-    uint32_t PcmFormatToBits(AudioSampleFormat format);
-    std::string GetPipeNameByDeviceForEc(const std::string &role, const DeviceType deviceType);
-    void GetTargetSourceTypeAndMatchingFlag(SourceType source, bool isEcFeatureEnable,
-        SourceType &targetSource, bool &useMatchingPropInfo);
-    DeviceType GetDeviceTypeFromPin(AudioPin pin);
-    std::string GetSourcePortName(InternalDeviceType deviceType);
-    bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote);
-    void GetUsbModuleInfo(std::string deviceInfo, AudioModuleInfo &moduleInfo);
-    void GetDPModuleInfo(AudioModuleInfo &moduleInfo, std::string deviceInfo);
-    std::string GetRemoteModuleName(std::string networkId, DeviceRole role);
-    EcType GetEcType(const DeviceType inputDevice, const DeviceType outputDevice);
-    InternalDeviceType GetDeviceType(const std::string &deviceName);
     void WriteServiceStartupError(std::string reason);
-    std::string GetEncryptAddr(const std::string &addr);
-    AdaptersType GetAdapterType(std::string sinkPortName);
-    std::string GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType = PIPE_TYPE_UNKNOWN);
-    int32_t SetPreferredDevice(const PreferredType preferredType, const sptr<AudioDeviceDescriptor> &desc);
-    void SetBtConnecting(bool flag);
-    void ClearScoDeviceSuspendState(std::string macAddress = "");
-    void UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor);
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> GetAvailableDevicesInner(AudioDeviceUsage usage);
-    void UpdateDescWhenNoBTPermission(std::vector<sptr<AudioDeviceDescriptor>> &deviceDescs);
-    AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId, DeviceRole deviceRole,
-        DeviceType deviceType);
-    std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByUsageInner(AudioDeviceUsage usage,
-        const std::vector<sptr<AudioDeviceDescriptor>>& descs);
-public:
-    static int32_t startDeviceId;
+    std::string GetRemoteModuleName(std::string networkId, DeviceRole role);
 private:
-    std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelperInstance();
-    int32_t ErasePreferredDeviceByType(const PreferredType preferredType);
-private:
-    AudioPolicyCommon() {}
-    ~AudioPolicyCommon() {}
-private:
-    bool isBTReconnecting_ = true;
+    AudioPolicyUtils() {}
+    ~AudioPolicyUtils() {}
 };
 
 }

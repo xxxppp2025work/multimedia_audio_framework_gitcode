@@ -1,9 +1,22 @@
-
+/*
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #ifndef LOG_TAG
-#define LOG_TAG "AudioPolicyConnectedDevice"
+#define LOG_TAG "AudioConnectedDevice"
 #endif
 
-#include "audio_policy_connected_device.h"
+#include "audio_connected_device.h"
 #include <ability_manager_client.h>
 #include "iservice_registry.h"
 #include "parameter.h"
@@ -16,12 +29,12 @@
 #include "media_monitor_manager.h"
 
 
-#include "audio_policy_common.h"
+#include "audio_policy_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-bool AudioPolicyConnectedDevice::IsConnectedOutputDevice(const sptr<AudioDeviceDescriptor> &desc)
+bool AudioConnectedDevice::IsConnectedOutputDevice(const sptr<AudioDeviceDescriptor> &desc)
 {
     DeviceType deviceType = desc->deviceType_;
 
@@ -42,7 +55,7 @@ bool AudioPolicyConnectedDevice::IsConnectedOutputDevice(const sptr<AudioDeviceD
     return true;
 }
 
-sptr<AudioDeviceDescriptor> AudioPolicyConnectedDevice::CheckExistOutputDevice(DeviceType activeDevice, std::string macAddress)
+sptr<AudioDeviceDescriptor> AudioConnectedDevice::CheckExistOutputDevice(DeviceType activeDevice, std::string macAddress)
 {
     auto isOutputDevicePresent = [&activeDevice, &macAddress] (const sptr<AudioDeviceDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
@@ -63,7 +76,7 @@ sptr<AudioDeviceDescriptor> AudioPolicyConnectedDevice::CheckExistOutputDevice(D
     return nullptr;
 }
 
-sptr<AudioDeviceDescriptor> AudioPolicyConnectedDevice::CheckExistInputDevice(DeviceType activeDevice)
+sptr<AudioDeviceDescriptor> AudioConnectedDevice::CheckExistInputDevice(DeviceType activeDevice)
 {
     auto isInputDevicePresent = [&activeDevice] (const sptr<AudioDeviceDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
@@ -77,7 +90,7 @@ sptr<AudioDeviceDescriptor> AudioPolicyConnectedDevice::CheckExistInputDevice(De
     return nullptr;
 }
 
-sptr<AudioDeviceDescriptor> AudioPolicyConnectedDevice::GetConnectedDeviceByType(int32_t deviceType)
+sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(int32_t deviceType)
 {
     auto isPresent = [&deviceType] (const sptr<AudioDeviceDescriptor> &desc) {
         if (deviceType == desc->deviceType_) {
@@ -92,7 +105,7 @@ sptr<AudioDeviceDescriptor> AudioPolicyConnectedDevice::GetConnectedDeviceByType
     return nullptr;
 }
 
-sptr<AudioDeviceDescriptor> AudioPolicyConnectedDevice::GetConnectedDeviceByType(std::string networkId, int32_t deviceType)
+sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::string networkId, int32_t deviceType)
 {
     auto isPresent = [&networkId, &deviceType] (const sptr<AudioDeviceDescriptor> &desc) {
         if (deviceType == desc->deviceType_ && networkId == desc->networkId_) {
@@ -107,7 +120,7 @@ sptr<AudioDeviceDescriptor> AudioPolicyConnectedDevice::GetConnectedDeviceByType
     return nullptr;
 }
 
-sptr<AudioDeviceDescriptor> AudioPolicyConnectedDevice::GetConnectedDeviceByType(std::string networkId, int32_t deviceType, std::string macAddress)
+sptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(std::string networkId, int32_t deviceType, std::string macAddress)
 {
     auto isPresent = [&networkId, &deviceType, &macAddress] (const sptr<AudioDeviceDescriptor> &desc) {
         if (deviceType == desc->deviceType_ && networkId == desc->networkId_ && macAddress == desc->macAddress_) {
@@ -122,7 +135,7 @@ sptr<AudioDeviceDescriptor> AudioPolicyConnectedDevice::GetConnectedDeviceByType
     return nullptr;
 }
 
-void AudioPolicyConnectedDevice::DelConnectedDevice(std::string networkId, int32_t deviceType, std::string macAddress)
+void AudioConnectedDevice::DelConnectedDevice(std::string networkId, int32_t deviceType, std::string macAddress)
 {
     auto isPresent = [&deviceType, &networkId, &macAddress] (const sptr<AudioDeviceDescriptor> &descriptor) {
         return descriptor->deviceType_ == deviceType && descriptor->networkId_ == networkId && descriptor->macAddress_ == macAddress;
@@ -133,7 +146,7 @@ void AudioPolicyConnectedDevice::DelConnectedDevice(std::string networkId, int32
     return;
 }
 
-void AudioPolicyConnectedDevice::DelConnectedDevice(std::string networkId, int32_t deviceType)
+void AudioConnectedDevice::DelConnectedDevice(std::string networkId, int32_t deviceType)
 {
     auto isPresent = [&deviceType, &networkId] (const sptr<AudioDeviceDescriptor> &descriptor) {
         return descriptor->deviceType_ == deviceType && descriptor->networkId_ == networkId;
@@ -144,23 +157,23 @@ void AudioPolicyConnectedDevice::DelConnectedDevice(std::string networkId, int32
     return;
 }
 
-void AudioPolicyConnectedDevice::AddConnectedDevice(sptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
+void AudioConnectedDevice::AddConnectedDevice(sptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
 {
     connectedDevices_.insert(connectedDevices_.begin(), remoteDeviceDescriptor);
     return;
 }
 
-bool AudioPolicyConnectedDevice::CheckDeviceConnected(std::string selectedDevice)
+bool AudioConnectedDevice::CheckDeviceConnected(std::string selectedDevice)
 {
     for (auto device : connectedDevices_) {
-        if (AudioPolicyCommon::GetInstance().GetRemoteModuleName(device->networkId_, device->deviceRole_) == selectedDevice) {
+        if (AudioPolicyUtils::GetInstance().GetRemoteModuleName(device->networkId_, device->deviceRole_) == selectedDevice) {
             return true;
         }
     }
     return false;
 }
 
-void AudioPolicyConnectedDevice::SetDisplayName(const std::string &deviceName, bool isLocalDevice)
+void AudioConnectedDevice::SetDisplayName(const std::string &deviceName, bool isLocalDevice)
 {
     for (const auto& deviceInfo : connectedDevices_) {
         if ((isLocalDevice && deviceInfo->networkId_ == LOCAL_NETWORK_ID) ||
@@ -170,7 +183,7 @@ void AudioPolicyConnectedDevice::SetDisplayName(const std::string &deviceName, b
     }
 }
 
-void AudioPolicyConnectedDevice::SetDisplayName(const std::string macAddress, const std::string deviceName)
+void AudioConnectedDevice::SetDisplayName(const std::string macAddress, const std::string deviceName)
 {
     for (auto device : connectedDevices_) {
         if (device->macAddress_ == macAddress) {
@@ -182,21 +195,21 @@ void AudioPolicyConnectedDevice::SetDisplayName(const std::string macAddress, co
     }
 }
 
-void AudioPolicyConnectedDevice::UpdateConnectDevice(DeviceType deviceType, const std::string &macAddress,
+void AudioConnectedDevice::UpdateConnectDevice(DeviceType deviceType, const std::string &macAddress,
     const std::string &deviceName, const AudioStreamInfo &streamInfo)
 {
-    auto isPresent = [&macAddress] (const sptr<AudioDeviceDescriptor> &descriptor) {
-        return descriptor->macAddress_ == macAddress;
+    auto isPresent = [&deviceType, &macAddress] (const sptr<AudioDeviceDescriptor> &descriptor) {
+        return descriptor->macAddress_ == macAddress && descriptor->deviceType_ == deviceType;
     };
 
-    sptr<AudioDeviceDescriptor> audioDescriptor
-        = new(std::nothrow) AudioDeviceDescriptor(deviceType, OUTPUT_DEVICE);
-    audioDescriptor->SetDeviceInfo(deviceName, macAddress);
-    audioDescriptor->SetDeviceCapability(streamInfo, 0);
-    std::replace_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent, audioDescriptor);
+    auto it = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+    if (it != connectedDevices_.end()) {
+        (*it)->deviceName_ = deviceName;
+        (*it)->audioStreamInfo_ = streamInfo;
+    }
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyConnectedDevice::GetDevicesInner(DeviceFlag deviceFlag)
+std::vector<sptr<AudioDeviceDescriptor>> AudioConnectedDevice::GetDevicesInner(DeviceFlag deviceFlag)
 {
     std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
 
@@ -238,7 +251,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyConnectedDevice::GetDevicesI
     return deviceList;
 }
 
-DeviceType AudioPolicyConnectedDevice::FindConnectedHeadset()
+DeviceType AudioConnectedDevice::FindConnectedHeadset()
 {
     DeviceType retType = DEVICE_TYPE_NONE;
     for (const auto& devDesc: connectedDevices_) {
@@ -254,12 +267,12 @@ DeviceType AudioPolicyConnectedDevice::FindConnectedHeadset()
     return retType;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyConnectedDevice::GetCopy()
+std::vector<sptr<AudioDeviceDescriptor>> AudioConnectedDevice::GetCopy()
 {
     return connectedDevices_;
 }
 
-std::vector<sptr<OHOS::AudioStandard::AudioDeviceDescriptor>> AudioPolicyConnectedDevice::GetDevicesForGroup(GroupType type,
+std::vector<sptr<OHOS::AudioStandard::AudioDeviceDescriptor>> AudioConnectedDevice::GetDevicesForGroup(GroupType type,
     int32_t groupId)
 {
     std::vector<sptr<OHOS::AudioStandard::AudioDeviceDescriptor>> devices = {};

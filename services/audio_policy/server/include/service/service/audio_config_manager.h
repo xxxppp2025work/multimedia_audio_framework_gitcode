@@ -1,5 +1,19 @@
-#ifndef ST_AUDIO_POLICY_CONFIG_MANAGER_H
-#define ST_AUDIO_POLICY_CONFIG_MANAGER_H
+/*
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#ifndef ST_AUDIO_CONFIG_MANAGER_H
+#define ST_AUDIO_CONFIG_MANAGER_H
 
 #include <bitset>
 #include <list>
@@ -17,15 +31,16 @@
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_policy_parser_factory.h"
+#include "audio_device_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioPolicyConfigManager : public IPortObserver {
+class AudioConfigManager : public IPortObserver {
 public:
-    static AudioPolicyConfigManager& GetInstance()
+    static AudioConfigManager& GetInstance()
     {
-        static AudioPolicyConfigManager instance;
+        static AudioConfigManager instance;
         return instance;
     }
     bool Init();
@@ -36,6 +51,8 @@ public:
     void OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmldata);
 
     void OnUpdateRouteSupport(bool isSupported);
+
+    void OnUpdateAnahsSupport(std::string anahsShowType);
 
     void OnAudioLatencyParsed(uint64_t latency);
 
@@ -49,6 +66,8 @@ public:
 
     void OnVoipConfigParsed(bool enableFastVoip);
 
+    // other
+
     bool GetModuleListByType(ClassType type, std::list<AudioModuleInfo>& moduleList);
 
     void GetDeviceClassInfo(std::unordered_map<ClassType, std::list<AudioModuleInfo>> &deviceClassInfo);
@@ -58,8 +77,8 @@ public:
     int32_t GetMaxRendererInstances();
     void SetNormalVoipFlag(const bool &normalVoipFlag);
 
-    int32_t GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId);
-    void GetGlobalConfigs(GlobalConfigs &globalConfigs);
+    int32_t GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
+        const AudioSamplingRate &samplingRate);
 
     bool GetVoipConfig();
 
@@ -80,11 +99,15 @@ public:
     bool GetAdapterInfoByType(AdaptersType type, AudioAdapterInfo &info);
 
     bool GetHasEarpiece();
+
+    void GetGlobalConfigs(GlobalConfigs &globalConfigs);
 private:
-    AudioPolicyConfigManager() : audioPolicyConfigParser_(AudioPolicyParserFactory::GetInstance().CreateParser(*this))
+    AudioConfigManager()
+    :audioPolicyConfigParser_(AudioPolicyParserFactory::GetInstance().CreateParser(*this)),
+    audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager())
     {
     }
-    ~AudioPolicyConfigManager()
+    ~AudioConfigManager()
     {
     }
 private:
@@ -104,6 +127,7 @@ private:
     bool normalVoipFlag_ = false;
 
     std::atomic<bool> isAdapterInfoMap_ = false;
+    AudioDeviceManager &audioDeviceManager_;
 };
 
 }

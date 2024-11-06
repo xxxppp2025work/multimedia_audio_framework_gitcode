@@ -149,7 +149,7 @@ void InitGetServerService(const uint8_t *rawData, size_t size, DeviceRole device
 
     AudioModuleInfo audioModuleInfo = GetServerPtr()->
         audioPolicyService_.ConstructRemoteAudioModuleInfo(LOCAL_NETWORK_ID, deviceRole, DEVICE_TYPE_BLUETOOTH_A2DP);
-    GetServerPtr()->audioPolicyService_.deviceClassInfo_.insert({ClassType::TYPE_A2DP, {audioModuleInfo}});
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.deviceClassInfo_.insert({ClassType::TYPE_A2DP, {audioModuleInfo}});
 
     AudioIOHandle ioHandle = GetServerPtr()->audioPolicyService_.audioPolicyManager_.OpenAudioPort(audioModuleInfo);
 
@@ -158,7 +158,7 @@ void InitGetServerService(const uint8_t *rawData, size_t size, DeviceRole device
 
 void ThreadFunctionTest()
 {
-    GetServerPtr()->audioPolicyService_.isAdapterInfoMap_.store(true);
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.isAdapterInfoMap_.store(true);
 }
 
 void AudioPolicyServiceSecondTest(const uint8_t* rawData, size_t size, AudioStreamInfo audioStreamInfo,
@@ -171,8 +171,8 @@ void AudioPolicyServiceSecondTest(const uint8_t* rawData, size_t size, AudioStre
     GetServerPtr()->audioPolicyService_.LoadSinksForCapturer();
     GetServerPtr()->audioPolicyService_.HandleRemoteCastDevice(true, audioStreamInfo);
     GetServerPtr()->audioPolicyService_.HandleRemoteCastDevice(false, audioStreamInfo);
-    GetServerPtr()->audioPolicyService_.OnVoipConfigParsed(false);
-    GetServerPtr()->audioPolicyService_.GetVoipConfig();
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(false);
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.GetVoipConfig();
     pid_t clientPid = *reinterpret_cast<const pid_t*>(rawData);
     GetServerPtr()->audioPolicyService_.ReduceAudioPolicyClientProxyMap(clientPid);
     AudioStreamChangeInfo streamChangeInfo;
@@ -225,8 +225,8 @@ void AudioPolicyServiceThirdTest(const uint8_t* rawData, size_t size)
     pipeInfo.streamPropInfos_.push_back(streamPropInfo);
     pipeInfos_.push_back(pipeInfo);
     adapterInfo.pipeInfos_ = pipeInfos_;
-    GetServerPtr()->audioPolicyService_.adapterInfoMap_ = {};
-    GetServerPtr()->audioPolicyService_.adapterInfoMap_.
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.adapterInfoMap_ = {};
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.adapterInfoMap_.
         insert({AdaptersType::TYPE_PRIMARY, adapterInfo});
     GetServerPtr()->audioPolicyService_.SetWakeUpAudioCapturerFromAudioServer(config);
 
@@ -265,7 +265,7 @@ void MakeAdapterInfoMap()
     pipeInfo.streamPropInfos_.push_back(streamPropInfo);
     pipeInfos_.push_back(pipeInfo);
     adapterInfo.pipeInfos_ = pipeInfos_;
-    GetServerPtr()->audioPolicyService_.adapterInfoMap_.
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.adapterInfoMap_.
         insert({AdaptersType::TYPE_PRIMARY, adapterInfo});
 }
 

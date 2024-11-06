@@ -409,7 +409,7 @@ void AudioPolicyServiceEnhanceSevenFuzzTest(const uint8_t *rawData, size_t size)
     descUpdated.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     descUpdated.connectState_ = DEACTIVE_CONNECTED;
     GetServerPtr()->audioPolicyService_.OnDeviceInfoUpdated(desc, ENABLE_UPDATE);
-    GetServerPtr()->audioPolicyService_.WriteServiceStartupError("Audio Tone Load Configuration failed");
+    AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Tone Load Configuration failed");
 
     uint32_t sessionID = *reinterpret_cast<const uint32_t*>(rawData);
     MessageParcel data;
@@ -499,21 +499,21 @@ void AudioPolicyServiceEnhanceNineFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->audioPolicyService_.HandleDistributedDeviceUpdate(statusInfo, descForCb);
     GetServerPtr()->audioPolicyService_.LoadSinksForCapturer();
     GetServerPtr()->audioPolicyService_.GetEffectManagerInfo();
-    GetServerPtr()->audioPolicyService_.OnVoipConfigParsed(true);
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(true);
 
     std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap;
-    GetServerPtr()->audioPolicyService_.GetAudioAdapterInfos(adapterInfoMap);
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.GetAudioAdapterInfos(adapterInfoMap);
 
     std::unordered_map<std::string, std::string> volumeGroupData;
-    GetServerPtr()->audioPolicyService_.GetVolumeGroupData(volumeGroupData);
-    GetServerPtr()->audioPolicyService_.GetInterruptGroupData(volumeGroupData);
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.GetVolumeGroupData(volumeGroupData);
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.GetInterruptGroupData(volumeGroupData);
 
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo;
-    GetServerPtr()->audioPolicyService_.GetDeviceClassInfo(deviceClassInfo);
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.GetDeviceClassInfo(deviceClassInfo);
 
     GlobalConfigs globalConfigs;
-    GetServerPtr()->audioPolicyService_.GetGlobalConfigs(globalConfigs);
-    GetServerPtr()->audioPolicyService_.GetVoipConfig();
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.GetGlobalConfigs(globalConfigs);
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.GetVoipConfig();
 
     int32_t clientId = *reinterpret_cast<const int32_t*>(rawData);
     MessageParcel data;

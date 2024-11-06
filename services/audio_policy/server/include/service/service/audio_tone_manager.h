@@ -1,5 +1,19 @@
-#ifndef ST_AUDIO_POLICY_TONE_MANAGER_H
-#define ST_AUDIO_POLICY_TONE_MANAGER_H
+/*
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#ifndef ST_AUDIO_TONE_MANAGER_H
+#define ST_AUDIO_TONE_MANAGER_H
 
 #include <bitset>
 #include <list>
@@ -21,19 +35,19 @@
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioPolicyToneManager {
+class AudioToneManager {
 public:
-    static AudioPolicyToneManager& GetInstance()
+    static AudioToneManager& GetInstance()
     {
-        static AudioPolicyToneManager instance;
+        static AudioToneManager instance;
         return instance;
     }
     bool LoadToneDtmfConfig();
     std::vector<int32_t> GetSupportedTones();
     std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype);
 private:
-    AudioPolicyToneManager() {}
-    ~AudioPolicyToneManager() {}
+    AudioToneManager() {}
+    ~AudioToneManager() {}
 private:
     std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneDescriptorMap_;
 };
