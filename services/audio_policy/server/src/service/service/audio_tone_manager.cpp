@@ -34,9 +34,9 @@
 namespace OHOS {
 namespace AudioStandard {
 
+#ifdef FEATURE_DTMF_TONE
 bool AudioToneManager::LoadToneDtmfConfig()
 {
-#ifdef FEATURE_DTMF_TONE
     AUDIO_INFO_LOG("Enter");
     std::unique_ptr<AudioToneParser> audioToneParser = std::make_unique<AudioToneParser>();
     if (audioToneParser == nullptr) {
@@ -56,33 +56,28 @@ bool AudioToneManager::LoadToneDtmfConfig()
         return false;
     }
     AUDIO_INFO_LOG("Done");
-#endif
     return true;
 }
 
 std::vector<int32_t> AudioToneManager::GetSupportedTones()
 {
     std::vector<int> supportedToneList = {};
-#ifdef FEATURE_DTMF_TONE
     for (auto i = toneDescriptorMap_.begin(); i != toneDescriptorMap_.end(); i++) {
         supportedToneList.push_back(i->first);
     }
-#endif
     return supportedToneList;
 }
 
 std::shared_ptr<ToneInfo> AudioToneManager::GetToneConfig(int32_t ltonetype)
 {
-#ifdef FEATURE_DTMF_TONE
     if (toneDescriptorMap_.find(ltonetype) != toneDescriptorMap_.end()) {
         AUDIO_DEBUG_LOG("AudioPolicyService GetToneConfig %{public}d", ltonetype);
         return toneDescriptorMap_[ltonetype];
     }
     AUDIO_DEBUG_LOG("AudioPolicyService GetToneConfig %{public}d", ltonetype);
-#endif
     return nullptr;
 }
-
+#endif
 
 }
 }

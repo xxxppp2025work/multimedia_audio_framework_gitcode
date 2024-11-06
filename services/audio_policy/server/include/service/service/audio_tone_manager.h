@@ -42,14 +42,18 @@ public:
         static AudioToneManager instance;
         return instance;
     }
+#ifdef FEATURE_DTMF_TONE
     bool LoadToneDtmfConfig();
     std::vector<int32_t> GetSupportedTones();
     std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype);
+#endif
 private:
     AudioToneManager() {}
     ~AudioToneManager() {}
 private:
+#ifdef FEATURE_DTMF_TONE
     std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneDescriptorMap_;
+#endif
 };
 
 }

@@ -4383,7 +4383,7 @@ void AudioPolicyService::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  b
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
     }
 }
-
+#ifdef FEATURE_DTMF_TONE
 std::vector<int32_t> AudioPolicyService::GetSupportedTones()
 {
     return audioToneManager_.GetSupportedTones();
@@ -4393,7 +4393,7 @@ std::shared_ptr<ToneInfo> AudioPolicyService::GetToneConfig(int32_t ltonetype)
 {
     return audioToneManager_.GetToneConfig(ltonetype);
 }
-
+#endif
 void AudioPolicyService::UpdateA2dpOffloadFlagBySpatialService(
     const std::string& macAddress, std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnableMap)
 {
