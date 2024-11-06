@@ -260,7 +260,7 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
         sceneType_.c_str(), effectMode_.c_str(), effectName.c_str());
 
     Swap(ioBufferConfig_.inputCfg, ioBufferConfig_.outputCfg); // pass outputCfg to next algo as inputCfg
-
+    UpdateOutputConfig(ioBufferConfig_.inputCfg);
     standByEffectHandles_.emplace_back(handle);
     effectNames_.emplace_back(effectName);
     libHandles_.emplace_back(libHandle);
@@ -331,6 +331,18 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
 
     DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(bufOut), outTotlen);
     DumpEffectProcessData(dumpNameOut_, static_cast<void *>(bufOut), outTotlen);
+}
+
+void UpdateBufferConfig(uint32_t *channels, uint64_t *channelLayout)
+{
+    *channels = channels_;
+    *channelLayout = channelLayout_;
+}
+
+void UpdateOutputConfig(AudioBufferConfig &outputCfg)
+{
+    channels_ = outputCfg.channels;
+    channelLayout_ = outputCfg.channelLayout;
 }
 
 bool AudioEffectChain::IsEmptyEffectHandles()
@@ -467,6 +479,7 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
         }
         preHandle = handle;
     }
+    UpdateOutputConfig(ioBufferConfig_.inputCfg);
     ioBufferConfig_.outputCfg.channels = DEFAULT_NUM_CHANNEL;
     ioBufferConfig_.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
     if (preHandle == nullptr) {
