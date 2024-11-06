@@ -153,12 +153,33 @@ config("audio_sasdk_public_config") {
   }
 }
 
+ohos_static_library("audio_device_descriptor") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+  }
+
+  sources = [ "client/src/audio_device_descriptor.cpp" ]
+
+  include_dirs = [ "../../interfaces/inner_api/native/audiocommon/include" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+  ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}
+
 ohos_shared_library("audio_client") {
   branch_protector_ret = "pac_ret"
   install_enable = true
   sources = [
     "client/src/audio_anahs_manager.cpp",
-    "client/src/audio_device_descriptor.cpp",
     "client/src/audio_filter.cpp",
     "client/src/audio_group_manager.cpp",
     "client/src/audio_manager_listener_stub.cpp",
@@ -188,6 +209,7 @@ ohos_shared_library("audio_client") {
 
   deps = [
     ":audio_common",
+    ":audio_device_descriptor",
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_policy_client",
   ]
