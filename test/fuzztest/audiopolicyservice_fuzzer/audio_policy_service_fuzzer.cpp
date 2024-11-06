@@ -263,7 +263,6 @@ void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
         fuzzAudioRendererFilter, fuzzAudioDeviceDescriptorSptr);
     GetServerPtr()->audioPolicyService_.FilterSinkInputs(fuzzInt32One);
     GetServerPtr()->audioPolicyService_.FilterSourceOutputs(fuzzInt32One);
-    GetServerPtr()->audioPolicyService_.RememberRoutingInfo(fuzzAudioRendererFilter, fuzzAudioDeviceDescriptorSptr);
     GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(fuzzAudioDeviceDescriptor, fuzzBool);
 }
 
