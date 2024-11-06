@@ -13,7 +13,14 @@
 
 import("//build/config/features.gni")
 import("//build/test.gni")
+import("../../../audio_framework_test_sources.gni")
 import("../../../config.gni")
+
+audio_service_sources = []
+cur_path = "../../../"
+foreach(source, audio_service_sources_template) {
+  audio_service_sources += [ "$cur_path$source" ]
+}
 
 ohos_fuzztest("AudioServerFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -34,6 +41,7 @@ ohos_fuzztest("AudioServerFuzzTest") {
   ]
 
   sources = [ "audio_server_fuzzer.cpp" ]
+  sources += audio_service_sources
 
   configs = [ "../../../services/audio_service:audio_service_config" ]
 

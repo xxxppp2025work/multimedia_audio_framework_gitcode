@@ -15,9 +15,22 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../appgallery.gni")
+import("../../../audio_framework_test_sources.gni")
 import("../../../av_session.gni")
 import("../../../bluetooth_part.gni")
 import("../../../config.gni")
+
+audio_policy_service_sources = []
+cur_path = "../../../"
+foreach(source, audio_policy_service_sources_template) {
+  audio_policy_service_sources += [ "$cur_path$source" ]
+}
+audio_policy_service_sources_dir =
+    "$cur_path$audio_policy_service_sources_dir_template"
+audio_policy_client_sources = []
+foreach(source, audio_policy_client_sources_template) {
+  audio_policy_client_sources += [ "$cur_path$source" ]
+}
 
 group("audio_policy_unittest_packages") {
   testonly = true
@@ -92,10 +105,12 @@ ohos_unittest("audio_interrupt_service_unit_test") {
   ]
 
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
+  sources += audio_policy_service_sources
 
   defines = []
 
   if (audio_framework_feature_dtmf_tone) {
+    sources += [ "$audio_policy_service_sources_dir/server/src/service/config/audio_tone_parser.cpp" ]
     defines += [ "FEATURE_DTMF_TONE" ]
   }
 
@@ -202,6 +217,7 @@ ohos_unittest("audio_policy_service_all_unit_test") {
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_second_unit_test.cpp",
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_third_unit_test.cpp",
   ]
+  sources += audio_policy_service_sources
 
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
@@ -221,6 +237,7 @@ ohos_unittest("audio_policy_service_all_unit_test") {
   defines = []
 
   if (audio_framework_feature_dtmf_tone) {
+    sources += [ "$audio_policy_service_sources_dir/server/src/service/config/audio_tone_parser.cpp" ]
     defines += [ "FEATURE_DTMF_TONE" ]
   }
 
@@ -283,6 +300,11 @@ ohos_unittest("audio_effect_config_parser_test") {
   ]
 
   sources = [ "./unittest/audio_effect_config_parser_test/src/audio_effect_config_parser_test.cpp" ]
+  sources += audio_policy_service_sources
+  if (audio_framework_feature_dtmf_tone) {
+    sources += [ "$audio_policy_service_sources_dir/server/src/service/config/audio_tone_parser.cpp" ]
+    defines = [ "FEATURE_DTMF_TONE" ]
+  }
 
   deps = [ "../../audio_policy:audio_policy_service" ]
 }
@@ -349,6 +371,11 @@ ohos_unittest("audio_socket_thread_unit_test") {
 
   sources =
       [ "./unittest/audio_socket_thread_test/src/audio_socket_thread_test.cpp" ]
+  sources += audio_policy_service_sources
+  if (audio_framework_feature_dtmf_tone) {
+    sources += [ "$audio_policy_service_sources_dir/server/src/service/config/audio_tone_parser.cpp" ]
+    defines = [ "FEATURE_DTMF_TONE" ]
+  }
 
   deps = [ "../../audio_policy:audio_policy_service" ]
 }
@@ -397,6 +424,11 @@ ohos_unittest("audio_policy_server_unit_test") {
   ]
 
   sources = [ "./unittest/audio_interrupt_service_test/src/audio_policy_server_unit_test.cpp" ]
+  sources += audio_policy_service_sources
+  if (audio_framework_feature_dtmf_tone) {
+    sources += [ "$audio_policy_service_sources_dir/server/src/service/config/audio_tone_parser.cpp" ]
+    defines = [ "FEATURE_DTMF_TONE" ]
+  }
 
   deps = [ "../../audio_policy:audio_policy_service" ]
 
@@ -462,6 +494,8 @@ ohos_unittest("audio_routing_manager_listener_stub_unit_test") {
   ]
 
   sources = [ "./unittest/audio_routing_manager_listener_stub_unit_test/src/audio_routing_manager_listener_stub_unit_test.cpp" ]
+  sources += audio_policy_client_sources
+  sources += [ "$audio_policy_service_sources_dir/client/src/audio_volume_group_info.cpp" ]
 
   deps = [ "../../audio_policy:audio_policy_client" ]
 
@@ -511,6 +545,8 @@ ohos_unittest("audio_policy_client_stub_impl_test") {
   ]
 
   sources = [ "./unittest/audio_policy_client_stub_impl_test/src/audio_policy_client_stub_impl_test.cpp" ]
+  sources += audio_policy_client_sources
+  sources += [ "$audio_policy_service_sources_dir/client/src/audio_volume_group_info.cpp" ]
 
   deps = [ "../../audio_policy:audio_policy_client" ]
 }
@@ -557,6 +593,8 @@ ohos_unittest("audio_client_tracker_callback_stub_unit_test") {
   ]
 
   sources = [ "./unittest/audio_client_tracker_callback_stub_unit_test/src/audio_client_tracker_callback_stub_unit_test.cpp" ]
+  sources += audio_policy_client_sources
+  sources += [ "$audio_policy_service_sources_dir/client/src/audio_volume_group_info.cpp" ]
 
   deps = [ "../../audio_policy:audio_policy_client" ]
 
@@ -623,6 +661,11 @@ ohos_unittest("audio_spatialization_service_unit_test") {
   ]
 
   sources = [ "./unittest/audio_spatialization_service_unit_test/src/audio_spatialization_service_unit_test.cpp" ]
+  sources += audio_policy_service_sources
+  if (audio_framework_feature_dtmf_tone) {
+    sources += [ "$audio_policy_service_sources_dir/server/src/service/config/audio_tone_parser.cpp" ]
+    defines = [ "FEATURE_DTMF_TONE" ]
+  }
 
   deps = [
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
@@ -674,6 +717,11 @@ ohos_unittest("stream_filter_router_unit_test") {
   ]
 
   sources = [ "./unittest/stream_filter_router_test/src/stream_filter_router_unit_test.cpp" ]
+  sources += audio_policy_service_sources
+  if (audio_framework_feature_dtmf_tone) {
+    sources += [ "$audio_policy_service_sources_dir/server/src/service/config/audio_tone_parser.cpp" ]
+    defines = [ "FEATURE_DTMF_TONE" ]
+  }
 
   deps = [
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
@@ -788,6 +836,11 @@ ohos_unittest("audio_affinity_parser_test") {
   sources = [
     "./unittest/audio_affinity_parser_test/src/audio_affinity_parser_test.cpp",
   ]
+  sources += audio_policy_service_sources
+  if (audio_framework_feature_dtmf_tone) {
+    sources += [ "$audio_policy_service_sources_dir/server/src/service/config/audio_tone_parser.cpp" ]
+    defines = [ "FEATURE_DTMF_TONE" ]
+  }
 
   deps = [ "../../audio_policy:audio_policy_service" ]
 }
@@ -851,6 +904,11 @@ ohos_unittest("audio_session_timer_test") {
 
   sources =
       [ "./unittest/audio_session_timer_test/src/audio_session_timer_test.cpp" ]
+  sources += audio_policy_service_sources
+  if (audio_framework_feature_dtmf_tone) {
+    sources += [ "$audio_policy_service_sources_dir/server/src/service/config/audio_tone_parser.cpp" ]
+    defines = [ "FEATURE_DTMF_TONE" ]
+  }
 
   deps = [ "../../audio_policy:audio_policy_service" ]
 }
@@ -916,6 +974,11 @@ ohos_unittest("audio_stream_collector_unit_test") {
   ]
 
   sources = [ "./unittest/audio_stream_collector_unit_test/src/audio_stream_collector_unit_test.cpp" ]
+  sources += audio_policy_service_sources
+  if (audio_framework_feature_dtmf_tone) {
+    sources += [ "$audio_policy_service_sources_dir/server/src/service/config/audio_tone_parser.cpp" ]
+    defines = [ "FEATURE_DTMF_TONE" ]
+  }
 
   deps = [
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
@@ -984,6 +1047,11 @@ ohos_unittest("audio_effect_manager_test") {
   sources = [
     "./unittest/audio_effect_manager_test/src/audio_effect_manager_test.cpp",
   ]
+  sources += audio_policy_service_sources
+  if (audio_framework_feature_dtmf_tone) {
+    sources += [ "$audio_policy_service_sources_dir/server/src/service/config/audio_tone_parser.cpp" ]
+    defines = [ "FEATURE_DTMF_TONE" ]
+  }
 
   deps = [ "../../audio_policy:audio_policy_service" ]
 }
@@ -1030,6 +1098,11 @@ ohos_unittest("audio_policy_server_handler_unit_test") {
   ]
 
   sources = [ "./unittest/audio_policy_server_handler_test/src/audio_policy_server_handler_unit_test.cpp" ]
+  sources += audio_policy_service_sources
+  if (audio_framework_feature_dtmf_tone) {
+    sources += [ "$audio_policy_service_sources_dir/server/src/service/config/audio_tone_parser.cpp" ]
+    defines = [ "FEATURE_DTMF_TONE" ]
+  }
 
   deps = [ "../../audio_policy:audio_policy_service" ]
 
@@ -1116,6 +1189,11 @@ ohos_unittest("volume_data_maintainer_unit_test") {
   ]
 
   sources = [ "./unittest/volume_data_maintainer_unit_test/src/volume_data_maintainer_unit_test.cpp" ]
+  sources += audio_policy_service_sources
+  if (audio_framework_feature_dtmf_tone) {
+    sources += [ "$audio_policy_service_sources_dir/server/src/service/config/audio_tone_parser.cpp" ]
+    defines = [ "FEATURE_DTMF_TONE" ]
+  }
 
   deps = [
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
@@ -1150,6 +1228,8 @@ ohos_unittest("audio_policy_manager_unit_test") {
   ]
 
   sources = [ "./unittest/audio_policy_manager_unit_test/src/audio_policy_manager_unit_test.cpp" ]
+  sources += audio_policy_client_sources
+  sources += [ "$audio_policy_service_sources_dir/client/src/audio_volume_group_info.cpp" ]
 
   deps = [ "../../audio_policy:audio_policy_client" ]
 }
@@ -1217,6 +1297,11 @@ ohos_unittest("audio_affinity_manager_unit_test") {
   ]
 
   sources = [ "./unittest/audio_affinity_manager_unit_test/src/audio_affinity_manager_unit_test.cpp" ]
+  sources += audio_policy_service_sources
+  if (audio_framework_feature_dtmf_tone) {
+    sources += [ "$audio_policy_service_sources_dir/server/src/service/config/audio_tone_parser.cpp" ]
+    defines = [ "FEATURE_DTMF_TONE" ]
+  }
 
   deps = [ "../../audio_policy:audio_policy_service" ]
 }

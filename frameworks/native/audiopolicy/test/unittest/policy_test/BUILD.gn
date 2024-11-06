@@ -12,9 +12,20 @@
 # limitations under the License.
 
 import("//build/test.gni")
+import("../../../../../../audio_framework_test_sources.gni")
 import("../../../../../../config.gni")
-
 module_output_path = "multimedia_audio_framework/audio_policy"
+audio_policy_service_sources = []
+audio_policy_client_sources = []
+cur_path = "../../../../../../"
+foreach(source, audio_policy_service_sources_template) {
+  audio_policy_service_sources += [ "$cur_path$source" ]
+}
+audio_policy_service_sources_dir =
+    "$cur_path$audio_policy_service_sources_dir_template"
+foreach(source, audio_policy_client_sources_template) {
+  audio_policy_client_sources += [ "$cur_path$source" ]
+}
 
 ohos_unittest("audio_policy_unit_test") {
   module_out_path = module_output_path
@@ -55,9 +66,12 @@ ohos_unittest("audio_policy_unit_test") {
     "src/audio_policy_ext_unit_test.cpp",
     "src/audio_policy_unit_test.cpp",
   ]
+  sources += audio_policy_client_sources
+  sources += audio_policy_service_sources
 
   defines = []
   if (audio_framework_feature_dtmf_tone) {
+    sources += [ "$audio_policy_service_sources_dir/server/src/service/config/audio_tone_parser.cpp" ]
     defines += [ "FEATURE_DTMF_TONE" ]
   }
 

@@ -520,7 +520,6 @@ public:
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
-        audioPolicyConfigParser_(AudioPolicyParserFactory::GetInstance().CreateParser(*this)),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         audioEffectManager_(AudioEffectManager::GetAudioEffectManager()),
@@ -1173,7 +1172,6 @@ private:
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
     std::unordered_map<int32_t, std::pair<std::string, DeviceRole>> fastRouterMap_; // key:uid value:<netWorkId, Role>
     IAudioPolicyInterface& audioPolicyManager_;
-    Parser& audioPolicyConfigParser_;
 #ifdef FEATURE_DTMF_TONE
     std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneDescriptorMap;
 #endif
@@ -1357,7 +1355,7 @@ private:
     AudioPolicyService *audioPolicyService_ = nullptr;
     std::mutex connectionMutex_;
     std::condition_variable connectionCV_;
-    static const int32_t CONNECTION_TIMEOUT_IN_MS = 300; // 300ms
+    static const int32_t CONNECTION_TIMEOUT_IN_MS;
 };
 
 class SafeVolumeEventSubscriber : public EventFwk::CommonEventSubscriber {
