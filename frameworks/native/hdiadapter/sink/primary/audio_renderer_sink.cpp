@@ -1095,8 +1095,8 @@ int32_t AudioRendererSinkInner::SetOutputRoutes(std::vector<std::pair<DeviceType
             return ret;
         }
         outputDevices[i].second = sinks[i].ext.device.type;
-        AUDIO_INFO_LOG("Output[%{public}zu] PIN is: 0x%{public}X DeviceType is %{public}d", i, outputDevices[i].second,
-            outputDevices[i].first);
+        AUDIO_WARNING_LOG("Output[%{public}zu] PIN is: 0x%{public}X DeviceType is %{public}d", i,
+            outputDevices[i].second, outputDevices[i].first);
         sinks[i].portId = static_cast<int32_t>(audioPort_.portId);
         sinks[i].role = AUDIO_PORT_SINK_ROLE;
         sinks[i].type = AUDIO_PORT_DEVICE_TYPE;
@@ -1123,7 +1123,7 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector
     CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "Invalid audio devices.");
     DeviceType activeDevice = activeDevices.front();
-    AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d", audioScene, activeDevice);
+    AUDIO_WARNING_LOG("SetAudioScene scene: %{public}d, device: %{public}d", audioScene, activeDevice);
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "invalid audioScene");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
