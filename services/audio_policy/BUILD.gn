@@ -432,7 +432,6 @@ ohos_shared_library("audio_policy_client") {
   }
 
   sources = [
-    "../audio_service/client/src/audio_device_descriptor.cpp",
     "../audio_service/client/src/audio_filter.cpp",
     "../audio_service/client/src/microphone_descriptor.cpp",
     "client/src/audio_anahs_manager_listener_stub.cpp",
@@ -451,7 +450,10 @@ ohos_shared_library("audio_policy_client") {
     "client/src/proxy/audio_policy_volume_proxy.cpp",
   ]
 
-  deps = [ "../../frameworks/native/audioutils:audio_utils" ]
+  deps = [
+    "../../frameworks/native/audioutils:audio_utils",
+    "../audio_service:audio_device_descriptor",
+  ]
 
   public_configs = [ ":audio_policy_client_config" ]
 
