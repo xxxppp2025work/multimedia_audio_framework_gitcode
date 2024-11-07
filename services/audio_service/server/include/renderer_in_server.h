@@ -173,6 +173,7 @@ private:
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
     int32_t effectModeWhenDual_ = EFFECT_DEFAULT;
     int32_t renderEmptyCountForInnerCap_ = 0;
+    bool offloadEnable_ = false;   // offload
 };
 } // namespace AudioStandard
 } // namespace OHOS
