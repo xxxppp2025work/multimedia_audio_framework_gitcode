@@ -1792,28 +1792,10 @@ void AudioPolicyManagerStub::OnMiddlesRemoteRequest(
     }
 }
 
-int AudioPolicyManagerStub::OnRemoteRequest(
+void AudioPolicyManagerStub::OnMidRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
-    CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(), -1, "ReadInterfaceToken failed");
-    Trace trace(code >= codeNums ? "invalid audio policy code" : g_audioPolicyCodeStrs[code]);
-    if (code <= static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX)) {
-        switch (code) {
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_VOLUMELEVEL):
-                GetMaxVolumeLevelInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MIN_VOLUMELEVEL):
-                GetMinVolumeLevelInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL_LEGACY):
-                SetSystemVolumeLevelLegacyInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL):
-                SetSystemVolumeLevelInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_ACTIVEVOLUME_TYPE):
-                GetSystemActiveVolumeTypeInternal(data, reply);
-                break;
+    switch (code) {
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_VOLUMELEVEL):
                 GetSystemVolumeLevelInternal(data, reply);
                 break;
@@ -1840,6 +1822,34 @@ int AudioPolicyManagerStub::OnRemoteRequest(
                 break;
             default:
                 OnMiddlesRemoteRequest(code, data, reply, option);
+                break;
+    }
+}
+
+int AudioPolicyManagerStub::OnRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(), -1, "ReadInterfaceToken failed");
+    Trace trace(code >= codeNums ? "invalid audio policy code" : g_audioPolicyCodeStrs[code]);
+    if (code <= static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX)) {
+        switch (code) {
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_VOLUMELEVEL):
+                GetMaxVolumeLevelInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MIN_VOLUMELEVEL):
+                GetMinVolumeLevelInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL_LEGACY):
+                SetSystemVolumeLevelLegacyInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL):
+                SetSystemVolumeLevelInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_ACTIVEVOLUME_TYPE):
+                GetSystemActiveVolumeTypeInternal(data, reply);
+                break;
+            default:
+                OnMidRemoteRequest(code, data, reply, option);
                 break;
         }
         return AUDIO_OK;
