@@ -2214,6 +2214,7 @@ void SpatializationStateChangeCallbackImpl::OnSpatializationStateChange(
 
 bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
 {
+    std::unique_lock<std::mutex> lock(statusMutex_);
     CHECK_AND_RETURN_RET_LOG(proxyObj_ != nullptr, false, "proxyObj_ is null");
     CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID && state_ != RELEASED, true,
         "state_ is %{public}d, no need for restore", state_.load());
@@ -2221,6 +2222,7 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
     State oldState = state_;
     state_ = NEW;
     SetStreamTrackerState(false);
+    lock.unlock();
 
     int32_t ret = SetAudioStreamInfo(streamParams_, proxyObj_);
     if (ret != SUCCESS) {
