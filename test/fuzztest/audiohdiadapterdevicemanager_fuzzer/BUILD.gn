@@ -14,7 +14,20 @@
 import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
+import("../../../audio_framework_test_sources.gni")
 import("../../../config.gni")
+
+audio_device_manager_sources = []
+cur_path = "../../../"
+foreach(source, audio_device_manager_sources_template) {
+  audio_device_manager_sources += [ "$cur_path$source" ]
+}
+audio_policy_service_sources = []
+foreach(source, audio_policy_service_sources_template) {
+  audio_policy_service_sources += [ "$cur_path$source" ]
+}
+audio_policy_service_sources_dir =
+    "$cur_path$audio_policy_service_sources_dir_template"
 
 ohos_fuzztest("AudioHdiAdapterDeviceManagerFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -36,6 +49,12 @@ ohos_fuzztest("AudioHdiAdapterDeviceManagerFuzzTest") {
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
   sources = [ "audio_hdi_adapter_devicemanager_fuzzer.cpp" ]
+  sources += audio_policy_service_sources
+  if (audio_framework_feature_dtmf_tone) {
+    sources += [ "$audio_policy_service_sources_dir/server/src/service/config/audio_tone_parser.cpp" ]
+    defines = [ "FEATURE_DTMF_TONE" ]
+  }
+  sources += audio_device_manager_sources
 
   deps = [
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",

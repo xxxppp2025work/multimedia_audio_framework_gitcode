@@ -14,9 +14,22 @@
 import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
+import("../../../audio_framework_test_sources.gni")
 import("../../../config.gni")
 import("../../../sensor.gni")
 import("../../../window_manager.gni")
+
+audio_effect_sources = []
+cur_path = "../../../"
+foreach(source, audio_effect_sources_template) {
+  audio_effect_sources += [ "$cur_path$source" ]
+}
+audio_policy_service_sources = []
+foreach(source, audio_policy_service_sources_template) {
+  audio_policy_service_sources += [ "$cur_path$source" ]
+}
+audio_policy_service_sources_dir =
+    "$cur_path$audio_policy_service_sources_dir_template"
 
 ohos_fuzztest("AudioEffectManagerFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -37,6 +50,12 @@ ohos_fuzztest("AudioEffectManagerFuzzTest") {
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
   sources = [ "audio_effect_manager_fuzzer.cpp" ]
+  sources += audio_policy_service_sources
+  if (audio_framework_feature_dtmf_tone) {
+    sources += [ "$audio_policy_service_sources_dir/server/src/service/config/audio_tone_parser.cpp" ]
+    defines = [ "FEATURE_DTMF_TONE" ]
+  }
+  sources += audio_effect_sources
 
   deps = [
     "../../../frameworks/native/audioeffect:audio_effect",

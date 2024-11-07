@@ -15,8 +15,21 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../appgallery.gni")
+import("../../../audio_framework_test_sources.gni")
 import("../../../bluetooth_part.gni")
 import("../../../config.gni")
+
+audio_policy_service_sources = []
+cur_path = "../../../"
+foreach(source, audio_policy_service_sources_template) {
+  audio_policy_service_sources += [ "$cur_path$source" ]
+}
+audio_policy_service_sources_dir =
+    "$cur_path$audio_policy_service_sources_dir_template"
+audio_policy_client_sources = []
+foreach(source, audio_policy_client_sources_template) {
+  audio_policy_client_sources += [ "$cur_path$source" ]
+}
 
 ohos_fuzztest("AudioPolicyProxyFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -43,9 +56,12 @@ ohos_fuzztest("AudioPolicyProxyFuzzTest") {
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
   sources = [ "audio_policy_proxy_fuzzer.cpp" ]
+  sources += audio_policy_client_sources
+  sources += audio_policy_service_sources
 
   defines = []
   if (audio_framework_feature_dtmf_tone) {
+    sources += [ "$audio_policy_service_sources_dir/server/src/service/config/audio_tone_parser.cpp" ]
     defines += [ "FEATURE_DTMF_TONE" ]
   }
 
