@@ -472,6 +472,13 @@ int32_t RendererInServer::WriteData()
     if (currentReadFrame + spanSizeInFrame_ > currentWriteFrame) {
         Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun
         FutexTool::FutexWake(audioServerBuffer_->GetFutex());
+        if (!offloadEnable_) {
+            CHECK_AND_RETURN_RET_LOG(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
+                "invalid write and read position.");
+            uint32_t dataSize = currentWriteFrame - currentReadFrame;
+            AUDIO_INFO_LOG("sessionId: %{public}u OHAudioBuffer %{public}u size is not enough", 
+                streamIndex_, dataSize);
+        }
         return ERR_OPERATION_FAILED;
     }
 
@@ -1099,6 +1106,7 @@ int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
             dualToneStream_->UpdateMaxLength(350); // 350 for cover offload
         }
     }
+    offloadEnable_ = true;
     // monitor
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
     float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, "offload");
@@ -1123,6 +1131,7 @@ int32_t RendererInServer::UnsetOffloadMode()
             dualToneStream_->UpdateMaxLength(20); // 20 for cover offload
         }
     }
+    offloadEnable_ = false;
     return ret;
 }
 
