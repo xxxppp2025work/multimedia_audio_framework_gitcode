@@ -837,6 +837,7 @@ static int PaHdiCapturerInit(struct Userdata *u)
         }
         u->isCapturerStarted = true;
     }
+    StartAuxCapture(u);
 
     return ret;
 

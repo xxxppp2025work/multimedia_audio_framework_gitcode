@@ -8225,6 +8225,7 @@ void AudioPolicyService::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, Str
         unique_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
         if (inputDesc != nullptr && inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
             moduleInfo = usbSourceModuleInfo_;
+            moduleInfo.sourceType = std::to_string(sourceType);
         } else {
             moduleInfo = primaryMicModuleInfo_;
             // current layout represents the number of channel. This will need to be modify in the future.
