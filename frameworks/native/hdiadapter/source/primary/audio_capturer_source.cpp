@@ -1258,7 +1258,7 @@ int32_t AudioCapturerSourceInner::DoSetInputRoute(DeviceType inputDevice,
 int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice,
     const std::string &deviceName)
 {
-    AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d",
+    AUDIO_WARNING_LOG("SetAudioScene scene: %{public}d, device: %{public}d",
         audioScene, activeDevice);
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "invalid audioScene");

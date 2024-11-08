@@ -135,7 +135,7 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
             if (desc->deviceType_ == DEVICE_TYPE_NONE) {
                 StreamUsage callStreamUsage =
                     AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
-                AUDIO_INFO_LOG("Media follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
+                AUDIO_WARNING_LOG("Media follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
                     callStreamUsage);
                 desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType, bypassType);
             }
@@ -148,7 +148,7 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     } else if (renderConfigMap_[streamUsage] == CALL_RENDER_ROUTERS) {
         descs.push_back(FetchCallRenderDevice(streamUsage, clientUID, routerType, bypassType));
     } else {
-        AUDIO_INFO_LOG("streamUsage %{public}d didn't config router strategy, skipped", streamUsage);
+        AUDIO_WARNING_LOG("streamUsage %{public}d didn't config router strategy, skipped", streamUsage);
         descs.push_back(make_unique<AudioDeviceDescriptor>());
         return descs;
     }

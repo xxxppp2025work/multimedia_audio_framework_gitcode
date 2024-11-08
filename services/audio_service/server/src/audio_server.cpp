@@ -832,10 +832,10 @@ int32_t  AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>>
 
     std::vector<DeviceType> deviceTypes;
     for (auto activeDevice : activeDevices) {
-        AUDIO_INFO_LOG("SetIORoutes device type:%{public}d", activeDevice.first);
+        AUDIO_WARNING_LOG("SetIORoutes device type:%{public}d", activeDevice.first);
         deviceTypes.push_back(activeDevice.first);
     }
-    AUDIO_INFO_LOG("SetIORoutes 1st deviceType: %{public}d, flag: %{public}d deviceName:%{public}s",
+    AUDIO_WARNING_LOG("SetIORoutes 1st deviceType: %{public}d, flag: %{public}d deviceName:%{public}s",
         type, flag, deviceName.c_str());
     int32_t ret = SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
     return ret;

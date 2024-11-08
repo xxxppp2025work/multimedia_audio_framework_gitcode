@@ -126,7 +126,7 @@ void AudioDeviceManager::FillArrayWhenDeviceAttrMatch(const shared_ptr<AudioDevi
     bool result = DeviceAttrMatch(devDesc, privacyType, devRole, devUsage);
     if (result) {
         descArray.push_back(devDesc);
-        AUDIO_INFO_LOG("Add to %{public}s list, and then %{public}s",
+        AUDIO_WARNING_LOG("Add to %{public}s list, and then %{public}s",
             logName.c_str(), GetConnDevicesStr(descArray).c_str());
     }
 }
@@ -376,12 +376,12 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Memory allocation failed");
 
     int32_t audioId = deviceDescriptor->deviceId_;
-    AUDIO_INFO_LOG("add type:id %{public}d:%{public}d", deviceDescriptor->getType(), audioId);
+    AUDIO_WARNING_LOG("add type:id %{public}d:%{public}d", deviceDescriptor->getType(), audioId);
 
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     RemoveVirtualConnectedDevice(devDesc);
     if (UpdateExistDeviceDescriptor(deviceDescriptor)) {
-        AUDIO_INFO_LOG("The device has been added and will not be added again.");
+        AUDIO_WARNING_LOG("The device has been added and will not be added again.");
         return;
     }
     AddConnectedDevices(devDesc);
@@ -1140,7 +1140,7 @@ int32_t AudioDeviceManager::SetDefaultOutputDevice(const DeviceType deviceType, 
         AUDIO_INFO_LOG("no need to set default output device since current stream has not started");
         return SUCCESS;
     }
-    AUDIO_INFO_LOG("stream %{public}u with usage %{public}d selects output device %{public}d",
+    AUDIO_WARNING_LOG("stream %{public}u with usage %{public}d selects output device %{public}d",
         sessionID, streamUsage, deviceType);
     if (streamUsage == STREAM_USAGE_VOICE_MESSAGE) {
         // select media default output device
@@ -1153,7 +1153,7 @@ int32_t AudioDeviceManager::SetDefaultOutputDevice(const DeviceType deviceType, 
         }
         mediaDefaultOutputDevices_.push_back(std::make_pair(sessionID, deviceType));
         if (selectedMediaDefaultOutputDevice_ != deviceType) {
-            AUDIO_INFO_LOG("media default output device changes from %{public}d to %{public}d",
+            AUDIO_WARNING_LOG("media default output device changes from %{public}d to %{public}d",
                 selectedMediaDefaultOutputDevice_, deviceType);
             selectedMediaDefaultOutputDevice_ = deviceType;
             return NEED_TO_FETCH;
@@ -1170,7 +1170,7 @@ int32_t AudioDeviceManager::SetDefaultOutputDevice(const DeviceType deviceType, 
         }
         callDefaultOutputDevices_.push_back(std::make_pair(sessionID, deviceType));
         if (selectedCallDefaultOutputDevice_ != deviceType) {
-            AUDIO_INFO_LOG("call default output device changes from %{public}d to %{public}d",
+            AUDIO_WARNING_LOG("call default output device changes from %{public}d to %{public}d",
                 selectedCallDefaultOutputDevice_, deviceType);
             selectedCallDefaultOutputDevice_ = deviceType;
             return NEED_TO_FETCH;
@@ -1201,7 +1201,7 @@ int32_t AudioDeviceManager::UpdateDefaultOutputDeviceWhenStarting(const uint32_t
             mediaDefaultOutputDevices_.erase(it);
         }
         mediaDefaultOutputDevices_.push_back(std::make_pair(sessionID, deviceType));
-        AUDIO_INFO_LOG("changes from %{public}d to %{public}d because media stream %{public}u starts",
+        AUDIO_WARNING_LOG("changes from %{public}d to %{public}d because media stream %{public}u starts",
             selectedMediaDefaultOutputDevice_, deviceType, sessionID);
         selectedMediaDefaultOutputDevice_ = deviceType;
     } else if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION || streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
@@ -1215,7 +1215,7 @@ int32_t AudioDeviceManager::UpdateDefaultOutputDeviceWhenStarting(const uint32_t
             callDefaultOutputDevices_.erase(it);
         }
         callDefaultOutputDevices_.push_back(std::make_pair(sessionID, deviceType));
-        AUDIO_INFO_LOG("changes from %{public}d to %{public}d because call stream %{public}u starts",
+        AUDIO_WARNING_LOG("changes from %{public}d to %{public}d because call stream %{public}u starts",
             selectedCallDefaultOutputDevice_, deviceType, sessionID);
         selectedCallDefaultOutputDevice_ = deviceType;
     }

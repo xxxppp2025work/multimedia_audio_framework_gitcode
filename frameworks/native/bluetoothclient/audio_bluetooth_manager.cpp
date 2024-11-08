@@ -153,7 +153,7 @@ void AudioA2dpManager::DisconnectBluetoothA2dpSource()
 int32_t AudioA2dpManager::SetActiveA2dpDevice(const std::string& macAddress)
 {
     std::lock_guard<std::mutex> a2dpLock(g_a2dpInstanceLock);
-    AUDIO_INFO_LOG("incoming device:%{public}s, current device:%{public}s",
+    AUDIO_WARNING_LOG("incoming device:%{public}s, current device:%{public}s",
         GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(activeA2dpDevice_.GetDeviceAddr()).c_str());
     a2dpInstance_ = A2dpSource::GetProfile();
     CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "Failed to obtain A2DP profile instance");
@@ -509,10 +509,10 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
         return ERROR;
     }
     std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
-    AUDIO_INFO_LOG("incoming device:%{public}s, current device:%{public}s",
+    AUDIO_WARNING_LOG("incoming device:%{public}s, current device:%{public}s",
         GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(activeHfpDevice_.GetDeviceAddr()).c_str());
     if (macAddress != activeHfpDevice_.GetDeviceAddr()) {
-        AUDIO_INFO_LOG("Active hfp device is changed, need to DisconnectSco for current activeHfpDevice.");
+        AUDIO_WARNING_LOG("Active hfp device is changed, need to DisconnectSco for current activeHfpDevice.");
         int32_t ret = DisconnectSco();
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "DisconnectSco failed, result: %{public}d", ret);
     }
