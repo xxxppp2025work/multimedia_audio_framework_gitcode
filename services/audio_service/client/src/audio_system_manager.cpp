@@ -861,9 +861,9 @@ void AudioFocusInfoChangeCallbackImpl::RemoveCallback(const std::weak_ptr<AudioF
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     std::lock_guard<std::mutex> cbListLock(cbListMutex_);
-    callbackList_.remove_if([&callback](std::weak_ptr<AudioFocusInfoChangeCallback> &callback_) {
+    callbackList_.erase(callbackList_.remove_if([&callback](std::weak_ptr<AudioFocusInfoChangeCallback> &callback_) {
         return callback_.lock() == callback.lock();
-    });
+    }), callbackList_.end());
 }
 
 void AudioFocusInfoChangeCallbackImpl::OnAudioFocusInfoChange(
@@ -1489,9 +1489,10 @@ void AudioDistributedRoutingRoleCallbackImpl::RemoveCallback(
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     std::lock_guard<std::mutex> cbListLock(cbListMutex_);
-    callbackList_.remove_if([&callback](std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback_) {
+    callbackList_.erase(callbackList_.remove_if([&callback](
+        std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback_) {
         return callback_ == callback;
-    });
+    }), callbackList_.end());
 }
 
 void AudioDistributedRoutingRoleCallbackImpl::OnDistributedRoutingRoleChange(
