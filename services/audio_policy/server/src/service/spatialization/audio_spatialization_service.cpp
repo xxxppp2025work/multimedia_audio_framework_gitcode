@@ -159,7 +159,7 @@ int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable)
     return SPATIALIZATION_SERVICE_OK;
 }
 
-int32_t AudioSpatializationService::SetSpatializationEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+int32_t AudioSpatializationService::SetSpatializationEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
     const bool enable)
 {
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
@@ -219,7 +219,7 @@ int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable)
     return SPATIALIZATION_SERVICE_OK;
 }
 
-int32_t AudioSpatializationService::SetHeadTrackingEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+int32_t AudioSpatializationService::SetHeadTrackingEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
     const bool enable)
 {
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
@@ -249,7 +249,7 @@ void AudioSpatializationService::HandleSpatializationEnabledChange(const bool &e
     }
 }
 
-void AudioSpatializationService::HandleSpatializationEnabledChange(const sptr<AudioDeviceDescriptor>
+void AudioSpatializationService::HandleSpatializationEnabledChange(const std::shared_ptr<AudioDeviceDescriptor>
     &selectedAudioDevice, const bool &enabled)
 {
     AUDIO_INFO_LOG("device Spatialization enabled callback is triggered: state is %{public}d", enabled);
@@ -266,7 +266,7 @@ void AudioSpatializationService::HandleHeadTrackingEnabledChange(const bool &ena
     }
 }
 
-void AudioSpatializationService::HandleHeadTrackingEnabledChange(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+void AudioSpatializationService::HandleHeadTrackingEnabledChange(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
     const bool &enabled)
 {
     AUDIO_INFO_LOG("device Head tracking enabled callback is triggered: state is %{public}d", enabled);

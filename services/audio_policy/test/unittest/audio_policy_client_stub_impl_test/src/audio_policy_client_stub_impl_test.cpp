@@ -113,10 +113,10 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_003, TestSize.Le
 HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_004, TestSize.Level1)
 {
     auto audioPolicyClient_ = std::make_shared<AudioPolicyClientStubImpl>();
-    std::vector<sptr<AudioDeviceDescriptor>> des;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> des;
     auto vec = std::make_shared<AudioDeviceDescriptor>();
     des.push_back(vec.get());
-    std::vector<sptr<AudioDeviceDescriptor>> result= audioPolicyClient_->
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result= audioPolicyClient_->
         DeviceFilterByFlag(DeviceFlag::ALL_DEVICES_FLAG, des);
     EXPECT_NE(audioPolicyClient_, nullptr);
 }
@@ -129,10 +129,10 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_004, TestSize.Le
 HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_005, TestSize.Level1)
 {
     auto audioPolicyClient_ = std::make_shared<AudioPolicyClientStubImpl>();
-    std::vector<sptr<AudioDeviceDescriptor>> des;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> des;
     auto vec = std::make_shared<AudioDeviceDescriptor>();
     des.push_back(vec.get());
-    std::vector<sptr<AudioDeviceDescriptor>> result= audioPolicyClient_->
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result= audioPolicyClient_->
         DeviceFilterByFlag(DeviceFlag::ALL_DISTRIBUTED_DEVICES_FLAG, des);
     EXPECT_NE(audioPolicyClient_, nullptr);
 }
@@ -145,8 +145,8 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_005, TestSize.Le
 HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_006, TestSize.Level1)
 {
     auto audioPolicyClient_ = std::make_shared<AudioPolicyClientStubImpl>();
-    std::vector<sptr<AudioDeviceDescriptor>> des;
-    std::vector<sptr<AudioDeviceDescriptor>> result= audioPolicyClient_->
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> des;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result= audioPolicyClient_->
         DeviceFilterByFlag(DeviceFlag::ALL_L_D_DEVICES_FLAG, des);
     EXPECT_NE(audioPolicyClient_, nullptr);
 }
@@ -159,8 +159,8 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_006, TestSize.Le
 HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_007, TestSize.Level1)
 {
     auto audioPolicyClient_ = std::make_shared<AudioPolicyClientStubImpl>();
-    std::vector<sptr<AudioDeviceDescriptor>> des;
-    std::vector<sptr<AudioDeviceDescriptor>> result= audioPolicyClient_->
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> des;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result= audioPolicyClient_->
         DeviceFilterByFlag(DeviceFlag::OUTPUT_DEVICES_FLAG, des);
     EXPECT_NE(audioPolicyClient_, nullptr);
 }
@@ -173,10 +173,10 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_007, TestSize.Le
 HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_008, TestSize.Level1)
 {
     auto audioPolicyClient_ = std::make_shared<AudioPolicyClientStubImpl>();
-    std::vector<sptr<AudioDeviceDescriptor>> des;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> des;
     auto vec = std::make_shared<AudioDeviceDescriptor>();
     des.push_back(vec.get());
-    std::vector<sptr<AudioDeviceDescriptor>> result= audioPolicyClient_->
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result= audioPolicyClient_->
         DeviceFilterByFlag(DeviceFlag::INPUT_DEVICES_FLAG, des);
     EXPECT_NE(audioPolicyClient_, nullptr);
 }
@@ -189,8 +189,8 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_008, TestSize.Le
 HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_009, TestSize.Level1)
 {
     auto audioPolicyClient_ = std::make_shared<AudioPolicyClientStubImpl>();
-    std::vector<sptr<AudioDeviceDescriptor>> des;
-    std::vector<sptr<AudioDeviceDescriptor>> result= audioPolicyClient_->
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> des;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result= audioPolicyClient_->
         DeviceFilterByFlag(DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG, des);
     EXPECT_NE(audioPolicyClient_, nullptr);
 }
@@ -203,10 +203,10 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_009, TestSize.Le
 HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_010, TestSize.Level1)
 {
     auto audioPolicyClient_ = std::make_shared<AudioPolicyClientStubImpl>();
-    std::vector<sptr<AudioDeviceDescriptor>> des;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> des;
     auto vec = std::make_shared<AudioDeviceDescriptor>();
     des.push_back(vec.get());
-    std::vector<sptr<AudioDeviceDescriptor>> result= audioPolicyClient_->
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result= audioPolicyClient_->
         DeviceFilterByFlag(DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG, des);
     EXPECT_NE(audioPolicyClient_, nullptr);
 }
@@ -219,8 +219,8 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_010, TestSize.Le
 HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_011, TestSize.Level1)
 {
     auto audioPolicyClient_ = std::make_shared<AudioPolicyClientStubImpl>();
-    std::vector<sptr<AudioDeviceDescriptor>> des;
-    std::vector<sptr<AudioDeviceDescriptor>> result= audioPolicyClient_->
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> des;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result= audioPolicyClient_->
         DeviceFilterByFlag(DeviceFlag::DEVICE_FLAG_MAX, des);
     EXPECT_NE(audioPolicyClient_, nullptr);
 }
@@ -412,7 +412,7 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_019, TestSize.Le
     int32_t result = audioPolicyClient_->AddPreferredOutputDeviceChangeCallback(cb);
     EXPECT_EQ(result, SUCCESS);
 
-    std::vector<sptr<AudioDeviceDescriptor>> desc;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
     audioPolicyClient_->OnPreferredOutputDeviceUpdated(desc);
     EXPECT_NE(audioPolicyClient_, nullptr);
 }
@@ -429,7 +429,7 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_020, TestSize.Le
     int32_t result = audioPolicyClient_->AddPreferredInputDeviceChangeCallback(cb);
     EXPECT_EQ(result, SUCCESS);
 
-    std::vector<sptr<AudioDeviceDescriptor>> desc;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
     audioPolicyClient_->OnPreferredInputDeviceUpdated(desc);
     EXPECT_NE(audioPolicyClient_, nullptr);
 }
@@ -576,7 +576,7 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_027, TestSize.Le
     audioPolicyClient_->OnSpatializationEnabledChange(enabled);
     EXPECT_NE(audioPolicyClient_, nullptr);
 
-    sptr<AudioDeviceDescriptor> deviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioPolicyClient_->OnSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     EXPECT_NE(audioPolicyClient_, nullptr);
 }
@@ -597,7 +597,7 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_028, TestSize.Le
     audioPolicyClient_->OnHeadTrackingEnabledChange(enabled);
     EXPECT_NE(audioPolicyClient_, nullptr);
 
-    sptr<AudioDeviceDescriptor> deviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioPolicyClient_->OnHeadTrackingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     EXPECT_NE(audioPolicyClient_, nullptr);
 }

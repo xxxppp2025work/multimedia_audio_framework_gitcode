@@ -71,7 +71,7 @@ public:
 
     AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor);
 
-    AudioDeviceDescriptor(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+    AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     virtual ~AudioDeviceDescriptor();
 
@@ -94,7 +94,7 @@ public:
 
     void Unmarshalling(Parcel &parcel);
 
-    static sptr<AudioDeviceDescriptor> UnmarshallingPtr(Parcel &parcel);
+    static std::shared_ptr<AudioDeviceDescriptor> UnmarshallingPtr(Parcel &parcel);
 
     void UnmarshallingToDeviceDescriptor(Parcel &parcel);
 

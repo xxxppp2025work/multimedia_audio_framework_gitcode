@@ -152,7 +152,7 @@ void AudioPolicyServerHandler::AddConcurrencyEventDispatcher(std::shared_ptr<IAu
     concurrencyEventDispatcher_ = dispatcher;
 }
 
-bool AudioPolicyServerHandler::SendDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc,
+bool AudioPolicyServerHandler::SendDeviceChangedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc,
     bool isConnected)
 {
     Trace trace("AudioPolicyServerHandler::SendDeviceChangedCallback");
@@ -167,7 +167,7 @@ bool AudioPolicyServerHandler::SendDeviceChangedCallback(const std::vector<sptr<
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendMicrophoneBlockedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc,
+bool AudioPolicyServerHandler::SendMicrophoneBlockedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc,
     DeviceBlockStatus status)
 {
     Trace trace("AudioPolicyServerHandler::SendMicrophoneBlockedCallback");
@@ -182,7 +182,7 @@ bool AudioPolicyServerHandler::SendMicrophoneBlockedCallback(const std::vector<s
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendAvailableDeviceChange(const std::vector<sptr<AudioDeviceDescriptor>> &desc,
+bool AudioPolicyServerHandler::SendAvailableDeviceChange(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc,
     bool isConnected)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -336,7 +336,7 @@ bool AudioPolicyServerHandler::SendPreferredInputDeviceUpdated()
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor,
+bool AudioPolicyServerHandler::SendDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor,
     const CastType &type)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -502,7 +502,7 @@ bool AudioPolicyServerHandler::SendSpatializatonEnabledChangeEvent(const bool &e
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendSpatializatonEnabledChangeForAnyDeviceEvent(const sptr<AudioDeviceDescriptor>
+bool AudioPolicyServerHandler::SendSpatializatonEnabledChangeForAnyDeviceEvent(const std::shared_ptr<AudioDeviceDescriptor>
     &selectedAudioDevice, const bool &enabled)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -528,7 +528,7 @@ bool AudioPolicyServerHandler::SendHeadTrackingEnabledChangeEvent(const bool &en
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendHeadTrackingEnabledChangeForAnyDeviceEvent(const sptr<AudioDeviceDescriptor>
+bool AudioPolicyServerHandler::SendHeadTrackingEnabledChangeForAnyDeviceEvent(const std::shared_ptr<AudioDeviceDescriptor>
     &selectedAudioDevice,
     const bool &enabled)
 {

@@ -55,7 +55,7 @@ bool AudioSpatializationManager::IsSpatializationEnabled()
     return AudioPolicyManager::GetInstance().IsSpatializationEnabled();
 }
 
-bool AudioSpatializationManager::IsSpatializationEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice)
+bool AudioSpatializationManager::IsSpatializationEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
 {
     return AudioPolicyManager::GetInstance().IsSpatializationEnabled(selectedAudioDevice->macAddress_);
 }
@@ -65,7 +65,7 @@ int32_t AudioSpatializationManager::SetSpatializationEnabled(const bool enable)
     return AudioPolicyManager::GetInstance().SetSpatializationEnabled(enable);
 }
 
-int32_t AudioSpatializationManager::SetSpatializationEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+int32_t AudioSpatializationManager::SetSpatializationEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
     const bool enable)
 {
     return AudioPolicyManager::GetInstance().SetSpatializationEnabled(selectedAudioDevice, enable);
@@ -76,7 +76,7 @@ bool AudioSpatializationManager::IsHeadTrackingEnabled()
     return AudioPolicyManager::GetInstance().IsHeadTrackingEnabled();
 }
 
-bool AudioSpatializationManager::IsHeadTrackingEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice)
+bool AudioSpatializationManager::IsHeadTrackingEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
 {
     return AudioPolicyManager::GetInstance().IsHeadTrackingEnabled(selectedAudioDevice->macAddress_);
 }
@@ -86,7 +86,7 @@ int32_t AudioSpatializationManager::SetHeadTrackingEnabled(const bool enable)
     return AudioPolicyManager::GetInstance().SetHeadTrackingEnabled(enable);
 }
 
-int32_t AudioSpatializationManager::SetHeadTrackingEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+int32_t AudioSpatializationManager::SetHeadTrackingEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
     const bool enable)
 {
     return AudioPolicyManager::GetInstance().SetHeadTrackingEnabled(selectedAudioDevice, enable);
@@ -121,7 +121,7 @@ bool AudioSpatializationManager::IsSpatializationSupported()
     return AudioPolicyManager::GetInstance().IsSpatializationSupported();
 }
 
-bool AudioSpatializationManager::IsSpatializationSupportedForDevice(const sptr<AudioDeviceDescriptor>
+bool AudioSpatializationManager::IsSpatializationSupportedForDevice(const std::shared_ptr<AudioDeviceDescriptor>
     &selectedAudioDevice)
 {
     return AudioPolicyManager::GetInstance().IsSpatializationSupportedForDevice(selectedAudioDevice->macAddress_);
@@ -132,7 +132,7 @@ bool AudioSpatializationManager::IsHeadTrackingSupported()
     return AudioPolicyManager::GetInstance().IsHeadTrackingSupported();
 }
 
-bool AudioSpatializationManager::IsHeadTrackingSupportedForDevice(const sptr<AudioDeviceDescriptor>
+bool AudioSpatializationManager::IsHeadTrackingSupportedForDevice(const std::shared_ptr<AudioDeviceDescriptor>
     &selectedAudioDevice)
 {
     return AudioPolicyManager::GetInstance().IsHeadTrackingSupportedForDevice(selectedAudioDevice->macAddress_);

@@ -658,7 +658,7 @@ bool AudioSystemManager::IsMicrophoneMute()
     return groupManager->IsMicrophoneMuteLegacy();
 }
 
-int32_t AudioSystemManager::SelectOutputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+int32_t AudioSystemManager::SelectOutputDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() == 1 && audioDeviceDescriptors[0] != nullptr,
         ERR_INVALID_PARAM, "invalid parameter");
@@ -676,7 +676,7 @@ int32_t AudioSystemManager::SelectOutputDevice(std::vector<sptr<AudioDeviceDescr
     return ret;
 }
 
-int32_t AudioSystemManager::SelectInputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+int32_t AudioSystemManager::SelectInputDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() == 1 && audioDeviceDescriptors[0] != nullptr,
         ERR_INVALID_PARAM, "invalid parameter");
@@ -694,7 +694,7 @@ std::string AudioSystemManager::GetSelectedDeviceInfo(int32_t uid, int32_t pid, 
 }
 
 int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
     // basic check
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr && audioDeviceDescriptors.size() != 0,
@@ -723,7 +723,7 @@ int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
 }
 
 int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
     // basic check
     CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr && audioDeviceDescriptors.size() != 0,
@@ -742,17 +742,17 @@ int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     return AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFlag deviceFlag)
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFlag deviceFlag)
 {
     return AudioPolicyManager::GetInstance().GetDevices(deviceFlag);
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevicesInner(DeviceFlag deviceFlag)
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevicesInner(DeviceFlag deviceFlag)
 {
     return AudioPolicyManager::GetInstance().GetDevicesInner(deviceFlag);
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetActiveOutputDeviceDescriptors()
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSystemManager::GetActiveOutputDeviceDescriptors()
 {
     AudioRendererInfo rendererInfo;
     return AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo);
@@ -766,13 +766,13 @@ int32_t AudioSystemManager::GetPreferredInputDeviceDescriptors()
     return SUCCESS;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetOutputDevice(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSystemManager::GetOutputDevice(
     sptr<AudioRendererFilter> audioRendererFilter)
 {
     return AudioPolicyManager::GetInstance().GetOutputDevice(audioRendererFilter);
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetInputDevice(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSystemManager::GetInputDevice(
     sptr<AudioCapturerFilter> audioCapturerFilter)
 {
     return AudioPolicyManager::GetInstance().GetInputDevice(audioCapturerFilter);
