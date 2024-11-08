@@ -2099,9 +2099,8 @@ HWTEST(AudioCapturerUnitTest, InitPlaybackCapturer_001, TestSize.Level1)
 
     int32_t type = 3;
     const AudioPlaybackCaptureConfig config;
-    int32_t ret = audioCapturer->InitPlaybackCapturer(type, config); 
+    int32_t ret = audioCapturer->InitPlaybackCapturer(type, config);
 
-    
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -2185,7 +2184,7 @@ HWTEST(AudioCapturerUnitTest, IsDeviceChanged_001, TestSize.Level1)
     unique_ptr<AudioCapturerPrivate> audioCapturer =
         std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
 
-     AudioPlaybackCaptureConfig playbackCaptureConfig;
+    AudioPlaybackCaptureConfig playbackCaptureConfig;
     audioCapturer->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
     audioCapturer->capturerInfo_.capturerFlags = 0;
     audioCapturer->capturerInfo_.originalFlag = 0;
