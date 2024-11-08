@@ -58,6 +58,7 @@
 #include "audio_log_utils.h"
 
 #include "media_monitor_manager.h"
+#include "xcollie/watchdog.h"
 
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
@@ -87,6 +88,8 @@ static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MEDIA_SERVICE_UID = 1013;
+constexpr int32_t WATCHDOG_INTERVAL_TIME = 3000; // 3000ms
+constexpr int32_t WATCHDOG_DELAY_TIME = 10000; // 10000ms
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -687,9 +690,7 @@ int32_t RendererInClientInner::GetBufferSize(size_t &bufferSize)
 {
     CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Renderer stream is released");
     bufferSize = clientSpanSizeInByte_;
-    if (renderMode_ == RENDER_MODE_CALLBACK) {
-        bufferSize = cbBufferSize_;
-    }
+    if (renderMode_ == RENDER_MODE_CALLBACK) { bufferSize = cbBufferSize_; }
 
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         CHECK_AND_RETURN_RET(converter_ != nullptr && converter_->GetInputBufferSize(bufferSize), ERR_OPERATION_FAILED);
@@ -1012,6 +1013,23 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     return result;
 }
 
+void RendererInClientInner::WatchingWriteCallbackFunc()
+{
+    writeCallbackFuncThreadStatusFlag_ = true;
+    auto taskFunc = [this]() {
+        if (writeCallbackFuncThreadStatusFlag_) {
+            AUDIO_INFO_LOG("Set writeCallbackFuncThreadStatusFlag_ to false");
+            writeCallbackFuncThreadStatusFlag_ = false;
+        } else {
+            AUDIO_INFO_LOG("watchdog happened and process exit");
+        }
+    };
+    std::string watchDogMessage = "WatchingWriteCallbackFunc" + std::to_string(sessionId_);
+    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask(watchDogMessage, taskFunc,
+        WATCHDOG_INTERVAL_TIME, WATCHDOG_DELAY_TIME);
+    AUDIO_INFO_LOG("watchdog start %{public}d", sessionId_);
+}
+
 void RendererInClientInner::WriteCallbackFunc()
 {
     AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", sessionId_);
@@ -1019,13 +1037,12 @@ void RendererInClientInner::WriteCallbackFunc()
 
     // Modify thread priority is not need as first call write will do these work.
     cbThreadCv_.notify_one();
-
+    // add watchdog
+    WatchingWriteCallbackFunc();
     // start loop
     while (!cbThreadReleased_) {
         Trace traceLoop("RendererInClientInner::WriteCallbackFunc");
-        if (!WaitForRunning()) {
-            continue;
-        }
+        if (!WaitForRunning()) { continue; }
         if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
             AUDIO_WARNING_LOG("The queue is too long, reducing data through loops");
         }
@@ -1061,8 +1078,13 @@ void RendererInClientInner::WriteCallbackFunc()
         Trace traceQueuePush("RendererInClientInner::QueueWaitPush");
         std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
         cbBufferQueue_.WaitNotEmptyFor(std::chrono::milliseconds(WRITE_BUFFER_TIMEOUT_IN_MS));
+        writeCallbackFuncThreadStatusFlag_ = true;
     }
     AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", sessionId_);
+    // stop watchdog
+    std::string watchDogMessage = "WatchingWriteCallbackFunc" + std::to_string(sessionId_);
+    HiviewDFX::Watchdog::GetInstance().RemovePeriodicalTask(watchDogMessage);
+    AUDIO_INFO_LOG("WatchingWriteCallbackFunc end %{public}d", sessionId_);
 }
 
 int32_t RendererInClientInner::SetCaptureMode(AudioCaptureMode captureMode)
@@ -1474,9 +1496,7 @@ bool RendererInClientInner::FlushAudioStream()
     }
 
     // clear cbBufferQueue
-    if (renderMode_ == RENDER_MODE_CALLBACK) {
-        cbBufferQueue_.Clear();
-    }
+    if (renderMode_ == RENDER_MODE_CALLBACK) { cbBufferQueue_.Clear(); }
 
     CHECK_AND_RETURN_RET_LOG(FlushRingCache() == SUCCESS, false, "Flush cache failed");
 
@@ -1773,9 +1793,7 @@ void RendererInClientInner::ResetFramePosition()
 
 void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
 {
-    if (silentModeAndMixWithOthers_) {
-        return;
-    }
+    if (silentModeAndMixWithOthers_) { return; }
     if (buffer[0] == 0) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -2306,9 +2324,7 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
     SetStreamTrackerState(false);
 
     int32_t ret = SetAudioStreamInfo(streamParams_, proxyObj_);
-    if (ret != SUCCESS) {
-        goto error;
-    }
+    if (ret != SUCCESS) { goto error; }
     if (!needStoreState) {
         AUDIO_INFO_LOG("telephony scene, return directly");
         return ret;

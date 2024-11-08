@@ -212,6 +212,7 @@ private:
     int32_t WriteCacheData(bool isDrain = false, bool stopFlag = false);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
+    void WatchingWriteCallbackFunc();
     void WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
@@ -398,6 +399,7 @@ private:
 
     std::mutex setPreferredFrameSizeMutex_;
     std::optional<int32_t> userSettedPreferredFrameSize_ = std::nullopt;
+    std::atomic_bool writeCallbackFuncThreadStatusFlag_ { false };
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

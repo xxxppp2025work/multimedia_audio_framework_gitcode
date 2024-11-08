@@ -46,6 +46,7 @@
 #ifdef DAUDIO_ENABLE
 #include "remote_fast_audio_renderer_sink.h"
 #include "remote_fast_audio_capturer_source.h"
+#include "xcollie/watchdog.h"
 #endif
 
 namespace OHOS {
@@ -63,6 +64,8 @@ namespace {
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
     static const int32_t HALF_FACTOR = 2;
+    constexpr int32_t WATCHDOG_INTERVAL_TIME = 3000; // 3000ms
+    constexpr int32_t WATCHDOG_DELAY_TIME = 10000; // 10000ms
 }
 
 static enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
@@ -225,6 +228,8 @@ private:
     void EndpointWorkLoopFuc();
     void RecordEndpointWorkLoopFuc();
 
+    void WatchingEndpointWorkLoopFuc();
+    void WatchingRecordEndpointWorkLoopFuc();
     // Call GetMmapHandlePosition in ipc may block more than a cycle, call it in another thread.
     void AsyncGetPosTime();
     bool DelayStopDevice();
@@ -346,6 +351,10 @@ private:
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     bool zeroVolumeStopDevice_ = false;
     bool isVolumeAlreadyZero_ = false;
+
+    std::atomic_bool endpointWorkLoopFucThreadStatus_ { false };
+
+    std::atomic_bool recordEndpointWorkLoopFucThreadStatus_ { false };
 };
 
 std::string AudioEndpoint::GenerateEndpointKey(AudioDeviceDescriptor &deviceInfo, int32_t endpointFlag)
@@ -2025,6 +2034,22 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
     return SUCCESS;
 }
 
+void AudioEndpointInner::WatchingRecordEndpointWorkLoopFuc()
+{
+    recordEndpointWorkLoopFucThreadStatus_ = true;
+    auto taskFunc = [this]() {
+        if (recordEndpointWorkLoopFucThreadStatus_) {
+            AUDIO_INFO_LOG("Set recordEndpointWorkLoopFucThreadStatus_ to false");
+            recordEndpointWorkLoopFucThreadStatus_ = false;
+        } else {
+            AUDIO_INFO_LOG("watchdog happened and process exit");
+        }
+    };
+    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask("WatchingRecordEndpointWorkLoopFuc", taskFunc,
+        WATCHDOG_INTERVAL_TIME, WATCHDOG_DELAY_TIME);
+    AUDIO_INFO_LOG("watchdog start");
+}
+
 void AudioEndpointInner::RecordEndpointWorkLoopFuc()
 {
     SetThreadQosLevel();
@@ -2032,6 +2057,8 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
     uint64_t curReadPos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
     AUDIO_INFO_LOG("Record endpoint work loop fuc start.");
+    // add watchdog
+    WatchingRecordEndpointWorkLoopFuc();
     while (isInited_.load()) {
         if (!KeepWorkloopRunning()) {
             continue;
@@ -2062,8 +2089,28 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
         loopTrace.End();
         threadStatus_ = SLEEPING;
         ClockTime::AbsoluteSleep(wakeUpTime);
+        recordEndpointWorkLoopFucThreadStatus_ = true;
     }
     ReSetThreadQosLevel();
+    // stop watchdog
+    HiviewDFX::Watchdog::GetInstance().RemovePeriodicalTask("WatchingRecordEndpointWorkLoopFuc");
+    AUDIO_INFO_LOG("WatchingRecordEndpointWorkLoopFuc watchdog end");
+}
+
+void AudioEndpointInner::WatchingEndpointWorkLoopFuc()
+{
+    endpointWorkLoopFucThreadStatus_ = true;
+    auto taskFunc = [this]() {
+        if (endpointWorkLoopFucThreadStatus_) {
+            AUDIO_INFO_LOG("Set endpointWorkLoopFucThreadStatus_ to false");
+            endpointWorkLoopFucThreadStatus_ = false;
+        } else {
+            AUDIO_INFO_LOG("watchdog happened and process exit");
+        }
+    };
+    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask("WatchingEndpointWorkLoopFuc", taskFunc,
+        WATCHDOG_INTERVAL_TIME, WATCHDOG_DELAY_TIME);
+    AUDIO_INFO_LOG("watchDog start");
 }
 
 void AudioEndpointInner::EndpointWorkLoopFuc()
@@ -2074,6 +2121,8 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
     int64_t wakeUpTime = ClockTime::GetCurNano();
     AUDIO_INFO_LOG("Endpoint work loop fuc start");
     int32_t ret = 0;
+    // add watchdog
+    WatchingEndpointWorkLoopFuc();
     while (isInited_.load()) {
         if (!KeepWorkloopRunning()) {
             continue;
@@ -2119,9 +2168,13 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         // start sleep
         threadStatus_ = SLEEPING;
         ClockTime::AbsoluteSleep(wakeUpTime);
+        endpointWorkLoopFucThreadStatus_ = true;
     }
     AUDIO_DEBUG_LOG("Endpoint work loop fuc end, ret %{public}d", ret);
     ReSetThreadQosLevel();
+    // stop watchdog
+    HiviewDFX::Watchdog::GetInstance().RemovePeriodicalTask("WatchingEndpointWorkLoopFuc");
+    AUDIO_INFO_LOG("WatchingEndpointWorkLoopFuc watchdog end");
 }
 
 void AudioEndpointInner::InitLatencyMeasurement()
