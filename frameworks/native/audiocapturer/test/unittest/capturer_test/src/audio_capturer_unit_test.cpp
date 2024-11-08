@@ -2125,7 +2125,6 @@ HWTEST(AudioCapturerUnitTest, CheckSignalData_001, TestSize.Level1)
     EXPECT_EQ(audioCapturer != nullptr, true);
 }
 
-
 /**
 * @tc.name  : Test GetStreamInfo.
 * @tc.number: GetStreamInfo
