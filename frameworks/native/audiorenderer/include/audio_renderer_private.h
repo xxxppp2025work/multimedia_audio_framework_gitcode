@@ -51,6 +51,8 @@ public:
     bool Drain() const override;
     bool PauseTransitent(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
+    bool Mute(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
+    bool Unmute(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
     bool Stop() override;
     bool Flush() const override;
     bool Release() override;
@@ -197,6 +199,7 @@ private:
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
     void UpdateAudioInterruptStrategy(float volume) const;
     void WriteSwitchStreamLogMsg();
+    bool IsAllowedStartBackgroud();
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;

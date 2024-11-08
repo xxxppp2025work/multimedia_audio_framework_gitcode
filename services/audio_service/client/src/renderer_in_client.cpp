@@ -749,6 +749,25 @@ float RendererInClientInner::GetVolume()
     return clientVolume_;
 }
 
+int32_t RendererInClientInner::SetMute(bool mute)
+{
+    Trace trace("RendererInClientInner::SetMute:" + std::to_string(mute));
+    AUDIO_INFO_LOG("sessionId:%{public}d SetDuck:%{public}d", sessionId_, mute);
+    muteVolume_ = mute ? 0.0f : 1.0f;
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
+    clientBuffer_->SetMuteFactor(muteVolume_);
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->SetMute(mute);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Set Mute failed:%{public}u", ret);
+        return ERROR;
+    }
+    if (offloadEnable_) {
+        ipcStream_->OffloadSetVolume(mute ? 0.0f : clientVolume_ * duckVolume_);
+    }
+    return SUCCESS;
+}
+
 int32_t RendererInClientInner::SetDuckVolume(float volume)
 {
     Trace trace("RendererInClientInner::SetDuckVolume:" + std::to_string(volume));

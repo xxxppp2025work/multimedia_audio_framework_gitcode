@@ -630,13 +630,29 @@ void AudioRendererPrivate::UnsetRendererPeriodPositionCallback()
     audioStream_->UnsetRendererPeriodPositionCallback();
 }
 
+bool AudioRendererPrivate::IsAllowedStartBackgroud()
+{
+    bool ret = AudioPolicyManager::GetInstance().IsAllowedPlayback(appInfo_.appUid, appInfo_.appPid);
+    if (ret) {
+        AUDIO_INFO_LOG("AVSession IsAudioPlaybackAllowed is: %{public}d", ret);
+        return ret;
+    } else {
+        if (std::count(BACKGROUND_NOSTART_STREAM_USAGE.begin(), BACKGROUND_NOSTART_STREAM_USAGE.end(),
+            rendererInfo_.streamUsage) == 0) {
+            AUDIO_INFO_LOG("%{public}d is BACKGROUND_NOSTART_STREAM_USAGE", rendererInfo_.streamUsage);
+            return true;
+        }
+    }
+    return ret;
+}
+
 bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 {
     Trace trace("AudioRenderer::Start");
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
         "interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.mode);
-
+    CHECK_AND_RETURN_RET_LOG(IsAllowedStartBackgroud(), false, "Start failed. IsAllowedStartBackgroud is false");
     RendererState state = GetStatus();
     CHECK_AND_RETURN_RET_LOG((state == RENDERER_PREPARED) || (state == RENDERER_STOPPED) || (state == RENDERER_PAUSED),
         false, "Start failed. Illegal state:%{public}u", state);
@@ -769,6 +785,26 @@ bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType)
     }
 
     return result;
+}
+
+bool AudioRendererPrivate::Mute(StateChangeCmdType cmdType) const
+{
+    Trace trace("AudioRenderer::Mute");
+    std::shared_lock<std::shared_mutex> lock(rendererMutex_);
+ 
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Mute. id: %{public}u", sessionID_);
+    (void)audioStream_->SetMute(true);
+    return true;
+}
+ 
+bool AudioRendererPrivate::Unmute(StateChangeCmdType cmdType) const
+{
+    Trace trace("AudioRenderer::Unmute");
+    std::shared_lock<std::shared_mutex> lock(rendererMutex_);
+ 
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Unmute. id: %{public}u", sessionID_);
+    (void)audioStream_->SetMute(false);
+    return true;
 }
 
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)

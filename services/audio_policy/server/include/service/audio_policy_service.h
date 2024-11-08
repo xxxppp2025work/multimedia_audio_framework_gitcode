@@ -231,6 +231,8 @@ public:
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
 
     bool IsDataShareReady();
+
+    int32_t ResumeStreamState();
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones();
 
@@ -564,6 +566,9 @@ public:
         const StreamUsage streamUsage, bool isRunning);
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
+
+    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
