@@ -17,6 +17,7 @@
 #include "audio_info.h"
 #include "audio_stream_info.h"
 #include "audio_adapter_info.h"
+#include "audio_ec_info.h"
 #include "audio_module_info.h"
 #include "audio_ec_info.h"
 #include "audio_policy_server.h"
@@ -42,6 +43,83 @@ static const std::string PIPE_PRIMARY_INPUT_UNITTEST = "primary_input";
 static const std::string PIPE_USB_ARM_OUTPUT_UNITTEST = "usb_arm_output";
 static const std::string PIPE_DP_OUTPUT_UNITTEST = "dp_output";
 static const std::string PIPE_USB_ARM_INPUT_UNITTEST = "usb_arm_input";
+const int32_t TEST_SESSIONID = MIN_SESSIONID + 1010;
+
+static const std::vector<AudioStreamType>audioStreamTypes = {
+    STREAM_DEFAULT,
+    STREAM_VOICE_CALL,
+    STREAM_MUSIC,
+    STREAM_RING,
+    STREAM_MEDIA,
+    STREAM_VOICE_ASSISTANT,
+    STREAM_SYSTEM,
+    STREAM_ALARM,
+    STREAM_NOTIFICATION,
+    STREAM_BLUETOOTH_SCO,
+    STREAM_ENFORCED_AUDIBLE,
+    STREAM_DTMF,
+    STREAM_TTS,
+    STREAM_RECORDING,
+    STREAM_MOVIE,
+    STREAM_GAME,
+    STREAM_SPEECH,
+    STREAM_SYSTEM_ENFORCED,
+    STREAM_ULTRASONIC,
+    STREAM_WAKEUP,
+    STREAM_VOICE_MESSAGE,
+    STREAM_NAVIGATION,
+    STREAM_INTERNAL_FORCE_STOP,
+    STREAM_SOURCE_VOICE_CALL,
+    STREAM_VOICE_COMMUNICATION,
+    STREAM_VOICE_RING,
+    STREAM_VOICE_CALL_ASSISTANT,
+    STREAM_TYPE_MAX,
+    STREAM_ALL
+};
+
+static const std::vector<DeviceType> deviceTypes = {
+    DEVICE_TYPE_NONE,
+    DEVICE_TYPE_INVALID,
+    DEVICE_TYPE_EARPIECE,
+    DEVICE_TYPE_SPEAKER,
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_WIRED_HEADPHONES,
+    DEVICE_TYPE_BLUETOOTH_SCO,
+    DEVICE_TYPE_BLUETOOTH_A2DP,
+    DEVICE_TYPE_MIC,
+    DEVICE_TYPE_WAKEUP,
+    DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_DP,
+    DEVICE_TYPE_REMOTE_CAST,
+    DEVICE_TYPE_FILE_SINK,
+    DEVICE_TYPE_FILE_SOURCE,
+    DEVICE_TYPE_EXTERN_CABLE,
+    DEVICE_TYPE_DEFAULT,
+    DEVICE_TYPE_USB_ARM_HEADSET
+};
+
+static const std::vector<DeviceCategory>deviceCategorys = {
+    CATEGORY_DEFAULT,
+    BT_HEADPHONE,
+    BT_SOUNDBOX,
+    BT_CAR,
+    BT_GLASSES,
+    BT_WATCH,
+    BT_HEARAID,
+    BT_UNWEAR_HEADPHONE
+};
+
+static const std::vector<AudioScene>audioScenes = {
+    AUDIO_SCENE_INVALID,
+    AUDIO_SCENE_DEFAULT,
+    AUDIO_SCENE_RINGING,
+    AUDIO_SCENE_PHONE_CALL,
+    AUDIO_SCENE_PHONE_CHAT,
+    AUDIO_SCENE_CALL_START,
+    AUDIO_SCENE_CALL_END,
+    AUDIO_SCENE_VOICE_RINGING,
+    AUDIO_SCENE_MAX
+};
 
 void AudioPolicyServiceExtUnitTest::SetUpTestCase(void)
 {
@@ -110,13 +188,521 @@ static void GetPermission()
 }
 
 /**
+* @tc.name  : Test AudioPolicyServiceExtUnitTest_Prepare001.
+* @tc.number: AudioPolicyServiceExtUnitTest_Prepare001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceExtUnitTest_Prepare001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceExtUnitTest AudioPolicyServiceExtUnitTest_Prepare001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    // Get permission for test
+    GetPermission();
+
+    // Call OnServiceConnected for HDI_SERVICE_INDEX
+    server->audioPolicyService_.OnServiceConnected(HDI_SERVICE_INDEX);
+}
+
+/**
+* @tc.name  : Test GetSystemVolumeLevel.
+* @tc.number: GetSystemVolumeLevel_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, GetSystemVolumeLevel_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceExtUnitTest GetSystemVolumeLevel_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    // clear connectedA2dpDeviceMap_
+    server->audioPolicyService_.connectedA2dpDeviceMap_.clear();
+
+    // modify currentActiveDevice_.deviceType_ to DEVICE_TYPE_SPEAKER
+    server->audioPolicyService_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
+    server->audioPolicyService_.GetSystemVolumeLevel(STREAM_MUSIC);
+    server->audioPolicyService_.GetSystemVolumeLevel(STREAM_RING);
+
+    // modify currentActiveDevice_.deviceType_ to DEVICE_TYPE_BLUETOOTH_A2DP
+    server->audioPolicyService_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    server->audioPolicyService_.GetSystemVolumeLevel(STREAM_MUSIC);
+    server->audioPolicyService_.GetSystemVolumeLevel(STREAM_MUSIC);
+
+    // modify activeBTDevice_ and connectedA2dpDeviceMap_
+    server->audioPolicyService_.activeBTDevice_ = "activeBTDevice";
+    AudioStreamInfo audioStreamInfo = {};
+    audioStreamInfo.samplingRate =  AudioSamplingRate::SAMPLE_RATE_48000;
+    audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    audioStreamInfo.channels = AudioChannel::STEREO;
+    A2dpDeviceConfigInfo configInfo = {audioStreamInfo, true};
+    server->audioPolicyService_.connectedA2dpDeviceMap_.insert({"activeBTDevice", configInfo});
+    server->audioPolicyService_.connectedA2dpDeviceMap_.insert({"A2dpDeviceCommon", {}});
+    server->audioPolicyService_.GetSystemVolumeLevel(STREAM_MUSIC);
+    server->audioPolicyService_.GetSystemVolumeLevel(STREAM_MUSIC);
+
+    // modify configInfo.absVolumeSupport to false
+    configInfo.absVolumeSupport = false;
+    server->audioPolicyService_.GetSystemVolumeLevel(STREAM_MUSIC);
+
+    // use STREAM_WAKEUP to test GetVolumeTypeFromStreamType's else branch
+    server->audioPolicyService_.GetSystemVolumeLevel(STREAM_WAKEUP);
+}
+
+/**
+* @tc.name  : Test FetchOutputDeviceForTrack.
+* @tc.number: FetchOutputDeviceForTrack_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, FetchOutputDeviceForTrack_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceExtUnitTest FetchOutputDeviceForTrack_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    server->audioPolicyService_.streamCollector_.audioRendererChangeInfos_.clear();
+
+    AudioStreamChangeInfo streamChangeInfo = {};
+    server->audioPolicyService_.FetchOutputDeviceForTrack(streamChangeInfo,
+        AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+}
+
+/**
+* @tc.name  : Test UnsetAudioDeviceAnahsCallback.
+* @tc.number: UnsetAudioDeviceAnahsCallback_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, UnsetAudioDeviceAnahsCallback_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceExtUnitTest UnsetAudioDeviceAnahsCallback_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    server->audioPolicyService_.UnsetAudioDeviceAnahsCallback();
+}
+
+/**
+* @tc.name  : Test SelectDealSafeVolume.
+* @tc.number: SelectDealSafeVolume_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, SelectDealSafeVolume_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceExtUnitTest SelectDealSafeVolume_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    server->audioPolicyService_.isSelectRestoreVol_ = true;
+    server->audioPolicyService_.isSelectIncreaseVol_ = true;
+    for (const auto& audioStreamType : audioStreamTypes) {
+        for (const auto& deviceType : deviceTypes) {
+            server->audioPolicyService_.currentActiveDevice_.deviceType_ = deviceType;
+            server->audioPolicyService_.SelectDealSafeVolume(audioStreamType, 1);
+            server->audioPolicyService_.SelectDealSafeVolume(audioStreamType, 20);
+        }
+    }
+    server->audioPolicyService_.isSelectRestoreVol_ = true;
+    server->audioPolicyService_.isSelectIncreaseVol_ = false;
+    for (const auto& audioStreamType : audioStreamTypes) {
+        for (const auto& deviceType : deviceTypes) {
+            server->audioPolicyService_.currentActiveDevice_.deviceType_ = deviceType;
+            server->audioPolicyService_.SelectDealSafeVolume(audioStreamType, 1);
+            server->audioPolicyService_.SelectDealSafeVolume(audioStreamType, 20);
+        }
+    }
+
+    server->audioPolicyService_.isSelectRestoreVol_ = false;
+    server->audioPolicyService_.isSelectIncreaseVol_ = true;
+    for (const auto& audioStreamType : audioStreamTypes) {
+        for (const auto& deviceType : deviceTypes) {
+            server->audioPolicyService_.currentActiveDevice_.deviceType_ = deviceType;
+            server->audioPolicyService_.SelectDealSafeVolume(audioStreamType, 1);
+            server->audioPolicyService_.SelectDealSafeVolume(audioStreamType, 20);
+        }
+    }
+
+    server->audioPolicyService_.isSelectRestoreVol_ = false;
+    server->audioPolicyService_.isSelectIncreaseVol_ = false;
+    for (const auto& audioStreamType : audioStreamTypes) {
+        for (const auto& deviceType : deviceTypes) {
+            server->audioPolicyService_.currentActiveDevice_.deviceType_ = deviceType;
+            server->audioPolicyService_.SelectDealSafeVolume(audioStreamType, 1);
+            server->audioPolicyService_.SelectDealSafeVolume(audioStreamType, 20);
+        }
+    }
+
+    server->audioPolicyService_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    for (const auto& audioStreamType : audioStreamTypes) {
+        for (const auto& deviceCategory : deviceCategorys) {
+            server->audioPolicyService_.currentActiveDevice_.deviceCategory_ = deviceCategory;
+            server->audioPolicyService_.SelectDealSafeVolume(audioStreamType, 20);
+        }
+    }
+}
+
+static void MakeAudioDeviceManagerConnectedDevices()
+{
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    // clear audioDeviceManager_.connectedDevices_
+    server->audioPolicyService_.audioDeviceManager_.connectedDevices_.clear();
+
+    // insert audioDeviceDescriptor into audioDeviceManager_.connectedDevices_
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
+    audioDeviceDescriptor->deviceRole_ = INPUT_DEVICE;
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_MIC;
+    audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
+    audioDeviceDescriptor->macAddress_ = "11:22:33:44:55:66";
+    audioDeviceDescriptor->volumeGroupId_ = 1;
+    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(audioDeviceDescriptor);
+    server->audioPolicyService_.audioDeviceManager_.AddConnectedDevices(devDesc);
+}
+
+/**
+* @tc.name  : Test SelectInputDevice.
+* @tc.number: SelectInputDevice_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, SelectInputDevice_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceExtUnitTest SelectInputDevice_001 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    MakeAudioDeviceManagerConnectedDevices();
+
+    int32_t ret = SUCCESS;
+    // case audioCapturerFilter->uid = 1
+    // case capturerChangeInfo->clientUID != audioCapturerFilter->uid
+    // case changeInfo->sessionId != 0
+    unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.capturerFlags = STREAM_FLAG_NORMAL;
+    capturerChangeInfo->createrUID = 0;
+    capturerChangeInfo->clientUID = -1;
+    capturerChangeInfo->sessionId = TEST_SESSIONID;
+    capturerChangeInfo->capturerInfo = capturerInfo;
+    server->audioPolicyService_.streamCollector_.audioCapturerChangeInfos_.push_back(move(capturerChangeInfo));
+
+    sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+    audioCapturerFilter->uid = 1;
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new AudioDeviceDescriptor();
+    audioDeviceDescriptorSptr->deviceRole_ = INPUT_DEVICE;
+    audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_MIC;
+    audioDeviceDescriptorSptr->networkId_ = LOCAL_NETWORK_ID;
+    audioDeviceDescriptorSptr->macAddress_ = "11:22:33:44:55:66";
+    audioDeviceDescriptorSptr->volumeGroupId_ = 1;
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+    ret = server->audioPolicyService_.SelectInputDevice(audioCapturerFilter, audioDeviceDescriptorSptrVector);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SelectInputDevice.
+* @tc.number: SelectInputDevice_002
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, SelectInputDevice_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceExtUnitTest SelectInputDevice_002 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    MakeAudioDeviceManagerConnectedDevices();
+
+    int32_t ret = SUCCESS;
+    // case audioCapturerFilter->uid = 1
+    // case capturerChangeInfo->clientUID = audioCapturerFilter->uid
+    // case changeInfo->sessionId != 0
+    unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.capturerFlags = STREAM_FLAG_FAST;
+    capturerChangeInfo->createrUID = 0;
+    capturerChangeInfo->clientUID = 1;
+    capturerChangeInfo->sessionId = TEST_SESSIONID;
+    capturerChangeInfo->capturerInfo = capturerInfo;
+    server->audioPolicyService_.streamCollector_.audioCapturerChangeInfos_.push_back(move(capturerChangeInfo));
+
+    sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+    audioCapturerFilter->uid = 1;
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new AudioDeviceDescriptor();
+    audioDeviceDescriptorSptr->deviceRole_ = INPUT_DEVICE;
+    audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_MIC;
+    audioDeviceDescriptorSptr->networkId_ = LOCAL_NETWORK_ID;
+    audioDeviceDescriptorSptr->macAddress_ = "11:22:33:44:55:66";
+    audioDeviceDescriptorSptr->volumeGroupId_ = 1;
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+    ret = server->audioPolicyService_.SelectInputDevice(audioCapturerFilter, audioDeviceDescriptorSptrVector);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SelectInputDevice.
+* @tc.number: SelectInputDevice_003
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, SelectInputDevice_003, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceExtUnitTest SelectInputDevice_003 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    MakeAudioDeviceManagerConnectedDevices();
+
+    int32_t ret = SUCCESS;
+    // case audioCapturerFilter->uid = 1
+    // case capturerChangeInfo->clientUID = audioCapturerFilter->uid
+    // case changeInfo->sessionId = 0
+    unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.capturerFlags = STREAM_FLAG_FAST;
+    capturerChangeInfo->createrUID = 0;
+    capturerChangeInfo->clientUID = 1;
+    capturerChangeInfo->sessionId = 0;
+    capturerChangeInfo->capturerInfo = capturerInfo;
+    server->audioPolicyService_.streamCollector_.audioCapturerChangeInfos_.push_back(move(capturerChangeInfo));
+
+    sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+    audioCapturerFilter->uid = 1;
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new AudioDeviceDescriptor();
+    audioDeviceDescriptorSptr->deviceRole_ = INPUT_DEVICE;
+    audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_MIC;
+    audioDeviceDescriptorSptr->networkId_ = LOCAL_NETWORK_ID;
+    audioDeviceDescriptorSptr->macAddress_ = "11:22:33:44:55:66";
+    audioDeviceDescriptorSptr->volumeGroupId_ = 1;
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+    ret = server->audioPolicyService_.SelectInputDevice(audioCapturerFilter, audioDeviceDescriptorSptrVector);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SelectInputDevice.
+* @tc.number: SelectInputDevice_004
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, SelectInputDevice_004, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceExtUnitTest SelectInputDevice_004 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    MakeAudioDeviceManagerConnectedDevices();
+
+    int32_t ret = SUCCESS;
+    // case audioCapturerFilter->uid = -1
+    // case audioCapturerFilter->capturerInfo.capturerFlags == STREAM_FLAG_FAST
+    // case selectedDesc.size() = 1
+    unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.capturerFlags = STREAM_FLAG_FAST;
+    capturerChangeInfo->createrUID = 0;
+    capturerChangeInfo->clientUID = 1;
+    capturerChangeInfo->sessionId = 0;
+    capturerChangeInfo->capturerInfo = capturerInfo;
+    server->audioPolicyService_.streamCollector_.audioCapturerChangeInfos_.push_back(move(capturerChangeInfo));
+
+    sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+    audioCapturerFilter->uid = -1;
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new AudioDeviceDescriptor();
+    audioDeviceDescriptorSptr->deviceRole_ = INPUT_DEVICE;
+    audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_MIC;
+    audioDeviceDescriptorSptr->networkId_ = LOCAL_NETWORK_ID;
+    audioDeviceDescriptorSptr->macAddress_ = "11:22:33:44:55:66";
+    audioDeviceDescriptorSptr->volumeGroupId_ = 1;
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+    ret = server->audioPolicyService_.SelectInputDevice(audioCapturerFilter, audioDeviceDescriptorSptrVector);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SelectInputDevice.
+* @tc.number: SelectInputDevice_005
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, SelectInputDevice_005, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceExtUnitTest SelectInputDevice_005 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    MakeAudioDeviceManagerConnectedDevices();
+
+    int32_t ret = SUCCESS;
+    // case audioCapturerFilter->uid = -1
+    // case audioCapturerFilter->capturerInfo.capturerFlags == STREAM_FLAG_FAST
+    // case selectedDesc.size() = 2
+    unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.capturerFlags = STREAM_FLAG_FAST;
+    capturerChangeInfo->createrUID = 0;
+    capturerChangeInfo->clientUID = 1;
+    capturerChangeInfo->sessionId = 0;
+    capturerChangeInfo->capturerInfo = capturerInfo;
+    server->audioPolicyService_.streamCollector_.audioCapturerChangeInfos_.push_back(move(capturerChangeInfo));
+
+    sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+    audioCapturerFilter->uid = -1;
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new AudioDeviceDescriptor();
+    audioDeviceDescriptorSptr->deviceRole_ = INPUT_DEVICE;
+    audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_MIC;
+    audioDeviceDescriptorSptr->networkId_ = LOCAL_NETWORK_ID;
+    audioDeviceDescriptorSptr->macAddress_ = "11:22:33:44:55:66";
+    audioDeviceDescriptorSptr->volumeGroupId_ = 1;
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr2 = new AudioDeviceDescriptor();
+    audioDeviceDescriptorSptr2->deviceRole_ = INPUT_DEVICE;
+    audioDeviceDescriptorSptr2->deviceType_ = DEVICE_TYPE_MIC;
+    audioDeviceDescriptorSptr2->networkId_ = LOCAL_NETWORK_ID;
+    audioDeviceDescriptorSptr2->macAddress_ = "11:22:33:44:55:66";
+    audioDeviceDescriptorSptr2->volumeGroupId_ = 1;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr2);
+    ret = server->audioPolicyService_.SelectInputDevice(audioCapturerFilter, audioDeviceDescriptorSptrVector);
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SelectInputDevice.
+* @tc.number: SelectInputDevice_006
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, SelectInputDevice_006, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceExtUnitTest SelectInputDevice_006 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    MakeAudioDeviceManagerConnectedDevices();
+
+    int32_t ret = SUCCESS;
+    // case audioCapturerFilter->uid = -1
+    // case audioCapturerFilter->capturerInfo.capturerFlags != STREAM_FLAG_FAST
+    // case selectedDesc.size() = 1
+    unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.capturerFlags = STREAM_FLAG_NORMAL;
+    capturerChangeInfo->createrUID = 0;
+    capturerChangeInfo->clientUID = 1;
+    capturerChangeInfo->sessionId = 0;
+    capturerChangeInfo->capturerInfo = capturerInfo;
+    server->audioPolicyService_.streamCollector_.audioCapturerChangeInfos_.push_back(move(capturerChangeInfo));
+
+    sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+    audioCapturerFilter->uid = -1;
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new AudioDeviceDescriptor();
+    audioDeviceDescriptorSptr->deviceRole_ = INPUT_DEVICE;
+    audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_MIC;
+    audioDeviceDescriptorSptr->networkId_ = LOCAL_NETWORK_ID;
+    audioDeviceDescriptorSptr->macAddress_ = "11:22:33:44:55:66";
+    audioDeviceDescriptorSptr->volumeGroupId_ = 1;
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+    ret = server->audioPolicyService_.SelectInputDevice(audioCapturerFilter, audioDeviceDescriptorSptrVector);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SelectInputDevice.
+* @tc.number: SelectInputDevice_007
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, SelectInputDevice_007, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceExtUnitTest SelectInputDevice_007 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    MakeAudioDeviceManagerConnectedDevices();
+
+    int32_t ret = SUCCESS;
+    // case audioCapturerFilter->uid = -1
+    // case audioCapturerFilter->capturerInfo.capturerFlags != STREAM_FLAG_FAST
+    // case capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION
+    unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.capturerFlags = STREAM_FLAG_NORMAL;
+    capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    capturerChangeInfo->createrUID = 0;
+    capturerChangeInfo->clientUID = 1;
+    capturerChangeInfo->sessionId = 0;
+    capturerChangeInfo->capturerInfo = capturerInfo;
+    server->audioPolicyService_.streamCollector_.audioCapturerChangeInfos_.push_back(move(capturerChangeInfo));
+
+    sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+    audioCapturerFilter->uid = -1;
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new AudioDeviceDescriptor();
+    audioDeviceDescriptorSptr->deviceRole_ = INPUT_DEVICE;
+    audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_MIC;
+    audioDeviceDescriptorSptr->networkId_ = LOCAL_NETWORK_ID;
+    audioDeviceDescriptorSptr->macAddress_ = "11:22:33:44:55:66";
+    audioDeviceDescriptorSptr->volumeGroupId_ = 1;
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+
+    for (const auto& audioScene : audioScenes) {
+        server->audioPolicyService_.audioScene_ = audioScene;
+        ret = server->audioPolicyService_.SelectInputDevice(audioCapturerFilter,
+            audioDeviceDescriptorSptrVector);
+        EXPECT_EQ(SUCCESS, ret);
+    }
+}
+
+/**
+* @tc.name  : Test SelectInputDevice.
+* @tc.number: SelectInputDevice_008
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, SelectInputDevice_008, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceExtUnitTest SelectInputDevice_008 start");
+    auto server = AudioPolicyServiceUnitTest::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    MakeAudioDeviceManagerConnectedDevices();
+
+    int32_t ret = SUCCESS;
+    // case audioCapturerFilter->uid = -1
+    // case audioCapturerFilter->capturerInfo.capturerFlags != STREAM_FLAG_FAST
+    // case capturerInfo.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION
+    unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.capturerFlags = STREAM_FLAG_NORMAL;
+    capturerInfo.sourceType = SOURCE_TYPE_VOICE_CALL;
+    capturerChangeInfo->createrUID = 0;
+    capturerChangeInfo->clientUID = 1;
+    capturerChangeInfo->sessionId = 0;
+    capturerChangeInfo->capturerInfo = capturerInfo;
+    server->audioPolicyService_.streamCollector_.audioCapturerChangeInfos_.push_back(move(capturerChangeInfo));
+
+    sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+    audioCapturerFilter->uid = -1;
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new AudioDeviceDescriptor();
+    audioDeviceDescriptorSptr->deviceRole_ = INPUT_DEVICE;
+    audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_MIC;
+    audioDeviceDescriptorSptr->networkId_ = LOCAL_NETWORK_ID;
+    audioDeviceDescriptorSptr->macAddress_ = "11:22:33:44:55:66";
+    audioDeviceDescriptorSptr->volumeGroupId_ = 1;
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+
+    for (const auto& audioScene : audioScenes) {
+        server->audioPolicyService_.audioScene_ = audioScene;
+        ret = server->audioPolicyService_.SelectInputDevice(audioCapturerFilter,
+            audioDeviceDescriptorSptrVector);
+        EXPECT_EQ(SUCCESS, ret);
+    }
+}
+
+/**
  * @tc.name  : Test AudioVolumeDump.
  * @tc.number: AudioVolumeDump_001
  * @tc.desc  : Test AudioVolumeDump interfaces.
  */
 HWTEST_F(AudioPolicyServiceExtUnitTest, AudioVolumeDump_001, TestSize.Level1)
 {
-    GetPermission();
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
     std::string dumpString = "666";
     server->AudioVolumeDump(dumpString);
@@ -246,7 +832,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, SetAbsVolumeSceneAsync_001, TestSize.Lev
     std::string macAddress = "";
     bool support = false;
     server->audioPolicyService_.SetAbsVolumeSceneAsync(macAddress, support);
-    EXPECT_EQ(server->audioPolicyService_.activeBTDevice_, "AA-BB-CC-DD-EE-FF");
+    EXPECT_EQ(server->audioPolicyService_.activeBTDevice_, "activeBTDevice_");
 }
 
 /**
@@ -569,7 +1155,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipRendererFlag_002, TestSize.Level1
     networkId = REMOTE_NETWORK_ID;
     ret = server->audioPolicyService_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
-
 }
 
 /**
