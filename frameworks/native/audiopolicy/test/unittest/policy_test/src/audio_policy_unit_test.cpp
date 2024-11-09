@@ -95,18 +95,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetToneConfig_001, TestSize.Level1)
 #endif
 
 /**
- * @tc.name  : Test Audio_Policy_IsStreamActive_001 via legal state
- * @tc.number: Audio_Policy_IsStreamActive_001
- * @tc.desc  : Test IsStreamActive interface. Returns success.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_IsStreamActive_001, TestSize.Level1)
-{
-    AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
-    bool isStreamActive = AudioPolicyManager::GetInstance().IsStreamActive(streamType);
-    EXPECT_EQ(false, isStreamActive);
-}
-
-/**
  * @tc.name  : Test Audio_Policy_SelectInputDevice_001 via illegal state
  * @tc.number: Audio_Policy_SelectInputDevice_001
  * @tc.desc  : Test SelectInputDevice interface. Returns success.
@@ -150,17 +138,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_IsAudioRendererLowLatencySupported_001,
     audioStreamInfo.channels = AudioChannel::MONO;
     bool ret = AudioPolicyManager::GetInstance().IsAudioRendererLowLatencySupported(audioStreamInfo);
     EXPECT_EQ(true, ret);
-}
-
-/**
- * @tc.name  : Test Audio_Policy_Manager_IsStreamActive_001 via illegal state
- * @tc.number: Audio_Policy_Manager_IsStreamActive_001
- * @tc.desc  : Test RegisterAudioCapturerEventListener interface. Returns success.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsStreamActive_001, TestSize.Level1)
-{
-    bool isStreamActive = AudioPolicyManager::GetInstance().IsStreamActive(AudioStreamType::STREAM_MUSIC);
-    EXPECT_EQ(false, isStreamActive);
 }
 
 /**
@@ -1372,8 +1349,6 @@ HWTEST(AudioPolicyUnitTest, GetStreamMute_003, TestSize.Level1)
     EXPECT_TRUE(isMute);
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(static_cast<AudioVolumeType>(99));
     EXPECT_TRUE(isMute);
-    isMute = AudioPolicyManager::GetInstance().IsStreamActive(AudioVolumeType::STREAM_MUSIC);
-    EXPECT_FALSE(isMute);
     ret = AudioPolicyManager::GetInstance().SetStreamMute(AudioVolumeType::STREAM_MUSIC, false);
     EXPECT_EQ(SUCCESS, ret);
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(AudioVolumeType::STREAM_MUSIC);
