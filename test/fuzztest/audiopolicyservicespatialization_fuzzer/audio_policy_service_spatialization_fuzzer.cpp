@@ -40,7 +40,7 @@ void AudioSpatializationServiceFuzzTest(const uint8_t *rawData, size_t size)
     audioSpatializationService->UpdateSpatialDeviceState(audioSpatialDeviceState);
     audioSpatializationService->Deinit();
 
-    sptr<AudioDeviceDescriptor> selectedAudioDevice = new (std::nothrow) AudioDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
     audioSpatializationService->SetHeadTrackingEnabled(selectedAudioDevice, true);
     audioSpatializationService->HandleHeadTrackingEnabledChange(selectedAudioDevice, true);
 

@@ -174,7 +174,9 @@ inline const sptr<IStandardAudioService> GetAudioSystemManagerProxy()
         sptr<AudioServerDeathRecipient> asDeathRecipient =
             new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) { AudioSystemManager::AudioServerDied(pid, uid); });
+            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) {
+                AudioSystemManager::AudioServerDied(pid, uid);
+            });
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
                 AUDIO_ERR_LOG("failed to add deathRecipient");
@@ -658,7 +660,8 @@ bool AudioSystemManager::IsMicrophoneMute()
     return groupManager->IsMicrophoneMuteLegacy();
 }
 
-int32_t AudioSystemManager::SelectOutputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+int32_t AudioSystemManager::SelectOutputDevice(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() == 1 && audioDeviceDescriptors[0] != nullptr,
         ERR_INVALID_PARAM, "invalid parameter");
@@ -676,7 +679,8 @@ int32_t AudioSystemManager::SelectOutputDevice(std::vector<sptr<AudioDeviceDescr
     return ret;
 }
 
-int32_t AudioSystemManager::SelectInputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+int32_t AudioSystemManager::SelectInputDevice(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() == 1 && audioDeviceDescriptors[0] != nullptr,
         ERR_INVALID_PARAM, "invalid parameter");
@@ -694,7 +698,7 @@ std::string AudioSystemManager::GetSelectedDeviceInfo(int32_t uid, int32_t pid, 
 }
 
 int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
     // basic check
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr && audioDeviceDescriptors.size() != 0,
@@ -723,7 +727,7 @@ int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
 }
 
 int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
     // basic check
     CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr && audioDeviceDescriptors.size() != 0,
@@ -743,17 +747,17 @@ int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     return AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFlag deviceFlag)
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFlag deviceFlag)
 {
     return AudioPolicyManager::GetInstance().GetDevices(deviceFlag);
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevicesInner(DeviceFlag deviceFlag)
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevicesInner(DeviceFlag deviceFlag)
 {
     return AudioPolicyManager::GetInstance().GetDevicesInner(deviceFlag);
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetActiveOutputDeviceDescriptors()
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSystemManager::GetActiveOutputDeviceDescriptors()
 {
     AudioRendererInfo rendererInfo;
     return AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo);
@@ -767,13 +771,13 @@ int32_t AudioSystemManager::GetPreferredInputDeviceDescriptors()
     return SUCCESS;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetOutputDevice(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSystemManager::GetOutputDevice(
     sptr<AudioRendererFilter> audioRendererFilter)
 {
     return AudioPolicyManager::GetInstance().GetOutputDevice(audioRendererFilter);
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetInputDevice(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSystemManager::GetInputDevice(
     sptr<AudioCapturerFilter> audioCapturerFilter)
 {
     return AudioPolicyManager::GetInstance().GetInputDevice(audioCapturerFilter);
@@ -1026,7 +1030,8 @@ int32_t AudioSystemManager::SetAudioManagerInterruptCallback(const std::shared_p
     CHECK_AND_RETURN_RET_LOG(audioInterruptCallback_ != nullptr, ERROR,
         "Failed to allocate memory for audioInterruptCallback");
 
-    int32_t ret = AudioPolicyManager::GetInstance().SetAudioManagerInterruptCallback(clientId, audioInterruptCallback_);
+    int32_t ret =
+        AudioPolicyManager::GetInstance().SetAudioManagerInterruptCallback(clientId, audioInterruptCallback_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Failed set callback");
 
     std::shared_ptr<AudioManagerInterruptCallbackImpl> cbInterrupt =
@@ -1369,7 +1374,8 @@ int32_t AudioSystemManager::RegisterWakeupSourceCallback()
     return gasp->SetWakeupSourceCallback(object);
 }
 
-int32_t AudioSystemManager::SetAudioCapturerSourceCallback(const std::shared_ptr<AudioCapturerSourceCallback> &callback)
+int32_t AudioSystemManager::SetAudioCapturerSourceCallback(
+    const std::shared_ptr<AudioCapturerSourceCallback> &callback)
 {
     audioCapturerSourceCallback_ = callback;
     return RegisterWakeupSourceCallback();
@@ -1396,7 +1402,8 @@ int32_t AudioSystemManager::UnsetAvailableDeviceChangeCallback(AudioDeviceUsage 
     return AudioPolicyManager::GetInstance().UnsetAvailableDeviceChangeCallback(clientId, usage);
 }
 
-int32_t AudioSystemManager::ConfigDistributedRoutingRole(AudioDeviceDescriptor *descriptor, CastType type)
+int32_t AudioSystemManager::ConfigDistributedRoutingRole(
+    std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
     if (descriptor == nullptr) {
         AUDIO_ERR_LOG("ConfigDistributedRoutingRole: invalid parameter");
@@ -1496,7 +1503,7 @@ void AudioDistributedRoutingRoleCallbackImpl::RemoveCallback(
 }
 
 void AudioDistributedRoutingRoleCallbackImpl::OnDistributedRoutingRoleChange(
-    const AudioDeviceDescriptor *descriptor, const CastType type)
+    std::shared_ptr<AudioDeviceDescriptor>descriptor, const CastType type)
 {
     std::vector<std::shared_ptr<AudioDistributedRoutingRoleCallback>> temp_;
     std::unique_lock<mutex> cbListLock(cbListMutex_);

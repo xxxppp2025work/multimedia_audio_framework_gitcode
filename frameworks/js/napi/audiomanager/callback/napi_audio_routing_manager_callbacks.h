@@ -33,7 +33,7 @@ public:
     explicit NapiAudioPreferredOutputDeviceChangeCallback(napi_env env);
     virtual ~NapiAudioPreferredOutputDeviceChangeCallback();
     void SaveCallbackReference(AudioStreamType streamType, napi_value callback);
-    void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
+    void OnPreferredOutputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
     void RemoveCallbackReference(napi_env env, napi_value callback);
     void RemoveAllCallbacks();
     void CreatePreferredOutTsfn(napi_env env);
@@ -43,7 +43,7 @@ private:
     struct AudioActiveOutputDeviceChangeJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
-        std::vector<sptr<AudioDeviceDescriptor>> desc;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
     };
 
     void OnJsCallbackActiveOutputDeviceChange(std::unique_ptr<AudioActiveOutputDeviceChangeJsCallback> &jsCb);
@@ -63,7 +63,7 @@ public:
     explicit NapiAudioPreferredInputDeviceChangeCallback(napi_env env);
     virtual ~NapiAudioPreferredInputDeviceChangeCallback();
     void SaveCallbackReference(SourceType sourceType, napi_value callback);
-    void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
+    void OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
     void RemoveCallbackReference(napi_env env, napi_value callback);
     void RemoveAllCallbacks();
     void CreatePerferredInTsfn(napi_env env);
@@ -73,7 +73,7 @@ private:
     struct AudioActiveInputDeviceChangeJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
-        std::vector<sptr<AudioDeviceDescriptor>> desc;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
     };
 
     void OnJsCallbackActiveInputDeviceChange(std::unique_ptr<AudioActiveInputDeviceChangeJsCallback> &jsCb);

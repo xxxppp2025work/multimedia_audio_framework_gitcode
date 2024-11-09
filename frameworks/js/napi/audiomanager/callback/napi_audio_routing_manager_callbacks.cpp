@@ -106,7 +106,7 @@ void NapiAudioPreferredOutputDeviceChangeCallback::RemoveAllCallbacks()
 }
 
 void NapiAudioPreferredOutputDeviceChangeCallback::OnPreferredOutputDeviceUpdated(
-    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_LOG(preferredOutputDeviceCbList_.size() > 0,
@@ -263,7 +263,7 @@ void NapiAudioPreferredInputDeviceChangeCallback::RemoveAllCallbacks()
 }
 
 void NapiAudioPreferredInputDeviceChangeCallback::OnPreferredInputDeviceUpdated(
-    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     std::lock_guard<std::mutex> lock(preferredInputListMutex_);
     CHECK_AND_RETURN_LOG(preferredInputDeviceCbList_.size() > 0, "Cannot find the reference of prefer device callback");

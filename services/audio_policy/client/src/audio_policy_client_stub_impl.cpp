@@ -109,21 +109,21 @@ size_t AudioPolicyClientStubImpl::GetFocusInfoChangeCallbackSize() const
     return focusInfoChangeCallbackList_.size();
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyClientStubImpl::DeviceFilterByFlag(DeviceFlag flag,
-    const std::vector<sptr<AudioDeviceDescriptor>>& desc)
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyClientStubImpl::DeviceFilterByFlag(DeviceFlag flag,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& desc)
 {
-    std::vector<sptr<AudioDeviceDescriptor>> descRet;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descRet;
     DeviceRole role = DEVICE_ROLE_NONE;
     switch (flag) {
         case DeviceFlag::ALL_DEVICES_FLAG:
-            for (sptr<AudioDeviceDescriptor> var : desc) {
+            for (std::shared_ptr<AudioDeviceDescriptor> var : desc) {
                 if (var->networkId_ == LOCAL_NETWORK_ID) {
                     descRet.insert(descRet.end(), var);
                 }
             }
             break;
         case DeviceFlag::ALL_DISTRIBUTED_DEVICES_FLAG:
-            for (sptr<AudioDeviceDescriptor> var : desc) {
+            for (std::shared_ptr<AudioDeviceDescriptor> var : desc) {
                 if (var->networkId_ != LOCAL_NETWORK_ID) {
                     descRet.insert(descRet.end(), var);
                 }
@@ -135,7 +135,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyClientStubImpl::DeviceFilter
         case DeviceFlag::OUTPUT_DEVICES_FLAG:
         case DeviceFlag::INPUT_DEVICES_FLAG:
             role = flag == INPUT_DEVICES_FLAG ? INPUT_DEVICE : OUTPUT_DEVICE;
-            for (sptr<AudioDeviceDescriptor> var : desc) {
+            for (std::shared_ptr<AudioDeviceDescriptor> var : desc) {
                 if (var->networkId_ == LOCAL_NETWORK_ID && var->deviceRole_ == role) {
                     descRet.insert(descRet.end(), var);
                 }
@@ -144,7 +144,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyClientStubImpl::DeviceFilter
         case DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG:
         case DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG:
             role = flag == DISTRIBUTED_INPUT_DEVICES_FLAG ? INPUT_DEVICE : OUTPUT_DEVICE;
-            for (sptr<AudioDeviceDescriptor> var : desc) {
+            for (std::shared_ptr<AudioDeviceDescriptor> var : desc) {
                 if (var->networkId_ != LOCAL_NETWORK_ID && var->deviceRole_ == role) {
                     descRet.insert(descRet.end(), var);
                 }
@@ -391,7 +391,8 @@ size_t AudioPolicyClientStubImpl::GetPreferredOutputDeviceChangeCallbackSize() c
     return preferredOutputDeviceCallbackList_.size();
 }
 
-void AudioPolicyClientStubImpl::OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+void AudioPolicyClientStubImpl::OnPreferredOutputDeviceUpdated(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     std::lock_guard<std::mutex> lockCbMap(pOutputDeviceChangeMutex_);
     for (auto it = preferredOutputDeviceCallbackList_.begin(); it != preferredOutputDeviceCallbackList_.end(); ++it) {
@@ -420,7 +421,8 @@ size_t AudioPolicyClientStubImpl::GetPreferredInputDeviceChangeCallbackSize() co
     return preferredInputDeviceCallbackList_.size();
 }
 
-void AudioPolicyClientStubImpl::OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+void AudioPolicyClientStubImpl::OnPreferredInputDeviceUpdated(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     std::lock_guard<std::mutex> lockCbMap(pInputDeviceChangeMutex_);
     for (auto it = preferredInputDeviceCallbackList_.begin(); it != preferredInputDeviceCallbackList_.end(); ++it) {
@@ -686,8 +688,8 @@ void AudioPolicyClientStubImpl::OnSpatializationEnabledChange(const bool &enable
     }
 }
 
-void AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor>
-    &deviceDescriptor, const bool &enabled)
+void AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForAnyDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled)
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
     for (const auto &callback : spatializationEnabledChangeCallbackList_) {
@@ -724,8 +726,8 @@ void AudioPolicyClientStubImpl::OnHeadTrackingEnabledChange(const bool &enabled)
     }
 }
 
-void AudioPolicyClientStubImpl::OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor>
-    &deviceDescriptor, const bool &enabled)
+void AudioPolicyClientStubImpl::OnHeadTrackingEnabledChangeForAnyDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled)
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
     for (const auto &callback : headTrackingEnabledChangeCallbackList_) {

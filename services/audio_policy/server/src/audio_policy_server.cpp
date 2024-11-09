@@ -1005,7 +1005,7 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
 }
 
 int32_t AudioPolicyServer::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "SelectOutputDevice: No system permission");
@@ -1019,7 +1019,7 @@ std::string AudioPolicyServer::GetSelectedDeviceInfo(int32_t uid, int32_t pid, A
 }
 
 int32_t AudioPolicyServer::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "SelectInputDevice: No system permission");
@@ -1027,7 +1027,7 @@ int32_t AudioPolicyServer::SelectInputDevice(sptr<AudioCapturerFilter> audioCapt
     return ret;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFlag deviceFlag)
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFlag deviceFlag)
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     switch (deviceFlag) {
@@ -1038,7 +1038,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFla
         case ALL_L_D_DEVICES_FLAG:
             if (!hasSystemPermission) {
                 AUDIO_ERR_LOG("GetDevices: No system permission");
-                std::vector<sptr<AudioDeviceDescriptor>> info = {};
+                std::vector<std::shared_ptr<AudioDeviceDescriptor>> info = {};
                 return info;
             }
             break;
@@ -1046,10 +1046,10 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFla
             break;
     }
 
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs = audioPolicyService_.GetDevices(deviceFlag);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs = audioPolicyService_.GetDevices(deviceFlag);
 
     if (!hasSystemPermission) {
-        for (sptr<AudioDeviceDescriptor> desc : deviceDescs) {
+        for (std::shared_ptr<AudioDeviceDescriptor> desc : deviceDescs) {
             desc->networkId_ = "";
             desc->interruptGroupId_ = GROUP_ID_NONE;
             desc->volumeGroupId_ = GROUP_ID_NONE;
@@ -1064,36 +1064,38 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFla
     return deviceDescs;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevicesInner(DeviceFlag deviceFlag)
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevicesInner(DeviceFlag deviceFlag)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != UID_AUDIO) {
         return {};
     }
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs = audioPolicyService_.GetDevicesInner(deviceFlag);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs = audioPolicyService_.GetDevicesInner(deviceFlag);
 
     return deviceDescs;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetOutputDevice(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetOutputDevice(
     sptr<AudioRendererFilter> audioRendererFilter)
 {
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("only for system app");
         return {};
     }
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs = audioPolicyService_.GetOutputDevice(audioRendererFilter);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs =
+        audioPolicyService_.GetOutputDevice(audioRendererFilter);
     return deviceDescs;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetInputDevice(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetInputDevice(
     sptr<AudioCapturerFilter> audioCapturerFilter)
 {
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("only for system app");
         return {};
     }
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs = audioPolicyService_.GetInputDevice(audioCapturerFilter);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs =
+        audioPolicyService_.GetInputDevice(audioCapturerFilter);
     return deviceDescs;
 }
 
@@ -1107,7 +1109,8 @@ int32_t AudioPolicyServer::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, A
     return audioPolicyService_.NotifyCapturerAdded(capturerInfo, streamInfo, sessionId);
 }
 
-int32_t AudioPolicyServer::VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId)
+int32_t AudioPolicyServer::VerifyVoiceCallPermission(
+    uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId)
 {
     bool hasSystemPermission = TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
     CHECK_AND_RETURN_RET_LOG(hasSystemPermission, ERR_PERMISSION_DENIED, "No system permission");
@@ -1117,10 +1120,10 @@ int32_t AudioPolicyServer::VerifyVoiceCallPermission(uint64_t fullTokenId, Secur
     return SUCCESS;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredOutputDeviceDescriptors(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo)
 {
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs =
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs =
         audioPolicyService_.GetPreferredOutputDeviceDescriptors(rendererInfo);
     bool hasBTPermission = VerifyBluetoothPermission();
     if (!hasBTPermission) {
@@ -1130,10 +1133,10 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredOutputDe
     return deviceDescs;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredInputDeviceDescriptors(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredInputDeviceDescriptors(
     AudioCapturerInfo &captureInfo)
 {
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs =
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs =
         audioPolicyService_.GetPreferredInputDeviceDescriptors(captureInfo);
     bool hasBTPermission = VerifyBluetoothPermission();
     if (!hasBTPermission) {
@@ -2263,7 +2266,7 @@ int32_t AudioPolicyServer::SetCaptureSilentState(bool state)
     return audioPolicyService_.SetCaptureSilentState(state);
 }
 
-int32_t AudioPolicyServer::GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc)
+int32_t AudioPolicyServer::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     return audioPolicyService_.GetHardwareOutputSamplingRate(desc);
 }
@@ -2325,9 +2328,9 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
     return ret;
 }
 
-std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetAvailableDevices(AudioDeviceUsage usage)
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetAvailableDevices(AudioDeviceUsage usage)
 {
-    std::vector<unique_ptr<AudioDeviceDescriptor>> deviceDescs = {};
+    std::vector<shared_ptr<AudioDeviceDescriptor>> deviceDescs = {};
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     switch (usage) {
         case MEDIA_OUTPUT_DEVICES:
@@ -2353,9 +2356,9 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetAvaila
         }
     }
 
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDevices = {};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDevices = {};
     for (auto &desc : deviceDescs) {
-        deviceDevices.push_back(new(std::nothrow) AudioDeviceDescriptor(*desc));
+        deviceDevices.push_back(std::make_shared<AudioDeviceDescriptor>(*desc));
     }
 
     bool hasBTPermission = VerifyBluetoothPermission();
@@ -2363,7 +2366,7 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetAvaila
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDevices);
         deviceDescs.clear();
         for (auto &dec : deviceDevices) {
-            deviceDescs.push_back(make_unique<AudioDeviceDescriptor>(*dec));
+            deviceDescs.push_back(make_shared<AudioDeviceDescriptor>(*dec));
         }
     }
 
@@ -2405,7 +2408,8 @@ int32_t AudioPolicyServer::OffloadStopPlaying(const AudioInterrupt &audioInterru
     return audioPolicyService_.OffloadStopPlaying(std::vector<int32_t>(1, audioInterrupt.sessionId));
 }
 
-int32_t AudioPolicyServer::ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type)
+int32_t AudioPolicyServer::ConfigDistributedRoutingRole(
+    const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("No system permission");
@@ -2442,7 +2446,7 @@ int32_t AudioPolicyServer::UnsetDistributedRoutingRoleCallback()
     return SUCCESS;
 }
 
-void AudioPolicyServer::OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor,
+void AudioPolicyServer::OnDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor,
     const CastType type)
 {
     CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
@@ -2554,7 +2558,7 @@ int32_t AudioPolicyServer::SetSpatializationEnabled(const bool enable)
     return audioSpatializationService_.SetSpatializationEnabled(enable);
 }
 
-int32_t AudioPolicyServer::SetSpatializationEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+int32_t AudioPolicyServer::SetSpatializationEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
     const bool enable)
 {
     if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
@@ -2599,7 +2603,7 @@ int32_t AudioPolicyServer::SetHeadTrackingEnabled(const bool enable)
     return audioSpatializationService_.SetHeadTrackingEnabled(enable);
 }
 
-int32_t AudioPolicyServer::SetHeadTrackingEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+int32_t AudioPolicyServer::SetHeadTrackingEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
     const bool enable)
 {
     if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
@@ -2752,12 +2756,12 @@ int32_t AudioPolicyServer::SetCallDeviceActive(InternalDeviceType deviceType, bo
     return audioPolicyService_.SetCallDeviceActive(deviceType, active, address);
 }
 
-std::unique_ptr<AudioDeviceDescriptor> AudioPolicyServer::GetActiveBluetoothDevice()
+std::shared_ptr<AudioDeviceDescriptor> AudioPolicyServer::GetActiveBluetoothDevice()
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     if (!hasSystemPermission) {
         AUDIO_ERR_LOG("No system permission");
-        return make_unique<AudioDeviceDescriptor>();
+        return make_shared<AudioDeviceDescriptor>();
     }
 
     auto btdevice = audioPolicyService_.GetActiveBluetoothDevice();
