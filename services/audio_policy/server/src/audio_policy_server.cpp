@@ -3074,6 +3074,18 @@ bool AudioPolicyServer::IsAudioSessionActivated()
     return isActive;
 }
 
+bool AudioPolicyServer::ShouldCallbackToApp(const uint32_t sessionID)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), true, "is not audio calling!");
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("interruptService_ is nullptr!");
+        return true;
+    }
+    bool callbackToApp = true;
+    callbackToApp = interruptService_->ShouldCallbackToApp(sessionID);
+    return callbackToApp;
+}
+
 int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();

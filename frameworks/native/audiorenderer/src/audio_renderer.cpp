@@ -1023,11 +1023,15 @@ void AudioRendererInterruptCallbackImpl::UpdateAudioStream(const std::shared_ptr
     audioStream_ = audioStream;
 }
 
-void AudioRendererInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEvent)
+void AudioRendererInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEvent, const bool &callbackToApp)
 {
     if (cb_ != nullptr) {
-        cb_->OnInterrupt(interruptEvent);
-        AUDIO_DEBUG_LOG("Send interruptEvent to app successfully");
+        if (callbackToApp) {
+            cb_->OnInterrupt(interruptEvent);
+            AUDIO_DEBUG_LOG("Send interruptEvent to app successfully");
+        } else {
+            AUDIO_INFO_LOG("should not send interruptEvent to app");
+        }
     } else {
         AUDIO_WARNING_LOG("cb_==nullptr, failed to send interruptEvent");
     }
@@ -1049,10 +1053,11 @@ void AudioRendererInterruptCallbackImpl::NotifyForcePausedToResume(const Interru
     // Change InterruptForceType to Share, Since app will take care of resuming
     InterruptEvent interruptEventResume {interruptEvent.eventType, INTERRUPT_SHARE,
                                          interruptEvent.hintType};
-    NotifyEvent(interruptEventResume);
+    NotifyEvent(interruptEventResume, true);
 }
 
-void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent)
+void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent,
+    const bool &callbackToApp)
 {
     State currentState = audioStream_->GetState();
     audioStream_->GetAudioSessionID(sessionID_);
@@ -1099,7 +1104,7 @@ void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
     }
     // Notify valid forced event callbacks to app
     InterruptEvent interruptEventForced {interruptEvent.eventType, interruptEvent.forceType, interruptEvent.hintType};
-    NotifyEvent(interruptEventForced);
+    NotifyEvent(interruptEventForced, callbackToApp);
 }
 
 void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
@@ -1112,6 +1117,10 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
     if (audioStream_ != nullptr) {
         audioStream_->GetAudioSessionID(sessionID_);
     }
+    bool callbackToApp = true;
+    if (interruptEvent.hintType == INTERRUPT_HINT_DUCK || interruptEvent.hintType == INTERRUPT_HINT_UNDUCK) {
+        callbackToApp = AudioPolicyManager::GetInstance().ShouldCallbackToApp(sessionID_);
+    }
     AUDIO_INFO_LOG("sessionId: %{public}u, forceType: %{public}d, hintType: %{public}d",
         sessionID_, forceType, interruptEvent.hintType);
 
@@ -1119,14 +1128,14 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
         AUDIO_DEBUG_LOG("INTERRUPT_SHARE. Let app handle the event");
         InterruptEvent interruptEventShared {interruptEvent.eventType, interruptEvent.forceType,
             interruptEvent.hintType};
-        NotifyEvent(interruptEventShared);
+        NotifyEvent(interruptEventShared, callbackToApp);
         return;
     }
 
     CHECK_AND_RETURN_LOG(audioStream_ != nullptr,
         "Stream is not alive. No need to take forced action");
 
-    HandleAndNotifyForcedEvent(interruptEvent);
+    HandleAndNotifyForcedEvent(interruptEvent, callbackToApp);
 }
 
 AudioRendererConcurrencyCallbackImpl::AudioRendererConcurrencyCallbackImpl()
