@@ -1609,7 +1609,6 @@ static int32_t SinkRenderMultiChannelGetData(pa_sink *si, pa_memchunk *chunkIn)
 
 static void PrepareSpatializationFading(int8_t *fadingState, int8_t *fadingCount, bool *actualSpatializationEnabled)
 {
-    
     (*fadingCount) = (*fadingCount) < 0 ? 0 : (*fadingCount);
     (*fadingCount) =
         (*fadingCount) > SPATIALIZATION_FADING_FRAMECOUNT ? SPATIALIZATION_FADING_FRAMECOUNT : (*fadingCount);
