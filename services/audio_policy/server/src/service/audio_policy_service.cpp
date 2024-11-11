@@ -60,6 +60,8 @@ static const int32_t WAIT_OFFLOAD_CLOSE_TIME_S = 10; // 10s
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
 static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS = 300000; // 300ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS = 150000; // 150ms
+static const int64_t DOUBLE_RINGING_MUTE_SLEEP_US = 400000; // 400ms
+static const int64_t DOUBLE_RINGING_MUTE_US = 1000000; // 1s
 static const int64_t SELECT_DEVICE_MUTE_MS = 200000; // 200ms
 static const int64_t SELECT_OFFLOAD_DEVICE_MUTE_MS = 400000; // 400ms
 static const int64_t NEW_DEVICE_AVALIABLE_MUTE_MS = 400000; // 400ms
@@ -2500,7 +2502,15 @@ void AudioPolicyService::MuteSinkPortForSwtichDevice(shared_ptr<AudioRendererCha
     vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioPolicyService::MuteSinkPortForSwtichDevice");
-    if (outputDevices.size() != 1) return;
+
+    if (outputDevices.size() != 1) {
+        Trace trace("AudioPolicyService::DoubleRingingForSwtichDevice");
+        if (IsStreamActive(STREAM_MUSIC)) {
+            MuteSinkPort("null", PRIMARY_SPEAKER, AudioStreamDeviceChangeReasonExt::ExtEnum::DOUBLE_RINGRING);
+        }
+        return;
+    }
+
     if (outputDevices.front()->IsSameDeviceDesc(rendererChangeInfo->outputDeviceInfo)) return;
 
     moveDeviceFinished_ = false;
@@ -2756,6 +2766,10 @@ void AudioPolicyService::MuteSinkPort(const std::string &oldSinkname, const std:
         oldSinkname == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {
         // remote cast -> earpiece 300ms fix sound leak
         MuteSinkPort(newSinkName, NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS, true);
+    } else if (reason.isDoubleRinging()) {
+        MuteSinkPort(newSinkName, DOUBLE_RINGING_MUTE_US, true);
+        AUDIO_INFO_LOG("double ringing mute primary wait %{public}" PRId64" us", DOUBLE_RINGING_MUTE_SLEEP_US);
+        usleep(DOUBLE_RINGING_MUTE_SLEEP_US); // sleep fix data cache pop.
     }
 }
 
