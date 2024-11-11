@@ -52,7 +52,7 @@ HWTEST(AudioEffectConfigParserTest, AudioEffectConfigParser_002, TestSize.Level1
     auto currNode = std::make_shared<xmlNode>().get();
     EXPECT_NE(currNode, nullptr);
 
-    int32_t countFirstNode[NODE_SIZE] = {0,0,0,0,0,0};
+    int32_t countFirstNode[NODE_SIZE] = {0, 0, 0, 0, 0, 0};
 
     LoadEffectConfigLibraries(result, currNode, countFirstNode);
 }
@@ -68,7 +68,7 @@ HWTEST(AudioEffectConfigParserTest, AudioEffectConfigParser_003, TestSize.Level1
     auto currNode = std::make_shared<xmlNode>().get();
     EXPECT_NE(currNode, nullptr);
 
-    int32_t countFirstNode[NODE_SIZE] = {5,5,5,5,5,5};
+    int32_t countFirstNode[NODE_SIZE] = {5, 5, 5, 5, 5, 5};
 
     LoadEffectConfigLibraries(result, currNode, countFirstNode);
 }
@@ -84,7 +84,7 @@ HWTEST(AudioEffectConfigParserTest, AudioEffectConfigParser_004, TestSize.Level1
     auto currNode = std::make_shared<xmlNode>().get();
     EXPECT_NE(currNode, nullptr);
 
-    int32_t countFirstNode[NODE_SIZE] = {1,1,1,1,1,1};
+    int32_t countFirstNode[NODE_SIZE] = {1, 1, 1, 1, 1, 1};
 
     LoadEffectConfigLibraries(result, currNode, countFirstNode);
 }
@@ -116,7 +116,7 @@ HWTEST(AudioEffectConfigParserTest, AudioEffectConfigParser_006, TestSize.Level1
     auto currNode = std::make_shared<xmlNode>().get();
     EXPECT_NE(currNode, nullptr);
 
-    int32_t countFirstNode[NODE_SIZE] = {5,5,5,5,5,5};
+    int32_t countFirstNode[NODE_SIZE] = {5, 5, 5, 5, 5, 5};
 
     LoadEffectConfigEffects(result, currNode, countFirstNode);
 }
