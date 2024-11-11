@@ -431,6 +431,7 @@ public:
         MIN = 1000,
         OLD_DEVICE_UNAVALIABLE_EXT = 1000,
         SET_AUDIO_SCENE = 1001,
+        DOUBLE_RINGRING = 1002,
     };
 
     operator AudioStreamDeviceChangeReason() const
@@ -470,6 +471,11 @@ public:
     bool isSetAudioScene() const
     {
         return reason_ == ExtEnum::SET_AUDIO_SCENE;
+    }
+
+    bool isDoubleRinging() const
+    {
+        return reason_ == ExtEnum::DOUBLE_RINGRING;
     }
 private:
     ExtEnum reason_;
