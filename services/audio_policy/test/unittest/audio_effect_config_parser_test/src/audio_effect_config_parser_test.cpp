@@ -148,7 +148,7 @@ HWTEST(AudioEffectConfigParserTest, AudioEffectConfigParser_008, TestSize.Level1
     auto currNode = std::make_shared<xmlNode>().get();
     EXPECT_NE(currNode, nullptr);
 
-    int32_t countFirstNode[NODE_SIZE] = {0,0,0,0,0,0};
+    int32_t countFirstNode[NODE_SIZE] = {0, 0, 0, 0, 0, 0};
 
     LoadEffectConfigEffectChains(result, currNode, countFirstNode);
 }
@@ -164,7 +164,7 @@ HWTEST(AudioEffectConfigParserTest, AudioEffectConfigParser_009, TestSize.Level1
     auto currNode = std::make_shared<xmlNode>().get();
     EXPECT_NE(currNode, nullptr);
 
-    int32_t countFirstNode[NODE_SIZE] = {5,5,5,5,5,5};
+    int32_t countFirstNode[NODE_SIZE] = {5 ,5 ,5, 5, 5, 5};
 
     LoadEffectConfigEffectChains(result, currNode, countFirstNode);
 }
@@ -180,7 +180,7 @@ HWTEST(AudioEffectConfigParserTest, AudioEffectConfigParser_010, TestSize.Level1
     auto currNode = std::make_shared<xmlNode>().get();
     EXPECT_NE(currNode, nullptr);
 
-    int32_t countFirstNode[NODE_SIZE] = {1,1,1,1,1,1};
+    int32_t countFirstNode[NODE_SIZE] = {1, 1, 1, 1, 1, 1};
 
     LoadEffectConfigEffectChains(result, currNode, countFirstNode);
 }
@@ -244,7 +244,7 @@ HWTEST(AudioEffectConfigParserTest, AudioEffectConfigParser_014, TestSize.Level1
     auto currNode = std::make_shared<xmlNode>().get();
     EXPECT_NE(currNode, nullptr);
 
-    int32_t countFirstNode[NODE_SIZE_PRE] = {0,0,0,0};
+    int32_t countFirstNode[NODE_SIZE_PRE] = {0, 0, 0, 0};
 
     LoadPreprocessExceptionCheck(result, currNode, countFirstNode);
 }
@@ -260,7 +260,7 @@ HWTEST(AudioEffectConfigParserTest, AudioEffectConfigParser_015, TestSize.Level1
     auto currNode = std::make_shared<xmlNode>().get();
     EXPECT_NE(currNode, nullptr);
 
-    int32_t countFirstNode[NODE_SIZE_PRE] = {5,5,5,5};
+    int32_t countFirstNode[NODE_SIZE_PRE] = {5, 5, 5, 5};
 
     LoadPreprocessExceptionCheck(result, currNode, countFirstNode);
 }
@@ -276,7 +276,7 @@ HWTEST(AudioEffectConfigParserTest, AudioEffectConfigParser_016, TestSize.Level1
     auto currNode = std::make_shared<xmlNode>().get();
     EXPECT_NE(currNode, nullptr);
 
-    int32_t countFirstNode[NODE_SIZE_PRE] = {1,1,1,1};
+    int32_t countFirstNode[NODE_SIZE_PRE] = {1, 1, 1, 1};
 
     LoadPreprocessExceptionCheck(result, currNode, countFirstNode);
 }
