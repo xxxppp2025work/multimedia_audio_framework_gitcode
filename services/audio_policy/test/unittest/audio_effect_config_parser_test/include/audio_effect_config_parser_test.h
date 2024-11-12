@@ -19,6 +19,7 @@
 #include "gtest/gtest.h"
 #include <libxml/tree.h>
 #include "audio_effect_config_parser.h"
+#include "audio_effect_config_parser.cpp"
 
 namespace OHOS {
 namespace AudioStandard {
