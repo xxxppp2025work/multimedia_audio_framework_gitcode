@@ -14,7 +14,6 @@
  */
 
 #include "audio_effect_config_parser_test.h"
-#include "audio_effect_config_parser.cpp"
 
 using namespace testing::ext;
 
