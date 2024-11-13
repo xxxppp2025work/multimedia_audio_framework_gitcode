@@ -2315,6 +2315,9 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
     bool result = false;
     State oldState = state_;
     state_ = NEW;
+    if (rendererInfo_.pipeType == PIPE_TYPE_OFFLOAD) {
+        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+    }
     SetStreamTrackerState(false);
 
     int32_t ret = SetAudioStreamInfo(streamParams_, proxyObj_);
@@ -2324,9 +2327,6 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
     if (!needStoreState) {
         AUDIO_INFO_LOG("telephony scene, return directly");
         return ret;
-    }
-    if (rendererInfo_.pipeType == PIPE_TYPE_OFFLOAD) {
-        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
     }
     switch (oldState) {
         case RUNNING:
