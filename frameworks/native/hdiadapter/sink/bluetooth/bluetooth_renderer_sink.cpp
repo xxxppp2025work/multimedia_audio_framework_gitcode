@@ -150,11 +150,6 @@ private:
     int32_t logMode_ = 0;
     AudioSampleFormat audioSampleFormat_ = SAMPLE_S16LE;
 
-    // for device switch
-    std::mutex switchDeviceMutex_;
-    int32_t muteCount_ = 0;
-    std::atomic<bool> switchDeviceMute_ = false;
-
     // Low latency
     int32_t PrepareMmapBuffer();
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
@@ -520,13 +515,6 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     if (suspend_) { return ret; }
 
     Trace trace("BluetoothRendererSinkInner::RenderFrame");
-    if (switchDeviceMute_) {
-        Trace traceEmpty("BluetoothRendererSinkInner::RenderFrame::renderEmpty");
-        if (memset_s(reinterpret_cast<void*>(&data), static_cast<size_t>(len), 0,
-            static_cast<size_t>(len)) != EOK) {
-            AUDIO_WARNING_LOG("call memset_s failed");
-        }
-    }
 
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
     BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
@@ -1175,26 +1163,7 @@ int32_t BluetoothRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &ap
 // LCOV_EXCL_START
 int32_t BluetoothRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
 {
-    std::lock_guard<std::mutex> lock(switchDeviceMutex_);
-    AUDIO_INFO_LOG("set a2dp mute %{public}d", mute);
-
-    if (mute) {
-        muteCount_++;
-        if (switchDeviceMute_) {
-            AUDIO_INFO_LOG("a2dp already muted");
-            return SUCCESS;
-        }
-        switchDeviceMute_ = true;
-    } else {
-        muteCount_--;
-        if (muteCount_ > 0) {
-            AUDIO_WARNING_LOG("a2dp not all unmuted");
-            return SUCCESS;
-        }
-        switchDeviceMute_ = false;
-        muteCount_ = 0;
-    }
-
+    AUDIO_WARNING_LOG("not supported.");
     return SUCCESS;
 }
 
