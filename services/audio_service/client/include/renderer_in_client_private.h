@@ -320,6 +320,7 @@ private:
     // ipc stream related
     AudioProcessConfig clientConfig_;
     sptr<IpcStreamListenerImpl> listener_ = nullptr;
+    std::mutex ipcStreamMutex_;
     sptr<IpcStream> ipcStream_ = nullptr;
     std::shared_ptr<OHAudioBuffer> clientBuffer_ = nullptr;
 
