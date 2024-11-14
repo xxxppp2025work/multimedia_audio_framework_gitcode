@@ -15,6 +15,7 @@
         "syscap": [
           "SystemCapability.Multimedia.Audio.Core",
           "SystemCapability.Multimedia.Audio.Renderer",
+          
           "SystemCapability.Multimedia.Audio.Capturer",
           "SystemCapability.Multimedia.Audio.Device",
           "SystemCapability.Multimedia.Audio.Volume",
