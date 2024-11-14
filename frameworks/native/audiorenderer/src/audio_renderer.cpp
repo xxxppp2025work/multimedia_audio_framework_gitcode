@@ -97,6 +97,7 @@ AudioRendererPrivate::~AudioRendererPrivate()
         outputDeviceChangeCallback->RemoveCallback();
         outputDeviceChangeCallback->UnsetAudioRendererObj();
     }
+    rendererRecreate_->Release();
     std::shared_ptr<AudioRendererConcurrencyCallbackImpl> cb = audioConcurrencyCallback_;
     if (cb != nullptr) {
         cb->UnsetAudioRendererObj();
@@ -352,7 +353,8 @@ int32_t AudioRendererPrivate::InitOutputDeviceChangeCallback()
         CHECK_AND_RETURN_RET_LOG(outputDeviceChangeCallback_ != nullptr, ERROR, "Memory allocation failed");
     }
 
-    outputDeviceChangeCallback_->SetAudioRendererObj(this);
+    rendererRecreate_ = std::make_shared<AudioRendererSwitchPerception>(this);
+    outputDeviceChangeCallback_->SetAudioRendererObj(rendererRecreate_);
 
     uint32_t sessionId;
     int32_t ret = GetAudioStreamId(sessionId);
@@ -1662,7 +1664,11 @@ void OutputDeviceChangeWithInfoCallbackImpl::OnRecreateStreamEvent(const uint32_
     const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("Enter, session id: %{public}d, stream flag: %{public}d", sessionId, streamFlag);
-    renderer_->SwitchStream(sessionId, streamFlag, reason);
+    std::shared_ptr<AudioRendererSwitchPerception> sptr = newrenderer_.lock();
+    if (sptr == nullptr) {
+        return;
+    }
+    sptr->SwitchStream(sessionId, streamFlag, reason);
 }
 
 AudioEffectMode AudioRendererPrivate::GetAudioEffectMode() const
