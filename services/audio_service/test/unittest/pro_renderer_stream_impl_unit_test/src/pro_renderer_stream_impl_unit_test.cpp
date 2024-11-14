@@ -24,10 +24,25 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
-void ProRendererStreamImplUnitTest::SetUpTestCase(void){}
-void ProRendererStreamImplUnitTest::TearDownTestCase(void){}
-void ProRendererStreamImplUnitTest::SetUp(void){}
-void ProRendererStreamImplUnitTest::TearDown(void){}
+void ProRendererStreamImplUnitTest::SetUpTestCase(void)
+{
+    // input testsuit setup step，setup invoked before all testcases
+}
+
+void ProRendererStreamImplUnitTest::TearDownTestCase(void)
+{
+    // input testsuit teardown step，teardown invoked after all testcases
+}
+
+void ProRendererStreamImplUnitTest::SetUp(void)
+{
+    // input testcase setup step，setup invoked before each testcases
+}
+
+void ProRendererStreamImplUnitTest::TearDown(void)
+{
+    // input testcase teardown step，teardown invoked after each testcases
+}
 
 /**
  * @tc.name  : Test GetDirectSampleRate API
