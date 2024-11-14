@@ -13,6 +13,7 @@
         "name": "audio_framework",
         "subsystem": "multimedia",
         "syscap": [
+          
           "SystemCapability.Multimedia.Audio.Core",
           "SystemCapability.Multimedia.Audio.Renderer",
           "SystemCapability.Multimedia.Audio.Capturer",
