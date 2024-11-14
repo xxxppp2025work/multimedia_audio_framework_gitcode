@@ -249,11 +249,11 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
             int64_t endTime = 0;
             AudioCacheMgr::GetInstance().GetCachedDuration(startTime, endTime);
             dumpString = "Call dump get time:[" + std::to_string(startTime) + "~" + std::to_string(endTime) + 
-            " ], cur:[" + std::string(ClockTime::GetCurNano()) + "] \n";
+                " ], cur:[" + std::to_string(ClockTime::GetCurNano()) + "] \n";
         } else if (dumpParam == "memory") {
             size_t dataLength = 0;
-            size_t dataLength = 0;
-            size_t dataLength = 0;
+            size_t bufferLength = 0;
+            size_t structLength = 0;
             AudioCacheMgr::GetInstance().GetCurMemoryCondition(dataLength, bufferLength, structLength);
             dumpString = "dataLength: " + std::to_string(dataLength / 1024) + 
                         " KB, bufferLength: " + std::to_string(bufferLength / 1024) + 
@@ -416,7 +416,7 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
 
     if (key == PCM_PERSIST_DUMP_INIT) {
         ret = AudioCacheMgr::GetInstance().Init();
-        CHECK_AND_RETURN_LOG(ret, ERROR, "Init AudioCacheMgr failed!");
+        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "Init AudioCacheMgr failed!");
         return SUCCESS;
     }
 

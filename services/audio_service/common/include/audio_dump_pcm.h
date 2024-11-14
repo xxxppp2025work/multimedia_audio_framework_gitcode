@@ -31,7 +31,7 @@ public:
 
     virtual void CacheData(std::string& dumpFileName, void* dataPointer, size_t dataLength) = 0;
     virtual int32_t DumpAllMemBlock(int64_t& startTime, int64_t& endTime) = 0;
-    virtual void GetCachedDuration(int16_t& startTime, int64_t& endTime) = 0;
+    virtual void GetCachedDuration(int64_t& startTime, int64_t& endTime) = 0;
     virtual void GetCurMemoryCondition(size_t& dataLength, size_t& bufferLength, size_t& structLength) = 0;
 };
 

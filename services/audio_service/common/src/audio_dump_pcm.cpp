@@ -102,7 +102,7 @@ int32_t MemChunk::GetCurUsedMemory(size_t& dataLength, size_t& bufferLength, siz
 
 void MemChunk::Reset()
 {
-    Trace trace(MemChunk::Reset);
+    Trace trace("MemChunk::Reset");
     pointerOffset_ = 0;
     curFileNameId_ = 0;
     firstMemBlockTime_ = ClockTime::GetCurNano();
@@ -194,7 +194,7 @@ int32_t AudioCacheMgrInner::GetAvailableMemBlock(size_t dataLength, std::string&
         }
     }
 
-    Trace trace3('AudioCacheMgrInner::GetAvailableMemBlock::RecycleOneMemChunk');
+    Trace trace3("AudioCacheMgrInner::GetAvailableMemBlock::RecycleOneMemChunk");
     std::shared_ptr<MemChunk> recycleMemChunk = memChunkDeque_.front();
     memChunkDeque_.pop_front();
     recycleMemChunk->Reset();
@@ -217,7 +217,7 @@ int32_t AudioCacheMgrInner::DumpAllMemBlock(int64_t& startTime, int64_t& endTime
 
     GetCachedDuration(startTime, endTime); // will hold g_Mutex
 
-    Trace trace('AudioCacheMgrInner::DumpAllMemBlock');
+    Trace trace("AudioCacheMgrInner::DumpAllMemBlock");
     bool targetStatus = false;
     if (!isDumpingData_.compare_exchange_strong(targetStatus, true)) {
         AUDIO_WARNING_LOG("Already in dumping data!");
@@ -282,7 +282,7 @@ void AudioCacheMgrInner::GetCurMemoryCondition(size_t& dataLength, size_t& buffe
     size_t curDataLength = 0;
     size_t curBufferLength = 0;
     size_t curStructLength = 0;
-    for (audio it = memChunkDeque_.begin(); it != memChunkDeque_.end(); ++it) {
+    for (auto it = memChunkDeque_.begin(); it != memChunkDeque_.end(); ++it) {
         (*it)->GetCurUsedMemory(curDataLength, curBufferLength, curStructLength);
         dataLength += curDataLength;
         bufferLength += curBufferLength;
