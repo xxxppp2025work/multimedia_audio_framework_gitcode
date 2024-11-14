@@ -45,6 +45,7 @@
 #include "audio_enhance_chain_manager.h"
 
 #include "audio_log_utils.h"
+#include "audio_dump_pcm.h"
 
 using namespace std;
 
@@ -783,7 +784,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
     DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
             static_cast<void *>(&data), len);
     }
 

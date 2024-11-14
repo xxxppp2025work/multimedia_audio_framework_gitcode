@@ -41,8 +41,9 @@
 #include "i_stream_manager.h"
 #include "linear_pos_time_model.h"
 #include "policy_handler.h"
-#include "media_monitor_manager.h"
 #include "audio_log_utils.h"
+#include "audio_dump_pcm.h"
+#include "media_monitor_manager.h"
 #ifdef DAUDIO_ENABLE
 #include "remote_fast_audio_renderer_sink.h"
 #include "remote_fast_audio_capturer_source.h"
@@ -1600,7 +1601,7 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
     DfxOperation(dstStreamData.bufferDesc, dstStreamInfo_.format, dstStreamInfo_.channels);
 
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpHdiName_,
+        AudioCacheMgr::GetInstance().CacheData(dumpHdiName_,
             static_cast<void *>(dstStreamData.bufferDesc.buffer), dstStreamData.bufferDesc.bufLength);
     }
 
@@ -2014,7 +2015,7 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
     DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(readBuf.buffer), readBuf.bufLength);
     DfxOperation(readBuf, dstStreamInfo_.format, dstStreamInfo_.channels);
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpHdiName_,
+        AudioCacheMgr::GetInstance().CacheData(dumpHdiName_,
             static_cast<void *>(readBuf.buffer), readBuf.bufLength);
     }
     WriteToProcessBuffers(readBuf);

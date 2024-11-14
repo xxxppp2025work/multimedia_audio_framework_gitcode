@@ -54,6 +54,7 @@
 #include "playback_capturer_manager.h"
 #include "config/audio_param_parser.h"
 #include "media_monitor_manager.h"
+#include "audio_dump_pcm.h"
 
 #define PA
 #ifdef PA
@@ -78,6 +79,10 @@ const std::string CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 constexpr const char *TEL_SATELLITE_SUPPORT = "const.telephony.satellite.supported";
 const std::string SATEMODEM_PARAMETER = "usedmodem=satemodem";
 const std::string PCM_DUMP_KEY = "PCM_DUMP";
+const std::string PCM_PERSIST_DUMP_INIT = "PERSIST_DUMP_INIT";
+const std::string PCM_PERSIST_DUMP_TIME = "PERSIST_DUMP_TIME";
+const std::string PCM_PERSIST_DUMP_DUMP = "PERSIST_DUMP_DUMP";
+const std::string PCM_PERSIST_DUMP_MEMORY = "PERSIST_DUMP_MEMORY";
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int SCHEDULE_REPORT_TIME_OUT_SECONDS = 2;
@@ -223,6 +228,43 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
         std::string dumpString = "check fast list :bundle name is" + bundleName + " result is " + result + "\n";
         return write(fd, dumpString.c_str(), dumpString.size());
     }
+
+    //hidumper -s 3001 '-a dump init'
+    //hidumper -s 3001 '-a dump dump'
+    //hidumper -s 3001 '-a dump time'
+    //hidumper -s 3001 '-a dump memory'
+    if (args.size() == FAST_DUMPINFO_LEN && args[0] == u"-dump") {
+        std::string dumpParam = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.to_bytes(args[1]);
+        std::string dumpString;
+        if (dumpParam == "init") {
+            AudioCacheMgr::GetInstance().Init();
+        } else if (dumpParam == "dump") {
+            int64_t startTime = 0;
+            int64_t endTime = 0;
+            AudioCacheMgr::GetInstance().DumpAllMemBlock(startTime, endTime);
+            dumpString = "Dump Memory time:[" + std::to_string(startTime) + "~" + std::to_string(endTime) + 
+            " ] \n";
+        } else if (dumpParam == "time") {
+            int64_t startTime = 0;
+            int64_t endTime = 0;
+            AudioCacheMgr::GetInstance().GetCachedDuration(startTime, endTime);
+            dumpString = "Call dump get time:[" + std::to_string(startTime) + "~" + std::to_string(endTime) + 
+            " ], cur:[" + std::string(ClockTime::GetCurNano()) + "] \n";
+        } else if (dumpParam == "memory") {
+            size_t dataLength = 0;
+            size_t dataLength = 0;
+            size_t dataLength = 0;
+            AudioCacheMgr::GetInstance().GetCurMemoryCondition(dataLength, bufferLength, structLength);
+            dumpString = "dataLength: " + std::to_string(dataLength / 1024) + 
+                        " KB, bufferLength: " + std::to_string(bufferLength / 1024) + 
+                        " KB, structLength: " + std::to_string(structLength / 1024) + " KB \n";
+        } else {
+            dumpString = "Call dump failed, no such operation \n";
+        }
+        return write(fd, dumpString.c_str(), dumpString.size());
+    }
+
+
     std::queue<std::u16string> argQue;
     for (decltype(args.size()) index = 0; index < args.size(); ++index) {
         argQue.push(args[index]);
@@ -372,6 +414,12 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
         return SUCCESS;
     }
 
+    if (key == PCM_PERSIST_DUMP_INIT) {
+        ret = AudioCacheMgr::GetInstance().Init();
+        CHECK_AND_RETURN_LOG(ret, ERROR, "Init AudioCacheMgr failed!");
+        return SUCCESS;
+    }
+
     if (audioParameterKeys.empty()) {
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
         return ERROR;
@@ -516,6 +564,27 @@ int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
         CHECK_AND_RETURN_RET_LOG(ret, ERROR, "get audiodump parameters failed");
         return SUCCESS;
     }
+
+    if (mainKey == PCM_PERSIST_DUMP_TIME) {
+        int64_t startTime = 0;
+        int64_t endTime = 0;
+        AudioCacheMgr::GetInstance().GetCachedDuration(startTime, endTime);
+        result.push_back({std::to_string(startTime), std::to_string(endTime)});
+        return SUCCESS;
+    } else if (mainKey == PCM_PERSIST_DUMP_DUMP) {
+        int64_t startTime = 0;
+        int64_t endTime = 0;
+        AudioCacheMgr::GetInstance().DumpAllMemBlock(startTime, endTime);
+        result.push_back({std::to_string(startTime), std::to_string(endTime)});
+        return SUCCESS;
+    } else if (mainKey == PCM_PERSIST_DUMP_MEMORY) {
+        size_t dataLength = 0;
+        size_t bufferLength = 0;
+        size_t structLength = 0;
+        AudioCacheMgr::GetInstance().GetCurMemoryCondition(dataLength, bufferLength, structLength);
+        result.push_back({std::to_string(dataLength), std::to_string(bufferLength + structLength)});
+        return SUCCESS;
+    } 
 
     if (audioParameterKeys.empty()) {
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
