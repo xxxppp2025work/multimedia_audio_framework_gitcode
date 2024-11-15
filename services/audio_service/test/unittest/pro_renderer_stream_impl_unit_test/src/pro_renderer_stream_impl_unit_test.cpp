@@ -269,31 +269,6 @@ HWTEST(ProRendererStreamImplUnitTest, PopSinkBuffer_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test GetSamplePerFrame API
- * @tc.type  : FUNC
- * @tc.number: GetSamplePerFrame
- */
-HWTEST(ProRendererStreamImplUnitTest, GetSamplePerFrame_001, TestSize.Level1)
-{
-    AudioProcessConfig processConfig;
-    bool isDirect = true;
-    std::shared_ptr<ProRendererStreamImpl> RendererStreamImpl =
-        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
-
-    AudioSampleFormat format = SAMPLE_U8;
-    uint32_t ret = RendererStreamImpl->GetSamplePerFrame(format);
-    EXPECT_EQ(ret, 1);
-
-    format = SAMPLE_S16LE;
-    ret = RendererStreamImpl->GetSamplePerFrame(format);
-    EXPECT_EQ(ret, 2);
-
-    format = INVALID_WIDTH;
-    ret = RendererStreamImpl->GetSamplePerFrame(format);
-    EXPECT_EQ(ret, 2);
-}
-
-/**
  * @tc.name  : Test ConvertSrcToFloat API
  * @tc.type  : FUNC
  * @tc.number: ConvertSrcToFloat

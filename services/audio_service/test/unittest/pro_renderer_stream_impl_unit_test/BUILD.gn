@@ -39,9 +39,7 @@ ohos_unittest("pro_renderer_stream_impl_unit_test") {
 
   configs = [ "../../../../../services/audio_service:audio_service_config" ]
 
-  deps = [
-    "../../../../audio_service:audio_process_service",
-  ]
+  deps = [ "../../../../audio_service:audio_process_service" ]
 
   external_deps = [
     "c_utils:utils",
