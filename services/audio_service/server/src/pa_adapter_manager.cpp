@@ -431,6 +431,7 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     if (ret < 0) {
         AUDIO_ERR_LOG("ConnectStreamToPA Failed");
         ReleasePaStream(paStream);
+        PolicyHandler::GetInstance().NotifyCapturerRemoved(sessionId);
         return nullptr;
     }
     if (processConfig.audioMode == AUDIO_MODE_RECORD) {
