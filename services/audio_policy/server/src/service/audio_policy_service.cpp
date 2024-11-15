@@ -9184,7 +9184,7 @@ int32_t AudioPolicyService::NotifyCapturerRemoved(uint64_t sessionId)
 {
     CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
     audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionID, false);
-    return SUCCESS; 
+    return SUCCESS;
 }
 
 } // namespace AudioStandard
