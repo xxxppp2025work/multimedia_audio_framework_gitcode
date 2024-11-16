@@ -1411,6 +1411,9 @@ napi_value NapiAudioVolumeGroupManager::GetMaxAmplitudeForInputDevice(napi_env e
             "audio volume group manager state is error.");
         context->inputMaxAmplitude = napiAudioVolumeGroupManager->audioGroupMngr_->GetMaxAmplitude(
             context->inputDeviceDescriptor->deviceId_);
+        if (context->inputDeviceDescriptor->getType() == DEVICE_TYPE_MIC) {
+            context->inputMaxAmplitude = log10(context->inputMaxAmplitude*19+1)/log10(20);
+        }
         if (FLOAT_COMPARE_EQ(context->inputMaxAmplitude, static_cast<float>(ERR_INVALID_PARAM))) {
             context->SignError(NAPI_ERR_INVALID_PARAM, "maxAmplitude invalid");
         } else if (context->inputMaxAmplitude < 0) {
