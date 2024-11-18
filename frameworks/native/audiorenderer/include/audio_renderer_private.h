@@ -32,6 +32,7 @@ constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
 class RendererPolicyServiceDiedCallback;
 class OutputDeviceChangeWithInfoCallbackImpl;
 class AudioRendererConcurrencyCallbackImpl;
+class AudioRendererSwitchPerception;
 
 class AudioRendererPrivate : public AudioRenderer {
 public:
@@ -222,6 +223,7 @@ private:
     std::mutex setStreamCallbackMutex_;
     std::mutex setParamsMutex_;
     int64_t framesAlreadyWritten_ = 0;
+    std::shared_ptr<AudioRendererSwitchPerception> rendererRecreate_ = nullptr;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {
@@ -259,6 +261,33 @@ private:
     std::weak_ptr<AudioRendererCallback> callback_;
 };
 
+class AudioRendererSwitchPerception {
+public:
+    AudioRendererSwitchPerception(AudioRendererPrivate *renderer)
+    {
+        renderer_ = renderer;
+    };
+    void SwitchStream(const uint32_t sessionId, const int32_t streamFlag,
+        const AudioStreamDeviceChangeReasonExt reason)
+    {
+        std::lock_guard<std::mutex> lock(rendererRelease_);
+        if (renderer_ == nullptr) {
+            return;
+        }
+        renderer_->SwitchStream(sessionId, streamFlag, reason);
+    }
+
+    void Release()
+    {
+        std::lock_guard<std::mutex> lock(rendererRelease_);
+        renderer_ = nullptr;
+    }
+
+private:
+    AudioRendererPrivate *renderer_;
+    std::mutex rendererRelease_;
+};
+
 class OutputDeviceChangeWithInfoCallbackImpl : public DeviceChangeWithInfoCallback {
 public:
     OutputDeviceChangeWithInfoCallbackImpl() = default;
@@ -288,22 +317,22 @@ public:
         callbacks_.erase(std::remove(callbacks_.begin(), callbacks_.end(), callback), callbacks_.end());
     }
 
-    void SetAudioRendererObj(AudioRendererPrivate *rendererObj)
+    void SetAudioRendererObj(std::shared_ptr<AudioRendererSwitchPerception> rendererSwitchObj)
     {
         std::lock_guard<std::mutex> lock(audioRendererObjMutex_);
-        renderer_ = rendererObj;
+        newrenderer_ = rendererSwitchObj;
     }
 
     void UnsetAudioRendererObj()
     {
         std::lock_guard<std::mutex> lock(audioRendererObjMutex_);
-        renderer_ = nullptr;
+        newrenderer_.reset();
     }
 private:
     std::vector<std::shared_ptr<AudioRendererOutputDeviceChangeCallback>> callbacks_;
-    AudioRendererPrivate *renderer_ = nullptr;
     std::mutex audioRendererObjMutex_;
     std::mutex callbackMutex_;
+    std::weak_ptr<AudioRendererSwitchPerception> newrenderer_;
 };
 
 class RendererPolicyServiceDiedCallback : public AudioStreamPolicyServiceDiedCallback {
