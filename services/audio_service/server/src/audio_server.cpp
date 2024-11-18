@@ -99,6 +99,7 @@ static const size_t PARAMETER_SET_LIMIT = 1024;
 constexpr int32_t UID_CAMERA = 1047;
 constexpr int32_t MAX_RENDERER_STREAM_CNT_PER_UID = 40;
 const int32_t DEFAULT_MAX_RENDERER_INSTANCES = 128;
+constexpr static int32_t LOGDRITHM_TRANSFORM_COEFF = 19;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
     UID_CAMERA
@@ -1872,7 +1873,14 @@ float AudioServer::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType)
         }
         if (audioCapturerSourceInstance != nullptr) {
             float normalMaxAmplitude = audioCapturerSourceInstance->GetMaxAmplitude();
-            return (normalMaxAmplitude > fastMaxAmplitude) ? normalMaxAmplitude : fastMaxAmplitude;
+            float retMaxAmplitude = (normalMaxAmplitude > fastMaxplitude) ? normalMaxAmplitude : fastMaxAmplitude;
+            retMaxAmplitude = retMaxAmplitude * LOGDRITHM_TRANSFORM_COEFF +1;
+            if (retMaxAmplitude > 1.0) {
+                retMaxAmplitude = log10(retMaxAmplitude) / log10(LOGDRITHM_TRANSFORM_COEFF + 1);
+            } else {
+                retMaxAmplitude = 0;
+            }
+            return retMaxAmplitude;
         }
     }
 
