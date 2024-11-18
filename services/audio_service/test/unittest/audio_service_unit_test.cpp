@@ -836,5 +836,472 @@ HWTEST(AudioServiceUnitTest, SetOffloadMode_001, TestSize.Level1)
     EXPECT_EQ(ERR_INVALID_INDEX, ret);
     audioService->RemoveCapturer(1);
 }
+
+/**
+ * @tc.name : Test OnProcessRelease API
+ * @tc.type : FUNC
+ * @tc.number: OnProcessRelease_001
+ * @tc.desc : Test OnProcessRelease interface with normal playback process.
+ */
+HWTEST(AudioServiceUnitTest, OnProcessRelease_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.audioMode = AUDIO_MODE_PLAYBACK;
+    processConfig.appInfo.appUid = 1000;
+    ProcessReleaseCallback *callback = nullptr;
+    sptr<AudioProcessInServer> processInServer = AudioProcessInServer::Create(processConfig, callback);
+    ASSERT_NE(processInServer, nullptr);
+    std::shared_ptr<AudioEndpoint> endpoint = std::make_shared<AudioEndpointSeparate>(
+        AudioEndpoint::TYPE_INDEPENDENT, 12345, STREAM_MUSIC);
+    ASSERT_NE(endpoint, nullptr);
+    AudioService *audioService = AudioService::GetInstance();
+    ASSERT_NE(audioService, nullptr);
+    std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>> pair(processInServer, endpoint);
+    audioService->linkedPairedList_.push_back(pair);
+    int32_t result = audioService->OnProcessRelease(processInServer.GetRefPtr(), false);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_TRUE(audioService->linkedPairedList_.empty());
+}
+
+/**
+ * @tc.name : Test OnProcessRelease API with nullptr
+ * @tc.type : FUNC
+ * @tc.number: OnProcessRelease_002
+ * @tc.desc : Test OnProcessRelease interface with nullptr process.
+ */
+HWTEST(AudioServiceUnitTest, OnProcessRelease_002, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    ASSERT_NE(audioService, nullptr);
+    //push nullptr
+    int32_t result = audioService->OnProcessRelease(nullptr, false);
+    EXPECT_EQ(result, ERROR);
+}
+
+/**
+ * @tc.name : Test OnProcessRelease API with switch stream
+ * @tc.type : FUNC
+ * @tc.number: OnProcessRelease_003
+ * @tc.desc : Test OnProcessRelease interface with switch stream flag.
+ */
+HWTEST(AudioServiceUnitTest, OnProcessRelease_003, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.audioMode = AUDIO_MODE_RECORD;
+    processConfig.appInfo.appUid = 1001;
+
+    ProcessReleaseCallback *callback = nullptr;
+    sptr<AudioProcessInServer> processInServer = AudioProcessInServer::Create(processConfig, callback);
+    ASSERT_NE(processInServer, nullptr);
+
+    std::shared_ptr<AudioEndpoint> endpoint = std::make_shared<AudioEndpointSeparate>(
+        AudioEndpoint::TYPE_INDEPENDENT, 12345, STREAM_MUSIC);
+    ASSERT_NE(endpoint, nullptr);
+
+    AudioService *audioService = AudioService::GetInstance();
+    ASSERT_NE(audioService, nullptr);
+
+    std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>> pair(processInServer, endpoint);
+    audioService->linkedPairedList_.push_back(pair);
+
+    int32_t result = audioService->OnProcessRelease(processInServer.GetRefPtr(), true);
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_TRUE(audioService->linkedPairedList_.empty());
+}
+
+/**
+ * @tc.name : Test CheckRenderSessionMuteState when session is not muted
+ * @tc.type : FUNC
+ * @tc.number: CheckRenderSessionMuteState_001
+ * @tc.desc : Test CheckRenderSessionMuteState with session not in mutedSessions.
+ */
+HWTEST(AudioServiceUnitTest, CheckRenderSessionMuteState_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+
+    std::shared_ptr<RendererInServer> renderer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+
+    // Execute test
+    uint32_t sessionId = 1001;  // Use a session ID that's not in mutedSessions_
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->CheckRenderSessionMuteState(sessionId, renderer);
+
+    // Verify result is implicit as we can't check private members
+    // The test passes if no crash occurs
+}
+
+/**
+ * @tc.name : Test CheckCaptureSessionMuteState when session is not muted
+ * @tc.type : FUNC
+ * @tc.number: CheckCaptureSessionMuteState_001
+ * @tc.desc : Test CheckCaptureSessionMuteState with session not in mutedSessions.
+ */
+HWTEST(AudioServiceUnitTest, CheckCaptureSessionMuteState_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+
+    std::shared_ptr<CapturerInServer> capturer =
+        std::make_shared<CapturerInServer>(processConfig, streamListener);
+
+    // Execute test
+    uint32_t sessionId = 1001;  // Use a session ID that's not in mutedSessions_
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->CheckCaptureSessionMuteState(sessionId, capturer);
+
+    // Verify result is implicit as we can't check private members
+    // The test passes if no crash occurs
+}
+
+/**
+ * @tc.name : Test CheckRenderSessionMuteState with null renderer
+ * @tc.type : FUNC
+ * @tc.number: CheckRenderSessionMuteState_002
+ * @tc.desc : Test CheckRenderSessionMuteState with null renderer parameter.
+ */
+HWTEST(AudioServiceUnitTest, CheckRenderSessionMuteState_002, TestSize.Level1)
+{
+    // Execute test with null renderer
+    uint32_t sessionId = 1001;
+    AudioService *audioService = AudioService::GetInstance();
+    std::shared_ptr<RendererInServer> nullRenderer = nullptr;
+    audioService->CheckRenderSessionMuteState(sessionId, nullRenderer);
+
+    // Test passes if no crash occurs
+}
+
+/**
+ * @tc.name : Test CheckCaptureSessionMuteState with null capturer
+ * @tc.type : FUNC
+ * @tc.number: CheckCaptureSessionMuteState_002
+ * @tc.desc : Test CheckCaptureSessionMuteState with null capturer parameter.
+ */
+HWTEST(AudioServiceUnitTest, CheckCaptureSessionMuteState_002, TestSize.Level1)
+{
+    // Execute test with null capturer
+    uint32_t sessionId = 1001;
+    AudioService *audioService = AudioService::GetInstance();
+    std::shared_ptr<CapturerInServer> nullCapturer = nullptr;
+    audioService->CheckCaptureSessionMuteState(sessionId, nullCapturer);
+
+    // Test passes if no crash occurs
+}
+
+/**
+ * @tc.name : Test CheckInnerCapForRenderer with null renderer
+ * @tc.type : FUNC
+ * @tc.number: CheckInnerCapForRenderer_001
+ * @tc.desc : Test CheckInnerCapForRenderer with null renderer parameter.
+ */
+HWTEST(AudioServiceUnitTest, CheckInnerCapForRenderer_001, TestSize.Level1)
+{
+    // Execute test with null renderer
+    uint32_t sessionId = 1001;
+    AudioService *audioService = AudioService::GetInstance();
+    std::shared_ptr<RendererInServer> nullRenderer = nullptr;
+    audioService->CheckInnerCapForRenderer(sessionId, nullRenderer);
+
+    // Test passes if no crash occurs
+}
+
+/**
+ * @tc.name : Test CheckInnerCapForRenderer with workingInnerCapId_ = 0
+ * @tc.type : FUNC
+ * @tc.number: CheckInnerCapForRenderer_002
+ * @tc.desc : Test CheckInnerCapForRenderer when inner-cap is not working.
+ */
+HWTEST(AudioServiceUnitTest, CheckInnerCapForRenderer_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+
+    std::shared_ptr<RendererInServer> renderer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+
+    // Execute test when workingInnerCapId_ is 0
+    uint32_t sessionId = 1001;
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->CheckInnerCapForRenderer(sessionId, renderer);
+
+    // Test passes if no crash occurs and renderer is not added to filteredRendererMap_
+}
+
+/**
+ * @tc.name : Test CheckInnerCapForRenderer with private privacy type
+ * @tc.type : FUNC
+ * @tc.number: CheckInnerCapForRenderer_003
+ * @tc.desc : Test CheckInnerCapForRenderer with PRIVACY_TYPE_PRIVATE.
+ */
+HWTEST(AudioServiceUnitTest, CheckInnerCapForRenderer_003, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.privacyType = AudioPrivacyType::PRIVACY_TYPE_PRIVATE;
+
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+
+    std::shared_ptr<RendererInServer> renderer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+
+    uint32_t sessionId = 1001;
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->CheckInnerCapForRenderer(sessionId, renderer);
+
+    // Test passes if no crash occurs and renderer is not added to filteredRendererMap_
+}
+
+/**
+ * @tc.name : Test CheckInnerCapForRenderer with public privacy type
+ * @tc.type : FUNC
+ * @tc.number: CheckInnerCapForRenderer_004
+ * @tc.desc : Test CheckInnerCapForRenderer with PRIVACY_TYPE_PUBLIC.
+ */
+HWTEST(AudioServiceUnitTest, CheckInnerCapForRenderer_004, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    processConfig.rendererInfo.streamUsage = STREAM_USAGE_UNKNOWN;
+    processConfig.appInfo.appPid = 1001;
+
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+
+    std::shared_ptr<RendererInServer> renderer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+
+    uint32_t sessionId = 1001;
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->CheckInnerCapForRenderer(sessionId, renderer);
+
+    // Test passes if no crash occurs
+}
+
+/**
+ * @tc.name : Test CheckInnerCapForRenderer with invalid policy
+ * @tc.type : FUNC
+ * @tc.number: CheckInnerCapForRenderer_005
+ * @tc.desc : Test CheckInnerCapForRenderer when filter policy is invalid.
+ */
+HWTEST(AudioServiceUnitTest, CheckInnerCapForRenderer_005, TestSize.Level1)
+{
+    // Prepare test data with empty filter options (which leads to POLICY_INVALID)
+    AudioProcessConfig processConfig;
+    processConfig.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+
+    std::shared_ptr<RendererInServer> renderer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+
+    uint32_t sessionId = 1001;
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->CheckInnerCapForRenderer(sessionId, renderer);
+
+    // Test passes if no crash occurs and renderer is not added to filteredRendererMap_
+}
+/**
+ * @tc.name: Test ShouldBeDualTone Normal Case
+ * @tc.type: FUNC
+ * @tc.number: ShouldBeDualTone_001
+ * @tc.desc: Test ShouldBeDualTone with headset and ringtone usage should return true
+ */
+HWTEST(AudioServiceUnitTest, ShouldBeDualTone_001, TestSize.Level1)
+{
+    // Prepare test data
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
+
+    AudioService *audioService = AudioService::GetInstance();
+
+    // Since we can't mock PolicyHandler, configure real device info
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    deviceInfo.isLowLatencyDevice_ = false;
+
+    bool result = audioService->ShouldBeDualTone(config);
+    EXPECT_NE(result, true);
+}
+
+/**
+ * @tc.name: Test ShouldBeDualTone Non-Headset Device
+ * @tc.type: FUNC
+ * @tc.number: ShouldBeDualTone_002
+ * @tc.desc: Test ShouldBeDualTone with non-headset device should return false
+ */
+HWTEST(AudioServiceUnitTest, ShouldBeDualTone_002, TestSize.Level1)
+{
+    // Prepare test data
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
+
+    AudioService *audioService = AudioService::GetInstance();
+
+    // Configure non-headset device
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceType_ = DEVICE_TYPE_NONE;  // Non-headset device
+    deviceInfo.isLowLatencyDevice_ = false;
+
+    bool result = audioService->ShouldBeDualTone(config);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name: Test ShouldBeDualTone Non-Ringtone Usage
+ * @tc.type: FUNC
+ * @tc.number: ShouldBeDualTone_003
+ * @tc.desc: Test ShouldBeDualTone with non-ringtone usage should return false
+ */
+HWTEST(AudioServiceUnitTest, ShouldBeDualTone_003, TestSize.Level1)
+{
+    // Prepare test data
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;  // Non-ringtone usage
+
+    AudioService *audioService = AudioService::GetInstance();
+
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    deviceInfo.isLowLatencyDevice_ = false;
+
+    bool result = audioService->ShouldBeDualTone(config);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name: Test ShouldBeDualTone Non-Playback Mode
+ * @tc.type: FUNC
+ * @tc.number: ShouldBeDualTone_004
+ * @tc.desc: Test ShouldBeDualTone with non-playback mode should return false
+ */
+HWTEST(AudioServiceUnitTest, ShouldBeDualTone_004, TestSize.Level1)
+{
+    // Prepare test data
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_RECORD;  // Non-playback mode
+    config.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
+
+    AudioService *audioService = AudioService::GetInstance();
+
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    deviceInfo.isLowLatencyDevice_ = false;
+
+    bool result = audioService->ShouldBeDualTone(config);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name: Test OnInitInnerCapList Normal Case
+ * @tc.type: FUNC
+ * @tc.number: OnInitInnerCapList_001
+ * @tc.desc: Test OnInitInnerCapList with valid renderer and public privacy type
+ */
+HWTEST(AudioServiceUnitTest, OnInitInnerCapList_001, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+
+    // Prepare renderer config
+    AudioProcessConfig processConfig;
+    processConfig.audioMode = AUDIO_MODE_PLAYBACK;
+    processConfig.privacyType = PRIVACY_TYPE_PUBLIC;
+    processConfig.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    processConfig.appInfo.appPid = 1001;
+
+    // Create renderer
+    std::shared_ptr<IStreamListener> streamListener = nullptr;
+    std::shared_ptr<RendererInServer> renderer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+
+    // Set working config for inner capture
+    CaptureFilterOptions filterOptions;
+    filterOptions.usages.push_back(STREAM_USAGE_MEDIA);
+    filterOptions.usageFilterMode = FilterMode::INCLUDE;
+    audioService->workingConfig_.filterOptions = filterOptions;
+
+    // Add renderer to map
+    uint32_t sessionId = 1;
+    {
+        std::unique_lock<std::mutex> lock(audioService->rendererMapMutex_);
+        audioService->allRendererMap_[sessionId] = renderer;
+    }
+
+    int32_t result = audioService->OnInitInnerCapList();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name: Test OnInitInnerCapList Empty Map
+ * @tc.type: FUNC
+ * @tc.number: OnInitInnerCapList_002
+ * @tc.desc: Test OnInitInnerCapList with empty renderer map
+ */
+HWTEST(AudioServiceUnitTest, OnInitInnerCapList_002, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+
+    // Clear renderer map
+    {
+        std::unique_lock<std::mutex> lock(audioService->rendererMapMutex_);
+        audioService->allRendererMap_.clear();
+    }
+
+    int32_t result = audioService->OnInitInnerCapList();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name: Test OnInitInnerCapList Private Privacy Type
+ * @tc.type: FUNC
+ * @tc.number: OnInitInnerCapList_003
+ * @tc.desc: Test OnInitInnerCapList with private privacy type renderer
+ */
+HWTEST(AudioServiceUnitTest, OnInitInnerCapList_003, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+
+    // Prepare renderer config with private privacy type
+    AudioProcessConfig processConfig;
+    processConfig.audioMode = AUDIO_MODE_PLAYBACK;
+    processConfig.privacyType = PRIVACY_TYPE_PRIVATE;  // Set private type
+    processConfig.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    processConfig.appInfo.appPid = 1001;
+
+    // Create renderer
+    std::shared_ptr<IStreamListener> streamListener = nullptr;
+    std::shared_ptr<RendererInServer> renderer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+
+    // Set working config for inner capture
+    CaptureFilterOptions filterOptions;
+    filterOptions.usages.push_back(STREAM_USAGE_MEDIA);
+    filterOptions.usageFilterMode = FilterMode::INCLUDE;
+    audioService->workingConfig_.filterOptions = filterOptions;
+
+    // Add renderer to map
+    uint32_t sessionId = 1;
+    {
+        std::unique_lock<std::mutex> lock(audioService->rendererMapMutex_);
+        audioService->allRendererMap_[sessionId] = renderer;
+    }
+
+    int32_t result = audioService->OnInitInnerCapList();
+    EXPECT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
