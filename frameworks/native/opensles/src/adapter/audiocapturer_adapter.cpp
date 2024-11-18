@@ -37,6 +37,9 @@ AudioCapturerAdapter* AudioCapturerAdapter::GetInstance()
 AudioCapturer *AudioCapturerAdapter::GetAudioCapturerById(SLuint32 id)
 {
     AUDIO_INFO_LOG("AudioCapturerAdapter::GetAudioCapturerById: %{public}lu", id);
+    auto it = captureMap_.find(id);
+    CHECK_AND_RETURN_RET_LOG(it != captureMap_.end(), nullptr,
+        "AudioCapturerAdapter::GetAudioCapturerById: %{public}lu not found", id);
     return captureMap_.find(id)->second;
 }
 
