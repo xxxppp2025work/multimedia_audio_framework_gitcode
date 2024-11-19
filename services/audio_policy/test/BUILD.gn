@@ -1363,10 +1363,8 @@ ohos_unittest("audio_effect_config_parser_unit_test") {
   ]
 
   sources = [ "./unittest/audio_effect_config_parser_unit_test/src/audio_effect_config_parser_unit_test.cpp" ]
-  sources += audio_policy_service_sources
-  defines = audio_policy_service_defines
 
-  deps = [ "../../audio_policy:audio_policy_service" ]
+  deps = [ "../../audio_policy:audio_policy_service_static" ]
 }
 
 ohos_unittest("audio_policy_manager_stub_test") {
@@ -1427,11 +1425,9 @@ ohos_unittest("audio_policy_manager_stub_test") {
   ]
 
   sources = [ "./unittest/audio_policy_manager_stub_test/src/audio_policy_manager_stub_test.cpp" ]
-  sources += audio_policy_service_sources
-  defines = audio_policy_service_defines
 
   deps = [
-    "../../audio_policy:audio_policy_service",
+    "../../audio_policy:audio_policy_service_static",
     "../../audio_policy:audio_setting_provider",
   ]
 }
