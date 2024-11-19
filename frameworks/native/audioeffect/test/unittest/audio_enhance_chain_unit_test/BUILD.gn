@@ -15,11 +15,6 @@ import("//build/test.gni")
 import("../../../../../../audio_framework_test_sources.gni")
 
 module_output_path = "audio_framework/audio_enhance_chain"
-audio_effect_sources = []
-cur_path = "../../../../../../"
-foreach(source, audio_effect_sources_template) {
-  audio_effect_sources += [ "$cur_path$source" ]
-}
 
 ohos_unittest("audio_enhance_chain_unit_test") {
   testonly = true
@@ -37,7 +32,6 @@ ohos_unittest("audio_enhance_chain_unit_test") {
   ]
 
   sources = [ "src/audio_enhance_chain_unit_test.cpp" ]
-  sources += audio_effect_sources
 
   deps = [
     "../../../../audioeffect:audio_effect",

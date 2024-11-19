@@ -608,13 +608,11 @@ ohos_unittest("pa_adapter_manager_unit_test") {
   module_out_path = module_output_path
   include_dirs = [ "../../server/include" ]
   sources = [ "pa_adapter_manager_unit_test.cpp" ]
-  sources += audio_process_service_sources
-  defines = audio_process_service_defines
 
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
 
-  deps = [ "../../../audio_service:audio_process_service" ]
+  deps = [ "../../../audio_service:audio_process_service_static" ]
   external_deps = [
     "c_utils:utils",
     "drivers_interface_audio:libeffect_proxy_1.0",
@@ -634,13 +632,11 @@ ohos_unittest("capturer_in_server_unit_test") {
   module_out_path = module_output_path
   include_dirs = [ "../../server/include" ]
   sources = [ "capturer_in_server_unit_test.cpp" ]
-  sources += audio_process_service_sources
-  defines = audio_process_service_defines
 
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
 
-  deps = [ "../../../audio_service:audio_process_service" ]
+  deps = [ "../../../audio_service:audio_process_service_static" ]
   external_deps = [
     "c_utils:utils",
     "drivers_interface_audio:libeffect_proxy_1.0",
