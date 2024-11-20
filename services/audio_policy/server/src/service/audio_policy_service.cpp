@@ -73,6 +73,10 @@ static const unsigned int BUFFER_CALC_20MS = 20;
 static const int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_MS = 5000; // 5s
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
 static const int64_t WAIT_RINGER_MODE_MUTE_RESET_TIME_MS = 500; // 500ms
+static const int32_t FETCH_RESULT_DEFAULT = 0;
+static const int32_t FETCH_RESULT_CONTINUE = 1;
+static const int32_t FETCH_RESULT_ERROR = 2;
+
 static const std::vector<std::string> SourceNames = {
     std::string(PRIMARY_MIC),
     std::string(BLUETOOTH_MIC),
@@ -1471,16 +1475,7 @@ std::vector<SinkInput> AudioPolicyService::FilterSinkInputs(int32_t sessionId)
     std::vector<SinkInput> targetSinkInputs = {};
     std::vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
 
-    for (size_t i = 0; i < sinkInputs.size(); i++) {
-        CHECK_AND_CONTINUE_LOG(sinkInputs[i].uid != dAudioClientUid,
-            "Find sink-input with daudio[%{public}d]", sinkInputs[i].pid);
-        CHECK_AND_CONTINUE_LOG(sinkInputs[i].streamType != STREAM_DEFAULT,
-            "Sink-input[%{public}zu] of effect sink, don't move", i);
-        AUDIO_DEBUG_LOG("sinkinput[%{public}zu]:%{public}s", i, PrintSinkInput(sinkInputs[i]).c_str());
-        if (sessionId == sinkInputs[i].streamId) {
-            targetSinkInputs.push_back(sinkInputs[i]);
-        }
-    }
+    FilterSinkInputsForTarget(sessionId, sinkInputs, targetSinkInputs);
     return targetSinkInputs;
 }
 
@@ -1488,7 +1483,13 @@ std::vector<SinkInput> AudioPolicyService::FilterSinkInputs(int32_t sessionId, s
 {
     // find sink-input id with audioRendererFilter
     std::vector<SinkInput> targetSinkInputs = {};
+    FilterSinkInputsForTarget(sessionId, sinkInputs, targetSinkInputs);
+    return targetSinkInputs;
+}
 
+void AudioPolicyService::FilterSinkInputsForTarget(int32_t sessionId, std::vector<SinkInput> sinkInputs,
+    std::vector<SinkInput> &targetSinkInputs)
+{
     for (size_t i = 0; i < sinkInputs.size(); i++) {
         CHECK_AND_CONTINUE_LOG(sinkInputs[i].uid != dAudioClientUid,
             "Find sink-input with daudio[%{public}d]", sinkInputs[i].pid);
@@ -1499,7 +1500,6 @@ std::vector<SinkInput> AudioPolicyService::FilterSinkInputs(int32_t sessionId, s
             targetSinkInputs.push_back(sinkInputs[i]);
         }
     }
-    return targetSinkInputs;
 }
 
 std::vector<SourceOutput> AudioPolicyService::FilterSourceOutputs(int32_t sessionId)
@@ -2680,16 +2680,10 @@ void AudioPolicyService::FetchOutputDevice(vector<shared_ptr<AudioRendererChange
         }
         MuteSinkPortForSwtichDevice(rendererChangeInfo, descs, reason);
         std::string encryptMacAddr = GetEncryptAddr(descs.front()->macAddress_);
-        if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            if (IsFastFromA2dpToA2dp(descs.front(), rendererChangeInfo, reason)) { continue; }
-            int32_t ret = ActivateA2dpDeviceWhenDescEnabled(descs.front(), rendererChangeInfos, reason);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed", encryptMacAddr.c_str());
-        } else if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            int32_t ret = HandleScoOutputDeviceFetched(descs.front(), rendererChangeInfos, reason);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] is not connected yet", encryptMacAddr.c_str());
-        } else if (descs.front()->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-            ActivateArmDevice(descs.front()->macAddress_, descs.front()->deviceRole_);
-        }
+        int32_t fetchResult = DeviceFetchOutputHandle(descs.front(), rendererChangeInfo, rendererChangeInfos, reason,
+            encryptMacAddr);
+        if (fetchResult == FETCH_RESULT_CONTINUE) { continue; }
+        if (fetchResult == FETCH_RESULT_ERROR) { return; }
         if (needUpdateActiveDevice) {
             isUpdateActiveDevice = UpdateDevice(descs.front(), reason, rendererChangeInfo);
             needUpdateActiveDevice = (isUpdateActiveDevice)? false : true;
@@ -2702,6 +2696,36 @@ void AudioPolicyService::FetchOutputDevice(vector<shared_ptr<AudioRendererChange
         MoveToNewOutputDevice(rendererChangeInfo, descs, sinkInputs, reason);
     }
     FetchOutputEnd(isUpdateActiveDevice, runningStreamCount);
+}
+
+int32_t AudioPolicyService::DeviceFetchOutputHandle(unique_ptr<AudioDeviceDescriptor> &desc,
+    shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+    vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
+    const AudioStreamDeviceChangeReasonExt reason, std::string encryptMacAddr)
+{
+    if (desc == nullptr) {
+        AUDIO_ERR_LOG("fetch output device is null");
+        return FETCH_RESULT_CONTINUE;
+    }
+    if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        if (IsFastFromA2dpToA2dp(descs.front(), rendererChangeInfo, reason)) {
+            return FETCH_RESULT_CONTINUE;
+        }
+        int32_t ret = ActivateA2dpDeviceWhenDescEnabled(descs.front(), rendererChangeInfos, reason);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("activate a2dp [%{public}s] failed", encryptMacAddr.c_str());
+            return FETCH_RESULT_ERROR;
+        }
+    } else if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        int32_t ret = HandleScoOutputDeviceFetched(descs.front(), rendererChangeInfos, reason);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("sco [%{public}s] is not connected yet", encryptMacAddr.c_str());
+            return FETCH_RESULT_ERROR;
+        }
+    } else if (descs.front()->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        ActivateArmDevice(descs.front()->macAddress_, descs.front()->deviceRole_);
+    }
+    return FETCH_RESULT_DEFAULT;
 }
 
 void AudioPolicyService::FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount)
