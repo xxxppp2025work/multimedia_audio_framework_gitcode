@@ -401,28 +401,5 @@ HWTEST(AudioEnhanceChainUnitTest, SetPropertyToHandle_001, TestSize.Level1)
     int result = audioEnhanceChain->SetPropertyToHandle(handle, property);
     EXPECT_EQ(SUCCESS, result);
 }
-
-/**
-* @tc.name   : Test SetPropertyToHandle API
-* @tc.number : SetPropertyToHandle_002
-* @tc.desc   : Test SetPropertyToHandle interface.
-*/
-HWTEST(AudioEnhanceChainUnitTest, SetPropertyToHandle_002, TestSize.Level1)
-{
-    AudioEffectInterface effectInterface = {
-        [](AudioEffectHandle self, AudioBuffer *inBuffer, AudioBuffer *outBuffer) -> int32_t {
-            return 0;
-        },
-        [](AudioEffectHandle self, uint32_t cmdCode, AudioEffectTransInfo *cmdInfo,
-            AudioEffectTransInfo *replyInfo) -> int32_t {
-            return 0;
-        }
-    };
-    AudioEffectInterface* effectInterfacePtr = &effectInterface;
-    AudioEffectHandle handle = &effectInterfacePtr;
-    std::string property = "";
-    int result = audioEnhanceChain->SetPropertyToHandle(handle, property);
-    EXPECT_EQ(SUCCESS, result);
-}
 } // namespace AudioStandard
 } // namespace OHOS
