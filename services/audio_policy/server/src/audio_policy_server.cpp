@@ -80,6 +80,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
 
     powerStateCallbackRegister_ = false;
+    supportVibrator_ = system::GetBoolParameter("const.vibrator.support_vibrator", true);
     volumeApplyToAll_ = system::GetBoolParameter("const.audio.volume_apply_to_all", false);
     if (volumeApplyToAll_) {
         audioPolicyService_.SetNormalVoipFlag(true);
@@ -184,6 +185,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             AUDIO_INFO_LOG("OnAddSystemAbility accessibility service start");
             SubscribeAccessibilityConfigObserver();
             InitKVStore();
+            RegisterDataObserver();
             break;
         case POWER_MANAGER_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility power manager service start");
@@ -259,6 +261,7 @@ void AudioPolicyServer::HandleKvDataShareEvent()
         InitMicrophoneMute();
     }
     InitKVStore();
+    RegisterDataObserver();
 }
 
 void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
@@ -554,13 +557,11 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
     const AAFwk::Want& want = eventData.GetWant();
     std::string action = want.GetAction();
     if (action == "usual.event.DATA_SHARE_READY") {
-        RegisterDataObserver();
-        std::string deviceName = audioPolicyService_.GetDeviceNameFromDataShare();
-        audioPolicyService_.SetDisplayName(deviceName, true);
         if (isInitMuteState_ == false) {
             AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
             InitMicrophoneMute();
         }
+        audioPolicyService_.SetDataShareReady(true);
     } else if (action == "usual.event.dms.rotation_changed") {
         uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
         AUDIO_INFO_LOG("Set rotation to audioeffectchainmanager is %{public}d", rotate);
@@ -889,7 +890,11 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
     }
 
     if (updateRingerMode) {
-        AudioRingerMode ringerMode = mute ? RINGER_MODE_VIBRATE : RINGER_MODE_NORMAL;
+        AudioRingerMode ringerMode = mute ? (supportVibrator_ ? RINGER_MODE_VIBRATE : RINGER_MODE_SILENT) :
+            RINGER_MODE_NORMAL;
+        if (!supportVibrator_) {
+            AUDIO_INFO_LOG("The device does not support vibration");
+        }
         AUDIO_INFO_LOG("RingerMode should be set to %{public}d because of ring mute state", ringerMode);
         // Update ringer mode but no need to update mute state again.
         SetRingerModeInternal(ringerMode, true);
@@ -924,9 +929,9 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
     if (streamType == STREAM_ALL) {
         const std::vector<AudioStreamType> &streamTypeArray =
             (VolumeUtils::IsPCVolumeEnable())? GET_PC_STREAM_ALL_VOLUME_TYPES : GET_STREAM_ALL_VOLUME_TYPES;
-        for (auto audioSteamType : streamTypeArray) {
-            AUDIO_INFO_LOG("SetVolume of STREAM_ALL, SteamType = %{public}d ", audioSteamType);
-            int32_t setResult = SetSingleStreamVolume(audioSteamType, volumeLevel, isUpdateUi);
+        for (auto audioStreamType : streamTypeArray) {
+            AUDIO_INFO_LOG("SetVolume of STREAM_ALL, SteamType = %{public}d ", audioStreamType);
+            int32_t setResult = SetSingleStreamVolume(audioStreamType, volumeLevel, isUpdateUi);
             if (setResult != SUCCESS) {
                 return setResult;
             }
@@ -966,7 +971,11 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
 
     if (updateRingerMode) {
         int32_t curRingVolumeLevel = GetSystemVolumeLevelInternal(STREAM_RING);
-        AudioRingerMode ringerMode = (curRingVolumeLevel > 0) ? RINGER_MODE_NORMAL : RINGER_MODE_VIBRATE;
+        AudioRingerMode ringerMode = (curRingVolumeLevel > 0) ? RINGER_MODE_NORMAL :
+            (supportVibrator_ ? RINGER_MODE_VIBRATE : RINGER_MODE_SILENT);
+        if (!supportVibrator_) {
+            AUDIO_INFO_LOG("The device does not support vibration");
+        }
         AUDIO_INFO_LOG("RingerMode should be set to %{public}d because of ring volume level", ringerMode);
         // Update ringer mode but no need to update volume again.
         SetRingerModeInternal(ringerMode, true);
@@ -2378,7 +2387,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
 
-    if (ret == SUCCESS && audioPolicyServerHandler_!= nullptr) {
+    if (ret == SUCCESS && audioPolicyServerHandler_!= nullptr && audioPolicyService_.IsCurrentActiveDeviceA2dp()) {
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
     }
     return ret;
@@ -3009,8 +3018,6 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id)
     audioPolicyService_.NotifyAccountsChanged(id);
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
     interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id);
-    std::string deviceName = audioPolicyService_.GetDeviceNameFromDataShare();
-    audioPolicyService_.SetDisplayName(deviceName, true);
 }
 
 int32_t AudioPolicyServer::MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType)
@@ -3157,6 +3164,11 @@ int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const s
 
 bool AudioPolicyServer::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
 {
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != MEDIA_SERVICE_UID) {
+        auto callerPid = IPCSkeleton::GetCallingPid();
+        return audioPolicyService_.IsAllowedPlayback(callerUid, callerPid);
+    }
     return audioPolicyService_.IsAllowedPlayback(uid, pid);
 }
 

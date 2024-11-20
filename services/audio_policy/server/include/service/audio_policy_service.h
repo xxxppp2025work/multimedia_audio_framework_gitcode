@@ -201,15 +201,13 @@ public:
 
     void OnUpdateAnahsSupport(std::string anahsShowType);
 
-    int32_t GetUserSetDeviceNameFromDataShareHelper(std::string &deviceName);
-
-    int32_t GetDefaultDeviceNameFromDataShareHelper(std::string &deviceName);
-
-    std::string GetDeviceNameFromDataShare();
+    int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
 
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
 
     bool IsDataShareReady();
+
+    void SetDataShareReady(std::atomic<bool> isDataShareReady);
 
     int32_t ResumeStreamState();
 #ifdef FEATURE_DTMF_TONE
@@ -473,6 +471,8 @@ public:
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
     bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid);
+
+    bool IsCurrentActiveDeviceA2dp();
 
     int32_t SetVoiceRingtoneMute(bool isMute);
 
