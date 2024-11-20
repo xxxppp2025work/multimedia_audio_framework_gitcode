@@ -55,6 +55,7 @@
 #include "audio_log_utils.h"
 
 #include "media_monitor_manager.h"
+#include "xcollie/watchdog.h"
 
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
@@ -75,6 +76,8 @@ static const int32_t HALF_FACTOR = 2;
 static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MEDIA_SERVICE_UID = 1013;
 static const int32_t MAX_WRITE_INTERVAL_MS = 40;
+constexpr int32_t WATCHDOG_INTERVAL_TIME = 3000; // 3000ms
+constexpr int32_t WATCHDOG_DELAY_TIME = 10000; // 10000ms
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -383,6 +386,31 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     return result;
 }
 
+void RendererRemoveWatchDog(const std::string &message, const std::int32_t sessionId)
+{
+    std::string watchDogMessage = message;
+    watchDogMessage += std::to_string(sessionId_);
+    HiviewDFX::Watchdog::GetInstance().RemovePeriodicalTask(watchDogMessage);
+    AUDIO_INFO_LOG("%{public}s end %{public}d", watchDogMessage.c_str(), sessionId_);
+}
+
+void RendererInClientInner::WatchingWriteCallbackFunc()
+{
+    writeCallbackFuncThreadStatusFlag_ = true;
+    auto taskFunc = [this]() {
+        if (writeCallbackFuncThreadStatusFlag_) {
+            AUDIO_INFO_LOG("Set writeCallbackFuncThreadStatusFlag_ to false");
+            writeCallbackFuncThreadStatusFlag_ = false;
+        } else {
+            AUDIO_INFO_LOG("watchdog happened and process exit");
+        }
+    };
+    std::string watchDogMessage = "WatchingWriteCallbackFunc" + std::to_string(sessionId_);
+    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask(watchDogMessage, taskFunc,
+        WATCHDOG_INTERVAL_TIME, WATCHDOG_DELAY_TIME);
+    AUDIO_INFO_LOG("watchdog start %{public}d", sessionId_);
+}
+
 void RendererInClientInner::WriteCallbackFunc()
 {
     AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", sessionId_);
@@ -390,11 +418,13 @@ void RendererInClientInner::WriteCallbackFunc()
 
     // Modify thread priority is not need as first call write will do these work.
     cbThreadCv_.notify_one();
-
+    // add watchdog
+    WatchingWriteCallbackFunc();
     // start loop
     while (!cbThreadReleased_) {
         Trace traceLoop("RendererInClientInner::WriteCallbackFunc");
         if (!WaitForRunning()) {
+            writeCallbackFuncThreadStatusFlag_ = true;
             continue;
         }
         if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
@@ -420,7 +450,10 @@ void RendererInClientInner::WriteCallbackFunc()
                 break;
             }
         }
-        if (state_ != RUNNING) { continue; }
+        if (state_ != RUNNING) {
+            writeCallbackFuncThreadStatusFlag_ = true;
+            continue;
+        }
         // call client write
         std::unique_lock<std::mutex> lockCb(writeCbMutex_);
         if (writeCb_ != nullptr) {
@@ -432,8 +465,13 @@ void RendererInClientInner::WriteCallbackFunc()
         Trace traceQueuePush("RendererInClientInner::QueueWaitPush");
         std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
         cbBufferQueue_.WaitNotEmptyFor(std::chrono::milliseconds(WRITE_BUFFER_TIMEOUT_IN_MS));
+        writeCallbackFuncThreadStatusFlag_ = true;
     }
     AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", sessionId_);
+    std::string watchDogMessage = "WatchingWriteCallbackFunc" + std::to_string(sessionId_);
+    HiviewDFX::Watchdog::GetInstance().RemovePeriodicalTask(watchDogMessage);
+    AUDIO_INFO_LOG("WatchingWriteCallbackFunc end %{public}d", sessionId_);
+    RendererRemoveWatchDog("WatchingWriteCallbackFunc", sessionId_);
 }
 
 int32_t RendererInClientInner::FlushRingCache()
