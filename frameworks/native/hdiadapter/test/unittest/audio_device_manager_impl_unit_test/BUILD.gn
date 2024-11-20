@@ -15,7 +15,7 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../../../../config.gni")
 
-module_output_path = "audio_framework/audio_device_manager_impl"
+module_output_path = "multimedia_audio_framework/audio_device_manager_impl"
 
 ohos_unittest("audio_device_manager_impl_unit_test") {
   testonly = true
