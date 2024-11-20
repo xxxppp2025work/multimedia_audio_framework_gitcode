@@ -966,7 +966,22 @@ float AudioRendererPrivate::GetVolume() const
 
 int32_t AudioRendererPrivate::SetRenderRate(AudioRendererRate renderRate) const
 {
-    return audioStream_->SetRenderRate(renderRate);
+    float speed = 0.0f;
+    switch (renderRate) {
+        case RENDER_RATE_NORMAL:
+            speed = 1.0f;
+            break;
+        case RENDER_RATE_DOUBLE:
+            speed = 2.0f;
+            break;
+        case RENDER_RATE_HALF:
+            speed = 0.5f;
+            break;
+        default:
+            speed = 1.0f;
+            break;
+    }
+    return audioStream_->SetSpeed(speed);
 }
 
 AudioRendererRate AudioRendererPrivate::GetRenderRate() const
