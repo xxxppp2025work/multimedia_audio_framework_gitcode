@@ -131,8 +131,7 @@ void AudioDeviceFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->SetMicrophoneMutePersistent(mute, PolicyType::PRIVACY_POLCIY_TYPE);
     GetServerPtr()->GetPersistentMicMuteState();
 
-    const std::shared_ptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor =
-        std::make_shared<AudioStandard::AudioDeviceDescriptor>();
+    const sptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor = new AudioStandard::AudioDeviceDescriptor();
     CastType type = *reinterpret_cast<const CastType *>(rawData);
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     GetServerPtr()->ConfigDistributedRoutingRole(deviceDescriptor, type);
@@ -235,8 +234,7 @@ void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
     AudioPipeType type = *reinterpret_cast<const AudioPipeType *>(rawData);
     GetServerPtr()->MoveToNewPipe(sessionId, type);
 
-    std::shared_ptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor =
-        std::make_shared<AudioStandard::AudioDeviceDescriptor>();
+    sptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor = new AudioStandard::AudioDeviceDescriptor();
     deviceDescriptor->deviceType_ = *reinterpret_cast<const DeviceType *>(rawData);
     deviceDescriptor->deviceRole_ = *reinterpret_cast<const DeviceRole *>(rawData);
     GetServerPtr()->GetHardwareOutputSamplingRate(deviceDescriptor);
@@ -326,7 +324,7 @@ void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)
 } // namespace AudioStandard
 } // namesapce OHOS
 
-extern "C" int LLVMFuzzerInitialize(const uint8_t *data, size_t size)
+extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::AudioStandard::GetServerPtr();
     return 0;
