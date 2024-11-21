@@ -122,6 +122,12 @@ bool VolumeDataMaintainer::GetFirstBoot(bool &firstBoot)
     return true;
 }
 
+void VolumeDataMaintainer::SetDataShareReady(std::atomic<bool> isDataShareReady)
+{
+    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    audioSettingProvider.SetDataShareReady(std::atomic_load(&isDataShareReady));
+}
+
 bool VolumeDataMaintainer::SaveVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel)
 {
     std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
@@ -164,12 +170,13 @@ bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamT
     int32_t volumeValue = 0;
     ErrCode ret = audioSettingProvider.GetIntValue(volumeKey, volumeValue, "system");
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Get Volume FromDataBase volumeMap failed");
+        AUDIO_ERR_LOG("Get streamType %{public}d, deviceType %{public}d, Volume FromDataBase volumeMap failed.",
+            streamType, deviceType);
         return false;
     } else {
         volumeLevelMap_[streamType] = volumeValue;
-        AUDIO_PRERELEASE_LOGI("Get streamType %{public}d Volume FromDataBase volumeMap from datashare %{public}d",
-            streamType, volumeValue);
+        AUDIO_PRERELEASE_LOGI("Get streamType %{public}d, deviceType %{public}d, "\
+            "Volume FromDataBase volumeMap from datashare %{public}d.", streamType, deviceType, volumeValue);
     }
 
     return true;
@@ -209,7 +216,7 @@ bool VolumeDataMaintainer::SaveMuteStatus(DeviceType deviceType, AudioStreamType
     bool muteStatus)
 {
     std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
-    if (streamType == STREAM_RING) {
+    if (streamType == STREAM_RING && VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_RING) {
         AUDIO_INFO_LOG("set ring stream mute status to all device.");
         bool saveMuteResult = false;
         for (auto &device : DEVICE_TYPE_LIST) {

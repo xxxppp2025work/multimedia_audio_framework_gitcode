@@ -199,11 +199,11 @@ void AudioPolicyClientProxy::OnMicStateUpdated(const MicStateChangeEvent &micSta
 }
 
 void AudioPolicyClientProxy::OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
-    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
@@ -225,11 +225,11 @@ void AudioPolicyClientProxy::OnPreferredOutputDeviceUpdated(const AudioRendererI
 }
 
 void AudioPolicyClientProxy::OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo,
-    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
@@ -428,7 +428,7 @@ void AudioPolicyClientProxy::OnSpatializationEnabledChange(const bool &enabled)
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::OnSpatializationEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor>
+void AudioPolicyClientProxy::OnSpatializationEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor>
     &deviceDescriptor, const bool &enabled)
 {
     MessageParcel data;
@@ -480,7 +480,7 @@ void AudioPolicyClientProxy::OnHeadTrackingEnabledChange(const bool &enabled)
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor>
+void AudioPolicyClientProxy::OnHeadTrackingEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor>
     &deviceDescriptor, const bool &enabled)
 {
     MessageParcel data;

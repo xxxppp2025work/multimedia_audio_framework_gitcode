@@ -466,6 +466,7 @@ AudioCapturerSourceInner::~AudioCapturerSourceInner()
     threadRunning_ = false;
     if (hdiAttr_ != nullptr) {
         free(hdiAttr_);
+        hdiAttr_ = nullptr;
     }
 }
 
@@ -903,6 +904,7 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
                 frameInfo.replyBytesEc : fdescEc->frameLen;
         }
     }
+    CheckUpdateState(fdesc->frame, replyBytes);
     AudioCaptureFrameInfoFree(&frameInfo, false);
 
     return SUCCESS;

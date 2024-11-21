@@ -308,6 +308,11 @@ void AudioAdapterManager::SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, 
     }
 }
 
+void AudioAdapterManager::SetDataShareReady(std::atomic<bool> isDataShareReady)
+{
+    volumeDataMaintainer_.SetDataShareReady(std::atomic_load(&isDataShareReady));
+}
+
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
@@ -736,13 +741,6 @@ int32_t AudioAdapterManager::SetDeviceActive(InternalDeviceType deviceType,
 
 void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType)
 {
-    if (!isLoaded_) {
-        AUDIO_ERR_LOG("The data base is not loaded. Can not load new volume for new device!");
-        // The ring volume is also saved in audio_config.para.
-        // So the boot animation can still play with right volume.
-        return;
-    }
-
     // The same device does not set the volume
     // Except for A2dp, because the currentActiveDevice_ has already been set in Activea2dpdevice.
     bool isRingerModeMute = AudioPolicyService::GetAudioPolicyService().IsRingerModeMute();
@@ -1512,7 +1510,7 @@ bool AudioAdapterManager::LoadMuteStatusMap(void)
         if (!result) {
             AUDIO_WARNING_LOG("Could not load mute status for stream type %{public}d from database.", streamType);
         }
-        if (streamType == STREAM_RING) {
+        if (streamType == STREAM_RING && VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_RING) {
             bool muteStateForStreamRing = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
             if (currentActiveDevice_ != DEVICE_TYPE_SPEAKER) {
                 continue;
@@ -1993,7 +1991,11 @@ void AudioAdapterManager::SetAbsVolumeMute(bool mute)
 {
     isAbsVolumeMute_ = mute;
     float volumeDb = mute ? 0.0f : 0.63957f; // 0.63957 = -4dB
-    SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
+    if (currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
+    } else {
+        AUDIO_INFO_LOG("The currentActiveDevice is not A2DP");
+    }
 }
 
 
