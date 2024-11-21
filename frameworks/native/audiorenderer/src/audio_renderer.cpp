@@ -1025,8 +1025,10 @@ void AudioRendererInterruptCallbackImpl::NotifyEvent(const InterruptEvent &inter
     if (cb_ != nullptr && interruptEvent.callbackToApp) {
         cb_->OnInterrupt(interruptEvent);
         AUDIO_DEBUG_LOG("Send interruptEvent to app successfully");
-    } else {
+    } else if (cb_ == nullptr) {
         AUDIO_WARNING_LOG("cb_==nullptr, failed to send interruptEvent");
+    } else {
+        AUDIO_INFO_LOG("callbackToApp is %{public}d", interruptEvent.callbackToApp);
     }
 }
 
@@ -1900,7 +1902,7 @@ void AudioRendererPrivate::ActivateAudioConcurrency(const AudioStreamParams &aud
     } else if (streamClass == IAudioStream::FAST_STREAM) {
         rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
     } else {
-        std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors =
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors =
             AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo_);
         if (!deviceDescriptors.empty() && deviceDescriptors[0] != nullptr) {
             if ((deviceDescriptors[0]->deviceType_ == DEVICE_TYPE_USB_HEADSET ||

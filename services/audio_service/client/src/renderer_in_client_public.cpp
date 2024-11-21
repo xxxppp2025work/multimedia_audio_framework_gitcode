@@ -69,7 +69,7 @@ const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t AUDIO_MS_PER_S = 1000;
 static constexpr int CB_QUEUE_CAPACITY = 3;
 const uint64_t AUDIO_FIRST_FRAME_LATENCY = 120; //ms
-static const int32_t CREATE_TIMEOUT_IN_SECOND = 8; // 8S
+static const int32_t CREATE_TIMEOUT_IN_SECOND = 9; // 9S
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 const uint64_t MAX_CBBUF_IN_USEC = 100000;
 const uint64_t MIN_CBBUF_IN_USEC = 20000;
@@ -492,7 +492,7 @@ int32_t RendererInClientInner::SetDuckVolume(float volume)
 int32_t RendererInClientInner::SetMute(bool mute)
 {
     Trace trace("RendererInClientInner::SetMute:" + std::to_string(mute));
-    AUDIO_INFO_LOG("sessionId:%{public}d SetDuck:%{public}d", sessionId_, mute);
+    AUDIO_INFO_LOG("sessionId:%{public}d SetMute:%{public}d", sessionId_, mute);
     muteVolume_ = mute ? 0.0f : 1.0f;
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
     clientBuffer_->SetMuteFactor(muteVolume_);
@@ -1057,6 +1057,9 @@ bool RendererInClientInner::FlushAudioStream()
     // clear cbBufferQueue
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         cbBufferQueue_.Clear();
+        if (memset_s(cbBuffer_.get(), cbBufferSize_, 0, cbBufferSize_) != EOK) {
+            AUDIO_ERR_LOG("memset_s buffer failed");
+        };
     }
 
     CHECK_AND_RETURN_RET_LOG(FlushRingCache() == SUCCESS, false, "Flush cache failed");
