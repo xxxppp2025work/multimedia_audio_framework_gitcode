@@ -185,6 +185,7 @@ ohos_shared_library("audio_client") {
     "client/src/policy_provider_stub.cpp",
     "client/src/renderer_in_client.cpp",
     "client/src/renderer_in_client_public.cpp",
+    "client/src/resource_manager_adapter.cpp",
   ]
 
   public_configs = [ ":audio_client_public_config" ]
@@ -212,6 +213,8 @@ ohos_shared_library("audio_client") {
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "resource_management:global_resmgr",
+    "i18n:intl_util",
   ]
 
   public_external_deps = [
