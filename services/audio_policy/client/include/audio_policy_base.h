@@ -143,18 +143,6 @@ public:
     virtual int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
-    virtual bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        SourceType sourceType = SOURCE_TYPE_MIC) = 0;
-
-    virtual bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        AudioPermissionState state) = 0;
-
-    virtual int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) = 0;
-
-    virtual int32_t GetAudioLatencyFromXml() = 0;
-
-    virtual uint32_t GetSinkLatencyFromXml() = 0;
-
     virtual int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo) = 0;
 
     virtual int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo) = 0;

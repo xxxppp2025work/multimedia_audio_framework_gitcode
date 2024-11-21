@@ -527,11 +527,6 @@ void AudioPolicyServiceEnhanceNineFuzzTest(const uint8_t *rawData, size_t size)
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     GetServerPtr()->audioPolicyService_.SetAvailableDeviceChangeCallback(clientId, MEDIA_OUTPUT_DEVICES, object, true);
     GetServerPtr()->audioPolicyService_.UnsetAvailableDeviceChangeCallback(clientId, MEDIA_OUTPUT_DEVICES);
-    GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_FILE_SINK;
-
-    uint32_t channelCount = CHANNEL_4;
-    GetServerPtr()->audioPolicyService_.ReconfigureAudioChannel(channelCount, DEVICE_TYPE_FILE_SINK);
-    GetServerPtr()->audioPolicyService_.ReconfigureAudioChannel(channelCount, DEVICE_TYPE_FILE_SOURCE);
 
     std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     SourceOutput sourceOutput;

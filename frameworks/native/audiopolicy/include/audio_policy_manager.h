@@ -189,18 +189,6 @@ public:
 
     int32_t UnsetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
 
-    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        SourceType sourceType = SOURCE_TYPE_MIC);
-
-    bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        AudioPermissionState state);
-
-    int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
-
-    int32_t GetAudioLatencyFromXml();
-
-    uint32_t GetSinkLatencyFromXml();
-
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo);
 
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);

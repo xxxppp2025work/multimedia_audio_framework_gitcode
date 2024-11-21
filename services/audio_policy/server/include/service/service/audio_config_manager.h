@@ -54,8 +54,6 @@ public:
 
     void OnUpdateAnahsSupport(std::string anahsShowType);
 
-    void OnAudioLatencyParsed(uint64_t latency);
-
     void OnSinkLatencyParsed(uint32_t latency);
 
     void OnVolumeGroupParsed(std::unordered_map<std::string, std::string>& volumeGroupData);
@@ -81,8 +79,6 @@ public:
         const AudioSamplingRate &samplingRate);
 
     bool GetVoipConfig();
-
-    int32_t GetAudioLatencyFromXml() const;
 
     uint32_t GetSinkLatencyFromXml() const;
 

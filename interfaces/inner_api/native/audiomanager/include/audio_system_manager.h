@@ -1012,17 +1012,6 @@ public:
     int32_t AbandonAudioFocus(const AudioInterrupt &audioInterrupt);
 
     /**
-     * @brief Reconfigure audio channel
-     *
-     * @param count count
-     * @param deviceType device type
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 8
-     */
-    int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
-
-    /**
      * @brief Request independent interrupt
      *
      * @param focusType focus type
@@ -1041,24 +1030,6 @@ public:
      * @since 8
      */
     bool AbandonIndependentInterrupt(FocusType focusType);
-
-    /**
-     * @brief Get audio latency from Xml
-     *
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 8
-     */
-    int32_t GetAudioLatencyFromXml() const;
-
-    /**
-     * @brief Get audio sink from Xml
-     *
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 8
-     */
-    uint32_t GetSinkLatencyFromXml() const;
 
     /**
      * @brief Update stream state

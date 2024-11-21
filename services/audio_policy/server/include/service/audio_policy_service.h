@@ -186,10 +186,6 @@ public:
 
     AudioScene GetAudioScene(bool hasSystemPermission = true) const;
 
-    int32_t GetAudioLatencyFromXml() const;
-
-    uint32_t GetSinkLatencyFromXml() const;
-
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
 
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
@@ -274,8 +270,6 @@ public:
         bool hasBTPermission, bool hasSystemPermission);
 
     void RegisteredTrackerClientDied(pid_t uid);
-
-    int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
 
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
 

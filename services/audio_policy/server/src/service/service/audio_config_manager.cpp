@@ -215,19 +215,9 @@ int32_t AudioConfigManager::GetVoipRendererFlag(const std::string &sinkPortName,
     return AUDIO_FLAG_NORMAL;
 }
 
-void AudioConfigManager::OnAudioLatencyParsed(uint64_t latency)
-{
-    audioLatencyInMsec_ = latency;
-}
-
 void AudioConfigManager::OnSinkLatencyParsed(uint32_t latency)
 {
     sinkLatencyInMsec_ = latency;
-}
-
-int32_t AudioConfigManager::GetAudioLatencyFromXml() const
-{
-    return audioLatencyInMsec_;
 }
 
 uint32_t AudioConfigManager::GetSinkLatencyFromXml() const
