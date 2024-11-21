@@ -166,7 +166,8 @@ IMmapAudioCapturerSource *RemoteFastAudioCapturerSource::GetInstance(const std::
     }
     RemoteFastAudioCapturerSourceInner *rfCapturer =
         new(std::nothrow) RemoteFastAudioCapturerSourceInner(deviceNetworkId);
-    AUDIO_DEBUG_LOG("New daudio remote fast capture device networkId: [%{public}s].", deviceNetworkId.c_str());
+    AUDIO_DEBUG_LOG("New daudio remote fast capture device networkId: [%{public}s].",
+        GetEncryptStr(deviceNetworkId).c_str());
     allRFSources[deviceNetworkId] = rfCapturer;
     return rfCapturer;
 }

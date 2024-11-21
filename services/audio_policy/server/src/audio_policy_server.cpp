@@ -2048,7 +2048,7 @@ int32_t AudioPolicyServer::GetNetworkIdByGroupId(int32_t groupId, std::string &n
         volumeGroupInfos.end());
     if (volumeGroupInfos.size() > 0) {
         networkId = volumeGroupInfos[0]->networkId_;
-        AUDIO_INFO_LOG("GetNetworkIdByGroupId: get networkId %{public}s.", networkId.c_str());
+        AUDIO_INFO_LOG("GetNetworkIdByGroupId: get networkId %{public}s.", GetEncryptStr(networkId).c_str());
     } else {
         AUDIO_ERR_LOG("GetNetworkIdByGroupId: has no valid group");
         return ERROR;

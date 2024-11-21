@@ -229,7 +229,7 @@ static string ParseAudioFormat(string format)
     }
 }
 
-static std::string GetEncryptAddr(const std::string &addr)
+static std::string GetEncryptStr(const std::string &addr)
 {
     const int32_t START_POS = 6;
     const int32_t END_POS = 13;
@@ -799,7 +799,7 @@ int32_t AudioPolicyService::SetRenderDeviceForUsage(
     });
     CHECK_AND_RETURN_RET_LOG(itr != devices.end(), ERR_INVALID_OPERATION,
         "device not available type:%{public}d macAddress:%{public}s id:%{public}d networkId:%{public}s",
-        desc->deviceType_, GetEncryptAddr(desc->macAddress_).c_str(),
+        desc->deviceType_, GetEncryptStr(desc->macAddress_).c_str(),
         tempId, GetEncryptStr(desc->networkId_).c_str());
     // set preferred device
     std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>(**itr);
@@ -814,7 +814,7 @@ int32_t AudioPolicyService::ConnectVirtualDevice(std::shared_ptr<AudioDeviceDesc
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "A2dp connect failed");
     ret = Bluetooth::AudioHfpManager::Connect(selectedDesc->macAddress_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Hfp connect failed");
-    AUDIO_INFO_LOG("Connect virtual device[%{public}s]", GetEncryptAddr(selectedDesc->macAddress_).c_str());
+    AUDIO_INFO_LOG("Connect virtual device[%{public}s]", GetEncryptStr(selectedDesc->macAddress_).c_str());
     return SUCCESS;
 }
 
@@ -864,7 +864,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
     AUDIO_WARNING_LOG("uid[%{public}d] type[%{public}d] mac[%{public}s] streamUsage[%{public}d] pid[%{public}d]",
-        audioRendererFilter->uid, selectedDesc[0]->deviceType_, GetEncryptAddr(selectedDesc[0]->macAddress_).c_str(),
+        audioRendererFilter->uid, selectedDesc[0]->deviceType_, GetEncryptStr(selectedDesc[0]->macAddress_).c_str(),
         audioRendererFilter->rendererInfo.streamUsage, IPCSkeleton::GetCallingPid());
 
     CHECK_AND_RETURN_RET_LOG((selectedDesc[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE) &&
@@ -1089,7 +1089,7 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
 
     AUDIO_WARNING_LOG("uid[%{public}d] type[%{public}d] mac[%{public}s] pid[%{public}d]",
         audioCapturerFilter->uid, selectedDesc[0]->deviceType_,
-        GetEncryptAddr(selectedDesc[0]->macAddress_).c_str(), IPCSkeleton::GetCallingPid());
+        GetEncryptStr(selectedDesc[0]->macAddress_).c_str(), IPCSkeleton::GetCallingPid());
     // check size == 1 && input device
     int32_t res = DeviceParamsCheck(DeviceRole::INPUT_DEVICE, selectedDesc);
     CHECK_AND_RETURN_RET(res == SUCCESS, res);
@@ -1680,8 +1680,8 @@ void AudioPolicyService::MoveToNewOutputDevice(shared_ptr<AudioRendererChangeInf
 
     AUDIO_WARNING_LOG("move session %{public}d [%{public}d][%{public}s]-->[%{public}d][%{public}s], reason %{public}d",
         rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo.deviceType_,
-        GetEncryptAddr(rendererChangeInfo->outputDeviceInfo.macAddress_).c_str(),
-        outputDevices.front()->deviceType_, GetEncryptAddr(outputDevices.front()->macAddress_).c_str(),
+        GetEncryptStr(rendererChangeInfo->outputDeviceInfo.macAddress_).c_str(),
+        outputDevices.front()->deviceType_, GetEncryptStr(outputDevices.front()->macAddress_).c_str(),
         static_cast<int>(reason));
 
     DeviceType oldDevice = rendererChangeInfo->outputDeviceInfo.deviceType_;
@@ -1735,8 +1735,8 @@ void AudioPolicyService::MoveToNewInputDevice(shared_ptr<AudioCapturerChangeInfo
         capturerChangeInfo->sessionId, inputDevice->deviceType_);
     AUDIO_WARNING_LOG("move session %{public}d [%{public}d][%{public}s]-->[%{public}d][%{public}s]",
         capturerChangeInfo->sessionId, capturerChangeInfo->inputDeviceInfo.deviceType_,
-        GetEncryptAddr(capturerChangeInfo->inputDeviceInfo.macAddress_).c_str(),
-        inputDevice->deviceType_, GetEncryptAddr(inputDevice->macAddress_).c_str());
+        GetEncryptStr(capturerChangeInfo->inputDeviceInfo.macAddress_).c_str(),
+        inputDevice->deviceType_, GetEncryptStr(inputDevice->macAddress_).c_str());
 
     if (audioConfigManager_.GetUpdateRouteSupport() && inputDevice->networkId_ == LOCAL_NETWORK_ID) {
         UpdateActiveDeviceRoute(inputDevice->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG, inputDevice->deviceName_);
@@ -1940,7 +1940,7 @@ void AudioPolicyService::FetchOutputDevice(vector<shared_ptr<AudioRendererChange
             continue;
         }
         MuteSinkPortForSwtichDevice(rendererChangeInfo, descs, reason);
-        std::string encryptMacAddr = GetEncryptAddr(descs.front()->macAddress_);
+        std::string encryptMacAddr = GetEncryptStr(descs.front()->macAddress_);
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             if (IsFastFromA2dpToA2dp(descs.front(), rendererChangeInfo, reason)) { continue; }
             int32_t ret = ActivateA2dpDeviceWhenDescEnabled(descs.front(), rendererChangeInfos, reason);
@@ -2122,7 +2122,7 @@ void AudioPolicyService::FetchStreamForA2dpOffload(const bool &requireReset)
             if (requireReset) {
                 int32_t ret = ActivateA2dpDevice(descs.front(), rendererChangeInfos);
                 CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed",
-                    GetEncryptAddr(descs.front()->macAddress_).c_str());
+                    GetEncryptStr(descs.front()->macAddress_).c_str());
             }
             if (rendererChangeInfo->rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
                 AudioServerProxy::GetInstance().ResetAudioEndpointProxy();
@@ -2323,7 +2323,7 @@ void AudioPolicyService::BluetoothScoFetch(shared_ptr<AudioDeviceDescriptor> &de
         ret = HandleScoInputDeviceFetched(desc, capturerChangeInfos);
     }
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("sco [%{public}s] is not connected yet", GetEncryptAddr(desc->macAddress_).c_str());
+        AUDIO_ERR_LOG("sco [%{public}s] is not connected yet", GetEncryptStr(desc->macAddress_).c_str());
     }
 }
 
@@ -2336,7 +2336,7 @@ void AudioPolicyService::BluetoothScoDisconectForRecongnition()
     if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         int32_t ret = ScoInputDeviceFetchedForRecongnition(false, tempDesc.macAddress_, tempDesc.connectState_);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] disconnected failed",
-            GetEncryptAddr(tempDesc.macAddress_).c_str());
+            GetEncryptStr(tempDesc.macAddress_).c_str());
     }
 }
 
@@ -3358,7 +3358,7 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
     AUDIO_INFO_LOG("OnDeviceConfigurationChanged start, deviceType: %{public}d, currentActiveDevice_: %{public}d, "
         "macAddress:[%{public}s], activeBTDevice:[%{public}s]", deviceType,
         audioActiveDevice_.GetCurrentOutputDeviceType(),
-        GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(btDevice).c_str());
+        GetEncryptStr(macAddress).c_str(), GetEncryptStr(btDevice).c_str());
     // only for the active a2dp device.
     if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(btDevice)
         && audioActiveDevice_.IsDeviceActive(deviceType)) {
@@ -3374,7 +3374,7 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
         ReloadA2dpOffloadOnDeviceChanged(deviceType, macAddress, deviceName, streamInfo);
     } else if (audioA2dpDevice_.CheckA2dpDeviceExist(macAddress)) {
         AUDIO_DEBUG_LOG("Audio configuration update, macAddress:[%{public}s], streamInfo.sampleRate: %{public}d",
-            GetEncryptAddr(macAddress).c_str(), streamInfo.samplingRate);
+            GetEncryptStr(macAddress).c_str(), streamInfo.samplingRate);
         audioA2dpDevice_.SetA2dpDeviceStreamInfo(macAddress, streamInfo);
     }
 }
@@ -3623,7 +3623,7 @@ void AudioPolicyService::UpdateDisplayNameForRemote(std::shared_ptr<AudioDeviceD
         for (auto deviceInfo : deviceList) {
             std::string strNetworkId(deviceInfo.networkId);
             if (strNetworkId == desc->networkId_) {
-                AUDIO_INFO_LOG("remote name [%{public}s]", deviceInfo.deviceName);
+                AUDIO_INFO_LOG("UpdateDisplayName remote name [%{public}s]", GetEncryptStr(deviceInfo.deviceName).c_str());
                 desc->displayName_ = deviceInfo.deviceName;
                 break;
             }
@@ -3829,7 +3829,7 @@ void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::s
     }
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
     AUDIO_INFO_LOG("bt select device type[%{public}d] address[%{public}s]",
-        devType, GetEncryptAddr(macAddress).c_str());
+        devType, GetEncryptStr(macAddress).c_str());
     std::vector<shared_ptr<AudioDeviceDescriptor>> bluetoothDevices =
         audioDeviceManager_.GetAvailableBluetoothDevice(devType, macAddress);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
@@ -4463,7 +4463,7 @@ void AudioPolicyService::WriteOutputDeviceChangedSysEvents(
     bean->Add("STREAMTYPE", sinkInput.streamType);
     bean->Add("DEVICETYPE", deviceDescriptor->deviceType_);
     bean->Add("NETWORKID", ConvertNetworkId(deviceDescriptor->networkId_));
-    bean->Add("ADDRESS", GetEncryptAddr(deviceDescriptor->macAddress_));
+    bean->Add("ADDRESS", GetEncryptStr(deviceDescriptor->macAddress_));
     bean->Add("DEVICE_NAME", deviceDescriptor->deviceName_);
     bean->Add("BT_TYPE", deviceDescriptor->deviceCategory_);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
@@ -4480,7 +4480,7 @@ void AudioPolicyService::WriteInputDeviceChangedSysEvents(
     bean->Add("STREAMTYPE", sourceOutput.streamType);
     bean->Add("DEVICETYPE", deviceDescriptor->deviceType_);
     bean->Add("NETWORKID", ConvertNetworkId(deviceDescriptor->networkId_));
-    bean->Add("ADDRESS", GetEncryptAddr(deviceDescriptor->macAddress_));
+    bean->Add("ADDRESS", GetEncryptStr(deviceDescriptor->macAddress_));
     bean->Add("DEVICE_NAME", deviceDescriptor->deviceName_);
     bean->Add("BT_TYPE", deviceDescriptor->deviceCategory_);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
@@ -6216,7 +6216,7 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
     AUDIO_INFO_LOG("[%{public}s] type[%{public}d] command: %{public}d category[%{public}d] connectState[%{public}d] " \
-        "isEnable[%{public}d]", GetEncryptAddr(desc.macAddress_).c_str(), desc.deviceType_,
+        "isEnable[%{public}d]", GetEncryptStr(desc.macAddress_).c_str(), desc.deviceType_,
         command, desc.deviceCategory_, desc.connectState_, desc.isEnable_);
     DeviceUpdateClearRecongnitionStatus(desc);
     if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
@@ -6294,7 +6294,7 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
     AUDIO_WARNING_LOG("Device type[%{public}d] flag[%{public}d] address[%{public}s]",
-        deviceType, active, GetEncryptAddr(address).c_str());
+        deviceType, active, GetEncryptStr(address).c_str());
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
     int32_t ret = audioActiveDevice_.SetCallDeviceActive(deviceType, active, address);
@@ -6460,7 +6460,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetDumpD
         AppendFormat(dumpString, "  - device id:%d\n", devDesc->deviceId_);
         AppendFormat(dumpString, "  - device role:%d\n", devDesc->deviceRole_);
         AppendFormat(dumpString, "  - device name:%s\n", devDesc->deviceName_.c_str());
-        AppendFormat(dumpString, "  - device mac:%s\n", GetEncryptAddr(devDesc->macAddress_).c_str());
+        AppendFormat(dumpString, "  - device mac:%s\n", GetEncryptStr(devDesc->macAddress_).c_str());
         AppendFormat(dumpString, "  - device network:%s\n", devDesc->networkId_.c_str());
         if (deviceFlag == DeviceFlag::INPUT_DEVICES_FLAG || deviceFlag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
             conneceType_  = CONNECT_TYPE_LOCAL;

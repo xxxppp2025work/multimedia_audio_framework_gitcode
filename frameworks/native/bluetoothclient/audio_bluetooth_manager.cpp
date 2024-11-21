@@ -154,7 +154,7 @@ int32_t AudioA2dpManager::SetActiveA2dpDevice(const std::string& macAddress)
 {
     std::lock_guard<std::mutex> a2dpLock(g_a2dpInstanceLock);
     AUDIO_WARNING_LOG("incoming device:%{public}s, current device:%{public}s",
-        GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(activeA2dpDevice_.GetDeviceAddr()).c_str());
+        GetEncryptStr(macAddress).c_str(), GetEncryptStr(activeA2dpDevice_.GetDeviceAddr()).c_str());
     a2dpInstance_ = A2dpSource::GetProfile();
     CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "Failed to obtain A2DP profile instance");
     BluetoothRemoteDevice device;
@@ -294,13 +294,13 @@ void AudioA2dpManager::CheckA2dpDeviceReconnect()
             if (wearState == 1) MediaBluetoothDeviceManager::SetMediaStack(device, WEAR_ACTION); // 1 wear state
         }
         AUDIO_WARNING_LOG("reconnect a2dp device:%{public}s, wear state:%{public}d",
-            GetEncryptAddr(device.GetDeviceAddr()).c_str(), wearState);
+            GetEncryptStr(device.GetDeviceAddr()).c_str(), wearState);
     }
 
     std::vector<std::string> virtualDevices;
     a2dpInstance_->GetVirtualDeviceList(virtualDevices);
     for (auto &macAddress : virtualDevices) {
-        AUDIO_WARNING_LOG("reconnect virtual a2dp device:%{public}s", GetEncryptAddr(macAddress).c_str());
+        AUDIO_WARNING_LOG("reconnect virtual a2dp device:%{public}s", GetEncryptStr(macAddress).c_str());
         a2dpListener_->OnVirtualDeviceChanged(static_cast<int32_t>(Bluetooth::BT_VIRTUAL_DEVICE_ADD), macAddress);
     }
 }
@@ -311,7 +311,7 @@ int32_t AudioA2dpManager::Connect(const std::string &macAddress)
     BluetoothRemoteDevice virtualDevice = BluetoothRemoteDevice(macAddress);
     if (MediaBluetoothDeviceManager::IsA2dpBluetoothDeviceConnecting(macAddress)) {
         AUDIO_WARNING_LOG("A2dp device %{public}s is connecting, ignore connect request",
-            GetEncryptAddr(macAddress).c_str());
+            GetEncryptStr(macAddress).c_str());
         virtualDevice.SetVirtualAutoConnectType(CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG, 0);
         return SUCCESS;
     }
@@ -319,7 +319,7 @@ int32_t AudioA2dpManager::Connect(const std::string &macAddress)
     a2dpInstance_->GetVirtualDeviceList(virtualDevices);
     if (std::find(virtualDevices.begin(), virtualDevices.end(), macAddress) == virtualDevices.end()) {
         AUDIO_WARNING_LOG("A2dp device %{public}s is not virtual device, ignore connect request",
-            GetEncryptAddr(macAddress).c_str());
+            GetEncryptStr(macAddress).c_str());
         return SUCCESS;
     }
     int32_t ret = a2dpInstance_->Connect(virtualDevice);
@@ -330,7 +330,7 @@ int32_t AudioA2dpManager::Connect(const std::string &macAddress)
 
 void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state, int cause)
 {
-    AUDIO_WARNING_LOG("state: %{public}d, macAddress: %{public}s", state, GetEncryptAddr(device.GetDeviceAddr()).c_str());
+    AUDIO_WARNING_LOG("state: %{public}d, macAddress: %{public}s", state, GetEncryptStr(device.GetDeviceAddr()).c_str());
     // Record connection state and device for hdi start time to check
     AudioA2dpManager::SetConnectionState(state);
     if (state == static_cast<int>(BTConnectState::CONNECTING)) {
@@ -365,13 +365,13 @@ void AudioA2dpListener::OnPlayingStatusChanged(const BluetoothRemoteDevice &devi
 
 void AudioA2dpListener::OnMediaStackChanged(const BluetoothRemoteDevice &device, int action)
 {
-    AUDIO_WARNING_LOG("action: %{public}d, macAddress: %{public}s", action, GetEncryptAddr(device.GetDeviceAddr()).c_str());
+    AUDIO_WARNING_LOG("action: %{public}d, macAddress: %{public}s", action, GetEncryptStr(device.GetDeviceAddr()).c_str());
     MediaBluetoothDeviceManager::SetMediaStack(device, action);
 }
 
 void AudioA2dpListener::OnVirtualDeviceChanged(int32_t action, std::string macAddress)
 {
-    AUDIO_WARNING_LOG("action: %{public}d, macAddress: %{public}s", action, GetEncryptAddr(macAddress).c_str());
+    AUDIO_WARNING_LOG("action: %{public}d, macAddress: %{public}s", action, GetEncryptStr(macAddress).c_str());
     if (action == static_cast<int32_t>(Bluetooth::BT_VIRTUAL_DEVICE_ADD)) {
         MediaBluetoothDeviceManager::SetMediaStack(BluetoothRemoteDevice(macAddress),
             BluetoothDeviceAction::VIRTUAL_DEVICE_ADD_ACTION);
@@ -437,13 +437,13 @@ void AudioHfpManager::CheckHfpDeviceReconnect()
             if (wearState == 1) HfpBluetoothDeviceManager::SetHfpStack(device, WEAR_ACTION); // 1 wear state
         }
         AUDIO_INFO_LOG("reconnect hfp device:%{public}s, wear state:%{public}d",
-            GetEncryptAddr(device.GetDeviceAddr()).c_str(), wearState);
+            GetEncryptStr(device.GetDeviceAddr()).c_str(), wearState);
     }
 
     std::vector<std::string> virtualDevices;
     hfpInstance_->GetVirtualDeviceList(virtualDevices);
     for (auto &macAddress : virtualDevices) {
-        AUDIO_PRERELEASE_LOGI("reconnect virtual hfp device:%{public}s", GetEncryptAddr(macAddress).c_str());
+        AUDIO_PRERELEASE_LOGI("reconnect virtual hfp device:%{public}s", GetEncryptStr(macAddress).c_str());
         hfpListener_->OnVirtualDeviceChanged(static_cast<int32_t>(Bluetooth::BT_VIRTUAL_DEVICE_ADD), macAddress);
     }
 }
@@ -506,12 +506,12 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
     BluetoothRemoteDevice device;
     if (HfpBluetoothDeviceManager::GetConnectedHfpBluetoothDevice(macAddress, device) != SUCCESS) {
         AUDIO_ERR_LOG("SetActiveHfpDevice failed for the HFP device %{public}s does not exist.",
-            GetEncryptAddr(macAddress).c_str());
+            GetEncryptStr(macAddress).c_str());
         return ERROR;
     }
     std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
     AUDIO_INFO_LOG("incoming device:%{public}s, current device:%{public}s",
-        GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(activeHfpDevice_.GetDeviceAddr()).c_str());
+        GetEncryptStr(macAddress).c_str(), GetEncryptStr(activeHfpDevice_.GetDeviceAddr()).c_str());
     if (macAddress != activeHfpDevice_.GetDeviceAddr()) {
         AUDIO_WARNING_LOG("Active hfp device is changed, need to DisconnectSco for current activeHfpDevice.");
         int32_t ret = DisconnectSco();
@@ -661,7 +661,7 @@ int32_t AudioHfpManager::Connect(const std::string &macAddress)
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
     BluetoothRemoteDevice virtualDevice = BluetoothRemoteDevice(macAddress);
     if (HfpBluetoothDeviceManager::IsHfpBluetoothDeviceConnecting(macAddress)) {
-        AUDIO_WARNING_LOG("Hfp device %{public}s is connecting, ignore connect request", GetEncryptAddr(macAddress).c_str());
+        AUDIO_WARNING_LOG("Hfp device %{public}s is connecting, ignore connect request", GetEncryptStr(macAddress).c_str());
         virtualDevice.SetVirtualAutoConnectType(CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG, 0);
         return SUCCESS;
     }
@@ -669,7 +669,7 @@ int32_t AudioHfpManager::Connect(const std::string &macAddress)
     hfpInstance_->GetVirtualDeviceList(virtualDevices);
     if (std::find(virtualDevices.begin(), virtualDevices.end(), macAddress) == virtualDevices.end()) {
         AUDIO_WARNING_LOG("Hfp device %{public}s is not virtual device, ignore connect request",
-            GetEncryptAddr(macAddress).c_str());
+            GetEncryptStr(macAddress).c_str());
         return SUCCESS;
     }
     int32_t ret = hfpInstance_->Connect(virtualDevice);
@@ -681,7 +681,7 @@ int32_t AudioHfpManager::Connect(const std::string &macAddress)
 void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state, int reason)
 {
     AUDIO_WARNING_LOG("state:[%{public}d] reason:[%{public}d] device:[%{public}s]",
-        state, reason, GetEncryptAddr(device.GetDeviceAddr()).c_str());
+        state, reason, GetEncryptStr(device.GetDeviceAddr()).c_str());
     // SCO_DISCONNECTED = 3, SCO_CONNECTING = 4, SCO_DISCONNECTING = 5, SCO_CONNECTED = 6
     HfpScoConnectState scoState = static_cast<HfpScoConnectState>(state);
     if (scoState == HfpScoConnectState::SCO_CONNECTED || scoState == HfpScoConnectState::SCO_DISCONNECTED) {
@@ -706,7 +706,7 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
 
 void AudioHfpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state, int cause)
 {
-    AUDIO_WARNING_LOG("state: %{public}d device: %{public}s", state, GetEncryptAddr(device.GetDeviceAddr()).c_str());
+    AUDIO_WARNING_LOG("state: %{public}d device: %{public}s", state, GetEncryptStr(device.GetDeviceAddr()).c_str());
     if (state == static_cast<int>(BTConnectState::CONNECTING)) {
         HfpBluetoothDeviceManager::SetHfpStack(device, BluetoothDeviceAction::CONNECTING_ACTION);
     }
@@ -726,13 +726,13 @@ void AudioHfpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &dev
 
 void AudioHfpListener::OnHfpStackChanged(const BluetoothRemoteDevice &device, int action)
 {
-    AUDIO_WARNING_LOG("action: %{public}d device: %{public}s", action, GetEncryptAddr(device.GetDeviceAddr()).c_str());
+    AUDIO_WARNING_LOG("action: %{public}d device: %{public}s", action, GetEncryptStr(device.GetDeviceAddr()).c_str());
     HfpBluetoothDeviceManager::SetHfpStack(device, action);
 }
 
 void AudioHfpListener::OnVirtualDeviceChanged(int32_t action, std::string macAddress)
 {
-    AUDIO_WARNING_LOG("action: %{public}d device: %{public}s", action, GetEncryptAddr(macAddress).c_str());
+    AUDIO_WARNING_LOG("action: %{public}d device: %{public}s", action, GetEncryptStr(macAddress).c_str());
     if (action == static_cast<int32_t>(Bluetooth::BT_VIRTUAL_DEVICE_ADD)) {
         HfpBluetoothDeviceManager::SetHfpStack(BluetoothRemoteDevice(macAddress),
             BluetoothDeviceAction::VIRTUAL_DEVICE_ADD_ACTION);

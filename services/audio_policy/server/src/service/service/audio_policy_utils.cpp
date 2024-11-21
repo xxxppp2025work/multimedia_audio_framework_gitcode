@@ -37,7 +37,7 @@ namespace AudioStandard {
 constexpr int32_t NS_PER_MS = 1000000;
 constexpr int32_t MS_PER_S = 1000;
 
-static std::string GetEncryptAddr(const std::string &addr)
+static std::string GetEncryptStr(const std::string &addr)
 {
     const int32_t START_POS = 6;
     const int32_t END_POS = 13;
@@ -144,7 +144,7 @@ void AudioPolicyUtils::SetBtConnecting(bool flag)
 
 void AudioPolicyUtils::ClearScoDeviceSuspendState(std::string macAddress)
 {
-    AUDIO_DEBUG_LOG("Clear sco suspend state %{public}s", GetEncryptAddr(macAddress).c_str());
+    AUDIO_DEBUG_LOG("Clear sco suspend state %{public}s", GetEncryptStr(macAddress).c_str());
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetDevicesByFilter(
         DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_ROLE_NONE, macAddress, "", SUSPEND_CONNECTED);
     for (auto &desc : descs) {

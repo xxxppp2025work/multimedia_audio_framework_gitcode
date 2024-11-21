@@ -31,7 +31,7 @@ using namespace std;
 
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 
-static std::string GetEncryptAddr(const std::string &addr)
+static std::string GetEncryptStr(const std::string &addr)
 {
     const int32_t START_POS = 6;
     const int32_t END_POS = 13;
@@ -178,7 +178,7 @@ bool AudioA2dpDevice::SetA2dpDeviceMute(const std::string& device, bool mute)
     std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
     auto configInfoPos = connectedA2dpDeviceMap_.find(device);
     if (configInfoPos == connectedA2dpDeviceMap_.end() || !configInfoPos->second.absVolumeSupport) {
-        AUDIO_WARNING_LOG("Set Mute failed for macAddress:[%{public}s]", GetEncryptAddr(device).c_str());
+        AUDIO_WARNING_LOG("Set Mute failed for macAddress:[%{public}s]", GetEncryptStr(device).c_str());
         return false;
     }
     configInfoPos->second.mute = mute;
@@ -244,7 +244,7 @@ bool AudioA2dpDevice::SetA2dpDeviceVolumeLevel(const std::string& device, const 
     std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
     auto configInfoPos = connectedA2dpDeviceMap_.find(device);
     if (configInfoPos == connectedA2dpDeviceMap_.end() || !configInfoPos->second.absVolumeSupport) {
-        AUDIO_WARNING_LOG("Set VolumeLevel failed for macAddress:[%{public}s]", GetEncryptAddr(device).c_str());
+        AUDIO_WARNING_LOG("Set VolumeLevel failed for macAddress:[%{public}s]", GetEncryptStr(device).c_str());
         return false;
     }
     configInfoPos->second.volumeLevel = volumeLevel;

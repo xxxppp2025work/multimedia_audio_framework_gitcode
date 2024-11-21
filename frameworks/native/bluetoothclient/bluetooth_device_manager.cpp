@@ -75,7 +75,7 @@ std::mutex HfpBluetoothDeviceManager::stopVirtualCallHandleLock_;
 BluetoothStopVirtualCallHandle HfpBluetoothDeviceManager::stopVirtualCallHandle_ = { BluetoothRemoteDevice(), false};
 
 // LCOV_EXCL_START
-std::string GetEncryptAddr(const std::string &addr)
+std::string GetEncryptStr(const std::string &addr)
 {
     if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
         return std::string("");
@@ -451,7 +451,7 @@ void MediaBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemot
     desc.connectState_ = ConnectState::CONNECTED;
     AUDIO_WARNING_LOG("a2dpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address is %{public}s,\
         category is %{public}d, device name is %{public}s", deviceStatus,
-        GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_, desc.deviceName_.c_str());
+        GetEncryptStr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_, desc.deviceName_.c_str());
     {
         std::lock_guard<std::mutex> deviceMapLock(g_a2dpDeviceMapLock);
         if (deviceStatus == DeviceStatus::ADD) {
@@ -621,7 +621,7 @@ void A2dpInBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemo
     desc.connectState_ = ConnectState::CONNECTED;
     AUDIO_INFO_LOG("a2dpInBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address is %{public}s,\
         category is %{public}d, device name is %{public}s", deviceStatus,
-        GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_, desc.deviceName_.c_str());
+        GetEncryptStr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_, desc.deviceName_.c_str());
     {
         std::lock_guard<std::mutex> a2dpInDeviceMapLock(g_a2dpInDeviceMapLock);
         if (deviceStatus == DeviceStatus::ADD) {
@@ -944,7 +944,7 @@ void HfpBluetoothDeviceManager::HandleUserSelection(const BluetoothRemoteDevice 
         if (deviceIter != privacyDevices_.rend()) {
             deviceAddr = deviceIter->GetDeviceAddr();
             AUDIO_WARNING_LOG("Change user select device from watch %{public}s to wear headphone %{public}s",
-                GetEncryptAddr(device.GetDeviceAddr()).c_str(), GetEncryptAddr(deviceAddr).c_str());
+                GetEncryptStr(device.GetDeviceAddr()).c_str(), GetEncryptStr(deviceAddr).c_str());
         }
     }
     std::lock_guard<std::mutex> observerLock(g_observerLock);
@@ -1026,7 +1026,7 @@ void HfpBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemoteD
     desc.connectState_ = ConnectState::DEACTIVE_CONNECTED;
     AUDIO_WARNING_LOG("hfpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address is %{public}s,\
         category is %{public}d, device name is %{public}s", deviceStatus,
-        GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_, desc.deviceName_.c_str());
+        GetEncryptStr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_, desc.deviceName_.c_str());
     {
         std::lock_guard<std::mutex> deviceMapLock(g_hfpDeviceMapLock);
         if (deviceStatus == DeviceStatus::ADD) {
