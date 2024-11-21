@@ -8903,11 +8903,10 @@ int32_t AudioPolicyService::ResetRingerModeMute()
 {
     if (!ringerModeMute_.load()) {
         std::unique_lock<std::mutex> lock(ringerModeMuteMutex_);
-        bool resetWaiting = ringerModeMuteCondition_.wait_for(lock,
-            std::chrono::milliseconds(WAIT_RINGER_MODE_MUTE_RESET_TIME_MS),
-            [this] { return !ringerModeMute_.load(); }
-        );
-        if (!resetWaiting || audioScene_ == AUDIO_SCENE_DEFAULT) {
+        // reset ringtone mute after WAIT_RINGER_MODE_MUTE_RESET_TIME_MS for STREAM_VOICE_CALL_ASSISTANT.
+        ringerModeMuteCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_RINGER_MODE_MUTE_RESET_TIME_MS),
+            [this] { return !ringerModeMute_.load(); });
+        if (!ringerModeMute_.load() || audioScene_ == AUDIO_SCENE_DEFAULT) {
             AUDIO_INFO_LOG("reset ringer mode mute");
             if (audioPolicyManager_.SetStreamMute(STREAM_RING, true) == SUCCESS) {
                 ringerModeMute_.store(true);
