@@ -530,6 +530,9 @@ private:
 
     std::vector<SinkInput> FilterSinkInputs(int32_t sessionId, std::vector<SinkInput> sinkInputs);
 
+    void FilterSinkInputsForTarget(int32_t sessionId, std::vector<SinkInput> sinkInputs,
+        std::vector<SinkInput> &targetSinkInputs);
+
     std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId);
 
     int32_t MoveToRemoteOutputDevice(std::vector<SinkInput> sinkInputIds,
@@ -602,6 +605,11 @@ private:
 
     void FetchOutputDevice(vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
+    
+    int32_t DeviceFetchOutputHandle(unique_ptr<AudioDeviceDescriptor> &desc,
+        shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+        vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
+        const AudioStreamDeviceChangeReasonExt reason, std::string encryptMacAddr);
 
     void FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount);
 
