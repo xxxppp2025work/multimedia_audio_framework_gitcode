@@ -79,10 +79,11 @@ const std::string CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 constexpr const char *TEL_SATELLITE_SUPPORT = "const.telephony.satellite.supported";
 const std::string SATEMODEM_PARAMETER = "usedmodem=satemodem";
 const std::string PCM_DUMP_KEY = "PCM_DUMP";
-const std::string PCM_PERSIST_DUMP_INIT = "PERSIST_DUMP_INIT";
-const std::string PCM_PERSIST_DUMP_TIME = "PERSIST_DUMP_TIME";
-const std::string PCM_PERSIST_DUMP_DUMP = "PERSIST_DUMP_DUMP";
-const std::string PCM_PERSIST_DUMP_MEMORY = "PERSIST_DUMP_MEMORY";
+const std::string PCM_PERSIST_DUMP_INIT = "persist_dump_init";
+const std::string PCM_PERSIST_DUMP_DEINIT = "persist_dump_deinit";
+const std::string PCM_PERSIST_DUMP_TIME = "persist_dump_time";
+const std::string PCM_PERSIST_DUMP_DUMP = "persist_dump_dump";
+const std::string PCM_PERSIST_DUMP_MEMORY = "persist_dump_memory";
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int SCHEDULE_REPORT_TIME_OUT_SECONDS = 2;
@@ -302,6 +303,11 @@ void AudioServer::OnStart()
     if (fastControlFlag == 1) {
         isFastControlled_ = true;
     }
+    int32_t isEnablePcmCache = 0;
+    GetSysPara("persist.multimedia.audioflag.isEnablePcmCache", isEnablePcmCache);
+    if (isEnablePcmCache) {
+        AudioCacheMgr::GetInstance().Init();
+    }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
     AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
@@ -414,9 +420,18 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
         return SUCCESS;
     }
 
+    int32_t setValue = 0;
     if (key == PCM_PERSIST_DUMP_INIT) {
+        setValue = 1;
+        SetSysPara("persist.multimedia.audioflag.isEnablePcmCache", setValue);
         ret = AudioCacheMgr::GetInstance().Init();
         CHECK_AND_RETURN_RET_LOG(ret, ERROR, "Init AudioCacheMgr failed!");
+        return SUCCESS;
+    } else if (key == PCM_PERSIST_DUMP_DEINIT) {
+        setValue = 0;
+        SetSysPara("persist.multimedia.audioflag.isEnablePcmCache", setValue);
+        ret = AudioCacheMgr::GetInstance().DeInit();
+        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "DeInit AudioCacheMgr failed!");
         return SUCCESS;
     }
 

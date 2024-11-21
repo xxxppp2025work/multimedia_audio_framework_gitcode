@@ -136,9 +136,28 @@ AudioCacheMgrInner::~AudioCacheMgrInner()
 
 bool AudioCacheMgrInner::Init()
 {
-    InitCallbackHandler();
-    isInited_ = true;
+    if (isInited_ == false) {
+        InitCallbackHandler();
+        isInited_ = true;
+        return true;
+    }
     AUDIO_WARNING_LOG("AudioCacheMgr is Inited!");
+    return true;
+}
+
+bool AudioCacheMgr::DeInit()
+{
+    Trace trace("AudioCacheMgrInner::DeInit");
+    std::unique_lock<std::mutex> lock(runnerMutex_);
+    if (callbackHandler_ != nullptr) {
+        callbackHandler_->ReleaseEventRunner();
+        callbackHandler_ = nullptr;
+        handler_ = nullptr;
+        AUDIO_INFO_LOG("deinit handler success");
+    }
+    lock.unlock();
+    isInited_ = false;
+    AUDIO_WARNING_LOG("AudioCacheMgr is DeInited!");
     return true;
 }
 

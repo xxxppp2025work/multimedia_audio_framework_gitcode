@@ -76,6 +76,7 @@ public:
     void OnHandle(uint32_t code, int64_t data) override;
 
     bool Init() override;
+    bool DeInit() override;
 
     void CacheData(std::string& dumpFileName, void* dataPointer, size_t dataLength) override;
     int32_t DumpAllMemBlock(int64_t& startTime, int64_t& endTime) override;
