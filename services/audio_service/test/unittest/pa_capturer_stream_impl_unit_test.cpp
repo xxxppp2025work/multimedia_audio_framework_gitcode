@@ -73,6 +73,9 @@ static AudioProcessConfig GetInnerCapConfig()
 std::shared_ptr<PaCapturerStreamImpl> PaCapturerStreamUnitTest::CreatePaCapturerStreamImpl()
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    if (adapterManager == nullptr) {
+        return nullptr;
+    }
     adapterManager->InitPaContext();
     AudioProcessConfig processConfig = GetInnerCapConfig();
     uint32_t sessionId = 123456;
@@ -92,6 +95,7 @@ std::shared_ptr<PaCapturerStreamImpl> PaCapturerStreamUnitTest::CreatePaCapturer
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_001, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
+    ASSERT_TRUE(capturerStreamImplRet != nullptr);
     uint64_t framesReadRet = 0;
     capturerStreamImplRet->byteSizePerFrame_ = 0;
     EXPECT_EQ(capturerStreamImplRet->byteSizePerFrame_, 0);
@@ -112,6 +116,7 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_001, TestSize.Level1)
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_002, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
+    ASSERT_TRUE(capturerStreamImplRet != nullptr);
     uint64_t timestampRet = 0;
     capturerStreamImplRet->paStream_ = nullptr;
 
@@ -128,9 +133,11 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_002, TestSize.Level1)
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_003, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
+    ASSERT_TRUE(capturerStreamImplRet != nullptr);
     uint64_t timestampRet = 0;
 
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -151,6 +158,7 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_003, TestSize.Level1)
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_004, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
+    ASSERT_TRUE(capturerStreamImplRet != nullptr);
     uint64_t latencyRet;
     bool isStandbyRet = false;
     capturerStreamImplRet->paStream_ = nullptr;
@@ -180,8 +188,10 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_004, TestSize.Level1)
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_005, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
+    ASSERT_TRUE(capturerStreamImplRet != nullptr);
     bool isStandbyRet = false;
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -211,6 +221,7 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_005, TestSize.Level1)
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_006, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
+    ASSERT_TRUE(capturerStreamImplRet != nullptr);
     capturerStreamImplRet->paStream_ = nullptr;
     capturerStreamImplRet->state_ = RUNNING;
 
@@ -227,6 +238,7 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_006, TestSize.Level1)
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_007, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
+    ASSERT_TRUE(capturerStreamImplRet != nullptr);
     capturerStreamImplRet->statusCallback_ = std::weak_ptr<IStatusCallback>();
     capturerStreamImplRet->state_ = STOPPED;
 
@@ -243,15 +255,16 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_007, TestSize.Level1)
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_008, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
+    ASSERT_TRUE(capturerStreamImplRet != nullptr);
     size_t lengthRet = 10;
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
     pa_stream *streamRet = adapterManager->InitPaStream(processConfig, sessionId, false);
     void *userdataRet = nullptr;
 
-    EXPECT_EQ(userdataRet, nullptr);
     capturerStreamImplRet->PAStreamReadCb(streamRet, lengthRet, userdataRet);
 }
 
@@ -264,7 +277,9 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_008, TestSize.Level1)
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_009, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
+    ASSERT_TRUE(capturerStreamImplRet != nullptr);
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -285,7 +300,9 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_009, TestSize.Level1)
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_010, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
+    ASSERT_TRUE(capturerStreamImplRet != nullptr);
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -305,14 +322,15 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_010, TestSize.Level1)
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_011, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
+    ASSERT_TRUE(capturerStreamImplRet != nullptr);
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
     pa_stream *streamRet = adapterManager->InitPaStream(processConfig, sessionId, false);
     void *userdataRet = nullptr;
 
-    EXPECT_EQ(userdataRet, nullptr);
     capturerStreamImplRet->PAStreamUnderFlowCb(streamRet, userdataRet);
 }
 
@@ -325,14 +343,15 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_011, TestSize.Level1)
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_012, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
+    ASSERT_TRUE(capturerStreamImplRet != nullptr);
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
     pa_stream *streamRet = adapterManager->InitPaStream(processConfig, sessionId, false);
     void *userdataRet = nullptr;
 
-    EXPECT_EQ(userdataRet, nullptr);
     capturerStreamImplRet->PAStreamSetStartedCb(streamRet, userdataRet);
     capturerStreamImplRet->PAStreamSetStartedCb(streamRet, (void *)1);
 }
@@ -346,7 +365,9 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_012, TestSize.Level1)
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_013, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
+    ASSERT_TRUE(capturerStreamImplRet != nullptr);
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -354,12 +375,10 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_013, TestSize.Level1)
     void *userdataRet = nullptr;
     int32_t successRet = 0;
 
-    EXPECT_EQ(userdataRet, nullptr);
     capturerStreamImplRet->PAStreamStartSuccessCb(streamRet, successRet, userdataRet);
     capturerStreamImplRet->PAStreamPauseSuccessCb(streamRet, successRet, userdataRet);
     capturerStreamImplRet->PAStreamFlushSuccessCb(streamRet, successRet, userdataRet);
     capturerStreamImplRet->PAStreamStopSuccessCb(streamRet, successRet, userdataRet);
-    EXPECT_EQ(successRet, 0);
 }
 }
 }

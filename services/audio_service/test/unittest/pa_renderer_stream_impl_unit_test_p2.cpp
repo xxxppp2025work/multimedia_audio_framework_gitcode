@@ -464,7 +464,6 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_017, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_018, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    ASSERT_TRUE(unit != nullptr);
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -484,7 +483,6 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_018, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_019, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    ASSERT_TRUE(unit != nullptr);
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -505,7 +503,6 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_019, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_020, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    ASSERT_TRUE(unit != nullptr);
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     AudioProcessConfig processConfig = GetInnerCapConfig();
@@ -526,7 +523,6 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_020, TestSize.Level1)
 HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_021, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
-    ASSERT_TRUE(unit != nullptr);
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     AudioProcessConfig processConfig = GetInnerCapConfig();

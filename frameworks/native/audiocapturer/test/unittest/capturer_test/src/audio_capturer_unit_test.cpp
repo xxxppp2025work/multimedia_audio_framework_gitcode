@@ -2300,7 +2300,6 @@ HWTEST(AudioCapturerUnitTest, OnAudioPolicyServiceDied_001, TestSize.Level1)
 {
     std::shared_ptr<CapturerPolicyServiceDiedCallback> capturerPolicyServiceDiedCallback =
         std::make_shared<CapturerPolicyServiceDiedCallback>();
-    ASSERT_TRUE(capturerPolicyServiceDiedCallback != nullptr);
 
     capturerPolicyServiceDiedCallback->OnAudioPolicyServiceDied();
     EXPECT_EQ(capturerPolicyServiceDiedCallback != nullptr, true);
@@ -2315,7 +2314,6 @@ HWTEST(AudioCapturerUnitTest, RestoreTheadLoop_001, TestSize.Level1)
 {
     std::shared_ptr<CapturerPolicyServiceDiedCallback> capturerPolicyServiceDiedCallback =
         std::make_shared<CapturerPolicyServiceDiedCallback>();
-    ASSERT_TRUE(capturerPolicyServiceDiedCallback != nullptr);
 
     capturerPolicyServiceDiedCallback->RestoreTheadLoop();
     EXPECT_EQ(capturerPolicyServiceDiedCallback != nullptr, true);
