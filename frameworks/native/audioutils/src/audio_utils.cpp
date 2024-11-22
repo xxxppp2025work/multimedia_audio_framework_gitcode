@@ -723,6 +723,17 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
     return float(curMaxAmplitude) / LONG_MAX;
 }
 
+bool SetSysPara(const std::string &key, int32_t &value)
+{
+    auto res = SetParameter(key.c_str(), std::to_string(value).c_str());
+    if (res < 0) {
+        AUDIO_WARNING_LOG("SetSysPara fail, key:%{public}s res:%{public}d", key.c_str(), res);
+        return false;
+    }
+    AUDIO_INFO_LOG("SetSysPara success.");
+    return true;
+}
+
 template <typename T>
 bool GetSysPara(const char *key, T &value)
 {

@@ -35,7 +35,7 @@ public:
         const std::string &handlerName);
 
     virtual void SendCallbackEvent(uint32_t code, int64_t data) = 0;
-    virutal void SendCallbackEvent(uint32_t eventCode, int64_t data, int64_t delayTime) = 0;
+    virtual void SendCallbackEvent(uint32_t eventCode, int64_t data, int64_t delayTime) = 0;
 
     virtual void ReleaseEventRunner() = 0;
 };

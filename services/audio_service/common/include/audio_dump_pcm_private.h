@@ -98,7 +98,7 @@ private:
     // Event handler
     std::shared_ptr<AudioCacheHandler> handler_ = nullptr;
     std::mutex runnerMutex_;
-    std::shared_ptr<CallbackHandler> callbackHander_ = nullptr;
+    std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
 
     enum {
         RELEASE_OVERTIME_MEMBLOCK = 0,

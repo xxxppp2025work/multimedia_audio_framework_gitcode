@@ -127,10 +127,10 @@ AudioCacheMgrInner::AudioCacheMgrInner()
 AudioCacheMgrInner::~AudioCacheMgrInner()
 {
     std::lock_guard<std::mutex> runnerlock(runnerMutex_);
-    if (callbackHander_ != nullptr) {
+    if (callbackHandler_ != nullptr) {
         AUDIO_INFO_LOG("runner move");
-        callbackHander_->ReleaseEventRunner();
-        callbackHander_ = nullptr;
+        callbackHandler_->ReleaseEventRunner();
+        callbackHandler_ = nullptr;
     }
 }
 
@@ -145,7 +145,7 @@ bool AudioCacheMgrInner::Init()
     return true;
 }
 
-bool AudioCacheMgr::DeInit()
+bool AudioCacheMgrInner::DeInit()
 {
     Trace trace("AudioCacheMgrInner::DeInit");
     std::unique_lock<std::mutex> lock(runnerMutex_);
@@ -341,9 +341,9 @@ void AudioCacheMgrInner::InitCallbackHandler()
 {
     Trace trace("AudioCacheMgrInner::InitCallbackHandler");
     std::unique_lock<std::mutex> lock(runnerMutex_);
-    if (callbackHander_ == nullptr) {
+    if (callbackHandler_ == nullptr) {
         handler_ = std::make_shared<AudioCacheHandler>(this);
-        callbackHander_ = CallbackHandler::GetInstance(handler_, "OS_AUDIODumpCB");
+        callbackHandler_ = CallbackHandler::GetInstance(handler_, "OS_AUDIODumpCB");
         AUDIO_INFO_LOG("init handler success");
     }
     lock.unlock();
@@ -355,9 +355,9 @@ void AudioCacheMgrInner::SafeSendCallBackEvent(uint32_t eventCode, int64_t data,
 {
     Trace trace("AudioCacheMgrInner::SafeSendCallBackEvent");
     std::lock_guard<std::mutex> lock(runnerMutex_);
-    CHECK_AND_RETURN_LOG(callbackHander_ != nullptr, "Runner is Release");
+    CHECK_AND_RETURN_LOG(callbackHandler_ != nullptr, "Runner is Release");
 
-    callbackHander_->SendCallbackEvent(eventCode, data, delayTime);
+    callbackHandler_->SendCallbackEvent(eventCode, data, delayTime);
 }
 
 void AudioCacheMgrInner::OnHandle(uint32_t code, int64_t data)
