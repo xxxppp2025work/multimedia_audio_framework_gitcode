@@ -880,5 +880,315 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_047, TestSize.Lev
 
     ptrAudioProcessInClientInner->CheckIfWakeUpTooLate(curTime, wakeUpTime, clientWriteCost);
 }
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_048
+ * @tc.desc  : Test AudioProcessInClientInner::CheckIfWakeUpTooLate
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_048, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    uint32_t framePos = 1;
+    int64_t sec = 2;
+    int64_t nanoSec = 10;
+    ptrAudioProcessInClientInner->processConfig_.audioMode = AUDIO_MODE_RECORD;
+    bool ret = ptrAudioProcessInClientInner->GetAudioTime(framePos, sec, nanoSec);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_049
+ * @tc.desc  : Test AudioProcessInClientInner::CheckIfWakeUpTooLate
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_049, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    int32_t frameSize = 13;
+    ptrAudioProcessInClientInner->spanSizeInFrame_ = 5;
+    ptrAudioProcessInClientInner->SetPreferredFrameSize(frameSize);
+    EXPECT_EQ(ptrAudioProcessInClientInner != nullptr, true);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_050
+ * @tc.desc  : Test AudioProcessInClientInner::CheckIfWakeUpTooLate
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_050, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    std::string timestamp = "abcdefg";
+    bool isRenderer = true;
+    ptrAudioProcessInClientInner->UpdateLatencyTimestamp(timestamp, isRenderer);
+    EXPECT_EQ(ptrAudioProcessInClientInner != nullptr, true);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_051
+ * @tc.desc  : Test AudioProcessInClientInner::CheckIfWakeUpTooLate
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_051, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    AudioProcessConfig config_;
+    config_.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
+    config_.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    config_.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    const AudioProcessConfig config1 = config_;
+    bool ret = ptrAudioProcessInClientInner->CheckIfSupport(config1);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_052
+ * @tc.desc  : Test AudioProcessInClientInner::CheckIfWakeUpTooLate
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_052, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    AudioProcessConfig config_;
+    config.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
+    config_.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    config_.streamInfo.encoding = ENCODING_PCM;
+    config_.streamInfo.format = SAMPLE_U8;
+    const AudioProcessConfig config1 = config_;
+    bool ret = ptrAudioProcessInClientInner->CheckIfSupport(config1);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_053
+ * @tc.desc  : Test AudioProcessInClientInner::CheckIfWakeUpTooLate
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_053, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    AudioProcessConfig config_;
+    config.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
+    config_.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    config_.streamInfo.encoding = ENCODING_PCM;
+    config_.streamInfo.format = SAMPLE_S32LE;
+    const AudioProcessConfig config1 = config_;
+    bool ret = ptrAudioProcessInClientInner->CheckIfSupport(config1);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_054
+ * @tc.desc  : Test AudioProcessInClientInner::CheckIfWakeUpTooLate
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_054, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    AudioProcessConfig config_;
+    config.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
+    config_.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    config_.streamInfo.encoding = ENCODING_PCM;
+    config_.streamInfo.format = SAMPLE_S32LE;
+    config_.streamInfo.channels = CHANNEL_3;
+    const AudioProcessConfig config1 = config_;
+    bool ret = ptrAudioProcessInClientInner->CheckIfSupport(config1);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_055
+ * @tc.desc  : Test AudioProcessInClientInner::CheckIfWakeUpTooLate
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_055, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    AudioStreamData srcData_;
+    AudioStreamData dstData_;
+    srcData_.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    dstData_.streamInfo.encoding = ENCODING_PCM;
+    const AudioStreamData srcData = srcData_;
+    const AudioStreamData dstData = dstData_;
+    bool ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_056
+ * @tc.desc  : Test AudioProcessInClientInner::CheckIfWakeUpTooLate
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_056, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    AudioStreamData srcData_;
+    AudioStreamData dstData_;
+    srcData_.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    dstData_.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    srcData_.streamInfo.format = SAMPLE_S16LE;
+    srcData_.streamInfo.channels = STEREO;
+    const AudioStreamData srcData = srcData_;
+    const AudioStreamData dstData = dstData_;
+    bool ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_057
+ * @tc.desc  : Test AudioProcessInClientInner::CheckIfWakeUpTooLate
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_057, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    AudioStreamData srcData_;
+    AudioStreamData dstData_;
+    srcData_.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    dstData_.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    srcData_.streamInfo.format = SAMPLE_S32LE;
+    srcData_.streamInfo.channels = MONO;
+    const AudioStreamData srcData = srcData_;
+    const AudioStreamData dstData = dstData_;
+    bool ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_058
+ * @tc.desc  : Test AudioProcessInClientInner::CheckIfWakeUpTooLate
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_058, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    AudioStreamData srcData_;
+    AudioStreamData dstData_;
+    srcData_.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    dstData_.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    srcData_.streamInfo.format = SAMPLE_S32LE;
+    srcData_.streamInfo.channels = STEREO;
+    const AudioStreamData srcData = srcData_;
+    const AudioStreamData dstData = dstData_;
+    bool ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_059
+ * @tc.desc  : Test AudioProcessInClientInner::CheckIfWakeUpTooLate
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_059, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    AudioStreamData srcData_;
+    AudioStreamData dstData_;
+    srcData_.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    dstData_.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    srcData_.streamInfo.format = SAMPLE_S32LE;
+    srcData_.streamInfo.channels = CHANNEL_5;
+    const AudioStreamData srcData = srcData_;
+    const AudioStreamData dstData = dstData_;
+    bool ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
+    EXPECT_EQ(ret, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS
