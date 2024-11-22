@@ -492,6 +492,8 @@ public:
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
     bool getFastControlParam();
 
+    bool IsCurrentActiveDeviceA2dp();
+    
     int32_t SetVoiceRingtoneMute(bool isMute);
     
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,

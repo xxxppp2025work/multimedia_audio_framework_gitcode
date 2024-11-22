@@ -9040,6 +9040,11 @@ void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &devic
     }
 }
 
+bool AudioPolicyService::IsCurrentActiveDeviceA2dp()
+{
+    return audioPolicyManager_.GetActiveDevice() == DEVICE_TYPE_BLUETOOTH_A2DP;
+}
+
 void AudioA2dpOffloadManager::ConnectA2dpOffload(const std::string &deviceAddress, const vector<int32_t> &sessionIds)
 {
     AUDIO_INFO_LOG("start connecting a2dpOffload for MacAddr:%{public}s.", GetEncryptAddr(deviceAddress).c_str());
