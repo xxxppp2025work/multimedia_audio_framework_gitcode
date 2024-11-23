@@ -360,12 +360,16 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         volMaps.volStart[index] = 0;
         volMaps.volEnd[index] = 0;
     }
+
+    int64_t volSums[CHANNEL_MAX] = {0};
+
     uint8_t *raw8 = buffer.buffer;
     for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
         for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
-            int32_t sample = static_cast<int32_t>(ReadInt24LE(raw8));
-            uint32_t sampleAbs = sample >= 0 ? static_cast<uint32_t>(sample): static_cast<uint32_t>(-sample) >> offset;
-            volMaps.volStart[channelIdx] +=  static_cast<int32_t>(sampleAbs);
+            int32_t sample = static_cast<int32_t>(ReadInt24LE(raw8) << offset);
+            uint32_t sampleAbs =
+                ((sample >= 0 ? static_cast<uint32_t>(sample): static_cast<uint32_t>(-sample)) >> offset);
+            volSums[channelIdx] +=  static_cast<int32_t>(sampleAbs);
             raw8 += byteSizePerData;
         }
         raw8 += (split - 1) * channel * byteSizePerData;
@@ -377,7 +381,7 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         return;
     }
     for (size_t index = 0; index < channel; index++) {
-        volMaps.volStart[index] /= static_cast<int32_t>(size);
+        volMaps.volStart[index] = volSums[index] / static_cast<int32_t>(size);
     }
     return;
 }
