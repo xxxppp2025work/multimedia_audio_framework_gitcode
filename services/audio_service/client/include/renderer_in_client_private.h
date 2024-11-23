@@ -39,6 +39,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace{
+const int32_t LOG_COUNT_LIMIT = 500;
+} // namespace
 class SpatializationStateChangeCallbackImpl;
 
 class RendererInClientInner : public RendererInClient, public IStreamListener, public IHandler,
@@ -406,6 +409,7 @@ private:
     std::mutex setPreferredFrameSizeMutex_;
     std::optional<int32_t> userSettedPreferredFrameSize_ = std::nullopt;
     std::atomic_bool writeCallbackFuncThreadStatusFlag_ { false };
+    int32_t sleepCount_ = LOG_COUNT_LIMIT;
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {
