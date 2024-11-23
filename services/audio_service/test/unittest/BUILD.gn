@@ -556,6 +556,8 @@ ohos_unittest("audio_process_in_client_unit_test") {
   external_deps = [
     "c_utils:utils",
     "googletest:gtest",
+    "eventhandler:libeventhandler",
+    "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
