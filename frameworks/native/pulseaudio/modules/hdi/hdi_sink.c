@@ -1717,37 +1717,43 @@ static void CheckOnlyPrimarySpeakerPaLoading(struct Userdata *u)
         u->primary.speakerPaAllStreamStartVolZeroTime = 0;
     }
 
-    if (PA_SINK_IS_RUNNING(u->sink->thread_info.state) && !u->primary.onlyPrimarySpeakerPaLoading &&
-        u->primary.paHaveDisabled) {
-        int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1);
-        AUDIO_INFO_LOG("sink running, open closed pa:[%{public}s] -- [%{public}s], ret:%{public}d", u->sink->name,
-            (ret == 0 ? "success" : "failed"), ret);
-        u->primary.paHaveDisabled = false;
-        u->primary.speakerPaHaveClosed = false;
+    if (u && u->primary.sinkAdapter && u->primary.sinkAdapter) {
+        if (PA_SINK_IS_RUNNING(u->sink->thread_info.state) && !u->primary.onlyPrimarySpeakerPaLoading &&
+            u->primary.paHaveDisabled) {
+            int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1);
+            AUDIO_INFO_LOG("sink running, open closed pa:[%{public}s] -- [%{public}s], ret:%{public}d", u->sink->name,
+                (ret == 0 ? "success" : "failed"), ret);
+            u->primary.paHaveDisabled = false;
+            u->primary.speakerPaHaveClosed = false;
+        }
     }
 }
 
 static void HandleClosePa(struct Userdata *u)
 {
-    if (!u->primary.paHaveDisabled) {
-        int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 0);
-        AUDIO_INFO_LOG("Speaker pa volume change to zero over [%{public}d]s, close %{public}s pa [%{public}s], "
-            "ret:%{public}d", WAIT_CLOSE_PA_OR_EFFECT_TIME, u->sink->name, (ret == 0 ? "success" : "failed"), ret);
-        u->primary.paHaveDisabled = true;
-        u->primary.speakerPaAllStreamStartVolZeroTime = 0;
-        u->primary.speakerPaHaveClosed = true;
-        time(&u->primary.speakerPaClosedTime);
+    if (u && u->primary.sinkAdapter && u->primary.sinkAdapter) {
+        if (!u->primary.paHaveDisabled) {
+            int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 0);
+            AUDIO_INFO_LOG("Speaker pa volume change to zero over [%{public}d]s, close %{public}s pa [%{public}s], "
+                "ret:%{public}d", WAIT_CLOSE_PA_OR_EFFECT_TIME, u->sink->name, (ret == 0 ? "success" : "failed"), ret);
+            u->primary.paHaveDisabled = true;
+            u->primary.speakerPaAllStreamStartVolZeroTime = 0;
+            u->primary.speakerPaHaveClosed = true;
+            time(&u->primary.speakerPaClosedTime);
+        }
     }
 }
 
 static void HandleOpenPa(struct Userdata *u)
 {
-    if (u->primary.paHaveDisabled) {
-        int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1);
-        AUDIO_INFO_LOG("volume change to non zero, open closed pa:[%{public}s] -- [%{public}s], ret:%{public}d",
-            u->sink->name, (ret == 0 ? "success" : "failed"), ret);
-        u->primary.paHaveDisabled = false;
-        u->primary.speakerPaHaveClosed = false;
+    if (u && u->primary.sinkAdapter && u->primary.sinkAdapter) {
+        if (u->primary.paHaveDisabled) {
+            int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1);
+            AUDIO_INFO_LOG("volume change to non zero, open closed pa:[%{public}s] -- [%{public}s], ret:%{public}d",
+                u->sink->name, (ret == 0 ? "success" : "failed"), ret);
+            u->primary.paHaveDisabled = false;
+            u->primary.speakerPaHaveClosed = false;
+        }
     }
 }
 
