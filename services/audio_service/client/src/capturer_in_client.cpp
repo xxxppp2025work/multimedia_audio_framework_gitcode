@@ -48,6 +48,7 @@
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
 #include "callback_handler.h"
+#include "xcollie/watchdog.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -64,6 +65,8 @@ const int64_t INVALID_FRAME_SIZE = -1;
 static const int32_t HALF_FACTOR = 2;
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
+constexpr int32_t WATCHDOG_INTERVAL_TIME = 3000; // 3000ms
+constexpr int32_t WATCHDOG_DELAY_TIME = 10000; // 10000ms
 }
 
 class CapturerInClientInner : public CapturerInClient, public IStreamListener, public IHandler,
@@ -233,6 +236,7 @@ private:
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     void ReadCallbackFunc();
+    void WatchingReadData();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
 
@@ -336,6 +340,8 @@ private:
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
 
     bool paramsIsSet_ = false;
+
+    std::atomic_bool threadStatusFlag_ { false };
 
     enum {
         STATE_CHANGE_EVENT = 0,
@@ -1110,6 +1116,32 @@ bool CapturerInClientInner::WaitForRunning()
     return true;
 }
 
+void CapturerRemoveWatchDog(const std::string &message, const std::int32_t sessionId)
+{
+    std::string watchDogMessage = message;
+    watchDogMessage += std::to_string(sessionId);
+    HiviewDFX::Watchdog::GetInstance().RemovePeriodicalTask(watchDogMessage);
+    AUDIO_INFO_LOG("%{public}s end %{public}d", watchDogMessage.c_str(), sessionId);
+}
+
+void CapturerInClientInner::WatchingReadData()
+{
+    threadStatusFlag_ = true;
+    auto taskFunc = [this]() {
+        if (threadStatusFlag_) {
+            AUDIO_INFO_LOG("Set threadStatusFlag_ to false");
+            threadStatusFlag_ = false;
+        } else {
+            AUDIO_INFO_LOG("watchdog happened and process exit");
+        }
+    };
+    std::string watchDogMessage = "WatchingCaptureInClientReadData";
+    watchDogMessage += std::to_string(sessionId_);
+    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask(watchDogMessage, taskFunc,
+        WATCHDOG_INTERVAL_TIME, WATCHDOG_DELAY_TIME);
+    AUDIO_INFO_LOG("watchdog start %{public}d", sessionId_);
+}
+
 void CapturerInClientInner::ReadCallbackFunc()
 {
     AUDIO_INFO_LOG("Thread start, sessionID :%{public}d", sessionId_);
@@ -1118,10 +1150,13 @@ void CapturerInClientInner::ReadCallbackFunc()
     // Modify thread priority is not need as first call read will do these work.
     cbThreadCv_.notify_one();
 
+    // add watchdog
+    WatchingReadData();
     // start loop
     while (!cbThreadReleased_) {
         Trace traceLoop("CapturerInClientInner::WriteCallbackFunc");
         if (!WaitForRunning()) {
+            threadStatusFlag_ = true;
             continue;
         }
 
@@ -1138,7 +1173,10 @@ void CapturerInClientInner::ReadCallbackFunc()
         if (result < 0 || result != static_cast<int32_t>(cbBufferSize_)) {
             AUDIO_WARNING_LOG("Call read error, ret:%{public}d, cbBufferSize_:%{public}zu", result, cbBufferSize_);
         }
-        if (state_ != RUNNING) { continue; }
+        if (state_ != RUNNING) {
+            threadStatusFlag_ = true;
+            continue;
+        }
         lockBuffer.unlock();
 
         // call client read
@@ -1147,10 +1185,13 @@ void CapturerInClientInner::ReadCallbackFunc()
         if (readCb_ != nullptr) {
             readCb_->OnReadData(cbBufferSize_);
         }
+        threadStatusFlag_ = true;
         lockCb.unlock();
         traceCb.End();
     }
     AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", sessionId_);
+    // stop watchdog
+    CapturerRemoveWatchDog("WatchingCaptureInClientReadData", sessionId_);
 }
 
 
