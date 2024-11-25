@@ -79,14 +79,14 @@ const std::vector<AudioStreamType> GET_PC_STREAM_RING_VOLUME_TYPES {
 };
 
 const std::vector<AudioStreamType> GET_PC_STREAM_ALL_VOLUME_TYPES {
-    STREAM_MUSIC,
     STREAM_VOICE_CALL,
     STREAM_VOICE_ASSISTANT,
     STREAM_ACCESSIBILITY,
     STREAM_RING,
     STREAM_ALARM,
     STREAM_VOICE_RING,
-    STREAM_ULTRASONIC
+    STREAM_ULTRASONIC,
+    STREAM_MUSIC
 };
 
 class AudioPolicyServer : public SystemAbility,
