@@ -92,31 +92,19 @@ static const std::vector<std::string> SYSTEM_SOUND_KEY_LIST = {
 bool AudioAdapterManager::Init()
 {
     char testMode[10] = {0}; // 10 for system parameter usage
-    auto res = GetParameter("debug.audio_service.testmodeon", "0", testMode, sizeof(testMode));
-    if (res == 1 && testMode[0] == '1') {
+    auto ret = GetParameter("debug.audio_service.testmodeon", "0", testMode, sizeof(testMode));
+    if (ret == 1 && testMode[0] == '1') {
         AUDIO_DEBUG_LOG("testMode on");
         testModeOn_ = true;
     }
-
     std::unique_ptr<AudioVolumeParser> audiovolumeParser = make_unique<AudioVolumeParser>();
     if (!audiovolumeParser->LoadConfig(streamVolumeInfos_)) {
         AUDIO_INFO_LOG("Audio Volume Config Load Configuration successfully");
         useNonlinearAlgo_ = 1;
         UpdateVolumeMapIndex();
     }
-
     // init volume before kvstore start by local prop for bootanimation
-    char currentVolumeValue[3] = {0};
-    auto ret = GetParameter("persist.multimedia.audio.ringtonevolume", "7",
-        currentVolumeValue, sizeof(currentVolumeValue));
-    if (ret > 0) {
-        int32_t ringtoneVolumeLevel = atoi(currentVolumeValue);
-        volumeDataMaintainer_.SetStreamVolume(STREAM_RING, ringtoneVolumeLevel);
-        AUDIO_INFO_LOG("Init: Get ringtone volume to map success %{public}d",
-            volumeDataMaintainer_.GetStreamVolume(STREAM_RING));
-    } else {
-        AUDIO_ERR_LOG("Init: Get volume parameter failed %{public}d", ret);
-    }
+    InitiateBootAnimationVolume();
 
     std::string defaultSafeVolume = std::to_string(GetMaxVolumeLevel(STREAM_MUSIC));
     AUDIO_INFO_LOG("defaultSafeVolume %{public}s", defaultSafeVolume.c_str());
@@ -142,10 +130,25 @@ bool AudioAdapterManager::Init()
 
     isVolumeUnadjustable_ = system::GetBoolParameter("const.multimedia.audio.fixedvolume", false);
     AUDIO_INFO_LOG("Get fixdvolume parameter success %{public}d", isVolumeUnadjustable_);
-
     handler_ = std::make_shared<AudioAdapterManagerHandler>();
-
     return true;
+}
+
+void AudioAdapterManager::InitiateBootAnimationVolume()
+{
+    char currentVolumeValue[3] = {0};
+    AudioVolumeType typeForBootAnimation = VolumeUtils::IsPCVolumeEnable() ? STREAM_SYSTEM : STREAM_RING;
+    std::string defaultVolume = VolumeUtils::IsPCVolumeEnable()?
+        std::to_string(volumeDataMaintainer_.GetStreamVolume(typeForBootAnimation)) : "7";
+    auto ret = GetParameter("persist.multimedia.audio.ringtonevolume", defaultVolume.c_str(),
+                            currentVolumeValue, sizeof(currentVolumeValue));
+    if (ret > 0) {
+        volumeDataMaintainer_.SetStreamVolume(typeForBootAnimation, atoi(currentVolumeValue));
+        AUDIO_INFO_LOG("Init: Get ringtone volume to map success %{public}d",
+            volumeDataMaintainer_.GetStreamVolume(typeForBootAnimation));
+    } else {
+        AUDIO_ERR_LOG("Init: Get volume parameter failed %{public}d", ret);
+    }
 }
 
 bool AudioAdapterManager::ConnectServiceAdapter()
@@ -298,7 +301,10 @@ int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType)
 
 void AudioAdapterManager::SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel)
 {
-    if (volumeType == STREAM_RING) {
+    AudioVolumeType audioVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(volumeType);
+    if (volumeType == STREAM_RING || audioVolumeMap == STREAM_SYSTEM) {
+        int32_t volumeLevel =
+            volumeDataMaintainer_.GetStreamVolume(audioVolumeMap) * (GetStreamMute(audioVolumeMap) ? 0 : 1);
         int32_t ret = SetParameter("persist.multimedia.audio.ringtonevolume", std::to_string(volumeLevel).c_str());
         if (ret == 0) {
             AUDIO_INFO_LOG("Save ringtone volume for boot success %{public}d", volumeLevel);
@@ -417,14 +423,14 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
         "SetSystemVolumeLevel audio adapter null");
 
     AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volume:%{public}d", streamType, volumeDb, volumeLevel);
-    if (streamType == STREAM_VOICE_CALL || streamType == STREAM_VOICE_COMMUNICATION) {
+    if (streamForVolumeMap == STREAM_VOICE_CALL || streamForVolumeMap == STREAM_VOICE_COMMUNICATION) {
         return SetVolumeDbForVolumeTypeGroup(VOICE_CALL_VOLUME_TYPE_LIST, volumeDb);
-    } else if (streamType == STREAM_MUSIC || (VolumeUtils::IsPCVolumeEnable() && streamForVolumeMap == STREAM_MUSIC)) {
+    } else if (streamForVolumeMap == STREAM_MUSIC) {
         return SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
-    } else if (streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_SYSTEM) {
-        const std::vector<AudioStreamType> &streamTypeArray =
-            (VolumeUtils::IsPCVolumeEnable())? GET_PC_STREAM_RING_VOLUME_TYPES : RINGTONE_VOLUME_TYPE_LIST;
-        return SetVolumeDbForVolumeTypeGroup(streamTypeArray, volumeDb);
+    } else if (streamForVolumeMap == STREAM_RING) {
+        return SetVolumeDbForVolumeTypeGroup(RINGTONE_VOLUME_TYPE_LIST, volumeDb);
+    } else if (streamForVolumeMap == STREAM_SYSTEM) {
+        return SetVolumeDbForVolumeTypeGroup(GET_PC_STREAM_RING_VOLUME_TYPES, volumeDb);
     }
 
     // audio volume
