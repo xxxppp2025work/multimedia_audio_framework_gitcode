@@ -1065,6 +1065,18 @@ private:
     AudioModuleInfo usbSourceModuleInfo_ = {};
     AudioModuleInfo dpSinkModuleInfo_ = {};
 
+    std::mutex dialogMutex_;
+    std::atomic<bool> isDialogSelectDestroy_ = false;
+    std::condition_variable dialogSelectCondition_;
+    std::unique_ptr<std::thread> safeVolumeDialogThrd_ = nullptr;
+    std::atomic<bool> isSafeVolumeDialogShowing_ = false;
+    std::mutex safeVolumeMutex_;
+
+    std::mutex notifyMutex_;
+    int32_t streamMusicVol_ = 0;
+    bool restoreNIsShowing_ = false;
+    bool increaseNIsShowing_ = false;
+
     DeviceType priorityOutputDevice_ = DEVICE_TYPE_INVALID;
     DeviceType priorityInputDevice_ = DEVICE_TYPE_INVALID;
     ConnectType conneceType_ = CONNECT_TYPE_LOCAL;
