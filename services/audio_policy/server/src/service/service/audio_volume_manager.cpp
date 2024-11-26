@@ -388,7 +388,7 @@ int32_t AudioVolumeManager::SetA2dpDeviceVolume(const std::string &macAddress, c
     }
     bool mute;
     audioA2dpDevice_.GetA2dpDeviceMute(macAddress, mute);
-    mute =  mute ? true : (sVolumeLevel == 0);
+    mute = sVolumeLevel == 0 ? true : false;
 
     audioA2dpDevice_.SetA2dpDeviceMute(macAddress, mute);
     audioPolicyManager_.SetAbsVolumeMute(mute);
