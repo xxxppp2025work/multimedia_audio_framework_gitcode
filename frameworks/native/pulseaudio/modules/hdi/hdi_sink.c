@@ -3614,11 +3614,6 @@ static void OffloadSinkStateChangeCb(pa_sink *sink, pa_sink_state_t newState)
         }
         OffloadReset(u);
         OffloadUnlock(u);
-        if (u->offload.inited) {
-            u->offload.inited = false;
-            u->offload.sinkAdapter->RendererSinkDeInit(u->offload.sinkAdapter);
-            AUDIO_INFO_LOG("DeInited Offload HDI renderer");
-        }
         g_speakerPaAllStreamStartVolZeroTime = 0;
     }
 }
@@ -3934,6 +3929,7 @@ static int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userd
             AUDIO_ERR_LOG("Load adapter failed");
             return -1;
         }
+        u->offload.inited = false;
         u->offload.msgq = pa_asyncmsgq_new(0);
         pa_atomic_store(&u->offload.hdistate, 0);
         u->offload.chunk.memblock = pa_memblock_new(u->sink->core->mempool,
@@ -4154,6 +4150,7 @@ static void UserdataFreeOffload(struct Userdata *u)
         u->offload.sinkAdapter->RendererSinkStop(u->offload.sinkAdapter);
         OffloadUnlock(u);
         u->offload.sinkAdapter->RendererSinkDeInit(u->offload.sinkAdapter);
+        AUDIO_INFO_LOG("DeInited Offload HDI renderer");
         UnLoadSinkAdapter(u->offload.sinkAdapter);
     }
 
