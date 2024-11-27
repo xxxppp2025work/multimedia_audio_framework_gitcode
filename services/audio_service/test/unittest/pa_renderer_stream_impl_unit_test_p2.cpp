@@ -436,5 +436,103 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_016, TestSize.Level1)
     int32_t ret = unit->SetLowPowerVolume(powerVolume);
     EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
 }
+
+/**
+ * @tc.name  : Test SetOffloadMode.
+ * @tc.type  : FUNC
+ * @tc.number: PaRenderer_017
+ * @tc.desc  : Test SetOffloadMode.
+ */
+HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_017, TestSize.Level1)
+{
+    auto unit = CreatePaRendererStreamImpl();
+    ASSERT_TRUE(unit != nullptr);
+    unit->paStream_ = nullptr;
+    unit->offloadNextStateTargetPolicy_ = OFFLOAD_ACTIVE_FOREGROUND;
+    unit->offloadStatePolicy_ = OFFLOAD_ACTIVE_FOREGROUND;
+    int32_t state = -10;
+    bool isAppBack = false;
+    EXPECT_EQ(unit->SetOffloadMode(state, isAppBack), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetOffloadMode.
+ * @tc.type  : FUNC
+ * @tc.number: PaRenderer_018
+ * @tc.desc  : Test SetOffloadMode.
+ */
+HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_018, TestSize.Level1)
+{
+    auto unit = CreatePaRendererStreamImpl();
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager->InitPaContext();
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    uint32_t sessionId = 123456;
+    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
+    auto userdata = adapterManager;
+    unit->PAStreamUnderFlowCb(stream, userdata);
+    EXPECT_EQ(unit != nullptr, true);
+}
+
+/**
+ * @tc.name  : Test SetOffloadMode.
+ * @tc.type  : FUNC
+ * @tc.number: PaRenderer_019
+ * @tc.desc  : Test SetOffloadMode.
+ */
+HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_019, TestSize.Level1)
+{
+    auto unit = CreatePaRendererStreamImpl();
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager->InitPaContext();
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    uint32_t sessionId = 123456;
+    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
+    int* ptr = new int;
+    auto *userdata = ptr;
+    unit->PAStreamUnderFlowCb(stream, userdata);
+    EXPECT_EQ(unit != nullptr, true);
+}
+
+/**
+ * @tc.name  : Test SetOffloadMode.
+ * @tc.type  : FUNC
+ * @tc.number: PaRenderer_020
+ * @tc.desc  : Test SetOffloadMode.
+ */
+HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_020, TestSize.Level1)
+{
+    auto unit = CreatePaRendererStreamImpl();
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager->InitPaContext();
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    uint32_t sessionId = 123456;
+    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
+    size_t length = 10;
+    auto userdata = adapterManager;
+    unit->PAStreamWriteCb(stream, length, userdata);
+    EXPECT_EQ(unit != nullptr, true);
+}
+
+/**
+ * @tc.name  : Test SetOffloadMode.
+ * @tc.type  : FUNC
+ * @tc.number: PaRenderer_021
+ * @tc.desc  : Test SetOffloadMode.
+ */
+HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_021, TestSize.Level1)
+{
+    auto unit = CreatePaRendererStreamImpl();
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager->InitPaContext();
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    uint32_t sessionId = 123456;
+    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
+    int* ptr = new int;
+    size_t length = 10;
+    auto *userdata = ptr;
+    unit->PAStreamWriteCb(stream, length, userdata);
+    EXPECT_EQ(unit != nullptr, true);
+}
 }
 }

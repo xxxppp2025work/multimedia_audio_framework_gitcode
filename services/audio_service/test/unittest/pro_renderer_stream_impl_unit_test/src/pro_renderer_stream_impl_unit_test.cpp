@@ -54,6 +54,7 @@ HWTEST(ProRendererStreamImplUnitTest, GetDirectSampleRate_001, TestSize.Level1)
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> RendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    ASSERT_TRUE(RendererStreamImpl != nullptr);
     RendererStreamImpl->processConfig_.streamType = STREAM_VOICE_COMMUNICATION;
     AudioSamplingRate sampleRate = SAMPLE_RATE_16000;
 
@@ -76,6 +77,7 @@ HWTEST(ProRendererStreamImplUnitTest, Start_001, TestSize.Level1)
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> RendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    ASSERT_TRUE(RendererStreamImpl != nullptr);
     RendererStreamImpl->status_ = I_STATUS_STARTED;
     int32_t ret = RendererStreamImpl->Start();
     EXPECT_EQ(ret, SUCCESS);
@@ -92,6 +94,7 @@ HWTEST(ProRendererStreamImplUnitTest, Pause_001, TestSize.Level1)
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> RendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    ASSERT_TRUE(RendererStreamImpl != nullptr);
     RendererStreamImpl->status_ = I_STATUS_PAUSED;
     RendererStreamImpl->isFirstFrame_ = false;
     int32_t ret = RendererStreamImpl->Pause();
@@ -109,6 +112,7 @@ HWTEST(ProRendererStreamImplUnitTest, Flush_001, TestSize.Level1)
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> RendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    ASSERT_TRUE(RendererStreamImpl != nullptr);
     RendererStreamImpl->readQueue_.push(1);
     RendererStreamImpl->isDrain_ = true;
     int32_t ret = RendererStreamImpl->Flush();
@@ -126,6 +130,7 @@ HWTEST(ProRendererStreamImplUnitTest, Drain_001, TestSize.Level1)
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> RendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    ASSERT_TRUE(RendererStreamImpl != nullptr);
     RendererStreamImpl->readQueue_.push(1);
     int32_t ret = RendererStreamImpl->Drain();
     EXPECT_EQ(ret, SUCCESS);
@@ -142,6 +147,7 @@ HWTEST(ProRendererStreamImplUnitTest, SetRate_001, TestSize.Level1)
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> RendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    ASSERT_TRUE(RendererStreamImpl != nullptr);
 
     int32_t rate = RENDER_RATE_NORMAL;
     int32_t ret = RendererStreamImpl->SetRate(rate);
@@ -171,6 +177,7 @@ HWTEST(ProRendererStreamImplUnitTest, DequeueBuffer_001, TestSize.Level1)
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> RendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    ASSERT_TRUE(RendererStreamImpl != nullptr);
 
     RendererStreamImpl->status_ = I_STATUS_IDLE;
     size_t length = 10;
@@ -189,6 +196,7 @@ HWTEST(ProRendererStreamImplUnitTest, DequeueBuffer_002, TestSize.Level1)
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> RendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    ASSERT_TRUE(RendererStreamImpl != nullptr);
 
     size_t length = 10;
     RendererStreamImpl->DequeueBuffer(length);
@@ -206,6 +214,7 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_001, TestSize.Level1)
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> RendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    ASSERT_TRUE(RendererStreamImpl != nullptr);
 
     const BufferDesc bufferDesc = { nullptr, 0, 0};
     int32_t ret = RendererStreamImpl->EnqueueBuffer(bufferDesc);
@@ -223,6 +232,7 @@ HWTEST(ProRendererStreamImplUnitTest, ReturnIndex_001, TestSize.Level1)
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> RendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    ASSERT_TRUE(RendererStreamImpl != nullptr);
 
     int32_t index = 10;
     int32_t ret = RendererStreamImpl->ReturnIndex(index);
@@ -240,6 +250,7 @@ HWTEST(ProRendererStreamImplUnitTest, PopSinkBuffer_001, TestSize.Level1)
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> RendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    ASSERT_TRUE(RendererStreamImpl != nullptr);
 
     std::vector<char> audioBuffer;
     int32_t index;
@@ -259,6 +270,7 @@ HWTEST(ProRendererStreamImplUnitTest, PopSinkBuffer_002, TestSize.Level1)
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> RendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    ASSERT_TRUE(RendererStreamImpl != nullptr);
 
     std::vector<char> audioBuffer;
     int32_t index;
@@ -279,6 +291,7 @@ HWTEST(ProRendererStreamImplUnitTest, ConvertSrcToFloat_001, TestSize.Level1)
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> RendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    ASSERT_TRUE(RendererStreamImpl != nullptr);
 
     const BufferDesc bufferDesc = { nullptr, 0, 0};
     RendererStreamImpl->bufferInfo_.format = AudioSampleFormat::SAMPLE_F32LE;
@@ -297,6 +310,7 @@ HWTEST(ProRendererStreamImplUnitTest, ConvertSrcToFloat_002, TestSize.Level1)
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> RendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    ASSERT_TRUE(RendererStreamImpl != nullptr);
 
     const BufferDesc bufferDesc = { nullptr, 0, 0};
     RendererStreamImpl->ConvertSrcToFloat(bufferDesc);
