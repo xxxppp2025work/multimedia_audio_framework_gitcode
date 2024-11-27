@@ -42,7 +42,7 @@ constexpr size_t FILENAME_AND_ID_SIZE = 128;                    // estimate each
 MemChunk::MemChunk() : totalBufferSize_(EACH_CHUNK_SIZE), pointerOffset_(0), curFileNameId_(0)
 {
     Trace trace("MemChunk::MemChunk");
-    firstMemBlockTime_ = ClockTime::GetCurNano();
+    firstMemBlockTime_ = ClockTime::GetRealNano();
     lastMemBlockTime_ = firstMemBlockTime_;
     bufferPointer_ = new (std::nothrow) uint8_t[EACH_CHUNK_SIZE];
     if (bufferPointer_ == nullptr) {
@@ -76,6 +76,7 @@ int32_t MemChunk::GetMemBlock(size_t dataLength, std::string& dumpFileName, MemB
     curMemBlock.dataPointer_ = bufferPointer_ + pointerOffset_;
     curMemBlock.dataLength_ = dataLength;
     pointerOffset_ += dataLength;
+    lastMemBlockTime_ = ClockTime::GetRealNano();
     memBlockDeque_->push_back(curMemBlock);
     return SUCCESS;
 }
@@ -105,7 +106,7 @@ void MemChunk::Reset()
     Trace trace("MemChunk::Reset");
     pointerOffset_ = 0;
     curFileNameId_ = 0;
-    firstMemBlockTime_ = ClockTime::GetCurNano();
+    firstMemBlockTime_ = ClockTime::GetRealNano();
     lastMemBlockTime_ = firstMemBlockTime_;
     idFileNameMap_ = {};
     fileNameIdMap_ = {};
@@ -153,6 +154,9 @@ bool AudioCacheMgrInner::DeInit()
         callbackHandler_->ReleaseEventRunner();
         callbackHandler_ = nullptr;
         handler_ = nullptr;
+
+        // clear all cached pcm
+        memChunkDeque_ = {};
         AUDIO_INFO_LOG("deinit handler success");
     }
     lock.unlock();
@@ -213,13 +217,15 @@ int32_t AudioCacheMgrInner::GetAvailableMemBlock(size_t dataLength, std::string&
         }
     }
 
-    Trace trace3("AudioCacheMgrInner::GetAvailableMemBlock::RecycleOneMemChunk");
-    std::shared_ptr<MemChunk> recycleMemChunk = memChunkDeque_.front();
-    memChunkDeque_.pop_front();
-    recycleMemChunk->Reset();
-    memChunkDeque_.push_back(recycleMemChunk);
-    if (recycleMemChunk->GetMemBlock(dataLength, dumpFileName, curMemBlock) == SUCCESS) {
-        return SUCCESS;
+    if (!memChunkDeque_.empty()) {
+        Trace trace3("AudioCacheMgrInner::GetAvailableMemBlock::RecycleOneMemChunk");
+        std::shared_ptr<MemChunk> recycleMemChunk = memChunkDeque_.front();
+        memChunkDeque_.pop_front();
+        recycleMemChunk->Reset();
+        memChunkDeque_.push_back(recycleMemChunk);
+        if (recycleMemChunk->GetMemBlock(dataLength, dumpFileName, curMemBlock) == SUCCESS) {
+            return SUCCESS;
+        }
     }
 
     AUDIO_ERR_LOG("failed to get available memBlock");
@@ -277,6 +283,14 @@ void AudioCacheMgrInner::GetCachedDuration(int64_t& startTime, int64_t& endTime)
         return;
     }
     std::lock_guard<std::mutex> processLock(g_Mutex);
+    // init but no data in memchunk
+    if (memChunkDeque_.size() == 0) {
+        startTime = ClockTime::GetRealNano();
+        endTime = startTime;
+        AUDIO_WARNING_LOG("GetCachedDuration while memChunkDeque_ is empty!");
+        return;
+    }
+
     int64_t temp;
     if (memChunkDeque_.front() != nullptr) {
         memChunkDeque_.front()->GetMemChunkDuration(startTime, temp);
@@ -284,8 +298,8 @@ void AudioCacheMgrInner::GetCachedDuration(int64_t& startTime, int64_t& endTime)
     if (memChunkDeque_.back() != nullptr) {
         memChunkDeque_.back()->GetMemChunkDuration(temp, endTime);
     }
-    AUDIO_INFO_LOG("startTime:%{public}" PRIu64 " ,endTime:%{public}" PRIu64 " cur:%{public}" PRIu64 ".", 
-        startTime, endTime, ClockTime::GetCurNano());
+    AUDIO_INFO_LOG("startTime:%{public}s, endTime:%{public}s.",
+        ClockTime::NanoTimeToString(startTime).c_str(), ClockTime::NanoTimeToString(endTime).c_str());
 }
 
 void AudioCacheMgrInner::GetCurMemoryCondition(size_t& dataLength, size_t& bufferLength, size_t& structLength)
@@ -320,7 +334,7 @@ void AudioCacheMgrInner::ReleaseOverTimeMemBlock()
     }
 
     int32_t recycleNums = 0;
-    int64_t curTime = ClockTime::GetCurNano();
+    int64_t curTime = ClockTime::GetRealNano();
     int64_t startTime, endTime;
 
     while(!memChunkDeque_.empty()) {

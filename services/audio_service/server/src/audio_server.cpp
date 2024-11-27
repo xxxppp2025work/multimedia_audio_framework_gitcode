@@ -249,8 +249,8 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
             int64_t startTime = 0;
             int64_t endTime = 0;
             AudioCacheMgr::GetInstance().GetCachedDuration(startTime, endTime);
-            dumpString = "Call dump get time:[" + std::to_string(startTime) + "~" + std::to_string(endTime) + 
-                " ], cur:[" + std::to_string(ClockTime::GetCurNano()) + "] \n";
+            dumpString = "Call dump get time:[" + ClockTime::NanoTimeToString(startTime) + "~" + ClockTime::NanoTimeToString(endTime) + 
+                " ], cur:[" + ClockTime::NanoTimeToString(ClockTime::GetRealNano()) + "] \n";
         } else if (dumpParam == "memory") {
             size_t dataLength = 0;
             size_t bufferLength = 0;
@@ -584,13 +584,13 @@ int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
         int64_t startTime = 0;
         int64_t endTime = 0;
         AudioCacheMgr::GetInstance().GetCachedDuration(startTime, endTime);
-        result.push_back({std::to_string(startTime), std::to_string(endTime)});
+        result.push_back({ClockTime::NanoTimeToString(startTime), ClockTime::NanoTimeToString(endTime)});
         return SUCCESS;
     } else if (mainKey == PCM_PERSIST_DUMP_DUMP) {
         int64_t startTime = 0;
         int64_t endTime = 0;
         AudioCacheMgr::GetInstance().DumpAllMemBlock(startTime, endTime);
-        result.push_back({std::to_string(startTime), std::to_string(endTime)});
+        result.push_back({ClockTime::NanoTimeToString(startTime), ClockTime::NanoTimeToString(endTime)});
         return SUCCESS;
     } else if (mainKey == PCM_PERSIST_DUMP_MEMORY) {
         size_t dataLength = 0;
