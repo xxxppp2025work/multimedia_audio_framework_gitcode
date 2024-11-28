@@ -336,14 +336,29 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioVolumeFuzzTest(data, size);
-    OHOS::AudioStandard::AudioDeviceFuzzTest(data, size);
-    OHOS::AudioStandard::AudioInterruptFuzzTest(data, size);
-    OHOS::AudioStandard::AudioPolicyFuzzTest(data, size);
-    OHOS::AudioStandard::AudioPolicyOtherFuzzTest(data, size);
-    OHOS::AudioStandard::AudioVolumeKeyCallbackStub(data, size);
-    OHOS::AudioStandard::AudioSessionFuzzTest(data, size);
-
+    uint8_t firstByte = *data;
+    switch(firstByte) {
+        case 0:
+            OHOS::AudioStandard::AudioVolumeFuzzTest(data, size);
+            break;
+        case 1:
+            OHOS::AudioStandard::AudioDeviceFuzzTest(data, size);
+            break;
+        case 2:
+            OHOS::AudioStandard::AudioInterruptFuzzTest(data, size);
+            break;
+        case 3:
+            OHOS::AudioStandard::AudioPolicyFuzzTest(data, size);
+            break;
+        case 4:
+            OHOS::AudioStandard::AudioPolicyOtherFuzzTest(data, size);
+            break;
+        case 5:
+            OHOS::AudioStandard::AudioVolumeKeyCallbackStub(data, size);
+            break;
+        default:
+            OHOS::AudioStandard::AudioSessionFuzzTest(data, size);
+            break;
+    }
     return 0;
 }
-
