@@ -493,8 +493,9 @@ static int32_t HandleCaptureFrame(struct Userdata *u, char *buffer, uint64_t req
             fdesc, replyBytes, fdescEc, &replyBytesEc);
         FreeFrameDesc(fdesc);
         FreeFrameDesc(fdescEc);
+        u->isEcCaptureSuccess = true;
         if (CheckSameAdapterEcLength(requestBytes, *replyBytes, u->requestBytesEc, replyBytesEc)) {
-            u->requestBytesEc = 0;
+            u->isEcCaptureSuccess = false;
         }
     }
     if (u->ecType == EC_DIFFERENT_ADAPTER) {
@@ -507,8 +508,9 @@ static int32_t HandleCaptureFrame(struct Userdata *u, char *buffer, uint64_t req
                 fdesc, &replyBytesUnused, fdescEc, &replyBytesEc);
             FreeFrameDesc(fdesc);
             FreeFrameDesc(fdescEc);
+            u->isEcCaptureSuccess = true;
             if (CheckDiffAdapterEcLength(requestBytes, *replyBytes, u->requestBytesEc, replyBytesEc)) {
-                u->requestBytesEc = 0;
+                u->isEcCaptureSuccess = false;
             }
         }
     }
@@ -631,6 +633,7 @@ static int32_t EcResample(const char *sceneKey, struct Userdata *u)
 
     CHECK_AND_RETURN_RET_LOG(u->bufferEc != NULL, ERROR, "bufferEc is null");
     CHECK_AND_RETURN_RET_LOG(u->requestBytesEc != 0, ERROR, "requestBytesEc is 0");
+    CHECK_AND_RETURN_RET_LOG(u->isEcCaptureSuccess == true, ERROR, "EC Capture fail");
     if (ecResampler != NULL) {
         pa_memchunk ecChunk, rEcChunk;
         ecChunk.length = u->requestBytesEc;
@@ -1116,6 +1119,7 @@ static void PrepareEcCapture(struct Userdata *u)
     u->captureHandleEc = NULL;
     u->requestBytesEc = 0;
     u->bufferEc = NULL;
+    u->isEcCaptureSuccess = true;
 
     if (u->ecType == EC_NONE) {
         return;
