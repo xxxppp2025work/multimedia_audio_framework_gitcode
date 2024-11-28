@@ -107,7 +107,7 @@ private:
     void CheckBlueToothActiveMusicTime(int32_t safeVolume);
     void CheckWiredActiveMusicTime(int32_t safeVolume);
     void RestoreSafeVolume(AudioStreamType streamType, int32_t safeVolume);
-    void SetSafeVolumeCallback(AudioStreamType streamType);
+    void SetSafeVolumeCallback(AudioStreamType streamType, bool isUpdateUi);
     void SetDeviceSafeVolumeStatus();
     void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support);
     int32_t SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel);
