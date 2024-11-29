@@ -323,7 +323,7 @@ void UpdateAudioSceneFromInterruptFuzzTest(const uint8_t *rawData, size_t size)
 } // namespace AudioStandard
 } // namesapce OHOS
 
-OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard:TESTSIZE] = {
+OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::InitFuzzTest,
     OHOS::AudioStandard::AddDumpInfoFuzzTest,
     OHOS::AudioStandard::SetCallbackHandlerFuzzTest,

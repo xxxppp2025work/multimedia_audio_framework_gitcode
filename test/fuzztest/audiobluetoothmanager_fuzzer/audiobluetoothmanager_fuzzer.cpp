@@ -111,7 +111,7 @@ void FetchOutputDeviceForTrackInternalFuzzTest(const uint8_t *rawData, size_t si
 } // namespace AudioStandard
 } // namesapce OHOS
 
-OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard:TESTSIZE] = {
+OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::AudioBluetoothManagerFuzzTest,
     OHOS::AudioStandard::AudioA2dpManagerFuzzTest,
     OHOS::AudioStandard::AudioHfpManagerFuzzTest,

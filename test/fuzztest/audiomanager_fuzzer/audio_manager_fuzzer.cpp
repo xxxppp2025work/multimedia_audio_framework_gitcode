@@ -186,7 +186,7 @@ void AudioGroupManagerFuzzTest(const uint8_t* data, size_t size)
 } // namespace AudioStandard
 } // namesapce OHOS
 
-OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard:TESTSIZE] = {
+OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::AudioManagerFuzzTest,
     OHOS::AudioStandard::AudioRoutingManagerFuzzTest,
     OHOS::AudioStandard::AudioStreamManagerFuzzTest,

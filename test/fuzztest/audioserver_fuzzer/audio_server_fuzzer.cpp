@@ -510,7 +510,7 @@ void AudioServerUnsetOffloadTest(const uint8_t *rawData, size_t size)
 } // namespace AudioStandard
 } // namesapce OHOS
 
-OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard:TESTSIZE] = {
+OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::AudioServerFuzzTest,
     OHOS::AudioStandard::AudioServerCaptureSilentlyFuzzTest,
     OHOS::AudioStandard::AudioServerOffloadSetVolumeFuzzTest,
