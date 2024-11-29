@@ -426,8 +426,42 @@ int32_t BluetoothCapturerSourceInner::CaptureFrameWithEc(
     FrameDesc *fdesc, uint64_t &replyBytes,
     FrameDesc *fdescEc, uint64_t &replyBytesEc)
 {
-    AUDIO_ERR_LOG("Bluetooth captureFrameWithEc is not support!");
-    return ERR_NOT_SUPPORTED;
+    Trace trace("BluetoothCapturerSourceInner::CaptureFrameWithEc");
+    CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "Audio capture handle is nullpre");
+
+    if (attr_.sourceType != SOURCE_TYPE_EC) {
+        CHECK_AND_RETURN_RET_LOG(fdesc != nullptr && fdesc->frame != nullptr &&
+            fdescEc != nullptr && fdescEc->frame != nullptr, ERR_INVALID_PARAM, "frame desc error");
+    } else {
+        CHECK_AND_RETURN_RET_LOG(fdescEc != nullptr && fdescEc->frame != nullptr,
+            ERR_INVALID_PARAM, "frame desc error");
+    }
+
+    int64_t stamp = ClockTime::GetCurNano();
+    uint64_t frameLen = static_cast<uint64_t>(fdesc->frameLen);
+    uint64_t frameLenEc = static_cast<uint64_t>(fdescEc->frameLen);
+
+    int32_t ret = audioCapture_->CaptureFrame(audioCapture_, reinterpret_cast<int8_t*>(fdesc->frame),
+        frameLen, &replyBytes);
+    CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_NOT_STARTED, "Capture Frame Fail");
+    CheckLatencySignal(reinterpret_cast<uint8_t*>(fdesc->frame), replyBytes);
+
+    BufferDesc tmpBuffer = {reinterpret_cast<uint8_t*>(fdesc->frame), replyBytes, replyBytes};
+    DfxOperation(tmpBuffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    CheckUpdateState(fdesc->frame, frameLen);
+
+    stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
+    if (logMode_) {
+        AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost [%{public}" PRIu64 "]ms", frameLen, stamp);
+    }
+
+    AUDIO_WARNING_LOG("Bluetooth EC not supported, will be set zero");
+    if (memset_s(fdescEc->frame, fdescEc->frameLen, 0, fdesc->frameLen) != EOK) {
+        AUDIO_ERR_LOG("memset ec error");
+    } else {
+        replyBytesEc = frameLenEc;
+    }
+    return SUCCESS;
 }
 
 void BluetoothCapturerSourceInner::CheckUpdateState(char *frame, uint64_t replyBytes)

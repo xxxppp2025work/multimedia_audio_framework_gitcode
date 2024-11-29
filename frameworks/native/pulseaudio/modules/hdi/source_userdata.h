@@ -79,6 +79,7 @@ struct Userdata {
     void *bufferMicRef;
     uint32_t captureId;
     uint32_t renderId;
+    bool isEcCaptureSuccess;
     pa_resampler *defaultSceneResampler;
 };
 

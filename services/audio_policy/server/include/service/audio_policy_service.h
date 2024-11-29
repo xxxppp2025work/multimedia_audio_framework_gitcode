@@ -484,6 +484,8 @@ public:
     void SubscribeSafeVolumeEvent();
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
 
+    void UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -618,7 +620,7 @@ private:
     int32_t HandleScoInputDeviceFetched(shared_ptr<AudioDeviceDescriptor> &desc,
         vector<shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
 
-    void HandleA2dpInputDeviceFetched();
+    void HandleA2dpInputDeviceFetched(SourceType sourceType);
 
     void BluetoothScoDisconectForRecongnition();
 
