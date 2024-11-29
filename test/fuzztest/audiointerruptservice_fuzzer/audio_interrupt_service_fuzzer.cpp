@@ -325,23 +325,62 @@ void UpdateAudioSceneFromInterruptFuzzTest(const uint8_t *rawData, size_t size)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::InitFuzzTest(data, size);
-    OHOS::AudioStandard::AddDumpInfoFuzzTest(data, size);
-    OHOS::AudioStandard::SetCallbackHandlerFuzzTest(data, size);
-    OHOS::AudioStandard::SetAudioManagerInterruptCallbackFuzzTest(data, size);
-    OHOS::AudioStandard::ActivateAudioInterruptFuzzTest(data, size);
-    OHOS::AudioStandard::DeactivateAudioInterruptFuzzTest(data, size);
-    OHOS::AudioStandard::CreateAudioInterruptZoneFuzzTest(data, size);
-    OHOS::AudioStandard::ReleaseAudioInterruptZoneFuzzTest(data, size);
-    OHOS::AudioStandard::RemoveAudioInterruptZonePidsFuzzTest(data, size);
-    OHOS::AudioStandard::GetStreamInFocusFuzzTest(data, size);
-    OHOS::AudioStandard::GetSessionInfoInFocusFuzzTest(data, size);
-    OHOS::AudioStandard::DispatchInterruptEventWithSessionIdFuzzTest(data, size);
-    OHOS::AudioStandard::RequestAudioFocusFuzzTest(data, size);
-    OHOS::AudioStandard::AbandonAudioFocusFuzzTest(data, size);
-    OHOS::AudioStandard::SetAudioInterruptCallbackFuzzTest(data, size);
-    OHOS::AudioStandard::UnsetAudioInterruptCallbackFuzzTest(data, size);
-    OHOS::AudioStandard::AddAudioInterruptZonePidsFuzzTest(data, size);
-    OHOS::AudioStandard::UpdateAudioSceneFromInterruptFuzzTest(data, size);
+    uint8_t firstByte = *data;
+    switch(firstByte) {
+        case 0:
+            OHOS::AudioStandard::InitFuzzTest(data, size);
+            break;
+        case 1:
+            OHOS::AudioStandard::AddDumpInfoFuzzTest(data, size);
+            break;
+        case 2:
+            OHOS::AudioStandard::SetCallbackHandlerFuzzTest(data, size);
+            break;
+        case 3:
+            OHOS::AudioStandard::SetAudioManagerInterruptCallbackFuzzTest(data, size);
+            break;
+        case 4:
+            OHOS::AudioStandard::ActivateAudioInterruptFuzzTest(data, size);
+            break;
+        case 5:
+            OHOS::AudioStandard::DeactivateAudioInterruptFuzzTest(data, size);
+            break;
+        case 6:
+            OHOS::AudioStandard::CreateAudioInterruptZoneFuzzTest(data, size);
+            break;
+        case 7:
+            OHOS::AudioStandard::ReleaseAudioInterruptZoneFuzzTest(data, size);
+            break;
+        case 8:
+            OHOS::AudioStandard::RemoveAudioInterruptZonePidsFuzzTest(data, size);
+            break;
+        case 9:
+            OHOS::AudioStandard::GetStreamInFocusFuzzTest(data, size);
+            break;
+        case 10:
+            OHOS::AudioStandard::GetSessionInfoInFocusFuzzTest(data, size);
+            break;
+        case 11:
+            OHOS::AudioStandard::DispatchInterruptEventWithSessionIdFuzzTest(data, size);
+            break;
+        case 12:
+            OHOS::AudioStandard::AudioServerSetVoiceVolumeTest(data, size);
+            break;
+        case 13:
+            OHOS::AudioStandard::AbandonAudioFocusFuzzTest(data, size);
+            break;
+        case 14:
+            OHOS::AudioStandard::SetAudioInterruptCallbackFuzzTest(data, size);
+            break;
+        case 15:
+            OHOS::AudioStandard::UnsetAudioInterruptCallbackFuzzTest(data, size);
+            break;
+        case 16:
+            OHOS::AudioStandard::AddAudioInterruptZonePidsFuzzTest(data, size);
+            break;
+        default:
+            OHOS::AudioStandard::UpdateAudioSceneFromInterruptFuzzTest(data, size);
+            break;
+    }    
     return 0;
 }

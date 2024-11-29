@@ -113,9 +113,20 @@ void FetchOutputDeviceForTrackInternalFuzzTest(const uint8_t *rawData, size_t si
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioBluetoothManagerFuzzTest(data, size);
-    OHOS::AudioStandard::AudioA2dpManagerFuzzTest(data, size);
-    OHOS::AudioStandard::AudioHfpManagerFuzzTest(data, size);
-    OHOS::AudioStandard::FetchOutputDeviceForTrackInternalFuzzTest(data, size);
+    uint8_t firstByte = *data;
+    switch(firstByte) {
+        case 0:
+            OHOS::AudioStandard::AudioBluetoothManagerFuzzTest(data, size);
+            break;
+        case 1:
+            OHOS::AudioStandard::AudioA2dpManagerFuzzTest(data, size);
+            break;
+        case 2:
+            OHOS::AudioStandard::AudioHfpManagerFuzzTest(data, size);
+            break;
+        default:
+            OHOS::AudioStandard::FetchOutputDeviceForTrackInternalFuzzTest(data, size);
+            break;
+    }
     return 0;
 }

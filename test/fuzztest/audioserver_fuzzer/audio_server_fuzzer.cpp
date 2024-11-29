@@ -512,28 +512,77 @@ void AudioServerUnsetOffloadTest(const uint8_t *rawData, size_t size)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioServerFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerCaptureSilentlyFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerOffloadSetVolumeFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerNotifyStreamVolumeChangedFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerResetRouteForDisconnectFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerGetEffectLatencyTest(data, size);
-    OHOS::AudioStandard::AudioServerGetMaxAmplitudeTest(data, size);
-    OHOS::AudioStandard::AudioServerResetAudioEndpointTest(data, size);
-    OHOS::AudioStandard::AudioServerCreatePlaybackCapturerManagerTest(data, size);
-    OHOS::AudioStandard::AudioServerSetOutputDeviceSinkTest(data, size);
-    OHOS::AudioStandard::AudioServerRequestThreadPriorityTest(data, size);
-    OHOS::AudioStandard::AudioServerSetAudioMonoStateTest(data, size);
-    OHOS::AudioStandard::AudioServerSetVoiceVolumeTest(data, size);
-    OHOS::AudioStandard::AudioServerCheckRemoteDeviceStateTest(data, size);
-    OHOS::AudioStandard::AudioServerNotifyDeviceInfoTest(data, size);
-    OHOS::AudioStandard::AudioServerGetAudioParameterTest(data, size);
-    OHOS::AudioStandard::AudioServerSetAudioParameterTest(data, size);
-    OHOS::AudioStandard::AudioServerSetMicrophoneMuteTest(data, size);
-    OHOS::AudioStandard::AudioServerSetAudioBalanceValueTest(data, size);
-    OHOS::AudioStandard::AudioServerSetAudioSceneTest(data, size);
-    OHOS::AudioStandard::AudioServerUpdateLatencyTimestampTest(data, size);
-    OHOS::AudioStandard::AudioServerSetOffloadModeTest(data, size);
-    OHOS::AudioStandard::AudioServerUnsetOffloadTest(data, size);
+    uint8_t firstByte = *data;
+    switch(firstByte) {
+        case 0:
+            OHOS::AudioStandard::AudioServerFuzzTest(data, size);
+            break;
+        case 1:
+            OHOS::AudioStandard::AudioServerCaptureSilentlyFuzzTest(data, size);
+            break;
+        case 2:
+            OHOS::AudioStandard::AudioServerOffloadSetVolumeFuzzTest(data, size);
+            break;
+        case 3:
+            OHOS::AudioStandard::AudioServerNotifyStreamVolumeChangedFuzzTest(data, size);
+            break;
+        case 4:
+            OHOS::AudioStandard::AudioServerResetRouteForDisconnectFuzzTest(data, size);
+            break;
+        case 5:
+            OHOS::AudioStandard::AudioServerGetEffectLatencyTest(data, size);
+            break;
+        case 6:
+            OHOS::AudioStandard::AudioServerGetMaxAmplitudeTest(data, size);
+            break;
+        case 7:
+            OHOS::AudioStandard::AudioServerResetAudioEndpointTest(data, size);
+            break;
+        case 8:
+            OHOS::AudioStandard::AudioServerCreatePlaybackCapturerManagerTest(data, size);
+            break;
+        case 9:
+            OHOS::AudioStandard::AudioServerSetOutputDeviceSinkTest(data, size);
+            break;
+        case 10:
+            OHOS::AudioStandard::AudioServerRequestThreadPriorityTest(data, size);
+            break;
+        case 11:
+            OHOS::AudioStandard::AudioServerSetAudioMonoStateTest(data, size);
+            break;
+        case 12:
+            OHOS::AudioStandard::AudioServerSetVoiceVolumeTest(data, size);
+            break;
+        case 13:
+            OHOS::AudioStandard::AudioServerCheckRemoteDeviceStateTest(data, size);
+            break;
+        case 14:
+            OHOS::AudioStandard::AudioServerNotifyDeviceInfoTest(data, size);
+            break;
+        case 15:
+            OHOS::AudioStandard::AudioServerGetAudioParameterTest(data, size);
+            break;
+        case 16:
+            OHOS::AudioStandard::AudioServerSetAudioParameterTest(data, size);
+            break;
+        case 17:
+            OHOS::AudioStandard::AudioServerSetMicrophoneMuteTest(data, size);
+            break;
+        case 18:
+            OHOS::AudioStandard::AudioServerSetAudioBalanceValueTest(data, size);
+            break;
+        case 19:
+            OHOS::AudioStandard::AudioServerSetAudioSceneTest(data, size);
+            break;
+        case 20:
+            OHOS::AudioStandard::AudioServerUpdateLatencyTimestampTest(data, size);
+            break;
+        case 21:
+            OHOS::AudioStandard::AudioServerSetOffloadModeTest(data, size);
+            break;
+        default:
+            OHOS::AudioStandard::AudioServerUnsetOffloadTest(data, size);
+            break;
+    }
     return 0;
 }

@@ -187,9 +187,20 @@ void AudioGroupManagerFuzzTest(const uint8_t* data, size_t size)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioManagerFuzzTest(data, size);
-    OHOS::AudioStandard::AudioRoutingManagerFuzzTest(data, size);
-    OHOS::AudioStandard::AudioStreamManagerFuzzTest(data, size);
-    OHOS::AudioStandard::AudioGroupManagerFuzzTest(data, size);
+    uint8_t firstByte = *data;
+    switch(firstByte) {
+        case 0:
+            OHOS::AudioStandard::AudioManagerFuzzTest(data, size);
+            break;
+        case 1:
+            OHOS::AudioStandard::AudioRoutingManagerFuzzTest(data, size);
+            break;
+        case 2:
+            OHOS::AudioStandard::AudioStreamManagerFuzzTest(data, size);
+            break;
+        default:
+            OHOS::AudioStandard::AudioGroupManagerFuzzTest(data, size);
+            break;
+    }
     return 0;
 }
