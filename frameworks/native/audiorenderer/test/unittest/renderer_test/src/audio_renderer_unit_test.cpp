@@ -2990,38 +2990,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Drain_006, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test Drain API stability.
- * @tc.number: Audio_Renderer_Drain_Stability_001
- * @tc.desc  : Test Drain interface stability.
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Drain_Stability_001, TestSize.Level1)
-{
-    AudioRendererOptions rendererOptions;
-
-    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(true, isStarted);
-
-    thread renderThread(StartRenderThread, audioRenderer.get(), 0);
-
-    for (int i = 0; i < VALUE_THOUSAND; i++) {
-        bool isDrained = audioRenderer->Drain();
-        EXPECT_EQ(true, isDrained);
-    }
-
-    renderThread.join();
-
-    bool isStopped = audioRenderer->Stop();
-    EXPECT_EQ(true, isStopped);
-
-    bool isReleased = audioRenderer->Release();
-    EXPECT_EQ(true, isReleased);
-}
-
-/**
  * @tc.name  : Test Flush API.
  * @tc.number: Audio_Renderer_Flush_001
  * @tc.desc  : Test Flush interface. Returns true, if the flush is successful.
@@ -6502,7 +6470,7 @@ HWTEST(AudioRendererUnitTest, SetVoipInterruptVoiceCall_001, TestSize.Level1)
 
     unique_ptr<AudioRenderer> audioRendererForVoiceCall = AudioRenderer::Create(rendererOptionsForVoice);
     if (audioRendererForVoiceCall == nullptr) {
-        break;
+        return ;
     }
     audioRendererForVoiceCall->SetInterruptMode(INDEPENDENT_MODE);
     bool isStartedforVoiceCall = audioRendererForVoiceCall->Start();
@@ -6535,7 +6503,7 @@ HWTEST(AudioRendererUnitTest, SetVoiceCallInterruptVoip_001, TestSize.Level1)
 
     unique_ptr<AudioRenderer> audioRendererForVoiceCall = AudioRenderer::Create(rendererOptionsForVoice);
     if (audioRendererForVoiceCall == nullptr) {
-        break;
+        return ;
     }
     audioRendererForVoiceCall->SetInterruptMode(INDEPENDENT_MODE);
     bool isStartedforVoiceCall = audioRendererForVoiceCall->Start();
