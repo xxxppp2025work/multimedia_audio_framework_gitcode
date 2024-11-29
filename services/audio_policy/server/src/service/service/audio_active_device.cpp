@@ -46,7 +46,7 @@ const uint32_t USER_NOT_SELECT_BT = 1;
 const uint32_t USER_SELECT_BT = 2;
 #endif
 
-static std::string GetEncryptAddr(const std::string &addr)
+static std::string GetEncryptStr(const std::string &addr)
 {
     const int32_t START_POS = 6;
     const int32_t END_POS = 13;
@@ -99,7 +99,7 @@ int32_t AudioActiveDevice::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDev
     if (Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDescriptor->macAddress_ &&
         audioIOHandleMap_.CheckIOHandleExist(BLUETOOTH_SPEAKER)) {
         AUDIO_WARNING_LOG("a2dp device [%{public}s] is already active",
-            GetEncryptAddr(deviceDescriptor->macAddress_).c_str());
+            GetEncryptStr(deviceDescriptor->macAddress_).c_str());
         return SUCCESS;
     }
 
@@ -108,7 +108,7 @@ int32_t AudioActiveDevice::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDev
         activeBTDevice_ = lastActiveA2dpDevice;
         audioPolicyManager_.SetActiveDevice(lastDevice);
         AUDIO_ERR_LOG("Active [%{public}s] failed, using original [%{public}s] device",
-            GetEncryptAddr(activeBTDevice_).c_str(), GetEncryptAddr(lastActiveA2dpDevice).c_str());
+            GetEncryptStr(activeBTDevice_).c_str(), GetEncryptStr(lastActiveA2dpDevice).c_str());
         return result;
     }
 

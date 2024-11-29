@@ -223,7 +223,7 @@ void RemoteAudioCapturerSourceInner::DeInit()
     // remove map recorder.
 
     CHECK_AND_RETURN_LOG(allRemoteSources.count(this->deviceNetworkId_) > 0,
-        "not find %{public}s", this->deviceNetworkId_.c_str());
+        "not find %{public}s", GetEncryptStr(this->deviceNetworkId_).c_str());
 
     RemoteAudioCapturerSource *temp = allRemoteSources[this->deviceNetworkId_];
     allRemoteSources.erase(this->deviceNetworkId_);

@@ -173,7 +173,8 @@ IMmapAudioRendererSink *RemoteFastAudioRendererSink::GetInstance(const std::stri
     }
     RemoteFastAudioRendererSinkInner *audioRenderer =
         new(std::nothrow) RemoteFastAudioRendererSinkInner(deviceNetworkId);
-    AUDIO_DEBUG_LOG("New daudio remote fast render device networkId: [%{public}s].", deviceNetworkId.c_str());
+    AUDIO_DEBUG_LOG("New daudio remote fast render device networkId: [%{public}s].",
+        GetEncryptStr(deviceNetworkId).c_str());
     allRFSinks[deviceNetworkId] = audioRenderer;
     return audioRenderer;
 }
@@ -241,7 +242,7 @@ void RemoteFastAudioRendererSinkInner::DeInit()
     ClearRender();
 
     CHECK_AND_RETURN_LOG(allRFSinks.count(this->deviceNetworkId_) > 0,
-        "not find %{public}s", this->deviceNetworkId_.c_str());
+        "not find %{public}s", GetEncryptStr(this->deviceNetworkId_).c_str());
     RemoteFastAudioRendererSink *temp = allRFSinks[this->deviceNetworkId_];
     allRFSinks.erase(this->deviceNetworkId_);
     if (temp == nullptr) {

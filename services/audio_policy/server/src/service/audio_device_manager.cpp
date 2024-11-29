@@ -32,7 +32,7 @@ const int32_t START_POS = 6;
 const int32_t END_POS = 13;
 
 // LCOV_EXCL_START
-static std::string GetEncryptAddr(const std::string &addr)
+static std::string GetEncryptStr(const std::string &addr)
 {
     if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
         string macHead("card=");
@@ -436,7 +436,7 @@ std::string AudioDeviceManager::GetConnDevicesStr(const vector<shared_ptr<AudioD
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceCategory_)));
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->connectState_)));
         } else if (iter->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
-            devices.append(":" + GetEncryptAddr(iter->macAddress_));
+            devices.append(":" + GetEncryptStr(iter->macAddress_));
         }
         devices.append(" ");
     }
@@ -1111,7 +1111,7 @@ bool AudioDeviceManager::IsDeviceConnected(std::shared_ptr<AudioDeviceDescriptor
     }
     AUDIO_WARNING_LOG("Role:%{public}d networkId:%{public}s Type:%{public}d macAddress:%{public}s device not found",
         audioDeviceDescriptors->deviceRole_, GetEncryptStr(audioDeviceDescriptors->networkId_).c_str(),
-        audioDeviceDescriptors->deviceType_, GetEncryptAddr(audioDeviceDescriptors->macAddress_).c_str());
+        audioDeviceDescriptors->deviceType_, GetEncryptStr(audioDeviceDescriptors->macAddress_).c_str());
     return false;
 }
 
@@ -1130,7 +1130,7 @@ bool AudioDeviceManager::IsVirtualConnectedDevice(const std::shared_ptr<AudioDev
     if (itr != connectedDevices_.end()) {
         isVirtualDevice = true;
         AUDIO_INFO_LOG("Device[%{public}s] is virtual connection",
-            GetEncryptAddr(selectedDesc->macAddress_).c_str());
+            GetEncryptStr(selectedDesc->macAddress_).c_str());
     }
     return isVirtualDevice;
 }

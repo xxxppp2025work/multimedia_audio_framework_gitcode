@@ -39,7 +39,7 @@ namespace AudioStandard {
 
 static const int64_t WAIT_RINGER_MODE_MUTE_RESET_TIME_MS = 500; // 500ms
 const int32_t DUAL_TONE_RING_VOLUME = 0;
-static std::string GetEncryptAddr(const std::string &addr)
+static std::string GetEncryptStr(const std::string &addr)
 {
     const int32_t START_POS = 6;
     const int32_t END_POS = 13;
@@ -398,7 +398,7 @@ int32_t AudioVolumeManager::SetA2dpDeviceVolume(const std::string &macAddress, c
     audioA2dpDevice_.SetA2dpDeviceMute(macAddress, mute);
     audioPolicyManager_.SetAbsVolumeMute(mute);
     AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
-        GetEncryptAddr(macAddress).c_str(), sVolumeLevel);
+        GetEncryptStr(macAddress).c_str(), sVolumeLevel);
     CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERR_UNKNOWN, "safevolume did not deal");
     return SUCCESS;
 }
@@ -759,7 +759,7 @@ void AudioVolumeManager::SetAbsVolumeSceneAsync(const std::string &macAddress, c
     usleep(SET_BT_ABS_SCENE_DELAY_MS);
     std::string btDevice = audioActiveDevice_.GetActiveBtDeviceMac();
     AUDIO_INFO_LOG("success for macAddress:[%{public}s], support: %{public}d, active bt:[%{public}s]",
-        GetEncryptAddr(macAddress).c_str(), support, GetEncryptAddr(btDevice).c_str());
+        GetEncryptStr(macAddress).c_str(), support, GetEncryptStr(btDevice).c_str());
 
     if (btDevice == macAddress) {
         audioPolicyManager_.SetAbsVolumeScene(support);
@@ -779,7 +779,7 @@ int32_t AudioVolumeManager::SetDeviceAbsVolumeSupported(const std::string &macAd
             break;
         }
         CHECK_AND_RETURN_RET_LOG(retryCount != maxRetries, ERROR,
-            "failed, can't find device for macAddress:[%{public}s]", GetEncryptAddr(macAddress).c_str());;
+            "failed, can't find device for macAddress:[%{public}s]", GetEncryptStr(macAddress).c_str());;
         usleep(ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS);
     }
 
@@ -828,7 +828,7 @@ bool AudioVolumeManager::GetStreamMute(AudioStreamType streamType) const
         A2dpDeviceConfigInfo info;
         bool ret = audioA2dpDevice_.GetA2dpDeviceInfo(btDevice, info);
         if (ret == false || !info.absVolumeSupport) {
-            AUDIO_WARNING_LOG("Get failed for macAddress:[%{public}s]", GetEncryptAddr(btDevice).c_str());
+            AUDIO_WARNING_LOG("Get failed for macAddress:[%{public}s]", GetEncryptStr(btDevice).c_str());
         } else {
             return info.mute;
         }

@@ -44,7 +44,7 @@ const int32_t DATA_LINK_CONNECTING = 10;
 const int32_t DATA_LINK_CONNECTED = 11;
 const int32_t CONNECTION_TIMEOUT_IN_MS = 1000; // 1000ms
 
-static std::string GetEncryptAddr(const std::string &addr)
+static std::string GetEncryptStr(const std::string &addr)
 {
     const int32_t START_POS = 6;
     const int32_t END_POS = 13;
@@ -64,8 +64,8 @@ void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &devic
 {
     A2dpOffloadConnectionState state = audioA2dpOffloadFlag_.GetCurrentOffloadConnectedState();
     AUDIO_INFO_LOG("OnA2dpPlayingStateChanged current A2dpOffload MacAddr:%{public}s, incoming MacAddr:%{public}s, "
-        "currentStatus:%{public}d, incommingState:%{public}d", GetEncryptAddr(a2dpOffloadDeviceAddress_).c_str(),
-        GetEncryptAddr(deviceAddress).c_str(), state, playingState);
+        "currentStatus:%{public}d, incommingState:%{public}d", GetEncryptStr(a2dpOffloadDeviceAddress_).c_str(),
+        GetEncryptStr(deviceAddress).c_str(), state, playingState);
     if (deviceAddress != a2dpOffloadDeviceAddress_) {
         if (playingState == A2DP_STOPPED && state == CONNECTION_STATUS_CONNECTED) {
             return;
@@ -105,7 +105,7 @@ void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &devic
 void AudioA2dpOffloadManager::ConnectA2dpOffload(const std::string &deviceAddress,
     const std::vector<int32_t> &sessionIds)
 {
-    AUDIO_INFO_LOG("start connecting a2dpOffload for MacAddr:%{public}s.", GetEncryptAddr(deviceAddress).c_str());
+    AUDIO_INFO_LOG("start connecting a2dpOffload for MacAddr:%{public}s.", GetEncryptStr(deviceAddress).c_str());
     A2dpOffloadConnectionState state = audioA2dpOffloadFlag_.GetCurrentOffloadConnectedState();
     a2dpOffloadDeviceAddress_ = deviceAddress;
     connectionTriggerSessionIds_.assign(sessionIds.begin(), sessionIds.end());
