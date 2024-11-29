@@ -332,7 +332,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::AudioPolicyServiceSafeVolumeTest,
     OHOS::AudioStandard::AudioPolicyServiceInterfaceTest,
     OHOS::AudioStandard::AudioDeviceConnectTest
-}
+};
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {

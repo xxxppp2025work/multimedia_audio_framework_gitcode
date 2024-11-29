@@ -116,7 +116,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::AudioA2dpManagerFuzzTest,
     OHOS::AudioStandard::AudioHfpManagerFuzzTest,
     OHOS::AudioStandard::FetchOutputDeviceForTrackInternalFuzzTest
-}
+};
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
