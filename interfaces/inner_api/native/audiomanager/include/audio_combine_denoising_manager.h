@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef ST_AUDIO_NOISE_MANAGER_H
-#define ST_AUDIO_NOISE_MANAGER_H
+#ifndef ST_AUDIO_COMBINE_DENOISING_MANAGER_H
+#define ST_AUDIO_COMBINE_DENOISING_MANAGER_H
 
 #include "audio_system_manager.h"
 
@@ -38,4 +38,4 @@ public:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // ST_AUDIO_NOISE_MANAGER_H
+#endif // ST_AUDIO_COMBINE_DENOISING_MANAGER_H
