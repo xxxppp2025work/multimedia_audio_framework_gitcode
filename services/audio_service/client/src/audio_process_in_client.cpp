@@ -41,6 +41,7 @@
 #include "i_audio_process.h"
 #include "linear_pos_time_model.h"
 #include "audio_log_utils.h"
+#include "xcollie/watchdog.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -49,6 +50,8 @@ namespace {
 static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
 static const int64_t DELAY_RESYNC_TIME = 10000000000; // 10s
 static const int32_t HALF_FACTOR = 2;
+constexpr int32_t WATCHDOG_INTERVAL_TIME = 3000; // 3000ms
+constexpr int32_t WATCHDOG_DELAY_TIME = 10000; // 10000ms
 }
 
 class ProcessCbImpl;
@@ -160,6 +163,7 @@ private:
 
     void DoFadeInOut(uint64_t &curWritePos);
 
+    void WatchingRecordProcessCallbackFuc();
 private:
     static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
@@ -228,6 +232,8 @@ private:
     std::atomic<bool> startFadeout_ = false; // true-fade out when pause or stop stream
 
     sptr<ProcessCbImpl> processCbImpl_ = nullptr;
+
+    std::atomic_bool recordProcessCallbackFucThreadStatus_ { false };
 };
 
 // ProcessCbImpl --> sptr | AudioProcessInClientInner --> shared_ptr
@@ -1330,6 +1336,32 @@ bool AudioProcessInClientInner::KeepLoopRunning()
     return false;
 }
 
+void ProcessRemoveWatchDog(const std::string &message, const std::int32_t sessionId)
+{
+    std::string watchDogMessage = message;
+    watchDogMessage += std::to_string(sessionId);
+    HiviewDFX::Watchdog::GetInstance().RemovePeriodicalTask(watchDogMessage);
+    AUDIO_INFO_LOG("%{public}s end %{public}d", watchDogMessage.c_str(), sessionId);
+}
+
+void AudioProcessInClientInner::WatchingRecordProcessCallbackFuc()
+{
+    recordProcessCallbackFucThreadStatus_ = true;
+    auto taskFunc = [this]() {
+        if (recordProcessCallbackFucThreadStatus_) {
+            AUDIO_INFO_LOG("Set recordProcessCallbackFucThreadStatus_ to false");
+            recordProcessCallbackFucThreadStatus_ = false;
+        } else {
+            AUDIO_INFO_LOG("watchdog happened and process exit");
+        }
+    };
+    std::string watchDogMessage = "WatchingRecordProcessCallbackFuc";
+    watchDogMessage += std::to_string(sessionId_);
+    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask(watchDogMessage, taskFunc,
+        WATCHDOG_INTERVAL_TIME, WATCHDOG_DELAY_TIME);
+    AUDIO_INFO_LOG("watchdog start %{public}d", sessionId_);
+}
+
 void AudioProcessInClientInner::RecordProcessCallbackFuc()
 {
     AUDIO_INFO_LOG("%{public}s enter.", __func__);
@@ -1339,8 +1371,11 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
     int64_t wakeUpTime = ClockTime::GetCurNano();
     int64_t clientReadCost = 0;
 
+    // add watchdog
+    WatchingRecordProcessCallbackFuc();
     while (!isCallbackLoopEnd_ && audioBuffer_ != nullptr) {
         if (!KeepLoopRunning()) {
+            recordProcessCallbackFucThreadStatus_ = true;
             continue;
         }
         threadStatus_ = INRUNNING;
@@ -1348,6 +1383,7 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
         if (needReSyncPosition_ && RecordReSyncServicePos() == SUCCESS) {
             wakeUpTime = ClockTime::GetCurNano();
             needReSyncPosition_ = false;
+            recordProcessCallbackFucThreadStatus_ = true;
             continue;
         }
         int64_t curTime = ClockTime::GetCurNano();
@@ -1377,7 +1413,10 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
             AUDIO_WARNING_LOG("%{public}s wakeUpTime is too late...", __func__);
             ClockTime::RelativeSleep(spanSizeInMs_ * ONE_MILLISECOND_DURATION);
         }
+        recordProcessCallbackFucThreadStatus_ = true;
     }
+    // stop watchdog
+    ProcessRemoveWatchDog("WatchingRecordProcessCallbackFuc", sessionId_);
 }
 
 int32_t AudioProcessInClientInner::RecordReSyncServicePos()
