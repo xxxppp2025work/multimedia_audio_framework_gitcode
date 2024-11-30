@@ -179,7 +179,7 @@ void UpdateSpatializationStateFuzzTest(const uint8_t *rawData, size_t size)
     bool spatializationEnabled = *reinterpret_cast<const bool*>(rawData);
     bool headTrackingEnabled = *reinterpret_cast<const bool*>(rawData + sizeof(bool));
     AudioSpatializationState spatializationState = {spatializationEnabled, headTrackingEnabled};
-    
+
     AudioEffectChainManager::GetInstance()->UpdateSpatializationState(spatializationState);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
