@@ -84,8 +84,8 @@ enum class AudioCacheStatus {
     INITED,
     OPEN,
     CLOSE,
-}
-const AudioCacheStatus curAudioCacheStatus = AudioCacheStatus::UNINIT;
+};
+AudioCacheStatus curAudioCacheStatus = AudioCacheStatus::UNINIT;
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int SCHEDULE_REPORT_TIME_OUT_SECONDS = 2;
@@ -241,11 +241,8 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
         if (dumpParam == "init") {
             AudioCacheMgr::GetInstance().Init();
         } else if (dumpParam == "dump") {
-            int64_t startTime = 0;
-            int64_t endTime = 0;
-            AudioCacheMgr::GetInstance().DumpAllMemBlock(startTime, endTime);
-            dumpString = "Dump Memory time:[" + std::to_string(startTime) + "~" + std::to_string(endTime) + 
-            " ] \n";
+            AudioCacheMgr::GetInstance().DumpAllMemBlock();
+            dumpString = "calls DumpAllMemBlock success\n";
         } else if (dumpParam == "time") {
             int64_t startTime = 0;
             int64_t endTime = 0;
@@ -415,7 +412,8 @@ bool AudioServer::SetPcmDumpParameter(const std::vector<std::pair<std::string, s
         AudioCacheMgr::GetInstance().DeInit();
         curAudioCacheStatus = AudioCacheStatus::CLOSE;
     } else if (params[0].first == "UPLOAD") {
-        CHECK_AND_RETURN_RET_LOG(AudioCacheMgr::DumpAllMemBlock() == SUCCESS, false, "upload allMemBlock failed!");
+        CHECK_AND_RETURN_RET_LOG(AudioCacheMgr::GetInstance().DumpAllMemBlock() == SUCCESS, false,
+            "upload allMemBlock failed!");
     } else {
         AUDIO_ERR_LOG("invalid param %{public}s", params[0].first.c_str());
         return false;
@@ -438,21 +436,6 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
     if (key == PCM_DUMP_KEY) {
         ret = SetPcmDumpParameter(kvpairs);
         CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set audiodump parameters failed");
-        return SUCCESS;
-    }
-
-    int32_t setValue = 0;
-    if (key == PCM_PERSIST_DUMP_INIT) {
-        setValue = 1;
-        SetSysPara("persist.multimedia.audioflag.isEnablePcmCache", setValue);
-        ret = AudioCacheMgr::GetInstance().Init();
-        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "Init AudioCacheMgr failed!");
-        return SUCCESS;
-    } else if (key == PCM_PERSIST_DUMP_DEINIT) {
-        setValue = 0;
-        SetSysPara("persist.multimedia.audioflag.isEnablePcmCache", setValue);
-        ret = AudioCacheMgr::GetInstance().DeInit();
-        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "DeInit AudioCacheMgr failed!");
         return SUCCESS;
     }
 
@@ -588,7 +571,7 @@ bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
     bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, false, "get audiodump parameters no permission");
     if (subKeys[0] == "STATUS") {
-        result.push_back({std::to_string(curAudioCacheStatus), ""});
+        result.push_back({std::string(static_cast<int>(curAudioCacheStatus)), ""});
     } else if (subKeys[0] == "TIME") {
         int64_t startTime = 0;
         int64_t endTime = 0;
