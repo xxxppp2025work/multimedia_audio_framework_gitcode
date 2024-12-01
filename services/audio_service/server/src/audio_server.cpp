@@ -79,11 +79,13 @@ const std::string CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 constexpr const char *TEL_SATELLITE_SUPPORT = "const.telephony.satellite.supported";
 const std::string SATEMODEM_PARAMETER = "usedmodem=satemodem";
 const std::string PCM_DUMP_KEY = "PCM_DUMP";
-const std::string PCM_PERSIST_DUMP_INIT = "persist_dump_init";
-const std::string PCM_PERSIST_DUMP_DEINIT = "persist_dump_deinit";
-const std::string PCM_PERSIST_DUMP_TIME = "persist_dump_time";
-const std::string PCM_PERSIST_DUMP_DUMP = "persist_dump_dump";
-const std::string PCM_PERSIST_DUMP_MEMORY = "persist_dump_memory";
+enum class AudioCacheStatus {
+    UNINIT = 0,
+    INITED,
+    OPEN,
+    CLOSE,
+}
+const AudioCacheStatus curAudioCacheStatus = AudioCacheStatus::UNINIT;
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int SCHEDULE_REPORT_TIME_OUT_SECONDS = 2;
@@ -129,7 +131,6 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
     SOURCE_TYPE_VOICE_TRANSCRIPTION,
     SOURCE_TYPE_CAMCORDER
 };
-
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 
@@ -401,8 +402,24 @@ bool AudioServer::SetPcmDumpParameter(const std::vector<std::pair<std::string, s
 {
     bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, false, "set audiodump parameters failed: no permission.");
-    int32_t res = Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(params);
-    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "MediaMonitor SetMediaParameters failed.");
+    if (params[0].first == "INIT")
+    {
+        AudioCacheMgr::GetInstance().Init();
+        curAudioCacheStatus = AudioCacheStatus::INITED;
+    } else if (params[0].first == "OPEN") {
+        if (curAudioCacheStatus == AudioCacheStatus::UNINIT || curAudioCacheStatus == AudioCacheStatus::CLOSE) {
+            AudioCacheMgr::GetInstance().Init();
+        }
+        curAudioCacheStatus = AudioCacheStatus::OPEN;
+    } else if (params[0].first == "CLOSE") {
+        AudioCacheMgr::GetInstance().DeInit();
+        curAudioCacheStatus = AudioCacheStatus::CLOSE;
+    } else if (params[0].first == "UPLOAD") {
+        CHECK_AND_RETURN_RET_LOG(AudioCacheMgr::DumpAllMemBlock() == SUCCESS, false, "upload allMemBlock failed!");
+    } else {
+        AUDIO_ERR_LOG("invalid param %{public}s", params[0].first.c_str());
+        return false;
+    }
     return true;
 }
 
@@ -413,6 +430,10 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "set extra parameters failed: not system app.");
     ret = VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "set extra parameters failed: no permission.");
+
+    ///////////////////////////////////////////////
+    AUDIO_INFO_LOG("kvpairs params %{public}s, %{public}s", kvpairs[0].first.c_str(), kvpairs[0].second.c_str());
+    //////////////////////////////////////////////
 
     if (key == PCM_DUMP_KEY) {
         ret = SetPcmDumpParameter(kvpairs);
@@ -566,8 +587,23 @@ bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
 {
     bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, false, "get audiodump parameters no permission");
-    int32_t res = Media::MediaMonitor::MediaMonitorManager::GetInstance().GetMediaParameters(subKeys, result);
-    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "MediaMonitor GetMediaParameters failed");
+    if (subKeys[0] == "STATUS") {
+        result.push_back({std::to_string(curAudioCacheStatus), ""});
+    } else if (subKeys[0] == "TIME") {
+        int64_t startTime = 0;
+        int64_t endTime = 0;
+        AudioCacheMgr::GetInstance().GetCachedDuration(startTime, endTime);
+        result.push_back({ClockTime::NanoTimeToString(startTime), ClockTime::NanoTimeToString(endTime)});
+    } else if (subKeys[0] == "MEMORY") {
+        size_t dataLength = 0;
+        size_t bufferLength = 0;
+        size_t structLength = 0;
+        AudioCacheMgr::GetInstance().GetCurMemoryCondition(dataLength, bufferLength, structLength);
+        result.push_back({std::to_string(dataLength), std::to_string(bufferLength + structLength)});
+    } else {
+        AUDIO_ERR_LOG("invalid param %{public}s", subKeys[0].c_str());
+        return false;
+    }
     return true;
 }
 
@@ -579,27 +615,6 @@ int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
         CHECK_AND_RETURN_RET_LOG(ret, ERROR, "get audiodump parameters failed");
         return SUCCESS;
     }
-
-    if (mainKey == PCM_PERSIST_DUMP_TIME) {
-        int64_t startTime = 0;
-        int64_t endTime = 0;
-        AudioCacheMgr::GetInstance().GetCachedDuration(startTime, endTime);
-        result.push_back({ClockTime::NanoTimeToString(startTime), ClockTime::NanoTimeToString(endTime)});
-        return SUCCESS;
-    } else if (mainKey == PCM_PERSIST_DUMP_DUMP) {
-        int64_t startTime = 0;
-        int64_t endTime = 0;
-        AudioCacheMgr::GetInstance().DumpAllMemBlock(startTime, endTime);
-        result.push_back({ClockTime::NanoTimeToString(startTime), ClockTime::NanoTimeToString(endTime)});
-        return SUCCESS;
-    } else if (mainKey == PCM_PERSIST_DUMP_MEMORY) {
-        size_t dataLength = 0;
-        size_t bufferLength = 0;
-        size_t structLength = 0;
-        AudioCacheMgr::GetInstance().GetCurMemoryCondition(dataLength, bufferLength, structLength);
-        result.push_back({std::to_string(dataLength), std::to_string(bufferLength + structLength)});
-        return SUCCESS;
-    } 
 
     if (audioParameterKeys.empty()) {
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");

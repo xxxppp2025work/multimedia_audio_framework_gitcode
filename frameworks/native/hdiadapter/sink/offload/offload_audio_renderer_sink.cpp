@@ -674,11 +674,14 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
+    /////////////////////////////////////////////////////////////////////////////////////
+    AUDIO_INFO_LOG("OffloadAudioRenderer renderFrame ret %{public}d, writenLen %{public}" PRIu64 "",ret, writeLen);
+    /////////////////////////////////////////////////////////////////////////////////////
     if (ret == 0 && writeLen != 0) {
-        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
         BufferDesc buffer = {reinterpret_cast<uint8_t *>(&data), len, len};
         DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
         if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+            DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
             AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
                 static_cast<void *>(&data), writeLen);
         }

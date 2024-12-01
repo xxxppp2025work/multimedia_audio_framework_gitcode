@@ -79,7 +79,7 @@ public:
     bool DeInit() override;
 
     void CacheData(std::string& dumpFileName, void* dataPointer, size_t dataLength) override;
-    int32_t DumpAllMemBlock(int64_t& startTime, int64_t& endTime) override;
+    int32_t DumpAllMemBlock() override;
     void GetCachedDuration(int64_t& startTime, int64_t& endTime) override;
     void GetCurMemoryCondition(size_t& dataLength, size_t& bufferLength, size_t& structLength) override;
 

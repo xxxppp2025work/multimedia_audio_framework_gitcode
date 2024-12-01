@@ -232,15 +232,13 @@ int32_t AudioCacheMgrInner::GetAvailableMemBlock(size_t dataLength, std::string&
     return ERROR;
 }
 
-int32_t AudioCacheMgrInner::DumpAllMemBlock(int64_t& startTime, int64_t& endTime)
+int32_t AudioCacheMgrInner::DumpAllMemBlock()
 {
     if (!isInited_.load()) {
         Trace trace("AudioCacheMgrInner::DumpAllMemBlock::NotInited");
         AUDIO_WARNING_LOG("not inited!");
         return ERR_ILLEGAL_STATE;
     }
-
-    GetCachedDuration(startTime, endTime); // will hold g_Mutex
 
     Trace trace("AudioCacheMgrInner::DumpAllMemBlock");
     bool targetStatus = false;
