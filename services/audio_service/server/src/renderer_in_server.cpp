@@ -301,6 +301,9 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
 void RendererInServer::StandByCheck()
 {
     Trace trace(traceTag_ + " StandByCheck:standByCounter_:" + std::to_string(standByCounter_.load()));
+    if (processConfig_.rendererInfo.streamUsage == StreamUsage::STREAM_USAGE_ULTRASONIC) {
+        return;
+    }
     AUDIO_INFO_LOG("sessionId:%{public}u standByCounter_:%{public}u standByEnable_:%{public}s ", streamIndex_,
         standByCounter_.load(), (standByEnable_ ? "true" : "false"));
 
