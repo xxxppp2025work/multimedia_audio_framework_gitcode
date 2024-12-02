@@ -62,6 +62,7 @@ private:
     void RequestAudioFocusInternal(MessageParcel &data, MessageParcel &reply);
     void AbandonAudioFocusInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamInFocusInternal(MessageParcel &data, MessageParcel &reply);
+    void GetStreamInFocusByUidInternal(MessageParcel &data, MessageParcel &reply);
     void GetSessionInfoInFocusInternal(MessageParcel &data, MessageParcel &reply);
     void GetDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void NotifyCapturerAddedInternal(MessageParcel &data, MessageParcel &reply);
@@ -93,6 +94,8 @@ private:
     void GetPreferredOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredInputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void SetClientCallbacksEnableInternal(MessageParcel &data, MessageParcel &reply);
+    void SetCallbackRendererInfoInternal(MessageParcel &data, MessageParcel &reply);
+    void SetCallbackCapturerInfoInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioFocusInfoListInternal(MessageParcel &data, MessageParcel &reply);
     void SetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);

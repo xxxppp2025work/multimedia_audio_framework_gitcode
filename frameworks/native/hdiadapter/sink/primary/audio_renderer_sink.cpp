@@ -253,6 +253,8 @@ private:
 
     // for device switch
     std::mutex switchDeviceMutex_;
+    // for adapter_
+    std::mutex sinkMutex_;
     int32_t muteCount_ = 0;
     std::atomic<bool> switchDeviceMute_ = false;
 
@@ -430,6 +432,7 @@ std::string AudioRendererSinkInner::GetDPDeviceAttrInfo(const std::string &condi
 
 std::string AudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("GetAudioParameter: key %{public}d, condition: %{public}s, halName: %{public}s",
         key, condition.c_str(), halName_.c_str());
     if (condition.starts_with("get_usb_info#C")) {
@@ -581,6 +584,7 @@ void AudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callb
 
 void AudioRendererSinkInner::DeInit()
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("DeInit.");
     started_ = false;
     sinkInited_ = false;
@@ -736,6 +740,7 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
 
 int32_t AudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;
     AUDIO_INFO_LOG("adapterNameCase_ :%{public}s", adapterNameCase_.c_str());
@@ -1047,7 +1052,7 @@ int32_t AudioRendererSinkInner::SetAudioRoute(DeviceType outputDevice, AudioRout
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "SetOutputRoutes failed with null adapter");
     int32_t ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    AUDIO_INFO_LOG("deviceType : %{public}d UpdateAudioRoute cost[%{public}" PRId64 "]ms", outputDevice, stamp);
+    AUDIO_WARNING_LOG("deviceType : %{public}d UpdateAudioRoute cost[%{public}" PRId64 "]ms", outputDevice, stamp);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UpdateAudioRoute failed");
 
     return SUCCESS;
@@ -1131,7 +1136,6 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector
     CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "Invalid audio devices.");
     DeviceType activeDevice = activeDevices.front();
-    AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d", audioScene, activeDevice);
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "invalid audioScene");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -1158,6 +1162,7 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector
             int32_t ret = audioRender_->SelectScene(audioRender_, &scene);
             CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED,
                 "Select scene FAILED: %{public}d", ret);
+            AUDIO_WARNING_LOG("scene: %{public}d, device: %{public}d", audioScene, activeDevice);
             currentAudioScene_ = audioScene;
             isAudioSceneUpdate = true;
         }
@@ -1392,14 +1397,17 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &dpInfoStr)
     std::string addressStr = dpInfoStr.substr(address_begin + std::strlen("address="),
         address_end - address_begin - std::strlen("address="));
 
-    if (!sampleRateStr.empty()) attr_.sampleRate = stoi(sampleRateStr);
-    if (!channeltStr.empty()) attr_.channel = static_cast<uint32_t>(stoi(channeltStr));
+    StringParser(sampleRateStr, attr_.sampleRate);
+    StringParser(channeltStr, attr_.channel);
+    
     attr_.address = addressStr;
     uint32_t formatByte = 0;
     if (attr_.channel <= 0 || attr_.sampleRate <= 0) {
         AUDIO_ERR_LOG("check attr failed channel[%{public}d] sampleRate[%{public}d]", attr_.channel, attr_.sampleRate);
     } else {
-        formatByte = static_cast<uint32_t>(stoi(bufferSize)) * BUFFER_CALC_1000MS / BUFFER_CALC_20MS
+        uint32_t bufferSizeValue = 0;
+        StringParser(bufferSize, bufferSizeValue);
+        formatByte = bufferSizeValue * BUFFER_CALC_1000MS / BUFFER_CALC_20MS
             / attr_.channel / attr_.sampleRate;
     }
 

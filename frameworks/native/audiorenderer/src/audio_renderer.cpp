@@ -45,6 +45,7 @@ static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
 static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_UNDERRUN_NUM = 100;
 constexpr int32_t TIME_OUT_SECONDS = 10;
+constexpr int32_t START_TIME_OUT_SECONDS = 15;
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_MUSIC, STREAM_USAGE_MUSIC},
     {STREAM_VOICE_CALL, STREAM_USAGE_VOICE_COMMUNICATION},
@@ -308,6 +309,7 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
 
     audioInterrupt_.audioFocusType.streamType = audioStreamType;
     audioInterrupt_.pid = appInfo_.appPid;
+    audioInterrupt_.uid = appInfo_.appUid;
     audioInterrupt_.mode = SHARE_MODE;
     audioInterrupt_.parallelPlayFlag = false;
 
@@ -659,9 +661,31 @@ bool AudioRendererPrivate::IsAllowedStartBackgroud()
     return ret;
 }
 
+bool AudioRendererPrivate::GetStartStreamResult(StateChangeCmdType cmdType)
+{
+    bool result = audioStream_->StartAudioStream(cmdType);
+    if (!result) {
+        AUDIO_ERR_LOG("Start audio stream failed");
+        std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
+        if (!audioStream_->GetSilentModeAndMixWithOthers()) {
+            int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+            if (ret != 0) {
+                AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
+            }
+        }
+    }
+
+    state_ = RENDERER_RUNNING;
+    return result;
+}
+
 bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 {
     Trace trace("AudioRenderer::Start");
+    AudioXCollie audioXCollie("AudioRendererPrivate::Start", START_TIME_OUT_SECONDS,
+        [](void *) {
+            AUDIO_ERR_LOG("Start timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
         "volume: %{public}f, interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType,
@@ -703,21 +727,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
         return true;
     }
 
-    bool result = audioStream_->StartAudioStream(cmdType);
-    if (!result) {
-        AUDIO_ERR_LOG("Start audio stream failed");
-        std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
-        if (!audioStream_->GetSilentModeAndMixWithOthers()) {
-            int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
-            if (ret != 0) {
-                AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
-            }
-        }
-    }
-
-    state_ = RENDERER_RUNNING;
-
-    return result;
+    return GetStartStreamResult(cmdType);
 }
 
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
@@ -1025,8 +1035,10 @@ void AudioRendererInterruptCallbackImpl::NotifyEvent(const InterruptEvent &inter
     if (cb_ != nullptr && interruptEvent.callbackToApp) {
         cb_->OnInterrupt(interruptEvent);
         AUDIO_DEBUG_LOG("Send interruptEvent to app successfully");
-    } else {
+    } else if (cb_ == nullptr) {
         AUDIO_WARNING_LOG("cb_==nullptr, failed to send interruptEvent");
+    } else {
+        AUDIO_INFO_LOG("callbackToApp is %{public}d", interruptEvent.callbackToApp);
     }
 }
 
@@ -1661,6 +1673,7 @@ void OutputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
 void OutputDeviceChangeWithInfoCallbackImpl::OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
     const AudioStreamDeviceChangeReasonExt reason)
 {
+    std::lock_guard<std::mutex> lock(audioRendererObjMutex_);
     AUDIO_INFO_LOG("Enter, session id: %{public}d, stream flag: %{public}d", sessionId, streamFlag);
     renderer_->SwitchStream(sessionId, streamFlag, reason);
 }
@@ -1825,6 +1838,7 @@ void AudioRendererPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryC
         abortRestore_ = false;
     }
 
+    SetDefaultOutputDevice(selectedDefaultOutputDevice_);
     if (GetStatus() == RENDERER_RUNNING) {
         GetAudioInterrupt(audioInterrupt_);
         int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
@@ -1899,7 +1913,7 @@ void AudioRendererPrivate::ActivateAudioConcurrency(const AudioStreamParams &aud
     } else if (streamClass == IAudioStream::FAST_STREAM) {
         rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
     } else {
-        std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors =
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors =
             AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo_);
         if (!deviceDescriptors.empty() && deviceDescriptors[0] != nullptr) {
             if ((deviceDescriptors[0]->deviceType_ == DEVICE_TYPE_USB_HEADSET ||

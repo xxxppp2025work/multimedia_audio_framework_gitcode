@@ -24,6 +24,7 @@
 #include <cinttypes>
 #include <thread>
 #include <future>
+#include <vector>
 
 #include "securec.h"
 #ifdef FEATURE_POWER_MANAGER
@@ -56,6 +57,8 @@ const int32_t BYTE_SIZE_SAMPLE_U8 = 1;
 const int32_t BYTE_SIZE_SAMPLE_S16 = 2;
 const int32_t BYTE_SIZE_SAMPLE_S24 = 3;
 const int32_t BYTE_SIZE_SAMPLE_S32 = 4;
+const uint32_t FRAME_TIME_LEN_MS = 20; // 20ms
+const uint32_t MILLISECONDS_PER_SECOND_MS = 1000;
 } // namespace
 
 static int32_t GetByteSizeByFormat(HdiAdapterFormat format)
@@ -209,11 +212,13 @@ private:
     int32_t DoSetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin, const std::string &deviceName = "");
 
     void CaptureThreadLoop();
-    void CaptureFrameEcInternal(const RingBuffer &ringBuf);
+    void CaptureFrameEcInternal(std::vector<uint8_t> &ecData);
+    int32_t ProcessCaptureBlockingEc(FrameDesc *fdescEc, uint64_t &replyBytesEc);
     int32_t StartNonblockingCapture();
     int32_t StopNonblockingCapture();
 
     int32_t DoStop();
+    int32_t StartCapture();
 
     CaptureAttr *hdiAttr_ = nullptr;
     IAudioSourceAttr attr_ = {};
@@ -466,6 +471,7 @@ AudioCapturerSourceInner::~AudioCapturerSourceInner()
     threadRunning_ = false;
     if (hdiAttr_ != nullptr) {
         free(hdiAttr_);
+        hdiAttr_ = nullptr;
     }
 }
 
@@ -811,15 +817,12 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     if (attr_.sourceType == SOURCE_TYPE_MIC_REF) {
         if (ringBuffer_ != nullptr) {
             Trace traceSec("CaptureRefOutput");
-            RingBuffer buffer = ringBuffer_->AcquireOutputBuffer();
-            int32_t ret = ringBuffer_->ReleaseOutputBuffer(buffer);
-            CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_READ_FAILED, "get data from ring buffer fail");
-            CHECK_AND_RETURN_RET_LOG(static_cast<uint64_t>(buffer.length) == requestBytes,
-                ERR_READ_FAILED, "buffer length is invalid");
-            if (memcpy_s(frame, requestBytes, buffer.data, requestBytes) != EOK) {
-                AUDIO_ERR_LOG("memcpy error");
+            int32_t ret = ringBuffer_->ReadDataFromRingBuffer(reinterpret_cast<uint8_t *>(frame), requestBytes);
+            if (ret == SUCCESS) {
+                replyBytes = requestBytes;
             } else {
-                replyBytes = static_cast<uint64_t>(buffer.length);
+                AUDIO_ERR_LOG("read micRef data from ringBuffer fail");
+                replyBytes = 0;
             }
         }
 
@@ -860,6 +863,23 @@ void AudioCapturerSourceInner::DfxOperation(BufferDesc &buffer, AudioSampleForma
     AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
+int32_t AudioCapturerSourceInner::ProcessCaptureBlockingEc(FrameDesc *fdescEc, uint64_t &replyBytesEc)
+{
+    if (ringBuffer_ != nullptr) {
+        Trace traceSec("CaptureEcOutput");
+        int32_t ret = ringBuffer_->ReadDataFromRingBuffer(reinterpret_cast<uint8_t *>(fdescEc->frame),
+            fdescEc->frameLen);
+        if (ret == SUCCESS) {
+            replyBytesEc = fdescEc->frameLen;
+        } else {
+            AUDIO_ERR_LOG("read ec data from ringBuffer fail");
+            replyBytesEc = 0;
+        }
+    }
+
+    return SUCCESS;
+}
+
 int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
     FrameDesc *fdesc, uint64_t &replyBytes,
     FrameDesc *fdescEc, uint64_t &replyBytesEc)
@@ -873,6 +893,10 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
     } else {
         CHECK_AND_RETURN_RET_LOG(fdescEc != nullptr && fdescEc->frame != nullptr,
             ERR_INVALID_PARAM, "frame desc error");
+    }
+
+    if (IsNonblockingSource(attr_.sourceType, adapterNameCase_)) {
+        return ProcessCaptureBlockingEc(fdescEc, replyBytesEc);
     }
 
     struct AudioFrameLen frameLen = {};
@@ -903,21 +927,23 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
                 frameInfo.replyBytesEc : fdescEc->frameLen;
         }
     }
+    CheckUpdateState(fdesc->frame, replyBytes);
     AudioCaptureFrameInfoFree(&frameInfo, false);
 
     return SUCCESS;
 }
 
-void AudioCapturerSourceInner::CaptureFrameEcInternal(const RingBuffer &ringBuf)
+void AudioCapturerSourceInner::CaptureFrameEcInternal(std::vector<uint8_t> &ecData)
 {
+    CHECK_AND_RETURN_LOG(audioCapture_, "audioCapture_ is nullptr");
     // mic frame just used for check, ec frame must be right
     struct AudioFrameLen frameLen = {};
-    frameLen.frameLen = static_cast<uint64_t>(ringBuf.length);
-    frameLen.frameEcLen = static_cast<uint64_t>(ringBuf.length);
+    frameLen.frameLen = static_cast<uint64_t>(ecData.size());
+    frameLen.frameEcLen = static_cast<uint64_t>(ecData.size());
     struct AudioCaptureFrameInfo frameInfo = {};
     int32_t ret = audioCapture_->CaptureFrameEc(audioCapture_, &frameLen, &frameInfo);
     if (ret >= 0 && frameInfo.frameEc != nullptr) {
-        if (memcpy_s(ringBuf.data, ringBuf.length, frameInfo.frameEc, frameInfo.replyBytesEc) != EOK) {
+        if (memcpy_s(ecData.data(), ecData.size(), frameInfo.frameEc, frameInfo.replyBytesEc) != EOK) {
             AUDIO_ERR_LOG("memcpy ec error");
         }
     }
@@ -931,24 +957,29 @@ void AudioCapturerSourceInner::CaptureThreadLoop()
         return;
     }
 
-    AUDIO_INFO_LOG("non blocking capture thread start, source type: %{public}d", attr_.sourceType);
+    uint32_t captureDataLen = FRAME_TIME_LEN_MS * attr_.sampleRate / MILLISECONDS_PER_SECOND_MS *
+        GetByteSizeByFormat(attr_.format) * attr_.channel;
+    AUDIO_INFO_LOG("non blocking capture thread start, source type: %{public}d, captureDataLen: %{public}u",
+        attr_.sourceType, captureDataLen);
+    std::vector<uint8_t> tempBuf;
+    tempBuf.resize(captureDataLen);
     ScheduleThreadInServer(getpid(), gettid());
     while (threadRunning_) {
         Trace trace("CaptureRefInput");
-        RingBuffer buffer = ringBuffer_->DequeueInputBuffer();
-        uint64_t replyBytes;
-        uint32_t requestBytes = static_cast<uint32_t>(buffer.length);
-        int32_t ret = 0;
+        uint64_t replyBytes = 0;
+        uint32_t requestBytes = static_cast<uint32_t>(tempBuf.size());
         if (attr_.sourceType == SOURCE_TYPE_MIC_REF) {
-            ret = audioCapture_->CaptureFrame(
-                audioCapture_, reinterpret_cast<int8_t *>(buffer.data), &requestBytes, &replyBytes);
+            CHECK_AND_RETURN_LOG(audioCapture_, "audioCapture_ is nullptr");
+            int32_t ret = audioCapture_->CaptureFrame(
+                audioCapture_, reinterpret_cast<int8_t *>(tempBuf.data()), &requestBytes, &replyBytes);
+            if (ret != SUCCESS) {
+                AUDIO_ERR_LOG("Capture frame failed");
+            }
         } else {
-            CaptureFrameEcInternal(buffer);
+            CaptureFrameEcInternal(tempBuf);
         }
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("Capture frame failed");
-        }
-        ringBuffer_->EnqueueInputBuffer(buffer);
+
+        ringBuffer_->WriteDataToRingBuffer(tempBuf.data(), tempBuf.size());
     }
     UnscheduleThreadInServer(getpid(), gettid());
     AUDIO_INFO_LOG("non blocking capture thread exit, source type: %{public}d", attr_.sourceType);
@@ -982,6 +1013,7 @@ float AudioCapturerSourceInner::GetMaxAmplitude()
 
 int32_t AudioCapturerSourceInner::StartNonblockingCapture()
 {
+    CHECK_AND_RETURN_RET_LOG(audioCapture_, ERR_INVALID_HANDLE, "audioCapture_ is nullptr");
     if (!started_) {
         int32_t ret = audioCapture_->Start(audioCapture_);
         if (ret < 0) {
@@ -1046,11 +1078,16 @@ int32_t AudioCapturerSourceInner::Start(void)
         + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
+    return StartCapture();
+}
+
+int32_t AudioCapturerSourceInner::StartCapture()
+{
     if (!started_) {
         if (audioCapturerSourceCallback_ != nullptr) {
             audioCapturerSourceCallback_->OnCapturerState(true);
         }
-
+        CHECK_AND_RETURN_RET_LOG(audioCapture_, ERR_INVALID_HANDLE, "audioCapture_ is nullptr");
         int32_t ret = audioCapture_->Start(audioCapture_);
         CHECK_AND_RETURN_RET(ret >= 0, ERR_NOT_STARTED);
         started_ = true;
@@ -1082,6 +1119,7 @@ int32_t AudioCapturerSourceInner::SetVolume(float left, float right)
 
 int32_t AudioCapturerSourceInner::GetVolume(float &left, float &right)
 {
+    CHECK_AND_RETURN_RET_LOG(audioCapture_, ERR_INVALID_HANDLE, "audioCapture_ is nullptr");
     float val = 0.0;
     audioCapture_->GetVolume(audioCapture_, &val);
     left = val;

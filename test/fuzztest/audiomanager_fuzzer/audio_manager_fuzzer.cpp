@@ -29,6 +29,9 @@ namespace AudioStandard {
 namespace {
     std::string g_networkId = "LocalDevice";
 }
+const uint8_t TESTSIZE = 4;
+typedef void (*TestPtr)(const uint8_t *, size_t);
+
 void AudioRendererStateCallbackFuzz::OnRendererStateChange(
     const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) {}
 
@@ -87,7 +90,7 @@ void AudioRoutingManagerFuzzTest(const uint8_t* data, size_t size)
     rendererInfo.contentType = *reinterpret_cast<const ContentType *>(data);
     rendererInfo.streamUsage = *reinterpret_cast<const StreamUsage *>(data);
     rendererInfo.rendererFlags = *reinterpret_cast<const int32_t *>(data);
-    std::vector<sptr<AudioDeviceDescriptor>> desc;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
 
     shared_ptr<AudioPreferredOutputDeviceChangeCallbackFuzz> preferredOutputCallbackFuzz =
         std::make_shared<AudioPreferredOutputDeviceChangeCallbackFuzz>();
@@ -102,7 +105,8 @@ void AudioRoutingManagerFuzzTest(const uint8_t* data, size_t size)
     shared_ptr<AudioPreferredInputDeviceChangeCallbackFuzz> preferredInputCallbackFuzz =
         std::make_shared<AudioPreferredInputDeviceChangeCallbackFuzz>();
     AudioRoutingManager::GetInstance()->GetPreferredInputDeviceForCapturerInfo(capturerInfo, desc);
-    AudioRoutingManager::GetInstance()->SetPreferredInputDeviceChangeCallback(capturerInfo, preferredInputCallbackFuzz);
+    AudioRoutingManager::GetInstance()->SetPreferredInputDeviceChangeCallback(
+        capturerInfo, preferredInputCallbackFuzz);
     AudioRoutingManager::GetInstance()->UnsetPreferredInputDeviceChangeCallback();
     AudioRoutingManager::GetInstance()->GetAvailableMicrophones();
 }
@@ -129,7 +133,8 @@ void AudioStreamManagerFuzzTest(const uint8_t* data, size_t size)
     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 
-    sptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor = new AudioStandard::AudioDeviceDescriptor();
+    std::shared_ptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor =
+        std::make_shared<AudioStandard::AudioDeviceDescriptor>();
     deviceDescriptor->deviceType_ = *reinterpret_cast<const DeviceType *>(data);
     deviceDescriptor->deviceRole_ = *reinterpret_cast<const DeviceRole *>(data);
     AudioStreamManager::GetInstance()->GetHardwareOutputSamplingRate(deviceDescriptor);
@@ -181,13 +186,24 @@ void AudioGroupManagerFuzzTest(const uint8_t* data, size_t size)
 } // namespace AudioStandard
 } // namesapce OHOS
 
+OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
+    OHOS::AudioStandard::AudioManagerFuzzTest,
+    OHOS::AudioStandard::AudioRoutingManagerFuzzTest,
+    OHOS::AudioStandard::AudioStreamManagerFuzzTest,
+    OHOS::AudioStandard::AudioGroupManagerFuzzTest
+};
+
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioManagerFuzzTest(data, size);
-    OHOS::AudioStandard::AudioRoutingManagerFuzzTest(data, size);
-    OHOS::AudioStandard::AudioStreamManagerFuzzTest(data, size);
-    OHOS::AudioStandard::AudioGroupManagerFuzzTest(data, size);
+    if (data == nullptr) {
+        return 0;
+    }
+    uint8_t firstByte = *data % OHOS::AudioStandard::TESTSIZE;
+    if (firstByte >= OHOS::AudioStandard::TESTSIZE) {
+        return 0;
+    }
+    g_testPtrs[firstByte](data, size);
     return 0;
 }

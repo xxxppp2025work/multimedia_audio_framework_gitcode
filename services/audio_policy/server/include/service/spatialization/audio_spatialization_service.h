@@ -50,16 +50,21 @@ public:
     bool IsSpatializationEnabled();
     bool IsSpatializationEnabled(const std::string address);
     int32_t SetSpatializationEnabled(const bool enable);
-    int32_t SetSpatializationEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
+    int32_t SetSpatializationEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
     bool IsHeadTrackingEnabled();
     bool IsHeadTrackingEnabled(const std::string address);
     int32_t SetHeadTrackingEnabled(const bool enable);
-    int32_t SetHeadTrackingEnabled(const sptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
+    int32_t SetHeadTrackingEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
     void HandleSpatializationEnabledChange(const bool &enabled);
-    void HandleSpatializationEnabledChange(const sptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
+    void HandleSpatializationEnabledChange(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
     void HandleHeadTrackingEnabledChange(const bool &enabled);
-    void HandleHeadTrackingEnabledChange(const sptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
-    AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage = StreamUsage::STREAM_USAGE_UNKNOWN);
+    void HandleHeadTrackingEnabledChange(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
+    AudioSpatializationState GetSpatializationState(
+        const StreamUsage streamUsage = StreamUsage::STREAM_USAGE_UNKNOWN);
     bool IsSpatializationSupported();
     bool IsSpatializationSupportedForDevice(const std::string address);
     bool IsHeadTrackingSupported();
@@ -117,7 +122,7 @@ private:
     bool isLoadedfromDb_ = false;
     AudioSpatializationState spatializationStateFlag_ = {false};
     std::unordered_map<std::string, AudioSpatializationState> addressToSpatialEnabledMap_;
-    AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
+    AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MUSIC;
     AudioSpatialDeviceType currSpatialDeviceType_{ EARPHONE_TYPE_OTHERS };
     std::vector<AudioRendererInfoForSpatialization> spatializationRendererInfoList_;
     std::mutex spatializationServiceMutex_;

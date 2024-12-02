@@ -54,6 +54,7 @@
             "drivers_interface_distributed_audio",
             "drivers_peripheral_bluetooth",
             "eventhandler",
+            "ffrt",
             "hdf_core",
             "hicollie",
             "hisysevent",
@@ -125,6 +126,7 @@
                 "header_files": [
                   "audio_system_manager.h",
                   "audio_stream_manager.h",
+                  "resource_manager_adapter.h",
                   "audio_group_manager.h",
                   "./audiocommon/include/audio_info.h",
                   "./audiocommon/include/audio_stream_change_info.h"
@@ -185,6 +187,16 @@
               "header": {
                 "header_files": [
                   "./audiocommon/include/audio_common_utils.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native"
+              }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/frameworks/native/offlineaudioeffect:offline_audio_effect",
+              "header": {
+                "header_files": [
+                  "./offlineaudioeffect/include/offline_audio_effect_manager.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native"
               }

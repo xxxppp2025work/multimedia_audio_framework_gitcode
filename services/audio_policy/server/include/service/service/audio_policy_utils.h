@@ -30,9 +30,17 @@
 #include "datashare_helper.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
+#include "audio_state_manager.h"
+#include "audio_device_manager.h"
+#include "audio_stream_collector.h"
+
+#include "audio_a2dp_offload_flag.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+const int64_t SET_BT_ABS_SCENE_DELAY_MS = 120000; // 120ms
+const int64_t CALL_IPC_COST_TIME_MS = 20000000; // 20ms
 
 class AudioPolicyUtils {
 public:
@@ -43,9 +51,40 @@ public:
     }
     void WriteServiceStartupError(std::string reason);
     std::string GetRemoteModuleName(std::string networkId, DeviceRole role);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevicesInner(AudioDeviceUsage usage);
+    void SetBtConnecting(bool flag);
+    int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc);
+    void ClearScoDeviceSuspendState(std::string macAddress = "");
+    int64_t GetCurrentTimeMS();
+    std::string GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType = PIPE_TYPE_UNKNOWN);
+    string ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat);
+    std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
+    uint32_t PcmFormatToBytes(AudioSampleFormat format);
+    std::string GetSourcePortName(DeviceType deviceType);
+    void UpdateDisplayName(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    void UpdateDisplayNameForRemote(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+    int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
+    void UpdateEffectDefaultSink(DeviceType deviceType);
+    std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelperInstance();
+    AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId,
+        DeviceRole deviceRole, DeviceType deviceType);
 private:
-    AudioPolicyUtils() {}
+    AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
+        audioStateManager_(AudioStateManager::GetAudioStateManager()),
+        audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
+        audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()) {}
     ~AudioPolicyUtils() {}
+    int32_t ErasePreferredDeviceByType(const PreferredType preferredType);
+public:
+    static int32_t startDeviceId;
+    static std::map<std::string, ClassType> portStrToEnum;
+private:
+    bool isBTReconnecting_ = false;
+    DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
+    AudioStreamCollector& streamCollector_;
+    AudioStateManager &audioStateManager_;
+    AudioDeviceManager &audioDeviceManager_;
+    AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
 };
 
 }

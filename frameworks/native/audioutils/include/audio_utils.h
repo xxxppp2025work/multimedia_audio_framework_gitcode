@@ -73,20 +73,13 @@ static constexpr unsigned int AUDIO_XCOLLIE_FLAG_RECOVERY = (1 << 1); // die whe
 
 class Util {
 public:
-    static bool IsDualToneStreamType(const AudioStreamType streamType)
-    {
-        return streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM;
-    }
+    static bool IsDualToneStreamType(const AudioStreamType streamType);
 
-    static bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage)
-    {
-        return usage == STREAM_USAGE_ALARM || usage == STREAM_USAGE_VOICE_RINGTONE || usage == STREAM_USAGE_RINGTONE;
-    }
+    static bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage);
 
-    static bool IsRingerAudioScene(const AudioScene &audioScene)
-    {
-        return audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING;
-    }
+    static bool IsRingerAudioScene(const AudioScene &audioScene);
+
+    static uint32_t GetSamplePerFrame(const AudioSampleFormat &format);
 };
 
 class Trace {
@@ -204,6 +197,9 @@ inline bool NotContain(const std::vector<V> &array, const V &value)
 }
 
 bool SetSysPara(const std::string& key, int32_t &value);
+template <typename T>
+void StringParser(std::string& param, T& result);
+
 template <typename T>
 bool GetSysPara(const char *key, T &value);
 
@@ -646,7 +642,6 @@ enum HdiRenderOffset : uint32_t {
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
-
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

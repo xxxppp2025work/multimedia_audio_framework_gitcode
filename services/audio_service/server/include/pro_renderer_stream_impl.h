@@ -43,8 +43,6 @@ public:
     int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency) override;
     int32_t GetLatency(uint64_t &latency) override;
     int32_t SetRate(int32_t rate) override;
-    int32_t SetLowPowerVolume(float volume) override;
-    int32_t GetLowPowerVolume(float &powerVolume) override;
     int32_t SetAudioEffectMode(int32_t effectMode) override;
     int32_t GetAudioEffectMode(int32_t &effectMode) override;
     int32_t SetPrivacyType(int32_t privacyType) override;
@@ -81,7 +79,6 @@ private:
     bool GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &nanoSec);
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate) const noexcept;
     AudioSampleFormat GetDirectFormat(AudioSampleFormat format) const noexcept;
-    uint32_t GetSamplePerFrame(AudioSampleFormat format) const noexcept;
     void ConvertSrcToFloat(const BufferDesc &bufferDesc);
     void ConvertFloatToDes(int32_t writeIndex);
     void GetStreamVolume();
@@ -108,7 +105,6 @@ private:
     size_t totalBytesWritten_;
     size_t sinkBytesWritten_;
     size_t minBufferSize_;
-    float powerVolumeFactor_;
     std::atomic<IStatus> status_;
     std::weak_ptr<IStatusCallback> statusCallback_;
     std::weak_ptr<IWriteCallback> writeCallback_;

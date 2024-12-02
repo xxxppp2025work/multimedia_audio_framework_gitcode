@@ -58,7 +58,6 @@ ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, b
       totalBytesWritten_(0),
       sinkBytesWritten_(0),
       minBufferSize_(0),
-      powerVolumeFactor_(1.f),
       status_(I_STATUS_INVALID),
       resample_(nullptr),
       processConfig_(processConfig),
@@ -160,7 +159,7 @@ int32_t ProRendererStreamImpl::InitParams()
             return ret;
         }
     }
-    uint32_t bufferSize = GetSamplePerFrame(desFormat_) * desSpanSize * desChannels;
+    uint32_t bufferSize = Util::GetSamplePerFrame(desFormat_) * desSpanSize * desChannels;
     sinkBuffer_.resize(DEFAULT_TOTAL_SPAN_COUNT, std::vector<char>(bufferSize, 0));
     for (int32_t i = 0; i < DEFAULT_TOTAL_SPAN_COUNT; i++) {
         writeQueue_.emplace(i);
@@ -173,7 +172,7 @@ int32_t ProRendererStreamImpl::InitParams()
 
 int32_t ProRendererStreamImpl::Start()
 {
-    Trace trace("ProRendererStreamImpl::Start");
+    Trace trace("ProRendererStreamImpl::Start::" + std::to_string(streamIndex_));
     isBlock_ = false;
     AUDIO_INFO_LOG("Enter");
     if (status_ == I_STATUS_INVALID) {
@@ -194,7 +193,7 @@ int32_t ProRendererStreamImpl::Start()
 
 int32_t ProRendererStreamImpl::Pause(bool isStandby)
 {
-    Trace trace("ProRendererStreamImpl::Pause");
+    Trace trace("ProRendererStreamImpl::Pause::" + std::to_string(streamIndex_));
     AUDIO_INFO_LOG("Enter");
     if (status_ == I_STATUS_STARTED) {
         status_ = I_STATUS_PAUSED;
@@ -202,7 +201,6 @@ int32_t ProRendererStreamImpl::Pause(bool isStandby)
     if (isFirstFrame_) {
         firstFrameSync_.notify_all();
     }
-    AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, 0.f);
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_PAUSED);
@@ -212,7 +210,7 @@ int32_t ProRendererStreamImpl::Pause(bool isStandby)
 
 int32_t ProRendererStreamImpl::Flush()
 {
-    Trace trace("ProRendererStreamImpl::Flush");
+    Trace trace("ProRendererStreamImpl::Flush::" + std::to_string(streamIndex_));
     AUDIO_INFO_LOG("reset total bytes");
     {
         std::lock_guard lock(enqueueMutex);
@@ -238,7 +236,7 @@ int32_t ProRendererStreamImpl::Flush()
 
 int32_t ProRendererStreamImpl::Drain()
 {
-    Trace trace("ProRendererStreamImpl::Drain");
+    Trace trace("ProRendererStreamImpl::Drain::" + std::to_string(streamIndex_));
     AUDIO_INFO_LOG("Enter");
     isDrain_ = true;
     if (!readQueue_.empty()) {
@@ -257,13 +255,12 @@ int32_t ProRendererStreamImpl::Drain()
 
 int32_t ProRendererStreamImpl::Stop()
 {
-    Trace trace("ProRendererStreamImpl::Stop");
+    Trace trace("ProRendererStreamImpl::Stop::" + std::to_string(streamIndex_));
     AUDIO_INFO_LOG("Enter");
     status_ = I_STATUS_STOPPED;
     if (isFirstFrame_) {
         firstFrameSync_.notify_all();
     }
-    AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, 0.f);
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STOPPED);
@@ -273,7 +270,7 @@ int32_t ProRendererStreamImpl::Stop()
 
 int32_t ProRendererStreamImpl::Release()
 {
-    Trace trace("ProRendererStreamImpl::Release");
+    Trace trace("ProRendererStreamImpl::Release::" + std::to_string(streamIndex_));
     AUDIO_INFO_LOG("Enter");
     status_ = I_STATUS_INVALID;
     isBlock_ = true;
@@ -343,18 +340,6 @@ int32_t ProRendererStreamImpl::SetRate(int32_t rate)
     return SUCCESS;
 }
 
-int32_t ProRendererStreamImpl::SetLowPowerVolume(float volume)
-{
-    powerVolumeFactor_ = volume; // todo power Volume Factor
-    return SUCCESS;
-}
-
-int32_t ProRendererStreamImpl::GetLowPowerVolume(float &powerVolume)
-{
-    powerVolume = powerVolumeFactor_;
-    return SUCCESS;
-}
-
 int32_t ProRendererStreamImpl::SetAudioEffectMode(int32_t effectMode)
 {
     return SUCCESS;
@@ -403,7 +388,7 @@ BufferDesc ProRendererStreamImpl::DequeueBuffer(size_t length)
 
 int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
 {
-    Trace trace("ProRendererStreamImpl::EnqueueBuffer");
+    Trace trace("ProRendererStreamImpl::EnqueueBuffer::" + std::to_string(streamIndex_));
     int32_t writeIndex = PopWriteBufferIndex();
     if (writeIndex < 0) {
         AUDIO_ERR_LOG("write index is empty.");
@@ -526,7 +511,7 @@ bool ProRendererStreamImpl::GetAudioTime(uint64_t &framePos, int64_t &sec, int64
 
 int32_t ProRendererStreamImpl::Peek(std::vector<char> *audioBuffer, int32_t &index)
 {
-    Trace trace("ProRendererStreamImpl::Peek");
+    Trace trace("ProRendererStreamImpl::Peek::" + std::to_string(streamIndex_));
     int32_t result = SUCCESS;
     if (isBlock_) {
         return ERR_WRITE_BUFFER;
@@ -571,7 +556,6 @@ int32_t ProRendererStreamImpl::Peek(std::vector<char> *audioBuffer, int32_t &ind
 
 int32_t ProRendererStreamImpl::ReturnIndex(int32_t index)
 {
-    Trace::Count("ProRendererStreamImpl::ReturnIndex", index);
     if (index < 0) {
         return SUCCESS;
     }
@@ -617,34 +601,10 @@ void ProRendererStreamImpl::PopSinkBuffer(std::vector<char> *audioBuffer, int32_
         index = readQueue_.front();
         readQueue_.pop();
         *audioBuffer = sinkBuffer_[index];
-        Trace::Count("ProRendererStreamImpl::PopSinkBuffer", index);
     }
     if (readQueue_.empty() && isDrain_) {
         drainSync_.notify_all();
     }
-}
-
-uint32_t ProRendererStreamImpl::GetSamplePerFrame(AudioSampleFormat format) const noexcept
-{
-    uint32_t audioPerSampleLength = 2; // 2 byte
-    switch (format) {
-        case AudioSampleFormat::SAMPLE_U8:
-            audioPerSampleLength = 1;
-            break;
-        case AudioSampleFormat::SAMPLE_S16LE:
-            audioPerSampleLength = 2; // 2 byte
-            break;
-        case AudioSampleFormat::SAMPLE_S24LE:
-            audioPerSampleLength = 3; // 3 byte
-            break;
-        case AudioSampleFormat::SAMPLE_S32LE:
-        case AudioSampleFormat::SAMPLE_F32LE:
-            audioPerSampleLength = 4; // 4 byte
-            break;
-        default:
-            break;
-    }
-    return audioPerSampleLength;
 }
 
 void ProRendererStreamImpl::SetOffloadDisable()
@@ -672,7 +632,7 @@ void ProRendererStreamImpl::ConvertSrcToFloat(const BufferDesc &bufferDesc)
 
 void ProRendererStreamImpl::ConvertFloatToDes(int32_t writeIndex)
 {
-    uint32_t samplePerFrame = GetSamplePerFrame(desFormat_);
+    uint32_t samplePerFrame = Util::GetSamplePerFrame(desFormat_);
     if (desFormat_ == AudioSampleFormat::SAMPLE_F32LE) {
         auto error = memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(), resampleDesBuffer.data(),
             resampleDesBuffer.size() * samplePerFrame);
@@ -703,18 +663,19 @@ void ProRendererStreamImpl::InitBasicInfo(const AudioStreamInfo &streamInfo)
     desSamplingRate_ = GetDirectSampleRate(streamInfo.samplingRate);
     desFormat_ = GetDirectFormat(streamInfo.format);
     spanSizeInFrame_ = (streamInfo.samplingRate * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
-    byteSizePerFrame_ = GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
+    byteSizePerFrame_ = Util::GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
     minBufferSize_ = spanSizeInFrame_ * byteSizePerFrame_;
     handleTimeModel_.ConfigSampleRate(currentRate_);
     bufferInfo_.channelCount = streamInfo.channels;
     bufferInfo_.format = streamInfo.format;
-    bufferInfo_.samplePerFrame = GetSamplePerFrame(streamInfo.format);
+    bufferInfo_.samplePerFrame = Util::GetSamplePerFrame(streamInfo.format);
     bufferInfo_.frameSize = spanSizeInFrame_;
 }
 
 void ProRendererStreamImpl::BlockStream() noexcept
 {
     isBlock_ = true;
+    AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, 0.f);
 }
 } // namespace AudioStandard
 } // namespace OHOS

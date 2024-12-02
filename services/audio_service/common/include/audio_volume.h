@@ -24,12 +24,20 @@ namespace OHOS {
 namespace AudioStandard {
 class StreamVolume;
 class SystemVolume;
+enum FadePauseState {
+    NO_FADE,
+    DO_FADE,
+    DONE_FADE,
+    INVALID_STATE
+};
+
 class AudioVolume {
 public:
     static AudioVolume *GetInstance();
     ~AudioVolume();
 
-    float GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass);
+    float GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass); // all volume
+    float GetStreamVolume(uint32_t sessionId); // only stream volume
 
     // history volume
     float GetHistoryVolume(uint32_t sessionId);
@@ -56,6 +64,10 @@ public:
     void Dump(std::string &dumpString);
     void Monitor(uint32_t sessionId, bool isOutput);
 
+    void SetFadeoutState(uint32_t streamIndex, uint32_t fadeoutState);
+    uint32_t GetFadeoutState(uint32_t streamIndex);
+    void RemoveFadeoutState(uint32_t streamIndex);
+
 private:
     AudioVolume();
 
@@ -66,6 +78,9 @@ private:
     std::unordered_map<uint32_t, std::pair<float, int32_t>> monitorVolume_ {};
     std::shared_mutex volumeMutex_ {};
     std::shared_mutex systemMutex_ {};
+
+    std::shared_mutex fadoutMutex_ {};
+    std::unordered_map<uint32_t, uint32_t> fadeoutState_{};
 };
 
 class StreamVolume {

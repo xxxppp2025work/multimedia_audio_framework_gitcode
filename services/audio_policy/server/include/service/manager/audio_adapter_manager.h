@@ -91,7 +91,7 @@ public:
 
     AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioModuleInfo);
 
-    int32_t CloseAudioPort(AudioIOHandle ioHandle);
+    int32_t CloseAudioPort(AudioIOHandle ioHandle, bool isSync = false);
 
     int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name);
 
@@ -146,6 +146,8 @@ public:
 
     void SetAbsVolumeMute(bool mute);
 
+    void SetDataShareReady(std::atomic<bool> isDataShareReady);
+
     bool IsAbsVolumeMute() const;
 
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
@@ -167,6 +169,10 @@ public:
 
     int32_t SetDeviceSafeTime(DeviceType deviceType, int64_t time);
 
+    int32_t SetRestoreVolumeLevel(DeviceType deviceType, int32_t volume);
+
+    int32_t GetRestoreVolumeLevel(DeviceType deviceType);
+
     int32_t GetSafeVolumeLevel() const;
 
     int32_t GetSafeVolumeTimeout() const;
@@ -186,6 +192,10 @@ public:
     void HandleRingerMode(AudioRingerMode ringerMode);
 
     void SetAudioServerProxy(sptr<IStandardAudioService> gsp);
+
+    void SetOffloadSessionId(uint32_t sessionId);
+
+    void ResetOffloadSessionId();
 private:
     friend class PolicyCallbackImpl;
 
@@ -228,6 +238,7 @@ private:
     std::string GetMuteKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
     void InitSystemSoundUriMap();
     void InitVolumeMapIndex();
+    void InitBootAnimationVolume();
     void UpdateVolumeMapIndex();
     void GetVolumePoints(AudioVolumeType streamType, DeviceVolumeType deviceType,
         std::vector<VolumePoint> &volumePoints);
@@ -284,6 +295,8 @@ private:
     int64_t safeActiveTime_ = 0;
     int64_t safeActiveBtTime_ = 0;
     int32_t safeVolumeTimeout_ = DEFAULT_SAFE_VOLUME_TIMEOUT;
+    int32_t safeActiveVolume_ = 0;
+    int32_t safeActiveBtVolume_ = 0;
     bool isWiredBoot_ = true;
     bool isBtBoot_ = true;
     int32_t curActiveCount_ = 0;
@@ -308,6 +321,7 @@ private:
     bool isAllCopyDone_ = false;
     bool isNeedConvertSafeTime_ = false;
     sptr<IStandardAudioService> audioServerProxy_ = nullptr;
+    std::optional<uint32_t> offloadSessionID_;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

@@ -107,9 +107,40 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
     }
     float volumeFloat = volumeStream * volumeSystem;
     if (monitorVolume_.find(sessionId) != monitorVolume_.end()) {
+        if (monitorVolume_[sessionId].first != volumeFloat) {
+            AUDIO_INFO_LOG("volume, sessionId:%{public}u, volume:%{public}f, volumeType:%{public}d,"
+                " deviceClass:%{public}s, stream volume:%{public}f, system volume:%{public}f",
+                sessionId, volumeFloat, volumeType, deviceClass.c_str(), volumeStream, volumeSystem);
+        }
         monitorVolume_[sessionId] = {volumeFloat, volumeLevel};
     }
     return volumeFloat;
+}
+
+float AudioVolume::GetStreamVolume(uint32_t sessionId)
+{
+    Trace trace("AudioVolume::GetStreamVolume sessionId:" + std::to_string(sessionId));
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
+    float volumeStream = 1.0f;
+    auto it = streamVolume_.find(sessionId);
+    if (it != streamVolume_.end()) {
+        volumeStream =
+            it->second.isMuted_ ? 0.0f : it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_;
+        AUDIO_DEBUG_LOG("stream volume, sessionId:%{public}u, volume:%{public}f, duck:%{public}f, lowPower:%{public}f,"
+            " isMuted:%{public}d, streamVolumeSize:%{public}zu",
+            sessionId, it->second.volume_, it->second.duckFactor_, it->second.lowPowerFactor_, it->second.isMuted_,
+            streamVolume_.size());
+    } else {
+        AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u, streamVolumeSize:%{public}zu",
+            sessionId, streamVolume_.size());
+    }
+    if (monitorVolume_.find(sessionId) != monitorVolume_.end()) {
+        if (monitorVolume_[sessionId].first != volumeStream) {
+            AUDIO_INFO_LOG("volume, sessionId:%{public}u, stream volume:%{public}f", sessionId, volumeStream);
+        }
+        monitorVolume_[sessionId] = {volumeStream, 15}; // 15 level only stream volume
+    }
+    return volumeStream;
 }
 
 float AudioVolume::GetHistoryVolume(uint32_t sessionId)
@@ -402,6 +433,27 @@ void AudioVolume::Monitor(uint32_t sessionId, bool isOutput)
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
     }
 }
+
+void AudioVolume::SetFadeoutState(uint32_t streamIndex, uint32_t fadeoutState)
+{
+    std::unique_lock<std::shared_mutex> lock(fadoutMutex_);
+    fadeoutState_.insert_or_assign(streamIndex, fadeoutState);
+}
+
+uint32_t AudioVolume::GetFadeoutState(uint32_t streamIndex)
+{
+    std::shared_lock<std::shared_mutex> lock(fadoutMutex_);
+    auto it = fadeoutState_.find(streamIndex);
+    if (it != fadeoutState_.end()) { return it->second; }
+    AUDIO_WARNING_LOG("No such streamIndex in map!");
+    return INVALID_STATE;
+}
+
+void AudioVolume::RemoveFadeoutState(uint32_t streamIndex)
+{
+    std::unique_lock<std::shared_mutex> lock(fadoutMutex_);
+    fadeoutState_.erase(streamIndex);
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -417,6 +469,11 @@ float GetCurVolume(uint32_t sessionId, const char *streamType, const char *devic
     int32_t stream = AudioVolume::GetInstance()->ConvertStreamTypeStrToInt(streamType);
     AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(stream));
     return AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass);
+}
+
+float GetStreamVolume(uint32_t sessionId)
+{
+    return AudioVolume::GetInstance()->GetStreamVolume(sessionId);
 }
 
 float GetPreVolume(uint32_t sessionId)
@@ -449,6 +506,16 @@ bool IsSameVolume(float x, float y)
 void MonitorVolume(uint32_t sessionId, bool isOutput)
 {
     AudioVolume::GetInstance()->Monitor(sessionId, isOutput);
+}
+
+void SetFadeoutState(uint32_t streamIndex, uint32_t fadeoutState)
+{
+    AudioVolume::GetInstance()->SetFadeoutState(streamIndex, fadeoutState);
+}
+
+uint32_t GetFadeoutState(uint32_t streamIndex)
+{
+    return AudioVolume::GetInstance()->GetFadeoutState(streamIndex);
 }
 #ifdef __cplusplus
 }

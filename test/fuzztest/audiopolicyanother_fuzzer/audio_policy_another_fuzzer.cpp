@@ -31,6 +31,8 @@ const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
 const int32_t SYSTEM_ABILITY_ID = 3009;
 const bool RUN_ON_CREATE = false;
 const int32_t LIMITSIZE = 4;
+const uint8_t TESTSIZE = 7;
+typedef void (*TestPtr)(const uint8_t *, size_t);
 
 AudioPolicyServer* GetServerPtr()
 {
@@ -131,7 +133,8 @@ void AudioDeviceFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->SetMicrophoneMutePersistent(mute, PolicyType::PRIVACY_POLCIY_TYPE);
     GetServerPtr()->GetPersistentMicMuteState();
 
-    const sptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor = new AudioStandard::AudioDeviceDescriptor();
+    const std::shared_ptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor =
+        std::make_shared<AudioStandard::AudioDeviceDescriptor>();
     CastType type = *reinterpret_cast<const CastType *>(rawData);
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     GetServerPtr()->ConfigDistributedRoutingRole(deviceDescriptor, type);
@@ -234,7 +237,8 @@ void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
     AudioPipeType type = *reinterpret_cast<const AudioPipeType *>(rawData);
     GetServerPtr()->MoveToNewPipe(sessionId, type);
 
-    sptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor = new AudioStandard::AudioDeviceDescriptor();
+    std::shared_ptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor =
+        std::make_shared<AudioStandard::AudioDeviceDescriptor>();
     deviceDescriptor->deviceType_ = *reinterpret_cast<const DeviceType *>(rawData);
     deviceDescriptor->deviceRole_ = *reinterpret_cast<const DeviceRole *>(rawData);
     GetServerPtr()->GetHardwareOutputSamplingRate(deviceDescriptor);
@@ -324,24 +328,33 @@ void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)
 } // namespace AudioStandard
 } // namesapce OHOS
 
-extern "C" int LLVMFuzzerInitialize(const uint8_t *data, size_t size)
+extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::AudioStandard::GetServerPtr();
     return 0;
 }
 
+OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
+    OHOS::AudioStandard::AudioVolumeFuzzTest,
+    OHOS::AudioStandard::AudioDeviceFuzzTest,
+    OHOS::AudioStandard::AudioInterruptFuzzTest,
+    OHOS::AudioStandard::AudioPolicyFuzzTest,
+    OHOS::AudioStandard::AudioPolicyOtherFuzzTest,
+    OHOS::AudioStandard::AudioVolumeKeyCallbackStub,
+    OHOS::AudioStandard::AudioSessionFuzzTest
+};
+
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioVolumeFuzzTest(data, size);
-    OHOS::AudioStandard::AudioDeviceFuzzTest(data, size);
-    OHOS::AudioStandard::AudioInterruptFuzzTest(data, size);
-    OHOS::AudioStandard::AudioPolicyFuzzTest(data, size);
-    OHOS::AudioStandard::AudioPolicyOtherFuzzTest(data, size);
-    OHOS::AudioStandard::AudioVolumeKeyCallbackStub(data, size);
-    OHOS::AudioStandard::AudioSessionFuzzTest(data, size);
-
+    if (data == nullptr) {
+        return 0;
+    }
+    uint8_t firstByte = *data % OHOS::AudioStandard::TESTSIZE;
+    if (firstByte >= OHOS::AudioStandard::TESTSIZE) {
+        return 0;
+    }
+    g_testPtrs[firstByte](data, size);
     return 0;
 }
-

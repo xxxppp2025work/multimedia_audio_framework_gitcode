@@ -95,6 +95,8 @@ public:
 
     int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe) override;
 
+    int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
+
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
 };
 
@@ -161,6 +163,11 @@ int32_t MockPolicyProvider::GetMaxRendererInstances()
 }
 
 int32_t MockPolicyProvider::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
+{
+    return SUCCESS;
+}
+
+int32_t MockPolicyProvider::NotifyCapturerRemoved(uint64_t sessionId)
 {
     return SUCCESS;
 }
@@ -342,11 +349,12 @@ void CallStreamFuncs(sptr<IpcStreamInServer> ipcStream)
     ipcStream->SetOffloadMode(param, false);
     ipcStream->UnsetOffloadMode();
     ipcStream->GetOffloadApproximatelyCacheTime(framePos, timestamp, timestamp, timestamp);
-    ipcStream->OffloadSetVolume(volume);
     ipcStream->UpdateSpatializationState(true, false);
     ipcStream->GetStreamManagerType();
     ipcStream->SetSilentModeAndMixWithOthers(false);
-    ipcStream->SetClientVolume(false, false);
+    ipcStream->SetClientVolume();
+    ipcStream->SetMute(false);
+    ipcStream->SetDuckFactor(volume);
     ipcStream->Stop();
     ipcStream->Release();
 }
@@ -448,7 +456,7 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
 } // namespace AudioStandard
 } // namesapce OHOS
 
-extern "C" int LLVMFuzzerInitialize(const uint8_t *data, size_t size)
+extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::AudioStandard::AudioFuzzTestGetPermission();
     SetParameter("persist.multimedia.audioflag.fast.disableseparate", "1");
