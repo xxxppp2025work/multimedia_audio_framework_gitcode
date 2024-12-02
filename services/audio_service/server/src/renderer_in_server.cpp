@@ -34,6 +34,7 @@
 #include "audio_enhance_chain_manager.h"
 #include "media_monitor_manager.h"
 #include "audio_volume.h"
+#include "audio_log_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -47,6 +48,7 @@ namespace {
     static const float FADINGOUT_BEGIN = 1.0f;
     static const float FADINGOUT_END = 0.0f;
     static constexpr int32_t ONE_MINUTE = 60;
+    static const int32_t HALF_FACTOR = 2;
     const int32_t MEDIA_UID = 1013;
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
@@ -499,9 +501,9 @@ int32_t RendererInServer::WriteData()
                 DoFadingOut(bufferDesc);
             }
         }
-        Trace::CountVolume(traceTag_, *bufferDesc.buffer);
         stream_->EnqueueBuffer(bufferDesc);
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
+        DfxOperation(bufferDesc, processConfig_.streamInfo.format, processConfig_.streamInfo.channels);
         if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
             Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
                 static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
@@ -519,6 +521,17 @@ int32_t RendererInServer::WriteData()
     standByCounter_ = 0;
     lastWriteTime_ = ClockTime::GetCurNano();
     return SUCCESS;
+}
+
+void RendererInServer::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
+{
+    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
+    if (channel == MONO) {
+        Trace::Count(logUtilsTag_, vols.volStart[0]);
+    } else {
+        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
+    }
+    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
