@@ -79,13 +79,6 @@ const std::string CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 constexpr const char *TEL_SATELLITE_SUPPORT = "const.telephony.satellite.supported";
 const std::string SATEMODEM_PARAMETER = "usedmodem=satemodem";
 const std::string PCM_DUMP_KEY = "PCM_DUMP";
-enum class AudioCacheStatus {
-    UNINIT = 0,
-    INITED,
-    OPEN,
-    CLOSE,
-};
-AudioCacheStatus curAudioCacheStatus = AudioCacheStatus::UNINIT;
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int SCHEDULE_REPORT_TIME_OUT_SECONDS = 2;
@@ -301,9 +294,9 @@ void AudioServer::OnStart()
     if (fastControlFlag == 1) {
         isFastControlled_ = true;
     }
-    int32_t isEnablePcmCache = 0;
-    GetSysPara("persist.multimedia.audioflag.isEnablePcmCache", isEnablePcmCache);
-    if (isEnablePcmCache) {
+    int32_t audioCacheState = 0;
+    GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
+    if (audioCacheState) {
         AudioCacheMgr::GetInstance().Init();
     }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
@@ -399,19 +392,21 @@ bool AudioServer::SetPcmDumpParameter(const std::vector<std::pair<std::string, s
 {
     bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, false, "set audiodump parameters failed: no permission.");
-    if (params[0].first == "INIT")
-    {
+    int32_t audioCacheState = 0;
+    GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
+    // audioCacheState 0:close, 1:open, 2:init
+    if (params[0].first == "INIT") {
         AudioCacheMgr::GetInstance().Init();
-        curAudioCacheStatus = AudioCacheStatus::INITED;
+        SetSysPara("persist.multimedia.audio.audioCacheState", 2);
     } else if (params[0].first == "OPEN") {
-        if (curAudioCacheStatus == AudioCacheStatus::UNINIT || curAudioCacheStatus == AudioCacheStatus::CLOSE) {
-            AudioCacheMgr::GetInstance().Init();
-        }
-        curAudioCacheStatus = AudioCacheStatus::OPEN;
+        AudioCacheMgr::GetInstance().Init();
+        SetSysPara("persist.multimedia.audio.audioCacheState", 1);
     } else if (params[0].first == "CLOSE") {
         AudioCacheMgr::GetInstance().DeInit();
-        curAudioCacheStatus = AudioCacheStatus::CLOSE;
+        SetSysPara("persist.multimedia.audio.audioCacheState", 0);
     } else if (params[0].first == "UPLOAD") {
+        CHECK_AND_RETURN_RET_LOG(audioCacheState == 1, false, 
+            "cannot upload, curAudioCacheState is %{public}d, not code 1!", audioCacheState);
         CHECK_AND_RETURN_RET_LOG(AudioCacheMgr::GetInstance().DumpAllMemBlock() == SUCCESS, false,
             "upload allMemBlock failed!");
     } else {
@@ -571,7 +566,9 @@ bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
     bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, false, "get audiodump parameters no permission");
     if (subKeys[0] == "STATUS") {
-        result.push_back({std::string(static_cast<int>(curAudioCacheStatus)), ""});
+        int32_t audioCacheState = 0;
+        GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
+        result.push_back({std::string(static_cast<int>(audioCacheState)), ""});
     } else if (subKeys[0] == "TIME") {
         int64_t startTime = 0;
         int64_t endTime = 0;
