@@ -118,6 +118,7 @@ private:
     void StandByCheck();
     bool ShouldEnableStandBy();
     int32_t OffloadSetVolumeInner();
+    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
 
 private:
     std::mutex statusLock_;
@@ -174,6 +175,8 @@ private:
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
     int32_t effectModeWhenDual_ = EFFECT_DEFAULT;
     int32_t renderEmptyCountForInnerCap_ = 0;
+    mutable int64_t volumeDataCount_ = 0;
+    std::string logUtilsTag_ = "";
 };
 } // namespace AudioStandard
 } // namespace OHOS
