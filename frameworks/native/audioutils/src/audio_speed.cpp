@@ -46,8 +46,8 @@ AudioSpeed::~AudioSpeed()
 int32_t AudioSpeed::Init()
 {
     sonicStream_ = sonicCreateStream(rate_, channels_);
-    LoadChangeSpeedFunc();
     CHECK_AND_RETURN_RET_LOG(sonicStream_ == nullptr, ERROR, "sonicCreateStream failed");
+    LoadChangeSpeedFunc();
 
     return SUCCESS;
 }
