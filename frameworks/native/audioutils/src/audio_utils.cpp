@@ -751,7 +751,7 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
     return float(curMaxAmplitude) / LONG_MAX;
 }
 
-bool SetSysPara(const std::string &key, int32_t &value)
+bool SetSysPara(const std::string &key, int32_t value)
 {
     auto res = SetParameter(key.c_str(), std::to_string(value).c_str());
     if (res < 0) {

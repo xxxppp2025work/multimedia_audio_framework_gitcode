@@ -203,7 +203,7 @@ inline bool NotContain(const std::vector<V> &array, const V &value)
     return std::find(array.begin(), array.end(), value) == array.end();
 }
 
-bool SetSysPara(const std::string& key, int32_t &value);
+bool SetSysPara(const std::string& key, int32_t value);
 template <typename T>
 bool GetSysPara(const char *key, T &value);
 

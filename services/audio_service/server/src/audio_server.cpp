@@ -568,7 +568,7 @@ bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
     if (subKeys[0] == "STATUS") {
         int32_t audioCacheState = 0;
         GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
-        result.push_back({std::string(static_cast<int>(audioCacheState)), ""});
+        result.push_back({std::to_string(static_cast<int>(audioCacheState)), ""});
     } else if (subKeys[0] == "TIME") {
         int64_t startTime = 0;
         int64_t endTime = 0;
