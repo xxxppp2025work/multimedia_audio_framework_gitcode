@@ -906,6 +906,16 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
             AUDIO_ERR_LOG("memcpy error");
         } else {
             replyBytes = (attr_.sourceType == SOURCE_TYPE_EC) ? 0 : fdesc->frameLen;
+            DumpFileUtil::WriteDumpFile(dumpFile_, fdesc->frame, replyBytes);
+            BufferDesc tmpBuffer = {reinterpret_cast<uint8_t*>(fdesc->frame), replyBytes, replyBytes};
+            AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate),
+                AudioEncodingType::ENCODING_PCM, static_cast<AudioSampleFormat>(attr_.format),
+                static_cast<AudioChannel>(attr_.channel));
+            VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
+            if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+                Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+                    static_cast<void*>(fdesc->frame), replyBytes);
+            }
         }
     }
     if (frameInfo.frameEc != nullptr) {
