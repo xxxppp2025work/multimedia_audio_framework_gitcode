@@ -617,7 +617,6 @@ void AudioPolicyParser::ParsePAConfigs(xmlNode &node)
 
             switch (GetPaConfigType(name)) {
                 case PAConfigType::AUDIO_LATENCY:
-                    portObserver_.OnAudioLatencyParsed((uint64_t)std::stoi(value));
                     globalConfigs_.globalPaConfigs_.audioLatency_ = value;
                     break;
                 case PAConfigType::SINK_LATENCY:

@@ -245,11 +245,6 @@ void AudioPolicyServiceThirdTest(const uint8_t* rawData, size_t size)
     GetServerPtr()->audioPolicyService_.RegisterRemoteDevStatusCallback();
     GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
         = DEVICE_TYPE_BLUETOOTH_A2DP;
-    uint32_t channelcount = *reinterpret_cast<const uint32_t*>(rawData);
-    GetServerPtr()->audioPolicyService_.ReconfigureAudioChannel(channelcount, DEVICE_TYPE_FILE_SINK);
-    GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_FILE_SINK;
-    GetServerPtr()->audioPolicyService_.ReconfigureAudioChannel(channelcount, DEVICE_TYPE_FILE_SINK);
-    GetServerPtr()->audioPolicyService_.ReconfigureAudioChannel(channelcount, DEVICE_TYPE_FILE_SOURCE);
     DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
     GetServerPtr()->audioPolicyService_.audioVolumeManager_.IsBlueTooth(deviceType);
     GetServerPtr()->audioPolicyService_.audioVolumeManager_.activeSafeTimeBt_ = ACTIVEBTTIME;

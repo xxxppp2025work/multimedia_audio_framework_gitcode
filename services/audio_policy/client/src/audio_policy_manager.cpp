@@ -912,41 +912,6 @@ int32_t AudioPolicyManager::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     return gsp->UpdateTracker(mode, streamChangeInfo);
 }
 
-bool AudioPolicyManager::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    SourceType sourceType)
-{
-    AUDIO_ERR_LOG("Not supported operation");
-    return false;
-}
-
-bool AudioPolicyManager::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    AudioPermissionState state)
-{
-    AUDIO_ERR_LOG("Not supported operation");
-    return false;
-}
-
-int32_t AudioPolicyManager::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->ReconfigureAudioChannel(count, deviceType);
-}
-
-int32_t AudioPolicyManager::GetAudioLatencyFromXml()
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->GetAudioLatencyFromXml();
-}
-
-uint32_t AudioPolicyManager::GetSinkLatencyFromXml()
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, 0, "audio policy manager proxy is NULL.");
-    return gsp->GetSinkLatencyFromXml();
-}
-
 int32_t AudioPolicyManager::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

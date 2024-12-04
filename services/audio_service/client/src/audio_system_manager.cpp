@@ -1086,11 +1086,6 @@ int32_t AudioSystemManager::AbandonAudioFocus(const AudioInterrupt &audioInterru
     return AudioPolicyManager::GetInstance().AbandonAudioFocus(clientId, audioInterrupt);
 }
 
-int32_t AudioSystemManager::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
-{
-    return AudioPolicyManager::GetInstance().ReconfigureAudioChannel(count, deviceType);
-}
-
 int32_t AudioSystemManager::GetVolumeGroups(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos)
 {
     return AudioPolicyManager::GetInstance().GetVolumeGroupInfos(networkId, infos);
@@ -1184,16 +1179,6 @@ bool AudioSystemManager::AbandonIndependentInterrupt(FocusType focusType)
     int32_t result = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
     AUDIO_DEBUG_LOG("result -> %{public}d", result);
     return (result == SUCCESS) ? true:false;
-}
-
-int32_t AudioSystemManager::GetAudioLatencyFromXml() const
-{
-    return AudioPolicyManager::GetInstance().GetAudioLatencyFromXml();
-}
-
-uint32_t AudioSystemManager::GetSinkLatencyFromXml() const
-{
-    return AudioPolicyManager::GetInstance().GetSinkLatencyFromXml();
 }
 
 int32_t AudioSystemManager::UpdateStreamState(const int32_t clientUid,

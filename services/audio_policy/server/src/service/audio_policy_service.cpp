@@ -2166,40 +2166,6 @@ void AudioPolicyService::RegisteredTrackerClientDied(pid_t uid)
     }
 }
 
-int32_t AudioPolicyService::ReconfigureAudioChannel(const uint32_t &channelCount, DeviceType deviceType)
-{
-    if (audioActiveDevice_.GetCurrentOutputDeviceType() != DEVICE_TYPE_FILE_SINK) {
-        AUDIO_INFO_LOG("FILE_SINK_DEVICE is not active. Cannot reconfigure now");
-        return ERROR;
-    }
-
-    std::string module = FILE_SINK;
-
-    if (deviceType == DeviceType::DEVICE_TYPE_FILE_SINK) {
-        CHECK_AND_RETURN_RET_LOG(channelCount <= CHANNEL_8 && channelCount >= MONO, ERROR, "Invalid sink channel");
-        module = FILE_SINK;
-    } else if (deviceType == DeviceType::DEVICE_TYPE_FILE_SOURCE) {
-        CHECK_AND_RETURN_RET_LOG(channelCount <= CHANNEL_6 && channelCount >= MONO, ERROR, "Invalid src channel");
-        module = FILE_SOURCE;
-    } else {
-        AUDIO_ERR_LOG("Invalid DeviceType");
-        return ERROR;
-    }
-
-    audioIOHandleMap_.ClosePortAndEraseIOHandle(module);
-
-    std::list<AudioModuleInfo> moduleInfoList;
-    audioConfigManager_.GetModuleListByType(ClassType::TYPE_FILE_IO, moduleInfoList);
-    for (auto &moduleInfo : moduleInfoList) {
-        if (module == moduleInfo.name) {
-            moduleInfo.channels = to_string(channelCount);
-            audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-            audioPolicyManager_.SetDeviceActive(deviceType, module, true);
-        }
-    }
-    return SUCCESS;
-}
-
 InternalDeviceType AudioPolicyService::GetDeviceType(const std::string &deviceName)
 {
     InternalDeviceType devType = InternalDeviceType::DEVICE_TYPE_NONE;
@@ -2433,16 +2399,6 @@ DeviceRole AudioPolicyService::GetDeviceRole(AudioPin pin) const
         default:
             return DeviceRole::DEVICE_ROLE_NONE;
     }
-}
-
-int32_t AudioPolicyService::GetAudioLatencyFromXml() const
-{
-    return audioConfigManager_.GetAudioLatencyFromXml();
-}
-
-uint32_t AudioPolicyService::GetSinkLatencyFromXml() const
-{
-    return audioConfigManager_.GetSinkLatencyFromXml();
 }
 
 bool AudioPolicyService::getFastControlParam()

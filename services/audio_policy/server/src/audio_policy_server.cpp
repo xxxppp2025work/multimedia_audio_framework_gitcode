@@ -1627,12 +1627,6 @@ int32_t AudioPolicyServer::GetAudioFocusInfoList(std::list<std::pair<AudioInterr
     return ERR_UNKNOWN;
 }
 
-bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    SourceType sourceType)
-{
-    return false;
-}
-
 bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint32_t tokenId, bool isRecording)
 {
     AUDIO_DEBUG_LOG("Verify permission [%{public}s]", permissionName.c_str());
@@ -1670,28 +1664,6 @@ bool AudioPolicyServer::VerifyBluetoothPermission()
     CHECK_AND_RETURN_RET(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED, false);
 
     return true;
-}
-
-bool AudioPolicyServer::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    AudioPermissionState state)
-{
-    return false;
-}
-
-int32_t AudioPolicyServer::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
-{
-#ifdef AUDIO_BUILD_VARIANT_ROOT
-    // Only root users should have access to this api
-    if (ROOT_UID != IPCSkeleton::GetCallingUid()) {
-        AUDIO_INFO_LOG("Unautorized user. Cannot modify channel");
-        return ERR_PERMISSION_DENIED;
-    }
-
-    return audioPolicyService_.ReconfigureAudioChannel(count, deviceType);
-#else
-    // this api is not supported
-    return ERR_NOT_SUPPORTED;
-#endif
 }
 
 void AudioPolicyServer::GetStreamVolumeInfoMap(StreamVolumeInfoMap& streamVolumeInfos)
@@ -1830,16 +1802,6 @@ void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
     AppendFormat(dumpString, "  -xp\t\t\t|dump xml data map\n");
     AppendFormat(dumpString, "  -e\t\t\t|dump audio effect manager Info\n");
     AppendFormat(dumpString, "  -as\t\t\t|dump audio session info\n");
-}
-
-int32_t AudioPolicyServer::GetAudioLatencyFromXml()
-{
-    return audioPolicyService_.GetAudioLatencyFromXml();
-}
-
-uint32_t AudioPolicyServer::GetSinkLatencyFromXml()
-{
-    return audioPolicyService_.GetSinkLatencyFromXml();
 }
 
 int32_t AudioPolicyServer::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo)
