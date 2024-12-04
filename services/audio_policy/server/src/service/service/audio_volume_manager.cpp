@@ -498,6 +498,7 @@ int32_t AudioVolumeManager::DealWithSafeVolume(const int32_t volumeLevel, bool i
         }
         PublishSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
         increaseNIsShowing_ = true;
+        SetSafeVolumeCallback(STREAM_MUSIC, false);
         return sVolumeLevel;
     }
     return sVolumeLevel;
@@ -661,17 +662,17 @@ void AudioVolumeManager::RestoreSafeVolume(AudioStreamType streamType, int32_t s
 
     AUDIO_INFO_LOG("restore safe volume.");
     SetSystemVolumeLevel(streamType, safeVolume);
-    SetSafeVolumeCallback(streamType);
+    SetSafeVolumeCallback(streamType, false);
 }
 
-void AudioVolumeManager::SetSafeVolumeCallback(AudioStreamType streamType)
+void AudioVolumeManager::SetSafeVolumeCallback(AudioStreamType streamType, bool isUpdateUi)
 {
     CHECK_AND_RETURN_LOG(VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC,
         "streamtype:%{public}d no need to set safe volume callback.", streamType);
     VolumeEvent volumeEvent;
     volumeEvent.volumeType = streamType;
     volumeEvent.volume = GetSystemVolumeLevel(streamType);
-    volumeEvent.updateUi = true;
+    volumeEvent.updateUi = isUpdateUi;
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
     if (audioPolicyServerHandler_ != nullptr && IsRingerModeMute()) {
@@ -695,7 +696,7 @@ void AudioVolumeManager::OnReceiveEvent(const EventFwk::CommonEventData &eventDa
         audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, safeStatusBt_);
         CreateCheckMusicActiveThread();
         DealWithEventVolume(RESTORE_VOLUME_NOTIFICATION_ID);
-        SetSafeVolumeCallback(STREAM_MUSIC);
+        SetSafeVolumeCallback(STREAM_MUSIC, true);
     } else if (action == AUDIO_INCREASE_VOLUME_EVENT) {
         AUDIO_INFO_LOG("AUDIO_INCREASE_VOLUME_EVENT has been received");
         std::lock_guard<std::mutex> lock(notifyMutex_);
@@ -707,7 +708,7 @@ void AudioVolumeManager::OnReceiveEvent(const EventFwk::CommonEventData &eventDa
         audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, safeStatusBt_);
         CreateCheckMusicActiveThread();
         DealWithEventVolume(INCREASE_VOLUME_NOTIFICATION_ID);
-        SetSafeVolumeCallback(STREAM_MUSIC);
+        SetSafeVolumeCallback(STREAM_MUSIC, true);
     }
 }
 
