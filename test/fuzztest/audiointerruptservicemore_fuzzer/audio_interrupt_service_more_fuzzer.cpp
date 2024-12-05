@@ -116,7 +116,7 @@ void ResetNonInterruptControlFuzzTest(const uint8_t *rawData, size_t size) //bui
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    
+
     uint32_t sessionId = *reinterpret_cast<const uint32_t*>(rawData);
     GetServerPtr()->interruptService_->GetClientTypeBySessionId(sessionId);
     GetServerPtr()->interruptService_->ResetNonInterruptControl(sessionId);
