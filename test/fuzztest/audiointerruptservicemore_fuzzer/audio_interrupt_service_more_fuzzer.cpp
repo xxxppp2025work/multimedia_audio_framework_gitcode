@@ -35,9 +35,9 @@ static size_t g_pos;
 const size_t THRESHOLD = 10;
 
 /*
-* describe: get data from outside untrusted data(RAW_DATA) which size is according to sizeof(T)
-* tips: only support basic type
-*/
+ * describe: get data from outside untrusted data(RAW_DATA) which size is according to sizeof(T)
+ * tips: only support basic type
+ */
 template<class T>
 T GetData()
 {
