@@ -1437,11 +1437,16 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
                 // Load bt sink module again with new configuration
                 AUDIO_DEBUG_LOG("Reload a2dp module [%{public}s]", moduleInfo.name.c_str());
                 AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-                CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
+                if (ioHandle == OPEN_PORT_FAILURE) {
+                    audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
+                    AUDIO_ERR_LOG("OpenAudioPort failed %{public}d", ioHandle);
+                    return;
+                }
                 audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
                 std::string portName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
                 audioPolicyManager_.SetDeviceActive(deviceType, portName, true);
                 audioPolicyManager_.SuspendAudioDevice(portName, false);
+                audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
 
                 audioConnectedDevice_.UpdateConnectDevice(deviceType, macAddress, deviceName, streamInfo);
                 break;
@@ -4288,6 +4293,11 @@ int32_t AudioPolicyService::NotifyCapturerRemoved(uint64_t sessionId)
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
     audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionId, false);
     return SUCCESS;
+}
+
+void AudioPolicyService::UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType)
+{
+    audioEcManager_.UpdateStreamEcAndMicRefInfo(moduleInfo, sourceType);
 }
 
 } // namespace AudioStandard
