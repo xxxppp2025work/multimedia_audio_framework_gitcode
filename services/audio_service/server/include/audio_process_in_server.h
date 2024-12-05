@@ -98,6 +98,9 @@ public:
 
     void WriteDumpFile(void *buffer, size_t bufferSize) override final;
 
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning) override;
+
 public:
     const AudioProcessConfig processConfig_;
 
