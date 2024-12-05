@@ -106,7 +106,7 @@ void AudioSendCallbackFuzzTest()
 
     VolumeEvent volumeEvent;
     audioPolicyServerHandler->SendVolumeKeyEventCallback(volumeEvent);
-
+ 
     std::pair<int32_t, AudioSessionDeactiveEvent> sessionDeactivePair;
     audioPolicyServerHandler->SendAudioSessionDeactiveCallback(sessionDeactivePair);
 
@@ -144,7 +144,7 @@ void AudioPolicyServSendFuzzTest()
 
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     audioPolicyServerHandler->SendRendererInfoEvent(audioRendererChangeInfos);
-
+ 
     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     audioPolicyServerHandler->SendCapturerInfoEvent(audioCapturerChangeInfos);
 
@@ -157,7 +157,7 @@ void AudioPolicyServSendFuzzTest()
     audioPolicyServerHandler->SendRecreateRendererStreamEvent(clientPid, sessionId, streamFlag, reason);
     audioPolicyServerHandler->SendRecreateCapturerStreamEvent(clientPid, sessionId, streamFlag, reason);
     audioPolicyServerHandler->SendConcurrencyEventWithSessionIDCallback(sessionId);
-
+ 
     AudioCapturerInfo capturerInfo;
     AudioStreamInfo streamInfo;
     uint64_t sendCapturerSessionId = CAPSESSION_ID;
