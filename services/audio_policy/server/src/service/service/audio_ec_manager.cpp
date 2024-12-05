@@ -234,17 +234,16 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamP
         moduleInfo.sourceType = std::to_string(sourceType);
     } else {
         moduleInfo = primaryMicModuleInfo_;
-
         // current layout represents the number of channel. This will need to be modify in the future.
         moduleInfo.channels = std::to_string(targetInfo.channelLayout_);
         moduleInfo.rate = std::to_string(targetInfo.sampleRate_);
         moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
         moduleInfo.format = targetInfo.format_;
         moduleInfo.sourceType = std::to_string(sourceType);
-        moduleInfo.deviceType = std::to_string(static_cast<int32_t>(inputDesc->deviceType_));
         
         // update primary info for ec config to get later
         if (isEcFeatureEnable_) {
+            moduleInfo.deviceType = std::to_string(static_cast<int32_t>(inputDesc->deviceType_));
             primaryMicModuleInfo_.channels = std::to_string(targetInfo.channelLayout_);
             primaryMicModuleInfo_.rate = std::to_string(targetInfo.sampleRate_);
             primaryMicModuleInfo_.format = targetInfo.format_;
