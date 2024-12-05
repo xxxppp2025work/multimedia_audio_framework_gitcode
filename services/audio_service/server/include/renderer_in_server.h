@@ -98,6 +98,9 @@ public:
     int32_t SetMute(bool isMute);
     int32_t SetDuckFactor(float duckFactor);
 
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning);
+
     void OnDataLinkConnectionUpdate(IOperation operation);
     int32_t GetActualStreamManagerType() const noexcept;
     
