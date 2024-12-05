@@ -361,6 +361,7 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
     "../../frameworks/native/offlineaudioeffect:offline_audio_effect",
     "../../frameworks/native/playbackcapturer:playback_capturer",
+    "../audio_policy:audio_policy_client",
   ]
 
   if (audio_framework_feature_daudio_enable == true) {

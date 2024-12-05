@@ -108,6 +108,9 @@ public:
     virtual void SetPreferredFrameSize(int32_t frameSize) = 0;
 
     virtual void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) = 0;
+
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
