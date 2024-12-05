@@ -503,8 +503,8 @@ int32_t RendererInServer::WriteData()
         }
         Trace::CountVolume(traceTag_, *bufferDesc.buffer);
         stream_->EnqueueBuffer(bufferDesc);
-        DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
+            DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
             AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
                 static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         }

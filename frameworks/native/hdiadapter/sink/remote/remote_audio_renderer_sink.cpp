@@ -537,7 +537,7 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
 
     for (const auto &audioPort : audioPortMap_) {
         FILE *dumpFile = nullptr;
-        std::string dumpFileName = DUMP_REMOTE_RENDER_SINK_FILENAME + "_" + GetTime() + "_" +
+        std::string dumpFileName = std::string(DUMP_REMOTE_RENDER_SINK_FILENAME) + "_" + GetTime() + "_" +
             std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
             std::to_string(attr_.format) + ".pcm";
         DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName, &dumpFile);

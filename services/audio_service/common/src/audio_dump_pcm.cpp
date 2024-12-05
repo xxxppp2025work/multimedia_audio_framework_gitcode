@@ -31,7 +31,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-constexpr uint64_t MAX_LIMIT_BUFFER_SIZE = 180 * 1024 * 1024;   // 180M
+constexpr uint64_t MAX_LIMIT_BUFFER_SIZE = 100 * 1024 * 1024;   // 100M
 constexpr size_t EACH_CHUNK_SIZE = 1024 * 1024;                 // 1M
 constexpr int64_t MEMBLOCK_RELEASE_TIME = 5 * 60 * 1000000;     // release pcm 5min ago
 constexpr int64_t MEMBLOCK_CHECK_TIME_MS = 30 * 1000;           // check cached data's time every 30s
