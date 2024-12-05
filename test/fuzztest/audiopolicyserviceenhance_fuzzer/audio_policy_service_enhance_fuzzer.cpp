@@ -42,9 +42,9 @@ static size_t g_pos;
 const size_t THRESHOLD = 10;
 
 /*
-* describe: get data from outside untrusted data(RAW_DATA) which size is according to sizeof(T)
-* tips: only support basic type
-*/
+ * describe: get data from outside untrusted data(RAW_DATA) which size is according to sizeof(T)
+ * tips: only support basic type
+ */
 template<class T>
 T GetData()
 {
@@ -150,7 +150,7 @@ void AudioPolicyServiceEnhanceTwoFuzzTest()
 
     AudioStreamInfo audioStreamInfo;
     GetServerPtr()->audioPolicyService_.audioA2dpDevice_.LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP,
-        audioStreamInfo, "", "", SOURCE_TYPE_MIC);
+        audioStreamInfo, "", "", SOURCE_TYPE_VOICE_RECOGNITION);
 
     DeviceType deviceType = GetData<DeviceType>();
     std::string networkId = "LocalDevice";

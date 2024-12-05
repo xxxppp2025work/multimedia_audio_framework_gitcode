@@ -29,7 +29,7 @@ constexpr uint32_t INFOCHANNELS = 2;
 constexpr uint64_t INFOCHANNELLAYOUT = 0x3;
 const string SCENETYPEDEFAULT = "SCENE_MOVIE";
 const string SCENETYPEMUSIC = "SCENE_MUSIC";
-static const uint8_t* RAW_DATA = nullptr;
+static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
@@ -54,9 +54,9 @@ SessionEffectInfo DEFAULT_INFO = {
 };
 
 /*
-* describe: get data from outside untrusted data(RAW_DATA) which size is according to sizeof(T)
-* tips: only support basic type
-*/
+ * describe: get data from outside untrusted data(RAW_DATA) which size is according to sizeof(T)
+ * tips: only support basic type
+ */
 template<class T>
 T GetData()
 {
@@ -76,7 +76,7 @@ T GetData()
 template<class T>
 uint32_t GetArrLength(T& arr)
 {
-        if (arr == nullptr) {
+    if (arr == nullptr) {
         AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
         return 0;
     }
@@ -180,7 +180,7 @@ void UpdateSpatializationStateFuzzTest()
     bool headTrackingEnabled = GetData<bool>();
 
     AudioSpatializationState spatializationState = {spatializationEnabled, headTrackingEnabled};
-    
+
     AudioEffectChainManager::GetInstance()->UpdateSpatializationState(spatializationState);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
