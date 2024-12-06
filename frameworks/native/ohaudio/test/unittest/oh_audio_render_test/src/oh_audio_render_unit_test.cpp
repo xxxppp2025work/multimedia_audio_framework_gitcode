@@ -1606,6 +1606,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetChannelCount_001, TestSize.Leve
     OH_AudioStream_Result result = OH_AudioRenderer_GetChannelCount(nullptr, &channelCount);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
 }
+
 /**
  * @tc.name  : Test OH_AudioRenderer_GetChannelCount API via legal state.
  * @tc.number: OH_AudioRenderer_GetChannelCount_002
