@@ -156,7 +156,7 @@ const int32_t ERR_MMI_SUBSCRIBE = BASE_AUDIO_ERR_OFFSET - 31;
 /**multimode creation failed*/
 const int32_t ERR_MMI_CREATION = BASE_AUDIO_ERR_OFFSET - 32;
 /** Unknown error */
-const int32_t  ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
+const int32_t ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif  // AUDIO_ERRORS_H
