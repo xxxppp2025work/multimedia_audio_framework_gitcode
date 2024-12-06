@@ -55,6 +55,7 @@
 #include "config/audio_param_parser.h"
 #include "media_monitor_manager.h"
 #include "offline_stream_in_server.h"
+#include "audio_dump_pcm.h"
 
 #define PA
 #ifdef PA
@@ -126,7 +127,6 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
     SOURCE_TYPE_CAMCORDER,
     SOURCE_TYPE_UNPROCESSED
 };
-
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 
@@ -246,6 +246,33 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
         std::string dumpString = "check fast list :bundle name is" + bundleName + " result is " + result + "\n";
         return write(fd, dumpString.c_str(), dumpString.size());
     }
+
+    //hidumper -s 3001 '-a -dump time'
+    //hidumper -s 3001 '-a -dump memory'
+    if (args.size() == FAST_DUMPINFO_LEN && args[0] == u"-dump") {
+        std::string dumpParam = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.to_bytes(args[1]);
+        std::string dumpString;
+        if (dumpParam == "time") {
+            int64_t startTime = 0;
+            int64_t endTime = 0;
+            AudioCacheMgr::GetInstance().GetCachedDuration(startTime, endTime);
+            dumpString = "Call dump get time:[" + ClockTime::NanoTimeToString(startTime) + "~" + 
+                ClockTime::NanoTimeToString(endTime) + " ], cur:[" + 
+                ClockTime::NanoTimeToString(ClockTime::GetRealNano()) + "] \n";
+        } else if (dumpParam == "memory") {
+            size_t dataLength = 0;
+            size_t bufferLength = 0;
+            size_t structLength = 0;
+            AudioCacheMgr::GetInstance().GetCurMemoryCondition(dataLength, bufferLength, structLength);
+            dumpString = "dataLength: " + std::to_string(dataLength / BYTE_TO_KB_SIZE) + 
+                        " KB, bufferLength: " + std::to_string(bufferLength / BYTE_TO_KB_SIZE) + 
+                        " KB, structLength: " + std::to_string(structLength / BYTE_TO_KB_SIZE) + " KB \n";
+        } else {
+            dumpString = "Call dump failed, no such operation \n";
+        }
+        return write(fd, dumpString.c_str(), dumpString.size());
+    }
+
     std::queue<std::u16string> argQue;
     for (decltype(args.size()) index = 0; index < args.size(); ++index) {
         argQue.push(args[index]);
@@ -282,6 +309,11 @@ void AudioServer::OnStart()
     GetSysPara("persist.multimedia.audioflag.fastcontrolled", fastControlFlag);
     if (fastControlFlag == 0) {
         isFastControlled_ = false;
+    }
+    int32_t audioCacheState = 0;
+    GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
+    if (audioCacheState) {
+        AudioCacheMgr::GetInstance().Init();
     }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
@@ -376,9 +408,8 @@ bool AudioServer::SetPcmDumpParameter(const std::vector<std::pair<std::string, s
 {
     bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, false, "set audiodump parameters failed: no permission.");
-    int32_t res = Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(params);
-    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "MediaMonitor SetMediaParameters failed.");
-    return true;
+    CHECK_AND_RETURN_RET_LOG(params.size() > 0, false, "params is empty!");
+    return AudioCacheMgr::GetInstance().SetDumpParameter(params);
 }
 
 int32_t AudioServer::SetExtraParameters(const std::string& key,
@@ -540,9 +571,8 @@ bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
 {
     bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, false, "get audiodump parameters no permission");
-    int32_t res = Media::MediaMonitor::MediaMonitorManager::GetInstance().GetMediaParameters(subKeys, result);
-    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "MediaMonitor GetMediaParameters failed");
-    return true;
+    CHECK_AND_RETURN_RET_LOG(subKeys.size() > 0, false, "subKeys is empty!");
+    return AudioCacheMgr::GetInstance().GetDumpParameter(subKeys, result);
 }
 
 int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
