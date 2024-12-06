@@ -384,14 +384,25 @@ describe("AudioRendererInterruptUnitTest", function() {
 
     it('SUB_AUDIO_RENDERER_INTERRUPT_TEST_012', 0, async function (done) {
         let flag1 = false
+        let flag2 = false
         let render1 = await createAudioRenderer(renderInfo['VOICE_CALL'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
             flag1 = true
         })
         await start(render1, done)
+
+        let render2 = await createAudioRenderer(renderInfo['VOICE_CALL'], streamInfo['48000'])
+        await render2.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
+        render2.on("audioInterrupt", async(eventAction) => {
+            flag2 = true
+        })
+        await start(render2, done)
+
+        await sleep(500)
         await release(render1, done)
-        expect(flag1 == false).assertEqual(true)
+        await release(render2, done)
+        expect(flag1 == false && flag2 == true).assertEqual(true)
         done()
     })
 
@@ -411,6 +422,7 @@ describe("AudioRendererInterruptUnitTest", function() {
             flag2 = true
         })
         await start(render2, done)
+
         await sleep(500)
         await release(render1, done)
         await release(render2, done)
@@ -516,6 +528,7 @@ describe("AudioRendererInterruptUnitTest", function() {
             interruptType(eventAction);
         })
         await start(render2, done)
+
         await sleep(500)
         await release(render1, done)
         await release(render2, done)
@@ -535,6 +548,7 @@ describe("AudioRendererInterruptUnitTest", function() {
             interruptType(eventAction);
         })
         await start(render2, done)
+
         await sleep(500)
         await release(render1, done)
         await release(render2, done)
@@ -553,6 +567,7 @@ describe("AudioRendererInterruptUnitTest", function() {
         let audioRender = await createAudioRenderer(renderInfo['VOICE_CALL'], streamInfo['48000'])
         await audioRender.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         await start(audioRender, done)
+
         await sleep(500)
         await release(render1, done)
         await release(audioRender, done)
@@ -575,6 +590,7 @@ describe("AudioRendererInterruptUnitTest", function() {
             flag2 = true
         })
         await start(render2, done)
+
         await sleep(500)
         await release(render1, done)
         await release(render2, done)
@@ -612,6 +628,7 @@ describe("AudioRendererInterruptUnitTest", function() {
             flag2 = true
         })
         await start(render2, done)
+
         await sleep(500)
         await release(render1, done)
         await release(render2, done)
@@ -1085,6 +1102,7 @@ describe("AudioRendererInterruptUnitTest", function() {
             flag2 = true
         })
         await start(render2, done)
+
         await sleep(500)
         await release(render1, done)
         await release(render2, done)
