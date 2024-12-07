@@ -27,6 +27,7 @@
 #include "audio_schedule.h"
 #include "audio_utils.h"
 #include "media_monitor_manager.h"
+#include "audio_policy_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -488,6 +489,14 @@ void AudioProcessInServer::WriterRenderStreamStandbySysEvent(uint32_t sessionId,
 void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
 {
     DumpFileUtil::WriteDumpFile(dumpFile_, buffer, bufferSize);
+}
+
+int32_t AudioProcessInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning)
+{
+    return AudioPolicyManager::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, sessionID,
+        streamUsage, isRunning);
+
 }
 } // namespace AudioStandard
 } // namespace OHOS

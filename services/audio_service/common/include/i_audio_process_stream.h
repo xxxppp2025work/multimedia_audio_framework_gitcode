@@ -50,6 +50,9 @@ public:
 
     virtual void WriteDumpFile(void *buffer, size_t bufferSize) = 0;
 
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning) = 0;
+
     virtual ~IAudioProcessStream() = default;
 };
 } // namespace AudioStandard

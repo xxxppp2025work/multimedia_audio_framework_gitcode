@@ -467,5 +467,15 @@ int32_t IpcStreamInServer::RegisterThreadPriority(uint32_t tid, const std::strin
         return ERR_OPERATION_FAILED;
     }
 }
+
+int32_t IpcStreamInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning)
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);
+    }
+    AUDIO_ERR_LOG("mode is not playback or renderer is null");
+    return ERR_OPERATION_FAILED;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -47,6 +47,9 @@ public:
 
     virtual int32_t Release(bool isSwitchStream = false) = 0;
 
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning) = 0;
+
     virtual ~AudioProcess() = default;
 };
 
@@ -83,6 +86,7 @@ public:
         ON_RELEASE,
         ON_REGISTER_PROCESS_CB,
         ON_REGISTER_THREAD_PRIORITY,
+        ON_SET_DEFAULT_OUTPUT_DEVICE,
         PROCESS_MAX_MSG
     };
 

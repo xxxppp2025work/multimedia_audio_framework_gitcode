@@ -207,6 +207,7 @@ ohos_shared_library("audio_client") {
     "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -362,6 +363,7 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
     "../../frameworks/native/offlineaudioeffect:offline_audio_effect",
     "../../frameworks/native/playbackcapturer:playback_capturer",
+    "../audio_policy:audio_policy_client",
   ]
 
   if (audio_framework_feature_daudio_enable == true) {
