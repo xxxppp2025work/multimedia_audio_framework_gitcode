@@ -19,7 +19,6 @@
 #include "audio_service.h"
 #include "audio_errors.h"
 #include "audio_process_in_client.h"
-#include "audio_process_in_client.cpp"
 
 using namespace testing::ext;
 

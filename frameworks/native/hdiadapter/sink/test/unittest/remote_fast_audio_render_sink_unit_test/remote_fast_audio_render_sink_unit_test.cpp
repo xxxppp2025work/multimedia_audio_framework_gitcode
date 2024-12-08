@@ -17,7 +17,6 @@
 #include "audio_errors.h"
 
 #include "remote_fast_audio_renderer_sink.h"
-#include "remote_fast_audio_renderer_sink.cpp"
 #include "audio_hdiadapter_info.h"
 #include "securec.h"
 #include <cinttypes>

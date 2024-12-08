@@ -16,7 +16,6 @@
 #include <gtest/gtest.h>
 #include "audio_errors.h"
 #include "remote_fast_audio_capturer_source.h"
-#include "remote_fast_audio_capturer_source.cpp"
 #include "i_audio_capturer_source.h"
 #include "audio_hdiadapter_info.h"
 #include "securec.h"

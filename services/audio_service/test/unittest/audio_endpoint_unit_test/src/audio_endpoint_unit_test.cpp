@@ -26,7 +26,6 @@
 #include "audio_stream_info.h"
 #include "audio_utils.h"
 #include "policy_handler.h"
-#include "audio_endpoint.cpp"
 
 using namespace testing::ext;
 
