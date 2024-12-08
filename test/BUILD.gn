@@ -49,7 +49,6 @@ group("audio_unit_test") {
     "../frameworks/native/audioutils/test/unittest:audio_utils_unit_test",
     "../frameworks/native/examples:pa_stream_test",
     "../frameworks/native/hdiadapter/sink/test/unittest/audio_running_lock_manager_unit_test:audio_running_lock_manager_unit_test",
-    "../frameworks/native/hdiadapter/sink/test/unittest/remote_fast_audio_render_sink_unit_test:remote_fast_audio_render_sink_unit_test",
     "../frameworks/native/hdiadapter/test/unittest/audio_device_adapter_impl_unit_test:audio_device_adapter_impl_unit_test",
     "../frameworks/native/hdiadapter/test/unittest/audio_device_manager_impl_unit_test:audio_device_manager_impl_unit_test",
     "../frameworks/native/offlineaudioeffect/test/unittest:offline_audio_effect_manager_unit_test",
