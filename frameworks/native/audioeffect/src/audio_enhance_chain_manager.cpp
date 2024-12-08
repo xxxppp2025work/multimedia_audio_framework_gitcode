@@ -188,7 +188,11 @@ void AudioEnhanceChainManager::UpdateEnhancePropertyMapFromDb(DeviceType deviceT
                 key.c_str(), property.c_str());
         } else {
             prop = defaultPropertyMap_[enhance];
-            settingProvider.GetStringValue(key, prop);
+            ret = settingProvider.PutStringValue(key, prop);
+            if(ret != SUCCESS) {
+                AUDIO_ERR_LOG("set to default Property:%{public}s, failed, ErrCode : %{public}d",
+                    property.c_str(), ret);
+            }
             AUDIO_INFO_LOG("Get prop failed,Effect_&_DeviceType:%{public}s is set to default Property:%{public}s",
                 key.c_str(), property.c_str());
         }
