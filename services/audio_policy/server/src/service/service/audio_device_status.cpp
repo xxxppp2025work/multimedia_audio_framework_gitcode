@@ -133,6 +133,8 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
         audioDeviceCommon_.UpdateConnectedDevicesWhenConnecting(updatedDesc, descForCb);
 
         reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
+        int32_t dpMaxVolume = audioPolicyManager_.GetMaxVolumeLevel(STREAM_MUSIC);
+        audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, dpMaxVolume);
 #ifdef BLUETOOTH_ENABLE
     if (updatedDesc.connectState_ == CONNECTED &&
         updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -740,6 +742,9 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
         if (statusInfo.connectType == ConnectType::CONNECT_TYPE_DISTRIBUTED) {
             AudioServerProxy::GetInstance().NotifyDeviceInfoProxy(networkId, true);
         }
+        audioPolicyManager_.SetAudioDeviceDescriptor(deviceDesc);
+        int32_t distributeMaxVolume = audioPolicyManager_.GetMaxVolumeLevel(STREAM_MUSIC);
+        audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, distributeMaxVolume);
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(deviceDesc, descForCb);
         std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId,
