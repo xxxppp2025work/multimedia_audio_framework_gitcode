@@ -520,8 +520,6 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
         std::set<std::string> sessions = sceneTypeToSessionIDMap_[it->first];
         for (auto s = sessions.begin(); s != sessions.end(); s++) {
             if (sessionIDToEffectInfoMap_.find(*s) == sessionIDToEffectInfoMap_.end()) {
-                AUDIO_INFO_LOG("sessionID:%{public}s sceneType:%{public}s, no find in sessionIDToEffectInfoMap_",
-                    (*s).c_str(), it->first.c_str());
                 continue;
             }
             if (sessionIDToEffectInfoMap_[*s].sceneMode == "EFFECT_NONE") {
