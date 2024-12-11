@@ -29,6 +29,73 @@ AudioToneParser::~AudioToneParser()
 {
 }
 
+int32_t AudioToneParser::LoadNewConfig(const std::string &configPath,
+    std::unordered_map<std::string, ToneInfoMap> &featuredToneDescriptorMap,
+    ToneInfoMap &toneDescriptorMap)
+{
+    AUDIO_INFO_LOG("Enter AudioToneParser::LoadNewConfig");
+    xmlDoc *doc = xmlReadFile(configPath.c_str(), nullptr, 0);
+    CHECK_AND_RETURN_RET_LOG(doc != nullptr, ERROR, "error: could not parse file %s", configPath.c_str());
+    xmlNode *rootElement = xmlDocGetRootElement(doc);
+    xmlNode *currNode = rootElement;
+    CHECK_AND_RETURN_RET_LOG(currNode != nullptr, ERROR, "root element is null");
+
+    if (xmlStrcmp(currNode->name, BAD_CAST"DTMF")) {
+        AUDIO_ERR_LOG("Missing tag - DTMF: %s", configPath.c_str());
+        xmlFreeDoc(doc);
+        return ERROR;
+    }
+    if (currNode->xmlChildrenNode == nullptr) {
+        AUDIO_ERR_LOG("Missing child - DTMF: %s", configPath.c_str());
+        xmlFreeDoc(doc);
+        return ERROR;
+    }
+    currNode = currNode->xmlChildrenNode;
+
+    while (currNode != nullptr) {
+        if (currNode->type != XML_ELEMENT_NODE) {
+            currNode = currNode->next;
+            continue;
+        }
+        if (!xmlStrcmp(currNode->name, BAD_CAST"Base")) {
+            ParseTones(currNode->xmlChildrenNode, toneDescriptorMap);
+        } else if (!xmlStrcmp(currNode->name, BAD_CAST"Country")) {
+            char *pCountryName = reinterpret_cast<char*>(xmlGetProp(currNode, BAD_CAST"name"));
+            if (pCountryName != nullptr) {
+                ParseTones(currNode->xmlChildrenNode, featuredToneDescriptorMap[std::string(pCountryName)]);
+                xmlFree(pCountryName);
+            }
+        } else if (!xmlStrcmp(currNode->name, BAD_CAST"Tones")) {
+            ParseTones(currNode, toneDescriptorMap);
+        }
+        currNode = currNode->next;
+    }
+
+    xmlFreeDoc(doc);
+    AUDIO_INFO_LOG("Done");
+    return SUCCESS;
+}
+
+void AudioToneParser::ParseTones(xmlNode *node, std::unordered_map<int32_t,
+    std::shared_ptr<ToneInfo>> &toneDescriptorMap)
+{
+    xmlNode *currNode = node;
+    while (currNode != nullptr) {
+        if (currNode->type != XML_ELEMENT_NODE) {
+            currNode = currNode->next;
+            continue;
+        }
+        if (!xmlStrcmp(currNode->name, BAD_CAST"Tones")) {
+            currNode = currNode->xmlChildrenNode;
+        } else if (!xmlStrcmp(currNode->name, BAD_CAST"ToneInfo")) {
+            ParseToneInfo(currNode, toneDescriptorMap);
+            break;
+        } else {
+            currNode = currNode->next;
+        }
+    }
+}
+
 int32_t AudioToneParser::LoadConfig(std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> &toneDescriptorMap)
 {
     AUDIO_INFO_LOG("Enter");
