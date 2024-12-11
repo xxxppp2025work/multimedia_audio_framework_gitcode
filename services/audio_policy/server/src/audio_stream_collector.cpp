@@ -748,7 +748,11 @@ int32_t AudioStreamCollector::GetCurrentRendererChangeInfos(
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
-        rendererChangeInfos.push_back(make_shared<AudioRendererChangeInfo>(*changeInfo));
+        if (changeInfo->rendererInfo.streamUsage == STREAM_USAGE_ULTRASONIC) {
+            rendererChangeInfos.insert(rendererChangeInfos.begin(), make_shared<AudioRendererChangeInfo>(*changeInfo));
+        } else {
+            rendererChangeInfos.push_back(make_shared<AudioRendererChangeInfo>(*changeInfo));
+        }
     }
     AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos returned");
 

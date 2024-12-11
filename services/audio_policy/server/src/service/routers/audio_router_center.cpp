@@ -122,6 +122,11 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
         AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
         shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
+        if (streamUsage == STREAM_USAGE_ULTRASONIC) {
+            AUDIO_INFO_LOG("streamUsage ULTRASONIC always choose speaker");
+            descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
+            return descs;
+        }
         if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
             ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) && HasScoDevice())) {
             auto isPresent = [] (const unique_ptr<RouterBase> &router) {
