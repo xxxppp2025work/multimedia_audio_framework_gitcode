@@ -30,6 +30,7 @@
 #include "media_monitor_manager.h"
 
 #include "audio_policy_utils.h"
+#include "locale_config.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -45,7 +46,7 @@ bool AudioToneManager::LoadToneDtmfConfig()
     CHECK_AND_RETURN_RET_LOG(audioToneParser != nullptr, false, "Failed to create AudioToneParser");
     std::string AUDIO_TONE_CONFIG_FILE = "system/etc/audio/audio_tone_dtmf_config.xml";
 
-    if (audioToneParser->LoadConfig(toneDescriptorMap_)) {
+    if (audioToneParser->LoadNewConfig(AUDIO_TONE_CONFIG_FILE, featuredToneDescriptorMap_, toneDescriptorMap_)) {
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::LOAD_CONFIG_ERROR,
             Media::MediaMonitor::EventType::FAULT_EVENT);
@@ -61,20 +62,40 @@ bool AudioToneManager::LoadToneDtmfConfig()
 
 std::vector<int32_t> AudioToneManager::GetSupportedTones()
 {
-    std::vector<int> supportedToneList = {};
-    for (auto i = toneDescriptorMap_.begin(); i != toneDescriptorMap_.end(); i++) {
-        supportedToneList.push_back(i->first);
+    std::set<int32_t> supportedToneList = {};
+    std::string countryCode = Global::I18n::LocaleConfig::GetSystemRegion();
+
+    auto featuredToneDescriptorItem = featuredToneDescriptorMap_.find(countryCode);
+    if (featuredToneDescriptorItem != featuredToneDescriptorMap_.end()) {
+        for (auto &[number, toneInfo] : featuredToneDescriptorItem->second) {
+            supportedToneList.insert(number);
+        }
     }
-    return supportedToneList;
+
+    for (auto &[number, toneInfo] : toneDescriptorMap_) {
+        supportedToneList.insert(number);
+    }
+
+    return std::vector<int>(supportedToneList.begin(), supportedToneList.end());;
 }
 
 std::shared_ptr<ToneInfo> AudioToneManager::GetToneConfig(int32_t ltonetype)
 {
+    std::string countryCode = Global::I18n::LocaleConfig::GetSystemRegion();
+    auto featuredToneDescriptorItem = featuredToneDescriptorMap_.find(countryCode);
+    if (featuredToneDescriptorItem != featuredToneDescriptorMap_.end()) {
+        auto toneInfo = featuredToneDescriptorItem->second.find(ltonetype);
+        if (toneInfo != featuredToneDescriptorItem->second.end()) {
+            AUDIO_DEBUG_LOG("AudioToneManager Get featured ToneConfig %{public}d", ltonetype);
+            return toneInfo->second;
+        }
+    }
+
     if (toneDescriptorMap_.find(ltonetype) != toneDescriptorMap_.end()) {
-        AUDIO_DEBUG_LOG("AudioToneManager GetToneConfig %{public}d", ltonetype);
+        AUDIO_DEBUG_LOG("AudioToneManager Get base ToneConfig %{public}d", ltonetype);
         return toneDescriptorMap_[ltonetype];
     }
-    AUDIO_DEBUG_LOG("AudioToneManager GetToneConfig %{public}d", ltonetype);
+    AUDIO_DEBUG_LOG("AudioToneManager Get ToneConfig %{public}d fail", ltonetype);
     return nullptr;
 }
 #endif

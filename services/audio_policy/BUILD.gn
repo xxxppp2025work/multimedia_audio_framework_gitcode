@@ -350,6 +350,10 @@ audio_ohos_library("audio_policy_service") {
     external_deps += [ "device_manager:devicemanagersdk" ]
   }
 
+  if (audio_framework_feature_dtmf_tone) {
+    external_deps += [ "i18n:intl_util" ]
+  }
+
   cflags = [ "-Os" ]
   cflags_cc = cflags
   subsystem_name = "multimedia"

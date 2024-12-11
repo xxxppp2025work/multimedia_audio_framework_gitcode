@@ -53,6 +53,7 @@ private:
 private:
 #ifdef FEATURE_DTMF_TONE
     std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneDescriptorMap_;
+    std::unordered_map<std::string, std::unordered_map<int32_t, std::shared_ptr<ToneInfo>>> featuredToneDescriptorMap_;
 #endif
 };
 
