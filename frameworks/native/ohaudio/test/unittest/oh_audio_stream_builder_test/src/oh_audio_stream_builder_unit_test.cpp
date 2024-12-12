@@ -1103,14 +1103,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInterruptM
 
     // 4. start
     result = OH_AudioRenderer_Start(audioRenderer1);
-    if (result != AUDIOSTREAM_SUCCESS) {
-        return ;
-    }
+    if (result != AUDIOSTREAM_SUCCESS) { return ;}
     sleep(1);
     result = OH_AudioRenderer_Start(audioRenderer2);
-    if (result != AUDIOSTREAM_SUCCESS) {
-        return ;
-    }
+    if (result != AUDIOSTREAM_SUCCESS) { return ;}
     sleep(2);
 
     // 5. stop and release client
