@@ -1356,5 +1356,11 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCallRenderDevic
     return devDesc;
 }
 // LCOV_EXCL_STOP
+
+void AudioDeviceManager::Dump(std::string &dumpString)
+{
+    std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
+    AppendFormat(dumpString, "  - current default output device: %d\n", selectedCallDefaultOutputDevice_);
+}
 }
 }

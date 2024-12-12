@@ -41,6 +41,7 @@
 #include "audio_microphone_descriptor.h"
 #include "audio_offload_stream.h"
 #include "audio_a2dp_offload_flag.h"
+#include "audio_device_manager.h"
 
 #include "audio_device_common.h"
 #include "audio_device_lock.h"
@@ -97,7 +98,8 @@ private:
         audioConnectedDevice_(AudioConnectedDevice::GetInstance()),
         audioMicrophoneDescriptor_(AudioMicrophoneDescriptor::GetInstance()),
         audioOffloadStream_(AudioOffloadStream::GetInstance()),
-        audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()) {}
+        audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
+        audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()) {}
     ~AudioPolicyDump() {}
 private:
     IAudioPolicyInterface& audioPolicyManager_;
@@ -111,6 +113,7 @@ private:
     AudioMicrophoneDescriptor& audioMicrophoneDescriptor_;
     AudioOffloadStream& audioOffloadStream_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
+    AudioDeviceManager& audioDeviceManager_;
 
     DeviceType priorityOutputDevice_ = DEVICE_TYPE_INVALID;
     DeviceType priorityInputDevice_ = DEVICE_TYPE_INVALID;
