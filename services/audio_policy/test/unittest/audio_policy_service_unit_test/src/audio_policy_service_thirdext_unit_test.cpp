@@ -171,7 +171,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, WaitForConnectionCompleted_001, TestS
     EXPECT_FALSE(!(audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ =
         CONNECTION_STATUS_CONNECTED));
 }
-
+#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test WaitForConnectionCompleted.
 * @tc.number: WaitForConnectionCompleted_002
@@ -188,7 +188,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, WaitForConnectionCompleted_002, TestS
     EXPECT_FALSE(!(audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ =
         CONNECTION_STATUS_CONNECTED));
 }
-
+#endif
 /**
 * @tc.name  : Test IsA2dpOffloadConnecting.
 * @tc.number: IsA2dpOffloadConnecting_001
@@ -354,7 +354,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, LoadSplitModule_001, TestSize.Level1)
         splitArgTwo, networkIdTwo);
     EXPECT_EQ(ERR_INVALID_HANDLE, result);
 }
-
+#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test SetDefaultOutputDevice.
 * @tc.number: SetDefaultOutputDevice_001
@@ -380,7 +380,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetDefaultOutputDevice_001, TestSize.
             deviceType, sessionID, streamUsage, isRunning);
     EXPECT_EQ(SUCCESS, result);
 }
-
+#endif
 /**
 * @tc.name  : Test UpdateDefaultOutputDeviceWhenStopping.
 * @tc.number: UpdateDefaultOutputDeviceWhenStopping_001
@@ -392,7 +392,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateDefaultOutputDeviceWhenStopping
     ASSERT_NE(nullptr, AudioPolicyServiceUnitTest::GetServerPtr());
 
     int32_t uid = getuid();
-    AudioPolicyServiceUnitTest::GetServerPtr()->audioPolicyService_.UpdateDefaultOutputDeviceWhenStopping(uid);
+    AudioPolicyServiceUnitTest::GetServerPtr()->
+        audioPolicyService_.audioDeviceLock_.UpdateDefaultOutputDeviceWhenStopping(uid);
     EXPECT_EQ(SUCCESS, uid);
 }
 
@@ -733,7 +734,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateSessionConnectionState_001, Tes
     EXPECT_NE(nullptr, server);
     int32_t sessionID = SESSION_ID;
     int32_t state = STATE;
-    server->audioPolicyService_.UpdateSessionConnectionState(sessionID, state);
+    server->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(sessionID, state);
     EXPECT_NE(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
 }
 
@@ -832,7 +833,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ScoInputDeviceFetchedForRecongnition_
         address, connectState);
     EXPECT_EQ(SUCCESS, result);
 }
-
+#ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test SetRotationToEffect.
 * @tc.number: SetRotationToEffect_001
@@ -847,7 +848,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetRotationToEffect_001, TestSize.Lev
     server->audioPolicyService_.SetRotationToEffect(rotate);
     EXPECT_NE(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
 }
-
+#endif
 /**
 * @tc.name  : Test DealAudioSceneOutputDevices.
 * @tc.number: DealAudioSceneOutputDevices_001

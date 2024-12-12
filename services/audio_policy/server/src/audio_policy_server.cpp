@@ -73,8 +73,11 @@ std::map<PolicyType, uint32_t> POLICY_TYPE_MAP = {
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
       audioPolicyService_(AudioPolicyService::GetAudioPolicyService()),
+      audioPolicyUtils_(AudioPolicyUtils::GetInstance()),
+      audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
       audioSpatializationService_(AudioSpatializationService::GetAudioSpatializationService()),
-      audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter())
+      audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
+      audioPolicyDump_(AudioPolicyDump::GetInstance())
 {
     volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
     AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
@@ -165,7 +168,6 @@ void AudioPolicyServer::OnStart()
     if (iRes < 0) {
         AUDIO_ERR_LOG("fail to call RegisterPermStateChangeCallback.");
     }
-
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     SubscribeVolumeKeyEvents();
 #endif
@@ -1773,12 +1775,12 @@ void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
 
 void AudioPolicyServer::AudioDevicesDump(std::string &dumpString)
 {
-    audioPolicyService_.DevicesInfoDump(dumpString);
+    audioPolicyDump_.DevicesInfoDump(dumpString);
 }
 
 void AudioPolicyServer::AudioModeDump(std::string &dumpString)
 {
-    audioPolicyService_.AudioModeDump(dumpString);
+    audioPolicyDump_.AudioModeDump(dumpString);
 }
 
 void AudioPolicyServer::AudioInterruptZoneDump(std::string &dumpString)
@@ -1788,32 +1790,32 @@ void AudioPolicyServer::AudioInterruptZoneDump(std::string &dumpString)
 
 void AudioPolicyServer::AudioPolicyParserDump(std::string &dumpString)
 {
-    audioPolicyService_.AudioPolicyParserDump(dumpString);
+    audioPolicyDump_.AudioPolicyParserDump(dumpString);
 }
 
 void AudioPolicyServer::AudioVolumeDump(std::string &dumpString)
 {
-    audioPolicyService_.StreamVolumesDump(dumpString);
+    audioPolicyDump_.StreamVolumesDump(dumpString);
 }
 
 void AudioPolicyServer::AudioStreamDump(std::string &dumpString)
 {
-    audioPolicyService_.AudioStreamDump(dumpString);
+    audioPolicyDump_.AudioStreamDump(dumpString);
 }
 
 void AudioPolicyServer::XmlParsedDataMapDump(std::string &dumpString)
 {
-    audioPolicyService_.XmlParsedDataMapDump(dumpString);
+    audioPolicyDump_.XmlParsedDataMapDump(dumpString);
 }
 
 void AudioPolicyServer::EffectManagerInfoDump(std::string &dumpString)
 {
-    audioPolicyService_.EffectManagerInfoDump(dumpString);
+    audioPolicyDump_.EffectManagerInfoDump(dumpString);
 }
 
 void AudioPolicyServer::MicrophoneMuteInfoDump(std::string &dumpString)
 {
-    audioPolicyService_.MicrophoneMuteInfoDump(dumpString);
+    audioPolicyDump_.MicrophoneMuteInfoDump(dumpString);
 }
 
 void AudioPolicyServer::AudioSessionInfoDump(std::string &dumpString)
@@ -3085,6 +3087,27 @@ int32_t AudioPolicyServer::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt r
     return audioPolicyService_.TriggerFetchDevice(reason);
 }
 
+int32_t AudioPolicyServer::SetPreferredDevice(const PreferredType preferredType,
+    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_AUDIO) {
+        AUDIO_ERR_LOG("No permission");
+        return ERROR;
+    }
+    return audioPolicyUtils_.SetPreferredDevice(preferredType, desc);
+}
+
+void AudioPolicyServer::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_AUDIO) {
+        AUDIO_ERR_LOG("No permission");
+        return;
+    }
+    audioDeviceManager_.SaveRemoteInfo(networkId, deviceType);
+}
+
 int32_t AudioPolicyServer::SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object)
 {
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "SetAudioDeviceAnahsCallback object is nullptr");
@@ -3129,6 +3152,11 @@ int32_t AudioPolicyServer::UnsetAudioConcurrencyCallback(const uint32_t sessionI
 int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeType)
 {
     return audioPolicyService_.ActivateAudioConcurrency(pipeType);
+}
+
+void AudioPolicyServer::CheckHibernateState(bool hibernate)
+{
+    audioPolicyService_.CheckHibernateState(hibernate);
 }
 
 int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
@@ -3306,12 +3334,6 @@ int32_t AudioPolicyServer::SetVoiceRingtoneMute(bool isMute)
         "SetVoiceRingtoneMute callerUid is error: not foundation");
     AUDIO_INFO_LOG("Set VoiceRingtone is %{public}d", isMute);
     return audioPolicyService_.SetVoiceRingtoneMute(isMute);
-}
-
-int32_t AudioPolicyServer::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-    const StreamUsage streamUsage, bool isRunning)
-{
-    return audioPolicyService_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
 }
 } // namespace AudioStandard
 } // namespace OHOS
