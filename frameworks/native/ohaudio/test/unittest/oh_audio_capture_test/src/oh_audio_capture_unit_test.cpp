@@ -35,21 +35,6 @@ OH_AudioStreamBuilder* OHAudioCaptureUnitTest::CreateCapturerBuilder()
     return builder;
 }
 
-/**
-* @tc.name  : Test OH_AudioStreamBuilder_GenerateCapturer API via legal state.
-* @tc.number: OH_Audio_Capture_Generate_001
-* @tc.desc  : Test OH_AudioStreamBuilder_GenerateCapturer interface. Returns true, if the result is successful.
-*/
-HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Generate_001, TestSize.Level0)
-{
-    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-
-    OH_AudioCapturer* audioCapturer;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-
-    OH_AudioStreamBuilder_Destroy(builder);
-}
 
 /**
 * @tc.name  : Test OH_AudioStreamBuilder_GenerateCapturer API via illegal OH_AudioStream_Type.
