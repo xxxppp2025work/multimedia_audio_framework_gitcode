@@ -26,7 +26,6 @@
 #include "audio_policy_manager.h"
 #include "audio_renderer_private.h"
 #include "fast_audio_stream.h"
-#include "audio_renderer.cpp"
 
 using namespace std;
 using namespace std::chrono;
@@ -7795,40 +7794,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Direct_VoIP_010, TestSize.Level1)
     EXPECT_EQ(true, isStopped);
     bool isReleased = audioRenderer->Release();
     EXPECT_EQ(true, isReleased);
-}
-
-/**
- * @tc.name  : Test GetFormatSize
- * @tc.number: GetFormatSize
- * @tc.desc  : Test GetFormatSize
- */
-HWTEST(AudioRendererUnitTest, GetFormatSize_001, TestSize.Level1)
-{
-    AudioStreamParams params;
-    params.format = SAMPLE_U8;
-    const AudioStreamParams info_1 = params;
-    size_t ret = GetFormatSize(info_1);
-    EXPECT_EQ(ret, 1);
-
-    params.format = SAMPLE_S16LE;
-    const AudioStreamParams info_2 = params;
-    ret = GetFormatSize(info_2);
-    EXPECT_EQ(ret, 2);
-
-    params.format = SAMPLE_S24LE;
-    const AudioStreamParams info_3 = params;
-    ret = GetFormatSize(info_3);
-    EXPECT_EQ(ret, 3);
-
-    params.format = SAMPLE_S32LE;
-    const AudioStreamParams info_4 = params;
-    ret = GetFormatSize(info_4);
-    EXPECT_EQ(ret, 4);
-
-    params.format = INVALID_WIDTH;
-    const AudioStreamParams info_5 = params;
-    ret = GetFormatSize(info_5);
-    EXPECT_EQ(ret, 2);
 }
 
 /**

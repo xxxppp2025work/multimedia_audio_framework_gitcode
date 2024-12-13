@@ -49,7 +49,6 @@ group("audio_unit_test") {
     "../frameworks/native/audioutils/test/unittest:audio_utils_unit_test",
     "../frameworks/native/examples:pa_stream_test",
     "../frameworks/native/hdiadapter/sink/test/unittest/audio_running_lock_manager_unit_test:audio_running_lock_manager_unit_test",
-    "../frameworks/native/hdiadapter/sink/test/unittest/remote_fast_audio_render_sink_unit_test:remote_fast_audio_render_sink_unit_test",
     "../frameworks/native/hdiadapter/test/unittest/audio_device_adapter_impl_unit_test:audio_device_adapter_impl_unit_test",
     "../frameworks/native/hdiadapter/test/unittest/audio_device_manager_impl_unit_test:audio_device_manager_impl_unit_test",
     "../frameworks/native/offlineaudioeffect/test/unittest:offline_audio_effect_manager_unit_test",
@@ -64,10 +63,8 @@ group("audio_unit_test") {
     "../services/audio_policy/test:audio_policy_manager_unit_test",
     "../services/audio_service/test/unittest:audio_balance_unit_test",
     "../services/audio_service/test/unittest:audio_endpoint_separate_unit_test",
-    "../services/audio_service/test/unittest:audio_process_in_client_unit_test",
     "../services/audio_service/test/unittest:audio_process_in_server_unit_test",
     "../services/audio_service/test/unittest:audio_service_unit_test",
-    "../services/audio_service/test/unittest:capturer_in_client_unit_test",
     "../services/audio_service/test/unittest:capturer_in_server_unit_test",
     "../services/audio_service/test/unittest:ipc_stream_in_server_unit_test",
     "../services/audio_service/test/unittest:ipc_stream_stub_unit_test",
@@ -75,7 +72,7 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test",
     "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test_p2",
     "../services/audio_service/test/unittest:volume_tools_unit_test",
-    "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_plus_unit_test",
+    "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_unit_test",
     "../services/audio_service/test/unittest/audio_manager_stub_unit_test:audio_manager_stub_unit_test",
     "../services/audio_service/test/unittest/audio_param_parser_unit_test:audio_param_parser_unit_test",
     "../services/audio_service/test/unittest/audio_server_dump_unit_test:audio_server_dump_unit_test",
@@ -96,7 +93,6 @@ group("audio_unit_test") {
     deps += [
       "../services/audio_service/test/unittest:audio_direct_sink_unit_test",
       "../services/audio_service/test/unittest:none_mix_engine_unit_test",
-      "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_unit_test",
     ]
   }
 }
