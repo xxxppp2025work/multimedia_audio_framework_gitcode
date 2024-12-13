@@ -437,14 +437,13 @@ std::string AudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, c
     std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("GetAudioParameter: key %{public}d, condition: %{public}s, halName: %{public}s",
         key, condition.c_str(), halName_.c_str());
-    // for usb, condition is get_usb_info#CxD0 or need_change_usb_device#CxD0
-    if (key == USB_DEVICE) {
-        if (halName_ == USB_HAL_NAME) {
-            adapterNameCase_ = USB_HAL_NAME;
-        }
+    if (condition.starts_with("get_usb_info#C")) {
+        // Init adapter to get parameter before load sink module (need fix)
+        adapterNameCase_ = USB_HAL_NAME;
         int32_t ret = InitAdapter();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "Init usb audio adapter failed. ret=%{public}d", ret);
-    } else if (key == AudioParamKey::GET_DP_DEVICE_INFO) {
+    }
+    if (key == AudioParamKey::GET_DP_DEVICE_INFO) {
         // Init adapter and render to get parameter before load sink module (need fix)
         return GetDPDeviceAttrInfo(condition);
     }
@@ -1403,7 +1402,7 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &dpInfoStr)
 
     StringParser(sampleRateStr, attr_.sampleRate);
     StringParser(channeltStr, attr_.channel);
-    
+
     attr_.address = addressStr;
     uint32_t formatByte = 0;
     if (attr_.channel <= 0 || attr_.sampleRate <= 0) {
