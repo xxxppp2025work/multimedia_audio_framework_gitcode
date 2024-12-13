@@ -604,6 +604,5 @@ std::vector<sptr<VolumeGroupInfo>> AudioDeviceLock::GetVolumeGroupInfos()
     return audioVolumeManager_.GetVolumeGroupInfos();
 }
 
-
 }
 }
