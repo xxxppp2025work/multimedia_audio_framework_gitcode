@@ -472,6 +472,8 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
 
+    void ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

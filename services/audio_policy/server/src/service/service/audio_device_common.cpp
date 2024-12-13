@@ -449,6 +449,36 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
     }
 }
 
+void AudioDeviceCommon::ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType)
+{
+    std::shared_ptr<AudioDeviceDescriptor> newMediaDescriptor =
+        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1, ROUTER_TYPE_USER_SELECT).front();
+    std::shared_ptr<AudioDeviceDescriptor> newCallDescriptor =
+        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
+        ROUTER_TYPE_USER_SELECT).front();
+    DeviceUsage usage = audioDeviceManager_.GetDeviceUsage(updatedDesc);
+    if (networkId == LOCAL_NETWORK_ID && deviceType == newMediaDescriptor->deviceType_ &&
+        (usage == MEDIA || usage == ALL_USAGE)) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
+            std::make_shared<AudioDeviceDescriptor>());
+    }
+    if (networkId == LOCAL_NETWORK_ID && deviceType == newCallDescriptor->deviceType_ &&
+        (usage == VOICE || usage == ALL_USAGE)) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+            std::make_shared<AudioDeviceDescriptor>());
+    }
+    if (networkId == newMediaDescriptor->networkId_ && deviceType == newMediaDescriptor->deviceType_ &&
+        (usage == MEDIA || usage == ALL_USAGE)) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
+            std::make_shared<AudioDeviceDescriptor>());
+    }
+    if (networkId == newCallDescriptor->networkId_ && deviceType == newCallDescriptor->deviceType_ &&
+        (usage == VOICE || usage == ALL_USAGE)) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+            std::make_shared<AudioDeviceDescriptor>());
+    }
+}
+
 void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     const AudioDeviceDescriptor &updatedDesc, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb)
 {
@@ -475,19 +505,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
         AUDIO_INFO_LOG("The device is virtual device, no need to update preferred device");
         return; // No need to update preferred device for virtual device
     }
-    DeviceUsage usage = audioDeviceManager_.GetDeviceUsage(updatedDesc);
-    if (audioDescriptor->networkId_ == LOCAL_NETWORK_ID && audioDescriptor->deviceType_ ==
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1,
-        ROUTER_TYPE_USER_SELECT).front()->deviceType_ && (usage == MEDIA || usage == ALL_USAGE)) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
-            std::make_shared<AudioDeviceDescriptor>());
-    }
-    if (audioDescriptor->networkId_ == LOCAL_NETWORK_ID && audioDescriptor->deviceType_ ==
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
-        ROUTER_TYPE_USER_SELECT).front()->deviceType_ && (usage == VOICE || usage == ALL_USAGE)) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>());
-    }
+    ClearUserSelectDevice(audioDescriptor->networkId_, audioDescriptor->deviceType_);
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForInputDevice(
