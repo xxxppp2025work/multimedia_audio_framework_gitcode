@@ -189,7 +189,9 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
     RouterType routerType = ROUTER_TYPE_NONE;
     AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
     if (capturerConfigMap_[sourceType] == "RecordCaptureRouters") {
-        if (audioScene != AUDIO_SCENE_DEFAULT) {
+        if (sourceType == SOURCE_TYPE_ULTRASONIC) {
+            return AudioDeviceManager::GetAudioDeviceManager().GetCaptureDefaultDevice();
+        } else if (audioScene != AUDIO_SCENE_DEFAULT) {
             desc = FetchCallCaptureDevice(sourceType, clientUID, routerType);
         } else {
             desc = FetchRecordCaptureDevice(sourceType, clientUID, routerType);

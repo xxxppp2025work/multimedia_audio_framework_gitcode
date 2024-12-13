@@ -765,7 +765,9 @@ int32_t AudioStreamCollector::GetCurrentCapturerChangeInfos(
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos");
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioCapturerChangeInfos_) {
-        if (!IsTransparentCapture(changeInfo->clientUID)) {
+        if (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_ULTRASONIC) {
+            capturerChangeInfos.insert(capturerChangeInfos.begin(), make_shared<AudioCapturerChangeInfo>(*changeInfo));
+        } else if (!IsTransparentCapture(changeInfo->clientUID)) {
             capturerChangeInfos.push_back(make_shared<AudioCapturerChangeInfo>(*changeInfo));
         } else {
             AUDIO_INFO_LOG("GetCurrentCapturerChangeInfos remove uid:%{public}d", changeInfo->clientUID);
