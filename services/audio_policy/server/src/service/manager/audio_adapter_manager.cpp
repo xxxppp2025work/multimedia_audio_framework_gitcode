@@ -465,7 +465,7 @@ int32_t AudioAdapterManager::SetVolumeDbForVolumeTypeGroup(const std::vector<Aud
 void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volumeDb)
 {
     static std::unordered_map<DeviceType, std::vector<std::string>> deviceClassMap = {
-        {DEVICE_TYPE_SPEAKER, {PRIMARY_CLASS, MCH_CLASS, REMOTE_CLASS, OFFLOAD_CLASS}},
+        {DEVICE_TYPE_SPEAKER, {PRIMARY_CLASS, MCH_CLASS, OFFLOAD_CLASS}},
         {DEVICE_TYPE_USB_HEADSET, {PRIMARY_CLASS, MCH_CLASS, OFFLOAD_CLASS}},
         {DEVICE_TYPE_BLUETOOTH_A2DP, {A2DP_CLASS, PRIMARY_CLASS, MCH_CLASS, OFFLOAD_CLASS}},
         {DEVICE_TYPE_BLUETOOTH_SCO, {PRIMARY_CLASS, MCH_CLASS}},
@@ -490,6 +490,11 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
     }
     auto audioVolume = AudioVolume::GetInstance();
     CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null");
+    if (deviceDesc_.networkId_ != "" && deviceDesc_.deviceType_ == DEVICE_TYPE_SPEAKER) {
+        SystemVolume systemVolume(volumeType, REMOTE_CLASS, volumeDb, volumeLevel, isMuted);
+        audioVolume->SetSystemVolume(systemVolume);
+        return;
+    }
     auto it = deviceClassMap.find(GetActiveDevice());
     if (it == deviceClassMap.end()) {
         AUDIO_ERR_LOG("unkown device type %{public}d", GetActiveDevice());
@@ -539,6 +544,11 @@ void AudioAdapterManager::ResetOffloadSessionId()
 {
     AUDIO_PRERELEASE_LOGI("reset offload sessionId[%{public}d]", offloadSessionID_.value());
     offloadSessionID_.reset();
+}
+
+void AudioAdapterManager::SetAudioDeviceDescriptor(AudioDeviceDescriptor deviceDesc)
+{
+    deviceDesc_ = deviceDesc;
 }
 
 int32_t AudioAdapterManager::GetSystemVolumeLevel(AudioStreamType streamType)

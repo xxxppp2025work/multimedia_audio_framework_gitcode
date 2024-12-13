@@ -198,6 +198,8 @@ public:
     void ResetOffloadSessionId();
 
     void UpdateSafeVolumeAfterTimer();
+
+    void SetAudioDeviceDescriptor(AudioDeviceDescriptor deviceDesc);
 private:
     friend class PolicyCallbackImpl;
 
@@ -326,6 +328,8 @@ private:
     std::optional<uint32_t> offloadSessionID_;
     std::mutex audioVolumeMutex_;
     std::mutex activeDeviceMutex_;
+
+    AudioDeviceDescriptor deviceDesc_ = {};
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
