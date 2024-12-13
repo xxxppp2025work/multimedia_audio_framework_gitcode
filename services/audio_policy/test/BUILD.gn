@@ -25,6 +25,7 @@ group("audio_policy_unittest_packages") {
     ":audio_affinity_manager_unit_test",
     ":audio_affinity_parser_test",
     ":audio_client_tracker_callback_stub_unit_test",
+    ":audio_concurrency_service_unit_test",
     ":audio_effect_config_parser_test",
     ":audio_effect_config_parser_unit_test",
     ":audio_effect_service_test",
@@ -35,11 +36,13 @@ group("audio_policy_unittest_packages") {
     ":audio_policy_server_handler_unit_test",
     ":audio_policy_server_unit_test",
     ":audio_policy_service_all_unit_test",
+    ":audio_router_center_unit_test",
     ":audio_routing_manager_listener_stub_unit_test",
     ":audio_session_timer_test",
     ":audio_socket_thread_unit_test",
     ":audio_spatialization_service_unit_test",
     ":audio_stream_collector_unit_test",
+    ":privacy_priority_router_unit_test",
     ":stream_filter_router_unit_test",
     ":volume_data_maintainer_unit_test",
   ]
@@ -1542,4 +1545,189 @@ ohos_unittest("audio_policy_manager_stub_test") {
     "../../audio_policy:audio_policy_service_static",
     "../../audio_policy:audio_setting_provider",
   ]
+}
+
+ohos_unittest("audio_router_center_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "../server/include",
+    "./unittest/audio_router_center_unit_test/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "eventhandler:libeventhandler",
+    "ffrt:libffrt",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  sources = [ "./unittest/audio_router_center_unit_test/src/audio_router_center_unit_test.cpp" ]
+  deps = [ "../../audio_policy:audio_policy_service_static" ]
+}
+
+ohos_unittest("audio_concurrency_service_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "../server/src/service/concurryency",
+    "./unittest/audio_concurrency_service_unit_test/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "eventhandler:libeventhandler",
+    "ffrt:libffrt",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  sources = [ "./unittest/audio_concurrency_service_unit_test/src/audio_concurrency_service_unit_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_service_static" ]
+}
+
+ohos_unittest("privacy_priority_router_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "../server/include",
+    "./unittest/privacy_priority_router_unit_test/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "eventhandler:libeventhandler",
+    "ffrt:libffrt",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  sources = [ "./unittest/privacy_priority_router_unit_test/src/privacy_priority_router_unit_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_service_static" ]
 }
