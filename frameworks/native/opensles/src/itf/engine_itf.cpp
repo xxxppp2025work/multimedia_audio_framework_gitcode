@@ -51,12 +51,12 @@ static SLresult CreateAudioPlayer(
     thiz->mId = audioPlayerId++;
     lock.unlock();
     IObjectInit(&thiz->mObject);
-    IPlayInit(&thiz->mPlay, audioPlayerId);
-    IVolumeInit(&thiz->mVolume, audioPlayerId);
-    IOHBufferQueueInit(&thiz->mBufferQueue, SL_IID_PLAY, audioPlayerId);
+    IPlayInit(&thiz->mPlay, thiz->mId);
+    IVolumeInit(&thiz->mVolume, thiz->mId);
+    IOHBufferQueueInit(&thiz->mBufferQueue, SL_IID_PLAY, thiz->mId);
     *pPlayer = &thiz->mObject.mItf;
     SLresult ret = AudioPlayerAdapter::GetInstance()->
-        CreateAudioPlayerAdapter(audioPlayerId, pAudioSrc, pAudioSnk, OHOS::AudioStandard::STREAM_MUSIC);
+        CreateAudioPlayerAdapter(thiz->mId, pAudioSrc, pAudioSnk, OHOS::AudioStandard::STREAM_MUSIC);
     if (ret != SL_RESULT_SUCCESS) {
         return SL_RESULT_RESOURCE_ERROR;
     }
