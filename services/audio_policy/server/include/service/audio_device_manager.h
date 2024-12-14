@@ -46,6 +46,7 @@ public:
     void ParseDeviceXml();
     void UpdateDevicesListInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const DeviceInfoUpdateCommand updateCommand);
+    void Dump(std::string &dumpString);
 
     vector<shared_ptr<AudioDeviceDescriptor>> GetRemoteRenderDevices();
     vector<shared_ptr<AudioDeviceDescriptor>> GetRemoteCaptureDevices();

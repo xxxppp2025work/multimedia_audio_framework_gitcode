@@ -99,6 +99,7 @@ void AudioPolicyDump::DevicesInfoDump(std::string &dumpString)
 
     GetMicrophoneDescriptorsDump(dumpString);
     GetOffloadStatusDump(dumpString);
+    audioDeviceManager_.Dump(dumpString);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyDump::GetDumpDeviceInfo(std::string &dumpString,
