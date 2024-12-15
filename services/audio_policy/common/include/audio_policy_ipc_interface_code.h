@@ -179,6 +179,7 @@ enum class AudioPolicyInterfaceCode {
     SET_PREFERRED_DEVICE,
     SAVE_REMOTE_INFO,
     AUDIO_POLICY_MANAGER_CODE_MAX = SAVE_REMOTE_INFO,
+    CLEAR_USER_SELECT_DEVICE,
 };
 } // namespace AudioStandard
 } // namespace OHOS

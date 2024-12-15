@@ -376,6 +376,8 @@ public:
 
     virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) = 0;
 
+    virtual void ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };
