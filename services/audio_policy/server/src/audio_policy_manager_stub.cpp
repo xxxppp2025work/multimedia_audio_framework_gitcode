@@ -1849,7 +1849,8 @@ void AudioPolicyManagerStub::ClearUserSelectDeviceInternal(MessageParcel &data, 
 {
     std::string networkId = data.ReadString();
     DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
-    ClearUserSelectDevice(networkId, deviceType);
+    DeviceUsage usage = static_cast<DeviceUsage>(data.ReadInt32());
+    ClearUserSelectDevice(networkId, deviceType, usage);
 }
 
 void AudioPolicyManagerStub::SetAudioDeviceAnahsCallbackInternal(MessageParcel &data, MessageParcel &reply)

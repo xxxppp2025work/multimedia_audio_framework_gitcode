@@ -362,7 +362,7 @@ public:
 
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
 
-    void ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType) override;
+    void ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType, DeviceUsage usage) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;

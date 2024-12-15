@@ -468,7 +468,7 @@ public:
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-    void ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType);
+    void ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType, DeviceUsage usage);
 
 private:
     AudioPolicyManager() {}

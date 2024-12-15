@@ -391,7 +391,7 @@ public:
 
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
-    void ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType);
+    void ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType, DeviceUsage usage);
 
     int32_t DisableSafeMediaVolume();
 

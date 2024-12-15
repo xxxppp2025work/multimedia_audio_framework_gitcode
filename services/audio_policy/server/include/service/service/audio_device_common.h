@@ -115,7 +115,7 @@ public:
         ConnectState connectState);
     std::vector<SourceOutput> GetSourceOutputs();
     void BluetoothScoDisconectForRecongnition();
-    void ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType);
+    void ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType, DeviceUsage usage);
 private:
     AudioDeviceCommon() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),

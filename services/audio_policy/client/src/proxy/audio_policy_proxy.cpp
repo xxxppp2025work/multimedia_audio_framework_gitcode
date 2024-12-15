@@ -2243,7 +2243,8 @@ int32_t AudioPolicyProxy::InjectInterruption(const std::string networkId, Interr
     return reply.ReadInt32();
 }
 
-void AudioPolicyProxy::ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType)
+void AudioPolicyProxy::ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType,
+    DeviceUsage usage)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -2256,6 +2257,7 @@ void AudioPolicyProxy::ClearUserSelectDevice(const std::string &networkId, Devic
 
     data.WriteString(networkId);
     data.WriteInt32(static_cast<int32_t>(deviceType));
+    data.WriteInt32(static_cast<int32_t>(usage));
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::CLEAR_USER_SELECT_DEVICE), data, reply, option);
     if (error != ERR_NONE) {
