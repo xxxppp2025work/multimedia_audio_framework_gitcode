@@ -186,6 +186,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_STREAM_IN_FOCUS_BY_UID",
     "SET_PREFERRED_DEVICE",
     "SAVE_REMOTE_INFO",
+    "CLEAR_USER_SELECT_DEVICE",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
