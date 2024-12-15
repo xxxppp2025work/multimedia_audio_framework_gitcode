@@ -473,6 +473,7 @@ public:
     int32_t SetVoiceRingtoneMute(bool isMute) override;
 
     void ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType) override;
+    void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
@@ -671,6 +672,7 @@ private:
     std::string GetBundleName();
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
     AudioPolicyDump &audioPolicyDump_;
+    int32_t sessionIdByRemote_ = -1;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {
