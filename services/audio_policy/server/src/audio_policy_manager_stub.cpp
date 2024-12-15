@@ -1283,6 +1283,9 @@ void AudioPolicyManagerStub::OnMiddleEigRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_SESSION_ACTIVATED):
             IsAudioSessionActivatedInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::CLEAR_USER_SELECT_DEVICE):
+            ClearUserSelectDeviceInternal(data, reply);
+            break;
         default:
             OnMiddleNinRemoteRequest(code, data, reply, option);
             break;
@@ -1840,6 +1843,13 @@ void AudioPolicyManagerStub::SaveRemoteInfoInternal(MessageParcel &data, Message
     std::string networkId = data.ReadString();
     DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
     SaveRemoteInfo(networkId, deviceType);
+}
+
+void AudioPolicyManagerStub::ClearUserSelectDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string networkId = data.ReadString();
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    ClearUserSelectDevice(networkId, deviceType);
 }
 
 void AudioPolicyManagerStub::SetAudioDeviceAnahsCallbackInternal(MessageParcel &data, MessageParcel &reply)

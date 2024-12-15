@@ -1664,6 +1664,11 @@ int32_t AudioPolicyService::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt 
     return audioDeviceLock_.TriggerFetchDevice(reason);
 }
 
+void AudioPolicyService::ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType)
+{
+    return audioDeviceCommon_.ClearUserSelectDevice(networkId, deviceType);
+}
+
 int32_t AudioPolicyService::DisableSafeMediaVolume()
 {
     return audioVolumeManager_.DisableSafeMediaVolume();
