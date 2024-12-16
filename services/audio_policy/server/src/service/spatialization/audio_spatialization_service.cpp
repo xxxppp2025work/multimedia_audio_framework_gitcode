@@ -71,6 +71,19 @@ static bool IsSpatializationSupportedUsage(StreamUsage usage)
     return usage != STREAM_USAGE_GAME;
 }
 
+static std::string GetEncryptAddr(const std::string &addr)
+{
+    if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
+        return std::string("");
+    }
+    std::string tmp = "**:**:**:**:**:**";
+    std::string out = addr;
+    for (int i = START_POS; i <= END_POS; i++) {
+        out[i] = tmp[i];
+    }
+    return out;
+}
+
 AudioSpatializationService::~AudioSpatializationService()
 {
     AUDIO_ERR_LOG("~AudioSpatializationService()");
@@ -165,7 +178,8 @@ int32_t AudioSpatializationService::SetSpatializationEnabled(
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     std::string address = selectedAudioDevice->macAddress_;
     std::string encryptedAddress = GetSha256EncryptAddress(address);
-    AUDIO_INFO_LOG("Device SpatializationEnabled is set to be: %{public}d", enable);
+    AUDIO_INFO_LOG("Device %{public}s SpatializationEnabled is set to be: %{public}d",
+        GetEncryptAddr(address).c_str(), enable);
     preSettingSpatialAddress_ = encryptedAddress;
     if (addressToSpatialEnabledMap_.find(encryptedAddress) != addressToSpatialEnabledMap_.end() &&
         addressToSpatialEnabledMap_[encryptedAddress].spatializationEnabled == enable) {
@@ -226,7 +240,8 @@ int32_t AudioSpatializationService::SetHeadTrackingEnabled(
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     std::string address = selectedAudioDevice->macAddress_;
     std::string encryptedAddress = GetSha256EncryptAddress(address);
-    AUDIO_INFO_LOG("Device HeadTrackingEnabled is set to be: %{public}d", enable);
+    AUDIO_INFO_LOG("Device %{public}s HeadTrackingEnabled is set to be: %{public}d",
+        GetEncryptAddr(address).c_str(), enable);
     preSettingSpatialAddress_ = encryptedAddress;
     if (addressToSpatialEnabledMap_.find(encryptedAddress) != addressToSpatialEnabledMap_.end() &&
         addressToSpatialEnabledMap_[encryptedAddress].headTrackingEnabled == enable) {
@@ -482,6 +497,9 @@ int32_t AudioSpatializationService::UpdateSpatializationStateReal(bool outputDev
             spatializationEnabled;
     }
 
+    AUDIO_INFO_LOG("currDevice: %{public}s state: %{public}d and %{public}d, previous state: %{public}d and %{public}d",
+        GetEncryptAddr(currentDeviceAddress_).c_str(), spatializationEnabled, headTrackingEnabled,
+        spatializationEnabledReal_, headTrackingEnabledReal_);
     if ((spatializationEnabledReal_ == spatializationEnabled) && (headTrackingEnabledReal_ == headTrackingEnabled)) {
         AUDIO_INFO_LOG("no need to update real spatialization state");
         UpdateHeadTrackingDeviceState(outputDeviceChange, preDeviceAddress);
