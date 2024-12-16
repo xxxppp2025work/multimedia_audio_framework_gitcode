@@ -139,5 +139,11 @@ void AudioRoutingManager::SaveRemoteInfo(const std::string &networkId, DeviceTyp
 {
     return AudioPolicyManager::GetInstance().SaveRemoteInfo(networkId, deviceType);
 }
+
+void AudioRoutingManager::ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType,
+    DeviceUsage usage)
+{
+    return AudioPolicyManager::GetInstance().ClearUserSelectDevice(networkId, deviceType, usage);
+}
 } // namespace AudioStandard
 } // namespace OHOS

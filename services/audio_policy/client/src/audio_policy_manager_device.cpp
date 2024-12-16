@@ -486,5 +486,16 @@ void AudioPolicyManager::SaveRemoteInfo(const std::string &networkId, DeviceType
         AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
     }
 }
+
+void AudioPolicyManager::ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType,
+    DeviceUsage usage)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp != nullptr) {
+        gsp->ClearUserSelectDevice(networkId, deviceType, usage);
+    } else {
+        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

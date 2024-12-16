@@ -81,6 +81,7 @@ public:
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
 private:
     int32_t GetCallingPid();
+    void ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType, DeviceUsage usage);
 };
 
 } // namespace AudioStandard

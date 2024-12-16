@@ -161,6 +161,7 @@ private:
     void TriggerFetchDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetPreferredDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SaveRemoteInfoInternal(MessageParcel &data, MessageParcel &reply);
+    void ClearUserSelectDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetAudioDeviceAnahsCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetAudioDeviceAnahsCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void MoveToNewTypeInternal(MessageParcel &data, MessageParcel &reply);

@@ -2242,5 +2242,28 @@ int32_t AudioPolicyProxy::InjectInterruption(const std::string networkId, Interr
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
     return reply.ReadInt32();
 }
+
+void AudioPolicyProxy::ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType,
+    DeviceUsage usage)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    if (!ret) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+    }
+
+    data.WriteString(networkId);
+    data.WriteInt32(static_cast<int32_t>(deviceType));
+    data.WriteInt32(static_cast<int32_t>(usage));
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::CLEAR_USER_SELECT_DEVICE), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SendRequest failed, error: %{public}d", error);
+    }
+    return;
+}
 } // namespace AudioStandard
 } // namespace OHOS

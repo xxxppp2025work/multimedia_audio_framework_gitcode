@@ -472,6 +472,7 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
 
+    void ClearUserSelectDevice(const std::string &networkId, DeviceType deviceType, DeviceUsage usage) override;
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 
     class RemoteParameterCallback : public AudioParameterCallback {
