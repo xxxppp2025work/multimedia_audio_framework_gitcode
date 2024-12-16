@@ -230,7 +230,11 @@ void AudioEcManager::UpdateEnhanceEffectState(SourceType source)
 void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamPropInfo &targetInfo,
     SourceType sourceType)
 {
-    if (!isEcFeatureEnable_) {
+    shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
+    if (inputDesc != nullptr && inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        moduleInfo = usbSourceModuleInfo_;
+        moduleInfo.sourceType = std::to_string(sourceType);
+    } else {
         moduleInfo = primaryMicModuleInfo_;
         // current layout represents the number of channel. This will need to be modify in the future.
         moduleInfo.channels = std::to_string(targetInfo.channelLayout_);
@@ -238,21 +242,10 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamP
         moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
         moduleInfo.format = targetInfo.format_;
         moduleInfo.sourceType = std::to_string(sourceType);
-    } else {
-        shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
-        if (inputDesc != nullptr && inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-            moduleInfo = usbSourceModuleInfo_;
-            moduleInfo.sourceType = std::to_string(sourceType);
-        } else {
-            moduleInfo = primaryMicModuleInfo_;
-            // current layout represents the number of channel. This will need to be modify in the future.
-            moduleInfo.channels = std::to_string(targetInfo.channelLayout_);
-            moduleInfo.rate = std::to_string(targetInfo.sampleRate_);
-            moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
-            moduleInfo.format = targetInfo.format_;
-            moduleInfo.sourceType = std::to_string(sourceType);
+        
+        // update primary info for ec config to get later
+        if (isEcFeatureEnable_) {
             moduleInfo.deviceType = std::to_string(static_cast<int32_t>(inputDesc->deviceType_));
-            // update primary info for ec config to get later
             primaryMicModuleInfo_.channels = std::to_string(targetInfo.channelLayout_);
             primaryMicModuleInfo_.rate = std::to_string(targetInfo.sampleRate_);
             primaryMicModuleInfo_.format = targetInfo.format_;
@@ -502,9 +495,7 @@ void AudioEcManager::PresetArmIdleInput(const string& address)
         DeviceRole configRole = moduleInfo.role == "sink" ? OUTPUT_DEVICE : INPUT_DEVICE;
         if (configRole != INPUT_DEVICE) {continue;}
         UpdateArmModuleInfo(address, INPUT_DEVICE, moduleInfo);
-        if (isEcFeatureEnable_) {
-            usbSourceModuleInfo_ = moduleInfo;
-        }
+        usbSourceModuleInfo_ = moduleInfo;
     }
 }
 
@@ -524,20 +515,15 @@ void AudioEcManager::ActivateArmDevice(const string& address, const DeviceRole r
             audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleInfo.name, true);
         }
         UpdateArmModuleInfo(address, role, moduleInfo);
-        if (isEcFeatureEnable_) {
-            if (role == OUTPUT_DEVICE) {
-                int32_t ret = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-                CHECK_AND_RETURN_LOG(ret == SUCCESS,
-                    "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
-                usbSinkModuleInfo_ = moduleInfo;
-            } else {
-                AUDIO_INFO_LOG("just save arm usb source module info, rate=%{public}s", moduleInfo.rate.c_str());
-                usbSourceModuleInfo_ = moduleInfo;
-            }
-        } else {
+
+        if (role == OUTPUT_DEVICE) {
             int32_t ret = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
             CHECK_AND_RETURN_LOG(ret == SUCCESS,
                 "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
+            usbSinkModuleInfo_ = moduleInfo;
+        } else {
+            AUDIO_INFO_LOG("just save arm usb source module info, rate=%{public}s", moduleInfo.rate.c_str());
+            usbSourceModuleInfo_ = moduleInfo;
         }
     }
 }
@@ -550,13 +536,11 @@ void AudioEcManager::UpdateArmModuleInfo(const string& address, const DeviceRole
     AUDIO_INFO_LOG("device info from usb hal is %{public}s", deviceInfo.c_str());
     if (!deviceInfo.empty()) {
         GetUsbModuleInfo(deviceInfo, moduleInfo);
-        if (isEcFeatureEnable_) {
-            uint32_t bufferSize = (static_cast<uint32_t>(std::stoi(moduleInfo.rate)) *
-                AudioPolicyUtils::GetInstance().PcmFormatToBytes(formatStrToEnum[moduleInfo.format]) *
-                static_cast<uint32_t>(std::stoi(moduleInfo.channels))) * RENDER_FRAME_INTERVAL_IN_SECONDS;
-            moduleInfo.bufferSize = std::to_string(bufferSize);
-            AUDIO_INFO_LOG("update arm usb buffer size: %{public}s", moduleInfo.bufferSize.c_str());
-        }
+        uint32_t bufferSize = (static_cast<uint32_t>(std::stoi(moduleInfo.rate)) *
+            AudioPolicyUtils::GetInstance().PcmFormatToBytes(formatStrToEnum[moduleInfo.format]) *
+            static_cast<uint32_t>(std::stoi(moduleInfo.channels))) * RENDER_FRAME_INTERVAL_IN_SECONDS;
+        moduleInfo.bufferSize = std::to_string(bufferSize);
+        AUDIO_INFO_LOG("update arm usb buffer size: %{public}s", moduleInfo.bufferSize.c_str());
     }
 }
 
