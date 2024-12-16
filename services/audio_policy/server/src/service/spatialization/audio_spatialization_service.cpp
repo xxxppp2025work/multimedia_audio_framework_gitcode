@@ -73,6 +73,9 @@ static bool IsSpatializationSupportedUsage(StreamUsage usage)
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
+    const int32_t START_POS = 6;
+    const int32_t END_POS = 13;
+    const int32_t ADDRESS_STR_LEN = 17;
     if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
         return std::string("");
     }
