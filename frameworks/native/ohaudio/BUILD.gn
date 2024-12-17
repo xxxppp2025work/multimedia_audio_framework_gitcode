@@ -62,7 +62,7 @@ ohos_shared_library("ohaudio") {
   ]
 
   deps = [
-    "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_client_static",
     "../audiocapturer:audio_capturer",
     "../audiorenderer:audio_renderer",
   ]
@@ -132,7 +132,7 @@ ohos_executable("oh_audio_capturer_lowlatency_test") {
 
   deps = [
     ":ohaudio",
-    "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_client_static",
     "../audioutils:audio_utils",
   ]
 
@@ -194,7 +194,7 @@ ohos_executable("oh_audio_session_manager_test") {
 
   deps = [
     ":ohaudio",
-    "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_client_static",
     "../audioutils:audio_utils",
   ]
 

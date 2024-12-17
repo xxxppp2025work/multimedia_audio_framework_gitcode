@@ -31,7 +31,7 @@ ohos_shared_library("audio_safe_volume_notification_impl") {
 
   sources = [ "src/audio_safe_volume_notification_impl.cpp" ]
 
-  deps = [ "../../../services/audio_service:audio_client" ]
+  deps = [ "../../../services/audio_service:audio_client_static" ]
 
   external_deps = [
     "ability_base:want",

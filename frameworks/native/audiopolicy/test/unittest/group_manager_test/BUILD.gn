@@ -31,7 +31,7 @@ ohos_unittest("audio_group_manager_unit_test") {
   sources = [ "src/audio_group_manager_unit_test.cpp" ]
 
   deps = [
-    "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_client_static",
     "../../../../audiorenderer:audio_renderer",
   ]
 

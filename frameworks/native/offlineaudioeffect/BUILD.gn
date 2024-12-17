@@ -43,7 +43,7 @@ audio_ohos_library("offline_audio_effect") {
   ]
 
   deps = [
-    "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_client_static",
     "../audioutils:audio_utils",
   ]
 
