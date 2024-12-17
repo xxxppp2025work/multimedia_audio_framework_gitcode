@@ -564,5 +564,46 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetMaxAmplitude_001, TestSize.Level1)
     const int32_t deviceId = 0;
     GetServerPtr()->audioPolicyService_.GetMaxAmplitude(deviceId);
 }
+
+/**
+* @tc.name  : Test ActivateConcurrencyFromServer.
+* @tc.number: ActivateConcurrencyFromServer_001
+* @tc.desc  : Test ActivateConcurrencyFromServer.
+*/
+HWTEST_F(AudioPolicyServiceThirdUnitTest, ActivateConcurrencyFromServer_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    int32_t result = server->audioPolicyService_.ActivateConcurrencyFromServer(PIPE_TYPE_UNKNOWN);
+    EXPECT_EQ(false, result);
+}
+
+/**
+* @tc.name  : Test IsAllowedPlayback.
+* @tc.number: IsAllowedPlayback_001
+* @tc.desc  : Test IsAllowedPlayback.
+*/
+HWTEST_F(AudioPolicyServiceThirdUnitTest, IsAllowedPlayback_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    const int32_t uid = 0;
+    const int32_t pid = 0;
+    EXPECT_EQ(false, server->audioPolicyService_.IsAllowedPlayback(uid, pid));
+}
+
+/**
+* @tc.name  : Test IsAllowedPlayback.
+* @tc.number: IsAllowedPlayback_002
+* @tc.desc  : Test IsAllowedPlayback.
+*/
+HWTEST_F(AudioPolicyServiceThirdUnitTest, IsAllowedPlayback_002, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    const int32_t uid = 1003;
+    const int32_t pid = 0;
+    EXPECT_TRUE(server->audioPolicyService_.IsAllowedPlayback(uid, pid));
+}
 } // namespace AudioStandard
 } // namespace OHOS
