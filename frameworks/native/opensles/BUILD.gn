@@ -74,7 +74,7 @@ if (!audio_framework_feature_opensl_es) {
     cflags = [ "-Werror" ]
 
     deps = [
-      "../../../services/audio_service:audio_client",
+      "../../../services/audio_service:audio_client_static",
       "../audiocapturer:audio_capturer",
       "../audiorenderer:audio_renderer",
     ]

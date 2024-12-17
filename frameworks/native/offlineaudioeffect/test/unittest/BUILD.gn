@@ -35,7 +35,7 @@ ohos_unittest("offline_audio_effect_manager_unit_test") {
 
   deps = [
     "../../:offline_audio_effect",
-    "../../../../../services/audio_service:audio_client",
+    "../../../../../services/audio_service:audio_client_static",
     "../../../audioutils:audio_utils",
   ]
 

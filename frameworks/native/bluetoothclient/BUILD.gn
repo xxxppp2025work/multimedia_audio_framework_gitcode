@@ -36,7 +36,7 @@ audio_ohos_library("audio_bluetooth_client") {
   ]
 
   deps = [
-    "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_client_static",
     "../audioutils:audio_utils",
   ]
 
