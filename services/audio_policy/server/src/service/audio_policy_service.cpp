@@ -4651,6 +4651,7 @@ int32_t AudioPolicyService::HandleDistributedDeviceUpdate(DStatusInfo &statusInf
     } else {
         UpdateConnectedDevicesWhenDisconnecting(deviceDesc, descForCb);
         std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(devType));
+        MuteDefaultSinkPort();
         ClosePortAndEraseIOHandle(moduleName);
         RemoveDeviceInRouterMap(moduleName);
         RemoveDeviceInFastRouterMap(networkId);
