@@ -31,6 +31,9 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
+static const int32_t START_POS = 6;
+static const int32_t END_POS = 13;
+static const int32_t ADDRESS_STR_LEN = 17;
 static const int32_t SPATIALIZATION_SERVICE_OK = 0;
 static const std::string BLUETOOTH_EFFECT_CHAIN_NAME = "EFFECTCHAIN_BT_MUSIC";
 static const std::string SPATIALIZATION_AND_HEAD_TRACKING_SUPPORTED_LABEL = "SPATIALIZATION_AND_HEADTRACKING";
@@ -73,9 +76,6 @@ static bool IsSpatializationSupportedUsage(StreamUsage usage)
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
-    const int32_t START_POS = 6;
-    const int32_t END_POS = 13;
-    const int32_t ADDRESS_STR_LEN = 17;
     if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
         return std::string("");
     }
