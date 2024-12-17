@@ -173,7 +173,9 @@ static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
 static std::string GetField(const std::string &src, const char* field, const char sep)
 {
     auto str = std::string(field) + '=';
-    auto pos = src.find(str) + str.length();
+    auto pos = src.find(str);
+    CHECK_AND_RETURN_RET(pos != std::string::npos, "");
+    pos += str.length();
     auto end = src.find(sep, pos);
     return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
 }
@@ -678,11 +680,14 @@ const std::string AudioServer::GetUsbParameter(const std::string &condition)
 {
     AUDIO_INFO_LOG("AudioServer::GetUsbParameter Entry. condition=%{public}s", condition.c_str());
     string address = GetField(condition, "address", ' ');
-    DeviceRole role = static_cast<DeviceRole>(stoi(GetField(condition, "role", ' ')));
+    int32_t deviceRoleNum = static_cast<int32_t>(DEVICE_ROLE_NONE);
+    std::string usbInfoStr;
+    CHECK_AND_RETURN_RET_LOG(StringConverter(GetField(condition, "role", ' '), deviceRoleNum), usbInfoStr,
+        "convert invalid value: %{public}s", GetField(condition, "role", ' ').c_str());
+    DeviceRole role = static_cast<DeviceRole>(deviceRoleNum);
     IAudioRendererSink *rendererSink = IAudioRendererSink::GetInstance("usb", "");
     CHECK_AND_RETURN_RET_LOG(rendererSink, "", "rendererSink is nullptr");
     std::string infoCond = std::string("get_usb_info#C") + GetField(address, "card", ';') + "D0";
-    std::string usbInfoStr;
     if (role == OUTPUT_DEVICE) {
         rendererSink->SetAddress(address);
         auto it = usbInfoMap_.find(address);
@@ -901,7 +906,7 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         }
         if (type == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD &&
             deviceTypes.size() == 1 && deviceTypes[0] == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            deviceTypes[0] = DEVICE_TYPE_SPEAKER;
+            deviceTypes[0] = DEVICE_TYPE_NONE;
         }
     }
     CHECK_AND_RETURN_RET_LOG(audioCapturerSourceInstance != nullptr && audioRendererSinkInstance != nullptr,
@@ -1829,10 +1834,20 @@ void AudioServer::RegisterAudioRendererSinkCallback()
 {
     // Only watch primary and fast sink for now, watch other sinks later.
     IAudioRendererSink *primarySink = IAudioRendererSink::GetInstance("primary", "");
+    IAudioRendererSink *usbSink = IAudioRendererSink::GetInstance("usb", "");
+    IAudioRendererSink *offloadSink = IAudioRendererSink::GetInstance("offload", "");
+    IAudioRendererSink *a2dpSink = IAudioRendererSink::GetInstance("a2dp", "");
+    IAudioRendererSink *a2dpFastSink = IAudioRendererSink::GetInstance("a2dp_fast", "");
     IAudioRendererSink *fastSink = FastAudioRendererSink::GetInstance();
+    IAudioRendererSink *fastVoipSink = FastAudioRendererSink::GetVoipInstance();
     for (auto sinkInstance : {
         primarySink,
-        fastSink
+        usbSink,
+        offloadSink,
+        a2dpSink,
+        a2dpFastSink,
+        fastSink,
+        fastVoipSink
     }) {
         if (sinkInstance) {
             sinkInstance->RegisterAudioSinkCallback(this);

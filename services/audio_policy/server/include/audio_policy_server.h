@@ -472,6 +472,8 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
 
+    void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
@@ -580,6 +582,7 @@ private:
     bool GetStreamMuteInternal(AudioStreamType streamType);
     bool IsVolumeTypeValid(AudioStreamType streamType);
     bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
+    bool CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel);
 
     // Permission and privacy
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
@@ -669,6 +672,7 @@ private:
     std::string GetBundleName();
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
     AudioPolicyDump &audioPolicyDump_;
+    int32_t sessionIdByRemote_ = -1;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

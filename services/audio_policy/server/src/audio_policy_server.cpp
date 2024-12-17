@@ -49,7 +49,7 @@ constexpr int32_t SYSTEM_PROCESS_TYPE = 1;
 constexpr int32_t PARAMS_VOLUME_NUM = 5;
 constexpr int32_t PARAMS_INTERRUPT_NUM = 4;
 constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
-constexpr int32_t EVENT_DES_SIZE = 60;
+constexpr int32_t EVENT_DES_SIZE = 80;
 constexpr int32_t ADAPTER_STATE_CONTENT_DES_SIZE = 60;
 constexpr int32_t API_VERSION_REMAINDER = 1000;
 constexpr int32_t API_VERSION_14 = 14; // for deprecated since 9
@@ -827,6 +827,16 @@ bool AudioPolicyServer::IsVolumeUnadjustable()
     return audioPolicyService_.IsVolumeUnadjustable();
 }
 
+bool AudioPolicyServer::CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel)
+{
+    if ((volumeLevel - volumeStep_) == 0 && !VolumeUtils::IsPCVolumeEnable() && (volumeType == STREAM_VOICE_ASSISTANT
+        || volumeType == STREAM_VOICE_CALL || volumeType == STREAM_ALARM || volumeType == STREAM_ACCESSIBILITY ||
+        volumeType == STREAM_VOICE_COMMUNICATION)) {
+        return false;
+    }
+    return true;
+}
+
 int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
@@ -850,6 +860,11 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
         CHECK_AND_RETURN_RET_LOG(volumeLevelInInt < maxRet, ERR_OPERATION_FAILED, "volumeLevelInInt is biggest");
         volumeLevelInInt = volumeLevelInInt + volumeStep_;
     } else {
+        if (!CheckCanMuteVolumeTypeByStep(streamInFocus, volumeLevelInInt)) {
+            // This type can not set to mute, but don't return error
+            AUDIO_INFO_LOG("SetSystemVolumeLevel this type can not set mute");
+            return SUCCESS;
+        }
         CHECK_AND_RETURN_RET_LOG(volumeLevelInInt > minRet, ERR_OPERATION_FAILED, "volumeLevelInInt is smallest");
         volumeLevelInInt = volumeLevelInInt - volumeStep_;
     }
@@ -879,6 +894,11 @@ int32_t AudioPolicyServer::AdjustSystemVolumeByStep(AudioVolumeType volumeType, 
         CHECK_AND_RETURN_RET_LOG(volumeLevelInInt < maxRet, ERR_OPERATION_FAILED, "volumeLevelInInt is biggest");
         volumeLevelInInt = volumeLevelInInt + volumeStep_;
     } else {
+        if (!CheckCanMuteVolumeTypeByStep(volumeType, volumeLevelInInt)) {
+            // This type can not set to mute, but don't return error
+            AUDIO_INFO_LOG("SetSystemVolumeLevel this type can not set mute");
+            return SUCCESS;
+        }
         CHECK_AND_RETURN_RET_LOG(volumeLevelInInt > minRet, ERR_OPERATION_FAILED, "volumeLevelInInt is smallest");
         volumeLevelInInt = volumeLevelInInt - volumeStep_;
     }
@@ -1582,6 +1602,13 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const Audio
     return ERR_UNKNOWN;
 }
 
+void AudioPolicyServer::ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent)
+{
+    if (interruptService_ != nullptr) {
+        interruptService_->ProcessRemoteInterrupt(sessionIds, interruptEvent);
+    }
+}
+
 int32_t AudioPolicyServer::ActivateAudioInterrupt(
     const AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
 {
@@ -2200,18 +2227,36 @@ void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::strin
 void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::string networkId,
     const std::string& condition)
 {
+    AUDIO_INFO_LOG("InterruptOnChange : networkId: %{public}s, condition: %{public}s.", networkId.c_str(),
+        condition.c_str());
     char eventDes[EVENT_DES_SIZE];
     InterruptType type = INTERRUPT_TYPE_BEGIN;
     InterruptForceType forceType = INTERRUPT_SHARE;
     InterruptHint hint = INTERRUPT_HINT_NONE;
+    int32_t audioCategory = 0;
 
-    int ret = sscanf_s(condition.c_str(), "%[^;];EVENT_TYPE=%d;FORCE_TYPE=%d;HINT_TYPE=%d;", eventDes,
-        EVENT_DES_SIZE, &type, &forceType, &hint);
+    int ret = sscanf_s(condition.c_str(), "%[^;];EVENT_TYPE=%d;FORCE_TYPE=%d;HINT_TYPE=%d;AUDIOCATEGORY=%d;",
+        eventDes, EVENT_DES_SIZE, &type, &forceType, &hint, &audioCategory);
     CHECK_AND_RETURN_LOG(ret >= PARAMS_INTERRUPT_NUM, "[InterruptOnChange]: Failed parse condition");
 
+    std::set<int32_t> sessionIdMedia = AudioStreamCollector::GetAudioStreamCollector().
+        GetSessionIdByStreamUsage(StreamUsage::STREAM_USAGE_MUSIC);
+    std::set<int32_t> sessionIdMovie = AudioStreamCollector::GetAudioStreamCollector().
+        GetSessionIdByStreamUsage(StreamUsage::STREAM_USAGE_MOVIE);
+    std::set<int32_t> sessionIdGame = AudioStreamCollector::GetAudioStreamCollector().
+        GetSessionIdByStreamUsage(StreamUsage::STREAM_USAGE_GAME);
+    std::set<int32_t> sessionIdAudioBook = AudioStreamCollector::GetAudioStreamCollector().
+        GetSessionIdByStreamUsage(StreamUsage::STREAM_USAGE_AUDIOBOOK);
+    std::set<int32_t> sessionIds = {};
+    sessionIds.insert(sessionIdMedia.begin(), sessionIdMedia.end());
+    sessionIds.insert(sessionIdMovie.begin(), sessionIdMovie.end());
+    sessionIds.insert(sessionIdGame.begin(), sessionIdGame.end());
+    sessionIds.insert(sessionIdAudioBook.begin(), sessionIdAudioBook.end());
+
     InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
-    CHECK_AND_RETURN_LOG(server_->audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
-    server_->audioPolicyServerHandler_->SendInterruptEventInternalCallback(interruptEvent);
+    if (server_ != nullptr) {
+        server_->ProcessRemoteInterrupt(sessionIds, interruptEvent);
+    }
 }
 
 void AudioPolicyServer::RemoteParameterCallback::StateOnChange(const std::string networkId,
@@ -3105,6 +3150,19 @@ void AudioPolicyServer::SaveRemoteInfo(const std::string &networkId, DeviceType 
         AUDIO_ERR_LOG("No permission");
         return;
     }
+    std::shared_ptr<AudioDeviceDescriptor> newMediaDescriptor =
+        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1, ROUTER_TYPE_USER_SELECT).front();
+    std::shared_ptr<AudioDeviceDescriptor> newCallDescriptor =
+        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
+        ROUTER_TYPE_USER_SELECT).front();
+    if (networkId == newMediaDescriptor->networkId_ && deviceType == newMediaDescriptor->deviceType_) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
+            std::make_shared<AudioDeviceDescriptor>());
+    }
+    if (networkId == newCallDescriptor->networkId_ && deviceType == newCallDescriptor->deviceType_) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+            std::make_shared<AudioDeviceDescriptor>());
+    }
     audioDeviceManager_.SaveRemoteInfo(networkId, deviceType);
 }
 
@@ -3243,8 +3301,11 @@ int32_t AudioPolicyServer::InjectInterruption(const std::string networkId, Inter
         return ERROR;
     }
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
+    std::set<int32_t> sessionIds =
+        AudioStreamCollector::GetAudioStreamCollector().GetSessionIdByDeviceType(DEVICE_TYPE_REMOTE_CAST);
     InterruptEventInternal interruptEvent { event.eventType, event.forceType, event.hintType, 0.2f};
-    return audioPolicyServerHandler_->SendInterruptEventInternalCallback(interruptEvent);
+    ProcessRemoteInterrupt(sessionIds, interruptEvent);
+    return SUCCESS;
 }
 
 bool AudioPolicyServer::CheckAudioSessionStrategy(const AudioSessionStrategy &sessionStrategy)

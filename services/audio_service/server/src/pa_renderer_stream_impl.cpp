@@ -193,19 +193,18 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
         AUDIO_ERR_LOG("Stream Stop Failed");
         return ERR_OPERATION_FAILED;
     }
-    pa_proplist *propList = pa_proplist_new();
-    if (propList != nullptr) {
-        AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
-        if (!offloadEnable_) {
-            palock.Unlock();
-            {
-                std::unique_lock<std::mutex> lock(fadingMutex_);
-                const int32_t WAIT_TIME_MS = 40;
-                fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
-            }
-            palock.Relock();
+
+    AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
+    if (!offloadEnable_) {
+        palock.Unlock();
+        {
+            std::unique_lock<std::mutex> lock(fadingMutex_);
+            const int32_t WAIT_TIME_MS = 40;
+            fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
         }
+        palock.Relock();
     }
+
     isStandbyPause_ = isStandby;
     operation = pa_stream_cork(paStream_, 1, PAStreamPauseSuccessCb, reinterpret_cast<void *>(this));
     pa_operation_unref(operation);
@@ -213,12 +212,15 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
     palock.Unlock();
 
     if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
-        initEffectFlag_ == false && processConfig_.rendererInfo.streamUsage != STREAM_USAGE_ACCESSIBILITY) {
+        initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        if (audioEffectChainManager != nullptr) {
-            audioEffectChainManager->InitAudioEffectChainDynamic(effectSceneName_);
+        if (audioEffectChainManager == nullptr) {
+            AUDIO_INFO_LOG("audioEffectChainManager is null");
+        } else {
+            std::string sessionIDTemp = std::to_string(streamIndex_);
+            audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
+            initEffectFlag_ = true;
         }
-        initEffectFlag_ = true;
     }
 
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
@@ -263,12 +265,15 @@ int32_t PaRendererStreamImpl::Flush()
     Trace trace("PaRendererStreamImpl::InitAudioEffectChainDynamic");
 
     if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
-        initEffectFlag_ == false && processConfig_.rendererInfo.streamUsage != STREAM_USAGE_ACCESSIBILITY) {
+        initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        if (audioEffectChainManager != nullptr) {
-            audioEffectChainManager->InitAudioEffectChainDynamic(effectSceneName_);
+        if (audioEffectChainManager == nullptr) {
+            AUDIO_INFO_LOG("audioEffectChainManager is null");
+        } else {
+            std::string sessionIDTemp = std::to_string(streamIndex_);
+            audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
+            initEffectFlag_ = true;
         }
-        initEffectFlag_ = true;
     }
 
     pa_operation_unref(operation);
@@ -306,18 +311,15 @@ int32_t PaRendererStreamImpl::Stop()
         return ERR_ILLEGAL_STATE;
     }
 
-    pa_proplist *propList = pa_proplist_new();
-    if (propList != nullptr) {
-        AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
-        if (!offloadEnable_) {
-            palock.Unlock();
-            {
-                std::unique_lock<std::mutex> lock(fadingMutex_);
-                const int32_t WAIT_TIME_MS = 20;
-                fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
-            }
-            palock.Relock();
+    AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
+    if (!offloadEnable_) {
+        palock.Unlock();
+        {
+            std::unique_lock<std::mutex> lock(fadingMutex_);
+            const int32_t WAIT_TIME_MS = 20;
+            fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
         }
+        palock.Relock();
     }
 
     pa_operation *operation = pa_stream_cork(paStream_, 1, PaRendererStreamImpl::PAStreamAsyncStopSuccessCb,
@@ -326,12 +328,15 @@ int32_t PaRendererStreamImpl::Stop()
     pa_operation_unref(operation);
 
     if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
-        initEffectFlag_ == false && processConfig_.rendererInfo.streamUsage != STREAM_USAGE_ACCESSIBILITY) {
+        initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        if (audioEffectChainManager != nullptr) {
-            audioEffectChainManager->InitAudioEffectChainDynamic(effectSceneName_);
+        if (audioEffectChainManager == nullptr) {
+            AUDIO_INFO_LOG("audioEffectChainManager is null");
+        } else {
+            std::string sessionIDTemp = std::to_string(streamIndex_);
+            audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
+            initEffectFlag_ = true;
         }
-        initEffectFlag_ = true;
     }
 
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
@@ -364,12 +369,15 @@ int32_t PaRendererStreamImpl::Release()
     state_ = RELEASED;
 
     if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
-        initEffectFlag_ == false && processConfig_.rendererInfo.streamUsage != STREAM_USAGE_ACCESSIBILITY) {
+        initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        if (audioEffectChainManager != nullptr) {
-            audioEffectChainManager->InitAudioEffectChainDynamic(effectSceneName_);
+        if (audioEffectChainManager == nullptr) {
+            AUDIO_INFO_LOG("audioEffectChainManager is null");
+        } else {
+            std::string sessionIDTemp = std::to_string(streamIndex_);
+            audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
+            initEffectFlag_ = true;
         }
-        initEffectFlag_ = true;
     }
 
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();

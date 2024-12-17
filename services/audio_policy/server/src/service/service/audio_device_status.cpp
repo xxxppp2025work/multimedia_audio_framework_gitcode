@@ -60,7 +60,9 @@ static std::string GetEncryptAddr(const std::string &addr)
 static std::string GetField(const std::string &src, const char* field, const char sep)
 {
     auto str = std::string(field) + '=';
-    auto pos = src.find(str) + str.length();
+    auto pos = src.find(str);
+    CHECK_AND_RETURN_RET(pos != std::string::npos, "");
+    pos += str.length();
     auto end = src.find(sep, pos);
     return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
 }
@@ -462,6 +464,12 @@ int32_t AudioDeviceStatus::HandleSpecialDeviceType(DeviceType &devType, bool &is
             GetEncryptAddr(address).c_str(), role,
             audioConnectedDevice_.HasHifi(role), audioConnectedDevice_.HasArm(role));
         if (isConnected) {
+            // Usb-c maybe reported repeatedly, the devType remains unchanged
+            auto exists = audioConnectedDevice_.GetUsbDeviceDescriptor(address, role);
+            if (exists) {
+                devType = exists->deviceType_;
+                return SUCCESS;
+            }
             if (audioConnectedDevice_.HasHifi(role) || NoNeedChangeUsbDevice(address)) {
                 devType = DEVICE_TYPE_USB_ARM_HEADSET;
             }
@@ -985,9 +993,9 @@ AudioStreamDeviceChangeReason AudioDeviceStatus::GetDeviceChangeReason(AudioDevi
 
 void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
-    AUDIO_INFO_LOG("[%{public}s] type[%{public}d] command: %{public}d category[%{public}d] connectState[%{public}d] " \
-        "isEnable[%{public}d]", GetEncryptAddr(desc.macAddress_).c_str(), desc.deviceType_,
-        command, desc.deviceCategory_, desc.connectState_, desc.isEnable_);
+    AUDIO_WARNING_LOG("[%{public}s] type[%{public}d] command: %{public}d category[%{public}d] " \
+        "connectState[%{public}d] isEnable[%{public}d]", GetEncryptAddr(desc.macAddress_).c_str(),
+        desc.deviceType_, command, desc.deviceCategory_, desc.connectState_, desc.isEnable_);
     DeviceUpdateClearRecongnitionStatus(desc);
     if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
         if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -1145,7 +1153,7 @@ void AudioDeviceStatus::UpdateAllUserSelectDevice(
 void AudioDeviceStatus::DeviceUpdateClearRecongnitionStatus(AudioDeviceDescriptor &desc)
 {
     if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE ||
-        desc.connectState_ == DEACTIVE_CONNECTED || !desc.isEnable_)) {
+        desc.connectState_ == DEACTIVE_CONNECTED || desc.connectState_ == SUSPEND_CONNECTED || !desc.isEnable_)) {
         audioDeviceCommon_.BluetoothScoDisconectForRecongnition();
         Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
     }

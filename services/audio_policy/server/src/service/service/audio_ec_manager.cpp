@@ -153,8 +153,13 @@ static void GetUsbModuleInfo(string deviceInfo, AudioModuleInfo &moduleInfo)
     }
 
     if (!moduleInfo.rate.empty() && !moduleInfo.format.empty() && !moduleInfo.channels.empty()) {
-        uint32_t bufferSize = static_cast<uint32_t>(std::stoi(moduleInfo.rate)) *
-            static_cast<uint32_t>(std::stoi(moduleInfo.channels)) *
+        uint32_t rateValue, channelValue = 0;
+        CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.rate, rateValue),
+            "convert invalid moduleInfo.rate: %{public}s", moduleInfo.rate.c_str());
+        CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.channels, channelValue),
+            "convert invalid moduleInfo.channels: %{public}s", moduleInfo.channels.c_str());
+
+        uint32_t bufferSize = rateValue * channelValue *
             AudioPolicyUtils::GetInstance().PcmFormatToBytes(static_cast<AudioSampleFormat>(
                 formatFromParserStrToEnum[moduleInfo.format])) * BUFFER_CALC_20MS / static_cast<uint32_t>(MS_PER_S);
         moduleInfo.bufferSize = std::to_string(bufferSize);
@@ -551,9 +556,14 @@ void AudioEcManager::UpdateArmModuleInfo(const string& address, const DeviceRole
     if (!deviceInfo.empty()) {
         GetUsbModuleInfo(deviceInfo, moduleInfo);
         if (isEcFeatureEnable_) {
-            uint32_t bufferSize = (static_cast<uint32_t>(std::stoi(moduleInfo.rate)) *
+            uint32_t rateValue, channelValue = 0;
+            CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.rate, rateValue),
+                "convert invalid moduleInfo.rate: %{public}s", moduleInfo.rate.c_str());
+            CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.channels, channelValue),
+                "convert invalid moduleInfo.channels: %{public}s", moduleInfo.channels.c_str());
+            uint32_t bufferSize = rateValue * channelValue *
                 AudioPolicyUtils::GetInstance().PcmFormatToBytes(formatStrToEnum[moduleInfo.format]) *
-                static_cast<uint32_t>(std::stoi(moduleInfo.channels))) * RENDER_FRAME_INTERVAL_IN_SECONDS;
+                RENDER_FRAME_INTERVAL_IN_SECONDS;
             moduleInfo.bufferSize = std::to_string(bufferSize);
             AUDIO_INFO_LOG("update arm usb buffer size: %{public}s", moduleInfo.bufferSize.c_str());
         }
@@ -644,6 +654,7 @@ int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionIn
         }
     }
 
+#ifndef IS_EMULATOR
     // need change to use profile for all devices later
     if (primaryMicModuleInfo_.OpenMicSpeaker == "1") {
         uint32_t sampleFormatBits = AudioPolicyUtils::GetInstance().PcmFormatToBytes(
@@ -651,6 +662,7 @@ int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionIn
         targetInfo.bufferSize_ = BUFFER_CALC_20MS * targetInfo.sampleRate_ / static_cast<uint32_t>(MS_PER_S)
             * targetInfo.channelLayout_ * sampleFormatBits;
     }
+#endif
 
     return SUCCESS;
 }
