@@ -1008,11 +1008,11 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
         AUDIO_ERR_LOG("Unadjustable device, not allow set volume");
         return ERR_OPERATION_FAILED;
     }
+    bool mute = GetStreamMuteInternal(streamType);
     if (streamType == STREAM_ALL) {
         const std::vector<AudioStreamType> &streamTypeArray =
             (VolumeUtils::IsPCVolumeEnable()) ? GET_PC_STREAM_ALL_VOLUME_TYPES : GET_STREAM_ALL_VOLUME_TYPES;
         for (auto audioStreamType : streamTypeArray) {
-            bool mute = GetStreamMuteInternal(streamType);
             AUDIO_INFO_LOG("SetVolume of STREAM_ALL, SteamType = %{public}d, mute = %{public}d, level = %{public}d",
                 audioStreamType, mute, volumeLevel);
             int32_t setResult = SetSingleStreamVolume(audioStreamType, volumeLevel, isUpdateUi, mute);
@@ -1022,7 +1022,6 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
         }
         return SUCCESS;
     }
-    bool mute = GetStreamMuteInternal(streamType);
     return SetSingleStreamVolume(streamType, volumeLevel, isUpdateUi, mute);
 }
 
