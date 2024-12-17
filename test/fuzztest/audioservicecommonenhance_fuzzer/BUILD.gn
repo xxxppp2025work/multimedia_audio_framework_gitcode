@@ -42,7 +42,7 @@ ohos_fuzztest("AudioServiceCommonEnhanceFuzzTest") {
 
   deps = [
     "../../../services/audio_policy:audio_policy_client",
-    "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_client_static",
     "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
