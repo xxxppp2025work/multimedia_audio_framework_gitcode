@@ -1545,6 +1545,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     const AudioStreamDeviceChangeReasonExt reason)
 {
     bool switchResult = false;
+    std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
     if (audioStream_) {
         Trace trace("SwitchToTargetStream");
         std::lock_guard<std::shared_mutex> lock(rendererMutex_);
@@ -1589,12 +1590,14 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
             switchResult = newAudioStream->StartAudioStream(CMD_FROM_CLIENT, reason);
             CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
         }
+        oldAudioStream = audioStream_;
         audioStream_ = newAudioStream;
         UpdateRendererAudioStream(audioStream_);
         isSwitching_ = false;
         audioStream_->GetAudioSessionID(newSessionId);
         switchResult = true;
     }
+    oldAudioStream = nullptr;
     WriteSwitchStreamLogMsg();
     return switchResult;
 }
