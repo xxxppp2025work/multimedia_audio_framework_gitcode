@@ -502,6 +502,8 @@ public:
         const StreamUsage streamUsage, bool isRunning);
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
+
+    int32_t NotifyCapturerRemoved(uint64_t sessionId);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
