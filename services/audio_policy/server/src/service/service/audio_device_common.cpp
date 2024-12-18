@@ -615,8 +615,8 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
             AUDIO_WARNING_LOG("stream %{public}d not running, no need fetch device", rendererChangeInfo->sessionId);
             continue;
         } else {
-        descs = audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
-            rendererChangeInfo->clientUID);
+            descs = audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
+                rendererChangeInfo->clientUID);
         }
         runningStreamCount++;
         if (rendererChangeInfo->rendererInfo.streamUsage == STREAM_USAGE_ULTRASONIC &&
@@ -643,7 +643,7 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
         }
         if (needUpdateActiveDevice) {
             isUpdateActiveDevice = audioActiveDevice_.UpdateDevice(descs.front(), reason, rendererChangeInfo);
-            needUpdateActiveDevice = (isUpdateActiveDevice)? false : true;
+            needUpdateActiveDevice = !isUpdateActiveDevice;
         }
         if (!hasDirectChangeDevice && isUpdateActiveDevice && NotifyRecreateDirectStream(rendererChangeInfo, reason)) {
             hasDirectChangeDevice = true;
