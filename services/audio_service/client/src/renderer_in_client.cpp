@@ -533,7 +533,7 @@ void RendererInClientInner::FirstFrameProcess()
         needSetThreadPriority_ = false;
     }
 
-    if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }oiioioo
+    if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }
 }
 
 int32_t RendererInClientInner::WriteRingCache(uint8_t *buffer, size_t bufferSize, bool speedCached,
