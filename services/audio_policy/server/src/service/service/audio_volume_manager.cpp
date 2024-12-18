@@ -207,6 +207,10 @@ void AudioVolumeManager::SetVolumeForSwitchDevice(DeviceType deviceType, const s
     // Load volume from KvStore and set volume for each stream type
     audioPolicyManager_.SetVolumeForSwitchDevice(deviceType);
 
+    int32_t safeVolume = audioPolicyManager_.GetSafeVolumeLevel();
+    RestoreSafeVolume(STREAM_MUSIC, safeVolume);
+    SetSafeVolumeStatusForDeviceSwitch();
+
     // The volume of voice_call needs to be adjusted separately
     if (audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL) {
         SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
@@ -366,6 +370,24 @@ int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int
     }
     isBtFirstBoot_ = false;
     return sVolumeLevel;
+}
+
+void AudioVolumeManager::SetSafeVolumeStatusForDeviceSwitch()
+{
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    if (IsBlueTooth(curOutputDeviceType) && safeStatus_ == SAFE_INACTIVE && safeStatusBt_ == SAFE_ACTIVE) {
+        AUDIO_INFO_LOG("set bluetooth device to safe inactive status when switch device.");
+        safeStatusBt_ = SAFE_INACTIVE;
+        audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, SAFE_INACTIVE);
+        CreateCheckMusicActiveThread();
+    } else if (IsWiredHeadSet(curOutputDeviceType) && safeStatusBt_ == SAFE_INACTIVE && safeStatus_ == SAFE_ACTIVE) {
+        AUDIO_INFO_LOG("set wired device to safe inactive status when switch device.");
+        safeStatus_ = SAFE_INACTIVE;
+        audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET, SAFE_INACTIVE);
+        CreateCheckMusicActiveThread();
+    } else {
+        AUDIO_DEBUG_LOG("current device not set safe volume status when switch device.");
+    }
 }
 
 int32_t AudioVolumeManager::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volumeLevel,
@@ -664,9 +686,13 @@ void AudioVolumeManager::RestoreSafeVolume(AudioStreamType streamType, int32_t s
         return;
     }
 
-    AUDIO_INFO_LOG("restore safe volume.");
-    SetSystemVolumeLevel(streamType, safeVolume);
-    SetSafeVolumeCallback(streamType);
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    if ((safeStatusBt_ == SAFE_ACTIVE && IsBlueTooth(curOutputDeviceType)) ||
+        (safeStatus_ == SAFE_ACTIVE && IsWiredHeadSet(curOutputDeviceType))) {
+        AUDIO_INFO_LOG("restore safe volume.");
+        SetSystemVolumeLevel(streamType, safeVolume);
+        SetSafeVolumeCallback(streamType);
+    }
 }
 
 void AudioVolumeManager::SetSafeVolumeCallback(AudioStreamType streamType)
