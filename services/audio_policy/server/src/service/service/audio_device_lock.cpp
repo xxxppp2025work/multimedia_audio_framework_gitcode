@@ -213,7 +213,7 @@ void AudioDeviceLock::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamCha
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(streamChangeInfo.audioRendererChangeInfo.sessionId);
 
     if (rendererChangeInfo[0]->rendererInfo.streamUsage == STREAM_USAGE_ULTRASONIC) {
-        streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+        streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfo);
     }
     audioDeviceCommon_.FetchOutputDevice(rendererChangeInfo, reason);
 }
@@ -229,6 +229,9 @@ void AudioDeviceLock::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChan
         make_shared<AudioCapturerChangeInfo>(streamChangeInfo.audioCapturerChangeInfo));
     streamCollector_.GetCapturerStreamInfo(streamChangeInfo, *capturerChangeInfo[0]);
 
+    if (capturerChangeInfo[0]->capturerInfo.sourceType == SOURCE_TYPE_ULTRASONIC) {
+        streamCollector_.GetCurrentCapturerChangeInfos(capturerChangeInfo);
+    }
     audioDeviceCommon_.FetchInputDevice(capturerChangeInfo);
 }
 
