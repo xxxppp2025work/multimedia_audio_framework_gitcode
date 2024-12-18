@@ -1357,7 +1357,7 @@ SourceType AudioStreamCollector::GetLastestRunningSourceType()
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioCapturerChangeInfos_) {
-        if (changeInfo->capturerState == RENDERER_RUNNING) {
+        if (changeInfo->capturerState == CAPTURER_RUNNING) {
             return changeInfo->capturerInfo.sourceType;
         }
     }
