@@ -526,18 +526,14 @@ int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSi
 
 void RendererInClientInner::FirstFrameProcess()
 {
-    if (ipcStream_ == nullptr) {
-        AUDIO_ERR_LOG("Error: ipcStream_ is not initialized!");
-        return;
-    }
- 
-    // if first call, call set thread priority. if thread tid change recall set thread priority
-    if (needSetThreadPriority_.exchange(false)) {
+ // if first call, call set thread priority. if thread tid change recall set thread priority
+    if (needSetThreadPriority_) {
         ipcStream_->RegisterThreadPriority(gettid(),
             AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid));
+        needSetThreadPriority_ = false;
     }
 
-    if (!hasFirstFrameWrited_.exchange(true)) { OnFirstFrameWriting(); }
+    if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }oiioioo
 }
 
 int32_t RendererInClientInner::WriteRingCache(uint8_t *buffer, size_t bufferSize, bool speedCached,
