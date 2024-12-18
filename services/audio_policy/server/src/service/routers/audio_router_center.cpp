@@ -121,7 +121,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     if (streamUsage == STREAM_USAGE_ULTRASONIC &&
         AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningStreamUsage() == STREAM_USAGE_INVALID) {
         AUDIO_INFO_LOG("Stream ULTRASONIC always choose spk");
-        return AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice();
+        descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
+        return descs;
     }
     if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS ||
         renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
