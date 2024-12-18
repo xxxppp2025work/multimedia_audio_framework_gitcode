@@ -602,18 +602,29 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
     bool isUpdateActiveDevice = false;
     int32_t runningStreamCount = 0;
     bool hasDirectChangeDevice = false;
+    bool hasUltrasonic = false;
     std::vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
     for (auto &rendererChangeInfo : rendererChangeInfos) {
-        if (!IsRendererStreamRunning(rendererChangeInfo) ||
+        vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+        if (hasUltrasonic && rendererChangeInfo->sessionId == rendererChangeInfos.back()->sessionId
+            && !IsRendererStreamRunning(rendererChangeInfo) && runningStreamCount = 0) {
+            descs = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_ULTRASONIC, 0);
+        } else if (!IsRendererStreamRunning(rendererChangeInfo) ||
             (audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_DEFAULT &&
             audioRouterCenter_.isCallRenderRouter(rendererChangeInfo->rendererInfo.streamUsage))) {
             AUDIO_WARNING_LOG("stream %{public}d not running, no need fetch device", rendererChangeInfo->sessionId);
             continue;
+        } else {
+            descs = audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
+                rendererChangeInfo->clientUID);
         }
         runningStreamCount++;
-        vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
-            audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
-            rendererChangeInfo->clientUID);
+        if (rendererChangeInfo->rendererInfo.streamUsage == STREAM_USAGE_ULTRASONIC &&
+            rendererChangeInfo->sessionId != rendererChangeInfos.back()->sessionId) {
+            hasUltrasonic = true;
+            runningStreamCount--;
+            continue;
+        }
         if (HandleDeviceChangeForFetchOutputDevice(descs.front(), rendererChangeInfo) == ERR_NEED_NOT_SWITCH_DEVICE &&
             !Util::IsRingerOrAlarmerStreamUsage(rendererChangeInfo->rendererInfo.streamUsage)) {
             continue;
@@ -632,7 +643,7 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
         }
         if (needUpdateActiveDevice) {
             isUpdateActiveDevice = audioActiveDevice_.UpdateDevice(descs.front(), reason, rendererChangeInfo);
-            needUpdateActiveDevice = (isUpdateActiveDevice)? false : true;
+            needUpdateActiveDevice = !isUpdateActiveDevice;
         }
         if (!hasDirectChangeDevice && isUpdateActiveDevice && NotifyRecreateDirectStream(rendererChangeInfo, reason)) {
             hasDirectChangeDevice = true;
@@ -640,7 +651,9 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
         NotifyRecreateRendererStream(descs.front(), rendererChangeInfo, reason);
         MoveToNewOutputDevice(rendererChangeInfo, descs, sinkInputs, reason);
     }
-    FetchOutputEnd(isUpdateActiveDevice, runningStreamCount);
+    if (!hasUltrasonic) {
+        FetchOutputEnd(isUpdateActiveDevice, runningStreamCount);
+    }
 }
 
 void AudioDeviceCommon::FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount)
@@ -1169,6 +1182,8 @@ void AudioDeviceCommon::FetchInputDeviceInner(
         runningStreamCount++;
         std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(sourceType, clientUID);
         AudioDeviceDescriptor inputDeviceInfo = capturerChangeInfo->inputDeviceInfo;
+        if (capturerChangeInfo->capturerInfo.sourceType == SOURCE_TYPE_ULTRASONIC &&
+            capturerChangeInfo->sessionId != capturerChangeInfos.back()->sessionId) { continue; }
         if (HandleDeviceChangeForFetchInputDevice(desc, capturerChangeInfo) == ERR_NEED_NOT_SWITCH_DEVICE) {
             continue;
         }

@@ -212,6 +212,9 @@ void AudioDeviceLock::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamCha
 
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(streamChangeInfo.audioRendererChangeInfo.sessionId);
 
+    if (rendererChangeInfo[0]->rendererInfo.streamUsage == STREAM_USAGE_ULTRASONIC) {
+        streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    }
     audioDeviceCommon_.FetchOutputDevice(rendererChangeInfo, reason);
 }
 
