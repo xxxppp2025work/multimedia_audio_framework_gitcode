@@ -1361,7 +1361,7 @@ SourceType AudioStreamCollector::GetLastestRunningSourceType()
             return changeInfo->capturerInfo.sourceType;
         }
     }
-    return STREAM_USAGE_UNKNOWN;
+    return SOURCE_TYPE_INVALID;
 }
 
 StreamUsage AudioStreamCollector::GetLastestRunningCallStreamUsage()
