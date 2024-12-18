@@ -1353,7 +1353,7 @@ StreamUsage AudioStreamCollector::GetLastestRunningStreamUsage()
     return STREAM_USAGE_INVALID;
 }
 
-StreamUsage AudioStreamCollector::GetLastestRunningSourceType()
+SourceType AudioStreamCollector::GetLastestRunningSourceType()
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioCapturerChangeInfos_) {
