@@ -430,22 +430,22 @@ void AudioDeviceCommon::ClearUserSelectDeviceWhenDisconnecting(std::vector<share
         if (audioStateManager_.GetPreferredMediaRenderDevice() != nullptr &&
             desc->IsSameDeviceDesc(*audioStateManager_.GetPreferredMediaRenderDevice())) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
-                new(std::nothrow) AudioDeviceDescriptor());
+                std::make_shared<AudioDeviceDescriptor>());
         }
         if (audioStateManager_.GetPreferredCallRenderDevice() != nullptr &&
             desc->IsSameDeviceDesc(*audioStateManager_.GetPreferredCallRenderDevice())) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                new(std::nothrow) AudioDeviceDescriptor());
+                std::make_shared<AudioDeviceDescriptor>());
         }
         if (audioStateManager_.GetPreferredCallCaptureDevice() != nullptr &&
             desc->IsSameDeviceDesc(*audioStateManager_.GetPreferredCallCaptureDevice())) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE,
-                new(std::nothrow) AudioDeviceDescriptor());
+                std::make_shared<AudioDeviceDescriptor>());
         }
         if (audioStateManager_.GetPreferredRecordCaptureDevice() != nullptr &&
             desc->IsSameDeviceDesc(*audioStateManager_.GetPreferredRecordCaptureDevice())) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE,
-                new(std::nothrow) AudioDeviceDescriptor());
+                std::make_shared<AudioDeviceDescriptor>());
         }
     }   
 }
