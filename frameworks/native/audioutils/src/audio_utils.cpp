@@ -934,6 +934,16 @@ void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **f
     }
 }
 
+void SafeCloseFd(int fd)
+{
+    // ignore stdin, stdout, stderr.
+    if (fd == STDIN_FILENO || fd == STDOUT_FILENO || fd == STEERR_FILENO) {
+        AUDIO_WARNING_LOG("Not closing special fd: %{public}d", fd);
+        return;
+    }
+    close(fd);
+}
+
 static void MemcpyToI32FromI16(int16_t *src, int32_t *dst, size_t count)
 {
     for (size_t i = 0; i < count; i++) {
