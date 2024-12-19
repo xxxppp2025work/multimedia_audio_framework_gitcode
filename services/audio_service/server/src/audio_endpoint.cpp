@@ -1534,6 +1534,7 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
         DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
         bool muteFlag = processList_[i]->GetMuteFlag();
+        bool isSilentModeAndMixWithOthers = processList_[i]->IsSilentModeAndMixWithOthers();
         if (deviceInfo_.networkId_ == LOCAL_NETWORK_ID &&
             !(deviceInfo_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && volumeType == STREAM_MUSIC &&
                 PolicyHandler::GetInstance().IsAbsVolumeSupported()) &&
@@ -1550,7 +1551,7 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         SpanStatus targetStatus = SpanStatus::SPAN_WRITE_DONE;
         if (curReadSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_READING)) {
             processBufferList_[i]->GetReadbuffer(curRead, streamData.bufferDesc); // check return?
-            if (muteFlag) {
+            if (muteFlag || isSilentModeAndMixWithOthers) {
                 memset_s(static_cast<void *>(streamData.bufferDesc.buffer), streamData.bufferDesc.bufLength,
                     0, streamData.bufferDesc.bufLength);
             }
