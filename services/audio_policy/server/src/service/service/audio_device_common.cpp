@@ -423,7 +423,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
     }
 }
 
-void AudioDeviceCommon::ClearUserSelectDeviceWhenDisconnecting(const std::vector<sptr<AudioDeviceDescriptor>> descs)
+void AudioDeviceCommon::ClearUserSelectDeviceWhenDisconnecting(std::vector<shared_ptr<AudioDeviceDescriptor>> descs)
 {
     for (const auto &desc : descs) {
         if (desc->deviceType_ == DEVICE_TYPE_DP) { hasDpDevice_ = false; }
