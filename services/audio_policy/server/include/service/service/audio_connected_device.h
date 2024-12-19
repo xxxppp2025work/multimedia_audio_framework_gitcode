@@ -55,7 +55,7 @@ public:
     void DelConnectedDevice(std::string networkId, DeviceType deviceType);
     void DelConnectedDevice(std::string networkId, DeviceType deviceType, std::string macAddress);
     void DelConnectedDevice(std::string networkId, DeviceType deviceType, std::string macAddress,
-        DeviceRole deviceRole, bool is SingleDelete = false);
+        DeviceRole deviceRole, bool isSingleDelete = false);
     void AddConnectedDevice(std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
     DeviceType FindConnectedHeadset();
     void SetDisplayName(const std::string macAddress, const std::string deviceName);
