@@ -934,7 +934,7 @@ void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **f
     }
 }
 
-void safeCloseFd(int fd)
+void SafeCloseFd(int fd)
 {
     // ignore stdin, stdout, stderr.
     if (fd == STDIN_FILENO || fd == STDOUT_FILENO || fd == STEERR_FILENO) {

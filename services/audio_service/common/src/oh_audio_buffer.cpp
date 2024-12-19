@@ -120,7 +120,7 @@ void AudioSharedMemoryImpl::Close()
     }
 
     if (fd_ > 0) {
-        (void)safeCloseFd(fd_);
+        (void)SafeCloseFd(fd_);
         fd_ = INVALID_FD;
         AUDIO_DEBUG_LOG("%{public}s close fd done", name_.c_str());
     }
@@ -202,7 +202,7 @@ std::shared_ptr<AudioSharedMemory> AudioSharedMemory::ReadFromParcel(MessageParc
         AUDIO_ERR_LOG("ReadFromParcel failed");
         memory = nullptr;
     }
-    safeCloseFd(fd);
+    SafeCloseFd(fd);
     return memory;
 }
 
@@ -384,8 +384,8 @@ std::shared_ptr<OHAudioBuffer> OHAudioBuffer::ReadFromParcel(MessageParcel &parc
     } else {
         AUDIO_DEBUG_LOG("Read some data done.");
     }
-    safeCloseFd(dataFd);
-    safeCloseFd(infoFd);
+    SafeCloseFd(dataFd);
+    SafeCloseFd(infoFd);
     AUDIO_DEBUG_LOG("ReadFromParcel done.");
     return buffer;
 }
