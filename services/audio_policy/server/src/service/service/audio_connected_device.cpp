@@ -157,18 +157,31 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceB
 }
 
 void AudioConnectedDevice::DelConnectedDevice(std::string networkId, DeviceType deviceType, std::string macAddress,
-    DeviceRole deviceRole)
+    DeviceRole deviceRole, bool isSingleDelete)
 {
-    auto isPresent = [&deviceType, &networkId, &macAddress,
-        &deviceRole] (const std::shared_ptr<AudioDeviceDescriptor> &descriptor) {
-        return descriptor->deviceType_ == deviceType && descriptor->networkId_ == networkId
-            && descriptor->macAddress_ == macAddress &&
-            (!IsUsb(descriptor->deviceType_) || descriptor->deviceRole_ == deviceRole);
-    };
-
-    connectedDevices_.erase(std::remove_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent),
-        connectedDevices_.end());
-    return;
+    if (!isSingleDelete) {
+        auto isPresent = [&deviceType, &networkId, &macAddress,
+            &deviceRole] (const std::shared_ptr<AudioDeviceDescriptor> &descriptor) {
+            return descriptor->deviceType_ == deviceType && descriptor->networkId_ == networkId
+                && descriptor->macAddress_ == macAddress &&
+                (!IsUsb(descriptor->deviceType_) || descriptor->deviceRole_ == deviceRole);
+        };
+        connectedDevices_.erase(std::remove_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent),
+            connectedDevices_.end());
+        return;
+    } else {
+        auto isPresent = [&deviceType, &networkId, &macAddress,
+            &deviceRole] (const std::shared_ptr<AudioDeviceDescriptor> &descriptor) {
+            return descriptor->deviceType_ == deviceType && descriptor->networkId_ == networkId
+                && descriptor->macAddress_ == macAddress &&
+                (!IsUsb(descriptor->deviceType_) || descriptor->deviceRole_ == deviceRole);
+        };
+        auto it = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+        if (it != connectedDevices_.end()) {
+            connectedDevices_.erase(it);
+        }
+        return;
+    }
 }
 
 void AudioConnectedDevice::DelConnectedDevice(std::string networkId, DeviceType deviceType, std::string macAddress)
