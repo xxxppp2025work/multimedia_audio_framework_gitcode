@@ -228,6 +228,8 @@ private:
     bool HadVoipStatus(const AudioInterrupt &audioInterrupt, const std::list<std::pair<AudioInterrupt, AudioFocuState>>
         &audioFocusInfoList);
 
+    bool CheckAudioSessionExistence(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
+
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
     std::shared_ptr<AudioPolicyServerHandler> handler_;
