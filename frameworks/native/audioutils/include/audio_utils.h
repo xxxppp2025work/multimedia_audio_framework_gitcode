@@ -27,6 +27,7 @@
 #include <queue>
 #include <climits>
 #include <condition_variable>
+#include <unistd.h>
 #include "securec.h"
 
 #include "audio_info.h"
@@ -642,6 +643,8 @@ enum HdiRenderOffset : uint32_t {
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
+
+void safeCloseFd(int fd);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H
