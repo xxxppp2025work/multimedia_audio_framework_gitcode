@@ -801,11 +801,7 @@ int32_t AudioStreamCollector::GetCurrentRendererChangeInfos(
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo->rendererInfo.streamUsage == STREAM_USAGE_ULTRASONIC) {
-            rendererChangeInfos.insert(rendererChangeInfos.begin(), make_shared<AudioRendererChangeInfo>(*changeInfo));
-        } else {
-            rendererChangeInfos.push_back(make_shared<AudioRendererChangeInfo>(*changeInfo));
-        }
+        rendererChangeInfos.push_back(make_shared<AudioRendererChangeInfo>(*changeInfo));
     }
     AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos returned");
 
@@ -818,9 +814,7 @@ int32_t AudioStreamCollector::GetCurrentCapturerChangeInfos(
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos");
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioCapturerChangeInfos_) {
-        if (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_ULTRASONIC) {
-            capturerChangeInfos.insert(capturerChangeInfos.begin(), make_shared<AudioCapturerChangeInfo>(*changeInfo));
-        } else if (!IsTransparentCapture(changeInfo->clientUID)) {
+        if (!IsTransparentCapture(changeInfo->clientUID)) {
             capturerChangeInfos.push_back(make_shared<AudioCapturerChangeInfo>(*changeInfo));
         } else {
             AUDIO_INFO_LOG("GetCurrentCapturerChangeInfos remove uid:%{public}d", changeInfo->clientUID);
@@ -1346,7 +1340,8 @@ StreamUsage AudioStreamCollector::GetLastestRunningStreamUsage()
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo->rendererState == RENDERER_RUNNING) {
+        if (changeInfo->rendererState == RENDERER_RUNNING &&
+            changeInfo->rendererInfo.streamUsage != STREAM_USAGE_ULTRASONIC) {
             return changeInfo->rendererInfo.streamUsage;
         }
     }
@@ -1357,7 +1352,8 @@ SourceType AudioStreamCollector::GetLastestRunningSourceType()
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioCapturerChangeInfos_) {
-        if (changeInfo->capturerState == CAPTURER_RUNNING) {
+        if (changeInfo->capturerState == CAPTURER_RUNNING &&
+            changeInfo->capturerInfo.sourceType != SOURCE_TYPE_ULTRASONIC) {
             return changeInfo->capturerInfo.sourceType;
         }
     }
