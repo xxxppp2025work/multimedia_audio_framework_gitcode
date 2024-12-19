@@ -840,7 +840,7 @@ static void MemcpyToI32FromI24(uint8_t *src, int32_t *dst, size_t count)
     }
 }
 
-void safeCloseFd(int fd)
+void SafeCloseFd(int fd)
 {
     // ignore stdin, stdout, stderr.
     if (fd == STDIN_FILENO || fd == STDOUT_FILENO || fd == STEERR_FILENO) {
