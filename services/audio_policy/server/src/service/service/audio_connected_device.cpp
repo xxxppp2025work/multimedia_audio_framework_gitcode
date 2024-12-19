@@ -91,6 +91,20 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::CheckExistInputDevi
     return nullptr;
 }
 
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioConnectedDevice::GetConnectedDevices(std::string networkId,
+    DeviceType deviceType, std::string macAddress, DeviceRole deviceRole)
+{
+    std::vector<sptr<AudioDeviceDescriptor>> AudioDeviceDescriptors;
+    for (const auto &desc : connectedDevices_) {
+        if (deviceType == desc->deviceType_ && networkId == desc->networkId_ && macAddress == desc->macAddress_ &&
+            (!IsUsb(deviceType) || deviceRole == desc->deviceRole_)) {
+                std::shared_ptr<AudioDeviceDescriptor> device = std::make_shared<AudioDeviceDescriptor>(*desc);
+                AudioDeviceDescriptors.push_back(device);
+            }
+    }
+    return AudioDeviceDescriptors;
+}
+
 std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(int32_t deviceType)
 {
     auto isPresent = [&deviceType] (const std::shared_ptr<AudioDeviceDescriptor> &desc) {
