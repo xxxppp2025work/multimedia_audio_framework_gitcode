@@ -52,6 +52,10 @@ public:
 
     virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) = 0;
 
+    virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
+
+    virtual bool IsSilentModeAndMixWithOthers() = 0;
+
     virtual ~IAudioProcessStream() = default;
 };
 } // namespace AudioStandard

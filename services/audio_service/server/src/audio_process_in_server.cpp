@@ -499,5 +499,17 @@ int32_t AudioProcessInServer::SetDefaultOutputDevice(const DeviceType defaultOut
     return PolicyHandler::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, sessionId_,
         processConfig_.rendererInfo.streamUsage, streamStatus_->load() == STREAM_RUNNING);
 }
+
+int32_t AudioProcessInServer::SetSilentModeAndMixWithOthers(bool on)
+{
+    silentModeAndMixWithOthers_ = on;
+    AUDIO_INFO_LOG("%{public}d", on);
+    return SUCCESS;
+}
+
+bool AudioProcessInServer::IsSilentModeAndMixWithOthers()
+{
+    return silentModeAndMixWithOthers_;
+}
 } // namespace AudioStandard
 } // namespace OHOS
