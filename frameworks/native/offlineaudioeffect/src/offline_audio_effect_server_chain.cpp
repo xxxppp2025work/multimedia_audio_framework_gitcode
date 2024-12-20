@@ -55,20 +55,6 @@ static inline void FreeIfNotNull(T*& ptr)
     }
 }
 
-static inline int32_t GetByteSize(AudioSampleFormat format)
-{
-    static const std::unordered_map<AudioSampleFormat, int32_t> sizeMap = {
-        {SAMPLE_U8, 1},
-        {SAMPLE_S16LE, 2},
-        {SAMPLE_S24LE, 3},
-        {SAMPLE_S32LE, 4},
-        {SAMPLE_F32LE, 4}
-    };
-
-    auto it = sizeMap.find(format);
-    return (it != sizeMap.end()) ? it->second : 2;  // Default size is 2
-}
-
 OfflineAudioEffectServerChain::OfflineAudioEffectServerChain(const std::string &chainName) : chainName_(chainName) {}
 
 OfflineAudioEffectServerChain::~OfflineAudioEffectServerChain()
@@ -160,8 +146,7 @@ int32_t OfflineAudioEffectServerChain::Create()
 
     std::lock_guard<std::mutex> lock(offlineChainMutex_);
     CHECK_AND_RETURN_RET_LOG(controller_, ERROR, "enable failed, controller is nullptr");
-    ret = controller_->SendCommand(controller_, AUDIO_EFFECT_COMMAND_ENABLE,
-        static_cast<int8_t *>(input), MAX_CMD_LEN, output, &replyLen);
+    ret = controller_->SendCommand(controller_, AUDIO_EFFECT_COMMAND_ENABLE, input, MAX_CMD_LEN, output, &replyLen);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
         "%{public}s effect COMMAND_ENABLE failed, errCode is %{public}d", chainName_.c_str(), ret);
 
@@ -191,10 +176,10 @@ int32_t OfflineAudioEffectServerChain::SetParam(AudioStreamInfo inInfo, AudioStr
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
         "%{public}s effect COMMAND_SET_CONFIG failed, errCode is %{public}d", chainName_.c_str(), ret);
 
-    inBufferSize_ = GetByteSize(inInfo.format) * inInfo.samplingRate * inInfo.channels *
-        MAX_TIME_INTERVAL_MS / AUDIO_MS_PER_SECOND;
-    outBufferSize_ = GetByteSize(outInfo.format) * outInfo.samplingRate * outInfo.channels *
-        MAX_TIME_INTERVAL_MS / AUDIO_MS_PER_SECOND;
+    inBufferSize_ = static_cast<uint32_t>(GetFormatByteSize(inInfo.format)) * inInfo.samplingRate *
+        inInfo.channels * MAX_TIME_INTERVAL_MS / AUDIO_MS_PER_SECOND;
+    outBufferSize_ = static_cast<uint32_t>(GetFormatByteSize(outInfo.format)) * outInfo.samplingRate *
+        outInfo.channels * MAX_TIME_INTERVAL_MS / AUDIO_MS_PER_SECOND;
     return SUCCESS;
 }
 
@@ -233,8 +218,8 @@ int32_t OfflineAudioEffectServerChain::Process(uint32_t inSize, uint32_t outSize
     struct AudioEffectBuffer input;
     struct AudioEffectBuffer output;
 
-    input = {inSize / GetFormatByteSize(offlineConfig_.inputCfg.format),
-        GetFormatByteSize(offlineConfig_.inputCfg.format),
+    input = {inSize / static_cast<uint32_t>(GetFormatByteSize(offlineConfig_.inputCfg.format)),
+        static_cast<uint32_t>(GetFormatByteSize(offlineConfig_.inputCfg.format)),
         reinterpret_cast<int8_t *>(serverBufferIn_->GetBase()), inSize};
     output = {};
 
@@ -242,8 +227,8 @@ int32_t OfflineAudioEffectServerChain::Process(uint32_t inSize, uint32_t outSize
     CHECK_AND_RETURN_RET_LOG(controller_, ERROR, "process failed, controller is nullptr");
     int32_t ret = controller_->EffectProcess(controller_, &input, &output);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "EffectProcess failed ret:%{public}d", ret);
-    ret = memcpy_s(reinterpret_cast<int8_t *>(serverBufferOut_->GetBase()), outSize,
-        output.rawData, output.frameCount * GetFormatByteSize(offlineConfig_.outputCfg.format));
+    ret = memcpy_s(reinterpret_cast<int8_t *>(serverBufferOut_->GetBase()), outSize, output.rawData,
+        output.frameCount * static_cast<uint32_t>(GetFormatByteSize(offlineConfig_.outputCfg.format)));
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "memcpy failed, ret:%{public}d", ret);
     FreeIfNotNull(output.rawData);
 
