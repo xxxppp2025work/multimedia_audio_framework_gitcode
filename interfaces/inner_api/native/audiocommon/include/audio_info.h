@@ -33,6 +33,7 @@
 #include <audio_session_info.h>
 #include <audio_stream_info.h>
 #include <audio_asr.h>
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -146,6 +147,8 @@ public:
         parcel.WriteUint32(segmentCnt);
         parcel.WriteUint32(repeatCnt);
         parcel.WriteUint32(repeatSegment);
+        CHECK_AND_RETURN_RET_LOG(segmentCnt >= 0 && segmentCnt <= TONEINFO_MAX_SEGMENTS+1,
+            false, "Using tainted data  [segmentCnt：%{public}d] as loop bound", segmentCnt);
         for (uint32_t i = 0; i < segmentCnt; i++) {
             segments[i].Marshalling(parcel);
         }
@@ -156,6 +159,8 @@ public:
         segmentCnt = parcel.ReadUint32();
         repeatCnt = parcel.ReadUint32();
         repeatSegment = parcel.ReadUint32();
+        CHECK_AND_RETURN_LOG(segmentCnt >= 0 && segmentCnt <= TONEINFO_MAX_SEGMENTS+1,
+            "Using tainted data  [segmentCnt：%{public}d] as loop bound", segmentCnt);
         for (uint32_t i = 0; i < segmentCnt; i++) {
             segments[i].Unmarshalling(parcel);
         }
