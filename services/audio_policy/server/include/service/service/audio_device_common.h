@@ -140,6 +140,7 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
     void UpdateConnectedDevicesWhenConnectingForInputDevice(const AudioDeviceDescriptor &updatedDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
+    void ClearUserSelectDeviceWhenDisconnecting(std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs);
 
     void MuteSinkPort(const std::string &oldSinkname, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason);
