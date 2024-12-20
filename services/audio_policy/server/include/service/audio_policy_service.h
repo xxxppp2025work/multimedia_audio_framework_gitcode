@@ -266,6 +266,8 @@ public:
 
     void ReduceAudioPolicyClientProxyMap(pid_t clientPid);
 
+    int32_t SetPreferredDevice(const PreferredType preferredType, const sptr<AudioDeviceDescriptor> &desc);
+
     int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
         bool hasBTPermission);
 
@@ -808,6 +810,12 @@ private:
     void MuteSinkPortForSwtichDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
         vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason);
 
+    void MuteSinkForSwtichGeneralDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+        vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason);
+
+    void MuteSinkForSwtichBluetoothDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+        vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason);
+
     std::string GetSinkName(const DeviceInfo& desc, int32_t sessionId);
 
     std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
@@ -985,7 +993,6 @@ private:
 
     void SetDefaultDeviceLoadFlag(bool isLoad);
 
-    int32_t SetPreferredDevice(const PreferredType preferredType, const sptr<AudioDeviceDescriptor> &desc);
     int32_t ErasePreferredDeviceByType(const PreferredType preferredType);
 
     void CheckAndNotifyUserSelectedDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
@@ -1064,6 +1071,8 @@ private:
 
     void OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
         const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason);
+    
+    vector<unique_ptr<AudioDeviceDescriptor>> UserSelectDeviceMapInit();
 
     void CheckForA2dpSuspend(AudioDeviceDescriptor &desc);
 
