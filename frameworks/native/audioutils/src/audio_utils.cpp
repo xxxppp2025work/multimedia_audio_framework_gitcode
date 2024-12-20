@@ -937,7 +937,7 @@ void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **f
 void SafeCloseFd(int fd)
 {
     // ignore stdin, stdout, stderr.
-    if (fd == STDIN_FILENO || fd == STDOUT_FILENO || fd == STEERR_FILENO) {
+    if (fd == STDIN_FILENO || fd == STDOUT_FILENO || fd == STDERR_FILENO) {
         AUDIO_WARNING_LOG("Not closing special fd: %{public}d", fd);
         return;
     }
