@@ -440,7 +440,7 @@ void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
     }
 }
 
-void RendererInServer::ReportDataToResSched(bool isSilent)
+void RendererInServer::ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type)
 {
 #ifdef RESSCHE_ENABLE
     AUDIO_INFO_LOG("report event to ResSched ,event type : %{public}d", type);
