@@ -95,7 +95,7 @@ int32_t AudioSharedMemoryImpl::Init()
         }
     } else {
         fd_ = AshmemCreate(name_.c_str(), size_);
-        if (fd == STDIN_FILENO || fd == STDOUT_FILENO || fd == STEERR_FILENO) {
+        if (fd_ == STDIN_FILENO || fd_ == STDOUT_FILENO || fd_ == STDERR_FILENO) {
             AUDIO_WARNING_LOG("fd is special fd: %{public}d", fd_);
         }
         CHECK_AND_RETURN_RET_LOG((fd_ > 0), ERR_OPERATION_FAILED, "Init falied: fd %{public}d", fd_);
