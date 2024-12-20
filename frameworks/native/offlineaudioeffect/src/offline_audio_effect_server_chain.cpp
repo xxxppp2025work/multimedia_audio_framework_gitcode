@@ -55,20 +55,6 @@ static inline void FreeIfNotNull(T*& ptr)
     }
 }
 
-static inline uint32_t GetByteSize(AudioSampleFormat format)
-{
-    static const std::unordered_map<AudioSampleFormat, uint32_t> sizeMap = {
-        {SAMPLE_U8, 1},
-        {SAMPLE_S16LE, 2},
-        {SAMPLE_S24LE, 3},
-        {SAMPLE_S32LE, 4},
-        {SAMPLE_F32LE, 4}
-    };
-
-    auto it = sizeMap.find(format);
-    return (it != sizeMap.end()) ? it->second : 2;  // Default size is 2
-}
-
 OfflineAudioEffectServerChain::OfflineAudioEffectServerChain(const std::string &chainName) : chainName_(chainName) {}
 
 OfflineAudioEffectServerChain::~OfflineAudioEffectServerChain()
@@ -190,10 +176,10 @@ int32_t OfflineAudioEffectServerChain::SetParam(AudioStreamInfo inInfo, AudioStr
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
         "%{public}s effect COMMAND_SET_CONFIG failed, errCode is %{public}d", chainName_.c_str(), ret);
 
-    inBufferSize_ = GetByteSize(inInfo.format) * inInfo.samplingRate * inInfo.channels *
-        MAX_TIME_INTERVAL_MS / AUDIO_MS_PER_SECOND;
-    outBufferSize_ = GetByteSize(outInfo.format) * outInfo.samplingRate * outInfo.channels *
-        MAX_TIME_INTERVAL_MS / AUDIO_MS_PER_SECOND;
+    inBufferSize_ = static_cast<uint32_t>(GetFormatByteSize(inInfo.format)) * inInfo.samplingRate *
+        inInfo.channels * MAX_TIME_INTERVAL_MS / AUDIO_MS_PER_SECOND;
+    outBufferSize_ = static_cast<uint32_t>(GetFormatByteSize(outInfo.format)) * outInfo.samplingRate *
+        outInfo.channels * MAX_TIME_INTERVAL_MS / AUDIO_MS_PER_SECOND;
     return SUCCESS;
 }
 

@@ -988,6 +988,9 @@ int32_t GetFormatByteSize(int32_t format)
 {
     int32_t formatByteSize;
     switch (format) {
+        case SAMPLE_U8:
+            formatByteSize = 1; // size is 1
+            break;
         case SAMPLE_S16LE:
             formatByteSize = 2; // size is 2
             break;
@@ -995,6 +998,9 @@ int32_t GetFormatByteSize(int32_t format)
             formatByteSize = 3; // size is 3
             break;
         case SAMPLE_S32LE:
+            formatByteSize = 4; // size is 4
+            break;
+        case SAMPLE_F32LE:
             formatByteSize = 4; // size is 4
             break;
         default:
