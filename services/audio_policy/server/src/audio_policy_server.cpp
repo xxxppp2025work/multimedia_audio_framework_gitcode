@@ -66,6 +66,7 @@ std::map<PolicyType, uint32_t> POLICY_TYPE_MAP = {
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
       audioPolicyService_(AudioPolicyService::GetAudioPolicyService()),
+      audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
       audioSpatializationService_(AudioSpatializationService::GetAudioSpatializationService()),
       audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter())
 {
@@ -2790,6 +2791,27 @@ int32_t AudioPolicyServer::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt r
         return ERROR;
     }
     return audioPolicyService_.TriggerFetchDevice(reason);
+}
+
+int32_t AudioPolicyServer::SetPreferredDevice(const PreferredType preferredType,
+    const sptr<AudioDeviceDescriptor> &desc)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_AUDIO) {
+        AUDIO_ERR_LOG("No permission");
+        return ERROR;
+    }
+    return audioPolicyService_.SetPreferredDevice(preferredType, desc);
+}
+
+void AudioPolicyServer::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_AUDIO) {
+        AUDIO_ERR_LOG("No permission");
+        return;
+    }
+    audioDeviceManager_.SaveRemoteInfo(networkId, deviceType);
 }
 
 void AudioPolicyServer::NotifyAccountsChanged(const int &id)
