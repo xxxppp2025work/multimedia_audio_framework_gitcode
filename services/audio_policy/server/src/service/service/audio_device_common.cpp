@@ -428,7 +428,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
         }
         descForCb.push_back(it);
         audioConnectedDevice_.DelConnectedDevice(updatedDesc.networkId_, updatedDesc.deviceType_,
-            updatedDesc.macAddress_, updatedDesc.deviceRole_);
+            updatedDesc.macAddress_, updatedDesc.deviceRole_, true);
     }
 
     // reset disconnected device info in stream
