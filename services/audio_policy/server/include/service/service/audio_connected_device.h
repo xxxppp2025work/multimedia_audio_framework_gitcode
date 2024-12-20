@@ -52,6 +52,8 @@ public:
         std::string macAddress);
     std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         std::string macAddress, DeviceRole deviceRole);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetConnectedDevices(std::string networkId,
+        DeviceType deviceType, std::string macAddress, DeviceRole deviceRole);
     void DelConnectedDevice(std::string networkId, DeviceType deviceType);
     void DelConnectedDevice(std::string networkId, DeviceType deviceType, std::string macAddress);
     void DelConnectedDevice(std::string networkId, DeviceType deviceType, std::string macAddress,
