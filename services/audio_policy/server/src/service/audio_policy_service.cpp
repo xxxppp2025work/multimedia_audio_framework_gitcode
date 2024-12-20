@@ -2255,6 +2255,24 @@ void AudioPolicyService::MuteSinkPortForSwtichDevice(unique_ptr<AudioRendererCha
     MuteSinkPort(oldSinkName, newSinkName, reason);
 }
 
+void AudioPolicyService::MuteSinkForSwtichGeneralDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+    vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
+{
+    if (outputDevices.front() != nullptr && (outputDevices.front()->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
+        outputDevices.front()->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO)) {
+        MuteSinkPortForSwtichDevice(rendererChangeInfo, outputDevices, reason);
+    }
+}
+
+void AudioPolicyService::MuteSinkForSwtichBluetoothDevice(unique_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+    vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
+{
+    if (outputDevices.front() != nullptr && (outputDevices.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        outputDevices.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
+        MuteSinkPortForSwtichDevice(rendererChangeInfo, outputDevices, reason);
+    }
+}
+
 void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
     vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -2273,6 +2291,7 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
         static_cast<int>(reason));
 
     DeviceType oldDevice = rendererChangeInfo->outputDeviceInfo.deviceType;
+    auto oldRendererChangeInfo = std::make_unique<AudioRendererChangeInfo>(*rendererChangeInfo.get());
 
     UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo,
         new AudioDeviceDescriptor(*outputDevices.front()), true, true);
@@ -2281,6 +2300,7 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
         audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
             rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
     }
+    MuteSinkForSwtichGeneralDevice(oldRendererChangeInfo, outputDevices, reason);
 
     UpdateEffectDefaultSink(outputDevices.front()->deviceType_);
     // MoveSinkInputByIndexOrName
@@ -2568,7 +2588,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
             !Util::IsRingerOrAlarmerStreamUsage(rendererChangeInfo->rendererInfo.streamUsage)) {
             continue;
         }
-        MuteSinkPortForSwtichDevice(rendererChangeInfo, descs, reason);
+        MuteSinkForSwtichBluetoothDevice(rendererChangeInfo, descs, reason);
         std::string encryptMacAddr = GetEncryptAddr(descs.front()->macAddress_);
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             if (IsFastFromA2dpToA2dp(descs.front(), rendererChangeInfo, reason)) { continue; }
@@ -4189,6 +4209,7 @@ void AudioPolicyService::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  b
     } else {
         UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+        CheckForA2dpSuspend(updatedDesc);
         FetchDevice(true, reason); //  fix pop, fetch device before unload module
         int32_t result = HandleLocalDeviceDisconnected(updatedDesc);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
@@ -4334,46 +4355,50 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
     AUDIO_DEBUG_LOG("Updated buffer size: %{public}d", bufferSize);
 
     auto a2dpModulesPos = deviceClassInfo_.find(ClassType::TYPE_A2DP);
-    if (a2dpModulesPos != deviceClassInfo_.end()) {
-        auto moduleInfoList = a2dpModulesPos->second;
-        for (auto &moduleInfo : moduleInfoList) {
-            std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-            if (IOHandles_.find(moduleInfo.name) != IOHandles_.end()) {
-                moduleInfo.channels = to_string(streamInfo.channels);
-                moduleInfo.rate = to_string(streamInfo.samplingRate);
-                moduleInfo.format = ConvertToHDIAudioFormat(streamInfo.format);
-                moduleInfo.bufferSize = to_string(bufferSize);
-                moduleInfo.renderInIdleState = "1";
-                moduleInfo.sinkLatency = "0";
+    CHECK_AND_RETURN_LOG(a2dpModulesPos != deviceClassInfo_.end(), "A2dp module not found");
+    auto moduleInfoList = a2dpModulesPos->second;
+    for (auto &moduleInfo : moduleInfoList) {
+        std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+        if (IOHandles_.find(moduleInfo.name) != IOHandles_.end()) {
+            moduleInfo.channels = to_string(streamInfo.channels);
+            moduleInfo.rate = to_string(streamInfo.samplingRate);
+            moduleInfo.format = ConvertToHDIAudioFormat(streamInfo.format);
+            moduleInfo.bufferSize = to_string(bufferSize);
+            moduleInfo.renderInIdleState = "1";
+            moduleInfo.sinkLatency = "0";
 
-                // First unload the existing bt sink
-                AUDIO_DEBUG_LOG("UnLoad existing a2dp module");
-                std::string currentActivePort = GetSinkPortName(GetCurrentOutputDeviceType());
-                AudioIOHandle activateDeviceIOHandle = IOHandles_[BLUETOOTH_SPEAKER];
-                MuteDefaultSinkPort();
-                audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
-                audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
+            // First unload the existing bt sink
+            AUDIO_DEBUG_LOG("UnLoad existing a2dp module");
+            std::string currentActivePort = GetSinkPortName(GetCurrentOutputDeviceType());
+            AudioIOHandle activateDeviceIOHandle = IOHandles_[BLUETOOTH_SPEAKER];
+            MuteDefaultSinkPort();
+            audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
+            audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
 
-                // Load bt sink module again with new configuration
-                AUDIO_DEBUG_LOG("Reload a2dp module [%{public}s]", moduleInfo.name.c_str());
-                AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-                CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
-                IOHandles_[moduleInfo.name] = ioHandle;
-                std::string portName = GetSinkPortName(deviceType);
-                audioPolicyManager_.SetDeviceActive(deviceType, portName, true);
-                audioPolicyManager_.SuspendAudioDevice(portName, false);
-
-                auto isPresent = [&macAddress] (const sptr<AudioDeviceDescriptor> &descriptor) {
-                    return descriptor->macAddress_ == macAddress;
-                };
-
-                sptr<AudioDeviceDescriptor> audioDescriptor
-                    = new(std::nothrow) AudioDeviceDescriptor(deviceType, OUTPUT_DEVICE);
-                audioDescriptor->SetDeviceInfo(deviceName, macAddress);
-                audioDescriptor->SetDeviceCapability(streamInfo, 0);
-                std::replace_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent, audioDescriptor);
-                break;
+            // Load bt sink module again with new configuration
+            AUDIO_DEBUG_LOG("Reload a2dp module [%{public}s]", moduleInfo.name.c_str());
+            AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+            if (ioHandle == OPEN_PORT_FAILURE) {
+                audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
+                AUDIO_ERR_LOG("OpenAudioPort failed %{public}d", ioHandle);
+                return;
             }
+            IOHandles_[moduleInfo.name] = ioHandle;
+            std::string portName = GetSinkPortName(deviceType);
+            audioPolicyManager_.SetDeviceActive(deviceType, portName, true);
+            audioPolicyManager_.SuspendAudioDevice(portName, false);
+            audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
+
+            auto isPresent = [&macAddress] (const sptr<AudioDeviceDescriptor> &descriptor) {
+                return descriptor->macAddress_ == macAddress;
+            };
+
+            sptr<AudioDeviceDescriptor> audioDescriptor
+                = new(std::nothrow) AudioDeviceDescriptor(deviceType, OUTPUT_DEVICE);
+            audioDescriptor->SetDeviceInfo(deviceName, macAddress);
+            audioDescriptor->SetDeviceCapability(streamInfo, 0);
+            std::replace_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent, audioDescriptor);
+            break;
         }
     }
 }
@@ -7717,16 +7742,7 @@ void AudioPolicyService::UpdateAllUserSelectDevice(vector<unique_ptr<AudioDevice
 void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason)
 {
-    AudioStateManager& stateManager = AudioStateManager::GetAudioStateManager();
-    unique_ptr<AudioDeviceDescriptor> userSelectMediaRenderDevice = stateManager.GetPreferredMediaRenderDevice();
-    unique_ptr<AudioDeviceDescriptor> userSelectCallRenderDevice = stateManager.GetPreferredCallRenderDevice();
-    unique_ptr<AudioDeviceDescriptor> userSelectCallCaptureDevice = stateManager.GetPreferredCallCaptureDevice();
-    unique_ptr<AudioDeviceDescriptor> userSelectRecordCaptureDevice = stateManager.GetPreferredRecordCaptureDevice();
-    vector<unique_ptr<AudioDeviceDescriptor>> userSelectDeviceMap;
-    userSelectDeviceMap.push_back(make_unique<AudioDeviceDescriptor>(*userSelectMediaRenderDevice));
-    userSelectDeviceMap.push_back(make_unique<AudioDeviceDescriptor>(*userSelectCallRenderDevice));
-    userSelectDeviceMap.push_back(make_unique<AudioDeviceDescriptor>(*userSelectCallCaptureDevice));
-    userSelectDeviceMap.push_back(make_unique<AudioDeviceDescriptor>(*userSelectRecordCaptureDevice));
+    vector<unique_ptr<AudioDeviceDescriptor>> userSelectDeviceMap = UserSelectDeviceMapInit();
     if (updateCommand == CATEGORY_UPDATE) {
         if (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
             reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
@@ -7752,10 +7768,29 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             }
         }
     } else if (updateCommand == ENABLE_UPDATE) {
+        if (!desc.isEnable_ && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+            desc.isSameDeviceDesc(make_unique<AudioDeviceDescriptor>(GetCurrentOutputDevice()))) {
+            Bluetooth::AudioHfpManager::DisconnectSco();
+        }
         UpdateAllUserSelectDevice(userSelectDeviceMap, desc, new(std::nothrow) AudioDeviceDescriptor(desc));
         reason = desc.isEnable_ ? AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE :
             AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
     }
+}
+
+vector<unique_ptr<AudioDeviceDescriptor>> AudioPolicyService::UserSelectDeviceMapInit()
+{
+    AudioStateManager& stateManager = AudioStateManager::GetAudioStateManager();
+    unique_ptr<AudioDeviceDescriptor> userSelectMediaRenderDevice = stateManager.GetPreferredMediaRenderDevice();
+    unique_ptr<AudioDeviceDescriptor> userSelectCallRenderDevice = stateManager.GetPreferredCallRenderDevice();
+    unique_ptr<AudioDeviceDescriptor> userSelectCallCaptureDevice = stateManager.GetPreferredCallCaptureDevice();
+    unique_ptr<AudioDeviceDescriptor> userSelectRecordCaptureDevice = stateManager.GetPreferredRecordCaptureDevice();
+    vector<unique_ptr<AudioDeviceDescriptor>> userSelectDeviceMap;
+    userSelectDeviceMap.push_back(make_unique<AudioDeviceDescriptor>(*userSelectMediaRenderDevice));
+    userSelectDeviceMap.push_back(make_unique<AudioDeviceDescriptor>(*userSelectCallRenderDevice));
+    userSelectDeviceMap.push_back(make_unique<AudioDeviceDescriptor>(*userSelectCallCaptureDevice));
+    userSelectDeviceMap.push_back(make_unique<AudioDeviceDescriptor>(*userSelectRecordCaptureDevice));
+    return userSelectDeviceMap;
 }
 
 #ifdef BLUETOOTH_ENABLE
