@@ -840,6 +840,16 @@ static void MemcpyToI32FromI24(uint8_t *src, int32_t *dst, size_t count)
     }
 }
 
+void SafeCloseFd(int fd)
+{
+    // ignore stdin, stdout, stderr.
+    if (fd == STDIN_FILENO || fd == STDOUT_FILENO || fd == STDERR_FILENO) {
+        AUDIO_WARNING_LOG("Not closing special fd: %{public}d", fd);
+        return;
+    }
+    close(fd);
+}
+
 bool NearZero(int16_t number)
 {
     return number >= -DETECTED_ZERO_THRESHOLD && number <= DETECTED_ZERO_THRESHOLD;
