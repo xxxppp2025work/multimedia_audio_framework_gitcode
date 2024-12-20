@@ -843,7 +843,7 @@ static void MemcpyToI32FromI24(uint8_t *src, int32_t *dst, size_t count)
 void SafeCloseFd(int fd)
 {
     // ignore stdin, stdout, stderr.
-    if (fd == STDIN_FILENO || fd == STDOUT_FILENO || fd == STEERR_FILENO) {
+    if (fd == STDIN_FILENO || fd == STDOUT_FILENO || fd == STDERR_FILENO) {
         AUDIO_WARNING_LOG("Not closing special fd: %{public}d", fd);
         return;
     }
