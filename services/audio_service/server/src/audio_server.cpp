@@ -2094,5 +2094,12 @@ int32_t AudioServer::GetOfflineAudioEffectChains(std::vector<std::string> &effec
         "refused for %{public}d", callingUid);
     return OfflineStreamInServer::GetOfflineAudioEffectChains(effectChains);
 }
+
+int32_t AudioServer::GenerateSessionId(uint32_t &sessionId)
+{
+    int32_t uid = IPCSkeleton::GetCallingUid();
+    sessionId = PolicyHandler::GetInstance().GenerateSessionId(uid);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS
