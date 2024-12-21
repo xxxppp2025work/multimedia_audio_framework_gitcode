@@ -562,6 +562,7 @@ private:
     int HandleRestoreSession(MessageParcel &data, MessageParcel &reply);
     int HandleCreateIpcOfflineStream(MessageParcel &data, MessageParcel &reply);
     int HandleGetOfflineAudioEffectChains(MessageParcel &data, MessageParcel &reply);
+    int HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply);
 
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
