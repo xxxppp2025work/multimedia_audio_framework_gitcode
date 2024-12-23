@@ -4442,6 +4442,7 @@ void AudioPolicyService::RemoveDeviceInFastRouterMap(std::string networkId)
 
 void AudioPolicyService::SetDisplayName(const std::string &deviceName, bool isLocalDevice)
 {
+    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
     for (const auto& deviceInfo : connectedDevices_) {
         if ((isLocalDevice && deviceInfo->networkId_ == LOCAL_NETWORK_ID) ||
             (!isLocalDevice && deviceInfo->networkId_ != LOCAL_NETWORK_ID)) {
