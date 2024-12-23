@@ -484,6 +484,13 @@ public:
      * @return Returns result of querying, 0 if success, error number else.
      */
     virtual int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) = 0;
+    /**
+     * generate sessionId.
+     *
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t GenerateSessionId(uint32_t &sessionId) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
