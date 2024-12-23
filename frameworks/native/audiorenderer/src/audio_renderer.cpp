@@ -1544,6 +1544,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     const AudioStreamDeviceChangeReasonExt reason)
 {
     bool switchResult = false;
+    std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
     if (audioStream_) {
         Trace trace("SwitchToTargetStream");
         std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
@@ -1594,6 +1595,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         audioStream_->GetAudioSessionID(newSessionId);
         switchResult = true;
     }
+    oldAudioStream = nullptr;
     WriteSwitchStreamLogMsg();
     return switchResult;
 }
