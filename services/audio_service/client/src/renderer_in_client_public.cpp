@@ -1574,7 +1574,7 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
     }
     if (!needStoreState) {
         AUDIO_INFO_LOG("telephony scene, return directly");
-        return ret;
+        return true;
     }
 
     SetDefaultOutputDevice(defaultOutputDevice_);
