@@ -1298,6 +1298,15 @@ public:
     */
     int32_t SetVoiceRingtoneMute(bool isMute);
 
+    /**
+    * @brief generate sessionId.
+    *
+    * @param sessionId specifies session id.
+    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+    * in {@link audio_errors.h}.
+    */
+    int32_t GenerateSessionId(uint32_t &sessionId);
+
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:

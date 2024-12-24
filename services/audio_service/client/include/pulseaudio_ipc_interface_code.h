@@ -90,6 +90,7 @@ namespace AudioStandard {
         RESTORE_SESSION,
         CREATE_IPC_OFFLINE_STREAM,
         GET_OFFLINE_AUDIO_EFFECT_CHAINS,
+        GENERATE_SESSION_ID,
         AUDIO_SERVER_CODE_MAX = GET_OFFLINE_AUDIO_EFFECT_CHAINS,
     };
 } // namespace AudioStandard
