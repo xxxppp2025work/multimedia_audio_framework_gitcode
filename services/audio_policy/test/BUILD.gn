@@ -370,6 +370,7 @@ ohos_unittest("audio_effect_config_parser_test") {
   include_dirs = [
     "./unittest/audio_effect_config_parser_test/include",
     "../../audio_policy/server/include/service/effect",
+    "../../audio_policy/server/src/service/effect",
   ]
 
   cflags = [
@@ -388,6 +389,8 @@ ohos_unittest("audio_effect_config_parser_test") {
     "hilog:libhilog",
     "init:libbegetutil",
     "libxml2:libxml2",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
   ]
 
   sources = [ "./unittest/audio_effect_config_parser_test/src/audio_effect_config_parser_test.cpp" ]
