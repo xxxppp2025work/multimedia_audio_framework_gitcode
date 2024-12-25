@@ -246,6 +246,10 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
 
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
+    if (rendererOptions.rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+        rendererOptions.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
+        rendererFlags = AUDIO_FLAG_NORMAL;
+    }
     AUDIO_INFO_LOG("StreamClientState for Renderer::Create. content: %{public}d, usage: %{public}d, "\
         "flags: %{public}d, uid: %{public}d", rendererOptions.rendererInfo.contentType,
         rendererOptions.rendererInfo.streamUsage, rendererFlags, appInfo.appUid);
