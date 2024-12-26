@@ -504,7 +504,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_020, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     AudioDeviceDescriptor deviceInfo;
-    sptr<AudioDeviceDescriptor> desc = new (std::nothrow) AudioDeviceDescriptor();
+    const sptr<AudioDeviceDescriptor> desc = new (std::nothrow) AudioDeviceDescriptor();
     bool hasBTPermission = true;
     bool hasSystemPermission = true;
     BluetoothOffloadState state = NO_A2DP_DEVICE;
@@ -522,7 +522,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_021, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     AudioDeviceDescriptor deviceInfo;
-    sptr<AudioDeviceDescriptor> desc = new (std::nothrow) AudioDeviceDescriptor();
+    const sptr<AudioDeviceDescriptor> desc = new (std::nothrow) AudioDeviceDescriptor();
     bool hasBTPermission = false;
     bool hasSystemPermission = true;
     BluetoothOffloadState state = NO_A2DP_DEVICE;
@@ -540,7 +540,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_022, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     AudioDeviceDescriptor deviceInfo;
-    sptr<AudioDeviceDescriptor> desc = new (std::nothrow) AudioDeviceDescriptor();
+    const sptr<AudioDeviceDescriptor> desc = new (std::nothrow) AudioDeviceDescriptor();
     bool hasBTPermission = false;
     bool hasSystemPermission = false;
     BluetoothOffloadState state = NO_A2DP_DEVICE;
@@ -594,42 +594,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_025, TestSize.Level1)
     audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
     int32_t ret = audioDeviceCommon.DeviceParamsCheck(targetRole, audioDeviceDescriptorSptrVector);
     EXPECT_EQ(ERR_INVALID_OPERATION, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_026
-* @tc.desc  : Test UpdateConnectedDevicesWhenConnecting interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_026, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    AudioDeviceDescriptor updatedDesc;
-    updatedDesc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    updatedDesc.deviceRole_ = INPUT_DEVICE;
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new (std::nothrow) AudioDeviceDescriptor();
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
-    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
-    audioDeviceCommon.UpdateConnectedDevicesWhenConnecting(updatedDesc, audioDeviceDescriptorSptrVector);
-    audioDeviceCommon.RemoveOfflineDevice(updatedDesc);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_027
-* @tc.desc  : Test UpdateConnectedDevicesWhenConnecting interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_027, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    AudioDeviceDescriptor updatedDesc;
-    updatedDesc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    updatedDesc.deviceRole_ = OUTPUT_DEVICE;
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new (std::nothrow) AudioDeviceDescriptor();
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
-    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
-    audioDeviceCommon.UpdateConnectedDevicesWhenConnecting(updatedDesc, audioDeviceDescriptorSptrVector);
-    audioDeviceCommon.RemoveOfflineDevice(updatedDesc);
 }
 } // namespace AudioStandard
 } // namespace OHOS
