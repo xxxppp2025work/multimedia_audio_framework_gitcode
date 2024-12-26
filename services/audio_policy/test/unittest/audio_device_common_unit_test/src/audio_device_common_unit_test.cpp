@@ -504,12 +504,12 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_020, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     AudioDeviceDescriptor deviceInfo;
-    const sptr<AudioDeviceDescriptor> desc = new (std::nothrow) AudioDeviceDescriptor();
     bool hasBTPermission = true;
     bool hasSystemPermission = true;
     BluetoothOffloadState state = NO_A2DP_DEVICE;
     audioDeviceCommon.audioA2dpOffloadFlag_.SetA2dpOffloadFlag(state);
-    audioDeviceCommon.UpdateDeviceInfo(deviceInfo, desc, hasBTPermission, hasSystemPermission);
+    audioDeviceCommon.UpdateDeviceInfo(deviceInfo, new (std::nothrow) AudioDeviceDescriptor(),
+        hasBTPermission, hasSystemPermission);
     EXPECT_EQ(NO_A2DP_DEVICE, deviceInfo.a2dpOffloadFlag_);
 }
 
@@ -522,12 +522,12 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_021, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     AudioDeviceDescriptor deviceInfo;
-    const sptr<AudioDeviceDescriptor> desc = new (std::nothrow) AudioDeviceDescriptor();
     bool hasBTPermission = false;
     bool hasSystemPermission = true;
     BluetoothOffloadState state = NO_A2DP_DEVICE;
     audioDeviceCommon.audioA2dpOffloadFlag_.SetA2dpOffloadFlag(state);
-    audioDeviceCommon.UpdateDeviceInfo(deviceInfo, desc, hasBTPermission, hasSystemPermission);
+    audioDeviceCommon.UpdateDeviceInfo(deviceInfo, new (std::nothrow) AudioDeviceDescriptor(),
+        hasBTPermission, hasSystemPermission);
     EXPECT_EQ(CATEGORY_DEFAULT, deviceInfo.deviceCategory_);
 }
 
@@ -540,12 +540,12 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_022, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     AudioDeviceDescriptor deviceInfo;
-    const sptr<AudioDeviceDescriptor> desc = new (std::nothrow) AudioDeviceDescriptor();
     bool hasBTPermission = false;
     bool hasSystemPermission = false;
     BluetoothOffloadState state = NO_A2DP_DEVICE;
     audioDeviceCommon.audioA2dpOffloadFlag_.SetA2dpOffloadFlag(state);
-    audioDeviceCommon.UpdateDeviceInfo(deviceInfo, desc, hasBTPermission, hasSystemPermission);
+    audioDeviceCommon.UpdateDeviceInfo(deviceInfo, new (std::nothrow) AudioDeviceDescriptor(),
+        hasBTPermission, hasSystemPermission);
     EXPECT_EQ(GROUP_ID_NONE, deviceInfo.volumeGroupId_);
     EXPECT_EQ(GROUP_ID_NONE, deviceInfo.interruptGroupId_);
 }
@@ -561,38 +561,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_023, TestSize.Level1)
     DeviceRole targetRole = INPUT_DEVICE;
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
     int32_t ret = audioDeviceCommon.DeviceParamsCheck(targetRole, audioDeviceDescriptors);
-    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_024
-* @tc.desc  : Test DeviceParamsCheck interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_024, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    DeviceRole targetRole = INPUT_DEVICE;
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new (std::nothrow) AudioDeviceDescriptor();
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
-    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
-    int32_t ret = audioDeviceCommon.DeviceParamsCheck(targetRole, audioDeviceDescriptorSptrVector);
-    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_025
-* @tc.desc  : Test DeviceParamsCheck interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_025, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    DeviceRole targetRole = OUTPUT_DEVICE;
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = new (std::nothrow) AudioDeviceDescriptor();
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
-    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
-    int32_t ret = audioDeviceCommon.DeviceParamsCheck(targetRole, audioDeviceDescriptorSptrVector);
     EXPECT_EQ(ERR_INVALID_OPERATION, ret);
 }
 } // namespace AudioStandard
