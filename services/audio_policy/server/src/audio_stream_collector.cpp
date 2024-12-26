@@ -1413,5 +1413,18 @@ bool AudioStreamCollector::HasVoipRendererStream()
     AUDIO_INFO_LOG("Has Fast Voip stream : %{public}d", hasVoip);
     return hasVoip;
 }
+
+bool AudioStreamCollector::HasRunningStream()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    // judge stream state is running
+    bool hasRunningStream = std::any_of(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
+        [](const auto &changeInfo) {
+            return changeInfo->rendererState == RENDERER_RUNNING;
+        });
+
+    AUDIO_INFO_LOG("Has Running Renderer stream : %{public}d", hasRunningStream);
+    return hasRunningStream;
+}
 } // namespace AudioStandard
 } // namespace OHOS
