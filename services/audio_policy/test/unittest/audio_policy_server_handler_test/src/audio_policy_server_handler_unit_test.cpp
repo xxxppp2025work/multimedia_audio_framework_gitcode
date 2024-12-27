@@ -280,28 +280,6 @@ HWTEST(AudioPolicyServerHandlerUnitTest, SendVolumeKeyEventCallback_002, TestSiz
 }
 
 /**
- * @tc.name  : SendKvDataUpdate_FirstBoot_Test
- * @tc.number: SendKvDataUpdate_001
- * @tc.desc  : Test SendKvDataUpdate method when isFirstBoot is true.
- */
-HWTEST(AudioPolicyServerHandlerUnitTest, SendKvDataUpdate_FirstBoot_Test, TestSize.Level2)
-{
-    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    EXPECT_TRUE(audioPolicyServerHandler_->SendKvDataUpdate(true));
-}
-
-/**
- * @tc.name  : SendKvDataUpdate_NotFirstBoot_Test
- * @tc.number: SendKvDataUpdate_002
- * @tc.desc  : Test SendKvDataUpdate method when isFirstBoot is false.
- */
-HWTEST(AudioPolicyServerHandlerUnitTest, SendKvDataUpdate_NotFirstBoot_Test, TestSize.Level2)
-{
-    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    EXPECT_TRUE(audioPolicyServerHandler_->SendKvDataUpdate(false));
-}
-
-/**
  * @tc.name  : HandleMicrophoneBlockedCallback_Test_001
  * @tc.number: Audio_HandleMicrophoneBlockedCallback_001
  * @tc.desc  : Test HandleMicrophoneBlockedCallback function when eventContextObj is nullptr.
@@ -893,8 +871,6 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleServiceEvent_001, TestSize.Level2
     eventId = AudioPolicyServerHandler::EventAudioServerCmd::RECREATE_RENDERER_STREAM_EVENT;
     audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
     eventId = AudioPolicyServerHandler::EventAudioServerCmd::RECREATE_CAPTURER_STREAM_EVENT;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::DATABASE_UPDATE;
     audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
     eventId = AudioPolicyServerHandler::EventAudioServerCmd::ON_WAKEUP_CLOSE;
     audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
