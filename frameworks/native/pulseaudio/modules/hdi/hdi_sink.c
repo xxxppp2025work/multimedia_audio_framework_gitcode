@@ -473,9 +473,6 @@ static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memch
         AUDIO_DEBUG_LOG("StartOffloadHdi before write, because maybe sink switch");
         StartOffloadHdi(u, i);
     }
-    if (u->offload.firstWriteHdi) {
-        OffloadSetHdiVolume(i);
-    }
     int32_t ret = u->offload.sinkAdapter->RendererRenderFrame(u->offload.sinkAdapter, ((char*)p + index),
         (uint64_t)length, &writeLen);
     pa_memblock_release(pchunk->memblock);
@@ -488,6 +485,7 @@ static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memch
         u->offload.firstWriteHdi = false;
         u->offload.hdiPosTs = now;
         u->offload.hdiPos = 0;
+        OffloadSetHdiVolume(i);
     }
     if (ret == 0 && u->offload.setHdiBufferSizeNum > 0 && writeLen == length) {
         u->offload.setHdiBufferSizeNum--;
@@ -497,7 +495,7 @@ static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memch
         AUDIO_DEBUG_LOG("RenderWriteOffload, hdi is full, break");
         return 1; // 1 indicates full
     } else if (writeLen == 0) {
-        AUDIO_ERR_LOG("Failed to render Length: %{public}zu, Written: %{public}" PRIu64 " bytes, %{public}d ret",
+        AUDIO_WARNING_LOG("Failed to render Length: %{public}zu, Written: %{public}" PRIu64 " bytes, %{public}d ret",
             length, writeLen, ret);
         return -1;
     }

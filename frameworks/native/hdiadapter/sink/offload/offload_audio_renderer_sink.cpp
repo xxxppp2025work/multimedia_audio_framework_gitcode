@@ -666,7 +666,10 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
 {
     int64_t stamp = ClockTime::GetCurNano();
 
-    CHECK_AND_RETURN_RET_LOG(!isFlushing_, ERR_OPERATION_FAILED, "failed! during flushing");
+    if (isFlushing_) {
+        AUDIO_WARNING_LOG("failed! during flushing");
+        return ERR_OPERATION_FAILED;
+    }
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "failed! state not in started");
     int32_t ret;
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Audio Render Handle is nullptr!");
