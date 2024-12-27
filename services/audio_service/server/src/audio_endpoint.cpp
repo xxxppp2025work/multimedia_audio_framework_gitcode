@@ -49,6 +49,10 @@
 #include "remote_fast_audio_renderer_sink.h"
 #include "remote_fast_audio_capturer_source.h"
 #endif
+#ifdef RESSCHE_ENABLE
+#include "res_type.h"
+#include "res_sched_client.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -247,7 +251,8 @@ private:
     void ProcessUpdateAppsUidForPlayback();
     void ProcessUpdateAppsUidForRecord();
 
-    void WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby);
+    void WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t appUid, int32_t standby);
+    void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t THREE_MILLISECOND_DURATION = 3000000; // 3ms
@@ -1329,7 +1334,7 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
                 AUDIO_INFO_LOG("change the status to stand-by, session %{public}u", tempBuffer->GetSessionId());
                 CHECK_AND_RETURN_RET_LOG(tempBuffer->GetStreamStatus() != nullptr, false, "GetStreamStatus failed");
                 tempBuffer->GetStreamStatus()->store(StreamStatus::STREAM_STAND_BY);
-                WriterRenderStreamStandbySysEvent(tempBuffer->GetSessionId(), 1);
+                WriterRenderStreamStandbySysEvent(tempBuffer->GetSessionId(), processList_[i]->GetAppInfo().appUid, 1);
                 needCheckStandby = true;
                 continue;
             }
@@ -2281,7 +2286,7 @@ void AudioEndpointInner::ProcessUpdateAppsUidForRecord()
     fastSource_->UpdateAppsUid(appsUid);
 }
 
-void AudioEndpointInner::WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby)
+void AudioEndpointInner::WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t appUid, int32_t standby)
 {
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::STREAM_STANDBY,
@@ -2289,6 +2294,20 @@ void AudioEndpointInner::WriterRenderStreamStandbySysEvent(uint32_t sessionId, i
     bean->Add("STREAMID", static_cast<int32_t>(sessionId));
     bean->Add("STANDBY", standby);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+
+    std::unordered_map<std::string, std::string> payload;
+    payload["uid"] = std::to_string(appUid);
+    payload["sessionId"] = std::to_string(sessionId);
+    payload["isStandby"] = std::to_string(standby);
+    ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_STANDBY);
+}
+
+void AudioEndpointInner::ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type)
+{
+#ifdef RESSCHE_ENABLE
+    AUDIO_INFO_LOG("report event to ResSched ,event type : %{public}d", type);
+    ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, 0, payload);
+#endif
 }
 
 uint32_t AudioEndpointInner::GetLinkedProcessCount()
