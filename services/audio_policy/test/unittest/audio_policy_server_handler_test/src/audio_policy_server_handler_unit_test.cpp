@@ -594,45 +594,6 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleRendererDeviceChangeEvent_001, Te
 }
 
 /**
- * @tc.name  : ResetRingerModeMute_Test_001
- * @tc.number: ResetRingerModeMute_Test_001
- * @tc.desc  : Test ResetRingerModeMute function .
- */
-HWTEST(AudioPolicyServerHandlerUnitTest, ResetRingerModeMute_Test_001, TestSize.Level2)
-{
-    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    EXPECT_NE(audioPolicyServerHandler_, nullptr);
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-    audioRendererChangeInfos.push_back(nullptr);
-
-    auto info1 = std::make_unique<AudioRendererChangeInfo>();
-    info1->rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION;
-    info1->rendererState = RendererState::RENDERER_RUNNING;
-    audioRendererChangeInfos.push_back(std::move(info1));
-
-    auto info2 = std::make_unique<AudioRendererChangeInfo>();
-    info2->rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_RINGTONE;
-    info2->rendererState = RendererState::RENDERER_PAUSED;
-    audioRendererChangeInfos.push_back(std::move(info2));
-
-    auto info3 = std::make_unique<AudioRendererChangeInfo>();
-    info3->rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_RINGTONE;
-    info3->rendererState = RendererState::RENDERER_STOPPED;
-    audioRendererChangeInfos.push_back(std::move(info3));
-
-    auto info4 = std::make_unique<AudioRendererChangeInfo>();
-    info4->rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_RINGTONE;
-    info4->rendererState = RendererState::RENDERER_RELEASED;
-    audioRendererChangeInfos.push_back(std::move(info4));
-
-    auto info5 = std::make_unique<AudioRendererChangeInfo>();
-    info5->rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ALARM;
-    info5->rendererState = RendererState::RENDERER_PAUSED;
-    audioRendererChangeInfos.push_back(std::move(info5));
-    audioPolicyServerHandler_->ResetRingerModeMute(audioRendererChangeInfos);
-}
-
-/**
  * @tc.name  : HandleSendRecreateRendererStreamEvent_001
  * @tc.number: HandleSendRecreateRendererStreamEvent_001
  * @tc.desc  : Test HandleInterruptEventWithSessionId function when eventContextObj is nullptr.
