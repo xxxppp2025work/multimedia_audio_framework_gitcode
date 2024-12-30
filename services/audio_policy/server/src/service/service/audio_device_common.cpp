@@ -32,6 +32,7 @@ namespace AudioStandard {
 
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
+static const int64_t OLD_DEVICE_UNAVALIABLE_VOIP_MUTE_MS = 120000; // 120ms
 static const int64_t NEW_DEVICE_AVALIABLE_MUTE_MS = 400000; // 400ms
 static const int64_t NEW_DEVICE_AVALIABLE_OFFLOAD_MUTE_MS = 1000000; // 1s
 static const int64_t NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS = 300000; // 300ms
@@ -611,7 +612,7 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
             !Util::IsRingerOrAlarmerStreamUsage(rendererChangeInfo->rendererInfo.streamUsage)) {
             continue;
         }
-        MuteSinkForSwtichBluetoothDevice(rendererChangeInfo, descs, reason);
+        MuteSinkForSwitchBluetoothDevice(rendererChangeInfo, descs, reason);
         std::string encryptMacAddr = GetEncryptAddr(descs.front()->macAddress_);
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             if (IsFastFromA2dpToA2dp(descs.front(), rendererChangeInfo, reason)) { continue; }
@@ -702,10 +703,10 @@ int32_t AudioDeviceCommon::HandleDeviceChangeForFetchOutputDevice(std::shared_pt
     return SUCCESS;
 }
 
-void AudioDeviceCommon::MuteSinkPortForSwtichDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
-    Trace trace("AudioDeviceCommon::MuteSinkPortForSwtichDevice");
+    Trace trace("AudioDeviceCommon::MuteSinkPortForSwitchDevice");
     audioIOHandleMap_.SetDeviceInfos(rendererChangeInfo->outputDeviceInfo.deviceType_,
         outputDevices.front()->deviceType_);
     if (outputDevices.size() != 1) {
@@ -732,21 +733,21 @@ void AudioDeviceCommon::MuteSinkPortForSwtichDevice(std::shared_ptr<AudioRendere
     MuteSinkPort(oldSinkName, newSinkName, reason);
 }
 
-void AudioDeviceCommon::MuteSinkForSwtichGeneralDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+void AudioDeviceCommon::MuteSinkForSwitchGeneralDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     if (outputDevices.front() != nullptr && (outputDevices.front()->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
         outputDevices.front()->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO)) {
-        MuteSinkPortForSwtichDevice(rendererChangeInfo, outputDevices, reason);
+        MuteSinkPortForSwitchDevice(rendererChangeInfo, outputDevices, reason);
     }
 }
 
-void AudioDeviceCommon::MuteSinkForSwtichBluetoothDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+void AudioDeviceCommon::MuteSinkForSwitchBluetoothDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     if (outputDevices.front() != nullptr && (outputDevices.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
         outputDevices.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
-        MuteSinkPortForSwtichDevice(rendererChangeInfo, outputDevices, reason);
+        MuteSinkPortForSwitchDevice(rendererChangeInfo, outputDevices, reason);
     }
 }
 
@@ -892,7 +893,7 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
         audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
             rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
     }
-    MuteSinkForSwtichGeneralDevice(oldRendererChangeInfo, outputDevices, reason);
+    MuteSinkForSwitchGeneralDevice(oldRendererChangeInfo, outputDevices, reason);
 
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(outputDevices.front()->deviceType_);
     // MoveSinkInputByIndexOrName
@@ -941,20 +942,29 @@ void AudioDeviceCommon::MuteSinkPort(const std::string &oldSinkname, const std::
         }
         audioIOHandleMap_.MuteSinkPort(newSinkName, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
         audioIOHandleMap_.MuteSinkPort(oldSinkname, muteTime, true);
-    } else if (reason.IsOldDeviceUnavaliable() && ((scene == AUDIO_SCENE_DEFAULT) ||
-        ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
-        ringermode != RINGER_MODE_NORMAL))) {
-        audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
-        usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
-    } else if (reason.IsOldDeviceUnavaliableExt() && ((scene == AUDIO_SCENE_DEFAULT) ||
-        ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
-        ringermode != RINGER_MODE_NORMAL))) {
-        audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS, true);
-        usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
     } else if (reason == AudioStreamDeviceChangeReason::UNKNOWN &&
         oldSinkname == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {
         // remote cast -> earpiece 300ms fix sound leak
         audioIOHandleMap_.MuteSinkPort(newSinkName, NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS, true);
+    } else {
+        bool condition  = scene == AUDIO_SCENE_DEFAULT || scene == AUDIO_SCENE_PHONE_CHAT ||
+            ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
+            ringermode != RINGER_MODE_NORMAL);
+        if (reason.IsOldDeviceUnavaliable() && condition) {
+            if (scene == AUDIO_SCENE_PHONE_CHAT) {
+                audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_VOIP_MUTE_MS, true);
+                usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
+            }
+            audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
+            usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS);
+        } else if (reason.IsOldDeviceUnavaliableExt() && condition) {
+            if (scene == AUDIO_SCENE_PHONE_CHAT) {
+                audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_VOIP_MUTE_MS, true);
+                usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS);
+            }
+            audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS, true);
+            usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
+        }
     }
 }
 

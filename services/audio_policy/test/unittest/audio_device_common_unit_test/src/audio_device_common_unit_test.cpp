@@ -902,7 +902,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_042, TestSize.Level1)
 /**
 * @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_043
-* @tc.desc  : Test MuteSinkForSwtichGeneralDevice interface.
+* @tc.desc  : Test MuteSinkForSwitchGeneralDevice interface.
 */
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_043, TestSize.Level1)
 {
@@ -913,7 +913,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_043, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
     audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_SPEAKER;
     audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    audioDeviceCommon.MuteSinkForSwtichGeneralDevice(rendererChangeInfo,
+    audioDeviceCommon.MuteSinkForSwitchGeneralDevice(rendererChangeInfo,
         audioDeviceDescriptorUniqueptrVector, reason);
     EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
 }
@@ -921,7 +921,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_043, TestSize.Level1)
 /**
 * @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_044
-* @tc.desc  : Test MuteSinkForSwtichGeneralDevice interface.
+* @tc.desc  : Test MuteSinkForSwitchGeneralDevice interface.
 */
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_044, TestSize.Level1)
 {
@@ -932,7 +932,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_044, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
     audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    audioDeviceCommon.MuteSinkForSwtichGeneralDevice(rendererChangeInfo,
+    audioDeviceCommon.MuteSinkForSwitchGeneralDevice(rendererChangeInfo,
         audioDeviceDescriptorUniqueptrVector, reason);
     EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
 }
@@ -940,7 +940,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_044, TestSize.Level1)
 /**
 * @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_045
-* @tc.desc  : Test MuteSinkForSwtichGeneralDevice interface.
+* @tc.desc  : Test MuteSinkForSwitchGeneralDevice interface.
 */
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_045, TestSize.Level1)
 {
@@ -951,7 +951,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_045, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
     audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    audioDeviceCommon.MuteSinkForSwtichGeneralDevice(rendererChangeInfo,
+    audioDeviceCommon.MuteSinkForSwitchGeneralDevice(rendererChangeInfo,
         audioDeviceDescriptorUniqueptrVector, reason);
     EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
 }
@@ -959,7 +959,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_045, TestSize.Level1)
 /**
 * @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_046
-* @tc.desc  : Test MuteSinkForSwtichBluetoothDevice interface.
+* @tc.desc  : Test MuteSinkForSwitchBluetoothDevice interface.
 */
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_046, TestSize.Level1)
 {
@@ -970,7 +970,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_046, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
     audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_SPEAKER;
     audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    audioDeviceCommon.MuteSinkForSwtichBluetoothDevice(rendererChangeInfo,
+    audioDeviceCommon.MuteSinkForSwitchBluetoothDevice(rendererChangeInfo,
         audioDeviceDescriptorUniqueptrVector, reason);
     EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
 }
@@ -978,7 +978,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_046, TestSize.Level1)
 /**
 * @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_047
-* @tc.desc  : Test MuteSinkForSwtichBluetoothDevice interface.
+* @tc.desc  : Test MuteSinkForSwitchBluetoothDevice interface.
 */
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_047, TestSize.Level1)
 {
@@ -989,7 +989,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_047, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
     audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    audioDeviceCommon.MuteSinkForSwtichBluetoothDevice(rendererChangeInfo,
+    audioDeviceCommon.MuteSinkForSwitchBluetoothDevice(rendererChangeInfo,
         audioDeviceDescriptorUniqueptrVector, reason);
     EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
 }
@@ -997,7 +997,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_047, TestSize.Level1)
 /**
 * @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_048
-* @tc.desc  : Test MuteSinkForSwtichBluetoothDevice interface.
+* @tc.desc  : Test MuteSinkForSwitchBluetoothDevice interface.
 */
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_048, TestSize.Level1)
 {
@@ -1008,7 +1008,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_048, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
     audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    audioDeviceCommon.MuteSinkForSwtichBluetoothDevice(rendererChangeInfo,
+    audioDeviceCommon.MuteSinkForSwitchBluetoothDevice(rendererChangeInfo,
         audioDeviceDescriptorUniqueptrVector, reason);
     EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
 }
