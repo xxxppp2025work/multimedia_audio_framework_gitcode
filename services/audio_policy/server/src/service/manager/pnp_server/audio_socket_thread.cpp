@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <string>
 #include "osal_time.h"
+#include "audio_utils.h"
 #include "audio_errors.h"
 #include "securec.h"
 #include "singleton.h"
@@ -87,19 +88,19 @@ int AudioSocketThread::AudioPnpUeventOpen(int *fd)
 
     if (setsockopt(socketFd, SOL_SOCKET, SO_RCVBUF, &buffSize, sizeof(buffSize)) != 0) {
         AUDIO_ERR_LOG("setsockopt SO_RCVBUF failed, %{public}d", errno);
-        close(socketFd);
+        CloseFd(socketFd);
         return ERROR;
     }
 
     if (setsockopt(socketFd, SOL_SOCKET, SO_PASSCRED, &on, sizeof(on)) != 0) {
         AUDIO_ERR_LOG("setsockopt SO_PASSCRED failed, %{public}d", errno);
-        close(socketFd);
+        CloseFd(socketFd);
         return ERROR;
     }
 
     if (::bind(socketFd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
         AUDIO_ERR_LOG("bind socket failed, %{public}d", errno);
-        close(socketFd);
+        CloseFd(socketFd);
         return ERROR;
     }
 
@@ -151,11 +152,9 @@ int32_t AudioSocketThread::SetAudioAnahsEventValue(AudioEvent *audioEvent, struc
             audioEvent->anahsName = UEVENT_REMOVE;
             return SUCCESS;
         } else {
-            AUDIO_ERR_LOG("set anahs event error.");
             return ERROR;
         }
     }
-    AUDIO_ERR_LOG("set anahs event error and subSystem is not platform.");
     return ERROR;
 }
 
@@ -602,7 +601,7 @@ bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLe
             msgTmp++;
             continue;
         }
-        AUDIO_DEBUG_LOG("Param msgTmp:[%{public}s] len:[%{public}zu]", msgTmp, strlen(msgTmp));
+        AUDIO_DEBUG_LOG("Param msgTmp:[%{private}s] len:[%{public}zu]", msgTmp, strlen(msgTmp));
         const char *arrStrTmp[UEVENT_ARR_SIZE] = {
             UEVENT_ACTION, UEVENT_DEV_NAME, UEVENT_NAME, UEVENT_STATE, UEVENT_DEVTYPE,
             UEVENT_SUBSYSTEM, UEVENT_SWITCH_NAME, UEVENT_SWITCH_STATE, UEVENT_HDI_NAME,

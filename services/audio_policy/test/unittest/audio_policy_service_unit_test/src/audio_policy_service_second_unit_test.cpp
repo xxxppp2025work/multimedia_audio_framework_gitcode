@@ -572,7 +572,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipRendererFlag_002, TestSize.Level1
     networkId = REMOTE_NETWORK_ID;
     ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
-
 }
 
 /**
@@ -994,8 +993,9 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetEcChannels_001, TestSize.Level1)
 HWTEST_F(AudioPolicyServiceExtUnitTest, UpdateAudioEcInfo_001, TestSize.Level1)
 {
     auto server = AudioPolicyServiceUnitTest::GetServerPtr();
-    DeviceType inputDevice = DeviceType::DEVICE_TYPE_MAX;
-    DeviceType outputDevice = DeviceType::DEVICE_TYPE_MAX;
+    AudioDeviceDescriptor inputDevice, outputDevice;
+    inputDevice.deviceType_ = DeviceType::DEVICE_TYPE_MAX;
+    outputDevice.deviceType_ = DeviceType::DEVICE_TYPE_MAX;
 
     server->audioPolicyService_.audioEcManager_.isEcFeatureEnable_ = false;
     server->audioPolicyService_.audioEcManager_.UpdateAudioEcInfo(inputDevice, outputDevice);
@@ -1006,15 +1006,15 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, UpdateAudioEcInfo_001, TestSize.Level1)
     server->audioPolicyService_.audioEcManager_.UpdateAudioEcInfo(inputDevice, outputDevice);
 
     inputDevice = server->audioPolicyService_.audioEcManager_.audioEcInfo_.inputDevice;
-    outputDevice = DeviceType::DEVICE_TYPE_MAX;
+    outputDevice.deviceType_ = DeviceType::DEVICE_TYPE_MAX;
     server->audioPolicyService_.audioEcManager_.UpdateAudioEcInfo(inputDevice, outputDevice);
 
-    inputDevice = DeviceType::DEVICE_TYPE_MAX;
+    inputDevice.deviceType_ = DeviceType::DEVICE_TYPE_MAX;
     outputDevice = server->audioPolicyService_.audioEcManager_.audioEcInfo_.outputDevice;
     server->audioPolicyService_.audioEcManager_.UpdateAudioEcInfo(inputDevice, outputDevice);
 
-    inputDevice = DeviceType::DEVICE_TYPE_MAX;
-    outputDevice = DeviceType::DEVICE_TYPE_MAX;
+    inputDevice.deviceType_ = DeviceType::DEVICE_TYPE_MAX;
+    outputDevice.deviceType_ = DeviceType::DEVICE_TYPE_MAX;
     server->audioPolicyService_.audioEcManager_.UpdateAudioEcInfo(inputDevice, outputDevice);
     EXPECT_EQ(server->audioPolicyService_.audioEcManager_.isEcFeatureEnable_, true);
 }
