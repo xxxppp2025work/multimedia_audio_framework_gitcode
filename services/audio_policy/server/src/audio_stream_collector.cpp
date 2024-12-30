@@ -1336,6 +1336,30 @@ bool AudioStreamCollector::IsCallStreamUsage(StreamUsage usage)
     return false;
 }
 
+StreamUsage AudioStreamCollector::GetRunningStreamUsageNoUltrasonic()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->rendererState == RENDERER_RUNNING &&
+            changeInfo->rendererInfo.streamUsage != STREAM_USAGE_ULTRASONIC) {
+            return changeInfo->rendererInfo.streamUsage;
+        }
+    }
+    return STREAM_USAGE_INVALID;
+}
+
+SourceType AudioStreamCollector::GetRunningSourceTypeNoUltrasonic()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioCapturerChangeInfos_) {
+        if (changeInfo->capturerState == CAPTURER_RUNNING &&
+            changeInfo->capturerInfo.sourceType != SOURCE_TYPE_ULTRASONIC) {
+            return changeInfo->capturerInfo.sourceType;
+        }
+    }
+    return SOURCE_TYPE_INVALID;
+}
+
 StreamUsage AudioStreamCollector::GetLastestRunningCallStreamUsage()
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
@@ -1388,6 +1412,34 @@ bool AudioStreamCollector::HasVoipRendererStream()
 
     AUDIO_INFO_LOG("Has Fast Voip stream : %{public}d", hasVoip);
     return hasVoip;
+}
+
+bool AudioStreamCollector::HasRunningRendererStream()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    // judge stream state is running
+    bool hasRunningRendererStream = std::any_of(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
+        [](const auto &changeInfo) {
+            return ((changeInfo->rendererState == RENDERER_RUNNING) || (changeInfo->rendererInfo.streamUsage ==
+                STREAM_USAGE_VOICE_MODEM_COMMUNICATION && changeInfo->rendererState == RENDERER_PREPARED));
+        });
+    AUDIO_INFO_LOG("Has Running Renderer stream : %{public}d", hasRunningRendererStream);
+    return hasRunningRendererStream;
+}
+
+bool AudioStreamCollector::HasRunningRecognitionCapturerStream()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    // judge stream state is running
+    bool hasRunningRecognitionCapturerStream = std::any_of(audioCapturerChangeInfos_.begin(),
+        audioCapturerChangeInfos_.end(),
+        [](const auto &changeInfo) {
+            return ((changeInfo->capturerState == CAPTURER_RUNNING) && (changeInfo->capturerInfo.sourceType ==
+                SOURCE_TYPE_VOICE_RECOGNITION));
+        });
+
+    AUDIO_INFO_LOG("Has Running Recognition stream : %{public}d", hasRunningRecognitionCapturerStream);
+    return hasRunningRecognitionCapturerStream;
 }
 } // namespace AudioStandard
 } // namespace OHOS
