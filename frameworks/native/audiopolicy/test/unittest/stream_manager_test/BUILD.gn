@@ -33,7 +33,7 @@ ohos_unittest("audio_stream_manager_unit_test") {
   sources = [ "src/audio_stream_manager_unit_test.cpp" ]
 
   deps = [
-    "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_client_static",
     "../../../../audiocapturer:audio_capturer",
     "../../../../audiorenderer:audio_renderer",
   ]

@@ -82,7 +82,7 @@ ohos_shared_library("audio") {
 
   deps = [
     "../../../services/audio_policy:audio_policy_client",
-    "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_client_static",
     "../../native/audiocapturer:audio_capturer",
     "../../native/audiorenderer:audio_renderer",
     "../../native/audioutils:audio_utils",

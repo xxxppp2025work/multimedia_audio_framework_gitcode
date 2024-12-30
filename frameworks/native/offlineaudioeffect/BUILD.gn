@@ -47,10 +47,10 @@ if (!audio_framework_feature_offline_effect) {
       "src/offline_audio_effect_server_chain.cpp",
     ]
 
-    deps = [
-      "../../../services/audio_service:audio_client",
-      "../audioutils:audio_utils",
-    ]
+  deps = [
+    "../../../services/audio_service:audio_client_static",
+    "../audioutils:audio_utils",
+  ]
 
     external_deps = [
       "c_utils:utils",

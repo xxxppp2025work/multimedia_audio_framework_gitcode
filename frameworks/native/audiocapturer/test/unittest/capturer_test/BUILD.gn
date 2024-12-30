@@ -48,7 +48,7 @@ ohos_unittest("audio_capturer_unit_test") {
   ]
 
   deps = [
-    "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_client_static",
     "../../../../audiocapturer:audio_capturer",
   ]
 }
@@ -75,7 +75,7 @@ ohos_unittest("inner_capturer_unit_test") {
   sources = [ "src/inner_capturer_unit_test.cpp" ]
 
   deps = [
-    "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_client_static",
     "../../../../audiocapturer:audio_capturer",
     "../../../../audiorenderer:audio_renderer",
   ]
@@ -104,7 +104,7 @@ ohos_unittest("audio_fast_capturer_unit_test") {
   sources = [ "src/audio_fast_capturer_unit_test.cpp" ]
 
   deps = [
-    "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_client_static",
     "../../../../audiocapturer:audio_capturer",
   ]
 }
