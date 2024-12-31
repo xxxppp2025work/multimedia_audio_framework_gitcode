@@ -6069,6 +6069,11 @@ int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, c
             sVolumeLevel = HandleAbsBluetoothVolume(macAddress, volumeLevel);
         }
     }
+
+    if (internalCall) {
+        CheckToCloseNotification(STREAM_MUSIC, volumeLevel);
+    }
+
     configInfoPos->second.volumeLevel = sVolumeLevel;
     bool mute = sVolumeLevel == 0 ? true : false;
     configInfoPos->second.mute = mute;
