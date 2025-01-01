@@ -507,5 +507,27 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetMaxAmplitude_001, TestSize.Level1)
     const int32_t deviceId = 0;
     GetServerPtr()->audioPolicyService_.GetMaxAmplitude(deviceId);
 }
+
+/**
+* @tc.name  : Test AudioToneParser.
+* @tc.number: AudioToneParser_001
+* @tc.desc  : Test AudioToneParser.
+*/
+HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioToneParser_001, TestSize.Level1)
+{
+    std::unique_ptr<AudioToneParser> audioToneParser = std::make_unique<AudioToneParser>();
+    ASSERT_NE(nullptr, audioToneParser);
+
+    const std::string configPath = "/system/etc/audio/audio_tone_dtmf_config.xml";
+    std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneDescriptorMap;
+    std::unordered_map<std::string, std::unordered_map<int32_t, std::shared_ptr<ToneInfo>>> customToneDescriptorMap;
+
+    int32_t res = -1;
+    res = audioToneParser->LoadNewConfig("", toneDescriptorMap, customToneDescriptorMap);
+    EXPECT_NE(res, 0);
+
+    res = audioToneParser->LoadNewConfig(configPath, toneDescriptorMap, customToneDescriptorMap);
+    EXPECT_EQ(res, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
