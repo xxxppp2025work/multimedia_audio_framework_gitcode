@@ -728,9 +728,19 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
     currentActiveDevice_ = deviceType;
 
     if (!isSameVolumeGroup) {
-        LoadVolumeMap();
-        LoadMuteStatusMap();
-        UpdateSafeVolume();
+        // If there's no os account available when trying to get one, audio_server would sleep for 1 sec
+        // and retry for 5 times, which could cause a sysfreeze.
+        bool osAccountReady = volumeDataMaintainer_.CheckOsAccountReady();
+        if (!osAccountReady) {
+            AUDIO_WARNING_LOG("Os account is not ready, may skip visiting datashare.");
+        }
+        // Skip interacting with datashare when DeviceType is DEVICE_TYPE_USB_HEADSET and os account is not ready,
+        // which could happen when first booting with a usb headset attached and could cause a sysfreeze
+        if (osAccountReady) {
+            LoadVolumeMap();
+            LoadMuteStatusMap();
+            UpdateSafeVolume();
+        }
     }
 
     auto iter = VOLUME_TYPE_LIST.begin();
