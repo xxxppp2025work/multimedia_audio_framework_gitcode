@@ -52,6 +52,7 @@ constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
 constexpr int32_t EVENT_DES_SIZE = 80;
 constexpr int32_t ADAPTER_STATE_CONTENT_DES_SIZE = 60;
 constexpr int32_t API_VERSION_REMAINDER = 1000;
+constexpr int32_t SERVICE_ONSTART_TIMEOUT = 120;
 constexpr pid_t FIRST_SCREEN_ON_PID = 1000;
 constexpr uid_t UID_CAST_ENGINE_SA = 5526;
 constexpr uid_t UID_AUDIO = 1041;
@@ -134,6 +135,7 @@ void AudioPolicyServer::OnDump()
 void AudioPolicyServer::OnStart()
 {
     AUDIO_INFO_LOG("Audio policy server on start");
+    AudioXCollie audioXCollie("AudioPolicyServer::OnStart", SERVICE_ONSTART_TIMEOUT);
 
     interruptService_ = std::make_shared<AudioInterruptService>();
     interruptService_->Init(this);
