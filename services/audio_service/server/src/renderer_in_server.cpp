@@ -900,7 +900,7 @@ int32_t RendererInServer::Stop()
         if (dualToneStream_ != nullptr) {
             dualToneStream_->Stop();
             dualToneStream_->SetAudioEffectMode(effectModeWhenDual_);
-        } 
+        }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     return SUCCESS;
