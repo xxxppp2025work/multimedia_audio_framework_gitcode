@@ -1755,8 +1755,9 @@ int32_t AudioCapturerSourceInner::UpdateSourceType(SourceType sourceType)
         return SUCCESS;
     }
 
+    SourceType tmpSourceType = attr_.sourceType;
     attr_.sourceType = sourceType;
-    AUDIO_INFO_LOG("change source type to %{public}d", attr_.sourceType);
+    AUDIO_INFO_LOG("change source type from %{public}d to %{public}d", tmpSourceType, attr_.sourceType);
     AudioPortPin inputPortPin = PIN_IN_MIC;
     return DoSetInputRoute(currentActiveDevice_, inputPortPin);
 }

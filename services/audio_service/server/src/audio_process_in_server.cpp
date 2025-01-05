@@ -143,6 +143,10 @@ int32_t AudioProcessInServer::Start()
             ERR_PERMISSION_DENIED, "NotifyPrivacy failed!");
     }
 
+    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK) {
+        AudioService::GetInstance()->UpdateSourceType(processConfig_.capturerInfo.sourceType);
+    }
+
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
     }
