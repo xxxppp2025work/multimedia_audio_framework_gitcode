@@ -648,6 +648,11 @@ void ProRendererStreamImpl::ConvertFloatToDes(int32_t writeIndex)
 void ProRendererStreamImpl::GetStreamVolume()
 {
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
+    if (volumeType == STREAM_VOICE_COMMUNICATION) {
+        bufferInfo_.volumeBg = 1;
+        bufferInfo_.volumeEd = 1;
+        return;
+    }
     bufferInfo_.volumeBg = AudioVolume::GetInstance()->GetHistoryVolume(streamIndex_);
     bufferInfo_.volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, DEVICE_NAME);
     if (bufferInfo_.volumeBg != bufferInfo_.volumeEd) {

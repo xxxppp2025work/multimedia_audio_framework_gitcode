@@ -51,6 +51,7 @@ private:
     AudioSamplingRate GetDirectVoipSampleRate(AudioSamplingRate sampleRate);
     HdiAdapterFormat GetDirectDeviceFormate(AudioSampleFormat format);
     int32_t GetDirectFormatByteSize(HdiAdapterFormat format);
+    void AdjustVoipVolume();
 
 private:
     bool isVoip_;

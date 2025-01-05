@@ -1432,7 +1432,14 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
     for (size_t offset = 0; dataLength > 0; dataLength--) {
         int32_t sum = 0;
         for (size_t i = 0; i < srcListSize; i++) {
-            int32_t vol = srcDataList[i].volumeStart; // change to modify volume of each channel
+            int32_t vol;
+            if (endpointType_ == EndpointType::TYPE_VOIP_MMAP) {
+                int32_t volumeSt = srcDataList[i].volumeStart;
+                fastSink_->SetVolume(volumeSt, volumeSt);
+                vol = 1 << VOLUME_SHIFT_NUMBER;
+            } else {
+                vol = srcDataList[i].volumeStart; // change to modify volume of each channel
+            }
             int16_t *srcPtr = reinterpret_cast<int16_t *>(srcDataList[i].bufferDesc.buffer) + offset;
             sum += (*srcPtr * static_cast<int64_t>(vol)) >> VOLUME_SHIFT_NUMBER; // 1/65536
         }

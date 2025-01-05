@@ -22,6 +22,7 @@
 #include "audio_utils.h"
 #include "none_mix_engine.h"
 #include "audio_performance_monitor.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -246,6 +247,21 @@ void NoneMixEngine::DoFadeinOut(bool isFadeOut, char *pBuffer, size_t bufferSize
     }
 }
 
+void NoneMixEngine::AdjustVoipVolume()
+{
+    if (isVoip_) {
+        AUDIO_INFO_LOG("Adjust voip volume");
+        uint32_t streamIndex = stream_->GetStreamIndex();
+        AudioProcessConfig config = stream_->GetAudioProcessConfig();
+        AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(config.streamType);
+        float volumeBg = AudioVolume::GetInstance()->GetHistoryVolume(streamIndex);
+        float volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndex, volumeType, std::string(SINK_ADAPTER_NAME));
+        if (volumeBg != volumeEd) {
+            renderSink_->SetVolume(volumeEd, volumeEd);
+        }
+    }
+}
+
 void NoneMixEngine::MixStreams()
 {
     if (stream_ == nullptr) {
@@ -276,6 +292,7 @@ void NoneMixEngine::MixStreams()
         ClockTime::RelativeSleep(PERIOD_NS);
         return;
     }
+    AdjustVoipVolume();
     AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_DIRECT_OUT);
     failedCount_ = 0;
     uint64_t written = 0;
