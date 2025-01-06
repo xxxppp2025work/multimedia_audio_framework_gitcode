@@ -435,24 +435,18 @@ void AudioVolumeManager::PublishSafeVolumeNotification(int32_t notificationId)
         reinterpret_cast<CreateSafeVolumeNotification*>(dlsym(libHandle, "CreateSafeVolumeNotificationImpl"));
     if (createSafeVolumeNotificationImpl == nullptr) {
         AUDIO_ERR_LOG("createSafeVolumeNotificationImpl failed %{public}s", __func__);
-#ifndef TEST_COVERAGE
         dlclose(libHandle);
-#endif
         return;
     }
     AudioSafeVolumeNotification *audioSafeVolumeNotificationImpl = createSafeVolumeNotificationImpl();
     if (audioSafeVolumeNotificationImpl == nullptr) {
         AUDIO_ERR_LOG("audioSafeVolumeNotificationImpl is nullptr %{public}s", __func__);
-#ifndef TEST_COVERAGE
         dlclose(libHandle);
-#endif
         return;
     }
     audioSafeVolumeNotificationImpl->PublishSafeVolumeNotification(notificationId);
     delete audioSafeVolumeNotificationImpl;
-#ifndef TEST_COVERAGE
     dlclose(libHandle);
-#endif
 }
 
 void AudioVolumeManager::CancelSafeVolumeNotification(int32_t notificationId)
@@ -466,24 +460,18 @@ void AudioVolumeManager::CancelSafeVolumeNotification(int32_t notificationId)
         reinterpret_cast<CreateSafeVolumeNotification*>(dlsym(libHandle, "CreateSafeVolumeNotificationImpl"));
     if (createSafeVolumeNotificationImpl == nullptr) {
         AUDIO_ERR_LOG("createSafeVolumeNotificationImpl failed %{public}s", __func__);
-#ifndef TEST_COVERAGE
         dlclose(libHandle);
-#endif
         return;
     }
     AudioSafeVolumeNotification *audioSafeVolumeNotificationImpl = createSafeVolumeNotificationImpl();
     if (audioSafeVolumeNotificationImpl == nullptr) {
         AUDIO_ERR_LOG("audioSafeVolumeNotificationImpl is nullptr %{public}s", __func__);
-#ifndef TEST_COVERAGE
         dlclose(libHandle);
-#endif
         return;
     }
     audioSafeVolumeNotificationImpl->CancelSafeVolumeNotification(notificationId);
     delete audioSafeVolumeNotificationImpl;
-#ifndef TEST_COVERAGE
     dlclose(libHandle);
-#endif
 }
 
 int32_t AudioVolumeManager::DealWithSafeVolume(const int32_t volumeLevel, bool isA2dpDevice)
