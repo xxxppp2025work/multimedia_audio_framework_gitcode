@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -92,7 +92,8 @@ int32_t AudioEffectHdiParam::SetHdiCommand(IEffectControl *hdiControl, int8_t *e
         AUDIO_WARNING_LOG("hdi memcpy failed");
     }
     uint32_t replyLen = GET_HDI_BUFFER_LEN;
-    ret = hdiControl->SendCommand(hdiControl, HDI_SET_PATAM, input_, SEND_HDI_COMMAND_LEN,
+    int32_t hdiSetPatam = 6;
+    ret = hdiControl->SendCommand(hdiControl, hdiSetPatam, input_, SEND_HDI_COMMAND_LEN,
         output_, &replyLen);
     return ret;
 }

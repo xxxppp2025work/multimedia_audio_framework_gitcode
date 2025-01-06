@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,6 +28,8 @@ constexpr int MAX_PID_COUNT = 1000;
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
+
+static constexpr int32_t AUDIO_FLAG_INVALID = -1;
 
 AudioPolicyProxy::AudioPolicyProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IAudioPolicy>(impl)

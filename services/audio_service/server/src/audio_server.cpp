@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -45,7 +45,6 @@
 #include "audio_manager_listener_proxy.h"
 #include "audio_service.h"
 #include "audio_schedule.h"
-#include "audio_info.h"
 #include "audio_utils.h"
 #include "i_audio_capturer_source.h"
 #include "i_audio_renderer_sink.h"
@@ -86,6 +85,10 @@ const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int SCHEDULE_REPORT_TIME_OUT_SECONDS = 2;
 static const int32_t INVALID_APP_UID = -1;
 static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = -1;
+const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
+const char* MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
+const char* CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
+const char* CAPTURE_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
 static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
     STREAM_USAGE_SYSTEM,
     STREAM_USAGE_DTMF,
@@ -1589,7 +1592,8 @@ int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
 int32_t AudioServer::SetWakeupSourceCallback(const sptr<IRemoteObject>& object)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callingUid == INTELL_VOICE_SERVICR_UID, false,
+    int32_t intellVoiceServicrUid = 1042;
+    CHECK_AND_RETURN_RET_LOG(callingUid == intellVoiceServicrUid, false,
         "SetWakeupSourceCallback refused for %{public}d", callingUid);
 
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -552,7 +552,8 @@ void AudioPolicyClientStubImpl::OnRendererStateChange(
     size_t infosSize = audioRendererChangeInfos.size();
     AUDIO_DEBUG_LOG("cbSize: %{public}zu infoSize: %{public}zu", cBSize, infosSize);
 
-    if (getuid() == RSS_UID) {
+    int32_t rssUid = 1096;
+    if (getuid() == rssUid) {
         AUDIO_INFO_LOG("cbSize: %{public}zu infoSize: %{public}zu", cBSize, infosSize);
     }
 

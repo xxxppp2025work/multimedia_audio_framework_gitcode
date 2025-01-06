@@ -26,6 +26,7 @@ namespace AudioStandard {
     constexpr int32_t DEFAULT_STREAM_ID = 10;
     const uint32_t SPAN_SIZE_IN_FRAME = 1000;
     const uint32_t TOTAL_SIZE_IN_FRAME = 1000;
+    const int32_t INTELL_VOICE_SERVICR_UID = 1042;
 class AudioProcessInServerUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);

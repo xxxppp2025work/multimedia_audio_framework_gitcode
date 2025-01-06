@@ -27,6 +27,7 @@ namespace OHOS {
 namespace Bluetooth {
 using namespace AudioStandard;
 
+const int WEAR_ENABLED = 1;
 const int DEFAULT_COD = -1;
 const int DEFAULT_MAJOR_CLASS = -1;
 const int DEFAULT_MAJOR_MINOR_CLASS = -1;

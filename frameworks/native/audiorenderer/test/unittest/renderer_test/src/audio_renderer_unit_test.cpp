@@ -18,7 +18,6 @@
 #include <chrono>
 #include <thread>
 
-#include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_renderer.h"

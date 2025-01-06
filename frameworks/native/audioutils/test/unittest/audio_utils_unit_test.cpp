@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,7 +15,6 @@
 
 #include <thread>
 #include <gtest/gtest.h>
-#include "audio_utils.h"
 #include "parameter.h"
 #include "audio_channel_blend.h"
 #include "volume_ramp.h"
@@ -2887,7 +2886,7 @@ HWTEST(AudioUtilsUnitTest, WriteDumpFile_001, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, ChangeDumpFileState_001, TestSize.Level1)
 {
-    std::string para = DUMP_SERVER_PARA;
+    std::string para = DumpFileUtil::DUMP_SERVER_PARA;
     std::string fileName = "dump_bluetooth_audiosink.pcm";
     const char *key = "sys.audio.dump.writeserver.enable";
     const char *value = "w";
@@ -2905,7 +2904,7 @@ HWTEST(AudioUtilsUnitTest, ChangeDumpFileState_001, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, ChangeDumpFileState_002, TestSize.Level1)
 {
-    std::string para = DUMP_CLIENT_PARA;
+    std::string para = DumpFileUtil::DUMP_CLIENT_PARA;
     std::string fileName = "dump_bluetooth_audiosink.pcm";
     const char *key = "sys.audio.dump.writeserver.enable";
     const char *value = "a";
@@ -2923,7 +2922,7 @@ HWTEST(AudioUtilsUnitTest, ChangeDumpFileState_002, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, ChangeDumpFileState_003, TestSize.Level1)
 {
-    std::string para = DUMP_CLIENT_PARA;
+    std::string para = DumpFileUtil::DUMP_CLIENT_PARA;
     std::string fileName = "dump_bluetooth_audiosink.pcm";
     const char *key = "sys.audio.dump.writeserver.enable";
     const char *value = "a";
@@ -2956,7 +2955,7 @@ HWTEST(AudioUtilsUnitTest, OpenDumpFile_001, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, OpenDumpFile_002, TestSize.Level1)
 {
-    std::string para = DUMP_CLIENT_PARA;
+    std::string para = DumpFileUtil::DUMP_CLIENT_PARA;
     std::string fileName = "dump_bluetooth_audiosink.pcm";
     FILE* tempFile = std::tmpfile();
     DumpFileUtil::OpenDumpFile(para, fileName, &tempFile);
@@ -2971,7 +2970,7 @@ HWTEST(AudioUtilsUnitTest, OpenDumpFile_002, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, OpenDumpFileInner_001, TestSize.Level1)
 {
-    std::string para = DUMP_SERVER_PARA;
+    std::string para = DumpFileUtil::DUMP_SERVER_PARA;
     std::string fileName = "dump_bluetooth_audiosink.pcm";
     FILE* tempFile = std::tmpfile();
     const char *key = "sys.audio.dump.writeserver.enable";
@@ -2991,7 +2990,7 @@ HWTEST(AudioUtilsUnitTest, OpenDumpFileInner_001, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, OpenDumpFileInner_002, TestSize.Level1)
 {
-    std::string para = DUMP_SERVER_PARA;
+    std::string para = DumpFileUtil::DUMP_SERVER_PARA;
     std::string fileName = "dump_bluetooth_audiosink.pcm";
     FILE* tempFile = std::tmpfile();
     const char *key = "sys.audio.dump.writeserver.enable";
@@ -3009,7 +3008,7 @@ HWTEST(AudioUtilsUnitTest, OpenDumpFileInner_002, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, OpenDumpFileInner_003, TestSize.Level1)
 {
-    std::string para = DUMP_SERVER_PARA;
+    std::string para = DumpFileUtil::DUMP_SERVER_PARA;
     std::string fileName = "dump_bluetooth_audiosink.pcm";
     FILE* tempFile = std::tmpfile();
     const char *key = "sys.audio.dump.writeserver.enable";

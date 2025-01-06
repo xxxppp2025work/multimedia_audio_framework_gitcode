@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,7 +17,6 @@
 #include <fstream>
 
 #include "audio_effect.h"
-#include "audio_utils.h"
 #include "audio_effect_log.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_errors.h"
@@ -180,7 +179,7 @@ void UpdateSpatializationStateFuzzTest()
     bool headTrackingEnabled = GetData<bool>();
 
     AudioSpatializationState spatializationState = {spatializationEnabled, headTrackingEnabled};
-    
+
     AudioEffectChainManager::GetInstance()->UpdateSpatializationState(spatializationState);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }

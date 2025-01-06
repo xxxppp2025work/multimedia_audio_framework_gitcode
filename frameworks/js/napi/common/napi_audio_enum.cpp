@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,7 +23,6 @@
 #include "audio_interrupt_info.h"
 #include "audio_device_info.h"
 #include "napi_param_utils.h"
-#include "audio_utils.h"
 #include "audio_asr.h"
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 #include "parameters.h"
@@ -620,7 +619,8 @@ napi_value NapiAudioEnum::CreateDefaultVolumeGroupIdObject(napi_env env)
 napi_value NapiAudioEnum::CreateDefaultInterruptIdObject(napi_env env)
 {
     napi_value defaultInterruptId;
-    napi_create_int32(env, DEFAULT_VOLUME_INTERRUPT_ID, &defaultInterruptId);
+    int32_t defaultVolumeInterruptId = 1;
+    napi_create_int32(env, defaultVolumeInterruptId, &defaultInterruptId);
     return defaultInterruptId;
 }
 
