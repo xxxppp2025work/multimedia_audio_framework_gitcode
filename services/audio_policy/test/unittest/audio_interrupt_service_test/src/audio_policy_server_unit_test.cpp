@@ -933,5 +933,36 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_045, TestSize.Level1)
     bool ret = ptrAudioPolicyServer->IsAllowedPlayback(uid, pid);
     EXPECT_EQ(ret, true);
 }
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_046
+* @tc.desc  : Test AudioPolicyServer::AddSystemAbilityListeners 
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_046, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_TRUE(ptrAudioPolicyServer != nullptr)
+
+    ptrAudioPolicyServer->AddSystemAbilityListeners();
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_047
+* @tc.desc  : Test AudioPolicyServer::OnAddSystemAbility 
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_047, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_TRUE(ptrAudioPolicyServer != nullptr)
+
+    ptrAudioPolicyServer->OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
+    ptrAudioPolicyServer->OnAddSystemAbility(USB_SYSTEM_ABILITY_ID, "");
+}
 } // AudioStandard
 } // OHOS

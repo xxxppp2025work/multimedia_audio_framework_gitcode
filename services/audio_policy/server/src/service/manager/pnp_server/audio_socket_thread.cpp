@@ -529,6 +529,7 @@ int32_t AudioSocketThread::AudioDpDetectDevice(struct AudioPnpUevent *audioPnpUe
 
 int32_t AudioSocketThread::AudioUsbHeadsetDetectDevice(struct AudioPnpUevent *audioPnpUevent)
 {
+    #ifdef USB_ENABLE
     AudioEvent audioEvent = {0};
 
     if (audioPnpUevent == NULL) {
@@ -573,6 +574,9 @@ int32_t AudioSocketThread::AudioUsbHeadsetDetectDevice(struct AudioPnpUevent *au
     }
     UpdatePnpDeviceState(&audioEvent);
     return SUCCESS;
+    #else
+    return ERROR;
+    #endif
 }
 
 int32_t AudioSocketThread::AudioMicBlockDevice(struct AudioPnpUevent *audioPnpUevent)
