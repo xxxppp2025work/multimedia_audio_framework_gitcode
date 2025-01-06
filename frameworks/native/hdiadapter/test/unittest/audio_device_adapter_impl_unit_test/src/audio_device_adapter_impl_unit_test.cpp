@@ -754,6 +754,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, ParamEventCallback_004, TestSize.Level1)
     EXPECT_NE(SUCCESS, result);
 }
 
+#ifdef FEATURE_DISTRIBUTE_AUDIO
 /**
 * @tc.name   : Test RegExtraParamObserver API
 * @tc.number : RegExtraParamObserver_001
@@ -766,6 +767,7 @@ HWTEST(AudioDeviceAdapterImplUnitTest, RegExtraParamObserver_001, TestSize.Level
     int32_t result = audioDeviceAdapterImpl->RegExtraParamObserver();
     EXPECT_EQ(SUCCESS, result);
 }
+#endif
 
 /**
 * @tc.name   : Test RegExtraParamObserver API

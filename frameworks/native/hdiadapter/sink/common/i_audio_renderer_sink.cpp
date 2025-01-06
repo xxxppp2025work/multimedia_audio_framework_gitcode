@@ -39,7 +39,9 @@ const char *DEVICE_CLASS_USB = "usb";
 const char *DEVICE_CLASS_DP = "dp";
 const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_A2DPFAST = "a2dp_fast";
+#ifndef FEATURE_WATCH
 const char *DEVICE_CLASS_FILE = "file_io";
+#endif
 #ifdef DAUDIO_ENABLE
 const char *DEVICE_CLASS_REMOTE = "remote";
 #endif
@@ -68,9 +70,11 @@ IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, cons
     if (!strcmp(devceClass, DEVICE_CLASS_A2DPFAST)) {
         iAudioRendererSink = BluetoothRendererSink::GetMmapInstance();
     }
+#ifndef FEATURE_WATCH
     if (!strcmp(devceClass, DEVICE_CLASS_FILE)) {
         iAudioRendererSink = AudioRendererFileSink::GetInstance();
     }
+#endif
 #ifdef DAUDIO_ENABLE
     if (!strcmp(devceClass, DEVICE_CLASS_REMOTE)) {
         iAudioRendererSink = RemoteAudioRendererSink::GetInstance(deviceNetworkId);

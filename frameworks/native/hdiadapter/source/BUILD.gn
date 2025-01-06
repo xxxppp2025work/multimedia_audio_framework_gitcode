@@ -313,10 +313,15 @@ ohos_shared_library("capturer_source_adapter") {
   ]
 
   deps = [
-    ":audio_capturer_file_source",
     ":audio_capturer_source",
     ":bluetooth_capturer_source",
   ]
+
+  if (audio_framework_feature_watch == false) {
+    deps += [ ":audio_capturer_file_source" ]
+  } else {
+    defines = [ "FEATURE_WATCH" ]
+  }
 
   if (audio_framework_feature_daudio_enable == true) {
     deps += [

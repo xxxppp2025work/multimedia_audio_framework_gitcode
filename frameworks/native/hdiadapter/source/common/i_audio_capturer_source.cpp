@@ -43,7 +43,9 @@ IAudioCapturerSource *IAudioCapturerSource::GetInstance(const char *deviceClass,
     const char *deviceClassPrimary = "primary";
     const char *deviceClassUsb = "usb";
     const char *deviceClassA2DP = "a2dp";
+#ifndef FEATURE_WATCH
     const char *deviceClassFile = "file_io";
+#endif
 #ifdef DAUDIO_ENABLE
     const char *deviceClassRemote = "remote";
 #endif
@@ -57,10 +59,12 @@ IAudioCapturerSource *IAudioCapturerSource::GetInstance(const char *deviceClass,
     if (!strcmp(deviceClass, deviceClassA2DP)) {
         return BluetoothCapturerSource::GetInstance();
     }
+#ifndef FEATURE_WATCH
     if (!strcmp(deviceClass, deviceClassFile)) {
         static AudioCapturerFileSource audioCapturer;
         return &audioCapturer;
     }
+#endif
 #ifdef DAUDIO_ENABLE
     if (!strcmp(deviceClass, deviceClassRemote)) {
         std::string networkId = deviceNetworkId;

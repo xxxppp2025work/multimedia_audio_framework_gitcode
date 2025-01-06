@@ -429,13 +429,18 @@ ohos_shared_library("renderer_sink_adapter") {
   ]
 
   deps = [
-    ":audio_renderer_file_sink",
     ":audio_renderer_sink",
     ":bluetooth_renderer_sink",
     ":fast_audio_renderer_sink",
     ":multichannel_audio_renderer_sink",
     ":offload_audio_renderer_sink",
   ]
+
+  if (audio_framework_feature_watch == false) {
+    deps += [ ":audio_renderer_file_sink" ]
+  } else {
+    defines = [ "FEATURE_WATCH" ]
+  }
 
   if (audio_framework_feature_daudio_enable == true) {
     deps += [
