@@ -1305,6 +1305,8 @@ public:
     int32_t UnsetAudioInterruptCallback(const int32_t zoneId, const uint32_t sessionId);
 
     int32_t SetVirtualCall(const bool isVirtual);
+
+    int32_t OnVoiceWakeupState(bool state);
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:

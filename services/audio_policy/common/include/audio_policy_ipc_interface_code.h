@@ -179,7 +179,8 @@ enum class AudioPolicyInterfaceCode {
     SET_PREFERRED_DEVICE,
     SAVE_REMOTE_INFO,
     SET_VIRTUAL_CALL,
-    AUDIO_POLICY_MANAGER_CODE_MAX = SET_VIRTUAL_CALL,
+    ON_VOICE_WAKEUP_STATE,
+    AUDIO_POLICY_MANAGER_CODE_MAX = ON_VOICE_WAKEUP_STATE,
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -3508,5 +3508,13 @@ void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t ses
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
 }
+
+int32_t AudioPolicyServer::OnVoiceWakeupState(bool state)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == INTELL_VOICE_SERVICR_UID, ERROR,
+        "callerUid is error: not intell voice service %{public}d", callingUid);
+    return audioPolicyService_.OnVoiceWakeupState(state);
+}
 } // namespace AudioStandard
 } // namespace OHOS
