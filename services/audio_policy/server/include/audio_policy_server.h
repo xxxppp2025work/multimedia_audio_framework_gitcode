@@ -491,6 +491,8 @@ public:
     // for S4 reboot update safevolume
     void UpdateSafeVolumeByS4();
 
+    int32_t OnVoiceWakeupState(bool state) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string& deviceId);
