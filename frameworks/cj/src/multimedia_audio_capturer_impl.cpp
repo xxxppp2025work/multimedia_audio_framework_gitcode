@@ -266,7 +266,7 @@ void MMAAudioCapturerImpl::RegisterCArrCallback(int32_t callbackType, void (*cal
             *errorCode = CJ_ERR_SYSTEM;
         }
         capturerReadDataCb_->RegisterFunc(func, audioCapturer_);
-        int32_t ret = audioCapturer_->SetCapturerReadCallback(capturerReadDataCb_);
+        ret = audioCapturer_->SetCapturerReadCallback(capturerReadDataCb_);
         if (ret != SUCCESS_CODE) {
             AUDIO_ERR_LOG("SetCapturerReadCallback failure!");
             *errorCode = CJ_ERR_SYSTEM;
