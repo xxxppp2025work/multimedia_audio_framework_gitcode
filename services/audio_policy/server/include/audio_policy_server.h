@@ -537,6 +537,8 @@ public:
     // for hibernate callback
     void CheckHibernateState(bool hibernate);
 
+    int32_t OnVoiceWakeupState(bool state) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string& deviceId);

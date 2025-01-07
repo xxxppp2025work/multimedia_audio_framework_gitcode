@@ -186,6 +186,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_STREAM_IN_FOCUS_BY_UID",
     "SET_PREFERRED_DEVICE",
     "SAVE_REMOTE_INFO",
+    "ON_VOICE_WAKEUP_STATE",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1188,6 +1189,9 @@ void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SAVE_REMOTE_INFO):
             SaveRemoteInfoInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ON_VOICE_WAKEUP_STATE):
+            OnVoiceWakeupStateInternal(data, reply);
+            break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
             IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -1850,6 +1854,13 @@ void AudioPolicyManagerStub::SetAudioDeviceAnahsCallbackInternal(MessageParcel &
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     int32_t result = SetAudioDeviceAnahsCallback(object);
     reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::OnVoiceWakeupStateInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool state = data.ReadBool();
+    int32_t result = OnVoiceWakeupState(state);
+    reply.WriteBool(state);
 }
 
 void AudioPolicyManagerStub::UnsetAudioDeviceAnahsCallbackInternal(MessageParcel &data, MessageParcel &reply)
