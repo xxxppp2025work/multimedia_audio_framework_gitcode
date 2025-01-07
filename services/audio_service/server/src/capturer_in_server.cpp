@@ -421,7 +421,7 @@ int32_t CapturerInServer::Release()
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         AUDIO_INFO_LOG("Disable inner capturer for %{public}u", streamIndex_);
         if (processConfig_.innerCapMode == MODERN_INNER_CAP) {
-            PlaybackCapturerManager::GetInstance()->RemovePlaybackCapturerFilterInfo(streamIndex_);
+            PlaybackCapturerManager::GetInstance()->RemovePlaybackCapturerFilterInfo(streamIndex_, innerCapId);
         } else {
             PlaybackCapturerManager::GetInstance()->SetInnerCapturerState(false);
         }
@@ -467,7 +467,7 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
             return ERR_PERMISSION_DENIED;
         }
     }
-
+    // TODO liyou 这里是否不需要再添加默认使用者，存储也可以直接存储InnerCapId?
     filterConfig_ = config;
 
     if (filterConfig_.filterOptions.usages.size() == 0) {
@@ -483,7 +483,7 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
     }
 
     // in plan: add more check and print config
-    PlaybackCapturerManager::GetInstance()->SetPlaybackCapturerFilterInfo(streamIndex_, filterConfig_);
+    PlaybackCapturerManager::GetInstance()->SetPlaybackCapturerFilterInfo(streamIndex_, filterConfig_, innerCapId_);
     return SUCCESS;
 }
 

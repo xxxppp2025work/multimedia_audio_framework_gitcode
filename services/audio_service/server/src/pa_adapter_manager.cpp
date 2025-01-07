@@ -368,7 +368,8 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
         if (processConfig.isInnerCapturer) {
             if (processConfig.innerCapMode == MODERN_INNER_CAP) {
                 AUDIO_INFO_LOG("Create the modern inner-cap.");
-                deviceName = NEW_INNER_CAPTURER_SOURCE;
+                std::string tempDevName(INNER_CAPTURER_SINK);
+                deviceName = tempDevName + std::to_string(processConfig.innerCapId) + ".monitor";
             } else {
                 deviceName = INNER_CAPTURER_SOURCE;
             }
@@ -427,7 +428,8 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
         return nullptr;
     }
 
-    int32_t ret = ConnectStreamToPA(paStream, sampleSpec, processConfig.capturerInfo.sourceType, deviceName);
+    int32_t ret = ConnectStreamToPA(paStream, sampleSpec, processConfig.capturerInfo.sourceType,
+        deviceName, processConfig.innerCapId);
     if (ret < 0) {
         AUDIO_ERR_LOG("ConnectStreamToPA Failed");
         ReleasePaStream(paStream);
@@ -605,7 +607,7 @@ std::shared_ptr<ICapturerStream> PaAdapterManager::CreateCapturerStream(AudioPro
 }
 
 int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec,
-    SourceType source, const std::string &deviceName)
+    SourceType source, const std::string &deviceName, int32_t innerCapId)
 {
     AUDIO_DEBUG_LOG("Enter PaAdapterManager::ConnectStreamToPA");
     if (CheckReturnIfinvalid(mainLoop_ && context_ && paStream, ERROR) < 0) {
@@ -615,7 +617,7 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
     PaLockGuard lock(mainLoop_);
     int32_t XcollieFlag = AUDIO_XCOLLIE_FLAG_LOG;
     if (managerType_ == PLAYBACK || managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
-        int32_t rendererRet = ConnectRendererStreamToPA(paStream, sampleSpec);
+        int32_t rendererRet = ConnectRendererStreamToPA(paStream, sampleSpec, innerCapId);
         CHECK_AND_RETURN_RET_LOG(rendererRet == SUCCESS, rendererRet, "ConnectRendererStreamToPA failed");
     }
     if (managerType_ == RECORDER) {
@@ -644,7 +646,7 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
     return SUCCESS;
 }
 
-int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec)
+int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec, int32_t innerCapId)
 {
     uint32_t tlength = 4; // 4 is tlength of playback
     uint32_t maxlength = 4; // 4 is max buffer length of playback
@@ -663,7 +665,8 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
     bufferAttr.tlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * tlength, &sampleSpec);
     bufferAttr.minreq = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
 
-    const char *sinkName = managerType_ == DUP_PLAYBACK ? INNER_CAPTURER_SINK :
+    std::string dupSinkName = std::string(INNER_CAPTURER_SINK) + std::to_string(innerCapId);
+    const char *sinkName = managerType_ == DUP_PLAYBACK ? dupSinkName.c_str() :
         (managerType_ == DUAL_PLAYBACK ? "Speaker" : nullptr);
     uint32_t flags = PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
         PA_STREAM_VARIABLE_RATE;

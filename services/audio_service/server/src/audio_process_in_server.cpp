@@ -267,15 +267,19 @@ int32_t AudioProcessInServer::RegisterProcessCb(sptr<IRemoteObject> object)
     return SUCCESS;
 }
 
-void AudioProcessInServer::SetInnerCapState(bool isInnerCapped)
+void AudioProcessInServer::SetInnerCapState(bool isInnerCapped, int32_t innerCapId)
 {
-    AUDIO_INFO_LOG("process[%{public}u] innercapped: %{public}s", sessionId_, isInnerCapped ? "true" : "false");
-    isInnerCapped_ = isInnerCapped;
+    AUDIO_INFO_LOG("process[%{public}u] innercapped: %{public}s, innerCapId:%{public}d",
+        sessionId_, isInnerCapped ? "true" : "false", innerCapId);
+    innerCapStates_[innerCapId] = isInnerCapped;
 }
 
-bool AudioProcessInServer::GetInnerCapState()
+bool AudioProcessInServer::GetInnerCapState(int32_t inerCapId)
 {
-    return isInnerCapped_;
+    if (innerCapStates_.count(inerCapId) && innerCapStates_[innerCapId]) {
+        return true;
+    }
+    return false;
 }
 
 AppInfo AudioProcessInServer::GetAppInfo()

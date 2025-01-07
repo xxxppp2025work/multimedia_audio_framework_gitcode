@@ -205,6 +205,7 @@ public:
     void HandleStateChangeEvent(int64_t data);
     void HandleCapturerMarkReachedEvent(int64_t capturerMarkPosition);
     void HandleCapturerPeriodReachedEvent(int64_t capturerPeriodNumber);
+    int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config);
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
 
@@ -341,6 +342,7 @@ private:
 
     bool paramsIsSet_ = false;
     std::atomic_bool threadStatusFlag_ { false };
+    int32_t InnerCapId_ = 0;
 
     enum {
         STATE_CHANGE_EVENT = 0,
@@ -741,6 +743,7 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
 
     config.isInnerCapturer = isInnerCapturer_;
     config.isWakeupCapturer = isWakeupCapturer_;
+    config.innerCapId = innerCapId_;
 
     clientConfig_ = config;
     return config;
@@ -1999,6 +2002,17 @@ DeviceType CapturerInClientInner::GetDefaultOutputDevice()
 {
     AUDIO_WARNING_LOG("not supported in capturer");
     return DEVICE_TYPE_NONE;
+}
+
+int32_t AudioCapturerPrivate::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config)
+{
+    sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("CheckCaptureLimit failed to get AudioServerProxy");
+        return;
+    }
+    int32_t ret = gasp->CheckCaptureLimit(config, InnerCapId_);
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS

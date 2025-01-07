@@ -284,16 +284,23 @@ void AudioService::CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<
         return;
     }
     // in plan: check if meet with the workingConfig_
-    if (ShouldBeInnerCap(renderer->processConfig_)) {
+    std::set<int32_t> captureIds;
+    if (ShouldBeInnerCap(renderer->processConfig_, captureIds)) {
         filteredRendererMap_.push_back(renderer);
-        renderer->EnableInnerCap(); // for debug
+        for (auto innerCapId : captureIds) {
+            renderer->EnableInnerCap(innerCapId); // for debug
+        }
     }
 }
 
-InnerCapFilterPolicy AudioService::GetInnerCapFilterPolicy()
+InnerCapFilterPolicy AudioService::GetInnerCapFilterPolicy(int32_t innerCapId)
 {
-    auto usagesSize = workingConfig_.filterOptions.usages.size();
-    auto pidsSize = workingConfig_.filterOptions.pids.size();
+    if (!workingConfigs_.count(innerCapId)) {
+        AUDIO_ERR_LOG("error, invalid innerCapId");
+        return POLICY_INVALID;
+    }
+    auto usagesSize = workingConfigs_[innerCapId].filterOptions.usages.size();
+    auto pidsSize = workingConfigs_[innerCapId].filterOptions.pids.size();
     if (usagesSize == 0 && pidsSize == 0) {
         AUDIO_ERR_LOG("error, invalid usages and pids");
         return POLICY_INVALID;
@@ -312,34 +319,55 @@ bool isFilterMatched(const std::vector<T> &params, T param, FilterMode mode)
     return (mode == FilterMode::INCLUDE && isFound) || (mode == FilterMode::EXCLUDE && !isFound);
 }
 
-bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig)
+bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId)
 {
     bool canBeCaptured = rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
-    if (!canBeCaptured) {
+    if (!canBeCaptured || || innerCapId == 0 || !workingConfigs_.count(innerCapId)) {
         AUDIO_WARNING_LOG("%{public}d privacy is not public!", rendererConfig.appInfo.appPid);
         return false;
     }
-    InnerCapFilterPolicy filterPolicy = GetInnerCapFilterPolicy();
+    return CheckShouldCap(rendererConfig, innerCapId);
+}
+
+bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, std::set<int32_t> &beCapIds)
+{
+    bool canBeCaptured = rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    if (!canBeCaptured || (innerCapId != 0 && !workingConfigs_.count(innerCapId))) {
+        AUDIO_WARNING_LOG("%{public}d privacy is not public!", rendererConfig.appInfo.appPid);
+        return false;
+    }
+    bool ret = false;
+    for (auto& filter : workingConfigs_ ) {
+        if (CheckShouldCap(rendererConfig, filter.first)) {
+            ret = true;
+            beCapIds.insert(innerCapId);
+        }
+    }
+    return ret;
+}
+
+bool AudioService::CheckShouldCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId)
+{
+    InnerCapFilterPolicy filterPolicy = GetInnerCapFilterPolicy(innerCapId);
     bool res = false;
     switch (filterPolicy) {
         case POLICY_INVALID:
             return false;
         case POLICY_USAGES_ONLY:
-            res = isFilterMatched(workingConfig_.filterOptions.usages,
-                rendererConfig.rendererInfo.streamUsage, workingConfig_.filterOptions.usageFilterMode);
+            res = isFilterMatched(workingConfigs_[innerCapId].filterOptions.usages,
+                rendererConfig.rendererInfo.streamUsage, workingConfigs_[innerCapId].filterOptions.usageFilterMode);
             break;
         case POLICY_USAGES_AND_PIDS:
-            res = isFilterMatched(workingConfig_.filterOptions.usages, rendererConfig.rendererInfo.streamUsage,
-                workingConfig_.filterOptions.usageFilterMode) &&
-                isFilterMatched(workingConfig_.filterOptions.pids, rendererConfig.appInfo.appPid,
-                workingConfig_.filterOptions.pidFilterMode);
+            res = isFilterMatched(workingConfigs_[innerCapId].filterOptions.usages, rendererConfig.rendererInfo.streamUsage,
+                workingConfigs_[innerCapId].filterOptions.usageFilterMode) &&
+                isFilterMatched(workingConfigs_[innerCapId].filterOptions.pids, rendererConfig.appInfo.appPid,
+                workingConfigs_[innerCapId].filterOptions.pidFilterMode);
             break;
         default:
             break;
     }
-
-    AUDIO_INFO_LOG("pid:%{public}d usage:%{public}d result:%{public}s", rendererConfig.appInfo.appPid,
-        rendererConfig.rendererInfo.streamUsage, res ? "true" : "false");
+    AUDIO_INFO_LOG("pid:%{public}d usage:%{public}d result:%{public}s capId:%{public}d",
+        rendererConfig.appInfo.appPid, rendererConfig.rendererInfo.streamUsage, res ? "true" : "false", innerCapId);
     return res;
 }
 
@@ -383,22 +411,40 @@ void AudioService::FilterAllFastProcess()
     }
     for (auto paired : linkedPairedList_) {
         AudioProcessConfig temp = paired.first->processConfig_;
-        if (temp.audioMode == AUDIO_MODE_PLAYBACK && ShouldBeInnerCap(temp)) {
-            paired.first->SetInnerCapState(true);
-            paired.second->EnableFastInnerCap();
-        } else {
-            paired.first->SetInnerCapState(false);
+        std::set<int32_t> captureIds;
+        if (temp.audioMode == AUDIO_MODE_PLAYBACK && ShouldBeInnerCap(temp, captureIds)) {
+            HandleFastCapture(captureIds, paired.first, paired.second)
+            
         }
     }
 
     for (auto pair : endpointList_) {
-        if (pair.second->GetDeviceRole() == OUTPUT_DEVICE && !pair.second->ShouldInnerCap()) {
-            pair.second->DisableFastInnerCap();
+        if (pair.second->GetDeviceRole() == OUTPUT_DEVICE) {
+            CheckDisableFastInner(pair.second);
         }
     }
 }
 
-int32_t AudioService::OnInitInnerCapList()
+int32_t AudioService::CheckDisableFastInner(std::shared_ptr<AudioEndpoint> endpoint)
+{
+    for (auto workingConfig : workingConfigs_) {
+        if (!endpoint->ShouldInnerCap(workingConfig.first)) {
+            endpoint->DisableFastInnerCap(workingConfig.first);
+        }
+    }
+}
+
+int32_t AudioService::HandleFastCapture(std::set<int32_t> captureIds, sptr<AudioProcessInServer> audioProcessInServer,
+    std::shared_ptr<AudioEndpoint> audioEndpoint)
+{
+    for (auto captureId : captureIds) {
+        audioProcessInServer->SetInnerCapState(true, captureId);
+        audioEndpoint->EnableFastInnerCap(captureId);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioService::OnInitInnerCapList(int32_t innerCapId)
 {
     AUDIO_INFO_LOG("workingInnerCapId_ is %{public}d", workingInnerCapId_);
     FilterAllFastProcess();
@@ -414,7 +460,7 @@ int32_t AudioService::OnInitInnerCapList()
                 AUDIO_WARNING_LOG("Renderer is already released!");
                 continue;
             }
-            if (ShouldBeInnerCap(renderer->processConfig_)) {
+            if (ShouldBeInnerCap(renderer->processConfig_, innerCapId)) {
                 renderer->EnableInnerCap();
                 filteredRendererMap_.push_back(renderer);
             }
@@ -425,7 +471,7 @@ int32_t AudioService::OnInitInnerCapList()
     return SUCCESS;
 }
 
-int32_t AudioService::OnUpdateInnerCapList()
+int32_t AudioService::OnUpdateInnerCapList(int32_t innerCapId)
 {
     AUDIO_INFO_LOG("workingInnerCapId_ is %{public}d", workingInnerCapId_);
 
@@ -436,7 +482,7 @@ int32_t AudioService::OnUpdateInnerCapList()
             AUDIO_WARNING_LOG("Renderer is already released!");
             continue;
         }
-        if (!ShouldBeInnerCap(renderer->processConfig_)) {
+        if (!ShouldBeInnerCap(renderer->processConfig_, innerCapId)) {
             renderer->DisableInnerCap();
         }
     }
@@ -482,41 +528,50 @@ int32_t AudioService::DisableDualToneList(uint32_t sessionId)
 }
 
 // Only one session is working at the same time.
-int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig)
+int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig,
+    int32_t innerCapId)
 {
     Trace trace("AudioService::OnCapturerFilterChange");
     // in plan:
     // step 1: if sessionId is not added before, add the sessionId and enbale the filter in allRendererMap_
     // step 2: if sessionId is already in using, this means the config is changed. Check the filtered renderer before,
     // call disable inner-cap for those not meet with the new config, than filter all allRendererMap_.
-    if (workingInnerCapId_ == 0) {
-        workingInnerCapId_ = sessionId;
-        workingConfig_ = newConfig;
-        return OnInitInnerCapList();
-    }
+    // if (workingInnerCapId_ == 0) {
+    //     workingInnerCapId_ = sessionId;
+    //     workingConfig_ = newConfig;
+    //     return OnInitInnerCapList();
+    // }
 
-    if (workingInnerCapId_ == sessionId) {
-        workingConfig_ = newConfig;
-        return OnUpdateInnerCapList();
+    // if (workingInnerCapId_ == sessionId) {
+    //     workingConfig_ = newConfig;
+    //     return OnUpdateInnerCapList();
+    // }
+
+    if (workingConfigs_.count(innerCapId)) {
+        workingConfigs_[innerCapId] = newConfig;
+        return OnUpdateInnerCapList(innerCapId);
+    } else {
+        workingConfigs_[innerCapId] = newConfig;
+        return OnInitInnerCapList(innerCapId);
     }
 
     AUDIO_WARNING_LOG("%{public}u is working, comming %{public}u will not work!", workingInnerCapId_, sessionId);
     return ERR_OPERATION_FAILED;
 }
 
-int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId)
+int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId, int32_t innerCapId)
 {
-    if (workingInnerCapId_ != sessionId) {
-        AUDIO_WARNING_LOG("%{public}u is working, remove %{public}u will not work!", workingInnerCapId_, sessionId);
+    if (!workingConfig_.count(innerCapId)) {
+        AUDIO_WARNING_LOG("%{public}u is working, remove %{public}u will not work!", innerCapId, sessionId);
         return SUCCESS;
     }
-    workingInnerCapId_ = 0;
-    workingConfig_ = {};
+    workingConfig_.erase(innerCapId);
 
+    //TODO liyou 确认移除时这里需不需要改动
     std::unique_lock<std::mutex> lockEndpoint(processListMutex_);
     for (auto pair : endpointList_) {
         if (pair.second->GetDeviceRole() == OUTPUT_DEVICE) {
-            pair.second->DisableFastInnerCap();
+            pair.second->DisableFastInnerCap(innerCapId);
         }
     }
     lockEndpoint.unlock();
@@ -663,12 +718,9 @@ void AudioService::CheckInnerCapForProcess(sptr<AudioProcessInServer> process, s
     if (workingInnerCapId_ == 0) {
         return;
     }
-
-    if (ShouldBeInnerCap(process->processConfig_)) {
-        process->SetInnerCapState(true);
-        endpoint->EnableFastInnerCap();
-    } else {
-        process->SetInnerCapState(false);
+    std::set<int32_t> captureIds;
+    if (ShouldBeInnerCap(process->processConfig_, captureIds)) {
+        HandleFastCapture(captureIds, process, endpoint);
     }
 }
 

@@ -456,6 +456,7 @@ public:
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void SubscribeSafeVolumeEvent();
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
+    void LoadModernInnerCapSink(int32_t innerCapId);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -535,9 +536,7 @@ private:
     bool GetAudioEffectOffloadFlag();
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
-
-    void LoadModernInnerCapSink();
-
+    // TODO liyou 这里删的LoadModernInnerCapSink
     int32_t GetUid(int32_t sessionId);
 
     void UnregisterBluetoothListener();

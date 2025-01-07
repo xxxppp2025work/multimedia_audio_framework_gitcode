@@ -36,9 +36,9 @@ public:
 
     virtual AudioStreamType GetAudioStreamType() = 0;
 
-    virtual void SetInnerCapState(bool isInnerCapped) = 0;
-
-    virtual bool GetInnerCapState() = 0;
+    virtual void SetInnerCapState(bool isInnerCapped, int32_t innerCapId) = 0;
+    // TODO liyou 这里加参数innerCapId，需要全局搜索用的地方
+    virtual bool GetInnerCapState(int32_t innerCapId) = 0;
 
     virtual AppInfo GetAppInfo() = 0;
 
