@@ -33,7 +33,7 @@ MMAAudioVolumeGroupManagerImpl::MMAAudioVolumeGroupManagerImpl(int32_t groupId)
 }
 int32_t MMAAudioVolumeGroupManagerImpl::GetMaxVolume(int32_t volumeType)
 {
-    if(audioGroupMngr_ == nullptr) {
+    if (audioGroupMngr_ == nullptr) {
         return CJ_ERR_INVALID_VALUE;
     }
     auto ret = audioGroupMngr_->GetMaxVolume(static_cast<AudioVolumeType>(volumeType));
@@ -42,7 +42,7 @@ int32_t MMAAudioVolumeGroupManagerImpl::GetMaxVolume(int32_t volumeType)
 
 int32_t MMAAudioVolumeGroupManagerImpl::GetMinVolume(int32_t volumeType)
 {
-    if(audioGroupMngr_ == nullptr) {
+    if (audioGroupMngr_ == nullptr) {
         return CJ_ERR_INVALID_VALUE;
     }
     auto ret = audioGroupMngr_->GetMinVolume(static_cast<AudioVolumeType>(volumeType));
@@ -51,7 +51,7 @@ int32_t MMAAudioVolumeGroupManagerImpl::GetMinVolume(int32_t volumeType)
 
 int32_t MMAAudioVolumeGroupManagerImpl::GetRingerMode() const
 {
-    if(audioGroupMngr_ == nullptr) {
+    if (audioGroupMngr_ == nullptr) {
         return CJ_ERR_INVALID_VALUE;
     }
     auto ret = audioGroupMngr_->GetRingerMode();
@@ -60,7 +60,7 @@ int32_t MMAAudioVolumeGroupManagerImpl::GetRingerMode() const
 
 float MMAAudioVolumeGroupManagerImpl::GetSystemVolumeInDb(int32_t volumeType, int32_t volumeLevel, int32_t deviceType)
 {
-    if(audioGroupMngr_ == nullptr) {
+    if (audioGroupMngr_ == nullptr) {
         return CJ_ERR_INVALID_RETURN_FLOAT_VALUE;
     }
     auto ret = audioGroupMngr_->GetSystemVolumeInDb(static_cast<AudioVolumeType>(volumeType), volumeLevel,
@@ -70,7 +70,7 @@ float MMAAudioVolumeGroupManagerImpl::GetSystemVolumeInDb(int32_t volumeType, in
 
 int32_t MMAAudioVolumeGroupManagerImpl::GetVolume(int32_t volumeType)
 {
-    if(audioGroupMngr_ == nullptr) {
+    if (audioGroupMngr_ == nullptr) {
         return CJ_ERR_INVALID_VALUE;
     }
     auto ret = audioGroupMngr_->GetVolume(static_cast<AudioVolumeType>(volumeType));
@@ -79,7 +79,7 @@ int32_t MMAAudioVolumeGroupManagerImpl::GetVolume(int32_t volumeType)
 
 bool MMAAudioVolumeGroupManagerImpl::IsMicrophoneMute()
 {
-    if(audioGroupMngr_ == nullptr) {
+    if (audioGroupMngr_ == nullptr) {
         return false;
     }
     auto ret = audioGroupMngr_->IsMicrophoneMute();
@@ -89,7 +89,7 @@ bool MMAAudioVolumeGroupManagerImpl::IsMicrophoneMute()
 bool MMAAudioVolumeGroupManagerImpl::IsMute(int32_t volumeType)
 {
     bool isMute{ false };
-    if(audioGroupMngr_ == nullptr) {
+    if (audioGroupMngr_ == nullptr) {
         return isMute;
     }
     auto ret = audioGroupMngr_->IsStreamMute(static_cast<AudioVolumeType>(volumeType), isMute);
@@ -101,7 +101,7 @@ bool MMAAudioVolumeGroupManagerImpl::IsMute(int32_t volumeType)
 
 bool MMAAudioVolumeGroupManagerImpl::IsVolumeUnadjustable()
 {
-    if(audioGroupMngr_ == nullptr) {
+    if (audioGroupMngr_ == nullptr) {
         return false;
     }
     auto ret = audioGroupMngr_->IsVolumeUnadjustable();
@@ -110,7 +110,7 @@ bool MMAAudioVolumeGroupManagerImpl::IsVolumeUnadjustable()
 
 float MMAAudioVolumeGroupManagerImpl::GetMaxAmplitudeForOutputDevice(const int32_t deviceId)
 {
-    if(audioGroupMngr_ == nullptr) {
+    if (audioGroupMngr_ == nullptr) {
         return CJ_ERR_INVALID_RETURN_FLOAT_VALUE;
     }
     auto ret = audioGroupMngr_->GetMaxAmplitude(deviceId);
@@ -122,7 +122,7 @@ float MMAAudioVolumeGroupManagerImpl::GetMaxAmplitudeForOutputDevice(const int32
 
 float MMAAudioVolumeGroupManagerImpl::GetMaxAmplitudeForInputDevice(const int32_t deviceId)
 {
-    if(audioGroupMngr_ == nullptr) {
+    if (audioGroupMngr_ == nullptr) {
         return CJ_ERR_INVALID_RETURN_FLOAT_VALUE;
     }
     auto ret = audioGroupMngr_->GetMaxAmplitude(deviceId);
@@ -134,7 +134,7 @@ float MMAAudioVolumeGroupManagerImpl::GetMaxAmplitudeForInputDevice(const int32_
 
 void MMAAudioVolumeGroupManagerImpl::RegisterCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode)
 {
-    if(audioGroupMngr_ == nullptr) {
+    if (audioGroupMngr_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         return;
     }
