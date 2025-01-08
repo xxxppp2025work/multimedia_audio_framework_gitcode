@@ -244,6 +244,115 @@ size_t AudioPolicyClientStubImpl::GetMicrophoneBlockedCallbackSize() const
     return microphoneBlockedCallbackList_.size();
 }
 
+int32_t AudioPolicyClientStubImpl::AddSelfAppVolumeChangeCallback(int32_t appUid
+    const std::shared_ptr<AudioManagerVolumeChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(selfAppVolumeChangeMutex_);
+    for (auto iter : selfAppVolumeChangeCallback_) {
+        if (iter->first == appUid && iter->second.get() == cb.get()) {
+            selfAppVolumeChangeCallbackNum_[appUid]++;
+            AUDIO_INFO_LOG("selfAppVolumeChangeCallback_ No need pushback");
+            return SUCCESS;
+        }
+    }
+    selfAppVolumeChangeCallbackNum_[appUid]++;
+    selfAppVolumeChangeCallback_.push_back({appUid, cb});
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveAllSelfAppVolumeChangeCallback(int32_t appUid)
+{
+    std::lock_guard<std::mutex> lockCbMap(selfAppVolumeChangeMutex_);
+    if (selfAppVolumeChangeCallbackNum_[appUid] != 0) {
+        selfAppVolumeChangeCallbackNum_[appUid] = 0;
+        auto iter = selfAppVolumeChangeCallback_.begin();
+        while (iter != selfAppVolumeChangeCallback_.end()) {
+            if (iter->first == appUid) {
+                iter = selfAppVolumeChangeCallback_.erase(iter);
+            } else {
+                iter++;
+            }
+        }
+        return SUCCESS;
+    }
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveSelfAppVolumeChangeCallback(int32_t appUid,
+    const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(selfAppVolumeChangeMutex_);
+    auto iter = selfAppVolumeChangeCallback_.begin();
+    while (iter != selfAppVolumeChangeCallback_.end()) {
+        if (iter->first != appUid || iter->second->get() != cb->get()) {
+            iter++;
+            continue;
+        }
+        selfAppVolumeChangeCallbackNum_[appUid]--;
+        if (selfAppVolumeChangeCallbackNum_[appUid] == 0) {
+            iter = selfAppVolumeChangeCallback_.erase(iter);
+        } else {
+            iter++;
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveAllAppVolumeChangeForUidCallback(const int32_t appUid)
+{
+    std::lock_guard<std::mutex> lockCbMap(appVolumeChangeForUidMutex_);
+    // 全部删除
+    if (appVolumeChangeForUidCallbackNum[appUid] != 0) {
+        appVolumeChangeForUidCallbackNum[appUid] = 0;
+        auto iter = appVolumeChangeForUidCallback_.begin();
+        while (iter != appVolumeChangeForUidCallback_.end()) {
+            if (iter->first == appUid) {
+                iter = appVolumeChangeForUidCallback_.erase(iter);
+            } else {
+                iter++;
+            }
+        }
+        return SUCCESS;
+    }
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveAppVolumeChangeForUidCallback(const int32_t appUid,
+    const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(appVolumeChangeForUidMutex_);
+    //指定删除
+    auto iter = appVolumeChangeForUidCallback_.begin();
+    while (iter != appVolumeChangeForUidCallback_.end()) {
+        if (iter->first != appUid || iter->second->get() != cb->get()) {
+            iter++;
+            continue;
+        }
+        appVolumeChangeForUidCallbackNum[appUid]--;
+        if (appVolumeChangeForUidCallbackNum[appUid] == 0) {
+            iter = appVolumeChangeForUidCallback_.erase(iter);
+        } else {
+            iter++;
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::AddAppVolumeChangeForUidCallback(const int32_t appUid,
+    const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(appVolumeChangeForUidMutex_);
+    for (auto iter : appVolumeChangeForUidCallback_) {
+        if (iter->first == appUid && iter->second.get() == cb.get()) {
+            appVolumeChangeForUidCallbackNum[appUid]++;
+            AUDIO_INFO_LOG("appVolumeChangeForUidCallback_ No need pushback");
+            return SUCCESS;
+        }
+    }
+    appVolumeChangeForUidCallbackNum[appUid]++;
+    appVolumeChangeForUidCallback_.push_back({appUid, cb});
+    return SUCCESS;
+
+}
+
 int32_t AudioPolicyClientStubImpl::AddRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(ringerModeMutex_);
@@ -278,12 +387,48 @@ size_t AudioPolicyClientStubImpl::GetRingerModeCallbackSize() const
     return ringerModeCallbackList_.size();
 }
 
+size_t AudioPolicyClientStubImpl::GetAppVolumeChangeCallbackForUidSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(appVolumeChangeForUidMutex_);
+    return appVolumeChangeForUidCallback_.size();
+}
+
+size_t AudioPolicyClientStubImpl::GetSelfAppVolumeChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(selfAppVolumeChangeMutex_);
+    return selfAppVolumeChangeCallback_.size();
+}
+
 void AudioPolicyClientStubImpl::OnRingerModeUpdated(const AudioRingerMode &ringerMode)
 {
     std::lock_guard<std::mutex> lockCbMap(ringerModeMutex_);
     for (auto it = ringerModeCallbackList_.begin(); it != ringerModeCallbackList_.end(); ++it) {
         (*it)->OnRingerModeUpdated(ringerMode);
     }
+}
+
+void AudioPolicyClientStubImpl::OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent)
+{
+    {
+        std::lock_guard<std::mutex> lockCbMap(appVolumeChangeForUidMutex_);
+        for (auto iter : appVolumeChangeForUidCallback_) {
+            if (iter->first != appUid) {
+                continue;
+            }
+            iter->second->OnAppVolumeChangedForUid(appUid, volumeEvent);
+        }
+    }
+    {
+        std::lock_guard<std::mutex> lockCbMap(selfAppVolumeChangeMutex_);
+        for (auto iter : selfAppVolumeChangeCallback_) {
+            if (iter->first != appUid) {
+                continue;
+            }
+            iter->second->OnSelfAppVolumeChanged(volumeEvent);
+        }
+
+    }
+
 }
 
 int32_t AudioPolicyClientStubImpl::AddAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &cb)

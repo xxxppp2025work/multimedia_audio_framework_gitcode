@@ -40,6 +40,39 @@ AudioGroupManager::~AudioGroupManager()
     }
 }
 
+int32_t AudioGroupManager::SetSelfAppVolume(int32_t volume, int32_t volumeFlag)
+{
+    AUDIO_INFO_LOG("SetSelfAppVolume: volume[%{public}d], flag[%{public}d]",
+        volume, volumeFlag);
+    return AudioPolicyManager::GetInstance().SetSelfAppVolumeLevel(volume, volumeFlag);
+}
+
+int32_t AudioGroupManager::SetAppVolume(int32_t appUid, int32_t volume, int32_t volumeFlag)
+{
+    AUDIO_INFO_LOG("SetAppVolume: appUid[%{public}d], volume[%{public}d], flag[%{public}d]",
+        appUid, volume, volumeFlag);
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppVolume: No system permission");
+    return AudioPolicyManager::GetInstance().SetAppVolumeLevel(appUid, volume, volumeFlag);
+}
+
+int32_t AudioGroupManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag)
+{
+    AUDIO_INFO_LOG("SetAppVolumeMuted: appUid[%{public}d], muted[%{public}d], flag[%{public}d]",
+        appUid, muted, volumeFlag);
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppVolumeMuted: No system permission");
+    return AudioPolicyManager::GetInstance().SetAppVolumeMuted(appUid, muted, volumeFlag);
+}
+
+bool AudioGroupManager::IsAppVolumeMute(int32_t appUid, bool owned)
+{
+    AUDIO_INFO_LOG("IsAppVolumeMute: appUid[%{public}d], muted[%{public}d]", ppUid, muted);
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "IsAppVolumeMute: No system permission");
+    return AudioPolicyManager::GetInstance().IsAppVolumeMute(appUid, muted);
+}
+
 int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t volumeFlag)
 {
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
@@ -82,6 +115,18 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume,
 AudioStreamType AudioGroupManager::GetActiveVolumeType(const int32_t clientUid)
 {
     return AudioPolicyManager::GetInstance().GetSystemActiveVolumeType(clientUid);
+}
+
+int32_t AudioGroupManager::GetSelfAppVolume()
+{
+    return AudioPolicyManager::GetInstance().GetSelfAppVolumeLevel();
+}
+
+int32_t AudioGroupManager::GetAppVolume(int32_t appUid)
+{
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "GetVolume: No system permission");
+    return AudioPolicyManager::GetInstance().GetAppVolumeLevel(appUid);
 }
 
 int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
@@ -292,6 +337,34 @@ bool AudioGroupManager::IsAlived()
 int32_t AudioGroupManager::GetGroupId()
 {
     return groupId_;
+}
+
+int32_t AudioGroupManager::SetSelfAppVolumeCallback(
+    const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "SetSelfAppVolumeCallback: callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetSelfAppVolumeChangeCallback(callback);
+}
+
+int32_t AudioGroupManager::SetAppVolumeCallbackForUid(const int32_t appUid,
+    const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "SetAppVolumeCallbackForUid: callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetAppVolumeChangeCallbackForUid(appUid, callback);
+}
+
+int32_t AudioGroupManager::UnsetAppVolumeCallbackForUid(const int32_t appUid,
+    const std::shared_ptr<AudioManagerVolumeChangeCallback> &callback)
+{
+    return AudioPolicyManager::GetInstance().UnsetAppVolumeCallbackForUid(appUid, callback); 
+}
+
+int32_t AudioGroupManager::UnSetSelfAppVolumeCallback(
+    const std::shared_ptr<AudioManagerVolumeChangeCallback> &callback)
+{
+    return AudioPolicyManager::GetInstance().UnsetSelfAppVolumeCallback(callback); 
 }
 
 int32_t AudioGroupManager::SetRingerModeCallback(const int32_t clientId,

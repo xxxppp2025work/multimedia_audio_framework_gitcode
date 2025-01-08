@@ -24,6 +24,7 @@ namespace OHOS {
 namespace AudioStandard {
 class StreamVolume;
 class SystemVolume;
+class AppVolume;
 enum FadePauseState {
     NO_FADE,
     DO_FADE,
@@ -55,6 +56,7 @@ public:
 
     // system volume
     void SetSystemVolume(SystemVolume &systemVolume);
+    void SetAppVolume(AppVolume &appVolume);
     void SetSystemVolume(int32_t volumeType, const std::string &deviceClass, float volume, int32_t volumeLevel);
     void SetSystemVolumeMute(int32_t volumeType, const std::string &deviceClass, bool isMuted);
 
@@ -78,6 +80,7 @@ private:
 private:
     std::unordered_map<uint32_t, StreamVolume> streamVolume_ {};
     std::unordered_map<std::string, SystemVolume> systemVolume_ {};
+    std::unordered_map<int32_t, AppVolume> appVolume_ {};
     std::unordered_map<uint32_t, float> historyVolume_ {};
     std::unordered_map<uint32_t, std::pair<float, int32_t>> monitorVolume_ {};
     std::shared_mutex volumeMutex_ {};
@@ -127,6 +130,23 @@ public:
 private:
     int32_t volumeType_ = 0;
     std::string deviceClass_ = "";
+
+public:
+    float volume_ = 0.0f;
+    int32_t volumeLevel_ = 0;
+    bool isMuted_ = false;
+};
+
+class AppVolume {
+public:
+    AppVolume(int32_t appUid, float volume, int32_t volumeLevel, bool isMuted)
+        : appUid_(appUid), volume_(volume),
+        volumeLevel_(volumeLevel), isMuted_(isMuted) {};
+    ~AppVolume() = default;
+    int32_t GetAppUid() {return appUid_;};
+
+private:
+    int32_t appUid_ = 0;
 
 public:
     float volume_ = 0.0f;
