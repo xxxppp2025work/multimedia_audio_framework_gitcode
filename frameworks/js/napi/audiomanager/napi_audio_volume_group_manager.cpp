@@ -23,6 +23,7 @@
 #include "napi_audio_enum.h"
 #include "napi_audio_ringermode_callback.h"
 #include "napi_audio_micstatechange_callback.h"
+#include "napi_appvolume_change_callback.h"
 #include "audio_errors.h"
 #include "audio_manager_log.h"
 #include "audio_utils.h"
@@ -1299,9 +1300,9 @@ napi_value NapiAudioVolumeGroupManager::On(napi_env env, napi_callback_info info
     }
     std::string callbackName = NapiParamUtils::GetStringArgument(env, args[PARAM0]);
     AUDIO_INFO_LOG("On callbackName: %{public}s", callbackName.c_str());
-
+    
     napi_valuetype handler = napi_undefined;
-    if (napi_typeof(env, args[PARAM1], &handler) != napi_ok || handler != napi_function) {
+    if (napi_typeof(env, args[argc - 1], &handler) != napi_ok || handler != napi_function) {
         AUDIO_ERR_LOG("On type mismatch for parameter 2");
         NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
             "incorrect parameter types: The type of callback must be function");

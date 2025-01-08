@@ -168,7 +168,8 @@ int32_t RendererInServer::Init()
         "Construct rendererInServer failed: %{public}d", ret);
     streamIndex_ = stream_->GetStreamIndex();
     AudioVolume::GetInstance()->AddStreamVolume(streamIndex_, processConfig_.streamType,
-        processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid);
+        processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
+        processConfig_.rendererInfo.volumeMode);
     traceTag_ = "[" + std::to_string(streamIndex_) + "]RendererInServer"; // [100001]RendererInServer:
     ret = ConfigServerBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
@@ -1061,7 +1062,8 @@ int32_t RendererInServer::InitDupStream()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && dupStream_ != nullptr, ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
     dupStreamIndex_ = dupStream_->GetStreamIndex();
     AudioVolume::GetInstance()->AddStreamVolume(dupStreamIndex_, processConfig_.streamType,
-        processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid);
+        processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
+        processConfig_.rendererInfo.volumeMode);
 
     dupStreamCallback_ = std::make_shared<StreamCallbacks>(dupStreamIndex_);
     dupStream_->RegisterStatusCallback(dupStreamCallback_);
@@ -1132,7 +1134,8 @@ int32_t RendererInServer::InitDualToneStream()
         dualToneStreamIndex_ = dualToneStream_->GetStreamIndex();
         AUDIO_INFO_LOG("init dual tone renderer:[%{public}u]", dualToneStreamIndex_);
         AudioVolume::GetInstance()->AddStreamVolume(dualToneStreamIndex_, processConfig_.streamType,
-            processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid);
+            processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
+            processConfig_.rendererInfo.volumeMode);
 
         isDualToneEnabled_ = true;
     }

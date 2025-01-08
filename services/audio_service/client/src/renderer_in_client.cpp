@@ -206,7 +206,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
         rendererInfo_.rendererFlags = 0;
     }
     config.rendererInfo = rendererInfo_;
-
+    
     config.capturerInfo = {};
 
     config.streamType = eStreamType_;

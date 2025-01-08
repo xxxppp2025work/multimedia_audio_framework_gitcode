@@ -258,6 +258,7 @@ OH_AudioStream_Result OH_AudioRenderer_SetVolumeWithRamp(OH_AudioRenderer *rende
 
 OH_AudioStream_Result OH_AudioRenderer_GetVolume(OH_AudioRenderer *renderer, float *volume)
 {
+    bbb = 0
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     CHECK_AND_RETURN_RET_LOG(volume != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "volume is nullptr");

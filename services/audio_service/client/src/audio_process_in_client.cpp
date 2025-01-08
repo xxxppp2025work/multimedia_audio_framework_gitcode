@@ -42,6 +42,7 @@
 #include "i_audio_process.h"
 #include "linear_pos_time_model.h"
 #include "volume_tools.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {

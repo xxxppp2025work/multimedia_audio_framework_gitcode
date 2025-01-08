@@ -151,6 +151,9 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetChannelLayout(OH_AudioStreamBuild
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilder* builder,
     OH_AudioStream_Usage usage);
 
+OH_AudioStream_Result OH_AudioStreamBuilder_SetVolumeMode(OH_AudioStreamBuilder* builder,
+    OH_AudioStream_VolumeMode volumeMode);
+
 /*
  * Set the capturer information of the stream client
  *

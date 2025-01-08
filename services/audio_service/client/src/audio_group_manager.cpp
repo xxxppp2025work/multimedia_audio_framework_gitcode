@@ -40,6 +40,22 @@ AudioGroupManager::~AudioGroupManager()
     }
 }
 
+int32_t AudioGroupManager::SetSelfAppVolume(int32_t volume, int32_t volumeFlag)
+{
+    AUDIO_INFO_LOG("SetSelfAppVolume: volume[%{public}d], flag[%{public}d]",
+        volume, volumeFlag);
+    return AudioPolicyManager::GetInstance().SetSelfAppVolumeLevel(volume, volumeFlag);
+}
+
+int32_t AudioGroupManager::SetAppVolume(int32_t appUid, int32_t volume, int32_t volumeFlag)
+{
+    AUDIO_INFO_LOG("SetAppVolume: appUid[%{public}d], volume[%{public}d], flag[%{public}d]",
+        appUid, volume, volumeFlag);
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppVolume: No system permission");
+    return AudioPolicyManager::GetInstance().SetAppVolumeLevel(appUid, volume, volumeFlag);
+}
+
 int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t volumeFlag)
 {
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {

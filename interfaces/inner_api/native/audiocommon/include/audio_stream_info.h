@@ -168,7 +168,17 @@ enum AudioStreamType {
     /**
      * Indicates audio streams used for only one volume bar of a device.
      */
-    STREAM_ALL = 100
+    STREAM_ALL = 100,
+
+    /**
+     * Indicates audio streams type is APP.
+     */
+    STREAM_APP = 200
+};
+
+enum AudioVolumeMode{
+    SYSTEM_GLOBAL,
+    APP_INDIVIDUAL
 };
 
 /**

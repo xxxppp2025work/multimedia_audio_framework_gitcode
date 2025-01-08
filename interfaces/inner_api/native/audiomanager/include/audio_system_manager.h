@@ -447,6 +447,69 @@ public:
     int32_t SetVolume(AudioVolumeType volumeType, int32_t volume) const;
 
     /**
+     * @brief Set the app volume.
+     *
+     * @param appUid app uid.
+     * @param volume The volume to be set for the current uid app.
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 8
+     */
+    int32_t SetAppVolume(int32_t appUid, int32_t volume, int32_t flag = 0);
+
+    /**
+     * @brief Set self app volume.
+     *
+     * @param volume The volume to be set for the current app.
+     * @return self app volume level
+     * @since 8
+     */
+    int32_t SetSelfAppVolume(int32_t volume, int32_t flag = 0);
+
+    /**
+     * @brief Get uid app volume.
+     *
+     * @param appUid App uid.
+     * @return uid app volume level
+     * @since 8
+     */ 
+    int32_t GetAppVolume(int32_t appUid);
+
+    /**
+     * @brief Get the uid app volume.
+     *
+     * @param volume The volume to be set for the current app.
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 8
+     */ 
+    int32_t GetSelfAppVolume();
+    int32_t SetSelfAppVolumeCallback(const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback);
+    int32_t UnsetSelfAppVolumeCallback(const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback = nullptr);
+    int32_t SetAppVolumeCallbackForUid(const int32_t appUid,
+        const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback);
+    int32_t UnsetAppVolumeCallbackForUid(
+        const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback = nullptr);
+    /**
+     * @brief Set the uid app volume muted.
+     * @param appUid app uid
+     * @param muted muted or unmuted.
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 8
+     */ 
+    int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t flag = 0);
+
+    /**
+     * @brief Check the uid app volume is muted.
+     * @param appUid app uid
+     * @param owned If true is passed, the result will be indicated your owned muted statesettings to
+     * this app. Otherwise if false is passed, the result will be indicated the real muted state.
+     * @return the app uid muted status
+     * @since 8
+     */ 
+    bool IsAppVolumeMute(int32_t appUid, bool owned);
+    /**
      * @brief Obtains the current stream volume.
      *
      * @param volumeType Enumerates the audio volume type.

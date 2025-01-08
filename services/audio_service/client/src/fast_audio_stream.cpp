@@ -68,6 +68,7 @@ void FastAudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
     rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
+    processClient_->SetRendererInfo(rendererInfo_);
 }
 
 void FastAudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
@@ -92,6 +93,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
         config.rendererInfo.contentType = rendererInfo_.contentType;
         config.rendererInfo.streamUsage = rendererInfo_.streamUsage;
         config.rendererInfo.rendererFlags = STREAM_FLAG_FAST;
+        config.rendererInfo.volumeMode = rendererInfo_.volumeMode;
         config.rendererInfo.originalFlag = rendererInfo_.originalFlag;
     } else if (eMode_ == AUDIO_MODE_RECORD) {
         AUDIO_DEBUG_LOG("FastAudioStream: Initialize recording");

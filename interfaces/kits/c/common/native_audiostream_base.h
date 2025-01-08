@@ -248,6 +248,11 @@ typedef enum {
     AUDIOSTREAM_USAGE_VIDEO_COMMUNICATION = 17,
 } OH_AudioStream_Usage;
 
+typedef enum {
+    SYSTEM_GLOBAL,
+    APP_INDIVIDUAL
+}OH_AudioStream_VolumeMode;
+
 /**
  * @brief Define the audio latency mode.
  *

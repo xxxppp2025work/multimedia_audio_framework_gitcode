@@ -59,7 +59,7 @@ private:
         bool inputBArgTransFlag;
         bool outputBArgTransFlag;
         int32_t policyType;
-
+        int32_t appUid;
         std::shared_ptr<AudioDeviceDescriptor> inputDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();;
         std::shared_ptr<AudioDeviceDescriptor> outputDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();;
     };
@@ -70,6 +70,7 @@ private:
     static napi_value GetVolume(napi_env env, napi_callback_info info);
     static napi_value GetVolumeSync(napi_env env, napi_callback_info info);
     static napi_value SetVolume(napi_env env, napi_callback_info info);
+    static napi_value GetAppVolumeDegree(napi_env env, napi_callback_info info);
     static napi_value SetVolumeWithFlag(napi_env env, napi_callback_info info);
     static napi_value GetMaxVolume(napi_env env, napi_callback_info info);
     static napi_value GetMaxVolumeSync(napi_env env, napi_callback_info info);
@@ -118,6 +119,7 @@ private:
     int32_t cachedClientId_ = -1;
     std::shared_ptr<AudioRingerModeCallback> ringerModecallbackNapi_ = nullptr;
     std::shared_ptr<AudioManagerMicStateChangeCallback> micStateChangeCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioManagerAppVolumeChangeCallback> selfAppVolumeChangeCallbackNapi_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
