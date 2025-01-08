@@ -454,7 +454,7 @@ bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
         WatchTimeout guard("Security::AccessToken::PrivacyKit::StartUsingPermission:NotifyPrivacy");
         int res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         guard.CheckCurrTimeout();
-        if (res != 0) {
+        if (res != 0 && res != Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING) {
             AUDIO_ERR_LOG("StartUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d",
                 targetTokenId, res);
             return false;
