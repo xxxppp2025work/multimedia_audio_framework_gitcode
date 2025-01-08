@@ -20,6 +20,7 @@
 #include "volume_data_maintainer.h"
 #include "system_ability_definition.h"
 #include "audio_policy_manager_factory.h"
+#include ""
 
 namespace OHOS {
 namespace AudioStandard {
@@ -187,6 +188,47 @@ bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamT
     return true;
 }
 
+void VolumeDataMaintainer::SetAppVolume(int32_t appUid, int32_t volumeLevel)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    appVolumeLevelMap_[appUid] = volumeLevel;
+}
+
+void VolumeDataMaintainer::SetAppVolumeMuted(int32_t appUid, bool muted)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    int ownedAppUid = GetCallingUid();
+    appMuteStatusMap_[appUid][ownedAppUid] = muted;
+}
+
+bool VolumeDataMaintainer::GetAppMute(int32_t appUid)
+{
+     std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    auto iter = appMuteStatusMap_.find(appUid);
+    if (iter == appMuteStatusMap_.end()) {
+        return false;
+    } else {
+        for (auto subIter : iter->second) {
+            if (subIter->second) {
+                return true;
+            }
+        }
+    }
+    reteurn false;
+}
+
+bool VolumeDataMaintainer::GetAppMuteOwned(int32_t appUid)
+{
+     std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    int ownedAppUid = GetCallingUid();
+    auto iter = appMuteStatusMap_.find(appUid);
+    if (iter == appMuteStatusMap_.end()) {
+        return false;
+    } else {
+        return iter->second[ownedAppUid];
+    }
+}
+
 void VolumeDataMaintainer::SetStreamVolume(AudioStreamType streamType, int32_t volumeLevel)
 {
     std::lock_guard<ffrt::mutex> lock(volumeMutex_);
@@ -203,6 +245,12 @@ int32_t VolumeDataMaintainer::GetStreamVolume(AudioStreamType streamType)
 {
     std::lock_guard<ffrt::mutex> lock(volumeMutex_);
     return GetStreamVolumeInternal(streamType);
+}
+
+int32_t VolumeDataMaintainer::GetAppVolume(int32_t appUid)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    return appVolumeLevelMap_[appUid];
 }
 
 int32_t VolumeDataMaintainer::GetStreamVolumeInternal(AudioStreamType streamType)

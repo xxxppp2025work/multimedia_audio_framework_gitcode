@@ -309,6 +309,8 @@ enum CallbackChange : int32_t {
     CALLBACK_SET_VOLUME_KEY_EVENT,
     CALLBACK_SET_DEVICE_CHANGE,
     CALLBACK_SET_RINGER_MODE,
+    CALLBACK_APP_VOLUME_CHANGE,
+    CALLBACK_SELF_APP_VOLUME_CHANGE,
     CALLBACK_SET_MIC_STATE_CHANGE,
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE,
     CALLBACK_HEAD_TRACKING_ENABLED_CHANGE,
@@ -343,12 +345,18 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
     "check CALLBACK_ENUMS");
 
+enum AudioVolumeMode{
+    SYSTEM_GLOBAL,
+    APP_INDIVIDUAL
+};
+
 struct VolumeEvent {
     AudioVolumeType volumeType;
     int32_t volume;
     bool updateUi;
     int32_t volumeGroupId;
     std::string networkId;
+    AudioVolumeMode volumeMode;
 };
 
 struct AudioParameters {
