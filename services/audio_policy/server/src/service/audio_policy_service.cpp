@@ -5970,7 +5970,7 @@ int32_t AudioPolicyService::DealWithSafeVolume(const int32_t volumeLevel, bool i
     if (isA2dpDevice) {
         DeviceCategory curOutputDeviceCategory = GetCurrentOutputDeviceCategory();
         AUDIO_INFO_LOG("bluetooth Category:%{public}d", curOutputDeviceCategory);
-        if (curOutputDeviceCategory != BT_HEADPHONE) {
+        if (curOutputDeviceCategory == BT_SOUNDBOX || curOutputDeviceCategory == BT_CAR) {
             return volumeLevel;
         }
     }
