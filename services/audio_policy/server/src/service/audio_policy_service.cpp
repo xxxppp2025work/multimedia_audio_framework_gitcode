@@ -2030,5 +2030,10 @@ void AudioPolicyService::CheckHibernateState(bool hibernate)
 {
     AudioServerProxy::GetInstance().CheckHibernateStateProxy(hibernate);
 }
+
+int32_t AudioPolicyService::OnVoiceWakeupState(bool state)
+{
+    return audioOffloadStream_.OnVoiceWakeupState(state);
+}
 } // namespace AudioStandard
 } // namespace OHOS

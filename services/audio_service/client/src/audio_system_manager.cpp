@@ -1590,5 +1590,11 @@ int32_t AudioSystemManager::LoadSplitModule(const std::string &splitArgs, const 
     return AudioPolicyManager::GetInstance().LoadSplitModule(splitArgs, networkId);
 }
 
+int32_t AudioSystemManager::OnVoiceWakeupState(bool state)
+{
+    AUDIO_INFO_LOG("%{public}d", state);
+    return AudioPolicyManager::GetInstance().OnVoiceWakeupState(state);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
