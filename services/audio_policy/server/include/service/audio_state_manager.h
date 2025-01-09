@@ -48,6 +48,12 @@ public:
     // Set tone render device selected by the user
     void SetPreferredToneRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
+    void ExcludeOutputDevices(AudioDeviceUsage devUsage,
+        vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    
+    void UnexcludeOutputDevices(AudioDeviceUsage devUsage,
+        vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+
     // Get media render device selected by the user
     shared_ptr<AudioDeviceDescriptor> GetPreferredMediaRenderDevice();
 
@@ -71,6 +77,8 @@ public:
     void UpdatePreferredCallCaptureDeviceConnectState(ConnectState state);
     void UpdatePreferredRecordCaptureDeviceConnectState(ConnectState state);
 
+    bool IsExcludedDevice(AudioDeviceUsage devUsage, shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor);
+
 private:
     AudioStateManager() {};
     ~AudioStateManager() {};
@@ -80,7 +88,13 @@ private:
     std::shared_ptr<AudioDeviceDescriptor> preferredRingRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredRecordCaptureDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredToneRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
+
+    vector<shared_ptr<AudioDeviceDescriptor>> mediaExcludedDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> callExcludedDevices_;
+
     std::mutex mutex_;
+    std::shared_mutex mediaExcludedDevicesMutex_;
+    std::shared_mutex callExcludedDevicesMutex_;
 };
 
 } // namespace AudioStandard

@@ -52,6 +52,34 @@ void AudioStateManager::SetPreferredToneRenderDevice(const std::shared_ptr<Audio
     preferredToneRenderDevice_ = deviceDescriptor;
 }
 
+void AudioStateManager::ExcludeOutputDevices(AudioDeviceUsage devUsage,
+    vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    if (devUsage == MEDIA_OUTPUT_DEVICES) {
+        lock_guard<shared_mutex> lock(mediaExcludedDevicesMutex_);
+        mediaExcludedDevices_.insert(mediaExcludedDevices_.end(),
+            audioDeviceDescriptors.begin(), audioDeviceDescriptors.end());
+    } else if (devUsage == CALL_OUTPUT_DEVICES) {
+        lock_guard<shared_mutex> lock(callExcludedDevicesMutex_);
+        callExcludedDevices_.insert(callExcludedDevices_.end(),
+            audioDeviceDescriptors.begin(), audioDeviceDescriptors.end());
+    }
+}
+
+void AudioStateManager::UnexcludeOutputDevices(AudioDeviceUsage devUsage,
+    vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    if (devUsage == MEDIA_OUTPUT_DEVICES) {
+        lock_guard<shared_mutex> lock(mediaExcludedDevicesMutex_);
+        mediaExcludedDevices_.erase(remove(mediaExcludedDevices_.begin(), mediaExcludedDevices_.end(),
+            audioDeviceDescriptors), mediaExcludedDevices_.end());
+    } else if (devUsage == CALL_OUTPUT_DEVICES) {
+        lock_guard<shared_mutex> lock(callExcludedDevicesMutex_);
+        callExcludedDevices_.erase(remove(callExcludedDevices_.begin(), callExcludedDevices_.end(),
+            audioDeviceDescriptors), callExcludedDevices_.end());
+    }
+}
+
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredMediaRenderDevice()
 {
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredMediaRenderDevice_);
@@ -111,6 +139,27 @@ void AudioStateManager::UpdatePreferredRecordCaptureDeviceConnectState(ConnectSt
 {
     CHECK_AND_RETURN_LOG(preferredRecordCaptureDevice_ != nullptr, "preferredRecordCaptureDevice_ is nullptr");
     preferredRecordCaptureDevice_->connectState_ = state;
+}
+
+bool AudioStateManager::IsExcludedDevice(AudioDeviceUsage devUsage,
+    shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
+{
+    CHECK_AND_RETURN_RET(devUsage == MEDIA_OUTPUT_DEVICES || devUsage == CALL_OUTPUT_DEVICES, false);
+
+    auto isPresent = [&audioDeviceDescriptor] (const shared_ptr<AudioDeviceDescriptor> &desc) {
+        return desc->IsSameDeviceDesc(*audioDeviceDescriptor);
+    };
+
+    if (devUsage == MEDIA_OUTPUT_DEVICES) {
+        shared_lock<shared_mutex> lock(mediaExcludedDevicesMutex_);
+        return find_if(mediaExcludedDevices_.begin(), mediaExcludedDevices_.end(), isPresent) !=
+            mediaExcludedDevices_.end();
+    } else if (devUsage == CALL_OUTPUT_DEVICES) {
+        shared_lock<shared_mutex> lock(callExcludedDevicesMutex_);
+        return callExcludedDevices_.find(audioDeviceDescriptor) != callExcludedDevices_.end();
+    }
+
+    return false;
 }
 } // namespace AudioStandard
 } // namespace OHOS
