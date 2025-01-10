@@ -26,7 +26,6 @@
 #include "audio_group_handle.h"
 #include "audio_info.h"
 #include "audio_manager_base.h"
-#include "audio_policy_manager_factory.h"
 #include "ipc_skeleton.h"
 
 #include "iaudio_policy_interface.h"
