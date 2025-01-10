@@ -23,8 +23,6 @@
 #include <ostream>
 #include <climits>
 #include <string>
-#include <climits>
-#include "audio_utils.h"
 #include "audio_utils_c.h"
 #include "audio_errors.h"
 #include "audio_common_log.h"
@@ -55,6 +53,7 @@ constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
+constexpr int32_t UID_THPEXTRA_SA = 5000;
 constexpr int32_t TIME_OUT_SECONDS = 10;
 
 const uint32_t UNIQUE_ID_INTERVAL = 8;
@@ -63,6 +62,14 @@ constexpr size_t FIRST_CHAR = 1;
 constexpr size_t MIN_LEN = 8;
 constexpr size_t HEAD_STR_LEN = 2;
 constexpr size_t TAIL_STR_LEN = 5;
+
+const int32_t DATA_INDEX_0 = 0;
+const int32_t DATA_INDEX_1 = 1;
+const int32_t DATA_INDEX_2 = 2;
+const int32_t DATA_INDEX_3 = 3;
+const int32_t DATA_INDEX_4 = 4;
+const int32_t DATA_INDEX_5 = 5;
+const int32_t STEREO_CHANNEL_COUNT = 2;
 
 const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
 #ifdef AUDIO_BUILD_VARIANT_ROOT
@@ -74,7 +81,7 @@ const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_DISTRIBUTED_AUDIO_SA,
     UID_FOUNDATION_SA,
     UID_DISTRIBUTED_CALL_SA,
-    UID_AUDIO,
+    UID_THPEXTRA_SA,
     UID_TELEPHONY_SA // used in distributed communication call
 };
 
@@ -83,7 +90,7 @@ const std::set<SourceType> NO_BACKGROUND_CHECK_SOURCE_TYPE = {
     SOURCE_TYPE_VOICE_CALL,
     SOURCE_TYPE_REMOTE_CAST
 };
-}
+} // namespace
 
 static std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_NAME_MAP = {
     {STREAM_VOICE_ASSISTANT, "VOICE_ASSISTANT"},
@@ -114,41 +121,6 @@ static std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_NAME_MAP = {
     {STREAM_VOICE_CALL_ASSISTANT, "VOICE_CALL_ASSISTANT"},
 };
 
-WatchTimeout::WatchTimeout(const std::string &funcName, int64_t timeoutNs) : funcName_(funcName), timeoutNs_(timeoutNs)
-{
-    startTimeNs_ = ClockTime::GetCurNano();
-}
-
-WatchTimeout::~WatchTimeout()
-{
-    if (!isChecked_) {
-        CheckCurrTimeout();
-    }
-}
-
-void WatchTimeout::CheckCurrTimeout()
-{
-    int64_t cost = ClockTime::GetCurNano() - startTimeNs_;
-    if (cost > timeoutNs_) {
-        AUDIO_WARNING_LOG("[%{public}s] cost %{public}" PRId64"ms!", funcName_.c_str(), cost / AUDIO_US_PER_SECOND);
-    }
-    isChecked_ = true;
-}
-bool Util::IsDualToneStreamType(const AudioStreamType streamType)
-{
-    return streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM;
-}
-
-bool Util::IsRingerOrAlarmerStreamUsage(const StreamUsage &usage)
-{
-    return usage == STREAM_USAGE_ALARM || usage == STREAM_USAGE_VOICE_RINGTONE || usage == STREAM_USAGE_RINGTONE;
-}
-
-bool Util::IsRingerAudioScene(const AudioScene &audioScene)
-{
-    return audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING;
-}
-
 uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
 {
     uint32_t audioPerSampleLength = 2; // 2 byte
@@ -172,6 +144,47 @@ uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
     return audioPerSampleLength;
 }
 
+bool Util::IsScoSupportSource(const SourceType sourceType)
+{
+    return sourceType == SOURCE_TYPE_VOICE_RECOGNITION || sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION;
+}
+
+bool Util::IsDualToneStreamType(const AudioStreamType streamType)
+{
+    return streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM;
+}
+
+bool Util::IsRingerOrAlarmerStreamUsage(const StreamUsage &usage)
+{
+    return usage == STREAM_USAGE_ALARM || usage == STREAM_USAGE_VOICE_RINGTONE || usage == STREAM_USAGE_RINGTONE;
+}
+
+bool Util::IsRingerAudioScene(const AudioScene &audioScene)
+{
+    return audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING;
+}
+
+WatchTimeout::WatchTimeout(const std::string &funcName, int64_t timeoutNs) : funcName_(funcName), timeoutNs_(timeoutNs)
+{
+    startTimeNs_ = ClockTime::GetCurNano();
+}
+
+WatchTimeout::~WatchTimeout()
+{
+    if (!isChecked_) {
+        CheckCurrTimeout();
+    }
+}
+
+void WatchTimeout::CheckCurrTimeout()
+{
+    int64_t cost = ClockTime::GetCurNano() - startTimeNs_;
+    if (cost > timeoutNs_) {
+        AUDIO_WARNING_LOG("[%{public}s] cost %{public}" PRId64"ms!", funcName_.c_str(), cost / AUDIO_US_PER_SECOND);
+    }
+    isChecked_ = true;
+}
+
 int64_t ClockTime::GetCurNano()
 {
     int64_t result = -1; // -1 for bad result.
@@ -180,6 +193,18 @@ int64_t ClockTime::GetCurNano()
     int ret = clock_gettime(clockId, &time);
     CHECK_AND_RETURN_RET_LOG(ret >= 0, result,
         "GetCurNanoTime fail, result:%{public}d", ret);
+    result = (time.tv_sec * AUDIO_NS_PER_SECOND) + time.tv_nsec;
+    return result;
+}
+
+int64_t ClockTime::GetRealNano()
+{
+    int64_t result = -1; // -1 for bad result
+    struct timespec time;
+    clockid_t clockId = CLOCK_REALTIME;
+    int ret = clock_gettime(clockId, &time);
+    CHECK_AND_RETURN_RET_LOG(ret >= 0, result,
+        "GetRealNanotime fail, result:%{public}d", ret);
     result = (time.tv_sec * AUDIO_NS_PER_SECOND) + time.tv_nsec;
     return result;
 }
@@ -200,6 +225,23 @@ int32_t ClockTime::AbsoluteSleep(int64_t nanoTime)
     }
 
     return ret;
+}
+
+std::string ClockTime::NanoTimeToString(int64_t nanoTime)
+{
+    struct tm *tm_info;
+    char buffer[80];
+    time_t time_seconds = nanoTime / AUDIO_NS_PER_SECOND;
+
+    tm_info = localtime(&time_seconds);
+    if (tm_info == NULL) {
+        AUDIO_ERR_LOG("get localtime failed!");
+        return "";
+    }
+
+    size_t res = strftime(buffer, sizeof(buffer), "%H:%M:%S", tm_info);
+    CHECK_AND_RETURN_RET_LOG(res != 0, "", "strftime failed!");
+    return std::string(buffer);
 }
 
 int32_t ClockTime::RelativeSleep(int64_t nanoTime)
@@ -389,45 +431,56 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
     if (!ret) {
         AUDIO_ERR_LOG("failed: not allowed!");
     }
-    AUDIO_INFO_LOG("tokenId:%{public}u fullTokenId:%{public}" PRIu64": %{public}s", tokenId, fullTokenId, (ret ? "true"
-        : "false"));
     return ret;
 }
 
-std::mutex recordMapMutex;
-std::map<std::uint32_t, std::set<uint32_t>> g_tokenIdRecordMap_ = {};
+std::mutex g_recordMapMutex;
+std::map<std::uint32_t, std::set<uint32_t>> g_tokenIdRecordMap = {};
 
 bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
 {
     AudioXCollie audioXCollie("PermissionUtil::NotifyStart", TIME_OUT_SECONDS);
-    std::lock_guard<std::mutex> lock(recordMapMutex);
-    if (g_tokenIdRecordMap_.count(targetTokenId)) {
-        if (!g_tokenIdRecordMap_[targetTokenId].count(sessionId)) {
-            g_tokenIdRecordMap_[targetTokenId].emplace(sessionId);
+    AUDIO_INFO_LOG("NotifyPrivacy Start for tokenId:%{public}u sessionId:%{public}u", targetTokenId, sessionId);
+    std::lock_guard<std::mutex> lock(g_recordMapMutex);
+    if (g_tokenIdRecordMap.count(targetTokenId)) {
+        if (!g_tokenIdRecordMap[targetTokenId].count(sessionId)) {
+            g_tokenIdRecordMap[targetTokenId].emplace(sessionId);
         } else {
-            AUDIO_WARNING_LOG("this stream %{public}u is already running, no need call start", sessionId);
+            AUDIO_WARNING_LOG("this stream %{public}u is already running,no need NotifyPrivacy StartUsingPermission", sessionId);
         }
     } else {
-        Trace trace("PrivacyKit::StartUsingPermission");
-        AUDIO_WARNING_LOG("PrivacyKit::StartUsingPermission tokenId: %{public}d sessionId:%{public}d",
-            targetTokenId, sessionId);
+        Trace trace("PrivacyKit::StartUsingPermission"); 
+        AUDIO_WARNING_LOG("NotifyPrivacy StartUsingPermission for tokenId:%{public}u sessionId:%{public}u",targetTokenId, sessionId);
         WatchTimeout guard("Security::AccessToken::PrivacyKit::StartUsingPermission:NotifyPrivacy");
-        int res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+        int32_t res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         guard.CheckCurrTimeout();
-        if (res != 0) {
-            AUDIO_ERR_LOG("StartUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d",
-                targetTokenId, res);
-            return false;
+        if (res == Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING) {
+            AUDIO_WARNING_LOG("NotifyPrivacy StopUsingPermission for tokenId:%{public}u "
+                "because PrivacyKit return ERR_PERMISSION_ALREADY_START_USING", targetTokenId);
+            WatchTimeout guardStop("Security::AccessToken::PrivacyKit::StopUsingPermission:NotifyStop");
+            int32_t stopRet = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+            guardStop.CheckCurrTimeout();
+            CHECK_AND_RETURN_RET_LOG( stopRet == 0, false, "NotifyPrivacy StopUsingPermission for tokenId %{public}u failed!"
+                "After StartUsingPermission return ERR_PERMISSION_ ALREADY_START_USING!The PrivacyKit error code:%{public}d",
+                targetTokenId, stopRet);
+
+            AUDIO_WARNING_LOG("Retry NotifyPrivacy StartUsingPermission for tokenId:%{public}u "
+                "because PrivacyKit return ERR_PERMISSION_ALREADY_START_USING",targetTokenId);
+            WatchTimeout guardStart("Security::AccessToken::PrivacyKit::StartUsingPermission:NotifyPrivacy");
+            res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+            guardStart.CheckCurrTimeout();
+            CHECK_AND_RETURN_RET_LOG( res != Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING, false,
+                "Retry NotifyPrivacy StartUsingPermission for tokenId:%{public}u failed!"
+                "The PrivacyKit return ERR_PERMISSION_ALREADY_START_USING again!", targetTokenId);
         }
-        WatchTimeout reguard("Security::AccessToken::PrivacyKit::AddPermissionUsedRecord:NotifyPrivacy");
-        res = Security::AccessToken::PrivacyKit::AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
-        reguard.CheckCurrTimeout();
-        if (res != 0) {
-            AUDIO_ERR_LOG("AddPermissionUsedRecord for tokenId %{public}u! The PrivacyKit error code is %{public}d",
-                targetTokenId, res);
-            return false;
-        }
-        g_tokenIdRecordMap_[targetTokenId] = {sessionId};
+        CHECK_AND_RETURN_RET_LOG( res == 0, false, "NotifyPrivacy AddPermissionUsedRecord"
+            "for tokenId:%{public}u failed!, The PrivacyKit error code:%{public}d", targetTokenId, res);
+        WatchTimeout reguardRecord("Security::AccessToken::PrivacyKit::AddPermissionUsedRecord:NotifyPrivacy");
+        int32_t recordRet = Security::AccessToken::PrivacyKit::AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
+        reguardRecord.CheckCurrTimeout();
+        CHECK_AND_RETURN_RET_LOG( recordRet == 0, false, "NotifyPrivacy AddPermissionUsedRecord for tokenId %{public}u,"
+            "The PrivacyKit error code:%{public}d", targetTokenId, recordRet);
+        g_tokenIdRecordMap[targetTokenId] = {sessionId};
     }
     return true;
 }
@@ -435,31 +488,29 @@ bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
 bool PermissionUtil::NotifyStop(uint32_t targetTokenId, uint32_t sessionId)
 {
     AudioXCollie audioXCollie("PermissionUtil::NotifyStop", TIME_OUT_SECONDS);
-    std::unique_lock<std::mutex> lock(recordMapMutex);
-    if (!g_tokenIdRecordMap_.count(targetTokenId)) {
-        AUDIO_INFO_LOG("this TokenId %{public}u is already not in using", targetTokenId);
+    AUDIO_INFO_LOG("NotifyPrivacy Stop for tokenId:%{public}u sessionId is %{public}u", targetTokenId, sessionId);
+    std::unique_lock<std::mutex> lock(g_recordMapMutex);
+    if (!g_tokenIdRecordMap.count(targetTokenId)) {
+        AUDIO_INFO_LOG("this TokenId %{public}u is already not in using, no need NotifyPrivacy StopUsingPermission", targetTokenId);
         return true;
     }
 
-    if (g_tokenIdRecordMap_[targetTokenId].count(sessionId)) {
-        g_tokenIdRecordMap_[targetTokenId].erase(sessionId);
+    if (g_tokenIdRecordMap[targetTokenId].count(sessionId)) {
+        g_tokenIdRecordMap[targetTokenId].erase(sessionId);
     }
-    AUDIO_DEBUG_LOG("this TokenId %{public}u set size is %{public}zu!", targetTokenId,
-        g_tokenIdRecordMap_[targetTokenId].size());
-    if (g_tokenIdRecordMap_[targetTokenId].empty()) {
-        g_tokenIdRecordMap_.erase(targetTokenId);
+    AUDIO_DEBUG_LOG("this TokenId %{public}u set size is %{public}zu when NotifyPrivacy Stop!", targetTokenId,
+        g_tokenIdRecordMap[targetTokenId].size());
+    if (g_tokenIdRecordMap[targetTokenId].empty()) {
+        g_tokenIdRecordMap.erase(targetTokenId);
 
         Trace trace("PrivacyKit::StopUsingPermission");
-        AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}d sessionId:%{public}d",
+        AUDIO_WARNING_LOG("NotifyPrivacy StopUsingPermission for tokenId:%{public}u sessionId:%{public}u",
             targetTokenId, sessionId);
-        WatchTimeout guard("Security::AccessToken::PrivacyKit::StopUsingPermission:NotifyPrivacy");
+        WatchTimeout guard("Security::AccessToken::PrivacyKit::StopUsingPermission:NotifyStop");
         int32_t res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         guard.CheckCurrTimeout();
-        if (res != 0) {
-            AUDIO_ERR_LOG("StopUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d",
-                targetTokenId, res);
-            return false;
-        }
+        CHECK_AND_RETURN_RET_LOG( res == 0, false, "NotifyPrivacy StopUsingPermission\n"
+            "for tokenId:%{public}u failed!, The PrivacyKit error code:%{public}d", targetTokenId, res);
     }
     return true;
 }
@@ -493,9 +544,31 @@ void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len)
     }
 }
 
-void AdjustStereoToMonoForPCM24Bit(int8_t *data, uint64_t len)
+void AdjustStereoToMonoForPCM24Bit(uint8_t *data, uint64_t len)
 {
-    // 24bit is not supported for audio balance.
+    uint64_t count = len / STEREO_CHANNEL_COUNT / 3; // 3: the bit depth of PCM24Bit is 24 bits (3 bytes)
+
+    while (count > 0) {
+        uint32_t leftData = (static_cast<uint32_t>(data[DATA_INDEX_2]) << BIT_16) |
+            (static_cast<uint32_t>(data[DATA_INDEX_1]) << BIT_8) |
+            (static_cast<uint32_t>(data[DATA_INDEX_0]));
+        uint32_t rightData = (static_cast<uint32_t>(data[DATA_INDEX_5]) << BIT_16) |
+            (static_cast<uint32_t>(data[DATA_INDEX_4]) << BIT_8) |
+            (static_cast<uint32_t>(data[DATA_INDEX_3]));
+
+        leftData = static_cast<uint32_t>(static_cast<int32_t>(leftData << BIT_8) / STEREO_CHANNEL_COUNT +
+            static_cast<int32_t>(rightData << BIT_8) / STEREO_CHANNEL_COUNT) >> BIT_8;
+        rightData = leftData;
+
+        data[DATA_INDEX_0] = static_cast<uint8_t>(leftData);
+        data[DATA_INDEX_1] = static_cast<uint8_t>(leftData >> BIT_8);
+        data[DATA_INDEX_2] = static_cast<uint8_t>(leftData >> BIT_16);
+        data[DATA_INDEX_3] = static_cast<uint8_t>(rightData);
+        data[DATA_INDEX_4] = static_cast<uint8_t>(rightData >> BIT_8);
+        data[DATA_INDEX_5] = static_cast<uint8_t>(rightData >> BIT_16);
+        data += 6; // 6: 2 channels, 24 bits (3 bytes), 2 * 3 = 6
+        count--;
+    }
 }
 
 void AdjustStereoToMonoForPCM32Bit(int32_t *data, uint64_t len)
@@ -542,9 +615,33 @@ void AdjustAudioBalanceForPCM16Bit(int16_t *data, uint64_t len, float left, floa
     }
 }
 
-void AdjustAudioBalanceForPCM24Bit(int8_t *data, uint64_t len, float left, float right)
+void AdjustAudioBalanceForPCM24Bit(uint8_t *data, uint64_t len, float left, float right)
 {
-    // 24bit is not supported for audio balance.
+    uint64_t count = len / STEREO_CHANNEL_COUNT / 3; // 3: the bit depth of PCM24Bit is 24 bits (3 bytes)
+
+    while (count > 0) {
+        uint32_t leftData = (static_cast<uint32_t>(data[DATA_INDEX_2]) << BIT_16) |
+            (static_cast<uint32_t>(data[DATA_INDEX_1]) << BIT_8) |
+            (static_cast<uint32_t>(data[DATA_INDEX_0]));
+        int32_t leftTemp = static_cast<int32_t>(leftData << BIT_8);
+        leftTemp *= left;
+        leftData = static_cast<uint32_t>(leftTemp) >> BIT_8;
+        data[DATA_INDEX_0] = static_cast<uint8_t>(leftData);
+        data[DATA_INDEX_1] = static_cast<uint8_t>(leftData >> BIT_8);
+        data[DATA_INDEX_2] = static_cast<uint8_t>(leftData >> BIT_16);
+
+        uint32_t rightData = (static_cast<uint32_t>(data[DATA_INDEX_5]) << BIT_16) |
+            (static_cast<uint32_t>(data[DATA_INDEX_4]) << BIT_8) |
+            (static_cast<uint32_t>(data[DATA_INDEX_3]));
+        int32_t rightTemp = static_cast<int32_t>(rightData << BIT_8);
+        rightTemp *= right;
+        rightData = static_cast<uint32_t>(rightTemp) >> BIT_8;
+        data[DATA_INDEX_3] = static_cast<uint8_t>(rightData);
+        data[DATA_INDEX_4] = static_cast<uint8_t>(rightData >> BIT_8);
+        data[DATA_INDEX_5] = static_cast<uint8_t>(rightData >> BIT_16);
+        data += 6; // 6: 2 channels, 24 bits (3 bytes), 2 * 3 = 6
+        count--;
+    }
 }
 
 void AdjustAudioBalanceForPCM32Bit(int32_t *data, uint64_t len, float left, float right)
@@ -710,6 +807,30 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
 }
 
 template <typename T>
+bool StringConverter(const std::string &str, T &result)
+{
+    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), result);
+    return ec == std::errc{} && ptr == str.data() + str.size();
+}
+
+template bool StringConverter(const std::string &str, uint64_t &result);
+template bool StringConverter(const std::string &str, uint32_t &result);
+template bool StringConverter(const std::string &str, int32_t &result);
+template bool StringConverter(const std::string &str, uint8_t &result);
+template bool StringConverter(const std::string &str, int8_t &result);
+
+bool SetSysPara(const std::string &key, int32_t value)
+{
+    auto res = SetParameter(key.c_str(), std::to_string(value).c_str());
+    if (res < 0) {
+        AUDIO_WARNING_LOG("SetSysPara fail, key:%{public}s res:%{public}d", key.c_str(), res);
+        return false;
+    }
+    AUDIO_INFO_LOG("SetSysPara %{public}d success.", value);
+    return true;
+}
+
+template <typename T>
 bool GetSysPara(const char *key, T &value)
 {
     CHECK_AND_RETURN_RET_LOG(key != nullptr, false, "key is nullptr");
@@ -822,6 +943,17 @@ void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **f
             *file = DumpFileUtil::OpenDumpFileInner(para, fileName, OTHER_NATIVE_SERVICE);
         }
     }
+}
+
+void CloseFd(int fd)
+{
+    // log stdin, stdout, stderr.
+    if (fd == STDIN_FILENO || fd == STDOUT_FILENO || fd == STDERR_FILENO) {
+        AUDIO_WARNING_LOG("special fd: %{public}d will be closed", fd);
+    }
+    int tmpFd = fd;
+    close(fd);
+    AUDIO_DEBUG_LOG("fd: %{public}d closed successfuly!", tmpFd);
 }
 
 static void MemcpyToI32FromI16(int16_t *src, int32_t *dst, size_t count)
@@ -958,7 +1090,7 @@ bool SignalDetectAgent::DetectSignalData(int32_t *buffer, size_t bufferLen)
             lastPeakSignalPos_ = currentPeakIndex;
         }
         blankHaveOutput_ = false;
-        blankPeriod_ = static_cast<int32_t>(frameCount) - static_cast<int32_t>(rightZeroSignal);
+        blankPeriod_ = static_cast<int32_t>(frameCount - rightZeroSignal);
     }
     int32_t thresholdBlankPeriod = BLANK_THRESHOLD_MS * sampleRate_ / MILLISECOND_PER_SECOND;
     if (blankPeriod_ > thresholdBlankPeriod) {
@@ -982,7 +1114,7 @@ bool AudioLatencyMeasurement::MockPcmData(uint8_t *buffer, size_t bufferLen)
     memset_s(buffer, bufferLen, 0, bufferLen);
     int16_t *signal = signalData_.get();
     size_t newlyMocked = bufferLen * MILLISECOND_PER_SECOND /
-        static_cast<uint32_t>(channelCount_ * sampleRate_ * formatByteSize_);
+        static_cast<size_t>(channelCount_ * sampleRate_ * formatByteSize_);
     mockedTime_ += newlyMocked;
     if (mockedTime_ >= MOCK_INTERVAL) {
         mockedTime_ = 0;
@@ -1219,6 +1351,9 @@ const std::string AudioInfoDumpUtils::GetSourceName(SourceType sourceType)
         case SOURCE_TYPE_WAKEUP:
             name = "WAKEUP";
             break;
+        case SOURCE_TYPE_UNPROCESSED:
+            name = "SOURCE_TYPE_UNPROCESSED";
+            break;
         default:
             name = "UNKNOWN";
     }
@@ -1248,9 +1383,10 @@ const std::string AudioInfoDumpUtils::GetDeviceVolumeTypeName(DeviceVolumeType d
     return deviceTypeName;
 }
 
+bool VolumeUtils::isPCVolumeEnable_ = false;
+
 std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeMap_ = {
     {STREAM_VOICE_CALL, STREAM_VOICE_CALL},
-    {STREAM_VOICE_MESSAGE, STREAM_VOICE_CALL},
     {STREAM_VOICE_COMMUNICATION, STREAM_VOICE_CALL},
     {STREAM_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL_ASSISTANT},
 
@@ -1267,7 +1403,7 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_GAME, STREAM_MUSIC},
     {STREAM_SPEECH, STREAM_MUSIC},
     {STREAM_NAVIGATION, STREAM_MUSIC},
-    {STREAM_CAMCORDER, STREAM_MUSIC},
+    {STREAM_VOICE_MESSAGE, STREAM_MUSIC},
 
     {STREAM_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT},
     {STREAM_ALARM, STREAM_ALARM},
@@ -1276,9 +1412,51 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_ALL, STREAM_ALL},
 };
 
+std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeMap_ = {
+    {STREAM_VOICE_CALL, STREAM_MUSIC},
+    {STREAM_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL_ASSISTANT},
+    {STREAM_VOICE_MESSAGE, STREAM_MUSIC},
+    {STREAM_VOICE_ASSISTANT, STREAM_MUSIC},
+    {STREAM_VOICE_COMMUNICATION, STREAM_MUSIC},
+    {STREAM_DTMF, STREAM_MUSIC},
+    {STREAM_MUSIC, STREAM_MUSIC},
+    {STREAM_MEDIA, STREAM_MUSIC},
+    {STREAM_MOVIE, STREAM_MUSIC},
+    {STREAM_GAME, STREAM_MUSIC},
+    {STREAM_SPEECH, STREAM_MUSIC},
+    {STREAM_RECORDING, STREAM_MUSIC},
+    {STREAM_NAVIGATION, STREAM_MUSIC},
+    {STREAM_ACCESSIBILITY, STREAM_MUSIC},
+    {STREAM_ALL, STREAM_ALL},
+
+    {STREAM_RING, STREAM_MUSIC},
+    {STREAM_VOICE_RING, STREAM_MUSIC},
+    {STREAM_ALARM, STREAM_MUSIC},
+
+    {STREAM_SYSTEM, STREAM_SYSTEM},
+    {STREAM_NOTIFICATION, STREAM_SYSTEM},
+    {STREAM_SYSTEM_ENFORCED, STREAM_SYSTEM},
+
+    {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
+};
+
 std::unordered_map<AudioStreamType, AudioVolumeType>& VolumeUtils::GetVolumeMap()
 {
-    return defaultVolumeMap_;
+    if (isPCVolumeEnable_) {
+        return audioPCVolumeMap_;
+    } else {
+        return defaultVolumeMap_;
+    }
+}
+
+void VolumeUtils::SetPCVolumeEnable(const bool& isPCVolumeEnable)
+{
+    isPCVolumeEnable_ = isPCVolumeEnable;
+}
+
+bool VolumeUtils::IsPCVolumeEnable()
+{
+    return isPCVolumeEnable_;
 }
 
 AudioVolumeType VolumeUtils::GetVolumeTypeFromStreamType(AudioStreamType streamType)
