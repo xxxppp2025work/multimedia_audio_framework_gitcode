@@ -146,7 +146,6 @@ int32_t AudioProcessInServer::Start()
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
     }
-
     if (streamStatus_->load() == STREAM_STAND_BY) {
         AUDIO_INFO_LOG("Call start while in stand-by, session %{public}u", sessionId_);
         WriterRenderStreamStandbySysEvent(sessionId_, 0);
@@ -202,7 +201,7 @@ int32_t AudioProcessInServer::Resume()
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
     }
-
+    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(sessionId_);
     AUDIO_PRERELEASE_LOGI("Resume in server success!");
     return SUCCESS;
 }
