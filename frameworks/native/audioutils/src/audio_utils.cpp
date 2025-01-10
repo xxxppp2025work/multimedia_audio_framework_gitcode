@@ -494,21 +494,6 @@ void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len)
     }
 }
 
-
-void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len)
-{
-    // the number 2: stereo audio has 2 channels
-    uint64_t count = len / 2;
-
-    while (count > 0) {
-        // the number 2 is the count of stereo audio channels
-        data[0] = data[0] / 2 + data[1] / 2;
-        data[1] = data[0];
-        data += 2;
-        count--;
-    }
-}
-
 void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len)
 {
     uint64_t count = len / 2 / 2;
