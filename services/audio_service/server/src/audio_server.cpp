@@ -53,6 +53,7 @@
 #include "policy_handler.h"
 #include "config/audio_param_parser.h"
 #include "media_monitor_manager.h"
+#include "audio_dump_pcm.h"
 
 #define PA
 #ifdef PA
@@ -188,6 +189,7 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
         std::string dumpString = "check fast list :bundle name is" + bundleName + " result is " + result + "\n";
         return write(fd, dumpString.c_str(), dumpString.size());
     }
+
     std::queue<std::u16string> argQue;
     for (decltype(args.size()) index = 0; index < args.size(); ++index) {
         argQue.push(args[index]);
@@ -224,6 +226,11 @@ void AudioServer::OnStart()
     GetSysPara("persist.multimedia.audioflag.fastcontrolled", fastControlFlag);
     if (fastControlFlag == 1) {
         isFastControlled_ = true;
+    }
+    int32_t audioCacheState = 0;
+    GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
+    if (audioCacheState != 0) {
+        AudioCacheMgr::GetInstance().Init();
     }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
@@ -304,8 +311,8 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
     if (key == "PCM_DUMP") {
         ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
         CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "set audiodump parameters failed: no permission.");
-        ret = Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(kvpairs);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetMediaParameters failed.");
+        CHECK_AND_RETURN_RET_LOG(kvpairs.size() > 0, false, "params is empty!");
+        return AudioCacheMgr::GetInstance().SetDumpParameter(kvpairs);
     }
 
     if (audioParameterKeys.empty()) {
@@ -445,6 +452,13 @@ void AudioServer::SetAudioParameter(const std::string& networkId, const AudioPar
 int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
     const std::vector<std::string> &subKeys, std::vector<std::pair<std::string, std::string>> &result)
 {
+    if (mainKey == "PCM_DUMP") {
+        bool ret = VerifyClientPermission(DUMP_AUDIO_PERMISSION);
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "get audiodump parameters failed: no permission.");
+        CHECK_AND_RETURN_RET_LOG(subKeys.size() > 0, false, "subKeys is empty!");
+        return AudioCacheMgr::GetInstance().GetDumpParameter(subKeys, result);
+    }
+
     if (audioParameterKeys.empty()) {
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
         return ERROR;
@@ -1752,29 +1766,12 @@ int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float
 
 int32_t AudioServer::SetSystemVolumeToEffect(const AudioStreamType streamType, float volume)
 {
-    std::string sceneType;
-    switch (streamType) {
-        case STREAM_RING:
-        case STREAM_ALARM:
-            sceneType = "SCENE_RING";
-            break;
-        case STREAM_VOICE_ASSISTANT:
-            sceneType = "SCENE_SPEECH";
-            break;
-        case STREAM_MUSIC:
-            sceneType = "SCENE_MUSIC";
-            break;
-        case STREAM_ACCESSIBILITY:
-            sceneType = "SCENE_OTHERS";
-            break;
-        default:
-            return SUCCESS;
-    }
+    AudioVolumeType systemVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
 
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
-    AUDIO_INFO_LOG("streamType : %{public}d , systemVolume: %{public}f", streamType, volume);
-    audioEffectChainManager->SetSceneTypeSystemVolume(sceneType, volume);
+    AUDIO_INFO_LOG("streamType: %{public}d, systemVolume: %{public}f", streamType, volume);
+    audioEffectChainManager->SetEffectSystemVolume(systemVolumeType, volume);
     
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
