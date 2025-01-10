@@ -461,7 +461,7 @@ int32_t IpcStreamInServer::RegisterThreadPriority(uint32_t tid, const std::strin
     if (!clientThreadPriorityRequested_) {
         clientTid_ = tid;
         clientBundleName_ = bundleName;
-        ScheduleReportData(IPCSkeleton::GetCallingPid();, tid, bundleName.c_str());
+        ScheduleReportData(IPCSkeleton::GetCallingPid(), tid, bundleName.c_str());
         return SUCCESS;
     } else {
         AUDIO_ERR_LOG("client thread priority requested");
