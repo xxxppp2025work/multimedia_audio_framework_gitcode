@@ -52,7 +52,7 @@ ohos_shared_library("cj_multimedia_audio_ffi") {
 
   deps = [
     "../../services/audio_policy:audio_policy_client",
-    "../../services/audio_service:audio_client",
+    "../../services/audio_service:audio_stream_util",
     "../native/audiocapturer:audio_capturer",
     "../native/audiorenderer:audio_renderer",
     "../native/audioutils:audio_utils",

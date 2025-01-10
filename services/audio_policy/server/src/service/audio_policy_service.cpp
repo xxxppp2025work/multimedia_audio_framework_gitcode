@@ -37,13 +37,13 @@
 #include "media_monitor_manager.h"
 #include "client_type_manager.h"
 #include "audio_safe_volume_notification.h"
-#include "avsession_manager.h"
 #include "audio_setting_provider.h"
 #include "audio_spatialization_service.h"
 #include "audio_usb_manager.h"
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
+#include "audio_ability_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -74,7 +74,6 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
 static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
 static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
 const int32_t UID_AUDIO = 1041;
-static const int64_t WATI_PLAYBACK_TIME = 200000; // 200ms
 
 #ifdef BLUETOOTH_ENABLE
 static sptr<IStandardAudioService> g_btProxy = nullptr;
@@ -1964,21 +1963,7 @@ bool AudioPolicyService::IsCurrentActiveDeviceA2dp()
 
 bool AudioPolicyService::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
 {
-#ifdef AVSESSION_ENABLE
-    // Temporary solution to avoid performance issues
-    if (uid == BOOTUP_MUSIC_UID) {
-        return true;
-    }
-    bool allowed = false;
-    allowed = OHOS::AVSession::AVSessionManager::GetInstance().IsAudioPlaybackAllowed(uid, pid);
-    if (!allowed) {
-        usleep(WATI_PLAYBACK_TIME); //wait for 200ms
-        AUDIO_INFO_LOG("IsAudioPlaybackAllowed Try again after 200ms");
-        allowed = OHOS::AVSession::AVSessionManager::GetInstance().IsAudioPlaybackAllowed(uid, pid);
-    }
-    return allowed;
-#endif
-    return true;
+    return AudioAbilityManager::GetInstance()->IsAllowedPlayback(uid, pid);
 }
 
 int32_t AudioPolicyService::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,

@@ -56,6 +56,7 @@ ohos_unittest("audio_interrupt_service_unit_test") {
   include_dirs = [
     "./unittest/audio_interrupt_service_test/include",
     "../../audio_policy/server/src/service/interrupt",
+    "../../audio_service/util/include",
   ]
 
   use_exceptions = true
@@ -121,7 +122,10 @@ ohos_unittest("audio_interrupt_service_unit_test") {
     "./unittest/audio_interrupt_service_test/src/audio_interrupt_unit_test.cpp",
   ]
 
-  deps = [ "../../audio_policy:audio_policy_service_static" ]
+  deps = [
+    "../../audio_policy:audio_policy_service_static",
+    "../../audio_service:audio_stream_util",
+  ]
 
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
@@ -208,6 +212,7 @@ ohos_unittest("audio_policy_service_all_unit_test") {
     "../../audio_policy/server/include/service",
     "../../audio_policy/server/include/service/service",
     "../../audio_policy/server/include",
+    "../../audio_policy/util/include",
   ]
 
   use_exceptions = true
@@ -283,6 +288,7 @@ ohos_unittest("audio_policy_service_all_unit_test") {
     "../../../services/audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
+    "../../audio_service:audio_stream_util",
   ]
 
   if (accessibility_enable == true) {
@@ -611,6 +617,7 @@ ohos_unittest("audio_policy_server_unit_test") {
     "../../audio_policy/server/src/service/interrupt",
     "../../audio_policy/server/include",
     "../../audio_policy/test/unittest/audio_interrupt_service_test/include",
+    "../../audio_service/util/include",
   ]
 
   use_exceptions = true
@@ -649,7 +656,10 @@ ohos_unittest("audio_policy_server_unit_test") {
 
   sources = [ "./unittest/audio_interrupt_service_test/src/audio_policy_server_unit_test.cpp" ]
 
-  deps = [ "../../audio_policy:audio_policy_service_static" ]
+  deps = [
+    "../../audio_policy:audio_policy_service_static",
+    "../../audio_service:audio_stream_util",
+  ]
 
   if (audio_framework_feature_dtmf_tone) {
     defines = [ "FEATURE_DTMF_TONE" ]
@@ -902,6 +912,7 @@ ohos_unittest("stream_filter_router_unit_test") {
   include_dirs = [
     "./unittest/stream_filter_router_unit_test/include",
     "../../audio_policy/server/include/service/routers",
+    "../../audio_service/util/include",
   ]
 
   use_exceptions = true
@@ -947,6 +958,7 @@ ohos_unittest("stream_filter_router_unit_test") {
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
     "../../audio_service:audio_common",
+    "../../audio_service:audio_stream_util",
   ]
 
   if (accessibility_enable == true) {
@@ -1258,6 +1270,7 @@ ohos_unittest("audio_policy_server_handler_unit_test") {
   include_dirs = [
     "./unittest/audio_policy_server_handler_unit_test/include",
     "../../audio_policy/server/include",
+    "../../audio_service/util/include",
   ]
 
   use_exceptions = true
@@ -1296,7 +1309,10 @@ ohos_unittest("audio_policy_server_handler_unit_test") {
 
   sources = [ "./unittest/audio_policy_server_handler_test/src/audio_policy_server_handler_unit_test.cpp" ]
 
-  deps = [ "../../audio_policy:audio_policy_service_static" ]
+  deps = [
+    "../../audio_policy:audio_policy_service_static",
+    "../../audio_service:audio_stream_util",
+  ]
 
   if (accessibility_enable == true) {
     external_deps += [
@@ -1430,6 +1446,7 @@ ohos_unittest("audio_affinity_manager_unit_test") {
     "../../audio_policy/server/include/service/",
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../audio_service/client/src",
+    "../../audio_policy/server/src/service/device",
   ]
 
   use_exceptions = true
@@ -1690,6 +1707,7 @@ ohos_unittest("audio_policy_manager_stub_test") {
   module_out_path = module_output_path
   include_dirs = [
     "../client/include",
+    "../../audio_service/util/include",
     "./unittest/audio_policy_manager_stub_test/include",
   ]
 
@@ -1750,5 +1768,6 @@ ohos_unittest("audio_policy_manager_stub_test") {
   deps = [
     "../../audio_policy:audio_policy_service_static",
     "../../audio_policy:audio_setting_provider",
+    "../../audio_service:audio_stream_util",
   ]
 }

@@ -48,7 +48,7 @@ if (!audio_framework_feature_offline_effect) {
     ]
 
     deps = [
-      "../../../services/audio_service:audio_client",
+      "../../../services/audio_service:audio_stream_util",
       "../audioutils:audio_utils",
     ]
 

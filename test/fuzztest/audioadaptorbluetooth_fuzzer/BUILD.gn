@@ -27,6 +27,7 @@ ohos_fuzztest("AudioAdaptorBluetoothFuzzTest") {
     "../../../frameworks/native/hdiadapter/common/include",
     "../../../frameworks/native/hdiadapter/sink/bluetooth",
     "../../../frameworks/native/hdiadapter/sink/common",
+    "../../../services/audio_service/util/include",
   ]
   cflags = [
     "-g",
@@ -43,6 +44,7 @@ ohos_fuzztest("AudioAdaptorBluetoothFuzzTest") {
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
     "../../../services/audio_policy:audio_policy_service_static",
+    "../../../services/audio_service:audio_stream_util",
   ]
 
   external_deps = [

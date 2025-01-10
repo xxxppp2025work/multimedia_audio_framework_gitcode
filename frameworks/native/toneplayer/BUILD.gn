@@ -58,7 +58,6 @@ if (!audio_framework_feature_dtmf_tone) {
 
     deps = [
       "../../../services/audio_policy:audio_policy_client",
-      "../../../services/audio_service:audio_client",
       "../audiorenderer:audio_renderer",
       "../audioutils:audio_utils",
     ]

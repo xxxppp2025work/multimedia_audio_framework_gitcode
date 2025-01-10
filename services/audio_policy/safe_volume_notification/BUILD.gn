@@ -27,11 +27,13 @@ ohos_shared_library("audio_safe_volume_notification_impl") {
     "include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../services/audio_service/client/include",
   ]
 
-  sources = [ "src/audio_safe_volume_notification_impl.cpp" ]
-
-  deps = [ "../../../services/audio_service:audio_client" ]
+  sources = [
+    "../../../services/audio_service/client/src/resource_manager_adapter.cpp",
+    "src/audio_safe_volume_notification_impl.cpp",
+  ]
 
   external_deps = [
     "ability_base:want",

@@ -23,6 +23,7 @@ ohos_fuzztest("AudioPolicyFuzzTest") {
   include_dirs = [
     "../../../services/audio_policy/server/include",
     "../../../../../communication/bluetooth/interfaces/inner_api/include",
+    "../../../services/audio_service/util/include",
   ]
   cflags = [
     "-g",
@@ -47,7 +48,10 @@ ohos_fuzztest("AudioPolicyFuzzTest") {
 
   sources = [ "audio_policy_fuzzer.cpp" ]
 
-  deps = [ "../../../services/audio_policy:audio_policy_service_static" ]
+  deps = [
+    "../../../services/audio_policy:audio_policy_service_static",
+    "../../../services/audio_service:audio_stream_util",
+  ]
   external_deps = [
     "ability_base:want",
     "ability_runtime:extension_manager",
