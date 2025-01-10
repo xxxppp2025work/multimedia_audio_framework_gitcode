@@ -27,6 +27,8 @@
 #include "audio_schedule.h"
 #include "audio_utils.h"
 #include "media_monitor_manager.h"
+#include "audio_dump_pcm.h"
+#include "audio_performance_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -45,7 +47,7 @@ sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig
 AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConfig,
     ProcessReleaseCallback *releaseCallback) : processConfig_(processConfig), releaseCallback_(releaseCallback)
 {
-    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
+    if (processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
         sessionId_ = PolicyHandler::GetInstance().GenerateSessionId(processConfig_.appInfo.appUid);
     } else {
         sessionId_ = processConfig.originalSessionId;
@@ -150,8 +152,9 @@ int32_t AudioProcessInServer::Start()
         WriterRenderStreamStandbySysEvent(sessionId_, 0);
         streamStatus_->store(STREAM_STARTING);
     }
-    processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
 
+    processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
+    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(sessionId_);
     AUDIO_INFO_LOG("Start in server success!");
     return SUCCESS;
 }
@@ -491,10 +494,17 @@ void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
     DumpFileUtil::WriteDumpFile(dumpFile_, buffer, bufferSize);
 
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            buffer, bufferSize);
+        DumpFileUtil::WriteDumpFile(dumpFile_, buffer, bufferSize);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_, buffer, bufferSize);
     }
 }
+
+int32_t AudioProcessInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+{
+    return PolicyHandler::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, sessionId_,
+        processConfig_.rendererInfo.streamUsage, streamStatus_->load() == STREAM_RUNNING);
+}
+
 
 int32_t AudioProcessInServer::SetSilentModeAndMixWithOthers(bool on)
 {

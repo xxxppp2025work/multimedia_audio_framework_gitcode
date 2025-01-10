@@ -26,8 +26,8 @@
 #include "audio_process_config.h"
 #include "i_stream_manager.h"
 #include "playback_capturer_manager.h"
-#include "policy_handler.h"
 #include "media_monitor_manager.h"
+#include "audio_dump_pcm.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -132,8 +132,8 @@ int32_t CapturerInServer::Init()
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterReadCallback(shared_from_this());
 
-    AudioStreamInfo tempInfo = processConfig_.streamInfo;
     // eg: /data/data/.pulse_dir/10000_100009_capturer_server_out_48000_2_1.pcm
+    AudioStreamInfo tempInfo = processConfig_.streamInfo;
     dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + "_" + std::to_string(streamIndex_)
         + "_capturer_server_out_" + std::to_string(tempInfo.samplingRate) + "_"
         + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
@@ -245,9 +245,9 @@ void CapturerInServer::ReadData(size_t length)
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
     }
     ringCache_->Dequeue({dstBuffer.buffer, dstBuffer.bufLength});
-    DumpFileUtil::WriteDumpFile(dumpS2C_, static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+        DumpFileUtil::WriteDumpFile(dumpS2C_, static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
             static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
     }
 
@@ -342,11 +342,11 @@ int32_t CapturerInServer::Pause()
 int32_t CapturerInServer::Flush()
 {
     std::unique_lock<std::mutex> lock(statusLock_);
-    if (status_ != I_STATUS_STARTED) {
+    if (status_ == I_STATUS_STARTED) {
         status_ = I_STATUS_FLUSHING_WHEN_STARTED;
-    } else if (status_ != I_STATUS_PAUSED) {
+    } else if (status_ == I_STATUS_PAUSED) {
         status_ = I_STATUS_FLUSHING_WHEN_PAUSED;
-    } else if (status_ != I_STATUS_STOPPED) {
+    } else if (status_ == I_STATUS_STOPPED) {
         status_ = I_STATUS_FLUSHING_WHEN_STOPPED;
     } else {
         AUDIO_ERR_LOG("CapturerInServer::Flush failed, Illegal state: %{public}u", status_);
@@ -536,6 +536,13 @@ void CapturerInServer::SetNonInterruptMute(const bool muteFlag)
     AUDIO_INFO_LOG("muteFlag: %{public}d", muteFlag);
     muteFlag_ = muteFlag;
     AudioService::GetInstance()->UpdateMuteControlSet(streamIndex_, muteFlag);
+}
+
+void CapturerInServer::RestoreSession()
+{
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
+    stateListener->OnOperationHandled(RESTORE_SESSION, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS
