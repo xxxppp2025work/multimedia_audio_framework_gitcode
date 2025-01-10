@@ -23,6 +23,7 @@
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_schedule.h"
+#include "ipc_skeleton.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -460,7 +461,7 @@ int32_t IpcStreamInServer::RegisterThreadPriority(uint32_t tid, const std::strin
     if (!clientThreadPriorityRequested_) {
         clientTid_ = tid;
         clientBundleName_ = bundleName;
-        ScheduleReportData(config_.appInfo.appPid, tid, bundleName.c_str());
+        ScheduleReportData(IPCSkeleton::GetCallingPid();, tid, bundleName.c_str());
         return SUCCESS;
     } else {
         AUDIO_ERR_LOG("client thread priority requested");
