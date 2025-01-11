@@ -751,6 +751,33 @@ int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     return AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
 }
 
+int32_t AudioSystemManager::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    vector<shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioDevUsage == MEDIA_OUTPUT_USAGE || audioDevUsage == CALL_OUTPUT_USAGE,
+        ERR_INVALID_PARAM, "invalid parameter: only support output device");
+    CHECK_AND_RETURN_RET_LOG(!audioDeviceDescriptors.empty(), ERR_INVALID_PARAM, "invalid parameter: empty list");
+    size_t validSize = 64;
+    for (const auto &devDesc : audioDeviceDescriptors) {
+        CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, ERR_INVALID_PARAM, "invalid parameter: mull pointer in list");
+        CHECK_AND_RETURN_RET_LOG(devDesc->networkId_ == LOCAL_NETWORK_ID || devDesc->networkId_.size() == validSize, 
+            ERR_INVALID_PARAM, "invalid parameter: invalid networkId.");
+    }
+    return AudioPolicyManager::GetInstance().ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+int32_t AudioSystemManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    vector<shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+{
+    return AudioPolicyManager::GetInstance().UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+vector<shared_ptr<AudioDeviceDescriptor>> AudioSystemManager::GetExcludedOutputDevices(
+    AudioDeviceUsage audioDevUsage) const
+{
+    return AudioPolicyManager::GetInstance().GetExcludedOutputDevices(audioDevUsage);
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFlag deviceFlag)
 {
     return AudioPolicyManager::GetInstance().GetDevices(deviceFlag);

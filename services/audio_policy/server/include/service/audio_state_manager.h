@@ -77,6 +77,7 @@ public:
     void UpdatePreferredCallCaptureDeviceConnectState(ConnectState state);
     void UpdatePreferredRecordCaptureDeviceConnectState(ConnectState state);
 
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedOutputDevices(AudioDeviceUsage usage);
     bool IsExcludedDevice(AudioDeviceUsage devUsage, shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor);
 
 private:

@@ -70,6 +70,9 @@ private:
     void SelectOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void GetSelectedDeviceInfoInternal(MessageParcel &data, MessageParcel &reply);
     void SelectInputDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void ExcludeOutputDevicesInternal(MessageParcel &data, MessageParcel &reply);
+    void UnexcludeOutputDevicesInternal(MessageParcel &data, MessageParcel &reply);
+    void GetExcludedOutputDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
     void GetSinkLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);

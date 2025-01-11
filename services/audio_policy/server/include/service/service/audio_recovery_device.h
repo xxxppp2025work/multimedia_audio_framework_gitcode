@@ -54,6 +54,10 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+    int32_t ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
 private:
     AudioRecoveryDevice() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),

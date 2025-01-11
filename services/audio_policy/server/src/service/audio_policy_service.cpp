@@ -408,6 +408,24 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     return audioDeviceLock_.SelectInputDevice(audioCapturerFilter, selectedDesc);
 }
 
+int32_t AudioPolicyService::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    return audioDeviceLock_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+int32_t AudioPolicyService::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    return audioDeviceLock_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetExcludedOutputDevices(
+    AudioDeviceUsage audioDevUsage)
+{
+    return audioDeviceLock_.GetExcludedOutputDevices(audioDevUsage);
+}
+
 bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const
 {
     return audioSceneManager_.IsStreamActive(streamType);

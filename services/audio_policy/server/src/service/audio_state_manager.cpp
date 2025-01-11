@@ -141,6 +141,25 @@ void AudioStateManager::UpdatePreferredRecordCaptureDeviceConnectState(ConnectSt
     preferredRecordCaptureDevice_->connectState_ = state;
 }
 
+vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedOutputDevices(AudioDeviceUsage usage)
+{
+    if (usage == MEDIA_OUTPUT_DEVICES) {
+        shared_lock<shared_mutex> lock(mediaExcludedDevicesMutex_);
+        for (const auto &desc : mediaExcludedDevices_) {
+            devices.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+        }
+    } else if (usage == CALL_OUTPUT_DEVICES) {
+        shared_lock<shared_mutex> lock(callExcludedDevicesMutex_);
+        vector<shared_ptr<AudioDeviceDescriptor>> devices;
+        for (const auto &desc : callExcludedDevices_) {
+            devices.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+        }
+        return devices;
+    }
+
+    return {};
+}
+
 bool AudioStateManager::IsExcludedDevice(AudioDeviceUsage devUsage,
     shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
 {

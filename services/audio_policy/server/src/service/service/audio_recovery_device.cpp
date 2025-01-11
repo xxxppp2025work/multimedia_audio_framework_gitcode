@@ -333,6 +333,22 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
     return SUCCESS;
 }
 
+int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    int32_t res = audioStateManager_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    // to do
+    return res;
+}
+
+int32_t AudioRecoveryDevice::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    int32_t res = audioStateManager_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    // to do
+    return res;
+}
+
 void AudioRecoveryDevice::SetCaptureDeviceForUsage(AudioScene scene, SourceType srcType,
     std::shared_ptr<AudioDeviceDescriptor> desc)
 {

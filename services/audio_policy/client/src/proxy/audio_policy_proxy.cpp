@@ -595,6 +595,82 @@ int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(audioDevUsage));
+    uint32_t size = audioDeviceDescriptors.size();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_DEVICE_INFO_SIZE_LIMIT,
+        -1, "ExcludeOutputDevices get invalid device size.");
+    data.WriteInt32(size);
+    for (auto audioDeviceDescriptor : audioDeviceDescriptors) {
+        bool audioDeviceTmp = audioDeviceDescriptor->Marshalling(data);
+        CHECK_AND_RETURN_RET_LOG(audioDeviceTmp, -1, "AudioDeviceDescriptor Marshalling() failed");
+    }
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::EXCLUDE_OUTPUT_DEVICES), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "ExcludeOutputDevices failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(audioDevUsage));
+    uint32_t size = audioDeviceDescriptors.size();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_DEVICE_INFO_SIZE_LIMIT,
+        -1, "UnexcludeOutputDevices get invalid device size.");
+    data.WriteInt32(size);
+    for (auto audioDeviceDescriptor : audioDeviceDescriptors) {
+        bool audioDeviceTmp = audioDeviceDescriptor->Marshalling(data);
+        CHECK_AND_RETURN_RET_LOG(audioDeviceTmp, -1, "AudioDeviceDescriptor Marshalling() failed");
+    }
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNEXCLUDE_OUTPUT_DEVICES), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "UnexcludeOutputDevices failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedOutputDevices(
+    AudioDeviceUsage audioDevUsage)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> excludedDevices;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, excludedDevices, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(audioDevUsage));
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_EXCLUDED_OUTPUT_DEVICES), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, excludedDevices,
+        "Get excluded output devices failed, error: %d", error);
+
+    int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= static_cast<int32_t>(AUDIO_DEVICE_INFO_SIZE_LIMIT),
+        excludedDevices, "Using tainted data size: %{public}d as loop bound", size);
+    for (int32_t i = 0; i < size; i++) {
+        excludedDevices.push_back(AudioDeviceDescriptor::UnmarshallingPtr(reply));
+    }
+
+    return excludedDevices;
+}
+
 int32_t AudioPolicyProxy::ConfigDistributedRoutingRole(
     const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
