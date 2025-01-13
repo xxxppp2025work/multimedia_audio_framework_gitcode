@@ -596,7 +596,7 @@ public:
 
     /**
      * @brief Exclude the audio output device according to the DeviceUsage.
-     * 
+     *
      * @param audioDevUsage AudioDeviceUsage.
      * @param audioDeviceDescriptors Output device object.
      * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
@@ -608,7 +608,7 @@ public:
 
     /**
      * @brief Unexclude the audio output device according to the DeviceUsage.
-     * 
+     *
      * @param audioDevUsage AudioDeviceUsage.
      * @param audioDeviceDescriptors Output device object.
      * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
@@ -620,7 +620,7 @@ public:
     
     /**
      * @brief Get the list of excluded audio output devices according to the DeviceUsage.
-     * 
+     *
      * @param audioDevUsage AudioDeviceUsage.
      * @return Returns the device list is obtained.
      * @since 16

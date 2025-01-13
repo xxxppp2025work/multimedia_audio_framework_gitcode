@@ -1197,7 +1197,7 @@ void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNEXCLUDE_OUTPUT_DEVICES):
             UnexcludeOutputDevicesInternal(data, reply);
             break;
-        case static_cast<uint32_t>AudioPolicyInterfaceCode::GET_EXCLUDED_OUTPUT_DEVICES):
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_EXCLUDED_OUTPUT_DEVICES):
             GetExcludedOutputDevicesInternal(data, reply);
             break;
         default:

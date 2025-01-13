@@ -336,17 +336,61 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
 int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
-    int32_t res = audioStateManager_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    // to do
-    return res;
+    AUDIO_WARNING_LOG("audioDevUsage[%{public}d], Exclude devices list size [%{public}zu], %{public}s",
+        audioDevUsage, audioDeviceDescriptors.size(),
+        AudioPolicyUtils::GetInstance().GetDevicesStr(audioDeviceDescriptors).c_str());
+
+    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() > 0, "No device to exclude");
+    audioStateManager_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    for (const auto &desc : audioDeviceDescriptors) {
+        CHECK_AND_RETURN_LOG(desc != nullptr, "Invalid device descriptor");
+    }
+
+    audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
+    audioDeviceCommon_.FetchDevice(false);
+    AudioDeviceDescriptor currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
+    AudioDeviceDescriptor currentInputDevice = audioActiveDevice_.GetCurrentInputDevice();
+    audioCapturerSession_.ReloadSourceForDeviceChange(
+        currentInputDevice, currentOutputDevice, "ExcludeOutputDevices");
+    if ((currentOutputDevice.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
+        (currentOutputDevice.networkId_ != LOCAL_NETWORK_ID)) {
+        audioA2dpOffloadManager_->UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
+    } else {
+        audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream(currentOutputDevice.deviceType_);
+    }
+    audioDeviceCommon_.OnPreferredOutputDeviceUpdated(currentOutputDevice);
+    // to do: write dtx event
+    return SUCCESS;
 }
 
 int32_t AudioRecoveryDevice::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
-    int32_t res = audioStateManager_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    // to do
-    return res;
+    AUDIO_WARNING_LOG("audioDevUsage[%{public}d], Unexclude devices list size [%{public}zu], %{public}s",
+        audioDevUsage, audioDeviceDescriptors.size(),
+        AudioPolicyUtils::GetInstance().GetDevicesStr(audioDeviceDescriptors).c_str());
+
+    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() > 0, "No device to exclude");
+    audioStateManager_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    for (const auto &desc : audioDeviceDescriptors) {
+        CHECK_AND_RETURN_LOG(desc != nullptr, "Invalid device descriptor");
+    }
+
+    audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
+    audioDeviceCommon_.FetchDevice(false);
+    AudioDeviceDescriptor currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
+    AudioDeviceDescriptor currentInputDevice = audioActiveDevice_.GetCurrentInputDevice();
+    audioCapturerSession_.ReloadSourceForDeviceChange(
+        currentInputDevice, currentOutputDevice, "ExcludeOutputDevices");
+    if ((currentOutputDevice.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
+        (currentOutputDevice.networkId_ != LOCAL_NETWORK_ID)) {
+        audioA2dpOffloadManager_->UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
+    } else {
+        audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream(currentOutputDevice.deviceType_);
+    }
+    audioDeviceCommon_.OnPreferredOutputDeviceUpdated(currentOutputDevice);
+    // to do: write dtx event
+    return SUCCESS;
 }
 
 void AudioRecoveryDevice::SetCaptureDeviceForUsage(AudioScene scene, SourceType srcType,

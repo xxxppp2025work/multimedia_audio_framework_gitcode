@@ -52,31 +52,35 @@ void AudioStateManager::SetPreferredToneRenderDevice(const std::shared_ptr<Audio
     preferredToneRenderDevice_ = deviceDescriptor;
 }
 
-void AudioStateManager::ExcludeOutputDevices(AudioDeviceUsage devUsage,
+void AudioStateManager::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
-    if (devUsage == MEDIA_OUTPUT_DEVICES) {
+    if (audioDevUsage == MEDIA_OUTPUT_DEVICES) {
         lock_guard<shared_mutex> lock(mediaExcludedDevicesMutex_);
-        mediaExcludedDevices_.insert(mediaExcludedDevices_.end(),
-            audioDeviceDescriptors.begin(), audioDeviceDescriptors.end());
-    } else if (devUsage == CALL_OUTPUT_DEVICES) {
+        for (const auto &desc : audioDeviceDescriptors) {
+            mediaExcludedDevices_.insert(desc);
+        }
+    } else if (audioDevUsage == CALL_OUTPUT_DEVICES) {
         lock_guard<shared_mutex> lock(callExcludedDevicesMutex_);
-        callExcludedDevices_.insert(callExcludedDevices_.end(),
-            audioDeviceDescriptors.begin(), audioDeviceDescriptors.end());
+        for (const auto &desc : audioDeviceDescriptors) {
+            callExcludedDevices_.insert(desc);
+        }
     }
 }
 
-void AudioStateManager::UnexcludeOutputDevices(AudioDeviceUsage devUsage,
+void AudioStateManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
-    if (devUsage == MEDIA_OUTPUT_DEVICES) {
+    if (audioDevUsage == MEDIA_OUTPUT_DEVICES) {
         lock_guard<shared_mutex> lock(mediaExcludedDevicesMutex_);
-        mediaExcludedDevices_.erase(remove(mediaExcludedDevices_.begin(), mediaExcludedDevices_.end(),
-            audioDeviceDescriptors), mediaExcludedDevices_.end());
-    } else if (devUsage == CALL_OUTPUT_DEVICES) {
+        for (const auto &desc : audioDeviceDescriptors) {
+            mediaExcludedDevices_.erase(desc);
+        }
+    } else if (audioDevUsage == CALL_OUTPUT_DEVICES) {
         lock_guard<shared_mutex> lock(callExcludedDevicesMutex_);
-        callExcludedDevices_.erase(remove(callExcludedDevices_.begin(), callExcludedDevices_.end(),
-            audioDeviceDescriptors), callExcludedDevices_.end());
+        for (const auto &desc : audioDeviceDescriptors) {
+            callExcludedDevices_.erase(desc);
+        }
     }
 }
 
@@ -160,22 +164,17 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedOutputDe
     return {};
 }
 
-bool AudioStateManager::IsExcludedDevice(AudioDeviceUsage devUsage,
+bool AudioStateManager::IsExcludedDevice(AudioDeviceUsage audioDevUsage,
     shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
 {
-    CHECK_AND_RETURN_RET(devUsage == MEDIA_OUTPUT_DEVICES || devUsage == CALL_OUTPUT_DEVICES, false);
+    CHECK_AND_RETURN_RET(audioDevUsage == MEDIA_OUTPUT_DEVICES || audioDevUsage == CALL_OUTPUT_DEVICES, false);
 
-    auto isPresent = [&audioDeviceDescriptor] (const shared_ptr<AudioDeviceDescriptor> &desc) {
-        return desc->IsSameDeviceDesc(*audioDeviceDescriptor);
-    };
-
-    if (devUsage == MEDIA_OUTPUT_DEVICES) {
+    if (audioDevUsage == MEDIA_OUTPUT_DEVICES) {
         shared_lock<shared_mutex> lock(mediaExcludedDevicesMutex_);
-        return find_if(mediaExcludedDevices_.begin(), mediaExcludedDevices_.end(), isPresent) !=
-            mediaExcludedDevices_.end();
-    } else if (devUsage == CALL_OUTPUT_DEVICES) {
+        return mediaExcludedDevices_.contains(audioDeviceDescriptor);
+    } else if (audioDevUsage == CALL_OUTPUT_DEVICES) {
         shared_lock<shared_mutex> lock(callExcludedDevicesMutex_);
-        return callExcludedDevices_.find(audioDeviceDescriptor) != callExcludedDevices_.end();
+        return callExcludedDevices_.contains(audioDeviceDescriptor);
     }
 
     return false;

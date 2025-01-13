@@ -48,10 +48,10 @@ public:
     // Set tone render device selected by the user
     void SetPreferredToneRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
-    void ExcludeOutputDevices(AudioDeviceUsage devUsage,
+    void ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
-    
-    void UnexcludeOutputDevices(AudioDeviceUsage devUsage,
+
+    void UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
 
     // Get media render device selected by the user
@@ -77,8 +77,8 @@ public:
     void UpdatePreferredCallCaptureDeviceConnectState(ConnectState state);
     void UpdatePreferredRecordCaptureDeviceConnectState(ConnectState state);
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedOutputDevices(AudioDeviceUsage usage);
-    bool IsExcludedDevice(AudioDeviceUsage devUsage, shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor);
+    vector<shared_ptr<AudioDeviceDescriptor>> GetExcludedOutputDevices(AudioDeviceUsage audioDevUsage);
+    bool IsExcludedDevice(AudioDeviceUsage audioDevUsage, shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor);
 
 private:
     AudioStateManager() {};
@@ -90,12 +90,12 @@ private:
     std::shared_ptr<AudioDeviceDescriptor> preferredRecordCaptureDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredToneRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
 
-    vector<shared_ptr<AudioDeviceDescriptor>> mediaExcludedDevices_;
-    vector<shared_ptr<AudioDeviceDescriptor>> callExcludedDevices_;
+    set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptorComparer> mediaExcludedDevices_;
+    set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptorComparer> callExcludedDevices_;
 
     std::mutex mutex_;
-    std::shared_mutex mediaExcludedDevicesMutex_;
-    std::shared_mutex callExcludedDevicesMutex_;
+    shared_mutex mediaExcludedDevicesMutex_;
+    shared_mutex callExcludedDevicesMutex_;
 };
 
 } // namespace AudioStandard
