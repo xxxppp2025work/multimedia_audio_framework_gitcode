@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -281,7 +281,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_009, TestSize.Level1
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
     capturerInServer_->spanSizeInFrame_ = -100;
     capturerInServer_->muteFlag_.store(true);
-    AudioDump::GetInstance().GetVersionType() = BETA_VERSION;
+    AudioDump::GetInstance().GetVersionType() = DumpFileUtil::BETA_VERSION;
     capturerInServer_->ReadData(length);
     EXPECT_NE(capturerInServer_, nullptr);
 }
