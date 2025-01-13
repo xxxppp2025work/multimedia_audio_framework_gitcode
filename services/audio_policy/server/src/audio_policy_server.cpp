@@ -1704,7 +1704,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
     return ERR_UNKNOWN;
 }
 
-int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
+int32_t AudioPolicyServer::DeactivateAudioInterrupt(AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
         return interruptService_->DeactivateAudioInterrupt(zoneID, audioInterrupt);

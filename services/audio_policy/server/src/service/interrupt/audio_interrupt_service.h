@@ -81,8 +81,8 @@ public:
     int32_t UnsetAudioInterruptCallback(const int32_t zoneId, const uint32_t streamId);
     bool AudioInterruptIsActiveInFocusList(const int32_t zoneId, const uint32_t incomingStreamId);
     int32_t ActivateAudioInterrupt(
-        const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy = false);
-    int32_t DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
+        const int32_t zoneId, AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy = false);
+    int32_t DeactivateAudioInterrupt(const int32_t zoneId, AudioInterrupt &audioInterrupt);
     void ResetNonInterruptControl(uint32_t streamId);
 
     // zone debug interfaces
@@ -105,6 +105,7 @@ public:
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
     ClientType GetClientTypeByStreamId(int32_t streamId);
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
+    void HandleAppStreamType(AudioInterrupt &audioInterrupt);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;

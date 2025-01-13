@@ -125,7 +125,7 @@ public:
         const int32_t zoneID = 0 /* default value: 0 -- local device */,
         const bool isUpdatedAudioStrategy = false /* default value: false -- is update audio strategy */) = 0;
 
-    virtual int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt,
+    virtual int32_t DeactivateAudioInterrupt(AudioInterrupt &audioInterrupt,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
     virtual int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;

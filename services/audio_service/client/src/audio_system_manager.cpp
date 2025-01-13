@@ -1009,7 +1009,7 @@ int32_t AudioSystemManager::ActivateAudioInterrupt(AudioInterrupt &audioInterrup
     return AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
 }
 
-int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const
+int32_t AudioSystemManager::DeactivateAudioInterrupt(AudioInterrupt &audioInterrupt) const
 {
     AUDIO_DEBUG_LOG("stub implementation");
     return AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
