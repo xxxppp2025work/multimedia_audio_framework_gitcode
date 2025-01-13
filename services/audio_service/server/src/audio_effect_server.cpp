@@ -124,6 +124,7 @@ std::shared_ptr<AudioEffectLibEntry> FindLibrary(const std::string &name,
 
 static bool LoadEffect(const Effect &effect, const std::vector<std::shared_ptr<AudioEffectLibEntry>> &libList)
 {
+    AUDIO_ERR_LOG("andy, call LoadEffect");
     std::shared_ptr<AudioEffectLibEntry> currentLibEntry = FindLibrary(effect.libraryName, libList);
     if (currentLibEntry == nullptr) {
         AUDIO_ERR_LOG("<log error> could not find library %{public}s to load effect %{public}s",

@@ -278,7 +278,7 @@ void AudioServer::InitMaxRendererStreamCntPerUid()
 
 void AudioServer::OnStart()
 {
-    AUDIO_INFO_LOG("OnStart uid:%{public}d", getuid());
+    AUDIO_INFO_LOG("andy, OnStart uid:%{public}d", getuid());
     InitMaxRendererStreamCntPerUid();
     AudioInnerCall::GetInstance()->RegisterAudioServer(this);
     bool res = Publish(this);

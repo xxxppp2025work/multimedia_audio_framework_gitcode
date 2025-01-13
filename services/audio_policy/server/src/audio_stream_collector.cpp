@@ -102,8 +102,8 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::Creat
     return streamMap;
 }
 
-AudioStreamCollector::AudioStreamCollector() : audioSystemMgr_
-    (AudioSystemManager::GetInstance())
+AudioStreamCollector::AudioStreamCollector() : audioAbilityMgr_
+    (AudioAbilityManager::GetInstance())
 {
     audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
     audioConcurrencyService_ = std::make_shared<AudioConcurrencyService>();
@@ -1190,7 +1190,7 @@ void AudioStreamCollector::WriterRenderStreamChangeSysEvent(AudioStreamChangeInf
     AudioStreamType streamType = GetVolumeTypeFromContentUsage(
         streamChangeInfo.audioRendererChangeInfo.rendererInfo.contentType,
         streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage);
-    uint64_t transactionId = audioSystemMgr_->GetTransactionId(
+    uint64_t transactionId = audioAbilityMgr_->GetTransactionId(
         streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceType_, OUTPUT_DEVICE);
 
     uint8_t effectChainType = EFFECT_CHAIN_TYPE_MAP.count(
@@ -1225,7 +1225,7 @@ void AudioStreamCollector::WriterCaptureStreamChangeSysEvent(AudioStreamChangeIn
     bool isOutput = false;
     AudioStreamType streamType = GetStreamTypeFromSourceType(
         streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType);
-    uint64_t transactionId = audioSystemMgr_->GetTransactionId(
+    uint64_t transactionId = audioAbilityMgr_->GetTransactionId(
         streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceType_, INPUT_DEVICE);
 
     uint8_t effectChainType = EFFECT_CHAIN_TYPE_MAP.count(
@@ -1262,7 +1262,7 @@ void AudioStreamCollector::WriteRenderStreamReleaseSysEvent(
 {
     AudioStreamType streamType = GetVolumeTypeFromContentUsage(audioRendererChangeInfo->rendererInfo.contentType,
         audioRendererChangeInfo->rendererInfo.streamUsage);
-    uint64_t transactionId = audioSystemMgr_->GetTransactionId(
+    uint64_t transactionId = audioAbilityMgr_->GetTransactionId(
         audioRendererChangeInfo->outputDeviceInfo.deviceType_, OUTPUT_DEVICE);
 
     uint8_t effectChainType = EFFECT_CHAIN_TYPE_MAP.count(
@@ -1296,7 +1296,7 @@ void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
     const std::shared_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfo)
 {
     AudioStreamType streamType = GetStreamTypeFromSourceType(audioCapturerChangeInfo->capturerInfo.sourceType);
-    uint64_t transactionId = audioSystemMgr_->GetTransactionId(
+    uint64_t transactionId = audioAbilityMgr_->GetTransactionId(
         audioCapturerChangeInfo->inputDeviceInfo.deviceType_, INPUT_DEVICE);
 
     uint8_t effectChainType = EFFECT_CHAIN_TYPE_MAP.count(
