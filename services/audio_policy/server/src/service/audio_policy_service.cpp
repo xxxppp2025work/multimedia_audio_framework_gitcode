@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,7 +21,6 @@
 #include <dlfcn.h>
 #include "iservice_registry.h"
 
-#include "audio_utils.h"
 #include "audio_manager_listener_stub.h"
 #include "parameter.h"
 #include "parameters.h"
@@ -1974,8 +1973,9 @@ bool AudioPolicyService::IsCurrentActiveDeviceA2dp()
 bool AudioPolicyService::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
 {
 #ifdef AVSESSION_ENABLE
+    int32_t bootupMusicUid = 1003;
     // Temporary solution to avoid performance issues
-    if (uid == BOOTUP_MUSIC_UID) {
+    if (uid == bootupMusicUid) {
         return true;
     }
     bool allowed = false;

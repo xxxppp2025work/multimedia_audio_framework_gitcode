@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -483,14 +483,16 @@ static bool UnmarshallEffectChainMgrParam(EffectChainManagerParam &effectChainMg
     effectChainMgrParam.defaultSceneName = data.ReadString();
 
     int32_t containSize = data.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(containSize >= 0 && containSize <= AUDIO_EFFECT_PRIOR_SCENE_UPPER_LIMIT,
+    int32_t audioEffectPriorSceneUpperLimit = 7;
+    CHECK_AND_RETURN_RET_LOG(containSize >= 0 && containSize <= audioEffectPriorSceneUpperLimit,
         false, "Create audio effect priorscene failed, please check log");
     while (containSize--) {
         effectChainMgrParam.priorSceneList.emplace_back(data.ReadString());
     }
 
     containSize = data.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(containSize >= 0 && containSize <= AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT,
+    int32_t audioEffectChainConfigUpperLimit = 64;
+    CHECK_AND_RETURN_RET_LOG(containSize >= 0 && containSize <= audioEffectChainConfigUpperLimit,
         false, "Create audio effect chain name map failed, please check log");
     while (containSize--) {
         string key = data.ReadString();
@@ -499,7 +501,8 @@ static bool UnmarshallEffectChainMgrParam(EffectChainManagerParam &effectChainMg
     }
 
     containSize = data.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(containSize >= 0 && containSize <= AUDIO_EFFECT_COUNT_PROPERTY_UPPER_LIMIT,
+    int32_t audioEffectCountPropertyUpperLimit = 20;
+    CHECK_AND_RETURN_RET_LOG(containSize >= 0 && containSize <= audioEffectCountPropertyUpperLimit,
         false, "Create audio effect default property failed, please check log");
     while (containSize--) {
         string key = data.ReadString();
@@ -515,11 +518,13 @@ int AudioManagerStub::HandleCreateAudioEffectChainManager(MessageParcel &data, M
     vector<EffectChain> effectChains = {};
     vector<int32_t> countEffect = {};
     int32_t countChains = data.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(countChains >= 0 && countChains <= AUDIO_EFFECT_CHAIN_COUNT_UPPER_LIMIT,
+    int32_t audioEffectChainCountUpperLimit = 32;
+    CHECK_AND_RETURN_RET_LOG(countChains >= 0 && countChains <= audioEffectChainCountUpperLimit,
         AUDIO_ERR, "Create audio effect chains failed, invalid countChains");
     for (i = 0; i < countChains; i++) {
         int32_t count = data.ReadInt32();
-        CHECK_AND_RETURN_RET_LOG(count >= 0 && count <= AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT,
+        int32_t audioEffectCountPerChainUpperLimit = 16;
+        CHECK_AND_RETURN_RET_LOG(count >= 0 && count <= audioEffectCountPerChainUpperLimit,
             AUDIO_ERR, "Create audio effect chains failed, effect countChains");
         countEffect.emplace_back(count);
     }

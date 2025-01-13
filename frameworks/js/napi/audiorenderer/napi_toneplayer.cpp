@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,7 +18,6 @@
 
 #include "napi_toneplayer.h"
 
-#include "audio_utils.h"
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
 
@@ -47,7 +46,7 @@ bool NapiTonePlayer::CheckTonePlayerStatus(NapiTonePlayer *napi,
 {
     CHECK_AND_RETURN_RET_LOG(napi != nullptr, false, "napi object is nullptr.");
     if (napi->tonePlayer_ == nullptr) {
-        context->SignError(NAPI_ERR_SYSTEM);
+        context->SignError(NapiAudioError::NAPI_ERR_SYSTEM);
         return false;
     }
     return true;
@@ -130,7 +129,7 @@ napi_value NapiTonePlayer::Construct(napi_env env, napi_callback_info info)
 
     if (napiTonePlayer->tonePlayer_  == nullptr) {
         AUDIO_ERR_LOG("Toneplayer Create failed");
-        NapiTonePlayer::isConstructSuccess_ = NAPI_ERR_PERMISSION_DENIED;
+        NapiTonePlayer::isConstructSuccess_ = NapiAudioError::NAPI_ERR_PERMISSION_DENIED;
     }
 
     status = napi_wrap(env, thisVar, static_cast<void*>(napiTonePlayer.get()),
@@ -177,15 +176,16 @@ napi_value NapiTonePlayer::CreateTonePlayer(napi_env env, napi_callback_info inf
     auto context = std::make_shared<TonePlayerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("CreateTonePlayer failed : no memory");
-        NapiAudioError::ThrowError(env, "CreateTonePlayer failed : no memory", NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "CreateTonePlayer failed : no memory", NapiAudioError::NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NapiAudioError::NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetRendererInfo(env, &context->rendererInfo, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "GetRendererInfo failed",
-            NAPI_ERR_INVALID_PARAM);
+            NapiAudioError::NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
 
@@ -204,21 +204,21 @@ napi_value NapiTonePlayer::CreateTonePlayerSync(napi_env env, napi_callback_info
     napi_value argv[ARGS_ONE] = {};
     napi_status status = NapiParamUtils::GetParam(env, info, argc, argv);
     CHECK_AND_RETURN_RET_LOG((argc == ARGS_ONE) && (status == napi_ok),
-        ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "GetParam failed");
+        ThrowErrorAndReturn(env, NapiAudioError::NAPI_ERR_INPUT_INVALID), "GetParam failed");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_object,
-        ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "valueType invaild");
+        ThrowErrorAndReturn(env, NapiAudioError::NAPI_ERR_INPUT_INVALID), "valueType invaild");
 
     AudioRendererInfo rendererInfo;
 
     CHECK_AND_RETURN_RET_LOG(NapiParamUtils::GetRendererInfo(env, &rendererInfo, argv[PARAM0]) == napi_ok,
-        ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "GetRendererInfo failed");
+        ThrowErrorAndReturn(env, NapiAudioError::NAPI_ERR_INVALID_PARAM), "GetRendererInfo failed");
 
     unique_ptr<AudioRendererInfo> audioRendererInfo = make_unique<AudioRendererInfo>();
     CHECK_AND_RETURN_RET_LOG(audioRendererInfo != nullptr,
-        ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "audioRendererInfo create failed,no memery.");
+        ThrowErrorAndReturn(env, NapiAudioError::NAPI_ERR_NO_MEMORY), "audioRendererInfo create failed,no memery.");
     *audioRendererInfo = rendererInfo;
 
     return NapiTonePlayer::CreateTonePlayerWrapper(env, audioRendererInfo);
@@ -229,17 +229,18 @@ napi_value NapiTonePlayer::Load(napi_env env, napi_callback_info info)
     auto context = std::make_shared<TonePlayerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("Load failed : no memory");
-        NapiAudioError::ThrowError(env, "Load failed : no memory", NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "Load failed : no memory", NapiAudioError::NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NapiAudioError::NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->toneType, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get toneType failed",
-            NAPI_ERR_INVALID_PARAM);
+            NapiAudioError::NAPI_ERR_INVALID_PARAM);
         NAPI_CHECK_ARGS_RETURN_VOID(context, ToneTypeCheck(env, context->toneType), "toneType invaild",
-            NAPI_ERR_INVALID_PARAM);
+            NapiAudioError::NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
 
@@ -252,7 +253,7 @@ napi_value NapiTonePlayer::Load(napi_env env, napi_callback_info info)
             "context object state is error.");
         context->isTrue = napiTonePlayer->tonePlayer_->LoadTone(toneType);
         if (!context->isTrue) {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NapiAudioError::NAPI_ERR_SYSTEM);
         }
     };
     auto complete = [env](napi_value &output) {
@@ -266,7 +267,7 @@ napi_value NapiTonePlayer::Start(napi_env env, napi_callback_info info)
     auto context = std::make_shared<TonePlayerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("Start failed : no memory");
-        NapiAudioError::ThrowError(env, "Start failed : no memory", NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "Start failed : no memory", NapiAudioError::NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -280,7 +281,7 @@ napi_value NapiTonePlayer::Start(napi_env env, napi_callback_info info)
             "context object state is error.");
         context->isTrue = napiTonePlayer->tonePlayer_->StartTone();
         if (!context->isTrue) {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NapiAudioError::NAPI_ERR_SYSTEM);
         }
     };
     auto complete = [env](napi_value &output) {
@@ -294,7 +295,7 @@ napi_value NapiTonePlayer::Stop(napi_env env, napi_callback_info info)
     auto context = std::make_shared<TonePlayerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("Stop failed : no memory");
-        NapiAudioError::ThrowError(env, "Stop failed : no memory", NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "Stop failed : no memory", NapiAudioError::NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -308,7 +309,7 @@ napi_value NapiTonePlayer::Stop(napi_env env, napi_callback_info info)
             "context object state is error.");
         context->isTrue = napiTonePlayer->tonePlayer_->StopTone();
         if (!context->isTrue) {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NapiAudioError::NAPI_ERR_SYSTEM);
         }
     };
     auto complete = [env](napi_value &output) {
@@ -322,7 +323,7 @@ napi_value NapiTonePlayer::Release(napi_env env, napi_callback_info info)
     auto context = std::make_shared<TonePlayerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("Release failed : no memory");
-        NapiAudioError::ThrowError(env, "Release failed : no memory", NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "Release failed : no memory", NapiAudioError::NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -336,7 +337,7 @@ napi_value NapiTonePlayer::Release(napi_env env, napi_callback_info info)
             "context object state is error.");
         context->isTrue = napiTonePlayer->tonePlayer_->Release();
         if (!context->isTrue) {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NapiAudioError::NAPI_ERR_SYSTEM);
         }
     };
     auto complete = [env](napi_value &output) {
