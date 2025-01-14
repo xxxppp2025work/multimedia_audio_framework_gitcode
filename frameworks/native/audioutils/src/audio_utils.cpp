@@ -505,8 +505,7 @@ bool PermissionUtil::NotifyStop(uint32_t targetTokenId, uint32_t sessionId)
     AUDIO_INFO_LOG("Notify PrivacyKit Stop for tokenId:%{public}u sessionId:%{public}u Start!", targetTokenId, sessionId);
     std::unique_lock<std::mutex> lock(g_recordMapMutex);
     if (!g_tokenIdRecordMap.count(targetTokenId)) {
-        AUDIO_INFO_LOG("this TokenId:%{public}u is already not in using,"
-            "no need StopUsingPermission", targetTokenId);
+        AUDIO_INFO_LOG("this TokenId:%{public}u is already not in using", targetTokenId);
         return true;
     }
 
