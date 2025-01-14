@@ -460,7 +460,12 @@ int32_t RendererInClientInner::SetVolume(float volume)
     }
     clientVolume_ = volume;
 
-    return SetInnerVolume(volume);
+    int32_t result =  SetInnerVolume(volume);
+    if (result == SUCCESS) {
+        AudioPolicyManager::GetInstance().SaveAdjustVolumeInfo(volume, sessionId_,
+            ClockTime::GetCurTime(), static_cast<uint32_t>(STREAM_VOLUME_INFO));
+    }
+    return result;
 }
 
 float RendererInClientInner::GetVolume()
@@ -486,6 +491,8 @@ int32_t RendererInClientInner::SetDuckVolume(float volume)
         AUDIO_ERR_LOG("Set Duck failed:%{public}u", ret);
         return ERROR;
     }
+    AudioPolicyManager::GetInstance().SaveAdjustVolumeInfo(volume, sessionId_,
+        ClockTime::GetCurTime(), static_cast<uint32_t>(DUCK_VOLUME_INFO));
     return SUCCESS;
 }
 
@@ -745,7 +752,12 @@ int32_t RendererInClientInner::SetLowPowerVolume(float volume)
     lowPowerVolume_ = volume;
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is null!");
-    return ipcStream_->SetLowPowerVolume(lowPowerVolume_);
+    int result = ipcStream_->SetLowPowerVolume(lowPowerVolume_);
+    if (result == SUCCESS) {
+        AudioPolicyManager::GetInstance().SaveAdjustVolumeInfo(volume, sessionId_,
+            ClockTime::GetCurTime(), static_cast<uint32_t>(LOW_POWER_VOLUME_INFO));
+    }
+    return result;
 }
 
 float RendererInClientInner::GetLowPowerVolume()

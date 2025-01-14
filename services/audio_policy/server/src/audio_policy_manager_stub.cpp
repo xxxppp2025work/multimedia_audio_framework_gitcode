@@ -53,6 +53,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "IS_MICROPHONE_MUTE",
     "SET_CALLBACK",
     "UNSET_CALLBACK",
+    "SAVE_ADJUSTVOLUMEINFO",
     "SET_QUERY_CLIENT_TYPE_CALLBACK",
     "ACTIVATE_INTERRUPT",
     "DEACTIVATE_INTERRUPT",
@@ -247,6 +248,15 @@ void AudioPolicyManagerStub::SetRingerModeInternal(MessageParcel &data, MessageP
     AudioRingerMode rMode = static_cast<AudioRingerMode>(data.ReadInt32());
     int32_t result = SetRingerMode(rMode);
     reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SaveAdjustVolumeInfoInternal(MessageParcel &data, MessageParcel &reply)
+{
+    float volume = data.ReadFloat();
+    uint32_t sessionId = data.ReadUint32();
+    std::string invocationTime = data.ReadString();
+    uint32_t volumeType = data.ReadUint32();
+    SaveAdjustVolumeInfo(volume, sessionId, invocationTime, volumeType);
 }
 
 #ifdef FEATURE_DTMF_TONE
@@ -1687,6 +1697,9 @@ void AudioPolicyManagerStub::OnMiddlesRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_CALLBACK):
             UnsetInterruptCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SAVE_ADJUSTVOLUMEINFO):
+            SaveAdjustVolumeInfoInternal(data, reply);
             break;
         default:
             OnMiddleFirRemoteRequest(code, data, reply, option);

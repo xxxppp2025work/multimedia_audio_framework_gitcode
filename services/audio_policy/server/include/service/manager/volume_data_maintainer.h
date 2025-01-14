@@ -88,6 +88,7 @@ public:
     bool SaveMicMuteState(bool isMute);
     bool GetMicMuteState(bool &isMute);
     bool CheckOsAccountReady();
+    int32_t GetVolumeValue(AudioStreamType streamType);
 
 private:
     VolumeDataMaintainer();

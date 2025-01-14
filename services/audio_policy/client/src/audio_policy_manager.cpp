@@ -1957,6 +1957,16 @@ int32_t AudioPolicyManager::SetVoiceRingtoneMute(bool isMute)
     return gsp->SetVoiceRingtoneMute(isMute);
 }
 
+void AudioPolicyManager::SaveAdjustVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
+    uint32_t VolumeType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
+    }
+    gsp->SaveAdjustVolumeInfo(volume, sessionId, invocationTime, VolumeType);
+}
+
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;

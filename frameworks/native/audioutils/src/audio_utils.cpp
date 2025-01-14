@@ -263,6 +263,24 @@ int32_t ClockTime::RelativeSleep(int64_t nanoTime)
     return ret;
 }
 
+std::string ClockTime::GetCurTime()
+{
+    time_t nowtime = time(NULL);
+    struct tm *localTime = localtime(&nowtime);
+
+    std::string month = std::to_string(1 + localTime->tm_mon);
+    std::string day = std::to_string(localTime->tm_mday);
+    std::string year = std::to_string(1900 + localTime->tm_year);
+    std::string hour = std::to_string(localTime->tm_hour);
+    std::string minute = std::to_string(localTime->tm_min);
+    std::string second = std::to_string(localTime->tm_sec);
+
+    std::string curTime = year + "/" + month + "/" + day + " " +
+                          hour + ":" + minute + ":" + second;
+
+    return curTime;
+}
+
 void Trace::Count(const std::string &value, int64_t count)
 {
 #ifdef FEATURE_HITRACE_METER

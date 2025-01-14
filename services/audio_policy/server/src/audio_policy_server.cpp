@@ -373,6 +373,9 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
             return;
         }
     });
+    audioPolicyService_.SaveVolumeKeyRegistrationInfo(
+        keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP ? "Volume Up" : "Volume Down", ClockTime::GetCurTime(),
+        keySubId, keySubId >= 0 ? true : false);
     if (keySubId < 0) {
         AUDIO_ERR_LOG("key: %{public}s failed", (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
         return ERR_MMI_SUBSCRIBE;
@@ -446,6 +449,9 @@ int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
                 SetStreamMuteInternal(streamInFocus, !isMuted, true);
             }
         });
+    std::string keyType = "mute";
+    audioPolicyService_.SaveVolumeKeyRegistrationInfo(keyType, ClockTime::GetCurTime(),
+        muteKeySubId, muteKeySubId >= 0 ? true : false);
     if (muteKeySubId < 0) {
         AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for mute failed ");
         return ERR_MMI_SUBSCRIBE;
@@ -1164,6 +1170,8 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
 
     int32_t ret = audioPolicyService_.SetSystemVolumeLevel(streamType, volumeLevel);
     if (ret == SUCCESS) {
+        audioPolicyService_.SaveSystemVolumeLevelInfo(streamType, volumeLevel, GetBundleName(),
+            ClockTime::GetCurTime());
         UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute);
         if (updateRingerMode) {
             ProcUpdateRingerMode();
@@ -1421,7 +1429,11 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode)
     }
 
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-    return SetRingerModeInner(ringMode);
+    int32_t result = SetRingerModeInner(ringMode);
+    if (result == SUCCESS) {
+        audioPolicyService_.SaveRingerModeInfo(ringMode, GetBundleName(), ClockTime::GetCurTime());
+    }
+    return result;
 }
 
 int32_t AudioPolicyServer::SetRingerModeInner(AudioRingerMode ringMode)
@@ -3397,6 +3409,12 @@ int32_t AudioPolicyServer::InjectInterruption(const std::string networkId, Inter
     InterruptEventInternal interruptEvent { event.eventType, event.forceType, event.hintType, 0.2f};
     ProcessRemoteInterrupt(sessionIds, interruptEvent);
     return SUCCESS;
+}
+
+void AudioPolicyServer::SaveAdjustVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
+    uint32_t volumeType)
+{
+    audioPolicyService_.SaveAdjustVolumeInfo(volume, sessionId, invocationTime, volumeType);
 }
 
 bool AudioPolicyServer::CheckAudioSessionStrategy(const AudioSessionStrategy &sessionStrategy)

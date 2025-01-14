@@ -457,6 +457,12 @@ public:
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void SubscribeSafeVolumeEvent();
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
+    void SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel, std::string callerName,
+        std::string invocationTime);
+    void SaveAdjustVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime, uint32_t volumeType);
+    void SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName, std::string invocationTime);
+    void SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime, int32_t subscriptionId,
+    bool registrationResult);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

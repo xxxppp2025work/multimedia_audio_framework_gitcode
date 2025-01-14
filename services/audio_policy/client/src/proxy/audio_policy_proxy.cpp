@@ -2247,5 +2247,29 @@ int32_t AudioPolicyProxy::InjectInterruption(const std::string networkId, Interr
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
     return reply.ReadInt32();
 }
+
+void AudioPolicyProxy::SaveAdjustVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
+    uint32_t volumeType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    if (!ret) {
+        AUDIO_ERR_LOG("SaveAdjustVolumeInfo failed");
+    }
+    data.WriteFloat(volume);
+    data.WriteUint32(sessionId);
+    data.WriteString(invocationTime);
+    data.WriteUint32(volumeType);
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SAVE_ADJUSTVOLUMEINFO), data, reply, option);
+    if (error == ERR_NONE) {
+        AUDIO_ERR_LOG("SaveAdjustVolumeInfo failed, error: %{public}d", error);
+    }
+    return;
+}
 } // namespace AudioStandard
 } // namespace OHOS

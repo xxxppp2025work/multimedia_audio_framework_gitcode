@@ -87,6 +87,11 @@ private:
         GlobalConfigs globalConfigs);
     void GetEffectManagerInfo();
     bool IsStreamSupported(AudioStreamType streamType);
+    std::string GetAudioStreamType(AudioStreamType streamType);
+    std::string GetRingerModeType(AudioRingerMode ringerMode);
+    void GetAdjustVolumeDump(std::string &dumpString);
+    void GetRingerModeInfoDump(std::string &dumpString);
+    void AllDeviceVolumeInfoDump(std::string &dumpString);
 private:
     AudioPolicyDump() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioEffectService_(AudioEffectService::GetAudioEffectService()),

@@ -378,6 +378,9 @@ public:
 
     virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) = 0;
 
+    virtual void SaveAdjustVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
+        uint32_t volumeType) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };
