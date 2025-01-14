@@ -1764,5 +1764,33 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_081, TestSize.Level1)
     ret = audioDeviceCommon.GetHasDpFlag();
     EXPECT_EQ(true, ret);
 }
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_082
+* @tc.desc  : Test GetHasDpFlag interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_082, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    bool ret = audioDeviceCommon.hasDpDevice_;
+    EXPECT_EQ(true, ret == audioDeviceCommon.GetHasDpFlag());
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_083
+* @tc.desc  : Test SetHasDpFlag interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_083, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    bool ret = audioDeviceCommon.hasDpDevice_;
+    audioDeviceCommon.SetHasDpFlag(false);
+    EXPECT_EQ(false, audioDeviceCommon.hasDpDevice_);
+    audioDeviceCommon.SetHasDpFlag(true);
+    EXPECT_EQ(true, audioDeviceCommon.hasDpDevice_);
+    audioDeviceCommon.SetHasDpFlag(ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS
