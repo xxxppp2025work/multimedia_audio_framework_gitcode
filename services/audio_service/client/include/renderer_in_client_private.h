@@ -396,6 +396,12 @@ private:
         CAPTURER_MARK_REACHED_EVENT,
     };
 
+    enum {
+        STREAM_VOLUME_INFO = 0,
+        LOW_POWER_VOLUME_INFO,
+        DUCK_VOLUME_INFO,
+    };
+
     // note that the starting elements should remain the same as the enum State
     enum : int64_t {
         HANDLER_PARAM_INVALID = -1,

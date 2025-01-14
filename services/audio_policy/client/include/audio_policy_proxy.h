@@ -362,6 +362,9 @@ public:
 
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
 
+    void SaveAdjustVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
+        uint32_t volumeType) override;
+
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

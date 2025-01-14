@@ -114,6 +114,11 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
         }
         monitorVolume_[sessionId] = {volumeFloat, volumeLevel};
     }
+
+    AUDIO_INFO_LOG("AudioVolume, volumeStream:%{public}f, volumeLevel:%{public}d, volumeSystem:%{public}f,"
+        " volumeFloat%{public}f",
+        volumeStream, volumeLevel, volumeSystem, volumeFloat);
+
     return volumeFloat;
 }
 

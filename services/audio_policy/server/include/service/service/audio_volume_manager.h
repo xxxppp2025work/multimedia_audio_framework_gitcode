@@ -53,6 +53,22 @@ namespace AudioStandard {
 
 using InternalDeviceType = DeviceType;
 
+struct AdjustVolumeInfo {
+    AudioStreamType streamType;
+    int32_t volumeLevel;
+    std::string callerName;
+    float volume;
+    uint32_t sessionId;
+    std::string invocationTime;
+};
+
+struct VolumeKeyEventRegistration {
+    std::string keyType;  // Volume up or down
+    int32_t subscriptionId;
+    std::string registrationTime;
+    bool registrationResult;
+};
+
 class AudioVolumeManager {
 public:
     static AudioVolumeManager& GetInstance()
@@ -95,6 +111,17 @@ public:
     void SetDefaultDeviceLoadFlag(bool isLoad);
     void NotifyVolumeGroup();
     bool GetLoadFlag();
+    void SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel, std::string callerName,
+        std::string invocationTime);
+    void SaveAdjustVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime, uint32_t volumeType);
+    void SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime, int32_t subscriptionId,
+    bool registrationResult);
+    void GetSystemVolumeLevelInfo(std::vector<AdjustVolumeInfo>& systemVolumeLevelInfo);
+    void GetSystemVolumeInfo(std::vector<AdjustVolumeInfo>& StreamVolumeInfo);
+    void GetLowPowerVolumeInfo(std::vector<AdjustVolumeInfo>& lowPowerVolumeInfo);
+    void GetDuckVolumeInfo(std::vector<AdjustVolumeInfo>& duckVolumeInfo);
+    void GetVolumeKeyRegistrationInfo(std::vector<VolumeKeyEventRegistration>& keyRegistrationInfo);
+    std::vector<std::shared_ptr<AllDeviceVolumeInfo>> GetAllDeviceVolumeInfo();
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
@@ -167,6 +194,17 @@ private:
     std::mutex defaultDeviceLoadMutex_;
     std::condition_variable loadDefaultDeviceCV_;
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
+
+    std::shared_ptr<FixedSizeList<AdjustVolumeInfo>> systemVolumeLevelInfo_ =
+        std::make_shared<FixedSizeList<AdjustVolumeInfo>>(MAX_CACHE_AMOUNT);
+    std::shared_ptr<FixedSizeList<AdjustVolumeInfo>> setStreamVolumeInfo_ =
+        std::make_shared<FixedSizeList<AdjustVolumeInfo>>(MAX_CACHE_AMOUNT);
+    std::shared_ptr<FixedSizeList<AdjustVolumeInfo>> setLowPowerVolumeInfo_ =
+        std::make_shared<FixedSizeList<AdjustVolumeInfo>>(MAX_CACHE_AMOUNT);
+    std::shared_ptr<FixedSizeList<AdjustVolumeInfo>> setDuckVolumeInfo_ =
+        std::make_shared<FixedSizeList<AdjustVolumeInfo>>(MAX_CACHE_AMOUNT);
+    std::shared_ptr<FixedSizeList<VolumeKeyEventRegistration>> volumeKeyRegistrations_ =
+        std::make_shared<FixedSizeList<VolumeKeyEventRegistration>>(MAX_CACHE_AMOUNT);
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioA2dpDevice& audioA2dpDevice_;

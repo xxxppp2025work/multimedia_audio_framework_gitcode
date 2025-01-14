@@ -72,6 +72,20 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_ALL
 };
 
+static const std::vector<AudioStreamType> AUDIO_STREAMTYPE_VOLUME_LIST = {
+    STREAM_MUSIC,
+    STREAM_RING,
+    STREAM_SYSTEM,
+    STREAM_NOTIFICATION,
+    STREAM_ALARM,
+    STREAM_DTMF,
+    STREAM_VOICE_CALL,
+    STREAM_VOICE_ASSISTANT,
+    STREAM_ACCESSIBILITY,
+    STREAM_ULTRASONIC,
+    STREAM_WAKEUP,
+};
+
 bool AudioVolumeManager::Init(std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler)
 {
     audioPolicyServerHandler_ = audioPolicyServerHandler;
@@ -977,5 +991,90 @@ void AudioVolumeManager::NotifyVolumeGroup()
     loadDefaultDeviceCV_.notify_all();
 }
 
+std::vector<std::shared_ptr<AllDeviceVolumeInfo>> AudioVolumeManager::GetAllDeviceVolumeInfo()
+{
+    std::vector<std::shared_ptr<AllDeviceVolumeInfo>> allDeviceVolumeInfo_;
+    std::shared_ptr<AllDeviceVolumeInfo> deviceVolumeInfo = nullptr;
+    auto deviceList = audioConnectedDevice_.GetDevicesInner(DeviceFlag::ALL_DEVICES_FLAG);
+    for (auto &device : deviceList) {
+        for (auto &streamType : AUDIO_STREAMTYPE_VOLUME_LIST) {
+            deviceVolumeInfo = audioPolicyManager_.GetAllDeviceVolumeInfo(device->deviceType_, streamType);
+            if (deviceVolumeInfo != nullptr) {
+                allDeviceVolumeInfo_.push_back(deviceVolumeInfo);
+            }
+        }
+    }
+    return allDeviceVolumeInfo_;
+}
+
+void AudioVolumeManager::SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel,
+    std::string callerName, std::string invocationTime)
+{
+    AdjustVolumeInfo systemVolumeLevelInfo;
+    systemVolumeLevelInfo.streamType = streamType;
+    systemVolumeLevelInfo.volumeLevel = volumeLevel;
+    systemVolumeLevelInfo.callerName = callerName;
+    systemVolumeLevelInfo.invocationTime = invocationTime;
+    systemVolumeLevelInfo_->add(systemVolumeLevelInfo);
+}
+
+void AudioVolumeManager::SaveAdjustVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
+    uint32_t volumeType)
+{
+    AdjustVolumeInfo adjustVolumeInfo;
+    adjustVolumeInfo.volume = volume;
+    adjustVolumeInfo.sessionId = sessionId;
+    adjustVolumeInfo.invocationTime = invocationTime;
+    switch (volumeType)
+    {
+        case 0:
+            setStreamVolumeInfo_->add(adjustVolumeInfo);
+            break;
+        case 1:
+            setLowPowerVolumeInfo_->add(adjustVolumeInfo);
+            break;
+        case 2:
+            setDuckVolumeInfo_->add(adjustVolumeInfo);
+            break;
+        default:
+            break;
+    };
+}
+
+void AudioVolumeManager::SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime,
+    int32_t subscriptionId, bool registrationResult)
+{
+    VolumeKeyEventRegistration volumeKeyEventRegistration;
+    volumeKeyEventRegistration.keyType = keyType;
+    volumeKeyEventRegistration.subscriptionId = subscriptionId;
+    volumeKeyEventRegistration.registrationTime = registrationTime;
+    volumeKeyEventRegistration.registrationResult = registrationResult;
+    volumeKeyRegistrations_->add(volumeKeyEventRegistration);
+}
+
+void AudioVolumeManager::GetSystemVolumeLevelInfo(std::vector<AdjustVolumeInfo>& systemVolumeLevelInfo)
+{
+    systemVolumeLevelInfo = systemVolumeLevelInfo_->GetData();
+}
+
+void AudioVolumeManager::GetSystemVolumeInfo(std::vector<AdjustVolumeInfo>& streamVolumeInfo)
+{
+    streamVolumeInfo = setStreamVolumeInfo_->GetData();
+}
+
+void AudioVolumeManager::GetLowPowerVolumeInfo(std::vector<AdjustVolumeInfo>& lowPowerVolumeInfo)
+{
+    lowPowerVolumeInfo = setLowPowerVolumeInfo_->GetData();
+}
+
+void AudioVolumeManager::GetDuckVolumeInfo(std::vector<AdjustVolumeInfo>& duckVolumeInfo)
+{
+    duckVolumeInfo = setDuckVolumeInfo_->GetData();
+}
+
+void AudioVolumeManager::GetVolumeKeyRegistrationInfo(std::vector<VolumeKeyEventRegistration>& keyRegistrationInfo)
+{
+    keyRegistrationInfo = volumeKeyRegistrations_->GetData();
+}
 }
 }

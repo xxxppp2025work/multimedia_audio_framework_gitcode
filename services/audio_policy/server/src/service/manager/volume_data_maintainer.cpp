@@ -185,6 +185,11 @@ int32_t VolumeDataMaintainer::GetStreamVolumeInternal(AudioStreamType streamType
     return volumeLevelMap_[streamForVolumeMap];
 }
 
+int32_t VolumeDataMaintainer::GetVolumeValue(AudioStreamType streamType)
+{
+    return volumeLevelMap_[streamType];
+}
+
 std::unordered_map<AudioStreamType, int32_t> VolumeDataMaintainer::GetVolumeMap()
 {
     std::lock_guard<ffrt::mutex> lock(volumeMutex_);
