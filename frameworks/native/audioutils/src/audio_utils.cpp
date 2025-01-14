@@ -447,8 +447,7 @@ bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
         if (!g_tokenIdRecordMap[targetTokenId].count(sessionId)) {
             g_tokenIdRecordMap[targetTokenId].emplace(sessionId);
         } else {
-            AUDIO_WARNING_LOG("this stream %{public}u is already running,"
-                "no need StartUsingPermission", sessionId);
+            AUDIO_WARNING_LOG("this stream %{public}u is already running, no need call start", sessionId);
         }
     } else {
         Trace trace("PrivacyKit::StartUsingPermission");
