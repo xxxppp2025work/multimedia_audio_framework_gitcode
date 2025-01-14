@@ -479,7 +479,7 @@ bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
     return true;
 }
 
-bool ReNotifyStart(uint32_t targetTokenId, uint32_t &res)
+bool PermissionUtil::ReNotifyStart(uint32_t targetTokenId, uint32_t &res)
 {
     Trace trace("PermissionUtil::ReNotifyStart");
     AUDIO_WARNING_LOG("StopUsingPermission for tokenId:%{public}u when retry StartUsingPermission!", targetTokenId);
