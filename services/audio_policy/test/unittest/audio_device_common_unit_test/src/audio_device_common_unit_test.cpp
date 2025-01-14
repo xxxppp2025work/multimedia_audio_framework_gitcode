@@ -1897,5 +1897,33 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_087, TestSize.Level1)
     audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
     EXPECT_EQ(true, audioDeviceCommon.audioVolumeManager_.IsRingerModeMute());
 }
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_088
+* @tc.desc  : Test GetHasDpFlag interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_088, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    bool ret = audioDeviceCommon.hasDpDevice_;
+    EXPECT_EQ(true, ret == audioDeviceCommon.GetHasDpFlag());
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_089
+* @tc.desc  : Test SetHasDpFlag interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_089, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    bool ret = audioDeviceCommon.hasDpDevice_;
+    audioDeviceCommon.SetHasDpFlag(false);
+    EXPECT_EQ(false, audioDeviceCommon.hasDpDevice_);
+    audioDeviceCommon.SetHasDpFlag(true);
+    EXPECT_EQ(true, audioDeviceCommon.hasDpDevice_);
+    audioDeviceCommon.SetHasDpFlag(ret);
+}  
 } // namespace AudioStandard
 } // namespace OHOS
