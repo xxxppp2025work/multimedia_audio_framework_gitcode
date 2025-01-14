@@ -310,10 +310,10 @@ int32_t AudioA2dpManager::Connect(const std::string &macAddress)
 {
     CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance unavailable");
     BluetoothRemoteDevice virtualDevice = BluetoothRemoteDevice(macAddress);
+    virtualDevice.SetVirtualAutoConnectType(CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG, 0);
     if (MediaBluetoothDeviceManager::IsA2dpBluetoothDeviceConnecting(macAddress)) {
         AUDIO_WARNING_LOG("A2dp device %{public}s is connecting, ignore connect request",
             GetEncryptAddr(macAddress).c_str());
-        virtualDevice.SetVirtualAutoConnectType(CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG, 0);
         return SUCCESS;
     }
     std::vector<std::string> virtualDevices;
@@ -325,7 +325,6 @@ int32_t AudioA2dpManager::Connect(const std::string &macAddress)
     }
     int32_t ret = a2dpInstance_->Connect(virtualDevice);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "A2dp Connect Failed");
-    virtualDevice.SetVirtualAutoConnectType(CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG, 0);
     return SUCCESS;
 }
 
@@ -666,10 +665,10 @@ int32_t AudioHfpManager::Connect(const std::string &macAddress)
 {
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
     BluetoothRemoteDevice virtualDevice = BluetoothRemoteDevice(macAddress);
+    virtualDevice.SetVirtualAutoConnectType(CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG, 0);
     if (HfpBluetoothDeviceManager::IsHfpBluetoothDeviceConnecting(macAddress)) {
         AUDIO_WARNING_LOG("Hfp device %{public}s is connecting, ignore connect request",
             GetEncryptAddr(macAddress).c_str());
-        virtualDevice.SetVirtualAutoConnectType(CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG, 0);
         return SUCCESS;
     }
     std::vector<std::string> virtualDevices;
@@ -681,7 +680,6 @@ int32_t AudioHfpManager::Connect(const std::string &macAddress)
     }
     int32_t ret = hfpInstance_->Connect(virtualDevice);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Hfp Connect Failed");
-    virtualDevice.SetVirtualAutoConnectType(CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG, 0);
     return SUCCESS;
 }
 

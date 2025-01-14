@@ -217,11 +217,10 @@ int32_t AudioRecoveryDevice::SetRenderDeviceForUsage(StreamUsage streamUsage,
 
 int32_t AudioRecoveryDevice::ConnectVirtualDevice(std::shared_ptr<AudioDeviceDescriptor> &selectedDesc)
 {
-    int32_t ret = Bluetooth::AudioA2dpManager::Connect(selectedDesc->macAddress_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "A2dp connect failed");
-    ret = Bluetooth::AudioHfpManager::Connect(selectedDesc->macAddress_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Hfp connect failed");
     AUDIO_INFO_LOG("Connect virtual device[%{public}s]", GetEncryptAddr(selectedDesc->macAddress_).c_str());
+    int32_t retA2dp = Bluetooth::AudioA2dpManager::Connect(selectedDesc->macAddress_);
+    int32_t retHfp = Bluetooth::AudioHfpManager::Connect(selectedDesc->macAddress_);
+    CHECK_AND_RETURN_RET_LOG(retA2dp == SUCCESS || retHfp == SUCCESS, ERROR, "Connect Virtual Device failed");
     return SUCCESS;
 }
 
