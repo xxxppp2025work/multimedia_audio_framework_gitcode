@@ -432,7 +432,7 @@ bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
         int32_t recordRet = Security::AccessToken::PrivacyKit::AddPermissionUsedRecord(
             targetTokenId, MICROPHONE_PERMISSION, 1, 0);
         reguardRecord.CheckCurrTimeout();
-        CHECK_AND_RETURN_RET_LOG(recordRet == 0, false, "AddPermissionUsedRecord for tokenId:%{public}u,"
+        CHECK_AND_RETURN_RET_LOG(recordRet == 0, false, "AddPermissionUsedRecord for tokenId:%{public}u failed,"
             "The PrivacyKit error code:%{public}d", targetTokenId, recordRet);
 
         g_tokenIdRecordMap[targetTokenId] = {sessionId};
@@ -451,7 +451,7 @@ bool PermissionUtil::ReNotifyStart(uint32_t targetTokenId, int32_t &res)
         "The PrivacyKit error code:%{public}d", targetTokenId, stopRet);
         
     AUDIO_WARNING_LOG("Retry StartUsingPermission for tokenId:%{public}u again!", targetTokenId);
-    WatchTimeout guardStart("Security::AccessToken::PrivacyKit::StartUsingPermission:NotifyPrivacy");
+    WatchTimeout guardStart("Security::AccessToken::PrivacyKit::StartUsingPermission:ReNotifyStart");
     res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
     guardStart.CheckCurrTimeout();
     CHECK_AND_RETURN_RET_LOG(res != Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING, false,
