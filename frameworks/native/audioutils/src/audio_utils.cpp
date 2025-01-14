@@ -461,7 +461,7 @@ bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
             AUDIO_WARNING_LOG("The PrivacyKit return ERR_PERMISSION_ALREADY_START_USING,"
                 "Retry StartUsingPermission again");
             CHECK_AND_RETURN_RET_LOG(ReNotifyStart(targetTokenId, res), false,
-                "Retry StartUsingPermission for tokenId:%{public}u failed!", targetTokenId);       
+                "Retry StartUsingPermission for tokenId:%{public}u failed!", targetTokenId);
         }
         CHECK_AND_RETURN_RET_LOG(res == 0, false, "StartUsingPermission for tokenId:%{public}u failed!"
             "The PrivacyKit error code:%{public}d!", targetTokenId, res);
