@@ -440,7 +440,7 @@ std::map<std::uint32_t, std::set<uint32_t>> g_tokenIdRecordMap = {};
 bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
 {
     AudioXCollie audioXCollie("PermissionUtil::NotifyStart", TIME_OUT_SECONDS);
-    AUDIO_INFO_LOG("Notify PrivacyKit Start for tokenId:%{public}u sessionId:%{public}u", 
+    AUDIO_INFO_LOG("Notify PrivacyKit Start for tokenId:%{public}u sessionId:%{public}u Start!", 
         targetTokenId, sessionId);
     std::lock_guard<std::mutex> lock(g_recordMapMutex);
     if (g_tokenIdRecordMap.count(targetTokenId)) {
@@ -502,7 +502,7 @@ bool ReNotifyStart(uint32_t targetTokenId, uint32_t &res)
 bool PermissionUtil::NotifyStop(uint32_t targetTokenId, uint32_t sessionId)
 {
     AudioXCollie audioXCollie("PermissionUtil::NotifyStop", TIME_OUT_SECONDS);
-    AUDIO_INFO_LOG("NotifyStop for tokenId:%{public}u sessionId:%{public}u", targetTokenId, sessionId);
+    AUDIO_INFO_LOG("Notify PrivacyKit Stop for tokenId:%{public}u sessionId:%{public}u Start!", targetTokenId, sessionId);
     std::unique_lock<std::mutex> lock(g_recordMapMutex);
     if (!g_tokenIdRecordMap.count(targetTokenId)) {
         AUDIO_INFO_LOG("this TokenId:%{public}u is already not in using,"
