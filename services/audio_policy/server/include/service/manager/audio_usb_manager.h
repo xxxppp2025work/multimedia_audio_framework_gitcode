@@ -18,6 +18,7 @@
 #include <mutex>
 #include <map>
 #include <vector>
+#include <condition_variable>
 #include "common_event_subscriber.h"
 #include "idevice_status_observer.h"
 
@@ -51,6 +52,9 @@ struct SoundCard {
 struct UsbAudioDevice {
     UsbAddr usbAddr_;
     string name_;
+    uint32_t cardNum_{0};
+    bool isCapturer_{false};
+    bool isPlayer_{false};
     inline bool operator==(const UsbAudioDevice &o) const
     {
         return usbAddr_ == o.usbAddr_;
@@ -69,25 +73,32 @@ public:
     static AudioUsbManager& GetInstance();
     static map<UsbAddr, SoundCard> GetUsbSoundCardMap();
     static vector<UsbAudioDevice> GetUsbAudioDevices();
-    static vector<UsbAudioDevice> GetPlayerDevices();
-    static vector<UsbAudioDevice> GetCapturerDevices();
 
     void Init(IDeviceStatusObserver *observer);
     void Deinit();
     void SubscribeEvent();
 
 private:
-    void HandleUsbAudioDeviceAttach(const UsbAudioDevice &device);
-    void HandleUsbAudioDeviceDetach(const UsbAudioDevice &device);
     void RefreshUsbAudioDevices();
     void NotifyDevice(const UsbAudioDevice &device, const bool isConnected);
+    void StartNotifyThread();
+    void NotifyDevicesLoop(list<pair<UsbAudioDevice, bool>> &origin);
+    void FillToDelete(pair<UsbAudioDevice, bool> &curr, bool IsPrevAttach, set<UsbAddr> &toDelete);
+    void HandleDeviceUpdate(pair<UsbAudioDevice, bool> &p);
+    void PreDeleteDevice(const UsbAddr addr);
+    bool FillUsbAudioDevice(UsbAudioDevice &device);
+    void PushMessageQueue(const UsbAudioDevice &device, const bool isAttach);
+    list<pair<UsbAudioDevice, bool>> WaitMessageQueue();
 
     vector<UsbAudioDevice> audioDevices_;
     map<UsbAddr, SoundCard> soundCardMap_;
     shared_ptr<EventSubscriber> eventSubscriber_{nullptr};
     bool initialized_{false};
+    condition_variable ntCondition_;
+    list<pair<UsbAudioDevice, bool>> messageQueue_;
 
     mutex mutex_;
+    mutex mqMutex_;
     IDeviceStatusObserver *observer_{nullptr};
 };
 
