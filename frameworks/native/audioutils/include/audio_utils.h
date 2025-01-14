@@ -148,6 +148,7 @@ public:
     static bool VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId);
     static bool NotifyStart(uint32_t targetTokenId, uint32_t sessionId);
     static bool NotifyStop(uint32_t targetTokenId, uint32_t sessionId);
+    static bool ReNotifyStart(uint32_t targetTokenId, uint32_t &res);
 };
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
