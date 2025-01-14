@@ -117,6 +117,7 @@ private:
 bool MockIRemoteObject::bExchange = true;
 }
 
+#ifdef FEATURE_FILE_SINK_SOURCE
 /**
 * @tc.name  : Test HandleFourthPartCode API
 * @tc.type  : FUNC
@@ -134,6 +135,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_010, TestSize.Level1)
     auto ret = audioServer->HandleThirdPartCode(format, data, reply, option);
     EXPECT_EQ(AUDIO_ERR, ret);
 }
+#endif
 
 /**
 * @tc.name  : Test HandleFourthPartCode API
