@@ -400,7 +400,7 @@ std::map<std::uint32_t, std::set<uint32_t>> g_tokenIdRecordMap = {};
 bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
 {
     AudioXCollie audioXCollie("PermissionUtil::NotifyStart", TIME_OUT_SECONDS);
-    AUDIO_INFO_LOG("Notify PrivacyKit Start for tokenId:%{public}u sessionId:%{public}u Start!", 
+    AUDIO_INFO_LOG("Notify PrivacyKit Start for tokenId:%{public}u sessionId:%{public}u Start!",
         targetTokenId, sessionId);
     std::lock_guard<std::mutex> lock(g_recordMapMutex);
     if (g_tokenIdRecordMap.count(targetTokenId)) {
@@ -418,9 +418,10 @@ bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
         int32_t res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         guard.CheckCurrTimeout();
         if (res == Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING) {
-            AUDIO_WARNING_LOG("The PrivacyKit return ERR_PERMISSION_ALREADY_START_USING, Retry StartUsingPermission again");
-            CHECK_AND_RETURN_RET_LOG( ReNotifyStart(targetTokenId, res), false,
-                "Retry StartUsingPermission for tokenId:%{public}u failed!", targetTokenId);        
+            AUDIO_WARNING_LOG("The PrivacyKit return ERR_PERMISSION_ALREADY_START_USING,"
+                "Retry StartUsingPermission again");
+            CHECK_AND_RETURN_RET_LOG(ReNotifyStart(targetTokenId, res), false,
+                "Retry StartUsingPermission for tokenId:%{public}u failed!", targetTokenId);       
         }
         CHECK_AND_RETURN_RET_LOG(res == 0, false, "StartUsingPermission for tokenId:%{public}u failed!"
             "The PrivacyKit error code:%{public}d!", targetTokenId, res);
@@ -439,7 +440,7 @@ bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
     return true;
 }
 
-bool PermissionUtil::ReNotifyStart(uint32_t targetTokenId, uint32_t &res)
+bool PermissionUtil::ReNotifyStart(uint32_t targetTokenId, int32_t &res)
 {
     Trace trace("PermissionUtil::ReNotifyStart");
     AUDIO_WARNING_LOG("StopUsingPermission for tokenId:%{public}u when retry StartUsingPermission!", targetTokenId);
@@ -461,7 +462,8 @@ bool PermissionUtil::ReNotifyStart(uint32_t targetTokenId, uint32_t &res)
 bool PermissionUtil::NotifyStop(uint32_t targetTokenId, uint32_t sessionId)
 {
     AudioXCollie audioXCollie("PermissionUtil::NotifyStop", TIME_OUT_SECONDS);
-    AUDIO_INFO_LOG("Notify PrivacyKit Stop for tokenId:%{public}u sessionId:%{public}u Start!", targetTokenId, sessionId);
+    AUDIO_INFO_LOG("Notify PrivacyKit Stop for tokenId:%{public}u sessionId:%{public}u Start!",
+        targetTokenId, sessionId);
     std::unique_lock<std::mutex> lock(g_recordMapMutex);
     if (!g_tokenIdRecordMap.count(targetTokenId)) {
         AUDIO_INFO_LOG("this TokenId:%{public}u is already not in using", targetTokenId);
