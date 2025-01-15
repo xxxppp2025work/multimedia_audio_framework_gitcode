@@ -745,7 +745,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     }
 
     {
-        std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
+        std::lock_guard<std::mutex> lockSilentMode(silentModeAndMixWithOthersMutex_);
         if (!audioStream_->GetSilentModeAndMixWithOthers()) {
             int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
             CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
@@ -1800,6 +1800,8 @@ void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
             break;
         case AUDIO_FLAG_DIRECT:
             rendererInfo_.rendererFlags = AUDIO_FLAG_DIRECT;
+            break;
+        default:
             break;
     }
     if (rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL) {

@@ -62,8 +62,7 @@ public:
     int32_t GetMinVolume(AudioVolumeType volumeType);
     int32_t SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType = DEVICE_TYPE_NONE);
     int32_t IsStreamMute(AudioVolumeType volumeType, bool &isMute);
-    int32_t Init();
-    bool IsAlived();
+
     int32_t GetGroupId();
     int32_t SetRingerModeCallback(const int32_t clientId,
         const std::shared_ptr<AudioRingerModeCallback> &callback);
@@ -85,6 +84,8 @@ public:
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
     float GetMaxAmplitude(const int32_t deviceId);
 private:
+    int32_t InitNetworkIdByGroupId();
+
     int32_t groupId_;
     ConnectType connectType_ = CONNECT_TYPE_LOCAL;
     std::string netWorkId_ = LOCAL_NETWORK_ID;

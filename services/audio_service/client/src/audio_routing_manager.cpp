@@ -39,16 +39,6 @@ int32_t AudioRoutingManager::GetCallingPid()
     return getpid();
 }
 
-int32_t AudioRoutingManager::SetMicStateChangeCallback(
-    const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback)
-{
-    AudioSystemManager* audioSystemManager = AudioSystemManager::GetInstance();
-    std::shared_ptr<AudioGroupManager> groupManager = audioSystemManager->GetGroupManager(DEFAULT_VOLUME_GROUP_ID);
-    CHECK_AND_RETURN_RET_LOG(groupManager != nullptr, ERR_INVALID_PARAM,
-        "setMicrophoneMuteCallback falied, groupManager is null");
-    return groupManager->SetMicStateChangeCallback(callback);
-}
-
 int32_t AudioRoutingManager::GetPreferredOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {

@@ -57,7 +57,6 @@ public:
     virtual ~AudioRoutingManager() = default;
 
     static AudioRoutingManager *GetInstance();
-    int32_t SetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
     int32_t GetPreferredOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     int32_t SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,

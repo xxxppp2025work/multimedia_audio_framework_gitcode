@@ -16,6 +16,7 @@
 #define LOG_TAG "AudioGroupManager"
 #endif
 
+#include <mutex>
 #include "audio_errors.h"
 #include "audio_manager_proxy.h"
 #include "audio_policy_manager.h"
@@ -29,6 +30,51 @@
 namespace OHOS {
 namespace AudioStandard {
 static sptr<IStandardAudioService> g_sProxy = nullptr;
+static std::mutex g_asProxyMutex;
+
+static const sptr<IStandardAudioService> GetAudioServiceProxy()
+{
+    lock_guard<mutex> lock(g_asProxyMutex);
+
+    if (g_sProxy == nullptr) {
+        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "get sa manager failed");
+
+        sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+        CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "get audio sa remote object failed");
+
+        g_sProxy = iface_cast<IStandardAudioService>(object);
+        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, nullptr, "proxy cast failed");
+
+        int32_t res = RegisterDeathRecipient(g_sProxy->AsObject());
+        if (res != SUCCESS) {
+            AUDIO_ERR_LOG("register death recipient failed");
+        }
+    }
+
+    return g_sProxy;
+}
+
+static int32_t RegisterDeathRecipient(sptr<IRemoteObject> object)
+{
+    pid_t pid = 0;
+    pid_t uid = 0;
+    sptr<AudioServerDeathRecipient> deathRecipient = new(std::nothrow) AudioServerDeathRecipient(pid, uid);
+    CHECK_AND_RETURN_RET_LOG(deathRecipient != nullptr, ERROR_NO_MEMORY, "deathRecipient is null");
+    deathRecipient->SetNotifyCb(
+        [] (pid_t pid, pid_t uid) { AudioPolicyManager::AudioServerDied(pid, uid); });
+    CHECK_AND_RETURN_RET_LOG(object->AddDeathRecipient(deathRecipient), ERROR_SYSTEM, "AddDeathRecipient failed");
+    return SUCCESS;
+}
+
+void AudioGroupManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
+{
+    AUDIO_ERR_LOG("audio server die, reset proxy handle");
+
+    lock_guard<mutex> lock(g_asProxyMutex);
+    g_sProxy == nullptr;
+}
+
 AudioGroupManager::AudioGroupManager(int32_t groupId) : groupId_(groupId)
 {
 }
@@ -124,9 +170,6 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
 
 int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
 {
-    if (!IsAlived()) {
-        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "GetMaxVolume service unavailable");
-    }
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=3;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE=" +
             std::to_string(volumeType) + ";";
@@ -254,43 +297,18 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
     return SUCCESS;
 }
 
-int32_t AudioGroupManager::Init()
+int32_t AudioGroupManager::InitNetworkIdByGroupId()
 {
-    // init networkId_
-    std::string netWorkId;
+    std::string netWorkId = LOCAL_NETWORK_ID;
     int32_t ret = AudioPolicyManager::GetInstance().GetNetworkIdByGroupId(groupId_, netWorkId);
-    if (ret == SUCCESS) {
-        netWorkId_ = netWorkId;
-        connectType_ = netWorkId_ == LOCAL_NETWORK_ID ? CONNECT_TYPE_LOCAL : CONNECT_TYPE_DISTRIBUTED;
-        AUDIO_INFO_LOG("AudioGroupManager::init set networkId %{public}s.", netWorkId_.c_str());
-    } else {
-        AUDIO_ERR_LOG("AudioGroupManager::init failed, has no valid group");
-        return ERROR;
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("get networkid failed");
+        return ret;
     }
+    netWorkId_ = netWorkId;
+    connectType_ = (netWorkId_ == LOCAL_NETWORK_ID) ? CONNECT_TYPE_LOCAL : CONNECT_TYPE_DISTRIBUTED;
 
-    // init g_sProxy
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    CHECK_AND_RETURN_RET_LOG(samgr != nullptr, ERROR, "AudioSystemManager::init failed");
-
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "AudioSystemManager::object is NULL.");
-    g_sProxy = iface_cast<IStandardAudioService>(object);
-    if (g_sProxy == nullptr) {
-        AUDIO_DEBUG_LOG("AudioSystemManager::init g_sProxy is NULL.");
-        return ERROR;
-    } else {
-        AUDIO_DEBUG_LOG("AudioSystemManager::init g_sProxy is assigned.");
-        return SUCCESS;
-    }
-}
-
-bool AudioGroupManager::IsAlived()
-{
-    if (g_sProxy == nullptr) {
-        Init();
-    }
-
-    return (g_sProxy != nullptr) ? true : false;
+    return SUCCESS;
 }
 
 int32_t AudioGroupManager::GetGroupId()
