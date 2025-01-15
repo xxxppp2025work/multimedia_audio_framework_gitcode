@@ -48,7 +48,11 @@ public:
 
     virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel) = 0;
 
+    virtual int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel) = 0;
+
     virtual int32_t GetSystemVolumeLevel(AudioStreamType streamType) = 0;
+
+    virtual int32_t GetAppVolumeLevel(int32_t appUid) = 0;
 
     virtual int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType) = 0;
 

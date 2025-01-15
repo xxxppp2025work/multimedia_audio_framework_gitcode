@@ -258,6 +258,19 @@ bool AudioPolicyServerHandler::SendRingerModeUpdatedCallback(const AudioRingerMo
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendAppVolumeChangeCallback(int32_t appUid, const VolumeEvent &volumeEvent)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->appUid = appUid;
+    eventContextObj->volumeEvent = volumeEvent;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::APP_VOLUME_CHANGE_EVENT,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send RINGER_MODEUPDATE_EVENT event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendMicStateUpdatedCallback(const MicStateChangeEvent &micStateChangeEvent)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -732,6 +745,28 @@ void AudioPolicyServerHandler::HandleFocusInfoChangeEvent(const AppExecFwk::Inne
             it->second->OnAudioFocusInfoChange(eventContextObj->focusInfoList);
         }
     }
+}
+
+void AudioPolicyServerHandler::HandleAppVolumeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        sptr<IAudioPolicyClient> appVolumeChangeListenerCb = it->second;
+        if (appVolumeChangeListenerCb == nullptr) {
+            AUDIO_ERR_LOG("appVolumeChangeListenerCb nullptr for client %{public}d", it->first);
+            continue;
+        }
+        
+        AUDIO_INFO_LOG("appVolumeChangeListenerCb client %{public}d :volumeMode %{public}d :appUid%{public}d",
+            it->first, static_cast<int32_t>(eventContextObj->volumeEvent.volumeMode), eventContextObj->appUid);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_APP_VOLUME_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_APP_VOLUME_CHANGE]) {
+            appVolumeChangeListenerCb->OnAppVolumeChanged(eventContextObj->appUid, eventContextObj->volumeEvent);
+        }    
+    }   
 }
 
 void AudioPolicyServerHandler::HandleRingerModeUpdatedEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -1306,6 +1341,8 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
         case EventAudioServerCmd::HEAD_TRACKING_ENABLED_CHANGE:
             HandleHeadTrackingEnabledChangeEvent(event);
             break;
+        case EventAudioServerCmd::APP_VOLUME_CHANGE_EVENT:
+            HandleAppVolumeChangeEvent(event);
         default:
             break;
     }

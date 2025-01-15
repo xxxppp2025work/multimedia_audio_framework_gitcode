@@ -50,14 +50,44 @@ public:
     virtual void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) = 0;
 };
 
+class AudioManagerVolumeChangeCallback {
+public:
+    virtual ~AudioManagerVolumeChangeCallback() = default;
+    /**
+     * Called when the volume level changes
+     *
+     * @param appUid indicate witch App volume change.
+     * @param 
+     */
+    virtual void OnMicStateUpdated(const int32_t appUid, const ) = 0;
+};
+
+class AudioManagerAppVolumeChangeCallback {
+public:
+    virtual ~AudioManagerAppVolumeChangeCallback() = default;
+    /**
+     * Called when the App volume changes
+     *
+     * @param event volume change Information.
+     */
+    virtual void OnAppVolumeChangedForUid(const VolumeEvent &event) = 0;
+    virtual void OnSelfAppVolumeChanged(const VolumeEvent &event) = 0;
+};
+
 class AudioGroupManager {
 public:
     AudioGroupManager(int32_t groupId);
     virtual ~AudioGroupManager();
 
     int32_t SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t flag = 0);
+    int32_t SetAppVolume(int32_t appUid, int32_t volume, int32_t flag = 0);
+    int32_t SetSelfAppVolume(int32_t volume, int32_t flag = 0);
+    int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t flag = 0);
+    bool IsAppVolumeMute(int32_t appUid, bool owned);
     AudioStreamType GetActiveVolumeType(const int32_t clientUid);
     int32_t GetVolume(AudioVolumeType volumeType);
+    int32_t GetAppVolume(int32_t appUid);
+    int32_t GetSelfAppVolume();
     int32_t GetMaxVolume(AudioVolumeType volumeType);
     int32_t GetMinVolume(AudioVolumeType volumeType);
     int32_t SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType = DEVICE_TYPE_NONE);
@@ -67,6 +97,10 @@ public:
     int32_t GetGroupId();
     int32_t SetRingerModeCallback(const int32_t clientId,
         const std::shared_ptr<AudioRingerModeCallback> &callback);
+    int32_t SetAppVolumeCallbackForUid(const int32_t appUid,
+        const std::shared_ptr<AudioManagerVolumeChangeCallback> &callback);
+    int32_t SetSelfAppVolumeCallback(
+        const std::shared_ptr<AudioManagerVolumeChangeCallback> &callback);
     int32_t UnsetRingerModeCallback(const int32_t clientId) const;
     int32_t UnsetRingerModeCallback(const int32_t clientId,
         const std::shared_ptr<AudioRingerModeCallback> &callback) const;

@@ -244,6 +244,20 @@ size_t AudioPolicyClientStubImpl::GetMicrophoneBlockedCallbackSize() const
     return microphoneBlockedCallbackList_.size();
 }
 
+int32_t AudioPolicyClientStubImpl::AddSelfAppVolumeChangeCallback(int32_t appUid
+    const std::shared_ptr<AudioManagerVolumeChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(selfAppVolumeChangeMutex_);
+    selfAppVolumeChangeCallbackMap_[appUid] = cb;
+}
+
+int32_t AudioPolicyClientStubImpl::AddAppVolumeChangeForUidCallback(const int32_t appUid,
+    const std::shared_ptr<AudioManagerVolumeChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(appVolumeChangeForUidMutex_);
+    appVolumeChangeForUidCallbackMap_[appUid] = cb;
+}
+
 int32_t AudioPolicyClientStubImpl::AddRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(ringerModeMutex_);
@@ -284,6 +298,29 @@ void AudioPolicyClientStubImpl::OnRingerModeUpdated(const AudioRingerMode &ringe
     for (auto it = ringerModeCallbackList_.begin(); it != ringerModeCallbackList_.end(); ++it) {
         (*it)->OnRingerModeUpdated(ringerMode);
     }
+}
+
+void AudioPolicyClientStubImpl::OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent)
+{
+    {
+        std::lock_guard<std::mutex> lockCbMap(appVolumeChangeForUidMutex_);
+        auto it = appVolumeChangeForUidCallbackMap_.find(appUid);
+        if (it == appVolumeChangeForUidCallbackMap_.end()) {
+            AUDIO_WARNING_LOG("OnAppVolumeChangedForUid find appUid failed");
+            return;
+        }
+        it->second->OnAppVolumeChangedForUid(volumeEvent);
+    }
+    {
+        std::lock_guard<std::mutex> lockCbMap(selfAppVolumeChangeMutex_);
+        auto it = selfAppVolumeChangeCallbackMap_.find(appUid);
+        if (it == selfAppVolumeChangeCallbackMap_.end()) {
+            AUDIO_WARNING_LOG("OnSelfAppVolumeChanged find appUid failed");
+            return;
+        }
+        it->second->OnSelfAppVolumeChanged(volumeEvent);
+    }
+
 }
 
 int32_t AudioPolicyClientStubImpl::AddAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &cb)
