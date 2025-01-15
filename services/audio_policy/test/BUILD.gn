@@ -528,8 +528,11 @@ ohos_unittest("audio_socket_thread_unit_test") {
     "samgr:samgr_proxy",
   ]
 
-  sources =
-      [ "./unittest/audio_socket_thread_test/src/audio_socket_thread_test.cpp" ]
+  if (audio_framework_feature_wired_audio) {
+    sources = [
+      "./unittest/audio_socket_thread_test/src/audio_socket_thread_test.cpp",
+    ]
+  }
 
   deps = [ "../../audio_policy:audio_policy_service_static" ]
 }
