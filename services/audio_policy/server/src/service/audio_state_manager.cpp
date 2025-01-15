@@ -58,11 +58,13 @@ void AudioStateManager::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     if (audioDevUsage == MEDIA_OUTPUT_DEVICES) {
         lock_guard<shared_mutex> lock(mediaExcludedDevicesMutex_);
         for (const auto &desc : audioDeviceDescriptors) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
             mediaExcludedDevices_.insert(desc);
         }
     } else if (audioDevUsage == CALL_OUTPUT_DEVICES) {
         lock_guard<shared_mutex> lock(callExcludedDevicesMutex_);
         for (const auto &desc : audioDeviceDescriptors) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
             callExcludedDevices_.insert(desc);
         }
     }
@@ -74,11 +76,13 @@ void AudioStateManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     if (audioDevUsage == MEDIA_OUTPUT_DEVICES) {
         lock_guard<shared_mutex> lock(mediaExcludedDevicesMutex_);
         for (const auto &desc : audioDeviceDescriptors) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
             mediaExcludedDevices_.erase(desc);
         }
     } else if (audioDevUsage == CALL_OUTPUT_DEVICES) {
         lock_guard<shared_mutex> lock(callExcludedDevicesMutex_);
         for (const auto &desc : audioDeviceDescriptors) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
             callExcludedDevices_.erase(desc);
         }
     }
@@ -147,6 +151,7 @@ void AudioStateManager::UpdatePreferredRecordCaptureDeviceConnectState(ConnectSt
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedOutputDevices(AudioDeviceUsage usage)
 {
+    vector<shared_ptr<AudioDeviceDescriptor>> devices;
     if (usage == MEDIA_OUTPUT_DEVICES) {
         shared_lock<shared_mutex> lock(mediaExcludedDevicesMutex_);
         for (const auto &desc : mediaExcludedDevices_) {
@@ -158,10 +163,9 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedOutputDe
         for (const auto &desc : callExcludedDevices_) {
             devices.push_back(make_shared<AudioDeviceDescriptor>(*desc));
         }
-        return devices;
     }
 
-    return {};
+    return devices;
 }
 
 bool AudioStateManager::IsExcludedDevice(AudioDeviceUsage audioDevUsage,

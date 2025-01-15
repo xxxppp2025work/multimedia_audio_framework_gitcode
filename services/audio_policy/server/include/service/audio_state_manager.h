@@ -16,6 +16,8 @@
 #ifndef ST_AUDIO_STATE_MANAGER_H
 #define ST_AUDIO_STATE_MANAGER_H
 
+#include <set>
+#include <shared_mutex>
 #include "audio_system_manager.h"
 
 namespace OHOS {
@@ -90,8 +92,8 @@ private:
     std::shared_ptr<AudioDeviceDescriptor> preferredRecordCaptureDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredToneRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
 
-    set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptorComparer> mediaExcludedDevices_;
-    set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptorComparer> callExcludedDevices_;
+    set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptor::AudioDeviceDescriptorComparer> mediaExcludedDevices_;
+    set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptor::AudioDeviceDescriptorComparer> callExcludedDevices_;
 
     std::mutex mutex_;
     shared_mutex mediaExcludedDevicesMutex_;

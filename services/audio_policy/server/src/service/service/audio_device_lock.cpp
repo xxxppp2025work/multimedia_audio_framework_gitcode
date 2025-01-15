@@ -486,7 +486,7 @@ int32_t AudioDeviceLock::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetExcludedOutputDevices(
     AudioDeviceUsage audioDevUsage)
 {
-    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
+    std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
     return audioStateManager_.GetExcludedOutputDevices(audioDevUsage);
 }
 

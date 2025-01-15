@@ -423,6 +423,10 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
                 std::make_shared<AudioDeviceDescriptor>());
         }
     }
+
+    audioRecoveryDevice_.UnExcludeOutputDevicesInner(MEDIA_OUTPUT_DEVICES, descForCb);
+    audioRecoveryDevice_.UnExcludeOutputDevicesInner(CALL_OUTPUT_DEVICES, descForCb);
+
     audioConnectedDevice_.DelConnectedDevice(updatedDesc.networkId_, updatedDesc.deviceType_,
         updatedDesc.macAddress_, updatedDesc.deviceRole_);
 
@@ -483,6 +487,8 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>());
     }
+    audioRecoveryDevice_.UnExcludeOutputDevicesInner(MEDIA_OUTPUT_DEVICES, descForCb);
+    audioRecoveryDevice_.UnExcludeOutputDevicesInner(CALL_OUTPUT_DEVICES, descForCb);
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForInputDevice(

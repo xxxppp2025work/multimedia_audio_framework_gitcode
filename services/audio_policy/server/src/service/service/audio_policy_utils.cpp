@@ -560,5 +560,28 @@ std::string AudioPolicyUtils::GetDevicesStr(const vector<shared_ptr<AudioDeviceD
     }
     return devices;
 }
+
+AudioDeviceUsage AudioPolicyUtils::GetAudioDeviceUsageByStreamUsage(StreamUsage streamUsage)
+{
+    switch (streamUsage) {
+        case AudioStreamUsage::AUDIO_STREAM_USAGE_VOICE_COMMUNICATION:
+        case AudioStreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
+        case AudioStreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
+            return CALL_OUTPUT_DEVICES;
+        default:
+            return MEDIA_OUTPUT_DEVICES;
+    }
+}
+
+PreferredType AudioPolicyUtils::GetPreferredTypeByStreamUsage(StreamUsage streamUsage)
+{
+    switch (streamUsage) {
+        case AudioStreamUsage::AUDIO_STREAM_USAGE_VOICE_COMMUNICATION:
+        case AudioStreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
+        case AudioStreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
+            return AUDIO_CALL_RENDER;
+        default:
+            return AUDIO_MEDIA_RENDER;
+    }
 }
 }

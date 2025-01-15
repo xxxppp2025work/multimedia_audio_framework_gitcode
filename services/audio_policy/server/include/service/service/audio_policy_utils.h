@@ -73,6 +73,9 @@ public:
     DeviceRole GetDeviceRole(AudioPin pin) const;
     DeviceType GetDeviceType(const std::string &deviceName);
     std::string GetDevicesStr(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+
+    AudioDeviceUsage GetAudioDeviceUsageByStreamUsage(StreamUsage streamUsage);
+    PreferredType GetPreferredTypeByStreamUsage(StreamUsage streamUsage);
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),

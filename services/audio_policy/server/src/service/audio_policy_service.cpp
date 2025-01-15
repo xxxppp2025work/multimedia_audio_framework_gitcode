@@ -411,6 +411,7 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
 int32_t AudioPolicyService::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
+    Trace trace("AudioPolicyService::ExcludeOutputDevices");
     return audioDeviceLock_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
 

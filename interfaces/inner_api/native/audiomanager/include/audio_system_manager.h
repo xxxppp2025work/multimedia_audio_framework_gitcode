@@ -604,7 +604,7 @@ public:
      * @since 16
      */
     int32_t ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) const;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
 
     /**
      * @brief Unexclude the audio output device according to the DeviceUsage.
@@ -616,7 +616,7 @@ public:
      * @since 16
      */
     int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) const;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
     
     /**
      * @brief Get the list of excluded audio output devices according to the DeviceUsage.

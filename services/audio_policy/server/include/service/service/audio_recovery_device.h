@@ -36,6 +36,7 @@
 #include "audio_scene_manager.h"
 #include "audio_a2dp_offload_manager.h"
 #include "audio_capturer_session.h"
+#include "audio_state_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -58,6 +59,8 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    int32_t UnexcludeOutputDevicesInner(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
 private:
     AudioRecoveryDevice() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
@@ -67,7 +70,8 @@ private:
         audioRouteMap_(AudioRouteMap::GetInstance()),
         audioConnectedDevice_(AudioConnectedDevice::GetInstance()),
         audioDeviceCommon_(AudioDeviceCommon::GetInstance()),
-        audioCapturerSession_(AudioCapturerSession::GetInstance()) {}
+        audioCapturerSession_(AudioCapturerSession::GetInstance()),
+        audioStateManager_(AudioStateManager::GetAudioStateManager()) {}
     ~AudioRecoveryDevice() {}
     int32_t HandleRecoveryPreferredDevices(int32_t preferredType, int32_t deviceType,
         int32_t usageOrSourceType);
@@ -100,6 +104,7 @@ private:
     AudioConnectedDevice& audioConnectedDevice_;
     AudioDeviceCommon& audioDeviceCommon_;
     AudioCapturerSession& audioCapturerSession_;
+    AudioStateManager &audioStateManager_;
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
 };
 }
