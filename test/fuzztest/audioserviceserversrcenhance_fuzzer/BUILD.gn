@@ -77,5 +77,8 @@ ohos_fuzztest("AudioServiceServerSrcEnhanceFuzzTest") {
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":AudioServiceServerSrcEnhanceFuzzTest" ]
+  deps = []
+  if (audio_framework_feature_low_latency) {
+    deps += [ ":AudioServiceServerSrcEnhanceFuzzTest" ]
+  }
 }
