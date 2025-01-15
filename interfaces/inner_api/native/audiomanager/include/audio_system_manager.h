@@ -972,7 +972,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const;
+    int32_t DeactivateAudioInterrupt(AudioInterrupt &audioInterrupt) const;
 
     /**
      * @brief registers the Interrupt callback listener

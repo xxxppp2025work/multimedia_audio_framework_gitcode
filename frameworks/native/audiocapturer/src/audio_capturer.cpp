@@ -550,7 +550,7 @@ bool AudioCapturerPrivate::Start() const
     bool result = audioStream_->StartAudioStream();
     if (!result) {
         AUDIO_ERR_LOG("Start audio stream failed");
-        ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+        ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
         if (ret != 0) {
             AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
         }
@@ -586,9 +586,10 @@ bool AudioCapturerPrivate::Pause() const
     Trace trace("AudioCapturer::Pause");
     AUDIO_INFO_LOG("StreamClientState for Capturer::Pause. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
-
+    
+    AudioInterrupt audioInterrupt = audioInterrupt_;
     // When user is intentionally pausing , Deactivate to remove from audio focus info list
-    int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+    int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
     if (ret != 0) {
         AUDIO_WARNING_LOG("AudioRenderer: DeactivateAudioInterrupt Failed");
     }
@@ -606,7 +607,8 @@ bool AudioCapturerPrivate::Stop() const
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
     WriteOverflowEvent();
-    int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+    AudioInterrupt audioInterrupt = audioInterrupt_;
+    int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
     if (ret != 0) {
         AUDIO_WARNING_LOG("AudioCapturer: DeactivateAudioInterrupt Failed");
     }

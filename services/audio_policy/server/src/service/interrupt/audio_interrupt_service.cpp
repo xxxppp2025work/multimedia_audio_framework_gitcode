@@ -627,8 +627,19 @@ bool AudioInterruptService::AudioInterruptIsActiveInFocusList(const int32_t zone
     return false;
 }
 
+void AudioInterruptService::HandleAppStreamType(AudioInterrupt &audioInterrupt)
+{
+    if (GetClientTypeByStreamId(audioInterrupt.streamId) != CLIENT_TYPE_GAME) {
+        return;
+    }
+    if (audioInterrupt.audioFocusType.streamType == STREAM_MUSIC) {
+        AUDIO_INFO_LOG("game create STREAM_MUSIC, turn into STREAM_GAME");
+        audioInterrupt.audioFocusType.streamType = STREAM_GAME;
+    }
+}
+
 int32_t AudioInterruptService::ActivateAudioInterrupt(
-    const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy)
+    const int32_t zoneId, AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy)
 {
     AudioXCollie audioXCollie("AudioInterruptService::ActivateAudioInterrupt", INTERRUPT_SERVICE_TIMEOUT,
         [](void *) {
@@ -636,6 +647,7 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(mutex_);
 
+    HandleAppStreamType(audioInterrupt);
     AudioStreamType streamType = audioInterrupt.audioFocusType.streamType;
     uint32_t incomingStreamId = audioInterrupt.streamId;
     AUDIO_INFO_LOG("streamId: %{public}u pid: %{public}d streamType: %{public}d "\
@@ -687,14 +699,14 @@ void AudioInterruptService::ResetNonInterruptControl(uint32_t streamId)
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
-int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt)
+int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, AudioInterrupt &audioInterrupt)
 {
     AudioXCollie audioXCollie("AudioInterruptService::DeactivateAudioInterrupt", INTERRUPT_SERVICE_TIMEOUT,
         [](void *) {
             AUDIO_ERR_LOG("DeactivateAudioInterrupt timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::lock_guard<std::mutex> lock(mutex_);
-
+    HandleAppStreamType(audioInterrupt);
     AUDIO_INFO_LOG("streamId: %{public}u pid: %{public}d streamType: %{public}d "\
         "usage: %{public}d source: %{public}d",
         audioInterrupt.streamId, audioInterrupt.pid, (audioInterrupt.audioFocusType).streamType,

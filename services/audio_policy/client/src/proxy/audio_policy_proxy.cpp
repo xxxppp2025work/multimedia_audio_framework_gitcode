@@ -738,7 +738,7 @@ int32_t AudioPolicyProxy::ActivateAudioInterrupt(
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
+int32_t AudioPolicyProxy::DeactivateAudioInterrupt(AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
     MessageParcel data;
     MessageParcel reply;
