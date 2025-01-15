@@ -22,6 +22,9 @@
 extern "C" {
 #endif
 
+const uint32_t SOUND_POOL_FADE_IN_MS = 5;
+const uint32_t SOUND_POOL_FADE_OUT_MS = 5;
+
 enum FadePauseState {
     NO_FADE,
     DO_FADE,

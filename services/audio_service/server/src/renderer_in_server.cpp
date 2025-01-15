@@ -531,6 +531,7 @@ int32_t RendererInServer::WriteData()
         }
         if (processConfig_.streamType != STREAM_ULTRASONIC) {
             if (currentReadFrame + spanSizeInFrame_ == currentWriteFrame) {
+                // if soundpool xxx
                 DoFadingOut(bufferDesc);
             }
         }

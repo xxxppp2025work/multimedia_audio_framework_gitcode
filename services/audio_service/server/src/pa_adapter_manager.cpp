@@ -648,8 +648,11 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
 
 int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec)
 {
-    uint32_t tlength = 4; // 4 is tlength of playback
-    uint32_t maxlength = 4; // 4 is max buffer length of playback
+    // uint32_t tlength = 4; // 4 is tlength of playback
+    // uint32_t maxlength = 4; // 4 is max buffer length of playback
+    // if soundpool
+    uint32_t tlength = 2; // 4 is tlength of playback
+    uint32_t maxlength = 2; // 4 is max buffer length of playback
     uint32_t prebuf = 1; // 1 is prebuf of playback
 
     if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
