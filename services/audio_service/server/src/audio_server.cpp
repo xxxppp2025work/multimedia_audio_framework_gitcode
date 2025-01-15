@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -37,7 +37,6 @@
 #include "parameters.h"
 
 #include "audio_capturer_source.h"
-#include "fast_audio_capturer_source.h"
 #include "bluetooth_capturer_source.h"
 #include "audio_errors.h"
 #include "audio_common_log.h"
@@ -50,13 +49,19 @@
 #include "i_audio_capturer_source.h"
 #include "i_audio_renderer_sink.h"
 #include "audio_renderer_sink.h"
-#include "fast_audio_renderer_sink.h"
 #include "i_standard_audio_server_manager_listener.h"
 #include "playback_capturer_manager.h"
 #include "config/audio_param_parser.h"
 #include "media_monitor_manager.h"
 #include "offline_stream_in_server.h"
 #include "audio_dump_pcm.h"
+
+#ifdef SUPPORT_LOWDELAY
+#include "fast_audio_renderer_sink.h"
+#include "fast_audio_capturer_source.h"
+#else
+#include "audio_info.h"
+#endif
 
 #define PA
 #ifdef PA
@@ -181,6 +186,7 @@ static std::string GetField(const std::string &src, const char* field, const cha
     return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
 }
 
+#ifdef SUPPORT_LOWDELAY
 static void UpdateArmInstance(IAudioCapturerSource *&audioCapturerSourceInstance,
     IAudioRendererSink *&audioRendererSinkInstance)
 {
@@ -190,6 +196,7 @@ static void UpdateArmInstance(IAudioCapturerSource *&audioCapturerSourceInstance
     CHECK_AND_RETURN_LOG(primarySink, "primarySink is nullptr");
     primarySink->ResetOutputRouteForDisconnect(DEVICE_TYPE_NONE);
 }
+#endif
 
 class CapturerStateOb final : public ICapturerStateCallback {
 public:
@@ -898,6 +905,7 @@ int32_t AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> 
 int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
     BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName)
 {
+#ifdef SUPPORT_LOWDELAY
     IAudioCapturerSource *audioCapturerSourceInstance;
     IAudioRendererSink *audioRendererSinkInstance;
     if (type == DEVICE_TYPE_USB_ARM_HEADSET) {
@@ -943,6 +951,7 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         AUDIO_ERR_LOG("SetIORoutes invalid device flag");
         return ERR_INVALID_PARAM;
     }
+#endif
     return SUCCESS;
 }
 
@@ -1381,6 +1390,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
         return remoteObject;
     }
 
+#ifdef SUPPORT_LOWDELAY
     sptr<IAudioProcess> process = AudioService::GetInstance()->GetAudioProcess(config);
     if (process == nullptr) {
         if (config.audioMode == AUDIO_MODE_PLAYBACK) {
@@ -1392,6 +1402,10 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
     AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
     sptr<IRemoteObject> remoteObject= process->AsObject();
     return remoteObject;
+#else
+    AUDIO_ERR_LOG("GetAudioProcess failed.");
+    return nullptr;
+#endif
 }
 
 sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode)
@@ -1805,6 +1819,7 @@ int32_t AudioServer::SetSupportStreamUsage(std::vector<int32_t> usage)
 
 void AudioServer::RegisterAudioCapturerSourceCallback()
 {
+#ifdef SUPPORT_LOWDELAY
     IAudioCapturerSource* audioCapturerSourceWakeupInstance =
         IAudioCapturerSource::GetInstance("primary", nullptr, SOURCE_TYPE_WAKEUP);
     if (audioCapturerSourceWakeupInstance != nullptr) {
@@ -1832,10 +1847,12 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
                 }));
         }
     }
+#endif
 }
 
 void AudioServer::RegisterAudioRendererSinkCallback()
 {
+#ifdef SUPPORT_LOWDELAY
     // Only watch primary and fast sink for now, watch other sinks later.
     IAudioRendererSink *primarySink = IAudioRendererSink::GetInstance("primary", "");
     IAudioRendererSink *usbSink = IAudioRendererSink::GetInstance("usb", "");
@@ -1848,6 +1865,7 @@ void AudioServer::RegisterAudioRendererSinkCallback()
     IAudioRendererSink *a2dpFastSink = IAudioRendererSink::GetInstance("a2dp_fast", "");
     IAudioRendererSink *fastSink = FastAudioRendererSink::GetInstance();
     IAudioRendererSink *fastVoipSink = FastAudioRendererSink::GetVoipInstance();
+
     for (auto sinkInstance : {
         primarySink,
         usbSink,
@@ -1865,6 +1883,7 @@ void AudioServer::RegisterAudioRendererSinkCallback()
             sinkInstance->RegisterAudioSinkCallback(this);
         }
     }
+#endif
 }
 
 int32_t AudioServer::SetCaptureSilentState(bool state)
@@ -1955,9 +1974,11 @@ float AudioServer::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType)
 
 void AudioServer::ResetAudioEndpoint()
 {
+#ifdef SUPPORT_LOWDELAY
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "Refused for %{public}d", callingUid);
     AudioService::GetInstance()->ResetAudioEndpoint();
+#endif
 }
 
 void AudioServer::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
