@@ -40,10 +40,14 @@ ohos_shared_library("audio_utils") {
     "./src/audio_performance_monitor.cpp",
     "./src/audio_speed.cpp",
     "./src/audio_utils.cpp",
+    "./src/audio_xml_parser.cpp",
     "./src/volume_ramp.cpp",
   ]
 
-  public_external_deps = [ "bounds_checking_function:libsec_shared" ]
+  public_external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "libxml2:libxml2",
+  ]
 
   external_deps = [
     "access_token:libaccesstoken_sdk",

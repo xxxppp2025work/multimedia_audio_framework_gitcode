@@ -17,11 +17,11 @@
 #endif
 
 #include "audio_converter_parser.h"
-#include <libxml/tree.h>
 #ifdef USE_CONFIG_POLICY
 #endif
 
 #include "media_monitor_manager.h"
+#include "audio_xml_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -103,28 +103,9 @@ static void WriteConverterConfigError()
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-static void ParseEffectConfigFile(xmlDoc* &doc)
-{
-    AUDIO_INFO_LOG("use default audio effect config file path: %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
-    doc = xmlReadFile(AUDIO_CONVERTER_CONFIG_FILE, nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
-}
-
 AudioConverterParser::AudioConverterParser()
 {
     AUDIO_INFO_LOG("AudioConverterParser created");
-}
-
-static int32_t LoadConfigCheck(xmlDoc *doc, xmlNode *currNode)
-{
-    CHECK_AND_RETURN_RET_LOG(currNode != nullptr, FILE_PARSE_ERROR, "error: could not parse file %{public}s",
-        AUDIO_CONVERTER_CONFIG_FILE);
-    bool ret = xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar *>("audio_converter_conf"));
-    CHECK_AND_RETURN_RET_LOG(!ret, FILE_CONTENT_ERROR, "Missing tag - audio_converter_conf: %{public}s",
-        AUDIO_CONVERTER_CONFIG_FILE);
-    CHECK_AND_RETURN_RET_LOG(currNode->xmlChildrenNode != nullptr, FILE_CONTENT_ERROR,
-        "Missing node - audio_converter_conf: %s", AUDIO_CONVERTER_CONFIG_FILE);
-
-    return 0;
 }
 
 static void LoadConfigLibrary(ConverterConfig &result, xmlNode *currNode)
@@ -158,10 +139,10 @@ static void LoadConfigChannelLayout(ConverterConfig &result, xmlNode *currNode)
     }
 }
 
-static void LoadConfigVersion(ConverterConfig &result, xmlNode *currNode)
+static void LoadConfigVersion(ConverterConfig &result, std::unique_ptr<AudioXmlNode>& audioXmlNode)
 {
-    bool ret = xmlHasProp(currNode, reinterpret_cast<const xmlChar *>("version"));
-    CHECK_AND_RETURN_LOG(ret, "missing information: audio_converter_conf node has no version attribute");
+    CHECK_AND_RETURN_LOG(audioXmlNode->HasProp("version"),
+        "missing information: audio_converter_conf node has no version attribute");
 
     result.version = reinterpret_cast<char *>(xmlGetProp(currNode, reinterpret_cast<const xmlChar *>("version")));
 }
@@ -178,44 +159,41 @@ ConverterConfig AudioConverterParser::LoadConfig()
     int32_t ret = 0;
     AUDIO_INFO_LOG("AudioConverterParser::LoadConfig");
     CHECK_AND_RETURN_RET(cfg_ == nullptr, *cfg_);
-    xmlDoc *doc = nullptr;
-    xmlNode *rootElement = nullptr;
+    std::unique_ptr<AudioXmlNode> audioXmlNode = AudioXmlNode::Create();
     cfg_ = std::make_unique<ConverterConfig>();
     ConverterConfig &result = *cfg_;
 
-    ParseEffectConfigFile(doc);
-    if (doc == nullptr) {
+    AUDIO_INFO_LOG("use default audio effect config file path: %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
+    audioXmlNode->Config(AUDIO_CONVERTER_CONFIG_FILE, nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
+    if (!audioXmlNode->IsNodeValid()) {
         WriteConverterConfigError();
-    }
-    CHECK_AND_RETURN_RET_LOG(doc != nullptr, result, "error: could not parse file %{public}s",
-        AUDIO_CONVERTER_CONFIG_FILE);
-
-    rootElement = xmlDocGetRootElement(doc);
-    xmlNode *currNode = rootElement;
-
-    if ((ret = LoadConfigCheck(doc, currNode)) != 0) {
-        xmlFreeDoc(doc);
-        return result;
+        AUDIO_ERR_LOG("error: could not parse file %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
+        return FILE_PARSE_ERROR;
     }
 
-    LoadConfigVersion(result, currNode);
-    currNode = currNode->xmlChildrenNode;
+    CHECK_AND_RETURN_RET_LOG(audioXmlNode->CompareName("audio_converter_conf");, FILE_CONTENT_ERROR,
+        "Missing tag - audio_converter_conf: %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
 
-    while (currNode != nullptr) {
-        if (currNode->type != XML_ELEMENT_NODE) {
-            currNode = currNode->next;
+    result.version = audioXmlNode->GetProp("version");
+    audioXmlNode->MoveToChildren();
+    CHECK_AND_RETURN_RET_LOG(currNode->xmlChildrenNode != nullptr, FILE_CONTENT_ERROR,
+        "Missing node - audio_converter_conf: %s", AUDIO_CONVERTER_CONFIG_FILE);
+
+
+    while (audioXmlNode->IsNodeValid()) {
+        if (!audioXmlNode->IsElementNode()) {
+            audioXmlNode->MoveToNext();
             continue;
         }
-
-        if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar *>("library"))) {
-            LoadConfigLibrary(result, currNode);
-        } else if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar *>("converter_conf"))) {
-            LoadConfigChannelLayout(result, currNode);
+        if (audioXmlNode->CompareName("library")) {
+            LoadConfigLibrary(result);
+        } else if (audioXmlNode->CompareName("converter_conf")) {
+            LoadConfigChannelLayout(result);
         }
 
-        currNode = currNode->next;
+        audioXmlNode->MoveToNext();
     }
-    xmlFreeDoc(doc);
+    audioXmlNode = nullptr;
     return result;
 }
 } // namespace AudioStandard
