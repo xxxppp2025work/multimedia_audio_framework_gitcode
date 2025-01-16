@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -267,7 +267,13 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
     if (capturerInfo_.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
+#ifdef SUPPORT_LOW_LATENCY
         streamClass = GetPreferredStreamClass(audioStreamParams);
+#else
+        capturerInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
+        capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
+        streamClass = IAudioStream::PA_STREAM;
+#endif
     }
     ActivateAudioConcurrency(streamClass);
 
