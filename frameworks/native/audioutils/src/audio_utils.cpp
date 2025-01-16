@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -45,6 +45,10 @@ using OHOS::Security::AccessToken::AccessTokenKit;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+const int32_t SIGNAL_DATA_SIZE = 96;
+const int32_t DECIMAL_EXPONENT = 10;
+const size_t DATE_LENGTH = 17;
+static uint32_t g_sessionToMock = 0;
 constexpr int32_t UID_AUDIO = 1041;
 constexpr int32_t UID_MSDP_SA = 6699;
 constexpr int32_t UID_INTELLIGENT_VOICE_SA = 1042;
@@ -70,6 +74,9 @@ const int32_t DATA_INDEX_3 = 3;
 const int32_t DATA_INDEX_4 = 4;
 const int32_t DATA_INDEX_5 = 5;
 const int32_t STEREO_CHANNEL_COUNT = 2;
+const char* DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
+const char* DUMP_SERVICE_DIR = "/data/local/tmp/";
+const char* DUMP_APP_DIR = "/data/storage/el2/base/cache/";
 
 const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
 #ifdef AUDIO_BUILD_VARIANT_ROOT
@@ -274,9 +281,11 @@ void Trace::CountVolume(const std::string &value, uint8_t data)
 {
 #ifdef FEATURE_HITRACE_METER
     if (data == 0) {
-        CountTrace(HITRACE_TAG_ZAUDIO, value, PCM_MAYBE_SILENT);
+        int64_t pcmMaybeSilent = 1;
+        CountTrace(HITRACE_TAG_ZAUDIO, value, pcmMaybeSilent);
     } else {
-        CountTrace(HITRACE_TAG_ZAUDIO, value, PCM_MAYBE_NOT_SILENT);
+        int64_t pcmMaybeNotSilent = 5;
+        CountTrace(HITRACE_TAG_ZAUDIO, value, pcmMaybeNotSilent);
     }
 #endif
 }
@@ -764,6 +773,7 @@ float CalculateMaxAmplitudeForPCM16Bit(int16_t *frame, uint64_t nSamples)
 float CalculateMaxAmplitudeForPCM24Bit(char *frame, uint64_t nSamples)
 {
     int curMaxAmplitude = 0;
+    uint32_t maxValueOfSigned24Bit = 8388607;
     for (uint32_t i = 0; i < nSamples; ++i) {
         char *curPos = frame + (i * 3); // 3 bytes
         int curValue = 0;
@@ -777,7 +787,7 @@ float CalculateMaxAmplitudeForPCM24Bit(char *frame, uint64_t nSamples)
             curMaxAmplitude = curValue;
         }
     }
-    return float(curMaxAmplitude) / MAX_VALUE_OF_SIGNED_24_BIT;
+    return float(curMaxAmplitude) / maxValueOfSigned24Bit;
 }
 
 float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
@@ -971,7 +981,8 @@ static void MemcpyToI32FromI24(uint8_t *src, int32_t *dst, size_t count)
 
 bool NearZero(int16_t number)
 {
-    return number >= -DETECTED_ZERO_THRESHOLD && number <= DETECTED_ZERO_THRESHOLD;
+    int32_t detectedZeroThreshold = 1;
+    return number >= -detectedZeroThreshold && number <= detectedZeroThreshold;
 }
 
 std::string GetTime()
@@ -985,8 +996,9 @@ std::string GetTime()
     if (t == nullptr) {
         return "";
     }
+    int32_t yearBase = 1900;
 
-    curTime += std::to_string(YEAR_BASE + t->tm_year);
+    curTime += std::to_string(yearBase + t->tm_year);
     curTime += (1 + t->tm_mon < DECIMAL_EXPONENT ? "0" + std::to_string(1 + t->tm_mon) :
         std::to_string(1 + t->tm_mon));
     curTime += (t->tm_mday < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_mday) :
@@ -1089,7 +1101,8 @@ bool SignalDetectAgent::DetectSignalData(int32_t *buffer, size_t bufferLen)
         blankHaveOutput_ = false;
         blankPeriod_ = static_cast<int32_t>(frameCount - rightZeroSignal);
     }
-    int32_t thresholdBlankPeriod = BLANK_THRESHOLD_MS * sampleRate_ / MILLISECOND_PER_SECOND;
+    int32_t blankThresholdMs = 100;
+    int32_t thresholdBlankPeriod = blankThresholdMs * sampleRate_ / MILLISECOND_PER_SECOND;
     if (blankPeriod_ > thresholdBlankPeriod) {
         return !blankHaveOutput_;
     }
@@ -1110,10 +1123,11 @@ bool AudioLatencyMeasurement::MockPcmData(uint8_t *buffer, size_t bufferLen)
 {
     memset_s(buffer, bufferLen, 0, bufferLen);
     int16_t *signal = signalData_.get();
+    size_t mockInterval = 2000;
     size_t newlyMocked = bufferLen * MILLISECOND_PER_SECOND /
         static_cast<size_t>(channelCount_ * sampleRate_ * formatByteSize_);
     mockedTime_ += newlyMocked;
-    if (mockedTime_ >= MOCK_INTERVAL) {
+    if (mockedTime_ >= mockInterval) {
         mockedTime_ = 0;
         if (format_ == SAMPLE_S32LE) {
             MemcpyToI32FromI16(signal, reinterpret_cast<int32_t*>(buffer), SIGNAL_DATA_SIZE);
@@ -1159,12 +1173,13 @@ void AudioLatencyMeasurement::InitSignalData()
 {
     signalData_ = std::make_unique<int16_t[]>(SIGNAL_DATA_SIZE);
     memset_s(signalData_.get(), SIGNAL_DATA_SIZE, 0, SIGNAL_DATA_SIZE);
+    const int32_t signalThreshold = 10;
     const int16_t channels = 2; // 2 channels
     const int16_t samplePerChannel = SIGNAL_DATA_SIZE / channels;
     int16_t *signalBuffer = signalData_.get();
     for (int16_t index = 0; index < samplePerChannel; index++) {
-        signalBuffer[index * channels] = SIGNAL_THRESHOLD + static_cast<int16_t>(sinf(2.0f *
-            static_cast<float>(M_PI) * index / samplePerChannel) * (SHRT_MAX - SIGNAL_THRESHOLD));
+        signalBuffer[index * channels] = signalThreshold + static_cast<int16_t>(sinf(2.0f *
+            static_cast<float>(M_PI) * index / samplePerChannel) * (SHRT_MAX - signalThreshold));
         for (int16_t k = 1; k < channels; k++) {
             signalBuffer[channels * index + k] = signalBuffer[channels * index];
         }

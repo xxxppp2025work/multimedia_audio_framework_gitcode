@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -37,7 +37,7 @@ bool NapiAudioVolumeManager::CheckContextStatus(std::shared_ptr<AudioVolumeManag
 {
     CHECK_AND_RETURN_RET_LOG(context != nullptr, false, "context object is nullptr.");
     if (context->native == nullptr) {
-        context->SignError(NAPI_ERR_SYSTEM);
+        context->SignError(NapiAudioError::NAPI_ERR_SYSTEM);
         AUDIO_ERR_LOG("context object state is error.");
         return false;
     }
@@ -49,7 +49,7 @@ bool NapiAudioVolumeManager::CheckAudioVolumeManagerStatus(NapiAudioVolumeManage
 {
     CHECK_AND_RETURN_RET_LOG(napi != nullptr, false, "napi object is nullptr.");
     if (napi->audioSystemMngr_ == nullptr) {
-        context->SignError(NAPI_ERR_SYSTEM);
+        context->SignError(NapiAudioError::NAPI_ERR_SYSTEM);
         AUDIO_ERR_LOG("context object state is error.");
         return false;
     }
@@ -171,15 +171,17 @@ napi_value NapiAudioVolumeManager::GetVolumeGroupInfos(napi_env env, napi_callba
     auto context = std::make_shared<AudioVolumeManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("GetVolumeGroupInfos failed : no memory");
-        NapiAudioError::ThrowError(env, "GetVolumeGroupInfos failed : no memory", NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "GetVolumeGroupInfos failed : no memory", NapiAudioError::NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NapiAudioError::NAPI_ERR_INVALID_PARAM);
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, argv[PARAM0], &valueType);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, valueType == napi_string, "invaild valueType", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, valueType == napi_string, "invaild valueType",
+            NapiAudioError::NAPI_ERR_INVALID_PARAM);
         context->networkId = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
     };
     context->GetCbInfo(env, info, inputParser);
@@ -193,7 +195,8 @@ napi_value NapiAudioVolumeManager::GetVolumeGroupInfos(napi_env env, napi_callba
             "audio volume group manager state is error.");
         context->intValue = napiAudioVolumeManager->audioSystemMngr_->GetVolumeGroups(
             context->networkId, context->volumeGroupInfos);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "getvolumegroups failed", NAPI_ERR_SYSTEM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "getvolumegroups failed",
+            NapiAudioError::NAPI_ERR_SYSTEM);
     };
 
     auto complete = [env, context](napi_value &output) {
@@ -209,17 +212,19 @@ napi_value NapiAudioVolumeManager::GetVolumeGroupInfosSync(napi_env env, napi_ca
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NapiAudioError::NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_string, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of networkId must be string"), "invalid valueType");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_string, NapiAudioError::ThrowErrorAndReturn(env,
+        NapiAudioError::NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of networkId must be string"),
+        "invalid valueType");
 
     std::string networkId = NapiParamUtils::GetStringArgument(env, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(!networkId.empty(), NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "parameter verification failed: The param of networkId is empty"), "get networkid failed");
+    CHECK_AND_RETURN_RET_LOG(!networkId.empty(), NapiAudioError::ThrowErrorAndReturn(env,
+        NapiAudioError::NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of networkId is empty"),
+        "get networkid failed");
 
     std::vector<sptr<VolumeGroupInfo>> volumeGroupInfos;
     if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioSystemMngr_ == nullptr) {
@@ -238,14 +243,16 @@ napi_value NapiAudioVolumeManager::GetVolumeGroupManager(napi_env env, napi_call
     auto context = std::make_shared<AudioVolumeManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("GetVolumeGroupManager failed : no memory");
-        NapiAudioError::ThrowError(env, "GetVolumeGroupManager failed : no memory", NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "GetVolumeGroupManager failed : no memory", NapiAudioError::NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NapiAudioError::NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->groupId, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get groupId failed", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get groupId failed",
+            NapiAudioError::NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
 
@@ -263,13 +270,14 @@ napi_value NapiAudioVolumeManager::GetVolumeGroupManagerSync(napi_env env, napi_
     napi_value args[ARGS_ONE] = {};
     napi_status status = NapiParamUtils::GetParam(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "getparam failed");
-    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "mandatory parameters are left unspecified"), "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NapiAudioError::NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of groupId must be number"), "invalid valueType");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+        NapiAudioError::NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of groupId must be number"),
+        "invalid valueType");
 
     int32_t groupId;
     NapiParamUtils::GetValueInt32(env, groupId, args[PARAM0]);
@@ -282,7 +290,8 @@ napi_value NapiAudioVolumeManager::GetVolumeGroupManagerSync(napi_env env, napi_
     napi_strict_equals(env, result, undefinedValue, &isEqual);
     if (isEqual) {
         AUDIO_ERR_LOG("The audio volume group manager is undefined!");
-        NapiAudioError::ThrowError(env, "GetVolumeGroupManagerSync failed: invalid param", NAPI_ERR_INVALID_PARAM);
+        NapiAudioError::ThrowError(env, "GetVolumeGroupManagerSync failed: invalid param",
+            NapiAudioError::NAPI_ERR_INVALID_PARAM);
         return result;
     }
 
@@ -295,12 +304,12 @@ napi_value NapiAudioVolumeManager::RegisterCallback(napi_env env, napi_value jsT
     napi_value undefinedResult = nullptr;
     NapiAudioVolumeManager *napiVolumeManager = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiVolumeManager));
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-        "status error");
-    CHECK_AND_RETURN_RET_LOG(napiVolumeManager != nullptr, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY),
-        "napiVolumeManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env,
+        NapiAudioError::NAPI_ERR_SYSTEM), "status error");
+    CHECK_AND_RETURN_RET_LOG(napiVolumeManager != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NapiAudioError::NAPI_ERR_NO_MEMORY), "napiVolumeManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiVolumeManager->audioSystemMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(
-        env, NAPI_ERR_NO_MEMORY), "audioSystemMngr_ is nullptr");
+        env, NapiAudioError::NAPI_ERR_NO_MEMORY), "audioSystemMngr_ is nullptr");
 
     if (!cbName.compare(VOLUME_KEY_EVENT_CALLBACK_NAME)) {
         if (napiVolumeManager->volumeKeyEventCallbackNapi_ == nullptr) {
@@ -321,7 +330,7 @@ napi_value NapiAudioVolumeManager::RegisterCallback(napi_env env, napi_value jsT
         }
     } else {
         AUDIO_ERR_LOG("No such callback supported");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
+        NapiAudioError::ThrowError(env, NapiAudioError::NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of type is not supported");
     }
     return undefinedResult;
@@ -339,12 +348,13 @@ napi_value NapiAudioVolumeManager::On(napi_env env, napi_callback_info info)
     napi_status status = napi_get_cb_info(env, info, &argCount, args, &jsThis, nullptr);
     if (status != napi_ok || argCount < minArgCount) {
         AUDIO_ERR_LOG("On fail to napi_get_cb_info/Requires min 2 parameters");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified");
+        NapiAudioError::ThrowError(env, NapiAudioError::NAPI_ERR_INPUT_INVALID,
+            "mandatory parameters are left unspecified");
     }
 
     napi_valuetype eventType = napi_undefined;
     if (napi_typeof(env, args[PARAM0], &eventType) != napi_ok || eventType != napi_string) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+        NapiAudioError::ThrowError(env, NapiAudioError::NAPI_ERR_INPUT_INVALID,
             "incorrect parameter types: The type of eventType must be string");
         return undefinedResult;
     }
@@ -354,7 +364,7 @@ napi_value NapiAudioVolumeManager::On(napi_env env, napi_callback_info info)
     napi_valuetype handler = napi_undefined;
     if (napi_typeof(env, args[PARAM1], &handler) != napi_ok || handler != napi_function) {
         AUDIO_ERR_LOG("On type mismatch for parameter 2");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+        NapiAudioError::ThrowError(env, NapiAudioError::NAPI_ERR_INPUT_INVALID,
             "incorrect parameter types: The type of callback must be function");
         return undefinedResult;
     }
@@ -374,11 +384,12 @@ napi_value NapiAudioVolumeManager::Off(napi_env env, napi_callback_info info)
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
     if (status != napi_ok || argc < minArgCount) {
         AUDIO_ERR_LOG("Off fail to napi_get_cb_info/Requires min 1 parameters");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified");
+        NapiAudioError::ThrowError(env, NapiAudioError::NAPI_ERR_INPUT_INVALID,
+        "mandatory parameters are left unspecified");
     }
     napi_valuetype eventType = napi_undefined;
     if (napi_typeof(env, args[PARAM0], &eventType) != napi_ok || eventType != napi_string) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+        NapiAudioError::ThrowError(env, NapiAudioError::NAPI_ERR_INPUT_INVALID,
             "incorrect parameter types: The type of eventType must be string");
         return undefinedResult;
     }
@@ -394,12 +405,12 @@ napi_value NapiAudioVolumeManager::UnregisterCallback(napi_env env, napi_value j
     napi_value undefinedResult = nullptr;
     NapiAudioVolumeManager *napiVolumeManager = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiVolumeManager));
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-        "status error");
-    CHECK_AND_RETURN_RET_LOG(napiVolumeManager != nullptr, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY),
-        "napiVolumeManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env,
+        NapiAudioError::NAPI_ERR_SYSTEM), "status error");
+    CHECK_AND_RETURN_RET_LOG(napiVolumeManager != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NapiAudioError::NAPI_ERR_NO_MEMORY), "napiVolumeManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiVolumeManager->audioSystemMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(
-        env, NAPI_ERR_NO_MEMORY), "audioSystemMngr_ is nullptr");
+        env, NapiAudioError::NAPI_ERR_NO_MEMORY), "audioSystemMngr_ is nullptr");
 
     if (!cbName.compare(VOLUME_KEY_EVENT_CALLBACK_NAME)) {
         napi_value callback = nullptr;
@@ -427,7 +438,7 @@ napi_value NapiAudioVolumeManager::UnregisterCallback(napi_env env, napi_value j
         }
     } else {
         AUDIO_ERR_LOG("No such callback supported");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
+        NapiAudioError::ThrowError(env, NapiAudioError::NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of type is not supported");
     }
     return undefinedResult;

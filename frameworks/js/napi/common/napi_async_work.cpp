@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -43,12 +43,14 @@ void ContextBase::GetCbInfo(napi_env envi, napi_callback_info info, NapiCbInfoPa
     size_t argc = ARGC_MAX;
     napi_value argv[ARGC_MAX] = {nullptr};
     status = napi_get_cb_info(env, info, &argc, argv, &self, nullptr);
-    NAPI_CHECK_STATUS_RETURN_VOID(this, "napi_get_cb_info failed!", NAPI_ERROR_INVALID_PARAM);
-    NAPI_CHECK_ARGS_RETURN_VOID(this, argc <= ARGC_MAX, "too many arguments!", NAPI_ERR_INPUT_INVALID);
-    NAPI_CHECK_ARGS_RETURN_VOID(this, self != nullptr, "no JavaScript this argument!", NAPI_ERR_INPUT_INVALID);
+    NAPI_CHECK_STATUS_RETURN_VOID(this, "napi_get_cb_info failed!", NapiAudioError::NAPI_ERROR_INVALID_PARAM);
+    NAPI_CHECK_ARGS_RETURN_VOID(this, argc <= ARGC_MAX, "too many arguments!",
+        NapiAudioError::NAPI_ERR_INPUT_INVALID);
+    NAPI_CHECK_ARGS_RETURN_VOID(this, self != nullptr, "no JavaScript this argument!",
+        NapiAudioError::NAPI_ERR_INPUT_INVALID);
     napi_create_reference(env, self, 1, &selfRef);
     status = napi_unwrap(env, self, &native);
-    NAPI_CHECK_STATUS_RETURN_VOID(this, "self unwrap failed!", NAPI_ERROR_INVALID_PARAM);
+    NAPI_CHECK_STATUS_RETURN_VOID(this, "self unwrap failed!", NapiAudioError::NAPI_ERROR_INVALID_PARAM);
 
     if (!sync && (argc > 0)) {
         // get the last arguments :: <callback>
@@ -57,7 +59,7 @@ void ContextBase::GetCbInfo(napi_env envi, napi_callback_info info, NapiCbInfoPa
         napi_status tyst = napi_typeof(env, argv[index], &type);
         if ((tyst == napi_ok) && (type == napi_function)) {
             status = napi_create_reference(env, argv[index], 1, &callbackRef);
-            NAPI_CHECK_STATUS_RETURN_VOID(this, "ref callback failed!", NAPI_ERROR_INVALID_PARAM);
+            NAPI_CHECK_STATUS_RETURN_VOID(this, "ref callback failed!", NapiAudioError::NAPI_ERROR_INVALID_PARAM);
             argc = index;
             AUDIO_DEBUG_LOG("async callback, no promise");
         } else {
@@ -68,7 +70,8 @@ void ContextBase::GetCbInfo(napi_env envi, napi_callback_info info, NapiCbInfoPa
     if (parser) {
         parser(argc, argv);
     } else {
-        NAPI_CHECK_ARGS_RETURN_VOID(this, argc == 0, "required no arguments!", NAPI_ERROR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(this, argc == 0, "required no arguments!",
+            NapiAudioError::NAPI_ERROR_INVALID_PARAM);
     }
 }
 
