@@ -843,8 +843,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 #endif
         audioEffectService_.SetMasterSinkAvailable();
     }
-    // load inner-cap-sink
-    LoadModernInnerCapSink();
+    // TODO liyou 这里删的LoadModernInnerCapSink
     // RegisterBluetoothListener() will be called when bluetooth_host is online
     // load hdi-effect-model
     LoadHdiEffectModel();
@@ -871,21 +870,7 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
     AUDIO_DEBUG_LOG("audioBalance = %{public}f", audioBalance);
     AudioServerProxy::GetInstance().SetAudioBalanceValueProxy(audioBalance);
 }
-
-void AudioPolicyService::LoadModernInnerCapSink()
-{
-    AUDIO_INFO_LOG("Start");
-    AudioModuleInfo moduleInfo = {};
-    moduleInfo.lib = "libmodule-inner-capturer-sink.z.so";
-    moduleInfo.name = INNER_CAPTURER_SINK;
-
-    moduleInfo.format = "s16le";
-    moduleInfo.channels = "2"; // 2 channel
-    moduleInfo.rate = "48000";
-    moduleInfo.bufferSize = "3840"; // 20ms
-
-    audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-}
+// TODO liyou 这里删的LoadModernInnerCapSink
 
 void AudioPolicyService::LoadEffectLibrary()
 {
@@ -2044,6 +2029,22 @@ int32_t AudioPolicyService::NotifyCapturerRemoved(uint64_t sessionId)
 void AudioPolicyService::CheckHibernateState(bool hibernate)
 {
     AudioServerProxy::GetInstance().CheckHibernateStateProxy(hibernate);
+}
+
+void AudioPolicyService::LoadModerninnerCapSink(int32_t innerCapId)
+{
+    AUDIO_INFO_LOG("Start");
+    AudioModuleInfo moduleInfo = {};
+    moduleInfo.lib = "libmodule-inner-capturer-sink.z.so";
+    std::string name = INNER_CAPTURER_SINK;
+    moduleInfo.name = name + std::tostring(innerCapId);
+
+    moduleInfo.format = "s16le";
+    moduleInfo.channels = "2"; // 2 channel
+    moduleInfo.rate = "48000";
+    moduleInfo.bufferSize = "3840"; // 20ms
+
+    audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
 }
 } // namespace AudioStandard
 } // namespace OHOS

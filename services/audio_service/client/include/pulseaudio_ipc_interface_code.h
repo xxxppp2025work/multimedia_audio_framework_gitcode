@@ -91,7 +91,8 @@ namespace AudioStandard {
         CREATE_IPC_OFFLINE_STREAM,
         GET_OFFLINE_AUDIO_EFFECT_CHAINS,
         GENERATE_SESSION_ID,
-        AUDIO_SERVER_CODE_MAX = GENERATE_SESSION_ID,
+        CHECK_CAPTURE_LIMIT,
+        AUDIO_SERVER_CODE_MAX = CHECK_CAPTURE_LIMIT,
     };
 } // namespace AudioStandard
 } // namespace OHOS

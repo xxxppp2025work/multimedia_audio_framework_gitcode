@@ -113,6 +113,7 @@ public:
     sptr<IRemoteObject> CreateIpcOfflineStream(int32_t &errorCode) override;
     int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) override;
     int32_t GenerateSessionId(uint32_t &sessionId) override;
+    int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &InnerCapId) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

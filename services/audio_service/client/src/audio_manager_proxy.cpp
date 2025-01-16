@@ -1407,5 +1407,23 @@ int32_t AudioManagerProxy::GenerateSessionId(uint32_t &sessionId)
     sessionId = reply.ReadUint32();
     return 0;
 }
+
+int32_t AudioManagerProxy::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &InnerCapId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    int32_t ret = ProcessConfig::WriteInnerCapConfigToParcel(config, data);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Write config failed");
+
+    ret = Remote()->SendRequest(IpcStreamMsg::CHECK_CAPTURE_LIMIT, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "Failed, ipc error: %{public}d", ret);
+    ret = reply.ReadInt32();
+    InnerCapId = reply.ReadInt32();
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

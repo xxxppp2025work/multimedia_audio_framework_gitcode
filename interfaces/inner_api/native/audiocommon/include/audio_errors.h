@@ -159,6 +159,9 @@ const int32_t ERR_MMI_CREATION = BASE_AUDIO_ERR_OFFSET - 32;
 /** set volume failed for not complying with safe volume regulation */
 const int32_t ERR_SET_VOL_FAILED_BY_SAFE_VOL = BASE_AUDIO_ERR_OFFSET - 33;
 
+/** add capture over limit */
+const int32_t ERR_ADD_CAPTURE_OVER_LIMIT = BASE_AUDIO_ERR_OFFSET - 34;
+
 /** Unknown error */
 const int32_t  ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
 }  // namespace AudioStandard

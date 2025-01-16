@@ -35,6 +35,12 @@ private:
     uint32_t streamIndex_ = 0;
 };
 
+// TODO liyou 内录信息整改
+    struct RendererCaptureInfo {
+        std::atomic<bool> isInnerCapEnabled_ = false;
+        std::shared_ptr<IRendererStream> dupStream_ = nullptr;
+    }
+
 class RendererInServer : public IStatusCallback, public IWriteCallback,
     public std::enable_shared_from_this<RendererInServer> {
 public:
@@ -83,9 +89,10 @@ public:
     int32_t DrainAudioBuffer();
 
     // for inner-cap
-    int32_t EnableInnerCap();
+    int32_t EnableInnerCap(int32_t innerCapId);
+    //TODO liyou 这里判断disable的时候怎么弄
     int32_t DisableInnerCap();
-    int32_t InitDupStream();
+    int32_t InitDupStream(int32_t innerCapId);
 
     // for dual tone
     int32_t EnableDualTone();
@@ -136,11 +143,10 @@ private:
 
     // for inner-cap
     std::mutex dupMutex_;
-    std::atomic<bool> isInnerCapEnabled_ = false;
     uint32_t dupStreamIndex_ = 0;
     std::shared_ptr<StreamCallbacks> dupStreamCallback_ = nullptr;
-    std::shared_ptr<IRendererStream> dupStream_ = nullptr;
-
+    std::unordered_map<int32_t, RendererCaptureInfo> captureInfos_;
+    
     // for dual sink tone
     std::mutex dualToneMutex_;
     std::atomic<bool> isDualToneEnabled_ = false;
@@ -181,6 +187,7 @@ private:
 
     // only read & write in CheckAndWriterRenderStreamStandbySysEvent
     bool lastWriteStandbyEnableStatus_ = false;
+    std::set<int32_t> innerCapIds;
 };
 } // namespace AudioStandard
 } // namespace OHOS

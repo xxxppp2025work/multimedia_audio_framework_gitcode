@@ -89,8 +89,9 @@ public:
     uint32_t GetSessionId();
 
     // for inner-cap
-    void SetInnerCapState(bool isInnerCapped) override;
-    bool GetInnerCapState() override;
+    void SetInnerCapState(bool isInnerCapped, int32_t innerCapId) override;
+    // TODO liyou Get的时候也得传入innerCapId
+    bool GetInnerCapState(int32_t innerCapId) override;
 
     AppInfo GetAppInfo() override final;
     BufferDesc &GetConvertedBuffer() override;
@@ -113,7 +114,7 @@ private:
 private:
     std::atomic<bool> muteFlag_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
-    bool isInnerCapped_ = false;
+    std::unordered_map<int32_t, bool> innerCapStates_;
     ProcessReleaseCallback *releaseCallback_ = nullptr;
 
     bool needCheckBackground_ = false;

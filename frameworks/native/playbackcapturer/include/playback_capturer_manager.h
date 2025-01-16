@@ -35,10 +35,11 @@ public:
     virtual ~ICapturerFilterListener() = default;
 
     // This will be called when a filter is first enabled or changed.
-    virtual int32_t OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig) = 0;
+    virtual int32_t OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig,
+        int32_t innerCapId) = 0;
 
     // This will be called when a filter released.
-    virtual int32_t OnCapturerFilterRemove(uint32_t sessionId) = 0;
+    virtual int32_t OnCapturerFilterRemove(uint32_t sessionId, int32_t innerCapId) = 0;
 };
 
 class PlaybackCapturerManager {
@@ -57,15 +58,21 @@ public:
     // add for new playback-capturer
     std::vector<StreamUsage> GetDefaultUsages();
     bool RegisterCapturerFilterListener(ICapturerFilterListener *listener);
-    int32_t SetPlaybackCapturerFilterInfo(uint32_t sessionId, const AudioPlaybackCaptureConfig &config);
+    int32_t SetPlaybackCapturerFilterInfo(uint32_t sessionId, const AudioPlaybackCaptureConfig &config, int32_t innerCapId);
     int32_t RemovePlaybackCapturerFilterInfo(uint32_t sessionId);
+    int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &InnerCapId);
+private:
+    int32_t GetFilterIndex();
 private:
     std::mutex setMutex_;
+    std::mutex filterMapMutex_;
     std::unordered_set<int32_t> supportStreamUsageSet_;
     std::vector<StreamUsage> defaultUsages_ = { STREAM_USAGE_MEDIA, STREAM_USAGE_MUSIC, STREAM_USAGE_MOVIE,
         STREAM_USAGE_GAME, STREAM_USAGE_AUDIOBOOK };
     bool isCaptureSilently_ = false;
     bool isInnerCapturerRunning_ = false;
+    std::unordered_map<int32_t, AudioPlaybackCaptureConfig> filters_;
+    int32_t filterNowIndex_ = 0;
     ICapturerFilterListener *listener_ = nullptr;
 };
 

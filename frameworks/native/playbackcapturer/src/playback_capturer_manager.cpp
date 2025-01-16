@@ -155,18 +155,60 @@ bool PlaybackCapturerManager::RegisterCapturerFilterListener(ICapturerFilterList
 }
 
 int32_t PlaybackCapturerManager::SetPlaybackCapturerFilterInfo(uint32_t sessionId,
-    const AudioPlaybackCaptureConfig &config)
+    const AudioPlaybackCaptureConfig &config, int32_t innerCapId)
 {
     CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, ERR_ILLEGAL_STATE, "listener is null!");
 
-    return listener_->OnCapturerFilterChange(sessionId, config);
+    return listener_->OnCapturerFilterChange(sessionId, config, innerCapId);
 }
 
-int32_t PlaybackCapturerManager::RemovePlaybackCapturerFilterInfo(uint32_t sessionId)
+int32_t PlaybackCapturerManager::RemovePlaybackCapturerFilterInfo(uint32_t sessionId, int32_t innerCapId)
 {
     CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, ERR_ILLEGAL_STATE, "listener is null!");
 
-    return listener_->OnCapturerFilterRemove(sessionId);
+    return listener_->OnCapturerFilterRemove(sessionId, innerCapId);
+}
+int32_t PlaybackCapturerManager::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &InnerCapId)
+{
+    // TODO liyou 暂时写死，后续通过读取配置表获取
+    int32_t numLimit = 2;
+    bool isSame = false;
+    AudioPlaybackCaptureConfig newConfig = config;
+    if (newConfig.usages.size() == 0) {
+        std::vector<StreamUsage> defalutUsages = GetDefaultUsages();
+        for (size_t i = 0; i < defalutUsages.size(); i++) {
+            newConfig.usages.push_back(defalutUsages[i]);
+        }
+        AUDIO_INFO_LOG("Reset config to %{public}s", ProcessConfig::DumpInnerCapConfig(newConfig).c_str());
+    }
+    std::lock_guard<std::mutex> lock(filterMapMutex_);
+    for (auto& filter : filters_) {
+        if (filter.second == newConfig) {
+            InnerCapId = filter.first;
+            isSame = true;
+            break;
+        }
+    }
+    if (!isSame && filters_.size() >= numLimit) {
+        AUDIO_ERROR_LOG("Capture nume over limit");
+        InnerCapId = 0;
+        retur ERR_ADD_CAPTURE_OVER_LIMIT;
+    }
+    if (!isSame) {
+        GetFilterIndex();
+        InnerCapId = filterNowIndex_;
+        filters_[filterNowIndex_] = newConfig;
+    }
+    return SUCCESS;
+}
+
+int32_t PlaybackCapturerManager::GetFilterIndex() {
+    // TODO liyou 暂时写死，后续通过读取配置表获取
+    int32_t numLimit = 2;
+    if (filterNowIndex_ >= numLimit) {
+        filterNowIndex_ = 0
+    }
+    return (++filterNowIndex_);
 }
 } // namespace OHOS
 } // namespace AudioStandard

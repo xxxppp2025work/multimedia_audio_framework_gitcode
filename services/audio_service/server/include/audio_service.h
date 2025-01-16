@@ -44,8 +44,9 @@ public:
     ~AudioService();
 
     // override for ICapturerFilterListener
-    int32_t OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig) override;
-    int32_t OnCapturerFilterRemove(uint32_t sessionId) override;
+    int32_t OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig,
+        int32_t innerCapId) override;
+    int32_t OnCapturerFilterRemove(uint32_t sessionId, int32_t innerCapId) override;
 
     sptr<IpcStreamInServer> GetIpcStream(const AudioProcessConfig &config, int32_t &ret);
 
@@ -96,11 +97,14 @@ private:
     void CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void CheckInnerCapForProcess(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     void FilterAllFastProcess();
-    InnerCapFilterPolicy GetInnerCapFilterPolicy();
-    bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig);
+    InnerCapFilterPolicy GetInnerCapFilterPolicy(int32_t innerCapId);
+    // TODO liyou 检查传入内录ID
+    bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId);
+    bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, std::set<int32_t> &beCapIds);
+    bool CheckShouldCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId);
     bool ShouldBeDualTone(const AudioProcessConfig &config);
-    int32_t OnInitInnerCapList(); // for first InnerCap filter take effect.
-    int32_t OnUpdateInnerCapList(); // for some InnerCap filter has already take effect.
+    int32_t OnInitInnerCapList(int32_t innerCapId); // for first InnerCap filter take effect.
+    int32_t OnUpdateInnerCapList(int32_t innerCapId); // for some InnerCap filter has already take effect.
     bool IsEndpointTypeVoip(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo);
     void RemoveIdFromMuteControlSet(uint32_t sessionId);
     void CheckRenderSessionMuteState(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
@@ -108,6 +112,7 @@ private:
     void CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProcessInServer> process);
     int32_t GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream);
     void ReLinkProcessToEndpoint();
+    int32_t CheckDisableFastInner(std::shared_ptr<AudioEndpoint> endpoint);
 
 private:
     std::mutex processListMutex_;
@@ -123,6 +128,8 @@ private:
     uint32_t workingInnerCapId_ = 0; // invalid sessionId
     uint32_t workingDualToneId_ = 0; // invalid sessionId
     AudioPlaybackCaptureConfig workingConfig_;
+    //TODO liyou 处理workingConfig_ 这里注意是否需要加锁,注意维护删除
+    std::unordered_map<int32_t, AudioPlaybackCaptureConfig> workingConfigs_;
 
     std::mutex rendererMapMutex_;
     std::mutex capturerMapMutex_;

@@ -1048,14 +1048,16 @@ int32_t RendererInServer::GetPrivacyType(int32_t &privacyType)
     return stream_->GetPrivacyType(privacyType);
 }
 
-int32_t RendererInServer::EnableInnerCap()
+// TODO liyou 这个方法还有地方没改造完
+int32_t RendererInServer::EnableInnerCap(int32_t innerCapId)
 {
     // in plan
-    if (isInnerCapEnabled_) {
-        AUDIO_INFO_LOG("InnerCap is already enabled");
+    if (captureInfos_.count(innerCapId) && captureInfos_[innerCapId].isInnerCapEnabled_) {
+        AUDIO_INFO_LOG("InnerCap is already enabled,id:%{public}d", innerCapId);
         return SUCCESS;
     }
-    int32_t ret = InitDupStream();
+    //TODO liyou RendererInServer看起来不是单实例，用map存的哇
+    int32_t ret = InitDupStream(int32_t innerCapId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed");
     return SUCCESS;
 }
@@ -1077,10 +1079,13 @@ int32_t RendererInServer::DisableInnerCap()
     return ERROR;
 }
 
-int32_t RendererInServer::InitDupStream()
+int32_t RendererInServer::InitDupStream(int32_t innerCapId)
 {
     std::lock_guard<std::mutex> lock(dupMutex_);
-    int32_t ret = IStreamManager::GetDupPlaybackManager().CreateRender(processConfig_, dupStream_);
+    std::shared_ptr<IRendererStream> dupStream_ = nullptr;
+    AudioProcessConfig dupConfig = processConfig_;
+    dupConfig.innerCapId = innerCapId;
+    int32_t ret = IStreamManager::GetDupPlaybackManager().CreateRender(dupConfig, dupStream_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && dupStream_ != nullptr, ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
     dupStreamIndex_ = dupStream_->GetStreamIndex();
     AudioVolume::GetInstance()->AddStreamVolume(dupStreamIndex_, processConfig_.streamType,
@@ -1091,8 +1096,8 @@ int32_t RendererInServer::InitDupStream()
     dupStream_->RegisterWriteCallback(dupStreamCallback_);
 
     AUDIO_INFO_LOG("Dup Renderer %{public}u with status: %{public}d", streamIndex_, status_);
-
-    isInnerCapEnabled_ = true;
+    RendererCaptureInfo capInfo;
+    capInfo.isInnerCapEnabled_ = true;
 
     if (audioServerBuffer_ != nullptr) {
         float clientVolume = audioServerBuffer_->GetStreamVolume();
@@ -1114,6 +1119,8 @@ int32_t RendererInServer::InitDupStream()
             renderEmptyCountForInnerCap_ = OFFLOAD_INNER_CAP_PREBUF;
         }
     }
+    capInfo.dupStream_ = dupStream_;
+    captureInfos_[innerCapId] = capInfo;
     return SUCCESS;
 }
 
