@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,7 +21,6 @@
 #include <dlfcn.h>
 #include "iservice_registry.h"
 
-#include "audio_utils.h"
 #include "audio_manager_listener_stub.h"
 #include "parameter.h"
 #include "parameters.h"
@@ -56,6 +55,7 @@ static const char* SETTINGS_DATA_BASE_URI =
     "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true";
 static const char* SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
 static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
+constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 }
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
