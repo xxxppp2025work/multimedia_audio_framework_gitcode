@@ -47,7 +47,6 @@ ohos_shared_library("audio_capturer") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    Stashed changes
     integer_overflow = true
     ubsan = true
     boundary_sanitize = true
