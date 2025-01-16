@@ -24,6 +24,7 @@ ohos_fuzztest("AudioBluetoothManagerFuzzTest") {
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include",
     "../../../../../communication/bluetooth/interfaces/inner_api/include",
+    "../../../services/audio_service/util/include",
   ]
   cflags = [
     "-g",
@@ -40,6 +41,7 @@ ohos_fuzztest("AudioBluetoothManagerFuzzTest") {
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client_static",
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_stream_util",
   ]
 
   external_deps = [

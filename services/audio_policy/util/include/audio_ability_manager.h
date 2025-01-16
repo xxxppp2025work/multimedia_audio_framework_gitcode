@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,17 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AUDIO_ERROR_H
-#define AUDIO_ERROR_H
+
+#ifndef ST_AUDIO_ABILITY_MANAGER_H
+#define ST_AUDIO_ABILITY_MANAGER_H
+
+#include "audio_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
-enum AudioServiceErrorCodes {
-    FUCK_AUDIO_CLIENT
-};
+class AudioAbilityManager {
+public:
+    static AudioAbilityManager *GetInstance();
 
-enum AudioServiceEventTypes {
+    virtual ~AudioAbilityManager();
+
+    uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole);
+    int32_t SetMicrophoneMuteProxy(bool isMute);
+    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid);
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_ERROR_H
+#endif // ST_AUDIO_ABILITY_MANAGER_H
