@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Copyright (c) 2024-2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -21,8 +21,7 @@ audio_utils_source = []
 audio_include = []
 
 audio_sources = [
-  "$AUDIO_SUBSYSTEM_DIR/services/audio_service/client/src/audio_device_descriptor.cpp",
-  "$AUDIO_SUBSYSTEM_DIR/services/audio_service/client/src/audio_filter.cpp",
+  "$AUDIO_SUBSYSTEM_DIR/services/audio_policy/server/src/service/device/audio_device_descriptor.cpp",
   "$WORK_DIR/audiocapturer/callback/napi_audio_capturer_callbacks.cpp",
   "$WORK_DIR/audiocapturer/callback/napi_audio_capturer_device_change_callback.cpp",
   "$WORK_DIR/audiocapturer/callback/napi_audio_capturer_info_change_callback.cpp",
