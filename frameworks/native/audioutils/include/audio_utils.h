@@ -111,6 +111,11 @@ private:
     bool isCanceled_;
 };
 
+class CheckoutSystemAppUtil {
+public:
+    static bool CheckoutSystemApp(int32_t uid);
+};
+
 class ClockTime {
 public:
     static int64_t GetCurNano();
@@ -202,6 +207,7 @@ inline bool NotContain(const std::vector<V> &array, const V &value)
 
 template <typename T>
 bool StringConverter(const std::string &str, T &result);
+bool StringConverterFloat(const std::string &str, float &result);
 
 bool SetSysPara(const std::string& key, int32_t value);
 template <typename T>

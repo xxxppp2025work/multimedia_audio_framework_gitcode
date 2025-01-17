@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -32,7 +32,6 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_MIN_VOLUMELEVEL",
     "SET_SYSTEM_VOLUMELEVEL_LEGACY",
     "SET_SYSTEM_VOLUMELEVEL",
-    "GET_SYSTEM_ACTIVEVOLUME_TYPE",
     "GET_SYSTEM_VOLUMELEVEL",
     "SET_STREAM_MUTE_LEGACY",
     "SET_STREAM_MUTE",
@@ -175,6 +174,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "IS_AUDIO_SESSION_ACTIVATED",
     "LOAD_SPLIT_MODULE",
     "SET_DEFAULT_OUTPUT_DEVICE",
+    "GET_SYSTEM_ACTIVEVOLUME_TYPE",
     "GET_OUTPUT_DEVICE",
     "GET_INPUT_DEVICE",
     "SET_AUDIO_DEVICE_ANAHS_CALLBACK",
@@ -186,6 +186,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_STREAM_IN_FOCUS_BY_UID",
     "SET_PREFERRED_DEVICE",
     "SAVE_REMOTE_INFO",
+    "SET_VIRTUAL_CALL",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -360,6 +361,7 @@ void AudioPolicyManagerStub::SetStreamMuteLegacyInternal(MessageParcel &data, Me
 {
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     bool mute = data.ReadBool();
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
     int result = SetStreamMuteLegacy(volumeType, mute);
     reply.WriteInt32(result);
 }
@@ -368,7 +370,8 @@ void AudioPolicyManagerStub::SetStreamMuteInternal(MessageParcel &data, MessageP
 {
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     bool mute = data.ReadBool();
-    int result = SetStreamMute(volumeType, mute);
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    int result = SetStreamMute(volumeType, mute, deviceType);
     reply.WriteInt32(result);
 }
 
@@ -840,6 +843,7 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
 
 void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParcel &data, MessageParcel &reply)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     uint32_t maxUsageNum = 30;
     AudioPlaybackCaptureConfig config;
     int32_t flag = data.ReadInt32();
@@ -863,14 +867,17 @@ void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParce
 
     int32_t ret = SetPlaybackCapturerFilterInfos(config, appTokenId);
     reply.WriteInt32(ret);
+#endif
 }
 
 void AudioPolicyManagerStub::SetCaptureSilentStateInternal(MessageParcel &data, MessageParcel &reply)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     bool flag = data.ReadBool();
 
     int32_t ret = SetCaptureSilentState(flag);
     reply.WriteInt32(ret);
+#endif
 }
 
 void AudioPolicyManagerStub::GetHardwareOutputSamplingRateInternal(MessageParcel &data, MessageParcel &reply)
@@ -1285,6 +1292,9 @@ void AudioPolicyManagerStub::OnMiddleEigRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_SESSION_ACTIVATED):
             IsAudioSessionActivatedInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VIRTUAL_CALL):
+            SetVirtualCallInternal(data, reply);
             break;
         default:
             OnMiddleNinRemoteRequest(code, data, reply, option);
@@ -2075,6 +2085,13 @@ void AudioPolicyManagerStub::SetVoiceRingtoneMuteInternal(MessageParcel &data, M
 {
     bool isMute = data.ReadBool();
     int32_t result = SetVoiceRingtoneMute(isMute);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetVirtualCallInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool isVirtual = data.ReadBool();
+    int32_t result = SetVirtualCall(isVirtual);
     reply.WriteInt32(result);
 }
 } // namespace audio_policy

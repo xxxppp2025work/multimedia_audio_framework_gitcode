@@ -1,4 +1,4 @@
-# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Copyright (c) 2022-2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -120,6 +120,11 @@ ohos_unittest("audio_balance_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
 }
 
 ohos_unittest("audio_direct_sink_unit_test") {
@@ -240,7 +245,9 @@ ohos_unittest("audio_service_unit_test") {
 
   include_dirs = [
     "../../../../services/audio_service/common/include",
+    "../../../../services/audio_service/common/include/limiter",
     "../../../../services/audio_service/common/src",
+    "../../../../services/audio_service/common/src/limiter",
     "../../../../services/audio_service/server/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../interfaces/inner_api/native/audiomanager/include",
@@ -260,6 +267,9 @@ ohos_unittest("audio_service_unit_test") {
     "./common/audio_common_converter_unit_test.cpp",
     "./common/audio_down_mix_stereo_unit_test.cpp",
     "./common/audio_volume_unit_test.cpp",
+    "./common/limiter_unit_test/audio_limiter_adapter_unit_test.cpp",
+    "./common/limiter_unit_test/audio_limiter_manager_unit_test.cpp",
+    "./common/limiter_unit_test/audio_limiter_unit_test.cpp",
     "./common/volume_tools_unit_test.cpp",
     "./server/audio_server_unit_test.cpp",
   ]
@@ -678,6 +688,11 @@ ohos_unittest("capturer_in_server_unit_test") {
     "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
 }
 
 ohos_unittest("audio_dump_pcm_unit_test") {

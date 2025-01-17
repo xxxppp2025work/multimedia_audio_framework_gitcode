@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -119,7 +119,8 @@ public:
     float GetSingleStreamVolume(int32_t streamId) const;
 
     int32_t SetStreamMute(AudioStreamType streamType, bool mute,
-        const StreamUsage &streamUsage = STREAM_USAGE_UNKNOWN);
+        const StreamUsage &streamUsage = STREAM_USAGE_UNKNOWN,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE);
 
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) const;
 
@@ -211,6 +212,8 @@ public:
     void SetFirstScreenOn();
 
     int32_t ResumeStreamState();
+
+    int32_t SetVirtualCall(const bool isVirtual);
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones(const std::string &countryCode);
 
@@ -466,7 +469,9 @@ private:
         audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
         audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
+#ifdef AUDIO_WIRED_DETECT
         audioPnpServer_(AudioPnpServer::GetAudioPnpServer()),
+#endif
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioRouteMap_(AudioRouteMap::GetInstance()),
         audioConfigManager_(AudioConfigManager::GetInstance()),
@@ -535,9 +540,9 @@ private:
     bool GetAudioEffectOffloadFlag();
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
-
+#ifdef HAS_FEATURE_INNERCAPTURER
     void LoadModernInnerCapSink();
-
+#endif
     int32_t GetUid(int32_t sessionId);
 
     void UnregisterBluetoothListener();
@@ -593,7 +598,9 @@ private:
     AudioAffinityManager &audioAffinityManager_;
     AudioStateManager &audioStateManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
+#ifdef AUDIO_WIRED_DETECT
     AudioPnpServer &audioPnpServer_;
+#endif
 
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,

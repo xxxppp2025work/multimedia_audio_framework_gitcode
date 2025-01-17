@@ -52,6 +52,7 @@
 #include "audio_volume_c.h"
 #include "renderer_sink_adapter.h"
 #include "audio_effect_chain_adapter.h"
+#include "audio_limiter_adapter.h"
 #include "playback_capturer_adapter.h"
 #include "sink_userdata.h"
 #include "time.h"
@@ -121,6 +122,8 @@ time_t g_effectStartVolZeroTimeMap[SCENE_TYPE_NUM] = {0, 0, 0, 0, 0, 0, 0};
 char *const SCENE_TYPE_SET[SCENE_TYPE_NUM] = {"SCENE_DEFAULT", "SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE",
     "SCENE_SPEECH", "SCENE_RING", "SCENE_VOIP_DOWN", "SCENE_OTHERS", "EFFECT_NONE"};
 const int32_t COMMON_SCENE_TYPE_INDEX = 0;
+const int32_t SUCCESS = 0;
+const int32_t ERROR = -1;
 
 enum HdiInputType { HDI_INPUT_TYPE_PRIMARY, HDI_INPUT_TYPE_OFFLOAD, HDI_INPUT_TYPE_MULTICHANNEL };
 
@@ -177,6 +180,8 @@ static void *AllocateBuffer(size_t size);
 static bool AllocateEffectBuffer(struct Userdata *u);
 static void FreeEffectBuffer(struct Userdata *u);
 static void ResetBufferAttr(struct Userdata *u);
+static void CreateLimiter(struct Userdata *u);
+static void FreeLimiter(struct Userdata *u);
 
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-6f
@@ -306,7 +311,7 @@ static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, 
     }
 }
 
-static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool mchFlag)
+static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool mchFlag, pa_sink *si)
 {
     uint32_t processChannels = DEFAULT_NUM_CHANNEL;
     uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
@@ -315,30 +320,33 @@ static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool m
         processChannels = u->multiChannel.sinkChannel;
         processChannelLayout = u->multiChannel.sinkChannelLayout;
     } else {
-        if (pa_safe_streq(sceneType, "EFFECT_NONE")) {
-            return;
-        }
         EffectChainManagerReturnEffectChannelInfo(sceneType, &processChannels, &processChannelLayout);
     }
-    pa_resampler *r;
-    pa_sample_spec outSampleSpec = {
-        .channels = processChannels,
-        .rate = EFFECT_PROCESS_RATE,
-        .format = sinkIn->thread_info.resampler->o_ss.format
-    };
+
+    pa_sample_spec outSampleSpec;
     pa_channel_map outChannelMap;
-    ConvertChLayoutToPaChMap(processChannelLayout, &outChannelMap);
-    outChannelMap.channels = processChannels;
+    if (pa_safe_streq(sceneType, "EFFECT_NONE")) {
+        outSampleSpec = si->sample_spec;
+        outChannelMap = si->channel_map;
+    } else {
+        outSampleSpec.channels = processChannels;
+        outSampleSpec.rate = EFFECT_PROCESS_RATE;
+        outSampleSpec.format = sinkIn->thread_info.resampler->o_ss.format;
+        ConvertChLayoutToPaChMap(processChannelLayout, &outChannelMap);
+        outChannelMap.channels = processChannels;
+    }
+
     if (pa_sample_spec_equal(&sinkIn->thread_info.resampler->o_ss, &outSampleSpec) &&
         pa_channel_map_equal(&sinkIn->thread_info.resampler->o_cm, &outChannelMap)) {
-            return;
-        }
-    AUDIO_INFO_LOG("Update Resampler before effectchain: input sample rate [%{public}d], channels [%{public}d], "
-        "format [%{public}d]; output rate [%{public}d], channels [%{public}d], format [%{public}d]",
-        sinkIn->thread_info.resampler->i_ss.rate, sinkIn->thread_info.resampler->i_ss.channels,
-        sinkIn->thread_info.resampler->i_ss.format, outSampleSpec.rate, outSampleSpec.channels,
-        outSampleSpec.format);
-    r = pa_resampler_new(
+        return;
+    }
+    AUDIO_INFO_LOG("Update Resampler before effectchain: sceneType [%{public}s], sink name [%{public}s], "
+        "input sample rate [%{public}d], channels [%{public}d], format [%{public}d]; "
+        "output rate [%{public}d], channels [%{public}d], format [%{public}d]",
+        sceneType, si->name, sinkIn->thread_info.resampler->i_ss.rate, sinkIn->thread_info.resampler->i_ss.channels,
+        sinkIn->thread_info.resampler->i_ss.format, outSampleSpec.rate, outSampleSpec.channels, outSampleSpec.format);
+
+    pa_resampler *r = pa_resampler_new(
         sinkIn->thread_info.resampler->mempool,
         &sinkIn->thread_info.resampler->i_ss,
         &sinkIn->thread_info.resampler->i_cm,
@@ -1335,7 +1343,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         } else if ((sceneTypeFlag && existFlag) || (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
             RecordEffectChainStatus(existFlag, sSceneType, sSceneMode);
             pa_sink_input_assert_ref(sinkIn);
-            updateResampler(sinkIn, sceneType, false);
+            updateResampler(sinkIn, sceneType, false, si);
 
             AUTO_CTRACE("hdi_sink::PrimaryCluster:%u len:%zu", sinkIn->index, *length);
             pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
@@ -1459,7 +1467,7 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode);
         if (!existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
             pa_sink_input_assert_ref(sinkIn);
-            updateResampler(sinkIn, NULL, true);
+            updateResampler(sinkIn, NULL, true, si);
             pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
 
             if (mixlength == 0 || infoIn->chunk.length < mixlength) {mixlength = infoIn->chunk.length;}
@@ -1670,8 +1678,13 @@ static void SinkRenderPrimaryAfterProcess(pa_sink *si, size_t length, pa_memchun
     u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
     void *dst = pa_memblock_acquire_chunk(chunkIn);
     int32_t frameLen = bitSize > 0 ? ((int32_t) length / bitSize) : 0;
-    ConvertFromFloat(u->format, frameLen, u->bufferAttr->tempBufOut, dst);
-
+    if (u->isLimiterCreated) {
+        // limiter only support 2 channels and float format
+        LimiterManagerProcess((int32_t)u->sink->index, frameLen, u->bufferAttr->tempBufOut, u->bufferAttr->bufOut);
+        ConvertFromFloat(u->format, frameLen, u->bufferAttr->bufOut, dst);
+    } else {
+        ConvertFromFloat(u->format, frameLen, u->bufferAttr->tempBufOut, dst);
+    }
     chunkIn->index = 0;
     chunkIn->length = length;
     pa_memblock_release(chunkIn->memblock);
@@ -2167,7 +2180,7 @@ uint32_t GetFrameSize(const char *sinkSceneType, size_t sinkLengthDefault, int32
         uint32_t sinkLength = byteSize > 0 ? ((uint32_t)sinkByteLength / byteSize) : 0;
         return sinkLength;
     } else {
-        size_t effectFrameSize = EFFECT_FRAME_LENGTH_MONO * processChannels;
+        uint32_t effectFrameSize = (uint32_t)EFFECT_FRAME_LENGTH_MONO * (uint32_t)processChannels;
         return effectFrameSize;
     }
 }
@@ -2301,6 +2314,19 @@ static void UnsetSinkVolume(pa_sink *s)
     }
 }
 
+static void CreateLimiter(struct Userdata *u)
+{
+    if (!u->isLimiterCreated) {
+        int32_t ret = LimiterManagerCreate((int32_t)u->sink->index);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "limiter manager create failed");
+        // allocate limiter buffer; cal algoframelen and latency
+        ret = LimiterManagerSetConfig((int32_t)u->sink->index, (int32_t)u->sink->thread_info.max_request,
+            (int32_t)pa_sample_size_of_format(u->format), (int32_t)u->ss.rate, (int32_t)u->ss.channels);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "limiter manager set config failed");
+        u->isLimiterCreated = true;
+    }
+}
+
 static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 {
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
@@ -2319,6 +2345,8 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
     } else {
         if (u->isEffectBufferAllocated || AllocateEffectBuffer(u)) {
             u->isEffectBufferAllocated = true;
+            // limiter process only in normal render
+            CreateLimiter(u);
             SinkRenderPrimary(u->sink, u->sink->thread_info.max_request, &chunk);
         }
     }
@@ -3080,6 +3108,9 @@ static void PaInputStateChangeCbMultiChannel(struct Userdata *u, pa_sink_input *
     const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
     const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
     const bool stopping = state == PA_SINK_INPUT_UNLINKED;
+
+    EffectChainManagerQueryHdiSupportedChannelLayout(&u->multiChannel.sinkChannel, &u->multiChannel.sinkChannelLayout);
+
     if (corking) {
         SetFadeoutState(i->index, NO_FADE);
     }
@@ -3241,8 +3272,6 @@ static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchun
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
-    EffectChainManagerReturnMultiChannelInfo(&u->multiChannel.sinkChannel, &u->multiChannel.sinkChannelLayout);
-
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
     size_t tmpLength = length * u->multiChannel.sinkChannel / DEFAULT_IN_CHANNEL_NUM;
     chunkIn->index = 0;
@@ -3335,16 +3364,26 @@ static bool POSSIBLY_UNUSED ThreadFuncRendererTimerMultiChannelFlagJudge(struct 
     return flag;
 }
 
+static void ReleaseEffectBufferAndLimiter(struct Userdata *u)
+{
+    if (u->isEffectBufferAllocated == true) {
+        FreeEffectBuffer(u);
+        u->isEffectBufferAllocated = false;
+    }
+    // free limiter buffer
+    FreeLimiter(u);
+}
+
 static void ProcessNormalData(struct Userdata *u)
 {
     AUTO_CTRACE("ProcessNormalData");
     int64_t sleepForUsec = -1;
     pa_usec_t now = 0;
 
-    if (u->sink->thread_info.state == PA_SINK_SUSPENDED && u->isEffectBufferAllocated == true) {
-        FreeEffectBuffer(u);
-        u->isEffectBufferAllocated = false;
+    if (u->sink->thread_info.state == PA_SINK_SUSPENDED) {
+        ReleaseEffectBufferAndLimiter(u);
     }
+
     bool flag = (((u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
                 (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state))) &&
                 !(u->sink->thread_info.state == PA_SINK_IDLE && u->primary.previousState == PA_SINK_SUSPENDED) &&
@@ -3821,7 +3860,7 @@ static int32_t SinkProcessMsg(pa_msgobject *o, int32_t code, void *data, int64_t
                 *((uint64_t *)data) = CalcOffloadCacheLenInHdi(u);
             } else if (u->sink_latency) {
                 *((uint64_t *)data) = u->sink_latency * PA_USEC_PER_MSEC;
-            } else {
+            } else if (pa_atomic_load(&u->primary.isHDISinkStarted) == 1) {
                 uint64_t latency;
                 uint32_t hdiLatency;
                 bool getLatencyFromHdiSucess = true;
@@ -3971,7 +4010,7 @@ static int32_t SinkSetStateInIoThreadCbStartMultiChannel(struct Userdata *u, pa_
 
     u->multiChannel.timestamp = pa_rtclock_now();
 
-    EffectChainManagerReturnMultiChannelInfo(&u->multiChannel.sinkChannel, &u->multiChannel.sinkChannelLayout);
+    EffectChainManagerQueryHdiSupportedChannelLayout(&u->multiChannel.sinkChannel, &u->multiChannel.sinkChannelLayout);
     ResetMultiChannelHdiState(u);
     return 0;
 }
@@ -4621,6 +4660,17 @@ static bool FreeBufferAttr(struct Userdata *u)
     return true;
 }
 
+static void FreeLimiter(struct Userdata *u)
+{
+    if (u->isLimiterCreated == true) {
+        if (LimiterManagerRelease((int32_t)u->sink->index) == SUCCESS) {
+            u->isLimiterCreated = false;
+        } else {
+            AUDIO_ERR_LOG("LimiterManagerRelease failed");
+        }
+    }
+}
+
 static void UserdataFree(struct Userdata *u)
 {
     if (u == NULL) {
@@ -4674,6 +4724,8 @@ static void UserdataFree(struct Userdata *u)
     if (!FreeBufferAttr(u)) {
         return;
     }
+    // free limiter buffer
+    FreeLimiter(u);
 
     pa_xfree(u);
 

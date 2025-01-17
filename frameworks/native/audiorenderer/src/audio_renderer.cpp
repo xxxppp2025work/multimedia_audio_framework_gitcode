@@ -551,6 +551,7 @@ int32_t AudioRendererPrivate::PrepareAudioStream(const AudioStreamParams &audioS
             appInfo_.appUid);
         CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "SetParams GetPlayBackStream failed.");
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
+        isFastRenderer_ = IAudioStream::IsFastStreamClass(streamClass);
     }
     return SUCCESS;
 }
@@ -738,17 +739,18 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     if (GetVolumeInner() == 0 && isStillMuted_) {
         AUDIO_INFO_LOG("StreamClientState for Renderer::Start. volume=%{public}f, isStillMuted_=%{public}d",
             GetVolumeInner(), isStillMuted_);
-        audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SLIENT;
+        audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
     } else {
         isStillMuted_ = false;
     }
 
     {
         std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
-        if (!audioStream_->GetSilentModeAndMixWithOthers()) {
-            int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
-            CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
+        if (audioStream_->GetSilentModeAndMixWithOthers()) {
+            audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
         }
+        int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
     }
 
     if (IsNoStreamRenderer()) {
@@ -1393,14 +1395,16 @@ void AudioRendererPrivate::SetSilentModeAndMixWithOthers(bool on)
     std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
     if (static_cast<RendererState>(audioStream_->GetState()) == RENDERER_RUNNING) {
         if (audioStream_->GetSilentModeAndMixWithOthers() && !on) {
-            int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
-            CHECK_AND_RETURN_LOG(ret == 0, "ActivateAudioInterrupt Failed");
+            audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+            int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "ActivateAudioInterrupt Failed");
             audioStream_->SetSilentModeAndMixWithOthers(on);
             return;
         } else if (!audioStream_->GetSilentModeAndMixWithOthers() && on) {
             audioStream_->SetSilentModeAndMixWithOthers(on);
-            int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
-            CHECK_AND_RETURN_LOG(ret == 0, "DeactivateAudioInterrupt Failed");
+            audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
+            int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "ActivateAudioInterrupt Failed");
             return;
         }
     }
@@ -1752,6 +1756,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         // Update audioStream_ to newAudioStream in both AudioRendererPrivate and AudioInterruptCallbackImpl.
         oldAudioStream = audioStream_;
         UpdateRendererAudioStream(newAudioStream);
+        isFastRenderer_ = IAudioStream::IsFastStreamClass(targetClass);
         isSwitching_ = false;
         audioStream_->GetAudioSessionID(newSessionId);
         switchResult = true;
@@ -1806,8 +1811,12 @@ void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
     }
 
     uint32_t newSessionId = 0;
-    if (!SwitchToTargetStream(targetClass, newSessionId, reason) && audioRendererErrorCallback_) {
-        audioRendererErrorCallback_->OnError(ERROR_SYSTEM);
+    if (!SwitchToTargetStream(targetClass, newSessionId, reason)) {
+        int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+        CHECK_AND_RETURN_LOG(ret == 0, "DeactivateAudioInterrupt Failed");
+        if (audioRendererErrorCallback_) {
+            audioRendererErrorCallback_->OnError(ERROR_SYSTEM);
+        }
     }
     usedSessionId_.push_back(newSessionId);
     int32_t ret = AudioPolicyManager::GetInstance().RegisterDeviceChangeWithInfoCallback(newSessionId,

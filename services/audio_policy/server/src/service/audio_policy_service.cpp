@@ -114,7 +114,9 @@ bool AudioPolicyService::Init(void)
     audioEffectService_.EffectServiceInit();
     audioDeviceManager_.ParseDeviceXml();
     audioAffinityManager_.ParseAffinityXml();
+#ifdef AUDIO_WIRED_DETECT
     audioPnpServer_.init();
+#endif
     audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
     if (audioA2dpOffloadManager_ != nullptr) {audioA2dpOffloadManager_->Init();}
 
@@ -193,7 +195,9 @@ void AudioPolicyService::Deinit(void)
     audioPolicyManager_.Deinit();
     audioIOHandleMap_.DeInit();
     deviceStatusListener_->UnRegisterDeviceStatusListener();
+#ifdef AUDIO_WIRED_DETECT
     audioPnpServer_.StopPnpServer();
+#endif
 
     if (isBtListenerRegistered) {
         UnregisterBluetoothListener();
@@ -336,9 +340,10 @@ float AudioPolicyService::GetSingleStreamVolume(int32_t streamId) const
     return streamCollector_.GetSingleStreamVolume(streamId);
 }
 
-int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage)
+int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
+    const DeviceType &deviceType)
 {
-    return audioVolumeManager_.SetStreamMute(streamType, mute, streamUsage);
+    return audioVolumeManager_.SetStreamMute(streamType, mute, streamUsage, deviceType);
 }
 
 int32_t AudioPolicyService::SetSourceOutputStreamMute(int32_t uid, bool setMute) const
@@ -754,6 +759,11 @@ void AudioPolicyService::SetFirstScreenOn()
     audioDeviceCommon_.SetFirstScreenOn();
 }
 
+int32_t AudioPolicyService::SetVirtualCall(const bool isVirtual)
+{
+    return audioDeviceCommon_.SetVirtualCall(isVirtual);
+}
+
 void AudioPolicyService::RegisterNameMonitorHelper()
 {
     std::shared_ptr<DataShare::DataShareHelper> dataShareHelper
@@ -836,8 +846,10 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 #endif
         audioEffectService_.SetMasterSinkAvailable();
     }
+#ifdef HAS_FEATURE_INNERCAPTURER
     // load inner-cap-sink
     LoadModernInnerCapSink();
+#endif
     // RegisterBluetoothListener() will be called when bluetooth_host is online
     // load hdi-effect-model
     LoadHdiEffectModel();
@@ -865,6 +877,7 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
     AudioServerProxy::GetInstance().SetAudioBalanceValueProxy(audioBalance);
 }
 
+#ifdef HAS_FEATURE_INNERCAPTURER
 void AudioPolicyService::LoadModernInnerCapSink()
 {
     AUDIO_INFO_LOG("Start");
@@ -879,6 +892,7 @@ void AudioPolicyService::LoadModernInnerCapSink()
 
     audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
 }
+#endif
 
 void AudioPolicyService::LoadEffectLibrary()
 {
@@ -1138,6 +1152,10 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
             return AUDIO_FLAG_NORMAL;
         }
     }
+    if (flag == AUDIO_FLAG_VOIP_FAST && audioSceneManager_.GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
+        AUDIO_INFO_LOG("Current scene is phone call, concede incoming voip fast output stream");
+        flag = AUDIO_FLAG_NORMAL;
+    }
     return flag;
 }
 
@@ -1154,9 +1172,14 @@ int32_t AudioPolicyService::GetPreferredInputStreamType(AudioCapturerInfo &captu
     if (preferredDeviceList.size() == 0) {
         return AUDIO_FLAG_NORMAL;
     }
-    return audioDeviceCommon_.GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
+    int32_t flag = audioDeviceCommon_.GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
         preferredDeviceList[0]->deviceType_,
         capturerInfo.originalFlag, preferredDeviceList[0]->networkId_, capturerInfo.samplingRate);
+    if (flag == AUDIO_FLAG_VOIP_FAST && audioSceneManager_.GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
+        AUDIO_INFO_LOG("Current scene is phone call, concede incoming voip fast input stream");
+        flag = AUDIO_FLAG_NORMAL;
+    }
+    return flag;
 }
 
 int32_t AudioPolicyService::ResumeStreamState()
@@ -1477,6 +1500,7 @@ void AudioPolicyService::RegisterDataObserver()
 
 int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     int32_t ret = AudioServerProxy::GetInstance().SetCaptureSilentStateProxy(config.silentCapture);
     CHECK_AND_RETURN_RET_LOG(!ret, ERR_OPERATION_FAILED, "SetCaptureSilentState failed");
 
@@ -1489,11 +1513,18 @@ int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCa
     }
 
     return AudioServerProxy::GetInstance().SetSupportStreamUsageProxy(targetUsages);
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioPolicyService::SetCaptureSilentState(bool state)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     return AudioServerProxy::GetInstance().SetCaptureSilentStateProxy(state);
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioPolicyService::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)
@@ -1972,7 +2003,7 @@ int32_t AudioPolicyService::SetDefaultOutputDevice(const DeviceType deviceType, 
     CHECK_AND_RETURN_RET_LOG(audioConfigManager_.GetHasEarpiece(), ERR_NOT_SUPPORTED, "the device has no earpiece");
     int32_t ret = audioDeviceManager_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
     if (ret == NEED_TO_FETCH) {
-        audioDeviceCommon_.FetchDevice(true);
+        audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
         return SUCCESS;
     }
     return ret;

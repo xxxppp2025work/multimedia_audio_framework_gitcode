@@ -40,6 +40,7 @@ ohos_shared_library("audio_common") {
 
   include_dirs = [
     "common/include",
+    "common/include/limiter",
     "../../frameworks/native/audioschedule/include",
     "../../interfaces/inner_api/native/audiocommon/include",
   ]
@@ -57,6 +58,9 @@ ohos_shared_library("audio_common") {
     "common/src/callback_handler.cpp",
     "common/src/format_converter.cpp",
     "common/src/futex_tool.cpp",
+    "common/src/limiter/audio_limiter.cpp",
+    "common/src/limiter/audio_limiter_adapter.cpp",
+    "common/src/limiter/audio_limiter_manager.cpp",
     "common/src/linear_pos_time_model.cpp",
     "common/src/oh_audio_buffer.cpp",
     "common/src/volume_tools.cpp",
@@ -244,6 +248,10 @@ ohos_shared_library("audio_client") {
     defines += [ "FEATURE_OFFLINE_EFFECT" ]
   }
 
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
+
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
   cflags = [ "-Os" ]
@@ -271,6 +279,7 @@ config("audio_service_config") {
 
   include_dirs = [
     "common/include",
+    "common/include/limiter",
     "client/include",
     "server/include",
     "server/include/config",
@@ -308,7 +317,7 @@ config("audio_service_config") {
     cflags += [ "-DBINDER_IPC_32BIT" ]
   }
 
-  if (audio_framework_feature_daudio_enable == true) {
+  if (audio_framework_feature_distributed_audio == true) {
     cflags += [ "-DDAUDIO_ENABLE" ]
   }
 
@@ -370,7 +379,7 @@ audio_ohos_library("audio_process_service") {
     "../audio_policy:audio_device_util",
   ]
 
-  if (audio_framework_feature_daudio_enable == true) {
+  if (audio_framework_feature_distributed_audio == true) {
     deps += [
       "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
       "../../frameworks/native/hdiadapter/source:remote_fast_audio_capturer_source",
@@ -408,6 +417,11 @@ audio_ohos_library("audio_process_service") {
     deps +=
         [ "../../frameworks/native/offlineaudioeffect:offline_audio_effect" ]
     defines += [ "FEATURE_OFFLINE_EFFECT" ]
+  }
+
+  if (audio_framework_feature_inner_capturer) {
+    deps += [ "../../frameworks/native/playbackcapturer:playback_capturer" ]
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
 
   cflags = [ "-Os" ]
@@ -457,7 +471,6 @@ audio_ohos_library("audio_service") {
     "../../frameworks/native/hdiadapter/source:bluetooth_capturer_source",
     "../../frameworks/native/hdiadapter/source:capturer_source_adapter",
     "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
-    "../../frameworks/native/playbackcapturer:playback_capturer",
   ]
 
   external_deps = [
@@ -515,6 +528,11 @@ audio_ohos_library("audio_service") {
 
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
+  }
+
+  if (audio_framework_feature_inner_capturer) {
+    deps += [ "../../frameworks/native/playbackcapturer:playback_capturer" ]
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
 
   cflags = [ "-Os" ]

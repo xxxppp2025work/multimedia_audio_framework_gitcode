@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -350,14 +350,15 @@ int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType)
     return gsp->GetSystemVolumeLevel(volumeType);
 }
 
-int32_t AudioPolicyManager::SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy)
+int32_t AudioPolicyManager::SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy,
+    const DeviceType &deviceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     if (isLegacy) {
-        return gsp->SetStreamMuteLegacy(volumeType, mute);
+        return gsp->SetStreamMuteLegacy(volumeType, mute, deviceType);
     }
-    return gsp->SetStreamMute(volumeType, mute);
+    return gsp->SetStreamMute(volumeType, mute, deviceType);
 }
 
 bool AudioPolicyManager::GetStreamMute(AudioVolumeType volumeType)
@@ -1148,14 +1149,19 @@ int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supporte
 int32_t AudioPolicyManager::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config,
     uint32_t appTokenId)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
     return gsp->SetPlaybackCapturerFilterInfos(config, appTokenId);
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioPolicyManager::SetCaptureSilentState(bool state)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("SetCaptureSilentState: audio policy manager proxy is NULL");
@@ -1163,6 +1169,9 @@ int32_t AudioPolicyManager::SetCaptureSilentState(bool state)
     }
 
     return gsp->SetCaptureSilentState(state);
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioPolicyManager::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)
@@ -1954,6 +1963,13 @@ int32_t AudioPolicyManager::SetVoiceRingtoneMute(bool isMute)
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->SetVoiceRingtoneMute(isMute);
+}
+
+int32_t AudioPolicyManager::SetVirtualCall(const bool isVirtual)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->SetVirtualCall(isVirtual);
 }
 
 AudioPolicyManager& AudioPolicyManager::GetInstance()
