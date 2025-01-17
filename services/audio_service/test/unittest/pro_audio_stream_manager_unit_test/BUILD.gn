@@ -55,7 +55,7 @@ ohos_unittest("pro_audio_stream_manager_unit_test") {
   deps = [
     "../../../../../frameworks/native/audiocapturer:audio_capturer",
     "../../../../../frameworks/native/audioutils:audio_utils",
-    "../../../../audio_service:audio_client",
+    "../../../../audio_service:audio_client_static",
     "../../../../audio_service:audio_common",
     "../../../../audio_service:audio_process_service_static",
   ]

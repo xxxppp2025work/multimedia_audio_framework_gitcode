@@ -32,7 +32,7 @@ ohos_moduletest("audio_policy_module_test") {
 
   sources = [ "1.0/src/audio_policy_test.cpp" ]
 
-  deps = [ "../../../services/audio_service:audio_client" ]
+  deps = [ "../../../services/audio_service:audio_client_static" ]
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
