@@ -25,6 +25,7 @@
 #include "cockpit_phone_router.h"
 #include "pair_device_router.h"
 #include "default_router.h"
+#include "seperate_mic_router.h"
 
 #include "media_monitor_manager.h"
 
@@ -154,6 +155,8 @@ void AudioStrategyRouterParser::AddRouters(std::vector<std::unique_ptr<RouterBas
             routers.push_back(make_unique<CockpitPhoneRouter>());
         } else if (name == "PairDeviceRouter") {
             routers.push_back(make_unique<PairDeviceRouter>());
+        } else if (name == "SeperateMicRouter") {
+            routers.push_back(make_unique<SeperateMicRouter>());
         }
     }
 }

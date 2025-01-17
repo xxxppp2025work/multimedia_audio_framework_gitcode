@@ -194,6 +194,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/routers/pair_device_router.cpp",
     "server/src/service/routers/privacy_priority_router.cpp",
     "server/src/service/routers/public_priority_router.cpp",
+    "server/src/service/routers/seperate_mic_router.cpp",
     "server/src/service/routers/stream_filter_router.cpp",
     "server/src/service/routers/user_select_router.cpp",
     "server/src/service/service/audio_a2dp_device.cpp",

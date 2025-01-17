@@ -994,6 +994,12 @@ enum RouterType {
      * @since 12
      */
     ROUTER_TYPE_APP_SELECT,
+
+    /**
+     * Seperate mic router.
+     * @since 12
+     */
+    ROUTER_TYPE_SEPERATE_MIC,
 };
 
 enum RenderMode {
