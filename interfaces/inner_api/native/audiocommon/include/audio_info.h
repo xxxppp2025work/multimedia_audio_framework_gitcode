@@ -50,11 +50,13 @@ constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
 constexpr int32_t AUDIO_USAGE_VOIP = 1;
 constexpr uint32_t STREAM_FLAG_FAST = 1;
+constexpr uint32_t STREAM_FLAG_NORMAL = 0;
 constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
 constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
 constexpr int32_t EMPTY_UID = 0;
 constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
 constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
+
 
 constexpr uint32_t MIN_STREAMID = 100000;
 constexpr uint32_t MAX_STREAMID = UINT32_MAX - MIN_STREAMID;
