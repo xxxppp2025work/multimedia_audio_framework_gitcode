@@ -37,7 +37,7 @@ ohos_unittest("audio_routing_manager_test") {
   ]
   sources = [ "src/audio_routing_manager_unit_test.cpp" ]
   deps = [
-    "../../../../../../services/audio_policy:audio_device_util",
+    "../../../../../../services/audio_policy:audio_foundation",
     "../../../../../../services/audio_service:audio_client",
   ]
 }

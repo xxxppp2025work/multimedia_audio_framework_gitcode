@@ -16,7 +16,6 @@
 #ifndef AUDIO_STREAM_COLLECTOR_H
 #define AUDIO_STREAM_COLLECTOR_H
 
-#include "audio_info.h"
 #include "audio_policy_client.h"
 #include "audio_system_manager.h"
 #include "audio_policy_server_handler.h"

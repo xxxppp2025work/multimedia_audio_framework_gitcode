@@ -275,7 +275,7 @@ audio_ohos_library("audio_policy_service") {
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_config.para",
     "../audio_policy:audio_config.para.dac",
-    "../audio_policy:audio_device_util",
+    "../audio_policy:audio_foundation",
     "../audio_policy:audio_setting_provider",
     "../audio_service:audio_common",
   ]
@@ -327,7 +327,7 @@ audio_ohos_library("audio_policy_service") {
     "openssl:libcrypto_shared",
   ]
 
-  if (usb_manager_enable) {
+  if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]
     external_deps += [ "usb_manager:usbsrv_client" ]
     sources += [ "server/src/service/manager/audio_usb_manager.cpp" ]
@@ -582,7 +582,7 @@ ohos_executable("audio_policy_test") {
   configs = [ ":audio_policy_client_config" ]
 
   deps = [
-    "../audio_policy:audio_device_util",
+    "../audio_policy:audio_foundation",
     "../audio_policy:audio_policy_client",
     "../audio_service:audio_client",
   ]
@@ -600,7 +600,7 @@ ohos_executable("audio_policy_test") {
   subsystem_name = "multimedia"
 }
 
-config("audio_device_util_public_config") {
+config("audio_foundation_public_config") {
   include_dirs = [
     "util/include",
     "../audio_service/util/include",
@@ -610,7 +610,7 @@ config("audio_device_util_public_config") {
   ]
 }
 
-ohos_shared_library("audio_device_util") {
+ohos_shared_library("audio_foundation") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -621,7 +621,7 @@ ohos_shared_library("audio_device_util") {
   install_enable = true
   sources = [ "server/src/service/device/audio_device_descriptor.cpp" ]
 
-  public_configs = [ ":audio_device_util_public_config" ]
+  public_configs = [ ":audio_foundation_public_config" ]
 
   deps = [
     "../../frameworks/native/audioutils:audio_utils",
@@ -635,6 +635,76 @@ ohos_shared_library("audio_device_util") {
     "c_utils:utils",
     "libxml2:libxml2",
     "pulseaudio:sonic",
+  ]
+
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
+
+  innerapi_tags = [ "platformsdk" ]
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+config("audio_manager_client_public_config") {
+  include_dirs = [
+    "util/include",
+    "../audio_policy/client/include",
+    "../audio_policy/common/include",
+    "../audio_service/client/include",
+    "../../frameworks/native/audiopolicy/include",
+    "../../frameworks/native/audioutils/include",
+    "../../interfaces/inner_api/native/audiocommon/include",
+    "../../interfaces/inner_api/native/audiomanager/include",
+    "../../frameworks/native/audiostream/include",
+    "../../interfaces/inner_api/native/audiocapturer/include",
+    "../../interfaces/inner_api/native/audiorenderer/include",
+  ]
+}
+
+ohos_shared_library("audio_manager_client") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+  }
+  install_enable = true
+  sources = [
+    "../audio_service/client/src/audio_anahs_manager.cpp",
+    "../audio_service/client/src/audio_filter.cpp",
+    "../audio_service/client/src/audio_group_manager.cpp",
+    "../audio_service/client/src/audio_manager_listener_stub.cpp",
+    "../audio_service/client/src/audio_manager_proxy.cpp",
+    "../audio_service/client/src/audio_routing_manager.cpp",
+    "../audio_service/client/src/audio_stream_manager.cpp",
+    "../audio_service/client/src/audio_stream_tracker.cpp",
+    "../audio_service/client/src/audio_system_manager.cpp",
+    "../audio_service/client/src/resource_manager_adapter.cpp",
+    "util/src/audio_util.cpp",
+  ]
+
+  public_configs = [ ":audio_manager_client_public_config" ]
+
+  deps = [
+    ":audio_foundation",
+    ":audio_policy_client",
+    "../../frameworks/native/audioutils:audio_utils",
+    "../audio_service:audio_common",
+  ]
+
+  external_deps = [
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "i18n:intl_util",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "resource_management:global_resmgr",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
   ]
 
   cflags = [ "-Os" ]

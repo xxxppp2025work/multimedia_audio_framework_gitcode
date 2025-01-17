@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,7 +28,6 @@
 #include "audio_renderer_log.h"
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
-#include "audio_utils.h"
 
 #include "media_monitor_manager.h"
 
@@ -44,6 +43,8 @@ static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
 };
 static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_UNDERRUN_NUM = 100;
+static constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
+static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 constexpr int32_t TIME_OUT_SECONDS = 10;
 constexpr int32_t START_TIME_OUT_SECONDS = 15;
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
@@ -503,7 +504,13 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
 
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererInfo_.contentType, rendererInfo_.streamUsage);
+#ifdef SUPPORT_LOW_LATENCY
     IAudioStream::StreamClass streamClass = GetPreferredStreamClass(audioStreamParams);
+#else
+    rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
+    rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
+#endif
     int32_t ret = PrepareAudioStream(audioStreamParams, audioStreamType, streamClass);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "PrepareAudioStream failed");
 
@@ -529,7 +536,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     // eg: 100005_44100_2_1_client_in.pcm
     std::string dumpFileName = std::to_string(sessionID_) + "_" + std::to_string(params.sampleRate) + "_" +
         std::to_string(params.channelCount) + "_" + std::to_string(params.sampleFormat) + "_client_in.pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
     ret = InitOutputDeviceChangeCallback();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitOutputDeviceChangeCallback Failed");
@@ -1068,7 +1075,6 @@ int32_t AudioRendererPrivate::SetBufferDuration(uint64_t bufferDuration) const
 {
     CHECK_AND_RETURN_RET_LOG(bufferDuration >= MINIMUM_BUFFER_SIZE_MSEC && bufferDuration <= MAXIMUM_BUFFER_SIZE_MSEC,
         ERR_INVALID_PARAM, "Error: Please set the buffer duration between 5ms ~ 20ms");
-    
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->SetBufferSizeInMsec(bufferDuration);
@@ -1927,6 +1933,7 @@ void AudioRendererPrivate::WriteUnderrunEvent() const
 
 int32_t AudioRendererPrivate::RegisterRendererPolicyServiceDiedCallback()
 {
+    std::lock_guard<std::mutex> lock(rendererPolicyServiceDiedCbMutex_);
     AUDIO_DEBUG_LOG("RegisterRendererPolicyServiceDiedCallback");
     if (!audioPolicyServiceDiedCallback_) {
         audioPolicyServiceDiedCallback_ = std::make_shared<RendererPolicyServiceDiedCallback>();
@@ -1943,6 +1950,7 @@ int32_t AudioRendererPrivate::RegisterRendererPolicyServiceDiedCallback()
 
 int32_t AudioRendererPrivate::RemoveRendererPolicyServiceDiedCallback()
 {
+    std::lock_guard<std::mutex> lock(rendererPolicyServiceDiedCbMutex_);
     AUDIO_DEBUG_LOG("RemoveRendererPolicyServiceDiedCallback");
     if (audioPolicyServiceDiedCallback_) {
         int32_t ret = AudioPolicyManager::GetInstance().UnregisterAudioStreamPolicyServerDiedCb(

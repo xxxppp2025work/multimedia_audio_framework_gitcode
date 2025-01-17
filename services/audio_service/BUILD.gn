@@ -15,6 +15,7 @@ import("//build/ohos.gni")
 import("../../appgallery.gni")
 import("../../audio_framework_test_sources.gni")
 import("../../config.gni")
+import("../../config.gni")
 import("../../ressche_part.gni")
 import("../../sensor.gni")
 import("../../window_manager.gni")
@@ -120,6 +121,7 @@ config("audio_client_public_config") {
     "common/include",
     "../audio_policy/client/include",
     "../audio_policy/common/include",
+    "../audio_policy/util/include",
     "../../frameworks/native/audiopolicy/include",
     "../../frameworks/native/audiostream/include",
     "../../frameworks/native/audioutils/include",
@@ -166,6 +168,7 @@ ohos_shared_library("audio_client") {
   branch_protector_ret = "pac_ret"
   install_enable = true
   sources = [
+    "../audio_policy/util/src/audio_util.cpp",
     "client/src/audio_anahs_manager.cpp",
     "client/src/audio_combine_denoising_manager.cpp",
     "client/src/audio_effect_manager.cpp",
@@ -183,7 +186,6 @@ ohos_shared_library("audio_client") {
     "client/src/audio_stream_tracker.cpp",
     "client/src/audio_system_manager.cpp",
     "client/src/capturer_in_client.cpp",
-    "client/src/fast_audio_stream.cpp",
     "client/src/i_audio_stream.cpp",
     "client/src/ipc_offline_stream_proxy.cpp",
     "client/src/ipc_stream_listener_impl.cpp",
@@ -197,12 +199,16 @@ ohos_shared_library("audio_client") {
     "client/src/resource_manager_adapter.cpp",
   ]
 
+  if (audio_framework_feature_low_latency) {
+    sources += [ "client/src/fast_audio_stream.cpp" ]
+  }
+
   public_configs = [ ":audio_client_public_config" ]
 
   deps = [
     ":audio_common",
     "../../frameworks/native/audioutils:audio_utils",
-    "../audio_policy:audio_device_util",
+    "../audio_policy:audio_foundation",
     "../audio_policy:audio_policy_client",
   ]
 
@@ -250,6 +256,10 @@ ohos_shared_library("audio_client") {
 
   if (audio_framework_feature_inner_capturer) {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
+
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
   }
 
   version_script = "../../audio_framework.versionscript"
@@ -336,11 +346,8 @@ audio_ohos_library("audio_process_service") {
   install_enable = true
 
   sources = [
-    "server/src/audio_endpoint.cpp",
-    "server/src/audio_endpoint_separate.cpp",
     "server/src/audio_engine_manager.cpp",
     "server/src/audio_playback_engine.cpp",
-    "server/src/audio_process_in_server.cpp",
     "server/src/audio_process_stub.cpp",
     "server/src/audio_service.cpp",
     "server/src/capturer_in_server.cpp",
@@ -361,6 +368,14 @@ audio_ohos_library("audio_process_service") {
     "server/src/renderer_in_server.cpp",
   ]
 
+  if (audio_framework_feature_low_latency) {
+    sources += [
+      "server/src/audio_endpoint.cpp",
+      "server/src/audio_endpoint_separate.cpp",
+      "server/src/audio_process_in_server.cpp",
+    ]
+  }
+
   configs = [ ":audio_service_config" ]
 
   deps = [
@@ -371,12 +386,11 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
-    "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "../../frameworks/native/hdiadapter/source:audio_capturer_source",
     "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
     "../../frameworks/native/playbackcapturer:playback_capturer",
-    "../audio_policy:audio_device_util",
+    "../audio_policy:audio_foundation",
   ]
 
   if (audio_framework_feature_distributed_audio == true) {
@@ -424,6 +438,14 @@ audio_ohos_library("audio_process_service") {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
 
+  if (audio_framework_feature_low_latency) {
+    deps += [
+      "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
+      "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
+    ]
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+
   cflags = [ "-Os" ]
   cflags_cc = cflags
 
@@ -464,13 +486,11 @@ audio_ohos_library("audio_service") {
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
-    "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:offload_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "../../frameworks/native/hdiadapter/source:audio_capturer_source",
     "../../frameworks/native/hdiadapter/source:bluetooth_capturer_source",
     "../../frameworks/native/hdiadapter/source:capturer_source_adapter",
-    "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
   ]
 
   external_deps = [
@@ -535,6 +555,14 @@ audio_ohos_library("audio_service") {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
 
+  if (audio_framework_feature_low_latency) {
+    deps += [
+      "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
+      "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
+    ]
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+
   cflags = [ "-Os" ]
   cflags_cc = cflags
 
@@ -585,10 +613,11 @@ ohos_shared_library("audio_sasdk") {
 }
 
 group("audio_service_test_packages") {
-  deps = [
-    ":audio_hdi_device_test",
-    ":audio_process_client_test",
-  ]
+  deps = [ ":audio_hdi_device_test" ]
+
+  if (audio_framework_feature_low_latency) {
+    deps += [ ":audio_process_client_test" ]
+  }
 }
 
 ohos_executable("audio_process_client_test") {

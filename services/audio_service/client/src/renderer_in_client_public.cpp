@@ -41,7 +41,6 @@
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
 #include "audio_system_manager.h"
-#include "audio_utils.h"
 #include "futex_tool.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
@@ -53,6 +52,7 @@
 #include "audio_spatialization_manager.h"
 #include "policy_handler.h"
 #include "volume_tools.h"
+#include "audio_util.h"
 
 #include "media_monitor_manager.h"
 
@@ -182,7 +182,7 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
 {
     rendererInfo_ = rendererInfo;
 
-    rendererInfo_.sceneType = GetEffectSceneName(rendererInfo_.streamUsage);
+    rendererInfo_.sceneType = AudioUtil::GetEffectSceneName(rendererInfo_.streamUsage);
 
     if (rendererInfo_.sceneType == AUDIO_SUPPORTED_SCENE_TYPES.find(SCENE_OTHERS)->second) {
         effectMode_ = EFFECT_NONE;
@@ -251,7 +251,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     dumpOutFile_ = std::to_string(sessionId_) + "_" + std::to_string(curStreamParams_.samplingRate) + "_" +
         std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out.pcm";
 
-    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
     logUtilsTag_ = "[" + std::to_string(sessionId_) + "]NormalRenderer";
     InitDirectPipeType();
 

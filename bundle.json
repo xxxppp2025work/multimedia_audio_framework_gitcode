@@ -35,7 +35,9 @@
           "audio_framework_feature_offline_effect",
           "audio_framework_feature_distributed_audio",
           "audio_framework_feature_file_io",
-          "audio_framework_feature_inner_capturer"
+          "audio_framework_feature_inner_capturer",
+          "audio_framework_feature_usb_audio",
+          "audio_framework_feature_low_latency"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "4500KB",
@@ -128,12 +130,23 @@
             },
             {
               "type": "none",
-              "name": "//foundation/multimedia/audio_framework/services/audio_policy:audio_device_util",
+              "name": "//foundation/multimedia/audio_framework/services/audio_policy:audio_foundation",
               "header": {
                 "header_files": [
                   "./audiocommon/include/audio_device_descriptor.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include"
+              }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/services/audio_policy:audio_manager_client",
+              "header": {
+                "header_files": [
+                  "./audiomanager/include/audio_anahs_manager.h",
+                  "./audiomanager/include/resource_manager_adapter.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include"
               }
             },
             {

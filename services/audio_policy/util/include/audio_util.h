@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,23 +13,18 @@
  * limitations under the License.
  */
 
-#ifndef MULTICHANNEL_RENDERER_SINK_H
-#define MULTICHANNEL_RENDERER_SINK_H
-
-#include <cstdio>
-#include <list>
-
-#include "i_audio_renderer_sink.h"
+#ifndef ST_AUDIO_UTIL_H
+#define ST_AUDIO_UTIL_H
 
 namespace OHOS {
 namespace AudioStandard {
-class MultiChannelRendererSink : public IAudioRendererSink {
+class AudioUtil {
 public:
-    static MultiChannelRendererSink *GetInstance(const std::string &halName);
+    static AudioUtil *GetInstance();
 
-    MultiChannelRendererSink() = default;
-    ~MultiChannelRendererSink() = default;
+    virtual ~AudioUtil();
+    static const std::string GetEffectSceneName(const StreamUsage &streamUsage);
 };
-}  // namespace AudioStandard
-}  // namespace OHOS
-#endif // MULTICHANNEL_RENDERER_SINK_H
+} // namespace AudioStandard
+} // namespace OHOS
+#endif // ST_AUDIO_UTIL_H
