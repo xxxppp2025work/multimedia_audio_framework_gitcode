@@ -169,7 +169,11 @@ void AudioUsbManager::Init(IDeviceStatusObserver *observer)
 {
     lock_guard<mutex> lock(mutex_);
     if (!initialized_) {
-        AUDIO_INFO_LOG("Entry");
+#ifdef PRODUCT_IS_PC
+        AUDIO_INFO_LOG("Entry. PRODUCT_IS_PC=true");
+#else
+        AUDIO_INFO_LOG("Entry. PRODUCT_IS_PC=false");
+#endif
         observer_ = observer;
         RefreshUsbAudioDevices();
         initialized_ = true;
