@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,7 +17,6 @@
 #include "audio_policy_server.h"
 #include "audio_interrupt_unit_test.h"
 #include "audio_info.h"
-#include "audio_utils.h"
 #include "securec.h"
 #include "audio_interrupt_service.h"
 
@@ -1037,6 +1036,34 @@ HWTEST(AudioPolicyUnitTest, UpdateMuteStateAccordingToVolLevel_003, TestSize.Lev
     int32_t volumeLevel = 1;
     bool mute = false;
     ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute);
+}
+
+/**
+* @tc.name  : Test NotifyProcessStatus.
+* @tc.number: NotifyProcessStatus_001
+* @tc.desc  : Test AudioPolicyServer::NotifyProcessStatus
+*/
+HWTEST(AudioPolicyUnitTest, NotifyProcessStatus_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    bool isStart = true;
+    ptrAudioPolicyServer->NotifyProcessStatus(isStart);
+}
+
+/**
+* @tc.name  : Test NotifyProcessStatus.
+* @tc.number: NotifyProcessStatus_002
+* @tc.desc  : Test AudioPolicyServer::NotifyProcessStatus
+*/
+HWTEST(AudioPolicyUnitTest, NotifyProcessStatus_002, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    bool isStart = false;
+    ptrAudioPolicyServer->NotifyProcessStatus(isStart);
 }
 } // AudioStandard
 } // OHOS

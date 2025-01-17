@@ -45,6 +45,11 @@ ohos_shared_library("audio_renderer") {
     "src/audio_renderer_proxy_obj.cpp",
   ]
 
+  defines = []
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+
   deps = [
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_service:audio_client",

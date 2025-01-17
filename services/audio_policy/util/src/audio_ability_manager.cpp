@@ -52,6 +52,7 @@ constexpr unsigned int XCOLLIE_TIME_OUT_SECONDS = 10;
 std::mutex g_asProxyMutex;
 sptr<IStandardAudioService> g_asProxy = nullptr;
 static const int64_t WATI_PLAYBACK_TIME = 200000; // 200
+constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 
 AudioAbilityManager::~AudioAbilityManager()
 {
