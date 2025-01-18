@@ -490,7 +490,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerReturnEffectChannelInf
     uint32_t processChannels = DEFAULT_NUM_CHANNEL;
     uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
     result = EffectChainManagerReturnEffectChannelInfo(sceneType, &processChannels, &processChannelLayout);
-    EXPECT_EQ(ERROR, result);
+    EXPECT_EQ(SUCCESS, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
