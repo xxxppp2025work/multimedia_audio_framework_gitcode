@@ -313,7 +313,7 @@ int32_t CapturerInServer::Start()
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId), ERR_OPERATION_FAILED,
             "VerifyBackgroundCapture failed!");
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyStart(tokenId, streamIndex_), ERR_PERMISSION_DENIED,
-            "NotifyPrivacy failed!");
+            "NotifyPrivacy Start failed!");
     }
 
     AudioService::GetInstance()->UpdateSourceType(processConfig_.capturerInfo.sourceType);
