@@ -126,7 +126,7 @@ private:
 
 private:
     uint32_t clientTid_ = 0;
-    int32_t clientPid_ = IPCSkeleton::GetCallingPid();
+    int32_t clientPid_ = 0;
     std::string clientBundleName_;
     bool clientThreadPriorityRequested_ = false;
     AudioProcessConfig config_;
