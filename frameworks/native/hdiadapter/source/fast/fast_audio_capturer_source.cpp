@@ -37,6 +37,7 @@ namespace AudioStandard {
 namespace {
 const int64_t GENERAL_MAX_HANDLE_COST_IN_NANOSEC = 10000000; // 10ms = 10ns * 1000 * 1000
 const int64_t VOIP_MAX_HANDLE_COST_IN_NANOSEC = 20000000; // 20ms = 20ns * 1000 * 1000
+const int64_t WAIT_FOR_FINISH_STOPPING = 100; // 100ms
 }
 
 class FastAudioCapturerSourceInner : public FastAudioCapturerSource {
@@ -103,6 +104,9 @@ private:
     bool capturerInited_ = false;
     bool started_ = false;
     bool paused_ = false;
+    std::mutex waitStopLock_;
+    bool stopping_ = false;
+    std::condition_variable waitCv_;
     std::atomic<bool> isCheckPositionSuccess_ = true;
 
     uint32_t captureId_ = 0;
@@ -534,6 +538,10 @@ int32_t FastAudioCapturerSourceInner::CheckPositionTime()
 int32_t FastAudioCapturerSourceInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
+    if (stopping_) {
+        std::unique_lock<std::mutex> lock(waitStopLock_);
+        waitCv_.wait_for(lock, std::chrono::milliseconds(WAIT_FOR_FINISH_STOPPING));
+    }
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
     if (runningLockManager_ == nullptr) {
@@ -741,10 +749,13 @@ int32_t FastAudioCapturerSourceInner::Stop(void)
 #endif
 
     if ((started_ || !isCheckPositionSuccess_) && audioCapture_ != nullptr) {
+        stopping_ = true;
         int32_t ret = audioCapture_->Stop(audioCapture_);
         if (audioCapturerSourceCallback_ != nullptr) {
             audioCapturerSourceCallback_->OnCapturerState(false);
         }
+        stopping_ = false;
+        waitCv_.notify_all();
         CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "Stop capture Failed");
     }
     started_ = false;
