@@ -224,7 +224,7 @@ int32_t IpcStreamInServer::Stop()
 
 int32_t IpcStreamInServer::Release()
 {
-    UnscheduleReportData(IPCSkeleton::GetCallingPid(), clientTid_, clientBundleName_.c_str());
+    UnscheduleReportData(clientPid_, clientTid_, clientBundleName_.c_str());
     clientThreadPriorityRequested_ = false;
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->Release();
