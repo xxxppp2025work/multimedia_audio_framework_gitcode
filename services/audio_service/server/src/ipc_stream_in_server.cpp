@@ -224,7 +224,7 @@ int32_t IpcStreamInServer::Stop()
 
 int32_t IpcStreamInServer::Release()
 {
-    UnscheduleReportData(clientPid_, clientTid_, clientBundleName_.c_str());
+    UnscheduleReportData(IPCSkeleton::GetCallingPid(), clientTid_, clientBundleName_.c_str());
     clientThreadPriorityRequested_ = false;
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->Release();
@@ -462,6 +462,7 @@ int32_t IpcStreamInServer::SetDuckFactor(float duckFactor)
 int32_t IpcStreamInServer::RegisterThreadPriority(uint32_t tid, const std::string &bundleName)
 {
     if (!clientThreadPriorityRequested_) {
+        clientPid_ = IPCSkeleton::GetCallingPid();
         clientTid_ = tid;
         clientBundleName_ = bundleName;
         ScheduleReportData(clientPid_, tid, bundleName.c_str());
