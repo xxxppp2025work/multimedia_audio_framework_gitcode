@@ -88,6 +88,10 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
     } else {
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u, streamVolumeSize:%{public}zu",
             sessionId, streamVolume_.size());
+        if (volumeType == STREAM_VOICE_ASSISTANT &&
+            !CheckoutSystemAppUtil::CheckoutSystemApp(it->second.GetAppUid())) {
+            volumeType = STREAM_MUSIC;
+        }
     }
 
     std::shared_lock<std::shared_mutex> lockSystem(systemMutex_);
