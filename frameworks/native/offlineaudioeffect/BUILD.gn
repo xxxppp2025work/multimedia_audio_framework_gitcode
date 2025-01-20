@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Copyright (c) 2024-2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -19,6 +19,16 @@ config("offline_audio_effect_config") {
   include_dirs = [
     "include",
     "../../../interfaces/inner_api/native/offlineaudioeffect/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../interfaces/inner_api/native/offlineaudioeffect/include",
+    "../../../frameworks/native/offlineaudioeffect/include",
+    "../../../services/audio_service/common/include",
+    "../../../services/audio_service/client/include",
+    "../../../frameworks/native/audiopolicy/include",
+    "../../../services/audio_policy/client/include",
+    "../../../services/audio_policy/common/include",
+    "../../../services/audio_service/util/include",
   ]
 
   cflags = [
@@ -45,22 +55,28 @@ if (!audio_framework_feature_offline_effect) {
     install_enable = true
 
     sources = [
+      "../../../services/audio_service/client/src/offline_stream_in_client.cpp",
       "src/offline_audio_effect_chain_impl.cpp",
       "src/offline_audio_effect_manager.cpp",
     ]
 
-    deps = [
-      "../../../services/audio_service:audio_client",
-      "../audioutils:audio_utils",
-    ]
+    deps = [ "../audioutils:audio_utils" ]
 
     external_deps = [
+      "bundle_framework:appexecfwk_base",
+      "bundle_framework:appexecfwk_core",
       "c_utils:utils",
       "hilog:libhilog",
       "ipc:ipc_single",
+      "samgr:samgr_proxy",
     ]
 
     public_configs = [ ":offline_audio_effect_config" ]
+
+    defines = []
+    if (audio_framework_feature_offline_effect) {
+      defines += [ "FEATURE_OFFLINE_EFFECT" ]
+    }
 
     version_script = "../../../audio_framework.versionscript"
     innerapi_tags = [ "platformsdk" ]
