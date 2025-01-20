@@ -244,15 +244,17 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_007, TestSize.Level1)
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_008, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
+    ASSERT_NE(nullptr, capturerStreamImplRet);
+
     size_t lengthRet = 10;
     adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
     pa_stream *streamRet = adapterManager->InitPaStream(processConfig, sessionId, false);
-    void *userdataRet = nullptr;
+    ASSERT_NE(nullptr, streamRet);
 
-    EXPECT_EQ(userdataRet, nullptr);
+    void *userdataRet = nullptr;
     capturerStreamImplRet->PAStreamReadCb(streamRet, lengthRet, userdataRet);
 }
 
@@ -265,14 +267,16 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_008, TestSize.Level1)
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_009, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
+    ASSERT_NE(nullptr, capturerStreamImplRet);
+
     adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
     pa_stream *streamRet = adapterManager->InitPaStream(processConfig, sessionId, false);
-    void *userdataRet = nullptr;
+    ASSERT_NE(nullptr, streamRet);
 
-    EXPECT_EQ(userdataRet, nullptr);
+    void *userdataRet = nullptr;
     capturerStreamImplRet->PAStreamMovedCb(streamRet, userdataRet);
     capturerStreamImplRet->PAStreamMovedCb(streamRet, (void *)1);
 }
@@ -286,13 +290,16 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_009, TestSize.Level1)
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_010, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
+    ASSERT_NE(nullptr, capturerStreamImplRet);
+    
     adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
     pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
-    capturerStreamImplRet->paStream_ = stream;
+    ASSERT_NE(nullptr, stream);
 
+    capturerStreamImplRet->paStream_ = stream;
     auto ret = capturerStreamImplRet->InitParams();
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -306,14 +313,16 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_010, TestSize.Level1)
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_011, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
+    ASSERT_NE(nullptr, capturerStreamImplRet);
+
     adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
     pa_stream *streamRet = adapterManager->InitPaStream(processConfig, sessionId, false);
-    void *userdataRet = nullptr;
+    ASSERT_NE(nullptr, streamRet);
 
-    EXPECT_EQ(userdataRet, nullptr);
+    void *userdataRet = nullptr;
     capturerStreamImplRet->PAStreamUnderFlowCb(streamRet, userdataRet);
 }
 
@@ -326,14 +335,16 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_011, TestSize.Level1)
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_012, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
+    ASSERT_NE(nullptr, capturerStreamImplRet);
+
     adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
     adapterManager->InitPaContext();
     uint32_t sessionId = 123456;
     AudioProcessConfig processConfig = GetInnerCapConfig();
     pa_stream *streamRet = adapterManager->InitPaStream(processConfig, sessionId, false);
-    void *userdataRet = nullptr;
+    ASSERT_NE(nullptr, streamRet);
 
-    EXPECT_EQ(userdataRet, nullptr);
+    void *userdataRet = nullptr;
     capturerStreamImplRet->PAStreamSetStartedCb(streamRet, userdataRet);
     capturerStreamImplRet->PAStreamSetStartedCb(streamRet, (void *)1);
 }
