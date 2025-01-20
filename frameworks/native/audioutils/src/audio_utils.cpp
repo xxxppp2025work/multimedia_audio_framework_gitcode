@@ -31,9 +31,11 @@
 #ifdef FEATURE_HITRACE_METER
 #include "hitrace_meter.h"
 #endif
+#include "bundle_mgr_interface.h"
 #include "parameter.h"
 #include "tokenid_kit.h"
 #include "ipc_skeleton.h"
+#include "iservice_registry.h"
 #include "access_token.h"
 #include "accesstoken_kit.h"
 #include "privacy_kit.h"
@@ -170,6 +172,23 @@ uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
             break;
     }
     return audioPerSampleLength;
+}
+
+bool CheckoutSystemAppUtil::CheckoutSystemApp(int32_t uid)
+{
+    bool isSystemApp = false;
+    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():CheckoutSystemApp");
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, false, "systemAbilityManager is nullptr");
+    guard.CheckCurrTimeout();
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, false, "remoteObject is nullptr");
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, false, "bundleMgrProxy is nullptr");
+    WatchTimeout reguard("bundleMgrProxy->CheckIsSystemAppByUid:CheckoutSystemApp");
+    isSystemApp = bundleMgrProxy->CheckIsSystemAppByUid(uid);
+    reguard.CheckCurrTimeout();
+    return isSystemApp;
 }
 
 int64_t ClockTime::GetCurNano()
