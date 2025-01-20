@@ -23,6 +23,7 @@
 #include "audio_policy_manager.h"
 #include "audio_utils.h"
 #include "i_audio_stream.h"
+#include "audio_util.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -139,7 +140,7 @@ static void UpdateEffectInfoArray(SupportedEffectConfig &supportedEffectConfig,
 
 int32_t AudioStreamManager::GetEffectInfoArray(AudioSceneEffectInfo &audioSceneEffectInfo, StreamUsage streamUsage)
 {
-    std::string effectScene = IAudioStream::GetEffectSceneName(streamUsage);
+    std::string effectScene = AudioUtil::GetEffectSceneName(streamUsage);
     SupportedEffectConfig supportedEffectConfig;
     int32_t ret = AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);
     uint32_t streamNum = supportedEffectConfig.postProcessNew.stream.size();
