@@ -873,6 +873,10 @@ AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zoneId)
             // if the steam is not active or the active stream is an audio capturer stream, skip it.
             continue;
         }
+        if ((iter->first).audioFocusType.streamType == STREAM_VOICE_ASSISTANT &&
+            !CheckoutSystemAppUtil::CheckoutSystemApp((iter->first).uid)) {
+            (iter->first).audioFocusType.streamType = STREAM_MUSIC;
+        }
         int32_t curPriority = GetStreamTypePriority((iter->first).audioFocusType.streamType);
         if (curPriority < focusPriority) {
             focusPriority = curPriority;
