@@ -1983,6 +1983,7 @@ RendererPolicyServiceDiedCallback::~RendererPolicyServiceDiedCallback()
 void RendererPolicyServiceDiedCallback::SetAudioRendererObj(AudioRendererPrivate *rendererObj)
 {
     renderer_ = rendererObj;
+    OHOS::AudioStandard::ObjectRefMap<AudioRendererPrivate>::Insert(renderer_);
 }
 
 void RendererPolicyServiceDiedCallback::SetAudioInterrupt(AudioInterrupt &audioInterrupt)
@@ -2005,6 +2006,7 @@ void RendererPolicyServiceDiedCallback::RestoreTheadLoop()
     int32_t tryCounter = 10;
     uint32_t sleepTime = 300000;
     bool restoreResult = false;
+    OHOS::AudioStandard::ObjectRefMap objectGuard(renderer_);
     while (!restoreResult && tryCounter > 0) {
         tryCounter--;
         usleep(sleepTime);
