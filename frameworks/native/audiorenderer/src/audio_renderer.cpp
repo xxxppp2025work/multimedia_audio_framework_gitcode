@@ -1955,6 +1955,7 @@ int32_t AudioRendererPrivate::RemoveRendererPolicyServiceDiedCallback()
     if (audioPolicyServiceDiedCallback_) {
         int32_t ret = AudioPolicyManager::GetInstance().UnregisterAudioStreamPolicyServerDiedCb(
             audioPolicyServiceDiedCallback_);
+        audioPolicyServiceDiedCallback_->UnsetAudioRendererObj();
         if (ret != 0) {
             AUDIO_ERR_LOG("RemoveRendererPolicyServiceDiedCallback failed");
             audioPolicyServiceDiedCallback_ = nullptr;
@@ -1978,12 +1979,6 @@ RendererPolicyServiceDiedCallback::~RendererPolicyServiceDiedCallback()
         restoreThread_.reset();
         restoreThread_ = nullptr;
     }
-}
-
-void RendererPolicyServiceDiedCallback::SetAudioRendererObj(AudioRendererPrivate *rendererObj)
-{
-    renderer_ = rendererObj;
-    OHOS::AudioStandard::ObjectRefMap<AudioRendererPrivate>::Insert(renderer_);
 }
 
 void RendererPolicyServiceDiedCallback::SetAudioInterrupt(AudioInterrupt &audioInterrupt)

@@ -320,15 +320,25 @@ class RendererPolicyServiceDiedCallback : public AudioStreamPolicyServiceDiedCal
 public:
     RendererPolicyServiceDiedCallback();
     virtual ~RendererPolicyServiceDiedCallback();
-    void SetAudioRendererObj(AudioRendererPrivate *rendererObj);
     void SetAudioInterrupt(AudioInterrupt &audioInterrupt);
     void OnAudioPolicyServiceDied() override;
+    void SetAudioRendererObj(AudioRendererPrivate *rendererObj)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        renderer_ = rendererObj;
+    }
+    void UnsetAudioRendererObj()
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        renderer_ = nullptr;
+    }
 
 private:
     AudioRendererPrivate *renderer_ = nullptr;
     AudioInterrupt audioInterrupt_;
     void RestoreTheadLoop();
     std::unique_ptr<std::thread> restoreThread_ = nullptr;
+    std::mutex mutex_;
 };
 
 class AudioRendererConcurrencyCallbackImpl : public AudioConcurrencyCallback {
