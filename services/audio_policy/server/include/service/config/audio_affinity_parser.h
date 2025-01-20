@@ -20,13 +20,12 @@
 #include <unordered_map>
 #include <string>
 #include <sstream>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
 
 #include "audio_info.h"
 #include "iport_observer.h"
 #include "parser.h"
 #include "audio_affinity_manager.h"
+#include "audio_xml_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -37,16 +36,17 @@ public:
     static constexpr char AFFINITY_CONFIG_FILE[] = "/system/etc/audio/audio_affinity_config.xml";
 
     bool LoadConfiguration() final;
-    bool Parse() final;
     void Destroy() final;
 
     audioAffinityParser(AudioAffinityManager *affinityManager)
     {
         audioAffinityManager_ = affinityManager;
+        audioXmlNode_ = AudioXmlNode::Create();
     }
 
     virtual ~audioAffinityParser()
     {
+        audioXmlNode_ = nullptr;
         Destroy();
     }
 
@@ -56,12 +56,12 @@ public:
     }
 
 private:
-    bool ParseInternal(xmlNode *node);
-    void ParserAffinityGroups(xmlNode *node, const DeviceFlag& deviceFlag);
-    void ParserAffinityGroupAttribute(xmlNode *node, const DeviceFlag& deviceFlag);
-    void ParserAffinityGroupDeviceInfos(xmlNode *node, AffinityDeviceInfo& deviceInfo);
+    bool ParseInternal(std::shared_ptr<AudioXmlNode> &curNode);
+    void ParserAffinityGroups(std::shared_ptr<AudioXmlNode> &curNode, const DeviceFlag& deviceFlag);
+    void ParserAffinityGroupAttribute(std::shared_ptr<AudioXmlNode> &curNode, const DeviceFlag& deviceFlag);
+    void ParserAffinityGroupDeviceInfos(std::shared_ptr<AudioXmlNode> &curNode, AffinityDeviceInfo& deviceInfo);
 
-    xmlDoc *mDoc_ = nullptr;
+    std::shared_ptr<AudioXmlNode> audioXmlNode_ = nullptr;
     AudioAffinityManager* audioAffinityManager_ = nullptr;
     std::vector<AffinityDeviceInfo> affinityDeviceInfoArray_ = {};
 };
