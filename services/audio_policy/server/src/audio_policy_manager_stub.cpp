@@ -341,7 +341,7 @@ void AudioPolicyManagerStub::SetStreamMuteLegacyInternal(MessageParcel &data, Me
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     bool mute = data.ReadBool();
     DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
-    int result = SetStreamMuteLegacy(volumeType, mute);
+    int result = SetStreamMuteLegacy(volumeType, mute, deviceType);
     reply.WriteInt32(result);
 }
 
