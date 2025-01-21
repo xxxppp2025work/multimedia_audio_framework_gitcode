@@ -320,9 +320,16 @@ class RendererPolicyServiceDiedCallback : public AudioStreamPolicyServiceDiedCal
 public:
     RendererPolicyServiceDiedCallback();
     virtual ~RendererPolicyServiceDiedCallback();
-    void SetAudioRendererObj(AudioRendererPrivate *rendererObj);
     void SetAudioInterrupt(AudioInterrupt &audioInterrupt);
     void OnAudioPolicyServiceDied() override;
+    void SetAudioRendererObj(AudioRendererPrivate *rendererObj)
+    {
+        renderer_ = rendererObj;
+    }
+    void UnsetAudioRendererObj()
+    {
+        renderer_ = nullptr;
+    }
 
 private:
     AudioRendererPrivate *renderer_ = nullptr;
