@@ -902,5 +902,10 @@ const std::string PaAdapterManager::GetEnhanceSceneName(SourceType sourceType)
     return sceneName;
 }
 
+uint64_t PaAdapterManager::GetLatency() noexcept
+{
+    return 0;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
