@@ -25,6 +25,7 @@ class AudioXmlNode {
 public:
     static std::shared_ptr<AudioXmlNode> Create();
     virtual std::shared_ptr<AudioXmlNode> GetChildrenNode() = 0;
+    virtual std::shared_ptr<AudioXmlNode> GetCopyNode() = 0;
     AudioXmlNode() = default;
     virtual ~AudioXmlNode() = default;
 

@@ -41,13 +41,13 @@ public:
     audioAffinityParser(AudioAffinityManager *affinityManager)
     {
         audioAffinityManager_ = affinityManager;
-        audioXmlNode_ = AudioXmlNode::Create();
+        curNode_ = AudioXmlNode::Create();
     }
 
     virtual ~audioAffinityParser()
     {
-        audioXmlNode_ = nullptr;
         Destroy();
+        curNode_ = nullptr;
     }
 
     std::vector<AffinityDeviceInfo>& GetAffinityDeviceInfo()
@@ -56,12 +56,12 @@ public:
     }
 
 private:
-    bool ParseInternal(std::shared_ptr<AudioXmlNode> &curNode);
-    void ParserAffinityGroups(std::shared_ptr<AudioXmlNode> &curNode, const DeviceFlag& deviceFlag);
-    void ParserAffinityGroupAttribute(std::shared_ptr<AudioXmlNode> &curNode, const DeviceFlag& deviceFlag);
-    void ParserAffinityGroupDeviceInfos(std::shared_ptr<AudioXmlNode> &curNode, AffinityDeviceInfo& deviceInfo);
+    bool ParseInternal(std::shared_ptr<AudioXmlNode> curNode);
+    void ParserAffinityGroups(std::shared_ptr<AudioXmlNode> curNode, const DeviceFlag& deviceFlag);
+    void ParserAffinityGroupAttribute(std::shared_ptr<AudioXmlNode> curNode, const DeviceFlag& deviceFlag);
+    void ParserAffinityGroupDeviceInfos(std::shared_ptr<AudioXmlNode> curNode, AffinityDeviceInfo& deviceInfo);
 
-    std::shared_ptr<AudioXmlNode> audioXmlNode_ = nullptr;
+    std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
     AudioAffinityManager* audioAffinityManager_ = nullptr;
     std::vector<AffinityDeviceInfo> affinityDeviceInfoArray_ = {};
 };

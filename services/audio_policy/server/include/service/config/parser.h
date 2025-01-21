@@ -21,7 +21,7 @@ namespace AudioStandard {
 class Parser {
 public:
     virtual ~Parser() {}
-    virtual LoadConfiguration() = 0;
+    virtual bool LoadConfiguration() = 0;
     virtual void Destroy() = 0;
 };
 } // namespace AudioStandard

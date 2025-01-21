@@ -22,6 +22,7 @@
 
 #include "media_monitor_manager.h"
 #include "audio_xml_parser.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -156,12 +157,12 @@ ConverterConfig AudioConverterParser::LoadConfig()
     if (!curNode->IsNodeValid()) {
         WriteConverterConfigError();
         AUDIO_ERR_LOG("error: could not parse file %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
-        return FILE_PARSE_ERROR;
+        return result;
     }
 
-    CHECK_AND_RETURN_RET_LOG(curNode->CompareName("audio_converter_conf"), FILE_CONTENT_ERROR,
+    CHECK_AND_RETURN_RET_LOG(curNode->CompareName("audio_converter_conf"), result,
         "Missing tag - audio_converter_conf: %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
-    CHECK_AND_RETURN_LOG(curNode->GetProp("version", result.version) == SUCCESS,
+    CHECK_AND_RETURN_RET_LOG(curNode->GetProp("version", result.version) == SUCCESS, result,
         "get prop version failed!");
 
     curNode->MoveToChildren();
@@ -171,9 +172,9 @@ ConverterConfig AudioConverterParser::LoadConfig()
             continue;
         }
         if (curNode->CompareName("library")) {
-            LoadConfigLibrary(result, curNode);
+            LoadConfigLibrary(result, curNode->GetCopyNode());
         } else if (curNode->CompareName("converter_conf")) {
-            LoadConfigChannelLayout(result, curNode);
+            LoadConfigChannelLayout(result, curNode->GetCopyNode());
         }
         curNode->MoveToNext();
     }

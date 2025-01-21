@@ -62,7 +62,8 @@ std::shared_ptr<XmlFuncHandle> DlopenUtils::xmlFuncHandle_ = nullptr;
 class AudioXmlNodeInner : public AudioXmlNode {
 public:
     virtual std::shared_ptr<AudioXmlNode> GetChildrenNode() override;
-    AudioXmlNodeInner(xmlNode *curNode = nullptr);
+    virtual std::shared_ptr<AudioXmlNode> GetCopyNode() override;
+    AudioXmlNodeInner();
     AudioXmlNodeInner(const AudioXmlNodeInner &obj);
     AudioXmlNodeInner &operator=(const AudioXmlNodeInner &obj);
     ~AudioXmlNodeInner() override;
@@ -144,8 +145,12 @@ std::shared_ptr<AudioXmlNode> AudioXmlNodeInner::GetChildrenNode()
     return copyNode;
 }
 
-// only the main node has doc and freedoc() when destruct
-AudioXmlNodeInner::AudioXmlNodeInner(xmlNode *curNode):curNode_(curNode)
+std::shared_ptr<AudioXmlNode> AudioXmlNodeInner::GetCopyNode()
+{
+    return std::make_shared<AudioXmlNodeInner>(*this);
+}
+
+AudioXmlNodeInner::AudioXmlNodeInner()
 {
     CHECK_AND_RETURN_LOG(DlopenUtils::Init(), "open so fail!");
     xmlFuncHandle_ = DlopenUtils::GetHandle();
@@ -154,7 +159,7 @@ AudioXmlNodeInner::AudioXmlNodeInner(xmlNode *curNode):curNode_(curNode)
 
 AudioXmlNodeInner::AudioXmlNodeInner(const AudioXmlNodeInner &obj)
 {
-    // do not copy doc_, cause when destruct, it will free xmlNode;
+    // only the main node has doc and freedoc() when destruct
     doc_ = nullptr;
     curNode_ = obj.curNode_;
     CHECK_AND_RETURN_LOG(DlopenUtils::Init(), "open so fail!");
@@ -163,7 +168,7 @@ AudioXmlNodeInner::AudioXmlNodeInner(const AudioXmlNodeInner &obj)
 
 AudioXmlNodeInner &AudioXmlNodeInner::operator=(const AudioXmlNodeInner &obj)
 {
-    // do not copy doc_, cause when destruct, it will free xmlNode;
+    // only the main node has doc and freedoc() when destruct
     doc_ = nullptr;
     curNode_ = obj.curNode_;
     if (!DlopenUtils::Init()) {
@@ -177,6 +182,7 @@ AudioXmlNodeInner::~AudioXmlNodeInner()
 {
     if (xmlFuncHandle_ != nullptr && doc_ != nullptr) {
         xmlFuncHandle_->xmlFreeDoc(doc_);
+        doc_ = nullptr;
     }
     curNode_ = nullptr;
     xmlFuncHandle_ = nullptr;
@@ -227,8 +233,9 @@ int32_t AudioXmlNodeInner::GetProp(const char *propName, std::string &result)
     auto xmlFunc = reinterpret_cast<xmlChar *(*)(const xmlNode *node, const xmlChar *propName)>
         (dlsym(xmlFuncHandle_->libHandle_, "xmlGetProp"));
     xmlChar *tempValue = xmlFunc(curNode_, reinterpret_cast<const xmlChar*>(propName));
-    CHECK_AND_RETURN_LOG(tempValue != nullptr, ERROR, "GetProp Fail! curNode has no prop: %{public}s", propName);
+    CHECK_AND_RETURN_RET_LOG(tempValue != nullptr, ERROR, "GetProp Fail! curNode has no prop: %{public}s", propName);
     result = reinterpret_cast<char*>(tempValue);
+    xmlFuncHandle_->xmlFree(tempValue);
     return SUCCESS;
 }
 

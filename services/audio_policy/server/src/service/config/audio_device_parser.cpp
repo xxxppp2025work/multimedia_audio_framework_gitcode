@@ -36,9 +36,9 @@ static std::map<std::string, DeviceType> deviceTypeMap_ = {
 
 bool AudioDeviceParser::LoadConfiguration()
 {
-    audioXmlNode_->Config(DEVICE_CONFIG_FILE, nullptr, 0);
+    curNode_->Config(DEVICE_CONFIG_FILE, nullptr, 0);
 
-    if (!ParseInternal()) {
+    if (!ParseInternal(curNode_)) {
         return false;
     }
     audioDeviceManager_->OnXmlParsingCompleted(devicePrivacyMaps_);
@@ -47,22 +47,19 @@ bool AudioDeviceParser::LoadConfiguration()
 
 void AudioDeviceParser::Destroy()
 {
-    if (mDoc_ != nullptr) {
-        xmlFreeDoc(mDoc_);
-    }
+    curNode_->FreeDoc();
 }
 
-bool AudioDeviceParser::ParseInternal()
+bool AudioDeviceParser::ParseInternal(std::shared_ptr<AudioXmlNode> curNode)
 {
-    for (; audioXmlNode_->IsNodeValid(); audioXmlNode_->MoveToNext()) {
-        if (audioXmlNode_->IsElementNode()) {
-            switch (GetDeviceNodeNameAsInt()) {
+    for (; curNode->IsNodeValid(); curNode->MoveToNext()) {
+        if (curNode->IsElementNode()) {
+            switch (GetDeviceNodeNameAsInt(curNode)) {
                 case ADAPTER:
-                    ParseAudioDevicePrivacyType(devicePrivacyType_);
+                    ParseAudioDevicePrivacyType(curNode->GetCopyNode(), devicePrivacyType_);
                     break;
                 default:
-                    audioXmlNode_->MoveToChildren();
-                    ParseInternal();
+                    ParseInternal(curNode->GetChildrenNode());
                     break;
             }
         }
@@ -70,81 +67,71 @@ bool AudioDeviceParser::ParseInternal()
     return true;
 }
 
-void AudioDeviceParser::ParseDevicePrivacyInfo(xmlNode *node, std::list<DevicePrivacyInfo> &deviceLists)
+void AudioDeviceParser::ParseDevicePrivacyInfo(std::shared_ptr<AudioXmlNode> curNode,
+    std::list<DevicePrivacyInfo> &deviceLists)
 {
-    xmlNode *deviceNode = node;
-
-    while (deviceNode != nullptr) {
-        if (deviceNode->type == XML_ELEMENT_NODE) {
+    while (curNode->IsNodeValid()) {
+        if (curNode->IsElementNode()) {
             DevicePrivacyInfo deviceInfo = {};
-            char *pValue = reinterpret_cast<char*>(xmlGetProp(deviceNode,
-                reinterpret_cast<xmlChar*>(const_cast<char*>("name"))));
-            deviceInfo.deviceName = pValue;
-            xmlFree(pValue);
+            CHECK_AND_RETURN_LOG(curNode->GetProp("name", deviceInfo.deviceName) == SUCCESS, "get prop name fail!");
 
-            pValue = reinterpret_cast<char*>(xmlGetProp(deviceNode,
-                reinterpret_cast<xmlChar*>(const_cast<char*>("type"))));
+            std::string pValue;
+            CHECK_AND_RETURN_LOG(curNode->GetProp("type", pValue) == SUCCESS, "get prop type fail!");
             deviceInfo.deviceType = deviceTypeMap_[pValue];
-            xmlFree(pValue);
 
-            pValue = reinterpret_cast<char*>(xmlGetProp(deviceNode,
-                reinterpret_cast<xmlChar*>(const_cast<char*>("role"))));
+            CHECK_AND_RETURN_LOG(curNode->GetProp("role", pValue) == SUCCESS, "get prop role fail!");
             uint32_t intValue = 0;
             ParseDeviceRole(pValue, intValue);
             deviceInfo.deviceRole = static_cast<DeviceRole>(intValue);
-            xmlFree(pValue);
 
-            pValue = reinterpret_cast<char*>(xmlGetProp(deviceNode,
-                reinterpret_cast<xmlChar*>(const_cast<char*>("Category"))));
+            CHECK_AND_RETURN_LOG(curNode->GetProp("Category", pValue) == SUCCESS, "get prop Category fail!");
             intValue = 0;
             ParseDeviceCategory(pValue, intValue);
             deviceInfo.deviceCategory = static_cast<DeviceCategory>(intValue);
-            xmlFree(pValue);
 
-            pValue = reinterpret_cast<char*>(xmlGetProp(deviceNode,
-                reinterpret_cast<xmlChar*>(const_cast<char*>("usage"))));
+            CHECK_AND_RETURN_LOG(curNode->GetProp("usage", pValue) == SUCCESS, "get prop usage fail!");
             intValue = 0;
             ParseDeviceUsage(pValue, intValue);
             deviceInfo.deviceUsage = static_cast<DeviceUsage>(intValue);
-            xmlFree(pValue);
+
             deviceLists.push_back(deviceInfo);
             AUDIO_DEBUG_LOG("AudioDeviceParser: name:%{public}s, type:%{public}d, role:%{public}d, Category:%{public}d,"
                 "Usage:%{public}d", deviceInfo.deviceName.c_str(), deviceInfo.deviceType, deviceInfo.deviceRole,
                 deviceInfo.deviceCategory, deviceInfo.deviceUsage);
         }
-        deviceNode = deviceNode->next;
+        curNode->MoveToNext();
     }
 }
 
-void AudioDeviceParser::ParserDevicePrivacyInfoList(xmlNode *node, std::list<DevicePrivacyInfo> &deviceLists)
+void AudioDeviceParser::ParserDevicePrivacyInfoList(std::shared_ptr<AudioXmlNode> curNode,
+    std::list<DevicePrivacyInfo> &deviceLists)
 {
-    xmlNode *currentNode = node;
-    while (currentNode != nullptr) {
-        if (currentNode->type == XML_ELEMENT_NODE
-            && (!xmlStrcmp(currentNode->name, reinterpret_cast<const xmlChar*>("devices")))) {
-            ParseDevicePrivacyInfo(currentNode->xmlChildrenNode, deviceLists);
+    while (curNode->IsNodeValid()) {
+        if (curNode->CompareName("devices")) {
+            ParseDevicePrivacyInfo(curNode->GetChildrenNode(), deviceLists);
         }
-        currentNode = currentNode->next;
+        curNode->MoveToNext();
     }
 }
 
-void AudioDeviceParser::ParseAudioDevicePrivacyType(AudioDevicePrivacyType &deviceType)
+void AudioDeviceParser::ParseAudioDevicePrivacyType(std::shared_ptr<AudioXmlNode> curNode,
+    AudioDevicePrivacyType &deviceType)
 {
-    while (audioXmlNode_->IsNodeValid()) {
+    while (curNode->IsNodeValid()) {
         //read deviceType
-        if (audioXmlNode_->CompareName("adapter")) {
+        if (curNode->CompareName("adapter")) {
             std::string adapterName;
-            CHECK_AND_RETURN_LOG(audioXmlNode_->GetProp("name", adapterName) == SUCCESS, "get prop adapterName fail!");
+            CHECK_AND_RETURN_LOG(curNode->GetProp("name", adapterName) == SUCCESS, "get prop adapterName fail!");
             AUDIO_DEBUG_LOG("AudioDeviceParser: adapter name: %{public}s", adapterName.c_str());
             devicePrivacyType_ = GetDevicePrivacyType(adapterName);
             std::list<DevicePrivacyInfo> deviceLists = {};
-            // 不能简单直接move，貌似是只传入child，然后直接next
-            ParserDevicePrivacyInfoList(currNode->xmlChildrenNode, deviceLists);
+
+            ParserDevicePrivacyInfoList(curNode->GetChildrenNode(), deviceLists);
             devicePrivacyMaps_[devicePrivacyType_] = deviceLists;
         } else {
             return;
         }
-        currNode = currNode->next;
+        curNode->MoveToNext();
     }
 }
 
@@ -159,9 +146,9 @@ AudioDevicePrivacyType AudioDeviceParser::GetDevicePrivacyType(const std::string
     }
 }
 
-DeviceNodeName AudioDeviceParser::GetDeviceNodeNameAsInt()
+DeviceNodeName AudioDeviceParser::GetDeviceNodeNameAsInt(std::shared_ptr<AudioXmlNode> curNode)
 {
-    if (audioXmlNode_->CompareName("adapter")) {
+    if (curNode->CompareName("adapter")) {
         return DeviceNodeName::ADAPTER;
     } else {
         return DeviceNodeName::UNKNOWN_NODE;

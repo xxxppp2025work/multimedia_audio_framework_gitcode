@@ -37,12 +37,12 @@ public:
     static constexpr char AUDIO_CONCURRENCY_CONFIG_FILE[] = "/vendor/etc/audio/audio_concurrency_config.xml";
     AudioConcurrencyParser()
     {
-        audioXmlNode_ = AudioXmlNode::Create();
+        curNode_ = AudioXmlNode::Create();
         AUDIO_INFO_LOG("AudioConcurrencyParser ctor");
     }
     virtual ~AudioConcurrencyParser()
     {
-        audioXmlNode_ = nullptr;
+        curNode_ = nullptr;
         AUDIO_DEBUG_LOG("AudioConcurrencyParser dtor");
     }
     int32_t LoadConfig(std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> &concurrencyMap);
@@ -52,7 +52,7 @@ private:
         std::shared_ptr<AudioXmlNode> audioXmlNode);
     void ParseIncoming(const std::string &existing, std::shared_ptr<AudioXmlNode> audioXmlNode,
         std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> &concurrencyMap);
-    std::shared_ptr<AudioXmlNode> audioXmlNode_ = nullptr;
+    std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
     std::map<std::string, AudioPipeType> audioPipeTypeMap_ = {
         {"primary out", PIPE_TYPE_NORMAL_OUT},
         {"primary in", PIPE_TYPE_NORMAL_IN},

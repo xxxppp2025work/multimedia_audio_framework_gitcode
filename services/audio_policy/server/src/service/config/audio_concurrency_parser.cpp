@@ -21,13 +21,13 @@ int32_t AudioConcurrencyParser::LoadConfig(std::map<std::pair<AudioPipeType, Aud
     ConcurrencyAction> &concurrencyMap)
 {
     AUDIO_INFO_LOG("start.");
-    audioXmlNode_->Config(AUDIO_CONCURRENCY_CONFIG_FILE, nullptr, 0);
-    if (!audioXmlNode_->CompareName("audioConcurrencyPolicy")) {
+    curNode_->Config(AUDIO_CONCURRENCY_CONFIG_FILE, nullptr, 0);
+    if (!curNode_->CompareName("audioConcurrencyPolicy")) {
         AUDIO_ERR_LOG("Missing tag - audioConcurrencyPolicy");
-        audioXmlNode_->FreeDoc();
+        curNode_->FreeDoc();
         return ERR_OPERATION_FAILED;
     }
-    ParseInternal(concurrencyMap, audioXmlNode_);
+    ParseInternal(concurrencyMap, curNode_);
     return SUCCESS;
 }
 

@@ -19,7 +19,6 @@
 #include "audio_affinity_parser.h"
 #include "audio_errors.h"
 #include "media_monitor_manager.h"
-#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -41,12 +40,12 @@ static std::map<std::string, DeviceType> deviceTypeMap_ = {
 
 bool audioAffinityParser::LoadConfiguration()
 {
-    bool ret = audioXmlNode_->Config(AFFINITY_CONFIG_FILE, nullptr, 0);
+    bool ret = curNode_->Config(AFFINITY_CONFIG_FILE, nullptr, 0);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "audioAffinityParser xmlReadFile failed");
 
-    audioXmlNode_->MoveToChildren();
-    CHECK_AND_RETURN_LOG(audioXmlNode_->IsNodeValid(), "audioAffinityParser Missing node");
-    if (!ParseInternal(audioXmlNode_)) {
+    curNode_->MoveToChildren();
+    CHECK_AND_RETURN_RET_LOG(curNode_->IsNodeValid(), false, "audioAffinityParser Missing node");
+    if (!ParseInternal(curNode_->GetCopyNode())) {
         return false;
     }
     CHECK_AND_RETURN_RET_LOG(audioAffinityManager_ != nullptr, false, "audioAffinityManager_ is null");
@@ -56,36 +55,36 @@ bool audioAffinityParser::LoadConfiguration()
 
 void audioAffinityParser::Destroy()
 {
-    audioXmlNode_->FreeDoc();
+    curNode_->FreeDoc();
 }
 
-bool audioAffinityParser::ParseInternal(std::shared_ptr<AudioXmlNode> &curNode)
+bool audioAffinityParser::ParseInternal(std::shared_ptr<AudioXmlNode> curNode)
 {
     while (curNode->IsNodeValid()) {
         if (curNode->CompareName("OutputDevices")) {
-            ParserAffinityGroups(curNode, OUTPUT_DEVICES_FLAG);
+            ParserAffinityGroups(curNode->GetCopyNode(), OUTPUT_DEVICES_FLAG);
         } else if (curNode->CompareName("InputDevices")) {
-            ParserAffinityGroups(curNode, INPUT_DEVICES_FLAG);
+            ParserAffinityGroups(curNode->GetCopyNode(), INPUT_DEVICES_FLAG);
         }
         curNode->MoveToNext();
     }
     return true;
 }
 
-void audioAffinityParser::ParserAffinityGroups(std::shared_ptr<AudioXmlNode> &curNode, const DeviceFlag& deviceFlag)
+void audioAffinityParser::ParserAffinityGroups(std::shared_ptr<AudioXmlNode> curNode, const DeviceFlag& deviceFlag)
 {
     curNode->MoveToChildren();
     CHECK_AND_RETURN_LOG(curNode->IsNodeValid(), "audioAffinityParser Missing node groups");
 
     while (curNode->IsNodeValid()) {
         if (curNode->CompareName("AffinityGroups")) {
-            ParserAffinityGroupAttribute(curNode, deviceFlag);
+            ParserAffinityGroupAttribute(curNode->GetCopyNode(), deviceFlag);
         }
         curNode->MoveToNext();
     }
 }
 
-void audioAffinityParser::ParserAffinityGroupAttribute(std::shared_ptr<AudioXmlNode> &curNode,
+void audioAffinityParser::ParserAffinityGroupAttribute(std::shared_ptr<AudioXmlNode> curNode,
     const DeviceFlag& deviceFlag)
 {
     curNode->MoveToChildren();
@@ -97,22 +96,19 @@ void audioAffinityParser::ParserAffinityGroupAttribute(std::shared_ptr<AudioXmlN
         if (curNode->CompareName("AffinityGroup")) {
             std::string attrPrimary;
             if (curNode->GetProp("isPrimary", attrPrimary) == SUCCESS) {
-                CHECK_AND_RETURN_LOG(StringConverter<uint32_t>(attrPrimary, deviceInfo.isPrimary),
-                    "convert attrPrimary fail!");
-                curNode->FreeProp(attrPrimary);
+                deviceInfo.isPrimary = (attrPrimary == "True" ? true : false);
             }
             std::string attrGroupName;
             if (curNode->GetProp("name", attrGroupName) == SUCCESS) {
                 deviceInfo.groupName = attrGroupName;
-                curNode->FreeProp(attrGroupName);
             }
-            ParserAffinityGroupDeviceInfos(curNode, deviceInfo);
+            ParserAffinityGroupDeviceInfos(curNode->GetCopyNode(), deviceInfo);
         }
         curNode->MoveToNext();
     }
 }
 
-void audioAffinityParser::ParserAffinityGroupDeviceInfos(std::shared_ptr<AudioXmlNode> &curNode,
+void audioAffinityParser::ParserAffinityGroupDeviceInfos(std::shared_ptr<AudioXmlNode> curNode,
     AffinityDeviceInfo& deviceInfo)
 {
     curNode->MoveToChildren();

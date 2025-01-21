@@ -50,29 +50,29 @@ public:
 
     AudioDeviceParser(AudioDeviceManager *audioDeviceManager)
     {
-        audioXmlNode_ = AudioXmlNode::Create();
+        curNode_ = AudioXmlNode::Create();
         audioDeviceManager_ = audioDeviceManager;
     }
 
     virtual ~AudioDeviceParser()
     {
-        audioXmlNode_ = nullptr;
+        curNode_ = nullptr;
         AUDIO_INFO_LOG("AudioDeviceParser dtor");
         Destroy();
     }
 
 private:
-    DeviceNodeName GetDeviceNodeNameAsInt(xmlNode *node);
-    bool ParseInternal(std::shared_ptr<AudioXmlNode> &node);
-    void ParseDevicePrivacyInfo(xmlNode *node, std::list<DevicePrivacyInfo> &deviceLists);
-    void ParserDevicePrivacyInfoList(xmlNode *node, std::list<DevicePrivacyInfo> &deviceLists);
-    void ParseAudioDevicePrivacyType(xmlNode *node, AudioDevicePrivacyType &deviceType);
+    DeviceNodeName GetDeviceNodeNameAsInt();
+    bool ParseInternal(std::shared_ptr<AudioXmlNode> curNode);
+    void ParseDevicePrivacyInfo(std::shared_ptr<AudioXmlNode> curNode, std::list<DevicePrivacyInfo> &deviceLists);
+    void ParserDevicePrivacyInfoList(std::shared_ptr<AudioXmlNode> curNode, std::list<DevicePrivacyInfo> &deviceLists);
+    void ParseAudioDevicePrivacyType(std::shared_ptr<AudioXmlNode> curNode, AudioDevicePrivacyType &deviceType);
     void ParseDeviceRole(const std::string &deviceRole, uint32_t &deviceRoleFlag);
     void ParseDeviceCategory(const std::string &deviceCategory, uint32_t &deviceCategoryFlag);
     void ParseDeviceUsage(const std::string &deviceUsage, uint32_t &deviceUsageFlag);
     AudioDevicePrivacyType GetDevicePrivacyType(const std::string &devicePrivacyType);
 
-    std::shared_ptr<AudioXmlNode> audioXmlNode_ = nullptr;
+    std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
     AudioDevicePrivacyType devicePrivacyType_ = {};
     AudioDeviceManager *audioDeviceManager_;
     std::unordered_map<AudioDevicePrivacyType, std::list<DevicePrivacyInfo>> devicePrivacyMaps_ = {};
