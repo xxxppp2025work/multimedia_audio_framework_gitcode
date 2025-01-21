@@ -910,7 +910,8 @@ float AudioPolicyService::GetSingleStreamVolume(int32_t streamId) const
     return streamCollector_.GetSingleStreamVolume(streamId);
 }
 
-int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage)
+int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
+    const DeviceType &deviceType)
 {
     int32_t result = SUCCESS;
     DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
@@ -934,7 +935,7 @@ int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute,
 #endif
         }
     }
-    result = audioPolicyManager_.SetStreamMute(streamType, mute, streamUsage);
+    result = audioPolicyManager_.SetStreamMute(streamType, mute, streamUsage, deviceType);
 
     Volume vol = {false, 1.0f, 0};
     vol.isMute = mute;

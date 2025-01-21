@@ -113,9 +113,11 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId) override;
 
-    int32_t SetStreamMuteLegacy(AudioStreamType streamType, bool mute) override;
+    int32_t SetStreamMuteLegacy(AudioStreamType streamType, bool mute,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE) override;
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute) override;
+    int32_t SetStreamMute(AudioStreamType streamType, bool mute,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE) override;
 
     bool GetStreamMute(AudioStreamType streamType) override;
 
@@ -518,8 +520,10 @@ private:
     AudioStreamType GetSystemActiveVolumeTypeInternal(const int32_t clientUid);
     int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType);
     float GetSystemVolumeDb(AudioStreamType streamType);
-    int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi);
-    int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi);
+    int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE);
+    int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE);
     bool GetStreamMuteInternal(AudioStreamType streamType);
     bool IsVolumeTypeValid(AudioStreamType streamType);
     bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
