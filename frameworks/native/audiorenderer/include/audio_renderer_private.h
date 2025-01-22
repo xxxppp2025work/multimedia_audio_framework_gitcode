@@ -324,10 +324,12 @@ public:
     void OnAudioPolicyServiceDied() override;
     void SetAudioRendererObj(AudioRendererPrivate *rendererObj)
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         renderer_ = rendererObj;
     }
     void UnsetAudioRendererObj()
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         renderer_ = nullptr;
     }
 
@@ -336,6 +338,7 @@ private:
     AudioInterrupt audioInterrupt_;
     void RestoreTheadLoop();
     std::unique_ptr<std::thread> restoreThread_ = nullptr;
+    std::mutex mutex_;
 };
 
 class AudioRendererConcurrencyCallbackImpl : public AudioConcurrencyCallback {
