@@ -169,6 +169,8 @@ enum {
 
 static enum HdiAdapterFormat ConvertPaToHdiAdapterFormat(pa_sample_format_t format)
 {
+    AUDIO_INFO_LOG("module_split_stream_sink.c HdiAdapterFormat ConvertPaToHdiAdapterFormat format is: %{public}d",
+        (int)format);
     enum HdiAdapterFormat adapterFormat;
     switch (format) {
         case PA_SAMPLE_U8:
