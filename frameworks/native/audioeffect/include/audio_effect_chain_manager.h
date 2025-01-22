@@ -112,6 +112,9 @@ public:
     void InitAudioEffectChainManager(std::vector<EffectChain> &effectChains,
         const EffectChainManagerParam &effectChainManagerParam,
         std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList);
+    void ConstructEffectChainMgrMaps(std::vector<EffectChain> &effectChains,
+        const EffectChainManagerParam &effectChainManagerParam,
+        std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList);
     bool CheckAndAddSessionID(const std::string &sessionID);
     int32_t CreateAudioEffectChainDynamic(const std::string &sceneType);
     bool CheckAndRemoveSessionID(const std::string &sessionID);
