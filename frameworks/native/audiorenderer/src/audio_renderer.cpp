@@ -2001,6 +2001,7 @@ void RendererPolicyServiceDiedCallback::RestoreTheadLoop()
     int32_t tryCounter = 10;
     uint32_t sleepTime = 300000;
     bool restoreResult = false;
+    std::lock_guard<std::mutex> lock(mutex_);
     while (!restoreResult && tryCounter > 0) {
         tryCounter--;
         usleep(sleepTime);
