@@ -20,13 +20,12 @@
 #include <unordered_map>
 #include <string>
 #include <sstream>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
 
 #include "audio_policy_log.h"
 #include "iport_observer.h"
 #include "parser.h"
 #include "audio_device_manager.h"
+#include "audio_xml_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -45,33 +44,33 @@ public:
     static constexpr char DEVICE_CONFIG_FILE[] = "/system/etc/audio/audio_device_privacy.xml";
 
     bool LoadConfiguration() final;
-    bool Parse() final;
     void Destroy() final;
 
     AudioDeviceParser(AudioDeviceManager *audioDeviceManager)
     {
+        curNode_ = AudioXmlNode::Create();
         audioDeviceManager_ = audioDeviceManager;
     }
 
     virtual ~AudioDeviceParser()
     {
+        curNode_ = nullptr;
         AUDIO_INFO_LOG("AudioDeviceParser dtor");
         Destroy();
     }
 
 private:
-    DeviceNodeName GetDeviceNodeNameAsInt(xmlNode *node);
-    bool ParseInternal(xmlNode *node);
-    void ParseDevicePrivacyInfo(xmlNode *node, std::list<DevicePrivacyInfo> &deviceLists);
-    void ParserDevicePrivacyInfoList(xmlNode *node, std::list<DevicePrivacyInfo> &deviceLists);
-    void ParseAudioDevicePrivacyType(xmlNode *node, AudioDevicePrivacyType &deviceType);
+    DeviceNodeName GetDeviceNodeNameAsInt();
+    bool ParseInternal(std::shared_ptr<AudioXmlNode> curNode);
+    void ParseDevicePrivacyInfo(std::shared_ptr<AudioXmlNode> curNode, std::list<DevicePrivacyInfo> &deviceLists);
+    void ParserDevicePrivacyInfoList(std::shared_ptr<AudioXmlNode> curNode, std::list<DevicePrivacyInfo> &deviceLists);
+    void ParseAudioDevicePrivacyType(std::shared_ptr<AudioXmlNode> curNode, AudioDevicePrivacyType &deviceType);
     void ParseDeviceRole(const std::string &deviceRole, uint32_t &deviceRoleFlag);
     void ParseDeviceCategory(const std::string &deviceCategory, uint32_t &deviceCategoryFlag);
     void ParseDeviceUsage(const std::string &deviceUsage, uint32_t &deviceUsageFlag);
-    std::string ExtractPropertyValue(const std::string &propName, xmlNode *node);
     AudioDevicePrivacyType GetDevicePrivacyType(const std::string &devicePrivacyType);
 
-    xmlDoc *mDoc_ = nullptr;
+    std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
     AudioDevicePrivacyType devicePrivacyType_ = {};
     AudioDeviceManager *audioDeviceManager_;
     std::unordered_map<AudioDevicePrivacyType, std::list<DevicePrivacyInfo>> devicePrivacyMaps_ = {};
