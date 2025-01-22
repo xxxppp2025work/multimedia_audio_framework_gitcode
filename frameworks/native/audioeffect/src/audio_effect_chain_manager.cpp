@@ -21,9 +21,15 @@
 #include "audio_errors.h"
 #include "audio_effect_log.h"
 #include "securec.h"
-
+#include "system_ability_definition.h"
+#include "audio_setting_provider.h"
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+const std::unordered_map<std::string, std::string> AUDIO_PERSISTENCE_EFFECT_KEY {
+    {"voip_down", "settings.sound_ai_voip_down_selection"},
+};
+}
 static int32_t CheckValidEffectLibEntry(const std::shared_ptr<AudioEffectLibEntry> &libEntry, const std::string &effect,
     const std::string &libName)
 {
@@ -81,7 +87,7 @@ AudioEffectChainManager::AudioEffectChainManager()
     deviceSink_ = DEFAULT_DEVICE_SINK;
     spatialDeviceType_ = EARPHONE_TYPE_OTHERS;
     isInitialized_ = false;
-
+    defaultPropertyMap_.clear();
 #ifdef SENSOR_ENABLE
     headTracker_ = std::make_shared<HeadTracker>();
 #endif
@@ -274,7 +280,7 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     }
     // Construct effectPropertyMap_ that stores effect's property
     effectPropertyMap_ = effectChainManagerParam.effectDefaultProperty;
-
+    defaultPropertyMap_ = effectChainManagerParam.effectDefaultProperty;
     AUDIO_INFO_LOG("EffectToLibraryEntryMap size %{public}zu", effectToLibraryEntryMap_.size());
     AUDIO_DEBUG_LOG("EffectChainToEffectsMap size %{public}zu, SceneTypeAndModeToEffectChainNameMap size %{public}zu",
         effectChainToEffectsMap_.size(), sceneTypeAndModeToEffectChainNameMap_.size());
@@ -332,6 +338,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
     audioEffectChain->SetSpatialDeviceType(spatialDeviceType_);
     audioEffectChain->SetSpatializationSceneType(spatializationSceneType_);
     audioEffectChain->SetSpatializationEnabled(spatializationEnabled_);
+    LoadEffectProperties();
     std::string tSceneType = (sceneType == DEFAULT_SCENE_TYPE ? DEFAULT_PRESET_SCENE : sceneType);
     for (std::string effect: effectChainToEffectsMap_[effectChain]) {
         AudioEffectHandle handle = nullptr;
@@ -1326,6 +1333,22 @@ int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectPropert
         }
     }
     return ret;
+}
+
+void AudioEffectChainManager::LoadEffectProperties()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    for (const auto &[effect, key] : AUDIO_PERSISTENCE_EFFECT_KEY) {
+        std::string prop = "";
+        ErrCode ret = settingProvider.GetStringValue(key, prop, "system");
+        if (!prop.empty() && ret == SUCCESS) {
+            AUDIO_INFO_LOG("effect->name %{public}s prop %{public}s", effect.c_str(), prop.c_str());
+            effectPropertyMap_[effect] = prop;
+        } else {
+            AUDIO_ERR_LOG("get prop failed for key %{public}s", key.c_str());
+            effectPropertyMap_[effect] = defaultPropertyMap_[effect];
+        }
+    }
 }
 
 int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
