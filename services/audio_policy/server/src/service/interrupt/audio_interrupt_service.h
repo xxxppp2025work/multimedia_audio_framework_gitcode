@@ -262,6 +262,7 @@ private:
     // deprecated interrupt members
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
     int32_t clientOnFocus_ = 0;
+    mutable int32_t ownerPid_;
 
     std::mutex mutex_;
 };

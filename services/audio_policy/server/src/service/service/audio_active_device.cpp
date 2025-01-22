@@ -337,12 +337,13 @@ int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active)
         "Requested device not available %{public}d ", deviceType);
     if (!active) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>());
+            std::make_shared<AudioDeviceDescriptor>(), AduioStateManager::GetAduioStateManager().ownerPid_);
 #ifdef BLUETOOTH_ENABLE
         HandleNegtiveBt(deviceType);
 #endif
     } else {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, *itr);
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, *itr,
+            AduioStateManager::GetAduioStateManager().ownerPid_);
 #ifdef BLUETOOTH_ENABLE
         HandleActiveBt(deviceType, (*itr)->macAddress_);
 #endif
@@ -369,13 +370,13 @@ int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool activ
             AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(address);
         }
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>(**itr));
+            std::make_shared<AudioDeviceDescriptor>(**itr), AduioStateManager::GetAduioStateManager().ownerPid_);
 #ifdef BLUETOOTH_ENABLE
         HandleActiveBt(deviceType, (*itr)->macAddress_);
 #endif
     } else {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>());
+            std::make_shared<AudioDeviceDescriptor>(), AduioStateManager::GetAduioStateManager().ownerPid_);
 #ifdef BLUETOOTH_ENABLE
         HandleNegtiveBt(deviceType);
 #endif

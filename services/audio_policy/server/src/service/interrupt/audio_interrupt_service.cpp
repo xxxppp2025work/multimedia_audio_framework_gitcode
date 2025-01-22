@@ -683,6 +683,11 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
     // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
     lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    if (targetAudioScene == 0) {
+        AduioStateManager::GetAduioStateManager().SetAudioSceneOwnerPid(0);
+    } else {
+        AduioStateManager::GetAduioStateManager().SetAudioSceneOwnerPid(ownerPid_);
+    }
     return SUCCESS;
 }
 
@@ -1515,9 +1520,10 @@ AudioScene AudioInterruptService::GetHighestPriorityAudioScene(const int32_t zon
     for (const auto&[interrupt, focuState] : audioFocusInfoList) {
         AudioScene itAudioScene = GetAudioSceneFromAudioInterrupt(interrupt);
         int itAudioScenePriority = GetAudioScenePriority(itAudioScene);
-        if (itAudioScenePriority > audioScenePriority) {
+        if (itAudioScenePriority >= audioScenePriority) {
             audioScene = itAudioScene;
             audioScenePriority = itAudioScenePriority;
+            ownerPid_ = interrupt.pid;
         }
     }
     return audioScene;
