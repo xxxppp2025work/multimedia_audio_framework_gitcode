@@ -504,8 +504,10 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
 
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererInfo_.contentType, rendererInfo_.streamUsage);
+    AUDIO_INFO_LOG("AudioRendererPrivate::SetParams audioStreamParams.format is: %{public}d", audioStreamParams.format);
 #ifdef SUPPORT_LOW_LATENCY
     IAudioStream::StreamClass streamClass = GetPreferredStreamClass(audioStreamParams);
+    AUDIO_INFO_LOG("AudioRendererPrivate::SetParams streamClass is: %{public}d", streamClass);
 #else
     rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
     rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
@@ -553,6 +555,8 @@ int32_t AudioRendererPrivate::PrepareAudioStream(const AudioStreamParams &audioS
     // check AudioStreamParams for fast stream
     // As fast stream only support specified audio format, we should call GetPlaybackStream with audioStreamParams.
     ActivateAudioConcurrency(audioStreamParams, audioStreamType, streamClass);
+
+    AUDIO_INFO_LOG("AudioRendererPrivate::PrepareAudioStream streamClass is: %{public}d", streamClass);
     if (audioStream_ == nullptr) {
         audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType,
             appInfo_.appUid);
@@ -2125,6 +2129,7 @@ void AudioRendererPrivate::ActivateAudioConcurrency(const AudioStreamParams &aud
     }
     int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioConcurrency(rendererInfo_.pipeType);
     if (ret != SUCCESS) {
+        AUDIO_INFO_LOG("AudioRendererPrivate::ActivateAudioConcurrency error");
         if (streamClass == IAudioStream::FAST_STREAM) {
             streamClass = IAudioStream::PA_STREAM;
         }

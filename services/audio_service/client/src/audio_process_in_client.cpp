@@ -718,7 +718,8 @@ bool AudioProcessInClient::CheckIfSupport(const AudioProcessConfig &config)
         return false;
     }
 
-    if (config.streamInfo.format != SAMPLE_S16LE && config.streamInfo.format != SAMPLE_S32LE) {
+    if (config.streamInfo.format != SAMPLE_S16LE && config.streamInfo.format != SAMPLE_S32LE &&
+        config.streamInfo.format != SAMPLE_F32LE) {
         return false;
     }
 
