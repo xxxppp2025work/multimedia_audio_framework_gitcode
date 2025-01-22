@@ -236,16 +236,31 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
-    const std::unordered_map<std::string, std::string> &map = effectChainManagerParam.sceneTypeToChainNameMap;
     maxEffectChainCount_ = effectChainManagerParam.maxExtraNum + 1;
     priorSceneList_ = effectChainManagerParam.priorSceneList;
+    ConstructEffectChainMgrMaps(effectChains, effectChainManagerParam, effectLibraryList);
+    AUDIO_INFO_LOG("EffectToLibraryEntryMap size %{public}zu", effectToLibraryEntryMap_.size());
+    AUDIO_DEBUG_LOG("EffectChainToEffectsMap size %{public}zu, SceneTypeAndModeToEffectChainNameMap size %{public}zu",
+        effectChainToEffectsMap_.size(), sceneTypeAndModeToEffectChainNameMap_.size());
+    InitHdiStateInner();
+#ifdef WINDOW_MANAGER_ENABLE
+    AUDIO_DEBUG_LOG("Call RegisterDisplayListener.");
+#endif
+    isInitialized_ = true;
+    RecoverAllChains();
+}
+
+void AudioEffectChainManager::ConstructEffectChainMgrMaps(std::vector<EffectChain> &effectChains,
+    const EffectChainManagerParam &effectChainManagerParam,
+    std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList)
+{
+    const std::unordered_map<std::string, std::string> &map = effectChainManagerParam.sceneTypeToChainNameMap;
     std::set<std::string> effectSet;
     for (EffectChain efc: effectChains) {
         for (std::string effect: efc.apply) {
             effectSet.insert(effect);
         }
     }
-
     // Construct EffectToLibraryEntryMap that stores libEntry for each effect name
     std::shared_ptr<AudioEffectLibEntry> libEntry = nullptr;
     std::string libName;
@@ -281,15 +296,6 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     // Construct effectPropertyMap_ that stores effect's property
     effectPropertyMap_ = effectChainManagerParam.effectDefaultProperty;
     defaultPropertyMap_ = effectChainManagerParam.effectDefaultProperty;
-    AUDIO_INFO_LOG("EffectToLibraryEntryMap size %{public}zu", effectToLibraryEntryMap_.size());
-    AUDIO_DEBUG_LOG("EffectChainToEffectsMap size %{public}zu, SceneTypeAndModeToEffectChainNameMap size %{public}zu",
-        effectChainToEffectsMap_.size(), sceneTypeAndModeToEffectChainNameMap_.size());
-    InitHdiStateInner();
-#ifdef WINDOW_MANAGER_ENABLE
-    AUDIO_DEBUG_LOG("Call RegisterDisplayListener.");
-#endif
-    isInitialized_ = true;
-    RecoverAllChains();
 }
 
 bool AudioEffectChainManager::CheckAndAddSessionID(const std::string &sessionID)
