@@ -1124,6 +1124,26 @@ static bool DoStopDrainFadeout(pa_sink_input *sinkIn, uint32_t streamIndex, int3
     return false;
 }
 
+static int32_t GetFadeLenth(enum FadeStrategy fadeStrategy, size_t chunkLength, pa_sample_spec ss)
+{
+    if (fadeStrategy == FADE_STRATEGY_NONE) {
+        // none fade
+        return 0;
+    }
+
+    if (fadeStrategy == FADE_STRATEGY_SHORTER) {
+        // do 5ms fade-in fade-out
+        size_t fadeLenth = pa_usec_to_bytes(5000, &ss);
+        return ((fadeLenth < chunkLength) ? fadeLenth : chunkLength);
+    }
+
+    if (fadeStrategy == FADE_STRATEGY_DEFAULT) {
+        return chunkLength;
+    }
+
+    return chunkLength;
+}
+
 static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_sink *si)
 {
     CHECK_AND_RETURN_LOG(sinkIn != NULL, "sinkIn is null");
@@ -1133,15 +1153,18 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
     CHECK_AND_RETURN_LOG(u != NULL, "u is NULL");
 
     const char *streamType = safeProplistGets(sinkIn->proplist, "stream.type", "NULL");
-    if (pa_safe_streq(streamType, "ultrasonic")) {
-        return;
-    }
+    if (pa_safe_streq(streamType, "ultrasonic")) { return; }
+
+    const char *strExpectedPlaybackDurationBytes = safeProplistGets(sinkIn->proplist,
+        "expectedPlaybackDurationBytes", "0");
+    uint64_t expectedPlaybackDurationBytes = 0;
+    pa_atou64(strExpectedPlaybackDurationBytes, &expectedPlaybackDurationBytes);
+    enum FadeStrategy fadeStrategy
+        = GetFadeStrategy(pa_bytes_to_usec(expectedPlaybackDurationBytes, &(sinkIn->sample_spec)) / PA_USEC_PER_MSEC);
 
     uint32_t streamIndex = sinkIn->index;
     uint32_t sinkFadeoutPause = GetFadeoutState(streamIndex);
-    if (DoStopDrainFadeout(sinkIn, streamIndex, infoIn->chunk.length)) {
-        sinkFadeoutPause = DO_FADE;
-    }
+    if (DoStopDrainFadeout(sinkIn, streamIndex, infoIn->chunk.length)) { sinkFadeoutPause = DO_FADE;}
 
     if (sinkFadeoutPause == DONE_FADE && (sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING)) {
         silenceData(infoIn, si, streamIndex);
@@ -1149,6 +1172,8 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
         return;
     }
     uint32_t format = (uint32_t)ConvertPaToHdiAdapterFormat(u->format);
+    int32_t fadeLenth = GetFadeLenth(fadeStrategy, infoIn->chunk.length, u->ss);
+
     if (pa_atomic_load(&u->primary.fadingFlagForPrimary) == 1 &&
         u->primary.primarySinkInIndex == (int32_t)sinkIn->index) {
         if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
@@ -1160,7 +1185,7 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
         int32_t bufferAvg = GetSimpleBufferAvg(data, infoIn->chunk.length);
         AUDIO_INFO_LOG("do fading in for sink[%{public}d],buffer avg:%{public}d", streamIndex, bufferAvg);
-        DoFading(data, infoIn->chunk.length, format, (uint32_t)u->ss.channels, 0);
+        DoFading(data, fadeLenth, format, (uint32_t)u->ss.channels, 0);
         u->primary.primaryFadingInDone = 1;
         pa_memblock_release(infoIn->chunk.memblock);
     }
@@ -1170,8 +1195,8 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
         int32_t bufferAvg = GetSimpleBufferAvg(data, infoIn->chunk.length);
         AUDIO_INFO_LOG("do fading out for sink[%{public}d],buffer avg:%{public}d", streamIndex, bufferAvg);
-        DoFading(data, infoIn->chunk.length, format, (uint32_t)u->ss.channels, 1);
-        SetFadeoutState(streamIndex, DONE_FADE);
+        DoFading(data + infoIn->chunk.length - fadeLenth, fadeLenth, format, (uint32_t)u->ss.channels, 1);
+        if (fadeStrategy == FADE_STRATEGY_DEFAULT) { SetFadeoutState(streamIndex, DONE_FADE); }
         pa_memblock_release(infoIn->chunk.memblock);
     }
 }
@@ -3021,7 +3046,14 @@ static void PaInputStateChangeCbPrimary(struct Userdata *u, pa_sink_input *i, pa
             AUDIO_INFO_LOG("PaInputStateChangeCb, Successfully restarted HDI renderer");
         }
     }
-    ResetVolumeBySinkInputState(i, state);
+    const char *strExpectedPlaybackDurationBytes = safeProplistGets(i->proplist, "expectedPlaybackDurationBytes", "0");
+    uint64_t expectedPlaybackDurationBytes = 0;
+    pa_atou64(strExpectedPlaybackDurationBytes, &expectedPlaybackDurationBytes);
+    enum FadeStrategy fadeStrategy
+        = GetFadeStrategy(pa_bytes_to_usec(expectedPlaybackDurationBytes, &(i->sample_spec)) / PA_USEC_PER_MSEC);
+    if (fadeStrategy == FADE_STRATEGY_DEFAULT) {
+        ResetVolumeBySinkInputState(i, state);
+    }
 }
 
 // call from IO thread(OS_ProcessData)
