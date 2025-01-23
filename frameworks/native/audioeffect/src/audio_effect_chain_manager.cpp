@@ -25,11 +25,6 @@
 #include "audio_setting_provider.h"
 namespace OHOS {
 namespace AudioStandard {
-namespace {
-const std::unordered_map<std::string, std::string> AUDIO_PERSISTENCE_EFFECT_KEY {
-    {"voip_down", "settings.sound_ai_voip_down_selection"},
-};
-}
 static int32_t CheckValidEffectLibEntry(const std::shared_ptr<AudioEffectLibEntry> &libEntry, const std::string &effect,
     const std::string &libName)
 {

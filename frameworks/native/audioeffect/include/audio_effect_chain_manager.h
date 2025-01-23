@@ -104,6 +104,10 @@ enum SceneTypeOperation {
     REMOVE_SCENE_TYPE = 1,
 };
 
+const std::unordered_map<std::string, std::string> AUDIO_PERSISTENCE_EFFECT_KEY {
+    {"voip_down", "settings.sound_ai_voip_down_selection"},
+};
+
 class AudioEffectChainManager {
 public:
     AudioEffectChainManager();
