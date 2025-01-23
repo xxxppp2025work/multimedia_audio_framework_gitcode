@@ -87,6 +87,7 @@ AudioRendererPrivate::~AudioRendererPrivate()
 
     if (rendererProxyObj_ != nullptr) {
         rendererProxyObj_->UnsetRendererObj();
+        AudioPolicyManager::GetInstance().RemoveClientTrackerStub(sessionID_);
     }
 
     RemoveRendererPolicyServiceDiedCallback();
@@ -164,6 +165,8 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
 {
     Trace trace("AudioRenderer::Create");
     std::lock_guard<std::mutex> lock(createRendererMutex_);
+    CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().GetAudioPolicyManagerProxy() != nullptr,
+        nullptr, "sa not start");
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererOptions.rendererInfo.contentType,
         rendererOptions.rendererInfo.streamUsage);
     if (audioStreamType == STREAM_ULTRASONIC && getuid() != UID_MSDP_SA) {
@@ -1446,14 +1449,13 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     bool switchResult = false;
     if (audioStream_) {
         Trace trace("SwitchToTargetStream");
+        std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
         std::lock_guard<std::shared_mutex> lock(rendererMutex_);
         isSwitching_ = true;
         RendererState previousState = GetStatus();
         AUDIO_INFO_LOG("Previous stream state: %{public}d, original sessionId: %{public}u", previousState, sessionID_);
         if (previousState == RENDERER_RUNNING) {
-            // stop old stream
-            switchResult = audioStream_->StopAudioStream();
-            CHECK_AND_RETURN_RET_LOG(switchResult, false, "StopAudioStream failed.");
+            CHECK_AND_RETURN_RET_LOG(audioStream_->StopAudioStream(), false, "StopAudioStream failed.");
         }
         IAudioStream::SwitchInfo info;
         InitSwitchInfo(targetClass, info);
@@ -1480,6 +1482,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
             switchResult = newAudioStream->StartAudioStream(CMD_FROM_CLIENT, reason);
             CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
         }
+        oldAudioStream = audioStream_;
         audioStream_ = newAudioStream;
         UpdateRendererAudioStream(audioStream_);
         isSwitching_ = false;
@@ -1572,6 +1575,7 @@ void OutputDeviceChangeWithInfoCallbackImpl::OnRecreateStreamEvent(const uint32_
 {
     std::lock_guard<std::mutex> lock(audioRendererObjMutex_);
     AUDIO_INFO_LOG("Enter, session id: %{public}d, stream flag: %{public}d", sessionId, streamFlag);
+    CHECK_AND_RETURN_LOG(renderer_ != nullptr, "renderer_ is nullptr");
     renderer_->SwitchStream(sessionId, streamFlag, reason);
 }
 

@@ -41,6 +41,7 @@
 #include "policy_handler.h"
 #include "audio_log_utils.h"
 #include "media_monitor_manager.h"
+#include "audio_dump_pcm.h"
 #ifdef DAUDIO_ENABLE
 #include "remote_fast_audio_renderer_sink.h"
 #include "remote_fast_audio_capturer_source.h"
@@ -50,12 +51,13 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
-    static constexpr int64_t RECORD_DELAY_TIME = 4000000; // 4ms
-    static constexpr int64_t RECORD_VOIP_DELAY_TIME = 20000000; // 20ms
-    static constexpr int64_t MAX_SPAN_DURATION_IN_NANO = 100000000; // 100ms
+    static constexpr int64_t RECORD_DELAY_TIME_NS = 4000000; // 4ms = 4 * 1000 * 1000ns
+    static constexpr int64_t RECORD_VOIP_DELAY_TIME_NS = 20000000; // 20ms = 20 * 1000 * 1000ns
+    static constexpr int64_t MAX_SPAN_DURATION_NS = 100000000; // 100ms = 100 * 1000 * 1000ns
     static constexpr int64_t DELAY_STOP_HDI_TIME = 10000000000; // 10s
-    static constexpr int64_t WAIT_CLIENT_STANDBY_TIME_NS = 1000000000; // 1s
-    static constexpr int64_t DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME = 4000000000; // 4s
+    static constexpr int64_t WAIT_CLIENT_STANDBY_TIME_NS = 1000000000; // 1s = 1000 * 1000 * 1000ns
+    static constexpr int64_t DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME_NS = 4000000000; // 4s = 4 * 1000 * 1000 * 1000ns
+    static constexpr int64_t DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING_NS = 1000000000; // 1s
     static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 400; // 400ms
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
@@ -204,6 +206,7 @@ private:
 
     void CheckStandBy();
     bool IsAnyProcessRunning();
+    bool IsAnyProcessRunningInner();
     bool CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos);
     void WaitAllProcessReady(uint64_t curWritePos);
     bool ProcessToEndpointDataHandle(uint64_t curWritePos);
@@ -836,7 +839,7 @@ int32_t AudioEndpointInner::PrepareDeviceBuffer(const DeviceInfo &deviceInfo)
     AUDIO_DEBUG_LOG("panDuration %{public}" PRIu64" ns, serverAheadReadTime %{public}" PRIu64" ns.",
         spanDuration_, serverAheadReadTime_);
 
-    CHECK_AND_RETURN_RET_LOG(spanDuration_ > 0 && spanDuration_ < MAX_SPAN_DURATION_IN_NANO,
+    CHECK_AND_RETURN_RET_LOG(spanDuration_ > 0 && spanDuration_ < MAX_SPAN_DURATION_NS,
         ERR_INVALID_PARAM, "mmap span info error, spanDuration %{public}" PRIu64".", spanDuration_);
     dstAudioBuffer_ = OHAudioBuffer::CreateFromRemote(dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_,
         AUDIO_SERVER_ONLY, dstBufferFd_, OHAudioBuffer::INVALID_BUFFER_FD);
@@ -902,6 +905,12 @@ int32_t AudioEndpointInner::GetPreferBufferInfo(uint32_t &totalSizeInframe, uint
 bool AudioEndpointInner::IsAnyProcessRunning()
 {
     std::lock_guard<std::mutex> lock(listLock_);
+    return IsAnyProcessRunningInner();
+}
+
+// Should be called with AudioEndpointInner::listLock_ locked
+bool AudioEndpointInner::IsAnyProcessRunningInner()
+{
     bool isRunning = false;
     for (size_t i = 0; i < processBufferList_.size(); i++) {
         if (processBufferList_[i]->GetStreamStatus() &&
@@ -1036,7 +1045,7 @@ bool AudioEndpointInner::DelayStopDevice()
         CHECK_AND_RETURN_RET_LOG(fastSource_ != nullptr && fastSource_->Stop() == SUCCESS,
             false, "Source stop failed.");
     } else {
-        CHECK_AND_RETURN_RET_LOG(fastSink_ != nullptr && fastSink_->Stop() == SUCCESS,
+        CHECK_AND_RETURN_RET_LOG(endpointStatus_ == IDEL && fastSink_ != nullptr && fastSink_->Stop() == SUCCESS,
             false, "Sink stop failed.");
     }
     isStarted_ = false;
@@ -1081,7 +1090,7 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
 {
     InitLatencyMeasurement();
     // Prevents the audio from immediately stopping at 0 volume on start
-    delayStopTimeForZeroVolume_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME;
+    delayStopTimeForZeroVolume_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME_NS;
     AUDIO_PRERELEASE_LOGI("OnStart endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
     if (endpointStatus_ == RUNNING) {
         AUDIO_INFO_LOG("OnStart find endpoint already in RUNNING.");
@@ -1268,6 +1277,10 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
     if (processList_.size() == 0) {
         StopDevice();
         endpointStatus_ = UNLINKED;
+    } else if (!IsAnyProcessRunningInner()) {
+        endpointStatus_ = IDEL;
+        isStarted_ = false;
+        delayStopTime_ = DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING_NS;
     }
 
     AUDIO_DEBUG_LOG("UnlinkProcessStream end, %{public}s the process.", (isFind ? "find and remove" : "not find"));
@@ -1491,7 +1504,7 @@ void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
     if (std::abs(vol - 0) <= std::numeric_limits<float>::epsilon()) {
         if (!zeroVolumeStopDevice_ && !isVolumeAlreadyZero_) {
             AUDIO_INFO_LOG("Begin zero volume, will stop device.");
-            delayStopTimeForZeroVolume_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME;
+            delayStopTimeForZeroVolume_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME_NS;
             isVolumeAlreadyZero_ = true;
         }
     } else {
@@ -1524,7 +1537,7 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         AudioStreamType streamType = processList_[i]->GetAudioStreamType();
         AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
         DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
-        bool muteFlag = processList_[i]->GetMuteFlag();
+        bool muteFlag = processList_[i]->GetMuteState();
         if (deviceInfo_.networkId == LOCAL_NETWORK_ID &&
             !(deviceInfo_.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && volumeType == STREAM_MUSIC &&
                 PolicyHandler::GetInstance().IsAbsVolumeSupported()) &&
@@ -1533,6 +1546,8 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         } else {
             streamData.volumeStart = curReadSpan->volumeStart;
         }
+        Trace traceVol("VolumeProcess " + std::to_string(streamData.volumeStart) +
+            " sessionid:" + std::to_string(processList_[i]->GetAudioSessionId()));
         streamData.volumeEnd = curReadSpan->volumeEnd;
         streamData.streamInfo = processList_[i]->GetStreamInfo();
         streamData.isInnerCaped = processList_[i]->GetInnerCapState();
@@ -1588,12 +1603,12 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
         MixToDupStream(audioDataList);
     }
 
-    DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
-        dstStreamData.bufferDesc.bufLength);
     DfxOperation(dstStreamData.bufferDesc, dstStreamInfo_.format, dstStreamInfo_.channels);
 
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpHdiName_,
+        DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
+            dstStreamData.bufferDesc.bufLength);
+        AudioCacheMgr::GetInstance().CacheData(dumpHdiName_,
             static_cast<void *>(dstStreamData.bufferDesc.buffer), dstStreamData.bufferDesc.bufLength);
     }
 
@@ -1684,7 +1699,7 @@ bool AudioEndpointInner::RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wak
 {
     uint64_t nextHandlePos = curReadPos + dstSpanSizeInframe_;
     int64_t nextHdiWriteTime = GetPredictNextWriteTime(nextHandlePos);
-    int64_t tempDelay = endpointType_ == TYPE_VOIP_MMAP ? RECORD_VOIP_DELAY_TIME : RECORD_DELAY_TIME;
+    int64_t tempDelay = endpointType_ == TYPE_VOIP_MMAP ? RECORD_VOIP_DELAY_TIME_NS : RECORD_DELAY_TIME_NS;
     int64_t predictWakeupTime = nextHdiWriteTime + tempDelay;
     if (predictWakeupTime <= ClockTime::GetCurNano()) {
         wakeUpTime = ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION;
@@ -1959,7 +1974,7 @@ void AudioEndpointInner::WriteToProcessBuffers(const BufferDesc &readBuf)
         }
 
         int32_t ret = WriteToSpecialProcBuf(processBufferList_[i], readBuf, processList_[i]->GetConvertedBuffer(),
-            processList_[i]->GetMuteFlag());
+            processList_[i]->GetMuteState());
         CHECK_AND_CONTINUE_LOG(ret == SUCCESS,
             "endpoint write to process buffer %{public}zu fail, ret %{public}d.", i, ret);
         AUDIO_DEBUG_LOG("endpoint process buffer %{public}zu write success.", i);
@@ -1980,10 +1995,10 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
     BufferDesc readBuf;
     int32_t ret = dstAudioBuffer_->GetReadbuffer(curReadPos, readBuf);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "get read buffer fail, ret %{public}d.", ret);
-    DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(readBuf.buffer), readBuf.bufLength);
     DfxOperation(readBuf, dstStreamInfo_.format, dstStreamInfo_.channels);
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpHdiName_,
+        DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(readBuf.buffer), readBuf.bufLength);
+        AudioCacheMgr::GetInstance().CacheData(dumpHdiName_,
             static_cast<void *>(readBuf.buffer), readBuf.bufLength);
     }
     WriteToProcessBuffers(readBuf);

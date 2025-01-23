@@ -407,7 +407,7 @@ void RendererInClientInner::InitCallbackHandler()
 {
     std::lock_guard<std::mutex> lock(runnerMutex_);
     if (callbackHandler_ == nullptr) {
-        callbackHandler_ = CallbackHandler::GetInstance(shared_from_this());
+        callbackHandler_ = CallbackHandler::GetInstance(shared_from_this(), "OS_AudioStateCB");
     }
 }
 
@@ -1312,10 +1312,11 @@ bool RendererInClientInner::StopAudioStream()
 {
     Trace trace("RendererInClientInner::StopAudioStream " + std::to_string(sessionId_));
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
-    if (!offloadEnable_) {
-        DrainAudioStream(true);
-    }
     std::unique_lock<std::mutex> statusLock(statusMutex_);
+    std::lock_guard<std::mutex> lock(writeMutex_);
+    if (!offloadEnable_) {
+        DrainAudioStreamInner(true);
+    }
 
     if (state_ == STOPPED) {
         AUDIO_INFO_LOG("Renderer in client is already stopped");
@@ -1498,37 +1499,10 @@ int32_t RendererInClientInner::DrainRingCache()
 
 bool RendererInClientInner::DrainAudioStream(bool stopFlag)
 {
-    Trace trace("RendererInClientInner::DrainAudioStream " + std::to_string(sessionId_));
     std::lock_guard<std::mutex> statusLock(statusMutex_);
-    if (state_ != RUNNING) {
-        AUDIO_ERR_LOG("Drain failed. Illegal state:%{public}u", state_.load());
-        return false;
-    }
     std::lock_guard<std::mutex> lock(writeMutex_);
-    CHECK_AND_RETURN_RET_LOG(WriteCacheData(true, stopFlag) == SUCCESS, false, "Drain cache failed");
-
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    AUDIO_INFO_LOG("stopFlag:%{public}d", stopFlag);
-    int32_t ret = ipcStream_->Drain(stopFlag);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Drain call server failed:%{public}u", ret);
-        return false;
-    }
-    std::unique_lock<std::mutex> waitLock(callServerMutex_);
-    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return notifiedOperation_ == DRAIN_STREAM; // will be false when got notified.
-    });
-
-    if (notifiedOperation_ != DRAIN_STREAM || notifiedResult_ != SUCCESS) {
-        AUDIO_ERR_LOG("Drain failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
-            (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
-        notifiedOperation_ = MAX_OPERATION_CODE;
-        return false;
-    }
-    notifiedOperation_ = MAX_OPERATION_CODE;
-    waitLock.unlock();
-    AUDIO_INFO_LOG("Drain stream SUCCESS, sessionId: %{public}d", sessionId_);
-    return true;
+    bool ret = DrainAudioStreamInner(stopFlag);
+    return ret;
 }
 
 void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
@@ -1836,8 +1810,7 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
         clientVolume_ = volumeRamp_.GetRampVolume();
         AUDIO_INFO_LOG("clientVolume_:%{public}f", clientVolume_);
         Trace traceVolume("RendererInClientInner::WriteCacheData:Ramp:clientVolume_:" + std::to_string(clientVolume_));
-        CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
-        clientBuffer_->SetStreamVolume(clientVolume_);
+        SetInnerVolume(clientVolume_);
     }
 
     DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
@@ -2225,6 +2198,33 @@ int32_t RendererInClientInner::UnregisterSpatializationStateEventListener(uint32
     return SUCCESS;
 }
 
+bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
+{
+    Trace trace("RendererInClientInner::DrainAudioStreamInner " + std::to_string(sessionId_));
+    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false, "Drain failed. Illegal state:%{public}u", state_.load());
+    CHECK_AND_RETURN_RET_LOG(WriteCacheData(true, stopFlag) == SUCCESS, false, "Drain cache failed");
+
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    AUDIO_INFO_LOG("stopFlag:%{public}d", stopFlag);
+    int32_t ret = ipcStream_->Drain(stopFlag);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Drain call server failed:%{public}u", ret);
+    std::unique_lock<std::mutex> waitLock(callServerMutex_);
+    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return notifiedOperation_ == DRAIN_STREAM; // will be false when got notified.
+    });
+
+    if (notifiedOperation_ != DRAIN_STREAM || notifiedResult_ != SUCCESS) {
+        AUDIO_ERR_LOG("Drain failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+            (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+        notifiedOperation_ = MAX_OPERATION_CODE;
+        return false;
+    }
+    notifiedOperation_ = MAX_OPERATION_CODE;
+    waitLock.unlock();
+    AUDIO_INFO_LOG("Drain stream SUCCESS, sessionId: %{public}d", sessionId_);
+    return true;
+}
+
 void RendererInClientInner::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
 {
     sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
@@ -2294,7 +2294,7 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
     }
     if (!needStoreState) {
         AUDIO_INFO_LOG("telephony scene, return directly");
-        return ret;
+        return ret == SUCCESS;
     }
     switch (oldState) {
         case RUNNING:

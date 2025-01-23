@@ -231,20 +231,22 @@ int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::
 int32_t PaAdapterManager::ReleaseCapturer(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Enter ReleaseCapturer");
-    std::lock_guard<std::mutex> lock(streamMapMutex_);
+    std::unique_lock<std::mutex> lock(streamMapMutex_);
     auto it = capturerStreamMap_.find(streamIndex);
     if (it == capturerStreamMap_.end()) {
         AUDIO_WARNING_LOG("No matching stream");
         return SUCCESS;
     }
+    std::shared_ptr<ICapturerStream> currentCapturer = capturerStreamMap_[streamIndex];
+    capturerStreamMap_[streamIndex] = nullptr;
+    capturerStreamMap_.erase(streamIndex);
+    lock.unlock();
 
-    if (capturerStreamMap_[streamIndex]->Release() < 0) {
+    if (currentCapturer != nullptr && currentCapturer->Release() < 0) {
         AUDIO_WARNING_LOG("Release stream %{public}d failed", streamIndex);
         return ERR_OPERATION_FAILED;
     }
 
-    capturerStreamMap_[streamIndex] = nullptr;
-    capturerStreamMap_.erase(streamIndex);
     if (capturerStreamMap_.size() == 0) {
         AUDIO_INFO_LOG("Release the last stream");
     }
@@ -559,6 +561,8 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
             std::to_string(processConfig.rendererInfo.spatializationEnabled).c_str());
         pa_proplist_sets(propList, "headtracking.enabled",
             std::to_string(processConfig.rendererInfo.headTrackingEnabled).c_str());
+        AudioVolumeType systemVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig.streamType);
+        pa_proplist_sets(propList, "systemVolume.type", std::to_string(systemVolumeType).c_str());
         SetHighResolution(propList, processConfig, sessionId);
     } else if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         SetRecordProplist(propList, processConfig);

@@ -27,6 +27,7 @@
 #include "audio_schedule.h"
 #include "audio_utils.h"
 #include "media_monitor_manager.h"
+#include "audio_dump_pcm.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -85,9 +86,9 @@ void AudioProcessInServer::SetNonInterruptMute(const bool muteFlag)
     AudioService::GetInstance()->UpdateMuteControlSet(sessionId_, muteFlag);
 }
 
-bool AudioProcessInServer::GetMuteFlag()
+bool AudioProcessInServer::GetMuteState()
 {
-    return muteFlag_;
+    return muteFlag_ || silentModeAndMixWithOthers_;
 }
 
 uint32_t AudioProcessInServer::GetSessionId()
@@ -488,12 +489,18 @@ void AudioProcessInServer::WriterRenderStreamStandbySysEvent(uint32_t sessionId,
 
 void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
 {
-    DumpFileUtil::WriteDumpFile(dumpFile_, buffer, bufferSize);
-
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            buffer, bufferSize);
+        DumpFileUtil::WriteDumpFile(dumpFile_, buffer, bufferSize);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_, buffer, bufferSize);
     }
 }
+
+int32_t AudioProcessInServer::SetSilentModeAndMixWithOthers(bool on)
+{
+    silentModeAndMixWithOthers_ = on;
+    AUDIO_INFO_LOG("%{public}d", on);
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

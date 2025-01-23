@@ -41,6 +41,7 @@
 #include "parameters.h"
 #include "audio_log_utils.h"
 #include "media_monitor_manager.h"
+#include "audio_dump_pcm.h"
 
 using namespace std;
 using namespace OHOS::HDI::Audio_Bluetooth;
@@ -134,7 +135,7 @@ private:
     bool rendererInited_;
     bool started_;
     bool paused_;
-    bool suspend_;
+    std::atomic<bool> suspend_ = false;
     float leftVolume_;
     float rightVolume_;
     struct HDI::Audio_Bluetooth::AudioProxyManager *audioManager_;
@@ -542,12 +543,11 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
         }
     }
 
-    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
     BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
     DfxOperation(buffer, audioSampleFormat_, static_cast<AudioChannel>(attr_.channel));
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            static_cast<void *>(&data), len);
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(&data), len);
     }
 
     while (true) {
@@ -916,12 +916,16 @@ int32_t BluetoothRendererSinkInner::Flush(void)
 
 int32_t BluetoothRendererSinkInner::SuspendRenderSink(void)
 {
+    AUDIO_INFO_LOG("in");
+    Trace trace("BluetoothRendererSinkInner::SuspendRenderSink");
     suspend_ = true;
     return SUCCESS;
 }
 
 int32_t BluetoothRendererSinkInner::RestoreRenderSink(void)
 {
+    AUDIO_INFO_LOG("in");
+    Trace trace("BluetoothRendererSinkInner::RestoreRenderSink");
     suspend_ = false;
     return SUCCESS;
 }

@@ -33,6 +33,7 @@
 #endif
 #include "media_monitor_manager.h"
 #include "audio_volume.h"
+#include "audio_dump_pcm.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -182,18 +183,22 @@ int32_t RendererInServer::Init()
     return SUCCESS;
 }
 
-void RendererInServer::WriterRenderStreamStandbySysEvent()
+void RendererInServer::CheckAndWriterRenderStreamStandbySysEvent(bool standbyEnable)
 {
+    if (standbyEnable == lastWriteStandbyEnableStatus_) {
+        return;
+    }
+    lastWriteStandbyEnableStatus_ = standbyEnable;
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::STREAM_STANDBY,
         Media::MediaMonitor::BEHAVIOR_EVENT);
     bean->Add("STREAMID", static_cast<int32_t>(streamIndex_));
-    bean->Add("STANDBY", standByEnable_ ? 1 : 0);
+    bean->Add("STANDBY", standbyEnable ? 1 : 0);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
     std::unordered_map<std::string, std::string> payload;
     payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
     payload["sessionId"] = std::to_string(streamIndex_);
-    payload["isStandby"] = std::to_string(standByEnable_ ? 1 : 0);
+    payload["isStandby"] = std::to_string(standbyEnable ? 1 : 0);
     ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_STANDBY);
 }
 
@@ -214,8 +219,8 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
                 AUDIO_INFO_LOG("%{public}u recv stand-by started", streamIndex_);
                 audioServerBuffer_->GetStreamStatus()->store(STREAM_RUNNING);
                 FutexTool::FutexWake(audioServerBuffer_->GetFutex());
-                WriterRenderStreamStandbySysEvent();
             }
+            CheckAndWriterRenderStreamStandbySysEvent(false);
             status_ = I_STATUS_STARTED;
             startedTime_ = ClockTime::GetCurNano();
             stateListener->OnOperationHandled(START_STREAM, 0);
@@ -224,7 +229,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             if (standByEnable_) {
                 AUDIO_INFO_LOG("%{public}u recv stand-by paused", streamIndex_);
                 audioServerBuffer_->GetStreamStatus()->store(STREAM_STAND_BY);
-                WriterRenderStreamStandbySysEvent();
+                CheckAndWriterRenderStreamStandbySysEvent(true);
                 return;
             }
             status_ = I_STATUS_PAUSED;
@@ -495,9 +500,9 @@ int32_t RendererInServer::WriteData()
             }
         }
         stream_->EnqueueBuffer(bufferDesc);
-        DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+            DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
+            AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
                 static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         }
 
@@ -676,15 +681,25 @@ int32_t RendererInServer::Start()
         }
     }
 
-    if (isDualToneEnabled_) {
+    dualToneStreamInStart();
+    return SUCCESS;
+}
+
+void RendererInServer::dualToneStreamInStart()
+{
+    if (isDualToneEnabled_ && dualToneStream_ != nullptr) {
+        //Joint judgment ensures that there is a double ring and there is a stream to enter.
+        stream_->GetAudioEffectMode(effectModeWhenDual_);
+        stream_->SetAudioEffectMode(EFFECT_NONE);
         std::lock_guard<std::mutex> lock(dualToneMutex_);
+        //Locking before SetAudioEffectMode/GetAudioEffectMode results in a deadlock.
         if (dualToneStream_ != nullptr) {
-            stream_->GetAudioEffectMode(effectModeWhenDual_);
-            stream_->SetAudioEffectMode(EFFECT_NONE);
+            //Since there was no lock protection before the last time it was awarded dualToneStream_ it was
+            //modified elsewhere, it was decided again after the lock was awarded.
+            dualToneStream_->SetAudioEffectMode(EFFECT_NONE);
             dualToneStream_->Start();
         }
     }
-    return SUCCESS;
 }
 
 int32_t RendererInServer::Pause()
@@ -712,11 +727,16 @@ int32_t RendererInServer::Pause()
             dupStream_->Pause();
         }
     }
-    if (isDualToneEnabled_) {
+    if (isDualToneEnabled_ && dualToneStream_ != nullptr) {
+        //Joint judgment ensures that there is a double ring and there is a stream to enter.
+        stream_->SetAudioEffectMode(effectModeWhenDual_);
         std::lock_guard<std::mutex> lock(dualToneMutex_);
+        //Locking before SetAudioEffectMode/GetAudioEffectMode results in a deadlock.
         if (dualToneStream_ != nullptr) {
-            stream_->SetAudioEffectMode(effectModeWhenDual_);
+            //Since there was no lock protection before the last time it was awarded dualToneStream_ it was
+            //modified elsewhere, it was decided again after the lock was awarded.
             dualToneStream_->Pause();
+            dualToneStream_->SetAudioEffectMode(effectModeWhenDual_);
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
@@ -845,11 +865,16 @@ int32_t RendererInServer::Stop()
             dupStream_->Stop();
         }
     }
-    if (isDualToneEnabled_) {
+    if (isDualToneEnabled_ && dualToneStream_ != nullptr) {
+        //Joint judgment ensures that there is a double ring and there is a stream to enter.
+        stream_->SetAudioEffectMode(effectModeWhenDual_);
         std::lock_guard<std::mutex> lock(dualToneMutex_);
+        //Locking before SetAudioEffectMode/GetAudioEffectMode results in a deadlock.
         if (dualToneStream_ != nullptr) {
-            stream_->SetAudioEffectMode(effectModeWhenDual_);
+            //Since there was no lock protection before the last time it was awarded dualToneStream_ it was
+            //modified elsewhere, it was decided again after the lock was awarded.
             dualToneStream_->Stop();
+            dualToneStream_->SetAudioEffectMode(effectModeWhenDual_);
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
@@ -959,6 +984,10 @@ int32_t RendererInServer::GetLowPowerVolume(float &volume)
 
 int32_t RendererInServer::SetAudioEffectMode(int32_t effectMode)
 {
+    if (isDualToneEnabled_) {
+        effectModeWhenDual_ = effectMode;
+        return SUCCESS;
+    }
     return stream_->SetAudioEffectMode(effectMode);
 }
 
@@ -1026,7 +1055,7 @@ int32_t RendererInServer::InitDupStream()
     if (audioServerBuffer_ != nullptr) {
         float clientVolume = audioServerBuffer_->GetStreamVolume();
         float duckFactor = audioServerBuffer_->GetDuckFactor();
-        bool isMuted = silentModeAndMixWithOthers_;
+        bool isMuted = (isMuted_ || silentModeAndMixWithOthers_ || muteFlag_);
         // If some factors are not needed, remove them.
         AudioVolume::GetInstance()->SetStreamVolume(dupStreamIndex_, clientVolume);
         AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(dupStreamIndex_, duckFactor);
@@ -1088,7 +1117,7 @@ int32_t RendererInServer::InitDualToneStream()
     if (audioServerBuffer_ != nullptr) {
         float clientVolume = audioServerBuffer_->GetStreamVolume();
         float duckFactor = audioServerBuffer_->GetDuckFactor();
-        bool isMuted = silentModeAndMixWithOthers_;
+        bool isMuted = (isMuted_ || silentModeAndMixWithOthers_ || muteFlag_);
         // If some factors are not needed, remove them.
         AudioVolume::GetInstance()->SetStreamVolume(dualToneStreamIndex_, clientVolume);
         AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(dualToneStreamIndex_, duckFactor);
@@ -1099,6 +1128,7 @@ int32_t RendererInServer::InitDualToneStream()
         AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dual stream", dualToneStreamIndex_);
         stream_->GetAudioEffectMode(effectModeWhenDual_);
         stream_->SetAudioEffectMode(EFFECT_NONE);
+        dualToneStream_->SetAudioEffectMode(EFFECT_NONE);
         dualToneStream_->Start();
     }
     return SUCCESS;
@@ -1215,12 +1245,13 @@ int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_ = on;
     AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", on);
-    AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, on);
+    bool isMuted = (isMuted_ || on || muteFlag_);
+    AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, isMuted);
     if (isInnerCapEnabled_) {
-        AudioVolume::GetInstance()->SetStreamVolumeMute(dupStreamIndex_, on);
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dupStreamIndex_, isMuted);
     }
     if (isDualToneEnabled_) {
-        AudioVolume::GetInstance()->SetStreamVolumeMute(dualToneStreamIndex_, on);
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dualToneStreamIndex_, isMuted);
     }
     if (offloadEnable_) {
         OffloadSetVolumeInner();
@@ -1251,13 +1282,15 @@ int32_t RendererInServer::SetClientVolume()
 
 int32_t RendererInServer::SetMute(bool isMute)
 {
+    isMuted_ = isMute;
     AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", isMute);
-    AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, isMute);
+    bool isMuted = (isMute || silentModeAndMixWithOthers_ || muteFlag_);
+    AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, isMuted);
     if (isInnerCapEnabled_) {
-        AudioVolume::GetInstance()->SetStreamVolumeMute(dupStreamIndex_, isMute);
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dupStreamIndex_, isMuted);
     }
     if (isDualToneEnabled_) {
-        AudioVolume::GetInstance()->SetStreamVolumeMute(dualToneStreamIndex_, isMute);
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dualToneStreamIndex_, isMuted);
     }
     if (offloadEnable_) {
         OffloadSetVolumeInner();
@@ -1400,6 +1433,18 @@ void RendererInServer::SetNonInterruptMute(const bool muteFlag)
     AUDIO_INFO_LOG("mute flag %{public}d", muteFlag);
     muteFlag_ = muteFlag;
     AudioService::GetInstance()->UpdateMuteControlSet(streamIndex_, muteFlag);
+
+    bool isMuted = (isMuted_ || silentModeAndMixWithOthers_ || muteFlag);
+    AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, isMuted);
+    if (isInnerCapEnabled_) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dupStreamIndex_, isMuted);
+    }
+    if (isDualToneEnabled_) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dualToneStreamIndex_, isMuted);
+    }
+    if (offloadEnable_) {
+        OffloadSetVolumeInner();
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
