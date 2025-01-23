@@ -55,7 +55,6 @@ private:
     GlobalConfigType GetGlobalConfigTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
     XmlNodeType GetXmlNodeTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
     DefaultMaxInstanceType GetDefaultMaxInstanceTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
-    StreamType GetStreamTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
 
     bool ParseInternal(std::shared_ptr<AudioXmlNode> curNode);
     void ParseAdapters(std::shared_ptr<AudioXmlNode> curNode);

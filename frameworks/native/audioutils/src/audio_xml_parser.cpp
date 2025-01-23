@@ -44,6 +44,7 @@ struct XmlFuncHandle {
     void (*xmlFree)(xmlChar *content); // need check if works
     void (*xmlCleanupParser)();
     int32_t (*xmlStrcmp)(const xmlChar *propName1, const xmlChar *propName2);
+    xmlChar *(*xmlNodeGetContent)(const xmlNode *cur);
 };
 
 class DlopenUtils {
@@ -76,6 +77,9 @@ public:
 
     virtual bool HasProp(const char *propName) override;
     virtual int32_t GetProp(const char *propName, std::string &result) override;
+    virtual int32_t GetContent(std::string &result) override;
+    virtual std::string GetName() override;
+
     virtual void FreeDoc() override;
     virtual void FreeProp(char *propName) override;
     virtual void CleanUpParser() override;
@@ -112,6 +116,8 @@ bool DlopenUtils::Init()
             reinterpret_cast<decltype(xmlFuncHandle_->xmlCleanupParser)>(dlsym(libHandle, "xmlCleanupParser"));
         xmlFuncHandle_->xmlStrcmp =
             reinterpret_cast<decltype(xmlFuncHandle_->xmlStrcmp)>(dlsym(libHandle, "xmlStrcmp"));
+        xmlFuncHandle_->xmlNodeGetContent =
+            reinterpret_cast<decltype(xmlFuncHandle_->xmlNodeGetContent)>(dlsym(libHandle, "xmlNodeGetContent"));
         AUDIO_INFO_LOG("Libxml2 open success");
     }
     g_refCount_.store(g_refCount_.load() + 1);
@@ -237,6 +243,21 @@ int32_t AudioXmlNodeInner::GetProp(const char *propName, std::string &result)
     result = reinterpret_cast<char*>(tempValue);
     xmlFuncHandle_->xmlFree(tempValue);
     return SUCCESS;
+}
+
+int32_t AudioXmlNodeInner::GetContent(std::string &result)
+{
+    CHECK_AND_RETURN_RET_LOG(xmlFuncHandle_ != nullptr, ERROR, "xmlFuncHandle is nullptr!");
+    xmlChar *tempContent = xmlFuncHandle_->xmlNodeGetContent(curNode_);
+    CHECK_AND_RETURN_RET_LOG(tempContent != nullptr, ERROR, "GetContent Fail!");
+    result = reinterpret_cast<char*>(tempContent);
+    xmlFuncHandle_->xmlFree(tempContent);
+    return SUCCESS;
+}
+
+std::string AudioXmlNodeInner::GetName()
+{
+    return reinterpret_cast<char*>(curNode_->name);
 }
 
 void AudioXmlNodeInner::FreeDoc()

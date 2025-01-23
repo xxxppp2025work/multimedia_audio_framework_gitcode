@@ -39,6 +39,9 @@ public:
 
     virtual bool HasProp(const char *propName) = 0;
     virtual int32_t GetProp(const char *propName, std::string &result) = 0;
+    virtual int32_t GetContent(std::string &result) = 0;
+    virtual std::string GetName() = 0;
+
     virtual void FreeDoc() = 0;
     virtual void FreeProp(char *propName) = 0;
     virtual void CleanUpParser() = 0;
