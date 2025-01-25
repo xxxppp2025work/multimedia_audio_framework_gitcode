@@ -1769,26 +1769,30 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
             "Create wakeup record stream failed: no permission.");
         return true;
     }
-
+    CHECK_AND_RETURN_RET(HandleCheckRecorderBackgroundCapture(config), false,
+        "VerifyBackgroundCapture failed for callerUid:%{public}d", config.callerUid);
+    return true;
+}
+bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig &config)
+{
+    SwitchStreamInfo info = {
+        config.originalSessionId,
+        config.callerUid,
+        config.appInfo.appUid,
+        config.appInfo.appPid,
+        config.appInfo.appTokenId,
+        CAPTURER_PREPARED,
+    };
     if (PermissionUtil::NeedVerifyBackgroundCapture(config.callerUid, sourceType) &&
         !PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId)) {
-        SwitchStreamInfo info = {
-            config.originalSessionId,
-            config.callerUid,
-            config.appInfo.appUid,
-            config.appInfo.appPid,
-            config.appInfo.appTokenId,
-            CAPTURER_PREPARED,
-        };
-        AUDIO_ERR_LOG("VerifyBackgroundCapture failed uid:%{public}d", config.callerUid);
         if(!SwitchStreamUtil::isSwitchStreamSwtching(info, SWITCH_STATE_CREATED)) {
+            AUDIO_INFO_LOG("Recreating stream for callerUid:%{public}d need not VerifyBackgroundCapture",
+                config.callerUid);
             return true;
         }
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
         return false;
     }
-
-    return true;
 }
 
 bool AudioServer::CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId)
