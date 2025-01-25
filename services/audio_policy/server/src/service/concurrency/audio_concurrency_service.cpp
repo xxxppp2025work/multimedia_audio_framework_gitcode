@@ -125,7 +125,7 @@ void AudioConcurrencyService::AudioConcurrencyClient::OnConcedeStream()
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
         streamCollector.GetCurrentCapturerChangeInfos(capturerChangeInfos);
         for (auto &capturerChangeInfo : capturerChangeInfos) {
-            if(capturerChangeInfo->sessionId == static_cast<int32_t>(sessionID)) {
+            if (capturerChangeInfo->sessionId == static_cast<int32_t>(sessionID)) {
                 SwitchStreamInfo info = {
                     static_cast<uint32_t>(capturerChangeInfo->sessionId),
                     capturerChangeInfo->createrUID,

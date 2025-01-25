@@ -331,7 +331,7 @@ int32_t CapturerInServer::Start()
         };
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
         uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
-        if(!SwitchStreamUtil::isSwitchStreamSwtching(info, SWITCH_STATE_STARTED)){
+        if (!SwitchStreamUtil::isSwitchStreamSwtching(info, SWITCH_STATE_STARTED)) {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId), ERR_OPERATION_FAILED,
             "VerifyBackgroundCapture failed!");
         }

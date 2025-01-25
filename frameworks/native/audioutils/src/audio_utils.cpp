@@ -511,17 +511,18 @@ bool SwitchStreamUtil::InsertSwitchStreamRecord(SwitchStreamInfo info, SwitchSta
 
 void SwitchStreamUtil::HandleSwitchStreamTimeoutThread(SwitchStreamInfo info, SwitchState targetState)
 {
-    std::thread timeoutThread(info, targetState {
-        AUDIO_INFO_LOG("Start timing. It will change to SWITCH_STATE_TIMEOUT after 2 seconds.")
+    std::thread timeoutThread([info, targetState]() {
+        AUDIO_INFO_LOG("Start timing. It will change to SWITCH_STATE_TIMEOUT after 2 seconds.");
         std::this_thread::sleep_for(std::chrono::seconds(2));
         {
             std::lock_guard<std::mutex> lock(g_switchMapMutex);
             auto it = g_switchStreamRecordMap.find(info);
-            if (it != g_switchStreamRecordMap.end() && it->second = SWITCH_STATE_WAITING) {
+            if (it != g_switchStreamRecordMap.end() && it->second == SWITCH_STATE_WAITING) {
                 it->second = SWITCH_STATE_TIMEOUT;
-                AUDIO_INFO_LOG("SwitchStream:%{public}u uid:%{public}d CapturerState:%{public}d was timeout!"
-                    "Update Record switchState:%{public}d  success", info.sessionId,
-                    info.appUid, info.nextState, SWITCH_STATE_TIMEOUT);
+                AUDIO_INFO_LOG("SwitchStream:%{public}u uid:%{public}d CapturerState:%{public}d was timeout! "
+                    "Update Record switchState:%{public}d success",
+                    info.sessionId, info.appUid, info.nextState, SWITCH_STATE_TIMEOUT);
+            }
         }
     });
     timeoutThread.detach();
