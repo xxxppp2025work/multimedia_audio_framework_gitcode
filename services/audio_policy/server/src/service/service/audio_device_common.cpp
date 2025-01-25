@@ -1286,6 +1286,15 @@ bool AudioDeviceCommon::NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
             audioActiveDevice_.GetCurrentInputDevice().networkId_, capturerChangeInfo->capturerInfo.samplingRate);
         TriggerRecreateCapturerStreamCallback(capturerChangeInfo->callerPid,
             capturerChangeInfo->sessionId, streamClass, reason);
+        SwitchStreamInfo switchStreaminfo = {
+            static_cast<uint32_t>(capturerChangeInfo->sessionId),
+            capturerChangeInfo->createrUID,
+            capturerChangeInfo->clientUID,
+            capturerChangeInfo->clientPid,
+            capturerChangeInfo->appTokenId,
+            capturerChangeInfo->capturerState,
+        };
+        SwitchStreamUtil::UpdateSwitchStreamRecord(switchStreaminfo, SWITCH_STATE_WAITING);
         return true;
     }
     return false;

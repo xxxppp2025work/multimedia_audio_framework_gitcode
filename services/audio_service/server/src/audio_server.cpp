@@ -1769,10 +1769,22 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
             "Create wakeup record stream failed: no permission.");
         return true;
     }
-
+    
     if (PermissionUtil::NeedVerifyBackgroundCapture(config.callerUid, sourceType) &&
         !PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId)) {
+        SwitchStreamInfo info = {
+            config.originalSessionId,
+            config.callerUid,
+            config.appInfo.appUid,
+            config.appInfo.appPid,
+            config.appInfo.appTokenId,
+            CAPTURER_PREPARED,
+        };
         AUDIO_ERR_LOG("VerifyBackgroundCapture failed uid:%{public}d", config.callerUid);
+        if(!SwitchStreamUtil::isSwitchStreamSwtching(info, SWITCH_STATE_CREATED)){
+            return true;
+        }
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
         return false;
     }
 

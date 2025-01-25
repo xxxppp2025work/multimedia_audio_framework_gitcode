@@ -16,6 +16,8 @@
 #define LOG_TAG "AudioConcurrencyService"
 #endif
 
+#include "audio_utils.h"
+#include "audio_stream_collector.h"
 #include "audio_concurrency_service.h"
 #include "audio_concurrency_state_listener_proxy.h"
 
@@ -38,6 +40,22 @@ void AudioConcurrencyService::DispatchConcurrencyEventWithSessionId(uint32_t ses
     CHECK_AND_RETURN_LOG(concurrencyClients_.find(sessionID) != concurrencyClients_.end(),
         "session %{public}u not exist", sessionID);
     concurrencyClients_[sessionID]->OnConcedeStream();
+    AudioStreamCollector& streamCollector = AudioStreamCollector::GetAudioStreamCollector();
+    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
+    streamCollector.GetCurrentCapturerChangeInfos(capturerChangeInfos);
+    for (auto &capturerChangeInfo : capturerChangeInfos) {
+        if(capturerChangeInfo->sessionId == static_cast<int32_t>(sessionID)) {
+            SwitchStreamInfo switchStreaminfo = {
+                static_cast<uint32_t>(capturerChangeInfo->sessionId),
+                capturerChangeInfo->createrUID,
+                capturerChangeInfo->clientUID,
+                capturerChangeInfo->clientPid,
+                capturerChangeInfo->appTokenId,
+                capturerChangeInfo->capturerState,
+            };
+            SwitchStreamUtil::UpdateSwitchStreamRecord(switchStreaminfo, SWITCH_STATE_WAITING);
+        }
+    }
 }
 
 AudioConcurrencyService::AudioConcurrencyDeathRecipient::AudioConcurrencyDeathRecipient(
