@@ -574,7 +574,8 @@ void SwitchStreamUtil::HandelSwitchInfoInRecord(SwitchStreamInfo info, SwitchSta
             CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
                 false, "Remove Finished Record for Stream:%{public}u Failed!", iter->first.sessionId);
         } else if ((iter->second == SWITCH_STATE_WAITING) && (info.nextState == CAPTURER_STOPPED
-            || info.nextState == CAPTURER_PAUSED || info.nextState == CAPTURER_RELEASED)) {
+            || info.nextState == CAPTURER_PAUSED || info.nextState == CAPTURER_RELEASED 
+            || info.nextState == CAPTURER_RELEASED)) {
             AUDIO_WARNING_LOG("SwitchStream streamState has been changed to [%{public}d] before recreate!",
                 info.nextState);
         } else {
