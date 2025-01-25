@@ -1395,7 +1395,7 @@ void AudioDeviceCommon::HandleA2dpInputDeviceFetched(std::shared_ptr<AudioDevice
 }
 
 void AudioDeviceCommon::TriggerRecreateCapturerStreamCallback(const std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
-        int32_t streamFlag, const AudioStreamDeviceChangeReasonExt reason)
+    int32_t streamFlag, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioDeviceCommon::TriggerRecreateCapturerStreamCallback");
     SwitchStreamInfo info = {
