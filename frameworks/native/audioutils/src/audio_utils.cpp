@@ -554,7 +554,7 @@ void SwitchStreamUtil::HandelSwitchInfoInRecord(SwitchStreamInfo info, SwitchSta
             return true;
         } else {
             CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
-            false, "Remove Error Record for Stream:%{public}u Failed!", iter->first.sessionId);
+                false, "Remove Error Record for Stream:%{public}u Failed!", iter->first.sessionId);
             return false;
         }
     } else if (targetState == SWITCH_STATE_STARTED) {  
@@ -565,21 +565,21 @@ void SwitchStreamUtil::HandelSwitchInfoInRecord(SwitchStreamInfo info, SwitchSta
                 targetState, info.sessionId, info.appUid, info.nextState);
         } else {
             CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
-            false, "Remove Error Record for Stream:%{public}u Failed!", iter->first.sessionId);
+                false, "Remove Error Record for Stream:%{public}u Failed!", iter->first.sessionId);
         }
     } else {
         if (((iter->second == SWITCH_STATE_CREATED) || (iter->second == SWITCH_STATE_STARTED))
             && (info.nextState == CAPTURER_STOPPED || info.nextState == CAPTURER_PAUSED
             || info.nextState == CAPTURER_RELEASED || info.nextState == CAPTURER_INVALID)) {
-            CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState), false,
-                "Remove Finished Record for Stream:%{public}u Failed!", iter->first.sessionId);
+            CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
+                false, "Remove Finished Record for Stream:%{public}u Failed!", iter->first.sessionId);
         } else if ((iter->second == SWITCH_STATE_WAITING) && (info.nextState == CAPTURER_STOPPED
             || info.nextState == CAPTURER_PAUSED || info.nextState == CAPTURER_RELEASED)) {
             AUDIO_WARNING_LOG("SwitchStream streamState has been changed to [%{public}d] before recreate!",
-            info.nextState);
+                info.nextState);
         } else {
             CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
-            false, "Remove Error Record for Stream:%{public}u Failed!", iter->first.sessionId);
+                false, "Remove Error Record for Stream:%{public}u Failed!", iter->first.sessionId);
             AUDIO_WARNING_LOG("Error Record has been Removed for stream:%{public}u", iter->first.sessionId);
         }
     }
@@ -593,7 +593,7 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo info, SwitchSta
     if (!isInfoInRecord) {
         if (targetState == SWITCH_STATE_WAITING) {
             CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState),
-            false, "Insert SwitchStream into Record fail!");
+                false, "Insert SwitchStream into Record fail!");
             return true;
         }
         return false;
@@ -602,7 +602,7 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo info, SwitchSta
             CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
                 false, "Remove Error Record for Stream:%{public}u Failed!", iter->first.sessionId);
             CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState),
-            false, "Insert SwitchStream into Record fail!");
+                false, "Insert SwitchStream into Record fail!");
             return true;
         }
         if (iter->first.nextState == info.nextState) {
@@ -613,8 +613,8 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo info, SwitchSta
                 targetState, info.sessionId, info.appUid, info.nextState);
         }
         if (iter->second == SWITCH_STATE_TIMEOUT || iter->second ==SWITCH_STATE_FINISHED) {
-            CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
-            false, "Remove TIMEOUT or FINISHED Record for Stream:%{public}u Failed!", iter->first.sessionId);
+            CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState), false,
+                "Remove TIMEOUT or FINISHED Record for Stream:%{public}u Failed!", iter->first.sessionId);
             return false;
         }
         HandelSwitchInfoInRecord(info, targetState);
