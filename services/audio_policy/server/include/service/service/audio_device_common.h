@@ -235,7 +235,7 @@ private:
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType);
     void HandleA2dpInputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc, SourceType sourceType);
     void TriggerRecreateCapturerStreamCallback(const std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
-        int32_t streamFlag,const AudioStreamDeviceChangeReasonExt reason);
+        int32_t streamFlag, const AudioStreamDeviceChangeReasonExt reason);
     int32_t HandleScoInputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
 private:
