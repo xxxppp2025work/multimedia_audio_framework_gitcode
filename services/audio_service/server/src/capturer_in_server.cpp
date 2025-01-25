@@ -436,7 +436,7 @@ int32_t CapturerInServer::Stop()
         };
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
         PermissionUtil::NotifyPrivacyStop(tokenId, streamIndex_);
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STOPED);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     }
 
     int ret = stream_->Stop();

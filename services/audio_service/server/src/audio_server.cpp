@@ -1769,7 +1769,7 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
             "Create wakeup record stream failed: no permission.");
         return true;
     }
-    
+
     if (PermissionUtil::NeedVerifyBackgroundCapture(config.callerUid, sourceType) &&
         !PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId)) {
         SwitchStreamInfo info = {
