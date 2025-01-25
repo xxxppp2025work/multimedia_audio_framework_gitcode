@@ -1394,7 +1394,8 @@ void AudioDeviceCommon::HandleA2dpInputDeviceFetched(std::shared_ptr<AudioDevice
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "load a2dp input module failed");
 }
 
-void AudioDeviceCommon::TriggerRecreateCapturerStreamCallback(const std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
+void AudioDeviceCommon::TriggerRecreateCapturerStreamCallback(
+    const std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
     int32_t streamFlag, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioDeviceCommon::TriggerRecreateCapturerStreamCallback");

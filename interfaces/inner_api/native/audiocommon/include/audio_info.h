@@ -800,19 +800,22 @@ struct SwitchStreamInfo {
     int32_t appPid = 0;
     uint32_t appTokenId = 0;
     CapturerState nextState = CAPTURER_INVALID;
-    bool operator==(const SwitchStreamInfo& info) const {
+    bool operator==(const SwitchStreamInfo& info) const 
+    {
         return sessionId == info.sessionId && callerUid == info.callerUid &&
             appUid == info.appUid && appPid == info.appPid && appTokenId == info.appTokenId;
     }
-    bool operator!=(const SwitchStreamInfo& info) const {
+    bool operator!=(const SwitchStreamInfo& info) const 
+    {
         return !(*this == info);
     }
 
-    bool operator<(const SwitchStreamInfo& info) const {
+    bool operator<(const SwitchStreamInfo& info) const 
+    {
         if (sessionId != info.sessionId) {
             return sessionId < info.sessionId;
         }
-        if (callerUid != info.callerUid){
+        if (callerUid != info.callerUid) {
             return callerUid < info.callerUid;
         }
         if (appUid != info.appUid) {
@@ -824,13 +827,16 @@ struct SwitchStreamInfo {
         return appTokenId < info.appTokenId;
     }
 
-    bool operator<=(const SwitchStreamInfo& info) const {
+    bool operator<=(const SwitchStreamInfo& info) const 
+    {
         return *this < info || *this == info;
     }
-    bool operator>(const SwitchStreamInfo& info) const {
+    bool operator>(const SwitchStreamInfo& info) const 
+    {
         return !(*this <= info);
     }
-    bool operator>=(const SwitchStreamInfo& info) const {
+    bool operator>=(const SwitchStreamInfo& info) const 
+    {
         return !(*this < info);
     }
 };

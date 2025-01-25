@@ -74,11 +74,11 @@ AudioProcessInServer::~AudioProcessInServer()
             processConfig_.appInfo.appUid,
             processConfig_.appInfo.appPid,
             processConfig_.appInfo.appTokenId,
-            CAPTURER_STOPED,
+            CAPTURER_INVALID,
         };
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
         PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     }
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
@@ -154,7 +154,7 @@ int32_t AudioProcessInServer::Start()
             processConfig_.appInfo.appTokenId,
             CAPTURER_RUNNING,
         };
-        if(!SwitchStreamUtil::isSwitchStreamSwtching(info, SWITCH_STATE_STARTED)){
+        if (!SwitchStreamUtil::isSwitchStreamSwtching(info, SWITCH_STATE_STARTED)) {
             CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(processConfig_.appInfo.appTokenId,
                 processConfig_.appInfo.appFullTokenId), ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
         }
@@ -229,7 +229,7 @@ int32_t AudioProcessInServer::Resume()
         };
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
         uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
-        if(!SwitchStreamUtil::isSwitchStreamSwtching(info, SWITCH_STATE_STARTED)){
+        if (!SwitchStreamUtil::isSwitchStreamSwtching(info, SWITCH_STATE_STARTED)) {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId), ERR_OPERATION_FAILED,
             "VerifyBackgroundCapture failed!");
         }

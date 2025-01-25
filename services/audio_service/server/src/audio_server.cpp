@@ -1781,7 +1781,7 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
             CAPTURER_PREPARED,
         };
         AUDIO_ERR_LOG("VerifyBackgroundCapture failed uid:%{public}d", config.callerUid);
-        if(!SwitchStreamUtil::isSwitchStreamSwtching(info, SWITCH_STATE_CREATED)){
+        if(!SwitchStreamUtil::isSwitchStreamSwtching(info, SWITCH_STATE_CREATED)) {
             return true;
         }
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);

@@ -155,8 +155,11 @@ public:
     static bool InsertSwitchStreamRecord(SwitchStreamInfo info, SwitchState targetState);
     static bool UpdateSwitchStreamRecord(SwitchStreamInfo info, SwitchState targetState);
     static bool RemoveSwitchStreamRecord(SwitchStreamInfo info, SwitchState targetState);
-    static bool isSwitchStreamSwtching(SwitchStreamInfo info,SwitchState targetState);
+    static bool isSwitchStreamSwtching(SwitchStreamInfo info, SwitchState targetState);
+    static bool HandelCreatedSwitchInfoInRecord(SwitchStreamInfo info, SwitchState targetState);
+    static bool HandelStartedSwitchInfoInRecord(SwitchStreamInfo info, SwitchState targetState);
     static bool HandelSwitchInfoInRecord(SwitchStreamInfo info, SwitchState targetState);
+    static void HandleSwitchStreamTimeoutThread(SwitchStreamInfo info, SwitchState targetState);
     static bool RemoveAllRecordBySessionId(uint32_t sessionId);
 };
 
