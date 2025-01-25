@@ -40,22 +40,6 @@ void AudioConcurrencyService::DispatchConcurrencyEventWithSessionId(uint32_t ses
     CHECK_AND_RETURN_LOG(concurrencyClients_.find(sessionID) != concurrencyClients_.end(),
         "session %{public}u not exist", sessionID);
     concurrencyClients_[sessionID]->OnConcedeStream();
-    AudioStreamCollector& streamCollector = AudioStreamCollector::GetAudioStreamCollector();
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
-    streamCollector.GetCurrentCapturerChangeInfos(capturerChangeInfos);
-    for (auto &capturerChangeInfo : capturerChangeInfos) {
-        if(capturerChangeInfo->sessionId == static_cast<int32_t>(sessionID)) {
-            SwitchStreamInfo switchStreaminfo = {
-                static_cast<uint32_t>(capturerChangeInfo->sessionId),
-                capturerChangeInfo->createrUID,
-                capturerChangeInfo->clientUID,
-                capturerChangeInfo->clientPid,
-                capturerChangeInfo->appTokenId,
-                capturerChangeInfo->capturerState,
-            };
-            SwitchStreamUtil::UpdateSwitchStreamRecord(switchStreaminfo, SWITCH_STATE_WAITING);
-        }
-    }
 }
 
 AudioConcurrencyService::AudioConcurrencyDeathRecipient::AudioConcurrencyDeathRecipient(
@@ -137,6 +121,22 @@ void AudioConcurrencyService::SetCallbackHandler(std::shared_ptr<AudioPolicyServ
 void AudioConcurrencyService::AudioConcurrencyClient::OnConcedeStream()
 {
     if (callback_ != nullptr) {
+        AudioStreamCollector& streamCollector = AudioStreamCollector::GetAudioStreamCollector();
+        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
+        streamCollector.GetCurrentCapturerChangeInfos(capturerChangeInfos);
+        for (auto &capturerChangeInfo : capturerChangeInfos) {
+            if(capturerChangeInfo->sessionId == static_cast<int32_t>(sessionID)) {
+                SwitchStreamInfo info = {
+                    static_cast<uint32_t>(capturerChangeInfo->sessionId),
+                    capturerChangeInfo->createrUID,
+                    capturerChangeInfo->clientUID,
+                    capturerChangeInfo->clientPid,
+                    capturerChangeInfo->appTokenId,
+                    capturerChangeInfo->capturerState,
+                };
+                SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
+            }
+        }
         callback_->OnConcedeStream();
     }
 }

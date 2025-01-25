@@ -475,7 +475,7 @@ std::mutex g_switchMapMutex;
 static std::map<SwitchStreamInfo, SwitchState> g_switchStreamRecordMap = {};
 
 bool SwitchStreamUtil::isSwitchStreamSwtching(SwitchStreamInfo info, SwitchState targetState){
-    std::lock_guardstd::mutex lock(g_switchMapMutex);
+    std::lock_guard std::mutex lock(g_switchMapMutex);
     auto iter = g_switchStreamRecordMap.find(info);
     if(iter != g_switchStreamRecordMap.end() && targetState == SWITCH_STATE_CREATED
         && iter->second == SWITCH_STATE_WAITING && (info.nextState == CAPTURER_PREPARED)){
@@ -487,13 +487,17 @@ bool SwitchStreamUtil::isSwitchStreamSwtching(SwitchStreamInfo info, SwitchState
     && iter->second == SWITCH_STATE_CREATED && (info.nextState == CAPTURER_RUNNING)){
         AUDIO_WARNING_LOG("stream:%{public}u is restarting , need not check using mic in background !",
         info.sessionId);
-    return true;
+        return true;
     }
     return false;
 }
 
 bool SwitchStreamUtil::InsertSwitchStreamRecord(SwitchStreamInfo info, SwitchState targetState)
 {
+    if (RECORD_ALLOW_BACKGROUND_LIST.count(info.callerUid)) {
+        AUDIO_INFO_LOG("internal sa(%{public}d) user directly recording", info.callerUid);
+        return true;
+    }
     auto ret = g_switchStreamRecordMap.insert(std::make_pair(info, targetState));
     CHECK_AND_RETURN_RET_LOG(ret.second , false, "Update Record switchState:%{public}d for stream:%{public}u failed",
     targetState, info.sessionId);
@@ -503,7 +507,7 @@ bool SwitchStreamUtil::InsertSwitchStreamRecord(SwitchStreamInfo info, SwitchSta
 
     std::thread timeoutThread(info, targetState {
         std::this_thread::sleep_for(std::chrono::seconds(2));
-        std::lock_guardstd::mutex lock(g_switchMapMutex);
+        std::lock_guard std::mutex lock(g_switchMapMutex);
         auto it = g_switchStreamRecordMap.find(info);
         if(it != g_switchStreamRecordMap.end()){
             it->second = SWITCH_STATE_TIMEOUT;
@@ -528,7 +532,7 @@ bool SwitchStreamUtil::RemoveSwitchStreamRecord(SwitchStreamInfo info, SwitchSta
 }
 
 bool SwitchStreamUtil::RemoveAllRecordBySessionId(uint32_t sessionId) {
-    std::lock_guardstd::mutex lock(g_switchMapMutex);
+    std::lock_guard std::mutex lock(g_switchMapMutex);
 
     for (auto it = g_switchStreamRecordMap.begin(); it != g_switchStreamRecordMap.end(); ) {
         if (it->first.sessionId == sessionId) {
