@@ -500,10 +500,10 @@ bool SwitchStreamUtil::InsertSwitchStreamRecord(SwitchStreamInfo info, SwitchSta
     }
     auto ret = g_switchStreamRecordMap.insert(std::make_pair(info, targetState));
     CHECK_AND_RETURN_RET_LOG(ret.second , false, "Update Record switchState:%{public}d for stream:%{public}u failed",
-    targetState, info.sessionId);
+        targetState, info.sessionId);
     AUDIO_WARNING_LOG("SwitchStream will start!Update Record switchState:%{public}d for stream:%{public}u"
-    "uid:%{public}d pid:%{public}d CapturerState:%{public}d success",
-    targetState, info.sessionId, info.appUid, info.nextState);
+        "uid:%{public}d pid:%{public}d CapturerState:%{public}d success",
+        targetState, info.sessionId, info.appUid, info.nextState);
 
     std::thread timeoutThread(info, targetState {
         std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -511,9 +511,9 @@ bool SwitchStreamUtil::InsertSwitchStreamRecord(SwitchStreamInfo info, SwitchSta
         auto it = g_switchStreamRecordMap.find(info);
         if(it != g_switchStreamRecordMap.end()){
             it->second = SWITCH_STATE_TIMEOUT;
-        AUDIO_INFO_LOG("SwitchStream was timeout!Update Record switchState:%{public}d for stream:%{public}u"
-        "uid:%{public}d pid:%{public}d CapturerState:%{public}d success",
-        SWITCH_STATE_TIMEOUT, info.sessionId, info.appUid, info.nextState);
+            AUDIO_INFO_LOG("SwitchStream was timeout!Update Record switchState:%{public}d for stream:%{public}u"
+                "uid:%{public}d pid:%{public}d CapturerState:%{public}d success",
+                SWITCH_STATE_TIMEOUT, info.sessionId, info.appUid, info.nextState);
         }
     });
     timeoutThread.detach();
