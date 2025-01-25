@@ -476,7 +476,7 @@ static std::map<SwitchStreamInfo, SwitchState> g_switchStreamRecordMap = {};
 
 bool SwitchStreamUtil::isSwitchStreamSwtching(SwitchStreamInfo info, SwitchState targetState)
 {
-    std::lock_guard std::mutex lock(g_switchMapMutex);
+    std::lock_guard<std::mutex> lock(g_switchMapMutex);
     auto iter = g_switchStreamRecordMap.find(info);
     if (iter != g_switchStreamRecordMap.end() && targetState == SWITCH_STATE_CREATED
         && iter->second == SWITCH_STATE_WAITING && (info.nextState == CAPTURER_PREPARED)) {
@@ -515,7 +515,7 @@ void SwitchStreamUtil::HandleSwitchStreamTimeoutThread(SwitchStreamInfo info, Sw
         AUDIO_INFO_LOG("Start timing. It will change to SWITCH_STATE_TIMEOUT after 2 seconds.")
         std::this_thread::sleep_for(std::chrono::seconds(2));
         {
-            std::lock_guard std::mutex lock(g_switchMapMutex);
+            std::lock_guard<std::mutex> lock(g_switchMapMutex);
             auto it = g_switchStreamRecordMap.find(info);
             if (it != g_switchStreamRecordMap.end() && it->second = SWITCH_STATE_WAITING) {
                 it->second = SWITCH_STATE_TIMEOUT;
@@ -540,7 +540,7 @@ bool SwitchStreamUtil::RemoveSwitchStreamRecord(SwitchStreamInfo info, SwitchSta
 
 bool SwitchStreamUtil::RemoveAllRecordBySessionId(uint32_t sessionId)
 {
-    std::lock_guard std::mutex lock(g_switchMapMutex);
+    std::lock_guard<std::mutex> lock(g_switchMapMutex);
 
     for (auto it = g_switchStreamRecordMap.begin(); it != g_switchStreamRecordMap.end();) {
         if (it->first.sessionId == sessionId) {
@@ -602,7 +602,7 @@ bool SwitchStreamUtil::HandelStartedSwitchInfoInRecord(SwitchStreamInfo info, Sw
 
 bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo info, SwitchState targetState)
 {
-    std::lock_guardstd::mutex lock(g_switchMapMutex);
+    std::lock_guard<std::mutex> lock(g_switchMapMutex);
     auto iter = g_switchStreamRecordMap.find(info);
     bool isInfoInRecord = (iter != g_switchStreamRecordMap.end());
 
