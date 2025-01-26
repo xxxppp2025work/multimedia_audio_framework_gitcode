@@ -469,11 +469,9 @@ void PaAdapterManager::ReleasePaStream(pa_stream *paStream)
     AUDIO_INFO_LOG("Release paStream because of errs");
 }
 
-bool PaAdapterManager::IsEffectNone(StreamUsage streamUsage)
+bool PaAdapterManager::IsEffectNone(int32_t effectMode)
 {
-    if (streamUsage == STREAM_USAGE_SYSTEM || streamUsage == STREAM_USAGE_DTMF ||
-        streamUsage == STREAM_USAGE_ENFORCED_TONE || streamUsage == STREAM_USAGE_ULTRASONIC ||
-        streamUsage == STREAM_USAGE_NAVIGATION || streamUsage == STREAM_USAGE_NOTIFICATION) {
+    if (effectMode == EFFECT_NONE) {
         return true;
     }
     return false;
@@ -551,7 +549,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
 
     if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
         pa_proplist_sets(propList, "scene.mode",
-            IsEffectNone(processConfig.rendererInfo.streamUsage) ? "EFFECT_NONE" : "EFFECT_DEFAULT");
+            IsEffectNone(processConfig.rendererInfo.effectMode) ? "EFFECT_NONE" : "EFFECT_DEFAULT");
         // mark dup stream for dismissing volume handle
         std::string streamMode = managerType_ == DUP_PLAYBACK ? DUP_STREAM
             : (managerType_ == DUAL_PLAYBACK ? DUAL_TONE_STREAM : NORMAL_STREAM);
