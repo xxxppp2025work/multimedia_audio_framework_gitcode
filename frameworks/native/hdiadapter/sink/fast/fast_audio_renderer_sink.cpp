@@ -391,6 +391,9 @@ int32_t FastAudioRendererSinkInner::PrepareMmapBuffer()
     uint32_t reqBufferFrameSize = totalBufferInMs * (attr_.sampleRate / 1000);
 
     struct AudioMmapBufferDescriptor desc = {0};
+    AUDIO_INFO_LOG("FastAudioRendererSinkInner::PrepareMmapBuffer() audioRender_ is nullptr: %{public}d",
+        audioRender_ == nullptr);
+
     int32_t ret = audioRender_->ReqMmapBuffer(audioRender_, reqBufferFrameSize, &desc);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "ReqMmapBuffer failed, ret:%{public}d", ret);
     AUDIO_INFO_LOG("AudioMmapBufferDescriptor memoryAddress[%{private}p] memoryFd[%{public}d] totalBufferFrames"

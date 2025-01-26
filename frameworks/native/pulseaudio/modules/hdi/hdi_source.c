@@ -104,6 +104,8 @@ static char *GetStateInfo(pa_source_state_t state)
 
 static uint32_t GetByteSizeByFormat(int32_t format)
 {
+    AUDIO_INFO_LOG("hdi_source.c GetByteSizeByFormat format is: %{public}d",
+        (int)format);
     uint32_t byteSize = 0;
     switch (format) {
         case SAMPLE_U8:
@@ -977,6 +979,8 @@ static int PaSetSourceProperties(pa_module *m, pa_modargs *ma, const pa_sample_s
 
 static enum HdiAdapterFormat ConvertPaToHdiAdapterFormat(pa_sample_format_t format)
 {
+    AUDIO_INFO_LOG("hdi_source.c ConvertPaToHdiAdapterFormat format is: %{public}d",
+        (int)format);
     enum HdiAdapterFormat adapterFormat;
     switch (format) {
         case PA_SAMPLE_U8:
@@ -1004,6 +1008,8 @@ static enum HdiAdapterFormat ConvertPaToHdiAdapterFormat(pa_sample_format_t form
 
 static bool GetEndianInfo(pa_sample_format_t format)
 {
+    AUDIO_INFO_LOG("hdi_source.c GetEndianInfo format is: %{public}d",
+        (int)format);
     bool isBigEndian = false;
     switch (format) {
         case PA_SAMPLE_S16BE:

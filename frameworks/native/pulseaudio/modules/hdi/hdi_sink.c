@@ -270,20 +270,25 @@ static void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b)
 
 static void ConvertToFloat(pa_sample_format_t format, unsigned n, void *src, float *dst)
 {
+    AUDIO_INFO_LOG("hdi_sink.c ConvertToFloat format is: %{public}d", (int)format);
     CHECK_AND_RETURN_LOG(src != NULL, "src is null");
     CHECK_AND_RETURN_LOG(dst != NULL, "dst is null");
     int32_t ret;
     switch (format) {
         case PA_SAMPLE_S16LE:
+            AUDIO_INFO_LOG("hdi_sink.c ConvertToFloat PA_SAMPLE_S16LE is: %{public}d", (int)PA_SAMPLE_S16LE);
             ConvertFrom16BitToFloat(n, src, dst);
             break;
         case PA_SAMPLE_S24LE:
+            AUDIO_INFO_LOG("hdi_sink.c ConvertToFloat PA_SAMPLE_S24LE is: %{public}d", (int)PA_SAMPLE_S24LE);
             ConvertFrom24BitToFloat(n, src, dst);
             break;
         case PA_SAMPLE_S32LE:
+            AUDIO_INFO_LOG("hdi_sink.c ConvertToFloat PA_SAMPLE_S32LE is: %{public}d", (int)PA_SAMPLE_S32LE);
             ConvertFrom32BitToFloat(n, src, dst);
             break;
         default:
+            AUDIO_INFO_LOG("hdi_sink.c ConvertToFloat default");
             ret = memcpy_s(dst, n, src, n);
             CHECK_AND_RETURN_LOG(ret == 0, "ConvertToFloat: copy from src to dst fail!");
             break;
@@ -292,20 +297,25 @@ static void ConvertToFloat(pa_sample_format_t format, unsigned n, void *src, flo
 
 static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, void *dst)
 {
+    AUDIO_INFO_LOG("hdi_sink.c ConvertFromFloat format is: %{public}d", (int)format);
     CHECK_AND_RETURN_LOG(src != NULL, "src is null");
     CHECK_AND_RETURN_LOG(dst != NULL, "dst is null");
     int32_t ret;
     switch (format) {
         case PA_SAMPLE_S16LE:
+            AUDIO_INFO_LOG("hdi_sink.c ConvertToFloat PA_SAMPLE_S16LE is: %{public}d", (int)PA_SAMPLE_S16LE);
             ConvertFromFloatTo16Bit(n, src, dst);
             break;
         case PA_SAMPLE_S24LE:
+            AUDIO_INFO_LOG("hdi_sink.c ConvertToFloat PA_SAMPLE_S24LE is: %{public}d", (int)PA_SAMPLE_S24LE);
             ConvertFromFloatTo24Bit(n, src, dst);
             break;
         case PA_SAMPLE_S32LE:
+            AUDIO_INFO_LOG("hdi_sink.c ConvertToFloat PA_SAMPLE_S32LE is: %{public}d", (int)PA_SAMPLE_S32LE);
             ConvertFromFloatTo32Bit(n, src, dst);
             break;
         default:
+            AUDIO_INFO_LOG("hdi_sink.c ConvertToFloat default");
             ret = memcpy_s(dst, n, src, n);
             CHECK_AND_RETURN_LOG(ret == 0, "ConvertFromFloat: copy from src to dst fail!");
             break;
@@ -1055,21 +1065,32 @@ static void silenceData(pa_mix_info *infoIn, pa_sink *si, uint32_t streamIndex)
 
 static enum HdiAdapterFormat ConvertPaToHdiAdapterFormat(pa_sample_format_t format)
 {
+    AUDIO_INFO_LOG("hdi_sink.c HdiAdapterFormat ConvertPaToHdiAdapterFormat format is: %{public}d",
+        (int)format);
     enum HdiAdapterFormat adapterFormat;
     switch (format) {
         case PA_SAMPLE_U8:
+            AUDIO_INFO_LOG("hdi_sink.c HdiAdapterFormat ConvertPaToHdiAdapterFormat PA_SAMPLE_U8 is: %{public}d",
+            (int)PA_SAMPLE_U8);
             adapterFormat = SAMPLE_U8;
             break;
         case PA_SAMPLE_S16LE:
+            AUDIO_INFO_LOG("hdi_sink.c HdiAdapterFormat ConvertPaToHdiAdapterFormat PA_SAMPLE_S16LE is: %{public}d",
+            (int)PA_SAMPLE_S16LE);
             adapterFormat = SAMPLE_S16;
             break;
         case PA_SAMPLE_S24LE:
+            AUDIO_INFO_LOG("hdi_sink.c HdiAdapterFormat ConvertPaToHdiAdapterFormat PA_SAMPLE_S24LE is: %{public}d",
+            (int)PA_SAMPLE_S24LE);
             adapterFormat = SAMPLE_S24;
             break;
         case PA_SAMPLE_S32LE:
+            AUDIO_INFO_LOG("hdi_sink.c HdiAdapterFormat ConvertPaToHdiAdapterFormat PA_SAMPLE_S32LE is: %{public}d",
+            (int)PA_SAMPLE_S32LE);
             adapterFormat = SAMPLE_S32;
             break;
         default:
+            AUDIO_INFO_LOG("hdi_sink.c HdiAdapterFormat ConvertPaToHdiAdapterFormat default");
             adapterFormat = INVALID_WIDTH;
             break;
     }

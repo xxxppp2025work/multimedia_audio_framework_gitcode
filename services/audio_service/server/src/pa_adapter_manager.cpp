@@ -809,6 +809,9 @@ pa_sample_spec PaAdapterManager::ConvertToPAAudioParams(AudioProcessConfig proce
     pa_sample_spec paSampleSpec;
     paSampleSpec.channels = processConfig.streamInfo.channels;
     paSampleSpec.rate = processConfig.streamInfo.samplingRate;
+    AUDIO_INFO_LOG("PaAdapterManager::ConvertToPAAudioParams format is: %{public}d",
+        (int)processConfig.streamInfo.format);
+
     switch (processConfig.streamInfo.format) {
         case SAMPLE_U8:
             paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_U8;
@@ -821,6 +824,9 @@ pa_sample_spec PaAdapterManager::ConvertToPAAudioParams(AudioProcessConfig proce
             break;
         case SAMPLE_S32LE:
             paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_S32LE;
+            break;
+        case SAMPLE_F32LE:
+            paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_FLOAT32LE;
             break;
         default:
             paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_INVALID;

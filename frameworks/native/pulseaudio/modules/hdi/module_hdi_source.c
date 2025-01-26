@@ -125,6 +125,8 @@ static bool DecreaseScenekeyCount(pa_hashmap *sceneMap, const char *key)
 
 static enum HdiAdapterFormat ConvertPaFormat(pa_sample_format_t paFormat)
 {
+    AUDIO_INFO_LOG("module_hdi_source.c HdiAdapterFormat ConvertPaFormat paFormat is: %{public}d",
+        (int)paFormat);
     enum HdiAdapterFormat format;
     switch (paFormat) {
         case PA_SAMPLE_U8:
@@ -230,6 +232,8 @@ static void SetDefaultResampler(pa_source_output *so, const pa_sample_spec *algo
 
 static uint32_t GetByteSizeByFormat(enum HdiAdapterFormat format)
 {
+    AUDIO_INFO_LOG("module_hdi_source.c GetByteSizeByFormat format is: %{public}d",
+        (int)format);
     uint32_t byteSize = 0;
     switch (format) {
         case SAMPLE_U8:

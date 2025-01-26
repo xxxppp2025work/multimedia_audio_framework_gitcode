@@ -86,6 +86,9 @@ enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
         case AudioSampleFormat::SAMPLE_S32LE:
             adapterFormat = HdiAdapterFormat::SAMPLE_S32;
             break;
+        case AudioSampleFormat::SAMPLE_F32LE:
+            adapterFormat = HdiAdapterFormat::SAMPLE_F32;
+            break;
         default:
             adapterFormat = HdiAdapterFormat::INVALID_WIDTH;
             break;
