@@ -1734,7 +1734,6 @@ int32_t AudioServer::CheckInnerRecorderPermission(const AudioProcessConfig &conf
 bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 {
     Security::AccessToken::AccessTokenID tokenId = config.appInfo.appTokenId;
-    uint64_t fullTokenId = config.appInfo.appFullTokenId;
     SourceType sourceType = config.capturerInfo.sourceType;
     CHECK_AND_RETURN_RET_LOG(VALID_SOURCE_TYPE.count(sourceType), false, "invalid source type:%{public}d", sourceType);
 
@@ -1774,13 +1773,6 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
             "Create wakeup record stream failed: no permission.");
         return true;
     }
-
-    if (PermissionUtil::NeedVerifyBackgroundCapture(config.callerUid, sourceType) &&
-        !PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId)) {
-        AUDIO_ERR_LOG("VerifyBackgroundCapture failed uid:%{public}d", config.callerUid);
-        return false;
-    }
-
     return true;
 }
 
