@@ -397,7 +397,7 @@ struct AudioRendererInfo {
             && parcel.WriteInt32(format)
             && parcel.WriteBool(isOffloadAllowed)
             && parcel.WriteInt32(playerType)
-            && parcel.WriteUint64(expectedPlaybackDurationBytes);
+            && parcel.WriteUint64(expectedPlaybackDurationBytes)
             && parcel.WriteInt32(effectMode);
     }
     void Unmarshalling(Parcel &parcel)
