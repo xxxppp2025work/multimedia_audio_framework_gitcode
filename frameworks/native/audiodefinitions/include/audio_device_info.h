@@ -24,9 +24,21 @@
 namespace OHOS {
 namespace AudioStandard {
 enum DeviceRole {
+    /**
+     * Device role none.
+     */
     DEVICE_ROLE_NONE = -1,
+    /**
+     * Input device role.
+     */
     INPUT_DEVICE = 1,
+    /**
+     * Output device role.
+     */
     OUTPUT_DEVICE = 2,
+    /**
+     * Device role max count.
+     */
     DEVICE_ROLE_MAX
 };
 

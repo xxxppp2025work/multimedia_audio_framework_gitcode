@@ -78,7 +78,6 @@ std::unordered_map<std::string, AudioPortPin> AudioPolicyUtils::pinStrToEnum = {
     {"PIN_OUT_HEADPHONE", PIN_OUT_HEADPHONE},
     {"PIN_OUT_USB_HEADSET", PIN_OUT_USB_HEADSET},
     {"PIN_OUT_BLUETOOTH_A2DP", PIN_OUT_BLUETOOTH_A2DP},
-    
     {"PIN_OUT_DP", PIN_OUT_DP},
     {"PIN_IN_MIC", PIN_IN_MIC},
     {"PIN_IN_HS_MIC", PIN_IN_HS_MIC},
