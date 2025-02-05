@@ -104,12 +104,19 @@ enum SceneTypeOperation {
     REMOVE_SCENE_TYPE = 1,
 };
 
+const std::unordered_map<std::string, std::string> AUDIO_PERSISTENCE_EFFECT_KEY {
+    {"voip_down", "settings.sound_ai_voip_down_selection"},
+};
+
 class AudioEffectChainManager {
 public:
     AudioEffectChainManager();
     ~AudioEffectChainManager();
     static AudioEffectChainManager *GetInstance();
     void InitAudioEffectChainManager(std::vector<EffectChain> &effectChains,
+        const EffectChainManagerParam &effectChainManagerParam,
+        std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList);
+    void ConstructEffectChainMgrMaps(std::vector<EffectChain> &effectChains,
         const EffectChainManagerParam &effectChainManagerParam,
         std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList);
     bool CheckAndAddSessionID(const std::string &sessionID);
@@ -194,6 +201,7 @@ private:
     int32_t EffectVolumeUpdateInner(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
     void InitHdiStateInner();
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
+    void LoadEffectProperties();
     std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> effectToLibraryEntryMap_;
     std::map<std::string, std::string> effectToLibraryNameMap_;
     std::map<std::string, std::vector<std::string>> effectChainToEffectsMap_;
@@ -207,6 +215,7 @@ private:
     std::set<std::string> sceneTypeToSpecialEffectSet_;
     std::vector<std::string> priorSceneList_;
     std::unordered_map<std::string, std::string> effectPropertyMap_;
+    std::unordered_map<std::string, std::string> defaultPropertyMap_;
     std::vector<std::pair<std::string, int32_t>> sceneTypeCountList_;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
