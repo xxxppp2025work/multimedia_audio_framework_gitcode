@@ -99,7 +99,7 @@ public:
 private:
     std::string adapterName_ = STR_INIT;
     std::string adapterSupportScene_ = STR_INIT;
-    std::list<AudioAdapterInfo> deviceInfos_ {};
+    std::list<AdapterDeviceInfo> deviceInfos_ {};
     std::list<PipeInfo> pipeInfos_ {};
 };
 
@@ -144,6 +144,11 @@ struct PaPropInfo {
     std::string paPropRole_ = STR_INIT;
     std::string moduleName_ = STR_INIT;
 };
+
+struct AttributeInfo {
+    std::string name_ = STR_INIT;
+    std::string value_ = STR_INIT;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
