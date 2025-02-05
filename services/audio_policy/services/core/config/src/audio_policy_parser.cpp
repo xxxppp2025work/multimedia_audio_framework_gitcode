@@ -48,7 +48,7 @@ bool AudioPolicyParser::Parse()
     }
     if (!xmlStrcmp(root->name, reinterpret_cast<const xmlChar*>("audioPolicyConfiguration"))) {
         AudioPolicyConfigData config = AudioPolicyConfigData::GetInstance();
-        config.version_ = ExtractProertyValue("version", *root);
+        config.version_ = ExtractPropertyValue("version", *root);
         if (config.version_.empty()) {
             AUDIO_ERR_LOG("Get audio policy config xml version failed");
         }
@@ -200,10 +200,10 @@ void AudioPolicyParser::ParseStreamProps(xmlNode &node, PipeInfo &pipeInfo)
 
     while (currNode != nullptr) {
         if (currNode->type == XML_ELEMENT_NODE) {
-            StreamPropInfo streamPropInfo = {};
+            StreamPropInfo streamPropInfo {};
             streamPropInfo.pipeInfo_ = &pipeInfo;
             std::string formatStr = ExtractPropertyValue("format", *currNode);
-            streamPropInfo.format_ = AudioPolicyUtils::formatStrToEnum(formatStr);
+            streamPropInfo.format_ = AudioPolicyUtils::formatStrToEnum[formatStr];
             std::string sampleRateStr = ExtractPropertyValue("sampleRates", *currNode);
             if (sampleRateStr != "") {
                 CHECK_AND_RETURN_LOG(StringConverter(sampleRateStr, streamPropInfo.sampleRate_),
@@ -212,13 +212,13 @@ void AudioPolicyParser::ParseStreamProps(xmlNode &node, PipeInfo &pipeInfo)
             }
             std::string channelLayoutStr = ExtractPropertyValue("channelLayout", *currNode);
             if (channelLayoutStr != "") {
-                streamPropInfo.channelLayout_ = AudioPolicyUtils::layoutStrToChannels[channelLayoutStr];
+                streamPropInfo.channelLayout_ = AudioPolicyUtils::layoutStrToEnum[channelLayoutStr];
                 pipeInfo.channelLayouts_.push_back(streamPropInfo.channelLayout_);
             }
             std::string bufferSizeStr = ExtractPropertyValue("bufferSize", *currNode);
             if (bufferSizeStr != "") {
                 CHECK_AND_RETURN_LOG(StringConverter(bufferSizeStr, streamPropInfo.bufferSize_),
-                    "Convert invalid sampleRate: %{public}s", bufferSizeStr.c_str());
+                    "Convert invalid bufferSize: %{public}s", bufferSizeStr.c_str());
             }
             std::string supportDevicesStr = ExtractPropertyValue("supportDevices", *currNode);
             if (supportDevicesStr != "") {
@@ -258,7 +258,7 @@ void AudioPolicyParser::ParseAttributeByName(AttributeInfo &attributeInfo, PipeI
 {
     if (attributeInfo.name_ == "flag") {
         std::list<std::string> supportFlags {};
-        SplitStringToList(attributeInfo.value_, supportFlags, "|")
+        SplitStringToList(attributeInfo.value_, supportFlags, "|");
         for (auto flag : supportFlags) {
             pipeInfo.supportFlags_.push_back(AudioPolicyUtils::flagStrToEnum[flag]);
         }
@@ -274,12 +274,13 @@ void AudioPolicyParser::ParseDevices(xmlNode &node, AudioAdapterInfo &adapterInf
 
     while (currNode != nullptr) {
         if (currNode->type == XML_ELEMENT_NODE) {
-            AudioPipeDeviceInfo deviceInfo = {};
+            AdapterDeviceInfo deviceInfo {};
+            deviceInfo.adapterInfo_ = &adapterInfo;
             deviceInfo.name_ = ExtractPropertyValue("name", *currNode);
             std::string type = ExtractPropertyValue("type", *currNode);
             deviceInfo.type_ = AudioPolicyUtils::deviceTypeStrToEnum[type];
             std::string pin = ExtractPropertyValue("pin", *currNode);
-            deviceInfo.pin_ = AudioPolicyUtils::deviceTypeStrToEnum[type];
+            deviceInfo.pin_ = AudioPolicyUtils::pinStrToEnum[pin];
             std::string role = ExtractPropertyValue("role", *currNode);
             deviceInfo.role_ = AudioPolicyUtils::deviceRoleStrToEnum[role];
             std::string supportPipeInStr = ExtractPropertyValue("supportPipes", *currNode);

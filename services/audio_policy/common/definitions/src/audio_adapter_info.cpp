@@ -108,7 +108,7 @@ PipeInfo* AudioAdapterInfo::GetPipeInfoByName(const std::string &pipeName)
     return nullptr;
 }
 
-AdapterDeviceInfo* AudioAdapterInfo::GetDeviceInfoByDeviceType(DeviceType deviceType)
+AdapterDeviceInfo* AudioAdapterInfo::GetDeviceInfoByType(DeviceType deviceType)
 {
     for (auto &deviceInfo : deviceInfos_) {
         auto device = SUPPORTED_DEVICE_TYPE.find(deviceType);

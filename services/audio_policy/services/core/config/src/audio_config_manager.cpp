@@ -47,7 +47,7 @@ void AudioConfigManager::OnAudioPolicyXmlParsingCompleted()
     CHECK_AND_RETURN_LOG(!configData.adapterInfoMap_.empty(), "Parse audio policy xml failed, received data is empty");
 
     audioPolicyConfig_ = configData;
-    audioPolicyConfig_.Reorganaize();
+    audioPolicyConfig_.Reorganize();
 }
 
 void AudioConfigManager::GetDeviceDescriptorByDeviceType(DeviceType deviceType, AudioDeviceDescriptor &desc)
@@ -67,7 +67,7 @@ std::string AudioConfigManager::GetSinkPortName(DeviceType deviceType, std::stri
     auto deviceIt = audioPolicyConfig_.deviceInfoMap_.find(deviceType);
     CHECK_AND_RETURN_RET_LOG(deviceIt != audioPolicyConfig_.deviceInfoMap_.end(), portName, "Find deviceType failed");
     auto pipeIt = deviceIt->second.supportPipeMap_.find(pipeName);
-    CHECK_AND_RETURN_RET_LOG(pipeIt != deviceIt->second.supportPipeMap_.end(), portName, "Find pipeType failed");
+    CHECK_AND_RETURN_RET_LOG(pipeIt != deviceIt->second.supportPipeMap_.end(), portName, "Find pipeName failed");
     portName = pipeIt->second.paProp_.moduleName_;
     return portName;
 }

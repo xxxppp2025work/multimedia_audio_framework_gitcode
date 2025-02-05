@@ -65,6 +65,32 @@ enum class PipeInfoType {
     UNKNOWN
 };
 
+struct AttributeInfo {
+    std::string name_ = STR_INIT;
+    std::string value_ = STR_INIT;
+}
+
+struct PaPropInfo {
+    std::string lib_ = STR_INIT;
+    std::string paPropRole_ = STR_INIT;
+    std::string moduleName_ = STR_INIT;
+};
+
+struct PipeInfo;
+struct AdapterDeviceInfo;
+class AudioAdapterInfo;
+
+struct StreamPropInfo {
+    AudioSampleFormat format_ = INVALID_WIDTH;
+    uint32_t sampleRate_ = 0;
+    AudioChannelLayout channelLayout_ = CH_LAYOUT_UNKNOWN;
+    uint32_t bufferSize_ = 0;
+
+    PipeInfo *pipeInfo_;
+    std::list<DeviceType> supportDevices_ {}; // delete?
+    std::unordered_map<DeviceType, AdapterDeviceInfo&> supportDeviceMap_ {};
+};
+
 class AudioPolicyConfigData {
 public:
     static AudioPolicyConfigData&  GetInstace()
@@ -77,7 +103,6 @@ public:
     void SetPipeMaps(std::list<PipeInfo> &pipeInfos);
     void SetSupportDeviceAndPipeMaps(PipeInfo &pipeInfo);
 
-private:
     std::string version_ = STR_INIT;
     std::unordered_map<AdapterType, AudioAdapterInfo> adapterInfoMap_ {};
     std::unordered_map<DeviceType, AdapterDeviceInfo&> deviceInfoMap_ {};
@@ -96,10 +121,9 @@ public:
     AdapterDeviceInfo* GetDeviceInfoByType(DeviceType deviceType);
     PipeInfo* GetPipeInfoByName(const std::string &pipeName);
 
-private:
     std::string adapterName_ = STR_INIT;
     std::string adapterSupportScene_ = STR_INIT;
-    std::list<AudioAdapterInfo> deviceInfos_ {};
+    std::list<AdapterDeviceInfo> deviceInfos_ {};
     std::list<PipeInfo> pipeInfos_ {};
 };
 
@@ -126,23 +150,6 @@ struct PipeInfo {
     std::list<StreamPropInfo> streamPropInfos_ {};
     std::list<AttributeInfo> attributeInfos_ {};
     std::unordered_map<DeviceType, AdapterDeviceInfo&> supportDeviceMap_ {};
-};
-
-struct StreamPropInfo {
-    AudioSampleFormat format_ = INVALID_WIDTH;
-    uint32_t sampleRate_ = 0;
-    AudioChannelLayout channelLayout_ = CH_LAYOUT_UNKNOWN;
-    uint32_t bufferSize_ = 0;
-
-    PipeInfo *pipeInfo_;
-    std::list<DeviceType> supportDevices_ {}; // delete?
-    std::unordered_map<DeviceType, AdapterDeviceInfo&> supportDeviceMap_ {};
-};
-
-struct PaPropInfo {
-    std::string lib_ = STR_INIT;
-    std::string paPropRole_ = STR_INIT;
-    std::string moduleName_ = STR_INIT;
 };
 } // namespace AudioStandard
 } // namespace OHOS
