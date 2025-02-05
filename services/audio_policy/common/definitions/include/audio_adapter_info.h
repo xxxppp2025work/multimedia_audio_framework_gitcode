@@ -28,6 +28,14 @@ namespace OHOS {
 namespace AudioStandard {
 static const char* STR_INIT = "";
 
+static const char* ADAPTER_TYPE_PRIMARY = "primary";
+static const char* ADAPTER_TYPE_A2DP = "a2dp";
+static const char* ADAPTER_TYPE_REMOTE = "remote";
+static const char* ADAPTER_TYPE_FILE = "file";
+static const char* ADAPTER_TYPE_USB = "usb";
+static const char* ADAPTER_TYPE_DP = "dp";
+static const char* ADAPTER_TYPE_SLE = "sle";
+
 enum class XmlNodeType {
     ADAPTERS,
     XML_UNKNOWN
