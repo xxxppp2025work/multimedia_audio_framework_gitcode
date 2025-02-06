@@ -148,7 +148,7 @@ void AudioPolicyParser::ParsePipes(xmlNode &node, AudioAdapterInfo &adapterInfo)
         }
         currNode = currNode->next;
     }
-    adapterInfo.SetPipeInfos(std::move(pipeInfos));
+    adapterInfo.SetPipeInfos(pipeInfos);
 }
 
 void AudioPolicyParser::ParsePipeInfos(xmlNode &node, PipeInfo &pipeInfo)
@@ -287,7 +287,7 @@ void AudioPolicyParser::ParseDevices(xmlNode &node, AudioAdapterInfo &adapterInf
         }
         currNode = currNode->next;
     }
-    adapterInfo.SetDeviceInfos(std::move(deviceInfos));
+    adapterInfo.SetDeviceInfos(deviceInfos);
 }
 
 void AudioPolicyParser::SplitStringToList(std::string &str, std::list<std::string> &result, const char *delim)

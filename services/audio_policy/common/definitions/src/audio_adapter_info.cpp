@@ -88,7 +88,7 @@ void AudioPolicyConfigData::SetVersion(const std::string version)
 void AudioPolicyConfigData::SetAdapterInfoMap(std::unordered_map<AdapterType, AudioAdapterInfo> &adapterInfoMap)
 {
     if (!adapterInfoMap.empty()) {
-        adapterInfoMap_ = adapterInfoMap;
+        adapterInfoMap_ = std::move(adapterInfoMap);
     } else {
         AUDIO_ERR_LOG("Set adapterInfoMap failed, data is empty");
     }
@@ -96,7 +96,7 @@ void AudioPolicyConfigData::SetAdapterInfoMap(std::unordered_map<AdapterType, Au
 
 void AudioPolicyConfigData::AddAdapterInfoToMap(AdapterType type, AudioAdapterInfo &info)
 {
-    adapterInfoMap_[type] = info;
+    adapterInfoMap_[type] = std::move(info);
 }
 
 std::string AudioPolicyConfigData::GetVersion()
@@ -106,7 +106,7 @@ std::string AudioPolicyConfigData::GetVersion()
 
 void AudioPolicyConfigData::GetAdapterInfoMap(std::unordered_map<AdapterType, AudioAdapterInfo> &adapterInfoMap)
 {
-    adapterInfoMap = adapterInfoMap_;
+    adapterInfoMap = std::move(adapterInfoMap_);
 }
 
 AdapterType AudioAdapterInfo::GetTypeEnum()
@@ -177,7 +177,7 @@ void AudioAdapterInfo::SetAdapterSupportScene(const std::string adapterSupportSc
 void AudioAdapterInfo::SetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos)
 {
     if (!deviceInfos.empty()) {
-        deviceInfos_ = deviceInfos;
+        deviceInfos_ = std::move(deviceInfos);
     } else {
         AUDIO_ERR_LOG("Set deviceInfos failed, data is empty");
     }
@@ -186,7 +186,7 @@ void AudioAdapterInfo::SetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos)
 void AudioAdapterInfo::SetPipeInfos(std::list<PipeInfo> &pipeInfos)
 {
     if (!pipeInfos.empty()) {
-        pipeInfos_ = pipeInfos;
+        pipeInfos_ = std::move(pipeInfos);
     } else {
         AUDIO_ERR_LOG("Set pipeInfos failed, data is empty");
     }
@@ -204,12 +204,12 @@ std::string AudioAdapterInfo::GetAdapterSupportScene()
 
 void AudioAdapterInfo::GetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos)
 {
-    deviceInfos = deviceInfos_;
+    deviceInfos = std::move(deviceInfos_);
 }
 
 void AudioAdapterInfo::GetPipeInfos(std::list<PipeInfo> &pipeInfos)
 {
-    pipeInfos = pipeInfos_;
+    pipeInfos = std::move(pipeInfos_);
 }
 }
 }
