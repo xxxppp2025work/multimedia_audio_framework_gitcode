@@ -63,13 +63,50 @@ void AudioPolicyConfigData::SetSupportDeviceAndPipeMaps(PipeInfo &pipeInfo)
 void AudioPolicyConfigData::Reorganize()
 {
     for (auto &pair : adapterInfoMap_) {
-        SetDeviceMaps(pair.second.deviceInfos_);
-        SetPipeMaps(pair.second.pipeInfos_);
+        std::list<AdapterDeviceInfo> deviceInfos {};
+        std::list<PipeInfo> pipeInfos {};
+        pair.second.GetDeviceInfos(deviceInfos);
+        SetDeviceMaps(deviceInfos);
+        pair.second.GetPipeInfos(pipeInfos);
+        SetPipeMaps(pipeInfos);
     }
 
     for (auto &pair : pipeInfoMap_) {
         SetSupportDeviceAndPipeMaps(pair.second);
     }
+}
+
+void AudioPolicyConfigData::SetVersion(const std::string version)
+{
+    if (!version.empty()) {
+        version_ = version;
+    } else {
+        AUDIO_ERR_LOG("Set version failed, data is empty");
+    }
+}
+
+void AudioPolicyConfigData::SetAdapterInfoMap(std::unordered_map<AdapterType, AudioAdapterInfo> &adapterInfoMap)
+{
+    if (!adapterInfoMap.empty()) {
+        adapterInfoMap_ = adapterInfoMap;
+    } else {
+        AUDIO_ERR_LOG("Set adapterInfoMap failed, data is empty");
+    }
+}
+
+void AudioPolicyConfigData::AddAdapterInfoToMap(AdapterType type, AudioAdapterInfo &info)
+{
+    adapterInfoMap_[type] = info;
+}
+
+std::string AudioPolicyConfigData::GetVersion()
+{
+    return version_;
+}
+
+void AudioPolicyConfigData::GetAdapterInfoMap(std::unordered_map<AdapterType, AudioAdapterInfo> &adapterInfoMap)
+{
+    adapterInfoMap = adapterInfoMap_;
 }
 
 AdapterType AudioAdapterInfo::GetTypeEnum()
@@ -117,6 +154,62 @@ AdapterDeviceInfo* AudioAdapterInfo::GetDeviceInfoByType(DeviceType deviceType)
         }
     }
     return nullptr;
+}
+
+void AudioAdapterInfo::SetAdapterName(const std::string adapterName)
+{
+    if (!adapterName.empty()) {
+        adapterName_ = adapterName;
+    } else {
+        AUDIO_ERR_LOG("Set adapterName failed, data is empty");
+    }
+}
+
+void AudioAdapterInfo::SetAdapterSupportScene(const std::string adapterSupportScene)
+{
+    if (!adapterSupportScene.empty()) {
+        adapterSupportScene_ = adapterSupportScene;
+    } else {
+        AUDIO_ERR_LOG("Set adapterSupportScene failed, data is empty");
+    }
+}
+
+void AudioAdapterInfo::SetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos)
+{
+    if (!deviceInfos.empty()) {
+        deviceInfos_ = deviceInfos;
+    } else {
+        AUDIO_ERR_LOG("Set deviceInfos failed, data is empty");
+    }
+}
+
+void AudioAdapterInfo::SetPipeInfos(std::list<PipeInfo> &pipeInfos)
+{
+    if (!pipeInfos.empty()) {
+        pipeInfos_ = pipeInfos;
+    } else {
+        AUDIO_ERR_LOG("Set pipeInfos failed, data is empty");
+    }
+}
+
+std::string AudioAdapterInfo::GetAdapterName()
+{
+    return adapterName_;
+}
+
+std::string AudioAdapterInfo::GetAdapterSupportScene()
+{
+    return adapterSupportScene_;
+}
+
+void AudioAdapterInfo::GetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos)
+{
+    deviceInfos = deviceInfos_;
+}
+
+void AudioAdapterInfo::GetPipeInfos(std::list<PipeInfo> &pipeInfos)
+{
+    pipeInfos = pipeInfos_;
 }
 }
 }

@@ -103,8 +103,12 @@ public:
     void SetPipeMaps(std::list<PipeInfo> &pipeInfos);
     void SetSupportDeviceAndPipeMaps(PipeInfo &pipeInfo);
 
-    std::string version_ = STR_INIT;
-    std::unordered_map<AdapterType, AudioAdapterInfo> adapterInfoMap_ {};
+    void SetVersion(const std::string version);
+    void SetAdapterInfoMap(std::unordered_map<AdapterType, AudioAdapterInfo> &adapterInfoMap);
+    void AddAdapterInfoToMap(AdapterType type, AudioAdapterInfo &info);
+    std::string GetVersion();
+    void GetAdapterInfoMap(std::unordered_map<AdapterType, AudioAdapterInfo> &adapterInfoMap);
+
     std::unordered_map<DeviceType, AdapterDeviceInfo&> deviceInfoMap_ {};
     std::unordered_map<std::string, PipeInfo&> pipeInfoMap_ {};
     // check: use output/input deviceMap or interface in adapterInfo
@@ -112,6 +116,9 @@ public:
     std::unordered_map<DeviceType, AdapterDeviceInfo&> inputDeviceMap_ {};
     std::unordered_map<std::string, PipeInfo&> outputPipeMap_ {};
     std::unordered_map<std::string, PipeInfo&> inputPipeMap_ {};
+private:
+    std::string version_ = STR_INIT;
+    std::unordered_map<AdapterType, AudioAdapterInfo> adapterInfoMap_ {};
 };
 
 class AudioAdapterInfo {
@@ -121,6 +128,16 @@ public:
     AdapterDeviceInfo* GetDeviceInfoByType(DeviceType deviceType);
     PipeInfo* GetPipeInfoByName(const std::string &pipeName);
 
+    void SetAdapterName(const std::string adapterName);
+    void SetAdapterSupportScene(const std::string adapterSupportScene);
+    void SetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos);
+    void SetPipeInfos(std::list<PipeInfo> &pipeInfos);
+    std::string GetAdapterName();
+    std::string GetAdapterSupportScene();
+    void GetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos);
+    void GetPipeInfos(std::list<PipeInfo> &pipeInfos);
+
+private:
     std::string adapterName_ = STR_INIT;
     std::string adapterSupportScene_ = STR_INIT;
     std::list<AdapterDeviceInfo> deviceInfos_ {};

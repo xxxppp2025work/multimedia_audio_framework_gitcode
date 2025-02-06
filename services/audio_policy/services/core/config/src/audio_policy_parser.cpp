@@ -48,10 +48,8 @@ bool AudioPolicyParser::Parse()
     }
     if (!xmlStrcmp(root->name, reinterpret_cast<const xmlChar*>("audioPolicyConfiguration"))) {
         AudioPolicyConfigData config = AudioPolicyConfigData::GetInstance();
-        config.version_ = ExtractPropertyValue("version", *root);
-        if (config.version_.empty()) {
-            AUDIO_ERR_LOG("Get audio policy config xml version failed");
-        }
+        config.SetVersion(ExtractPropertyValue("version", *root));
+
     }
     if (!ParseInternal(*root)) {
         AUDIO_ERR_LOG("Audio policy config xml parse failed");
@@ -109,8 +107,8 @@ void AudioPolicyParser::ParseAdapter(xmlNode &node)
     }
 
     AudioAdapterInfo adapterInfo = {};
-    adapterInfo.adapterName_ = adapterName;
-    adapterInfo.adaptersupportScene_ = ExtractPropertyValue("supportScene", node);
+    adapterInfo.SetAdapterName(adapterName);
+    adapterInfo.SetAdapterSupportScene(ExtractPropertyValue("supportScene", node));
 
     xmlNode *currNode = node.xmlChildrenNode;
     while (currNode != nullptr) {
@@ -130,7 +128,7 @@ void AudioPolicyParser::ParseAdapter(xmlNode &node)
         currNode = currNode->next;
     }
     AudioPolicyConfigData config = AudioPolicyConfigData::GetInstance();
-    config.adapterInfoMap_[adapterInfo.GetTypeEnum()] = std::move(adapterInfo);
+    config.AddAdapterInfoToMap(adapterInfo.GetTypeEnum(), adapterInfo);
 }
 
 void AudioPolicyParser::ParsePipes(xmlNode &node, AudioAdapterInfo &adapterInfo)
@@ -150,7 +148,7 @@ void AudioPolicyParser::ParsePipes(xmlNode &node, AudioAdapterInfo &adapterInfo)
         }
         currNode = currNode->next;
     }
-    adapterInfo.pipeInfos_ = std::move(pipeInfos);
+    adapterInfo.SetPipeInfos(std::move(pipeInfos));
 }
 
 void AudioPolicyParser::ParsePipeInfos(xmlNode &node, PipeInfo &pipeInfo)
@@ -289,7 +287,7 @@ void AudioPolicyParser::ParseDevices(xmlNode &node, AudioAdapterInfo &adapterInf
         }
         currNode = currNode->next;
     }
-    adapterInfo.deviceInfos_ = std::move(deviceInfos);
+    adapterInfo.SetDeviceInfos(std::move(deviceInfos));
 }
 
 void AudioPolicyParser::SplitStringToList(std::string &str, std::list<std::string> &result, const char *delim)

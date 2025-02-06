@@ -43,8 +43,10 @@ bool AudioConfigManager::Init()
 void AudioConfigManager::OnAudioPolicyXmlParsingCompleted()
 {
     AudioPolicyConfigData configData = AudioPolicyConfigData::GetInstance();
-    AUDIO_INFO_LOG("AdapterInfo num [%{public}zu]", configData.adapterInfoMap_.size());
-    CHECK_AND_RETURN_LOG(!configData.adapterInfoMap_.empty(), "Parse audio policy xml failed, received data is empty");
+    std::unordered_map<AdapterType, AudioAdapterInfo> adapterInfoMap {};
+    configData.GetAdapterInfoMap(adapterInfoMap);
+    AUDIO_INFO_LOG("AdapterInfo num [%{public}zu]", adapterInfoMap.size());
+    CHECK_AND_RETURN_LOG(!adapterInfoMap.empty(), "Parse audio policy xml failed, received data is empty");
 
     audioPolicyConfig_ = configData;
     audioPolicyConfig_.Reorganize();
