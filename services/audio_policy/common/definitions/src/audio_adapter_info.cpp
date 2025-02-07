@@ -55,7 +55,9 @@ void AudioPolicyConfigData::SetSupportDeviceAndPipeMaps(PipeInfo &pipeInfo)
 
             pipeInfo.supportDeviceMap_.insert({supportDevice, deviceInfo});
             streamPropInfo.supportDeviceMap_.insert({supportDevice, deviceInfo});
-            deviceInfo.supportPipeMap_.insert({pipeInfo.name_, pipeInfo});
+            for (auto &supportFlag : pipeInfo.supportFlags_) {
+                deviceInfo.supportPipeMap_.insert({supportFlag, pipeInfo});
+            }
         }
     }
 }

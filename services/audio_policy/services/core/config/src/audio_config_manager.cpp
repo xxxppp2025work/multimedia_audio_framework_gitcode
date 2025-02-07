@@ -20,6 +20,7 @@
 
 #include "audio_policy_utils.h"
 #include "audio_policy_service.h"
+#include "audio_stream_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -72,6 +73,33 @@ std::string AudioConfigManager::GetSinkPortName(DeviceType deviceType, std::stri
     CHECK_AND_RETURN_RET_LOG(pipeIt != deviceIt->second.supportPipeMap_.end(), portName, "Find pipeName failed");
     portName = pipeIt->second.paProp_.moduleName_;
     return portName;
+}
+
+void AudioConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> desc, StreamPropInfo &info)
+{
+    // device -> adapter -> flag -> stream
+    auto deviceIt = audioPolicyConfig_.deviceInfoMap_.find(desc->deviceDesc_->deviceType_);
+    CHECK_AND_RETURN_LOG(deviceIt != audioPolicyConfig_.deviceInfoMap_.end(), "Find deviceType failed");
+    auto pipeIt = deviceIt->second.supportPipeMap_.find(desc->audioFlag); // audioFlag? two enum definitions
+    if (pipeIt == deviceIt->second.supportPipeMap_.end()) {
+        AUDIO_ERR_LOG("Find audioFlag failed");
+        AudioFlagType flag = desc->audioMode_ == AUDIO_MODE_PLAYBACK ?
+            FLAG_TYPE_OUTPUT_NORMAL : FLAG_TYPE_INPUT_NORMAL;
+        pipeIt = deviceIt->second.supportPipeMap_.find(flag);
+        CHECK_AND_RETURN_LOG(pipeIt != deviceIt->second.supportPipeMap_.end(), "Find normal flag failed");
+    }
+    for (auto &streamProp : pipeIt->second.streamPropInfos_) {
+        if (streamProp.format_ == desc->audioStreamParams.format &&
+            streamProp.sampleRate_ == desc->audioStreamParams.samplingRate &&
+            streamProp.channelLayout_ == desc->audioStreamParams.channelLayout) {
+            info = streamProp;
+            return;
+        }
+    }
+    if (streamProp.format_ == INVALID_WIDTH && streamProp.sampleRate_ == 0 &&
+        streamProp.channelLayout_ == CH_LAYOUT_UNKNOWN) {
+        AUDIO_ERR_LOG("Find streamPropInfo failed");
+    }
 }
 
 }

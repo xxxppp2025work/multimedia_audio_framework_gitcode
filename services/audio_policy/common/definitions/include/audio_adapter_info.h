@@ -87,7 +87,7 @@ struct StreamPropInfo {
     uint32_t bufferSize_ = 0;
 
     PipeInfo *pipeInfo_;
-    std::list<DeviceType> supportDevices_ {}; // delete?
+    std::list<DeviceType> supportDevices_ {};
     std::unordered_map<DeviceType, AdapterDeviceInfo&> supportDeviceMap_ {};
 };
 
@@ -151,8 +151,8 @@ struct AdapterDeviceInfo {
     DeviceRole role_ = DEVICE_ROLE_NONE;
 
     AudioAdapterInfo *adapterInfo_;
-    std::list<std::string> supportPipes_ {}; // delete?
-    std::unordered_map<std::string, PipeInfo&> supportPipeMap_ {};
+    std::list<std::string> supportPipes_ {};
+    std::unordered_map<AudioFlagType, PipeInfo&> supportPipeMap_ {}; // flag <-> pipeInfo
 };
 
 struct PipeInfo {

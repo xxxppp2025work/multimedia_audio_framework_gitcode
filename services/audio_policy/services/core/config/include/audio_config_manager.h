@@ -39,6 +39,7 @@ public:
 
     void GetDeviceDescriptorByDeviceType(DeviceType deviceType, AudioDeviceDescriptor &desc);
     std::string GetSinkPortName(DeviceType deviceType, std::string pipeName);
+    void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> desc, StreamPropInfo &info);
 private:
     AudioConfigManager() : audioPolicyConfig_(AudioPolicyConfigData::GetInstance())
     {
