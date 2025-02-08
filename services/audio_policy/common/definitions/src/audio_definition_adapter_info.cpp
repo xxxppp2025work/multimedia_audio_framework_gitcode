@@ -87,7 +87,7 @@ void AudioPolicyConfigData::SetVersion(const std::string version)
     }
 }
 
-void AudioPolicyConfigData::SetAdapterInfoMap(std::unordered_map<AudioAdapterType, AudioAdapterInfo> &adapterInfoMap)
+void AudioPolicyConfigData::SetAdapterInfoMap(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap)
 {
     if (!adapterInfoMap.empty()) {
         adapterInfoMap_ = std::move(adapterInfoMap);
@@ -96,7 +96,7 @@ void AudioPolicyConfigData::SetAdapterInfoMap(std::unordered_map<AudioAdapterTyp
     }
 }
 
-void AudioPolicyConfigData::AddAdapterInfoToMap(AudioAdapterType type, AudioAdapterInfo &info)
+void AudioPolicyConfigData::AddAdapterInfoToMap(AudioAdapterType type, PolicyAdapterInfo &info)
 {
     adapterInfoMap_[type] = std::move(info);
 }
@@ -106,17 +106,17 @@ std::string AudioPolicyConfigData::GetVersion()
     return version_;
 }
 
-void AudioPolicyConfigData::GetAdapterInfoMap(std::unordered_map<AudioAdapterType, AudioAdapterInfo> &adapterInfoMap)
+void AudioPolicyConfigData::GetAdapterInfoMap(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap)
 {
     adapterInfoMap = std::move(adapterInfoMap_);
 }
 
-AudioAdapterType AudioAdapterInfo::GetTypeEnum()
+AudioAdapterType PolicyAdapterInfo::GetTypeEnum()
 {
     return GetAdapterType(adapterName_);
 }
 
-AudioAdapterType AudioAdapterInfo::GetAdapterType(const std::string &adapterName)
+AudioAdapterType PolicyAdapterInfo::GetAdapterType(const std::string &adapterName)
 {
     if (adapterName == ADAPTER_TYPE_PRIMARY) {
         return AudioAdapterType::TYPE_PRIMARY;
@@ -137,7 +137,7 @@ AudioAdapterType AudioAdapterInfo::GetAdapterType(const std::string &adapterName
     }
 }
 
-AdapterPipeInfo* AudioAdapterInfo::GetPipeInfoByName(const std::string &pipeName)
+AdapterPipeInfo* PolicyAdapterInfo::GetPipeInfoByName(const std::string &pipeName)
 {
     for (auto &pipeInfo : pipeInfos_) {
         if (pipeInfo.name_ == pipeName) {
@@ -147,7 +147,7 @@ AdapterPipeInfo* AudioAdapterInfo::GetPipeInfoByName(const std::string &pipeName
     return nullptr;
 }
 
-AdapterDeviceInfo* AudioAdapterInfo::GetDeviceInfoByType(DeviceType deviceType)
+AdapterDeviceInfo* PolicyAdapterInfo::GetDeviceInfoByType(DeviceType deviceType)
 {
     for (auto &deviceInfo : deviceInfos_) {
         auto device = SUPPORTED_DEVICE_TYPE.find(deviceType);
@@ -158,7 +158,7 @@ AdapterDeviceInfo* AudioAdapterInfo::GetDeviceInfoByType(DeviceType deviceType)
     return nullptr;
 }
 
-void AudioAdapterInfo::SetAdapterName(const std::string adapterName)
+void PolicyAdapterInfo::SetAdapterName(const std::string adapterName)
 {
     if (!adapterName.empty()) {
         adapterName_ = adapterName;
@@ -167,7 +167,7 @@ void AudioAdapterInfo::SetAdapterName(const std::string adapterName)
     }
 }
 
-void AudioAdapterInfo::SetAdapterSupportScene(const std::string adapterSupportScene)
+void PolicyAdapterInfo::SetAdapterSupportScene(const std::string adapterSupportScene)
 {
     if (!adapterSupportScene.empty()) {
         adapterSupportScene_ = adapterSupportScene;
@@ -176,7 +176,7 @@ void AudioAdapterInfo::SetAdapterSupportScene(const std::string adapterSupportSc
     }
 }
 
-void AudioAdapterInfo::SetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos)
+void PolicyAdapterInfo::SetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos)
 {
     if (!deviceInfos.empty()) {
         deviceInfos_ = std::move(deviceInfos);
@@ -185,7 +185,7 @@ void AudioAdapterInfo::SetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos)
     }
 }
 
-void AudioAdapterInfo::SetPipeInfos(std::list<AdapterPipeInfo> &pipeInfos)
+void PolicyAdapterInfo::SetPipeInfos(std::list<AdapterPipeInfo> &pipeInfos)
 {
     if (!pipeInfos.empty()) {
         pipeInfos_ = std::move(pipeInfos);
@@ -194,22 +194,22 @@ void AudioAdapterInfo::SetPipeInfos(std::list<AdapterPipeInfo> &pipeInfos)
     }
 }
 
-std::string AudioAdapterInfo::GetAdapterName()
+std::string PolicyAdapterInfo::GetAdapterName()
 {
     return adapterName_;
 }
 
-std::string AudioAdapterInfo::GetAdapterSupportScene()
+std::string PolicyAdapterInfo::GetAdapterSupportScene()
 {
     return adapterSupportScene_;
 }
 
-void AudioAdapterInfo::GetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos)
+void PolicyAdapterInfo::GetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos)
 {
     deviceInfos = std::move(deviceInfos_);
 }
 
-void AudioAdapterInfo::GetPipeInfos(std::list<AdapterPipeInfo> &pipeInfos)
+void PolicyAdapterInfo::GetPipeInfos(std::list<AdapterPipeInfo> &pipeInfos)
 {
     pipeInfos = std::move(pipeInfos_);
 }

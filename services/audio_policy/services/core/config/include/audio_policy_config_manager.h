@@ -22,12 +22,13 @@
 #include "audio_manager_base.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
-#include "audio_policy_parser_factory.h"
+#include "audio_policy_config_parser.h"
+#include "audio_stream_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioPolicyConfigManager : public IPortObserver {
+class AudioPolicyConfigManager {
 public:
     static AudioPolicyConfigManager& GetInstance()
     {
@@ -35,7 +36,7 @@ public:
         return instance;
     }
     bool Init();
-    void OnAudioPolicyXmlParsingCompleted();
+    void OnAudioPolicyConfigXmlParsingCompleted();
 
     void GetDeviceDescriptorByDeviceType(DeviceType deviceType, AudioDeviceDescriptor &desc);
     std::string GetSinkPortName(DeviceType deviceType, std::string pipeName);

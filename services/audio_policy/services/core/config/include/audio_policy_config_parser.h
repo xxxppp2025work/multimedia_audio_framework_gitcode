@@ -16,8 +16,6 @@
 #define AUDIO_POLICY_CONFIG_PARSER_H
 
 #include <list>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
 #include <unordered_map>
 #include <string>
 #include <regex>
@@ -25,8 +23,9 @@
 #include "audio_definition_adapter_info.h"
 #include "audio_device_info.h"
 #include "audio_stream_info.h"
-#include "iport_observer.h"
 #include "parser.h"
+#include "audio_xml_parser.h"
+#include "audio_policy_config_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,40 +35,38 @@ public:
     static constexpr char CONFIG_FILE[] = "/vendor/etc/audio/audio_policy_config.xml";
 
     bool LoadConfiguration() final;
-    bool Parse() final;
     void Destroy() final;
 
-    explicit AudioPolicyConfigParser(IPortObserver &observer)
-        : portObserver_(observer),
-          doc_(nullptr)
+    explicit AudioPolicyConfigParser(AudioPolicyConfigManager *manager): configManager_(manager)
     {
+        curNode_ = AudioXmlNode::Create();
     }
 
     virtual ~AudioPolicyConfigParser()
     {
         Destroy();
+        curNode_ = nullptr;
     }
 
 private:
-    PolicyXmlNodeType GetXmlNodeTypeAsInt(xmlNode &node);
-    AdapterInfoType GetAdapterInfoTypeAsInt(xmlNode &node);
-    PipeInfoType GetPipeInfoTypeAsInt(xmlNode &node);
-    std::string ExtractPropertyValue(const std::string &propName, xmlNode &node);
+    PolicyXmlNodeType GetXmlNodeTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
+    AdapterInfoType GetAdapterInfoTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
+    PipeInfoType GetPipeInfoTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
 
-    bool ParseInternal(xmlNode &node);
-    void ParseAdapters(xmlNode &node);
-    void ParseAdapter(xmlNode &node);
-    void ParsePipes(xmlNode &node, AudioAdapterInfo &adapterInfo);
-    void ParsePipeInfos(xmlNode &node, AdapterPipeInfo &pipeInfo);
-    void ParsePaProp(xmlNode &node, AdapterPipeInfo &pipeInfo);
-    void ParseStreamProps(xmlNode &node, AdapterPipeInfo &pipeInfo);
-    void ParseAttributes(xmlNode &node, AdapterPipeInfo &pipeInfo);
+    bool ParseInternal(std::shared_ptr<AudioXmlNode> curNode);
+    void ParseAdapters(std::shared_ptr<AudioXmlNode> curNode);
+    void ParseAdapter(std::shared_ptr<AudioXmlNode> curNode);
+    void ParsePipes(std::shared_ptr<AudioXmlNode> curNode, PolicyAdapterInfo &adapterInfo);
+    void ParsePipeInfos(std::shared_ptr<AudioXmlNode> curNode, AdapterPipeInfo &pipeInfo);
+    void ParsePaProp(std::shared_ptr<AudioXmlNode> curNode, AdapterPipeInfo &pipeInfo);
+    void ParseStreamProps(std::shared_ptr<AudioXmlNode> curNode, AdapterPipeInfo &pipeInfo);
+    void ParseAttributes(std::shared_ptr<AudioXmlNode> curNode, AdapterPipeInfo &pipeInfo);
     void ParseAttributeByName(AttributeInfo &attributeInfo, AdapterPipeInfo &pipeInfo);
-    void ParseDevices(xmlNode &node, AudioAdapterInfo &adapterInfo);
-    void SplitStringToList(std::string &str, std::list<std::string> &result);
+    void ParseDevices(std::shared_ptr<AudioXmlNode> curNode, PolicyAdapterInfo &adapterInfo);
+    void SplitStringToList(std::string &str, std::list<std::string> &result, const char *delim);
 
-    IPortObserver &portObserver_;
-    xmlDoc *doc_;
+    std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
+    AudioPolicyConfigManager *configManager_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

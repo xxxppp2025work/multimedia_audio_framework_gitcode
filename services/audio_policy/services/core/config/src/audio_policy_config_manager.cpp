@@ -17,15 +17,13 @@
 #endif
 
 #include "audio_policy_config_manager.h"
-
 #include "audio_policy_utils.h"
-#include "audio_stream_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
 bool AudioPolicyConfigManager::Init()
 {
-    std::unique_ptr<AudioPolicyParser> audioPolicyConfigParser = make_unique<AudioPolicyParser>(*this);
+    std::unique_ptr<AudioPolicyConfigParser> audioPolicyConfigParser = make_unique<AudioPolicyConfigParser>(this);
     bool ret = audioPolicyConfigParser->LoadConfiguration();
     if (!ret) {
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Policy Config Load Configuration failed");
@@ -40,10 +38,10 @@ bool AudioPolicyConfigManager::Init()
     return ret;
 }
 
-void AudioPolicyConfigManager::OnAudioPolicyXmlParsingCompleted()
+void AudioPolicyConfigManager::OnAudioPolicyConfigXmlParsingCompleted()
 {
     AudioPolicyConfigData configData = AudioPolicyConfigData::GetInstance();
-    std::unordered_map<AudioAdapterType, AudioAdapterInfo> adapterInfoMap {};
+    std::unordered_map<AudioAdapterType, PolicyAdapterInfo> adapterInfoMap {};
     configData.GetAdapterInfoMap(adapterInfoMap);
     AUDIO_INFO_LOG("AdapterInfo num [%{public}zu]", adapterInfoMap.size());
     CHECK_AND_RETURN_LOG(!adapterInfoMap.empty(), "Parse audio policy xml failed, received data is empty");

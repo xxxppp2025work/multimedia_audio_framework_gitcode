@@ -68,7 +68,7 @@ enum class PipeInfoType {
 struct AttributeInfo {
     std::string name_ = STR_INITED;
     std::string value_ = STR_INITED;
-}
+};
 
 struct PaPropInfo {
     std::string lib_ = STR_INITED;
@@ -78,7 +78,7 @@ struct PaPropInfo {
 
 struct AdapterPipeInfo;
 struct AdapterDeviceInfo;
-class AudioAdapterInfo;
+class PolicyAdapterInfo;
 
 struct PipeStreamPropInfo {
     AudioSampleFormat format_ = INVALID_WIDTH;
@@ -93,7 +93,7 @@ struct PipeStreamPropInfo {
 
 class AudioPolicyConfigData {
 public:
-    static AudioPolicyConfigData&  GetInstace()
+    static AudioPolicyConfigData&  GetInstance()
     {
         static AudioPolicyConfigData instance;
         return instance;
@@ -104,10 +104,10 @@ public:
     void SetSupportDeviceAndPipeMaps(AdapterPipeInfo &pipeInfo);
 
     void SetVersion(const std::string version);
-    void SetAdapterInfoMap(std::unordered_map<AudioAdapterType, AudioAdapterInfo> &adapterInfoMap);
-    void AddAdapterInfoToMap(AudioAdapterType type, AudioAdapterInfo &info);
+    void SetAdapterInfoMap(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap);
+    void AddAdapterInfoToMap(AudioAdapterType type, PolicyAdapterInfo &info);
     std::string GetVersion();
-    void GetAdapterInfoMap(std::unordered_map<AudioAdapterType, AudioAdapterInfo> &adapterInfoMap);
+    void GetAdapterInfoMap(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap);
 
     std::unordered_map<DeviceType, AdapterDeviceInfo&> deviceInfoMap_ {};
     std::unordered_map<std::string, AdapterPipeInfo&> pipeInfoMap_ {};
@@ -118,10 +118,10 @@ public:
     std::unordered_map<std::string, AdapterPipeInfo&> inputPipeMap_ {};
 private:
     std::string version_ = STR_INITED;
-    std::unordered_map<AudioAdapterType, AudioAdapterInfo> adapterInfoMap_ {};
+    std::unordered_map<AudioAdapterType, PolicyAdapterInfo> adapterInfoMap_ {};
 };
 
-class AudioAdapterInfo {
+class PolicyAdapterInfo {
 public:
     static AudioAdapterType GetAdapterType(const std::string &adapterName);
     AudioAdapterType GetTypeEnum();
@@ -150,7 +150,7 @@ struct AdapterDeviceInfo {
     AudioPortPin pin_ = PIN_NONE;
     DeviceRole role_ = DEVICE_ROLE_NONE;
 
-    AudioAdapterInfo *adapterInfo_;
+    PolicyAdapterInfo *adapterInfo_;
     std::list<std::string> supportPipes_ {};
     std::unordered_map<AudioFlagType, AdapterPipeInfo&> supportPipeMap_ {}; // flag <-> pipeInfo
 };
@@ -163,7 +163,7 @@ struct AdapterPipeInfo {
     AudioPreloadType preloadAttr = PRELOAD_TYPE_UNKNOWN;
     std::list<AudioFlagType> supportFlags_ {};
 
-    AudioAdapterInfo *adapterInfo_;
+    PolicyAdapterInfo *adapterInfo_;
     std::list<PipeStreamPropInfo> streamPropInfos_ {};
     std::list<AttributeInfo> attributeInfos_ {};
     std::unordered_map<DeviceType, AdapterDeviceInfo&> supportDeviceMap_ {};
