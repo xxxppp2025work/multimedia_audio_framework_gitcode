@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AUDIO_POLICY_UTILS_H
-#define AUDIO_POLICY_UTILS_H
+#ifndef AUDIO_DEFINITION_POLICY_UTILS_H
+#define AUDIO_DEFINITION_POLICY_UTILS_H
 
 #include <bitset>
 #include <list>
@@ -28,18 +28,18 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioPolicyUtils {
+class AudioDefinitionPolicyUtils {
 public:
-    static AudioPolicyUtils& GetInstance()
+    static AudioDefinitionPolicyUtils& GetInstance()
     {
-        static AudioPolicyUtils instance;
+        static AudioDefinitionPolicyUtils instance;
         return instance;
     }
     uint32_t PcmFormatToBytes(AudioSampleFormat format);
     AudioChannel ConvertLayoutToAudioChannel(AudioChannelLayout layout);
 private:
-    AudioPolicyUtils() {}
-    ~AudioPolicyUtils() {}
+    AudioDefinitionPolicyUtils() {}
+    ~AudioDefinitionPolicyUtils() {}
 public:
     static std::unordered_map<std::string, DeviceRole> deviceRoleStrToEnum;
     static std::unordered_map<std::string, AudioPipeRole> pipeRoleStrToEnum;
@@ -53,4 +53,4 @@ public:
 
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_POLICY_UTILS_H
+#endif // AUDIO_DEFINITION_POLICY_UTILS_H

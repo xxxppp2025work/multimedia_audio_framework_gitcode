@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AUDIO_CONFIG_MANAGER_H
-#define AUDIO_CONFIG_MANAGER_H
+#ifndef AUDIO_POLICY_CONFIG_MANAGER_H
+#define AUDIO_POLICY_CONFIG_MANAGER_H
 
 #include <string>
 #include "iport_observer.h"
@@ -27,11 +27,11 @@
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioConfigManager : public IPortObserver {
+class AudioPolicyConfigManager : public IPortObserver {
 public:
-    static AudioConfigManager& GetInstance()
+    static AudioPolicyConfigManager& GetInstance()
     {
-        static AudioConfigManager instance;
+        static AudioPolicyConfigManager instance;
         return instance;
     }
     bool Init();
@@ -41,10 +41,10 @@ public:
     std::string GetSinkPortName(DeviceType deviceType, std::string pipeName);
     void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> desc, PipeStreamPropInfo &info);
 private:
-    AudioConfigManager() : audioPolicyConfig_(AudioPolicyConfigData::GetInstance())
+    AudioPolicyConfigManager() : audioPolicyConfig_(AudioPolicyConfigData::GetInstance())
     {
     }
-    ~AudioConfigManager()
+    ~AudioPolicyConfigManager()
     {
     }
 private:
@@ -54,4 +54,4 @@ private:
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // AUDIO_CONFIG_MANAGER_H
+#endif // AUDIO_POLICY_CONFIG_MANAGER_H

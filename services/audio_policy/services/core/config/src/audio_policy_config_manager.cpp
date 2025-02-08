@@ -13,18 +13,17 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "AudioConfigManager"
+#define LOG_TAG "AudioPolicyConfigManager"
 #endif
 
-#include "audio_config_manager.h"
+#include "audio_policy_config_manager.h"
 
 #include "audio_policy_utils.h"
-#include "audio_policy_service.h"
 #include "audio_stream_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
-bool AudioConfigManager::Init()
+bool AudioPolicyConfigManager::Init()
 {
     std::unique_ptr<AudioPolicyParser> audioPolicyConfigParser = make_unique<AudioPolicyParser>(*this);
     bool ret = audioPolicyConfigParser->LoadConfiguration();
@@ -41,7 +40,7 @@ bool AudioConfigManager::Init()
     return ret;
 }
 
-void AudioConfigManager::OnAudioPolicyXmlParsingCompleted()
+void AudioPolicyConfigManager::OnAudioPolicyXmlParsingCompleted()
 {
     AudioPolicyConfigData configData = AudioPolicyConfigData::GetInstance();
     std::unordered_map<AudioAdapterType, AudioAdapterInfo> adapterInfoMap {};
@@ -53,7 +52,7 @@ void AudioConfigManager::OnAudioPolicyXmlParsingCompleted()
     audioPolicyConfig_.Reorganize();
 }
 
-void AudioConfigManager::GetDeviceDescriptorByDeviceType(DeviceType deviceType, AudioDeviceDescriptor &desc)
+void AudioPolicyConfigManager::GetDeviceDescriptorByDeviceType(DeviceType deviceType, AudioDeviceDescriptor &desc)
 {
     auto it = audioPolicyConfig_.deviceInfoMap_.find(deviceType);
     if (it != audioPolicyConfig_.deviceInfoMap_.end()) {
@@ -64,7 +63,7 @@ void AudioConfigManager::GetDeviceDescriptorByDeviceType(DeviceType deviceType, 
     }
 }
 
-std::string AudioConfigManager::GetSinkPortName(DeviceType deviceType, std::string pipeName)
+std::string AudioPolicyConfigManager::GetSinkPortName(DeviceType deviceType, std::string pipeName)
 {
     std::string portName = PORT_NONE;
     auto deviceIt = audioPolicyConfig_.deviceInfoMap_.find(deviceType);
@@ -75,7 +74,7 @@ std::string AudioConfigManager::GetSinkPortName(DeviceType deviceType, std::stri
     return portName;
 }
 
-void AudioConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> desc, PipeStreamPropInfo &info)
+void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> desc, PipeStreamPropInfo &info)
 {
     // device -> adapter -> flag -> stream
     auto deviceIt = audioPolicyConfig_.deviceInfoMap_.find(desc->deviceDesc_->deviceType_);

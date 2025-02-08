@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AUDIO_POLICY_PARSER_H
-#define AUDIO_POLICY_PARSER_H
+#ifndef AUDIO_POLICY_CONFIG_PARSER_H
+#define AUDIO_POLICY_CONFIG_PARSER_H
 
 #include <list>
 #include <libxml/parser.h>
@@ -22,7 +22,7 @@
 #include <string>
 #include <regex>
 
-#include "audio_adapter_info.h"
+#include "audio_definition_adapter_info.h"
 #include "audio_device_info.h"
 #include "audio_stream_info.h"
 #include "iport_observer.h"
@@ -30,7 +30,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioPolicyParser : public Parser {
+class AudioPolicyConfigParser : public Parser {
 public:
     static constexpr char CHIP_PROD_CONFIG_FILE[] = "/chip_prod/etc/audio/audio_policy_config.xml";
     static constexpr char CONFIG_FILE[] = "/vendor/etc/audio/audio_policy_config.xml";
@@ -39,13 +39,13 @@ public:
     bool Parse() final;
     void Destroy() final;
 
-    explicit AudioPolicyParser(IPortObserver &observer)
+    explicit AudioPolicyConfigParser(IPortObserver &observer)
         : portObserver_(observer),
           doc_(nullptr)
     {
     }
 
-    virtual ~AudioPolicyParser()
+    virtual ~AudioPolicyConfigParser()
     {
         Destroy();
     }
@@ -74,4 +74,4 @@ private:
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // AUDIO_POLICY_PARSER_H
+#endif // AUDIO_POLICY_CONFIG_PARSER_H

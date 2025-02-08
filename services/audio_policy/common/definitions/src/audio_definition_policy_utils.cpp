@@ -13,37 +13,30 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "AudioPolicyUtils"
+#define LOG_TAG "AudioDefinitionPolicyUtils"
 #endif
 
-#include "audio_policy_utils.h"
+#include "audio_definition_policy_utils.h"
 #include <ability_manager_client.h>
 #include "iservice_registry.h"
 #include "parameter.h"
 #include "parameters.h"
 #include "audio_utils.h"
 #include "audio_log.h"
-#include "audio_utils.h"
-#include "audio_manager_listener_stub.h"
-#include "audio_inner_call.h"
-#include "media_monitor_manager.h"
-#include "data_share_observer_callback.h"
-#include "audio_policy_manager_factory.h"
-#include "device_init_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
-std::unordered_map<std::string, DeviceRole> AudioPolicyUtils::deviceRoleStrToEnum = {
+std::unordered_map<std::string, DeviceRole> AudioDefinitionPolicyUtils::deviceRoleStrToEnum = {
     {"input", INPUT_DEVICE},
     {"output", OUTPUT_DEVICE},
 };
 
-std::unordered_map<std::string, AudioPipeRole> AudioPolicyUtils::pipeRoleStrToEnum = {
+std::unordered_map<std::string, AudioPipeRole> AudioDefinitionPolicyUtils::pipeRoleStrToEnum = {
     {"input", PIPE_ROLE_IN},
     {"output", PIPE_ROLE_OUT},
 };
 
-std::unordered_map<std::string, DeviceType> AudioPolicyUtils::deviceTypeStrToEnum = {
+std::unordered_map<std::string, DeviceType> AudioDefinitionPolicyUtils::deviceTypeStrToEnum = {
     {"DEVICE_TYPE_EARPIECE", DEVICE_TYPE_EARPIECE},
     {"DEVICE_TYPE_SPEAKER", DEVICE_TYPE_SPEAKER},
     {"DEVICE_TYPE_WIRED_HEADSET", DEVICE_TYPE_WIRED_HEADSET},
@@ -65,7 +58,7 @@ std::unordered_map<std::string, DeviceType> AudioPolicyUtils::deviceTypeStrToEnu
     {"DEVICE_TYPE_USB_ARM_HEADSET", DEVICE_TYPE_USB_ARM_HEADSET},
 };
 
-std::unordered_map<std::string, AudioPortPin> AudioPolicyUtils::pinStrToEnum = {
+std::unordered_map<std::string, AudioPortPin> AudioDefinitionPolicyUtils::pinStrToEnum = {
     {"PIN_OUT_SPEAKER", PIN_OUT_SPEAKER},
     {"PIN_OUT_HEADSET", PIN_OUT_HEADSET},
     {"PIN_OUT_LINEOUT", PIN_OUT_LINEOUT},
@@ -88,13 +81,13 @@ std::unordered_map<std::string, AudioPortPin> AudioPolicyUtils::pinStrToEnum = {
     {"PIN_IN_USB_HEADSET", PIN_IN_USB_HEADSET},
 };
 
-std::unordered_map<std::string, AudioSampleFormat> AudioPolicyUtils::formatStrToEnum = {
+std::unordered_map<std::string, AudioSampleFormat> AudioDefinitionPolicyUtils::formatStrToEnum = {
     {"s16le", SAMPLE_S16LE},
     {"s24le", SAMPLE_S24LE},
     {"s32le", SAMPLE_S32LE},
 };
 
-std::unordered_map<std::string, AudioChannelLayout> AudioPolicyUtils::layoutStrToEnum = {
+std::unordered_map<std::string, AudioChannelLayout> AudioDefinitionPolicyUtils::layoutStrToEnum = {
     {"CH_LAYOUT_MONO", CH_LAYOUT_MONO},
     {"CH_LAYOUT_STEREO", CH_LAYOUT_STEREO},
     {"CH_LAYOUT_2POINT1", CH_LAYOUT_2POINT1},
@@ -111,7 +104,7 @@ std::unordered_map<std::string, AudioChannelLayout> AudioPolicyUtils::layoutStrT
     {"CH_LAYOUT_7POINT1POINT4", CH_LAYOUT_7POINT1POINT4},
 };
 
-std::unordered_map<std::string, AudioFlagType> AudioPolicyUtils::flagStrToEnum = {
+std::unordered_map<std::string, AudioFlagType> AudioDefinitionPolicyUtils::flagStrToEnum = {
     {"AUDIO_OUTPUT_FLAG_NORMAL", FLAG_TYPE_OUTPUT_NORMAL},
     {"AUDIO_OUTPUT_FLAG_FAST", FLAG_TYPE_OUTPUT_FAST},
     {"AUDIO_OUTPUT_FLAG_VOIP", FLAG_TYPE_OUTPUT_VOIP},
@@ -123,12 +116,12 @@ std::unordered_map<std::string, AudioFlagType> AudioPolicyUtils::flagStrToEnum =
     {"AUDIO_INPUT_FLAG_WAKEUP", FLAG_TYPE_INPUT_WAKEUP},
 };
 
-std::unordered_map<std::string, AudioPreloadType> AudioPolicyUtils::preloadStrToEnum = {
+std::unordered_map<std::string, AudioPreloadType> AudioDefinitionPolicyUtils::preloadStrToEnum = {
     {"false", PRELOAD_TYPE_NOTSUPPORT},
     {"true", PRELOAD_TYPE_SUPPORT},
 };
 
-uint32_t AudioPolicyUtils::PcmFormatToBytes(AudioSampleFormat format)
+uint32_t AudioDefinitionPolicyUtils::PcmFormatToBytes(AudioSampleFormat format)
 {
     // AudioSampleFormat / PCM_8_BIT
     switch (format) {
@@ -147,7 +140,7 @@ uint32_t AudioPolicyUtils::PcmFormatToBytes(AudioSampleFormat format)
     }
 }
 
-AudioChannel AudioPolicyUtils::ConvertLayoutToAudioChannel(AudioChannelLayout layout)
+AudioChannel AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(AudioChannelLayout layout)
 {
     AudioChannel channel = AudioChannel::CHANNEL_UNKNOWN;
     switch (layout) {

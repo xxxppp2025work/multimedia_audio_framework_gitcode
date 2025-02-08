@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef ST_AUDIO_POLICY_CONFIG_H
-#define ST_AUDIO_POLICY_CONFIG_H
+#ifndef AUDIO_DEFINITION_POLICY_CONFIG_H
+#define AUDIO_DEFINITION_POLICY_CONFIG_H
 
 #include <list>
 #include <set>
@@ -171,4 +171,4 @@ struct AdapterPipeInfo {
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // ST_AUDIO_POLICY_CONFIG_H
+#endif // AUDIO_DEFINITION_POLICY_CONFIG_H

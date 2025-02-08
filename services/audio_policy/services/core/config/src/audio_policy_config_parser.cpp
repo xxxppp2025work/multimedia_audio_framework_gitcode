@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "AudioPolicyParser"
+#define LOG_TAG "AudioPolicyConfigParser"
 #endif
 
-#include "audio_policy_parser.h"
-#include "audio_policy_utils.h"
+#include "audio_policy_config_parser.h"
+#include "audio_definition_policy_utils.h"
 #include <sstream>
 
 namespace OHOS {
 namespace AudioStandard {
-bool AudioPolicyParser::LoadConfiguration()
+bool AudioPolicyConfigParser::LoadConfiguration()
 {
     AUDIO_INFO_LOG("Enter");
     doc_ = xmlReadFile(CHIP_PROD_CONFIG_FILE, nullptr, 0);
@@ -38,7 +38,7 @@ bool AudioPolicyParser::LoadConfiguration()
 }
 
 // LCOV_EXCL_START
-bool AudioPolicyParser::Parse()
+bool AudioPolicyConfigParser::Parse()
 {
     AUDIO_INFO_LOG("Enter");
     xmlNode *root = xmlDocGetRootElement(doc_);
@@ -61,14 +61,14 @@ bool AudioPolicyParser::Parse()
     return true;
 }
 
-void AudioPolicyParser::Destroy()
+void AudioPolicyConfigParser::Destroy()
 {
     if (doc_ != nullptr) {
         xmlFreeDoc(doc_);
     }
 }
 
-bool AudioPolicyParser::ParseInternal(xmlNode &node)
+bool AudioPolicyConfigParser::ParseInternal(xmlNode &node)
 {
     xmlNode *currNode = &node;
     for (; currNode; currNode = currNode->next) {
@@ -86,7 +86,7 @@ bool AudioPolicyParser::ParseInternal(xmlNode &node)
     return true;
 }
 
-void AudioPolicyParser::ParseAdapters(xmlNode &node)
+void AudioPolicyConfigParser::ParseAdapters(xmlNode &node)
 {
     xmlNode *currNode = node.xmlChildrenNode;
 
@@ -98,7 +98,7 @@ void AudioPolicyParser::ParseAdapters(xmlNode &node)
     }
 }
 
-void AudioPolicyParser::ParseAdapter(xmlNode &node)
+void AudioPolicyConfigParser::ParseAdapter(xmlNode &node)
 {
     std::string adapterName = ExtractPropertyValue("name", node);
     if (adapterName.empty()) {
@@ -131,7 +131,7 @@ void AudioPolicyParser::ParseAdapter(xmlNode &node)
     config.AddAdapterInfoToMap(adapterInfo.GetTypeEnum(), adapterInfo);
 }
 
-void AudioPolicyParser::ParsePipes(xmlNode &node, AudioAdapterInfo &adapterInfo)
+void AudioPolicyConfigParser::ParsePipes(xmlNode &node, AudioAdapterInfo &adapterInfo)
 {
     xmlNode *currNode = node.xmlChildrenNode;
     std::list<AdapterPipeInfo> pipeInfos;
@@ -142,7 +142,7 @@ void AudioPolicyParser::ParsePipes(xmlNode &node, AudioAdapterInfo &adapterInfo)
             pipeInfo.adapterInfo_ = &adapterInfo;
             pipeInfo.name_ = ExtractPropertyValue("name", *currNode);
             std::string pipeRole = ExtractPropertyValue("role", *currNode);
-            pipeInfo.pipeRole_ = AudioPolicyUtils::pipeRoleStrToEnum[pipeRole];
+            pipeInfo.pipeRole_ = AudioDefinitionPolicyUtils::pipeRoleStrToEnum[pipeRole];
             ParsePipeInfos(*currNode, pipeInfo);
             pipeInfos.push_back(std::move(pipeInfo));
         }
@@ -151,7 +151,7 @@ void AudioPolicyParser::ParsePipes(xmlNode &node, AudioAdapterInfo &adapterInfo)
     adapterInfo.SetPipeInfos(pipeInfos);
 }
 
-void AudioPolicyParser::ParsePipeInfos(xmlNode &node, AdapterPipeInfo &pipeInfo)
+void AudioPolicyConfigParser::ParsePipeInfos(xmlNode &node, AdapterPipeInfo &pipeInfo)
 {
     xmlNode *currNode = node.xmlChildrenNode;
     while (currNode != nullptr) {
@@ -175,7 +175,7 @@ void AudioPolicyParser::ParsePipeInfos(xmlNode &node, AdapterPipeInfo &pipeInfo)
     }
 }
 
-void AudioPolicyParser::ParsePaProp(xmlNode &node, AdapterPipeInfo &pipeInfo)
+void AudioPolicyConfigParser::ParsePaProp(xmlNode &node, AdapterPipeInfo &pipeInfo)
 {
     xmlNode *currNode = node.xmlChildrenNode;
     PaPropInfo paProp {};
@@ -191,7 +191,7 @@ void AudioPolicyParser::ParsePaProp(xmlNode &node, AdapterPipeInfo &pipeInfo)
     pipeInfo.paProp_ = std::move(paProp);
 }
 
-void AudioPolicyParser::ParseStreamProps(xmlNode &node, AdapterPipeInfo &pipeInfo)
+void AudioPolicyConfigParser::ParseStreamProps(xmlNode &node, AdapterPipeInfo &pipeInfo)
 {
     xmlNode *currNode = node.xmlChildrenNode;
     std::list<PipeStreamPropInfo> streamPropInfos;
@@ -201,7 +201,7 @@ void AudioPolicyParser::ParseStreamProps(xmlNode &node, AdapterPipeInfo &pipeInf
             PipeStreamPropInfo streamPropInfo {};
             streamPropInfo.pipeInfo_ = &pipeInfo;
             std::string formatStr = ExtractPropertyValue("format", *currNode);
-            streamPropInfo.format_ = AudioPolicyUtils::formatStrToEnum[formatStr];
+            streamPropInfo.format_ = AudioDefinitionPolicyUtils::formatStrToEnum[formatStr];
             std::string sampleRateStr = ExtractPropertyValue("sampleRates", *currNode);
             if (sampleRateStr != "") {
                 CHECK_AND_RETURN_LOG(StringConverter(sampleRateStr, streamPropInfo.sampleRate_),
@@ -210,7 +210,7 @@ void AudioPolicyParser::ParseStreamProps(xmlNode &node, AdapterPipeInfo &pipeInf
             }
             std::string channelLayoutStr = ExtractPropertyValue("channelLayout", *currNode);
             if (channelLayoutStr != "") {
-                streamPropInfo.channelLayout_ = AudioPolicyUtils::layoutStrToEnum[channelLayoutStr];
+                streamPropInfo.channelLayout_ = AudioDefinitionPolicyUtils::layoutStrToEnum[channelLayoutStr];
                 pipeInfo.channelLayouts_.push_back(streamPropInfo.channelLayout_);
             }
             std::string bufferSizeStr = ExtractPropertyValue("bufferSize", *currNode);
@@ -223,7 +223,7 @@ void AudioPolicyParser::ParseStreamProps(xmlNode &node, AdapterPipeInfo &pipeInf
                 std::list<std::string> supportDevices {};
                 SplitStringToList(supportDevicesStr, supportDevices, ",");
                 for (auto device : supportDevices) {
-                    streamPropInfo.supportDevices_.push_back(AudioPolicyUtils::deviceTypeStrToEnum[device]);
+                    streamPropInfo.supportDevices_.push_back(AudioDefinitionPolicyUtils::deviceTypeStrToEnum[device]);
                 }
             }
 
@@ -234,7 +234,7 @@ void AudioPolicyParser::ParseStreamProps(xmlNode &node, AdapterPipeInfo &pipeInf
     pipeInfo.streamPropInfos_ = std::move(streamPropInfos);
 }
 
-void AudioPolicyParser::ParseAttributes(xmlNode &node, AdapterPipeInfo &pipeInfo)
+void AudioPolicyConfigParser::ParseAttributes(xmlNode &node, AdapterPipeInfo &pipeInfo)
 {
     xmlNode *currNode = node.xmlChildrenNode;
     std::list<AttributeInfo> attributeInfos;
@@ -252,20 +252,20 @@ void AudioPolicyParser::ParseAttributes(xmlNode &node, AdapterPipeInfo &pipeInfo
     pipeInfo.attributeInfos_ = std::move(attributeInfos);
 }
 
-void AudioPolicyParser::ParseAttributeByName(AttributeInfo &attributeInfo, AdapterPipeInfo &pipeInfo)
+void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo, AdapterPipeInfo &pipeInfo)
 {
     if (attributeInfo.name_ == "flag") {
         std::list<std::string> supportFlags {};
         SplitStringToList(attributeInfo.value_, supportFlags, "|");
         for (auto flag : supportFlags) {
-            pipeInfo.supportFlags_.push_back(AudioPolicyUtils::flagStrToEnum[flag]);
+            pipeInfo.supportFlags_.push_back(AudioDefinitionPolicyUtils::flagStrToEnum[flag]);
         }
     } else if (attributeInfo.name_ == "preload") {
-        pipeInfo.preloadAttr = AudioPolicyUtils::preloadStrToEnum[attributeInfo.value_];
+        pipeInfo.preloadAttr = AudioDefinitionPolicyUtils::preloadStrToEnum[attributeInfo.value_];
     }
 }
 
-void AudioPolicyParser::ParseDevices(xmlNode &node, AudioAdapterInfo &adapterInfo)
+void AudioPolicyConfigParser::ParseDevices(xmlNode &node, AudioAdapterInfo &adapterInfo)
 {
     xmlNode *currNode = node.xmlChildrenNode;
     std::list<AdapterDeviceInfo> deviceInfos = {};
@@ -276,11 +276,11 @@ void AudioPolicyParser::ParseDevices(xmlNode &node, AudioAdapterInfo &adapterInf
             deviceInfo.adapterInfo_ = &adapterInfo;
             deviceInfo.name_ = ExtractPropertyValue("name", *currNode);
             std::string type = ExtractPropertyValue("type", *currNode);
-            deviceInfo.type_ = AudioPolicyUtils::deviceTypeStrToEnum[type];
+            deviceInfo.type_ = AudioDefinitionPolicyUtils::deviceTypeStrToEnum[type];
             std::string pin = ExtractPropertyValue("pin", *currNode);
-            deviceInfo.pin_ = AudioPolicyUtils::pinStrToEnum[pin];
+            deviceInfo.pin_ = AudioDefinitionPolicyUtils::pinStrToEnum[pin];
             std::string role = ExtractPropertyValue("role", *currNode);
-            deviceInfo.role_ = AudioPolicyUtils::deviceRoleStrToEnum[role];
+            deviceInfo.role_ = AudioDefinitionPolicyUtils::deviceRoleStrToEnum[role];
             std::string supportPipeInStr = ExtractPropertyValue("supportPipes", *currNode);
             SplitStringToList(supportPipeInStr, deviceInfo.supportPipes_, ",");
             deviceInfos.push_back(std::move(deviceInfo));
@@ -290,7 +290,7 @@ void AudioPolicyParser::ParseDevices(xmlNode &node, AudioAdapterInfo &adapterInf
     adapterInfo.SetDeviceInfos(deviceInfos);
 }
 
-void AudioPolicyParser::SplitStringToList(std::string &str, std::list<std::string> &result, const char *delim)
+void AudioPolicyConfigParser::SplitStringToList(std::string &str, std::list<std::string> &result, const char *delim)
 {
     char *token = std::strtok(&str[0], delim);
     while (token != nullptr) {
@@ -299,7 +299,7 @@ void AudioPolicyParser::SplitStringToList(std::string &str, std::list<std::strin
     }
 }
 
-PolicyXmlNodeType AudioPolicyParser::GetXmlNodeTypeAsInt(xmlNode &node)
+PolicyXmlNodeType AudioPolicyConfigParser::GetXmlNodeTypeAsInt(xmlNode &node)
 {
     if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("adapters"))) {
         return PolicyXmlNodeType::ADAPTERS;
@@ -308,7 +308,7 @@ PolicyXmlNodeType AudioPolicyParser::GetXmlNodeTypeAsInt(xmlNode &node)
     }
 }
 
-AdapterInfoType AudioPolicyParser::GetAdapterInfoTypeAsInt(xmlNode &node)
+AdapterInfoType AudioPolicyConfigParser::GetAdapterInfoTypeAsInt(xmlNode &node)
 {
     if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("pipes"))) {
         return AdapterInfoType::PIPES;
@@ -319,7 +319,7 @@ AdapterInfoType AudioPolicyParser::GetAdapterInfoTypeAsInt(xmlNode &node)
     }
 }
 
-PipeInfoType AudioPolicyParser::GetPipeInfoTypeAsInt(xmlNode &node)
+PipeInfoType AudioPolicyConfigParser::GetPipeInfoTypeAsInt(xmlNode &node)
 {
     if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("paProp"))) {
         return PipeInfoType::PA_PROP;
@@ -332,7 +332,7 @@ PipeInfoType AudioPolicyParser::GetPipeInfoTypeAsInt(xmlNode &node)
     }
 }
 
-std::string AudioPolicyParser::ExtractPropertyValue(const std::string &propName, xmlNode &node)
+std::string AudioPolicyConfigParser::ExtractPropertyValue(const std::string &propName, xmlNode &node)
 {
     std::string propValue = "";
     xmlChar *tempValue = nullptr;
