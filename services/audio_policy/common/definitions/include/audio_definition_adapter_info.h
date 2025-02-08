@@ -26,7 +26,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static const char* STR_INIT = "";
+static const char* STR_INITED = "";
 
 static const char* ADAPTER_TYPE_PRIMARY = "primary";
 static const char* ADAPTER_TYPE_A2DP = "a2dp";
@@ -36,12 +36,12 @@ static const char* ADAPTER_TYPE_USB = "usb";
 static const char* ADAPTER_TYPE_DP = "dp";
 static const char* ADAPTER_TYPE_SLE = "sle";
 
-enum class XmlNodeType {
+enum class PolicyXmlNodeType {
     ADAPTERS,
     XML_UNKNOWN
 };
 
-enum class AdapterType {
+enum class AudioAdapterType {
     TYPE_PRIMARY,
     TYPE_A2DP,
     TYPE_USB,
@@ -66,27 +66,27 @@ enum class PipeInfoType {
 };
 
 struct AttributeInfo {
-    std::string name_ = STR_INIT;
-    std::string value_ = STR_INIT;
+    std::string name_ = STR_INITED;
+    std::string value_ = STR_INITED;
 }
 
 struct PaPropInfo {
-    std::string lib_ = STR_INIT;
-    std::string paPropRole_ = STR_INIT;
-    std::string moduleName_ = STR_INIT;
+    std::string lib_ = STR_INITED;
+    std::string paPropRole_ = STR_INITED;
+    std::string moduleName_ = STR_INITED;
 };
 
-struct PipeInfo;
+struct AdapterPipeInfo;
 struct AdapterDeviceInfo;
 class AudioAdapterInfo;
 
-struct StreamPropInfo {
+struct PipeStreamPropInfo {
     AudioSampleFormat format_ = INVALID_WIDTH;
     uint32_t sampleRate_ = 0;
     AudioChannelLayout channelLayout_ = CH_LAYOUT_UNKNOWN;
     uint32_t bufferSize_ = 0;
 
-    PipeInfo *pipeInfo_;
+    AdapterPipeInfo *pipeInfo_;
     std::list<DeviceType> supportDevices_ {};
     std::unordered_map<DeviceType, AdapterDeviceInfo&> supportDeviceMap_ {};
 };
@@ -100,63 +100,63 @@ public:
     }
     void Reorganize();
     void SetDeviceMaps(std::list<AdapterDeviceInfo> &deviceInfos);
-    void SetPipeMaps(std::list<PipeInfo> &pipeInfos);
-    void SetSupportDeviceAndPipeMaps(PipeInfo &pipeInfo);
+    void SetPipeMaps(std::list<AdapterPipeInfo> &pipeInfos);
+    void SetSupportDeviceAndPipeMaps(AdapterPipeInfo &pipeInfo);
 
     void SetVersion(const std::string version);
-    void SetAdapterInfoMap(std::unordered_map<AdapterType, AudioAdapterInfo> &adapterInfoMap);
-    void AddAdapterInfoToMap(AdapterType type, AudioAdapterInfo &info);
+    void SetAdapterInfoMap(std::unordered_map<AudioAdapterType, AudioAdapterInfo> &adapterInfoMap);
+    void AddAdapterInfoToMap(AudioAdapterType type, AudioAdapterInfo &info);
     std::string GetVersion();
-    void GetAdapterInfoMap(std::unordered_map<AdapterType, AudioAdapterInfo> &adapterInfoMap);
+    void GetAdapterInfoMap(std::unordered_map<AudioAdapterType, AudioAdapterInfo> &adapterInfoMap);
 
     std::unordered_map<DeviceType, AdapterDeviceInfo&> deviceInfoMap_ {};
-    std::unordered_map<std::string, PipeInfo&> pipeInfoMap_ {};
+    std::unordered_map<std::string, AdapterPipeInfo&> pipeInfoMap_ {};
     // check: use output/input deviceMap or interface in adapterInfo
     std::unordered_map<DeviceType, AdapterDeviceInfo&> outputDeviceMap_ {};
     std::unordered_map<DeviceType, AdapterDeviceInfo&> inputDeviceMap_ {};
-    std::unordered_map<std::string, PipeInfo&> outputPipeMap_ {};
-    std::unordered_map<std::string, PipeInfo&> inputPipeMap_ {};
+    std::unordered_map<std::string, AdapterPipeInfo&> outputPipeMap_ {};
+    std::unordered_map<std::string, AdapterPipeInfo&> inputPipeMap_ {};
 private:
-    std::string version_ = STR_INIT;
-    std::unordered_map<AdapterType, AudioAdapterInfo> adapterInfoMap_ {};
+    std::string version_ = STR_INITED;
+    std::unordered_map<AudioAdapterType, AudioAdapterInfo> adapterInfoMap_ {};
 };
 
 class AudioAdapterInfo {
 public:
-    static AdapterType GetAdapterType(const std::string &adapterName);
-    AdapterType GetTypeEnum();
+    static AudioAdapterType GetAdapterType(const std::string &adapterName);
+    AudioAdapterType GetTypeEnum();
     AdapterDeviceInfo* GetDeviceInfoByType(DeviceType deviceType);
-    PipeInfo* GetPipeInfoByName(const std::string &pipeName);
+    AdapterPipeInfo* GetPipeInfoByName(const std::string &pipeName);
 
     void SetAdapterName(const std::string adapterName);
     void SetAdapterSupportScene(const std::string adapterSupportScene);
     void SetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos);
-    void SetPipeInfos(std::list<PipeInfo> &pipeInfos);
+    void SetPipeInfos(std::list<AdapterPipeInfo> &pipeInfos);
     std::string GetAdapterName();
     std::string GetAdapterSupportScene();
     void GetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos);
-    void GetPipeInfos(std::list<PipeInfo> &pipeInfos);
+    void GetPipeInfos(std::list<AdapterPipeInfo> &pipeInfos);
 
 private:
-    std::string adapterName_ = STR_INIT;
-    std::string adapterSupportScene_ = STR_INIT;
+    std::string adapterName_ = STR_INITED;
+    std::string adapterSupportScene_ = STR_INITED;
     std::list<AdapterDeviceInfo> deviceInfos_ {};
-    std::list<PipeInfo> pipeInfos_ {};
+    std::list<AdapterPipeInfo> pipeInfos_ {};
 };
 
 struct AdapterDeviceInfo {
-    std::string name_ = STR_INIT;
+    std::string name_ = STR_INITED;
     DeviceType type_ = DEVICE_TYPE_NONE;
     AudioPortPin pin_ = PIN_NONE;
     DeviceRole role_ = DEVICE_ROLE_NONE;
 
     AudioAdapterInfo *adapterInfo_;
     std::list<std::string> supportPipes_ {};
-    std::unordered_map<AudioFlagType, PipeInfo&> supportPipeMap_ {}; // flag <-> pipeInfo
+    std::unordered_map<AudioFlagType, AdapterPipeInfo&> supportPipeMap_ {}; // flag <-> pipeInfo
 };
 
-struct PipeInfo {
-    std::string name_ = STR_INIT;
+struct AdapterPipeInfo {
+    std::string name_ = STR_INITED;
     AudioPipeRole pipeRole_ = PIPE_ROLE_NONE;
     PaPropInfo paProp_ {};
 
@@ -164,7 +164,7 @@ struct PipeInfo {
     std::list<AudioFlagType> supportFlags_ {};
 
     AudioAdapterInfo *adapterInfo_;
-    std::list<StreamPropInfo> streamPropInfos_ {};
+    std::list<PipeStreamPropInfo> streamPropInfos_ {};
     std::list<AttributeInfo> attributeInfos_ {};
     std::unordered_map<DeviceType, AdapterDeviceInfo&> supportDeviceMap_ {};
 };

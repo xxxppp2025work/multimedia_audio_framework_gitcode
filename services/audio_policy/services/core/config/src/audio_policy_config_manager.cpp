@@ -44,7 +44,7 @@ bool AudioConfigManager::Init()
 void AudioConfigManager::OnAudioPolicyXmlParsingCompleted()
 {
     AudioPolicyConfigData configData = AudioPolicyConfigData::GetInstance();
-    std::unordered_map<AdapterType, AudioAdapterInfo> adapterInfoMap {};
+    std::unordered_map<AudioAdapterType, AudioAdapterInfo> adapterInfoMap {};
     configData.GetAdapterInfoMap(adapterInfoMap);
     AUDIO_INFO_LOG("AdapterInfo num [%{public}zu]", adapterInfoMap.size());
     CHECK_AND_RETURN_LOG(!adapterInfoMap.empty(), "Parse audio policy xml failed, received data is empty");
@@ -75,7 +75,7 @@ std::string AudioConfigManager::GetSinkPortName(DeviceType deviceType, std::stri
     return portName;
 }
 
-void AudioConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> desc, StreamPropInfo &info)
+void AudioConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> desc, PipeStreamPropInfo &info)
 {
     // device -> adapter -> flag -> stream
     auto deviceIt = audioPolicyConfig_.deviceInfoMap_.find(desc->deviceDesc_->deviceType_);

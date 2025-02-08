@@ -51,20 +51,20 @@ public:
     }
 
 private:
-    XmlNodeType GetXmlNodeTypeAsInt(xmlNode &node);
-    AdapterType GetAdapterInfoTypeAsInt(xmlNode &node);
-    PipeType GetPipeInfoTypeAsInt(xmlNode &node);
+    PolicyXmlNodeType GetXmlNodeTypeAsInt(xmlNode &node);
+    AdapterInfoType GetAdapterInfoTypeAsInt(xmlNode &node);
+    PipeInfoType GetPipeInfoTypeAsInt(xmlNode &node);
     std::string ExtractPropertyValue(const std::string &propName, xmlNode &node);
 
     bool ParseInternal(xmlNode &node);
     void ParseAdapters(xmlNode &node);
     void ParseAdapter(xmlNode &node);
     void ParsePipes(xmlNode &node, AudioAdapterInfo &adapterInfo);
-    void ParsePipeInfos(xmlNode &node, PipeInfo &pipeInfo);
-    void ParsePaProp(xmlNode &node, PipeInfo &pipeInfo);
-    void ParseStreamProps(xmlNode &node, PipeInfo &pipeInfo);
-    void ParseAttributes(xmlNode &node, PipeInfo &pipeInfo);
-    void ParseAttributeByName(AttributeInfo &attributeInfo, PipeInfo &pipeInfo);
+    void ParsePipeInfos(xmlNode &node, AdapterPipeInfo &pipeInfo);
+    void ParsePaProp(xmlNode &node, AdapterPipeInfo &pipeInfo);
+    void ParseStreamProps(xmlNode &node, AdapterPipeInfo &pipeInfo);
+    void ParseAttributes(xmlNode &node, AdapterPipeInfo &pipeInfo);
+    void ParseAttributeByName(AttributeInfo &attributeInfo, AdapterPipeInfo &pipeInfo);
     void ParseDevices(xmlNode &node, AudioAdapterInfo &adapterInfo);
     void SplitStringToList(std::string &str, std::list<std::string> &result);
 

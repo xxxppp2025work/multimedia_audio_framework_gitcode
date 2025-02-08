@@ -40,6 +40,7 @@ group("audio_policy_packages") {
 config("audio_policy_public_config") {
   include_dirs = [
     "common/include",
+    "common/definitions/include",
     "client/include",
     "server/include",
     "server/include/service",
@@ -58,6 +59,7 @@ config("audio_policy_public_config") {
     "server/src/service/interrupt",
     "server/src/service/session",
     "safe_volume_notification/include",
+    "services/core/config/include",
     "../audio_service/client/include",
     "../audio_service/common/include",
     "../../frameworks/native/audioinnercall/include",
@@ -221,6 +223,10 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/session/audio_session_service.cpp",
     "server/src/service/session/audio_session_timer.cpp",
     "server/src/service/spatialization/audio_spatialization_service.cpp",
+    "common/definitions/src/audio_definition_adapter_info.cpp",
+    "common/definitions/src/audio_definition_policy_utils.cpp",
+    "services/core/config/src/audio_policy_config_parser.cpp",
+    "services/core/config/src/audio_policy_config_manager.cpp",
   ]
 
   defines = []
