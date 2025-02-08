@@ -155,7 +155,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_004, TestSize.Level1)
     processBuffer->basicBufferInfo_->basePosInFrame.store(pos);
     AudioProcessConfig config = {};
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
-    sptr<AudioProcessInServer> audioProcess = AudioProcessInServer::Create(config, AudioServer::GetInstance());
+    sptr<AudioProcessInServer> audioProcess = AudioProcessInServer::Create(config, AudioService::GetInstance());
     audioEndpointInner->processList_.push_back(audioProcess);
     audioEndpointInner->processBufferList_.push_back(processBuffer);
 
