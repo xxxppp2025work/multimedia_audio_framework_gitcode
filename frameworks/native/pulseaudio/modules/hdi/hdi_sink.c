@@ -48,10 +48,9 @@
 #include "audio_qosmanager.h"
 #include "audio_schedule.h"
 #include "audio_utils_c.h"
-#include "audio_hdiadapter_info.h"
 #include "volume_tools_c.h"
 #include "audio_volume_c.h"
-#include "renderer_sink_adapter.h"
+#include "common/hdi_adapter_info.h"
 #include "audio_effect_chain_adapter.h"
 #include "audio_limiter_adapter.h"
 #include "playback_capturer_adapter.h"
@@ -362,7 +361,7 @@ static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool m
     return;
 }
 
-static ssize_t RenderWrite(struct RendererSinkAdapter *sinkAdapter, pa_memchunk *pchunk)
+static ssize_t RenderWrite(struct SinkAdapter *sinkAdapter, pa_memchunk *pchunk)
 {
     size_t index;
     size_t length;
@@ -379,7 +378,7 @@ static ssize_t RenderWrite(struct RendererSinkAdapter *sinkAdapter, pa_memchunk 
     while (true) {
         uint64_t writeLen = 0;
 
-        int32_t ret = sinkAdapter->RendererRenderFrame(sinkAdapter, ((char*)p + index),
+        int32_t ret = sinkAdapter->SinkAdapterRenderFrame(sinkAdapter, ((char*)p + index),
             (uint64_t)length, &writeLen);
         if (writeLen > length) {
             AUDIO_ERR_LOG("Error writeLen > actual bytes. Length: %zu, Written: %" PRIu64 " bytes, %d ret",
@@ -421,7 +420,7 @@ static void OffloadSetHdiVolume(pa_sink_input *i)
     struct Userdata *u = i->sink->userdata;
     const char *streamType = safeProplistGets(i->proplist, "stream.type", "NULL");
     const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
-    const char *deviceClass = GetDeviceClass(u->offload.sinkAdapter->deviceClass);
+    const char *deviceClass = u->offload.sinkAdapter->deviceClass;
     uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
     float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass);
     float volumeBeg = GetPreVolume(sessionID);
@@ -442,7 +441,7 @@ static void OffloadSetHdiVolume(pa_sink_input *i)
             SetStreamVolumeFade(sessionID, fadeEnd, fadeEnd);
         }
     }
-    u->offload.sinkAdapter->RendererSinkSetVolume(u->offload.sinkAdapter, volumeEnd, volumeEnd);
+    u->offload.sinkAdapter->SinkAdapterSetVolume(u->offload.sinkAdapter, volumeEnd, volumeEnd);
 }
 
 static void OffloadSetHdiBufferSize(pa_sink_input *i)
@@ -454,7 +453,7 @@ static void OffloadSetHdiBufferSize(pa_sink_input *i)
     struct Userdata *u = i->sink->userdata;
     const uint32_t bufSize = (GetInputPolicyState(i) == OFFLOAD_INACTIVE_BACKGROUND ?
                               OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1);
-    u->offload.sinkAdapter->RendererSinkSetBufferSize(u->offload.sinkAdapter, bufSize);
+    u->offload.sinkAdapter->SinkAdapterSetBufferSize(u->offload.sinkAdapter, bufSize);
 }
 
 static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memchunk *pchunk)
@@ -476,7 +475,7 @@ static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memch
         AUDIO_DEBUG_LOG("StartOffloadHdi before write, because maybe sink switch");
         StartOffloadHdi(u, i);
     }
-    int32_t ret = u->offload.sinkAdapter->RendererRenderFrame(u->offload.sinkAdapter, ((char*)p + index),
+    int32_t ret = u->offload.sinkAdapter->SinkAdapterRenderFrame(u->offload.sinkAdapter, ((char*)p + index),
         (uint64_t)length, &writeLen);
     pa_memblock_release(pchunk->memblock);
     if (writeLen != length && writeLen != 0) {
@@ -535,7 +534,7 @@ static void OffloadCallback(const enum RenderCallbackType type, int8_t *userdata
 
 static void RegOffloadCallback(struct Userdata *u)
 {
-    u->offload.sinkAdapter->RendererRegCallback(u->offload.sinkAdapter, (int8_t *)OffloadCallback, (int8_t *)u);
+    u->offload.sinkAdapter->SinkAdapterRegistOffloadHdiCallback(u->offload.sinkAdapter, (int8_t *)OffloadCallback, (int8_t *)u);
 }
 
 static ssize_t TestModeRenderWrite(struct Userdata *u, pa_memchunk *pchunk)
@@ -560,7 +559,7 @@ static ssize_t TestModeRenderWrite(struct Userdata *u, pa_memchunk *pchunk)
     while (true) {
         uint64_t writeLen = 0;
 
-        int32_t ret = u->primary.sinkAdapter->RendererRenderFrame(u->primary.sinkAdapter, ((char *)p + index),
+        int32_t ret = u->primary.sinkAdapter->SinkAdapterRenderFrame(u->primary.sinkAdapter, ((char *)p + index),
             (uint64_t)length, &writeLen);
         if (writeLen > length) {
             AUDIO_ERR_LOG("Error writeLen > actual bytes. Length: %zu, Written: %" PRIu64 " bytes, %d ret",
@@ -1054,9 +1053,9 @@ static void silenceData(pa_mix_info *infoIn, pa_sink *si, uint32_t streamIndex)
     pa_memblock_release(infoIn->chunk.memblock);
 }
 
-static enum HdiAdapterFormat ConvertPaToHdiAdapterFormat(pa_sample_format_t format)
+static enum AudioSampleFormatIntf ConvertPaToHdiAdapterFormat(pa_sample_format_t format)
 {
-    enum HdiAdapterFormat adapterFormat;
+    enum AudioSampleFormatIntf adapterFormat;
     switch (format) {
         case PA_SAMPLE_U8:
             adapterFormat = SAMPLE_U8;
@@ -1222,11 +1221,11 @@ static void CheckAndPushUidToArr(pa_sink_input *sinkIn, int32_t appsUid[MAX_MIX_
     }
 }
 
-static void SafeRendererSinkUpdateAppsUid(struct RendererSinkAdapter *sinkAdapter,
+static void SafeRendererSinkUpdateAppsUid(struct SinkAdapter *sinkAdapter,
     const int32_t appsUid[MAX_MIX_CHANNELS], const size_t count)
 {
     if (sinkAdapter) {
-        sinkAdapter->RendererSinkUpdateAppsUid(sinkAdapter, appsUid, count);
+        sinkAdapter->SinkAdapterUpdateAppsUid(sinkAdapter, appsUid, count);
     }
 }
 
@@ -1260,7 +1259,7 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
     CHECK_AND_RETURN_LOG(u != NULL, "u is NULL");
     const char *streamType = safeProplistGets(sinkIn->proplist, "stream.type", "NULL");
     const char *sessionIDStr = safeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
-    const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
+    const char *deviceClass = u->primary.sinkAdapter->deviceClass;
     uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
     float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass);
     float volumeBeg = GetPreVolume(sessionID);
@@ -1760,7 +1759,7 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
         const char *sinkSceneTypeTmp = pa_proplist_gets(input->proplist, "scene.type");
         const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
         const char *sessionIDStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
-        const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
+        const char *deviceClass = u->primary.sinkAdapter->deviceClass;
         uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
         float volume = GetCurVolume(sessionID, streamType, deviceClass);
         bool isZeroVolume = IsSameVolume(volume, 0.0f);
@@ -1794,9 +1793,8 @@ static void CheckOnlyPrimarySpeakerPaLoading(struct Userdata *u)
         u->primary.speakerPaAllStreamStartVolZeroTime = 0;
     }
 
-    if (strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), "primary")) {
-        AUDIO_DEBUG_LOG("Sink[%{public}s] -- no primary, dont close it.",
-            GetDeviceClass(u->primary.sinkAdapter->deviceClass));
+    if (strcmp(u->primary.sinkAdapter->deviceClass, "primary")) {
+        AUDIO_DEBUG_LOG("Sink[%{public}s] -- no primary, dont close it.", u->primary.sinkAdapter->deviceClass);
         u->primary.onlyPrimarySpeakerPaLoading = false;
         u->primary.speakerPaAllStreamVolumeZero = false;
         u->primary.speakerPaAllStreamStartVolZeroTime = 0;
@@ -1811,7 +1809,7 @@ static void CheckOnlyPrimarySpeakerPaLoading(struct Userdata *u)
 
     if (PA_SINK_IS_RUNNING(u->sink->thread_info.state) && !u->primary.onlyPrimarySpeakerPaLoading &&
         u->primary.paHaveDisabled) {
-        int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1);
+        int32_t ret = u->primary.sinkAdapter->SinkAdapterSetPaPower(u->primary.sinkAdapter, 1);
         AUDIO_INFO_LOG("sink running, open closed pa:[%{public}s] -- [%{public}s], ret:%{public}d", u->sink->name,
             (ret == 0 ? "success" : "failed"), ret);
         u->primary.paHaveDisabled = false;
@@ -1822,7 +1820,7 @@ static void CheckOnlyPrimarySpeakerPaLoading(struct Userdata *u)
 static void HandleClosePa(struct Userdata *u)
 {
     if (!u->primary.paHaveDisabled) {
-        int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 0);
+        int32_t ret = u->primary.sinkAdapter->SinkAdapterSetPaPower(u->primary.sinkAdapter, 0);
         AUDIO_INFO_LOG("Speaker pa volume change to zero over [%{public}d]s, close %{public}s pa [%{public}s], "
             "ret:%{public}d", WAIT_CLOSE_PA_OR_EFFECT_TIME, u->sink->name, (ret == 0 ? "success" : "failed"), ret);
         u->primary.paHaveDisabled = true;
@@ -1835,7 +1833,7 @@ static void HandleClosePa(struct Userdata *u)
 static void HandleOpenPa(struct Userdata *u)
 {
     if (u->primary.paHaveDisabled) {
-        int32_t ret = u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1);
+        int32_t ret = u->primary.sinkAdapter->SinkAdapterSetPaPower(u->primary.sinkAdapter, 1);
         AUDIO_INFO_LOG("volume change to non zero, open closed pa:[%{public}s] -- [%{public}s], ret:%{public}d",
             u->sink->name, (ret == 0 ? "success" : "failed"), ret);
         u->primary.paHaveDisabled = false;
@@ -1858,7 +1856,7 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
         }
         const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
         const char *sessionIDStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
-        const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
+        const char *deviceClass = u->primary.sinkAdapter->deviceClass;
         uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
         float volume = GetCurVolume(sessionID, streamType, deviceClass);
         bool isZeroVolume = IsSameVolume(volume, 0.0f);
@@ -2367,7 +2365,7 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 
     if (!strcmp(u->sink->name, DP_SINK_NAME)) {
         // dp update volume
-        SetSinkVolumeByDeviceClass(u->sink, GetDeviceClass(u->primary.sinkAdapter->deviceClass));
+        SetSinkVolumeByDeviceClass(u->sink, u->primary.sinkAdapter->deviceClass);
         pa_sink_render_full(u->sink, u->sink->thread_info.max_request, &chunk);
         UnsetSinkVolume(u->sink); // reset volume 1.0f
     } else {
@@ -2807,7 +2805,7 @@ static int32_t UpdatePresentationPosition(struct Userdata *u)
     uint64_t frames;
     int64_t timeSec;
     int64_t timeNanoSec;
-    int ret = u->offload.sinkAdapter->RendererSinkGetPresentationPosition(
+    int ret = u->offload.sinkAdapter->SinkAdapterGetPresentationPosition(
         u->offload.sinkAdapter, &frames, &timeSec, &timeNanoSec);
     if (ret != 0) {
         AUDIO_ERR_LOG("RendererSinkGetPresentationPosition fail, ret %d", ret);
@@ -2839,7 +2837,8 @@ static void OffloadRewindAndFlush(struct Userdata *u, pa_sink_input *i, bool aft
     CHECK_AND_RETURN_LOG(ps != NULL, "ps is null");
 
     OffloadLock(u); // flush will interrupt the offload callback, may be offload unlock.
-    int32_t ret = u->offload.sinkAdapter->RendererSinkFlush(u->offload.sinkAdapter);
+
+    int32_t ret = u->offload.sinkAdapter->SinkAdapterFlush(u->offload.sinkAdapter);
     if (ret == 0) {
         uint64_t offloadFade = 180000; // 180000 us fade out
         uint64_t cacheLenInHdi = CalcOffloadCacheLenInHdi(u);
@@ -2895,7 +2894,7 @@ static int32_t getSinkInputSessionID(pa_sink_input *i)
 static void OffloadLock(struct Userdata *u)
 {
     if (!u->offload.runninglocked) {
-        u->offload.sinkAdapter->RendererSinkOffloadRunningLockLock(u->offload.sinkAdapter);
+        u->offload.sinkAdapter->SinkAdapterLockOffloadRunningLockLock(u->offload.sinkAdapter);
         u->offload.runninglocked = true;
     } else {
     }
@@ -2904,7 +2903,7 @@ static void OffloadLock(struct Userdata *u)
 static void OffloadUnlock(struct Userdata *u)
 {
     if (u->offload.runninglocked) {
-        u->offload.sinkAdapter->RendererSinkOffloadRunningLockUnlock(u->offload.sinkAdapter);
+        u->offload.sinkAdapter->SinkAdapterUnLockOffloadRunningLock(u->offload.sinkAdapter);
         u->offload.runninglocked = false;
     } else {
     }
