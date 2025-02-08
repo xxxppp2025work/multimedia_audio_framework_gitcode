@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_policy_config_manager.h"
+#include "audio_policy_config_parser.h"
 #include "audio_policy_utils.h"
 
 namespace OHOS {
