@@ -41,6 +41,7 @@ public:
 private:
     ProcessReleaseCallback *processHolder_ = nullptr;
     AudioProcessInServer *processInServer_ = nullptr;
+    int64_t createTime_ = 0;
 };
 
 class AudioProcessInServer : public AudioProcessStub, public IAudioProcessStream {
@@ -74,6 +75,7 @@ public:
     uint32_t GetAudioSessionId() override;
     AudioStreamType GetAudioStreamType() override;
     AudioProcessConfig GetAudioProcessConfig() override;
+    void EnableStandby() override;
 
     int Dump(int fd, const std::vector<std::u16string> &args) override;
     void Dump(std::string &dumpString);
@@ -85,8 +87,9 @@ public:
     int32_t RemoveProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
 
     void SetNonInterruptMute(const bool muteFlag);
-    bool GetMuteFlag() override;
+    bool GetMuteState() override;
     uint32_t GetSessionId();
+    int32_t GetStandbyStatus(bool &isStandby, int64_t &enterStandbyTime);
 
     // for inner-cap
     void SetInnerCapState(bool isInnerCapped) override;
@@ -98,6 +101,10 @@ public:
 
     void WriteDumpFile(void *buffer, size_t bufferSize) override final;
 
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) override;
+
+    int32_t SetSilentModeAndMixWithOthers(bool on) override;
+
 public:
     const AudioProcessConfig processConfig_;
 
@@ -108,6 +115,7 @@ private:
 
 private:
     std::atomic<bool> muteFlag_ = false;
+    std::atomic<bool> silentModeAndMixWithOthers_ = false;
     bool isInnerCapped_ = false;
     ProcessReleaseCallback *releaseCallback_ = nullptr;
 
@@ -132,6 +140,7 @@ private:
     BufferDesc convertedBuffer_ = {};
     std::string dumpFileName_;
     FILE *dumpFile_ = nullptr;
+    int64_t enterStandbyTime_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

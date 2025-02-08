@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +24,6 @@
 #include "audio_server.h"
 #include "audio_service.h"
 #include "audio_stream_info.h"
-#include "audio_utils.h"
 #include "policy_handler.h"
 
 #include <locale>
@@ -117,6 +116,7 @@ private:
 bool MockIRemoteObject::bExchange = true;
 }
 
+#ifdef FEATURE_FILE_IO
 /**
 * @tc.name  : Test HandleFourthPartCode API
 * @tc.type  : FUNC
@@ -134,6 +134,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_010, TestSize.Level1)
     auto ret = audioServer->HandleThirdPartCode(format, data, reply, option);
     EXPECT_EQ(AUDIO_ERR, ret);
 }
+#endif
 
 /**
 * @tc.name  : Test HandleFourthPartCode API
@@ -929,23 +930,6 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_006, TestSize.Level1)
     data.WriteString("2");
     data.WriteString("3");
     data.WriteString("4");
-    MessageParcel reply;
-    MessageOption option;
-    auto ret = audioServer->HandleSecondPartCode(format, data, reply, option);
-    EXPECT_EQ(AUDIO_OK, ret);
-}
-
-/**
-* @tc.name  : Test HandleSecondPartCode API
-* @tc.type  : FUNC
-* @tc.number: HandleSecondPartCode_007
-* @tc.desc  : Test HandleSecondPartCode interface. Set code value to REQUEST_THREAD_PRIORITY
-*/
-HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_007, TestSize.Level1)
-{
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::REQUEST_THREAD_PRIORITY);
-    MessageParcel data;
     MessageParcel reply;
     MessageOption option;
     auto ret = audioServer->HandleSecondPartCode(format, data, reply, option);

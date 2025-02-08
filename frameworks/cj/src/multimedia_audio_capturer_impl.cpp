@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,8 +14,7 @@
  */
 #include "multimedia_audio_capturer_impl.h"
 #include "cj_lambda.h"
-#include "audio_info.h"
-#include "audio_log.h"
+#include "audio_capturer_log.h"
 #include "multimedia_audio_common.h"
 #include "multimedia_audio_error.h"
 #include "timestamp.h"
@@ -32,8 +31,7 @@ int32_t MMAAudioCapturerImpl::CreateAudioCapturer(CAudioCapturerOptions options)
 {
     AudioCapturerOptions capturerOptions;
     Convert2AudioCapturerOptions(capturerOptions, options);
-    std::string cacheDir = "/data/storage/el2/base/temp";
-    audioCapturer_ = AudioCapturer::Create(capturerOptions, cacheDir);
+    audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions);
     if (audioCapturer_ == nullptr) {
         AUDIO_ERR_LOG("Create AudioCapturer failed.");
         return ERR_INVALID_INSTANCE_CODE;
@@ -261,9 +259,13 @@ void MMAAudioCapturerImpl::RegisterCArrCallback(int32_t callbackType, void (*cal
             AUDIO_ERR_LOG("Register read_data event failure!");
             *errorCode = CJ_ERR_SYSTEM;
         }
-        audioCapturer_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
+        auto ret = audioCapturer_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
+        if (ret != SUCCESS_CODE) {
+            AUDIO_ERR_LOG("SetCaptureMode failure!");
+            *errorCode = CJ_ERR_SYSTEM;
+        }
         capturerReadDataCb_->RegisterFunc(func, audioCapturer_);
-        int32_t ret = audioCapturer_->SetCapturerReadCallback(capturerReadDataCb_);
+        ret = audioCapturer_->SetCapturerReadCallback(capturerReadDataCb_);
         if (ret != SUCCESS_CODE) {
             AUDIO_ERR_LOG("SetCapturerReadCallback failure!");
             *errorCode = CJ_ERR_SYSTEM;

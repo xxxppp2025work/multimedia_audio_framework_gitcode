@@ -84,9 +84,6 @@ ohos_fuzztest("AudioPolicyServiceMoreFuzzTest") {
   }
 
   defines = []
-  if (audio_framework_feature_double_pnp_detect) {
-    defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
-  }
 
   if (build_variant == "user") {
     defines += [ "AUDIO_BUILD_VARIANT_USER" ]
@@ -132,6 +129,10 @@ ohos_fuzztest("AudioPolicyServiceMoreFuzzTest") {
   if (audio_framework_feature_device_manager) {
     defines += [ "FEATURE_DEVICE_MANAGER" ]
     external_deps += [ "device_manager:devicemanagersdk" ]
+  }
+
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
   }
 }
 

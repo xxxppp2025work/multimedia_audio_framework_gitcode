@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,7 +26,6 @@
 #include <gmock/gmock.h>
 
 #include "audio_effect.h"
-#include "audio_utils.h"
 #include "audio_effect_log.h"
 #include "audio_effect_volume.h"
 #include "audio_errors.h"
@@ -66,14 +65,14 @@ void AudioEffectVolumeUnitTest::TearDown(void)
 HWTEST(AudioEffectVolumeUnitTest, GetSystemVolume_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioEffectVolumeUnitTest: GetSystemVolume_001 start ");
-    const std::string sceneType = "SCENE_MUSIC";
+    const int32_t systemVolumeType = 1;
     const float systemVolume = 0.5f;
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
-    audioEffectVolume->SetSystemVolume(sceneType, systemVolume);
-    float result = audioEffectVolume->GetSystemVolume(sceneType);
+    audioEffectVolume->SetSystemVolume(systemVolumeType, systemVolume);
+    float result = audioEffectVolume->GetSystemVolume(systemVolumeType);
     EXPECT_EQ(systemVolume, result);
 
-    result = audioEffectVolume->GetSystemVolume("");
+    result = audioEffectVolume->GetSystemVolume(9999);
     EXPECT_EQ(systemVolume, result);
 }
 

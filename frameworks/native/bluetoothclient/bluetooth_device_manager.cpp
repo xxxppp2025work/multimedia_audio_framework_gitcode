@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,6 +27,7 @@ namespace OHOS {
 namespace Bluetooth {
 using namespace AudioStandard;
 
+const int WEAR_ENABLED = 1;
 const int DEFAULT_COD = -1;
 const int DEFAULT_MAJOR_CLASS = -1;
 const int DEFAULT_MAJOR_MINOR_CLASS = -1;
@@ -141,11 +142,12 @@ DeviceCategory GetDeviceCategory(const BluetoothRemoteDevice &device)
     int majorClass = DEFAULT_MAJOR_CLASS;
     int majorMinorClass = DEFAULT_MAJOR_MINOR_CLASS;
     device.GetDeviceProductType(cod, majorClass, majorMinorClass);
-    AUDIO_INFO_LOG("Device type majorClass: %{public}d, majorMinorClass: %{public}d.", majorClass, majorMinorClass);
+    AUDIO_WARNING_LOG("Device type majorClass: %{public}d, majorMinorClass: %{public}d.", majorClass, majorMinorClass);
     DeviceCategory bluetoothCategory = CATEGORY_DEFAULT;
     auto pos = bluetoothDeviceCategoryMap_.find(std::make_pair(majorClass, majorMinorClass));
     if (pos != bluetoothDeviceCategoryMap_.end()) {
         bluetoothCategory = pos->second;
+        AUDIO_WARNING_LOG("Bluetooth category is: %{public}d", bluetoothCategory);
     }
     return bluetoothCategory;
 }
@@ -189,6 +191,9 @@ void MediaBluetoothDeviceManager::SetMediaStack(const BluetoothRemoteDevice &dev
         case BluetoothDeviceAction::VIRTUAL_DEVICE_REMOVE_ACTION:
             HandleRemoveVirtualConnectDevice(device);
             break;
+        case BluetoothDeviceAction::CATEGORY_UPDATE_ACTION:
+            HandleUpdateDeviceCategory(device);
+            break;
         default:
             AUDIO_ERR_LOG("SetMediaStack failed due to the unknow action: %{public}d", action);
             break;
@@ -208,6 +213,12 @@ void MediaBluetoothDeviceManager::HandleConnectDevice(const BluetoothRemoteDevic
     if (IsA2dpBluetoothDeviceExist(device.GetDeviceAddr())) {
         return;
     }
+    AudioDeviceDescriptor desc = HandleConnectDeviceInner(device);
+    NotifyToUpdateAudioDevice(device, desc, DeviceStatus::ADD);
+}
+
+AudioDeviceDescriptor MediaBluetoothDeviceManager::HandleConnectDeviceInner(const BluetoothRemoteDevice &device)
+{
     RemoveDeviceInConfigVector(device, connectingDevices_);
     // If the device was virtual connected, remove it from the negativeDevices_ list.
     RemoveDeviceInConfigVector(device, negativeDevices_);
@@ -238,7 +249,7 @@ void MediaBluetoothDeviceManager::HandleConnectDevice(const BluetoothRemoteDevic
             desc.deviceCategory_ = BT_HEADPHONE;
             break;
     }
-    NotifyToUpdateAudioDevice(device, desc, DeviceStatus::ADD);
+    return desc;
 }
 
 void MediaBluetoothDeviceManager::HandleDisconnectDevice(const BluetoothRemoteDevice &device)
@@ -466,6 +477,19 @@ void MediaBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemot
     CHECK_AND_RETURN_LOG(g_deviceObserver != nullptr, "NotifyToUpdateAudioDevice, device observer is null");
     bool isConnected = deviceStatus == DeviceStatus::ADD;
     g_deviceObserver->OnDeviceStatusUpdated(desc, isConnected);
+}
+
+void MediaBluetoothDeviceManager::HandleUpdateDeviceCategory(const BluetoothRemoteDevice &device)
+{
+    if (!IsA2dpBluetoothDeviceExist(device.GetDeviceAddr())) {
+        AUDIO_WARNING_LOG("HandleUpdateDeviceCategory failed for the device has not be reported the connected action.");
+        return;
+    }
+    AudioDeviceDescriptor desc = HandleConnectDeviceInner(device);
+    std::lock_guard<std::mutex> observerLock(g_observerLock);
+    if (g_deviceObserver != nullptr) {
+        g_deviceObserver->OnDeviceInfoUpdated(desc, DeviceInfoUpdateCommand::CATEGORY_UPDATE);
+    }
 }
 
 void MediaBluetoothDeviceManager::NotifyToUpdateVirtualDevice(const BluetoothRemoteDevice &device,
@@ -734,6 +758,9 @@ void HfpBluetoothDeviceManager::SetHfpStack(const BluetoothRemoteDevice &device,
         case BluetoothDeviceAction::VIRTUAL_DEVICE_REMOVE_ACTION:
             HandleRemoveVirtualConnectDevice(device);
             break;
+        case BluetoothDeviceAction::CATEGORY_UPDATE_ACTION:
+            HandleUpdateDeviceCategory(device);
+            break;
         default:
             AUDIO_ERR_LOG("SetHfpStack failed due to the unknow action: %{public}d", action);
             break;
@@ -753,13 +780,21 @@ void HfpBluetoothDeviceManager::HandleConnectDevice(const BluetoothRemoteDevice 
     if (IsHfpBluetoothDeviceExist(device.GetDeviceAddr())) {
         return;
     }
+    AudioDeviceDescriptor desc = HandleConnectDeviceInner(device);
+    NotifyToUpdateAudioDevice(device, desc, DeviceStatus::ADD);
+}
+
+AudioDeviceDescriptor HfpBluetoothDeviceManager::HandleConnectDeviceInner(const BluetoothRemoteDevice &device)
+{
     RemoveDeviceInConfigVector(device, connectingDevices_);
+    // If the device was virtual connected, remove it from the negativeDevices_ list.
     RemoveDeviceInConfigVector(device, negativeDevices_);
     RemoveDeviceInConfigVector(device, virtualDevices_);
     DeviceCategory bluetoothCategory = GetDeviceCategory(device);
     AudioDeviceDescriptor desc;
     desc.deviceCategory_ = bluetoothCategory;
     switch (bluetoothCategory) {
+        case BT_GLASSES:
         case BT_HEADPHONE:
             if (IsBTWearDetectionEnable(device)) {
                 AddDeviceInConfigVector(device, negativeDevices_);
@@ -767,9 +802,6 @@ void HfpBluetoothDeviceManager::HandleConnectDevice(const BluetoothRemoteDevice 
             } else {
                 AddDeviceInConfigVector(device, privacyDevices_);
             }
-            break;
-        case BT_GLASSES:
-            AddDeviceInConfigVector(device, privacyDevices_);
             break;
         case BT_SOUNDBOX:
         case BT_CAR:
@@ -779,12 +811,12 @@ void HfpBluetoothDeviceManager::HandleConnectDevice(const BluetoothRemoteDevice 
             AddDeviceInConfigVector(device, negativeDevices_);
             break;
         default:
-            AUDIO_INFO_LOG("Unknow BT category, regard as bluetooth headset.");
+            AUDIO_WARNING_LOG("Unknow BT category, regard as bluetooth headset.");
             AddDeviceInConfigVector(device, privacyDevices_);
             desc.deviceCategory_ = BT_HEADPHONE;
             break;
     }
-    NotifyToUpdateAudioDevice(device, desc, DeviceStatus::ADD);
+    return desc;
 }
 
 void HfpBluetoothDeviceManager::HandleDisconnectDevice(const BluetoothRemoteDevice &device)
@@ -989,6 +1021,19 @@ void HfpBluetoothDeviceManager::HandleRemoveVirtualConnectDevice(const Bluetooth
     AudioDeviceDescriptor desc;
     desc.deviceCategory_ = CATEGORY_DEFAULT;
     NotifyToUpdateVirtualDevice(device, desc, DeviceStatus::VIRTUAL_REMOVE);
+}
+
+void HfpBluetoothDeviceManager::HandleUpdateDeviceCategory(const BluetoothRemoteDevice &device)
+{
+    if (!IsHfpBluetoothDeviceExist(device.GetDeviceAddr())) {
+        AUDIO_WARNING_LOG("HandleUpdateDeviceCategory failed for the device has not be reported the connected action.");
+        return;
+    }
+    AudioDeviceDescriptor desc = HandleConnectDeviceInner(device);
+    std::lock_guard<std::mutex> observerLock(g_observerLock);
+    if (g_deviceObserver != nullptr) {
+        g_deviceObserver->OnDeviceInfoUpdated(desc, DeviceInfoUpdateCommand::CATEGORY_UPDATE);
+    }
 }
 
 void HfpBluetoothDeviceManager::AddDeviceInConfigVector(const BluetoothRemoteDevice &device,

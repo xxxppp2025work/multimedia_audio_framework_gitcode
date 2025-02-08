@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,12 +23,10 @@
 #include <mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
-#include "audio_info.h"
 #include "audio_manager_base.h"
 #include "audio_module_info.h"
 #include "audio_ec_info.h"
 #include "datashare_helper.h"
-#include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_state_manager.h"
 #include "audio_device_manager.h"
@@ -56,6 +54,7 @@ public:
     int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc);
     void ClearScoDeviceSuspendState(std::string macAddress = "");
     int64_t GetCurrentTimeMS();
+    std::string GetNewSinkPortName(DeviceType deviceType);
     std::string GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType = PIPE_TYPE_UNKNOWN);
     string ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat);
     std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
@@ -68,6 +67,10 @@ public:
     std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelperInstance();
     AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId,
         DeviceRole deviceRole, DeviceType deviceType);
+    DeviceRole GetDeviceRole(DeviceType deviceType) const;
+    DeviceRole GetDeviceRole(const std::string &role);
+    DeviceRole GetDeviceRole(AudioPin pin) const;
+    DeviceType GetDeviceType(const std::string &deviceName);
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),

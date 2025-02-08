@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,10 +23,17 @@
 #include <mutex>
 #include <vector>
 
+#ifdef SUPPORT_LOW_LATENCY
 #include "audio_process_in_server.h"
 #include "audio_endpoint.h"
+#endif
+
+#include "i_audio_process_stream.h"
+#include "i_audio_process.h"
+#include "audio_info.h"
+#include "audio_device_descriptor.h"
 #include "ipc_stream_in_server.h"
-#include "playback_capturer_manager.h"
+#include "playback_capturer_filter_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,7 +45,12 @@ enum InnerCapFilterPolicy : uint32_t {
 };
 } // anonymous namespace
 
-class AudioService : public ProcessReleaseCallback, public ICapturerFilterListener {
+#ifdef SUPPORT_LOW_LATENCY
+class AudioService : public ProcessReleaseCallback, public ICapturerFilterListener
+#else
+class AudioService : public ICapturerFilterListener
+#endif
+{
 public:
     static AudioService *GetInstance();
     ~AudioService();
@@ -47,8 +59,11 @@ public:
     int32_t OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig) override;
     int32_t OnCapturerFilterRemove(uint32_t sessionId) override;
 
+    int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime);
     sptr<IpcStreamInServer> GetIpcStream(const AudioProcessConfig &config, int32_t &ret);
+    int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume);
 
+#ifdef SUPPORT_LOW_LATENCY
     sptr<AudioProcessInServer> GetAudioProcess(const AudioProcessConfig &config);
     // override for ProcessReleaseCallback, do release process work.
     int32_t OnProcessRelease(IAudioProcessStream *process, bool isSwitchStream = false) override;
@@ -57,13 +72,14 @@ public:
     AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
         const AudioProcessConfig &clientConfig, bool isVoipStream);
-    int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume);
 
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     int32_t UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
+    void ResetAudioEndpoint();
+#endif
+
     void Dump(std::string &dumpString);
     float GetMaxAmplitude(bool isOutputDevice);
-    void ResetAudioEndpoint();
 
     void RemoveRenderer(uint32_t sessionId);
     void RemoveCapturer(uint32_t sessionId);
@@ -71,6 +87,8 @@ public:
     int32_t DisableDualToneList(uint32_t sessionId);
     int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack);
     int32_t UnsetOffloadMode(uint32_t sessionId);
+    void UpdateAudioSinkState(uint32_t sinkId, bool started);
+    void CheckHibernateState(bool onHibernate);
     std::shared_ptr<RendererInServer> GetRendererBySessionID(const uint32_t &session);
     std::shared_ptr<CapturerInServer> GetCapturerBySessionID(const uint32_t &session);
     void SetNonInterruptMute(const uint32_t SessionId, const bool muteFlag);
@@ -82,6 +100,7 @@ public:
     bool IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t appUid, int32_t maxStreamCntPerUid);
     void GetCreatedAudioStreamMostUid(int32_t &mostAppUid, int32_t &mostAppNum);
     void CleanAppUseNumMap(int32_t appUid);
+    bool HasBluetoothEndpoint();
 
 private:
     AudioService();
@@ -89,34 +108,43 @@ private:
 
     void InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
+#ifdef HAS_FEATURE_INNERCAPTURER
     // for inner-capturer
     void CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
+#ifdef SUPPORT_LOW_LATENCY
     void CheckInnerCapForProcess(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     void FilterAllFastProcess();
+
+    void CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProcessInServer> process);
+    int32_t GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream);
+#endif
     InnerCapFilterPolicy GetInnerCapFilterPolicy();
     bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig);
+#endif
     bool ShouldBeDualTone(const AudioProcessConfig &config);
+#ifdef HAS_FEATURE_INNERCAPTURER
     int32_t OnInitInnerCapList(); // for first InnerCap filter take effect.
     int32_t OnUpdateInnerCapList(); // for some InnerCap filter has already take effect.
+#endif
     bool IsEndpointTypeVoip(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo);
     void RemoveIdFromMuteControlSet(uint32_t sessionId);
     void CheckRenderSessionMuteState(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
-    void CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProcessInServer> process);
-    int32_t GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream);
     void ReLinkProcessToEndpoint();
 
 private:
     std::mutex processListMutex_;
-    std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> linkedPairedList_;
-
     std::mutex releaseEndpointMutex_;
     std::condition_variable releaseEndpointCV_;
     std::set<std::string> releasingEndpointSet_;
+
+#ifdef SUPPORT_LOW_LATENCY
+    std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> linkedPairedList_;
     std::map<std::string, std::shared_ptr<AudioEndpoint>> endpointList_;
+#endif
 
     // for inner-capturer
-    PlaybackCapturerManager *innerCapturerMgr_ = nullptr;
+    bool isRegisterCapturerFilterListened_ = false;
     uint32_t workingInnerCapId_ = 0; // invalid sessionId
     uint32_t workingDualToneId_ = 0; // invalid sessionId
     AudioPlaybackCaptureConfig workingConfig_;
@@ -134,6 +162,10 @@ private:
     int32_t currentRendererStreamCnt_ = 0;
     std::mutex streamLifeCycleMutex_ {};
     std::map<int32_t, std::int32_t> appUseNumMap_;
+    std::mutex allRunningSinksMutex_;
+    std::condition_variable allRunningSinksCV_;
+    std::set<uint32_t> allRunningSinks_;
+    bool onHibernate_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

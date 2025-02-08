@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,11 +16,11 @@
 #ifndef AUDIO_STREAM_COLLECTOR_H
 #define AUDIO_STREAM_COLLECTOR_H
 
-#include "audio_info.h"
 #include "audio_policy_client.h"
 #include "audio_system_manager.h"
 #include "audio_policy_server_handler.h"
 #include "audio_concurrency_service.h"
+#include "audio_ability_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -75,12 +75,21 @@ public:
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
     void ResetRendererStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     void ResetCapturerStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
+    StreamUsage GetRunningStreamUsageNoUltrasonic();
+    SourceType GetRunningSourceTypeNoUltrasonic();
     StreamUsage GetLastestRunningCallStreamUsage();
     std::vector<uint32_t> GetAllRendererSessionIDForUID(int32_t uid);
     int32_t ResumeStreamState();
     bool HasVoipRendererStream();
     bool ChangeVoipCapturerStreamToNormal();
     bool IsCallStreamUsage(StreamUsage usage);
+    std::set<int32_t> GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage streamUsage);
+    std::set<int32_t> GetSessionIdsOnRemoteDeviceBySourceType(SourceType sourceType);
+    std::set<int32_t> GetSessionIdsOnRemoteDeviceByDeviceType(DeviceType deviceType);
+    int32_t GetSessionIdsPauseOnRemoteDeviceByRemote(InterruptHint hintType);
+    bool HasRunningRendererStream();
+    bool HasRunningRecognitionCapturerStream();
+
 private:
     std::mutex streamsInfoMutex_;
     std::map<std::pair<int32_t, int32_t>, int32_t> rendererStatequeue_;
@@ -115,7 +124,7 @@ private:
     bool CheckRendererStateInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
     bool CheckRendererInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
     bool IsTransparentCapture(const uint32_t clientUid);
-    AudioSystemManager *audioSystemMgr_;
+    AudioAbilityManager *audioAbilityMgr_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     std::shared_ptr<AudioConcurrencyService> audioConcurrencyService_;
 };

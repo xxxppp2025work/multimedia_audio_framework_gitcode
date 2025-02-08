@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,16 +24,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-
-const std::vector<std::string> NEED_EC_SCENE = {
-    "SCENE_VOIP_UP",
-    "SCENE_PRE_ENHANCE",
-};
-
-const std::vector<std::string> NEED_MICREF_SCENE = {
-    "SCENE_VOIP_UP",
-    "SCENE_RECORD",
-};
 
 struct EnhanceBuffer {
     std::vector<uint8_t> micBufferIn;
@@ -70,6 +60,7 @@ struct AudioEnhanceDeviceAttr {
 struct AudioEnhanceParamAdapter {
     uint32_t muteInfo;
     uint32_t volumeInfo;
+    uint32_t foldState;
     std::string preDevice;
     std::string postDevice;
     std::string sceneType;
@@ -81,7 +72,7 @@ public:
     AudioEnhanceChain(const std::string &scene, const AudioEnhanceParamAdapter &algoParam,
         const AudioEnhanceDeviceAttr &deviceAttr, const bool defaultFlag);
     ~AudioEnhanceChain();
-    void AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle, const std::string &enhance,
+    int32_t AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle, const std::string &enhance,
         const std::string &property);
     bool IsEmptyEnhanceHandles();
     void GetAlgoConfig(AudioBufferConfig &micConfig, AudioBufferConfig &ecConfig, AudioBufferConfig &micRefConfig);
@@ -94,11 +85,14 @@ public:
     int32_t SetEnhanceParamToHandle(AudioEffectHandle handle);
     bool IsDefaultChain();
     int32_t SetInputDevice(const std::string &inputDevice, const std::string &deviceName);
+    int32_t SetFoldState(uint32_t foldState);
+    int32_t InitCommand();
 
 private:
     void InitAudioEnhanceChain();
     void InitDump();
     void ReleaseEnhanceChain();
+    void WriteDumpFile(std::unique_ptr<EnhanceBuffer> &enhanceBuffer, uint32_t length);
     int32_t GetOneFrameInputData(std::unique_ptr<EnhanceBuffer> &enhanceBuffer);
     int32_t DeinterleaverData(uint8_t *src, uint32_t channel, uint8_t *dst, uint32_t offset);
     int32_t SetPropertyToHandle(AudioEffectHandle handle, const std::string &property);
@@ -112,8 +106,6 @@ private:
     AudioEnhanceParamAdapter algoParam_;
     AudioEnhanceDeviceAttr deviceAttr_;
     FILE *dumpFileIn_ = nullptr;
-    FILE *dumpFileEc_ = nullptr;
-    FILE *dumpFileMicRef_ = nullptr;
     FILE *dumpFileOut_ = nullptr;
     FILE *dumpFileDeinterLeaver_ = nullptr;
     bool needEcFlag_;

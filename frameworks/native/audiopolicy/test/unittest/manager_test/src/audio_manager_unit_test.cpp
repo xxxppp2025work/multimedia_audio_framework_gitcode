@@ -34,6 +34,7 @@ using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+    constexpr size_t WRTTE_BUFFER_SIZE = 38400;
     constexpr uint32_t MIN_DEVICE_COUNT = 2;
     constexpr uint32_t MIN_DEVICE_ID = 1;
     constexpr uint32_t MIN_DEVICE_NUM = 1;
@@ -138,6 +139,18 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_002, TestSize.Level1)
     EXPECT_THAT(inputDevice->audioStreamInfo_.samplingRate, Each(AllOf(Le(SAMPLE_RATE_96000), Ge(SAMPLE_RATE_8000))));
     EXPECT_EQ(inputDevice->audioStreamInfo_.encoding, AudioEncodingType::ENCODING_PCM);
     EXPECT_THAT(inputDevice->audioStreamInfo_.channels, Each(AllOf(Le(CHANNEL_8), Ge(MONO))));
+}
+
+/**
+* @tc.name   : Test GetAudioParameter API
+* @tc.number : GetAudioParameter_001
+* @tc.desc   : Test GetAudioParameter interface. Returns if app in fastlist
+*/
+HWTEST(AudioManagerUnitTest, GetAudioParameter_001, TestSize.Level1)
+{
+    std::string mockBundleName = "Is_Fast_Blocked_For_AppName#com.samples.audio";
+    std::string result = AudioSystemManager::GetInstance()->GetAudioParameter(mockBundleName);
+    EXPECT_EQ(result, "true");
 }
 
 /**
@@ -546,7 +559,7 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_010, TestSize.Level1)
     inputDevice->networkId_ = LOCAL_NETWORK_ID;
     deviceDescriptorVector.push_back(inputDevice);
     auto ret = AudioSystemManager::GetInstance()->SelectInputDevice(audioCapturerFilter, deviceDescriptorVector);
-    EXPECT_LT(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -627,6 +640,125 @@ HWTEST(AudioManagerUnitTest, DeactivateAudioInterrupt_001, TestSize.Level1)
     audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
     auto ret = AudioSystemManager::GetInstance()->DeactivateAudioInterrupt(audioInterrupt);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name   : Test GetStandbyStatus API
+* @tc.number : GetStandbyStatus_001
+* @tc.desc   : Test GetStandbyStatus_001 interface.
+*/
+HWTEST(AudioManagerUnitTest, GetStandbyStatus_001, TestSize.Level1)
+{
+    uint32_t sessionId = 0;
+    bool isStandby = false;
+    int64_t enterStandbyTime = 0;
+    auto ret = AudioSystemManager::GetInstance()->GetStandbyStatus(sessionId, isStandby, enterStandbyTime);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
+* @tc.name   : Test GetStandbyStatus API
+* @tc.number : GetStandbyStatus_002
+* @tc.desc   : Test GetStandbyStatus_002 interface.
+*/
+HWTEST(AudioManagerUnitTest, GetStandbyStatus_002, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions = {};
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_RINGTONE;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_NOTIFICATION_RINGTONE;
+    rendererOptions.rendererInfo.rendererFlags = 0;
+    unique_ptr<AudioRenderer> renderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, renderer);
+
+    renderer->Start();
+    std::unique_ptr<uint8_t[]> tempBuffer = std::make_unique<uint8_t[]>(WRTTE_BUFFER_SIZE);
+    renderer->Write(tempBuffer.get(), WRTTE_BUFFER_SIZE);
+
+    uint32_t sessionId = 0;
+    renderer->GetAudioStreamId(sessionId);
+    bool isStandby = false;
+    int64_t enterStandbyTime = 0;
+    auto ret = AudioSystemManager::GetInstance()->GetStandbyStatus(sessionId, isStandby, enterStandbyTime);
+    ASSERT_EQ(ret, SUCCESS) << "GetStandbyStatus call failed";
+    ASSERT_EQ(isStandby, false) << "renderer should not be standby";
+}
+
+/**
+* @tc.name   : Test GetStandbyStatus API
+* @tc.number : GetStandbyStatus_003
+* @tc.desc   : Test GetStandbyStatus_003 interface.
+*/
+HWTEST(AudioManagerUnitTest, GetStandbyStatus_003, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions = {};
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_RINGTONE;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_NOTIFICATION_RINGTONE;
+    rendererOptions.rendererInfo.rendererFlags = 0;
+    unique_ptr<AudioRenderer> renderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, renderer);
+
+    renderer->Start();
+    std::unique_ptr<uint8_t[]> tempBuffer = std::make_unique<uint8_t[]>(WRTTE_BUFFER_SIZE);
+    renderer->Write(tempBuffer.get(), WRTTE_BUFFER_SIZE);
+
+    usleep(2000000); // 2000000 for sleep 2s, wait for steam enter standby
+
+    uint32_t sessionId = 0;
+    renderer->GetAudioStreamId(sessionId);
+    bool isStandby = false;
+    int64_t enterStandbyTime = 0;
+    auto ret = AudioSystemManager::GetInstance()->GetStandbyStatus(sessionId, isStandby, enterStandbyTime);
+    ASSERT_EQ(ret, SUCCESS) << "GetStandbyStatus call failed";
+    ASSERT_EQ(isStandby, true) << "renderer should be in standby";
+}
+
+/**
+* @tc.name   : Test GenerateSessionId API
+* @tc.number : GenerateSessionId_001
+* @tc.desc   : Test GenerateSessionId_001 interface.
+*/
+HWTEST(AudioManagerUnitTest, GenerateSessionId_001, TestSize.Level1)
+{
+    uint32_t sessionId = 0;
+    auto ret = AudioSystemManager::GetInstance()->GenerateSessionId(sessionId);
+    EXPECT_EQ(AUDIO_ERR, ret);
+}
+
+/**
+* @tc.name   : Test SetAudioInterruptCallback API
+* @tc.number : SetAudioInterruptCallback_001
+* @tc.desc   : Test SetAudioInterruptCallback interface.
+*/
+HWTEST(AudioManagerUnitTest, SetAudioInterruptCallback_001, TestSize.Level1)
+{
+    uint32_t sessionId = 0;
+    std::shared_ptr<AudioInterruptCallback> callback = nullptr;
+    uint32_t clientUid = 1;
+    int32_t zoneID = 1;
+    auto ret = AudioSystemManager::GetInstance()->SetAudioInterruptCallback(sessionId, callback,
+        clientUid, zoneID);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
+* @tc.name   : Test UnsetAudioInterruptCallback API
+* @tc.number : UnsetAudioInterruptCallback_001
+* @tc.desc   : Test UnsetAudioInterruptCallback interface.
+*/
+HWTEST(AudioManagerUnitTest, UnsetAudioInterruptCallback_001, TestSize.Level1)
+{
+    int32_t zoneId = 1;
+    uint32_t sessionId = 1;
+    auto ret = AudioSystemManager::GetInstance()->UnsetAudioInterruptCallback(zoneId, sessionId);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
 /**
@@ -1101,17 +1233,6 @@ HWTEST(AudioManagerUnitTest, SetDeviceActive_003, TestSize.Level1)
 
     auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER);
     EXPECT_TRUE(isActive);
-}
-
-/**
-* @tc.name   : Test IsDeviceActive API
-* @tc.number : IsDeviceActive_001
-* @tc.desc   : Test IsDeviceActive interface. Activate device by DEVICE_TYPE_NONE
-*/
-HWTEST(AudioManagerUnitTest, IsDeviceActive_001, TestSize.Level1)
-{
-    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_NONE);
-    EXPECT_EQ(false, isActive);
 }
 
 /**
@@ -2232,7 +2353,7 @@ HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_002, TestSize.Level
     bool isStarted = audioRenderer1->Start();
     EXPECT_EQ(true, isStarted);
 
-    uint32_t sessionID1 = -1;
+    uint32_t streamId1 = -1;
     std::this_thread::sleep_for(std::chrono::seconds(2));
     if (audioRenderer1 != nullptr) {
         // Wait here for callback. If not callback for 2 mintues, will skip this step
@@ -2241,7 +2362,7 @@ HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_002, TestSize.Level
         EXPECT_EQ(g_audioFocusInfoList.size(), 1);
         for (auto it = g_audioFocusInfoList.begin(); it != g_audioFocusInfoList.end(); ++it) {
             if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_MUSIC) {
-                sessionID1 = it->first.sessionId;
+                streamId1 = it->first.streamId;
                 EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
             } else {
                 EXPECT_TRUE(false);
@@ -2264,7 +2385,7 @@ HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_002, TestSize.Level
         for (auto it = g_audioFocusInfoList.begin(); it != g_audioFocusInfoList.end(); ++it) {
             if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_MUSIC) {
                 EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
-                EXPECT_TRUE(sessionID1 != it->first.sessionId);
+                EXPECT_TRUE(streamId1 != it->first.streamId);
             }
         }
     }

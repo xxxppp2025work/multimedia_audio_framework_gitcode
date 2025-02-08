@@ -24,7 +24,7 @@
 #include "audio_capturer.h"
 #include "audio_errors.h"
 #include "audio_info.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_renderer.h"
 #include "audio_stream_manager.h"
 #include "audio_system_manager.h"
@@ -1513,27 +1513,6 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateCh
     std::this_thread::sleep_for(std::chrono::seconds(WAIT_TIME));
     g_audioManagerInstance->UnregisterAudioCapturerEventListener(getpid());
     std::this_thread::sleep_for(std::chrono::seconds(10));
-}
-
-/**
-* @tc.name  : Test IsAudioRendererLowLatencySupported API
-* @tc.number: Audio_Stream_IsAudioRendererLowLatencySupported_001
-* @tc.desc  : Test IsAudioRendererLowLatencySupported interface
-*/
-HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_IsAudioRendererLowLatencySupported_001, TestSize.Level1)
-{
-    AudioCapturerOptions capturerOptions;
-
-    AudioStreamManagerUnitTest::InitializeCapturerOptions(capturerOptions);
-    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    AudioStreamInfo audioStreamInfo;
-    bool ret = AudioStreamManager::GetInstance()->IsAudioRendererLowLatencySupported(audioStreamInfo);
-    EXPECT_EQ(true, ret);
-
-    bool isReleased = audioCapturer->Release();
-    EXPECT_EQ(true, isReleased);
 }
 
 /**

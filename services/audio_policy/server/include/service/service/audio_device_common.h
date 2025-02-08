@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,8 +25,6 @@
 
 #include "singleton.h"
 #include "audio_group_handle.h"
-#include "audio_info.h"
-#include "audio_utils.h"
 #include "audio_ec_info.h"
 #include "audio_manager_base.h"
 #include "audio_module_info.h"
@@ -62,6 +60,7 @@ public:
         return instance;
     }
     void Init(std::shared_ptr<AudioPolicyServerHandler> handler);
+    void DeInit();
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
@@ -113,6 +112,11 @@ public:
     int32_t ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
         ConnectState connectState);
     std::vector<SourceOutput> GetSourceOutputs();
+    void BluetoothScoDisconectForRecongnition();
+    void SetFirstScreenOn();
+    void ClientDiedDisconnectScoNormal();
+    void ClientDiedDisconnectScoRecognition();
+    int32_t SetVirtualCall(const bool isVirtual);
 private:
     AudioDeviceCommon() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
@@ -176,12 +180,27 @@ private:
     int32_t OpenRemoteAudioDevice(std::string networkId, DeviceRole deviceRole, DeviceType deviceType,
         std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
 
+    int32_t LoadA2dpModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo, std::string networkID,
+        std::string sinkName, SourceType sourceType);
+    void GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
+        SourceType sourceType);
+    int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, DeviceType deviceType,
+        const AudioStreamInfo& audioStreamInfo, std::string networkID, std::string sinkName,
+        SourceType sourceType);
+    int32_t SwitchActiveA2dpDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+
     // fetchOutput
     void FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount);
     void FetchOutputDeviceWhenNoRunningStream();
     int32_t HandleDeviceChangeForFetchOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
-    void MuteSinkPortForSwtichDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+    void MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices,
+        const AudioStreamDeviceChangeReasonExt reason);
+    void MuteSinkForSwitchGeneralDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices,
+        const AudioStreamDeviceChangeReasonExt reason);
+    void MuteSinkForSwitchBluetoothDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices,
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t ActivateA2dpDeviceWhenDescEnabled(shared_ptr<AudioDeviceDescriptor> &desc,
@@ -198,6 +217,8 @@ private:
     bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote);
     bool NotifyRecreateDirectStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         const AudioStreamDeviceChangeReasonExt reason);
+    vector<std::shared_ptr<AudioDeviceDescriptor>> GetDeviceDescriptorInner(
+        std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
 
     // fetchInput
     void FetchInputDeviceInner(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
@@ -212,9 +233,9 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     void BluetoothScoFetch(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType);
-    void HandleA2dpInputDeviceFetched();
-    void TriggerRecreateCapturerStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag,
-        const AudioStreamDeviceChangeReasonExt reason);
+    void HandleA2dpInputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc, SourceType sourceType);
+    void TriggerRecreateCapturerStreamCallback(const std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
+        int32_t streamFlag, const AudioStreamDeviceChangeReasonExt reason);
     int32_t HandleScoInputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
 private:
@@ -225,6 +246,7 @@ private:
     int32_t enableDualHalToneSessionId_ = -1;
     bool isOpenRemoteDevice = false;
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
+    bool isFirstScreenOn_ = false;
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;

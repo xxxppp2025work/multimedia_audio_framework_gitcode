@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,9 +16,8 @@
 #include "multimedia_audio_renderer_impl.h"
 #include "cj_lambda.h"
 #include "audio_errors.h"
-#include "audio_info.h"
 #include "audio_interrupt_info.h"
-#include "audio_log.h"
+#include "audio_renderer_log.h"
 #include "multimedia_audio_common.h"
 #include "multimedia_audio_error.h"
 #include "timestamp.h"
@@ -40,8 +39,7 @@ int32_t MMAAudioRendererImpl::CreateAudioRenderer(CAudioRendererOptions options)
 {
     AudioRendererOptions rendererOptions;
     Convert2AudioRendererOptions(rendererOptions, options);
-    std::string cacheDir = "";
-    audioRenderer_ = AudioRenderer::Create(cacheDir, rendererOptions);
+    audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions);
     if (audioRenderer_ == nullptr) {
         AUDIO_ERR_LOG("Create AudioRenderer failed.");
         return ERR_INVALID_INSTANCE_CODE;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,6 @@
 #define LOG_TAG "VolumeDataMaintainer"
 #endif
 
-#include "audio_utils.h"
 #include "volume_data_maintainer.h"
 #include "system_ability_definition.h"
 #include "audio_policy_manager_factory.h"
@@ -96,30 +95,9 @@ VolumeDataMaintainer::~VolumeDataMaintainer()
     AUDIO_DEBUG_LOG("VolumeDataMaintainer Destory");
 }
 
-bool VolumeDataMaintainer::SetFirstBoot(bool fristBoot)
+bool VolumeDataMaintainer::CheckOsAccountReady()
 {
-    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    const std::string settingKey = "first_boot";
-    ErrCode ret = settingProvider.PutBoolValue(settingKey, fristBoot);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("Failed to set fristboot :%{public}d", ret);
-        return false;
-    }
-    return true;
-}
-
-bool VolumeDataMaintainer::GetFirstBoot(bool &firstBoot)
-{
-    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    const std::string settingKey = "first_boot";
-    bool value;
-    ErrCode ret = settingProvider.GetBoolValue(settingKey, value);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("Failed to get fristboot :%{public}d", ret);
-        return false;
-    }
-    firstBoot = value;
-    return true;
+    return AudioSettingProvider::CheckOsAccountReady();
 }
 
 void VolumeDataMaintainer::SetDataShareReady(std::atomic<bool> isDataShareReady)
@@ -198,6 +176,30 @@ int32_t VolumeDataMaintainer::GetStreamVolume(AudioStreamType streamType)
 {
     std::lock_guard<ffrt::mutex> lock(volumeMutex_);
     return GetStreamVolumeInternal(streamType);
+}
+
+int32_t VolumeDataMaintainer::GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    std::string volumeKey = GetVolumeKeyForDataShare(deviceType, streamType);
+    int32_t volumeValue = 0;
+    if (!volumeKey.compare("")) {
+        AUDIO_ERR_LOG("[device %{public}d, streamType %{public}d] is not supported for datashare",
+            deviceType, streamType);
+        return volumeValue;
+    }
+
+    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    ErrCode ret = audioSettingProvider.GetIntValue(volumeKey, volumeValue, "system");
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Get streamType %{public}d, deviceType %{public}d, Volume FromDataBase volumeMap failed.",
+            streamType, deviceType);
+    } else {
+        AUDIO_PRERELEASE_LOGI("Get streamType %{public}d, deviceType %{public}d, "\
+            "Volume FromDataBase volumeMap from datashare %{public}d.", streamType, deviceType, volumeValue);
+    }
+
+    return volumeValue;
 }
 
 int32_t VolumeDataMaintainer::GetStreamVolumeInternal(AudioStreamType streamType)

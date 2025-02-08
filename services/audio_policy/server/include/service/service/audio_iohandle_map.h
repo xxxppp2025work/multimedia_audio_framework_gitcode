@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +24,6 @@
 #include <mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
-#include "audio_info.h"
 #include "audio_manager_base.h"
 #include "audio_module_info.h"
 
@@ -55,11 +54,14 @@ public:
     void MuteSinkPort(const std::string &portName, int32_t duration, bool isSync);
     void SetMoveFinish(bool flag);
     void MuteDefaultSinkPort(std::string networkID, std::string sinkName);
+    void SetDeviceInfos(DeviceType oldOutputDevice, DeviceType newOutputDevice);
+    void UnmutePortAfterMuteDuration(int32_t muteDuration, const std::string &portName);
+    void DoUnmutePort(int32_t muteDuration, const std::string &portName);
+
 private:
     AudioIOHandleMap() {}
     ~AudioIOHandleMap() {}
 
-    void UnmutePortAfterMuteDuration(int32_t muteDuration, std::string portName, DeviceType deviceType);
 private:
     std::mutex ioHandlesMutex_;
     std::unordered_map<std::string, AudioIOHandle> IOHandles_ = {};
@@ -67,6 +69,9 @@ private:
     std::mutex moveDeviceMutex_;
     std::condition_variable moveDeviceCV_;
     std::atomic<bool> moveDeviceFinished_ = false;
+
+    DeviceType oldOutputDevice_ = DEVICE_TYPE_NONE;
+    DeviceType newOutputDevice_ = DEVICE_TYPE_NONE;
 
     static std::map<std::string, std::string> sinkPortStrToClassStrMap_;
 };

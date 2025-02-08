@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,6 +22,34 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+const std::vector<DeviceRole> DEVICE_ROLE_SET = {
+    DEVICE_ROLE_NONE,
+    INPUT_DEVICE,
+    OUTPUT_DEVICE
+};
+
+const std::vector<DeviceType> DEVICE_TYPE_SET = {
+    DEVICE_TYPE_NONE,
+    DEVICE_TYPE_INVALID,
+    DEVICE_TYPE_EARPIECE,
+    DEVICE_TYPE_SPEAKER,
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_WIRED_HEADPHONES,
+    DEVICE_TYPE_BLUETOOTH_SCO,
+    DEVICE_TYPE_BLUETOOTH_A2DP,
+    DEVICE_TYPE_MIC,
+    DEVICE_TYPE_WAKEUP,
+    DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_DP,
+    DEVICE_TYPE_REMOTE_CAST,
+    DEVICE_TYPE_USB_ARM_HEADSET,
+    DEVICE_TYPE_FILE_SINK,
+    DEVICE_TYPE_FILE_SOURCE,
+    DEVICE_TYPE_EXTERN_CABLE,
+    DEVICE_TYPE_DEFAULT
+};
+
 napi_value NapiParamUtils::GetUndefinedValue(napi_env env)
 {
     napi_value result {};
@@ -1075,6 +1103,91 @@ napi_status NapiParamUtils::SetExtraAudioParametersInfo(const napi_env &env,
     }
 
     return status;
+}
+
+int32_t NapiParamUtils::UniqueEffectPropertyData(AudioEffectPropertyArrayV3 &propertyArray)
+{
+    int32_t propSize = static_cast<int32_t>(propertyArray.property.size());
+    std::set<std::string> classSet;
+    for (int32_t i = 0; i < propSize; i++)    {
+        if (propertyArray.property[i].category != "" && propertyArray.property[i].name != "") {
+                classSet.insert(propertyArray.property[i].name);
+            }
+    }
+    return static_cast<int32_t>(classSet.size());
+}
+
+napi_status NapiParamUtils::GetEffectPropertyArray(napi_env env,
+    AudioEffectPropertyArrayV3 &propertyArray, napi_value in)
+{
+    uint32_t arrayLen = 0;
+    napi_status status = napi_get_array_length(env, in, &arrayLen);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && arrayLen > 0, status, "get array length invalid");
+
+    AudioEffectPropertyArrayV3 effectArray;
+    AudioEffectPropertyArrayV3 enhanceArray;
+    for (uint32_t i = 0; i < arrayLen; i++) {
+        napi_value element = nullptr;
+        napi_get_element(env, in, i, &element);
+
+        AudioEffectPropertyV3 prop;
+        napi_value propValue = nullptr;
+
+        status = napi_get_named_property(env, element, "name", &propValue);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get name failed");
+        prop.name = GetStringArgument(env, propValue);
+		
+        status = napi_get_named_property(env, element, "category", &propValue);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get category failed");
+        prop.category = GetStringArgument(env, propValue);
+
+        int32_t effectFlag = {-1};
+        status = GetValueInt32(env, "flag", effectFlag, element);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get flag failed");
+        prop.flag = static_cast<EffectFlag>(effectFlag);
+
+        propertyArray.property.push_back(prop);
+        if (prop.flag == RENDER_EFFECT_FLAG) {
+            effectArray.property.push_back(prop);
+        } else if (prop.flag == CAPTURE_EFFECT_FLAG) {
+            enhanceArray.property.push_back(prop);
+        }
+    }
+
+    int32_t effectSize = UniqueEffectPropertyData(effectArray);
+    CHECK_AND_RETURN_RET_LOG(effectSize == static_cast<int32_t>(effectArray.property.size()),
+        napi_invalid_arg, "audio effect property array exist duplicate data");
+
+    int32_t enhanceSize = UniqueEffectPropertyData(enhanceArray);
+    CHECK_AND_RETURN_RET_LOG(enhanceSize == static_cast<int32_t>(enhanceArray.property.size()),
+        napi_invalid_arg, "audio enhance property array exist duplicate data");
+
+    int32_t size = static_cast<int32_t>(propertyArray.property.size());
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        napi_invalid_arg, "Audio enhance property array size invalid");
+
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::SetEffectProperty(const napi_env &env,
+    const AudioEffectPropertyArrayV3 &propertyArray, napi_value &result)
+{
+    int32_t position = 0;
+    napi_value jsEffectInfoObj = nullptr;
+    napi_status status = napi_create_array_with_length(env, propertyArray.property.size(), &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get create array failed");
+    for (const auto &property : propertyArray.property) {
+        napi_create_object(env, &jsEffectInfoObj);
+        status = SetValueString(env, "name", property.name, jsEffectInfoObj);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set name failed");
+        status = SetValueString(env, "category", property.category, jsEffectInfoObj);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set category failed");
+        status = SetValueInt32(env, "flag", property.flag, jsEffectInfoObj);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set flag failed");
+        napi_set_element(env, result, position, jsEffectInfoObj);
+        position++;
+    }
+    return napi_ok;
 }
 
 napi_status NapiParamUtils::GetEffectPropertyArray(napi_env env, AudioEffectPropertyArray &effectArray,

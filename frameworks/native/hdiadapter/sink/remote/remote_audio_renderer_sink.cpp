@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -39,7 +39,9 @@
 #include "audio_utils.h"
 #include "i_audio_device_adapter.h"
 #include "i_audio_device_manager.h"
-#include "audio_log_utils.h"
+#include "volume_tools.h"
+#include "audio_dump_pcm.h"
+#include "audio_performance_monitor.h"
 
 using namespace std;
 using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioAdapter;
@@ -81,6 +83,7 @@ const string NAVIGATION_STREAM_TYPE = "13";
 uint32_t MEDIA_RENDERID = 0;
 uint32_t NAVIGATION_RENDERID = 1;
 uint32_t COMMUNICATION_RENDERID = 2;
+const char* DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink";
 }
 class RemoteAudioRendererSinkInner : public RemoteAudioRendererSink, public IAudioDeviceAdapterCallback {
 public:
@@ -107,6 +110,7 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t GetTransactionId(uint64_t *transactionId) override;
     int32_t GetLatency(uint32_t *latency) override;
+    int32_t GetAudioScene() override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
     int32_t SetOutputRoutes(std::vector<DeviceType> &outputDevices) override;
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
@@ -114,7 +118,7 @@ public:
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
-    void RegisterParameterCallback(IAudioSinkCallback* callback) override;
+    void RegisterAudioSinkCallback(IAudioSinkCallback* callback) override;
     void ResetOutputRouteForDisconnect(DeviceType device) override;
     int32_t SetPaPower(int32_t flag) override;
     int32_t SetPriPaPower() override;
@@ -140,7 +144,6 @@ private:
     void ClearRender();
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
 private:
     std::string deviceNetworkId_ = "";
     std::atomic<bool> rendererInited_ = false;
@@ -162,6 +165,7 @@ private:
     unordered_map<string, AudioCategory> splitStreamMap_;
     IAudioSinkAttr attr_ = {};
     unordered_map<AudioCategory, FILE*> dumpFileMap_;
+    unordered_map<AudioCategory, std::string> dumpFileNameMap_;
     std::mutex createRenderMutex_;
     vector<uint32_t> renderIdVector_ = {MEDIA_RENDERID, NAVIGATION_RENDERID, COMMUNICATION_RENDERID};
     // for get amplitude
@@ -185,6 +189,7 @@ RemoteAudioRendererSinkInner::~RemoteAudioRendererSinkInner()
     if (rendererInited_.load()) {
         RemoteAudioRendererSinkInner::DeInit();
     }
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(ADAPTER_TYPE_REMOTE);
     AUDIO_DEBUG_LOG("RemoteAudioRendererSink destruction.");
 }
 
@@ -249,6 +254,7 @@ void RemoteAudioRendererSinkInner::ClearRender()
     AudioDeviceManagerFactory::GetInstance().DestoryDeviceManager(REMOTE_DEV_MGR);
 
     dumpFileMap_.clear();
+    dumpFileNameMap_.clear();
     AUDIO_INFO_LOG("Clear remote audio render end.");
 }
 
@@ -464,14 +470,20 @@ int32_t RemoteAudioRendererSinkInner::RenderFrameLogic(char &data, uint64_t len,
     }
 
     BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
-    DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
+        static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_, volumeDataCount_);
     Trace traceRenderFrame("audioRender_->RenderFrame");
     ret = audioRender_->RenderFrame(frameHal, writeLen);
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_REMOTE, ClockTime::GetCurNano());
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "Render frame fail, ret %{public}x.", ret);
     writeLen = len;
 
     FILE *dumpFile = dumpFileMap_[splitStreamMap_[streamType]];
+    std::string dumpFileName = dumpFileNameMap_[splitStreamMap_[streamType]];
     DumpFileUtil::WriteDumpFile(dumpFile, static_cast<void *>(&data), len);
+    AudioCacheMgr::GetInstance().CacheData(dumpFileName, static_cast<void *>(&data), len);
+
     CheckUpdateState(&data, len);
 
     int64_t cost = (ClockTime::GetCurNano() - start) / AUDIO_US_PER_SECOND;
@@ -531,9 +543,12 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
 
     for (const auto &audioPort : audioPortMap_) {
         FILE *dumpFile = nullptr;
-        DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_REMOTE_RENDER_SINK_FILENAME
-            + std::to_string(audioPort.first) + '_' + GetTime() + ".pcm", &dumpFile);
+        std::string dumpFileName = std::string(DUMP_REMOTE_RENDER_SINK_FILENAME) + "_" + GetTime() + "_" +
+            std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
+            std::to_string(attr_.format) + ".pcm";
+        DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName, &dumpFile);
         dumpFileMap_[audioPort.first] = dumpFile;
+        dumpFileNameMap_[audioPort.first] = dumpFileName;
     }
 
     for (const auto &audioRender : audioRenderMap_) {
@@ -543,6 +558,7 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_NOT_STARTED, "Start fail, ret %{public}d.", ret);
     }
     started_.store(true);
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_REMOTE, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -604,6 +620,7 @@ int32_t RemoteAudioRendererSinkInner::Resume(void)
     }
 
     paused_.store(false);
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_REMOTE, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -783,6 +800,12 @@ int32_t RemoteAudioRendererSinkInner::OpenOutput(DeviceType outputDevice)
     return SUCCESS;
 }
 
+int32_t RemoteAudioRendererSinkInner::GetAudioScene()
+{
+    AUDIO_WARNING_LOG("not supported.");
+    return ERR_NOT_SUPPORTED;
+}
+
 int32_t RemoteAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
 {
     CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
@@ -849,7 +872,7 @@ std::string RemoteAudioRendererSinkInner::GetAudioParameter(const AudioParamKey 
 #endif
 }
 
-void RemoteAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
+void RemoteAudioRendererSinkInner::RegisterAudioSinkCallback(IAudioSinkCallback* callback)
 {
     AUDIO_INFO_LOG("register sink audio param callback.");
     callback_ = callback;
@@ -862,9 +885,9 @@ void RemoteAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback*
         audioAdapter = audioAdapter_;
     }
 
-    CHECK_AND_RETURN_LOG(audioAdapter != nullptr, "RegisterParameterCallback: Audio adapter is null.");
+    CHECK_AND_RETURN_LOG(audioAdapter != nullptr, "RegisterAudioSinkCallback: Audio adapter is null.");
     int32_t ret = audioAdapter->RegExtraParamObserver();
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterParameterCallback failed, ret %{public}d.", ret);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterAudioSinkCallback failed, ret %{public}d.", ret);
 #endif
 }
 
@@ -956,18 +979,6 @@ int32_t RemoteAudioRendererSinkInner::UpdateAppsUid(const int32_t appsUid[MAX_MI
 int32_t RemoteAudioRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
     return ERR_NOT_SUPPORTED;
-}
-
-void RemoteAudioRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format,
-    AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 int32_t RemoteAudioRendererSinkInner::GetRenderId(uint32_t &renderId) const

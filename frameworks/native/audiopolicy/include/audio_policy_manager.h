@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,9 +28,10 @@
 #include "audio_routing_manager.h"
 #include "audio_routing_manager_listener_stub.h"
 #include "audio_anahs_manager_listener_stub.h"
+#include "audio_policy_interface.h"
 #include "audio_system_manager.h"
 #include "i_standard_client_tracker.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "microphone_descriptor.h"
 #include "audio_spatialization_manager.h"
 #include "audio_spatialization_state_change_listener_stub.h"
@@ -69,7 +70,8 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId);
 
-    int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy = false);
+    int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy = false,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE);
 
     bool GetStreamMute(AudioVolumeType volumeType);
 
@@ -106,9 +108,9 @@ public:
     int32_t SetRingerMode(AudioRingerMode ringMode);
 
 #ifdef FEATURE_DTMF_TONE
-    std::vector<int32_t> GetSupportedTones();
+    std::vector<int32_t> GetSupportedTones(const std::string &countryCode);
 
-    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype);
+    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype, const std::string &countryCode);
 #endif
 
     AudioRingerMode GetRingerMode();
@@ -154,7 +156,7 @@ public:
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID = 0);
 
     int32_t ActivateAudioInterrupt(
-        const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0, const bool isUpdatedAudioStrategy = false);
+        AudioInterrupt &audioInterrupt, const int32_t zoneID = 0, const bool isUpdatedAudioStrategy = false);
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 
@@ -192,17 +194,7 @@ public:
 
     int32_t UnsetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
 
-    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        SourceType sourceType = SOURCE_TYPE_MIC);
-
-    bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        AudioPermissionState state);
-
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
-
-    int32_t GetAudioLatencyFromXml();
-
-    uint32_t GetSinkLatencyFromXml();
 
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo);
 
@@ -243,8 +235,6 @@ public:
     int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos);
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId);
-
-    bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo);
@@ -394,8 +384,6 @@ public:
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
 
-    int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo, uint32_t sessionId);
-
     ConverterConfig GetConverterConfig();
 
     void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
@@ -428,6 +416,9 @@ public:
 
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
 
+    int32_t SetPreferredDevice(const PreferredType preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &desc);
+
     int32_t SetAudioDeviceAnahsCallback(const std::shared_ptr<AudioDeviceAnahs> &callback);
 
     int32_t UnsetAudioDeviceAnahsCallback();
@@ -440,6 +431,12 @@ public:
     int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
 
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
+
+    void ResetClientTrackerStubMap();
+
+    void RemoveClientTrackerStub(int32_t sessionId);
+
+    void CheckAndRemoveClientTrackerStub(const AudioMode &mode, const AudioStreamChangeInfo &streamChangeInfo);
 
     int32_t InjectInterruption(const std::string networkId, InterruptEvent &event);
 
@@ -455,8 +452,13 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute);
 
-    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning);
+    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
+
+    int32_t SetVirtualCall(const bool isVirtual);
+
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
 
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
@@ -482,6 +484,7 @@ private:
 
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
     static std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> audioStreamCBMap_;
+    static std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackStub>> clientTrackerStubMap_;
 
     bool isAudioRendererEventListenerRegistered = false;
     bool isAudioCapturerEventListenerRegistered = false;

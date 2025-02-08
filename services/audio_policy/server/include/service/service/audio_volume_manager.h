@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,14 +23,12 @@
 #include <mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
-#include "audio_info.h"
 #include "audio_manager_base.h"
 #include "audio_module_info.h"
 #include "audio_shared_memory.h"
 #include "audio_system_manager.h"
 #include "audio_ec_info.h"
 #include "datashare_helper.h"
-#include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
@@ -70,11 +68,13 @@ public:
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
     void SetSharedAbsVolumeScene(const bool support);
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
+    int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
     int32_t DisableSafeMediaVolume();
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
     int32_t SetStreamMute(AudioStreamType streamType, bool mute,
-        const StreamUsage &streamUsage = STREAM_USAGE_UNKNOWN);
+        const StreamUsage &streamUsage = STREAM_USAGE_UNKNOWN,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE);
     bool GetStreamMute(AudioStreamType streamType) const;
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, bool internalCall = false);
@@ -90,6 +90,10 @@ public:
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     int32_t SetVoiceRingtoneMute(bool isMute);
     void SetVoiceCallVolume(int32_t volume);
+    bool GetVolumeGroupInfosNotWait(std::vector<sptr<VolumeGroupInfo>> &infos);
+    void SetDefaultDeviceLoadFlag(bool isLoad);
+    void NotifyVolumeGroup();
+    bool GetLoadFlag();
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
@@ -111,7 +115,6 @@ private:
     void SetDeviceSafeVolumeStatus();
     void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support);
     int32_t SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel);
-    bool CheckMixActiveMusicTime(int32_t safeVolume);
     void PublishSafeVolumeNotification(int32_t notificationId);
     void CancelSafeVolumeNotification(int32_t notificationId);
     void UpdateVolumeForLowLatency();
@@ -119,6 +122,8 @@ private:
     void CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel);
     bool DeviceIsSupportSafeVolume();
     int32_t DealWithEventVolume(const int32_t notificationId);
+    void ChangeDeviceSafeStatus(SafeStatus safeStatus);
+    bool CheckMixActiveMusicTime(int32_t safeVolume);
 private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
@@ -156,11 +161,12 @@ private:
     bool isVoiceRingtoneMute_ = false;
 
     std::mutex notifyMutex_;
-    int32_t streamMusicVol_;
-    bool isSelectRestoreVol_ = false;
-    bool isSelectIncreaseVol_ = false;
+    int32_t streamMusicVol_ = 0;
     bool restoreNIsShowing_ = false;
     bool increaseNIsShowing_ = false;
+
+    std::mutex defaultDeviceLoadMutex_;
+    std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioA2dpDevice& audioA2dpDevice_;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,9 +21,7 @@
 #include "iservice_registry.h"
 #include "parameter.h"
 #include "parameters.h"
-#include "audio_utils.h"
-#include "audio_log.h"
-#include "audio_utils.h"
+#include "audio_policy_log.h"
 #include "media_monitor_manager.h"
 #include "audio_spatialization_service.h"
 
@@ -393,7 +391,7 @@ int32_t AudioOffloadStream::LoadOffloadModule()
     isOffloadOpened_.store(true);
     offloadCloseCondition_.notify_all();
     {
-        std::lock_guard<std::mutex> lock(offloadOpenMutex_);
+        std::lock_guard<std::mutex> lk(offloadOpenMutex_);
         if (audioIOHandleMap_.CheckIOHandleExist(OFFLOAD_PRIMARY_SPEAKER)) {
             AUDIO_INFO_LOG("offload is open");
             return SUCCESS;
@@ -415,7 +413,7 @@ int32_t AudioOffloadStream::UnloadOffloadModule()
     offloadCloseCondition_.wait_for(lock, std::chrono::seconds(WAIT_OFFLOAD_CLOSE_TIME_S),
         [this] () { return isOffloadOpened_.load(); });
     {
-        std::lock_guard<std::mutex> lock(offloadOpenMutex_);
+        std::lock_guard<std::mutex> lk(offloadOpenMutex_);
         if (isOffloadOpened_.load()) {
             AUDIO_INFO_LOG("offload restart");
             return ERROR;

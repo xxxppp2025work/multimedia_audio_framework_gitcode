@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,7 +18,6 @@
 
 #include "audio_policy_server_handler.h"
 #include "audio_policy_service.h"
-#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -201,6 +200,9 @@ bool AudioPolicyServerHandler::SendVolumeKeyEventCallback(const VolumeEvent &vol
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    if (volumeEvent.volumeType == AudioStreamType::STREAM_VOICE_CALL_ASSISTANT) {
+        return false;
+    }
     eventContextObj->volumeEvent = volumeEvent;
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::VOLUME_KEY_EVENT, eventContextObj));
@@ -291,18 +293,18 @@ bool AudioPolicyServerHandler::SendInterruptEventInternalCallback(const Interrup
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendInterruptEventWithSessionIdCallback(const InterruptEventInternal &interruptEvent,
-    const uint32_t &sessionId)
+bool AudioPolicyServerHandler::SendInterruptEventWithStreamIdCallback(const InterruptEventInternal &interruptEvent,
+    const uint32_t &streamId)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     eventContextObj->interruptEvent = interruptEvent;
-    eventContextObj->sessionId = sessionId;
+    eventContextObj->sessionId = streamId;
     lock_guard<mutex> runnerlock(runnerMutex_);
-    AUDIO_INFO_LOG("Send interrupt event with sessionId callback");
-    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::INTERRUPT_EVENT_WITH_SESSIONID,
+    AUDIO_INFO_LOG("Send interrupt event with streamId callback");
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::INTERRUPT_EVENT_WITH_STREAMID,
         eventContextObj));
-    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send INTERRUPT_EVENT_WITH_SESSIONID event failed");
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send INTERRUPT_EVENT_WITH_STREAMID event failed");
     return ret;
 }
 
@@ -805,11 +807,11 @@ void AudioPolicyServerHandler::HandleInterruptEvent(const AppExecFwk::InnerEvent
     std::shared_ptr<IAudioInterruptEventDispatcher> dispatcher = interruptEventDispatcher_.lock();
     lock.unlock();
     if (dispatcher != nullptr) {
-        dispatcher->DispatchInterruptEventWithSessionId(0, eventContextObj->interruptEvent);
+        dispatcher->DispatchInterruptEventWithStreamId(0, eventContextObj->interruptEvent);
     }
 }
 
-void AudioPolicyServerHandler::HandleInterruptEventWithSessionId(const AppExecFwk::InnerEvent::Pointer &event)
+void AudioPolicyServerHandler::HandleInterruptEventWithStreamId(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
@@ -818,7 +820,7 @@ void AudioPolicyServerHandler::HandleInterruptEventWithSessionId(const AppExecFw
     std::shared_ptr<IAudioInterruptEventDispatcher> dispatcher = interruptEventDispatcher_.lock();
     lock.unlock();
     if (dispatcher != nullptr) {
-        dispatcher->DispatchInterruptEventWithSessionId(eventContextObj->sessionId,
+        dispatcher->DispatchInterruptEventWithStreamId(eventContextObj->sessionId,
             eventContextObj->interruptEvent);
     }
 }
@@ -1285,8 +1287,8 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
         case EventAudioServerCmd::INTERRUPT_EVENT:
             HandleInterruptEvent(event);
             break;
-        case EventAudioServerCmd::INTERRUPT_EVENT_WITH_SESSIONID:
-            HandleInterruptEventWithSessionId(event);
+        case EventAudioServerCmd::INTERRUPT_EVENT_WITH_STREAMID:
+            HandleInterruptEventWithStreamId(event);
             break;
         case EventAudioServerCmd::INTERRUPT_EVENT_WITH_CLIENTID:
             HandleInterruptEventWithClientId(event);
@@ -1328,7 +1330,14 @@ int32_t AudioPolicyServerHandler::SetCallbackRendererInfo(const AudioRendererInf
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     lock_guard<mutex> lock(clientCbRendererInfoMapMutex_);
-    clientCbRendererInfoMap_[clientPid].push_back(rendererInfo);
+    auto &rendererList = clientCbRendererInfoMap_[clientPid];
+    auto it = std::find_if(rendererList.begin(), rendererList.end(),
+        [&rendererInfo](const AudioRendererInfo &existingRenderer) {
+            return existingRenderer.streamUsage == rendererInfo.streamUsage;
+        });
+    if (it == rendererList.end()) {
+        rendererList.push_back(rendererInfo);
+    }
     return AUDIO_OK;
 }
 
@@ -1346,7 +1355,14 @@ int32_t AudioPolicyServerHandler::SetCallbackCapturerInfo(const AudioCapturerInf
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     lock_guard<mutex> lock(clientCbCapturerInfoMapMutex_);
-    clientCbCapturerInfoMap_[clientPid].push_back(capturerInfo);
+    auto &capturerList = clientCbCapturerInfoMap_[clientPid];
+    auto it = std::find_if(capturerList.begin(), capturerList.end(),
+        [&capturerInfo](const AudioCapturerInfo &existingCapturer) {
+            return existingCapturer.sourceType == capturerInfo.sourceType;
+        });
+    if (it == capturerList.end()) {
+        capturerList.push_back(capturerInfo);
+    }
     return AUDIO_OK;
 }
 

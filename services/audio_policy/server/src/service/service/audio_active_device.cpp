@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,9 +22,7 @@
 #include "iservice_registry.h"
 #include "parameter.h"
 #include "parameters.h"
-#include "audio_utils.h"
-#include "audio_log.h"
-#include "audio_utils.h"
+#include "audio_policy_log.h"
 #include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
@@ -46,22 +44,6 @@ const uint32_t USER_NOT_SELECT_BT = 1;
 const uint32_t USER_SELECT_BT = 2;
 #endif
 
-static std::string GetEncryptAddr(const std::string &addr)
-{
-    const int32_t START_POS = 6;
-    const int32_t END_POS = 13;
-    const int32_t ADDRESS_STR_LEN = 17;
-    if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
-        return std::string("");
-    }
-    std::string tmp = "**:**:**:**:**:**";
-    std::string out = addr;
-    for (int i = START_POS; i <= END_POS; i++) {
-        out[i] = tmp[i];
-    }
-    return out;
-}
-
 bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo)
 {
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -74,7 +56,7 @@ bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, Aud
         }
     } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
         A2dpDeviceConfigInfo info;
-        if (audioA2dpDevice_.GetA2dpInDeviceInfo(GetCurrentInputDeviceMacAddr(), info)) {
+        if (audioA2dpDevice_.GetA2dpInDeviceInfo(activeBTInDevice_, info)) {
             streamInfo.samplingRate = *info.streamInfo.samplingRate.rbegin();
             streamInfo.format = info.streamInfo.format;
             streamInfo.channels = *info.streamInfo.channels.rbegin();
@@ -84,53 +66,19 @@ bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, Aud
     return false;
 }
 
-int32_t AudioActiveDevice::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
-{
-    CHECK_AND_RETURN_RET_LOG(audioA2dpDevice_.CheckA2dpDeviceExist(deviceDescriptor->macAddress_),
-        ERR_INVALID_PARAM, "the target A2DP device doesn't exist.");
-    int32_t result = ERROR;
-#ifdef BLUETOOTH_ENABLE
-    AUDIO_INFO_LOG("a2dp device name [%{public}s]", (deviceDescriptor->deviceName_).c_str());
-    std::string lastActiveA2dpDevice = activeBTDevice_;
-    activeBTDevice_ = deviceDescriptor->macAddress_;
-    DeviceType lastDevice = audioPolicyManager_.GetActiveDevice();
-    audioPolicyManager_.SetActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP);
-
-    if (Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDescriptor->macAddress_ &&
-        audioIOHandleMap_.CheckIOHandleExist(BLUETOOTH_SPEAKER)) {
-        AUDIO_WARNING_LOG("a2dp device [%{public}s] is already active",
-            GetEncryptAddr(deviceDescriptor->macAddress_).c_str());
-        return SUCCESS;
-    }
-
-    result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
-    if (result != SUCCESS) {
-        activeBTDevice_ = lastActiveA2dpDevice;
-        audioPolicyManager_.SetActiveDevice(lastDevice);
-        AUDIO_ERR_LOG("Active [%{public}s] failed, using original [%{public}s] device",
-            GetEncryptAddr(activeBTDevice_).c_str(), GetEncryptAddr(lastActiveA2dpDevice).c_str());
-        return result;
-    }
-
-    AudioStreamInfo audioStreamInfo = {};
-    GetActiveA2dpDeviceStreamInfo(DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo);
-    std::string networkId = GetCurrentOutputDeviceNetworkId();
-    std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(GetCurrentOutputDeviceType());
-
-    result = audioA2dpDevice_.LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo, networkId, sinkName);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "LoadA2dpModule failed %{public}d", result);
-#endif
-    return result;
-}
-
 std::string AudioActiveDevice::GetActiveBtDeviceMac()
 {
     return activeBTDevice_;
 }
 
-void AudioActiveDevice::SetActiveBtDeviceMac(std::string macAddress)
+void AudioActiveDevice::SetActiveBtDeviceMac(const std::string macAddress)
 {
     activeBTDevice_ = macAddress;
+}
+
+void AudioActiveDevice::SetActiveBtInDeviceMac(const std::string macAddress)
+{
+    activeBTInDevice_ = macAddress;
 }
 
 bool AudioActiveDevice::IsDirectSupportedDevice()
@@ -168,7 +116,7 @@ void AudioActiveDevice::SetCurrentInputDevice(const AudioDeviceDescriptor &desc)
     currentActiveInputDevice_ = AudioDeviceDescriptor(desc);
 }
 
-AudioDeviceDescriptor AudioActiveDevice::GetCurrentInputDevice()
+const AudioDeviceDescriptor& AudioActiveDevice::GetCurrentInputDevice()
 {
     std::lock_guard<std::mutex> lock(curInputDevice_);
     return currentActiveInputDevice_;
@@ -205,7 +153,7 @@ void AudioActiveDevice::SetCurrentOutputDeviceType(DeviceType deviceType)
     currentActiveDevice_.deviceType_ = deviceType;
 }
 
-AudioDeviceDescriptor AudioActiveDevice::GetCurrentOutputDevice()
+const AudioDeviceDescriptor& AudioActiveDevice::GetCurrentOutputDevice()
 {
     std::lock_guard<std::mutex> lock(curOutputDevice_);
     return currentActiveDevice_;
@@ -379,7 +327,7 @@ int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> callDevices
         = AudioPolicyUtils::GetInstance().GetAvailableDevicesInner(CALL_OUTPUT_DEVICES);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
-    for (auto &desc : callDevices) {
+    for (const auto &desc : callDevices) {
         std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
         deviceList.push_back(devDesc);
     }

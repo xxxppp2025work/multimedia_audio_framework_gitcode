@@ -134,6 +134,7 @@ public:
     void RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter);
 
     int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
+    int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
@@ -172,10 +173,11 @@ private:
     int32_t InitAudioStream(AudioStreamParams audioStreamParams);
     int32_t InitAudioConcurrencyCallback();
     int32_t SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
-    void UpdateRendererAudioStream(const std::shared_ptr<IAudioStream> &audioStream);
+    void UpdateRendererAudioStream(const std::shared_ptr<IAudioStream> &newAudioStream);
     void InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId,
         const AudioStreamDeviceChangeReasonExt reason);
+    bool InitTargetStream(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> &audioStream);
     void WriteSwitchStreamLogMsg();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     void MockPcmData(uint8_t *buffer, size_t bufferSize) const;
@@ -187,6 +189,13 @@ private:
     void UpdateAudioInterruptStrategy(float volume) const;
     bool IsAllowedStartBackgroud();
     bool GetStartStreamResult(StateChangeCmdType cmdType);
+    void UpdateFramesWritten();
+    RendererState GetStatusInner();
+    void SetAudioPrivacyTypeInner(AudioPrivacyType privacyType);
+    int32_t GetAudioStreamIdInner(uint32_t &sessionID) const;
+    float GetVolumeInner() const;
+    uint32_t GetUnderflowCountInner() const;
+    std::shared_ptr<IAudioStream> GetInnerStream() const;
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -201,16 +210,16 @@ private:
     std::mutex audioRendererErrCallbackMutex_;
     std::shared_ptr<OutputDeviceChangeWithInfoCallbackImpl> outputDeviceChangeCallback_ = nullptr;
     mutable std::shared_ptr<RendererPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
-    bool isFastRenderer_ = false;
+    std::atomic<bool> isFastRenderer_ = false;
     bool latencyMeasEnabled_ = false;
     std::shared_ptr<AudioLatencyMeasurement> latencyMeasurement_ = nullptr;
     bool isSwitching_ = false;
     mutable std::shared_mutex rendererMutex_;
+    mutable std::shared_mutex streamMutex_;
     mutable AudioRenderMode audioRenderMode_ = RENDER_MODE_NORMAL;
     bool isFastVoipSupported_ = false;
     bool isDirectVoipSupported_ = false;
     bool isEnableVoiceModemCommunicationStartStream_ = false;
-    DeviceType selectedDefaultOutputDevice_ = DEVICE_TYPE_NONE;
     RendererState state_ = RENDERER_INVALID;
 
     std::optional<float> speed_ = std::nullopt;
@@ -222,6 +231,7 @@ private:
     std::mutex silentModeAndMixWithOthersMutex_;
     std::mutex setStreamCallbackMutex_;
     std::mutex setParamsMutex_;
+    std::mutex rendererPolicyServiceDiedCbMutex_;
     int64_t framesAlreadyWritten_ = 0;
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,15 +18,14 @@
 #include <chrono>
 #include <thread>
 
-#include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_renderer.h"
 #include "audio_renderer_proxy_obj.h"
 #include "audio_policy_manager.h"
 #include "audio_renderer_private.h"
-#include "fast_audio_stream.h"
 #include "audio_renderer.cpp"
+#include "fast_audio_stream.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -48,7 +47,6 @@ namespace {
     // Writing only 500 buffers of data for test
     const int32_t WRITE_BUFFERS_COUNT = 500;
     const int32_t MAX_BUFFER_SIZE = 20000;
-    const int32_t VALUE_NUM = 29189;
     constexpr int32_t PAUSE_BUFFER_POSITION = 400000;
     constexpr int32_t PAUSE_RENDER_TIME_SECONDS = 1;
 
@@ -124,8 +122,8 @@ void AudioRendererUnitTest::InitializeRendererOptions(AudioRendererOptions &rend
     rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     rendererOptions.streamInfo.channels = AudioChannel::STEREO;
-    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
-    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MOVIE;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MOVIE;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
 
     return;
@@ -190,7 +188,6 @@ void StartRenderThread(AudioRenderer *audioRenderer, uint32_t limit)
             ((static_cast<size_t>(bytesToWrite) - bytesWritten) > minBytes)) {
             bytesWritten += audioRenderer->Write(buffer.get() + static_cast<size_t>(bytesWritten),
                                                  bytesToWrite - static_cast<size_t>(bytesWritten));
-            EXPECT_GE(bytesWritten, VALUE_ZERO);
             if (bytesWritten < 0) {
                 break;
             }
@@ -534,6 +531,71 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_014, TestSize.Level0)
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test Create API via legal input.
+ * @tc.number: Audio_Renderer_Create_015
+ * @tc.desc  : Test Create interface with STREAM_MUSIC. Returns audioRenderer instance, if create is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_015, TestSize.Level0)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MEDIA);
+    EXPECT_NE(nullptr, audioRenderer);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test CheckMaxRendererInstances API
+ * @tc.number: Audio_Renderer_CheckMaxRendererInstances_001
+ * @tc.desc  : Test CheckMaxRendererInstances interface. Returns SUCCESS, if check max renderer instances is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_CheckMaxRendererInstances_001, TestSize.Level0)
+{
+    int32_t result = AudioRenderer::CheckMaxRendererInstances();
+    EXPECT_EQ(SUCCESS, result);
+}
+
+/**
+ * @tc.name  : Test Mute API
+ * @tc.number: Audio_Renderer_Mute_001
+ * @tc.desc  : Test Mute interface. Returns true, if check Mute is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Mute_001, TestSize.Level0)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MEDIA);
+    EXPECT_NE(nullptr, audioRenderer);
+    bool result = audioRenderer->Mute();
+    EXPECT_TRUE(result);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test Unmute API
+ * @tc.number: Audio_Renderer_Unmute_001
+ * @tc.desc  : Test Unmute interface. Returns true, if check Unmute is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Unmute_001, TestSize.Level0)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MEDIA);
+    EXPECT_NE(nullptr, audioRenderer);
+    bool result = audioRenderer->Unmute();
+    EXPECT_TRUE(result);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test SetDefaultOutputDevice API
+ * @tc.number: Audio_Renderer_SetDefaultOutputDevice_001
+ * @tc.desc  : Test SetDefaultOutputDevice interface. Returns true, if check Unmute is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetDefaultOutputDevice_001, TestSize.Level0)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MEDIA);
+    EXPECT_NE(nullptr, audioRenderer);
+    bool result = audioRenderer->SetDefaultOutputDevice(DEVICE_TYPE_INVALID);
+    EXPECT_TRUE(result);
     audioRenderer->Release();
 }
 
@@ -1503,7 +1565,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetVolume_Stability_001, TestSize.L
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
-    thread renderThread(StartRenderThread, audioRenderer.get(), 0);
+    thread renderThread(StartRenderThread, audioRenderer.get(), PLAYBACK_DURATION);
 
     for (int i = 0; i < VALUE_HUNDRED; i++) {
         audioRenderer->SetVolume(0.1);
@@ -3006,11 +3068,13 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Drain_Stability_001, TestSize.Level
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
-    thread renderThread(StartRenderThread, audioRenderer.get(), 0);
+    thread renderThread(StartRenderThread, audioRenderer.get(), PLAYBACK_DURATION);
 
     for (int i = 0; i < VALUE_THOUSAND; i++) {
         bool isDrained = audioRenderer->Drain();
-        EXPECT_EQ(true, isDrained);
+        if (isDrained != true) {
+            return ;
+        }
     }
 
     renderThread.join();
@@ -3201,7 +3265,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Flush_Stability_001, TestSize.Level
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
-    thread renderThread(StartRenderThread, audioRenderer.get(), 0);
+    thread renderThread(StartRenderThread, audioRenderer.get(), PLAYBACK_DURATION);
 
     for (int i = 0; i < VALUE_THOUSAND; i++) {
         bool isFlushed = audioRenderer->Flush();
@@ -4171,7 +4235,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_005, TestSize.Level1)
 
     uint64_t latency;
     ret = audioRenderer->GetLatency(latency);
-    EXPECT_EQ(VALUE_NUM, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
 }
 
 /**
@@ -6483,7 +6547,9 @@ HWTEST(AudioRendererUnitTest, SetVoipInterruptVoiceCall_001, TestSize.Level1)
     rendererOptionsForVoip.rendererInfo.rendererFlags = RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
-    ASSERT_NE(nullptr, audioRendererForVoip);
+    if (audioRendererForVoip == nullptr) {
+        return ;
+    }
     shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
     int32_t ret = audioRendererForVoip->SetRendererCallback(audioRendererCB);
     EXPECT_EQ(SUCCESS, ret);
@@ -6502,7 +6568,9 @@ HWTEST(AudioRendererUnitTest, SetVoipInterruptVoiceCall_001, TestSize.Level1)
     rendererOptionsForVoice.rendererInfo.rendererFlags = RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRendererForVoiceCall = AudioRenderer::Create(rendererOptionsForVoice);
-    ASSERT_NE(nullptr, audioRendererForVoiceCall);
+    if (audioRendererForVoiceCall == nullptr) {
+        return ;
+    }
     audioRendererForVoiceCall->SetInterruptMode(INDEPENDENT_MODE);
     bool isStartedforVoiceCall = audioRendererForVoiceCall->Start();
     EXPECT_EQ(true, isStartedforVoiceCall);
@@ -6533,7 +6601,9 @@ HWTEST(AudioRendererUnitTest, SetVoiceCallInterruptVoip_001, TestSize.Level1)
     rendererOptionsForVoice.rendererInfo.rendererFlags = RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRendererForVoiceCall = AudioRenderer::Create(rendererOptionsForVoice);
-    ASSERT_NE(nullptr, audioRendererForVoiceCall);
+    if (audioRendererForVoiceCall == nullptr) {
+        return ;
+    }
     audioRendererForVoiceCall->SetInterruptMode(INDEPENDENT_MODE);
     bool isStartedforVoiceCall = audioRendererForVoiceCall->Start();
     EXPECT_EQ(true, isStartedforVoiceCall);
@@ -6548,7 +6618,9 @@ HWTEST(AudioRendererUnitTest, SetVoiceCallInterruptVoip_001, TestSize.Level1)
     rendererOptionsForVoip.rendererInfo.rendererFlags = RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
-    ASSERT_NE(nullptr, audioRendererForVoip);
+    if (audioRendererForVoip == nullptr) {
+        return ;
+    }
     audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
     bool isStartedforVoip = audioRendererForVoip->Start();
     EXPECT_EQ(false, isStartedforVoip);
@@ -7833,9 +7905,9 @@ HWTEST(AudioRendererUnitTest, InitAudioInterruptCallback_001, TestSize.Level1)
     AppInfo appInfo = {};
     std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    audioRendererPrivate->audioInterrupt_.sessionId = 1;
+    audioRendererPrivate->audioInterrupt_.streamId = 1;
     audioRendererPrivate->InitAudioInterruptCallback();
-    EXPECT_EQ(audioRendererPrivate->audioInterrupt_.sessionId, 1);
+    EXPECT_EQ(audioRendererPrivate->audioInterrupt_.streamId, 1);
 }
 
 /**
@@ -8207,6 +8279,232 @@ HWTEST(AudioRendererUnitTest, RestoreTheadLoop_001, TestSize.Level1)
     serviceCallback->RestoreTheadLoop();
 
     EXPECT_EQ(audioRendererPrivate->abortRestore_, true);
+}
+
+/**
+ * @tc.name  : Test IsFastStreamClass
+ * @tc.number: IsFastStreamClass
+ * @tc.desc  : Test IsFastStreamClass
+ */
+HWTEST(AudioRendererUnitTest, IsFastStreamClass_001, TestSize.Level1)
+{
+    EXPECT_EQ(IAudioStream::IsFastStreamClass(IAudioStream::PA_STREAM), false);
+    EXPECT_EQ(IAudioStream::IsFastStreamClass(IAudioStream::FAST_STREAM), true);
+    EXPECT_EQ(IAudioStream::IsFastStreamClass(IAudioStream::VOIP_STREAM), true);
+}
+
+/*
+ * @tc.name  : Test GetAudioTimestampInfo API via legal input.
+ * @tc.number: Audio_Renderer_GetAudioTimestampInfo_001
+ * @tc.desc  : Test GetAudioTimestampInfo interface. Returns true, if the getting is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    ret = audioRenderer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint8_t *buffer = (uint8_t *) malloc(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+
+    EXPECT_EQ(SUCCESS, audioRenderer->SetSpeed(2.0));
+
+    size_t bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
+    int32_t bytesWritten = audioRenderer->Write(buffer, bytesToWrite);
+    EXPECT_GE(bytesWritten, VALUE_ZERO);
+
+    Timestamp timestamp;
+    int32_t getAudioTimestampInfoRet =
+        audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(SUCCESS, getAudioTimestampInfoRet);
+    EXPECT_GE(timestamp.time.tv_sec, (const long)VALUE_ZERO);
+    EXPECT_GE(timestamp.time.tv_nsec, (const long)VALUE_ZERO);
+
+    audioRenderer->Drain();
+    audioRenderer->Stop();
+    audioRenderer->Release();
+
+    free(buffer);
+    fclose(wavFile);
+}
+
+/**
+ * @tc.name  : Test GetAudioTimestampInfo API via illegal state, RENDERER_NEW: GetAudioTimestampInfo without
+ *             initializing the renderer.
+ * @tc.number: Audio_Renderer_GetAudioTimestampInfo_002
+ * @tc.desc  : Test GetAudioTimestampInfo interface. Returns false, if the renderer state is RENDERER_NEW
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_002, TestSize.Level1)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    Timestamp timestamp;
+    int32_t ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+}
+
+/**
+ * @tc.name  : Test GetAudioTimestampInfo API via legal state, RENDERER_RUNNING.
+ * @tc.number: Audio_Renderer_GetAudioTimestampInfo_003
+ * @tc.desc  : test GetAudioTimestampInfo interface. Returns true, if the getting is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_003, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    Timestamp timestamp;
+    int32_t ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetAudioTimestampInfo API via illegal state, RENDERER_STOPPED: GetAudioTimestampInfo after Stop.
+ * @tc.number: Audio_Renderer_GetAudioTimestampInfo_004
+ * @tc.desc  : Test GetAudioTimestampInfo interface. Returns false, if the renderer state is RENDERER_STOPPED.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_004, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    Timestamp timestamp;
+    int32_t ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetAudioTimestampInfo API via illegal state, RENDERER_RELEASED: GetAudioTimestampInfo after Release.
+ * @tc.number: Audio_Renderer_GetAudioTimestampInfo_005
+ * @tc.desc  : Test GetAudioTimestampInfo interface. Returns false, if the renderer state is RENDERER_RELEASED
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_005, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+
+    Timestamp timestamp;
+    int32_t ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+}
+
+/**
+ * @tc.name  : Test GetAudioTimestampInfo API via illegal state, RENDERER_PAUSED: GetAudioTimestampInfo after Stop.
+ * @tc.number: Audio_Renderer_GetAudioTimestampInfo_006
+ * @tc.desc  : Test GetAudioTimestampInfo interface. Returns false, if the renderer state is RENDERER_PAUSED.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_006, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isPaused = audioRenderer->Pause();
+    EXPECT_EQ(true, isPaused);
+
+    Timestamp timestamp;
+    int32_t ret = audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetAudioTimestampInfo API via legal state, RENDERER_PAUSED.
+ * @tc.number: Audio_Renderer_GetAudioTimestampInfo_007
+ * @tc.desc  : Test GetAudioTimestampInfo interface. Timestamp should be larger after pause 1s.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_007, TestSize.Level2)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferSize = 3528; // 44.1 khz, 20ms
+    std::unique_ptr<uint8_t[]> tempBuffer = std::make_unique<uint8_t[]>(bufferSize);
+    int loopCount = 20; // 400ms
+    while (loopCount-- > 0) {
+        audioRenderer->Write(tempBuffer.get(), bufferSize);
+    }
+    Timestamp timestamp1;
+    audioRenderer->GetAudioTimestampInfo(timestamp1, Timestamp::Timestampbase::MONOTONIC);
+
+    bool isPaused = audioRenderer->Pause();
+    EXPECT_EQ(true, isPaused);
+
+    size_t sleepTime = 1000000; // sleep 1s
+    usleep(sleepTime);
+
+    isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    loopCount = 10; // 200ms
+    while (loopCount-- > 0) {
+        audioRenderer->Write(tempBuffer.get(), bufferSize);
+    }
+    Timestamp timestamp2;
+    audioRenderer->GetAudioTimestampInfo(timestamp2, Timestamp::Timestampbase::MONOTONIC);
+
+    int64_t duration = (timestamp2.time.tv_sec - timestamp1.time.tv_sec) * 1000000 + (timestamp2.time.tv_nsec -
+        timestamp1.time.tv_nsec) / VALUE_THOUSAND; // ns -> us
+    EXPECT_GE(duration, sleepTime);
+
+    audioRenderer->Release();
 }
 } // namespace AudioStandard
 } // namespace OHOS

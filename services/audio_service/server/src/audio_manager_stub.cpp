@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,6 +30,15 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 constexpr int32_t AUDIO_EXTRA_PARAMETERS_COUNT_UPPER_LIMIT = 40;
+constexpr int32_t AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT = 64;
+constexpr int32_t AUDIO_EFFECT_CHAIN_COUNT_UPPER_LIMIT = 32;
+constexpr int32_t AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT = 16;
+constexpr int32_t AUDIO_EFFECT_PRIOR_SCENE_UPPER_LIMIT = 7;
+constexpr int32_t AUDIO_EFFECT_COUNT_PROPERTY_UPPER_LIMIT = 20;
+#ifndef HAS_FEATURE_INNERCAPTURER
+constexpr int32_t ERROR = -1;
+#endif
+
 const char *g_audioServerCodeStrs[] = {
     "GET_AUDIO_PARAMETER",
     "SET_AUDIO_PARAMETER",
@@ -51,7 +60,6 @@ const char *g_audioServerCodeStrs[] = {
     "SET_AUDIO_BALANCE_VALUE",
     "CREATE_AUDIOPROCESS",
     "LOAD_AUDIO_EFFECT_LIBRARIES",
-    "REQUEST_THREAD_PRIORITY",
     "CREATE_AUDIO_EFFECT_CHAIN_MANAGER",
     "SET_OUTPUT_DEVICE_SINK",
     "CREATE_PLAYBACK_CAPTURER_MANAGER",
@@ -74,6 +82,7 @@ const char *g_audioServerCodeStrs[] = {
     "SET_ASR_NOISE_SUPPRESSION_MODE",
     "SET_OFFLOAD_MODE",
     "UNSET_OFFLOAD_MODE",
+    "CHECK_HIBERNATE_STATE",
     "GET_ASR_NOISE_SUPPRESSION_MODE",
     "SET_ASR_WHISPER_DETECTION_MODE",
     "GET_ASR_WHISPER_DETECTION_MODE",
@@ -84,6 +93,8 @@ const char *g_audioServerCodeStrs[] = {
     "SUSPEND_RENDERSINK",
     "RESTORE_RENDERSINK",
     "LOAD_HDI_EFFECT_MODEL",
+    "GET_AUDIO_EFFECT_PROPERTY_V3",
+    "SET_AUDIO_EFFECT_PROPERTY_V3",
     "GET_AUDIO_ENHANCE_PROPERTY",
     "GET_AUDIO_EFFECT_PROPERTY",
     "SET_AUDIO_ENHANCE_PROPERTY",
@@ -94,6 +105,11 @@ const char *g_audioServerCodeStrs[] = {
     "UPDATE_SESSION_CONNECTION_STATE",
     "SET_SINGLE_STREAM_MUTE",
     "RESTORE_SESSION",
+    "CREATE_IPC_OFFLINE_STREAM",
+    "GET_OFFLINE_AUDIO_EFFECT_CHAINS",
+    "GET_STANDBY_STATUS",
+    "GENERATE_SESSION_ID",
+    "NOTIFY_ACCOUNTS_CHANGED",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -172,6 +188,13 @@ int AudioManagerStub::HandleUnsetOffloadMode(MessageParcel &data, MessageParcel 
     uint32_t sessionId = data.ReadUint32();
     int32_t result = UnsetOffloadMode(sessionId);
     reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleCheckHibernateState(MessageParcel &data, MessageParcel &reply)
+{
+    bool onHibernate = data.ReadBool();
+    CheckHibernateState(onHibernate);
     return AUDIO_OK;
 }
 
@@ -456,14 +479,6 @@ int AudioManagerStub::HandleLoadAudioEffectLibraries(MessageParcel &data, Messag
     return AUDIO_OK;
 }
 
-int AudioManagerStub::HandleRequestThreadPriority(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t tid = data.ReadUint32();
-    string bundleName = data.ReadString();
-    RequestThreadPriority(tid, bundleName);
-    return AUDIO_OK;
-}
-
 static bool UnmarshallEffectChainMgrParam(EffectChainManagerParam &effectChainMgrParam, MessageParcel &data)
 {
     effectChainMgrParam.maxExtraNum = static_cast<uint32_t>(data.ReadInt32());
@@ -477,6 +492,7 @@ static bool UnmarshallEffectChainMgrParam(EffectChainManagerParam &effectChainMg
     }
 
     containSize = data.ReadInt32();
+
     CHECK_AND_RETURN_RET_LOG(containSize >= 0 && containSize <= AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT,
         false, "Create audio effect chain name map failed, please check log");
     while (containSize--) {
@@ -543,13 +559,18 @@ int AudioManagerStub::HandleSetOutputDeviceSink(MessageParcel &data, MessageParc
 
 int AudioManagerStub::HandleCreatePlaybackCapturerManager(MessageParcel &data, MessageParcel &reply)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     bool ret = CreatePlaybackCapturerManager();
     reply.WriteBool(ret);
     return AUDIO_OK;
+#else
+    return ERROR;
+#endif
 }
 
 int AudioManagerStub::HandleSetSupportStreamUsage(MessageParcel &data, MessageParcel &reply)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     vector<int32_t> usage;
     size_t cnt = static_cast<size_t>(data.ReadInt32());
     CHECK_AND_RETURN_RET_LOG(cnt <= AUDIO_SUPPORTED_STREAM_USAGES.size(), AUDIO_ERR,
@@ -565,6 +586,9 @@ int AudioManagerStub::HandleSetSupportStreamUsage(MessageParcel &data, MessagePa
     int32_t ret = SetSupportStreamUsage(usage);
     reply.WriteInt32(ret);
     return AUDIO_OK;
+#else
+    return ERROR;
+#endif
 }
 
 int AudioManagerStub::HandleRegiestPolicyProvider(MessageParcel &data, MessageParcel &reply)
@@ -588,6 +612,7 @@ int AudioManagerStub::HandleSetWakeupSourceCallback(MessageParcel &data, Message
 
 int AudioManagerStub::HandleSetCaptureSilentState(MessageParcel &data, MessageParcel &reply)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     bool state = false;
     int32_t flag = data.ReadInt32();
     if (flag == 1) {
@@ -596,6 +621,9 @@ int AudioManagerStub::HandleSetCaptureSilentState(MessageParcel &data, MessagePa
     int32_t ret = SetCaptureSilentState(state);
     reply.WriteInt32(ret);
     return AUDIO_OK;
+#else
+    return ERROR;
+#endif
 }
 
 int AudioManagerStub::HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply)
@@ -711,6 +739,29 @@ int AudioManagerStub::HandleRestoreSession(MessageParcel &data, MessageParcel &r
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleCreateIpcOfflineStream(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t errorCode = 0;
+    sptr<IRemoteObject> process = CreateIpcOfflineStream(errorCode);
+    CHECK_AND_RETURN_RET_LOG(process != nullptr, AUDIO_ERR,
+        "CREATE_IPC_OFFLINE_STREAM AudioManagerStub CreateIpcOfflineStream failed");
+    reply.WriteRemoteObject(process);
+    reply.WriteInt32(errorCode);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleGetOfflineAudioEffectChains(MessageParcel &data, MessageParcel &reply)
+{
+    vector<string> effectChains{};
+    int32_t errCode = GetOfflineAudioEffectChains(effectChains);
+    reply.WriteInt32(effectChains.size());
+    for (auto &chainName : effectChains) {
+        reply.WriteString(chainName);
+    }
+    reply.WriteInt32(errCode);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply,
     MessageOption &option)
 {
@@ -737,6 +788,17 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleLoadHdiEffectModel(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED):
             return HandleUpdateEffectBtOffloadSupported(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_ACCOUNTS_CHANGED):
+            return HandleNotifyAccountsChanged(data, reply);
+        default:
+            return HandleFifthPartCode(code, data, reply, option);
+    }
+}
+
+int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply,
+    MessageOption &option)
+{
+    switch (code) {
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SINK_MUTE_FOR_SWITCH_DEVICE):
             return HandleSetSinkMuteForSwitchDevice(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ROTATION_TO_EFFECT):
@@ -747,6 +809,14 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleSetNonInterruptMute(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::RESTORE_SESSION):
             return HandleRestoreSession(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_IPC_OFFLINE_STREAM):
+            return HandleCreateIpcOfflineStream(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_OFFLINE_AUDIO_EFFECT_CHAINS):
+            return HandleGetOfflineAudioEffectChains(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_STANDBY_STATUS):
+            return HandleGetStandbyStatus(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GENERATE_SESSION_ID):
+            return HandleGenerateSessionId(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -781,6 +851,10 @@ int AudioManagerStub::HandleThirdPartCode(uint32_t code, MessageParcel &data, Me
             return HandleSetOffloadMode(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UNSET_OFFLOAD_MODE):
             return HandleUnsetOffloadMode(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_EFFECT_PROPERTY_V3):
+            return HandleGetAudioEffectPropertyV3(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY_V3):
+            return HandleSetAudioEffectPropertyV3(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_ENHANCE_PROPERTY):
             return HandleGetAudioEnhanceProperty(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_EFFECT_PROPERTY):
@@ -810,8 +884,6 @@ int AudioManagerStub::HandleSecondPartCode(uint32_t code, MessageParcel &data, M
             return HandleCreateAudioProcess(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_AUDIO_EFFECT_LIBRARIES):
             return HandleLoadAudioEffectLibraries(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::REQUEST_THREAD_PRIORITY):
-            return HandleRequestThreadPriority(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIO_EFFECT_CHAIN_MANAGER):
             return HandleCreateAudioEffectChainManager(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_OUTPUT_DEVICE_SINK):
@@ -832,6 +904,8 @@ int AudioManagerStub::HandleSecondPartCode(uint32_t code, MessageParcel &data, M
             return HandleUpdateSpatialDeviceType(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_VOLUME):
             return HandleOffloadSetVolume(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_HIBERNATE_STATE):
+            return HandleCheckHibernateState(data, reply);
         default:
             return HandleThirdPartCode(code, data, reply, option);
     }
@@ -883,6 +957,37 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
 int AudioManagerStub::HandleLoadHdiEffectModel(MessageParcel &data, MessageParcel &reply)
 {
     LoadHdiEffectModel();
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetAudioEffectPropertyV3(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "audio enhance property array size invalid");
+    AudioEffectPropertyArrayV3 propertyArray = {};
+    for (int32_t i = 0; i < size; i++) {
+        AudioEffectPropertyV3 prop = {};
+        prop.Unmarshalling(data);
+        propertyArray.property.push_back(prop);
+    }
+    int32_t result = SetAudioEffectProperty(propertyArray);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleGetAudioEffectPropertyV3(MessageParcel &data, MessageParcel &reply)
+{
+    AudioEffectPropertyArrayV3 propertyArray = {};
+    int32_t result = GetAudioEffectProperty(propertyArray);
+    int32_t size = static_cast<int32_t>(propertyArray.property.size());
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "audio enhance property array size invalid");
+    reply.WriteInt32(size);
+    for (int32_t i = 0; i < size; i++) {
+        propertyArray.property[i].Marshalling(reply);
+    }
+    reply.WriteInt32(result);
     return AUDIO_OK;
 }
 
@@ -981,5 +1086,34 @@ int AudioManagerStub::HandleSetNonInterruptMute(MessageParcel &data, MessageParc
     SetNonInterruptMute(sessionId, muteFlag);
     return AUDIO_OK;
 }
+
+int AudioManagerStub::HandleGetStandbyStatus(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sessionId = data.ReadUint32();
+    bool isStandby = false;
+    int64_t enterStandbyTime = 0;
+    int32_t result = GetStandbyStatus(sessionId, isStandby, enterStandbyTime);
+
+    reply.WriteInt32(result);
+    reply.WriteBool(isStandby);
+    reply.WriteInt64(enterStandbyTime);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sessionId = data.ReadUint32();
+    int32_t ret = GenerateSessionId(sessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "generate session id failed");
+    reply.WriteUint32(sessionId);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleNotifyAccountsChanged(MessageParcel &data, MessageParcel &reply)
+{
+    NotifyAccountsChanged();
+    return AUDIO_OK;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

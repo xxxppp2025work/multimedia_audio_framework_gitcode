@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,7 +29,6 @@
 
 #endif
 
-#include "audio_info.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 
@@ -112,8 +111,10 @@ static void OnDeviceStatusChange(const std::string &info, DeviceStatusListener *
 
     DeviceType internalDevice = GetInternalDeviceType(pnpDeviceType);
     AUDIO_DEBUG_LOG("internalDevice = %{public}d, pnpDeviceType = %{public}d", internalDevice, pnpDeviceType);
-    CHECK_AND_RETURN_LOG(internalDevice != DEVICE_TYPE_NONE, "Unsupported device %{public}d", pnpDeviceType);
-
+    if (internalDevice == DEVICE_TYPE_NONE) {
+        AUDIO_DEBUG_LOG("Unsupported device %{public}d", pnpDeviceType);
+        return;
+    }
     bool isConnected = (pnpEventType == PNP_EVENT_DEVICE_ADD) ? true : false;
     AudioStreamInfo streamInfo = {};
     devListener->deviceObserver_.OnDeviceStatusUpdated(internalDevice, isConnected, "", "", streamInfo);
@@ -178,12 +179,14 @@ int32_t DeviceStatusListener::RegisterDeviceStatusListener()
         "[DeviceStatusListener]: Register service status listener failed");
     AUDIO_INFO_LOG("Register service status listener finished");
 
+#ifdef AUDIO_WIRED_DETECT
     audioPnpServer_ = &AudioPnpServer::GetAudioPnpServer();
     pnpDeviceCB_ = std::make_shared<AudioPnpStatusCallback>();
     pnpDeviceCB_->SetDeviceStatusListener(this);
     int32_t cbstatus = audioPnpServer_->RegisterPnpStatusListener(pnpDeviceCB_);
     CHECK_AND_RETURN_RET_LOG(cbstatus == SUCCESS, ERR_OPERATION_FAILED,
         "[DeviceStatusListener]: Register Pnp Status Listener failed");
+#endif
     AUDIO_INFO_LOG("Done");
     return SUCCESS;
 }
@@ -200,6 +203,7 @@ int32_t DeviceStatusListener::UnRegisterDeviceStatusListener()
     hdiServiceManager_ = nullptr;
     listener_ = nullptr;
 
+#ifdef AUDIO_WIRED_DETECT
     int32_t cbstatus = audioPnpServer_->UnRegisterPnpStatusListener();
     if (cbstatus != SUCCESS) {
         AUDIO_ERR_LOG("[DeviceStatusListener]: UnRegister Pnp Status Listener failed");
@@ -207,9 +211,11 @@ int32_t DeviceStatusListener::UnRegisterDeviceStatusListener()
     }
     audioPnpServer_ = nullptr;
     pnpDeviceCB_ = nullptr;
+#endif
     return SUCCESS;
 }
 
+#ifdef AUDIO_WIRED_DETECT
 void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
 {
     CHECK_AND_RETURN_LOG(!info.empty(), "OnPnpDeviceStatusChange invalid info");
@@ -232,12 +238,12 @@ void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
     PnpEventType pnpEventType = PNP_EVENT_UNKNOWN;
 
     AudioDeviceDescriptor desc = {};
- 
+
     if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;DEVICE_TYPE=%d;", &pnpEventType, &pnpDeviceType) < EVENT_NUM_TYPE) {
         AUDIO_ERR_LOG("Failed to scan info string %{public}s", info.c_str());
         return;
     }
- 
+
     auto nameBegin = info.find("EVENT_NAME=");
     auto nameEnd = info.find_first_of(";", nameBegin);
     desc.deviceName_ = info.substr(nameBegin + std::strlen("EVENT_NAME="),
@@ -249,7 +255,10 @@ void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
         addressEnd - addressBegin - std::strlen("DEVICE_ADDRESS="));
 
     desc.deviceType_ = GetInternalDeviceType(pnpDeviceType);
-    CHECK_AND_RETURN_LOG(desc.deviceType_ != DEVICE_TYPE_NONE, "Unsupported device %{public}d", pnpDeviceType);
+    if (desc.deviceType_ == DEVICE_TYPE_NONE) {
+        AUDIO_DEBUG_LOG("Unsupported device %{public}d", pnpDeviceType);
+        return;
+    }
     bool isConnected = (pnpEventType == PNP_EVENT_DEVICE_ADD) ? true : false;
 
     if (desc.deviceType_ == DEVICE_TYPE_DP) {
@@ -259,6 +268,7 @@ void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
         desc.deviceType_, isConnected, desc.deviceName_.c_str());
     deviceObserver_.OnPnpDeviceStatusUpdated(desc, isConnected);
 }
+#endif
 
 int32_t DeviceStatusListener::SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object)
 {
@@ -288,14 +298,17 @@ void DeviceStatusListener::OnMicrophoneBlocked(const std::string &info)
 
     PnpDeviceType pnpDeviceType = PNP_DEVICE_UNKNOWN;
     PnpEventType pnpEventType = PNP_EVENT_UNKNOWN;
- 
+
     if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;DEVICE_TYPE=%d;", &pnpEventType, &pnpDeviceType) < EVENT_NUM_TYPE) {
         AUDIO_ERR_LOG("Failed to scan info string %{public}s", info.c_str());
         return;
     }
- 
+
     DeviceType micBlockedDeviceType = GetInternalDeviceType(pnpDeviceType);
-    CHECK_AND_RETURN_LOG(micBlockedDeviceType != DEVICE_TYPE_NONE, "Unsupported device %{public}d", pnpDeviceType);
+    if (micBlockedDeviceType == DEVICE_TYPE_NONE) {
+        AUDIO_DEBUG_LOG("Unsupported device %{public}d", pnpDeviceType);
+        return;
+    }
 
     DeviceBlockStatus status = DEVICE_UNBLOCKED;
     if (pnpEventType == PNP_EVENT_MIC_BLOCKED) {
@@ -305,6 +318,7 @@ void DeviceStatusListener::OnMicrophoneBlocked(const std::string &info)
     deviceObserver_.OnMicrophoneBlockedUpdate(micBlockedDeviceType, status);
 }
 
+#ifdef AUDIO_WIRED_DETECT
 AudioPnpStatusCallback::AudioPnpStatusCallback()
 {
     AUDIO_INFO_LOG("ctor");
@@ -326,5 +340,6 @@ void AudioPnpStatusCallback::OnMicrophoneBlocked(const std::string &info)
 {
     listener_->OnMicrophoneBlocked(info);
 }
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

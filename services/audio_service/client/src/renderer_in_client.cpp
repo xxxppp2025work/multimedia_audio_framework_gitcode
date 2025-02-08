@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -41,7 +41,6 @@
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
 #include "audio_system_manager.h"
-#include "audio_utils.h"
 #include "futex_tool.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
@@ -52,9 +51,10 @@
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
 #include "policy_handler.h"
-#include "audio_log_utils.h"
+#include "volume_tools.h"
 
 #include "media_monitor_manager.h"
+#include "xcollie/watchdog.h"
 
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
@@ -71,10 +71,11 @@ static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offlo
 static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 1500; // 1500ms
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const uint32_t WAIT_FOR_NEXT_CB = 5000; // 5ms
-static const int32_t HALF_FACTOR = 2;
 static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MEDIA_SERVICE_UID = 1013;
 static const int32_t MAX_WRITE_INTERVAL_MS = 40;
+constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
+constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -381,6 +382,31 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     return result;
 }
 
+void RendererRemoveWatchdog(const std::string &message, const std::int32_t sessionId)
+{
+    std::string watchDogMessage = message;
+    watchDogMessage += std::to_string(sessionId);
+    HiviewDFX::Watchdog::GetInstance().RemovePeriodicalTask(watchDogMessage);
+    AUDIO_INFO_LOG("%{public}s end %{public}d", watchDogMessage.c_str(), sessionId);
+}
+
+void RendererInClientInner::WatchingWriteCallbackFunc()
+{
+    writeCallbackFuncThreadStatusFlag_ = true;
+    auto taskFunc = [this]() {
+        if (writeCallbackFuncThreadStatusFlag_) {
+            AUDIO_DEBUG_LOG("Set writeCallbackFuncThreadStatusFlag_ to false");
+            writeCallbackFuncThreadStatusFlag_ = false;
+        } else {
+            AUDIO_INFO_LOG("watchdog happened");
+        }
+    };
+    std::string watchDogMessage = "WatchingWriteCallbackFunc" + std::to_string(sessionId_);
+    AUDIO_INFO_LOG("watchdog start %{public}d", sessionId_);
+    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask(watchDogMessage, taskFunc,
+        WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
+}
+
 void RendererInClientInner::WriteCallbackFunc()
 {
     AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", sessionId_);
@@ -389,10 +415,13 @@ void RendererInClientInner::WriteCallbackFunc()
     // Modify thread priority is not need as first call write will do these work.
     cbThreadCv_.notify_one();
 
+    // add watchdog
+    WatchingWriteCallbackFunc();
     // start loop
     while (!cbThreadReleased_) {
         Trace traceLoop("RendererInClientInner::WriteCallbackFunc");
         if (!WaitForRunning()) {
+            writeCallbackFuncThreadStatusFlag_ = true;
             continue;
         }
         if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
@@ -418,7 +447,10 @@ void RendererInClientInner::WriteCallbackFunc()
                 break;
             }
         }
-        if (state_ != RUNNING) { continue; }
+        if (state_ != RUNNING) {
+            writeCallbackFuncThreadStatusFlag_ = true;
+            continue;
+        }
         // call client write
         std::unique_lock<std::mutex> lockCb(writeCbMutex_);
         if (writeCb_ != nullptr) {
@@ -430,8 +462,10 @@ void RendererInClientInner::WriteCallbackFunc()
         Trace traceQueuePush("RendererInClientInner::QueueWaitPush");
         std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
         cbBufferQueue_.WaitNotEmptyFor(std::chrono::milliseconds(WRITE_BUFFER_TIMEOUT_IN_MS));
+        writeCallbackFuncThreadStatusFlag_ = true;
     }
     AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", sessionId_);
+    RendererRemoveWatchdog("WatchingWriteCallbackFunc", sessionId_);
 }
 
 int32_t RendererInClientInner::FlushRingCache()
@@ -527,6 +561,11 @@ int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSi
 
 void RendererInClientInner::FirstFrameProcess()
 {
+    if (ipcStream_ == nullptr) {
+        AUDIO_ERR_LOG("Error: ipcStream_ is not initialized!");
+        return;
+    }
+
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_.exchange(false)) {
         ipcStream_->RegisterThreadPriority(gettid(),
@@ -590,7 +629,6 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     Trace trace(traceTag_+ " WriteSize:" + std::to_string(bufferSize));
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
         "invalid size is %{public}zu", bufferSize);
-    Trace::CountVolume(traceTag_, *buffer);
 
     if (gServerProxy_ == nullptr && getuid() == MEDIA_SERVICE_UID) {
         uint32_t samplingRate = clientConfig_.streamInfo.samplingRate;
@@ -608,7 +646,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         AUDIO_ERR_LOG("The stream status is null!");
         return ERR_INVALID_PARAM;
     }
-    
+
     if (clientBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY) {
         Trace trace2(traceTag_+ " call start to exit stand-by");
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");
@@ -636,13 +674,6 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         audioBlend_.Process(buffer, bufferSize);
     }
 
-    // refresh speed cache, fix latencyposition
-    if (lastSpeed_ != speed_ && ipcStream_ != nullptr) {
-        Timestamp timestamp;
-        GetAudioPosition(timestamp, Timestamp::Timestampbase::MONOTONIC);
-        lastSpeed_ = speed_;
-    }
-
     return WriteRingCache(buffer, bufferSize, speedCached, oriBufferSize);
 }
 
@@ -661,7 +692,6 @@ void RendererInClientInner::ResetFramePosition()
     lastReadIdx_ = 0;
     lastLatency_ = latency;
     lastLatencyPosition_ = latency * speed_;
-    lastSpeed_ = speed_;
 }
 
 void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
@@ -669,7 +699,7 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
     if (silentModeAndMixWithOthers_) {
         return;
     }
-    if (buffer[0] == 0) {
+    if (CheckBuffer(buffer, bufferSize)) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         }
@@ -686,6 +716,28 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
     } else if (buffer[0] != 0 && startMuteTime_ != 0) {
         startMuteTime_ = 0;
     }
+}
+
+bool RendererInClientInner::CheckBuffer(uint8_t *buffer, size_t bufferSize)
+{
+    bool isInvalid = false;
+    uint8_t ui8Data = 0;
+    uint16_t ui16Data = 0;
+    switch (clientConfig_.streamInfo.format) {
+        case SAMPLE_U8:
+            CHECK_AND_RETURN_RET_LOG(bufferSize > 0, false, "buffer size is too small");
+            ui8Data = *buffer;
+            isInvalid = ui8Data == 0;
+            break;
+        case SAMPLE_S16LE:
+            CHECK_AND_RETURN_RET_LOG(bufferSize > 1, false, "buffer size is too small");
+            ui16Data = *(reinterpret_cast<const uint16_t*>(buffer));
+            isInvalid = ui16Data == 0;
+            break;
+        default:
+            break;
+    }
+    return isInvalid;
 }
 
 int32_t RendererInClientInner::DrainIncompleteFrame(OptResult result, bool stopFlag,
@@ -755,29 +807,17 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
         clientVolume_ = volumeRamp_.GetRampVolume();
         AUDIO_INFO_LOG("clientVolume_:%{public}f", clientVolume_);
         Trace traceVolume("RendererInClientInner::WriteCacheData:Ramp:clientVolume_:" + std::to_string(clientVolume_));
-        CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
-        clientBuffer_->SetStreamVolume(clientVolume_);
+        SetInnerVolume(clientVolume_);
     }
 
     DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
-    DfxOperation(desc, clientConfig_.streamInfo.format, clientConfig_.streamInfo.channels);
+    VolumeTools::DfxOperation(desc, clientConfig_.streamInfo, traceTag_, volumeDataCount_);
     clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "WriteCacheData failed, null ipcStream_.");
     ipcStream_->UpdatePosition(); // notiify server update position
     HandleRendererPositionChanges(desc.bufLength);
     return SUCCESS;
-}
-
-void RendererInClientInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 int32_t RendererInClientInner::RegisterSpatializationStateEventListener()
@@ -829,6 +869,14 @@ bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return notifiedOperation_ == DRAIN_STREAM; // will be false when got notified.
     });
+
+    // clear cbBufferQueue
+    if (renderMode_ == RENDER_MODE_CALLBACK && stopFlag) {
+        cbBufferQueue_.Clear();
+        if (memset_s(cbBuffer_.get(), cbBufferSize_, 0, cbBufferSize_) != EOK) {
+            AUDIO_ERR_LOG("memset_s buffer failed");
+        };
+    }
 
     if (notifiedOperation_ != DRAIN_STREAM || notifiedResult_ != SUCCESS) {
         AUDIO_ERR_LOG("Drain failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,6 +26,7 @@ namespace AudioStandard {
     constexpr int32_t DEFAULT_STREAM_ID = 10;
     const uint32_t SPAN_SIZE_IN_FRAME = 1000;
     const uint32_t TOTAL_SIZE_IN_FRAME = 1000;
+    const int32_t INTELL_VOICE_SERVICR_UID = 1042;
 class AudioProcessInServerUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -94,10 +95,10 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_001, TestSize.Level1)
     auto ret = audioProcessInServer->GetSessionId(sessionIdRet);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(audioProcessInServer->GetSessionId(), sessionIdRet);
-    ret = audioProcessInServer->GetMuteFlag();
+    ret = audioProcessInServer->GetMuteState();
     EXPECT_EQ(ret, false);
     audioProcessInServer->SetNonInterruptMute(muteFlagRet);
-    EXPECT_EQ(audioProcessInServer->GetMuteFlag(), true);
+    EXPECT_EQ(audioProcessInServer->GetMuteState(), true);
 }
 
 /**

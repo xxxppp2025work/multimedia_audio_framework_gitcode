@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,7 +21,6 @@
 #include "event_runner.h"
 
 #include "audio_policy_log.h"
-#include "audio_info.h"
 #include "audio_system_manager.h"
 #include "audio_policy_client.h"
 
@@ -55,12 +54,14 @@ public:
 
     struct StreamMuteStatusEvent {
         StreamMuteStatusEvent() = delete;
-        StreamMuteStatusEvent(const AudioStreamType &streamType, const bool &mute, const StreamUsage &streamUsage)
-            : streamType_(streamType), mute_(mute), streamUsage_(streamUsage)
+        StreamMuteStatusEvent(const AudioStreamType &streamType, const bool &mute, const StreamUsage &streamUsage,
+            const DeviceType &deviceType)
+            : streamType_(streamType), mute_(mute), streamUsage_(streamUsage), deviceType_(deviceType)
         {}
         AudioStreamType streamType_;
         bool mute_;
         StreamUsage streamUsage_;
+        DeviceType deviceType_;
     };
 
     struct RingerModeEvent {
@@ -74,7 +75,7 @@ public:
     bool SendKvDataUpdate(const bool &isFirstBoot);
     bool SendSaveVolume(const DeviceType &deviceType, const AudioStreamType &streamType, const int32_t &volumeLevel);
     bool SendStreamMuteStatusUpdate(const AudioStreamType &streamType, const bool &mute,
-        const StreamUsage &streamUsage);
+        const StreamUsage &streamUsage, const DeviceType &deviceType = DEVICE_TYPE_NONE);
     bool SendRingerModeUpdate(const AudioRingerMode &ringerMode);
 
 protected:

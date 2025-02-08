@@ -52,9 +52,11 @@ public:
 
     virtual float GetSingleStreamVolume(int32_t streamId) = 0;
 
-    virtual int32_t SetStreamMuteLegacy(AudioVolumeType volumeType, bool mute) = 0;
+    virtual int32_t SetStreamMuteLegacy(AudioVolumeType volumeType, bool mute,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE) = 0;
 
-    virtual int32_t SetStreamMute(AudioVolumeType volumeType, bool mute) = 0;
+    virtual int32_t SetStreamMute(AudioVolumeType volumeType, bool mute,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE) = 0;
 
     virtual bool GetStreamMute(AudioVolumeType volumeType) = 0;
 
@@ -72,9 +74,6 @@ public:
 
     virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) = 0;
 
-    virtual int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
-        uint32_t sessionId) = 0;
-
     virtual bool IsDeviceActive(InternalDeviceType deviceType) = 0;
 
     virtual DeviceType GetActiveOutputDevice() = 0;
@@ -82,9 +81,9 @@ public:
     virtual DeviceType GetActiveInputDevice() = 0;
 
 #ifdef FEATURE_DTMF_TONE
-    virtual std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype) = 0;
+    virtual std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype, const std::string &countryCode) = 0;
 
-    virtual std::vector<int32_t> GetSupportedTones() = 0;
+    virtual std::vector<int32_t> GetSupportedTones(const std::string &countryCode) = 0;
 #endif
 
     virtual int32_t SetRingerModeLegacy(AudioRingerMode ringMode) = 0;
@@ -121,7 +120,7 @@ public:
     virtual int32_t UnsetAudioInterruptCallback(const uint32_t sessionID,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
-    virtual int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt,
+    virtual int32_t ActivateAudioInterrupt(AudioInterrupt &audioInterrupt,
         const int32_t zoneID = 0 /* default value: 0 -- local device */,
         const bool isUpdatedAudioStrategy = false /* default value: false -- is update audio strategy */) = 0;
 
@@ -146,17 +145,7 @@ public:
     virtual int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
-    virtual bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        SourceType sourceType = SOURCE_TYPE_MIC) = 0;
-
-    virtual bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        AudioPermissionState state) = 0;
-
     virtual int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) = 0;
-
-    virtual int32_t GetAudioLatencyFromXml() = 0;
-
-    virtual uint32_t GetSinkLatencyFromXml() = 0;
 
     virtual int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo) = 0;
 
@@ -187,8 +176,6 @@ public:
     virtual int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) = 0;
 
     virtual int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) = 0;
-
-    virtual bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) = 0;
 
     virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo) = 0;
@@ -335,6 +322,9 @@ public:
 
     virtual int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason) = 0;
 
+    virtual int32_t SetPreferredDevice(const PreferredType preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &desc) = 0;
+
     virtual int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetAudioDeviceAnahsCallback() = 0;
@@ -355,8 +345,13 @@ public:
 
     virtual int32_t SetVoiceRingtoneMute(bool isMute) = 0;
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning) = 0;
+    virtual void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) = 0;
+
+    virtual int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) = 0;
+
+    virtual int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray) = 0;
+
+    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) = 0;
 
     virtual int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray) = 0;
 
@@ -370,6 +365,7 @@ public:
 
     virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) = 0;
 
+    virtual int32_t SetVirtualCall(const bool isVirtual) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

@@ -42,6 +42,8 @@ const uint32_t LIMIT_TWO = 30;
 const uint32_t LIMIT_THREE = 60;
 const uint32_t LIMIT_FOUR = static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX);
 bool g_hasServerInit = false;
+const uint8_t TESTSIZE = 6;
+typedef void (*TestPtr)(const uint8_t *, size_t);
 
 AudioPolicyServer* GetServerPtr()
 {
@@ -117,27 +119,26 @@ void AudioPolicyServiceDumpTest(const uint8_t *rawData, size_t size)
     size = size - OFFSET;
 
     std::string dumpStr = "";
-    GetServerPtr()->audioPolicyService_.DevicesInfoDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.AudioModeDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.AudioPolicyParserDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.XmlParsedDataMapDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.StreamVolumesDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.DevicesInfoDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.AudioModeDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.AudioPolicyParserDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.XmlParsedDataMapDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.StreamVolumesDump(dumpStr);
     std::map<DeviceVolumeType, std::shared_ptr<DeviceVolumeInfo>> deviceVolumeInfoMap;
-    GetServerPtr()->audioPolicyService_.DeviceVolumeInfosDump(dumpStr, deviceVolumeInfoMap);
-    GetServerPtr()->audioPolicyService_.AudioStreamDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetVolumeConfigDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetGroupInfoDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetCallStatusDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetRingerModeDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetMicrophoneDescriptorsDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetCapturerStreamDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetSafeVolumeDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetOffloadStatusDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.EffectManagerInfoDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.MicrophoneMuteInfoDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetVolumeConfigDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetVolumeConfigDump(dumpStr);
-    GetServerPtr()->audioPolicyService_.GetVolumeConfigDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.DeviceVolumeInfosDump(dumpStr, deviceVolumeInfoMap);
+    GetServerPtr()->audioPolicyDump_.AudioStreamDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetVolumeConfigDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetGroupInfoDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetCallStatusDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetRingerModeDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetMicrophoneDescriptorsDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetCapturerStreamDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetOffloadStatusDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.EffectManagerInfoDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.MicrophoneMuteInfoDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetVolumeConfigDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetVolumeConfigDump(dumpStr);
+    GetServerPtr()->audioPolicyDump_.GetVolumeConfigDump(dumpStr);
 
     GetServerPtr()->interruptService_->AudioInterruptZoneDump(dumpStr);
 }
@@ -155,7 +156,7 @@ void AudioPolicyServiceDeviceTest(const uint8_t *rawData, size_t size)
 
     GetServerPtr()->audioPolicyService_.IsA2dpOffloadConnected();
     int32_t state = (num % MOD_NUM_TWO) + CONNECTING_NUMBER; // DATA_LINK_CONNECTING = 10, DATA_LINK_CONNECTED = 11;
-    GetServerPtr()->audioPolicyService_.UpdateSessionConnectionState(num, state);
+    GetServerPtr()->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(num, state);
 
     std::string macAddress = "11:22:33:44:55:66";
     GetServerPtr()->audioPolicyService_.SetCallDeviceActive(deviceType, isConnected, macAddress);
@@ -318,22 +319,27 @@ void AudioDeviceConnectTest(const uint8_t *rawData, size_t size)
 } // namespace AudioStandard
 } // namesapce OHOS
 
-extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
-{
-    OHOS::AudioStandard::AudioFuzzTestGetPermission();
-    return 0;
-}
+OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
+    OHOS::AudioStandard::AudioPolicyServiceDumpTest,
+    OHOS::AudioStandard::AudioPolicyServiceDeviceTest,
+    OHOS::AudioStandard::AudioPolicyServiceAccountTest,
+    OHOS::AudioStandard::AudioPolicyServiceSafeVolumeTest,
+    OHOS::AudioStandard::AudioPolicyServiceInterfaceTest,
+    OHOS::AudioStandard::AudioDeviceConnectTest
+};
 
-/* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioPolicyServiceDumpTest(data, size);
-    OHOS::AudioStandard::AudioPolicyServiceDeviceTest(data, size);
-    OHOS::AudioStandard::AudioPolicyServiceAccountTest(data, size);
-    OHOS::AudioStandard::AudioPolicyServiceSafeVolumeTest(data, size);
-    OHOS::AudioStandard::AudioPolicyServiceInterfaceTest(data, size);
-    OHOS::AudioStandard::AudioDeviceConnectTest(data, size);
-
+    if (data == nullptr || size <= 1) {
+        return 0;
+    }
+    uint8_t firstByte = *data % OHOS::AudioStandard::TESTSIZE;
+    if (firstByte >= OHOS::AudioStandard::TESTSIZE) {
+        return 0;
+    }
+    data = data + 1;
+    size = size - 1;
+    g_testPtrs[firstByte](data, size);
     return 0;
 }

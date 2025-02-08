@@ -90,9 +90,10 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
         std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
-        CHECK_AND_RETURN_RET_LOG(!value.empty(), 0,
-            "[AudioGroupManger]: invalid value %{public}s", value.c_str());
-        return std::stoi(value);
+        int32_t convertValue = 0;
+        CHECK_AND_RETURN_RET_LOG(StringConverter(value, convertValue), 0,
+            "[AudioGroupManger]: convert invalid value: %{public}s", value.c_str());
+        return convertValue;
     }
 
     switch (volumeType) {
@@ -130,9 +131,10 @@ int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
         std::string condition = "EVENT_TYPE=3;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE=" +
             std::to_string(volumeType) + ";";
         std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
-        CHECK_AND_RETURN_RET_LOG(!value.empty(), 0,
-            "[AudioGroupManger]: invalid value %{public}s", value.c_str());
-        return std::stoi(value);
+        int32_t convertValue = 0;
+        CHECK_AND_RETURN_RET_LOG(StringConverter(value, convertValue), 0,
+            "[AudioGroupManger]: convert invalid value: %{public}s", value.c_str());
+        return convertValue;
     }
 
     if (volumeType == STREAM_ALL) {
@@ -157,9 +159,10 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
         std::string condition = "EVENT_TYPE=2;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE" +
             std::to_string(volumeType) + ";";
         std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
-        CHECK_AND_RETURN_RET_LOG(!value.empty(), 0,
-            "[AudioGroupManger]: invalid value %{public}s", value.c_str());
-        return std::stoi(value);
+        int32_t convertValue = 0;
+        CHECK_AND_RETURN_RET_LOG(StringConverter(value, convertValue), 0,
+            "[AudioGroupManger]: convert invalid value: %{public}s", value.c_str());
+        return convertValue;
     }
 
     if (volumeType == STREAM_ALL) {
@@ -176,7 +179,7 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
     return AudioPolicyManager::GetInstance().GetMinVolumeLevel(volumeType);
 }
 
-int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
+int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType)
 {
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string conditon = "EVENT_TYPE=4;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
@@ -184,6 +187,10 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
         std::string value = mute ? "1" : "0";
         g_sProxy->SetAudioParameter(netWorkId_, AudioParamKey::VOLUME, conditon, value);
         return SUCCESS;
+    }
+
+    if (deviceType != DEVICE_TYPE_NONE) {
+        AUDIO_INFO_LOG("SetMute: deviceType [%{public}d], mute [%{public}d]", deviceType, mute);
     }
 
     AUDIO_INFO_LOG("SetStreamMute: volumeType [%{public}d], mute [%{public}d]", volumeType, mute);
@@ -206,7 +213,7 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
     }
 
     /* Call Audio Policy SetStreamMute */
-    return AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, false);
+    return AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, false, deviceType);
 }
 
 int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute)

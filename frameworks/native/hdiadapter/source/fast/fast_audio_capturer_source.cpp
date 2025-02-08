@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,7 +26,6 @@
 
 #include "audio_errors.h"
 #include "audio_hdi_log.h"
-#include "audio_utils.h"
 
 #include "v4_0/iaudio_manager.h"
 #include "fast_audio_capturer_source.h"
@@ -88,7 +87,6 @@ public:
     ~FastAudioCapturerSourceInner() override;
 private:
     static constexpr int32_t INVALID_FD = -1;
-    static constexpr int32_t HALF_FACTOR = 2;
     static constexpr uint32_t MAX_AUDIO_ADAPTER_NUM = 5;
     static constexpr float MAX_VOLUME_LEVEL = 15.0f;
     static constexpr int64_t SECOND_TO_NANOSECOND = 1000000000;
@@ -105,6 +103,7 @@ private:
     bool capturerInited_ = false;
     bool started_ = false;
     bool paused_ = false;
+    std::mutex statusMutex_;
     std::atomic<bool> isCheckPositionSuccess_ = true;
 
     uint32_t captureId_ = 0;
@@ -281,6 +280,7 @@ static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceTy
         case SOURCE_TYPE_MIC:
         case SOURCE_TYPE_PLAYBACK_CAPTURE:
         case SOURCE_TYPE_ULTRASONIC:
+        case SOURCE_TYPE_UNPROCESSED:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
             break;
         case SOURCE_TYPE_WAKEUP:
@@ -534,6 +534,7 @@ int32_t FastAudioCapturerSourceInner::CheckPositionTime()
 
 int32_t FastAudioCapturerSourceInner::Start(void)
 {
+    std::lock_guard<std::mutex> lock(statusMutex_);
     AUDIO_INFO_LOG("Start.");
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
@@ -693,11 +694,11 @@ std::string FastAudioCapturerSourceInner::GetAudioParameter(const AudioParamKey 
     AUDIO_INFO_LOG("GetAudioParameter, key: %{public}d, condition: %{public}s",
         key, condition.c_str());
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
-    char value[PARAM_VALUE_LENTH];
+    char value[DumpFileUtil::PARAM_VALUE_LENTH];
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, "",
         "GetAudioParameter failed, audioAdapter_ is null");
     int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(),
-        value, PARAM_VALUE_LENTH);
+        value, DumpFileUtil::PARAM_VALUE_LENTH);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "",
         "FRSource GetAudioParameter failed, error code:%{public}d", ret);
     return value;
@@ -731,6 +732,7 @@ void FastAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallbac
 
 int32_t FastAudioCapturerSourceInner::Stop(void)
 {
+    std::lock_guard<std::mutex> lock(statusMutex_);
     AUDIO_INFO_LOG("Enter, is check position success %{public}d", isCheckPositionSuccess_.load());
 #ifdef FEATURE_POWER_MANAGER
     if (runningLockManager_ != nullptr) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,7 +22,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static constexpr int32_t MAX_SOURCE_TYPE_NUM = 20;
+static constexpr int32_t AUDIO_INTERRUPT_INFO_SIZE_LIMIT = 65535;
 
 enum ActionTarget {
     CURRENT = 0,
@@ -36,6 +36,7 @@ enum AudioFocuState {
     PAUSE = 2,
     STOP = 3,
     PLACEHOLDER = 4,
+    PAUSEDBYREMOTE = 5,
 };
 
 enum InterruptMode {
@@ -165,10 +166,11 @@ struct AudioFocusType {
 
 class AudioInterrupt {
 public:
+    static constexpr int32_t MAX_SOURCE_TYPE_NUM = 20;
     StreamUsage streamUsage = STREAM_USAGE_INVALID;
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     AudioFocusType audioFocusType;
-    uint32_t sessionId = 0;
+    uint32_t streamId = 0;
     bool pauseWhenDucked = false;
     int32_t pid { -1 };
     int32_t uid { -1 };
@@ -179,8 +181,8 @@ public:
 
     AudioInterrupt() = default;
     AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,
-        uint32_t sessionId_) : streamUsage(streamUsage_), contentType(contentType_), audioFocusType(audioFocusType_),
-        sessionId(sessionId_) {}
+        uint32_t streamId_) : streamUsage(streamUsage_), contentType(contentType_), audioFocusType(audioFocusType_),
+        streamId(streamId_) {}
     ~AudioInterrupt() = default;
     static bool Marshalling(Parcel &parcel, const AudioInterrupt &interrupt)
     {
@@ -189,7 +191,7 @@ public:
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.audioFocusType.streamType));
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.audioFocusType.sourceType));
         res = res && parcel.WriteBool(interrupt.audioFocusType.isPlay);
-        res = res && parcel.WriteUint32(interrupt.sessionId);
+        res = res && parcel.WriteUint32(interrupt.streamId);
         res = res && parcel.WriteBool(interrupt.pauseWhenDucked);
         res = res && parcel.WriteInt32(interrupt.pid);
         res = res && parcel.WriteInt32(interrupt.uid);
@@ -210,7 +212,7 @@ public:
         interrupt.audioFocusType.streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
         interrupt.audioFocusType.sourceType = static_cast<SourceType>(parcel.ReadInt32());
         interrupt.audioFocusType.isPlay = parcel.ReadBool();
-        interrupt.sessionId = parcel.ReadUint32();
+        interrupt.streamId = parcel.ReadUint32();
         interrupt.pauseWhenDucked = parcel.ReadBool();
         interrupt.pid = parcel.ReadInt32();
         interrupt.uid = parcel.ReadInt32();

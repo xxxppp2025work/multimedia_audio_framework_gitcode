@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,15 +36,14 @@
 
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
-#include "audio_log_utils.h"
+#include "volume_tools.h"
 #include "audio_schedule.h"
 #include "audio_utils.h"
 #include "parameters.h"
 #include "media_monitor_manager.h"
 #include "audio_enhance_chain_manager.h"
 #include "hdi_utils_ringbuffer.h"
-
-using namespace std;
+#include "audio_dump_pcm.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -206,7 +205,6 @@ private:
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
     int32_t SetAudioRouteInfoForEnhanceChain(const DeviceType &inputDevice, const std::string &deviceName = "");
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
     int32_t SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin, const std::string &deviceName = "");
     int32_t DoSetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin, const std::string &deviceName = "");
 
@@ -215,9 +213,13 @@ private:
     int32_t ProcessCaptureBlockingEc(FrameDesc *fdescEc, uint64_t &replyBytesEc);
     int32_t StartNonblockingCapture();
     int32_t StopNonblockingCapture();
+    void DumpCapturerSourceData(char *frame, uint64_t &replyBytes);
 
     int32_t DoStop();
     int32_t StartCapture();
+
+    bool GetMuteState();
+    void SetMuteState(bool isMute);
 
     CaptureAttr *hdiAttr_ = nullptr;
     IAudioSourceAttr attr_ = {};
@@ -259,6 +261,7 @@ private:
     std::unique_ptr<ICapturerStateCallback> audioCapturerSourceCallback_ = nullptr;
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
+    std::mutex muteStateMutex_;
     bool muteState_ = false;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_INVALID;
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
@@ -368,7 +371,7 @@ private:
                 size_ -= replyBytes;
                 head_ = (head_ + replyBytes) % sizeMax_;
             } else {
-                uint64_t copySize = min((sizeMax_ - head_), replyBytes);
+                uint64_t copySize = std::min((sizeMax_ - head_), replyBytes);
                 if (copySize != 0) {
                     MemcpysAndCheck(frame, replyBytes, buffer_.get() + head_, copySize);
                     headNum_ += copySize;
@@ -418,7 +421,7 @@ private:
             if (tail < head_) {
                 MemcpysAndCheck((buffer_.get() + tail), bufferBytes, frame, bufferBytes);
             } else {
-                uint64_t copySize = min(sizeMax_ - tail, bufferBytes);
+                uint64_t copySize = std::min(sizeMax_ - tail, bufferBytes);
                 MemcpysAndCheck((buffer_.get() + tail), sizeMax_ - tail, frame, copySize);
 
                 if (copySize < bufferBytes) {
@@ -493,6 +496,7 @@ AudioCapturerSource *AudioCapturerSource::GetInstance(const std::string &halName
         case SourceType::SOURCE_TYPE_MIC:
         case SourceType::SOURCE_TYPE_VOICE_CALL:
         case SourceType::SOURCE_TYPE_CAMCORDER:
+        case SourceType::SOURCE_TYPE_UNPROCESSED:
             return GetMicInstance();
         case SourceType::SOURCE_TYPE_WAKEUP:
             if (!strcmp(sourceName, "Built_in_wakeup_mirror")) {
@@ -521,6 +525,7 @@ static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceTy
         case SOURCE_TYPE_WAKEUP:
             hdiAudioInputType = AUDIO_INPUT_SPEECH_WAKEUP_TYPE;
             break;
+        case SOURCE_TYPE_VOICE_TRANSCRIPTION:
         case SOURCE_TYPE_VOICE_COMMUNICATION:
             hdiAudioInputType = AUDIO_INPUT_VOICE_COMMUNICATION_TYPE;
             break;
@@ -538,6 +543,9 @@ static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceTy
             break;
         case SOURCE_TYPE_MIC_REF:
             hdiAudioInputType = AUDIO_INPUT_NOISE_REDUCTION_TYPE;
+            break;
+        case SOURCE_TYPE_UNPROCESSED:
+            hdiAudioInputType = AUDIO_INPUT_RAW_TYPE;
             break;
         default:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
@@ -758,6 +766,17 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     return 0;
 }
 
+static bool IsFormalSourceType(int32_t sourceType)
+{
+    if (sourceType == SOURCE_TYPE_EC) {
+        return false;
+    }
+    if (sourceType == SOURCE_TYPE_MIC_REF) {
+        return false;
+    }
+    return true;
+}
+
 int32_t AudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 {
     std::lock_guard<std::mutex> statusLock(statusMutex_);
@@ -771,7 +790,9 @@ int32_t AudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 
     sourceInited_ = true;
 
-    SetMute(muteState_);
+    if (GetMuteState() && IsFormalSourceType(attr_.sourceType)) {
+        SetMute(true);
+    }
 
     return SUCCESS;
 }
@@ -834,13 +855,8 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_READ_FAILED, "Capture Frame Fail");
     CheckLatencySignal(reinterpret_cast<uint8_t*>(frame), replyBytes);
 
-    DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
-    BufferDesc tmpBuffer = {reinterpret_cast<uint8_t*>(frame), replyBytes, replyBytes};
-    DfxOperation(tmpBuffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            static_cast<void*>(frame), replyBytes);
-    }
+    DumpCapturerSourceData(frame, replyBytes);
+
     CheckUpdateState(frame, requestBytes);
 
     int64_t stampThreshold = 50; // 50ms
@@ -849,17 +865,6 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
         AUDIO_WARNING_LOG("CaptureFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", requestBytes, stamp);
     }
     return SUCCESS;
-}
-
-void AudioCapturerSourceInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 int32_t AudioCapturerSourceInner::ProcessCaptureBlockingEc(FrameDesc *fdescEc, uint64_t &replyBytesEc)
@@ -879,8 +884,7 @@ int32_t AudioCapturerSourceInner::ProcessCaptureBlockingEc(FrameDesc *fdescEc, u
     return SUCCESS;
 }
 
-int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
-    FrameDesc *fdesc, uint64_t &replyBytes,
+int32_t AudioCapturerSourceInner::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &replyBytes,
     FrameDesc *fdescEc, uint64_t &replyBytesEc)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "Audio capture Handle is nullptr!");
@@ -898,9 +902,7 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
         return ProcessCaptureBlockingEc(fdescEc, replyBytesEc);
     }
 
-    struct AudioFrameLen frameLen = {};
-    frameLen.frameLen = fdesc->frameLen;
-    frameLen.frameEcLen = fdescEc->frameLen;
+    struct AudioFrameLen frameLen = {fdesc->frameLen, fdescEc->frameLen};
     struct AudioCaptureFrameInfo frameInfo = {};
 
     int32_t ret = audioCapture_->CaptureFrameEc(audioCapture_, &frameLen, &frameInfo);
@@ -912,10 +914,15 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
 
     // same adapter reply length is mic + ec, different adapter is only ec, so we can't use reply bytes to copy
     if (attr_.sourceType != SOURCE_TYPE_EC && frameInfo.frame != nullptr) {
+        if (frameInfo.replyBytes - fdescEc->frameLen < fdesc->frameLen) {
+            replyBytes = 0;
+            return ERR_INVALID_READ;
+        }
         if (memcpy_s(fdesc->frame, fdesc->frameLen, frameInfo.frame, fdesc->frameLen) != EOK) {
             AUDIO_ERR_LOG("memcpy error");
         } else {
             replyBytes = (attr_.sourceType == SOURCE_TYPE_EC) ? 0 : fdesc->frameLen;
+            DumpCapturerSourceData(fdesc->frame, replyBytes);
         }
     }
     if (frameInfo.frameEc != nullptr) {
@@ -930,6 +937,20 @@ int32_t AudioCapturerSourceInner::CaptureFrameWithEc(
     AudioCaptureFrameInfoFree(&frameInfo, false);
 
     return SUCCESS;
+}
+
+void AudioCapturerSourceInner::DumpCapturerSourceData(char *frame, uint64_t &replyBytes)
+{
+    BufferDesc tmpBuffer = {reinterpret_cast<uint8_t*>(frame), replyBytes, replyBytes};
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate),
+        AudioEncodingType::ENCODING_PCM, static_cast<AudioSampleFormat>(attr_.format),
+        static_cast<AudioChannel>(attr_.channel));
+    VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
+    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
+        DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+            static_cast<void*>(frame), replyBytes);
+    }
 }
 
 void AudioCapturerSourceInner::CaptureFrameEcInternal(std::vector<uint8_t> &ecData)
@@ -957,7 +978,7 @@ void AudioCapturerSourceInner::CaptureThreadLoop()
     }
 
     uint32_t captureDataLen = FRAME_TIME_LEN_MS * attr_.sampleRate / MILLISECONDS_PER_SECOND_MS *
-        GetByteSizeByFormat(attr_.format) * attr_.channel;
+        static_cast<uint32_t>(GetByteSizeByFormat(attr_.format)) * attr_.channel;
     AUDIO_INFO_LOG("non blocking capture thread start, source type: %{public}d, captureDataLen: %{public}u",
         attr_.sourceType, captureDataLen);
     std::vector<uint8_t> tempBuf;
@@ -1055,6 +1076,7 @@ int32_t AudioCapturerSourceInner::Start(void)
                 break;
             case SOURCE_TYPE_MIC:
             case SOURCE_TYPE_CAMCORDER:
+            case SOURCE_TYPE_UNPROCESSED:
             default:
                 keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryCapturer",
                     PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
@@ -1075,7 +1097,7 @@ int32_t AudioCapturerSourceInner::Start(void)
     dumpFileName_ = halName_ + "_" + std::to_string(attr_.sourceType) + "_" + GetTime()
         + "_source_" + std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel)
         + "_" + std::to_string(attr_.format) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
     return StartCapture();
 }
@@ -1127,9 +1149,21 @@ int32_t AudioCapturerSourceInner::GetVolume(float &left, float &right)
     return SUCCESS;
 }
 
+void AudioCapturerSourceInner::SetMuteState(bool isMute)
+{
+    std::lock_guard<std::mutex> statusLock(muteStateMutex_);
+    muteState_ = isMute;
+}
+
+bool AudioCapturerSourceInner::GetMuteState()
+{
+    std::lock_guard<std::mutex> statusLock(muteStateMutex_);
+    return muteState_;
+}
+
 int32_t AudioCapturerSourceInner::SetMute(bool isMute)
 {
-    muteState_ = isMute;
+    SetMuteState(isMute);
 
     if (IsInited() && audioCapture_) {
         int32_t ret = audioCapture_->SetMute(audioCapture_, isMute);
@@ -1153,7 +1187,7 @@ int32_t AudioCapturerSourceInner::SetMute(bool isMute)
         }
     }
 
-    AUDIO_INFO_LOG("end isMute=%{public}d", isMute);
+    AUDIO_INFO_LOG("halName:%{public}s isMute=%{public}d", halName_.c_str(), isMute);
 
     return SUCCESS;
 }
@@ -1169,7 +1203,7 @@ int32_t AudioCapturerSourceInner::GetMute(bool &isMute)
         AUDIO_WARNING_LOG("GetMute failed from hdi");
     }
 
-    isMute = muteState_;
+    isMute = GetMuteState();
 
     return SUCCESS;
 }
@@ -1208,6 +1242,7 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
         case DEVICE_TYPE_MIC:
         case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
+        case DEVICE_TYPE_BLUETOOTH_A2DP_IN:
             source.ext.device.type = PIN_IN_MIC;
             source.ext.device.desc = (char *)"pin_in_mic";
             break;
@@ -1545,7 +1580,8 @@ int32_t AudioCapturerSourceInner::UpdateUsbAttrs(const std::string &usbInfoStr)
         sourceFormat_end - sourceFormat_begin - std::strlen("source_format:"));
 
     // usb default config
-    attr_.sampleRate = static_cast<uint32_t>(stoi(sampleRateStr));
+    CHECK_AND_RETURN_RET_LOG(StringConverter(sampleRateStr, attr_.sampleRate), ERR_INVALID_PARAM,
+        "convert invalid sampleRate: %{public}s", sampleRateStr.c_str());
     attr_.channel = STEREO_CHANNEL_COUNT;
     attr_.format = ParseAudioFormat(formatStr);
     attr_.isBigEndian = false;
@@ -1672,7 +1708,7 @@ void AudioCapturerSourceInner::CheckLatencySignal(uint8_t *frame, size_t replyBy
         AudioExtParamKey hdiKey = AudioExtParamKey(key);
         std::string condition = "debug_audio_latency_measurement";
         int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(),
-            value, PARAM_VALUE_LENTH);
+            value, DumpFileUtil::PARAM_VALUE_LENTH);
         AUDIO_INFO_LOG("GetExtraParam ret:%{public}d", ret);
         LatencyMonitor::GetInstance().UpdateDspTime(value);
         LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(false,

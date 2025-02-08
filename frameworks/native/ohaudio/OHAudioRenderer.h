@@ -177,7 +177,8 @@ class OHAudioRenderer {
         AudioPrivacyType GetRendererPrivacy();
         int64_t GetFramesWritten();
         void GetRendererInfo(AudioRendererInfo& rendererInfo);
-        bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
+        bool GetTimestamp(Timestamp &timestamp, Timestamp::Timestampbase base);
+        int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base);
         int32_t GetFrameSizeInCallback();
         int32_t GetBufferDesc(BufferDesc &bufDesc) const;
         int32_t Enqueue(const BufferDesc &bufDesc) const;
@@ -210,7 +211,7 @@ class OHAudioRenderer {
 
         void SetRendererCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData);
     private:
-        std::unique_ptr<AudioRenderer> audioRenderer_;
+        std::shared_ptr<AudioRenderer> audioRenderer_;
         std::shared_ptr<AudioRendererCallback> audioRendererCallback_;
         std::shared_ptr<OHAudioRendererDeviceChangeCallbackWithInfo> audioRendererDeviceChangeCallbackWithInfo_;
         std::shared_ptr<OHRendererPositionCallback> rendererPositionCallback_;

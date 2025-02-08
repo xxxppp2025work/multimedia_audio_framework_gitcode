@@ -125,6 +125,7 @@ private:
     int32_t InitAudioInterruptCallback();
     int32_t InitInputDeviceChangeCallback();
     int32_t SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
+    void InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId);
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     int32_t InitAudioStream(const AudioStreamParams &AudioStreamParams);
@@ -152,6 +153,7 @@ private:
     std::shared_ptr<AudioCapturerConcurrencyCallbackImpl> audioConcurrencyCallback_ = nullptr;
     AudioDeviceDescriptor currentDeviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     bool latencyMeasEnabled_ = false;
+    int32_t firstConcurrencyResult_ = 0; // 0 is SUCCESS in error code
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     mutable std::mutex signalDetectAgentMutex_;
     FILE *dumpFile_ = nullptr;
@@ -160,6 +162,7 @@ private:
     std::mutex setCapturerCbMutex_;
     std::mutex setParamsMutex_;
     std::mutex captureMutex_;
+    std::mutex capturerPolicyServiceDiedCbMutex_;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {
@@ -170,6 +173,8 @@ public:
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void SaveCallback(const std::weak_ptr<AudioCapturerCallback> &callback);
     void UpdateAudioStream(const std::shared_ptr<IAudioStream> &audioStream);
+    void StartSwitch();
+    void FinishSwitch();
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
     void HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
@@ -179,6 +184,8 @@ private:
     bool isForcePaused_ = false;
     std::shared_ptr<AudioCapturerCallback> cb_;
     std::mutex mutex_;
+    bool switching_ = false;
+    std::condition_variable switchStreamCv_;
 };
 
 class AudioStreamCallbackCapturer : public AudioStreamCallback {

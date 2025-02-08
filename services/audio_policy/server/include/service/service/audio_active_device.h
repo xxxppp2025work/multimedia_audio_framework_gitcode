@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,12 +23,10 @@
 #include <mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
-#include "audio_info.h"
 #include "audio_manager_base.h"
 #include "audio_module_info.h"
 #include "audio_volume_config.h"
 #include "audio_system_manager.h"
-#include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_device_manager.h"
 #include "audio_affinity_manager.h"
@@ -61,20 +59,20 @@ public:
     float GetMaxAmplitude(const int32_t deviceId);
     void UpdateInputDeviceInfo(DeviceType deviceType);
     std::string GetActiveBtDeviceMac();
-    int32_t SwitchActiveA2dpDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
-    void SetActiveBtDeviceMac(std::string macAddress);
+    void SetActiveBtDeviceMac(const std::string macAddress);
+    void SetActiveBtInDeviceMac(const std::string macAddress);
     int32_t SetDeviceActive(DeviceType deviceType, bool active);
     int32_t SetCallDeviceActive(DeviceType deviceType, bool active, std::string address);
     bool GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo);
 
     void SetCurrentInputDevice(const AudioDeviceDescriptor &desc);
-    AudioDeviceDescriptor GetCurrentInputDevice();
+    const AudioDeviceDescriptor& GetCurrentInputDevice();
     DeviceType GetCurrentInputDeviceType();
     void SetCurrentInputDeviceType(DeviceType deviceType);
     std::string GetCurrentInputDeviceMacAddr();
     void SetCurrentOutputDevice(const AudioDeviceDescriptor &desc);
     void SetCurrentOutputDeviceType(DeviceType deviceType);
-    AudioDeviceDescriptor GetCurrentOutputDevice();
+    const AudioDeviceDescriptor& GetCurrentOutputDevice();
     DeviceType GetCurrentOutputDeviceType();
     DeviceCategory GetCurrentOutputDeviceCategory();
     std::string GetCurrentOutputDeviceNetworkId();
@@ -102,6 +100,7 @@ private:
     AudioDeviceDescriptor currentActiveInputDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
 
     std::string activeBTDevice_;
+    std::string activeBTInDevice_;
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioDeviceManager &audioDeviceManager_;

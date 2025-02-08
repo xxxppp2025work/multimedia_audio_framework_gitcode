@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,13 +24,12 @@
 #include <dlfcn.h>
 #include <sstream>
 #include "audio_hdi_log.h"
-#include "audio_utils.h"
 
 using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-    
+
 class RemoteFastAudioRenderSinkUnitTest : public ::testing::Test {
 public:
     static void SetUpTestCase();
@@ -475,6 +474,22 @@ HWTEST(RemoteFastAudioRenderSinkUnitTest, RemoteFastAudioRenderSinkUnitTest_0014
     instance = audioRendererInner->GetInstance(DEVICE_DEFAULT_ID);
     EXPECT_NE(instance, nullptr);
     audioRendererInner->rendererInited_ = true;
+}
+
+/**
+ * @tc.name  : Test Template RemoteFastAudioRendererSink
+ * @tc.number: RemoteFastAudioRendererSink_0015
+ * @tc.desc  : Test Template RemoteFastAudioRendererSink GetInstance Interface.
+ */
+HWTEST(RemoteFastAudioRenderSinkUnitTest, RemoteFastAudioRenderSinkUnitTest_0015, TestSize.Level1)
+{
+    std::shared_ptr<RemoteFastAudioRendererSinkInner> audioRendererInner =
+        std::make_shared<RemoteFastAudioRendererSinkInner>(DEVICE_DEFAULT_ID);
+    EXPECT_NE(audioRendererInner, nullptr);
+    IMmapAudioRendererSink* instance = audioRendererInner->GetInstance(DEVICE_DEFAULT_ID);
+    EXPECT_NE(instance, nullptr);
+    auto ret = instance->GetAudioScene();
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 } // namespace AudioStandard
 } // namespace OHOS

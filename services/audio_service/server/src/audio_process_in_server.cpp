@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,6 +27,8 @@
 #include "audio_schedule.h"
 #include "audio_utils.h"
 #include "media_monitor_manager.h"
+#include "audio_dump_pcm.h"
+#include "audio_performance_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -45,7 +47,7 @@ sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig
 AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConfig,
     ProcessReleaseCallback *releaseCallback) : processConfig_(processConfig), releaseCallback_(releaseCallback)
 {
-    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
+    if (processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
         sessionId_ = PolicyHandler::GetInstance().GenerateSessionId(processConfig_.appInfo.appUid);
     } else {
         sessionId_ = processConfig.originalSessionId;
@@ -56,7 +58,7 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
     dumpFileName_ = std::to_string(sessionId_) + '_' + "_dump_process_server_audio_" +
         std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +
         ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 }
 
 AudioProcessInServer::~AudioProcessInServer()
@@ -65,11 +67,20 @@ AudioProcessInServer::~AudioProcessInServer()
     if (convertedBuffer_.buffer != nullptr) {
         delete [] convertedBuffer_.buffer;
     }
-    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyStop(tokenId, sessionId_);
-    }
     DumpFileUtil::CloseDumpFile(&dumpFile_);
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
+        SwitchStreamInfo info = {
+            sessionId_,
+            processConfig_.callerUid,
+            processConfig_.appInfo.appUid,
+            processConfig_.appInfo.appPid,
+            processConfig_.appInfo.appTokenId,
+            CAPTURER_INVALID,
+        };
+        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
+    }
 }
 
 int32_t AudioProcessInServer::GetSessionId(uint32_t &sessionId)
@@ -85,14 +96,37 @@ void AudioProcessInServer::SetNonInterruptMute(const bool muteFlag)
     AudioService::GetInstance()->UpdateMuteControlSet(sessionId_, muteFlag);
 }
 
-bool AudioProcessInServer::GetMuteFlag()
+bool AudioProcessInServer::GetMuteState()
 {
-    return muteFlag_;
+    return muteFlag_ || silentModeAndMixWithOthers_;
 }
 
 uint32_t AudioProcessInServer::GetSessionId()
 {
     return sessionId_;
+}
+
+int32_t AudioProcessInServer::GetStandbyStatus(bool &isStandby, int64_t &enterStandbyTime)
+{
+    if (processBuffer_ == nullptr || processBuffer_->GetStreamStatus() == nullptr) {
+        AUDIO_ERR_LOG("GetStandbyStatus failed, buffer is nullptr.");
+        return ERR_OPERATION_FAILED;
+    }
+    isStandby = processBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY;
+    if (isStandby) {
+        enterStandbyTime = enterStandbyTime_;
+    } else {
+        enterStandbyTime = 0;
+    }
+
+    return SUCCESS;
+}
+
+void AudioProcessInServer::EnableStandby()
+{
+    CHECK_AND_RETURN_LOG(processBuffer_ != nullptr && processBuffer_->GetStreamStatus() != nullptr, "failed: nullptr");
+    processBuffer_->GetStreamStatus()->store(StreamStatus::STREAM_STAND_BY);
+    enterStandbyTime_ = ClockTime::GetCurNano();
 }
 
 int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
@@ -129,16 +163,27 @@ int32_t AudioProcessInServer::Start()
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STARTING || streamStatus_->load() == STREAM_STAND_BY,
         ERR_ILLEGAL_STATE, "Start failed, invalid status.");
 
-    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && !needCheckBackground_ &&
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && !needCheckBackground_ &&
         PermissionUtil::NeedVerifyBackgroundCapture(processConfig_.callerUid, processConfig_.capturerInfo.sourceType)) {
         AUDIO_INFO_LOG("set needCheckBackground_: true");
         needCheckBackground_ = true;
     }
-    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(processConfig_.appInfo.appTokenId,
-            processConfig_.appInfo.appFullTokenId), ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyStart(processConfig_.appInfo.appTokenId, sessionId_),
-            ERR_PERMISSION_DENIED, "NotifyPrivacy failed!");
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
+        SwitchStreamInfo info = {
+            sessionId_,
+            processConfig_.callerUid,
+            processConfig_.appInfo.appUid,
+            processConfig_.appInfo.appPid,
+            processConfig_.appInfo.appTokenId,
+            CAPTURER_RUNNING,
+        };
+        if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
+            CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(processConfig_.appInfo.appTokenId,
+                processConfig_.appInfo.appFullTokenId), ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
+        }
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(processConfig_.appInfo.appTokenId, sessionId_),
+            ERR_PERMISSION_DENIED, "NotifyPrivacyStart failed!");
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
     }
 
     for (size_t i = 0; i < listenerList_.size(); i++) {
@@ -148,9 +193,11 @@ int32_t AudioProcessInServer::Start()
         AUDIO_INFO_LOG("Call start while in stand-by, session %{public}u", sessionId_);
         WriterRenderStreamStandbySysEvent(sessionId_, 0);
         streamStatus_->store(STREAM_STARTING);
+        enterStandbyTime_ = 0;
     }
 
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
+    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(sessionId_);
     AUDIO_INFO_LOG("Start in server success!");
     return SUCCESS;
 }
@@ -163,9 +210,18 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_PAUSING,
         ERR_ILLEGAL_STATE, "Pause failed, invalid status.");
-    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
+        SwitchStreamInfo info = {
+            sessionId_,
+            processConfig_.callerUid,
+            processConfig_.appInfo.appUid,
+            processConfig_.appInfo.appPid,
+            processConfig_.appInfo.appTokenId,
+            CAPTURER_PAUSED,
+        };
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyStop(tokenId, sessionId_);
+        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     }
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this);
@@ -181,24 +237,35 @@ int32_t AudioProcessInServer::Resume()
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STARTING,
         ERR_ILLEGAL_STATE, "Resume failed, invalid status.");
-    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && !needCheckBackground_ &&
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && !needCheckBackground_ &&
         PermissionUtil::NeedVerifyBackgroundCapture(processConfig_.callerUid, processConfig_.capturerInfo.sourceType)) {
         AUDIO_INFO_LOG("set needCheckBackground_: true");
         needCheckBackground_ = true;
     }
-    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
+        SwitchStreamInfo info = {
+            sessionId_,
+            processConfig_.callerUid,
+            processConfig_.appInfo.appUid,
+            processConfig_.appInfo.appPid,
+            processConfig_.appInfo.appTokenId,
+            CAPTURER_RUNNING,
+        };
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
         uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId), ERR_OPERATION_FAILED,
-            "VerifyBackgroundCapture failed!");
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyStart(tokenId, sessionId_), ERR_PERMISSION_DENIED,
-            "NotifyPrivacy failed!");
+        if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
+            CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId),
+                ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
+        }
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, sessionId_), ERR_PERMISSION_DENIED,
+            "NotifyPrivacyStart failed!");
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
     }
 
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
     }
-
+    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(sessionId_);
     AUDIO_PRERELEASE_LOGI("Resume in server success!");
     return SUCCESS;
 }
@@ -210,9 +277,18 @@ int32_t AudioProcessInServer::Stop()
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STOPPING,
         ERR_ILLEGAL_STATE, "Stop failed, invalid status.");
-    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
+        SwitchStreamInfo info = {
+            sessionId_,
+            processConfig_.callerUid,
+            processConfig_.appInfo.appUid,
+            processConfig_.appInfo.appPid,
+            processConfig_.appInfo.appTokenId,
+            CAPTURER_STOPPED,
+        };
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyStop(tokenId, sessionId_);
+        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     }
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this); // notify endpoint?
@@ -231,9 +307,18 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(releaseCallback_ != nullptr, ERR_OPERATION_FAILED, "Failed: no service to notify.");
 
-    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
+        SwitchStreamInfo info = {
+            sessionId_,
+            processConfig_.callerUid,
+            processConfig_.appInfo.appUid,
+            processConfig_.appInfo.appPid,
+            processConfig_.appInfo.appTokenId,
+            CAPTURER_RELEASED,
+        };
         uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyStop(tokenId, sessionId_);
+        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     }
     int32_t ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
     AUDIO_INFO_LOG("notify service release result: %{public}d", ret);
@@ -245,13 +330,15 @@ ProcessDeathRecipient::ProcessDeathRecipient(AudioProcessInServer *processInServ
 {
     processInServer_ = processInServer;
     processHolder_ = processHolder;
+    createTime_ = ClockTime::GetCurNano();
+    AUDIO_INFO_LOG("OnRemoteDied create time: %{public}" PRId64 "", createTime_);
 }
 
 void ProcessDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 {
     CHECK_AND_RETURN_LOG(processHolder_ != nullptr, "processHolder_ is null.");
     int32_t ret = processHolder_->OnProcessRelease(processInServer_);
-    AUDIO_INFO_LOG("OnRemoteDied, call release ret: %{public}d", ret);
+    AUDIO_INFO_LOG("OnRemoteDied ret: %{public}d %{public}" PRId64 "", ret, createTime_);
 }
 
 int32_t AudioProcessInServer::RegisterProcessCb(sptr<IRemoteObject> object)
@@ -487,7 +574,24 @@ void AudioProcessInServer::WriterRenderStreamStandbySysEvent(uint32_t sessionId,
 
 void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
 {
-    DumpFileUtil::WriteDumpFile(dumpFile_, buffer, bufferSize);
+    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
+        DumpFileUtil::WriteDumpFile(dumpFile_, buffer, bufferSize);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_, buffer, bufferSize);
+    }
 }
+
+int32_t AudioProcessInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+{
+    return PolicyHandler::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, sessionId_,
+        processConfig_.rendererInfo.streamUsage, streamStatus_->load() == STREAM_RUNNING);
+}
+
+int32_t AudioProcessInServer::SetSilentModeAndMixWithOthers(bool on)
+{
+    silentModeAndMixWithOthers_ = on;
+    AUDIO_INFO_LOG("%{public}d", on);
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,8 +18,8 @@
 #include <list>
 #include <string>
 #include <memory>
+#include <vector>
 #include <unordered_map>
-#include "audio_info.h"
 #include "audio_device_info.h"
 #include "audio_system_manager.h"
 
@@ -63,17 +63,14 @@ public:
     shared_ptr<AudioDeviceDescriptor> GetCommRenderDefaultDevice(StreamUsage streamUsage);
     shared_ptr<AudioDeviceDescriptor> GetRenderDefaultDevice();
     shared_ptr<AudioDeviceDescriptor> GetCaptureDefaultDevice();
+    shared_ptr<AudioDeviceDescriptor> FindConnectedDeviceById(const int32_t deviceId);
     unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> GetDevicePrivacyMaps();
     vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableDevicesByUsage(AudioDeviceUsage usage);
-    shared_ptr<AudioDeviceDescriptor> GetDeviceByMacAddressAndDeviceType(
-        const vector<shared_ptr<AudioDeviceDescriptor>> &descs,
-        const string &macAddress, DeviceType deviceType);
     void GetAvailableDevicesWithUsage(const AudioDeviceUsage usage,
         const list<DevicePrivacyInfo> &deviceInfos, const std::shared_ptr<AudioDeviceDescriptor> &dev,
         std::vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableBluetoothDevice(DeviceType devType,
         const std::string &macAddress);
-    void UpdateScoState(const std::string &macAddress, bool isConnnected);
     bool GetScoState();
     void UpdateEarpieceStatus(const bool hasEarPiece);
     vector<shared_ptr<AudioDeviceDescriptor>> GetDevicesByFilter(DeviceType devType, DeviceRole devRole,
@@ -93,6 +90,8 @@ public:
     int32_t RemoveSelectedDefaultOutputDevice(const uint32_t sessionID);
     shared_ptr<AudioDeviceDescriptor> GetSelectedMediaRenderDevice();
     shared_ptr<AudioDeviceDescriptor> GetSelectedCallRenderDevice();
+    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
+    void Dump(std::string &dumpString);
 
 private:
     AudioDeviceManager();
@@ -108,7 +107,6 @@ private:
         vector<shared_ptr<AudioDeviceDescriptor>> &descArray);
 
     void MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc);
-    void MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc, DeviceRole devRole);
     void MakePairedDefaultDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc, DeviceRole devRole);
     void MakePairedDefaultDeviceImpl(const shared_ptr<AudioDeviceDescriptor> &devDesc,
         const shared_ptr<AudioDeviceDescriptor> &connectedDesc);
@@ -131,6 +129,10 @@ private:
         std::vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     void GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usage,
         vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    void GetRemoteAvailableDevicesByUsage(AudioDeviceUsage usage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    void ReorderAudioDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors,
+        const std::string &remoteInfoNetworkId, DeviceType remoteInfoDeviceType);
     bool UpdateExistDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     void AddBtToOtherList(const shared_ptr<AudioDeviceDescriptor> &devDesc);
@@ -175,6 +177,8 @@ private:
     DeviceType selectedCallDefaultOutputDevice_ = DEVICE_TYPE_DEFAULT;
     std::mutex selectDefaultOutputDeviceMutex_;
     std::mutex currentActiveDevicesMutex_;
+    std::string remoteInfoNetworkId_ = "";
+    DeviceType remoteInfoDeviceType_ = DEVICE_TYPE_DEFAULT;
 };
 } // namespace AudioStandard
 } // namespace OHOS

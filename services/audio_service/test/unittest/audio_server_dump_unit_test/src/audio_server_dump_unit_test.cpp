@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +24,6 @@
 #include "audio_server.h"
 #include "audio_service.h"
 #include "audio_stream_info.h"
-#include "audio_utils.h"
 #include "policy_handler.h"
 #include "pa_adapter_tools.h"
 
@@ -51,7 +50,8 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerOnTimeOut_001, TestSize.Level1)
 {
     AudioServerDump audioServerDump;
 
-    audioServerDump.Initialize();
+    int32_t res = audioServerDump.Initialize();
+    ASSERT_EQ(res, AUDIO_DUMP_SUCCESS) << "Initialize failed, server may not start!";
     audioServerDump.OnTimeOut();
 
     EXPECT_NE(nullptr, audioServerDump.mainLoop);
@@ -96,7 +96,8 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerPlaybackSinkDump_001, TestSize.Leve
     AudioServerDump audioServerDump;
 
     std::string dumpString;
-    audioServerDump.Initialize();
+    int32_t res = audioServerDump.Initialize();
+    ASSERT_EQ(res, AUDIO_DUMP_SUCCESS) << "Initialize failed, server may not start!";
     audioServerDump.PlaybackSinkDump(dumpString);
     std::string expectedOutput = "Playback Streams\n- 0 Playback stream (s) available:\n";
     EXPECT_EQ(dumpString, expectedOutput);
@@ -113,7 +114,8 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerPlaybackSinkDump_002, TestSize.Leve
     AudioServerDump audioServerDump;
 
     std::string PSDumpString;
-    audioServerDump.Initialize();
+    int32_t res = audioServerDump.Initialize();
+    ASSERT_EQ(res, AUDIO_DUMP_SUCCESS) << "Initialize failed, server may not start!";
     InputOutputInfo testPlaybackSinkDump = {
         .sessionId = "test_sessionId",
         .applicationName = "test_app",
@@ -142,7 +144,8 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerRecordSourceDump_001, TestSize.Leve
     AudioServerDump audioServerDump;
 
     std::string dumpString;
-    audioServerDump.Initialize();
+    int32_t res = audioServerDump.Initialize();
+    ASSERT_EQ(res, AUDIO_DUMP_SUCCESS) << "Initialize failed, server may not start!";
     audioServerDump.RecordSourceDump(dumpString);
     std::string expectedOutput = "Record Streams \n- 0 Record stream (s) available:\n";
     EXPECT_EQ(dumpString, expectedOutput);
@@ -159,7 +162,8 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerRecordSourceDump_002, TestSize.Leve
     AudioServerDump audioServerDump;
 
     std::string RSDumpString;
-    audioServerDump.Initialize();
+    int32_t res = audioServerDump.Initialize();
+    ASSERT_EQ(res, AUDIO_DUMP_SUCCESS) << "Initialize failed, server may not start!";
     InputOutputInfo testRecordSourceDump = {
         .sessionId = "AudioServerRecordSourceDump_002",
         .applicationName = "RecordSourceDump",
@@ -188,7 +192,8 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerHDFModulesDump_001, TestSize.Level1
     AudioServerDump audioServerDump;
 
     std::string HDFModulesDumpString;
-    audioServerDump.Initialize();
+    int32_t res = audioServerDump.Initialize();
+    ASSERT_EQ(res, AUDIO_DUMP_SUCCESS) << "Initialize failed, server may not start!";
     audioServerDump.HDFModulesDump(HDFModulesDumpString);
     std::string ret = "\nHDF Input Modules\n- 0 HDF Input Modules (s) available:\n"
                         "HDF Output Modules\n- 0 HDF Output Modules (s) available:\n";
@@ -206,7 +211,8 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerHDFModulesDump_002, TestSize.Level1
     AudioServerDump audioServerDump;
 
     std::string HDFModulesDumpString;
-    audioServerDump.Initialize();
+    int32_t res = audioServerDump.Initialize();
+    ASSERT_EQ(res, AUDIO_DUMP_SUCCESS) << "Initialize failed, server may not start!";
     SinkSourceInfo testSourceDevices = {
         .name = "testSourceDevices",
         .sampleSpec = {},
@@ -231,7 +237,8 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerHDFModulesDump_003, TestSize.Level1
     AudioServerDump audioServerDump;
 
     std::string HDFSinkDumpString;
-    audioServerDump.Initialize();
+    int32_t res = audioServerDump.Initialize();
+    ASSERT_EQ(res, AUDIO_DUMP_SUCCESS) << "Initialize failed, server may not start!";
     SinkSourceInfo testSinkDevices = {
         .name = "testSinkDevices",
         .sampleSpec = {},
@@ -350,7 +357,10 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerArgDataDump_002, TestSize.Level1)
                                    "  -p\t\t\t|dump pa playback streams\n"
                                    "  -r\t\t\t|dump pa record streams\n"
                                    "  -m\t\t\t|dump hdf input modules\n"
-                                   "  -ep\t\t\t|dump policyhandler info\n";
+                                   "  -ep\t\t\t|dump policyhandler info\n"
+                                   "  -ct\t\t\t|dump AudioCached time info\n"
+                                   "  -cm\t\t\t|dump AudioCached memory info\n"
+                                   "  -pm\t\t\t|dump AudioPerformMonitor info\n";
     audioServerDump.ArgDataDump(dumpString, argQue);
     EXPECT_EQ(expectedHelpInfo, dumpString);
 }
@@ -374,7 +384,10 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerArgDataDump_003, TestSize.Level1)
                                    "  -p\t\t\t|dump pa playback streams\n"
                                    "  -r\t\t\t|dump pa record streams\n"
                                    "  -m\t\t\t|dump hdf input modules\n"
-                                   "  -ep\t\t\t|dump policyhandler info\n";
+                                   "  -ep\t\t\t|dump policyhandler info\n"
+                                   "  -ct\t\t\t|dump AudioCached time info\n"
+                                   "  -cm\t\t\t|dump AudioCached memory info\n"
+                                   "  -pm\t\t\t|dump AudioPerformMonitor info\n";
     audioServerDump.ArgDataDump(dumpString, argQue);
     EXPECT_EQ(expectedHelpInfo, dumpString);
 }
@@ -466,7 +479,8 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerAudioDataDump_002, TestSize.Level1)
 
     std::string dumpString;
     std::queue<std::u16string> argQue;
-    audioServerDump.Initialize();
+    int32_t res = audioServerDump.Initialize();
+    ASSERT_EQ(res, AUDIO_DUMP_SUCCESS) << "Initialize failed, server may not start!";
     audioServerDump.AudioDataDump(dumpString, argQue);
     EXPECT_NE(nullptr, audioServerDump.mainLoop);
     EXPECT_NE(nullptr, audioServerDump.context);
@@ -484,7 +498,8 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerAudioDataDump_003, TestSize.Level1)
 
     std::string dumpString;
     std::queue<std::u16string> argQue;
-    audioServerDump.Initialize();
+    int32_t res = audioServerDump.Initialize();
+    ASSERT_EQ(res, AUDIO_DUMP_SUCCESS) << "Initialize failed, server may not start!";
     audioServerDump.mainLoop = nullptr;
     audioServerDump.AudioDataDump(dumpString, argQue);
     EXPECT_EQ(nullptr, audioServerDump.mainLoop);
@@ -503,7 +518,8 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerAudioDataDump_004, TestSize.Level1)
 
     std::string dumpString;
     std::queue<std::u16string> argQue;
-    audioServerDump.Initialize();
+    int32_t res = audioServerDump.Initialize();
+    ASSERT_EQ(res, AUDIO_DUMP_SUCCESS) << "Initialize failed, server may not start!";
     audioServerDump.context = nullptr;
     audioServerDump.AudioDataDump(dumpString, argQue);
     EXPECT_NE(nullptr, audioServerDump.mainLoop);
@@ -520,7 +536,8 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerResetPAAudioDump_001, TestSize.Leve
 {
     AudioServerDump audioServerDump;
 
-    audioServerDump.Initialize();
+    int32_t res = audioServerDump.Initialize();
+    ASSERT_EQ(res, AUDIO_DUMP_SUCCESS) << "Initialize failed, server may not start!";
     EXPECT_NE(nullptr, audioServerDump.mainLoop);
     EXPECT_TRUE(audioServerDump.isMainLoopStarted_);
     audioServerDump.ResetPAAudioDump();
@@ -555,7 +572,8 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerResetPAAudioDump_003, TestSize.Leve
 {
     AudioServerDump audioServerDump;
 
-    audioServerDump.Initialize();
+    int32_t res = audioServerDump.Initialize();
+    ASSERT_EQ(res, AUDIO_DUMP_SUCCESS) << "Initialize failed, server may not start!";
     EXPECT_NE(nullptr, audioServerDump.mainLoop);
     EXPECT_TRUE(audioServerDump.isMainLoopStarted_);
     audioServerDump.mainLoop = nullptr;
@@ -574,7 +592,8 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerResetPAAudioDump_004, TestSize.Leve
 {
     AudioServerDump audioServerDump;
 
-    audioServerDump.Initialize();
+    int32_t res = audioServerDump.Initialize();
+    ASSERT_EQ(res, AUDIO_DUMP_SUCCESS) << "Initialize failed, server may not start!";
     EXPECT_NE(nullptr, audioServerDump.mainLoop);
     EXPECT_TRUE(audioServerDump.isMainLoopStarted_);
     audioServerDump.isMainLoopStarted_ = false;
@@ -593,7 +612,8 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerResetPAAudioDump_005, TestSize.Leve
 {
     AudioServerDump audioServerDump;
 
-    audioServerDump.Initialize();
+    int32_t res = audioServerDump.Initialize();
+    ASSERT_EQ(res, AUDIO_DUMP_SUCCESS) << "Initialize failed, server may not start!";
     EXPECT_NE(nullptr, audioServerDump.context);
     EXPECT_TRUE(audioServerDump.isContextConnected_);
     audioServerDump.ResetPAAudioDump();
@@ -611,7 +631,8 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerResetPAAudioDump_006, TestSize.Leve
 {
     AudioServerDump audioServerDump;
 
-    audioServerDump.Initialize();
+    int32_t res = audioServerDump.Initialize();
+    ASSERT_EQ(res, AUDIO_DUMP_SUCCESS) << "Initialize failed, server may not start!";
     audioServerDump.isContextConnected_ = false;
     EXPECT_NE(nullptr, audioServerDump.context);
     EXPECT_FALSE(audioServerDump.isContextConnected_);

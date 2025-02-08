@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,10 +29,10 @@
 #include "audio_effect_chain_manager.h"
 #include "audio_errors.h"
 #include "audio_service_log.h"
-#include "audio_utils.h"
 #include "i_audio_renderer_sink.h"
 #include "policy_handler.h"
 #include "audio_volume.h"
+#include "audio_limiter_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -66,6 +66,7 @@ PaRendererStreamImpl::PaRendererStreamImpl(pa_stream *paStream, AudioProcessConf
     mainloop_ = mainloop;
     paStream_ = paStream;
     processConfig_ = processConfig;
+    effectMode_ = processConfig.rendererInfo.effectMode;
 }
 
 PaRendererStreamImpl::~PaRendererStreamImpl()
@@ -175,6 +176,7 @@ int32_t PaRendererStreamImpl::Start()
         std::string sessionIDTemp = std::to_string(streamIndex_);
         audioEffectVolume->SetStreamVolume(sessionIDTemp, clientVolume_);
     }
+    initEffectFlag_ = false;
 
     return SUCCESS;
 }
@@ -192,29 +194,32 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
         AUDIO_ERR_LOG("Stream Stop Failed");
         return ERR_OPERATION_FAILED;
     }
-    pa_proplist *propList = pa_proplist_new();
-    if (propList != nullptr) {
-        AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
-        if (!offloadEnable_) {
-            palock.Unlock();
-            {
-                std::unique_lock<std::mutex> lock(fadingMutex_);
-                const int32_t WAIT_TIME_MS = 40;
-                fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
-            }
-            palock.Relock();
+
+    AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
+    if (!offloadEnable_) {
+        palock.Unlock();
+        {
+            std::unique_lock<std::mutex> lock(fadingMutex_);
+            const int32_t WAIT_TIME_MS = 40;
+            fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
         }
+        palock.Relock();
     }
+
     isStandbyPause_ = isStandby;
     operation = pa_stream_cork(paStream_, 1, PAStreamPauseSuccessCb, reinterpret_cast<void *>(this));
     pa_operation_unref(operation);
     CHECK_AND_RETURN_RET_LOG(operation != nullptr, ERR_OPERATION_FAILED, "pa_stream_cork operation is null");
     palock.Unlock();
 
-    if (effectMode_ == EFFECT_DEFAULT) {
+    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        if (audioEffectChainManager != nullptr) {
-            audioEffectChainManager->InitAudioEffectChainDynamic(effectSceneName_);
+        if (audioEffectChainManager == nullptr) {
+            AUDIO_INFO_LOG("audioEffectChainManager is null");
+        } else {
+            std::string sessionIDTemp = std::to_string(streamIndex_);
+            audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
+            initEffectFlag_ = true;
         }
     }
 
@@ -249,10 +254,14 @@ int32_t PaRendererStreamImpl::Flush()
     }
     Trace trace("PaRendererStreamImpl::InitAudioEffectChainDynamic");
 
-    if (effectMode_ == EFFECT_DEFAULT) {
+    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        if (audioEffectChainManager != nullptr) {
-            audioEffectChainManager->InitAudioEffectChainDynamic(effectSceneName_);
+        if (audioEffectChainManager == nullptr) {
+            AUDIO_INFO_LOG("audioEffectChainManager is null");
+        } else {
+            std::string sessionIDTemp = std::to_string(streamIndex_);
+            audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
+            initEffectFlag_ = true;
         }
     }
 
@@ -260,7 +269,7 @@ int32_t PaRendererStreamImpl::Flush()
     return SUCCESS;
 }
 
-int32_t PaRendererStreamImpl::Drain()
+int32_t PaRendererStreamImpl::Drain(bool stopFlag)
 {
     AUDIO_INFO_LOG("Enter");
     PaLockGuard lock(mainloop_);
@@ -276,6 +285,10 @@ int32_t PaRendererStreamImpl::Drain()
         return ERR_OPERATION_FAILED;
     }
     streamDrainStatus_ = 0;
+    if (stopFlag && !offloadEnable_) {
+        AudioVolume::GetInstance()->SetStopFadeoutState(sinkInputIndex_, DO_FADE);
+        isDoFadeOut = true;
+    }
     operation = pa_stream_drain(paStream_, PAStreamDrainSuccessCb, reinterpret_cast<void *>(this));
     pa_operation_unref(operation);
     return SUCCESS;
@@ -291,29 +304,31 @@ int32_t PaRendererStreamImpl::Stop()
         return ERR_ILLEGAL_STATE;
     }
 
-    pa_proplist *propList = pa_proplist_new();
-    if (propList != nullptr) {
+    if (!isDoFadeOut && !offloadEnable_) {
         AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
-        if (!offloadEnable_) {
-            palock.Unlock();
-            {
-                std::unique_lock<std::mutex> lock(fadingMutex_);
-                const int32_t WAIT_TIME_MS = 20;
-                fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
-            }
-            palock.Relock();
+        palock.Unlock();
+        {
+            std::unique_lock<std::mutex> lock(fadingMutex_);
+            const int32_t WAIT_TIME_MS = 20;
+            fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
         }
+        palock.Relock();
     }
+    isDoFadeOut = false;
 
     pa_operation *operation = pa_stream_cork(paStream_, 1, PaRendererStreamImpl::PAStreamAsyncStopSuccessCb,
         reinterpret_cast<void *>(this));
     CHECK_AND_RETURN_RET_LOG(operation != nullptr, ERR_OPERATION_FAILED, "pa_stream_cork operation is null");
     pa_operation_unref(operation);
 
-    if (effectMode_ == EFFECT_DEFAULT) {
+    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        if (audioEffectChainManager != nullptr) {
-            audioEffectChainManager->InitAudioEffectChainDynamic(effectSceneName_);
+        if (audioEffectChainManager == nullptr) {
+            AUDIO_INFO_LOG("audioEffectChainManager is null");
+        } else {
+            std::string sessionIDTemp = std::to_string(streamIndex_);
+            audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
+            initEffectFlag_ = true;
         }
     }
 
@@ -346,10 +361,14 @@ int32_t PaRendererStreamImpl::Release()
     }
     state_ = RELEASED;
 
-    if (effectMode_ == EFFECT_DEFAULT) {
+    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        if (audioEffectChainManager != nullptr) {
-            audioEffectChainManager->InitAudioEffectChainDynamic(effectSceneName_);
+        if (audioEffectChainManager == nullptr) {
+            AUDIO_INFO_LOG("audioEffectChainManager is null");
+        } else {
+            std::string sessionIDTemp = std::to_string(streamIndex_);
+            audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
+            initEffectFlag_ = true;
         }
     }
 
@@ -360,6 +379,8 @@ int32_t PaRendererStreamImpl::Release()
     }
 
     AudioVolume::GetInstance()->RemoveFadeoutState(sinkInputIndex_);
+    AudioVolume::GetInstance()->RemoveStopFadeoutState(sinkInputIndex_);
+    isDoFadeOut = false;
 
     PaLockGuard lock(mainloop_);
     if (paStream_) {
@@ -390,6 +411,10 @@ int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
+    if (state_ == RELEASED) {
+        AUDIO_WARNING_LOG("stream is released, remain current timestamp unchanged");
+        return SUCCESS;
+    }
     AudioXCollie audioXCollie("PaRendererStreamImpl::GetCurrentTimeStamp", PA_STREAM_IMPL_TIMEOUT,
         [](void *) {
             AUDIO_ERR_LOG("pulseAudio timeout");
@@ -414,6 +439,10 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
+    }
+    if (state_ == RELEASED) {
+        AUDIO_WARNING_LOG("stream is released, remain current position unchanged");
+        return SUCCESS;
     }
     AudioXCollie audioXCollie("PaRendererStreamImpl::GetCurrentPosition", PA_STREAM_IMPL_TIMEOUT,
         [](void *) { AUDIO_ERR_LOG("pulseAudio timeout"); }, nullptr,
@@ -476,6 +505,11 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
+    if (state_ == RELEASED) {
+        AUDIO_WARNING_LOG("stream is released, latency is 0");
+        latency = 0;
+        return SUCCESS;
+    }
     pa_usec_t paLatency {0};
 
     UpdatePaTimingInfo();
@@ -493,9 +527,13 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
     latency += offloadEnable_ ? 0 : algorithmLatency * AUDIO_US_PER_MS;
     uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
     latency += a2dpOffloadLatency * AUDIO_US_PER_MS;
+    uint32_t limiterLatency = GetLimiterLatency();
+    latency += limiterLatency * AUDIO_US_PER_MS;
+
     AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64 ", algo latency: %{public}u ms"
-        ", a2dp offload latency: %{public}u ms, write: %{public}" PRIu64 ", read: %{public}" PRIu64 ", sink:%{public}"
-        PRIu64, latency, paLatency, algorithmLatency, a2dpOffloadLatency, writeIndex, readIndex, info->sink_usec);
+        ", a2dp offload latency: %{public}u ms, lmt latency: %{public}u ms, write: %{public}" PRIu64 ""
+        ", read: %{public}" PRIu64 ", sink:%{public}" PRIu64 "", latency, paLatency, algorithmLatency,
+        a2dpOffloadLatency, limiterLatency, writeIndex, readIndex, info->sink_usec);
 
     preLatency_ = latency;
     preTimeGetLatency_ = curTimeGetLatency;
@@ -525,6 +563,17 @@ uint32_t PaRendererStreamImpl::GetA2dpOffloadLatency()
         AUDIO_ERR_LOG("OffloadGetRenderPosition failed");
     }
     return a2dpOffloadLatency;
+}
+
+uint32_t PaRendererStreamImpl::GetLimiterLatency()
+{
+    AudioLmtManager *audioLmtManager = AudioLmtManager::GetInstance();
+    uint32_t limiterLatency = 0;
+    if (audioLmtManager != nullptr) {
+        int32_t sinkIndex = static_cast<int32_t>(pa_stream_get_device_index(paStream_));
+        limiterLatency = audioLmtManager->GetLatency(sinkIndex);
+    }
+    return limiterLatency;
 }
 
 int32_t PaRendererStreamImpl::SetRate(int32_t rate)

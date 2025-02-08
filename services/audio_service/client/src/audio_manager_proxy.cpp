@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,6 +20,7 @@
 
 #include <cinttypes>
 
+#include <audio_errors.h>
 #include "audio_system_manager.h"
 #include "audio_service_log.h"
 #include "audio_utils.h"
@@ -29,6 +30,10 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+constexpr int32_t MAX_OFFLINE_EFFECT_CHAIN_NUM = 10;
+
+}
 AudioManagerProxy::AudioManagerProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IStandardAudioService>(impl)
 {
@@ -691,22 +696,6 @@ bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries
 
     return true;
 }
-
-void AudioManagerProxy::RequestThreadPriority(uint32_t tid, string bundleName)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
-    (void)data.WriteUint32(tid);
-    (void)data.WriteString(bundleName);
-    int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::REQUEST_THREAD_PRIORITY), data, reply, option);
-    CHECK_AND_RETURN_LOG(error == ERR_NONE, "RequestThreadPriority failed, error: %{public}d", error);
-}
-
 static void MarshallEffectChainMgrParam(const EffectChainManagerParam &effectChainMgrParam, MessageParcel &data)
 {
     data.WriteInt32(effectChainMgrParam.maxExtraNum);
@@ -791,6 +780,7 @@ void AudioManagerProxy::SetOutputDeviceSink(int32_t deviceType, std::string &sin
 
 bool AudioManagerProxy::CreatePlaybackCapturerManager()
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     int32_t error;
     MessageParcel data;
     MessageParcel reply;
@@ -804,10 +794,14 @@ bool AudioManagerProxy::CreatePlaybackCapturerManager()
         "CreatePlaybackCapturerManager failed, error: %{public}d", error);
 
     return reply.ReadBool();
+#else
+    return false;
+#endif
 }
 
 int32_t AudioManagerProxy::SetSupportStreamUsage(std::vector<int32_t> usage)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     int32_t error;
     MessageParcel data;
     MessageParcel reply;
@@ -828,10 +822,14 @@ int32_t AudioManagerProxy::SetSupportStreamUsage(std::vector<int32_t> usage)
         "SetSupportStreamUsage failed, error: %{public}d", error);
 
     return reply.ReadInt32();
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioManagerProxy::SetCaptureSilentState(bool state)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     int32_t error;
     MessageParcel data;
     MessageParcel reply;
@@ -846,6 +844,9 @@ int32_t AudioManagerProxy::SetCaptureSilentState(bool state)
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
         "SetCaptureSilentState failed, error: %{public}d", error);
     return reply.ReadInt32();
+#else
+    return ERROR;
+#endif
 }
 
 int32_t AudioManagerProxy::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
@@ -1049,6 +1050,57 @@ void AudioManagerProxy::UpdateLatencyTimestamp(std::string &timestamp, bool isRe
         static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_LATENCY_TIMESTAMP), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE,
         "LatencyMeas UpdateLatencyTimestamp failed, error:%{public}d", error);
+}
+
+int32_t AudioManagerProxy::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray,
+    const DeviceType& deviceType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool res = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(res, ERR_INVALID_OPERATION, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(deviceType));
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_EFFECT_PROPERTY_V3), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Get Audio Effect Property, error: %d", error);
+
+    int32_t size = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "get audio effect property size invalid.");
+    for (int32_t i = 0; i < size; i++) {
+        // write and read must keep same order
+        AudioEffectPropertyV3 prop = {};
+        prop.Unmarshalling(reply);
+        propertyArray.property.push_back(prop);
+    }
+    return AUDIO_OK;
+}
+
+int32_t AudioManagerProxy::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+    const DeviceType& deviceType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_INVALID_OPERATION, "WriteInterfaceToken failed");
+
+    int32_t size = static_cast<int32_t>(propertyArray.property.size());
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "set audio effect property size invalid.");
+    data.WriteInt32(size);
+    for (int32_t i = 0; i < size; i++) {
+        // write and read must keep same order
+        propertyArray.property[i].Marshalling(data);
+    }
+    data.WriteInt32(static_cast<int32_t>(deviceType));
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY_V3), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
+    return reply.ReadInt32();
 }
 
 int32_t AudioManagerProxy::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
@@ -1283,6 +1335,112 @@ void AudioManagerProxy::RestoreSession(const int32_t &sessionID, bool isOutput)
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::RESTORE_SESSION), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed, error:%{public}d", error);
+}
+
+sptr<IRemoteObject> AudioManagerProxy::CreateIpcOfflineStream(int32_t &errorCode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, nullptr, "WriteInterfaceToken failed");
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_IPC_OFFLINE_STREAM), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, nullptr, "CreateIpcOfflineStream failed, error: %{public}d", error);
+    sptr<IRemoteObject> process = reply.ReadRemoteObject();
+    errorCode = reply.ReadInt32();
+    return process;
+}
+
+int32_t AudioManagerProxy::GetOfflineAudioEffectChains(vector<string> &effectChains)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_ERR, "WriteInterfaceToken failed");
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_OFFLINE_AUDIO_EFFECT_CHAINS), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "GetOfflineAudioEffectChains failed, error: %{public}d", error);
+    int32_t vecSize = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(vecSize >= 0 && vecSize <= MAX_OFFLINE_EFFECT_CHAIN_NUM, AUDIO_ERR,
+        "invalid offline effect chain num:%{public}d", vecSize);
+    for (int i = 0; i < vecSize; i++) {
+        effectChains.emplace_back(reply.ReadString());
+    }
+    return reply.ReadInt32();
+}
+
+void AudioManagerProxy::CheckHibernateState(bool onHibernate)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "AudioManagerProxy: WriteInterfaceToken failed");
+    data.WriteBool(onHibernate);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_HIBERNATE_STATE), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "CheckHibernateState failed, error: %{public}d", error);
+    return;
+}
+
+int32_t AudioManagerProxy::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    int32_t result = ERROR;
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, result, "WriteInterfaceToken failed");
+
+    data.WriteUint32(sessionId);
+
+    int32_t error = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_STANDBY_STATUS), data,
+        reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, result, "get transaction id failed, error: %d", error);
+
+    result = reply.ReadInt32();
+    isStandby = reply.ReadBool();
+    enterStandbyTime = reply.ReadInt64();
+
+    return result;
+}
+
+int32_t AudioManagerProxy::GenerateSessionId(uint32_t &sessionId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_ERR, "WriteInterfaceToken failed");
+    data.WriteUint32(sessionId);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GENERATE_SESSION_ID), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "generate sessionid failed,error:%{public}d", error);
+    sessionId = reply.ReadUint32();
+    return 0;
+}
+
+void AudioManagerProxy::NotifyAccountsChanged()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_ACCOUNTS_CHANGED), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed,error:%d", error);
 }
 } // namespace AudioStandard
 } // namespace OHOS

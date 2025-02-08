@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,7 +20,6 @@
 
 #include "audio_errors.h"
 #include "audio_policy_log.h"
-#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -182,16 +181,6 @@ void AudioPolicyManagerStub::UnsetAvailableDeviceChangeCallbackInternal(MessageP
     int32_t clientId = data.ReadInt32();
     AudioDeviceUsage usage = static_cast<AudioDeviceUsage>(data.ReadInt32());
     int32_t result = UnsetAvailableDeviceChangeCallback(clientId, usage);
-    reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::SetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)
-{
-    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
-    uint32_t sessionID = data.ReadUint32();
-    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
-    bool isRunning = data.ReadBool();
-    int32_t result = SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
     reply.WriteInt32(result);
 }
 

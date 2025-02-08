@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -38,11 +38,11 @@
 #include "media_monitor_manager.h"
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
-#include "audio_utils.h"
 #include "audio_proxy_manager.h"
 #include "audio_enhance_chain_manager.h"
 #include "audio_attribute.h"
-#include "audio_log_utils.h"
+#include "volume_tools.h"
+#include "audio_dump_pcm.h"
 
 using namespace std;
 using namespace OHOS::HDI::Audio_Bluetooth;
@@ -168,7 +168,6 @@ private:
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *frame, size_t replyBytes);
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
     int32_t DoStop();
@@ -217,8 +216,8 @@ private:
 };
 
 BluetoothCapturerSourceInner::BluetoothCapturerSourceInner()
-    : captureInited_(false), started_(false), paused_(false),
-      audioManager_(nullptr), audioAdapter_(nullptr), audioCapture_(nullptr), halName_ ("bt_hdap") {}
+    : captureInited_(false), started_(false), paused_(false), audioManager_(nullptr), audioAdapter_(nullptr),
+      audioCapture_(nullptr), handle_(nullptr), halName_ ("bt_hdap") {}
 
 BluetoothCapturerSourceInner::~BluetoothCapturerSourceInner()
 {
@@ -404,14 +403,15 @@ int32_t BluetoothCapturerSourceInner::CaptureFrame(char *frame, uint64_t request
 
     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_NOT_STARTED, "Capture Frame Fail");
     CheckLatencySignal(reinterpret_cast<uint8_t*>(frame), replyBytes);
-    DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
 
     BufferDesc tmpBuffer = {reinterpret_cast<uint8_t*>(frame), replyBytes, replyBytes};
-    DfxOperation(tmpBuffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
+        static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    VolumeTools::DfxOperation(tmpBuffer, streamInfo, logUtilsTag_, volumeDataCount_);
 
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            static_cast<void*>(frame), replyBytes);
+    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
+        DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void*>(frame), replyBytes);
     }
     CheckUpdateState(frame, requestBytes);
 
@@ -483,7 +483,7 @@ int32_t BluetoothCapturerSourceInner::Start(void)
     dumpFileName_ = halName_ + "_" + std::to_string(attr_.sourceType) + "_" + GetTime()
         + "_bluetooth_source_" + std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel)
         + "_" + std::to_string(attr_.format) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
     if (!started_) {
         if (audioCapturerSourceCallback_ != nullptr) {
@@ -772,8 +772,8 @@ void BluetoothCapturerSourceInner::CheckLatencySignal(uint8_t *frame, size_t rep
         AudioParamKey key = NONE;
         AudioExtParamKey hdiKey = AudioExtParamKey(key);
         std::string condition = "debug_audio_latency_measurement";
-        int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(),
-            value, PARAM_VALUE_LENTH);
+        int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value,
+            DumpFileUtil::PARAM_VALUE_LENTH);
         AUDIO_INFO_LOG("GetExtraParam ret:%{public}d", ret);
         LatencyMonitor::GetInstance().UpdateDspTime(value);
         LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(false,
@@ -810,18 +810,6 @@ int32_t BluetoothCapturerSourceInner::UpdateAppsUid(const std::vector<int32_t> &
 #endif
 
     return SUCCESS;
-}
-
-void BluetoothCapturerSourceInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format,
-    AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 int32_t BluetoothCapturerSourceInner::GetCaptureId(uint32_t &captureId) const

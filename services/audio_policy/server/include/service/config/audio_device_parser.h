@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,20 +20,15 @@
 #include <unordered_map>
 #include <string>
 #include <sstream>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
 
 #include "audio_policy_log.h"
-#include "audio_info.h"
 #include "iport_observer.h"
 #include "parser.h"
 #include "audio_device_manager.h"
+#include "audio_xml_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
-static const char* PRIVACY_TYPE = "privacy";
-static const char* PUBLIC_TYPE = "public";
-static const char* NEGATIVE_TYPE = "negative";
 
 enum DeviceNodeName {
     UNKNOWN_NODE = -1,
@@ -44,14 +39,16 @@ enum DeviceNodeName {
 
 class AudioDeviceParser : public Parser {
 public:
-    static constexpr char DEVICE_CONFIG_FILE[] = "system/etc/audio/audio_device_privacy.xml";
+    static constexpr char PRIVACY_TYPE[] = "privacy";
+    static constexpr char PUBLIC_TYPE[] = "public";
+    static constexpr char DEVICE_CONFIG_FILE[] = "etc/audio/audio_device_privacy.xml";
 
     bool LoadConfiguration() final;
-    bool Parse() final;
     void Destroy() final;
 
     AudioDeviceParser(AudioDeviceManager *audioDeviceManager)
     {
+        curNode_ = AudioXmlNode::Create();
         audioDeviceManager_ = audioDeviceManager;
     }
 
@@ -59,21 +56,21 @@ public:
     {
         AUDIO_INFO_LOG("AudioDeviceParser dtor");
         Destroy();
+        curNode_ = nullptr;
     }
 
 private:
-    DeviceNodeName GetDeviceNodeNameAsInt(xmlNode *node);
-    bool ParseInternal(xmlNode *node);
-    void ParseDevicePrivacyInfo(xmlNode *node, std::list<DevicePrivacyInfo> &deviceLists);
-    void ParserDevicePrivacyInfoList(xmlNode *node, std::list<DevicePrivacyInfo> &deviceLists);
-    void ParseAudioDevicePrivacyType(xmlNode *node, AudioDevicePrivacyType &deviceType);
+    DeviceNodeName GetDeviceNodeNameAsInt(std::shared_ptr<AudioXmlNode> curNode);
+    bool ParseInternal(std::shared_ptr<AudioXmlNode> curNode);
+    void ParseDevicePrivacyInfo(std::shared_ptr<AudioXmlNode> curNode, std::list<DevicePrivacyInfo> &deviceLists);
+    void ParserDevicePrivacyInfoList(std::shared_ptr<AudioXmlNode> curNode, std::list<DevicePrivacyInfo> &deviceLists);
+    void ParseAudioDevicePrivacyType(std::shared_ptr<AudioXmlNode> curNode, AudioDevicePrivacyType &deviceType);
     void ParseDeviceRole(const std::string &deviceRole, uint32_t &deviceRoleFlag);
     void ParseDeviceCategory(const std::string &deviceCategory, uint32_t &deviceCategoryFlag);
     void ParseDeviceUsage(const std::string &deviceUsage, uint32_t &deviceUsageFlag);
-    std::string ExtractPropertyValue(const std::string &propName, xmlNode *node);
     AudioDevicePrivacyType GetDevicePrivacyType(const std::string &devicePrivacyType);
 
-    xmlDoc *mDoc_ = nullptr;
+    std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
     AudioDevicePrivacyType devicePrivacyType_ = {};
     AudioDeviceManager *audioDeviceManager_;
     std::unordered_map<AudioDevicePrivacyType, std::list<DevicePrivacyInfo>> devicePrivacyMaps_ = {};

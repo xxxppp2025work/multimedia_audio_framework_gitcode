@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -32,18 +32,6 @@ namespace OHOS {
 namespace AudioStandard {
 // audio effect manager info
 constexpr int32_t AUDIO_EFFECT_COUNT_UPPER_LIMIT = 20;
-constexpr int32_t AUDIO_EFFECT_COUNT_STREAM_USAGE_UPPER_LIMIT = 200;
-constexpr int32_t AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT = 1;
-constexpr int32_t AUDIO_EFFECT_COUNT_POST_SECOND_NODE_UPPER_LIMIT = 1;
-constexpr int32_t AUDIO_EFFECT_COUNT_PRE_SECOND_NODE_UPPER_LIMIT = 1;
-constexpr int32_t AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT = 64; // max conf for sceneType + effectMode + deviceType
-constexpr int32_t AUDIO_EFFECT_CHAIN_COUNT_UPPER_LIMIT = 32; // max num of effectChain
-constexpr int32_t AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT = 16; // max num of effect per effectChain
-constexpr int32_t AUDIO_EFFECT_PRIOR_SCENE_UPPER_LIMIT = 7; // max num of effect prior scene
-constexpr int32_t AUDIO_EFFECT_COUNT_PROPERTY_UPPER_LIMIT = 20; // max num of property
-
-constexpr int32_t HDI_EFFECT_NUM = 2;
-constexpr int32_t HDI_SET_PATAM = 6;
 
 enum HdiSetParamCommandCode {
     HDI_INIT = 0,
@@ -59,6 +47,8 @@ enum HdiSetParamCommandCode {
     HDI_SPATIALIZATION_SCENE_TYPE = 10,
     HDI_STREAM_USAGE = 11,
     HDI_FOLD_STATE = 12,
+    HDI_LID_STATE = 13,
+    HDI_QUERY_CHANNELLAYOUT = 14,
 };
 
 enum AudioSpatialDeviceType {
@@ -68,6 +58,12 @@ enum AudioSpatialDeviceType {
     EARPHONE_TYPE_HEADPHONE,
     EARPHONE_TYPE_GLASSES,
     EARPHONE_TYPE_OTHERS,
+};
+
+enum FoldState : uint32_t {
+    FOLD_STATE_EXPAND = 1,
+    FOLD_STATE_CLOSE = 2,
+    FOLD_STATE_MIDDLE = 3,
 };
 
 struct AudioSpatialDeviceState {
@@ -122,7 +118,7 @@ struct PreProcessConfig {
     std::vector<PreStreamScene> priorScenes;
     std::vector<PreStreamScene> normalScenes;
 };
- 
+
 struct PostProcessConfig {
     uint32_t maxExtSceneNum;
     std::vector<PostStreamScene> defaultScenes;
@@ -263,6 +259,40 @@ const std::unordered_map<DeviceType, std::string> SUPPORTED_DEVICE_TYPE {
     {DEVICE_TYPE_FILE_SOURCE, "DEVICE_TYPE_FILE_SOURCE"},
     {DEVICE_TYPE_EXTERN_CABLE, "DEVICE_TYPE_EXTERN_CABLE"},
     {DEVICE_TYPE_DEFAULT, "DEVICE_TYPE_DEFAULT"},
+};
+
+
+enum EffectFlag { RENDER_EFFECT_FLAG = 0, CAPTURE_EFFECT_FLAG = 1};
+
+struct AudioEffectPropertyV3 {
+    std::string name;
+    std::string category;
+    EffectFlag flag;
+    friend bool operator==(const AudioEffectPropertyV3 &lhs, const AudioEffectPropertyV3 &rhs)
+    {
+        return (lhs.category == rhs.category && lhs.name == rhs.name && lhs.flag == rhs.flag);
+    };
+    friend bool operator<(const AudioEffectPropertyV3 &lhs, const AudioEffectPropertyV3 &rhs)
+    {
+        return ((lhs.name == rhs.name) || (lhs.name == rhs.name && lhs.category < rhs.category)
+            || (lhs.name == rhs.name && lhs.category == rhs.category && lhs.flag < rhs.flag));
+    };
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteString(name)&&
+            parcel.WriteString(category)&&
+            parcel.WriteInt32(flag);
+    };
+    void Unmarshalling(Parcel &parcel)
+    {
+        name = parcel.ReadString();
+        category = parcel.ReadString();
+        flag = static_cast<EffectFlag>(parcel.ReadInt32());
+    };
+};
+
+struct AudioEffectPropertyArrayV3 {
+    std::vector<AudioEffectPropertyV3> property;
 };
 
 struct AudioEnhanceProperty {
@@ -428,6 +458,7 @@ struct AudioRendererInfoForSpatialization {
 struct AudioEnhanceParam {
     uint32_t muteInfo;
     uint32_t volumeInfo;
+    uint32_t foldState;
     const char *preDevice;
     const char *postDevice;
     const char *sceneType;

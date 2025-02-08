@@ -78,7 +78,11 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetMicrophoneMuteAudioConfig_001, TestS
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_GetSupportedTones_001, TestSize.Level1)
 {
-    AudioPolicyManager::GetInstance().GetSupportedTones();
+    std::vector<int32_t> res = AudioPolicyManager::GetInstance().GetSupportedTones("");
+    EXPECT_NE(0, res.size());
+
+    res = AudioPolicyManager::GetInstance().GetSupportedTones("cn");
+    EXPECT_NE(0, res.size());
 }
 
 /**
@@ -89,8 +93,15 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetSupportedTones_001, TestSize.Level1)
 HWTEST(AudioPolicyUnitTest, Audio_Policy_GetToneConfig_001, TestSize.Level1)
 {
     int32_t ltonetype = 0;
-    std::shared_ptr<ToneInfo> toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype);
-    ASSERT_NE(nullptr, toneInfo);
+    std::shared_ptr<ToneInfo> toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype, "");
+    EXPECT_NE(nullptr, toneInfo);
+
+    toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype, "cn");
+    EXPECT_NE(nullptr, toneInfo);
+
+    ltonetype = INT32_MAX;
+    toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype, "");
+    EXPECT_NE(nullptr, toneInfo);
 }
 #endif
 
@@ -137,22 +148,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetStreamInFocus_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test Audio_Policy_IsAudioRendererLowLatencySupported_001 via legal state
- * @tc.number: Audio_Policy_IsAudioRendererLowLatencySupported_001
- * @tc.desc  : Test IsAudioRendererLowLatencySupported interface. Returns success.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_IsAudioRendererLowLatencySupported_001, TestSize.Level1)
-{
-    AudioStreamInfo audioStreamInfo;
-    audioStreamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    audioStreamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    audioStreamInfo.channels = AudioChannel::MONO;
-    bool ret = AudioPolicyManager::GetInstance().IsAudioRendererLowLatencySupported(audioStreamInfo);
-    EXPECT_EQ(true, ret);
-}
-
-/**
  * @tc.name  : Test Audio_Policy_Manager_IsStreamActive_001 via illegal state
  * @tc.number: Audio_Policy_Manager_IsStreamActive_001
  * @tc.desc  : Test RegisterAudioCapturerEventListener interface. Returns success.
@@ -183,7 +178,11 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetMicrophoneMuteAudioConfig_00
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetSupportedTones_001, TestSize.Level1)
 {
-    AudioPolicyManager::GetInstance().GetSupportedTones();
+    std::vector<int32_t> res = AudioPolicyManager::GetInstance().GetSupportedTones("");
+    EXPECT_NE(0, res.size());
+
+    res = AudioPolicyManager::GetInstance().GetSupportedTones("cn");
+    EXPECT_NE(0, res.size());
 }
 
 /**
@@ -194,8 +193,15 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetSupportedTones_001, TestSize
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetToneConfig_001, TestSize.Level1)
 {
     int32_t ltonetype = 0;
-    std::shared_ptr<ToneInfo> toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype);
-    ASSERT_NE(nullptr, toneInfo);
+    std::shared_ptr<ToneInfo> toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype, "");
+    EXPECT_NE(nullptr, toneInfo);
+
+    toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype, "cn");
+    EXPECT_NE(nullptr, toneInfo);
+
+    ltonetype = INT32_MAX;
+    toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype, "");
+    EXPECT_NE(nullptr, toneInfo);
 }
 #endif
 
@@ -282,22 +288,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterAudioCapturerEventListe
 
     ret = AudioPolicyManager::GetInstance().UnregisterAudioCapturerEventListener(clientId);
     EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
- * @tc.name  : Test Audio_Policy_Manager_IsAudioRendererLowLatencySupported_001 via legal state
- * @tc.number: Audio_Policy_Manager_IsAudioRendererLowLatencySupported_001
- * @tc.desc  : Test IsAudioRendererLowLatencySupported interface. Returns success.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsAudioRendererLowLatencySupported_001, TestSize.Level1)
-{
-    AudioStreamInfo audioStreamInfo;
-    audioStreamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    audioStreamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    audioStreamInfo.channels = AudioChannel::MONO;
-    bool ret = AudioPolicyManager::GetInstance().IsAudioRendererLowLatencySupported(audioStreamInfo);
-    EXPECT_EQ(true, ret);
 }
 
 /**
@@ -643,7 +633,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Ringermode_Update_Listener_001, TestSize.Level
         std::make_shared<AudioPolicyClientStubImpl>();
     std::shared_ptr<AudioRingerModeCallbackTest> callback = std::make_shared<AudioRingerModeCallbackTest>();
     AudioRingerMode ringerMode = AudioRingerMode::RINGER_MODE_SILENT;
-    
+
     ringermodeStub->OnRingerModeUpdated(ringerMode);
 
     ringermodeStub->AddRingerModeCallback(callback);
@@ -671,7 +661,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Rounting_Manager_Listener_001, TestSize.Level1
         std::make_shared<AudioManagerMicStateChangeCallbackTest>();
     MicStateChangeEvent micStateChangeEvent;
     micStateChangeEvent.mute = true;
-    
+
     audioPolicyClientStubImpl->OnMicStateUpdated(micStateChangeEvent);
 
     audioPolicyClientStubImpl->AddMicStateChangeCallback(callback);
@@ -789,22 +779,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_HighResolutionExist_002, TestSi
     EXPECT_EQ(SUCCESS, ret);
     bool isHighResExist = AudioPolicyManager::GetInstance().IsHighResolutionExist();
     EXPECT_EQ(false, isHighResExist);
-}
-
-/**
- * @tc.name  : Test Audio_Policy_Manager_GetSinkLatencyFromXml_001
- * @tc.number: Audio_Policy_Manager_GetSinkLatencyFromXml_001
- * @tc.desc  : Test GetSinkLatencyFromXml, return real value.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetSinkLatencyFromXml_001, TestSize.Level1)
-{
-    AudioPolicyManager::GetInstance().RecoverAudioPolicyCallbackClient();
-
-    uint32_t ret = AudioPolicyManager::GetInstance().GetSinkLatencyFromXml();
-    EXPECT_TRUE(ret >= LOW_LATENCY_FROM_XML && ret <= HIGH_LATENCY_FROM_XML);
-
-    ret = AudioPolicyManager::GetInstance().GetAudioLatencyFromXml();
-    EXPECT_TRUE(ret >= LOW_LATENCY_FROM_XML && ret <= HIGH_LATENCY_FROM_XML);
 }
 
 /**

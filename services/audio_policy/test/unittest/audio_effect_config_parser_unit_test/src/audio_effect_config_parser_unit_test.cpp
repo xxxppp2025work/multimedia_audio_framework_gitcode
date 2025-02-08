@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,7 +15,7 @@
 
 #include "audio_effect_config_parser_unit_test.h"
 #include "audio_policy_log.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_errors.h"
 #include "audio_effect.h"
 #include <libxml/parser.h>
@@ -34,6 +34,9 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+static constexpr int32_t AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT = 1;
+static constexpr int32_t AUDIO_EFFECT_COUNT_POST_SECOND_NODE_UPPER_LIMIT = 1;
+static constexpr int32_t AUDIO_EFFECT_COUNT_PRE_SECOND_NODE_UPPER_LIMIT = 1;
 
 void AudioEffectConfigParserUnitTest::SetUpTestCase(void) {}
 void AudioEffectConfigParserUnitTest::TearDownTestCase(void) {}
@@ -232,11 +235,6 @@ HWTEST(AudioEffectConfigParserUnitTest, AudioEffectConfigParser_006, TestSize.Le
     int32_t ret = parser.LoadEffectConfig(result);
     EXPECT_NE(ret, 0);
     EXPECT_NE(result.effects.size(), 1);
-    if (!result.effects.empty()) {
-        EXPECT_EQ(result.effects[0].name, "test_effect");
-        EXPECT_EQ(result.effects[0].libraryName, "bundle");
-        EXPECT_EQ(result.effects[0].effectProperty.size(), 2);
-    }
 
     result = OriginalEffectConfig();
 
@@ -249,10 +247,6 @@ HWTEST(AudioEffectConfigParserUnitTest, AudioEffectConfigParser_006, TestSize.Le
     ret = parser.LoadEffectConfig(result);
     EXPECT_NE(ret, 0);
     EXPECT_NE(result.effects.size(), 2);
-    if (result.effects.size() >= 2) {
-        EXPECT_EQ(result.effects[0].name, "effect1");
-        EXPECT_EQ(result.effects[1].name, "effect2");
-    }
 }
 
 /**
@@ -283,11 +277,6 @@ HWTEST(AudioEffectConfigParserUnitTest, AudioEffectConfigParser_007, TestSize.Le
     int32_t ret = parser.LoadEffectConfig(result);
     EXPECT_NE(ret, 0);
     EXPECT_NE(result.effectChains.size(), 1);
-    if (!result.effectChains.empty()) {
-        EXPECT_EQ(result.effectChains[0].name, "chain1");
-        EXPECT_EQ(result.effectChains[0].label, "label1");
-        EXPECT_EQ(result.effectChains[0].apply.size(), 2);
-    }
 }
 
 

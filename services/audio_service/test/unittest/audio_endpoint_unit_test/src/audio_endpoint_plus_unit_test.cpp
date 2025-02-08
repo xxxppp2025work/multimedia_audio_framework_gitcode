@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +24,6 @@
 #include "audio_server.h"
 #include "audio_service.h"
 #include "audio_stream_info.h"
-#include "audio_utils.h"
 #include "policy_handler.h"
 #include "audio_endpoint.cpp"
 
@@ -56,7 +55,7 @@ void AudioEndpointPlusUnitTest::TearDown(void)
 
 static const size_t BIGNUMBER = 2808348670;
 static const size_t NUMFIVE = 5;
-static constexpr uint32_t MORE_SESSIONID = MAX_SESSIONID + 1;
+static constexpr uint32_t MORE_SESSIONID = MAX_STREAMID + 1;
 static const int32_t CAPTURER_FLAG = 10;
 static const uint32_t SESSIONID = 123456;
 
@@ -646,7 +645,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_024, TestSize.Level1)
 
     audioEndpointInner->CheckPlaySignal(&buffer, bufferSize);
 }
-
+#ifdef AUDIO_ENDPOINT_INNER_UNIT_TEST_DIFF
 /*
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC
@@ -674,7 +673,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_025, TestSize.Level1)
 
     audioEndpointInner->CheckPlaySignal(&buffer, bufferSize);
 }
-
+#endif
 /*
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC

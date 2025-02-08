@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,6 +22,7 @@
 #include <sstream>
 #include <ostream>
 #include <climits>
+#include <thread>
 #include <string>
 #include "audio_utils_c.h"
 #include "audio_errors.h"
@@ -29,9 +30,11 @@
 #ifdef FEATURE_HITRACE_METER
 #include "hitrace_meter.h"
 #endif
+#include "bundle_mgr_interface.h"
 #include "parameter.h"
 #include "tokenid_kit.h"
 #include "ipc_skeleton.h"
+#include "iservice_registry.h"
 #include "access_token.h"
 #include "accesstoken_kit.h"
 #include "privacy_kit.h"
@@ -45,6 +48,18 @@ using OHOS::Security::AccessToken::AccessTokenKit;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+const int32_t YEAR_BASE = 1900;
+const size_t MOCK_INTERVAL = 2000;
+const int32_t DETECTED_ZERO_THRESHOLD = 1;
+const int32_t BLANK_THRESHOLD_MS = 100;
+const int32_t SIGNAL_THRESHOLD = 10;
+const uint32_t MAX_VALUE_OF_SIGNED_24_BIT = 8388607;
+const int64_t PCM_MAYBE_SILENT = 1;
+const int64_t PCM_MAYBE_NOT_SILENT = 5;
+const int32_t SIGNAL_DATA_SIZE = 96;
+const int32_t DECIMAL_EXPONENT = 10;
+const size_t DATE_LENGTH = 17;
+static uint32_t g_sessionToMock = 0;
 constexpr int32_t UID_AUDIO = 1041;
 constexpr int32_t UID_MSDP_SA = 6699;
 constexpr int32_t UID_INTELLIGENT_VOICE_SA = 1042;
@@ -70,6 +85,12 @@ const int32_t DATA_INDEX_3 = 3;
 const int32_t DATA_INDEX_4 = 4;
 const int32_t DATA_INDEX_5 = 5;
 const int32_t STEREO_CHANNEL_COUNT = 2;
+const int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
+
+const char* DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
+const char* DUMP_SERVICE_DIR = "/data/local/tmp/";
+const char* DUMP_APP_DIR = "/data/storage/el2/base/cache/";
+
 
 const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
 #ifdef AUDIO_BUILD_VARIANT_ROOT
@@ -144,6 +165,11 @@ uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
     return audioPerSampleLength;
 }
 
+bool Util::IsScoSupportSource(const SourceType sourceType)
+{
+    return sourceType == SOURCE_TYPE_VOICE_RECOGNITION || sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION;
+}
+
 bool Util::IsDualToneStreamType(const AudioStreamType streamType)
 {
     return streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM;
@@ -180,6 +206,23 @@ void WatchTimeout::CheckCurrTimeout()
     isChecked_ = true;
 }
 
+bool CheckoutSystemAppUtil::CheckoutSystemApp(int32_t uid)
+{
+    bool isSystemApp = false;
+    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():CheckoutSystemApp");
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, false, "systemAbilityManager is nullptr");
+    guard.CheckCurrTimeout();
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, false, "remoteObject is nullptr");
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, false, "bundleMgrProxy is nullptr");
+    WatchTimeout reguard("bundleMgrProxy->CheckIsSystemAppByUid:CheckoutSystemApp");
+    isSystemApp = bundleMgrProxy->CheckIsSystemAppByUid(uid);
+    reguard.CheckCurrTimeout();
+    return isSystemApp;
+}
+
 int64_t ClockTime::GetCurNano()
 {
     int64_t result = -1; // -1 for bad result.
@@ -188,6 +231,18 @@ int64_t ClockTime::GetCurNano()
     int ret = clock_gettime(clockId, &time);
     CHECK_AND_RETURN_RET_LOG(ret >= 0, result,
         "GetCurNanoTime fail, result:%{public}d", ret);
+    result = (time.tv_sec * AUDIO_NS_PER_SECOND) + time.tv_nsec;
+    return result;
+}
+
+int64_t ClockTime::GetRealNano()
+{
+    int64_t result = -1; // -1 for bad result
+    struct timespec time;
+    clockid_t clockId = CLOCK_REALTIME;
+    int ret = clock_gettime(clockId, &time);
+    CHECK_AND_RETURN_RET_LOG(ret >= 0, result,
+        "GetRealNanotime fail, result:%{public}d", ret);
     result = (time.tv_sec * AUDIO_NS_PER_SECOND) + time.tv_nsec;
     return result;
 }
@@ -208,6 +263,23 @@ int32_t ClockTime::AbsoluteSleep(int64_t nanoTime)
     }
 
     return ret;
+}
+
+std::string ClockTime::NanoTimeToString(int64_t nanoTime)
+{
+    struct tm *tm_info;
+    char buffer[80];
+    time_t time_seconds = nanoTime / AUDIO_NS_PER_SECOND;
+
+    tm_info = localtime(&time_seconds);
+    if (tm_info == NULL) {
+        AUDIO_ERR_LOG("get localtime failed!");
+        return "";
+    }
+
+    size_t res = strftime(buffer, sizeof(buffer), "%H:%M:%S", tm_info);
+    CHECK_AND_RETURN_RET_LOG(res != 0, "", "strftime failed!");
+    return std::string(buffer);
 }
 
 int32_t ClockTime::RelativeSleep(int64_t nanoTime)
@@ -400,12 +472,216 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
     return ret;
 }
 
+std::mutex g_switchMapMutex;
+static std::map<SwitchStreamInfo, SwitchState> g_switchStreamRecordMap = {};
+
+bool SwitchStreamUtil::IsSwitchStreamSwitching(SwitchStreamInfo &info, SwitchState targetState)
+{
+    std::lock_guard<std::mutex> lock(g_switchMapMutex);
+    auto iter = g_switchStreamRecordMap.find(info);
+    if (iter != g_switchStreamRecordMap.end() && targetState == SWITCH_STATE_CREATED &&
+        iter->second == SWITCH_STATE_WAITING && (info.nextState == CAPTURER_PREPARED)) {
+        AUDIO_INFO_LOG("stream:%{public}u is recreating , need not check using mic in background !",
+            info.sessionId);
+        return true;
+    }
+    if (iter != g_switchStreamRecordMap.end() && targetState == SWITCH_STATE_STARTED &&
+        iter->second == SWITCH_STATE_CREATED && (info.nextState == CAPTURER_RUNNING)) {
+        AUDIO_INFO_LOG("stream:%{public}u is restarting , need not check using mic in background !",
+            info.sessionId);
+        return true;
+    }
+    return false;
+}
+
+bool SwitchStreamUtil::InsertSwitchStreamRecord(SwitchStreamInfo &info, SwitchState targetState)
+{
+    if (RECORD_ALLOW_BACKGROUND_LIST.count(info.callerUid)) {
+        AUDIO_INFO_LOG("internal sa(%{public}d) user directly recording", info.callerUid);
+        return true;
+    }
+    auto ret = g_switchStreamRecordMap.insert(std::make_pair(info, targetState));
+    CHECK_AND_RETURN_RET_LOG(ret.second, false, "Update Record switchState:%{public}d for stream:%{public}u failed",
+        targetState, info.sessionId);
+    AUDIO_INFO_LOG("SwitchStream will start!Update Record switchState:%{public}d for stream:%{public}u"
+        "uid:%{public}d CapturerState:%{public}d success", targetState, info.sessionId, info.appUid, info.nextState);
+    std::thread(TimeoutThreadHandleTimeoutRecord, info, targetState).detach();
+    return true;
+}
+
+void SwitchStreamUtil::TimeoutThreadHandleTimeoutRecord(SwitchStreamInfo info, SwitchState targetState)
+{
+    const std::chrono::seconds TIMEOUT_DURATION(2);
+    AUDIO_INFO_LOG("Start timing. It will change to SWITCH_STATE_TIMEOUT after 2 seconds.");
+    std::this_thread::sleep_for(TIMEOUT_DURATION);
+
+    {
+        std::lock_guard<std::mutex> lock(g_switchMapMutex);
+        auto it = g_switchStreamRecordMap.find(info);
+        if (it != g_switchStreamRecordMap.end()) {
+            it->second = SWITCH_STATE_TIMEOUT;
+            g_switchStreamRecordMap.erase(it);
+            AUDIO_INFO_LOG("SwitchStream:%{public}u uid:%{public}d CapturerState:%{public}d was timeout! "
+                "Update Record switchState:%{public}d success",
+                info.sessionId, info.appUid, info.nextState, SWITCH_STATE_TIMEOUT);
+        }
+    }
+}
+
+//Remove switchStreamInfo from  switchStreamRecordMap must be called with g_switchMapMutex held
+bool SwitchStreamUtil::RemoveSwitchStreamRecord(SwitchStreamInfo &info, SwitchState targetState)
+{
+    if (g_switchStreamRecordMap.count(info) != 0) {
+        g_switchStreamRecordMap.erase(info);
+
+        CHECK_AND_RETURN_RET((g_switchStreamRecordMap.count(info) == 0), false,
+            "Remove exist record failed for stream:%{public}u", info.sessionId);
+        AUDIO_WARNING_LOG("Exist Record has been Removed for stream:%{public}u", info.sessionId);
+    }
+    return true;
+}
+
+bool SwitchStreamUtil::RemoveAllRecordBySessionId(uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(g_switchMapMutex);
+
+    for (auto it = g_switchStreamRecordMap.begin(); it != g_switchStreamRecordMap.end();) {
+        if (it->first.sessionId == sessionId) {
+            it = g_switchStreamRecordMap.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    return true;
+}
+
+bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo &info, SwitchState targetState)
+{
+    std::lock_guard<std::mutex> lock(g_switchMapMutex);
+    auto iter = g_switchStreamRecordMap.find(info);
+    bool isInfoInRecord = (iter != g_switchStreamRecordMap.end());
+    if (!isInfoInRecord) {
+        if (targetState == SWITCH_STATE_WAITING) {
+            CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState),
+                false, "Insert SwitchStream into Record fail!");
+            AUDIO_INFO_LOG("Insert SwitchStream into Record success!");
+        }
+        return true;
+    }
+        
+    switch (targetState) {
+        case SWITCH_STATE_WAITING:
+            CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
+                false, "Remove Error Record for Stream:%{public}u Failed!", iter->first.sessionId);
+            CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState),
+                false, "Insert SwitchStream into Record fail!");
+            break;
+        case SWITCH_STATE_CREATED:
+            CHECK_AND_RETURN_RET_LOG(HandleCreatedSwitchInfoInRecord(info, targetState), false,
+                "Handle switch record to SWITCH_STATE_CREATED failed!");
+            break;
+        case SWITCH_STATE_STARTED:
+            CHECK_AND_RETURN_RET_LOG(HandleStartedSwitchInfoInRecord(info, targetState), false,
+                "Handle switch record to SWITCH_STATE_STARTED failed!");
+            break;
+        default:
+            CHECK_AND_RETURN_RET_LOG(HandleSwitchInfoInRecord(info, targetState), false,
+                "Handle switch info in record failed!");
+            break;
+    }
+    if (iter->first.nextState == info.nextState) {
+        g_switchStreamRecordMap[info] = SWITCH_STATE_FINISHED;
+        g_switchStreamRecordMap.erase(info);
+        AUDIO_INFO_LOG("SwitchStream will finish!Remove Record for stream:%{public}u uid:%{public}d ",
+            info.sessionId, info.appUid);
+    }
+    if (iter->second == SWITCH_STATE_TIMEOUT || iter->second == SWITCH_STATE_FINISHED) {
+        CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState), false,
+            "Remove TIMEOUT or FINISHED Record for Stream:%{public}u Failed!", iter->first.sessionId);
+        return false;
+    }
+    return true;
+}
+
+bool SwitchStreamUtil::HandleCreatedSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState)
+{
+    auto iter = g_switchStreamRecordMap.find(info);
+    if (iter->second == SWITCH_STATE_WAITING && (info.nextState == CAPTURER_PREPARED)) {
+        g_switchStreamRecordMap[info] = targetState;
+        AUDIO_INFO_LOG("SwitchStream will reCreated!Update Record switchState:%{public}d for"
+            "stream:%{public}u uid:%{public}d streamState:%{public}d success",
+            targetState, info.sessionId, info.appUid, info.nextState);
+    } else {
+        CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
+            false, "Remove Error Record for Stream:%{public}u Failed!", iter->first.sessionId);
+    }
+    return true;
+}
+
+bool SwitchStreamUtil::HandleSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState)
+{
+    auto iter = g_switchStreamRecordMap.find(info);
+    if (((iter->second == SWITCH_STATE_CREATED) || (iter->second == SWITCH_STATE_STARTED)) &&
+        (info.nextState == CAPTURER_STOPPED || info.nextState == CAPTURER_PAUSED ||
+        info.nextState == CAPTURER_RELEASED || info.nextState == CAPTURER_INVALID)) {
+        CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
+            false, "Remove Finished Record for Stream:%{public}u Failed!", iter->first.sessionId);
+    } else if ((iter->second == SWITCH_STATE_WAITING) && (info.nextState == CAPTURER_STOPPED ||
+        info.nextState == CAPTURER_PAUSED || info.nextState == CAPTURER_RELEASED ||
+        info.nextState == CAPTURER_INVALID)) {
+        AUDIO_INFO_LOG("SwitchStream streamState has been changed to [%{public}d] before recreate!",
+            info.nextState);
+    } else {
+        CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
+            false, "Remove Error Record for Stream:%{public}u Failed!", iter->first.sessionId);
+        AUDIO_INFO_LOG("Error Record has been Removed for stream:%{public}u", iter->first.sessionId);
+    }
+    return true;
+}
+
+bool SwitchStreamUtil::HandleStartedSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState)
+{
+    auto iter = g_switchStreamRecordMap.find(info);
+    if ((iter->second == SWITCH_STATE_CREATED) && (info.nextState == CAPTURER_RUNNING)) {
+        g_switchStreamRecordMap[info] = targetState;
+        AUDIO_INFO_LOG("SwitchStream will reStarted!Update Record switchState:%{public}d for"
+            "stream:%{public}u uid:%{public}d streamState:%{public}d success",
+            targetState, info.sessionId, info.appUid, info.nextState);
+    } else {
+        CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
+            false, "Remove Error Record for Stream:%{public}u Failed!", iter->first.sessionId);
+    }
+    return true;
+}
+
 std::mutex g_recordMapMutex;
 std::map<std::uint32_t, std::set<uint32_t>> g_tokenIdRecordMap = {};
 
-bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
+int32_t PermissionUtil::StartUsingPermission(uint32_t targetTokenId, const char* permission)
 {
-    AudioXCollie audioXCollie("PermissionUtil::NotifyStart", TIME_OUT_SECONDS);
+    Trace trace("PrivacyKit::StartUsingPermission");
+    AUDIO_WARNING_LOG("PrivacyKit::StartUsingPermission tokenId:%{public}d permission:%{public}s",
+        targetTokenId, permission);
+    WatchTimeout guard("PrivacyKit::StartUsingPermission:PermissionUtil::StartUsingPermission");
+    int32_t res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, permission);
+    guard.CheckCurrTimeout();
+    return res;
+}
+
+int32_t PermissionUtil::StopUsingPermission(uint32_t targetTokenId, const char* permission)
+{
+    Trace trace("PrivacyKit::StopUsingPermission");
+    AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}d permission:%{public}s",
+        targetTokenId, permission);
+    WatchTimeout guard("PrivacyKit::StopUsingPermission:PermissionUtil::StopUsingPermission");
+    int32_t res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, permission);
+    guard.CheckCurrTimeout();
+    return res;
+}
+
+bool PermissionUtil::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId)
+{
+    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStart", TIME_OUT_SECONDS);
     std::lock_guard<std::mutex> lock(g_recordMapMutex);
     if (g_tokenIdRecordMap.count(targetTokenId)) {
         if (!g_tokenIdRecordMap[targetTokenId].count(sessionId)) {
@@ -414,33 +690,27 @@ bool PermissionUtil::NotifyStart(uint32_t targetTokenId, uint32_t sessionId)
             AUDIO_WARNING_LOG("this stream %{public}u is already running, no need call start", sessionId);
         }
     } else {
-        Trace trace("PrivacyKit::StartUsingPermission");
-        AUDIO_WARNING_LOG("PrivacyKit::StartUsingPermission tokenId: %{public}d sessionId:%{public}d",
-            targetTokenId, sessionId);
-        WatchTimeout guard("Security::AccessToken::PrivacyKit::StartUsingPermission:NotifyPrivacy");
-        int res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-        guard.CheckCurrTimeout();
-        if (res != 0) {
-            AUDIO_ERR_LOG("StartUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d",
-                targetTokenId, res);
-            return false;
+        AUDIO_INFO_LOG("Notify PrivacyKit to display the microphone privacy indicator "
+            "for tokenId: %{public}d sessionId:%{public}d", targetTokenId, sessionId);
+        int32_t res = PermissionUtil::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+        CHECK_AND_RETURN_RET_LOG(res == 0 || res == Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING, false,
+            "StartUsingPermission for tokenId:%{public}u, PrivacyKit error code:%{public}d", targetTokenId, res);
+        if (res == Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING) {
+            AUDIO_ERR_LOG("The PrivacyKit return ERR_PERMISSION_ALREADY_START_USING error code:%{public}d", res);
         }
-        WatchTimeout reguard("Security::AccessToken::PrivacyKit::AddPermissionUsedRecord:NotifyPrivacy");
+        WatchTimeout reguard("Security::AccessToken::PrivacyKit::AddPermissionUsedRecord:NotifyPrivacyStart");
         res = Security::AccessToken::PrivacyKit::AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
         reguard.CheckCurrTimeout();
-        if (res != 0) {
-            AUDIO_ERR_LOG("AddPermissionUsedRecord for tokenId %{public}u! The PrivacyKit error code is %{public}d",
-                targetTokenId, res);
-            return false;
-        }
+        CHECK_AND_RETURN_RET_LOG(res == 0, false, "AddPermissionUsedRecord for tokenId %{public}u!"
+            "The PrivacyKit error code:%{public}d", targetTokenId, res);
         g_tokenIdRecordMap[targetTokenId] = {sessionId};
     }
     return true;
 }
 
-bool PermissionUtil::NotifyStop(uint32_t targetTokenId, uint32_t sessionId)
+bool PermissionUtil::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionId)
 {
-    AudioXCollie audioXCollie("PermissionUtil::NotifyStop", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStop", TIME_OUT_SECONDS);
     std::unique_lock<std::mutex> lock(g_recordMapMutex);
     if (!g_tokenIdRecordMap.count(targetTokenId)) {
         AUDIO_INFO_LOG("this TokenId %{public}u is already not in using", targetTokenId);
@@ -454,18 +724,11 @@ bool PermissionUtil::NotifyStop(uint32_t targetTokenId, uint32_t sessionId)
         g_tokenIdRecordMap[targetTokenId].size());
     if (g_tokenIdRecordMap[targetTokenId].empty()) {
         g_tokenIdRecordMap.erase(targetTokenId);
-
-        Trace trace("PrivacyKit::StopUsingPermission");
-        AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}d sessionId:%{public}d",
-            targetTokenId, sessionId);
-        WatchTimeout guard("Security::AccessToken::PrivacyKit::StopUsingPermission:NotifyStop");
-        int32_t res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-        guard.CheckCurrTimeout();
-        if (res != 0) {
-            AUDIO_ERR_LOG("StopUsingPermission for tokenId %{public}u!, The PrivacyKit error code is %{public}d",
-                targetTokenId, res);
-            return false;
-        }
+        AUDIO_INFO_LOG("Notify PrivacyKit to remove the microphone privacy indicator "
+            "for tokenId: %{public}d sessionId:%{public}d", targetTokenId, sessionId);
+        int32_t res = PermissionUtil::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+        CHECK_AND_RETURN_RET_LOG(res == 0, false, "StopUsingPermission for tokenId %{public}u!"
+            "The PrivacyKit error code:%{public}d", targetTokenId, res);
     }
     return true;
 }
@@ -758,18 +1021,41 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
             curMaxAmplitude = value;
         }
     }
-    return float(curMaxAmplitude) / LONG_MAX;
+    return float(curMaxAmplitude) / static_cast<double>(LONG_MAX);
 }
 
 template <typename T>
-void StringParser(std::string& param, T& result)
+bool StringConverter(const std::string &str, T &result)
 {
-    std::stringstream valueStr;
-    valueStr << param;
-    valueStr >> result;
+    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), result);
+    return ec == std::errc{} && ptr == str.data() + str.size();
 }
 
-template void StringParser(std::string& param, uint32_t& result);
+template bool StringConverter(const std::string &str, uint64_t &result);
+template bool StringConverter(const std::string &str, uint32_t &result);
+template bool StringConverter(const std::string &str, int32_t &result);
+template bool StringConverter(const std::string &str, uint16_t &result);
+template bool StringConverter(const std::string &str, uint8_t &result);
+template bool StringConverter(const std::string &str, int8_t &result);
+
+bool StringConverterFloat(const std::string &str, float &result)
+{
+    char *end = nullptr;
+    errno = 0;
+    result = std::strtof(str.c_str(), &end);
+    return end != str.c_str() && *end == '\0' && errno == 0;
+}
+
+bool SetSysPara(const std::string &key, int32_t value)
+{
+    auto res = SetParameter(key.c_str(), std::to_string(value).c_str());
+    if (res < 0) {
+        AUDIO_WARNING_LOG("SetSysPara fail, key:%{public}s res:%{public}d", key.c_str(), res);
+        return false;
+    }
+    AUDIO_INFO_LOG("SetSysPara %{public}d success.", value);
+    return true;
+}
 
 template <typename T>
 bool GetSysPara(const char *key, T &value)
@@ -886,6 +1172,17 @@ void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **f
     }
 }
 
+void CloseFd(int fd)
+{
+    // log stdin, stdout, stderr.
+    if (fd == STDIN_FILENO || fd == STDOUT_FILENO || fd == STDERR_FILENO) {
+        AUDIO_WARNING_LOG("special fd: %{public}d will be closed", fd);
+    }
+    int tmpFd = fd;
+    close(fd);
+    AUDIO_DEBUG_LOG("fd: %{public}d closed successfuly!", tmpFd);
+}
+
 static void MemcpyToI32FromI16(int16_t *src, int32_t *dst, size_t count)
 {
     for (size_t i = 0; i < count; i++) {
@@ -931,8 +1228,8 @@ std::string GetTime()
     curTime += (t->tm_sec < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_sec) :
         std::to_string(t->tm_sec));
     int64_t mSec = static_cast<int64_t>(tv.tv_usec / AUDIO_MS_PER_SECOND);
-    curTime += (mSec < (DECIMAL_EXPONENT * DECIMAL_EXPONENT) ? (mSec < DECIMAL_EXPONENT ? "00" : "0")
-        + std::to_string(mSec) : std::to_string(mSec));
+    curTime += (mSec < (DECIMAL_EXPONENT * DECIMAL_EXPONENT) ? (mSec < DECIMAL_EXPONENT ? "00" : "0") +
+        std::to_string(mSec) : std::to_string(mSec));
     return curTime;
 }
 
@@ -1281,6 +1578,9 @@ const std::string AudioInfoDumpUtils::GetSourceName(SourceType sourceType)
         case SOURCE_TYPE_WAKEUP:
             name = "WAKEUP";
             break;
+        case SOURCE_TYPE_UNPROCESSED:
+            name = "SOURCE_TYPE_UNPROCESSED";
+            break;
         default:
             name = "UNKNOWN";
     }
@@ -1330,7 +1630,6 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_GAME, STREAM_MUSIC},
     {STREAM_SPEECH, STREAM_MUSIC},
     {STREAM_NAVIGATION, STREAM_MUSIC},
-    {STREAM_CAMCORDER, STREAM_MUSIC},
     {STREAM_VOICE_MESSAGE, STREAM_MUSIC},
 
     {STREAM_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT},

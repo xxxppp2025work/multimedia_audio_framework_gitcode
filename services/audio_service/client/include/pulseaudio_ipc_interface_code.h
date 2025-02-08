@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,8 +15,6 @@
 
 #ifndef I_AUDIO_SERVER_INTERFACE_H
 #define I_AUDIO_SERVER_INTERFACE_H
-
-#include "audio_info.h"
 
 /* SAID: 3001 */
 namespace OHOS {
@@ -42,7 +40,6 @@ namespace AudioStandard {
         SET_AUDIO_BALANCE_VALUE,
         CREATE_AUDIOPROCESS,
         LOAD_AUDIO_EFFECT_LIBRARIES,
-        REQUEST_THREAD_PRIORITY,
         CREATE_AUDIO_EFFECT_CHAIN_MANAGER,
         SET_OUTPUT_DEVICE_SINK,
         CREATE_PLAYBACK_CAPTURER_MANAGER,
@@ -65,6 +62,7 @@ namespace AudioStandard {
         SET_ASR_NOISE_SUPPRESSION_MODE,
         SET_OFFLOAD_MODE,
         UNSET_OFFLOAD_MODE,
+        CHECK_HIBERNATE_STATE,
         GET_ASR_NOISE_SUPPRESSION_MODE,
         SET_ASR_WHISPER_DETECTION_MODE,
         GET_ASR_WHISPER_DETECTION_MODE,
@@ -72,6 +70,8 @@ namespace AudioStandard {
         SET_ASR_VOICE_MUTE_MODE,
         IS_WHISPERING,
         GET_EFFECT_OFFLOAD_ENABLED,
+        GET_AUDIO_EFFECT_PROPERTY_V3,
+        SET_AUDIO_EFFECT_PROPERTY_V3,
         GET_AUDIO_ENHANCE_PROPERTY,
         GET_AUDIO_EFFECT_PROPERTY,
         SET_AUDIO_ENHANCE_PROPERTY,
@@ -85,7 +85,12 @@ namespace AudioStandard {
         UPDATE_SESSION_CONNECTION_STATE,
         SET_SINGLE_STREAM_MUTE,
         RESTORE_SESSION,
-        AUDIO_SERVER_CODE_MAX = RESTORE_SESSION,
+        CREATE_IPC_OFFLINE_STREAM,
+        GET_OFFLINE_AUDIO_EFFECT_CHAINS,
+        GET_STANDBY_STATUS,
+        GENERATE_SESSION_ID,
+        NOTIFY_ACCOUNTS_CHANGED,
+        AUDIO_SERVER_CODE_MAX = NOTIFY_ACCOUNTS_CHANGED,
     };
 } // namespace AudioStandard
 } // namespace OHOS

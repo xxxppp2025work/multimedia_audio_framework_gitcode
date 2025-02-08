@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License") = 0;
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,7 +18,6 @@
 #include <map>
 #include <memory>
 #include "timestamp.h"
-#include "audio_info.h"
 #include "audio_capturer.h"
 #include "audio_renderer.h"
 #include "audio_stream_manager.h"
@@ -102,6 +101,7 @@ public:
 
         std::optional<int32_t> userSettedPreferredFrameSize = std::nullopt;
         bool silentModeAndMixWithOthers = false;
+        DeviceType defaultOutputDevice = DEVICE_TYPE_NONE;
     };
 
     virtual ~IAudioStream() = default;
@@ -116,7 +116,13 @@ public:
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     static void CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> &streamMap);
-    static const std::string GetEffectSceneName(const StreamUsage &streamUsage);
+    static inline bool IsFastStreamClass(StreamClass streamClass)
+    {
+        if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
+            return true;
+        }
+        return false;
+    }
 
     virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) = 0;
     virtual void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId) = 0;
@@ -125,10 +131,6 @@ public:
     virtual int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj) = 0;
     virtual int32_t GetAudioStreamInfo(AudioStreamParams &info) = 0;
-    virtual bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        SourceType sourceType = SOURCE_TYPE_MIC) = 0;
-    virtual bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        AudioPermissionState state) = 0;
     virtual int32_t GetAudioSessionID(uint32_t &sessionID) = 0;
     virtual void GetAudioPipeType(AudioPipeType &pipeType) = 0;
     virtual State GetState() = 0;
@@ -275,6 +277,12 @@ public:
     virtual void SetSilentModeAndMixWithOthers(bool on) = 0;
 
     virtual bool GetSilentModeAndMixWithOthers() = 0;
+
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) = 0;
+
+    virtual DeviceType GetDefaultOutputDevice() = 0;
+
+    virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -63,6 +63,11 @@ int32_t AudioRendererFileSink::SetVoiceVolume(float volume)
     return ERR_NOT_SUPPORTED;
 }
 
+int32_t AudioRendererFileSink::GetAudioScene()
+{
+    return ERR_NOT_SUPPORTED;
+}
+
 int32_t AudioRendererFileSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
 {
     return ERR_NOT_SUPPORTED;
@@ -87,9 +92,9 @@ std::string AudioRendererFileSink::GetAudioParameter(const AudioParamKey key, co
     return "";
 }
 
-void AudioRendererFileSink::RegisterParameterCallback(IAudioSinkCallback* callback)
+void AudioRendererFileSink::RegisterAudioSinkCallback(IAudioSinkCallback* callback)
 {
-    AUDIO_ERR_LOG("AudioRendererFileSink RegisterParameterCallback not supported.");
+    AUDIO_ERR_LOG("AudioRendererFileSink RegisterAudioSinkCallback not supported.");
 }
 
 void AudioRendererFileSink::SetAudioMonoState(bool audioMono)

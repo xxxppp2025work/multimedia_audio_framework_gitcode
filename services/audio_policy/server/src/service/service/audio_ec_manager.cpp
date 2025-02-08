@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,7 +19,6 @@
 #include "audio_ec_manager.h"
 #include "parameter.h"
 #include "parameters.h"
-#include "audio_utils.h"
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
@@ -47,7 +46,8 @@ static const std::vector<DeviceType> MIC_REF_DEVICES = {
     DEVICE_TYPE_WIRED_HEADSET,
     DEVICE_TYPE_USB_HEADSET,
     DEVICE_TYPE_BLUETOOTH_SCO,
-    DEVICE_TYPE_USB_ARM_HEADSET
+    DEVICE_TYPE_USB_ARM_HEADSET,
+    DEVICE_TYPE_BLUETOOTH_A2DP_IN
 };
 
 static std::map<std::string, AudioSampleFormat> formatStrToEnum = {
@@ -152,8 +152,13 @@ static void GetUsbModuleInfo(string deviceInfo, AudioModuleInfo &moduleInfo)
     }
 
     if (!moduleInfo.rate.empty() && !moduleInfo.format.empty() && !moduleInfo.channels.empty()) {
-        uint32_t bufferSize = static_cast<uint32_t>(std::stoi(moduleInfo.rate)) *
-            static_cast<uint32_t>(std::stoi(moduleInfo.channels)) *
+        uint32_t rateValue, channelValue = 0;
+        CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.rate, rateValue),
+            "convert invalid moduleInfo.rate: %{public}s", moduleInfo.rate.c_str());
+        CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.channels, channelValue),
+            "convert invalid moduleInfo.channels: %{public}s", moduleInfo.channels.c_str());
+
+        uint32_t bufferSize = rateValue * channelValue *
             AudioPolicyUtils::GetInstance().PcmFormatToBytes(static_cast<AudioSampleFormat>(
                 formatFromParserStrToEnum[moduleInfo.format])) * BUFFER_CALC_20MS / static_cast<uint32_t>(MS_PER_S);
         moduleInfo.bufferSize = std::to_string(bufferSize);
@@ -190,6 +195,7 @@ void AudioEcManager::PrepareAndOpenNormalSource(SessionInfo &sessionInfo,
 void AudioEcManager::CloseNormalSource()
 {
     AUDIO_INFO_LOG("close all sources");
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(BLUETOOTH_MIC);
     audioIOHandleMap_.ClosePortAndEraseIOHandle(PRIMARY_MIC);
     if (isEcFeatureEnable_) {
         audioIOHandleMap_.ClosePortAndEraseIOHandle(USB_MIC);
@@ -270,7 +276,7 @@ void AudioEcManager::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType 
     std::shared_ptr<AudioDeviceDescriptor> inputDesc =
         audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
 
-    UpdateAudioEcInfo(inputDesc->deviceType_, outputDesc.front()->deviceType_);
+    UpdateAudioEcInfo(*inputDesc, *outputDesc.front());
     UpdateModuleInfoForEc(moduleInfo);
 }
 
@@ -409,24 +415,26 @@ EcType AudioEcManager::GetEcType(const DeviceType inputDevice, const DeviceType 
     return ecType;
 }
 
-void AudioEcManager::UpdateAudioEcInfo(const DeviceType inputDevice, const DeviceType outputDevice)
+void AudioEcManager::UpdateAudioEcInfo(const AudioDeviceDescriptor &inputDevice,
+    const AudioDeviceDescriptor &outputDevice)
 {
     if (!isEcFeatureEnable_) {
         AUDIO_INFO_LOG("UpdateModuleForEc ignore for feature not enable");
         return;
     }
     std::lock_guard<std::mutex> lock(audioEcInfoMutex_);
-    if (audioEcInfo_.inputDevice == inputDevice && audioEcInfo_.outputDevice == outputDevice) {
+    if (audioEcInfo_.inputDevice.IsSameDeviceDesc(inputDevice) &&
+        audioEcInfo_.outputDevice.IsSameDeviceDesc(outputDevice)) {
         AUDIO_INFO_LOG("UpdateModuleForEc abort, no device changed");
         return;
     }
     audioEcInfo_.inputDevice = inputDevice;
     audioEcInfo_.outputDevice = outputDevice;
-    audioEcInfo_.ecType = GetEcType(inputDevice, outputDevice);
-    audioEcInfo_.ecInputAdapter = GetHalNameForDevice(ROLE_SOURCE, inputDevice);
-    audioEcInfo_.ecOutputAdapter = GetHalNameForDevice(ROLE_SINK, outputDevice);
+    audioEcInfo_.ecType = GetEcType(inputDevice.deviceType_, outputDevice.deviceType_);
+    audioEcInfo_.ecInputAdapter = GetHalNameForDevice(ROLE_SOURCE, inputDevice.deviceType_);
+    audioEcInfo_.ecOutputAdapter = GetHalNameForDevice(ROLE_SINK, outputDevice.deviceType_);
     PipeInfo pipeInfo;
-    int32_t result = GetPipeInfoByDeviceTypeForEc(ROLE_SINK, outputDevice, pipeInfo);
+    int32_t result = GetPipeInfoByDeviceTypeForEc(ROLE_SINK, outputDevice.deviceType_, pipeInfo);
     CHECK_AND_RETURN_LOG(result == SUCCESS, "Ec stream not update for no pipe found");
     audioEcInfo_.pipeInfo = pipeInfo;
     audioEcInfo_.samplingRate = GetEcSamplingRate(audioEcInfo_.ecOutputAdapter, pipeInfo.streamPropInfos_.front());
@@ -434,9 +442,9 @@ void AudioEcManager::UpdateAudioEcInfo(const DeviceType inputDevice, const Devic
     audioEcInfo_.channels = GetEcChannels(audioEcInfo_.ecOutputAdapter, pipeInfo.streamPropInfos_.front());
     AUDIO_INFO_LOG("inputDevice: %{public}d, outputDevice: %{public}d, ecType: %{public}d, ecInputAdapter: %{public}s"
         "ecOutputAdapter: %{public}s, samplingRate: %{public}s, format: %{public}s, channels: %{public}s",
-        audioEcInfo_.inputDevice, audioEcInfo_.outputDevice, audioEcInfo_.ecType, audioEcInfo_.ecInputAdapter.c_str(),
-        audioEcInfo_.ecOutputAdapter.c_str(), audioEcInfo_.samplingRate.c_str(), audioEcInfo_.format.c_str(),
-        audioEcInfo_.channels.c_str());
+        audioEcInfo_.inputDevice.deviceType_, audioEcInfo_.outputDevice.deviceType_, audioEcInfo_.ecType,
+        audioEcInfo_.ecInputAdapter.c_str(), audioEcInfo_.ecOutputAdapter.c_str(), audioEcInfo_.samplingRate.c_str(),
+        audioEcInfo_.format.c_str(), audioEcInfo_.channels.c_str());
 }
 
 void AudioEcManager::UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo)
@@ -486,8 +494,8 @@ AudioEcInfo AudioEcManager::GetAudioEcInfo()
 void AudioEcManager::ResetAudioEcInfo()
 {
     std::lock_guard<std::mutex> lock(audioEcInfoMutex_);
-    audioEcInfo_.inputDevice = DEVICE_TYPE_NONE;
-    audioEcInfo_.outputDevice = DEVICE_TYPE_NONE;
+    audioEcInfo_.inputDevice.deviceType_ = DEVICE_TYPE_NONE;
+    audioEcInfo_.outputDevice.deviceType_ = DEVICE_TYPE_NONE;
 }
 
 void AudioEcManager::PresetArmIdleInput(const string& address)
@@ -495,7 +503,7 @@ void AudioEcManager::PresetArmIdleInput(const string& address)
     AUDIO_INFO_LOG("Entry. address=%{public}s", GetEncryptAddr(address).c_str());
     std::list<AudioModuleInfo> moduleInfoList;
     bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
-    CHECK_AND_RETURN_RET(ret,);
+    CHECK_AND_RETURN_LOG(ret, "GetModuleListByType empty");
     for (auto &moduleInfo : moduleInfoList) {
         DeviceRole configRole = moduleInfo.role == "sink" ? OUTPUT_DEVICE : INPUT_DEVICE;
         if (configRole != INPUT_DEVICE) {continue;}
@@ -509,9 +517,11 @@ void AudioEcManager::PresetArmIdleInput(const string& address)
 void AudioEcManager::ActivateArmDevice(const string& address, const DeviceRole role)
 {
     AUDIO_INFO_LOG("Entry. address=%{public}s, role=%{public}d", GetEncryptAddr(address).c_str(), role);
+    string &activeArmAddr = role == INPUT_DEVICE ? activeArmInputAddr_ : activeArmOutputAddr_;
+    CHECK_AND_RETURN_RET(address != activeArmAddr,);
     std::list<AudioModuleInfo> moduleInfoList;
     bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
-    CHECK_AND_RETURN_RET(ret,);
+    CHECK_AND_RETURN_LOG(ret, "GetModuleListByType empty");
     for (auto &moduleInfo : moduleInfoList) {
         DeviceRole configRole = moduleInfo.role == "sink" ? OUTPUT_DEVICE : INPUT_DEVICE;
         if (configRole != role) {continue;}
@@ -538,6 +548,26 @@ void AudioEcManager::ActivateArmDevice(const string& address, const DeviceRole r
                 "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
         }
     }
+    activeArmAddr = address;
+}
+
+void AudioEcManager::CloseUsbArmDevice(const AudioDeviceDescriptor &device)
+{
+    AUDIO_INFO_LOG("Entry. address=%{public}s, role=%{public}d",
+        GetEncryptAddr(device.macAddress_).c_str(), device.deviceRole_);
+    string &activeArmAddr = device.deviceRole_ == INPUT_DEVICE ? activeArmInputAddr_ : activeArmOutputAddr_;
+    CHECK_AND_RETURN_RET(device.macAddress_ == activeArmAddr,);
+    std::list<AudioModuleInfo> moduleInfoList;
+    bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
+    CHECK_AND_RETURN_LOG(ret, "GetModuleListByType Failed");
+    for (auto &moduleInfo : moduleInfoList) {
+        DeviceRole configRole = moduleInfo.role == "sink" ? OUTPUT_DEVICE : INPUT_DEVICE;
+        if (configRole != device.deviceRole_) {continue;}
+        if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name)) {
+            audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleInfo.name);
+        }
+    }
+    activeArmAddr = "";
 }
 
 void AudioEcManager::UpdateArmModuleInfo(const string& address, const DeviceRole role, AudioModuleInfo& moduleInfo)
@@ -549,9 +579,14 @@ void AudioEcManager::UpdateArmModuleInfo(const string& address, const DeviceRole
     if (!deviceInfo.empty()) {
         GetUsbModuleInfo(deviceInfo, moduleInfo);
         if (isEcFeatureEnable_) {
-            uint32_t bufferSize = (static_cast<uint32_t>(std::stoi(moduleInfo.rate)) *
+            uint32_t rateValue, channelValue = 0;
+            CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.rate, rateValue),
+                "convert invalid moduleInfo.rate: %{public}s", moduleInfo.rate.c_str());
+            CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.channels, channelValue),
+                "convert invalid moduleInfo.channels: %{public}s", moduleInfo.channels.c_str());
+            uint32_t bufferSize = rateValue * channelValue *
                 AudioPolicyUtils::GetInstance().PcmFormatToBytes(formatStrToEnum[moduleInfo.format]) *
-                static_cast<uint32_t>(std::stoi(moduleInfo.channels))) * RENDER_FRAME_INTERVAL_IN_SECONDS;
+                RENDER_FRAME_INTERVAL_IN_SECONDS;
             moduleInfo.bufferSize = std::to_string(bufferSize);
             AUDIO_INFO_LOG("update arm usb buffer size: %{public}s", moduleInfo.bufferSize.c_str());
         }
@@ -573,6 +608,9 @@ void AudioEcManager::GetTargetSourceTypeAndMatchingFlag(SourceType source,
             break;
         case SOURCE_TYPE_VOICE_CALL:
             targetSource = SOURCE_TYPE_VOICE_CALL;
+            break;
+        case SOURCE_TYPE_UNPROCESSED:
+            targetSource = SOURCE_TYPE_UNPROCESSED;
             break;
         default:
             targetSource = SOURCE_TYPE_MIC;
@@ -631,11 +669,7 @@ int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionIn
     targetInfo = targetStreamPropInfo;
 
     if (isEcFeatureEnable_) {
-        SourceType tmpSourceType = targetSourceType;
-        if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
-            tmpSourceType = SOURCE_TYPE_MIC;
-        }
-        std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(tmpSourceType, -1);
+        std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(targetSourceType, -1);
         if (inputDesc != nullptr && inputDesc->deviceType_ != DEVICE_TYPE_MIC &&
             targetInfo.channelLayout_ == PC_MIC_CHANNEL_NUM) {
             // only built-in mic can use 4 channel, update later by using xml to describe
@@ -643,6 +677,7 @@ int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionIn
         }
     }
 
+#ifndef IS_EMULATOR
     // need change to use profile for all devices later
     if (primaryMicModuleInfo_.OpenMicSpeaker == "1") {
         uint32_t sampleFormatBits = AudioPolicyUtils::GetInstance().PcmFormatToBytes(
@@ -650,6 +685,7 @@ int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionIn
         targetInfo.bufferSize_ = BUFFER_CALC_20MS * targetInfo.sampleRate_ / static_cast<uint32_t>(MS_PER_S)
             * targetInfo.channelLayout_ * sampleFormatBits;
     }
+#endif
 
     return SUCCESS;
 }
@@ -677,6 +713,12 @@ bool AudioEcManager::GetEcFeatureEnable()
 bool AudioEcManager::GetMicRefFeatureEnable()
 {
     return isMicRefFeatureEnable_;
+}
+
+void AudioEcManager::UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType)
+{
+    UpdateStreamEcInfo(moduleInfo, sourceType);
+    UpdateStreamMicRefInfo(moduleInfo, sourceType);
 }
 
 std::string AudioEcManager::GetHalNameForDevice(const std::string &role, const DeviceType deviceType)

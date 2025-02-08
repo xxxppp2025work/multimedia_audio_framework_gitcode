@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,7 +34,6 @@
 #include "i_audio_capturer_source.h"
 #include "audio_effect_server.h"
 #include "audio_asr.h"
-#include "audio_utils.h"
 #include "policy_handler.h"
 
 namespace OHOS {
@@ -93,7 +92,11 @@ public:
     int32_t SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on) override;
     int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on) override;
     int32_t IsWhispering() override;
-
+    // for effect V3
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE) override;
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE) override;
     // for effect
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
@@ -123,8 +126,6 @@ public:
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
 
     int32_t SetWakeupSourceCallback(const sptr<IRemoteObject>& object) override;
-
-    void RequestThreadPriority(uint32_t tid, std::string bundleName) override;
 
     int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
 
@@ -172,15 +173,39 @@ public:
     int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack) override;
 
     int32_t UnsetOffloadMode(uint32_t sessionId) override;
+
+    void OnAudioSinkStateChange(uint32_t sinkId, bool started) override;
+
+    void CheckHibernateState(bool hibernate) override;
+
+    sptr<IRemoteObject> CreateIpcOfflineStream(int32_t &errorCode) override;
+
+    int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) override;
+
+    int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
+
+    int32_t GenerateSessionId(uint32_t &sessionId) override;
+    
+    void NotifyAccountsChanged() override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
 private:
+    int32_t GetAudioEnhancePropertyArray(AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType);
+    int32_t GetAudioEffectPropertyArray(AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t SetAudioEffectChainProperty(const AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t SetAudioEnhanceChainProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType);
+
+    void SetA2dpAudioParameter(const std::string &renderValue);
     bool VerifyClientPermission(const std::string &permissionName,
         Security::AccessToken::AccessTokenID tokenId = Security::AccessToken::INVALID_TOKENID);
     bool PermissionChecker(const AudioProcessConfig &config);
     bool CheckPlaybackPermission(const AudioProcessConfig &config);
+    int32_t CheckInnerRecorderPermission(const AudioProcessConfig &config);
     bool CheckRecorderPermission(const AudioProcessConfig &config);
+    bool HandleCheckRecorderBackgroundCapture(const AudioProcessConfig &config);
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
 
     void ResetRecordConfig(AudioProcessConfig &config);
@@ -195,6 +220,8 @@ private:
     void AudioServerDied(pid_t pid, pid_t uid);
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
+    void RegisterAudioRendererSinkCallback();
+
     int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
     int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
@@ -208,7 +235,7 @@ private:
         const std::string &extraSceneType);
     int32_t SetSystemVolumeToEffect(const AudioStreamType streamType, float volume);
     const std::string GetBundleNameFromUid(int32_t uid);
-    bool IsFastBlocked(int32_t uid);
+    bool IsFastBlocked(int32_t uid, PlayerType playerType);
     int32_t SetVolumeInfoForEnhanceChain(const AudioStreamType &streamType);
     int32_t SetMicrophoneMuteForEnhanceChain(const bool &isMute);
     void InitMaxRendererStreamCntPerUid();
@@ -220,11 +247,14 @@ private:
     bool GetPcmDumpParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result);
     sptr<IRemoteObject> CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid);
+    int32_t SetAsrVoiceSuppressionControlMode(const AudioParamKey paramKey, AsrVoiceControlMode asrVoiceControlMode,
+        bool on, int32_t modifyVolume);
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;
     static constexpr int32_t MAX_VOLUME = 15;
     static constexpr int32_t MIN_VOLUME = 0;
+    static constexpr int32_t ROOT_UID = 0;
     static uint32_t paDaemonTid_;
     static std::unordered_map<int, float> AudioStreamVolumeMap;
     static std::map<std::string, std::string> audioParameters;

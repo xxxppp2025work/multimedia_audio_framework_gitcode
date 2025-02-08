@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,7 +19,6 @@
 #include <memory>
 #include "iremote_proxy.h"
 #include "audio_policy_base.h"
-#include "audio_info.h"
 #include "audio_errors.h"
 #include "microphone_descriptor.h"
 
@@ -48,9 +47,11 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId) override;
 
-    int32_t SetStreamMuteLegacy(AudioVolumeType volumeType, bool mute) override;
+    int32_t SetStreamMuteLegacy(AudioVolumeType volumeType, bool mute,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE) override;
 
-    int32_t SetStreamMute(AudioVolumeType volumeType, bool mute) override;
+    int32_t SetStreamMute(AudioVolumeType volumeType, bool mute,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE) override;
 
     bool GetStreamMute(AudioVolumeType volumeType) override;
 
@@ -59,9 +60,6 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) override;
-
-    int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
-        uint32_t sessionId) override;
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) override;
 
@@ -91,9 +89,9 @@ public:
     int32_t UnsetDistributedRoutingRoleCallback() override;
 
 #ifdef FEATURE_DTMF_TONE
-    std::vector<int32_t> GetSupportedTones() override;
+    std::vector<int32_t> GetSupportedTones(const std::string &countryCode) override;
 
-    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype) override;
+    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype, const std::string &countryCode) override;
 #endif
 
     AudioRingerMode GetRingerMode() override;
@@ -125,7 +123,7 @@ public:
 
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID = 0) override;
 
-    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0,
+    int32_t ActivateAudioInterrupt(AudioInterrupt &audioInterrupt, const int32_t zoneID = 0,
         const bool isUpdatedAudioStrategy = false) override;
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0) override;
@@ -146,17 +144,7 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID = 0) override;
 
-    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        SourceType sourceType = SOURCE_TYPE_MIC) override;
-
-    bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        AudioPermissionState state) override;
-
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
-
-    int32_t GetAudioLatencyFromXml() override;
-
-    uint32_t GetSinkLatencyFromXml() override;
 
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo) override;
 
@@ -179,8 +167,6 @@ public:
     int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) override;
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
-
-    bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) override;
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo) override;
@@ -321,6 +307,11 @@ public:
 
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason) override;
 
+    int32_t SetPreferredDevice(const PreferredType preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &desc) override;
+
+    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) override;
+
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAudioDeviceAnahsCallback() override;
@@ -341,8 +332,11 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
 
-    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning) override;
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
+
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray) override;
+
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
 
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
 
@@ -356,6 +350,8 @@ public:
 
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
 
+    int32_t SetVirtualCall(const bool isVirtual) override;
+
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,
@@ -366,4 +362,3 @@ private:
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_POLICY_PROXY_H
- 

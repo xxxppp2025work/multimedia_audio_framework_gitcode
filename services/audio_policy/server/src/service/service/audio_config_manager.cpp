@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,9 +21,7 @@
 #include "iservice_registry.h"
 #include "parameter.h"
 #include "parameters.h"
-#include "audio_utils.h"
-#include "audio_log.h"
-#include "audio_utils.h"
+#include "audio_policy_log.h"
 #include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
@@ -46,11 +44,6 @@ bool AudioConfigManager::Init()
         AUDIO_ERR_LOG("Audio Policy Config Load Configuration failed");
         return ret;
     }
-    ret = audioPolicyConfigParser->Parse();
-    if (!ret) {
-        AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Config Parse failed");
-        AUDIO_ERR_LOG("Audio Policy Config Parse Configuration failed");
-    }
     return ret;
 }
 
@@ -61,13 +54,11 @@ void AudioConfigManager::OnAudioPolicyXmlParsingCompleted(
     CHECK_AND_RETURN_LOG(!adapterInfoMap.empty(), "failed to parse audiopolicy xml file. Received data is empty");
     adapterInfoMap_ = adapterInfoMap;
 
-    for (auto &adapterInfo : adapterInfoMap_) {
-        for (auto &deviceInfos : (adapterInfo.second).deviceInfos_) {
-            if (deviceInfos.type_ == EARPIECE_TYPE_NAME) {
-                hasEarpiece_ = true;
-                break;
-            }
-        }
+    for (const auto &adapterInfo : adapterInfoMap_) {
+        hasEarpiece_ = std::any_of((adapterInfo.second).deviceInfos_.begin(), (adapterInfo.second).deviceInfos_.end(),
+            [](const auto& deviceInfos) {
+                return deviceInfos.type_ == EARPIECE_TYPE_NAME;
+            });
         if (hasEarpiece_) {
             break;
         }
@@ -178,11 +169,17 @@ void AudioConfigManager::OnGlobalConfigsParsed(GlobalConfigs &globalConfigs)
 
 int32_t AudioConfigManager::GetMaxRendererInstances()
 {
-    for (auto &configInfo : globalConfigs_.outputConfigInfos_) {
-        if (configInfo.name_ == "normal" && configInfo.value_ != "") {
-            AUDIO_INFO_LOG("Max output normal instance is %{public}s", configInfo.value_.c_str());
-            return (int32_t)std::stoi(configInfo.value_);
-        }
+    auto configIter = std::find_if(globalConfigs_.outputConfigInfos_.begin(), globalConfigs_.outputConfigInfos_.end(),
+        [](const auto& configInfo) {
+            return configInfo.name_ == "normal" && configInfo.value_ != "";
+        });
+    if (configIter != globalConfigs_.outputConfigInfos_.end()) {
+        AUDIO_INFO_LOG("Max output normal instance is %{public}s", configIter->value_.c_str());
+        int32_t convertValue = 0;
+        CHECK_AND_RETURN_RET_LOG(StringConverter(configIter->value_, convertValue),
+            DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES,
+            "convert invalid configInfo.value_: %{public}s", configIter->value_.c_str());
+        return convertValue;
     }
     return DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES;
 }

@@ -40,7 +40,7 @@ static std::string GetEncryptAddr(const std::string &addr)
             auto pos = macHead.length();
             auto end = addr.find(';', macHead.length());
             auto num = end == string::npos ? addr.substr(pos) : addr.substr(pos, end - pos);
-            return string("c**=") + num + "**";
+            return string("c**") + num + "**";
         }
         return "";
     }
@@ -69,7 +69,6 @@ void AudioDeviceManager::ParseDeviceXml()
     unique_ptr<AudioDeviceParser> audioDeviceParser = make_unique<AudioDeviceParser>(this);
     if (audioDeviceParser->LoadConfiguration()) {
         AUDIO_INFO_LOG("Audio device manager load configuration successfully.");
-        audioDeviceParser->Parse();
     }
     AUDIO_INFO_LOG("Out");
 }
@@ -148,35 +147,23 @@ void AudioDeviceManager::AddRemoteCaptureDev(const shared_ptr<AudioDeviceDescrip
     }
 }
 
-void AudioDeviceManager::MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc,
-    DeviceRole devRole)
-{
-    auto isPresent = [&devDesc, &devRole] (const shared_ptr<AudioDeviceDescriptor> &desc) {
-        if (desc->networkId_ != devDesc->networkId_ || desc->deviceRole_ != devRole) {
-            return false;
-        }
-        if (devDesc->macAddress_ != "" && devDesc->macAddress_ == desc->macAddress_) {
-            return true;
-        } else {
-            return (desc->deviceType_ == devDesc->deviceType_);
-        }
-    };
-
-    auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
-    if (it != connectedDevices_.end()) {
-        devDesc->pairDeviceDescriptor_ = *it;
-        (*it)->pairDeviceDescriptor_ = devDesc;
-    }
-
-    MakePairedDefaultDeviceDescriptor(devDesc, devRole);
-}
-
 void AudioDeviceManager::MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
-    if (devDesc->deviceRole_ == INPUT_DEVICE) {
-        MakePairedDeviceDescriptor(devDesc, OUTPUT_DEVICE);
-    } else if (devDesc->deviceRole_ == OUTPUT_DEVICE) {
-        MakePairedDeviceDescriptor(devDesc, INPUT_DEVICE);
+    auto isPresent = [&devDesc] (const shared_ptr<AudioDeviceDescriptor> &desc) {
+        return devDesc->IsPairedDeviceDesc(*desc);
+    };
+
+    if (devDesc->deviceRole_ == INPUT_DEVICE || devDesc->deviceRole_ == OUTPUT_DEVICE) {
+        auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+        if (it != connectedDevices_.end()) {
+            devDesc->pairDeviceDescriptor_ = *it;
+            (*it)->pairDeviceDescriptor_ = devDesc;
+        }
+        if (devDesc->deviceRole_ == INPUT_DEVICE) {
+            MakePairedDefaultDeviceDescriptor(devDesc, OUTPUT_DEVICE);
+        } else {
+            MakePairedDefaultDeviceDescriptor(devDesc, INPUT_DEVICE);
+        }
     }
 }
 
@@ -330,7 +317,7 @@ void AudioDeviceManager::AddCaptureDevices(const shared_ptr<AudioDeviceDescripto
         capturePrivacyDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, INPUT_DEVICE, ALL_USAGE, "capture public device",
         capturePublicDevices_);
-    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, RECONGNITION, "capture recon privacy device",
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, RECOGNITION, "capture recognition privacy device",
         reconCapturePrivacyDevices_);
 }
 
@@ -426,16 +413,17 @@ std::string AudioDeviceManager::GetConnDevicesStr()
 std::string AudioDeviceManager::GetConnDevicesStr(const vector<shared_ptr<AudioDeviceDescriptor>> &descs)
 {
     std::string devices;
-    devices.append("device type:id:(category:constate) ");
+    devices.append("device type:id:role:(category:constate) ");
     for (auto iter : descs) {
         CHECK_AND_CONTINUE_LOG(iter != nullptr, "iter is nullptr");
         devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
         devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceId_)));
+        devices.append(":" + std::to_string(static_cast<uint32_t>(iter->getRole())));
         if (iter->getType() == DEVICE_TYPE_BLUETOOTH_A2DP ||
             iter->getType() == DEVICE_TYPE_BLUETOOTH_SCO) {
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceCategory_)));
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->connectState_)));
-        } else if (iter->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
+        } else if (IsUsb(iter->getType())) {
             devices.append(":" + GetEncryptAddr(iter->macAddress_));
         }
         devices.append(" ");
@@ -669,6 +657,14 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCaptureDefaultDevice()
     return devDesc;
 }
 
+shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::FindConnectedDeviceById(const int32_t deviceId)
+{
+    auto it = std::find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [deviceId](auto &item) {
+        return item->deviceId_ == deviceId;
+    });
+    return it == connectedDevices_.cend() ? nullptr : *it;
+}
+
 // LCOV_EXCL_START
 void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage,
     const DevicePrivacyInfo &deviceInfo, const std::shared_ptr<AudioDeviceDescriptor> &dev,
@@ -779,11 +775,31 @@ void AudioDeviceManager::GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usag
     }
 }
 
+// GetRemoteAvailableDevicesByUsage must be called with AudioDeviceManager::currentActiveDevicesMutex_lock
+void AudioDeviceManager::GetRemoteAvailableDevicesByUsage(AudioDeviceUsage usage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptor)
+{
+    if ((usage & MEDIA_OUTPUT_DEVICES) != 0) {
+        for (const auto &desc : connectedDevices_) {
+            if (desc->deviceType_ == DEVICE_TYPE_REMOTE_CAST && desc->networkId_ == LOCAL_NETWORK_ID) {
+                audioDeviceDescriptor.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+            }
+        }
+    }
+}
+
+void AudioDeviceManager::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
+{
+    remoteInfoNetworkId_ = networkId;
+    remoteInfoDeviceType_ = deviceType;
+}
+
 std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableDevicesByUsage(AudioDeviceUsage usage)
 {
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     std::vector<shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
     GetDefaultAvailableDevicesByUsage(usage, audioDeviceDescriptors);
+    GetRemoteAvailableDevicesByUsage(usage, audioDeviceDescriptors);
     for (const auto &dev : connectedDevices_) {
         for (const auto &devicePrivacy : devicePrivacyMaps_) {
             list<DevicePrivacyInfo> deviceInfos = devicePrivacy.second;
@@ -791,20 +807,47 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
             GetAvailableDevicesWithUsage(usage, deviceInfos, desc, audioDeviceDescriptors);
         }
     }
+    // If there are distributed devices, place them at a higher priority in the sorting order.
+    if (remoteInfoNetworkId_ != "" && remoteInfoDeviceType_ != DEVICE_TYPE_DEFAULT) {
+        ReorderAudioDevices(audioDeviceDescriptors, remoteInfoNetworkId_, remoteInfoDeviceType_);
+    }
     return audioDeviceDescriptors;
 }
 
-shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetDeviceByMacAddressAndDeviceType(
-    const vector<shared_ptr<AudioDeviceDescriptor>> &descs, const string &macAddress, DeviceType deviceType)
+void AudioDeviceManager::ReorderAudioDevices(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors,
+    const std::string &remoteInfoNetworkId, DeviceType remoteInfoDeviceType)
 {
-    auto isPresent = [&](const shared_ptr<AudioDeviceDescriptor> &desc) {
-        return desc && desc->macAddress_ == macAddress && desc->deviceType_ == deviceType;
-    };
-    auto it = find_if(descs.begin(), descs.end(), isPresent);
-    if (it != descs.end()) {
-        return std::make_shared<AudioDeviceDescriptor>(**it);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> nonLocalSpeakerDevices;
+    for (auto &desc : audioDeviceDescriptors) {
+        if (desc->deviceType_ == DEVICE_TYPE_SPEAKER && desc->networkId_ != LOCAL_NETWORK_ID) {
+            nonLocalSpeakerDevices.push_back(std::move(desc));
+        }
     }
-    return std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceDescriptors.erase(std::remove_if(audioDeviceDescriptors.begin(), audioDeviceDescriptors.end(),
+        [](const auto &device) {return device == nullptr;}), audioDeviceDescriptors.end());
+    std::sort(nonLocalSpeakerDevices.begin(), nonLocalSpeakerDevices.end(),
+        [](const auto &a, const auto &b) {return a->deviceId_ < b->deviceId_;});
+    audioDeviceDescriptors.insert(audioDeviceDescriptors.end(),
+        std::make_move_iterator(nonLocalSpeakerDevices.begin()),
+        std::make_move_iterator(nonLocalSpeakerDevices.end()));
+
+    if (remoteInfoNetworkId != "" && remoteInfoDeviceType == DEVICE_TYPE_REMOTE_CAST) {
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> remoteCastDevices;
+        for (auto &desc : audioDeviceDescriptors) {
+            if (desc->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
+                remoteCastDevices.push_back(std::move(desc));
+            }
+        }
+        audioDeviceDescriptors.erase(std::remove_if(audioDeviceDescriptors.begin(), audioDeviceDescriptors.end(),
+            [](const auto &device) {return device == nullptr;}), audioDeviceDescriptors.end());
+        std::sort(remoteCastDevices.begin(), remoteCastDevices.end(),
+            [](const auto &a, const auto &b) {return a->deviceId_ < b->deviceId_;});
+
+        audioDeviceDescriptors.insert(audioDeviceDescriptors.end(),
+            std::make_move_iterator(remoteCastDevices.begin()),
+            std::make_move_iterator(remoteCastDevices.end()));
+    }
 }
 
 unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> AudioDeviceManager::GetDevicePrivacyMaps()
@@ -824,16 +867,6 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableB
         }
     }
     return audioDeviceDescriptors;
-}
-
-void AudioDeviceManager::UpdateScoState(const std::string &macAddress, bool isConnnected)
-{
-    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
-    for (const auto &desc : connectedDevices_) {
-        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->macAddress_ == macAddress) {
-            desc->isScoRealConnected_ = isConnnected;
-        }
-    }
 }
 
 bool AudioDeviceManager::GetScoState()
@@ -1035,7 +1068,7 @@ void AudioDeviceManager::RemoveCaptureDevices(const AudioDeviceDescriptor &devDe
 {
     RemoveMatchDeviceInArray(devDesc, "capture privacy device", capturePrivacyDevices_);
     RemoveMatchDeviceInArray(devDesc, "capture public device", capturePublicDevices_);
-    RemoveMatchDeviceInArray(devDesc, "capture recon privacy device", reconCapturePrivacyDevices_);
+    RemoveMatchDeviceInArray(devDesc, "capture recognition privacy device", reconCapturePrivacyDevices_);
 }
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetDevicesByFilter(DeviceType devType, DeviceRole devRole,
@@ -1321,6 +1354,26 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCallRenderDevic
         devDesc = make_shared<AudioDeviceDescriptor>(speaker_);
     }
     return devDesc;
+}
+
+void AudioDeviceManager::Dump(std::string &dumpString)
+{
+    std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
+    AppendFormat(dumpString, " MediaDefaultOutputDevices:\n");
+    for (auto it : mediaDefaultOutputDevices_) {
+        AppendFormat(dumpString, "  sessionId: %u, device type: %s\n", it.first,
+            AudioInfoDumpUtils::GetDeviceTypeName(it.second).c_str());
+    }
+    AppendFormat(dumpString, "current media default output device: %s\n",
+        AudioInfoDumpUtils::GetDeviceTypeName(selectedMediaDefaultOutputDevice_).c_str());
+
+    AppendFormat(dumpString, " CallDefaultOutputDevices:\n");
+    for (auto it : callDefaultOutputDevices_) {
+        AppendFormat(dumpString, "  sessionId: %u, device type: %s\n", it.first,
+            AudioInfoDumpUtils::GetDeviceTypeName(it.second).c_str());
+    }
+    AppendFormat(dumpString, "current call default output device: %s\n",
+        AudioInfoDumpUtils::GetDeviceTypeName(selectedCallDefaultOutputDevice_).c_str());
 }
 // LCOV_EXCL_STOP
 }

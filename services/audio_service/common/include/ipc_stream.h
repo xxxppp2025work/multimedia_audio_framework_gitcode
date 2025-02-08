@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,7 +23,6 @@
 #include "iremote_proxy.h"
 #include "iremote_stub.h"
 
-#include "audio_info.h"
 #include "audio_process_config.h"
 #include "i_stream_listener.h"
 #include "oh_audio_buffer.h"
@@ -98,6 +97,9 @@ public:
     virtual int32_t SetDuckFactor(float duckFactor) = 0;
 
     virtual int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) = 0;
+
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) = 0;
+
     // IPC code.
     enum IpcStreamMsg : uint32_t {
         ON_REGISTER_STREAM_LISTENER = 0,
@@ -132,6 +134,7 @@ public:
         ON_SET_MUTE,
         ON_SET_DUCK_FACTOR,
         ON_REGISTER_THREAD_PRIORITY,
+        ON_SET_DEFAULT_OUTPUT_DEVICE,
         IPC_STREAM_MAX_MSG
     };
 

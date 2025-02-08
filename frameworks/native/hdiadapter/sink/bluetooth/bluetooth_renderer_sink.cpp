@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -37,10 +37,12 @@
 
 #include "audio_errors.h"
 #include "audio_hdi_log.h"
-#include "audio_utils.h"
+#include "volume_tools.h"
 #include "parameters.h"
 #include "media_monitor_manager.h"
-#include "audio_log_utils.h"
+#include "audio_utils.h"
+#include "audio_dump_pcm.h"
+#include "audio_performance_monitor.h"
 
 using namespace std;
 using namespace OHOS::HDI::Audio_Bluetooth;
@@ -70,6 +72,7 @@ const uint32_t PCM_32_BIT = 32;
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 constexpr uint32_t BIT_TO_BYTES = 8;
 constexpr int64_t STAMP_THRESHOLD_MS = 20;
+const char *BLUETOOTH_CANCEL_SUSPEND = "A2dpSuspended=0;";
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
@@ -106,11 +109,12 @@ public:
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
     int32_t SetVoiceVolume(float volume) override;
+    int32_t GetAudioScene() override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
     int32_t SetOutputRoutes(std::vector<DeviceType> &outputDevices) override;
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
-    void RegisterParameterCallback(IAudioSinkCallback* callback) override;
+    void RegisterAudioSinkCallback(IAudioSinkCallback* callback) override;
     float GetMaxAmplitude() override;
 
     void ResetOutputRouteForDisconnect(DeviceType device) override;
@@ -134,12 +138,13 @@ private:
     bool rendererInited_;
     bool started_;
     bool paused_;
-    bool suspend_;
+    std::atomic<bool> suspend_ = false;
     float leftVolume_;
     float rightVolume_;
     struct HDI::Audio_Bluetooth::AudioProxyManager *audioManager_;
     struct HDI::Audio_Bluetooth::AudioAdapter *audioAdapter_;
     struct HDI::Audio_Bluetooth::AudioRender *audioRender_;
+    IAudioSinkCallback *callback_ = nullptr;
     struct HDI::Audio_Bluetooth::AudioPort audioPort = {};
     void *handle_;
     bool audioMonoState_ = false;
@@ -148,8 +153,11 @@ private:
     float rightBalanceCoef_ = 1.0f;
     int32_t initCount_ = 0;
     int32_t logMode_ = 0;
+    uint32_t sinkId_ = 0;
     AudioSampleFormat audioSampleFormat_ = SAMPLE_S16LE;
 
+    // for sink state
+    std::mutex sinkMutex_;
     // for device switch
     std::mutex switchDeviceMutex_;
     int32_t muteCount_ = 0;
@@ -196,7 +204,7 @@ private:
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *data, size_t len);
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
+    void UpdateSinkState(bool started);
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     mutable int64_t volumeDataCount_ = 0;
@@ -214,6 +222,7 @@ BluetoothRendererSinkInner::BluetoothRendererSinkInner(bool isBluetoothLowLatenc
 BluetoothRendererSinkInner::~BluetoothRendererSinkInner()
 {
     BluetoothRendererSinkInner::DeInit();
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(ADAPTER_TYPE_BLUETOOTH);
     AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
@@ -241,6 +250,12 @@ int32_t BluetoothRendererSinkInner::SetVoiceVolume(float volume)
     return ERR_NOT_SUPPORTED;
 }
 
+int32_t BluetoothRendererSinkInner::GetAudioScene()
+{
+    AUDIO_DEBUG_LOG("not supported.");
+    return ERR_NOT_SUPPORTED;
+}
+
 int32_t BluetoothRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
 {
     return ERR_NOT_SUPPORTED;
@@ -260,10 +275,28 @@ void BluetoothRendererSinkInner::SetAudioParameter(const AudioParamKey key, cons
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("SetAudioParameter for render failed, audioRender_ is null");
         return;
-    } else {
-        int32_t ret = audioRender_->attr.SetExtraParams(reinterpret_cast<AudioHandle>(audioRender_), value.c_str());
-        if (ret != SUCCESS) {
-            AUDIO_WARNING_LOG("SetAudioParameter for render failed, error code: %d", ret);
+    }
+
+    int32_t ret = audioRender_->attr.SetExtraParams(reinterpret_cast<AudioHandle>(audioRender_), value.c_str());
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("SetAudioParameter for render failed, error code: %d", ret);
+    }
+
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    if (started_ && isBluetoothLowLatency_ && !strcmp(value.c_str(), BLUETOOTH_CANCEL_SUSPEND)) {
+        int32_t tryCount = 3; // try to start bluetooth render up to 3 times;
+        while (tryCount-- > 0) {
+            AUDIO_INFO_LOG("Try to start bluetooth render");
+            CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "Bluetooth renderer is nullptr");
+            ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
+            if (ret == SUCCESS) {
+                AUDIO_INFO_LOG("Start Fast Success");
+                CheckBluetoothScenario();
+                return;
+            } else {
+                AUDIO_ERR_LOG("Start failed, remaining %{public}d attempt(s)", tryCount);
+                usleep(WAIT_TIME_FOR_RETRY_IN_MICROSECOND);
+            }
         }
     }
 }
@@ -274,13 +307,20 @@ std::string BluetoothRendererSinkInner::GetAudioParameter(const AudioParamKey ke
     return "";
 }
 
-void BluetoothRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
+void BluetoothRendererSinkInner::RegisterAudioSinkCallback(IAudioSinkCallback* callback)
 {
-    AUDIO_ERR_LOG("BluetoothRendererSink RegisterParameterCallback not supported.");
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    if (callback_) {
+        AUDIO_INFO_LOG("AudioSinkCallback registered");
+    } else {
+        callback_ = callback;
+        AUDIO_INFO_LOG("Register AudioSinkCallback");
+    }
 }
 
 void BluetoothRendererSinkInner::DeInit()
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("BluetoothRendererSinkInner::DeInit");
 
     AUDIO_INFO_LOG("DeInit. isFast: %{public}d", isBluetoothLowLatency_);
@@ -452,6 +492,7 @@ AudioFormat BluetoothRendererSinkInner::ConvertToHdiFormat(HdiAdapterFormat form
 
 int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("Init: format: %{public}d isFast: %{public}d", attr.format, isBluetoothLowLatency_);
     if (rendererInited_) {
         AUDIO_WARNING_LOG("Already inited");
@@ -498,6 +539,7 @@ int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
         CHECK_AND_RETURN_RET_LOG(result == 0, ERR_NOT_STARTED, "Prepare mmap buffer failed");
     }
 
+    GetRenderId(sinkId_);
     logMode_ = system::GetIntParameter("persist.multimedia.audiolog.switch", 0);
     logUtilsTag_ = "A2dpSink";
 
@@ -528,18 +570,20 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
         }
     }
 
-    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
     BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
-    DfxOperation(buffer, audioSampleFormat_, static_cast<AudioChannel>(attr_.channel));
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            static_cast<void *>(&data), len);
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
+        audioSampleFormat_, static_cast<AudioChannel>(attr_.channel));
+    VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_, volumeDataCount_);
+    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(&data), len);
     }
 
     while (true) {
         Trace trace("audioRender_->RenderFrame");
         int64_t stamp = ClockTime::GetCurNano();
         ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
+        AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_BLUETOOTH, ClockTime::GetCurNano());
         stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
         if (logMode_ || stamp >= STAMP_THRESHOLD_MS) {
             AUDIO_PRERELEASE_LOGW("A2dp RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms " \
@@ -576,16 +620,6 @@ void BluetoothRendererSinkInner::UpdateAppsUid()
 }
 #endif
 
-void BluetoothRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
-}
 
 ConvertHdiFormat BluetoothRendererSinkInner::ConvertToHdiAdapterFormat(AudioFormat format)
 {
@@ -638,6 +672,7 @@ float BluetoothRendererSinkInner::GetMaxAmplitude()
 
 int32_t BluetoothRendererSinkInner::CheckBluetoothScenario()
 {
+    UpdateSinkState(true);
     started_ = true;
     if (isBluetoothLowLatency_ && CheckPositionTime() != SUCCESS) {
         AUDIO_ERR_LOG("CheckPositionTime failed!");
@@ -651,6 +686,7 @@ int32_t BluetoothRendererSinkInner::CheckBluetoothScenario()
 
 int32_t BluetoothRendererSinkInner::Start(void)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("BluetoothRendererSinkInner::Start");
     AUDIO_INFO_LOG("In isFast: %{public}d", isBluetoothLowLatency_);
 #ifdef FEATURE_POWER_MANAGER
@@ -674,7 +710,7 @@ int32_t BluetoothRendererSinkInner::Start(void)
 #endif
     dumpFileName_ = "bluetooth_audiosink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_"
         + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
     InitLatencyMeasurement();
 
@@ -685,6 +721,7 @@ int32_t BluetoothRendererSinkInner::Start(void)
             CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERROR, "Bluetooth renderer is nullptr");
             int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
             if (!ret) {
+                AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_BLUETOOTH, INIT_LASTWRITTEN_TIME);
                 return CheckBluetoothScenario();
             } else {
                 AUDIO_ERR_LOG("Start failed, remaining %{public}d attempt(s)", tryCount);
@@ -798,6 +835,7 @@ int32_t BluetoothRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 
 int32_t BluetoothRendererSinkInner::Stop(void)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("in isFast: %{public}d", isBluetoothLowLatency_);
 
     Trace trace("BluetoothRendererSinkInner::Stop");
@@ -814,6 +852,7 @@ int32_t BluetoothRendererSinkInner::Stop(void)
         Trace trace("audioRender_->control.Stop");
         AUDIO_DEBUG_LOG("Stop control before");
         int32_t ret = audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));
+        UpdateSinkState(false);
         AUDIO_DEBUG_LOG("Stop control after");
         if (!ret) {
             started_ = false;
@@ -830,6 +869,7 @@ int32_t BluetoothRendererSinkInner::Stop(void)
 
 int32_t BluetoothRendererSinkInner::Pause(void)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("in");
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -854,6 +894,7 @@ int32_t BluetoothRendererSinkInner::Pause(void)
 
 int32_t BluetoothRendererSinkInner::Resume(void)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("in");
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -872,7 +913,7 @@ int32_t BluetoothRendererSinkInner::Resume(void)
             return ERR_OPERATION_FAILED;
         }
     }
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_BLUETOOTH, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -912,12 +953,16 @@ int32_t BluetoothRendererSinkInner::Flush(void)
 
 int32_t BluetoothRendererSinkInner::SuspendRenderSink(void)
 {
+    AUDIO_INFO_LOG("in");
+    Trace trace("BluetoothRendererSinkInner::SuspendRenderSink");
     suspend_ = true;
     return SUCCESS;
 }
 
 int32_t BluetoothRendererSinkInner::RestoreRenderSink(void)
 {
+    AUDIO_INFO_LOG("in");
+    Trace trace("BluetoothRendererSinkInner::RestoreRenderSink");
     suspend_ = false;
     return SUCCESS;
 }
@@ -1141,6 +1186,16 @@ void BluetoothRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len)
         LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(true,
             signalDetectAgent_->lastPeakBufferTime_);
         LatencyMonitor::GetInstance().ShowBluetoothTimestamp();
+    }
+}
+
+// UpdateSinkState must be called with BluetoothRendererSinkInner::sinkMutex_ held
+void BluetoothRendererSinkInner::UpdateSinkState(bool started)
+{
+    if (callback_) {
+        callback_->OnAudioSinkStateChange(sinkId_, started);
+    } else {
+        AUDIO_WARNING_LOG("AudioSinkCallback is nullptr");
     }
 }
 

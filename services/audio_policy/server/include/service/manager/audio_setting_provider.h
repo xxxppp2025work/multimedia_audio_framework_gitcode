@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,7 +27,6 @@
 #include "data_ability_observer_stub.h"
 
 #include "audio_policy_log.h"
-#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -54,6 +53,7 @@ class AudioSettingProvider : public NoCopyable {
 public:
     static AudioSettingProvider& GetInstance(int32_t systemAbilityId);
     static int32_t GetCurrentUserId();
+    static bool CheckOsAccountReady();
     ErrCode GetStringValue(const std::string &key, std::string &value, std::string tableType = "");
     ErrCode GetIntValue(const std::string &key, int32_t &value, std::string tableType = "");
     ErrCode GetLongValue(const std::string &key, int64_t &value, std::string tableType = "");
@@ -75,7 +75,7 @@ protected:
     ~AudioSettingProvider() override;
 
 private:
-    static bool isDataShareReady_;
+    static std::atomic<bool> isDataShareReady_;
     static void Initialize(int32_t systemAbilityId);
     static std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelper(std::string tableType = "");
     static bool ReleaseDataShareHelper(std::shared_ptr<DataShare::DataShareHelper> &helper);

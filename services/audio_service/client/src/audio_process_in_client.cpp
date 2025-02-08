@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,13 +34,14 @@
 #include "audio_system_manager.h"
 #include "audio_utils.h"
 #include "securec.h"
+#include "xcollie/watchdog.h"
 
 #include "audio_manager_base.h"
 #include "audio_process_cb_stub.h"
 #include "audio_server_death_recipient.h"
 #include "i_audio_process.h"
 #include "linear_pos_time_model.h"
-#include "audio_log_utils.h"
+#include "volume_tools.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -48,7 +49,8 @@ namespace AudioStandard {
 namespace {
 static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
 static const int64_t DELAY_RESYNC_TIME = 10000000000; // 10s
-static const int32_t HALF_FACTOR = 2;
+constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
+constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
 }
 
 class ProcessCbImpl;
@@ -115,6 +117,10 @@ public:
     
     bool Init(const AudioProcessConfig &config);
 
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) override;
+
+    int32_t SetSilentModeAndMixWithOthers(bool on) override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
     static constexpr AudioStreamInfo g_targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
@@ -156,9 +162,9 @@ private:
     int32_t ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
     void CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime);
     void CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime, int64_t clientWriteCost);
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
 
     void DoFadeInOut(uint64_t &curWritePos);
+    void WatchingRecordProcessCallbackFuc();
 
 private:
     static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
@@ -228,6 +234,7 @@ private:
     std::atomic<bool> startFadeout_ = false; // true-fade out when pause or stop stream
 
     sptr<ProcessCbImpl> processCbImpl_ = nullptr;
+    std::atomic_bool recordProcessCallbackFucThreadStatus_ { false };
 };
 
 // ProcessCbImpl --> sptr | AudioProcessInClientInner --> shared_ptr
@@ -671,7 +678,7 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "%{public}s memcpy fail, ret %{public}d,"
         " spanSizeInByte %{public}zu.", __func__, ret, spanSizeInByte_);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(readbufDesc.buffer), spanSizeInByte_);
-    DfxOperation(readbufDesc, processConfig_.streamInfo.format, processConfig_.streamInfo.channels);
+    VolumeTools::DfxOperation(readbufDesc, processConfig_.streamInfo, logUtilsTag_, volumeDataCount_);
 
     ret = memset_s(readbufDesc.buffer, readbufDesc.bufLength, 0, readbufDesc.bufLength);
     if (ret != EOK) {
@@ -896,7 +903,7 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
             writeProcessDataTrace.End();
 
             DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(curCallbackBuffer.buffer), offSet);
-            DfxOperation(curCallbackBuffer, processConfig_.streamInfo.format, processConfig_.streamInfo.channels);
+            VolumeTools::DfxOperation(curCallbackBuffer, processConfig_.streamInfo, logUtilsTag_, volumeDataCount_);
         }
     }
 
@@ -905,17 +912,6 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
     }
 
     return SUCCESS;
-}
-
-void AudioProcessInClientInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 int32_t AudioProcessInClientInner::SetVolume(int32_t vol)
@@ -938,7 +934,7 @@ int32_t AudioProcessInClientInner::Start()
     std::string dumpFileName = std::to_string(sessionId_) + "_dump_process_client_audio_" +
         std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +
         ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
     std::lock_guard<std::mutex> lock(statusSwitchLock_);
     if (streamStatus_->load() == StreamStatus::STREAM_RUNNING) {
@@ -1330,6 +1326,32 @@ bool AudioProcessInClientInner::KeepLoopRunning()
     return false;
 }
 
+void ProcessRemoveWatchdog(const std::string &message, const std::int32_t sessionId)
+{
+    std::string watchDogMessage = message;
+    watchDogMessage += std::to_string(sessionId);
+    HiviewDFX::Watchdog::GetInstance().RemovePeriodicalTask(watchDogMessage);
+    AUDIO_INFO_LOG("%{public}s end %{public}d", watchDogMessage.c_str(), sessionId);
+}
+
+void AudioProcessInClientInner::WatchingRecordProcessCallbackFuc()
+{
+    recordProcessCallbackFucThreadStatus_ = true;
+    auto taskFunc = [this]() {
+        if (recordProcessCallbackFucThreadStatus_) {
+            AUDIO_DEBUG_LOG("Set recordProcessCallbackFucThreadStatus_ to false");
+            recordProcessCallbackFucThreadStatus_ = false;
+        } else {
+            AUDIO_INFO_LOG("watchdog happened");
+        }
+    };
+    std::string watchDogMessage = "WatchingRecordProcessCallbackFuc";
+    watchDogMessage += std::to_string(sessionId_);
+    AUDIO_INFO_LOG("watchdog start %{public}d", sessionId_);
+    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask(watchDogMessage, taskFunc,
+        WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
+}
+
 void AudioProcessInClientInner::RecordProcessCallbackFuc()
 {
     AUDIO_INFO_LOG("%{public}s enter.", __func__);
@@ -1339,8 +1361,11 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
     int64_t wakeUpTime = ClockTime::GetCurNano();
     int64_t clientReadCost = 0;
 
+    // add watchdog
+    WatchingRecordProcessCallbackFuc();
     while (!isCallbackLoopEnd_ && audioBuffer_ != nullptr) {
         if (!KeepLoopRunning()) {
+            recordProcessCallbackFucThreadStatus_ = true;
             continue;
         }
         threadStatus_ = INRUNNING;
@@ -1348,6 +1373,7 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
         if (needReSyncPosition_ && RecordReSyncServicePos() == SUCCESS) {
             wakeUpTime = ClockTime::GetCurNano();
             needReSyncPosition_ = false;
+            recordProcessCallbackFucThreadStatus_ = true;
             continue;
         }
         int64_t curTime = ClockTime::GetCurNano();
@@ -1377,7 +1403,10 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
             AUDIO_WARNING_LOG("%{public}s wakeUpTime is too late...", __func__);
             ClockTime::RelativeSleep(spanSizeInMs_ * ONE_MILLISECOND_DURATION);
         }
+        recordProcessCallbackFucThreadStatus_ = true;
     }
+    // stop watchdog
+    ProcessRemoveWatchdog("WatchingRecordProcessCallbackFuc", sessionId_);
 }
 
 int32_t AudioProcessInClientInner::RecordReSyncServicePos()
@@ -1733,6 +1762,18 @@ void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t &curTime, int64_t &
             "] delay " + std::to_string(wakeUpTime - curTime) + "ns");
         AUDIO_PRERELEASE_LOGW("wakeUpTime is too late...");
     }
+}
+
+int32_t AudioProcessInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+{
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "set failed with null ipcProxy.");
+    return processProxy_->SetDefaultOutputDevice(defaultOutputDevice);
+}
+
+int32_t AudioProcessInClientInner::SetSilentModeAndMixWithOthers(bool on)
+{
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "ipcProxy is null.");
+    return processProxy_->SetSilentModeAndMixWithOthers(on);
 }
 } // namespace AudioStandard
 } // namespace OHOS

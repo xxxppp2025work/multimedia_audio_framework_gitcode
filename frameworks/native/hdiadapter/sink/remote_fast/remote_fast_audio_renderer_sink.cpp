@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,7 +27,6 @@
 #include "audio_errors.h"
 #include "audio_hdi_log.h"
 #include "audio_utils.h"
-#include "audio_info.h"
 #include <v1_0/iaudio_manager.h>
 #include <v1_0/iaudio_callback.h>
 #include <v1_0/audio_types.h>
@@ -96,6 +95,7 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t GetTransactionId(uint64_t *transactionId) override;
     int32_t GetLatency(uint32_t *latency) override;
+    int32_t GetAudioScene() override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
     int32_t SetOutputRoutes(std::vector<DeviceType> &outputDevices) override;
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
@@ -103,7 +103,7 @@ public:
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
-    void RegisterParameterCallback(IAudioSinkCallback* callback) override;
+    void RegisterAudioSinkCallback(IAudioSinkCallback* callback) override;
 
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) override;
@@ -214,7 +214,7 @@ void RemoteFastAudioRendererSinkInner::ClearRender()
     }
 #endif // DEBUG_DIRECT_USE_HDI
     if (bufferFd_ != INVALID_FD) {
-        close(bufferFd_);
+        CloseFd(bufferFd_);
         bufferFd_ = INVALID_FD;
     }
 
@@ -646,15 +646,15 @@ int32_t RemoteFastAudioRendererSinkInner::GetLatency(uint32_t *latency)
     return SUCCESS;
 }
 
-void RemoteFastAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
+void RemoteFastAudioRendererSinkInner::RegisterAudioSinkCallback(IAudioSinkCallback* callback)
 {
     AUDIO_INFO_LOG("register params callback");
     callback_ = callback;
 
 #ifdef FEATURE_DISTRIBUTE_AUDIO
-    CHECK_AND_RETURN_LOG(audioAdapter_ != nullptr, "RegisterParameterCallback: Audio adapter is null.");
+    CHECK_AND_RETURN_LOG(audioAdapter_ != nullptr, "RegisterAudioSinkCallback: Audio adapter is null.");
     int32_t ret = audioAdapter_->RegExtraParamObserver();
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterParameterCallback failed, ret %{public}d.", ret);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterAudioSinkCallback failed, ret %{public}d.", ret);
 #endif
 }
 
@@ -711,6 +711,12 @@ int32_t RemoteFastAudioRendererSinkInner::GetPresentationPosition(uint64_t& fram
 {
     AUDIO_ERR_LOG("GetPresentationPosition not supported");
     return ERR_NOT_SUPPORTED;
+}
+
+int32_t RemoteFastAudioRendererSinkInner::GetAudioScene()
+{
+    AUDIO_INFO_LOG("SetAudioScene not supported");
+    return SUCCESS;
 }
 
 int32_t RemoteFastAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)

@@ -179,6 +179,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_REMOTE_CAST = 24,
     /**
+     * Indicates a none headset usb device.
+     */
+    DEVICE_TYPE_USB_DEVICE = 25,
+    /**
      * Indicates a hdmi device
      */
     DEVICE_TYPE_HDMI = 26,
@@ -320,10 +324,10 @@ enum DeviceCategory {
 };
 
 enum DeviceUsage {
-    MEDIA = 1,
-    VOICE = 2,
-    ALL_USAGE = 3,
-    RECONGNITION = 4,
+    MEDIA = 1 << 0,
+    VOICE = 1 << 1,
+    RECOGNITION = 1 << 2,
+    ALL_USAGE = (1 << 3) - 1, // Represents the bitwise OR of all the above usages.
 };
 
 enum DeviceInfoUpdateCommand {
@@ -463,6 +467,7 @@ public:
         MIN = 1000,
         OLD_DEVICE_UNAVALIABLE_EXT = 1000,
         SET_AUDIO_SCENE = 1001,
+        SET_DEFAULT_OUTPUT_DEVICE = 1002
     };
 
     operator AudioStreamDeviceChangeReason() const
@@ -503,6 +508,12 @@ public:
     {
         return reason_ == ExtEnum::SET_AUDIO_SCENE;
     }
+
+    bool isSetDefaultOutputDevice() const
+    {
+        return reason_ == ExtEnum::SET_DEFAULT_OUTPUT_DEVICE;
+    }
+
 private:
     ExtEnum reason_;
 };

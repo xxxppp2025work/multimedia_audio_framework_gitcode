@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,7 +18,6 @@
 
 #include <memory>
 
-#include "audio_info.h"
 #include "oh_audio_buffer.h"
 
 namespace OHOS {
@@ -44,11 +43,17 @@ public:
 
     virtual BufferDesc &GetConvertedBuffer() = 0;
 
-    virtual bool GetMuteFlag() = 0;
+    virtual bool GetMuteState() = 0;
 
     virtual AudioProcessConfig GetAudioProcessConfig() = 0;
 
     virtual void WriteDumpFile(void *buffer, size_t bufferSize) = 0;
+
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) = 0;
+
+    virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
+
+    virtual void EnableStandby();
 
     virtual ~IAudioProcessStream() = default;
 };

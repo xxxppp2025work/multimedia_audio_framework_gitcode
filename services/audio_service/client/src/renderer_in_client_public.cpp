@@ -41,7 +41,6 @@
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
 #include "audio_system_manager.h"
-#include "audio_utils.h"
 #include "futex_tool.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
@@ -52,7 +51,8 @@
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
 #include "policy_handler.h"
-#include "audio_log_utils.h"
+#include "volume_tools.h"
+#include "audio_manager_util.h"
 
 #include "media_monitor_manager.h"
 
@@ -182,10 +182,11 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
 {
     rendererInfo_ = rendererInfo;
 
-    rendererInfo_.sceneType = GetEffectSceneName(rendererInfo_.streamUsage);
+    rendererInfo_.sceneType = AudioManagerUtil::GetEffectSceneName(rendererInfo_.streamUsage);
 
     if (rendererInfo_.sceneType == AUDIO_SUPPORTED_SCENE_TYPES.find(SCENE_OTHERS)->second) {
         effectMode_ = EFFECT_NONE;
+        rendererInfo_.effectMode = EFFECT_NONE;
     }
 
     AUDIO_PRERELEASE_LOGI("SetRendererInfo with flag %{public}d, sceneType %{public}s", rendererInfo_.rendererFlags,
@@ -251,7 +252,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     dumpOutFile_ = std::to_string(sessionId_) + "_" + std::to_string(curStreamParams_.samplingRate) + "_" +
         std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out.pcm";
 
-    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
     logUtilsTag_ = "[" + std::to_string(sessionId_) + "]NormalRenderer";
     InitDirectPipeType();
 
@@ -266,20 +267,6 @@ int32_t RendererInClientInner::GetAudioStreamInfo(AudioStreamParams &info)
     CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, ERR_OPERATION_FAILED, "Params is not set");
     info = streamParams_;
     return SUCCESS;
-}
-
-bool RendererInClientInner::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    SourceType sourceType)
-{
-    AUDIO_WARNING_LOG("CheckRecordingCreate is not supported");
-    return false;
-}
-
-bool RendererInClientInner::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    AudioPermissionState state)
-{
-    AUDIO_WARNING_LOG("CheckRecordingCreate is not supported");
-    return false;
 }
 
 int32_t RendererInClientInner::GetAudioSessionID(uint32_t &sessionID)
@@ -357,32 +344,17 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
     uint64_t latency = 0;
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency);
-    // first enter, reset latency and timestamp
-    if (lastFrameTimestamp_ == 0) {
-        lastFrameTimestamp_ = timestampVal;
-        lastLatency_ = latency;
-        lastLatencyPosition_ = latency * speed_;
-    }
-    readIdx = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
-    uint64_t framePosition = lastFramePosition_;
-    if (readIdx >= latency + lastReadIdx_) { // happen when last speed latency consumed
-        framePosition += lastLatencyPosition_ + (readIdx - lastReadIdx_ - latency) * speed_;
-        lastLatency_ = latency;
-        lastLatencyPosition_ = latency * speed_;
-        lastReadIdx_ = readIdx;
-    } else { // happen when last speed latency not consumed
-        if (lastLatency_ + readIdx > latency + lastReadIdx_) {
-            framePosition += lastLatencyPosition_ * (lastLatency_ + readIdx - latency - lastReadIdx_) / lastLatency_;
-            lastLatencyPosition_ = lastLatencyPosition_ * (latency + lastReadIdx_ - readIdx) / lastLatency_;
-            lastLatency_ = latency + lastReadIdx_ - readIdx;
-        }
-    }
+
+    uint64_t framePosition = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
+    framePosition = framePosition > latency ? framePosition - latency : 0;
+
     // add MCR latency
     uint32_t mcrLatency = 0;
     if (converter_ != nullptr) {
-        mcrLatency = converter_->GetLatency() * rendererRate_ / AUDIO_MS_PER_S;
+        mcrLatency = converter_->GetLatency() * curStreamParams_.samplingRate / AUDIO_MS_PER_S;
         framePosition = framePosition > mcrLatency ? framePosition - mcrLatency : 0;
     }
+
     if (lastFramePosition_ < framePosition) {
         lastFramePosition_ = framePosition;
         lastFrameTimestamp_ = timestampVal;
@@ -392,8 +364,8 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         timestampVal = lastFrameTimestamp_;
     }
     AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
-        ", timestamp %{public}" PRIu64 ", lastLatencyPosition_ %{public}" PRIu64 ", totlatency %{public}" PRIu64,
-        framePosition, lastFlushReadIndex_, timestampVal, lastLatencyPosition_, latency + mcrLatency);
+        ", timestamp %{public}" PRIu64 ", mcrLatency %{public}u, Sinklatency %{public}" PRIu64, framePosition,
+        lastFlushReadIndex_, timestampVal, mcrLatency, latency);
 
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
@@ -1068,6 +1040,14 @@ bool RendererInClientInner::FlushAudioStream()
         AUDIO_ERR_LOG("Flush call server failed:%{public}u", ret);
         return false;
     }
+
+    // clear multichannel render buffer
+    if (converter_) {
+        ret = converter_->Flush();
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("Flush mcr buffer failed.");
+        }
+    }
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return notifiedOperation_ == FLUSH_STREAM; // will be false when got notified.
@@ -1293,6 +1273,7 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.state = state_;
     info.sessionId = sessionId_;
     info.streamTrackerRegistered = streamTrackerRegistered_;
+    info.defaultOutputDevice = defaultOutputDevice_;
     GetStreamSwitchInfo(info);
 
     {
@@ -1347,7 +1328,7 @@ void RendererInClientInner::InitCallbackHandler()
 {
     std::lock_guard<std::mutex> lock(runnerMutex_);
     if (callbackHandler_ == nullptr) {
-        callbackHandler_ = CallbackHandler::GetInstance(shared_from_this());
+        callbackHandler_ = CallbackHandler::GetInstance(shared_from_this(), "OS_AudioStateCB");
     }
 }
 
@@ -1550,7 +1531,7 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
     CHECK_AND_RETURN_RET_LOG(proxyObj_ != nullptr, false, "proxyObj_ is null");
     CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID && state_ != RELEASED, true,
         "state_ is %{public}d, no need for restore", state_.load());
-    bool result = false;
+    bool result = true;
     State oldState = state_;
     state_ = NEW;
     SetStreamTrackerState(false);
@@ -1565,8 +1546,11 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
     }
     if (!needStoreState) {
         AUDIO_INFO_LOG("telephony scene, return directly");
-        return ret;
+        return ret == SUCCESS;
     }
+
+    SetDefaultOutputDevice(defaultOutputDevice_);
+
     switch (oldState) {
         case RUNNING:
             result = StartAudioStream();
@@ -1579,6 +1563,7 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
             result = StartAudioStream() && StopAudioStream();
             break;
         default:
+            state_ = oldState;
             break;
     }
     if (!result) {
@@ -1590,6 +1575,74 @@ error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
     return false;
+}
+
+int32_t RendererInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+{
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->SetDefaultOutputDevice(defaultOutputDevice);
+    if (ret == SUCCESS) {
+        defaultOutputDevice_ = defaultOutputDevice;
+    }
+    return ret;
+}
+
+DeviceType RendererInClientInner::GetDefaultOutputDevice()
+{
+    return defaultOutputDevice_;
+}
+
+int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
+{
+    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Renderer stream state is not RUNNING");
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
+    uint64_t readIdx = 0;
+    uint64_t timestampVal = 0;
+    uint64_t latency = 0;
+    int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency);
+    // first enter, reset latency and timestamp
+    if (lastFrameTimestamp_ == 0) {
+        lastFrameTimestamp_ = timestampVal;
+        lastLatency_ = latency;
+        lastLatencyPosition_ = latency * speed_;
+    }
+    readIdx = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
+    uint64_t framePosition = lastFramePosition_;
+    if (readIdx >= latency + lastReadIdx_) { // happen when last speed latency consumed
+        framePosition += lastLatencyPosition_ + (readIdx - lastReadIdx_ - latency) * speed_;
+        lastLatency_ = latency;
+        lastLatencyPosition_ = latency * speed_;
+        lastReadIdx_ = readIdx;
+    } else { // happen when last speed latency not consumed
+        if (lastLatency_ + readIdx > latency + lastReadIdx_) {
+            framePosition += lastLatencyPosition_ * (lastLatency_ + readIdx - latency - lastReadIdx_) / lastLatency_;
+            lastLatencyPosition_ = lastLatencyPosition_ * (latency + lastReadIdx_ - readIdx) / lastLatency_;
+            lastLatency_ = latency + lastReadIdx_ - readIdx;
+        }
+    }
+    // add MCR latency
+    uint32_t mcrLatency = 0;
+    if (converter_ != nullptr) {
+        mcrLatency = converter_->GetLatency() * curStreamParams_.samplingRate / AUDIO_MS_PER_S;
+        framePosition = framePosition > mcrLatency ? framePosition - mcrLatency : 0;
+    }
+ 
+    if (lastFramePosition_ < framePosition) {
+        lastFramePosition_ = framePosition;
+        lastFrameTimestamp_ = timestampVal;
+    } else {
+        AUDIO_DEBUG_LOG("The frame position should be continuously increasing");
+        framePosition = lastFramePosition_;
+        timestampVal = lastFrameTimestamp_;
+    }
+    AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
+        ", timestamp %{public}" PRIu64 ", lastLatencyPosition_ %{public}" PRIu64 ", totlatency %{public}" PRIu64,
+        framePosition, lastFlushReadIndex_, timestampVal, lastLatencyPosition_, latency + mcrLatency);
+ 
+    timestamp.framePosition = framePosition;
+    timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
+    timestamp.time.tv_nsec = static_cast<time_t>(timestampVal % AUDIO_NS_PER_SECOND);
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS

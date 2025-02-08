@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,17 +19,51 @@
 #include "audio_iohandle_map.h"
 #include "parameter.h"
 #include "parameters.h"
-#include "audio_utils.h"
 #include "audio_policy_manager_factory.h"
 
 #include "audio_server_proxy.h"
+#include "audio_policy_async_action_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-static const int64_t WAIT_SET_MUTE_LATENCY_TIME_US = 80000; // 80ms
+class WaitActiveDeviceAction : public PolicyAsyncAction {
+public:
+    WaitActiveDeviceAction(int32_t muteDuration, const std::string &portName)
+        : muteDuration_(muteDuration), portName_(portName)
+    {}
+
+    void Exec() override
+    {
+        AudioIOHandleMap::GetInstance().UnmutePortAfterMuteDuration(muteDuration_, portName_);
+    }
+
+private:
+    int32_t muteDuration_;
+    const std::string portName_;
+};
+
+class UnmutePortAction : public PolicyAsyncAction {
+public:
+    UnmutePortAction(int32_t muteDuration, const std::string &portName)
+        : muteDuration_(muteDuration), portName_(portName)
+    {}
+
+    void Exec() override
+    {
+        AudioIOHandleMap::GetInstance().DoUnmutePort(muteDuration_, portName_);
+    }
+
+private:
+    int32_t muteDuration_;
+    const std::string portName_;
+};
+
+static const int64_t WAIT_SET_MUTE_LATENCY_TIME_MS = 80; // 80ms
+static const int64_t WAIT_SET_MUTE_LATENCY_TIME_EXT_MS = 200; // 200ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
 static const int64_t WAIT_MOVE_DEVICE_MUTE_TIME_MAX_MS = 5000; // 5s
+static const int64_t US_PER_MS = 1000;
 
 std::map<std::string, std::string> AudioIOHandleMap::sinkPortStrToClassStrMap_ = {
     {PRIMARY_SPEAKER, PRIMARY_CLASS},
@@ -37,6 +71,8 @@ std::map<std::string, std::string> AudioIOHandleMap::sinkPortStrToClassStrMap_ =
     {USB_SPEAKER, USB_CLASS},
     {DP_SINK, DP_CLASS},
     {OFFLOAD_PRIMARY_SPEAKER, OFFLOAD_CLASS},
+    {PRIMARY_DIRECT_VOIP, DIRECT_VOIP_CLASS},
+    {PRIMARY_MMAP_VOIP, MMAP_VOIP_CLASS},
 };
 
 void AudioIOHandleMap::DeInit()
@@ -170,17 +206,27 @@ void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duratio
         // Mute by pa.
         AudioPolicyManagerFactory::GetAudioPolicyManager().SetSinkMute(portName, true, isSync);
     }
-    usleep(WAIT_SET_MUTE_LATENCY_TIME_US); // sleep fix data cache pop.
+    // primary set device earpiece od speaker need longer latency.
+    int64_t muteLatencyTime = WAIT_SET_MUTE_LATENCY_TIME_MS;
+    if ((portName == PRIMARY_SPEAKER || portName == USB_SPEAKER) && (oldOutputDevice_ != newOutputDevice_) &&
+        (oldOutputDevice_ == DEVICE_TYPE_USB_HEADSET || oldOutputDevice_ == DEVICE_TYPE_USB_ARM_HEADSET) &&
+        (newOutputDevice_ == DEVICE_TYPE_EARPIECE || newOutputDevice_ == DEVICE_TYPE_SPEAKER)) {
+        oldOutputDevice_ = DEVICE_TYPE_NONE;
+        newOutputDevice_ = DEVICE_TYPE_NONE;
+        muteLatencyTime = WAIT_SET_MUTE_LATENCY_TIME_EXT_MS;
+    }
 
-    // Muted and then unmute.
-    std::thread switchThread(&AudioIOHandleMap::UnmutePortAfterMuteDuration, this, duration, portName,
-        DEVICE_TYPE_NONE);
-    switchThread.detach();
+    std::shared_ptr<WaitActiveDeviceAction> action = std::make_shared<WaitActiveDeviceAction>(duration, portName);
+    CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
+    AsyncActionDesc desc;
+    desc.delayTimeMs = muteLatencyTime;
+    desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
+    DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
 }
 
 void AudioIOHandleMap::MuteDefaultSinkPort(std::string networkID, std::string sinkName)
 {
-    if (networkID != LOCAL_NETWORK_ID || (networkID == LOCAL_NETWORK_ID && sinkName != PRIMARY_SPEAKER)) {
+    if (networkID != LOCAL_NETWORK_ID || sinkName != PRIMARY_SPEAKER) {
         // PA may move the sink to default when unloading module.
         MuteSinkPort(PRIMARY_SPEAKER, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
     }
@@ -198,7 +244,7 @@ void AudioIOHandleMap::NotifyUnmutePort()
     moveDeviceCV_.notify_all();
 }
 
-void AudioIOHandleMap::UnmutePortAfterMuteDuration(int32_t muteDuration, std::string portName, DeviceType deviceType)
+void AudioIOHandleMap::UnmutePortAfterMuteDuration(int32_t muteDuration, const std::string &portName)
 {
     Trace trace("UnmutePortAfterMuteDuration:" + portName + " for " + std::to_string(muteDuration) + "us");
 
@@ -214,13 +260,28 @@ void AudioIOHandleMap::UnmutePortAfterMuteDuration(int32_t muteDuration, std::st
     }
     AUDIO_INFO_LOG("%{public}d us for device type[%{public}s]", muteDuration, portName.c_str());
 
-    usleep(muteDuration);
+    std::shared_ptr<UnmutePortAction> action = std::make_shared<UnmutePortAction>(muteDuration, portName);
+    CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
+    AsyncActionDesc desc;
+    desc.delayTimeMs = muteDuration / US_PER_MS;
+    desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
+    DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+}
+
+void AudioIOHandleMap::DoUnmutePort(int32_t muteDuration, const std::string &portName)
+{
     if (sinkPortStrToClassStrMap_.count(portName) > 0) {
         AudioServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(sinkPortStrToClassStrMap_.at(portName),
             muteDuration, false);
     } else {
         AudioPolicyManagerFactory::GetAudioPolicyManager().SetSinkMute(portName, false);
     }
+}
+
+void AudioIOHandleMap::SetDeviceInfos(DeviceType oldOutputDevice, DeviceType newOutputDevice)
+{
+    oldOutputDevice_ = oldOutputDevice;
+    newOutputDevice_ = newOutputDevice;
 }
 }
 }

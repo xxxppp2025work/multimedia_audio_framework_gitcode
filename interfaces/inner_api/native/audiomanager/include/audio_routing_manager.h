@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,9 +19,9 @@
 #include <iostream>
 
 #include "audio_system_manager.h"
-#include "audio_info.h"
 #include "audio_group_manager.h"
 #include "microphone_descriptor.h"
+#include "audio_policy_interface.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -29,27 +29,6 @@ namespace AudioStandard {
 class AudioDeviceDescriptor;
 class AudioRendererFilter;
 class AudioDeviceRefiner;
-class AudioPreferredOutputDeviceChangeCallback {
-public:
-    virtual ~AudioPreferredOutputDeviceChangeCallback() = default;
-    /**
-     * Called when the prefer output device changes
-     *
-     * @param vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptor.
-     */
-    virtual void OnPreferredOutputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) = 0;
-};
-
-class AudioPreferredInputDeviceChangeCallback {
-    public:
-    virtual ~AudioPreferredInputDeviceChangeCallback() = default;
-    /**
-     * Called when the prefer input device changes
-     *
-     * @param vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptor.
-     */
-    virtual void OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) = 0;
-};
 
 class AudioRoutingManager {
 public:
@@ -76,6 +55,9 @@ public:
     int32_t SetAudioDeviceRefinerCallback(const std::shared_ptr<AudioDeviceRefiner> &callback);
     int32_t UnsetAudioDeviceRefinerCallback();
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
+    int32_t SetPreferredDevice(const PreferredType preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &desc);
+    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
 private:
     int32_t GetCallingPid();
 };

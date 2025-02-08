@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,7 +21,6 @@
 #include "event_runner.h"
 
 #include "audio_policy_log.h"
-#include "audio_info.h"
 #include "audio_system_manager.h"
 #include "audio_policy_client.h"
 #include "i_standard_concurrency_state_listener.h"
@@ -53,7 +52,7 @@ public:
         MIC_STATE_CHANGE_EVENT,
         MIC_STATE_CHANGE_EVENT_WITH_CLIENTID,
         INTERRUPT_EVENT,
-        INTERRUPT_EVENT_WITH_SESSIONID,
+        INTERRUPT_EVENT_WITH_STREAMID,
         INTERRUPT_EVENT_WITH_CLIENTID,
         PREFERRED_OUTPUT_DEVICE_UPDATED,
         PREFERRED_INPUT_DEVICE_UPDATED,
@@ -153,8 +152,8 @@ public:
     bool SendMicStateUpdatedCallback(const MicStateChangeEvent &micStateChangeEvent);
     bool SendMicStateWithClientIdCallback(const MicStateChangeEvent &micStateChangeEvent, int32_t clientId);
     bool SendInterruptEventInternalCallback(const InterruptEventInternal &interruptEvent);
-    bool SendInterruptEventWithSessionIdCallback(const InterruptEventInternal &interruptEvent,
-        const uint32_t &sessionId);
+    bool SendInterruptEventWithStreamIdCallback(const InterruptEventInternal &interruptEvent,
+        const uint32_t &streamId);
     bool SendInterruptEventWithClientIdCallback(const InterruptEventInternal &interruptEvent,
         const int32_t &clientId);
     bool SendPreferredOutputDeviceUpdated();
@@ -205,7 +204,7 @@ private:
     void HandleMicStateUpdatedEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleMicStateUpdatedEventWithClientId(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEvent(const AppExecFwk::InnerEvent::Pointer &event);
-    void HandleInterruptEventWithSessionId(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleInterruptEventWithStreamId(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEventWithClientId(const AppExecFwk::InnerEvent::Pointer &event);
     void HandlePreferredOutputDeviceUpdated();
     void HandlePreferredInputDeviceUpdated();

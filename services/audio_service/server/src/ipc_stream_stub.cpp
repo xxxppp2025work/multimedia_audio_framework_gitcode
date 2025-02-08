@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -73,6 +73,8 @@ int IpcStreamStub::OnMiddleCodeRemoteRequest(uint32_t code, MessageParcel &data,
             return HandleSetDuckFactor(data, reply);
         case ON_REGISTER_THREAD_PRIORITY:
             return HandleRegisterThreadPriority(data, reply);
+        case ON_SET_DEFAULT_OUTPUT_DEVICE:
+            return HandleSetDefaultOutputDevice(data, reply);
         default:
             AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -214,6 +216,7 @@ int32_t IpcStreamStub::HandleDrain(MessageParcel &data, MessageParcel &reply)
 
 int32_t IpcStreamStub::HandleUpdatePlaybackCaptureConfig(MessageParcel &data, MessageParcel &reply)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     AudioPlaybackCaptureConfig config;
     int32_t ret = ProcessConfig::ReadInnerCapConfigFromParcel(config, data);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, AUDIO_ERR, "Read config failed");
@@ -221,6 +224,9 @@ int32_t IpcStreamStub::HandleUpdatePlaybackCaptureConfig(MessageParcel &data, Me
     reply.WriteInt32(UpdatePlaybackCaptureConfig(config));
 
     return AUDIO_OK;
+#else
+    return ERROR;
+#endif
 }
 
 int32_t IpcStreamStub::HandleGetAudioTime(MessageParcel &data, MessageParcel &reply)
@@ -408,6 +414,13 @@ int32_t IpcStreamStub::HandleRegisterThreadPriority(MessageParcel &data, Message
     uint32_t tid = data.ReadUint32();
     std::string bundleName = data.ReadString();
     reply.WriteInt32(RegisterThreadPriority(tid, bundleName));
+    return AUDIO_OK;
+}
+
+int32_t IpcStreamStub::HandleSetDefaultOutputDevice(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t deviceType = data.ReadInt32();
+    reply.WriteInt32(SetDefaultOutputDevice(static_cast<OHOS::AudioStandard::DeviceType>(deviceType)));
     return AUDIO_OK;
 }
 } // namespace AudioStandard

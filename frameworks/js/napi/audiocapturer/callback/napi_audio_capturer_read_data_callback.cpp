@@ -141,7 +141,12 @@ void NapiCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr<
     }
 
     auto obj = static_cast<NapiAudioCapturer *>(napiCapturer_);
-    ObjectRefMap<NapiAudioCapturer>::IncreaseRef(obj);
+    NapiAudioCapturer *napiCapturer = ObjectRefMap<NapiAudioCapturer>::IncreaseRef(obj);
+    if (napiCapturer == nullptr) {
+        AUDIO_ERR_LOG("napiCapturer is null");
+        return;
+    }
+
     CapturerReadDataJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCapturerReadDataCallback: event is nullptr.");
@@ -163,7 +168,7 @@ void NapiCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr<
 
 void NapiCapturerReadDataCallback::CaptureReadDataTsfnFinalize(napi_env env, void *data, void *hint)
 {
-    AUDIO_INFO_LOG("CaptureReadDataTsfnFinalize: safe thread resource release.");
+    AUDIO_DEBUG_LOG("CaptureReadDataTsfnFinalize: safe thread resource release.");
 }
 
 void NapiCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWork(

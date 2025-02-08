@@ -29,6 +29,9 @@ namespace AudioStandard {
 namespace {
     std::string g_networkId = "LocalDevice";
 }
+const uint8_t TESTSIZE = 4;
+typedef void (*TestPtr)(const uint8_t *, size_t);
+
 void AudioRendererStateCallbackFuzz::OnRendererStateChange(
     const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) {}
 
@@ -63,7 +66,7 @@ void AudioManagerFuzzTest(const uint8_t* data, size_t size)
     focusInfo.first.audioFocusType.streamType = *reinterpret_cast<const AudioStreamType *>(data);
     focusInfo.first.audioFocusType.sourceType = *reinterpret_cast<const SourceType *>(data);
     focusInfo.first.audioFocusType.isPlay = *reinterpret_cast<const bool *>(data);
-    focusInfo.first.sessionId = *reinterpret_cast<const int32_t *>(data);
+    focusInfo.first.streamId = *reinterpret_cast<const int32_t *>(data);
     focusInfo.first.pauseWhenDucked = *reinterpret_cast<const bool *>(data);
     focusInfo.first.pid = *reinterpret_cast<const int32_t *>(data);
     focusInfo.first.mode = *reinterpret_cast<const InterruptMode *>(data);
@@ -136,13 +139,6 @@ void AudioStreamManagerFuzzTest(const uint8_t* data, size_t size)
     deviceDescriptor->deviceRole_ = *reinterpret_cast<const DeviceRole *>(data);
     AudioStreamManager::GetInstance()->GetHardwareOutputSamplingRate(deviceDescriptor);
 
-    AudioStreamInfo audioStreamInfo = {};
-    audioStreamInfo.samplingRate = *reinterpret_cast<const AudioSamplingRate *>(data);
-    audioStreamInfo.channels = *reinterpret_cast<const AudioChannel *>(data);
-    audioStreamInfo.format = *reinterpret_cast<const AudioSampleFormat *>(data);
-    audioStreamInfo.encoding = *reinterpret_cast<const AudioEncodingType *>(data);
-    AudioStreamManager::GetInstance()->IsAudioRendererLowLatencySupported(audioStreamInfo);
-
     AudioVolumeType volumeType = *reinterpret_cast<const AudioVolumeType *>(data);
     AudioStreamManager::GetInstance()->IsStreamActive(volumeType);
 }
@@ -183,13 +179,26 @@ void AudioGroupManagerFuzzTest(const uint8_t* data, size_t size)
 } // namespace AudioStandard
 } // namesapce OHOS
 
+OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
+    OHOS::AudioStandard::AudioManagerFuzzTest,
+    OHOS::AudioStandard::AudioRoutingManagerFuzzTest,
+    OHOS::AudioStandard::AudioStreamManagerFuzzTest,
+    OHOS::AudioStandard::AudioGroupManagerFuzzTest
+};
+
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioManagerFuzzTest(data, size);
-    OHOS::AudioStandard::AudioRoutingManagerFuzzTest(data, size);
-    OHOS::AudioStandard::AudioStreamManagerFuzzTest(data, size);
-    OHOS::AudioStandard::AudioGroupManagerFuzzTest(data, size);
+    if (data == nullptr || size <= 1) {
+        return 0;
+    }
+    uint8_t firstByte = *data % OHOS::AudioStandard::TESTSIZE;
+    if (firstByte >= OHOS::AudioStandard::TESTSIZE) {
+        return 0;
+    }
+    data = data + 1;
+    size = size - 1;
+    g_testPtrs[firstByte](data, size);
     return 0;
 }

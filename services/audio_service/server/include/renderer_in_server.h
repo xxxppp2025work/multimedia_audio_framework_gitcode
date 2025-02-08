@@ -70,7 +70,9 @@ public:
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa);
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled);
-    void WriterRenderStreamStandbySysEvent();
+    void CheckAndWriterRenderStreamStandbySysEvent(bool standbyEnable);
+
+    int32_t GetStandbyStatus(bool &isStandby, int64_t &enterStandbyTime);
 
     int32_t Init();
     int32_t ConfigServerBuffer();
@@ -97,6 +99,7 @@ public:
     int32_t SetClientVolume();
     int32_t SetMute(bool isMute);
     int32_t SetDuckFactor(float duckFactor);
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice);
 
     void OnDataLinkConnectionUpdate(IOperation operation);
     int32_t GetActualStreamManagerType() const noexcept;
@@ -104,6 +107,7 @@ public:
     bool Dump(std::string &dumpString);
     void SetNonInterruptMute(const bool muteFlag);
     void RestoreSession();
+    void dualToneStreamInStart();
 
 public:
     const AudioProcessConfig processConfig_;
@@ -111,6 +115,7 @@ private:
     void OnStatusUpdateSub(IOperation operation);
     bool IsHighResolution() const noexcept;
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
+    bool CheckBuffer(uint8_t *buffer, size_t bufferSize);
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
     void OtherStreamEnqueue(const BufferDesc &bufferDesc);
     void DoFadingOut(BufferDesc& bufferDesc);
@@ -125,6 +130,7 @@ private:
     std::shared_ptr<IRendererStream> stream_ = nullptr;
     uint32_t streamIndex_ = -1;
     std::string traceTag_;
+    mutable int64_t volumeDataCount_ = 0;
     IStatus status_ = I_STATUS_IDLE;
     bool offloadEnable_ = false;
     std::atomic<bool> standByEnable_ = false;
@@ -154,12 +160,14 @@ private:
     std::atomic<size_t> needForceWrite_ = 0;
     bool afterDrain = false;
     float lowPowerVolume_ = 1.0f;
+    std::atomic<bool> isMuted_ = false;
     bool isNeedFade_ = false;
     float oldAppliedVolume_ = MAX_FLOAT_VOLUME;
     std::mutex updateIndexLock_;
     int64_t startedTime_ = 0;
     uint32_t underrunCount_ = 0;
     std::atomic<uint32_t> standByCounter_ = 0;
+    int64_t enterStandbyTime_ = 0;
     int64_t lastWriteTime_ = 0;
     bool resetTime_ = false;
     uint64_t resetTimestamp_ = 0;
@@ -174,6 +182,9 @@ private:
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
     int32_t effectModeWhenDual_ = EFFECT_DEFAULT;
     int32_t renderEmptyCountForInnerCap_ = 0;
+
+    // only read & write in CheckAndWriterRenderStreamStandbySysEvent
+    bool lastWriteStandbyEnableStatus_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

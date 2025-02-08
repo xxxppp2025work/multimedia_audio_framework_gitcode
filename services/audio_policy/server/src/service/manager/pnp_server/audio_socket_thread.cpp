@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <string>
 #include "osal_time.h"
+#include "audio_utils.h"
 #include "audio_errors.h"
 #include "securec.h"
 #include "singleton.h"
@@ -39,9 +40,6 @@ AudioEvent AudioSocketThread::audioSocketEvent_ = {
     .eventType = AUDIO_EVENT_UNKNOWN,
     .deviceType = AUDIO_DEVICE_UNKNOWN,
 };
-namespace {
-AudioDevBusUsbDevice g_audioUsbDeviceList[AUDIO_UEVENT_USB_DEVICE_COUNT] = {};
-}
 
 bool AudioSocketThread::IsUpdatePnpDeviceState(AudioEvent *pnpDeviceEvent)
 {
@@ -87,19 +85,19 @@ int AudioSocketThread::AudioPnpUeventOpen(int *fd)
 
     if (setsockopt(socketFd, SOL_SOCKET, SO_RCVBUF, &buffSize, sizeof(buffSize)) != 0) {
         AUDIO_ERR_LOG("setsockopt SO_RCVBUF failed, %{public}d", errno);
-        close(socketFd);
+        CloseFd(socketFd);
         return ERROR;
     }
 
     if (setsockopt(socketFd, SOL_SOCKET, SO_PASSCRED, &on, sizeof(on)) != 0) {
         AUDIO_ERR_LOG("setsockopt SO_PASSCRED failed, %{public}d", errno);
-        close(socketFd);
+        CloseFd(socketFd);
         return ERROR;
     }
 
     if (::bind(socketFd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
         AUDIO_ERR_LOG("bind socket failed, %{public}d", errno);
-        close(socketFd);
+        CloseFd(socketFd);
         return ERROR;
     }
 
@@ -151,11 +149,10 @@ int32_t AudioSocketThread::SetAudioAnahsEventValue(AudioEvent *audioEvent, struc
             audioEvent->anahsName = UEVENT_REMOVE;
             return SUCCESS;
         } else {
-            AUDIO_ERR_LOG("set anahs event error.");
+            AUDIO_ERR_LOG("set anahs event failed.");
             return ERROR;
         }
     }
-    AUDIO_ERR_LOG("set anahs event error and subSystem is not platform.");
     return ERROR;
 }
 
@@ -174,14 +171,6 @@ static void SetAudioPnpUevent(AudioEvent *audioEvent, struct AudioPnpUevent *aud
         case ADD_DEVICE_ADAPTER:
             audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
             audioEvent->deviceType = PNP_DEVICE_ADAPTER_DEVICE;
-            break;
-        case ADD_DEVICE_MIC_BLOCKED:
-            audioEvent->eventType = PNP_EVENT_MIC_BLOCKED;
-            audioEvent->deviceType = PNP_DEVICE_MIC;
-            break;
-        case ADD_DEVICE_MIC_UN_BLOCKED:
-            audioEvent->eventType = PNP_EVENT_MIC_UNBLOCKED;
-            audioEvent->deviceType = PNP_DEVICE_MIC;
             break;
         default:
             audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
@@ -232,7 +221,6 @@ int32_t AudioSocketThread::AudioAnahsDetectDevice(struct AudioPnpUevent *audioPn
         return HDF_ERR_INVALID_PARAM;
     }
     if (SetAudioAnahsEventValue(&audioEvent, audioPnpUevent) != SUCCESS) {
-        AUDIO_ERR_LOG("set audio anahs event failed.");
         return ERROR;
     }
 
@@ -267,180 +255,6 @@ int32_t AudioSocketThread::AudioAnalogHeadsetDetectDevice(struct AudioPnpUevent 
     }
     UpdatePnpDeviceState(&audioEvent);
     return SUCCESS;
-}
-
-int32_t AudioSocketThread::CheckUsbDesc(struct UsbDevice *usbDevice)
-{
-    if (usbDevice->descLen > USB_DES_LEN_MAX) {
-        AUDIO_ERR_LOG("usbDevice->descLen is more than USB_DES_LEN_MAX");
-        return HDF_ERR_INVALID_PARAM;
-    }
-    for (size_t len = 0; len < usbDevice->descLen;) {
-        size_t descLen = usbDevice->desc[len];
-        if (descLen == 0) {
-            AUDIO_ERR_LOG("descLen is 0");
-            return HDF_ERR_INVALID_PARAM;
-        }
-
-        if (descLen < USB_IF_DESC_LEN) {
-            len += descLen;
-            continue;
-        }
-
-        int32_t descType = usbDevice->desc[len + 1];
-        if (descType != USB_AUDIO_DESC_TYPE) {
-            len += descLen;
-            continue;
-        }
-
-        /* According to the 1.0 and 2.0 usb standard protocols, the audio field corresponding to the interface
-         * description type is: offset=1 interface descriptor type is 4; offset=5 interface class,audio is 1; offset=6
-         * interface subclass,audio control is 1 */
-        int32_t usbClass = usbDevice->desc[len + USB_IF_CLASS_OFFSET];
-        int32_t subClass = usbDevice->desc[len + USB_IF_SUBCLASS_OFFSET];
-        if (usbClass == USB_AUDIO_CLASS && subClass == USB_AUDIO_SUBCLASS_CTRL) {
-            AUDIO_INFO_LOG(
-                "descType %{public}d, usbClass %{public}d, subClass %{public}d", descType, usbClass, subClass);
-            return AUDIO_DEVICE_ONLINE;
-        }
-        len += descLen;
-    }
-    return SUCCESS;
-}
-
-int32_t AudioSocketThread::ReadAndScanUsbDev(const char *devPath)
-{
-    FILE *fp = NULL;
-    struct UsbDevice usbDevice;
-    size_t len;
-    errno_t error;
-    uint32_t tryTime = 0;
-    char realpathRes[PATH_MAX + 1] = {'\0'};
-
-    if (devPath == NULL) {
-        AUDIO_ERR_LOG("audio devPath null");
-        return ERROR;
-    }
-
-    while (tryTime < AUDIO_DEVICE_WAIT_TRY_TIME) {
-        if (realpath(devPath, realpathRes) != NULL || (strlen(devPath) > PATH_MAX)) {
-            AUDIO_INFO_LOG("audio try[%{public}d] realpath fail[%{public}d] realpathRes [%{public}s]",
-                tryTime, errno, realpathRes);
-            break;
-        }
-        tryTime++;
-        OsalMSleep(AUDIO_DEVICE_WAIT_ONLINE);
-    }
-
-    fp = fopen(realpathRes, "r");
-    if (fp == NULL) {
-        AUDIO_ERR_LOG("audio realpath open fail[%{public}d]", errno);
-        return ERROR;
-    }
-
-    len = fread(usbDevice.desc, 1, sizeof(usbDevice.desc) - 1, fp);
-    if (len == 0) {
-        AUDIO_ERR_LOG("audio realpath read fail");
-        fclose(fp);
-        return ERROR;
-    }
-    fclose(fp);
-
-    error = strncpy_s((char *)usbDevice.devName, sizeof(usbDevice.devName), realpathRes,
-        sizeof(usbDevice.devName) - 1);
-    if (error != EOK) {
-        AUDIO_ERR_LOG("audio realpath strncpy fail");
-        return ERROR;
-    }
-
-    usbDevice.descLen = len;
-    return CheckUsbDesc(&usbDevice);
-}
-
-bool AudioSocketThread::FindAudioUsbDevice(const char *devName)
-{
-    if (strlen(devName) > USB_DEV_NAME_LEN_MAX - 1) {
-        AUDIO_ERR_LOG("find usb audio device name exceed max len");
-        return false;
-    }
-
-    for (uint32_t count = 0; count < AUDIO_UEVENT_USB_DEVICE_COUNT; count++) {
-        if (g_audioUsbDeviceList[count].isUsed &&
-            (strncmp((char *)g_audioUsbDeviceList[count].devName, devName, strlen(devName)) == EOK)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool AudioSocketThread::AddAudioUsbDevice(const char *devName)
-{
-    if (strlen(devName) > USB_DEV_NAME_LEN_MAX - 1) {
-        AUDIO_ERR_LOG("add usb audio device name exceed max len");
-        return false;
-    }
-
-    if (FindAudioUsbDevice(devName)) {
-        AUDIO_ERR_LOG("find usb audio device name[%{public}s]", devName);
-        return true;
-    }
-
-    for (uint32_t count = 0; count < AUDIO_UEVENT_USB_DEVICE_COUNT; count++) {
-        if (g_audioUsbDeviceList[count].isUsed) {
-            continue;
-        }
-        if (strncpy_s((char *)g_audioUsbDeviceList[count].devName, USB_DEV_NAME_LEN_MAX, devName, strlen(devName))
-            != EOK) {
-            AUDIO_ERR_LOG("add usb audio device name fail");
-            return false;
-        }
-        g_audioUsbDeviceList[count].isUsed = true;
-        return true;
-    }
-    AUDIO_ERR_LOG("add usb audio device name fail");
-    return false;
-}
-
-bool AudioSocketThread::CheckAudioUsbDevice(const char *devName)
-{
-    int32_t state = 0;
-    int32_t len;
-    char subDir[USB_DEV_NAME_LEN_MAX] = {0};
-
-    if (*devName == '\0') {
-        return false;
-    }
-    len = snprintf_s(subDir, USB_DEV_NAME_LEN_MAX, USB_DEV_NAME_LEN_MAX - 1, "/dev/" "%s", devName);
-    if (len < 0) {
-        AUDIO_ERR_LOG("audio snprintf dev dir fail");
-        return false;
-    }
-    AUDIO_INFO_LOG("CheckAudioUsbDevice: devName:%{public}s subDir:%{public}s len:%{public}d", devName, subDir, len);
-
-    state = ReadAndScanUsbDev(subDir);
-    if ((state == AUDIO_DEVICE_ONLINE) && AddAudioUsbDevice(devName)) {
-        return true;
-    }
-    return false;
-}
-
-bool AudioSocketThread::DeleteAudioUsbDevice(const char *devName)
-{
-    if (strlen(devName) > USB_DEV_NAME_LEN_MAX - 1) {
-        AUDIO_ERR_LOG("delete usb audio device name exceed max len");
-        return false;
-    }
-
-    for (uint32_t count = 0; count < AUDIO_UEVENT_USB_DEVICE_COUNT; count++) {
-        if (g_audioUsbDeviceList[count].isUsed &&
-            strncmp((char *)g_audioUsbDeviceList[count].devName, devName, strlen(devName)) == EOK) {
-            g_audioUsbDeviceList[count].isUsed = false;
-            AUDIO_INFO_LOG("delete usb audio device name[%{public}s]", devName);
-            return true;
-        }
-    }
-
-    return false;
 }
 
 int32_t AudioSocketThread::AudioNnDetectDevice(struct AudioPnpUevent *audioPnpUevent)
@@ -536,50 +350,23 @@ int32_t AudioSocketThread::AudioDpDetectDevice(struct AudioPnpUevent *audioPnpUe
     return SUCCESS;
 }
 
-int32_t AudioSocketThread::AudioUsbHeadsetDetectDevice(struct AudioPnpUevent *audioPnpUevent)
+int32_t AudioSocketThread::AudioMicBlockDevice(struct AudioPnpUevent *audioPnpUevent)
 {
+    if (audioPnpUevent == nullptr) {
+        AUDIO_ERR_LOG("mic blocked audioPnpUevent is null");
+        return HDF_ERR_INVALID_PARAM;
+    }
     AudioEvent audioEvent = {0};
-
-    if (audioPnpUevent == NULL) {
-        return HDF_ERR_INVALID_PARAM;
-    }
-
-    if (audioPnpUevent->action == NULL || audioPnpUevent->devName == NULL || audioPnpUevent->subSystem == NULL ||
-        audioPnpUevent->devType == NULL) {
-        return HDF_ERR_INVALID_PARAM;
-    }
-
-    if ((strcmp(audioPnpUevent->subSystem, UEVENT_SUBSYSTEM_USB) != 0) ||
-        (strcmp(audioPnpUevent->devType, UEVENT_SUBSYSTEM_USB_DEVICE) != 0) ||
-        (strstr(audioPnpUevent->devName, BUS_USB_DIR) == NULL)) {
-        return HDF_ERR_INVALID_PARAM;
-    }
-
-    if (strcmp(audioPnpUevent->action, UEVENT_ACTION_ADD) == 0) {
-        if (!CheckAudioUsbDevice(audioPnpUevent->devName)) {
-            return HDF_ERR_INVALID_PARAM;
-        }
-        audioEvent.eventType = PNP_EVENT_DEVICE_ADD;
-    } else if (strcmp(audioPnpUevent->action, UEVENT_ACTION_REMOVE) == 0) {
-        if (!DeleteAudioUsbDevice(audioPnpUevent->devName)) {
-            return HDF_ERR_INVALID_PARAM;
-        }
-        audioEvent.eventType = PNP_EVENT_DEVICE_REMOVE;
+    if (strncmp(audioPnpUevent->name, "mic_blocked", strlen("mic_blocked")) == 0) {
+        audioEvent.eventType = PNP_EVENT_MIC_BLOCKED;
+    } else if (strncmp(audioPnpUevent->name, "mic_un_blocked", strlen("mic_un_blocked")) == 0) {
+        audioEvent.eventType = PNP_EVENT_MIC_UNBLOCKED;
     } else {
-        return ERROR;
+        return HDF_ERR_INVALID_PARAM;
     }
+    audioEvent.deviceType = PNP_DEVICE_MIC;
 
-    audioEvent.deviceType = PNP_DEVICE_USB_HEADSET;
-    AUDIO_DEBUG_LOG("audio usb headset [%{public}s]", audioEvent.eventType == PNP_EVENT_DEVICE_ADD ? "add" : "removed");
-
-    audioEvent.name = audioPnpUevent->name;
-    audioEvent.address = audioPnpUevent->devName;
-
-    if (!IsUpdatePnpDeviceState(&audioEvent)) {
-        AUDIO_ERR_LOG("audio usb device[%{public}u] state[%{public}u] not need flush !", audioEvent.deviceType,
-            audioEvent.eventType);
-        return SUCCESS;
-    }
+    AUDIO_INFO_LOG("mic blocked uevent info recv: %{public}s", audioPnpUevent->name);
     UpdatePnpDeviceState(&audioEvent);
     return SUCCESS;
 }
@@ -602,7 +389,7 @@ bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLe
             msgTmp++;
             continue;
         }
-        AUDIO_DEBUG_LOG("Param msgTmp:[%{public}s] len:[%{public}zu]", msgTmp, strlen(msgTmp));
+        AUDIO_DEBUG_LOG("Param msgTmp:[%{private}s] len:[%{public}zu]", msgTmp, strlen(msgTmp));
         const char *arrStrTmp[UEVENT_ARR_SIZE] = {
             UEVENT_ACTION, UEVENT_DEV_NAME, UEVENT_NAME, UEVENT_STATE, UEVENT_DEVTYPE,
             UEVENT_SUBSYSTEM, UEVENT_SWITCH_NAME, UEVENT_SWITCH_STATE, UEVENT_HDI_NAME,
@@ -625,10 +412,10 @@ bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLe
     }
 
     if ((AudioAnalogHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) ||
-        (AudioUsbHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) ||
         (AudioDpDetectDevice(&audioPnpUevent) == SUCCESS) ||
         (AudioAnahsDetectDevice(&audioPnpUevent) == SUCCESS) ||
-        (AudioNnDetectDevice(&audioPnpUevent) == SUCCESS)) {
+        (AudioNnDetectDevice(&audioPnpUevent) == SUCCESS) ||
+        (AudioMicBlockDevice(&audioPnpUevent) == SUCCESS)) {
         return true;
     }
 
@@ -681,105 +468,6 @@ void AudioSocketThread::UpdateDeviceState(AudioEvent audioEvent)
 
     UpdatePnpDeviceState(&audioEvent);
     return;
-}
-
-inline bool AudioSocketThread::IsBadName(const char *name)
-{
-    if (*name == '\0') {
-        AUDIO_ERR_LOG("name is null");
-        return true;
-    }
-
-    while (*name != '\0') {
-        if (isdigit(*name++) == 0) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-int32_t AudioSocketThread::ScanUsbBusSubDir(const char *subDir)
-{
-    int32_t len;
-    DIR *devDir = NULL;
-    dirent *dirEnt = NULL;
-
-    char devName[USB_DEV_NAME_LEN_MAX] = {0};
-
-    devDir = opendir(subDir);
-    if (devDir == NULL) {
-        AUDIO_ERR_LOG("open usb sub dir failed");
-        return HDF_ERR_INVALID_PARAM;
-    }
-
-    int32_t state = SUCCESS;
-    while (((dirEnt = readdir(devDir)) != NULL) && (state == SUCCESS)) {
-        if (IsBadName(dirEnt->d_name)) {
-            continue;
-        }
-
-        len = snprintf_s(devName, USB_DEV_NAME_LEN_MAX, USB_DEV_NAME_LEN_MAX - 1, "%s/%s", subDir,
-            dirEnt->d_name);
-        if (len < 0) {
-            AUDIO_ERR_LOG("audio snprintf dev dir fail");
-            state = ERROR;
-            break;
-        }
-
-        AUDIO_DEBUG_LOG("audio usb dir[%{public}s]", devName);
-        state = ReadAndScanUsbDev(devName);
-        if (state == AUDIO_DEVICE_ONLINE) {
-            char *subDevName = devName + strlen("/dev/");
-            AUDIO_ERR_LOG("audio sub dev dir=[%{public}s]", subDevName);
-            if (AddAudioUsbDevice(subDevName)) {
-                AUDIO_ERR_LOG("audio add usb audio device success");
-                break;
-            }
-        }
-    }
-
-    closedir(devDir);
-    return state;
-}
-
-int32_t AudioSocketThread::DetectUsbHeadsetState(AudioEvent *audioEvent)
-{
-    int32_t len;
-    DIR *busDir = NULL;
-    dirent *dirEnt = NULL;
-
-    char subDir[USB_DEV_NAME_LEN_MAX] = {0};
-
-    busDir = opendir(DEV_BUS_USB_DIR);
-    if (busDir == NULL) {
-        AUDIO_ERR_LOG("open usb dir failed");
-        return HDF_ERR_INVALID_PARAM;
-    }
-
-    int32_t state = SUCCESS;
-    while (((dirEnt = readdir(busDir)) != NULL) && (state == SUCCESS)) {
-        if (IsBadName(dirEnt->d_name)) {
-            continue;
-        }
-
-        len = snprintf_s(subDir, USB_DEV_NAME_LEN_MAX, USB_DEV_NAME_LEN_MAX - 1, DEV_BUS_USB_DIR "/%s",
-            dirEnt->d_name);
-        if (len < 0) {
-            AUDIO_ERR_LOG("audio snprintf dev dir fail");
-            break;
-        }
-        state = ScanUsbBusSubDir(subDir);
-        if (state == AUDIO_DEVICE_ONLINE) {
-            audioEvent->eventType = AUDIO_DEVICE_ADD;
-            audioEvent->deviceType = AUDIO_USB_HEADSET;
-            closedir(busDir);
-            return SUCCESS;
-        }
-    }
-
-    closedir(busDir);
-    return ERROR;
 }
 
 int32_t AudioSocketThread::DetectDPState(AudioEvent *audioEvent)

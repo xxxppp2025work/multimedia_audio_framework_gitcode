@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -142,7 +142,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_003, TestSize.Level1
     capturerInServer_->InitBufferStatus();
     EXPECT_NE(capturerInServer_, nullptr);
 }
-
+#ifdef CAPTURER_IN_SERVER_UNIT_TEST_DIFF
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
@@ -266,7 +266,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_008, TestSize.Level1
     EXPECT_NE(capturerInServer_, nullptr);
     delete capturerInServer_->audioServerBuffer_->basicBufferInfo_;
 }
-
+#endif
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
@@ -281,7 +281,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_009, TestSize.Level1
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
     capturerInServer_->spanSizeInFrame_ = -100;
     capturerInServer_->muteFlag_.store(true);
-    AudioDump::GetInstance().GetVersionType() = BETA_VERSION;
+    AudioDump::GetInstance().GetVersionType() = DumpFileUtil::BETA_VERSION;
     capturerInServer_->ReadData(length);
     EXPECT_NE(capturerInServer_, nullptr);
 }
@@ -614,6 +614,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_020, TestSize.Level1
     EXPECT_EQ(result, SUCCESS);
 }
 
+#ifdef HAS_FEATURE_INNERCAPTURER
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
@@ -686,6 +687,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_024, TestSize.Level1
     int32_t result = capturerInServer_->UpdatePlaybackCaptureConfig(config);
     EXPECT_EQ(result, ERR_PERMISSION_DENIED);
 }
+#endif
 
 /**
  * @tc.name  : Test CapturerInServer.
@@ -797,6 +799,53 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_030, TestSize.Level1
     capturerInServer_->ringCache_ = std::make_unique<AudioRingCache>(cacheSize);
     capturerInServer_->spanSizeInBytes_ = 1;
     int32_t result = capturerInServer_->InitCacheBuffer(targetSize);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: DrainAudioBuffer_001.
+ * @tc.desc  : Test DrainAudioBuffer interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, DrainAudioBuffer_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    int32_t result = capturerInServer_->DrainAudioBuffer();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: ResolveBuffer_001.
+ * @tc.desc  : Test ResolveBuffer interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, ResolveBuffer_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    std::shared_ptr<OHAudioBuffer> buffer;
+    int32_t result = capturerInServer_->ResolveBuffer(buffer);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: OnReadData_001.
+ * @tc.desc  : Test OnReadData interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, OnReadData_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    size_t length = 0;
+    int32_t result = capturerInServer_->OnReadData(length);
     EXPECT_EQ(result, SUCCESS);
 }
 } // namespace AudioStandard

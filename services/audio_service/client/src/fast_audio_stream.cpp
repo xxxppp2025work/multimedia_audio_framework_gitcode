@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,7 +22,6 @@
 
 #include "audio_errors.h"
 #include "audio_capturer_log.h"
-#include "audio_utils.h"
 
 #include "fast_audio_stream.h"
 
@@ -93,6 +92,8 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
         config.rendererInfo.streamUsage = rendererInfo_.streamUsage;
         config.rendererInfo.rendererFlags = STREAM_FLAG_FAST;
         config.rendererInfo.originalFlag = rendererInfo_.originalFlag;
+        config.rendererInfo.playerType = rendererInfo_.playerType;
+        config.rendererInfo.expectedPlaybackDurationBytes = rendererInfo_.expectedPlaybackDurationBytes;
     } else if (eMode_ == AUDIO_MODE_RECORD) {
         AUDIO_DEBUG_LOG("FastAudioStream: Initialize recording");
         config.capturerInfo.sourceType = capturerInfo_.sourceType;
@@ -144,20 +145,6 @@ int32_t FastAudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
     AUDIO_INFO_LOG("GetAudioStreamInfo enter.");
     audioStreamInfo = streamInfo_;
     return SUCCESS;
-}
-
-bool FastAudioStream::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    SourceType sourceType)
-{
-    AUDIO_ERR_LOG("Not supported operation");
-    return false;
-}
-
-bool FastAudioStream::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    AudioPermissionState state)
-{
-    AUDIO_ERR_LOG("Not supported operation");
-    return false;
 }
 
 int32_t FastAudioStream::GetAudioSessionID(uint32_t &sessionID)
@@ -233,22 +220,15 @@ int32_t FastAudioStream::SetVolume(float volume)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "SetVolume failed: null process");
     int32_t ret = SUCCESS;
-    cacheVolume_ = volume;
-    if (!silentModeAndMixWithOthers_) {
-        ret = processClient_->SetVolume(volume);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetVolume error.");
-    }
+    ret = processClient_->SetVolume(volume);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetVolume error.");
     return ret;
 }
 
 float FastAudioStream::GetVolume()
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, 1.0f, "SetVolume failed: null process"); // 1.0f for default
-    if (silentModeAndMixWithOthers_) {
-        return cacheVolume_;
-    } else {
-        return processClient_->GetVolume();
-    }
+    return processClient_->GetVolume();
 }
 
 int32_t FastAudioStream::SetMute(bool mute)
@@ -269,12 +249,10 @@ int32_t FastAudioStream::SetDuckVolume(float volume)
 
 void FastAudioStream::SetSilentModeAndMixWithOthers(bool on)
 {
-    if (!silentModeAndMixWithOthers_ && on) {
-        SetVolume(0.0);
-    } else if (silentModeAndMixWithOthers_ && !on) {
-        SetVolume(cacheVolume_);
-    }
+    AUDIO_PRERELEASE_LOGI("%{public}d", on);
     silentModeAndMixWithOthers_ = on;
+    CHECK_AND_RETURN_LOG(processClient_ != nullptr, "processClient is null.");
+    processClient_->SetSilentModeAndMixWithOthers(on);
 }
 
 bool FastAudioStream::GetSilentModeAndMixWithOthers()
@@ -909,6 +887,23 @@ bool FastAudioStream::GetHighResolutionEnabled()
 {
     AUDIO_WARNING_LOG("not supported in fast audio stream");
     return false;
+}
+
+int32_t FastAudioStream::SetDefaultOutputDevice(const DeviceType defaultOuputDevice)
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "set failed: null process");
+    return processClient_->SetDefaultOutputDevice(defaultOuputDevice);
+}
+
+DeviceType FastAudioStream::GetDefaultOutputDevice()
+{
+    return DEVICE_TYPE_NONE;
+}
+
+// diffrence from GetAudioPosition only when set speed
+int32_t FastAudioStream::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
+{
+    return GetAudioTime(timestamp, base);
 }
 } // namespace AudioStandard
 } // namespace OHOS

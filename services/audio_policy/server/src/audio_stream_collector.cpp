@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,7 +20,6 @@
 
 #include "audio_client_tracker_callback_proxy.h"
 #include "audio_spatialization_service.h"
-#include "audio_utils.h"
 
 #include "media_monitor_manager.h"
 
@@ -102,8 +101,8 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::Creat
     return streamMap;
 }
 
-AudioStreamCollector::AudioStreamCollector() : audioSystemMgr_
-    (AudioSystemManager::GetInstance())
+AudioStreamCollector::AudioStreamCollector() : audioAbilityMgr_
+    (AudioAbilityManager::GetInstance())
 {
     audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
     audioConcurrencyService_ = std::make_shared<AudioConcurrencyService>();
@@ -715,6 +714,59 @@ AudioStreamType AudioStreamCollector::GetStreamType(int32_t sessionId)
     return streamType;
 }
 
+std::set<int32_t> AudioStreamCollector::GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage streamUsage)
+{
+    std::set<int32_t> sessionIdSet;
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->rendererInfo.streamUsage == streamUsage &&
+            changeInfo->outputDeviceInfo.deviceType_ == DEVICE_TYPE_SPEAKER &&
+            changeInfo->outputDeviceInfo.networkId_ != LOCAL_NETWORK_ID) {
+            sessionIdSet.insert(changeInfo->sessionId);
+        }
+    }
+    return sessionIdSet;
+}
+
+std::set<int32_t> AudioStreamCollector::GetSessionIdsOnRemoteDeviceBySourceType(SourceType sourceType)
+{
+    std::set<int32_t> sessionIdSet;
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioCapturerChangeInfos_) {
+        if (changeInfo->capturerInfo.sourceType == sourceType &&
+            changeInfo->inputDeviceInfo.deviceType_ == DEVICE_TYPE_MIC &&
+            changeInfo->inputDeviceInfo.networkId_ != LOCAL_NETWORK_ID) {
+            sessionIdSet.insert(changeInfo->sessionId);
+        }
+    }
+    return sessionIdSet;
+}
+
+std::set<int32_t> AudioStreamCollector::GetSessionIdsOnRemoteDeviceByDeviceType(DeviceType deviceType)
+{
+    std::set<int32_t> sessionIdSet;
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->outputDeviceInfo.deviceType_ == deviceType) {
+            sessionIdSet.insert(changeInfo->sessionId);
+        }
+    }
+    return sessionIdSet;
+}
+
+int32_t AudioStreamCollector::GetSessionIdsPauseOnRemoteDeviceByRemote(InterruptHint hintType)
+{
+    int32_t sessionIdVec = -1;
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->outputDeviceInfo.deviceType_ == DEVICE_TYPE_REMOTE_CAST &&
+            changeInfo->rendererState == RendererState::RENDERER_RUNNING) {
+            return changeInfo->sessionId;
+        }
+    }
+    return sessionIdVec;
+}
+
 bool AudioStreamCollector::IsOffloadAllowed(const int32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
@@ -933,6 +985,8 @@ bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
             (changeInfo->rendererInfo).streamUsage);
         if (rendererVolumeType == volumeType) {
             // An active stream has been found, return true directly.
+            AUDIO_INFO_LOG("matched clientUid: %{public}d id: %{public}d",
+                changeInfo->clientUID, changeInfo->sessionId);
             return true;
         }
     }
@@ -986,6 +1040,7 @@ AudioStreamType AudioStreamCollector::GetStreamTypeFromSourceType(SourceType sou
 {
     switch (sourceType) {
         case SOURCE_TYPE_MIC:
+        case SOURCE_TYPE_UNPROCESSED:
             return STREAM_MUSIC;
         case SOURCE_TYPE_VOICE_COMMUNICATION:
         case SOURCE_TYPE_VOICE_CALL:
@@ -1136,7 +1191,7 @@ void AudioStreamCollector::WriterRenderStreamChangeSysEvent(AudioStreamChangeInf
     AudioStreamType streamType = GetVolumeTypeFromContentUsage(
         streamChangeInfo.audioRendererChangeInfo.rendererInfo.contentType,
         streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage);
-    uint64_t transactionId = audioSystemMgr_->GetTransactionId(
+    uint64_t transactionId = audioAbilityMgr_->GetTransactionId(
         streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceType_, OUTPUT_DEVICE);
 
     uint8_t effectChainType = EFFECT_CHAIN_TYPE_MAP.count(
@@ -1171,7 +1226,7 @@ void AudioStreamCollector::WriterCaptureStreamChangeSysEvent(AudioStreamChangeIn
     bool isOutput = false;
     AudioStreamType streamType = GetStreamTypeFromSourceType(
         streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType);
-    uint64_t transactionId = audioSystemMgr_->GetTransactionId(
+    uint64_t transactionId = audioAbilityMgr_->GetTransactionId(
         streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceType_, INPUT_DEVICE);
 
     uint8_t effectChainType = EFFECT_CHAIN_TYPE_MAP.count(
@@ -1208,7 +1263,7 @@ void AudioStreamCollector::WriteRenderStreamReleaseSysEvent(
 {
     AudioStreamType streamType = GetVolumeTypeFromContentUsage(audioRendererChangeInfo->rendererInfo.contentType,
         audioRendererChangeInfo->rendererInfo.streamUsage);
-    uint64_t transactionId = audioSystemMgr_->GetTransactionId(
+    uint64_t transactionId = audioAbilityMgr_->GetTransactionId(
         audioRendererChangeInfo->outputDeviceInfo.deviceType_, OUTPUT_DEVICE);
 
     uint8_t effectChainType = EFFECT_CHAIN_TYPE_MAP.count(
@@ -1242,7 +1297,7 @@ void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
     const std::shared_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfo)
 {
     AudioStreamType streamType = GetStreamTypeFromSourceType(audioCapturerChangeInfo->capturerInfo.sourceType);
-    uint64_t transactionId = audioSystemMgr_->GetTransactionId(
+    uint64_t transactionId = audioAbilityMgr_->GetTransactionId(
         audioCapturerChangeInfo->inputDeviceInfo.deviceType_, INPUT_DEVICE);
 
     uint8_t effectChainType = EFFECT_CHAIN_TYPE_MAP.count(
@@ -1280,6 +1335,30 @@ bool AudioStreamCollector::IsCallStreamUsage(StreamUsage usage)
         return true;
     }
     return false;
+}
+
+StreamUsage AudioStreamCollector::GetRunningStreamUsageNoUltrasonic()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->rendererState == RENDERER_RUNNING &&
+            changeInfo->rendererInfo.streamUsage != STREAM_USAGE_ULTRASONIC) {
+            return changeInfo->rendererInfo.streamUsage;
+        }
+    }
+    return STREAM_USAGE_INVALID;
+}
+
+SourceType AudioStreamCollector::GetRunningSourceTypeNoUltrasonic()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioCapturerChangeInfos_) {
+        if (changeInfo->capturerState == CAPTURER_RUNNING &&
+            changeInfo->capturerInfo.sourceType != SOURCE_TYPE_ULTRASONIC) {
+            return changeInfo->capturerInfo.sourceType;
+        }
+    }
+    return SOURCE_TYPE_INVALID;
 }
 
 StreamUsage AudioStreamCollector::GetLastestRunningCallStreamUsage()
@@ -1334,6 +1413,34 @@ bool AudioStreamCollector::HasVoipRendererStream()
 
     AUDIO_INFO_LOG("Has Fast Voip stream : %{public}d", hasVoip);
     return hasVoip;
+}
+
+bool AudioStreamCollector::HasRunningRendererStream()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    // judge stream state is running
+    bool hasRunningRendererStream = std::any_of(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
+        [](const auto &changeInfo) {
+            return ((changeInfo->rendererState == RENDERER_RUNNING) || (changeInfo->rendererInfo.streamUsage ==
+                STREAM_USAGE_VOICE_MODEM_COMMUNICATION && changeInfo->rendererState == RENDERER_PREPARED));
+        });
+    AUDIO_INFO_LOG("Has Running Renderer stream : %{public}d", hasRunningRendererStream);
+    return hasRunningRendererStream;
+}
+
+bool AudioStreamCollector::HasRunningRecognitionCapturerStream()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    // judge stream state is running
+    bool hasRunningRecognitionCapturerStream = std::any_of(audioCapturerChangeInfos_.begin(),
+        audioCapturerChangeInfos_.end(),
+        [](const auto &changeInfo) {
+            return ((changeInfo->capturerState == CAPTURER_RUNNING) && (changeInfo->capturerInfo.sourceType ==
+                SOURCE_TYPE_VOICE_RECOGNITION));
+        });
+
+    AUDIO_INFO_LOG("Has Running Recognition stream : %{public}d", hasRunningRecognitionCapturerStream);
+    return hasRunningRecognitionCapturerStream;
 }
 } // namespace AudioStandard
 } // namespace OHOS

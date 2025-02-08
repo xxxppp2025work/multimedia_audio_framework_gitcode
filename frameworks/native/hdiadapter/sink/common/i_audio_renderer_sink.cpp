@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,52 +30,70 @@
 #endif
 #include "offload_audio_renderer_sink.h"
 #include "multichannel_audio_renderer_sink.h"
+#include "fast_audio_renderer_sink.h"
 
 
 namespace OHOS {
 namespace AudioStandard {
+const char *DEVICE_CLASS_PRIMARY = "primary";
+const char *DEVICE_CLASS_USB = "usb";
+const char *DEVICE_CLASS_DP = "dp";
+const char *DEVICE_CLASS_A2DP = "a2dp";
+const char *DEVICE_CLASS_A2DPFAST = "a2dp_fast";
+#ifdef FEATURE_FILE_IO
+const char *DEVICE_CLASS_FILE = "file_io";
+#endif
+#ifdef DAUDIO_ENABLE
+const char *DEVICE_CLASS_REMOTE = "remote";
+#endif
+const char *DEVICE_CLASS_OFFLOAD = "offload";
+const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
+const char *DEVICE_CLASS_DIRECT_VOIP = "primary_direct_voip";
+const char *DEVICE_CLASS_MMAP_VOIP = "primary_mmap_voip";
+
 IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, const char *deviceNetworkId)
 {
     CHECK_AND_RETURN_RET_LOG(devceClass != nullptr && deviceNetworkId != nullptr, nullptr,
         "GetInstance null class or networkid");
     AUDIO_DEBUG_LOG("%{public}s Sink:GetInstance[%{public}s]", devceClass, deviceNetworkId);
-    const char *deviceClassPrimary = "primary";
-    const char *deviceClassUsb = "usb";
-    const char *deviceClassDp = "dp";
-    const char *deviceClassA2DP = "a2dp";
-    const char *deviceClassFile = "file_io";
-#ifdef DAUDIO_ENABLE
-    const char *deviceClassRemote = "remote";
-#endif
-    const char *deviceClassOffload = "offload";
-    const char *deviceClassMultiChannel = "multichannel";
 
     IAudioRendererSink *iAudioRendererSink = nullptr;
-    if (!strcmp(devceClass, deviceClassPrimary)) {
+    if (!strcmp(devceClass, DEVICE_CLASS_PRIMARY)) {
         iAudioRendererSink = AudioRendererSink::GetInstance("primary");
     }
-    if (!strcmp(devceClass, deviceClassUsb)) {
+    if (!strcmp(devceClass, DEVICE_CLASS_USB)) {
         iAudioRendererSink = AudioRendererSink::GetInstance("usb");
     }
-    if (!strcmp(devceClass, deviceClassDp)) {
+    if (!strcmp(devceClass, DEVICE_CLASS_DP)) {
         iAudioRendererSink = AudioRendererSink::GetInstance("dp");
     }
-    if (!strcmp(devceClass, deviceClassA2DP)) {
+    if (!strcmp(devceClass, DEVICE_CLASS_A2DP)) {
         iAudioRendererSink = BluetoothRendererSink::GetInstance();
     }
-    if (!strcmp(devceClass, deviceClassFile)) {
+    if (!strcmp(devceClass, DEVICE_CLASS_A2DPFAST)) {
+        iAudioRendererSink = BluetoothRendererSink::GetMmapInstance();
+    }
+#ifdef FEATURE_FILE_IO
+    if (!strcmp(devceClass, DEVICE_CLASS_FILE)) {
         iAudioRendererSink = AudioRendererFileSink::GetInstance();
     }
+#endif
 #ifdef DAUDIO_ENABLE
-    if (!strcmp(devceClass, deviceClassRemote)) {
+    if (!strcmp(devceClass, DEVICE_CLASS_REMOTE)) {
         iAudioRendererSink = RemoteAudioRendererSink::GetInstance(deviceNetworkId);
     }
 #endif
-    if (!strcmp(devceClass, deviceClassOffload)) {
+    if (!strcmp(devceClass, DEVICE_CLASS_OFFLOAD)) {
         iAudioRendererSink = OffloadRendererSink::GetInstance();
     }
-    if (!strcmp(devceClass, deviceClassMultiChannel)) {
+    if (!strcmp(devceClass, DEVICE_CLASS_MULTICHANNEL)) {
         iAudioRendererSink = MultiChannelRendererSink::GetInstance("multichannel");
+    }
+    if (!strcmp(devceClass, DEVICE_CLASS_DIRECT_VOIP)) {
+        iAudioRendererSink = AudioRendererSink::GetInstance("voip");
+    }
+    if (!strcmp(devceClass, DEVICE_CLASS_MMAP_VOIP)) {
+        iAudioRendererSink = FastAudioRendererSink::GetVoipInstance();
     }
 
     if (iAudioRendererSink == nullptr) {
@@ -416,6 +434,20 @@ int32_t IAudioRendererSinkGetRenderId(struct RendererSinkAdapter *adapter, uint3
         "audioRenderer Not Inited! Init the renderer first, Renderer GetRenderId failed");
 
     int32_t ret = audioRendererSink->GetRenderId(*renderId);
+    return ret;
+}
+
+int32_t IAudioRendererSinkGetAudioScene(struct RendererSinkAdapter *adapter)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null RendererSinkAdapter");
+
+    IAudioRendererSink *audioRendererSink = static_cast<IAudioRendererSink *>(adapter->wapper);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    bool isInited = audioRendererSink->IsInited();
+    CHECK_AND_RETURN_RET_LOG(isInited, ERR_NOT_STARTED,
+        "audioRenderer Not Inited! Init the renderer first, Renderer GetAudioScene failed");
+
+    int32_t ret = audioRendererSink->GetAudioScene();
     return ret;
 }
 #ifdef __cplusplus

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,9 +34,9 @@
 
 #include "audio_errors.h"
 #include "audio_hdi_log.h"
-#include "audio_utils.h"
-#include "audio_log_utils.h"
+#include "volume_tools.h"
 #include "media_monitor_manager.h"
+#include "audio_dump_pcm.h"
 
 using namespace std;
 
@@ -58,7 +58,7 @@ const uint32_t STEREO_CHANNEL_COUNT = 2;
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
-const uint64_t SECOND_TO_NANOSECOND = 1000000000;
+const int64_t SECOND_TO_NANOSECOND = 1000000000;
 const uint64_t SECOND_TO_MICROSECOND = 1000000;
 const uint64_t SECOND_TO_MILLISECOND = 1000;
 const uint64_t MICROSECOND_TO_MILLISECOND = 1000;
@@ -105,11 +105,12 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t GetLatency(uint32_t *latency) override;
     int32_t GetTransactionId(uint64_t *transactionId) override;
+    int32_t GetAudioScene() override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
 
     void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string& condition) override;
-    void RegisterParameterCallback(IAudioSinkCallback* callback) override;
+    void RegisterAudioSinkCallback(IAudioSinkCallback* callback) override;
     int32_t RegisterRenderCallback(OnRenderCallback (*callback), int8_t *userdata) override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
@@ -127,6 +128,7 @@ public:
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+    void UpdateSinkState(bool started);
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
     OffloadAudioRendererSinkInner();
@@ -144,10 +146,12 @@ private:
     int32_t muteCount_ = 0;
     bool switchDeviceMute_ = false;
     uint32_t renderId_ = 0;
+    uint32_t sinkId_ = 0;
     std::string adapterNameCase_ = "";
     struct IAudioManager *audioManager_ = nullptr;
     struct IAudioAdapter *audioAdapter_ = nullptr;
     struct IAudioRender *audioRender_ = nullptr;
+    IAudioSinkCallback *callback_ = nullptr;
     struct AudioAdapterDescriptor adapterDesc_ = {};
     struct AudioPort audioPort_ = {};
     struct AudioCallbackService callbackServ = {};
@@ -176,7 +180,6 @@ private:
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
     void CheckLatencySignal(uint8_t *data, size_t len);
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel, AudioSamplingRate rate) const;
 
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> offloadRunningLockManager_;
@@ -187,7 +190,7 @@ private:
     std::string dumpFileName_ = "";
     mutable int64_t volumeDataCount_ = 0;
 };
-    
+
 OffloadAudioRendererSinkInner::OffloadAudioRendererSinkInner()
     : rendererInited_(false), started_(false), isFlushing_(false), startDuringFlush_(false), renderPos_(0),
       leftVolume_(DEFAULT_VOLUME_LEVEL), rightVolume_(DEFAULT_VOLUME_LEVEL),
@@ -259,9 +262,10 @@ std::string OffloadAudioRendererSinkInner::GetAudioParameter(const AudioParamKey
     AUDIO_INFO_LOG("key %{public}d, condition: %{public}s", key,
         condition.c_str());
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
-    char value[PARAM_VALUE_LENTH];
+    char value[DumpFileUtil::PARAM_VALUE_LENTH];
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, "", "GetAudioParameter failed, audioAdapter_ is null");
-    int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value, PARAM_VALUE_LENTH);
+    int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value,
+        DumpFileUtil::PARAM_VALUE_LENTH);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "GetAudioParameter failed, error code: %{public}d", ret);
     return value;
 }
@@ -361,9 +365,15 @@ bool OffloadAudioRendererSinkInner::IsInited()
     return rendererInited_;
 }
 
-void OffloadAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
+void OffloadAudioRendererSinkInner::RegisterAudioSinkCallback(IAudioSinkCallback* callback)
 {
-    AUDIO_WARNING_LOG("not supported.");
+    std::lock_guard<std::mutex> lock(renderMutex_);
+    if (callback_) {
+        AUDIO_INFO_LOG("AudioSinkCallback registered");
+    } else {
+        callback_ = callback;
+        AUDIO_INFO_LOG("Register AudioSinkCallback");
+    }
 }
 
 typedef int32_t (*RenderCallback)(struct IAudioCallback *self, enum AudioCallbackType type, int8_t* reserved,
@@ -610,6 +620,7 @@ int32_t OffloadAudioRendererSinkInner::CreateRender(const struct AudioPort &rend
 
 int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
+    std::lock_guard<std::mutex> lock(renderMutex_);
     Trace trace("OffloadSink::Init");
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName; // Set sound card information
@@ -647,6 +658,7 @@ int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
     CHECK_AND_RETURN_RET_LOG(tmp == 0, ERR_NOT_STARTED,
         "Create render failed, Audio Port: %{public}d", audioPort_.portId);
     rendererInited_ = true;
+    GetRenderId(sinkId_);
 
     return SUCCESS;
 }
@@ -668,19 +680,18 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         AdjustAudioBalance(&data, len);
     }
 
-    Trace::CountVolume("OffloadAudioRendererSinkInner::RenderFrame", static_cast<uint8_t>(data));
     Trace trace("OffloadSink::RenderFrame");
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
     if (ret == 0 && writeLen != 0) {
-        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
         BufferDesc buffer = {reinterpret_cast<uint8_t *>(&data), len, len};
-        DfxOperation(buffer, static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel),
-            static_cast<AudioSamplingRate>(attr_.sampleRate));
-        if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-                static_cast<void *>(&data), writeLen);
+        AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
+            static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+        VolumeTools::DfxOperation(buffer, streamInfo, LOG_UTILS_TAG, volumeDataCount_, OFFLOAD_DFX_SPLIT);
+        if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
+            DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
+            AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(&data), writeLen);
         }
         CheckUpdateState(&data, len);
     }
@@ -698,27 +709,6 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         AUDIO_WARNING_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
     }
     return SUCCESS;
-}
-
-void OffloadAudioRendererSinkInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format,
-    AudioChannel channel, AudioSamplingRate rate) const
-{
-    size_t byteSizePerData = VolumeTools::GetByteSize(format);
-    size_t frameLen =  byteSizePerData * static_cast<size_t>(channel) * static_cast<size_t>(rate) * 0.02; // 20ms
-    
-    int32_t minVolume = INT_32_MAX;
-    for (size_t index = 0; index < (buffer.bufLength + frameLen - 1) / frameLen; index++) {
-        BufferDesc temp = {buffer.buffer + frameLen * index,
-            min(buffer.bufLength - frameLen * index, frameLen), min(buffer.dataLength - frameLen * index, frameLen)};
-        ChannelVolumes vols = VolumeTools::CountVolumeLevel(temp, format, channel, OFFLOAD_DFX_SPLIT);
-        if (channel == MONO) {
-            minVolume = min(minVolume, vols.volStart[0]);
-        } else {
-            minVolume = min(minVolume, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-        }
-        AudioLogUtils::ProcessVolumeData(LOG_UTILS_TAG, vols, volumeDataCount_);
-    }
-    Trace::Count(LOG_UTILS_TAG, minVolume);
 }
 
 void OffloadAudioRendererSinkInner::CheckUpdateState(char *frame, uint64_t replyBytes)
@@ -748,6 +738,7 @@ float OffloadAudioRendererSinkInner::GetMaxAmplitude()
 
 int32_t OffloadAudioRendererSinkInner::Start(void)
 {
+    std::lock_guard<std::mutex> lock(renderMutex_);
     Trace trace("OffloadSink::Start");
     AUDIO_INFO_LOG("Start");
     InitLatencyMeasurement();
@@ -768,10 +759,11 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
         AUDIO_ERR_LOG("Start failed! ret %d", ret);
         return ERR_NOT_STARTED;
     }
+    UpdateSinkState(true);
 
     dumpFileName_ = "offload_audiosink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_"
         + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
     started_ = true;
     renderPos_ = 0;
@@ -795,7 +787,10 @@ int32_t OffloadAudioRendererSinkInner::SetVolume(float left, float right)
 
 int32_t OffloadAudioRendererSinkInner::SetVolumeInner(float &left, float &right)
 {
+    AudioXCollie audioXCollie("OffloadAudioRendererSinkInner::SetVolumeInner", TIME_OUT_SECONDS,
+        nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     AUDIO_INFO_LOG("set offload vol left is %{public}f, right is %{public}f", left, right);
+    CHECK_AND_RETURN_RET_LOG(!isFlushing_, ERR_OPERATION_FAILED, "failed! during flushing");
     float thevolume;
     int32_t ret;
     if (audioRender_ == nullptr) {
@@ -862,6 +857,12 @@ int32_t OffloadAudioRendererSinkInner::SetOutputRoutes(std::vector<DeviceType> &
     return ERR_NOT_SUPPORTED;
 }
 
+int32_t OffloadAudioRendererSinkInner::GetAudioScene()
+{
+    AUDIO_WARNING_LOG("not supported.");
+    return ERR_NOT_SUPPORTED;
+}
+
 int32_t OffloadAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
 {
     AUDIO_WARNING_LOG("not supported.");
@@ -900,6 +901,7 @@ int32_t OffloadAudioRendererSinkInner::Drain(AudioDrainType type)
 
 int32_t OffloadAudioRendererSinkInner::Stop(void)
 {
+    std::lock_guard<std::mutex> lock(renderMutex_);
     Trace trace("OffloadSink::Stop");
     AUDIO_INFO_LOG("Stop");
 
@@ -912,6 +914,7 @@ int32_t OffloadAudioRendererSinkInner::Stop(void)
         CHECK_AND_RETURN_RET_LOG(!Flush(), ERR_OPERATION_FAILED, "Flush failed!");
         AudioXCollie audioXCollie("audioRender_->Stop", TIME_OUT_SECONDS);
         int32_t ret = audioRender_->Stop(audioRender_);
+        UpdateSinkState(false);
         if (!ret) {
             started_ = false;
             return SUCCESS;
@@ -1166,6 +1169,16 @@ int32_t OffloadAudioRendererSinkInner::GetRenderId(uint32_t &renderId) const
 {
     renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_OFFLOAD);
     return SUCCESS;
+}
+
+// UpdateSinkState must be called with OffloadAudioRendererSinkInner::renderMutex_ held
+void OffloadAudioRendererSinkInner::UpdateSinkState(bool started)
+{
+    if (callback_) {
+        callback_->OnAudioSinkStateChange(sinkId_, started);
+    } else {
+        AUDIO_WARNING_LOG("AudioSinkCallback is nullptr");
+    }
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

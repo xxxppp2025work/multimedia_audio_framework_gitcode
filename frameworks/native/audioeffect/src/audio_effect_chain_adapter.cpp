@@ -72,7 +72,7 @@ int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr)
     if (audioEffectChainManager->ApplyAudioEffectChain(sceneTypeString, eBufferAttr) != SUCCESS) {
         return ERROR;
     }
-    bufferAttr->numChanOut = eBufferAttr->outChannels;
+    bufferAttr->numChanOut = static_cast<int32_t>(eBufferAttr->outChannels);
     bufferAttr->outChanLayout = eBufferAttr->outChannelLayout;
     return SUCCESS;
 }
@@ -236,18 +236,21 @@ int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sess
 
     uint64_t channelLayoutNum = 0;
     int32_t streamUsage = 0;
+    int32_t systemVolumeType = 0;
     std::string sceneTypeString = "";
     std::string sessionIDString = "";
     std::string sceneModeString = "";
     std::string spatializationEnabledString = "";
+
     if (sceneType && pack.channelLayout && sessionID && pack.sceneMode &&
-        pack.spatializationEnabled && pack.streamUsage) {
+        pack.spatializationEnabled && pack.streamUsage && pack.systemVolumeType) {
         sceneTypeString = sceneType;
         channelLayoutNum = std::strtoull(pack.channelLayout, nullptr, BASE_TEN);
         sessionIDString = sessionID;
         sceneModeString = pack.sceneMode;
         spatializationEnabledString = pack.spatializationEnabled;
         streamUsage = static_cast<int32_t>(std::strtol(pack.streamUsage, nullptr, BASE_TEN));
+        systemVolumeType = static_cast<int32_t>(std::strtol(pack.systemVolumeType, nullptr, BASE_TEN));
     } else {
         AUDIO_ERR_LOG("map input parameters missing.");
         return ERROR;
@@ -260,6 +263,7 @@ int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sess
     info.channelLayout = channelLayoutNum;
     info.spatializationEnabled = spatializationEnabledString;
     info.streamUsage = streamUsage;
+    info.systemVolumeType = systemVolumeType;
     return audioEffectChainManager->SessionInfoMapAdd(sessionIDString, info);
 }
 
@@ -290,7 +294,19 @@ int32_t EffectChainManagerReturnEffectChannelInfo(const char *sceneType, uint32_
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     uint32_t &chans = *channels;
     uint64_t &chLayout = *channelLayout;
-    return audioEffectChainManager->ReturnEffectChannelInfo(sceneTypeString, chans, chLayout);
+    return audioEffectChainManager->QueryEffectChannelInfo(sceneTypeString, chans, chLayout);
+}
+
+int32_t EffectChainManagerQueryHdiSupportedChannelLayout(uint32_t *channels, uint64_t *channelLayout)
+{
+    if (channels == nullptr || channelLayout == nullptr) {
+        return ERROR;
+    }
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    uint32_t &chans = *channels;
+    uint64_t &chLayout = *channelLayout;
+    return audioEffectChainManager->QueryHdiSupportedChannelInfo(chans, chLayout);
 }
 
 int32_t EffectChainManagerReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout)

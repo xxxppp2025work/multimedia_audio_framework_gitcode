@@ -27,6 +27,8 @@ namespace AudioStandard {
 using namespace std;
 const int32_t LIMITSIZE = 4;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
+const uint8_t TESTSIZE = 18;
+typedef void (*TestPtr)(const uint8_t *, size_t);
 
 void InitFuzzTest(const uint8_t *rawData, size_t size)
 {
@@ -195,7 +197,7 @@ void GetSessionInfoInFocusFuzzTest(const uint8_t *rawData, size_t size)
     interruptService->GetSessionInfoInFocus(audioInterrupt, zoneId);
 }
 
-void DispatchInterruptEventWithSessionIdFuzzTest(const uint8_t *rawData, size_t size)
+void DispatchInterruptEventWithStreamIdFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
@@ -210,7 +212,7 @@ void DispatchInterruptEventWithSessionIdFuzzTest(const uint8_t *rawData, size_t 
     interruptEvent.hintType = *reinterpret_cast<const InterruptHint *>(rawData);
     interruptEvent.duckVolume = 0;
 
-    interruptService->DispatchInterruptEventWithSessionId(sessionId, interruptEvent);
+    interruptService->DispatchInterruptEventWithStreamId(sessionId, interruptEvent);
 }
 
 void RequestAudioFocusFuzzTest(const uint8_t *rawData, size_t size)
@@ -321,27 +323,40 @@ void UpdateAudioSceneFromInterruptFuzzTest(const uint8_t *rawData, size_t size)
 } // namespace AudioStandard
 } // namesapce OHOS
 
+OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
+    OHOS::AudioStandard::InitFuzzTest,
+    OHOS::AudioStandard::AddDumpInfoFuzzTest,
+    OHOS::AudioStandard::SetCallbackHandlerFuzzTest,
+    OHOS::AudioStandard::SetAudioManagerInterruptCallbackFuzzTest,
+    OHOS::AudioStandard::ActivateAudioInterruptFuzzTest,
+    OHOS::AudioStandard::DeactivateAudioInterruptFuzzTest,
+    OHOS::AudioStandard::CreateAudioInterruptZoneFuzzTest,
+    OHOS::AudioStandard::ReleaseAudioInterruptZoneFuzzTest,
+    OHOS::AudioStandard::RemoveAudioInterruptZonePidsFuzzTest,
+    OHOS::AudioStandard::GetStreamInFocusFuzzTest,
+    OHOS::AudioStandard::GetSessionInfoInFocusFuzzTest,
+    OHOS::AudioStandard::DispatchInterruptEventWithStreamIdFuzzTest,
+    OHOS::AudioStandard::RequestAudioFocusFuzzTest,
+    OHOS::AudioStandard::AbandonAudioFocusFuzzTest,
+    OHOS::AudioStandard::SetAudioInterruptCallbackFuzzTest,
+    OHOS::AudioStandard::UnsetAudioInterruptCallbackFuzzTest,
+    OHOS::AudioStandard::AddAudioInterruptZonePidsFuzzTest,
+    OHOS::AudioStandard::UpdateAudioSceneFromInterruptFuzzTest
+};
+
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::InitFuzzTest(data, size);
-    OHOS::AudioStandard::AddDumpInfoFuzzTest(data, size);
-    OHOS::AudioStandard::SetCallbackHandlerFuzzTest(data, size);
-    OHOS::AudioStandard::SetAudioManagerInterruptCallbackFuzzTest(data, size);
-    OHOS::AudioStandard::ActivateAudioInterruptFuzzTest(data, size);
-    OHOS::AudioStandard::DeactivateAudioInterruptFuzzTest(data, size);
-    OHOS::AudioStandard::CreateAudioInterruptZoneFuzzTest(data, size);
-    OHOS::AudioStandard::ReleaseAudioInterruptZoneFuzzTest(data, size);
-    OHOS::AudioStandard::RemoveAudioInterruptZonePidsFuzzTest(data, size);
-    OHOS::AudioStandard::GetStreamInFocusFuzzTest(data, size);
-    OHOS::AudioStandard::GetSessionInfoInFocusFuzzTest(data, size);
-    OHOS::AudioStandard::DispatchInterruptEventWithSessionIdFuzzTest(data, size);
-    OHOS::AudioStandard::RequestAudioFocusFuzzTest(data, size);
-    OHOS::AudioStandard::AbandonAudioFocusFuzzTest(data, size);
-    OHOS::AudioStandard::SetAudioInterruptCallbackFuzzTest(data, size);
-    OHOS::AudioStandard::UnsetAudioInterruptCallbackFuzzTest(data, size);
-    OHOS::AudioStandard::AddAudioInterruptZonePidsFuzzTest(data, size);
-    OHOS::AudioStandard::UpdateAudioSceneFromInterruptFuzzTest(data, size);
+    if (data == nullptr || size <= 1) {
+        return 0;
+    }
+    uint8_t firstByte = *data % OHOS::AudioStandard::TESTSIZE;
+    if (firstByte >= OHOS::AudioStandard::TESTSIZE) {
+        return 0;
+    }
+    data = data + 1;
+    size = size - 1;
+    g_testPtrs[firstByte](data, size);
     return 0;
 }

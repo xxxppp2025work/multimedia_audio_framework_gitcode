@@ -25,29 +25,33 @@
 #include "res_config.h"
 #include "notification_content.h"
 #include "notification_normal_content.h"
+#include "string_wrapper.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
 class AudioSafeVolumeNotificationImpl : public AudioSafeVolumeNotification {
 public:
-    AudioSafeVolumeNotificationImpl();
+    AudioSafeVolumeNotificationImpl() = default;
     virtual ~AudioSafeVolumeNotificationImpl() = default;
 
     void PublishSafeVolumeNotification(int32_t notificationId) override;
     void CancelSafeVolumeNotification(int32_t notificationId) override;
 private:
-    std::string GetStringByName(const char *name);
+    std::string GetSystemStringByName(std::string name);
     bool SetTitleAndText(int32_t notificationId, std::shared_ptr<Notification::NotificationNormalContent> content);
     std::string GetButtonName(uint32_t notificationId);
     bool GetPixelMap();
-    void Init();
-    void RefreshResConfig();
+    Global::Resource::RState GetMediaDataByName(const std::string& name, size_t& len,
+        std::unique_ptr<uint8_t[]>& outValue, uint32_t density = 0);
+
+    std::string title_ {};
+    std::string text_ {};
+    std::string buttonName_ {};
+    std::string iconPath_ {};
 
     std::mutex mutex_ {};
     std::shared_ptr<Media::PixelMap> iconPixelMap_ {};
-    Global::Resource::ResourceManager *resourceManager_ = nullptr;
-    Global::Resource::ResConfig *resConfig_ = nullptr;
 };
 
 extern "C" AudioSafeVolumeNotification *CreateSafeVolumeNotificationImpl()

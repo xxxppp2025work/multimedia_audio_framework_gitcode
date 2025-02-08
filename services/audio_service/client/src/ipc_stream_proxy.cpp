@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -185,6 +185,7 @@ int32_t IpcStreamProxy::Drain(bool stopFlag)
 
 int32_t IpcStreamProxy::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -197,6 +198,9 @@ int32_t IpcStreamProxy::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureCo
     ret = Remote()->SendRequest(IpcStreamMsg::ON_UPDATA_PLAYBACK_CAPTURER_CONFIG, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "Failed, ipc error: %{public}d", ret);
     return reply.ReadInt32();
+#else
+    return ERROR;
+#endif
 }
 
 int32_t IpcStreamProxy::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
@@ -539,6 +543,19 @@ int32_t IpcStreamProxy::RegisterThreadPriority(uint32_t tid, const std::string &
     ret = reply.ReadInt32();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
     return ret;
+}
+
+int32_t IpcStreamProxy::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteInt32(defaultOutputDevice);
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_DEFAULT_OUTPUT_DEVICE, data, reply, option);
+    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "set default output device failed, ipc error: %{public}d", ret);
+    return reply.ReadInt32();
 }
 } // namespace AudioStandard
 } // namespace OHOS

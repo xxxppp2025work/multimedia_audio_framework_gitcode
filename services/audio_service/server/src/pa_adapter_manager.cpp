@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,7 +26,6 @@
 #include "pa_renderer_stream_impl.h"
 #include "pa_capturer_stream_impl.h"
 #include "audio_utils.h"
-#include "audio_info.h"
 #include "policy_handler.h"
 
 namespace OHOS {
@@ -36,6 +35,11 @@ const uint64_t BUF_LENGTH_IN_MSEC = 20;
 static const uint32_t PA_RECORD_MAX_LENGTH_NORMAL = 4;
 static const uint32_t PA_RECORD_MAX_LENGTH_WAKEUP = 30;
 static const int32_t CONNECT_STREAM_TIMEOUT_IN_SEC = 5; // 5S
+const char* INNER_CAPTURER_SOURCE = "Speaker.monitor";
+const char* NEW_INNER_CAPTURER_SOURCE = "InnerCapturerSink.monitor";
+const char* MONITOR_SOURCE_SUFFIX = ".monitor";
+const char* DUAL_TONE_STREAM = "DualToneStream";
+const char* NORMAL_STREAM = "NormalStream";
 static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_STRING_MAP = {
     {STREAM_VOICE_CALL, "voice_call"},
     {STREAM_MUSIC, "music"},
@@ -93,7 +97,7 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
     uint32_t sessionId = 0;
     if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK ||
-        processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
+        processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
         sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
     } else {
         sessionId = processConfig.originalSessionId;
@@ -200,7 +204,7 @@ int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::
     int32_t ret = InitPaContext();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
     uint32_t sessionId = 0;
-    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
+    if (processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
         sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
     } else {
         sessionId = processConfig.originalSessionId;
@@ -222,20 +226,22 @@ int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::
 int32_t PaAdapterManager::ReleaseCapturer(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Enter ReleaseCapturer");
-    std::lock_guard<std::mutex> lock(streamMapMutex_);
+    std::unique_lock<std::mutex> lock(streamMapMutex_);
     auto it = capturerStreamMap_.find(streamIndex);
     if (it == capturerStreamMap_.end()) {
         AUDIO_WARNING_LOG("No matching stream");
         return SUCCESS;
     }
+    std::shared_ptr<ICapturerStream> currentCapturer = capturerStreamMap_[streamIndex];
+    capturerStreamMap_[streamIndex] = nullptr;
+    capturerStreamMap_.erase(streamIndex);
+    lock.unlock();
 
-    if (capturerStreamMap_[streamIndex]->Release() < 0) {
+    if (currentCapturer != nullptr && currentCapturer->Release() < 0) {
         AUDIO_WARNING_LOG("Release stream %{public}d failed", streamIndex);
         return ERR_OPERATION_FAILED;
     }
 
-    capturerStreamMap_[streamIndex] = nullptr;
-    capturerStreamMap_.erase(streamIndex);
     if (capturerStreamMap_.size() == 0) {
         AUDIO_INFO_LOG("Release the last stream");
     }
@@ -368,12 +374,15 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
         if (processConfig.isInnerCapturer) {
             if (processConfig.innerCapMode == MODERN_INNER_CAP) {
                 AUDIO_INFO_LOG("Create the modern inner-cap.");
-                deviceName = NEW_INNER_CAPTURER_SOURCE;
+                const char* newInnerCapturerSource = "InnerCapturerSink.monitor";
+                deviceName = newInnerCapturerSource;
             } else {
-                deviceName = INNER_CAPTURER_SOURCE;
+                const char* innerCapturerSource = "Speaker.monitor";
+                deviceName = innerCapturerSource;
             }
         } else if (processConfig.capturerInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
-            deviceName = std::string(REMOTE_CAST_INNER_CAPTURER_SINK_NAME) + std::string(MONITOR_SOURCE_SUFFIX);
+            const char* monitorSourceSuffix = ".monitor";
+            deviceName = std::string(REMOTE_CAST_INNER_CAPTURER_SINK_NAME) + std::string(monitorSourceSuffix);
         }
         return PolicyHandler::GetInstance().NotifyCapturerAdded(processConfig.capturerInfo,
             processConfig.streamInfo, sessionId);
@@ -460,16 +469,6 @@ void PaAdapterManager::ReleasePaStream(pa_stream *paStream)
     AUDIO_INFO_LOG("Release paStream because of errs");
 }
 
-bool PaAdapterManager::IsEffectNone(StreamUsage streamUsage)
-{
-    if (streamUsage == STREAM_USAGE_SYSTEM || streamUsage == STREAM_USAGE_DTMF ||
-        streamUsage == STREAM_USAGE_ENFORCED_TONE || streamUsage == STREAM_USAGE_ULTRASONIC ||
-        streamUsage == STREAM_USAGE_NAVIGATION || streamUsage == STREAM_USAGE_NOTIFICATION) {
-        return true;
-    }
-    return false;
-}
-
 bool PaAdapterManager::CheckHighResolution(const AudioProcessConfig &processConfig)
 {
     DeviceType deviceType = processConfig.deviceType;
@@ -504,6 +503,28 @@ void PaAdapterManager::SetHighResolution(pa_proplist *propList, AudioProcessConf
     }
 }
 
+void PaAdapterManager::SetPlaybackProplist(pa_proplist *propList, AudioProcessConfig &processConfig)
+{
+        pa_proplist_sets(propList, "scene.mode",
+            processConfig.rendererInfo.effectMode == EFFECT_NONE ? "EFFECT_NONE" : "EFFECT_DEFAULT");
+        // mark dup stream for dismissing volume handle
+        std::string streamMode = managerType_ == DUP_PLAYBACK ? DUP_STREAM
+            : (managerType_ == DUAL_PLAYBACK ? DUAL_TONE_STREAM : NORMAL_STREAM);
+        pa_proplist_sets(propList, "stream.mode", streamMode.c_str());
+        pa_proplist_sets(propList, "stream.flush", "false");
+        pa_proplist_sets(propList, "stream.privacyType", std::to_string(processConfig.privacyType).c_str());
+        pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
+        pa_proplist_sets(propList, "scene.type", processConfig.rendererInfo.sceneType.c_str());
+        pa_proplist_sets(propList, "spatialization.enabled",
+            std::to_string(processConfig.rendererInfo.spatializationEnabled).c_str());
+        pa_proplist_sets(propList, "headtracking.enabled",
+            std::to_string(processConfig.rendererInfo.headTrackingEnabled).c_str());
+        pa_proplist_sets(propList, "expectedPlaybackDurationBytes",
+            std::to_string(processConfig.rendererInfo.expectedPlaybackDurationBytes).c_str());
+        AudioVolumeType systemVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig.streamType);
+        pa_proplist_sets(propList, "systemVolume.type", std::to_string(systemVolumeType).c_str());
+}
+
 void PaAdapterManager::SetRecordProplist(pa_proplist *propList, AudioProcessConfig &processConfig)
 {
     pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(processConfig.isInnerCapturer).c_str());
@@ -513,7 +534,8 @@ void PaAdapterManager::SetRecordProplist(pa_proplist *propList, AudioProcessConf
         std::to_string(processConfig.capturerInfo.sourceType).c_str());
     const std::string sceneType = GetEnhanceSceneName(processConfig.capturerInfo.sourceType);
     pa_proplist_sets(propList, "scene.type", sceneType.c_str());
-    if (unprocessAppUidSet_.find(processConfig.appInfo.appUid) != unprocessAppUidSet_.end()) {
+    auto item = unprocessAppUidSet_.find(processConfig.appInfo.appUid);
+    if ((item != unprocessAppUidSet_.end()) || (processConfig.capturerInfo.sourceType == SOURCE_TYPE_UNPROCESSED)) {
         AUDIO_INFO_LOG("ByPass UID is [%{public}d]", processConfig.appInfo.appUid);
         pa_proplist_sets(propList, "scene.bypass", "scene.bypass");
     }
@@ -540,20 +562,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
 
     if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
-        pa_proplist_sets(propList, "scene.mode",
-            IsEffectNone(processConfig.rendererInfo.streamUsage) ? "EFFECT_NONE" : "EFFECT_DEFAULT");
-        // mark dup stream for dismissing volume handle
-        std::string streamMode = managerType_ == DUP_PLAYBACK ? DUP_STREAM
-            : (managerType_ == DUAL_PLAYBACK ? DUAL_TONE_STREAM : NORMAL_STREAM);
-        pa_proplist_sets(propList, "stream.mode", streamMode.c_str());
-        pa_proplist_sets(propList, "stream.flush", "false");
-        pa_proplist_sets(propList, "stream.privacyType", std::to_string(processConfig.privacyType).c_str());
-        pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
-        pa_proplist_sets(propList, "scene.type", processConfig.rendererInfo.sceneType.c_str());
-        pa_proplist_sets(propList, "spatialization.enabled",
-            std::to_string(processConfig.rendererInfo.spatializationEnabled).c_str());
-        pa_proplist_sets(propList, "headtracking.enabled",
-            std::to_string(processConfig.rendererInfo.headTrackingEnabled).c_str());
+        SetPlaybackProplist(propList, processConfig);
         SetHighResolution(propList, processConfig, sessionId);
     } else if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         SetRecordProplist(propList, processConfig);
@@ -695,7 +704,8 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
     if (source == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         flags |= PA_STREAM_DONT_MOVE; //inner cap source-output,should not be moved!
     }
-    int32_t result = pa_stream_connect_record(paStream, cDeviceName, &bufferAttr, static_cast<pa_stream_flags_t>(flags));
+    int32_t result = pa_stream_connect_record(paStream, cDeviceName, &bufferAttr,
+        static_cast<pa_stream_flags_t>(flags));
     // PA_STREAM_ADJUST_LATENCY exist, return peek length from server;
     if (result < 0) {
         int32_t error = pa_context_errno(context_);
@@ -878,6 +888,11 @@ const std::string PaAdapterManager::GetEnhanceSceneName(SourceType sourceType)
     }
     const std::string sceneName = name;
     return sceneName;
+}
+
+uint64_t PaAdapterManager::GetLatency() noexcept
+{
+    return 0;
 }
 
 } // namespace AudioStandard

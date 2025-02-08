@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -165,7 +165,7 @@ int32_t ProRendererStreamImpl::InitParams()
         writeQueue_.emplace(i);
     }
     SetOffloadDisable();
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_DIRECT_STREAM_FILE, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, DUMP_DIRECT_STREAM_FILE, &dumpFile_);
     status_ = I_STATUS_IDLE;
     return SUCCESS;
 }
@@ -234,7 +234,7 @@ int32_t ProRendererStreamImpl::Flush()
     return SUCCESS;
 }
 
-int32_t ProRendererStreamImpl::Drain()
+int32_t ProRendererStreamImpl::Drain(bool stopFlag)
 {
     Trace trace("ProRendererStreamImpl::Drain::" + std::to_string(streamIndex_));
     AUDIO_INFO_LOG("Enter");
@@ -647,6 +647,11 @@ void ProRendererStreamImpl::ConvertFloatToDes(int32_t writeIndex)
 
 void ProRendererStreamImpl::GetStreamVolume()
 {
+    if (processConfig_.streamType == STREAM_VOICE_COMMUNICATION) {
+        bufferInfo_.volumeBg = 1;
+        bufferInfo_.volumeEd = 1;
+        return;
+    }
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
     bufferInfo_.volumeBg = AudioVolume::GetInstance()->GetHistoryVolume(streamIndex_);
     bufferInfo_.volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, DEVICE_NAME);

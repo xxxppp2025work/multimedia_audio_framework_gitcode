@@ -59,7 +59,6 @@ public:
     sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode) override;
     bool LoadAudioEffectLibraries(const std::vector<Library> libraries, const std::vector<Effect> effects,
         std::vector<Effect> &successEffects) override;
-    void RequestThreadPriority(uint32_t tid, std::string bundleName) override;
     bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
         const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam) override;
     void SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
@@ -87,6 +86,11 @@ public:
     int32_t IsWhispering() override;
     bool GetEffectOffloadEnabled() override;
     void LoadHdiEffectModel() override;
+    // for effect V3
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE) override;
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE) override;
     // for effect
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
@@ -103,7 +107,13 @@ public:
     void SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag) override;
     int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack) override;
     int32_t UnsetOffloadMode(uint32_t sessionId) override;
+    void CheckHibernateState(bool onHibernate) override;
     void RestoreSession(const int32_t &sessionID, bool isOutput) override;
+    sptr<IRemoteObject> CreateIpcOfflineStream(int32_t &errorCode) override;
+    int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) override;
+    int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
+    int32_t GenerateSessionId(uint32_t &sessionId) override;
+    void NotifyAccountsChanged() override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

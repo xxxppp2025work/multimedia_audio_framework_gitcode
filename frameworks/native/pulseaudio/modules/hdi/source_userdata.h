@@ -15,6 +15,8 @@
 #ifndef SOURCE_USERDATA_H
 #define SOURCE_USERDATA_H
 
+#include <sys/eventfd.h>
+#include <poll.h>
 #include <pulsecore/core.h>
 #include <pulsecore/log.h>
 #include <pulsecore/module.h>
@@ -44,7 +46,6 @@ struct Userdata {
     pa_thread *thread;
     pa_thread_mq threadMq;
     pa_thread *threadCap;
-    pa_thread_mq threadCapMq;
     pa_asyncmsgq *CaptureMq;
     pa_rtpoll *rtpoll;
     uint32_t bufferSize;
@@ -80,6 +81,8 @@ struct Userdata {
     uint32_t captureId;
     uint32_t renderId;
     pa_resampler *defaultSceneResampler;
+    pa_rtpoll_item *rtpollItem;
+    int eventFd;
 };
 
 struct AlgoSpecs {

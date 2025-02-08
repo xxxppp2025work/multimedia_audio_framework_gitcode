@@ -21,11 +21,16 @@
 #include "audio_service_log.h"
 #include "audio_utils.h"
 #include "none_mix_engine.h"
+#include "audio_performance_monitor.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t DELTA_TIME = 4000000; // 4ms
 constexpr int32_t PERIOD_NS = 20000000; // 20ms
+constexpr int32_t AUDIO_US_PER_MS = 1000;
+constexpr int32_t AUDIO_DEFAULT_LATENCY_US = 160000;
+constexpr int32_t AUDIO_FRAME_WORK_LATENCY_US = 40000;
 constexpr int32_t FADING_MS = 20; // 20ms
 constexpr int32_t MAX_ERROR_COUNT = 50;
 constexpr int16_t STEREO_CHANNEL_COUNT = 2;
@@ -45,12 +50,14 @@ NoneMixEngine::NoneMixEngine()
       failedCount_(0),
       writeCount_(0),
       fwkSyncTime_(0),
+      latency_(0),
       stream_(nullptr),
       startFadein_(false),
       startFadeout_(false),
       uChannel_(0),
       uFormat_(sizeof(int32_t)),
-      uSampleRate_(0)
+      uSampleRate_(0),
+      firstSetVolume_(true)
 {
     AUDIO_INFO_LOG("Constructor");
 }
@@ -105,6 +112,7 @@ int32_t NoneMixEngine::Start()
         playbackThread_ = std::make_unique<AudioThreadTask>(THREAD_NAME);
         playbackThread_->RegisterJob([this] { this->MixStreams(); });
     }
+    latency_ = 0;
     if (!isStart_) {
         startFadeout_ = false;
         startFadein_ = true;
@@ -245,6 +253,24 @@ void NoneMixEngine::DoFadeinOut(bool isFadeOut, char *pBuffer, size_t bufferSize
     }
 }
 
+void NoneMixEngine::AdjustVoipVolume()
+{
+    if (isVoip_) {
+        uint32_t streamIndx = stream_->GetStreamIndex();
+        AudioProcessConfig config = stream_->GetAudioProcessConfig();
+        AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(config.streamType);
+        float volumeBg = AudioVolume::GetInstance()->GetHistoryVolume(streamIndx);
+        float volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndx, volumeType, std::string(SINK_ADAPTER_NAME));
+        if ((!firstSetVolume_ && volumeBg != volumeEd) || firstSetVolume_) {
+            AUDIO_INFO_LOG("Adjust voip volume");
+            AudioVolume::GetInstance()->SetHistoryVolume(streamIndx, volumeEd);
+            AudioVolume::GetInstance()->Monitor(streamIndx, true);
+            renderSink_->SetVolume(volumeEd, volumeEd);
+            firstSetVolume_ = false;
+        }
+    }
+}
+
 void NoneMixEngine::MixStreams()
 {
     if (stream_ == nullptr) {
@@ -260,9 +286,11 @@ void NoneMixEngine::MixStreams()
     int32_t appUid = stream_->GetAudioProcessConfig().appInfo.appUid;
     int32_t index = -1;
     int32_t result = stream_->Peek(&audioBuffer, index);
+    uint32_t sessionId = stream_->GetStreamIndex();
     writeCount_++;
     if (index < 0) {
         AUDIO_WARNING_LOG("peek buffer failed.result:%{public}d,buffer size:%{public}d", result, index);
+        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_DIRECT_OUT);
         stream_->ReturnIndex(index);
         failedCount_++;
         if (startFadeout_) {
@@ -273,6 +301,8 @@ void NoneMixEngine::MixStreams()
         ClockTime::RelativeSleep(PERIOD_NS);
         return;
     }
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_DIRECT_OUT);
+    AdjustVoipVolume();
     failedCount_ = 0;
     uint64_t written = 0;
     // fade in or fade out
@@ -448,6 +478,25 @@ int32_t NoneMixEngine::SwitchSink(const AudioStreamInfo &streamInfo, bool isVoip
     renderSink_->DeInit();
     isVoip_ = isVoip;
     return InitSink(streamInfo);
+}
+
+uint64_t NoneMixEngine::GetLatency() noexcept
+{
+    if (!isStart_) {
+        return 0;
+    }
+    if (latency_ > 0) {
+        return latency_;
+    }
+    uint32_t latency = 0;
+    if (renderSink_->GetLatency(&latency) == 0) {
+        latency_ = latency * AUDIO_US_PER_MS + AUDIO_FRAME_WORK_LATENCY_US;
+    } else {
+        AUDIO_INFO_LOG("get latency failed,use default");
+        latency_ = AUDIO_DEFAULT_LATENCY_US;
+    }
+    AUDIO_INFO_LOG("latency value:%{public}" PRId64 " ns", latency_);
+    return latency_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -24,25 +24,26 @@ namespace OHOS {
 namespace AudioStandard {
 
 typedef struct IAudioSinkAttr {
-    const char *adapterName = NULL;
+    const char *adapterName = nullptr;
     uint32_t openMicSpeaker = 0;
     HdiAdapterFormat format = HdiAdapterFormat::INVALID_WIDTH;
     uint32_t sampleRate = 0;
     uint32_t channel = 0;
     float volume = 0.0f;
-    const char *filePath = NULL;
-    const char *deviceNetworkId = NULL;
+    const char *filePath = nullptr;
+    const char *deviceNetworkId = nullptr;
     int32_t deviceType = 0;
     uint64_t channelLayout = 0;
     int32_t audioStreamFlag = 0;
-    std::string address;
-    const char *aux;
+    std::string address = "";
+    const char *aux = NULL;
 } IAudioSinkAttr;
 
 class IAudioSinkCallback {
 public:
     virtual void OnAudioSinkParamChange(const std::string &netWorkId, const AudioParamKey key,
         const std::string &condition, const std::string &value) = 0;
+    virtual void OnAudioSinkStateChange(uint32_t sinkId, bool started) = 0;
 };
 
 typedef void OnRenderCallback(const RenderCallbackType type, int8_t *userdata);
@@ -75,12 +76,13 @@ public:
 
     virtual int32_t GetTransactionId(uint64_t *transactionId) = 0;
 
+    virtual int32_t GetAudioScene() = 0;
     virtual int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) = 0;
     virtual int32_t SetOutputRoutes(std::vector<DeviceType> &outputDevices) = 0;
 
     virtual void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) = 0;
     virtual std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) = 0;
-    virtual void RegisterParameterCallback(IAudioSinkCallback* callback) = 0;
+    virtual void RegisterAudioSinkCallback(IAudioSinkCallback* callback) = 0;
 
     virtual void SetAudioMonoState(bool audioMono) = 0;
     virtual void SetAudioBalanceValue(float audioBalance) = 0;

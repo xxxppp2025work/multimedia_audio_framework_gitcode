@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,11 +31,12 @@
 #include "audio_policy_manager.h"
 #include "audio_utils.h"
 #include "audio_manager_listener_stub.h"
+#include "audio_policy_interface.h"
+#include "audio_focus_info_change_callback_impl.h"
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-const unsigned int REQUEST_THREAD_PRIORITY_TIME_OUT_SECONDS = 10;
 constexpr unsigned int GET_BUNDLE_INFO_TIME_OUT_SECONDS = 10;
 constexpr unsigned int XCOLLIE_TIME_OUT_SECONDS = 10;
 
@@ -521,7 +522,7 @@ int32_t AudioSystemManager::GetMinVolume(AudioVolumeType volumeType)
     return AudioPolicyManager::GetInstance().GetMinVolumeLevel(volumeType);
 }
 
-int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
+int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType) const
 {
     AUDIO_INFO_LOG("SetStreamMute for volumeType [%{public}d], mute [%{public}d]", volumeType, mute);
     switch (volumeType) {
@@ -548,7 +549,7 @@ int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
     }
 
     /* Call Audio Policy SetStreamMute */
-    return AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, true);
+    return AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, true, deviceType);
 }
 
 bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
@@ -841,105 +842,6 @@ int32_t AudioSystemManager::UnregisterFocusInfoChangeCallback(
     return ret;
 }
 
-AudioFocusInfoChangeCallbackImpl::AudioFocusInfoChangeCallbackImpl()
-{
-    AUDIO_INFO_LOG("AudioFocusInfoChangeCallbackImpl constructor");
-}
-
-AudioFocusInfoChangeCallbackImpl::~AudioFocusInfoChangeCallbackImpl()
-{
-    AUDIO_INFO_LOG("AudioFocusInfoChangeCallbackImpl: destroy");
-}
-
-void AudioFocusInfoChangeCallbackImpl::SaveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback)
-{
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    bool hasCallback = false;
-    std::lock_guard<std::mutex> cbListLock(cbListMutex_);
-    for (auto it = callbackList_.begin(); it != callbackList_.end(); ++it) {
-        if ((*it).lock() == callback.lock()) {
-            hasCallback = true;
-        }
-    }
-    if (!hasCallback) {
-        callbackList_.push_back(callback);
-    }
-}
-
-void AudioFocusInfoChangeCallbackImpl::RemoveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback)
-{
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    std::lock_guard<std::mutex> cbListLock(cbListMutex_);
-    callbackList_.remove_if([&callback](std::weak_ptr<AudioFocusInfoChangeCallback> &callback_) {
-        return callback_.lock() == callback.lock();
-    });
-}
-
-void AudioFocusInfoChangeCallbackImpl::OnAudioFocusInfoChange(
-    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
-{
-    AUDIO_DEBUG_LOG("on callback Entered AudioFocusInfoChangeCallbackImpl %{public}s", __func__);
-    std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> temp_;
-    std::unique_lock<mutex> cbListLock(cbListMutex_);
-    for (auto callback = callbackList_.begin(); callback != callbackList_.end(); ++callback) {
-        cb_ = (*callback).lock();
-        if (cb_ != nullptr) {
-            AUDIO_DEBUG_LOG("OnAudioFocusInfoChange : Notify event to app complete");
-            temp_.push_back(cb_);
-        } else {
-            AUDIO_ERR_LOG("OnAudioFocusInfoChange: callback is null");
-        }
-    }
-    cbListLock.unlock();
-    for (uint32_t i = 0; i < temp_.size(); i++) {
-        temp_[i]->OnAudioFocusInfoChange(focusInfoList);
-    }
-    return;
-}
-
-void AudioFocusInfoChangeCallbackImpl::OnAudioFocusRequested(const AudioInterrupt &requestFocus)
-{
-    AUDIO_DEBUG_LOG("on callback Entered OnAudioFocusRequested %{public}s", __func__);
-
-    std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> temp_;
-    std::unique_lock<mutex> cbListLock(cbListMutex_);
-    for (auto callback = callbackList_.begin(); callback != callbackList_.end(); ++callback) {
-        cb_ = (*callback).lock();
-        if (cb_ != nullptr) {
-            AUDIO_DEBUG_LOG("OnAudioFocusRequested : Notify event to app complete");
-            temp_.push_back(cb_);
-        } else {
-            AUDIO_ERR_LOG("OnAudioFocusRequested: callback is null");
-        }
-    }
-    cbListLock.unlock();
-    for (uint32_t i = 0; i < temp_.size(); i++) {
-        temp_[i]->OnAudioFocusRequested(requestFocus);
-    }
-    return;
-}
-
-void AudioFocusInfoChangeCallbackImpl::OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus)
-{
-    AUDIO_DEBUG_LOG("on callback Entered OnAudioFocusAbandoned %{public}s", __func__);
-    std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> temp_;
-    std::unique_lock<mutex> cbListLock(cbListMutex_);
-    for (auto callback = callbackList_.begin(); callback != callbackList_.end(); ++callback) {
-        cb_ = (*callback).lock();
-        if (cb_ != nullptr) {
-            AUDIO_DEBUG_LOG("OnAudioFocusAbandoned : Notify event to app complete");
-            temp_.push_back(cb_);
-        } else {
-            AUDIO_ERR_LOG("OnAudioFocusAbandoned: callback is null");
-        }
-    }
-    cbListLock.unlock();
-    for (uint32_t i = 0; i < temp_.size(); i++) {
-        temp_[i]->OnAudioFocusAbandoned(abandonFocus);
-    }
-    return;
-}
-
 int32_t AudioSystemManager::RegisterVolumeKeyEventCallback(const int32_t clientPid,
     const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v)
 {
@@ -1003,16 +905,45 @@ int32_t AudioSystemManager::UnsetAudioManagerCallback(const AudioVolumeType stre
     return SUCCESS;
 }
 
-int32_t AudioSystemManager::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
+int32_t AudioSystemManager::ActivateAudioInterrupt(AudioInterrupt &audioInterrupt)
 {
     AUDIO_DEBUG_LOG("stub implementation");
-    return SUCCESS;
+    return AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
 }
 
 int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const
 {
     AUDIO_DEBUG_LOG("stub implementation");
-    return SUCCESS;
+    return AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
+}
+
+int32_t AudioSystemManager::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_ILLEGAL_STATE, "Audio service unavailable.");
+    int32_t ret = gasp->GetStandbyStatus(sessionId, isStandby, enterStandbyTime);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "failed: %{public}d", ret);
+    return ret;
+}
+
+int32_t AudioSystemManager::GenerateSessionId(uint32_t &sessionId)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
+    int32_t ret = gasp->GenerateSessionId(sessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get sessionId failed");
+    return 0;
+}
+
+int32_t AudioSystemManager::SetAudioInterruptCallback(const uint32_t sessionID,
+    const std::shared_ptr<AudioInterruptCallback> &callback, uint32_t clientUid, const int32_t zoneID)
+{
+    return AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID, callback, clientUid, zoneID);
+}
+
+int32_t AudioSystemManager::UnsetAudioInterruptCallback(const int32_t zoneId, const uint32_t sessionId)
+{
+    return AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(zoneId, sessionId);
 }
 
 int32_t AudioSystemManager::SetAudioManagerInterruptCallback(const std::shared_ptr<AudioManagerCallback> &callback)
@@ -1166,7 +1097,7 @@ bool AudioSystemManager::RequestIndependentInterrupt(FocusType focusType)
     audioInterrupt.contentType = ContentType::CONTENT_TYPE_SPEECH;
     audioInterrupt.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     audioInterrupt.audioFocusType.streamType = AudioStreamType::STREAM_RECORDING;
-    audioInterrupt.sessionId = static_cast<uint32_t>(clientId);
+    audioInterrupt.streamId = static_cast<uint32_t>(clientId);
     int32_t result = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
 
     AUDIO_DEBUG_LOG("Rresult -> %{public}d", result);
@@ -1180,20 +1111,10 @@ bool AudioSystemManager::AbandonIndependentInterrupt(FocusType focusType)
     audioInterrupt.contentType = ContentType::CONTENT_TYPE_SPEECH;
     audioInterrupt.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     audioInterrupt.audioFocusType.streamType = AudioStreamType::STREAM_RECORDING;
-    audioInterrupt.sessionId = static_cast<uint32_t>(clientId);
+    audioInterrupt.streamId = static_cast<uint32_t>(clientId);
     int32_t result = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
     AUDIO_DEBUG_LOG("result -> %{public}d", result);
     return (result == SUCCESS) ? true:false;
-}
-
-int32_t AudioSystemManager::GetAudioLatencyFromXml() const
-{
-    return AudioPolicyManager::GetInstance().GetAudioLatencyFromXml();
-}
-
-uint32_t AudioSystemManager::GetSinkLatencyFromXml() const
-{
-    return AudioPolicyManager::GetInstance().GetSinkLatencyFromXml();
 }
 
 int32_t AudioSystemManager::UpdateStreamState(const int32_t clientUid,
@@ -1230,16 +1151,6 @@ std::string AudioSystemManager::GetSelfBundleName()
     }
     reguard.CheckCurrTimeout();
     return bundleName;
-}
-
-void AudioSystemManager::RequestThreadPriority(uint32_t tid)
-{
-    AudioXCollie audioXCollie("RequestThreadPriority", REQUEST_THREAD_PRIORITY_TIME_OUT_SECONDS);
-
-    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
-    std::string bundleName = GetSelfBundleName();
-    gasp->RequestThreadPriority(tid, bundleName);
 }
 
 int32_t AudioSystemManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support)
@@ -1570,5 +1481,9 @@ int32_t AudioSystemManager::LoadSplitModule(const std::string &splitArgs, const 
     return AudioPolicyManager::GetInstance().LoadSplitModule(splitArgs, networkId);
 }
 
+int32_t AudioSystemManager::SetVirtualCall(const bool isVirtual)
+{
+    return AudioPolicyManager::GetInstance().SetVirtualCall(isVirtual);
+}
 } // namespace AudioStandard
 } // namespace OHOS

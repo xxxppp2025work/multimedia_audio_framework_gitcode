@@ -30,7 +30,7 @@ public:
     int32_t Start() override;
     int32_t Pause(bool isStandby = false) override;
     int32_t Flush() override;
-    int32_t Drain() override;
+    int32_t Drain(bool stopFlag = false) override;
     int32_t Stop() override;
     int32_t Release() override;
     int32_t GetStreamFramesWritten(uint64_t &framesWritten) override;
@@ -95,6 +95,7 @@ private:
 
     uint32_t GetEffectChainLatency();
     uint32_t GetA2dpOffloadLatency();
+    uint32_t GetLimiterLatency();
 
     void UpdatePaTimingInfo();
 
@@ -119,7 +120,7 @@ private:
 
     size_t totalBytesWritten_ = 0;
     int32_t renderRate_ = 0;
-    int32_t effectMode_ = -1;
+    int32_t effectMode_ = 1;
     std::string effectSceneName_ = "";
     int32_t privacyType_ = 0;
 
@@ -139,6 +140,8 @@ private:
     std::mutex fadingMutex_;
     std::condition_variable fadingCondition_;
     float clientVolume_ = 1.0f;
+    bool initEffectFlag_ = true;
+    bool isDoFadeOut = false;
 
     static inline std::atomic<int32_t> bufferNullCount_ = 0;
 

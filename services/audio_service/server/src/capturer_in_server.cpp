@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,8 +25,11 @@
 #include "audio_service.h"
 #include "audio_process_config.h"
 #include "i_stream_manager.h"
+#ifdef HAS_FEATURE_INNERCAPTURER
 #include "playback_capturer_manager.h"
+#endif
 #include "media_monitor_manager.h"
+#include "audio_dump_pcm.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -49,6 +52,19 @@ CapturerInServer::~CapturerInServer()
         Release();
     }
     DumpFileUtil::CloseDumpFile(&dumpS2C_);
+    if (needCheckBackground_) {
+        SwitchStreamInfo info = {
+            streamIndex_,
+            processConfig_.callerUid,
+            processConfig_.appInfo.appUid,
+            processConfig_.appInfo.appPid,
+            processConfig_.appInfo.appTokenId,
+            CAPTURER_INVALID,
+        };
+        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        PermissionUtil::NotifyPrivacyStop(tokenId, streamIndex_);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
+    }
 }
 
 int32_t CapturerInServer::ConfigServerBuffer()
@@ -136,7 +152,7 @@ int32_t CapturerInServer::Init()
     dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + "_" + std::to_string(streamIndex_)
         + "_capturer_server_out_" + std::to_string(tempInfo.samplingRate) + "_"
         + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpFileName_, &dumpS2C_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpS2C_);
 
     return SUCCESS;
 }
@@ -245,9 +261,9 @@ void CapturerInServer::ReadData(size_t length)
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
     }
     ringCache_->Dequeue({dstBuffer.buffer, dstBuffer.bufLength});
-    DumpFileUtil::WriteDumpFile(dumpS2C_, static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
-    if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
+    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
+        DumpFileUtil::WriteDumpFile(dumpS2C_, static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
             static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
     }
 
@@ -305,12 +321,22 @@ int32_t CapturerInServer::Start()
         needCheckBackground_ = true;
     }
     if (needCheckBackground_) {
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        SwitchStreamInfo info = {
+            streamIndex_,
+            processConfig_.callerUid,
+            processConfig_.appInfo.appUid,
+            processConfig_.appInfo.appPid,
+            processConfig_.appInfo.appTokenId,
+            CAPTURER_RUNNING,
+        };
         uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId), ERR_OPERATION_FAILED,
-            "VerifyBackgroundCapture failed!");
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyStart(tokenId, streamIndex_), ERR_PERMISSION_DENIED,
-            "NotifyPrivacy failed!");
+        if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
+            CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(info.appTokenId,
+                fullTokenId), ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
+        }
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(info.appTokenId, streamIndex_),
+            ERR_PERMISSION_DENIED, "NotifyPrivacyStart failed!");
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
     }
 
     AudioService::GetInstance()->UpdateSourceType(processConfig_.capturerInfo.sourceType);
@@ -330,8 +356,16 @@ int32_t CapturerInServer::Pause()
         return ERR_ILLEGAL_STATE;
     }
     if (needCheckBackground_) {
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyStop(tokenId, streamIndex_);
+        SwitchStreamInfo info = {
+            streamIndex_,
+            processConfig_.callerUid,
+            processConfig_.appInfo.appUid,
+            processConfig_.appInfo.appPid,
+            processConfig_.appInfo.appTokenId,
+            CAPTURER_PAUSED,
+        };
+        PermissionUtil::NotifyPrivacyStop(info.appTokenId, streamIndex_);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     }
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
@@ -390,8 +424,16 @@ int32_t CapturerInServer::Stop()
     status_ = I_STATUS_STOPPING;
 
     if (needCheckBackground_) {
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyStop(tokenId, streamIndex_);
+        SwitchStreamInfo info = {
+            streamIndex_,
+            processConfig_.callerUid,
+            processConfig_.appInfo.appUid,
+            processConfig_.appInfo.appPid,
+            processConfig_.appInfo.appTokenId,
+            CAPTURER_STOPPED,
+        };
+        PermissionUtil::NotifyPrivacyStop(info.appTokenId, streamIndex_);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     }
 
     int ret = stream_->Stop();
@@ -417,6 +459,7 @@ int32_t CapturerInServer::Release()
         return ret;
     }
     status_ = I_STATUS_RELEASED;
+#ifdef HAS_FEATURE_INNERCAPTURER
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         AUDIO_INFO_LOG("Disable inner capturer for %{public}u", streamIndex_);
         if (processConfig_.innerCapMode == MODERN_INNER_CAP) {
@@ -425,13 +468,23 @@ int32_t CapturerInServer::Release()
             PlaybackCapturerManager::GetInstance()->SetInnerCapturerState(false);
         }
     }
+#endif
     if (needCheckBackground_) {
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyStop(tokenId, streamIndex_);
+        SwitchStreamInfo info = {
+            streamIndex_,
+            processConfig_.callerUid,
+            processConfig_.appInfo.appUid,
+            processConfig_.appInfo.appPid,
+            processConfig_.appInfo.appTokenId,
+            CAPTURER_STOPPED,
+        };
+        PermissionUtil::NotifyPrivacyStop(info.appTokenId, streamIndex_);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     }
     return SUCCESS;
 }
 
+#ifdef HAS_FEATURE_INNERCAPTURER
 int32_t CapturerInServer::UpdatePlaybackCaptureConfigInLegacy(const AudioPlaybackCaptureConfig &config)
 {
     Trace trace("UpdatePlaybackCaptureConfigInLegacy");
@@ -485,6 +538,7 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
     PlaybackCapturerManager::GetInstance()->SetPlaybackCapturerFilterInfo(streamIndex_, filterConfig_);
     return SUCCESS;
 }
+#endif
 
 int32_t CapturerInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 {

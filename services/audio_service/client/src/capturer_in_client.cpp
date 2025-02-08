@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,7 +36,7 @@
 #include "ipc_stream.h"
 #include "audio_capturer_log.h"
 #include "audio_errors.h"
-#include "audio_log_utils.h"
+#include "volume_tools.h"
 #include "audio_manager_base.h"
 #include "audio_ring_cache.h"
 #include "audio_utils.h"
@@ -48,6 +48,7 @@
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
 #include "callback_handler.h"
+#include "xcollie/watchdog.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -61,9 +62,10 @@ const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t DEFAULT_BUF_DURATION_IN_USEC = 20000; // 20ms
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const int64_t INVALID_FRAME_SIZE = -1;
-static const int32_t HALF_FACTOR = 2;
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
+constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
+constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
 }
 
 class CapturerInClientInner : public CapturerInClient, public IStreamListener, public IHandler,
@@ -83,10 +85,6 @@ public:
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj) override;
-    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid, SourceType sourceType =
-        SOURCE_TYPE_MIC) override;
-    bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        AudioPermissionState state) override;
     State GetState() override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     void GetAudioPipeType(AudioPipeType &pipeType) override;
@@ -211,6 +209,9 @@ public:
     bool GetOffloadEnable() override;
     bool GetSpatializationEnabled() override;
     bool GetHighResolutionEnabled() override;
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
+    DeviceType GetDefaultOutputDevice() override;
+    int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -233,11 +234,11 @@ private:
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     void ReadCallbackFunc();
+    void WatchingReadData();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
 
     int32_t HandleCapturerRead(size_t &readSize, size_t &userSize, uint8_t &buffer, bool isBlockingRead);
-    void DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const;
     int32_t RegisterCapturerInClientPolicyServerDiedCb();
     int32_t UnregisterCapturerInClientPolicyServerDiedCb();
 private:
@@ -336,6 +337,7 @@ private:
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
 
     bool paramsIsSet_ = false;
+    std::atomic_bool threadStatusFlag_ { false };
 
     enum {
         STATE_CHANGE_EVENT = 0,
@@ -423,12 +425,14 @@ void CapturerInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, ui
 
 int32_t CapturerInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     AUDIO_INFO_LOG("client set %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "IpcStream is already nullptr");
     int32_t ret = ipcStream_->UpdatePlaybackCaptureConfig(config);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed: %{public}d", ret);
 
     filterConfig_ = config;
+#endif
     return SUCCESS;
 }
 
@@ -691,7 +695,7 @@ void CapturerInClientInner::SafeSendCallbackEvent(uint32_t eventCode, int64_t da
 void CapturerInClientInner::InitCallbackHandler()
 {
     if (callbackHandler_ == nullptr) {
-        callbackHandler_ = CallbackHandler::GetInstance(shared_from_this());
+        callbackHandler_ = CallbackHandler::GetInstance(shared_from_this(), "OS_AudioStateCB");
     }
 }
 
@@ -821,18 +825,6 @@ int32_t CapturerInClientInner::GetAudioStreamInfo(AudioStreamParams &info)
     CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, ERR_OPERATION_FAILED, "Params is not set");
     info = streamParams_;
     return SUCCESS;
-}
-
-bool CapturerInClientInner::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    SourceType sourceType)
-{
-    return AudioPolicyManager::GetInstance().CheckRecordingCreate(appTokenId, appFullTokenId, appUid, sourceType);
-}
-
-bool CapturerInClientInner::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-    AudioPermissionState state)
-{
-    return AudioPolicyManager::GetInstance().CheckRecordingStateChange(appTokenId, appFullTokenId, appUid, state);
 }
 
 int32_t CapturerInClientInner::GetAudioSessionID(uint32_t &sessionID)
@@ -1110,6 +1102,32 @@ bool CapturerInClientInner::WaitForRunning()
     return true;
 }
 
+void CapturerRemoveWatchdog(const std::string &message, const std::int32_t sessionId)
+{
+    std::string watchDogMessage = message;
+    watchDogMessage += std::to_string(sessionId);
+    HiviewDFX::Watchdog::GetInstance().RemovePeriodicalTask(watchDogMessage);
+    AUDIO_INFO_LOG("%{public}s end %{public}d", watchDogMessage.c_str(), sessionId);
+}
+
+void CapturerInClientInner::WatchingReadData()
+{
+    threadStatusFlag_ = true;
+    auto taskFunc = [this]() {
+        if (threadStatusFlag_) {
+            AUDIO_DEBUG_LOG("Set threadStatusFlag_ to false");
+            threadStatusFlag_ = false;
+        } else {
+            AUDIO_INFO_LOG("watchdog happened");
+        }
+    };
+    std::string watchDogMessage = "WatchingCaptureInClientReadData";
+    watchDogMessage += std::to_string(sessionId_);
+    AUDIO_INFO_LOG("watchdog start %{public}d", sessionId_);
+    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask(watchDogMessage, taskFunc,
+        WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
+}
+
 void CapturerInClientInner::ReadCallbackFunc()
 {
     AUDIO_INFO_LOG("Thread start, sessionID :%{public}d", sessionId_);
@@ -1118,10 +1136,13 @@ void CapturerInClientInner::ReadCallbackFunc()
     // Modify thread priority is not need as first call read will do these work.
     cbThreadCv_.notify_one();
 
+    // add watchdog
+    WatchingReadData();
     // start loop
     while (!cbThreadReleased_) {
         Trace traceLoop("CapturerInClientInner::WriteCallbackFunc");
         if (!WaitForRunning()) {
+            threadStatusFlag_ = true;
             continue;
         }
 
@@ -1138,7 +1159,10 @@ void CapturerInClientInner::ReadCallbackFunc()
         if (result < 0 || result != static_cast<int32_t>(cbBufferSize_)) {
             AUDIO_WARNING_LOG("Call read error, ret:%{public}d, cbBufferSize_:%{public}zu", result, cbBufferSize_);
         }
-        if (state_ != RUNNING) { continue; }
+        if (state_ != RUNNING) {
+            threadStatusFlag_ = true;
+            continue;
+        }
         lockBuffer.unlock();
 
         // call client read
@@ -1147,10 +1171,13 @@ void CapturerInClientInner::ReadCallbackFunc()
         if (readCb_ != nullptr) {
             readCb_->OnReadData(cbBufferSize_);
         }
+        threadStatusFlag_ = true;
         lockCb.unlock();
         traceCb.End();
     }
     AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", sessionId_);
+    // stop watchdog
+    CapturerRemoveWatchdog("WatchingCaptureInClientReadData", sessionId_);
 }
 
 
@@ -1666,20 +1693,9 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     int32_t res = HandleCapturerRead(readSize, userSize, buffer, isBlockingRead);
     CHECK_AND_RETURN_RET_LOG(res >= 0, ERROR, "HandleCapturerRead err : %{public}d", res);
     BufferDesc tmpBuffer = {reinterpret_cast<uint8_t *>(&buffer), userSize, userSize};
-    DfxOperation(tmpBuffer, clientConfig_.streamInfo.format, clientConfig_.streamInfo.channels);
+    VolumeTools::DfxOperation(tmpBuffer, clientConfig_.streamInfo, logUtilsTag_, volumeDataCount_);
     HandleCapturerPositionChanges(readSize);
     return readSize;
-}
-
-void CapturerInClientInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
-{
-    ChannelVolumes vols = VolumeTools::CountVolumeLevel(buffer, format, channel);
-    if (channel == MONO) {
-        Trace::Count(logUtilsTag_, vols.volStart[0]);
-    } else {
-        Trace::Count(logUtilsTag_, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
-    }
-    AudioLogUtils::ProcessVolumeData(logUtilsTag_, vols, volumeDataCount_);
 }
 
 void CapturerInClientInner::HandleCapturerPositionChanges(size_t bytesRead)
@@ -1925,7 +1941,7 @@ bool CapturerInClientInner::RestoreAudioStream(bool needStoreState)
     if (ret != SUCCESS) {
         goto error;
     }
-
+#ifdef HAS_FEATURE_INNERCAPTURER
     // for inner-capturer
     if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         ret = UpdatePlaybackCaptureConfig(filterConfig_);
@@ -1933,7 +1949,7 @@ bool CapturerInClientInner::RestoreAudioStream(bool needStoreState)
             goto error;
         }
     }
-
+#endif
     switch (oldState) {
         case RUNNING:
             result = StartAudioStream();
@@ -1957,6 +1973,25 @@ error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
     return false;
+}
+
+int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+{
+    (void)defaultOutputDevice;
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return ERROR;
+}
+
+DeviceType CapturerInClientInner::GetDefaultOutputDevice()
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return DEVICE_TYPE_NONE;
+}
+
+// diffrence from GetAudioPosition only when set speed
+int32_t CapturerInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
+{
+    return GetAudioTime(timestamp, base);
 }
 } // namespace AudioStandard
 } // namespace OHOS

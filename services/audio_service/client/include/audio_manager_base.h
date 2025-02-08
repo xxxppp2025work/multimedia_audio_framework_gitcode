@@ -320,11 +320,6 @@ public:
     virtual int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) = 0;
 
     /**
-     * Request thread priority for client thread.
-     */
-    virtual void RequestThreadPriority(uint32_t tid, std::string bundleName) = 0;
-
-    /**
      * Create playback capturer manager.
      *
      * @return true/false.
@@ -416,6 +411,11 @@ public:
 
     // Check if the multi-channel sound effect is working on the DSP
     virtual bool GetEffectOffloadEnabled() = 0;
+    // for effect V3
+    virtual int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE) = 0;
+    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE) = 0;
     // for effect
     virtual int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) = 0;
     virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) = 0;
@@ -463,6 +463,38 @@ public:
     virtual int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack) = 0;
 
     virtual int32_t UnsetOffloadMode(uint32_t sessionId) = 0;
+
+    virtual void CheckHibernateState(bool onHibernate) = 0;
+
+    /**
+     * Create IpcOfflineStream for audio edition.
+     *
+     * @return Returns IpcOfflineStream client.
+     */
+    virtual sptr<IRemoteObject> CreateIpcOfflineStream(int32_t &errorCode) = 0;
+
+    /**
+     * Get all offline audio effect chain names for audio edition.
+     *
+     * @return Returns result of querying, 0 if success, error number else.
+     */
+    virtual int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) = 0;
+
+    /**
+     * check standby status.
+     *
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) = 0;
+
+    /**
+     * generate sessionId.
+     *
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t GenerateSessionId(uint32_t &sessionId) = 0;
+
+    virtual void NotifyAccountsChanged() = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -493,7 +525,6 @@ private:
     int HandleSetAudioBalanceValue(MessageParcel &data, MessageParcel &reply);
     int HandleCreateAudioProcess(MessageParcel &data, MessageParcel &reply);
     int HandleLoadAudioEffectLibraries(MessageParcel &data, MessageParcel &reply);
-    int HandleRequestThreadPriority(MessageParcel &data, MessageParcel &reply);
     int HandleCreateAudioEffectChainManager(MessageParcel &data, MessageParcel &reply);
     int HandleSetOutputDeviceSink(MessageParcel &data, MessageParcel &reply);
     int HandleCreatePlaybackCapturerManager(MessageParcel &data, MessageParcel &reply);
@@ -516,6 +547,7 @@ private:
     int HandleSetAsrNoiseSuppressionMode(MessageParcel &data, MessageParcel &reply);
     int HandleSetOffloadMode(MessageParcel &data, MessageParcel &reply);
     int HandleUnsetOffloadMode(MessageParcel &data, MessageParcel &reply);
+    int HandleCheckHibernateState(MessageParcel &data, MessageParcel &reply);
     int HandleGetAsrNoiseSuppressionMode(MessageParcel &data, MessageParcel &reply);
     int HandleSetAsrWhisperDetectionMode(MessageParcel &data, MessageParcel &reply);
     int HandleGetAsrWhisperDetectionMode(MessageParcel &data, MessageParcel &reply);
@@ -523,6 +555,8 @@ private:
     int HandleSetAsrVoiceMuteMode(MessageParcel &data, MessageParcel &reply);
     int HandleIsWhispering(MessageParcel &data, MessageParcel &reply);
     int HandleGetEffectOffloadEnabled(MessageParcel &data, MessageParcel &reply);
+    int HandleSetAudioEffectPropertyV3(MessageParcel &data, MessageParcel &reply);
+    int HandleGetAudioEffectPropertyV3(MessageParcel &data, MessageParcel &reply);
     int HandleSetAudioEffectProperty(MessageParcel &data, MessageParcel &reply);
     int HandleGetAudioEffectProperty(MessageParcel &data, MessageParcel &reply);
     int HandleSetAudioEnhanceProperty(MessageParcel &data, MessageParcel &reply);
@@ -536,9 +570,16 @@ private:
     int HandleUpdateSessionConnectionState(MessageParcel &data, MessageParcel &reply);
     int HandleSetNonInterruptMute(MessageParcel &data, MessageParcel &reply);
     int HandleRestoreSession(MessageParcel &data, MessageParcel &reply);
+    int HandleCreateIpcOfflineStream(MessageParcel &data, MessageParcel &reply);
+    int HandleGetOfflineAudioEffectChains(MessageParcel &data, MessageParcel &reply);
+    int HandleGetStandbyStatus(MessageParcel &data, MessageParcel &reply);
+    int HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply);
+    int HandleNotifyAccountsChanged(MessageParcel &data, MessageParcel &reply);
+
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    int HandleFifthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
 };
 } // namespace AudioStandard
 } // namespace OHOS

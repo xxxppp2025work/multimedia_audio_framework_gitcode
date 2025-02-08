@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,8 +17,7 @@
 #include "parameter.h"
 
 #include "audio_errors.h"
-#include "audio_log.h"
-#include "audio_utils.h"
+#include "audio_policy_log.h"
 #include "audio_affinity_parser.h"
 
 using namespace std;
@@ -37,10 +36,9 @@ static int64_t GetCurrentTimeMS()
 
 void AudioAffinityManager::ParseAffinityXml()
 {
-    unique_ptr<audioAffinityParser> affinityParser = make_unique<audioAffinityParser>(this);
+    unique_ptr<AudioAffinityParser> affinityParser = make_unique<AudioAffinityParser>(this);
     if (affinityParser->LoadConfiguration()) {
         AUDIO_INFO_LOG("Audio Affinity manager load configuration successfully.");
-        affinityParser->Parse();
     }
     OnXmlParsingCompleted(affinityParser->GetAffinityDeviceInfo());
 }
@@ -227,7 +225,7 @@ int32_t AudioAffinityManager::GetAffinityClientUID(const int32_t &clientUID, con
 
     std::unordered_map<int32_t, AffinityDeviceInfo> affinityDeviceInfoMap =
         GetActiveAffinityDeviceMapByGroupName(activeGroupNameMap, affinityDeviceInfo.groupName);
-    
+
     return GetAffinityClientUID(clientUID, affinityDeviceInfoMap);
 }
 

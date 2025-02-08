@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,6 +23,8 @@
 #include "ipc_skeleton.h"
 #include "ffrt.h"
 
+#include "audio_utils.h"
+#include "audio_setting_provider.h"
 #include "audio_policy_log.h"
 #include "audio_info.h"
 #include "audio_setting_provider.h"
@@ -55,14 +57,12 @@ public:
     }
     ~VolumeDataMaintainer();
 
-    bool SetFirstBoot(bool fristBoot);
-    bool GetFirstBoot(bool &firstBoot);
-
     void SetDataShareReady(std::atomic<bool> isDataShareReady);
     bool SaveVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel);
     bool GetVolume(DeviceType deviceType, AudioStreamType streamType);
     void SetStreamVolume(AudioStreamType streamType, int32_t volumeLevel);
     int32_t GetStreamVolume(AudioStreamType streamType);
+    int32_t GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType);
     std::unordered_map<AudioStreamType, int32_t> GetVolumeMap();
 
     bool SaveMuteStatus(DeviceType deviceType, AudioStreamType streamType,
@@ -89,6 +89,7 @@ public:
     void RegisterCloned();
     bool SaveMicMuteState(bool isMute);
     bool GetMicMuteState(bool &isMute);
+    bool CheckOsAccountReady();
 
 private:
     VolumeDataMaintainer();

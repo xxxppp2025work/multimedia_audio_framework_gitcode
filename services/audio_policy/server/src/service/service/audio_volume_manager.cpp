@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,9 +21,7 @@
 #include "iservice_registry.h"
 #include "parameter.h"
 #include "parameters.h"
-#include "audio_utils.h"
-#include "audio_log.h"
-#include "audio_utils.h"
+#include "audio_policy_log.h"
 #include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
@@ -53,17 +51,6 @@ static std::string GetEncryptAddr(const std::string &addr)
         out[i] = tmp[i];
     }
     return out;
-}
-
-inline void ResetSelectValue(bool &isSelectN1, bool &isSelectN2)
-{
-    AUDIO_INFO_LOG("ResetSelectValue enter");
-    if (isSelectN1) {
-        isSelectN1 = false;
-    }
-    if (isSelectN2) {
-        isSelectN2 = false;
-    }
 }
 
 const int32_t ONE_MINUTE = 60;
@@ -113,6 +100,7 @@ void AudioVolumeManager::DeInit(void)
         safeVolumeDialogThrd_.reset();
         safeVolumeDialogThrd_ = nullptr;
     }
+    audioPolicyServerHandler_ = nullptr;
 }
 
 int32_t AudioVolumeManager::GetMaxVolumeLevel(AudioVolumeType volumeType) const
@@ -198,7 +186,7 @@ int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType)
     {
         DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
         std::string btDevice = audioActiveDevice_.GetActiveBtDeviceMac();
-        if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC &&
+        if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC && streamType != STREAM_VOICE_CALL &&
             curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
             A2dpDeviceConfigInfo info;
             bool ret = audioA2dpDevice_.GetA2dpDeviceInfo(btDevice, info);
@@ -208,6 +196,11 @@ int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType)
         }
     }
     return audioPolicyManager_.GetSystemVolumeLevel(streamType);
+}
+
+int32_t AudioVolumeManager::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
+{
+    return audioPolicyManager_.GetSystemVolumeLevelNoMuteState(streamType);
 }
 
 void AudioVolumeManager::SetVolumeForSwitchDevice(DeviceType deviceType, const std::string &newSinkName)
@@ -309,7 +302,7 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int
 {
     int32_t result;
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC &&
+    if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC && streamType !=STREAM_VOICE_CALL &&
         curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         std::string btDevice = audioActiveDevice_.GetActiveBtDeviceMac();
         result = SetA2dpDeviceVolume(btDevice, volumeLevel, true);
@@ -318,17 +311,22 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int
             // set to avrcp device
             return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(btDevice, volumeLevel);
         } else if (result == ERR_UNKNOWN) {
+            AUDIO_INFO_LOG("UNKNOWN RESULT set abs safe volume");
             return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(btDevice,
                 audioPolicyManager_.GetSafeVolumeLevel());
         } else {
             AUDIO_ERR_LOG("AudioVolumeManager::SetSystemVolumeLevel set abs volume failed");
         }
+#else
+    (void)result;
 #endif
     }
     int32_t sVolumeLevel = SelectDealSafeVolume(streamType, volumeLevel);
     CheckToCloseNotification(streamType, volumeLevel);
-    CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERROR, "safevolume did not deal");
-    result = audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel);
+    CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERR_SET_VOL_FAILED_BY_SAFE_VOL,
+        "safevolume did not deal");
+    result = audioPolicyManager_.SetSystemVolumeLevel(VolumeUtils::GetVolumeTypeFromStreamType(streamType),
+        volumeLevel);
     if (result == SUCCESS && (streamType == STREAM_VOICE_CALL || streamType == STREAM_VOICE_COMMUNICATION)) {
         SetVoiceCallVolume(volumeLevel);
     }
@@ -344,13 +342,13 @@ int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int
     int32_t sVolumeLevel = volumeLevel;
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     DeviceCategory curOutputDeviceCategory = audioActiveDevice_.GetCurrentOutputDeviceCategory();
-    if (sVolumeLevel > audioPolicyManager_.GetSafeVolumeLevel() && (!isSelectRestoreVol_ && !isSelectIncreaseVol_) &&
+    if (sVolumeLevel > audioPolicyManager_.GetSafeVolumeLevel() &&
         VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC) {
         switch (curOutputDeviceType) {
             case DEVICE_TYPE_BLUETOOTH_A2DP:
             case DEVICE_TYPE_BLUETOOTH_SCO:
                 if (curOutputDeviceCategory == BT_SOUNDBOX || curOutputDeviceCategory == BT_CAR) {
-                    break;
+                    return sVolumeLevel;
                 }
                 if (isBtFirstBoot_) {
                     sVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
@@ -370,8 +368,9 @@ int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int
                 break;
         }
     }
-    isBtFirstBoot_ = false;
-    ResetSelectValue(isSelectRestoreVol_, isSelectIncreaseVol_);
+    if (curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP || curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+        isBtFirstBoot_ = false;
+    }
     return sVolumeLevel;
 }
 
@@ -395,6 +394,10 @@ int32_t AudioVolumeManager::SetA2dpDeviceVolume(const std::string &macAddress, c
     }
     bool mute = sVolumeLevel == 0 ? true : false;
 
+    if (internalCall) {
+        CheckToCloseNotification(STREAM_MUSIC, volumeLevel);
+    }
+
     audioA2dpDevice_.SetA2dpDeviceMute(macAddress, mute);
     audioPolicyManager_.SetAbsVolumeMute(mute);
     AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
@@ -405,7 +408,7 @@ int32_t AudioVolumeManager::SetA2dpDeviceVolume(const std::string &macAddress, c
 
 int32_t AudioVolumeManager::HandleAbsBluetoothVolume(const std::string &macAddress, const int32_t volumeLevel)
 {
-    int32_t sVolumeLevel = volumeLevel;
+    int32_t sVolumeLevel = 0;
     if (isBtFirstBoot_) {
         sVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
         AUDIO_INFO_LOG("Btfirstboot set volume use safe volume");
@@ -487,7 +490,7 @@ int32_t AudioVolumeManager::DealWithSafeVolume(const int32_t volumeLevel, bool i
     if (isA2dpDevice) {
         DeviceCategory curOutputDeviceCategory = audioActiveDevice_.GetCurrentOutputDeviceCategory();
         AUDIO_INFO_LOG("bluetooth Category:%{public}d", curOutputDeviceCategory);
-        if (curOutputDeviceCategory != BT_HEADPHONE) {
+        if (curOutputDeviceCategory == BT_SOUNDBOX || curOutputDeviceCategory == BT_CAR) {
             return volumeLevel;
         }
     }
@@ -540,7 +543,8 @@ bool AudioVolumeManager::IsWiredHeadSet(const DeviceType &deviceType)
 bool AudioVolumeManager::IsBlueTooth(const DeviceType &deviceType)
 {
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-        if (audioActiveDevice_.GetCurrentOutputDeviceCategory() == BT_HEADPHONE) {
+        if (audioActiveDevice_.GetCurrentOutputDeviceCategory() != BT_CAR &&
+            audioActiveDevice_.GetCurrentOutputDeviceCategory() != BT_SOUNDBOX) {
             return true;
         }
     }
@@ -551,11 +555,9 @@ int32_t AudioVolumeManager::CheckActiveMusicTime()
 {
     AUDIO_INFO_LOG("enter");
     int32_t safeVolume = audioPolicyManager_.GetSafeVolumeLevel();
-    bool activeMusic = false;
-    bool isUpSafeVolume = false;
     while (!safeVolumeExit_) {
-        activeMusic = audioSceneManager_.IsStreamActive(STREAM_MUSIC);
-        isUpSafeVolume = GetSystemVolumeLevel(STREAM_MUSIC) > safeVolume ? true : false;
+        bool activeMusic = audioSceneManager_.IsStreamActive(STREAM_MUSIC);
+        bool isUpSafeVolume = GetSystemVolumeLevel(STREAM_MUSIC) > safeVolume ? true : false;
         streamMusicVol_ = isUpSafeVolume ? GetSystemVolumeLevel(STREAM_MUSIC) : streamMusicVol_;
         DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
         AUDIO_INFO_LOG("activeMusic:%{public}d, deviceType_:%{public}d, isUpSafeVolume:%{public}d",
@@ -579,23 +581,20 @@ int32_t AudioVolumeManager::CheckActiveMusicTime()
 
 bool AudioVolumeManager::CheckMixActiveMusicTime(int32_t safeVolume)
 {
-    AUDIO_INFO_LOG("CheckMixActiveMusicTime enter.");
-    if (activeSafeTimeBt_ + activeSafeTime_ >= ONE_MINUTE * audioPolicyManager_.GetSafeVolumeTimeout()) {
-        AUDIO_INFO_LOG("safe volume mix device timeout");
-        audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, SAFE_ACTIVE);
-        audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP, 0);
-        audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET, SAFE_ACTIVE);
-        audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET, 0);
+    int64_t mixSafeTime = activeSafeTimeBt_ + activeSafeTime_;
+    AUDIO_INFO_LOG("mix device cumulative time: %{public}lld", mixSafeTime);
+    if (mixSafeTime >= ONE_MINUTE * audioPolicyManager_.GetSafeVolumeTimeout()) {
+        AUDIO_INFO_LOG("mix device safe volume timeout");
+        ChangeDeviceSafeStatus(SAFE_ACTIVE);
+        RestoreSafeVolume(STREAM_MUSIC, safeVolume);
         startSafeTimeBt_ = 0;
         startSafeTime_ = 0;
-        safeStatusBt_ = SAFE_ACTIVE;
-        safeStatus_ = SAFE_ACTIVE;
-        RestoreSafeVolume(STREAM_MUSIC, safeVolume);
         activeSafeTimeBt_ = 0;
         activeSafeTime_ = 0;
+        audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP, 0);
+        audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET, 0);
         return true;
     }
-    AUDIO_INFO_LOG("CheckMixActiveMusicTime end.");
     return false;
 }
 
@@ -606,24 +605,23 @@ void AudioVolumeManager::CheckBlueToothActiveMusicTime(int32_t safeVolume)
     }
     int32_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     if (activeSafeTimeBt_ >= ONE_MINUTE * audioPolicyManager_.GetSafeVolumeTimeout()) {
-        AUDIO_INFO_LOG("safe volume timeout");
-        audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, SAFE_ACTIVE);
-        audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP, 0);
-        startSafeTimeBt_ = 0;
-        safeStatusBt_ = SAFE_ACTIVE;
+        AUDIO_INFO_LOG("bluetooth device safe volume timeout");
+        ChangeDeviceSafeStatus(SAFE_ACTIVE);
         RestoreSafeVolume(STREAM_MUSIC, safeVolume);
+        startSafeTimeBt_ = 0;
         activeSafeTimeBt_ = 0;
+        audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP, 0);
         PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = true;
     } else if (CheckMixActiveMusicTime(safeVolume)) {
         PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = true;
     } else if (currentTime - startSafeTimeBt_ >= ONE_MINUTE) {
-        AUDIO_INFO_LOG("safe volume 1 min timeout");
         activeSafeTimeBt_ = audioPolicyManager_.GetCurentDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP);
         activeSafeTimeBt_ += currentTime - startSafeTimeBt_;
         audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP, activeSafeTimeBt_);
         startSafeTimeBt_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        AUDIO_INFO_LOG("bluetooth safe volume 1 min timeout, cumulative time: %{public}lld", activeSafeTimeBt_);
     }
     startSafeTime_ = 0;
 }
@@ -635,24 +633,23 @@ void AudioVolumeManager::CheckWiredActiveMusicTime(int32_t safeVolume)
     }
     int32_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     if (activeSafeTime_ >= ONE_MINUTE * audioPolicyManager_.GetSafeVolumeTimeout()) {
-        AUDIO_INFO_LOG("safe volume timeout");
-        audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET, SAFE_ACTIVE);
-        audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET, 0);
-        startSafeTime_ = 0;
-        safeStatus_ = SAFE_ACTIVE;
+        AUDIO_INFO_LOG("wired device safe volume timeout");
+        ChangeDeviceSafeStatus(SAFE_ACTIVE);
         RestoreSafeVolume(STREAM_MUSIC, safeVolume);
+        startSafeTime_ = 0;
         activeSafeTime_ = 0;
+        audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET, 0);
         PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = true;
     } else if (CheckMixActiveMusicTime(safeVolume)) {
         PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = true;
     } else if (currentTime - startSafeTime_ >= ONE_MINUTE) {
-        AUDIO_INFO_LOG("safe volume 1 min timeout");
         activeSafeTime_ = audioPolicyManager_.GetCurentDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET);
         activeSafeTime_ += currentTime - startSafeTime_;
         audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET, activeSafeTime_);
         startSafeTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        AUDIO_INFO_LOG("wired safe volume 1 min timeout, cumulative time: %{public}lld", activeSafeTime_);
     }
     startSafeTimeBt_ = 0;
 }
@@ -668,7 +665,9 @@ void AudioVolumeManager::RestoreSafeVolume(AudioStreamType streamType, int32_t s
     }
 
     AUDIO_INFO_LOG("restore safe volume.");
+    audioPolicyManager_.SetRestoreVolumeFlag(true);
     SetSystemVolumeLevel(streamType, safeVolume);
+    audioPolicyManager_.SetRestoreVolumeFlag(false);
     SetSafeVolumeCallback(streamType);
 }
 
@@ -695,21 +694,17 @@ void AudioVolumeManager::OnReceiveEvent(const EventFwk::CommonEventData &eventDa
     if (action == AUDIO_RESTORE_VOLUME_EVENT) {
         AUDIO_INFO_LOG("AUDIO_RESTORE_VOLUME_EVENT has been received");
         std::lock_guard<std::mutex> lock(notifyMutex_);
-        userSelect_ = true;
-        isSelectRestoreVol_ = true;
-        restoreNIsShowing_ = false;
         CancelSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
-        SetDeviceSafeVolumeStatus();
+        restoreNIsShowing_ = false;
+        ChangeDeviceSafeStatus(SAFE_INACTIVE);
         DealWithEventVolume(RESTORE_VOLUME_NOTIFICATION_ID);
         SetSafeVolumeCallback(STREAM_MUSIC);
     } else if (action == AUDIO_INCREASE_VOLUME_EVENT) {
         AUDIO_INFO_LOG("AUDIO_INCREASE_VOLUME_EVENT has been received");
         std::lock_guard<std::mutex> lock(notifyMutex_);
-        userSelect_ = true;
-        isSelectIncreaseVol_ = true;
-        increaseNIsShowing_ = false;
         CancelSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
-        SetDeviceSafeVolumeStatus();
+        increaseNIsShowing_ = false;
+        ChangeDeviceSafeStatus(SAFE_INACTIVE);
         DealWithEventVolume(INCREASE_VOLUME_NOTIFICATION_ID);
         SetSafeVolumeCallback(STREAM_MUSIC);
     }
@@ -741,6 +736,19 @@ void AudioVolumeManager::SetDeviceSafeVolumeStatus()
             AUDIO_INFO_LOG("safeVolume unsupported device:%{public}d", curOutputDeviceType);
             break;
     }
+}
+
+void AudioVolumeManager::ChangeDeviceSafeStatus(SafeStatus safeStatus)
+{
+    AUDIO_INFO_LOG("change all support safe volume devices status.");
+
+    safeStatusBt_ = safeStatus;
+    audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, safeStatusBt_);
+
+    safeStatus_ = safeStatus;
+    audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET, safeStatus_);
+
+    CreateCheckMusicActiveThread();
 }
 
 int32_t AudioVolumeManager::DisableSafeMediaVolume()
@@ -790,10 +798,15 @@ int32_t AudioVolumeManager::SetDeviceAbsVolumeSupported(const std::string &macAd
     return SUCCESS;
 }
 
-int32_t AudioVolumeManager::SetStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage)
+int32_t AudioVolumeManager::SetStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
+    const DeviceType &deviceType)
 {
     int32_t result = SUCCESS;
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    if (deviceType != DEVICE_TYPE_NONE) {
+        AUDIO_INFO_LOG("set stream mute for specified device [%{public}d]", deviceType);
+        curOutputDeviceType = deviceType;
+    }
     if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC &&
         curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         std::string btDevice = audioActiveDevice_.GetActiveBtDeviceMac();
@@ -808,7 +821,7 @@ int32_t AudioVolumeManager::SetStreamMute(AudioStreamType streamType, bool mute,
 #endif
         }
     }
-    result = audioPolicyManager_.SetStreamMute(streamType, mute, streamUsage);
+    result = audioPolicyManager_.SetStreamMute(streamType, mute, streamUsage, curOutputDeviceType);
 
     Volume vol = {false, 1.0f, 0};
     vol.isMute = mute;
@@ -904,16 +917,18 @@ int32_t AudioVolumeManager::DealWithEventVolume(const int32_t notificationId)
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     int32_t restoreVolume = 0;
     const int32_t ONE_VOLUME_LEVEL = 1;
-    int32_t currentVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
+    int32_t safeVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
     int32_t ret = 0;
+    bool isRestoreFlag = false;
     if (IsBlueTooth(curOutputDeviceType)) {
         switch (notificationId) {
             case RESTORE_VOLUME_NOTIFICATION_ID:
                 restoreVolume = audioPolicyManager_.GetRestoreVolumeLevel(DEVICE_TYPE_BLUETOOTH_A2DP);
-                ret = SetSystemVolumeLevel(STREAM_MUSIC, restoreVolume);
+                isRestoreFlag = restoreVolume > safeVolumeLevel ? true : false;
+                ret = isRestoreFlag ? SetSystemVolumeLevel(STREAM_MUSIC, restoreVolume) : ERROR;
                 break;
             case INCREASE_VOLUME_NOTIFICATION_ID:
-                ret = SetSystemVolumeLevel(STREAM_MUSIC, currentVolumeLevel + ONE_VOLUME_LEVEL);
+                ret = SetSystemVolumeLevel(STREAM_MUSIC, safeVolumeLevel + ONE_VOLUME_LEVEL);
                 break;
             default:
                 AUDIO_ERR_LOG("current state unsupport safe volume");
@@ -922,10 +937,11 @@ int32_t AudioVolumeManager::DealWithEventVolume(const int32_t notificationId)
         switch (notificationId) {
             case RESTORE_VOLUME_NOTIFICATION_ID:
                 restoreVolume = audioPolicyManager_.GetRestoreVolumeLevel(DEVICE_TYPE_WIRED_HEADSET);
-                ret = SetSystemVolumeLevel(STREAM_MUSIC, restoreVolume);
+                isRestoreFlag = restoreVolume > safeVolumeLevel ? true : false;
+                ret = isRestoreFlag ? SetSystemVolumeLevel(STREAM_MUSIC, restoreVolume) : ERROR;
                 break;
             case INCREASE_VOLUME_NOTIFICATION_ID:
-                ret = SetSystemVolumeLevel(STREAM_MUSIC, currentVolumeLevel + ONE_VOLUME_LEVEL);
+                ret = SetSystemVolumeLevel(STREAM_MUSIC, safeVolumeLevel + ONE_VOLUME_LEVEL);
                 break;
             default:
                 AUDIO_ERR_LOG("current state unsupport safe volume");
@@ -963,6 +979,32 @@ bool AudioVolumeManager::IsRingerModeMute()
 void AudioVolumeManager::SetRingerModeMute(bool flag)
 {
     ringerModeMute_.store(flag);
+}
+
+bool AudioVolumeManager::GetVolumeGroupInfosNotWait(std::vector<sptr<VolumeGroupInfo>> &infos)
+{
+    if (!isPrimaryMicModuleInfoLoaded_) {
+        return false;
+    }
+
+    GetVolumeGroupInfo(infos);
+    return true;
+}
+
+void AudioVolumeManager::SetDefaultDeviceLoadFlag(bool isLoad)
+{
+    isPrimaryMicModuleInfoLoaded_.store(isLoad);
+}
+
+bool AudioVolumeManager::GetLoadFlag()
+{
+    return isPrimaryMicModuleInfoLoaded_.load();
+}
+
+void AudioVolumeManager::NotifyVolumeGroup()
+{
+    std::lock_guard<std::mutex> lock(defaultDeviceLoadMutex_);
+    SetDefaultDeviceLoadFlag(true);
 }
 
 }

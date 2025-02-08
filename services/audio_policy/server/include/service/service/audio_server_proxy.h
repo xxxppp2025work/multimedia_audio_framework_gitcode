@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,12 +25,10 @@
 #include <mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
-#include "audio_info.h"
 #include "audio_manager_base.h"
 #include "audio_module_info.h"
 #include "audio_ec_info.h"
 #include "datashare_helper.h"
-#include "audio_utils.h"
 #include "audio_errors.h"
 
 #include "ipc_skeleton.h"
@@ -63,6 +61,7 @@ public:
     void SetVoiceVolumeProxy(float volume);
     void UnsetOffloadModeProxy(uint32_t sessionId);
     void SetOffloadModeProxy(uint32_t sessionId, int32_t state, bool isAppBack);
+    void CheckHibernateStateProxy(bool hibernate);
     void RestoreSessionProxy(const int32_t &sessionID, bool isOutput);
     int32_t GetAudioEnhancePropertyProxy(AudioEnhancePropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE);
@@ -85,6 +84,9 @@ public:
     const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam);
     int32_t RegiestPolicyProviderProxy(const sptr<IRemoteObject> &object);
     void SetParameterCallbackProxy(const sptr<IRemoteObject>& object);
+    int32_t SetAudioEffectPropertyProxy(const AudioEffectPropertyArrayV3 &propertyArray,
+        const DeviceType& deviceType = DEVICE_TYPE_NONE);
+    int32_t GetAudioEffectPropertyProxy(AudioEffectPropertyArrayV3 &propertyArray);
     int32_t SetAudioEffectPropertyProxy(const AudioEffectPropertyArray &propertyArray);
     int32_t GetAudioEffectPropertyProxy(AudioEffectPropertyArray &propertyArray);
     void SetRotationToEffectProxy(const uint32_t rotate);
@@ -92,6 +94,7 @@ public:
     void SetAudioBalanceValueProxy(float audioBalance);
     int32_t SetSupportStreamUsageProxy(std::vector<int32_t> usage);
     int32_t SetCaptureSilentStateProxy(bool state);
+    void NotifyAccountsChanged();
 private:
     AudioServerProxy() {}
     ~AudioServerProxy() {}

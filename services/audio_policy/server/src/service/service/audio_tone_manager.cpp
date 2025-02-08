@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,9 +22,7 @@
 #include "parameter.h"
 #include "parameters.h"
 
-#include "audio_utils.h"
-#include "audio_log.h"
-#include "audio_utils.h"
+#include "audio_policy_log.h"
 #include "audio_inner_call.h"
 #include "audio_tone_parser.h"
 #include "media_monitor_manager.h"
@@ -43,9 +41,8 @@ bool AudioToneManager::LoadToneDtmfConfig()
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Tone Load Configuration failed");
     }
     CHECK_AND_RETURN_RET_LOG(audioToneParser != nullptr, false, "Failed to create AudioToneParser");
-    std::string AUDIO_TONE_CONFIG_FILE = "system/etc/audio/audio_tone_dtmf_config.xml";
-
-    if (audioToneParser->LoadConfig(toneDescriptorMap_)) {
+    if (audioToneParser->LoadNewConfig(AudioToneParser::AUDIO_TONE_CONFIG_FILE, toneDescriptorMap_,
+        customToneDescriptorMap_)) {
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::LOAD_CONFIG_ERROR,
             Media::MediaMonitor::EventType::FAULT_EVENT);
@@ -59,22 +56,41 @@ bool AudioToneManager::LoadToneDtmfConfig()
     return true;
 }
 
-std::vector<int32_t> AudioToneManager::GetSupportedTones()
+std::vector<int32_t> AudioToneManager::GetSupportedTones(const std::string &countryCode)
 {
-    std::vector<int> supportedToneList = {};
-    for (auto i = toneDescriptorMap_.begin(); i != toneDescriptorMap_.end(); i++) {
-        supportedToneList.push_back(i->first);
+    AUDIO_DEBUG_LOG("countryCode: %{public}s", countryCode.c_str());
+    std::set<int32_t> supportedToneList = {};
+    auto customToneDescriptorItem = customToneDescriptorMap_.find(countryCode);
+    if (customToneDescriptorItem != customToneDescriptorMap_.end()) {
+        for (auto &[number, toneInfo] : customToneDescriptorItem->second) {
+            supportedToneList.insert(number);
+        }
     }
-    return supportedToneList;
+
+    for (auto &[number, toneInfo] : toneDescriptorMap_) {
+        supportedToneList.insert(number);
+    }
+
+    return std::vector<int32_t>(supportedToneList.begin(), supportedToneList.end());
 }
 
-std::shared_ptr<ToneInfo> AudioToneManager::GetToneConfig(int32_t ltonetype)
+std::shared_ptr<ToneInfo> AudioToneManager::GetToneConfig(int32_t ltonetype, const std::string &countryCode)
 {
+    AUDIO_DEBUG_LOG("ltonetype: %{public}d, countryCode: %{public}s", ltonetype, countryCode.c_str());
+    auto customToneDescriptorItem = customToneDescriptorMap_.find(countryCode);
+    if (customToneDescriptorItem != customToneDescriptorMap_.end()) {
+        auto toneInfo = customToneDescriptorItem->second.find(ltonetype);
+        if (toneInfo != customToneDescriptorItem->second.end()) {
+            AUDIO_DEBUG_LOG("Get custom ToneConfig %{public}d", ltonetype);
+            return toneInfo->second;
+        }
+    }
+
     if (toneDescriptorMap_.find(ltonetype) != toneDescriptorMap_.end()) {
-        AUDIO_DEBUG_LOG("AudioToneManager GetToneConfig %{public}d", ltonetype);
+        AUDIO_DEBUG_LOG("Get default ToneConfig %{public}d", ltonetype);
         return toneDescriptorMap_[ltonetype];
     }
-    AUDIO_DEBUG_LOG("AudioToneManager GetToneConfig %{public}d", ltonetype);
+    AUDIO_DEBUG_LOG("Get ToneConfig %{public}d fail", ltonetype);
     return nullptr;
 }
 #endif

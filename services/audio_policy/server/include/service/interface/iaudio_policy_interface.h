@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,7 +17,6 @@
 #define I_AUDIO_POLICY_INTERFACE_H
 
 #include "audio_adapter_info.h"
-#include "audio_info.h"
 #include "audio_policy_manager.h"
 #include "audio_policy_ipc_interface_code.h"
 #include "audio_stream_removed_callback.h"
@@ -55,7 +54,7 @@ public:
     virtual float GetSystemVolumeDb(AudioStreamType streamType) = 0;
 
     virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute,
-        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN) = 0;
+        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN, const DeviceType &deviceType = DEVICE_TYPE_NONE) = 0;
 
     virtual int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) = 0;
 
@@ -160,7 +159,8 @@ public:
     virtual void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel) = 0;
 
     virtual void HandleStreamMuteStatus(AudioStreamType streamType, bool mute,
-        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN) = 0;
+        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE) = 0;
 
     virtual void HandleRingerMode(AudioRingerMode ringerMode) = 0;
 
@@ -169,6 +169,12 @@ public:
     virtual void SetOffloadSessionId(uint32_t sessionId) = 0;
 
     virtual void ResetOffloadSessionId() = 0;
+
+    virtual int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel) = 0;
+
+    virtual void SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel) = 0;
+
+    virtual void SetRestoreVolumeFlag(const bool safeVolumeCall) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

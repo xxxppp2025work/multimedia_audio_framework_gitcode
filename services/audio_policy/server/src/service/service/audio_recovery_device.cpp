@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,11 +19,9 @@
 #include "audio_recovery_device.h"
 #include "parameter.h"
 #include "parameters.h"
-#include "audio_utils.h"
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "media_monitor_manager.h"
 
-#include "audio_policy_service.h"
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 
@@ -49,6 +47,11 @@ static std::string GetEncryptAddr(const std::string &addr)
 void AudioRecoveryDevice::Init(std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager)
 {
     audioA2dpOffloadManager_ = audioA2dpOffloadManager;
+}
+
+void AudioRecoveryDevice::DeInit()
+{
+    audioA2dpOffloadManager_ = nullptr;
 }
 
 void AudioRecoveryDevice::RecoveryPreferredDevices()
@@ -153,9 +156,9 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
     audioActiveDevice_.NotifyUserSelectionEventToBt(selectedDesc[0]);
     audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
     audioDeviceCommon_.FetchDevice(false);
-    AudioPolicyService::GetAudioPolicyService().ReloadSourceForDeviceChange(
-        audioActiveDevice_.GetCurrentInputDeviceType(),
-        audioActiveDevice_.GetCurrentOutputDeviceType(), "SelectOutputDevice");
+    audioCapturerSession_.ReloadSourceForDeviceChange(
+        audioActiveDevice_.GetCurrentInputDevice(),
+        audioActiveDevice_.GetCurrentOutputDevice(), "SelectOutputDevice");
     if ((selectedDesc[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
         (selectedDesc[0]->networkId_ != LOCAL_NETWORK_ID)) {
         audioA2dpOffloadManager_->UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
@@ -307,9 +310,9 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
         AUDIO_INFO_LOG("Success for uid[%{public}d] device[%{public}s]",
             audioCapturerFilter->uid, GetEncryptStr(selectedDesc[0]->networkId_).c_str());
         audioDeviceCommon_.FetchDevice(false);
-        AudioPolicyService::GetAudioPolicyService().ReloadSourceForDeviceChange(
-            audioActiveDevice_.GetCurrentInputDeviceType(),
-            audioActiveDevice_.GetCurrentOutputDeviceType(), "SelectInputDevice fast");
+        audioCapturerSession_.ReloadSourceForDeviceChange(
+            audioActiveDevice_.GetCurrentInputDevice(),
+            audioActiveDevice_.GetCurrentOutputDevice(), "SelectInputDevice fast");
         return SUCCESS;
     }
 
@@ -323,9 +326,9 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
     audioDeviceCommon_.FetchDevice(false);
 
     WriteSelectInputSysEvents(selectedDesc, srcType, scene);
-    AudioPolicyService::GetAudioPolicyService().ReloadSourceForDeviceChange(
-        audioActiveDevice_.GetCurrentInputDeviceType(),
-        audioActiveDevice_.GetCurrentOutputDeviceType(), "SelectInputDevice");
+    audioCapturerSession_.ReloadSourceForDeviceChange(
+        audioActiveDevice_.GetCurrentInputDevice(),
+        audioActiveDevice_.GetCurrentOutputDevice(), "SelectInputDevice");
     return SUCCESS;
 }
 

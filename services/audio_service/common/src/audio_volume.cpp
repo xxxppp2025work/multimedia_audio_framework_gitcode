@@ -17,13 +17,13 @@
 #define LOG_TAG "AudioVolume"
 #endif
 
+#include <numeric>
 #include "audio_volume.h"
 #include "audio_volume_c.h"
 #include "audio_common_log.h"
 #include "audio_utils.h"
 #include "audio_stream_info.h"
 #include "media_monitor_manager.h"
-#include "event_bean.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -52,6 +52,9 @@ static const std::unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING
     {"voice_message", STREAM_VOICE_MESSAGE},
     {"navigation", STREAM_NAVIGATION}
 };
+
+uint64_t DURATION_TIME_DEFAULT = 40;
+uint64_t DURATION_TIME_SHORT = 10;
 
 AudioVolume *AudioVolume::GetInstance()
 {
@@ -85,6 +88,10 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
             " isMuted:%{public}d, streamVolumeSize:%{public}zu",
             sessionId, it->second.volume_, it->second.duckFactor_, it->second.lowPowerFactor_, it->second.isMuted_,
             streamVolume_.size());
+        if (volumeType == STREAM_VOICE_ASSISTANT &&
+            !CheckoutSystemAppUtil::CheckoutSystemApp(it->second.GetAppUid())) {
+            volumeType = STREAM_MUSIC;
+        }
     } else {
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u, streamVolumeSize:%{public}zu",
             sessionId, streamVolume_.size());
@@ -454,6 +461,29 @@ void AudioVolume::RemoveFadeoutState(uint32_t streamIndex)
     std::unique_lock<std::shared_mutex> lock(fadoutMutex_);
     fadeoutState_.erase(streamIndex);
 }
+
+void AudioVolume::SetStopFadeoutState(uint32_t streamIndex, uint32_t fadeoutState)
+{
+    std::unique_lock<std::shared_mutex> lock(fadoutMutex_);
+    stopFadeoutState_.insert_or_assign(streamIndex, fadeoutState);
+}
+
+uint32_t AudioVolume::GetStopFadeoutState(uint32_t streamIndex)
+{
+    std::shared_lock<std::shared_mutex> lock(fadoutMutex_);
+    auto it = stopFadeoutState_.find(streamIndex);
+    if (it != stopFadeoutState_.end()) {
+        return it->second;
+    }
+    AUDIO_WARNING_LOG("No such streamIndex in map!");
+    return INVALID_STATE;
+}
+
+void AudioVolume::RemoveStopFadeoutState(uint32_t streamIndex)
+{
+    std::unique_lock<std::shared_mutex> lock(fadoutMutex_);
+    stopFadeoutState_.erase(streamIndex);
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -516,6 +546,45 @@ void SetFadeoutState(uint32_t streamIndex, uint32_t fadeoutState)
 uint32_t GetFadeoutState(uint32_t streamIndex)
 {
     return AudioVolume::GetInstance()->GetFadeoutState(streamIndex);
+}
+
+uint32_t GetStopFadeoutState(uint32_t streamIndex)
+{
+    return AudioVolume::GetInstance()->GetStopFadeoutState(streamIndex);
+}
+
+void RemoveStopFadeoutState(uint32_t streamIndex)
+{
+    AudioVolume::GetInstance()->RemoveStopFadeoutState(streamIndex);
+}
+
+int32_t GetSimpleBufferAvg(uint8_t *buffer, int32_t length)
+{
+    if (length <= 0) {
+        return -1;
+    }
+    int32_t sum = std::accumulate(buffer, buffer + length, 0);
+    return sum / length;
+}
+
+FadeStrategy GetFadeStrategy(uint64_t expectedPlaybackDurationMs)
+{
+    // 0 is default; duration > 40ms do default fade
+    if (expectedPlaybackDurationMs == 0 || expectedPlaybackDurationMs > DURATION_TIME_DEFAULT) {
+        return FADE_STRATEGY_DEFAULT;
+    }
+
+    // duration <= 10 ms no fade
+    if (expectedPlaybackDurationMs <= DURATION_TIME_SHORT && expectedPlaybackDurationMs > 0) {
+        return FADE_STRATEGY_NONE;
+    }
+
+    // duration > 10ms && duration <= 40ms do 5ms fade
+    if (expectedPlaybackDurationMs <= DURATION_TIME_DEFAULT && expectedPlaybackDurationMs > DURATION_TIME_SHORT) {
+        return FADE_STRATEGY_SHORTER;
+    }
+
+    return FADE_STRATEGY_DEFAULT;
 }
 #ifdef __cplusplus
 }

@@ -19,11 +19,13 @@
 #include "audio_enhance_chain_manager.h"
 
 #include <algorithm>
+#include <charconv>
+#include <system_error>
 
 #include "securec.h"
 #include "system_ability_definition.h"
 
-#include "audio_log.h"
+#include "audio_effect_log.h"
 #include "audio_errors.h"
 #include "audio_effect.h"
 #include "audio_enhance_chain.h"
@@ -34,7 +36,7 @@ using namespace OHOS::AudioStandard;
 
 namespace OHOS {
 namespace AudioStandard {
-
+namespace {
 constexpr uint32_t SCENE_TYPE_MASK = 0x00FF0000;
 constexpr uint32_t CAPTURER_ID_MASK = 0x0000FF00;
 constexpr uint32_t RENDERER_ID_MASK = 0x000000FF;
@@ -43,6 +45,10 @@ const std::unordered_map<AudioEnhanceMode, std::string> AUDIO_ENHANCE_SUPPORTED_
     {ENHANCE_NONE, "ENHANCE_NONE"},
     {ENHANCE_DEFAULT, "ENHANCE_DEFAULT"},
 };
+const std::vector<AudioEnhanceScene> AUDIO_WITH_DEVICE_ENHANCES {SCENE_VOIP_UP};
+const std::string MAINKEY_DEVICE_STATUS = "device_status";
+const std::string SUBKEY_FOLD_STATE = "fold_state";
+}
 
 static int32_t FindEnhanceLib(const std::string &enhance,
     const std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList,
@@ -91,6 +97,7 @@ AudioEnhanceChainManager::AudioEnhanceChainManager()
     renderIdToDeviceMap_.clear();
     enhanceBuffer_ = nullptr;
     isInitialized_ = false;
+    foldState_ = FOLD_STATE_MIDDLE;
 }
 
 AudioEnhanceChainManager::~AudioEnhanceChainManager()
@@ -113,6 +120,7 @@ void AudioEnhanceChainManager::ResetInfo()
     enhanceToLibraryEntryMap_.clear();
     enhanceToLibraryNameMap_.clear();
     enhancePropertyMap_.clear();
+    defaultPropertyMap_.clear();
     captureIdToDeviceMap_.clear();
     captureIdToDeviceNameMap_.clear();
     renderIdToDeviceMap_.clear();
@@ -159,25 +167,69 @@ void AudioEnhanceChainManager::ConstructEnhanceChainMgrMaps(std::vector<EffectCh
     sceneTypeAndModeToEnhanceChainNameMap_ = managerParam.sceneTypeToChainNameMap;
     // Construct enhancePropertyMap_ that stores effect's property
     enhancePropertyMap_ = managerParam.effectDefaultProperty;
+    defaultPropertyMap_ = managerParam.effectDefaultProperty;
+    ConstructDeviceEnhances();
+}
+
+void AudioEnhanceChainManager::ConstructDeviceEnhances()
+{
+    CHECK_AND_RETURN_LOG(sceneTypeAndModeToEnhanceChainNameMap_.size() != 0, "no enhance algos");
+    for (const auto& sceneType: AUDIO_WITH_DEVICE_ENHANCES) {
+        std::string scene = AUDIO_ENHANCE_SUPPORTED_SCENE_TYPES.find(sceneType)->second;
+        std::string sceneAndMode = scene + "_&_" + "ENHANCE_DEFAULT";
+        std::string enhanceChain = "";
+        auto item = sceneTypeAndModeToEnhanceChainNameMap_.find(sceneAndMode);
+        CHECK_AND_CONTINUE_LOG(item != sceneTypeAndModeToEnhanceChainNameMap_.end(),
+            "no such sceneAndMode %{public}s", sceneAndMode.c_str());
+        enhanceChain = item->second;
+        auto mapIter = enhanceChainToEnhancesMap_.find(enhanceChain);
+        std::vector<std::string> deviceEnhances;
+        CHECK_AND_CONTINUE_LOG(mapIter != enhanceChainToEnhancesMap_.end(),
+            "no such enhanceChain %{public}s", enhanceChain.c_str());
+        deviceEnhances = mapIter->second;
+        for (std::string enhance: deviceEnhances) {
+            auto iter = enhancePropertyMap_.find(enhance);
+            if (iter == enhancePropertyMap_.end()) {
+                continue;
+            }
+            withDeviceEnhances_.insert(iter->first);
+        }
+    }
 }
 
 void AudioEnhanceChainManager::UpdateEnhancePropertyMapFromDb(DeviceType deviceType)
 {
     std::string deviceTypeName = "";
     GetDeviceTypeName(deviceType, deviceTypeName);
-    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    for (const auto &[enhance, prop] : enhancePropertyMap_) {
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    CHECK_AND_RETURN_LOG(settingProvider.CheckOsAccountReady(), "os account not ready");
+    for (auto &[enhance, prop] : enhancePropertyMap_) {
         std::string property = "";
         if (deviceTypeName == "") {
             AUDIO_ERR_LOG("DeviceTypeName Null");
             return;
         }
-        std::string key = enhance + "_&_" + deviceTypeName;
-        ErrCode ret = settingProvider.GetStringValue(key, property);
+        std::string key = "";
+        if (withDeviceEnhances_.find(enhance) == withDeviceEnhances_.end()) {
+            key = enhance;
+        } else {
+            key = enhance +  "_&_" + deviceTypeName;
+        }
+        ErrCode ret = settingProvider.GetStringValue(key, property, "system");
         if (ret == SUCCESS) {
-            enhancePropertyMap_.insert_or_assign(enhance, property);
+            prop = property;
             AUDIO_INFO_LOG("Get Effect_&_DeviceType:%{public}s is Property:%{public}s",
                 key.c_str(), property.c_str());
+        } else {
+            ret = settingProvider.PutStringValue(key, defaultPropertyMap_[enhance], "system");
+            if (ret != SUCCESS) {
+                AUDIO_ERR_LOG("set to default Property:%{public}s, failed, ErrCode : %{public}d",
+                    defaultPropertyMap_[enhance].c_str(), ret);
+                return;
+            }
+            prop = defaultPropertyMap_[enhance];
+            AUDIO_INFO_LOG("Get prop failed,Effect_&_DeviceType:%{public}s is set to default Property:%{public}s",
+                key.c_str(), prop.c_str());
         }
     }
 }
@@ -317,6 +369,9 @@ int32_t AudioEnhanceChainManager::CreateAudioEnhanceChainDynamic(const uint32_t 
     }
     std::string effectChainName = GetEnhanceChainNameBySceneCode(sceneKeyCode, defaultFlag);
     if (AddAudioEnhanceChainHandles(audioEnhanceChain, effectChainName) != SUCCESS) {
+        sceneTypeToEnhanceChainCountMap_.erase(sceneKeyCode);
+        sceneTypeToEnhanceChainMap_.erase(sceneKeyCode);
+        chainNum_--;
         AUDIO_ERR_LOG("%{public}u create failed.", sceneKeyCode);
         return ERROR;
     }
@@ -389,7 +444,7 @@ int32_t AudioEnhanceChainManager::CreateEnhanceChainInner(std::shared_ptr<AudioE
                 AUDIO_INFO_LOG("sceneKey[%{public}u] defaultChainExsist", sceneKeyCode);
             } else {
                 AudioEnhanceParamAdapter algoParam = {(uint32_t)isMute_, (uint32_t)(systemVol_ * VOLUME_FACTOR),
-                    capturerDevice, rendererDeivce, defaultScene_, deviceName};
+                    foldState_, capturerDevice, rendererDeivce, defaultScene_, deviceName};
                 audioEnhanceChain = std::make_shared<AudioEnhanceChain>(defaultScene_, algoParam, deviceAttr, 1);
                 captureId2DefaultChain_[captureId] = audioEnhanceChain;
                 AUDIO_INFO_LOG("captureId %{public}u defaultScene chain not exsist, create it", captureId);
@@ -399,7 +454,7 @@ int32_t AudioEnhanceChainManager::CreateEnhanceChainInner(std::shared_ptr<AudioE
             defaultFlag = true;
         } else {
             AudioEnhanceParamAdapter algoParam = {(uint32_t)isMute_, (uint32_t)(systemVol_ * VOLUME_FACTOR),
-                capturerDevice, rendererDeivce, sceneType, deviceName};
+                foldState_, capturerDevice, rendererDeivce, sceneType, deviceName};
             audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, 0);
             captureId2SceneCount_[captureId]++;
             AUDIO_INFO_LOG("captureId %{public}u create normalScene %{public}s chain", captureId, sceneType.c_str());
@@ -407,7 +462,7 @@ int32_t AudioEnhanceChainManager::CreateEnhanceChainInner(std::shared_ptr<AudioE
         }
     } else {
         AudioEnhanceParamAdapter algoParam = {(uint32_t)isMute_, (uint32_t)(systemVol_ * VOLUME_FACTOR),
-            capturerDevice, rendererDeivce, sceneType, deviceName};
+            foldState_, capturerDevice, rendererDeivce, sceneType, deviceName};
         audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, 0);
         AUDIO_INFO_LOG("priorScene %{public}s chain created", sceneType.c_str());
         chainNum_++;
@@ -433,8 +488,12 @@ int32_t AudioEnhanceChainManager::AddAudioEnhanceChainHandles(std::shared_ptr<Au
         CHECK_AND_CONTINUE_LOG(ret == 0, "EnhanceToLibraryEntryMap[%{public}s] createEffect fail",
             enhance.c_str());
         auto propIter = enhancePropertyMap_.find(enhance);
-        audioEnhanceChain->AddEnhanceHandle(handle, enhanceToLibraryEntryMap_[enhance]->audioEffectLibHandle,
+        ret = audioEnhanceChain->AddEnhanceHandle(handle, enhanceToLibraryEntryMap_[enhance]->audioEffectLibHandle,
             enhance, propIter == enhancePropertyMap_.end() ? "" : propIter->second);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("AddEnhanceHandle fail");
+            enhanceToLibraryEntryMap_[enhance]->audioEffectLibHandle->releaseEffect(handle);
+        }
     }
 
     if (audioEnhanceChain->IsEmptyEnhanceHandles()) {
@@ -716,7 +775,7 @@ int32_t AudioEnhanceChainManager::SetVolumeInfo(const AudioVolumeType &volumeTyp
     if (sceneTypeAndModeToEnhanceChainNameMap_.size() == 0 || sceneTypeToEnhanceChainMap_.size() == 0) {
         return SUCCESS;
     }
-    AUDIO_INFO_LOG("success, volumeType: %{public}d, systemVol: %{public}f", volumeType_, systemVol_);
+    AUDIO_DEBUG_LOG("success, volumeType: %{public}d, systemVol: %{public}f", volumeType_, systemVol_);
     return SUCCESS;
 }
 
@@ -743,41 +802,91 @@ int32_t AudioEnhanceChainManager::SetStreamVolumeInfo(const uint32_t &sessionId,
     if (sceneTypeAndModeToEnhanceChainNameMap_.size() == 0 || sceneTypeToEnhanceChainMap_.size() == 0) {
         return SUCCESS;
     }
-    AUDIO_INFO_LOG("success, sessionId: %{public}d, streamVol: %{public}f", sessionId_, streamVol_);
+    AUDIO_DEBUG_LOG("success, sessionId: %{public}d, streamVol: %{public}f", sessionId_, streamVol_);
     return SUCCESS;
+}
+
+int32_t AudioEnhanceChainManager::SetAudioEnhanceProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+    DeviceType deviceType)
+{
+    int32_t ret = SUCCESS;
+    std::lock_guard<std::mutex> lock(chainManagerMutex_);
+    for (const auto &property : propertyArray.property) {
+        std::string key = "";
+        enhancePropertyMap_.insert_or_assign(property.name, property.category);
+        if (withDeviceEnhances_.find(property.name) == withDeviceEnhances_.end()) {
+            key = property.name;
+        } else {
+            std::string deviceTypeName = "";
+            GetDeviceTypeName(deviceType, deviceTypeName);
+            key = property.name + "_&_" + deviceTypeName;
+        }
+        ret = WriteEnhancePropertyToDb(key, property.category);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("fail, WriteEnhancePropertyToDb, ErrCode: %{public}d", ret);
+            continue;
+        }
+        SetAudioEnhancePropertyToChains(property);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioEnhanceChainManager::SetAudioEnhancePropertyToChains(AudioEffectPropertyV3 property)
+{
+    int32_t ret = SUCCESS;
+    for (const auto &[sceneType, enhanceChain] : sceneTypeToEnhanceChainMap_) {
+        if (enhanceChain) {
+            AUDIO_DEBUG_LOG("effectClass->name %{public}s effectProp->category %{public}s",
+                property.name.c_str(), property.category.c_str());
+            ret = enhanceChain->SetEnhanceProperty(property.name, property.category);
+            CHECK_AND_CONTINUE_LOG(ret == SUCCESS, "set property failed[%{public}d]", ret);
+        }
+    }
+    return ret;
 }
 
 int32_t AudioEnhanceChainManager::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
     DeviceType deviceType)
 {
+    int32_t ret = SUCCESS;
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
     for (const auto &property : propertyArray.property) {
+        std::string key = "";
         enhancePropertyMap_.insert_or_assign(property.enhanceClass, property.enhanceProp);
+        if (withDeviceEnhances_.find(property.enhanceClass) == withDeviceEnhances_.end()) {
+            key = property.enhanceClass;
+        } else {
+            std::string deviceTypeName = "";
+            GetDeviceTypeName(deviceType, deviceTypeName);
+            key = property.enhanceClass + "_&_" + deviceTypeName;
+        }
+        ret = WriteEnhancePropertyToDb(key, property.enhanceProp);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("fail, WriteEnhancePropertyToDb, ErrCode: %{public}d", ret);
+            continue;
+        }
         SetAudioEnhancePropertyToChains(property);
-        std::string deviceTypeName = "";
-        GetDeviceTypeName(deviceType, deviceTypeName);
-        std::string key = property.enhanceClass + "_&_" + deviceTypeName;
-        WriteEnhancePropertyToDb(key, property.enhanceProp);
     }
-    return 0;
+    return SUCCESS;
 }
 
 int32_t AudioEnhanceChainManager::SetAudioEnhancePropertyToChains(AudioEnhanceProperty property)
 {
-    int32_t ret = 0;
+    int32_t ret = SUCCESS;
     for (const auto &[sceneType, enhanceChain] : sceneTypeToEnhanceChainMap_) {
         if (enhanceChain) {
             ret = enhanceChain->SetEnhanceProperty(property.enhanceClass, property.enhanceProp);
-            CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "set property failed");
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "set property failed");
         }
     }
-    return 0;
+    return ret;
 }
 
 int32_t AudioEnhanceChainManager::WriteEnhancePropertyToDb(const std::string &key, const std::string &property)
 {
-    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    ErrCode ret = settingProvider.PutStringValue(key, property);
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    CHECK_AND_RETURN_RET_LOG(settingProvider.CheckOsAccountReady(), ERROR, "os account not ready");
+    ErrCode ret = settingProvider.PutStringValue(key, property, "system");
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Write Enhance Property to Database failed");
     AUDIO_INFO_LOG("success, write Enhance_&_DeviceType:%{public}s is Property:%{public}s to Database",
         key.c_str(), property.c_str());
@@ -790,6 +899,23 @@ void AudioEnhanceChainManager::GetDeviceTypeName(DeviceType deviceType, std::str
     if (item != SUPPORTED_DEVICE_TYPE.end()) {
         deviceName = item->second;
     }
+}
+
+int32_t AudioEnhanceChainManager::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
+    DeviceType deviceType)
+{
+    std::lock_guard<std::mutex> lock(chainManagerMutex_);
+    propertyArray.property.clear();
+    if (deviceType != DEVICE_TYPE_NONE) {
+        UpdateEnhancePropertyMapFromDb(deviceType);
+    }
+    for (const auto &[effect, prop] : enhancePropertyMap_) {
+        if (!prop.empty()) {
+            AUDIO_DEBUG_LOG("effect->name %{public}s prop->category %{public}s", effect.c_str(), prop.c_str());
+            propertyArray.property.emplace_back(AudioEffectPropertyV3{effect, prop, CAPTURE_EFFECT_FLAG});
+        }
+    }
+    return AUDIO_OK;
 }
 
 int32_t AudioEnhanceChainManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
@@ -827,6 +953,51 @@ int32_t AudioEnhanceChainManager::ApplyAudioEnhanceChainDefault(const uint32_t c
         return ERROR;
     }
     AUDIO_DEBUG_LOG("Apply default chain success with captureId %{public}u.", captureId);
+    return SUCCESS;
+}
+
+void AudioEnhanceChainManager::UpdateExtraSceneType(const std::string &mainkey, const std::string &subkey,
+    const std::string &extraSceneType)
+{
+    std::lock_guard<std::mutex> lock(chainManagerMutex_);
+    if (mainkey == MAINKEY_DEVICE_STATUS && subkey == SUBKEY_FOLD_STATE) {
+        AUDIO_INFO_LOG("Set fold state: %{public}s to arm", extraSceneType.c_str());
+        uint32_t tempState = 0;
+        auto result = std::from_chars(extraSceneType.data(), extraSceneType.data() + extraSceneType.size(), tempState);
+        if (result.ec == std::errc() && result.ptr == (extraSceneType.data() + extraSceneType.size())) {
+            foldState_ = tempState;
+        } else {
+            AUDIO_ERR_LOG("extraSceneType: %{public}s is invalid", extraSceneType.c_str());
+            return;
+        }
+
+        for (const auto &[sceneType, enhanceChain] : sceneTypeToEnhanceChainMap_) {
+            if (enhanceChain == nullptr) {
+                continue;
+            }
+            if (enhanceChain->SetFoldState(foldState_) != SUCCESS) {
+                AUDIO_WARNING_LOG("Set fold state to enhance chain failed");
+                continue;
+            }
+        }
+    } else {
+        AUDIO_INFO_LOG("UpdateExtraSceneType failed, mainkey is %{public}s, subkey is %{public}s, "
+            "extraSceneType is %{public}s", mainkey.c_str(), subkey.c_str(), extraSceneType.c_str());
+        return;
+    }
+}
+
+int32_t AudioEnhanceChainManager::SendInitCommand()
+{
+    std::lock_guard<std::mutex> lock(chainManagerMutex_);
+    int32_t ret = 0;
+    for (const auto &[sceneType, enhanceChain] : sceneTypeToEnhanceChainMap_) {
+        if (enhanceChain) {
+            ret = enhanceChain->InitCommand();
+            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "[%{public}u] set init enhance command failed", sceneType);
+        }
+    }
+    AUDIO_INFO_LOG("SendInitCommand success");
     return SUCCESS;
 }
 } // namespace AudioStandard

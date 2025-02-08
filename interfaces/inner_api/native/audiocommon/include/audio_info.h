@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -37,19 +37,9 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-constexpr int32_t MAX_NUM_STREAMS = 3;
-constexpr int32_t RENDERER_STREAM_USAGE_SHIFT = 16;
-constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
-constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
-constexpr int32_t MIN_SERVICE_COUNT = 2;
-constexpr int32_t ROOT_UID = 0;
 constexpr int32_t INVALID_UID = -1;
-constexpr int32_t INTELL_VOICE_SERVICR_UID = 1042;
-constexpr int32_t RSS_UID = 1096;
-constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 constexpr int32_t NETWORK_ID_SIZE = 80;
 constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
-constexpr int32_t DEFAULT_VOLUME_INTERRUPT_ID = 1;
 constexpr int32_t AUDIO_FLAG_INVALID = -1;
 constexpr int32_t AUDIO_FLAG_NORMAL = 0;
 constexpr int32_t AUDIO_FLAG_MMAP = 1;
@@ -59,51 +49,37 @@ constexpr int32_t AUDIO_FLAG_VOIP_DIRECT = 4;
 constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
 constexpr int32_t AUDIO_USAGE_VOIP = 1;
-constexpr uint32_t STREAM_FLAG_NORMAL = 0;
 constexpr uint32_t STREAM_FLAG_FAST = 1;
-constexpr uint32_t STREAM_FLAG_DIRECT = 2;
 constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
 constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
 constexpr int32_t EMPTY_UID = 0;
 constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
 constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
 
-constexpr uint32_t MIN_SESSIONID = 100000;
-constexpr uint32_t MAX_SESSIONID = UINT32_MAX - MIN_SESSIONID;
+constexpr uint32_t MIN_STREAMID = 100000;
+constexpr uint32_t MAX_STREAMID = UINT32_MAX - MIN_STREAMID;
 
 const float MIN_FLOAT_VOLUME = 0.0f;
 const float MAX_FLOAT_VOLUME = 1.0f;
 
 const char* MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
-const char* MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
-const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
-const char* MICROPHONE_CONTROL_PERMISSION = "ohos.permission.MICROPHONE_CONTROL";
 const char* MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
 const char* ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
-const char* USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
 const char* CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO";
 const char* RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
-const char* MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
-const char* CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
-const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
-const char* CAPTURE_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
 
 const char* PRIMARY_WAKEUP = "Built_in_wakeup";
 
-const char* INNER_CAPTURER_SOURCE = "Speaker.monitor";
 const char* INNER_CAPTURER_SINK = "InnerCapturerSink";
-const char* NEW_INNER_CAPTURER_SOURCE = "InnerCapturerSink.monitor";
 const char* REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
-const char* MONITOR_SOURCE_SUFFIX = ".monitor";
 const char* DUP_STREAM = "DupStream";
-const char* DUAL_TONE_STREAM = "DualToneStream";
-const char* NORMAL_STREAM = "NormalStream";
 }
 
 #ifdef FEATURE_DTMF_TONE
 // Maximun number of sine waves in a tone segment
 constexpr uint32_t TONEINFO_MAX_WAVES = 3;
-
+//Maximun number of SupportedTones
+constexpr uint32_t MAX_SUPPORTED_TONEINFO_SIZE = 65535;
 // Maximun number of segments in a tone descriptor
 constexpr uint32_t TONEINFO_MAX_SEGMENTS = 12;
 constexpr uint32_t TONEINFO_INF = 0xFFFFFFFF;
@@ -145,6 +121,9 @@ public:
         parcel.WriteUint32(segmentCnt);
         parcel.WriteUint32(repeatCnt);
         parcel.WriteUint32(repeatSegment);
+        if (!(segmentCnt >= 0 && segmentCnt <= TONEINFO_MAX_SEGMENTS + 1)) {
+            return false;
+        }
         for (uint32_t i = 0; i < segmentCnt; i++) {
             segments[i].Marshalling(parcel);
         }
@@ -155,6 +134,9 @@ public:
         segmentCnt = parcel.ReadUint32();
         repeatCnt = parcel.ReadUint32();
         repeatSegment = parcel.ReadUint32();
+        if (!(segmentCnt >= 0 && segmentCnt <= TONEINFO_MAX_SEGMENTS + 1)) {
+            return;
+        }
         for (uint32_t i = 0; i < segmentCnt; i++) {
             segments[i].Unmarshalling(parcel);
         }
@@ -362,6 +344,21 @@ struct A2dpDeviceConfigInfo {
     bool mute = false;
 };
 
+enum PlayerType : int32_t {
+    PLAYER_TYPE_DEFAULT = 0,
+
+    // AudioFramework internal type.
+    PLAYER_TYPE_OH_AUDIO_RENDERER = 100,
+    PLAYER_TYPE_ARKTS_AUDIO_RENDERER = 101,
+    PLAYER_TYPE_CJ_AUDIO_RENDERER = 102,
+    PLAYER_TYPE_OPENSL_ES = 103,
+
+    // Indicates a type from the system internals, but not from the AudioFramework.
+    PLAYER_TYPE_SOUND_POOL = 1000,
+    PLAYER_TYPE_AV_PLAYER = 1001,
+    PLAYER_TYPE_SYSTEM_WEBVIEW = 1002,
+};
+
 struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
@@ -377,6 +374,12 @@ struct AudioRendererInfo {
     AudioSampleFormat format = SAMPLE_S16LE;
     bool isOffloadAllowed = true;
     bool isSatellite = false;
+    PlayerType playerType = PLAYER_TYPE_DEFAULT;
+    // Expected length of audio stream to be played.
+    // Currently only used for making decisions on fade-in and fade-out strategies.
+    // 0 is the default value, it is considered that no
+    uint64_t expectedPlaybackDurationBytes = 0;
+    int32_t effectMode = 1;
 
     bool Marshalling(Parcel &parcel) const
     {
@@ -392,7 +395,10 @@ struct AudioRendererInfo {
             && parcel.WriteUint8(encodingType)
             && parcel.WriteUint64(channelLayout)
             && parcel.WriteInt32(format)
-            && parcel.WriteBool(isOffloadAllowed);
+            && parcel.WriteBool(isOffloadAllowed)
+            && parcel.WriteInt32(playerType)
+            && parcel.WriteUint64(expectedPlaybackDurationBytes)
+            && parcel.WriteInt32(effectMode);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -409,6 +415,9 @@ struct AudioRendererInfo {
         channelLayout = parcel.ReadUint64();
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
         isOffloadAllowed = parcel.ReadBool();
+        playerType = static_cast<PlayerType>(parcel.ReadInt32());
+        expectedPlaybackDurationBytes = parcel.ReadUint64();
+        effectMode = parcel.ReadInt32();
     }
 };
 
@@ -792,6 +801,62 @@ enum StreamSetState {
     STREAM_UNMUTE
 };
 
+enum SwitchState {
+    SWITCH_STATE_WAITING,
+    SWITCH_STATE_TIMEOUT,
+    SWITCH_STATE_CREATED,
+    SWITCH_STATE_STARTED,
+    SWITCH_STATE_FINISHED
+};
+
+struct SwitchStreamInfo {
+    uint32_t sessionId = 0;
+    int32_t callerUid = INVALID_UID;
+    int32_t appUid = INVALID_UID;
+    int32_t appPid = 0;
+    uint32_t appTokenId = 0;
+    CapturerState nextState = CAPTURER_INVALID;
+    bool operator==(const SwitchStreamInfo& info) const
+    {
+        return sessionId == info.sessionId && callerUid == info.callerUid &&
+            appUid == info.appUid && appPid == info.appPid && appTokenId == info.appTokenId;
+    }
+    bool operator!=(const SwitchStreamInfo& info) const
+    {
+        return !(*this == info);
+    }
+
+    bool operator<(const SwitchStreamInfo& info) const
+    {
+        if (sessionId != info.sessionId) {
+            return sessionId < info.sessionId;
+        }
+        if (callerUid != info.callerUid) {
+            return callerUid < info.callerUid;
+        }
+        if (appUid != info.appUid) {
+            return appUid < info.appUid;
+        }
+        if (appPid != info.appPid) {
+            return appPid < info.appPid;
+        }
+        return appTokenId < info.appTokenId;
+    }
+
+    bool operator<=(const SwitchStreamInfo& info) const
+    {
+        return *this < info || *this == info;
+    }
+    bool operator>(const SwitchStreamInfo& info) const
+    {
+        return !(*this <= info);
+    }
+    bool operator>=(const SwitchStreamInfo& info) const
+    {
+        return !(*this < info);
+    }
+};
+
 struct StreamSetStateEventInternal {
     StreamSetState streamSetState;
     StreamUsage streamUsage;
@@ -1054,6 +1119,26 @@ enum PolicyType {
     EDM_POLICY_TYPE = 0,
     PRIVACY_POLCIY_TYPE = 1,
     TEMPORARY_POLCIY_TYPE = 2,
+};
+
+enum SuscribeResultCode {
+    SUCCESS_SUBSCRIBE = 0,
+    /**
+     * Volume button input error
+     */
+    ERR_SUBSCRIBE_INVALID_PARAM,
+     /**
+     * The keyOption creation failed
+     */
+    ERR_SUBSCRIBE_KEY_OPTION_NULL,
+     /**
+     * The im pointer creation failed
+     */
+    ERR_SUBSCRIBE_MMI_NULL,
+    /**
+     * Volume key multimode subscription results
+     */
+    ERR_MODE_SUBSCRIBE,
 };
 } // namespace AudioStandard
 } // namespace OHOS

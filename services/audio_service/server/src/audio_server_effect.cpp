@@ -34,6 +34,13 @@ void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std
         return;
     }
     audioEffectChainManager->UpdateParamExtra(mainkey, subkey, extraSceneType);
+
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    if (audioEnhanceChainManager == nullptr) {
+        AUDIO_ERR_LOG("audioEnhanceChainManager is nullptr");
+        return;
+    }
+    audioEnhanceChainManager->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
 }
 
 bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
@@ -89,30 +96,12 @@ int32_t AudioServer::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDevic
 
 int32_t AudioServer::SetSystemVolumeToEffect(const AudioStreamType streamType, float volume)
 {
-    std::string sceneType;
-    switch (streamType) {
-        case STREAM_RING:
-        case STREAM_ALARM:
-        case STREAM_SYSTEM:
-            sceneType = "SCENE_RING";
-            break;
-        case STREAM_VOICE_ASSISTANT:
-            sceneType = "SCENE_SPEECH";
-            break;
-        case STREAM_MUSIC:
-            sceneType = "SCENE_MUSIC";
-            break;
-        case STREAM_ACCESSIBILITY:
-            sceneType = "SCENE_OTHERS";
-            break;
-        default:
-            return SUCCESS;
-    }
+    AudioVolumeType systemVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
 
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
-    AUDIO_INFO_LOG("streamType : %{public}d , systemVolume : %{public}f", streamType, volume);
-    audioEffectChainManager->SetSceneTypeSystemVolume(sceneType, volume);
+    AUDIO_INFO_LOG("streamType: %{public}d, systemVolume: %{public}f", streamType, volume);
+    audioEffectChainManager->SetEffectSystemVolume(systemVolumeType, volume);
 
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
@@ -158,6 +147,49 @@ void AudioServer::LoadHdiEffectModel()
     audioEffectChainManager->InitHdiState();
 }
 
+int32_t AudioServer::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+    const DeviceType &deviceType)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+                             "SetA udio Effect Property refused for %{public}d", callingUid);
+    AudioEffectPropertyArrayV3 effectPropertyArray = {};
+    AudioEffectPropertyArrayV3 enhancePropertyArray = {};
+    for (auto &item : propertyArray.property) {
+        if (item.flag == CAPTURE_EFFECT_FLAG) {
+            enhancePropertyArray.property.push_back(item);
+        } else {
+            effectPropertyArray.property.push_back(item);
+        }
+    }
+    if (enhancePropertyArray.property.size() > 0) {
+        CHECK_AND_RETURN_RET_LOG(SetAudioEnhanceChainProperty(enhancePropertyArray, deviceType) == AUDIO_OK,
+            ERR_OPERATION_FAILED, "set audio enhancce property failed");
+    }
+    if (effectPropertyArray.property.size() > 0) {
+        CHECK_AND_RETURN_RET_LOG(SetAudioEffectChainProperty(effectPropertyArray) == AUDIO_OK,
+            ERR_OPERATION_FAILED, "set audio effect property failed");
+    }
+    return AUDIO_OK;
+}
+
+int32_t AudioServer::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray, const DeviceType& deviceType)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "get audio effect property refused for %{public}d", callingUid);
+    AudioEffectPropertyArrayV3 effectPropertyArray = {};
+    (void)GetAudioEffectPropertyArray(effectPropertyArray);
+    propertyArray.property.insert(propertyArray.property.end(),
+        effectPropertyArray.property.begin(), effectPropertyArray.property.end());
+
+    AudioEffectPropertyArrayV3 enhancePropertyArray = {};
+    (void)GetAudioEnhancePropertyArray(enhancePropertyArray, deviceType);
+    propertyArray.property.insert(propertyArray.property.end(),
+        enhancePropertyArray.property.begin(), enhancePropertyArray.property.end());
+    return AUDIO_OK;
+}
+
 int32_t AudioServer::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -195,6 +227,36 @@ int32_t AudioServer::GetAudioEnhanceProperty(AudioEnhancePropertyArray &property
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "Get Audio Enhance Property refused for %{public}d", callingUid);
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
+    return audioEnhanceChainManager->GetAudioEnhanceProperty(propertyArray, deviceType);
+}
+
+int32_t AudioServer::SetAudioEffectChainProperty(const AudioEffectPropertyArrayV3 &propertyArray)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+    return audioEffectChainManager->SetAudioEffectProperty(propertyArray);
+}
+
+int32_t AudioServer::SetAudioEnhanceChainProperty(const AudioEffectPropertyArrayV3 &propertyArray,
+    const DeviceType& deviceType)
+{
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
+    return audioEnhanceChainManager->SetAudioEnhanceProperty(propertyArray, deviceType);
+}
+
+int32_t AudioServer::GetAudioEffectPropertyArray(AudioEffectPropertyArrayV3 &propertyArray)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+    return audioEffectChainManager->GetAudioEffectProperty(propertyArray);
+}
+
+int32_t AudioServer::GetAudioEnhancePropertyArray(AudioEffectPropertyArrayV3 &propertyArray,
+    const DeviceType& deviceType)
+{
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
     return audioEnhanceChainManager->GetAudioEnhanceProperty(propertyArray, deviceType);
@@ -260,5 +322,16 @@ bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries,
     }
     return loadSuccess;
 }
+
+void AudioServer::NotifyAccountsChanged()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+    audioEffectChainManager->LoadEffectProperties();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

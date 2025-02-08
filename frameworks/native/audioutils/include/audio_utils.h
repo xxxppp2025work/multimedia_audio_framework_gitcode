@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,6 +27,8 @@
 #include <queue>
 #include <climits>
 #include <condition_variable>
+#include <charconv>
+#include <unistd.h>
 #include "securec.h"
 
 #include "audio_info.h"
@@ -45,22 +47,9 @@
 #define BIT_32 32
 namespace OHOS {
 namespace AudioStandard {
-const int64_t PCM_MAYBE_SILENT = 1;
-const int64_t PCM_MAYBE_NOT_SILENT = 5;
-const uint32_t MAX_VALUE_OF_SIGNED_24_BIT = 8388607;
-const int32_t SIGNAL_DATA_SIZE = 96;
-const int32_t SIGNAL_THRESHOLD = 10;
-const int32_t BLANK_THRESHOLD_MS = 100;
-const int32_t DETECTED_ZERO_THRESHOLD = 1;
-const size_t MILLISECOND_PER_SECOND = 1000;
-const int64_t DEFAULT_TIMEOUT_NS = 40 * 1000 * 1000;
-const size_t MOCK_INTERVAL = 2000;
-const int32_t GET_EXTRA_PARAM_LEN = 200;
-const int32_t YEAR_BASE = 1900;
-const int32_t DECIMAL_EXPONENT = 10;
-const size_t DATE_LENGTH = 17;
-static uint32_t g_sessionToMock = 0;
 const uint32_t STRING_BUFFER_SIZE = 4096;
+const size_t MILLISECOND_PER_SECOND = 1000;
+const int32_t GET_EXTRA_PARAM_LEN = 200;
 
 // Ringer or alarmer dual tone
 const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;
@@ -73,6 +62,8 @@ static constexpr unsigned int AUDIO_XCOLLIE_FLAG_RECOVERY = (1 << 1); // die whe
 
 class Util {
 public:
+    static bool IsScoSupportSource(const SourceType sourceType);
+
     static bool IsDualToneStreamType(const AudioStreamType streamType);
 
     static bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage);
@@ -107,11 +98,18 @@ private:
     bool isCanceled_;
 };
 
+class CheckoutSystemAppUtil {
+public:
+    static bool CheckoutSystemApp(int32_t uid);
+};
+
 class ClockTime {
 public:
     static int64_t GetCurNano();
+    static int64_t GetRealNano();
     static int32_t AbsoluteSleep(int64_t nanoTime);
     static int32_t RelativeSleep(int64_t nanoTime);
+    static std::string NanoTimeToString(int64_t nanoTime);
 };
 
 /**
@@ -125,6 +123,7 @@ public:
  */
 class WatchTimeout {
 public:
+    static constexpr int64_t DEFAULT_TIMEOUT_NS = 40 * 1000 * 1000;
     WatchTimeout(const std::string &funcName, int64_t timeoutNs = DEFAULT_TIMEOUT_NS);
     ~WatchTimeout();
     void CheckCurrTimeout();
@@ -145,8 +144,24 @@ public:
     static bool VerifyPermission(const std::string &permissionName, uint32_t tokenId);
     static bool NeedVerifyBackgroundCapture(int32_t callingUid, SourceType sourceType);
     static bool VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId);
-    static bool NotifyStart(uint32_t targetTokenId, uint32_t sessionId);
-    static bool NotifyStop(uint32_t targetTokenId, uint32_t sessionId);
+    static bool NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId);
+    static bool NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionId);
+    static int32_t StartUsingPermission(uint32_t targetTokenId, const char* permission);
+    static int32_t StopUsingPermission(uint32_t targetTokenId, const char* permission);
+};
+
+class SwitchStreamUtil {
+public:
+    static bool UpdateSwitchStreamRecord(SwitchStreamInfo &info, SwitchState targetState);
+    static bool IsSwitchStreamSwitching(SwitchStreamInfo &info, SwitchState targetState);
+private:
+    static bool InsertSwitchStreamRecord(SwitchStreamInfo &info, SwitchState targetState);
+    static bool RemoveSwitchStreamRecord(SwitchStreamInfo &info, SwitchState targetState);
+    static bool HandleCreatedSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState);
+    static bool HandleStartedSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState);
+    static bool HandleSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState);
+    static void TimeoutThreadHandleTimeoutRecord(SwitchStreamInfo info, SwitchState targetState);
+    static bool RemoveAllRecordBySessionId(uint32_t sessionId);
 };
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
@@ -195,8 +210,10 @@ inline bool NotContain(const std::vector<V> &array, const V &value)
 }
 
 template <typename T>
-void StringParser(std::string& param, T& result);
+bool StringConverter(const std::string &str, T &result);
+bool StringConverterFloat(const std::string &str, float &result);
 
+bool SetSysPara(const std::string& key, int32_t value);
 template <typename T>
 bool GetSysPara(const char *key, T &value);
 
@@ -206,28 +223,12 @@ enum AudioDumpFileType {
     AUDIO_PULSE = 2,
 };
 
-namespace {
-const char* DUMP_SERVER_PARA = "sys.audio.dump.writeserver.enable";
-const char* DUMP_CLIENT_PARA = "sys.audio.dump.writeclient.enable";
-const char* DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
-const char* DUMP_SERVICE_DIR = "/data/local/tmp/";
-const char* DUMP_APP_DIR = "/data/storage/el2/base/cache/";
-const char* DUMP_BLUETOOTH_RENDER_SINK_FILENAME = "dump_bluetooth_audiosink.pcm";
-const char* DUMP_RENDER_SINK_FILENAME = "dump_audiosink.pcm";
-const char* DUMP_MCH_SINK_FILENAME = "dump_mchaudiosink.pcm";
-const char* DUMP_DIRECT_RENDER_SINK_FILENAME = "dump_direct_audiosink.pcm";
-const char* DUMP_OFFLOAD_RENDER_SINK_FILENAME = "dump_offloadaudiosink.pcm";
-const char* DUMP_CAPTURER_SOURCE_FILENAME = "dump_capture_audiosource.pcm";
-const char* DUMP_TONEPLAYER_FILENAME = "dump_toneplayer_audio.pcm";
-const char* DUMP_PROCESS_IN_CLIENT_FILENAME = "dump_process_client_audio.pcm";
-const char* DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink";
-const char* DUMP_REMOTE_CAPTURE_SOURCE_FILENAME = "dump_remote_capture_audiosource.pcm";
-const uint32_t PARAM_VALUE_LENTH = 150;
-const char* BETA_VERSION = "beta";
-}
-
 class DumpFileUtil {
 public:
+    static constexpr char DUMP_SERVER_PARA[] = "sys.audio.dump.writeserver.enable";
+    static constexpr char DUMP_CLIENT_PARA[] = "sys.audio.dump.writeclient.enable";
+    static constexpr uint32_t PARAM_VALUE_LENTH = 150;
+    static constexpr char BETA_VERSION[] = "beta";
     static void WriteDumpFile(FILE *dumpFile, void *buffer, size_t bufferSize);
     static void CloseDumpFile(FILE **dumpFile);
     static std::map<std::string, std::string> g_lastPara;
@@ -241,7 +242,7 @@ template <typename...Args>
 void AppendFormat(std::string& out, const char* fmt, Args&& ... args)
 {
     char buf[STRING_BUFFER_SIZE] = {0};
-    int len = ::sprintf_s(buf, sizeof(buf), fmt, args...);
+    int len = ::sprintf_s(buf, sizeof(buf), fmt, std::forward<Args>(args)...);
     if (len <= 0) {
         return;
     }
@@ -313,9 +314,10 @@ T *ObjectRefMap<T>::IncreaseRef(T *obj)
 template <typename T>
 void ObjectRefMap<T>::DecreaseRef(T *obj)
 {
-    std::lock_guard<std::mutex> lock(allObjLock);
+    std::unique_lock<std::mutex> lock(allObjLock);
     if (refMap.count(obj) && --refMap[obj] == 0) {
         refMap.erase(obj);
+        lock.unlock();
         delete obj;
         obj = nullptr;
     }
@@ -640,6 +642,8 @@ enum HdiRenderOffset : uint32_t {
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
+
+void CloseFd(int fd);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

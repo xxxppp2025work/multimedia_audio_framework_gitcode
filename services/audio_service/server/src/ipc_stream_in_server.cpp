@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -224,7 +224,7 @@ int32_t IpcStreamInServer::Stop()
 
 int32_t IpcStreamInServer::Release()
 {
-    UnscheduleReportData(config_.appInfo.appPid, clientTid_, clientBundleName_.c_str());
+    UnscheduleReportData(clientPid_, clientTid_, clientBundleName_.c_str());
     clientThreadPriorityRequested_ = false;
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->Release();
@@ -259,11 +259,15 @@ int32_t IpcStreamInServer::Drain(bool stopFlag)
 
 int32_t IpcStreamInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     if (mode_ == AUDIO_MODE_RECORD && capturerInServer_ != nullptr) {
         return capturerInServer_->UpdatePlaybackCaptureConfig(config);
     }
     AUDIO_ERR_LOG("Failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
     return ERR_OPERATION_FAILED;
+#else
+    return ERROR;
+#endif
 }
 
 int32_t IpcStreamInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
@@ -458,14 +462,24 @@ int32_t IpcStreamInServer::SetDuckFactor(float duckFactor)
 int32_t IpcStreamInServer::RegisterThreadPriority(uint32_t tid, const std::string &bundleName)
 {
     if (!clientThreadPriorityRequested_) {
+        clientPid_ = IPCSkeleton::GetCallingPid();
         clientTid_ = tid;
         clientBundleName_ = bundleName;
-        ScheduleReportData(config_.appInfo.appPid, tid, bundleName.c_str());
+        ScheduleReportData(clientPid_, tid, bundleName.c_str());
         return SUCCESS;
     } else {
         AUDIO_ERR_LOG("client thread priority requested");
         return ERR_OPERATION_FAILED;
     }
+}
+
+int32_t IpcStreamInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+{
+    if ((mode_ != AUDIO_MODE_PLAYBACK) || (rendererInServer_ == nullptr)) {
+        AUDIO_ERR_LOG("mode is not playback or renderer is null");
+        return ERR_OPERATION_FAILED;
+    }
+    return rendererInServer_->SetDefaultOutputDevice(defaultOutputDevice);
 }
 } // namespace AudioStandard
 } // namespace OHOS

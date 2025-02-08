@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,10 +19,10 @@
 #include <memory>
 
 #include "ipc_stream_stub.h"
-#include "audio_info.h"
 #include "audio_process_config.h"
 #include "renderer_in_server.h"
 #include "capturer_in_server.h"
+#include "ipc_skeleton.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -114,6 +114,8 @@ public:
 
     int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) override;
 
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
+
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();
     std::shared_ptr<CapturerInServer> GetCapturer();
@@ -124,6 +126,7 @@ private:
 
 private:
     uint32_t clientTid_ = 0;
+    int32_t clientPid_ = 0;
     std::string clientBundleName_;
     bool clientThreadPriorityRequested_ = false;
     AudioProcessConfig config_;

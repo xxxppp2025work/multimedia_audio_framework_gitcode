@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,7 +20,6 @@
 #include "napi/native_api.h"
 #include "napi/native_common.h"
 #include "napi/native_node_api.h"
-#include "audio_info.h"
 #include "tone_player.h"
 
 namespace OHOS {
@@ -80,7 +79,8 @@ public:
         TYPE_MESSAGE = 10,
         TYPE_REMOTE_CAST = 11,
         TYPE_VOICE_TRANSCRIPTION = 12,
-        TYPE_CAMCORDER = 13
+        TYPE_CAMCORDER = 13,
+        TYPE_UNPROCESSED = 14
     };
 
     enum AudioDataCallbackResult {
