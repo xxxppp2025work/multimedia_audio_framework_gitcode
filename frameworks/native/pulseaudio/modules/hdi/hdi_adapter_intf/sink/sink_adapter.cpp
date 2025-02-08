@@ -118,3 +118,218 @@ int32_t SinkAdapterStart(struct SinkAdapter *adapter)
 
     return sink->Start();
 }
+
+int32_t SinkAdapterStop(struct SinkAdapter *adapter)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+
+    return sink->Stop();
+}
+
+int32_t SinkAdapterResume(struct SinkAdapter *adapter)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+
+    return sink->Resume();
+}
+
+int32_t SinkAdapterPause(struct SinkAdapter *adapter)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+
+    return sink->Pause();
+}
+
+int32_t SinkAdapterFlush(struct SinkAdapter *adapter)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+
+    return sink->Flush();
+}
+
+int32_t SinkAdapterReset(struct SinkAdapter *adapter)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+
+    return sink->Reset();
+}
+
+int32_t SinkAdapterRenderFrame(struct SinkAdapter *adapter, char *data, uint64_t len, uint64_t *writeLen)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+
+    return sink->RenderFrame(*data, len, *writeLen);
+}
+
+int32_t SinkAdapterSetVolume(struct SinkAdapter *adapter, float left, float right)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+
+    return sink->SetVolume(left, right);
+}
+
+int32_t SinkAdapterGetVolume(struct SinkAdapter *adapter, float *left, float *right)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+    CHECK_AND_RETURN_RET_LOG(left != nullptr && right != nullptr, ERR_INVALID_PARAM, "invalid param");
+
+    return sink->GetVolume(*left, *right);
+}
+
+int32_t SinkAdapterGetLatency(struct SinkAdapter *adapter, uint32_t *latency)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+    CHECK_AND_RETURN_RET_LOG(latency != nullptr, ERR_INVALID_PARAM, "invalid param");
+
+    return sink->GetLatency(*latency);
+}
+
+int32_t SinkAdapterGetPresentationPosition(struct SinkAdapter *adapter, uint64_t *frames, int64_t *timeSec,
+    int64_t *timeNanoSec)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+    CHECK_AND_RETURN_RET_LOG(frames != nullptr && timeSec != nullptr && timeNanoSec != nullptr, ERR_INVALID_PARAM,
+        "invalid param");
+
+    return sink->GetPresentationPosition(*frames, *timeSec, *timeNanoSec);
+}
+
+int32_t SinkAdapterSetPaPower(struct SinkAdapter *adapter, int32_t flag)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+
+    return sink->SetPaPower(flag);
+}
+
+int32_t SinkAdapterSetPriPaPower(struct SinkAdapter *adapter)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+
+    return sink->SetPriPaPower();
+}
+
+int32_t SinkAdapterUpdateAppsUid(struct SinkAdapter *adapter, const int32_t appsUid[MAX_MIX_CHANNELS],
+    const size_t size)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+
+    return sink->UpdateAppsUid(appsUid, size);
+}
+
+int32_t SinkAdapterRegistOffloadHdiCallback(struct SinkAdapter *adapter, int8_t *rawCallback, int8_t *userdata)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+    CHECK_AND_RETURN_RET_LOG(rawCallback != nullptr, ERR_INVALID_PARAM, "invalid param");
+
+    std::function<void(const RenderCallbackType type)> callback = [rawCallback, userdata]
+        (const RenderCallbackType type) {
+        reinterpret_cast<OnRenderCallback *>(rawCallback)(type, userdata);
+    };
+    sink->RegistOffloadHdiCallback(callback);
+    return SUCCESS;
+}
+
+int32_t SinkAdapterSetBufferSize(struct SinkAdapter *adapter, uint32_t sizeMs)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+
+    return sink->SetBufferSize(sizeMs);
+}
+
+int32_t SinkAdapterLockOffloadRunningLock(struct SinkAdapter *adapter)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+
+    return sink->LockOffloadRunningLock();
+}
+
+int32_t SinkAdapterUnLockOffloadRunningLock(struct SinkAdapter *adapter)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+
+    return sink->UnLockOffloadRunningLock();
+}
+
+int32_t SinkAdapterSplitRenderFrame(struct SinkAdapter *adapter, char *data, uint64_t len, uint64_t *writeLen,
+    const char *streamType)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+
+    return sink->SplitRenderFrame(*data, len, *writeLen, *streamType);
+}
+
+#ifdef __cplusplus
+}
+#endif
