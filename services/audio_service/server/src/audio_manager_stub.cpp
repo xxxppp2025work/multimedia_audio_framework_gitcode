@@ -65,6 +65,7 @@ const char *g_audioServerCodeStrs[] = {
     "CREATE_PLAYBACK_CAPTURER_MANAGER",
     "SET_SUPPORT_STREAM_USAGE",
     "REGISET_POLICY_PROVIDER",
+    "REGISET_CORE_SERVICE_PROVIDER",
     "SET_WAKEUP_CLOSE_CALLBACK",
     "SET_CAPTURE_SILENT_STATE",
     "UPDATE_SPATIALIZATION_STATE",
@@ -599,6 +600,15 @@ int AudioManagerStub::HandleRegiestPolicyProvider(MessageParcel &data, MessagePa
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleRegiestCoreServiceProvider(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, AUDIO_ERR, "obj is null");
+    int32_t result = RegiestCoreServiceProvider(object);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleSetWakeupSourceCallback(MessageParcel &data, MessageParcel &reply)
 {
     sptr<IRemoteObject> object = data.ReadRemoteObject();
@@ -891,6 +901,8 @@ int AudioManagerStub::HandleSecondPartCode(uint32_t code, MessageParcel &data, M
             return HandleSetSupportStreamUsage(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_POLICY_PROVIDER):
             return HandleRegiestPolicyProvider(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_CORE_SERVICE_PROVIDER):
+            return HandleRegiestCoreServiceProvider(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_WAKEUP_CLOSE_CALLBACK):
             return HandleSetWakeupSourceCallback(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_SILENT_STATE):

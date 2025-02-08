@@ -611,6 +611,9 @@ private:
     AudioDeviceManager &audioDeviceManager_;
     std::shared_ptr<AudioInterruptService> interruptService_;
 
+    std::shared_ptr<AudioCoreService> coreService_;
+    std::shared_ptr<AudioCoreService::EventEntry> eventEntry_;
+
     int32_t volumeStep_;
     std::atomic<bool> isFirstAudioServiceStart_ = false;
     std::atomic<bool> isInitMuteState_ = false;

@@ -60,6 +60,7 @@ void AudioDeviceLock::DeInit()
     audioA2dpOffloadManager_ = nullptr;
 }
 
+// Need delete
 int32_t AudioDeviceLock::SetAudioScene(AudioScene audioScene)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
@@ -84,31 +85,23 @@ int32_t AudioDeviceLock::SetAudioScene(AudioScene audioScene)
     return SUCCESS;
 }
 
+// need delete
 bool AudioDeviceLock::IsArmUsbDevice(const AudioDeviceDescriptor &desc)
 {
     std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
     return audioDeviceManager_.IsArmUsbDevice(desc);
 }
 
+// need delete
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetDevices(DeviceFlag deviceFlag)
 {
     std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
     return audioConnectedDevice_.GetDevicesInner(deviceFlag);
 }
 
-int32_t AudioDeviceLock::SetDeviceActive(InternalDeviceType deviceType, bool active)
-{
-    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
+// need delete
 
-    int32_t ret = audioActiveDevice_.SetDeviceActive(deviceType, active);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDeviceActive failed");
 
-    audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
-    audioDeviceCommon_.FetchDevice(false);
-    audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
-        audioActiveDevice_.GetCurrentOutputDevice(), "SetDevcieActive");
-    return SUCCESS;
-}
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetPreferredOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo, std::string networkId)

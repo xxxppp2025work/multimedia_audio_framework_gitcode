@@ -150,6 +150,8 @@ public:
 
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo) override;
 
+    int32_t CreateClient(const AudioStreamDescriptor &streamDesc, AudioFlag &audioFlag) override;
+
     int32_t RegisterTracker(AudioMode &mode,
         AudioStreamChangeInfo &streamChangeInfo, const sptr<IRemoteObject> &object) override;
 

@@ -266,6 +266,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     audioRenderer->privacyType_ = rendererOptions.privacyType;
     audioRenderer->strategy_ = rendererOptions.strategy;
     audioRenderer->originalStrategy_ = rendererOptions.strategy;
+    audioRenderer->streamInfo_ = rendererOptions.streamInfo;
     AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
         AUDIO_ERR_LOG("SetParams failed in renderer");
@@ -507,12 +508,10 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
 
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererInfo_.contentType, rendererInfo_.streamUsage);
-#ifdef SUPPORT_LOW_LATENCY
-    IAudioStream::StreamClass streamClass = GetPreferredStreamClass(audioStreamParams);
-#else
+    IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
+#ifndef SUPPORT_LOW_LATENCY
     rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
     rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-    IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
 #endif
     int32_t ret = PrepareAudioStream(audioStreamParams, audioStreamType, streamClass);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "PrepareAudioStream failed");
@@ -555,7 +554,22 @@ int32_t AudioRendererPrivate::PrepareAudioStream(const AudioStreamParams &audioS
 
     // check AudioStreamParams for fast stream
     // As fast stream only support specified audio format, we should call GetPlaybackStream with audioStreamParams.
-    ActivateAudioConcurrency(audioStreamParams, audioStreamType, streamClass);
+    // ActivateAudioConcurrency(audioStreamParams, audioStreamType, streamClass); // should move to server
+
+    // Create Client
+    AudioStreamDescriptor streamDesc;
+    streamDesc.audioStreamparams_ = audioStreamParams;
+    streamDesc.audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc.streamClass_ = streamClass; // may not need
+    streamDesc.deviceDesc_ = nullptr;
+    streamDesc.startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc.rendererInfo_ = rendererInfo_;
+    streamDesc.appInfo_ = appInfo_;
+
+    int32_t ret = AudioPolicyManager::GetInstance().CreateClient(streamDesc, streamClass);
+    CHECK_AND_RETURN_RET_LOG(ret != SUCCESS, ERR_OPERATION_FAILED, "CreateClient failed");
+
+
     if (audioStream_ == nullptr) {
         audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType,
             appInfo_.appUid);

@@ -390,6 +390,7 @@ void AudioPolicyService::NotifyRemoteRenderState(std::string networkId, std::str
     audioDeviceLock_.NotifyRemoteRenderState(networkId, condition, value);
 }
 
+// need delete
 bool AudioPolicyService::IsArmUsbDevice(const AudioDeviceDescriptor &desc)
 {
     return audioDeviceLock_.IsArmUsbDevice(desc);

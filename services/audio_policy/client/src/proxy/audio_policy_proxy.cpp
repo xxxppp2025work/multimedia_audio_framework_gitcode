@@ -908,6 +908,29 @@ int32_t AudioPolicyProxy::GetPreferredInputStreamType(AudioCapturerInfo &capture
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::CreateClient(const AudioStreamDescriptor &streamDesc, AudioFlag &audioFlag)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_FLAG_INVALID, "WriteInterfaceToken failed");
+
+    ret = streamDesc.Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_FLAG_INVALID, "Marshalling capturerInfo failed");
+
+    data.WriteInt32(static_cast<int32_t>(streamClass));
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::CREATE_CLIENT), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_FLAG_INVALID, "Failed to send request, error: %{public}d", error);
+
+    streanClass = reply.ReadInt32();
+
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
     const sptr<IRemoteObject> &object)
 {

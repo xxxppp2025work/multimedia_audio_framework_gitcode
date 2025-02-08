@@ -174,6 +174,10 @@ void AudioPolicyServer::OnStart()
 
     interruptService_->SetCallbackHandler(audioPolicyServerHandler_);
 
+    coreService_ = std::make_shared<AudioCoreService>();
+    coreService_->SetCallbackHandler(audioPolicyServerHandler_);
+    eventEntry_ = coreService_->GetEventEntry();
+
     if (audioPolicyService_.SetAudioStreamRemovedCallback(this)) {
         AUDIO_ERR_LOG("SetAudioStreamRemovedCallback failed");
     }
@@ -1238,7 +1242,7 @@ bool AudioPolicyServer::IsArmUsbDevice(const AudioDeviceDescriptor &desc)
     if (desc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) return true;
     if (desc.deviceType_ != DEVICE_TYPE_USB_HEADSET) return false;
 
-    return audioPolicyService_.IsArmUsbDevice(desc);
+    return coreService_->IsArmUsbDevice(desc);
 }
 
 void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &desc)
@@ -1295,7 +1299,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevice
             break;
     }
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs = audioPolicyService_.GetDevices(deviceFlag);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs = coreService_.GetDevices(deviceFlag);
 
     if (!hasSystemPermission) {
         for (std::shared_ptr<AudioDeviceDescriptor> desc : deviceDescs) {
@@ -1413,7 +1417,7 @@ bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
 
 int32_t AudioPolicyServer::SetDeviceActive(InternalDeviceType deviceType, bool active)
 {
-    return audioPolicyService_.SetDeviceActive(deviceType, active);
+    return coreService_->SetDeviceActive(deviceType, active);
 }
 
 bool AudioPolicyServer::IsDeviceActive(InternalDeviceType deviceType)
@@ -1634,11 +1638,12 @@ int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
         AUDIO_ERR_LOG("param is invalid");
         return ERR_INVALID_PARAM;
     }
-    return audioPolicyService_.SetAudioScene(audioScene);
+    return SetAudioSceneInternal(audioScene);
 }
 
 int32_t AudioPolicyServer::SetAudioSceneInternal(AudioScene audioScene)
 {
+    return coreService_->SetAudioScene(audioScene);
     return audioPolicyService_.SetAudioScene(audioScene);
 }
 
@@ -2008,6 +2013,11 @@ int32_t AudioPolicyServer::GetPreferredOutputStreamType(AudioRendererInfo &rende
 int32_t AudioPolicyServer::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
 {
     return audioPolicyService_.GetPreferredInputStreamType(capturerInfo);
+}
+
+int32_t AudioPolicyServer::CreateClient(AudioStreamDescriptor &streamDesc, AudioFlag &audioFlag)
+{
+    return eventEntry_.CreateClient(streamDesc, audioFlag);
 }
 
 int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
@@ -2461,6 +2471,7 @@ void AudioPolicyServer::RegisterParamCallback()
     audioPolicyService_.SetParameterCallback(remoteParameterCallback_);
     // regiest policy provider in audio server
     audioPolicyService_.RegiestPolicy();
+    coreService_->RegiestCoreService();
 }
 
 void AudioPolicyServer::RegisterBluetoothListener()
