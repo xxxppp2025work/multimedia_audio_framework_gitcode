@@ -3891,7 +3891,7 @@ static int32_t SinkProcessMsg(pa_msgobject *o, int32_t code, void *data, int64_t
 
     switch (code) {
         case PA_SINK_MESSAGE_GET_LATENCY: {
-            if (!strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_OFFLOAD)) {
+            if (!strcmp(u->primary.sinkAdapter->deviceClass, DEVICE_CLASS_OFFLOAD)) {
                 *((uint64_t *)data) = CalcOffloadCacheLenInHdi(u);
             } else if (u->sink_latency) {
                 *((uint64_t *)data) = u->sink_latency * PA_USEC_PER_MSEC;
@@ -3901,7 +3901,7 @@ static int32_t SinkProcessMsg(pa_msgobject *o, int32_t code, void *data, int64_t
                 bool getLatencyFromHdiSucess = true;
                 // Tries to fetch latency from HDI else will make an estimate based
                 // on samples to be rendered based on the timestamp and current time
-                if (u->primary.sinkAdapter->RendererSinkGetLatency(u->primary.sinkAdapter, &hdiLatency) == 0) {
+                if (u->primary.sinkAdapter->SinkAdapterGetLatency(u->primary.sinkAdapter, &hdiLatency) == 0) {
                     latency = (PA_USEC_PER_MSEC * hdiLatency);
                 } else {
                     pa_usec_t now = pa_rtclock_now();
@@ -4027,7 +4027,7 @@ static int32_t SinkSetStateInIoThreadCbStartPrimary(struct Userdata *u, pa_sink_
 
     if (pa_asyncmsgq_send(u->primary.dq, NULL, HDI_START, NULL, 0, NULL)) {
         AUDIO_ERR_LOG("audiorenderer control start failed!");
-        u->primary.sinkAdapter->RendererSinkDeInit(u->primary.sinkAdapter);
+        u->primary.sinkAdapter->SinkAdapterDeInit(u->primary.sinkAdapter);
     } else {
         pa_atomic_store(&u->primary.isHDISinkStarted, 1);
         u->writeCount = 0;
@@ -4062,7 +4062,7 @@ static void OffloadSinkStateChangeCb(pa_sink *sink, pa_sink_state_t newState)
         u->offload.inited = true;
     } else if (stopping && u->offload_enable) {
         if (u->offload.isHDISinkStarted) {
-            u->offload.sinkAdapter->RendererSinkStop(u->offload.sinkAdapter);
+            u->offload.sinkAdapter->SinkAdapterStop(u->offload.sinkAdapter);
             AUDIO_INFO_LOG("Stopped Offload HDI renderer, DeInit later");
             u->offload.isHDISinkStarted = false;
         }
@@ -4093,7 +4093,7 @@ static void MultiChannelSinkStateChangeCb(pa_sink *sink, pa_sink_state_t newStat
         }
 
         if (u->multiChannel.isHDISinkStarted) {
-            u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
+            u->multiChannel.sinkAdapter->SinkAdapterStop(u->multiChannel.sinkAdapter);
             AUDIO_INFO_LOG("MultiChannel Stopped HDI renderer");
             u->multiChannel.isHDISinkStarted = false;
         }
@@ -4109,11 +4109,11 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
     pa_assert_se(u = s->userdata);
 
     AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
-        GetDeviceClass(u->primary.sinkAdapter->deviceClass), GetStateInfo(s->thread_info.state),
+        u->primary.sinkAdapter->deviceClass, GetStateInfo(s->thread_info.state),
         GetStateInfo(newState));
     u->primary.previousState = u->sink->thread_info.state;
 
-    if (!strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_REMOTE)) {
+    if (!strcmp(u->primary.sinkAdapter->deviceClass, DEVICE_CLASS_REMOTE)) {
         return RemoteSinkStateChange(s, newState);
     }
 
@@ -4196,7 +4196,7 @@ static pa_hook_result_t SinkInputPutCb(pa_core *core, pa_sink_input *i, struct U
 
 static int32_t PrepareDevice(struct Userdata *u, const char *filePath)
 {
-    SinkAttr sample_attrs;
+    struct SinkAdapterAttr sample_attrs;
     int32_t ret;
 
     sample_attrs.format = ConvertPaToHdiAdapterFormat(u->ss.format);
@@ -4209,12 +4209,12 @@ static int32_t PrepareDevice(struct Userdata *u, const char *filePath)
     sample_attrs.deviceNetworkId = u->deviceNetworkId;
     sample_attrs.deviceType =  u->deviceType;
 
-    if (!strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_MULTICHANNEL)) {
+    if (!strcmp(u->primary.sinkAdapter->deviceClass, DEVICE_CLASS_MULTICHANNEL)) {
         sample_attrs.channel = DEFAULT_MULTICHANNEL_NUM;
         sample_attrs.channelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
     }
 
-    ret = u->primary.sinkAdapter->RendererSinkInit(u->primary.sinkAdapter, &sample_attrs);
+    ret = u->primary.sinkAdapter->SinkAdapterInit(u->primary.sinkAdapter, &sample_attrs);
     if (ret != 0) {
         AUDIO_ERR_LOG("audiorenderer Init failed!");
         return -1;
@@ -4222,7 +4222,7 @@ static int32_t PrepareDevice(struct Userdata *u, const char *filePath)
 
     if (ret != 0) {
         AUDIO_ERR_LOG("audiorenderer control start failed!");
-        u->primary.sinkAdapter->RendererSinkDeInit(u->primary.sinkAdapter);
+        u->primary.sinkAdapter->SinkAdapterDeInit(u->primary.sinkAdapter);
         return -1;
     }
 
@@ -4234,15 +4234,15 @@ static int32_t PrepareDeviceOffload(struct Userdata *u)
     const char *adapterName = safeProplistGets(u->sink->proplist, PA_PROP_DEVICE_STRING, "");
     const char *filePath = safeProplistGets(u->sink->proplist, "filePath", "");
     const char *deviceNetworkId = safeProplistGets(u->sink->proplist, "NetworkId", "");
-    AUDIO_INFO_LOG("PrepareDeviceOffload enter, deviceClass %d, filePath %s",
+    AUDIO_INFO_LOG("PrepareDeviceOffload enter, deviceClass %s, filePath %s",
         u->offload.sinkAdapter->deviceClass, filePath);
-    SinkAttr sample_attrs;
+    struct SinkAdapterAttr sample_attrs;
     int32_t ret;
 
-    enum HdiAdapterFormat format = ConvertPaToHdiAdapterFormat(u->ss.format);
+    enum AudioSampleFormatIntf format = ConvertPaToHdiAdapterFormat(u->ss.format);
     sample_attrs.format = format;
     AUDIO_INFO_LOG("PrepareDeviceOffload audiorenderer format: %d ,adapterName %s",
-        sample_attrs.format, GetDeviceClass(u->offload.sinkAdapter->deviceClass));
+        sample_attrs.format, u->offload.sinkAdapter->deviceClass);
     sample_attrs.adapterName = adapterName;
     sample_attrs.openMicSpeaker = u->open_mic_speaker;
     sample_attrs.sampleRate = u->ss.rate;
@@ -4252,7 +4252,7 @@ static int32_t PrepareDeviceOffload(struct Userdata *u)
     sample_attrs.deviceNetworkId = deviceNetworkId;
     sample_attrs.deviceType = u->deviceType;
 
-    ret = u->offload.sinkAdapter->RendererSinkInit(u->offload.sinkAdapter, &sample_attrs);
+    ret = u->offload.sinkAdapter->SinkAdapterInit(u->offload.sinkAdapter, &sample_attrs);
     if (ret != 0) {
         AUDIO_ERR_LOG("PrepareDeviceOffload audiorenderer Init failed!");
         return -1;
@@ -4261,17 +4261,17 @@ static int32_t PrepareDeviceOffload(struct Userdata *u)
     return 0;
 }
 
-static int32_t PrepareDeviceMultiChannel(struct Userdata *u, struct RendererSinkAdapter *sinkAdapter,
+static int32_t PrepareDeviceMultiChannel(struct Userdata *u, struct SinkAdapter *sinkAdapter,
     const char *filePath)
 {
     int32_t ret;
 
-    enum HdiAdapterFormat format = ConvertPaToHdiAdapterFormat(u->ss.format);
+    enum AudioSampleFormatIntf format = ConvertPaToHdiAdapterFormat(u->ss.format);
 
     u->multiChannel.sample_attrs.format = format;
     u->multiChannel.sample_attrs.sampleRate = u->ss.rate;
     AUDIO_INFO_LOG("PrepareDeviceMultiChannel format: %d ,adapterName %s",
-        u->multiChannel.sample_attrs.format, GetDeviceClass(sinkAdapter->deviceClass));
+        u->multiChannel.sample_attrs.format, sinkAdapter->deviceClass);
     u->multiChannel.sample_attrs.adapterName = u->adapterName;
     u->multiChannel.sample_attrs.openMicSpeaker = u->open_mic_speaker;
     u->multiChannel.sample_attrs.sampleRate = u->ss.rate;
@@ -4284,7 +4284,7 @@ static int32_t PrepareDeviceMultiChannel(struct Userdata *u, struct RendererSink
     u->multiChannel.sample_attrs.deviceNetworkId = u->deviceNetworkId;
     u->multiChannel.sample_attrs.deviceType = u->deviceType;
 
-    ret = sinkAdapter->RendererSinkInit(sinkAdapter, &u->multiChannel.sample_attrs);
+    ret = sinkAdapter->SinkAdapterInit(sinkAdapter, &u->multiChannel.sample_attrs);
     if (ret != 0) {
         AUDIO_ERR_LOG("PrepareDeviceMultiChannel Init failed!");
         return -1;
@@ -4329,7 +4329,7 @@ static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
     if (PrepareDevice(u, pa_modargs_get_value(ma, "file_path", "")) < 0) { goto fail; }
 
     u->primary.prewrite = 0;
-    if (u->offload_enable && !strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_PRIMARY)) {
+    if (u->offload_enable && !strcmp(u->primary.sinkAdapter->deviceClass, DEVICE_CLASS_PRIMARY)) {
         u->primary.prewrite = u->block_usec * 7; // 7 frame, set cache len in hdi, avoid pop
     }
 
@@ -4372,11 +4372,10 @@ fail:
 
 static int32_t PaHdiSinkNewInitThreadMultiChannel(pa_module *m, pa_modargs *ma, struct Userdata *u)
 {
-    int ret;
     pa_atomic_store(&u->multiChannel.dflag, 0);
     u->multiChannel.dq = pa_asyncmsgq_new(0);
-    ret = LoadSinkAdapter(DEVICE_CLASS_MULTICHANNEL, "LocalDevice", &u->multiChannel.sinkAdapter);
-    if (ret) {
+    u->multiChannel.sinkAdapter = GetSinkAdapter(DEVICE_CLASS_MULTICHANNEL, NULL);
+    if (u->multiChannel.sinkAdapter == NULL) {
         AUDIO_ERR_LOG("Load mch adapter failed");
         return -1;
     }
@@ -4395,11 +4394,11 @@ static int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userd
 {
     char *paThreadName = NULL;
 
-    const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
+    const char *deviceClass = u->primary.sinkAdapter->deviceClass;
     if (!strcmp(u->sink->name, OFFLOAD_SINK_NAME) && u->offload_enable) {
         AUDIO_DEBUG_LOG("PaHdiSinkNew device[%s] sink[%s] init offload thread", deviceClass, u->sink->name);
-        int32_t ret = LoadSinkAdapter(DEVICE_CLASS_OFFLOAD, "LocalDevice", &u->offload.sinkAdapter);
-        if (ret) {
+        u->offload.sinkAdapter = GetSinkAdapter(DEVICE_CLASS_OFFLOAD, NULL);
+        if (u->offload.sinkAdapter == NULL) {
             AUDIO_ERR_LOG("Load adapter failed");
             return -1;
         }
@@ -4457,9 +4456,11 @@ static int32_t PaHdiSinkNewInitUserData(pa_module *m, pa_modargs *ma, struct Use
     }
 
     AUDIO_DEBUG_LOG("Load sink adapter");
-    int32_t ret = LoadSinkAdapter(pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS),
-        pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID), &u->primary.sinkAdapter);
-    if (ret) {
+    const char *deviceClass = pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS);
+    u->primary.sinkAdapter = GetSinkAdapter(deviceClass, pa_modargs_get_value(ma, "network_id",
+        DEFAULT_DEVICE_NETWORKID));
+
+    if (u->primary.sinkAdapter == NULL) {
         AUDIO_ERR_LOG("Load adapter failed");
         return -1;
     }
@@ -4649,11 +4650,11 @@ static void UserdataFreeOffload(struct Userdata *u)
     }
 
     if (u->offload.sinkAdapter) {
-        u->offload.sinkAdapter->RendererSinkStop(u->offload.sinkAdapter);
+        u->offload.sinkAdapter->SinkAdapterStop(u->offload.sinkAdapter);
         OffloadUnlock(u);
-        u->offload.sinkAdapter->RendererSinkDeInit(u->offload.sinkAdapter);
+        u->offload.sinkAdapter->SinkAdapterDeInit(u->offload.sinkAdapter);
         AUDIO_INFO_LOG("DeInited Offload HDI renderer");
-        UnLoadSinkAdapter(u->offload.sinkAdapter);
+        ReleaseSinkAdapter(u->offload.sinkAdapter);
     }
 
     if (u->offload.chunk.memblock) {
@@ -4669,9 +4670,9 @@ static void UserdataFreeMultiChannel(struct Userdata *u)
     }
 
     if (u->multiChannel.sinkAdapter) {
-        u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
-        u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
-        UnLoadSinkAdapter(u->multiChannel.sinkAdapter);
+        u->multiChannel.sinkAdapter->SinkAdapterStop(u->multiChannel.sinkAdapter);
+        u->multiChannel.sinkAdapter->SinkAdapterDeInit(u->multiChannel.sinkAdapter);
+        ReleaseSinkAdapter(u->multiChannel.sinkAdapter);
     }
 
     if (u->multiChannel.chunk.memblock) {
@@ -4763,9 +4764,9 @@ static void UserdataFree(struct Userdata *u)
     }
 
     if (u->primary.sinkAdapter) {
-        u->primary.sinkAdapter->RendererSinkStop(u->primary.sinkAdapter);
-        u->primary.sinkAdapter->RendererSinkDeInit(u->primary.sinkAdapter);
-        UnLoadSinkAdapter(u->primary.sinkAdapter);
+        u->primary.sinkAdapter->SinkAdapterStop(u->primary.sinkAdapter);
+        u->primary.sinkAdapter->SinkAdapterDeInit(u->primary.sinkAdapter);
+        ReleaseSinkAdapter(u->primary.sinkAdapter);
     }
 
     if (u->sceneToCountMap) {
