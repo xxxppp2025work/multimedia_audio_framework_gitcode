@@ -2956,7 +2956,7 @@ static void StartOffloadHdi(struct Userdata *u, pa_sink_input *i)
         AUDIO_INFO_LOG("StartOffloadHdi, sessionID : %{public}d -> %{public}d", u->offload.sessionID, sessionID);
         if (sessionID != u->offload.sessionID) {
             if (u->offload.sessionID != -1) {
-                u->offload.sinkAdapter->RendererSinkReset(u->offload.sinkAdapter);
+                u->offload.sinkAdapter->SinkAdapterReset(u->offload.sinkAdapter);
                 OffloadReset(u);
             }
             u->offload.sessionID = sessionID;
@@ -2964,7 +2964,7 @@ static void StartOffloadHdi(struct Userdata *u, pa_sink_input *i)
     } else {
         AUDIO_INFO_LOG("StartOffloadHdi, Restart offload with rate:%{public}d, channels:%{public}d",
             u->ss.rate, u->ss.channels);
-        if (u->offload.sinkAdapter->RendererSinkStart(u->offload.sinkAdapter)) {
+        if (u->offload.sinkAdapter->SinkAdapterStart(u->offload.sinkAdapter)) {
             AUDIO_WARNING_LOG("StartOffloadHdi, audiorenderer control start failed!");
         } else {
             RegOffloadCallback(u);
@@ -2992,7 +2992,7 @@ static void PaInputStateChangeCbOffload(struct Userdata *u, pa_sink_input *i, pa
         pa_atomic_store(&u->offload.hdistate, 2); // 2 indicates corking
         pa_asyncmsgq_send(u->offload.dq, NULL, HDI_FLUSH, i, 0, NULL);
     } else if (stopping) {
-        u->offload.sinkAdapter->RendererSinkFlush(u->offload.sinkAdapter);
+        u->offload.sinkAdapter->SinkAdapterFlush(u->offload.sinkAdapter);
         OffloadReset(u);
         u->primary.speakerPaAllStreamStartVolZeroTime = 0;
     }
@@ -3035,7 +3035,7 @@ static void PaInputStateChangeCbPrimary(struct Userdata *u, pa_sink_input *i, pa
             u->ss.rate, u->ss.channels, (int)pa_sample_size_of_format(u->format));
         if (pa_asyncmsgq_send(u->primary.dq, NULL, HDI_START, NULL, 0, NULL)) {
             AUDIO_ERR_LOG("audiorenderer control start failed!");
-            u->primary.sinkAdapter->RendererSinkDeInit(u->primary.sinkAdapter);
+            u->primary.sinkAdapter->SinkAdapterDeInit(u->primary.sinkAdapter);
         } else {
             pa_atomic_store(&u->primary.isHDISinkStarted, 1);
             u->writeCount = 0;
@@ -3076,7 +3076,7 @@ static void StartPrimaryHdiIfRunning(struct Userdata *u)
 
     if (pa_asyncmsgq_send(u->primary.dq, NULL, HDI_START, NULL, 0, NULL)) {
         AUDIO_ERR_LOG("audiorenderer control start failed!");
-        u->primary.sinkAdapter->RendererSinkDeInit(u->primary.sinkAdapter);
+        u->primary.sinkAdapter->SinkAdapterDeInit(u->primary.sinkAdapter);
     } else {
         pa_atomic_store(&u->primary.isHDISinkStarted, 1);
         u->writeCount = 0;
@@ -3092,14 +3092,14 @@ static void ResetMultiChannelHdiState(struct Userdata *u)
     }
     if (u->multiChannel.isHDISinkInited) {
         if (u->multiChannel.sample_attrs.channel != (uint32_t)u->multiChannel.sinkChannel) {
-            u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
+            u->multiChannel.sinkAdapter->SinkAdapterStop(u->multiChannel.sinkAdapter);
             u->multiChannel.isHDISinkStarted = false;
-            u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
+            u->multiChannel.sinkAdapter->SinkAdapterDeInit(u->multiChannel.sinkAdapter);
             u->multiChannel.isHDISinkInited = false;
             u->multiChannel.sample_attrs.adapterName = "primary";
             u->multiChannel.sample_attrs.channel = (uint32_t)u->multiChannel.sinkChannel;
             u->multiChannel.sample_attrs.channelLayout = u->multiChannel.sinkChannelLayout;
-            u->multiChannel.sinkAdapter->RendererSinkInit(u->multiChannel.sinkAdapter, &u->multiChannel.sample_attrs);
+            u->multiChannel.sinkAdapter->SinkAdapterInit(u->multiChannel.sinkAdapter, &u->multiChannel.sample_attrs);
             u->multiChannel.isHDISinkInited = true;
         } else {
             if (u->multiChannel.isHDISinkStarted) {
@@ -3113,12 +3113,12 @@ static void ResetMultiChannelHdiState(struct Userdata *u)
         u->multiChannel.sample_attrs.adapterName = "primary";
         u->multiChannel.sample_attrs.channel = (uint32_t)u->multiChannel.sinkChannel;
         u->multiChannel.sample_attrs.channelLayout = u->multiChannel.sinkChannelLayout;
-        u->multiChannel.sinkAdapter->RendererSinkInit(u->multiChannel.sinkAdapter, &u->multiChannel.sample_attrs);
+        u->multiChannel.sinkAdapter->SinkAdapterInit(u->multiChannel.sinkAdapter, &u->multiChannel.sample_attrs);
         u->multiChannel.isHDISinkInited = true;
     }
-    if (u->multiChannel.sinkAdapter->RendererSinkStart(u->multiChannel.sinkAdapter)) {
+    if (u->multiChannel.sinkAdapter->SinkAdapterStart(u->multiChannel.sinkAdapter)) {
         u->multiChannel.isHDISinkStarted = false;
-        u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
+        u->multiChannel.sinkAdapter->SinkAdapterDeInit(u->multiChannel.sinkAdapter);
         u->multiChannel.isHDISinkInited = false;
         AUDIO_INFO_LOG("ResetMultiChannelHdiState deinit success");
     } else {
@@ -3181,14 +3181,14 @@ static void RendererSinkSetPriPaPower(pa_sink_input *i, pa_sink_input_state_t st
         }
         const char *streamType = safeProplistGets(i->proplist, "stream.type", "NULL");
         const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
-        const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
+        const char *deviceClass = u->primary.sinkAdapter->deviceClass;
         uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
         float volume = GetCurVolume(sessionID, streamType, deviceClass);
         bool isZeroVolume = IsSameVolume(volume, 0.0f);
         AUDIO_INFO_LOG(
             "session %{public}u, stream %{public}s, zerovol %{public}d", sessionID, streamType, isZeroVolume);
         if (!isZeroVolume) {
-            u->primary.sinkAdapter->RendererSinkSetPriPaPower(u->primary.sinkAdapter);
+            u->primary.sinkAdapter->SinkAdapterSetPriPaPower(u->primary.sinkAdapter);
         }
     }
 }
@@ -3223,7 +3223,7 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
     GetSinkInputName(i, str, SPRINTF_STR_LEN);
     AUDIO_INFO_LOG(
         "PaInputStateChangeCb, Sink[%{public}s]->SinkInput[%{public}s] state change:[%{public}s]-->[%{public}s]",
-        GetDeviceClass(u->primary.sinkAdapter->deviceClass), str, GetInputStateInfo(i->thread_info.state),
+        u->primary.sinkAdapter->deviceClass, str, GetInputStateInfo(i->thread_info.state),
         GetInputStateInfo(state));
 
     if (i->thread_info.state == state) {
@@ -3578,14 +3578,13 @@ static void ThreadFuncRendererTimerBus(void *userdata)
 
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
-    const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
+    const char *deviceClass = u->primary.sinkAdapter->deviceClass;
     AUDIO_INFO_LOG("Thread %s(use timing bus) starting up, pid %d, tid %d", deviceClass, getpid(), gettid());
     pa_thread_mq_install(&u->thread_mq);
 
     if (!strcmp(u->sink->name, OFFLOAD_SINK_NAME)) {
         OffloadReset(u);
         CHECK_AND_RETURN_LOG(u->offload.sinkAdapter != NULL, "offload.sinkAdapter is NULL");
-        u->offload.sinkAdapter->RendererSinkOffloadRunningLockInit(u->offload.sinkAdapter);
     }
     while (true) {
         int ret;
@@ -3790,14 +3789,14 @@ static void ThreadFuncWriteHDI(void *userdata)
             }
             case HDI_STOP: {
                 if (pa_atomic_load(&u->primary.isHDISinkStarted) == 1) {
-                    u->primary.sinkAdapter->RendererSinkStop(u->primary.sinkAdapter);
+                    u->primary.sinkAdapter->SinkAdapterStop(u->primary.sinkAdapter);
                     AUDIO_INFO_LOG("Stopped HDI renderer");
                     pa_atomic_store(&u->primary.isHDISinkStarted, 0);
                 }
                 break;
             }
             case HDI_START: {
-                ret = u->primary.sinkAdapter->RendererSinkStart(u->primary.sinkAdapter);
+                ret = u->primary.sinkAdapter->SinkAdapterStart(u->primary.sinkAdapter);
                 break;
             }
             case QUIT:
