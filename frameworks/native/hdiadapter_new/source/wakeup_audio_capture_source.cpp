@@ -129,14 +129,14 @@ int32_t WakeupAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 
 void WakeupAudioCaptureSource::DeInit(void)
 {
-    AudioXCollie audioXCollie("WakeupAudioCaptureSource::DeInit", TIMEOUT_SECONDS_S);
+    AudioXCollie audioXCollie("WakeupAudioCaptureSource::DeInit", TIMEOUT_SECONDS_5);
 
     AUDIO_INFO_LOG("in");
     std::lock_guard<std::mutex> lock(wakeupMutex_);
     if (!sourceInited_) {
         return;
     }
-    sourceInited_ = false
+    sourceInited_ = false;
     --sourceInitCount_;
     if (sourceInitCount_ == 0) {
         wakeupBuffer_.reset();
@@ -171,7 +171,7 @@ int32_t WakeupAudioCaptureSource::Stop(void)
 {
     std::lock_guard<std::mutex> lock(wakeupMutex_);
     if (!started_) {
-        return;
+        return SUCCESS;
     }
 
     int32_t ret = SUCCESS;
@@ -219,7 +219,7 @@ int32_t WakeupAudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t 
     return ERR_NOT_SUPPORTED;
 }
 
-std::string WakeupAudioCaptureSource::GetAudioParameter(const AudioParamKey key, std::string &condition)
+std::string WakeupAudioCaptureSource::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     return "";
 }

@@ -34,7 +34,7 @@ int32_t FileAudioCaptureSource::Init(const IAudioSourceAttr &attr)
     std::string dirPath;
     std::string fileName;
 
-    auto pos = filePath.rfind('/');
+    auto pos = filePath.rfind("/");
     if (pos != std::string::npos) {
         dirPath = filePath.substr(0, pos);
         fileName = filePath.substr(pos);
@@ -42,11 +42,11 @@ int32_t FileAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 
     char realPath[PATH_MAX + 1] = { 0x00 };
     CHECK_AND_RETURN_RET_LOG((filePath.length() < PATH_MAX) && (realpath(dirPath.c_str(), realPath) != nullptr),
-        ERR_INVALID_HANDLE, "Invalid path, errno: %{public}d", errno);
+        ERR_INVALID_HANDLE, "invalid path, errno: %{public}d", errno);
     
     std::string realPathStr(realPath);
     file_ = fopen(realPathStr.append(fileName).c_str(), "rb");
-    CHECK_AND_RETURN_RET_LOG(file_ != nullptr, ERROR, "Open file fail, errno: %{public}d", errno);
+    CHECK_AND_RETURN_RET_LOG(file_ != nullptr, ERROR, "open file fail, errno: %{public}d", errno);
 
     sourceInited_ = true;
     return SUCCESS;
@@ -58,6 +58,7 @@ void FileAudioCaptureSource::DeInit(void)
         fclose(file_);
         file_ = nullptr;
     }
+
     sourceInited_ = false;
 }
 
@@ -120,7 +121,7 @@ int32_t FileAudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &r
     return ERR_NOT_SUPPORTED;
 }
 
-std::string FileAudioCaptureSource::GetAudioParameter(const AudioParamKey key, std::string &condition)
+std::string FileAudioCaptureSource::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     return "";
 }
@@ -193,7 +194,6 @@ int32_t FileAudioCaptureSource::UpdateAppsUid(const std::vector<int32_t> &appsUi
     AUDIO_INFO_LOG("not support");
     return ERR_NOT_SUPPORTED;
 }
-
 
 } // namespace AudioStandard
 } // namespace OHOS
