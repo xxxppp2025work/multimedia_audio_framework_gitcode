@@ -39,7 +39,7 @@ bool AudioPolicyConfigParser::LoadConfiguration()
         return false;
     }
 
-    configManager_.OnAudioPolicyXmlParsingCompleted(); // how to notify manager?
+    configManager_->OnAudioPolicyConfigXmlParsingCompleted(); // how to notify manager?
     AUDIO_INFO_LOG("Done");
     return true;
 }
@@ -126,7 +126,7 @@ void AudioPolicyConfigParser::ParsePipes(std::shared_ptr<AudioXmlNode> curNode, 
             ParsePipeInfos(curNode->GetCopyNode(), pipeInfo);
             pipeInfos.push_back(std::move(pipeInfo));
         }
-        currNode = currNode->next;
+        curNode->MoveToNext();
     }
     adapterInfo.SetPipeInfos(pipeInfos);
 }

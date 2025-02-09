@@ -31,11 +31,6 @@ bool AudioPolicyConfigManager::Init()
         AUDIO_ERR_LOG("Audio Policy Config Load Configuration failed");
         return ret;
     }
-    ret = audioPolicyConfigParser->Parse();
-    if (!ret) {
-        AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Config Parse failed");
-        AUDIO_ERR_LOG("Audio Policy Config Parse Configuration failed");
-    }
     return ret;
 }
 
@@ -62,13 +57,13 @@ void AudioPolicyConfigManager::GetDeviceDescriptorByDeviceType(DeviceType device
     }
 }
 
-std::string AudioPolicyConfigManager::GetSinkPortName(DeviceType deviceType, std::string pipeName)
+std::string AudioPolicyConfigManager::GetSinkPortName(DeviceType deviceType, AudioFlagType flagType)
 {
     std::string portName = PORT_NONE;
     auto deviceIt = audioPolicyConfig_.deviceInfoMap_.find(deviceType);
     CHECK_AND_RETURN_RET_LOG(deviceIt != audioPolicyConfig_.deviceInfoMap_.end(), portName, "Find deviceType failed");
-    auto pipeIt = deviceIt->second.supportPipeMap_.find(pipeName);
-    CHECK_AND_RETURN_RET_LOG(pipeIt != deviceIt->second.supportPipeMap_.end(), portName, "Find pipeName failed");
+    auto pipeIt = deviceIt->second.supportPipeMap_.find(flagType);
+    CHECK_AND_RETURN_RET_LOG(pipeIt != deviceIt->second.supportPipeMap_.end(), portName, "Find flagType failed");
     portName = pipeIt->second.paProp_.moduleName_;
     return portName;
 }
