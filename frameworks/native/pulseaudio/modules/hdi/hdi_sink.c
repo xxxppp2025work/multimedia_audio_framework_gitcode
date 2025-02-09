@@ -4657,6 +4657,7 @@ static void UserdataFreeOffload(struct Userdata *u)
         u->offload.sinkAdapter->SinkAdapterDeInit(u->offload.sinkAdapter);
         AUDIO_INFO_LOG("DeInited Offload HDI renderer");
         ReleaseSinkAdapter(u->offload.sinkAdapter);
+        u->offload.sinkAdapter = NULL;
     }
 
     if (u->offload.chunk.memblock) {
@@ -4675,6 +4676,7 @@ static void UserdataFreeMultiChannel(struct Userdata *u)
         u->multiChannel.sinkAdapter->SinkAdapterStop(u->multiChannel.sinkAdapter);
         u->multiChannel.sinkAdapter->SinkAdapterDeInit(u->multiChannel.sinkAdapter);
         ReleaseSinkAdapter(u->multiChannel.sinkAdapter);
+        u->multiChannel.sinkAdapter = NULL;
     }
 
     if (u->multiChannel.chunk.memblock) {
@@ -4769,6 +4771,7 @@ static void UserdataFree(struct Userdata *u)
         u->primary.sinkAdapter->SinkAdapterStop(u->primary.sinkAdapter);
         u->primary.sinkAdapter->SinkAdapterDeInit(u->primary.sinkAdapter);
         ReleaseSinkAdapter(u->primary.sinkAdapter);
+        u->primary.sinkAdapter = NULL;
     }
 
     if (u->sceneToCountMap) {
