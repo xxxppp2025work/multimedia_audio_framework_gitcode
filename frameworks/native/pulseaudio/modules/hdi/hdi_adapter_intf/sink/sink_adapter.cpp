@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #ifndef LOG_TAG
 #define LOG_TAG "SinkAdapter"
 #endif
@@ -72,7 +73,8 @@ void DeInitSinkAdapter(struct SinkAdapter *adapter)
 
 int32_t SinkAdapterInit(struct SinkAdapter *adapter, const struct SinkAdapterAttr *attr)
 {
-    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE, "invalid adapter");
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
     CHECK_AND_RETURN_RET_LOG(attr != nullptr, ERR_INVALID_PARAM, "attr is nullptr");
     std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");

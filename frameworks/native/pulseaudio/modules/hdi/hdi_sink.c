@@ -51,6 +51,7 @@
 #include "volume_tools_c.h"
 #include "audio_volume_c.h"
 #include "common/hdi_adapter_info.h"
+#include "sink/sink_intf.h"
 #include "audio_effect_chain_adapter.h"
 #include "audio_limiter_adapter.h"
 #include "playback_capturer_adapter.h"
@@ -534,7 +535,8 @@ static void OffloadCallback(const enum RenderCallbackType type, int8_t *userdata
 
 static void RegOffloadCallback(struct Userdata *u)
 {
-    u->offload.sinkAdapter->SinkAdapterRegistOffloadHdiCallback(u->offload.sinkAdapter, (int8_t *)OffloadCallback, (int8_t *)u);
+    u->offload.sinkAdapter->SinkAdapterRegistOffloadHdiCallback(u->offload.sinkAdapter, (int8_t *)OffloadCallback,
+        (int8_t *)u);
 }
 
 static ssize_t TestModeRenderWrite(struct Userdata *u, pa_memchunk *pchunk)
@@ -2894,7 +2896,7 @@ static int32_t getSinkInputSessionID(pa_sink_input *i)
 static void OffloadLock(struct Userdata *u)
 {
     if (!u->offload.runninglocked) {
-        u->offload.sinkAdapter->SinkAdapterLockOffloadRunningLockLock(u->offload.sinkAdapter);
+        u->offload.sinkAdapter->SinkAdapterLockOffloadRunningLock(u->offload.sinkAdapter);
         u->offload.runninglocked = true;
     } else {
     }
@@ -3748,7 +3750,7 @@ static void ProcessHdiRendererPrimary(struct Userdata *u, pa_memchunk *pChunk)
     pa_usec_t now = pa_rtclock_now();
     if (pa_atomic_load(&u->primary.isHDISinkStarted) != 1 && now - u->timestampLastLog > USEC_PER_SEC) {
         u->timestampLastLog = now;
-        const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
+        const char *deviceClass = u->primary.sinkAdapter->deviceClass;
         AUDIO_DEBUG_LOG("HDI not started, skip RenderWrite, wait sink[%s] suspend", deviceClass);
         pa_memblock_unref(pChunk->memblock);
     } else if (pa_atomic_load(&u->primary.isHDISinkStarted) != 1) {
