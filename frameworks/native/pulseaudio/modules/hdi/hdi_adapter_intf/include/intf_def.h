@@ -149,8 +149,8 @@ struct SourceAdapter {
     int32_t (*SourceAdapterSetMute)(struct SourceAdapter *adapter, bool isMute);
     bool (*SourceAdapterGetMute)(struct SourceAdapter *adapter);
 
-    int32_t (*SourceAdapterUpdateAppsUid)(struct SourceAdapter *adapter, const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE],
-        const size_t size);
+    int32_t (*SourceAdapterUpdateAppsUid)(struct SourceAdapter *adapter,
+        const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size);
 };
 
 typedef enum EcType {
