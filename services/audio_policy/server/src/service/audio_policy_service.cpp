@@ -8927,6 +8927,21 @@ void AudioPolicyService::LoadHdiEffectModel()
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
+int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+{
+    return AUDIO_OK;
+}
+
+int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
+{
+    return AUDIO_OK;
+}
+
+int32_t AudioPolicyService::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
+{
+    return AUDIO_OK;
+}
+
 void AudioPolicyService::UpdateEffectBtOffloadSupported(const bool &isSupported)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
