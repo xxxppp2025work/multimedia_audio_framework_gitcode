@@ -1176,6 +1176,11 @@ int32_t AudioStreamCollector::ActivateAudioConcurrency(const AudioPipeType &pipe
         audioRendererChangeInfos_, audioCapturerChangeInfos_);
 }
 
+std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction>& AudioStreamCollector::GetConcurrencyMap()
+{
+    return audioConcurrencyService_->GetConcurrencyMap();
+}
+
 void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
     if (mode == AUDIO_MODE_PLAYBACK) {
