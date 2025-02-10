@@ -258,6 +258,31 @@ enum AudioPipeType {
     PIPE_TYPE_DIRECT_VOIP = 14,
 };
 
+enum AudioPipeRole {
+    PIPE_ROLE_NONE = -1,
+    PIPE_ROLE_IN = 1,
+    PIPE_ROLE_OUT = 2,
+};
+
+enum AudioFlagType {
+    FLAG_TYPE_UNKNOWN = 0,
+    FLAG_TYPE_OUTPUT_NORMAL = 1,
+    FLAG_TYPE_OUTPUT_FAST = 2,
+    FLAG_TYPE_OUTPUT_VOIP = 3,
+    FLAG_TYPE_OUTPUT_DIRECT = 4,
+    FLAG_TYPE_OUTPUT_HD = 5,
+    FLAG_TYPE_INPUT_NORMAL = 6,
+    FLAG_TYPE_INPUT_FAST = 7,
+    FLAG_TYPE_INPUT_VOIP = 8,
+    FLAG_TYPE_INPUT_WAKEUP = 9,
+};
+
+enum AudioPreloadType {
+    PRELOAD_TYPE_UNKNOWN = -1,
+    PRELOAD_TYPE_NOTSUPPORT = 0,
+    PRELOAD_TYPE_SUPPORT = 1,
+};
+
 struct AudioStreamParams {
     uint32_t samplingRate = 0;
     uint8_t encoding = 0;
@@ -304,6 +329,7 @@ enum AudioSampleFormat : uint8_t {
 
 // channel
 enum AudioChannel : uint8_t {
+    CHANNEL_UNKNOWN = 0,
     MONO = 1,
     STEREO = 2,
     CHANNEL_3 = 3,

@@ -39,6 +39,30 @@ enum API_VERSION {
     API_MAX = 1000
 };
 
+enum AudioPortPin {
+    PIN_NONE                     = 0,                 /**< Invalid pin */
+    PIN_OUT_SPEAKER              = 1 << 0,            /**< Speaker output pin */
+    PIN_OUT_HEADSET              = 1 << 1,            /**< Wired headset pin for output */
+    PIN_OUT_LINEOUT              = 1 << 2,            /**< Line-out pin */
+    PIN_OUT_HDMI                 = 1 << 3,            /**< HDMI output pin */
+    PIN_OUT_USB                  = 1 << 4,            /**< USB output pin */
+    PIN_OUT_USB_EXT              = 1 << 5,            /**< Extended USB output pin*/
+    PIN_OUT_EARPIECE             = 1 << 5 | 1 << 4,   /**< Earpiece output pin */
+    PIN_OUT_BLUETOOTH_SCO        = 1 << 6,            /**< Bluetooth SCO output pin */
+    PIN_OUT_DAUDIO_DEFAULT       = 1 << 7,            /**< Daudio default output pin */
+    PIN_OUT_HEADPHONE            = 1 << 8,            /**< Wired headphone output pin*/
+    PIN_OUT_USB_HEADSET          = 1 << 9,            /**< ARM USB out pin */
+    PIN_OUT_BLUETOOTH_A2DP       = 1 << 10,           /**< Bluetooth A2DP output pin */
+    PIN_OUT_DP                   = 1 << 11,           /**< Dp output pin */
+    PIN_IN_MIC                   = 1 << 27 | 1 << 0,  /**< Microphone input pin */
+    PIN_IN_HS_MIC                = 1 << 27 | 1 << 1,  /**< Wired headset microphone pin for input */
+    PIN_IN_LINEIN                = 1 << 27 | 1 << 2,  /**< Line-in pin */
+    PIN_IN_USB_EXT               = 1 << 27 | 1 << 3,  /**< Extended USB input pin*/
+    PIN_IN_BLUETOOTH_SCO_HEADSET = 1 << 27 | 1 << 4,  /**< Bluetooth SCO headset input pin */
+    PIN_IN_DAUDIO_DEFAULT        = 1 << 27 | 1 << 5,  /**< Daudio default input pin */
+    PIN_IN_USB_HEADSET           = 1 << 27 | 1 << 6,  /**< ARM USB input pin */
+};
+
 enum DeviceFlag {
     /**
      * Device flag none.
@@ -158,6 +182,14 @@ enum DeviceType {
      * Indicates a none headset usb device.
      */
     DEVICE_TYPE_USB_DEVICE = 25,
+    /**
+     * Indicates a hdmi device
+     */
+    DEVICE_TYPE_HDMI = 26,
+    /**
+     * Indicates a line digital device
+     */
+    DEVICE_TYPE_LINE_DIGITAL = 27,
     /**
      * Indicates a debug sink device
      */
