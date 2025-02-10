@@ -30,24 +30,15 @@ namespace AudioStandard {
 
 class AudioPolicyConfigManager {
 public:
-    static AudioPolicyConfigManager& GetInstance()
-    {
-        static AudioPolicyConfigManager instance;
-        return instance;
-    }
+    AudioPolicyConfigManager() : audioPolicyConfig_(AudioPolicyConfigData::GetInstance()) {}
+    ~AudioPolicyConfigManager() {}
     bool Init();
     void OnAudioPolicyConfigXmlParsingCompleted();
 
     void GetDeviceDescriptorByDeviceType(DeviceType deviceType, AudioDeviceDescriptor &desc);
     std::string GetSinkPortName(DeviceType deviceType, AudioFlagType flagType);
     void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> desc, PipeStreamPropInfo &info);
-private:
-    AudioPolicyConfigManager() : audioPolicyConfig_(AudioPolicyConfigData::GetInstance())
-    {
-    }
-    ~AudioPolicyConfigManager()
-    {
-    }
+
 private:
     AudioPolicyConfigData &audioPolicyConfig_;
 };

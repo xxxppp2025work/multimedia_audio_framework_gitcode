@@ -26,11 +26,11 @@ void AudioPolicyConfigData::SetDeviceMaps(std::list<AdapterDeviceInfo> &deviceIn
     for (AdapterDeviceInfo &deviceInfo : deviceInfos) {
         deviceInfoMap_.insert({deviceInfo.type_, deviceInfo});
 
-        if (deviceInfo.role_ == OUTPUT_DEVICE) {
-            outputDeviceMap_.insert({deviceInfo.type_, deviceInfo});
-        } else if (deviceInfo.role_ == INPUT_DEVICE) {
-            inputDeviceMap_.insert({deviceInfo.type_, deviceInfo});
-        }
+        // if (deviceInfo.role_ == OUTPUT_DEVICE) {
+        //     outputDeviceMap_.insert({deviceInfo.type_, deviceInfo});
+        // } else if (deviceInfo.role_ == INPUT_DEVICE) {
+        //     inputDeviceMap_.insert({deviceInfo.type_, deviceInfo});
+        // }
     }
 }
 
@@ -39,11 +39,11 @@ void AudioPolicyConfigData::SetPipeMaps(std::list<AdapterPipeInfo> &pipeInfos)
     for (AdapterPipeInfo &pipeInfo : pipeInfos) {
         pipeInfoMap_.insert({pipeInfo.name_, pipeInfo});
 
-        if (pipeInfo.pipeRole_ == PIPE_ROLE_OUT) {
-            outputPipeMap_.insert({pipeInfo.name_, pipeInfo});
-        } else if (pipeInfo.pipeRole_ == PIPE_ROLE_IN) {
-            inputPipeMap_.insert({pipeInfo.name_, pipeInfo});
-        }
+        // if (pipeInfo.pipeRole_ == PIPE_ROLE_OUT) {
+        //     outputPipeMap_.insert({pipeInfo.name_, pipeInfo});
+        // } else if (pipeInfo.pipeRole_ == PIPE_ROLE_IN) {
+        //     inputPipeMap_.insert({pipeInfo.name_, pipeInfo});
+        // }
     }
 }
 
@@ -109,6 +109,16 @@ std::string AudioPolicyConfigData::GetVersion()
 void AudioPolicyConfigData::GetAdapterInfoMap(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap)
 {
     adapterInfoMap = std::move(adapterInfoMap_);
+}
+
+void AudioPolicyConfigData::GetDeviceInfoMap(std::unordered_map<DeviceType, AdapterDeviceInfo&> &deviceInfoMap)
+{
+    deviceInfoMap = std::move(deviceInfoMap_);
+}
+
+void AudioPolicyConfigData::GetPipeInfoMap(std::unordered_map<std::string, AdapterPipeInfo&> &pipeInfoMap)
+{
+    pipeInfoMap = std::move(pipeInfoMap_);
 }
 
 AudioAdapterType PolicyAdapterInfo::GetTypeEnum()

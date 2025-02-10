@@ -106,19 +106,22 @@ public:
     void SetVersion(const std::string version);
     void SetAdapterInfoMap(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap);
     void AddAdapterInfoToMap(AudioAdapterType type, PolicyAdapterInfo &info);
+
     std::string GetVersion();
     void GetAdapterInfoMap(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap);
+    void GetDeviceInfoMap(std::unordered_map<DeviceType, AdapterDeviceInfo&> &deviceInfoMap);
+    void GetPipeInfoMap(std::unordered_map<std::string, AdapterPipeInfo&> &pipeInfoMap);
 
-    std::unordered_map<DeviceType, AdapterDeviceInfo&> deviceInfoMap_ {};
-    std::unordered_map<std::string, AdapterPipeInfo&> pipeInfoMap_ {};
-    // check: use output/input deviceMap or interface in adapterInfo
-    std::unordered_map<DeviceType, AdapterDeviceInfo&> outputDeviceMap_ {};
-    std::unordered_map<DeviceType, AdapterDeviceInfo&> inputDeviceMap_ {};
-    std::unordered_map<std::string, AdapterPipeInfo&> outputPipeMap_ {};
-    std::unordered_map<std::string, AdapterPipeInfo&> inputPipeMap_ {};
 private:
     std::string version_ = STR_INITED;
     std::unordered_map<AudioAdapterType, PolicyAdapterInfo> adapterInfoMap_ {};
+    std::unordered_map<DeviceType, AdapterDeviceInfo&> deviceInfoMap_ {};
+    std::unordered_map<std::string, AdapterPipeInfo&> pipeInfoMap_ {};
+    // check: use output/input deviceMap or interface in adapterInfo
+    // std::unordered_map<DeviceType, AdapterDeviceInfo&> outputDeviceMap_ {};
+    // std::unordered_map<DeviceType, AdapterDeviceInfo&> inputDeviceMap_ {};
+    // std::unordered_map<std::string, AdapterPipeInfo&> outputPipeMap_ {};
+    // std::unordered_map<std::string, AdapterPipeInfo&> inputPipeMap_ {};
 };
 
 class PolicyAdapterInfo {

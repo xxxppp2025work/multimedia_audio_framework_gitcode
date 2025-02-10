@@ -48,8 +48,10 @@ void AudioPolicyConfigManager::OnAudioPolicyConfigXmlParsingCompleted()
 
 void AudioPolicyConfigManager::GetDeviceDescriptorByDeviceType(DeviceType deviceType, AudioDeviceDescriptor &desc)
 {
-    auto it = audioPolicyConfig_.deviceInfoMap_.find(deviceType);
-    if (it != audioPolicyConfig_.deviceInfoMap_.end()) {
+    std::unordered_map<DeviceType, AdapterDeviceInfo&> deviceInfoMap;
+    audioPolicyConfig_.GetDeviceInfoMap(deviceInfoMap);
+    auto it = deviceInfoMap.find(deviceType);
+    if (it != deviceInfoMap.end()) {
         AdapterDeviceInfo deviceInfo = it->second;
         desc.deviceType_ = deviceType;
         desc.deviceRole_ = deviceInfo.role_;
@@ -60,8 +62,10 @@ void AudioPolicyConfigManager::GetDeviceDescriptorByDeviceType(DeviceType device
 std::string AudioPolicyConfigManager::GetSinkPortName(DeviceType deviceType, AudioFlagType flagType)
 {
     std::string portName = PORT_NONE;
-    auto deviceIt = audioPolicyConfig_.deviceInfoMap_.find(deviceType);
-    CHECK_AND_RETURN_RET_LOG(deviceIt != audioPolicyConfig_.deviceInfoMap_.end(), portName, "Find deviceType failed");
+    std::unordered_map<DeviceType, AdapterDeviceInfo&> deviceInfoMap;
+    audioPolicyConfig_.GetDeviceInfoMap(deviceInfoMap);
+    auto deviceIt = deviceInfoMap.find(deviceType);
+    CHECK_AND_RETURN_RET_LOG(deviceIt != deviceInfoMap.end(), portName, "Find deviceType failed");
     auto pipeIt = deviceIt->second.supportPipeMap_.find(flagType);
     CHECK_AND_RETURN_RET_LOG(pipeIt != deviceIt->second.supportPipeMap_.end(), portName, "Find flagType failed");
     portName = pipeIt->second.paProp_.moduleName_;
@@ -71,8 +75,10 @@ std::string AudioPolicyConfigManager::GetSinkPortName(DeviceType deviceType, Aud
 void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> desc, PipeStreamPropInfo &info)
 {
     // device -> adapter -> flag -> stream
-    auto deviceIt = audioPolicyConfig_.deviceInfoMap_.find(desc->deviceDesc_->deviceType_);
-    CHECK_AND_RETURN_LOG(deviceIt != audioPolicyConfig_.deviceInfoMap_.end(), "Find deviceType failed");
+    std::unordered_map<DeviceType, AdapterDeviceInfo&> deviceInfoMap;
+    audioPolicyConfig_.GetDeviceInfoMap(deviceInfoMap);
+    auto deviceIt = deviceInfoMap.find(desc->deviceDesc_->deviceType_);
+    CHECK_AND_RETURN_LOG(deviceIt != deviceInfoMap.end(), "Find deviceType failed");
     auto pipeIt = deviceIt->second.supportPipeMap_.find(desc->audioFlag); // audioFlag? two enum definitions
     if (pipeIt == deviceIt->second.supportPipeMap_.end()) {
         AUDIO_ERR_LOG("Find audioFlag failed");
