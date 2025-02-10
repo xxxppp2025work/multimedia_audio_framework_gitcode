@@ -166,6 +166,10 @@ public:
 
     virtual void SetAudioServerProxy(sptr<IStandardAudioService> gsp) = 0;
 
+    virtual void SetOffloadSessionId(uint32_t sessionId) = 0;
+
+    virtual void ResetOffloadSessionId() = 0;
+
     virtual int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel) = 0;
 };
 } // namespace AudioStandard
