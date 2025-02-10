@@ -703,22 +703,23 @@ float AudioPolicyServer::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t
 }
 
 // deprecated since api 9.
-int32_t AudioPolicyServer::SetStreamMuteLegacy(AudioStreamType streamType, bool mute)
+int32_t AudioPolicyServer::SetStreamMuteLegacy(AudioStreamType streamType, bool mute, const DeviceType &deviceType)
 {
-    return SetStreamMuteInternal(streamType, mute, false);
+    return SetStreamMuteInternal(streamType, mute, false, deviceType);
 }
 
-int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute)
+int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute, const DeviceType &deviceType)
 {
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("No system permission");
         return ERR_PERMISSION_DENIED;
     }
 
-    return SetStreamMuteInternal(streamType, mute, false);
+    return SetStreamMuteInternal(streamType, mute, false, deviceType);
 }
 
-int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi)
+int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi,
+    const DeviceType &deviceType)
 {
     AUDIO_INFO_LOG("SetStreamMuteInternal streamType: %{public}d, mute: %{public}d, updateUi: %{public}d",
         streamType, mute, isUpdateUi);
@@ -726,7 +727,7 @@ int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, boo
     if (streamType == STREAM_ALL) {
         for (auto audioStreamType : GET_STREAM_ALL_VOLUME_TYPES) {
             AUDIO_INFO_LOG("SetMute of STREAM_ALL for StreamType = %{public}d ", audioStreamType);
-            int32_t setResult = SetSingleStreamMute(audioStreamType, mute, isUpdateUi);
+            int32_t setResult = SetSingleStreamMute(audioStreamType, mute, isUpdateUi, deviceType);
             if (setResult != SUCCESS) {
                 return setResult;
             }
@@ -734,10 +735,11 @@ int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, boo
         return SUCCESS;
     }
 
-    return SetSingleStreamMute(streamType, mute, isUpdateUi);
+    return SetSingleStreamMute(streamType, mute, isUpdateUi, deviceType);
 }
 
-int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi)
+int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi,
+    const DeviceType &deviceType)
 {
     bool updateRingerMode = false;
     if (streamType == AudioStreamType::STREAM_RING || streamType == AudioStreamType::STREAM_VOICE_RING) {
@@ -753,7 +755,7 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
         }
     }
 
-    int32_t result = audioPolicyService_.SetStreamMute(streamType, mute);
+    int32_t result = audioPolicyService_.SetStreamMute(streamType, mute, STREAM_USAGE_UNKNOWN, deviceType);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Fail to set stream mute!");
 
     if (!mute && GetSystemVolumeLevelInternal(streamType) == 0) {

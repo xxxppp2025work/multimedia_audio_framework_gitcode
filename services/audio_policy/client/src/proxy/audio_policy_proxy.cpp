@@ -186,7 +186,8 @@ AudioScene AudioPolicyProxy::GetAudioScene()
     return static_cast<AudioScene>(reply.ReadInt32());
 }
 
-int32_t AudioPolicyProxy::SetStreamMuteLegacy(AudioVolumeType volumeType, bool mute)
+int32_t AudioPolicyProxy::SetStreamMuteLegacy(AudioVolumeType volumeType, bool mute,
+    const DeviceType &deviceType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -202,7 +203,8 @@ int32_t AudioPolicyProxy::SetStreamMuteLegacy(AudioVolumeType volumeType, bool m
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetStreamMute(AudioVolumeType volumeType, bool mute)
+int32_t AudioPolicyProxy::SetStreamMute(AudioVolumeType volumeType, bool mute,
+    const DeviceType &deviceType)
 {
     MessageParcel data;
     MessageParcel reply;
