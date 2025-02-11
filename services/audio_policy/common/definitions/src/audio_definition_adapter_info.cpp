@@ -118,7 +118,7 @@ void AudioPolicyConfigData::GetDeviceInfoMap(std::unordered_map<DeviceType, Adap
     deviceInfoMap = std::move(deviceInfoMap_);
 }
 
-void AudioPolicyConfigData::GetPipeInfoMap(std::unordered_map<std::string, AdapterPipeInfo&> &pipeInfoMap)
+void AudioPolicyConfigData::GetPipeInfoMap(std::unordered_map<AudioFlagType, AdapterPipeInfo&> &pipeInfoMap)
 {
     pipeInfoMap = std::move(pipeInfoMap_);
 }

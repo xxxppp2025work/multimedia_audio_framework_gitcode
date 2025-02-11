@@ -110,7 +110,7 @@ public:
     std::string GetVersion();
     void GetAdapterInfoMap(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap);
     void GetDeviceInfoMap(std::unordered_map<DeviceType, AdapterDeviceInfo&> &deviceInfoMap);
-    void GetPipeInfoMap(std::unordered_map<std::string, AdapterPipeInfo&> &pipeInfoMap);
+    void GetPipeInfoMap(std::unordered_map<AudioFlagType, AdapterPipeInfo&> &pipeInfoMap);
 
 private:
     std::string version_ = STR_INITED;
