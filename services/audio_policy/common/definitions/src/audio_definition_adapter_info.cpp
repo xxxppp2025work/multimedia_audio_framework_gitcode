@@ -37,13 +37,15 @@ void AudioPolicyConfigData::SetDeviceMaps(std::list<AdapterDeviceInfo> &deviceIn
 void AudioPolicyConfigData::SetPipeMaps(std::list<AdapterPipeInfo> &pipeInfos)
 {
     for (AdapterPipeInfo &pipeInfo : pipeInfos) {
-        pipeInfoMap_.insert({pipeInfo.name_, pipeInfo});
+        for (auto &supportFlag : pipeInfo.supportFlags_) {
+            pipeInfoMap_.insert({supportFlag, pipeInfo});
 
-        // if (pipeInfo.pipeRole_ == PIPE_ROLE_OUT) {
-        //     outputPipeMap_.insert({pipeInfo.name_, pipeInfo});
-        // } else if (pipeInfo.pipeRole_ == PIPE_ROLE_IN) {
-        //     inputPipeMap_.insert({pipeInfo.name_, pipeInfo});
-        // }
+            // if (pipeInfo.pipeRole_ == PIPE_ROLE_OUT) {
+            //     outputPipeMap_.insert({supportFlag, pipeInfo});
+            // } else if (pipeInfo.pipeRole_ == PIPE_ROLE_IN) {
+            //     inputPipeMap_.insert({supportFlag, pipeInfo});
+            // }
+        }
     }
 }
 
@@ -147,22 +149,22 @@ AudioAdapterType PolicyAdapterInfo::GetAdapterType(const std::string &adapterNam
     }
 }
 
-AdapterPipeInfo* PolicyAdapterInfo::GetPipeInfoByName(const std::string &pipeName)
+std::shared_ptr<AdapterPipeInfo> PolicyAdapterInfo::GetPipeInfoByName(const std::string &pipeName)
 {
     for (auto &pipeInfo : pipeInfos_) {
         if (pipeInfo.name_ == pipeName) {
-            return &pipeInfo;
+            return std::make_shared<AdapterPipeInfo>(pipeInfo);
         }
     }
     return nullptr;
 }
 
-AdapterDeviceInfo* PolicyAdapterInfo::GetDeviceInfoByType(DeviceType deviceType)
+std::shared_ptr<AdapterDeviceInfo> PolicyAdapterInfo::GetDeviceInfoByType(DeviceType deviceType)
 {
     for (auto &deviceInfo : deviceInfos_) {
         auto device = SUPPORTED_DEVICE_TYPE.find(deviceType);
         if (device != SUPPORTED_DEVICE_TYPE.end()) {
-            return &deviceInfo;
+            return std::make_shared<AdapterDeviceInfo>(deviceInfo);
         }
     }
     return nullptr;

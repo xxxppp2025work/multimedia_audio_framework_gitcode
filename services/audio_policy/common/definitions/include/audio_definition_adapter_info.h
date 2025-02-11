@@ -86,7 +86,7 @@ struct PipeStreamPropInfo {
     AudioChannelLayout channelLayout_ = CH_LAYOUT_UNKNOWN;
     uint32_t bufferSize_ = 0;
 
-    AdapterPipeInfo *pipeInfo_;
+    std::shared_ptr<AdapterPipeInfo> pipeInfo_;
     std::list<DeviceType> supportDevices_ {};
     std::unordered_map<DeviceType, AdapterDeviceInfo&> supportDeviceMap_ {};
 };
@@ -116,20 +116,20 @@ private:
     std::string version_ = STR_INITED;
     std::unordered_map<AudioAdapterType, PolicyAdapterInfo> adapterInfoMap_ {};
     std::unordered_map<DeviceType, AdapterDeviceInfo&> deviceInfoMap_ {};
-    std::unordered_map<std::string, AdapterPipeInfo&> pipeInfoMap_ {};
+    std::unordered_map<AudioFlagType, AdapterPipeInfo&> pipeInfoMap_ {};
     // check: use output/input deviceMap or interface in adapterInfo
     // std::unordered_map<DeviceType, AdapterDeviceInfo&> outputDeviceMap_ {};
     // std::unordered_map<DeviceType, AdapterDeviceInfo&> inputDeviceMap_ {};
-    // std::unordered_map<std::string, AdapterPipeInfo&> outputPipeMap_ {};
-    // std::unordered_map<std::string, AdapterPipeInfo&> inputPipeMap_ {};
+    // std::unordered_map<AudioFlagType, AdapterPipeInfo&> outputPipeMap_ {};
+    // std::unordered_map<AudioFlagType, AdapterPipeInfo&> inputPipeMap_ {};
 };
 
 class PolicyAdapterInfo {
 public:
     static AudioAdapterType GetAdapterType(const std::string &adapterName);
     AudioAdapterType GetTypeEnum();
-    AdapterDeviceInfo* GetDeviceInfoByType(DeviceType deviceType);
-    AdapterPipeInfo* GetPipeInfoByName(const std::string &pipeName);
+    std::shared_ptr<AdapterDeviceInfo> GetDeviceInfoByType(DeviceType deviceType);
+    std::shared_ptr<AdapterPipeInfo> GetPipeInfoByName(const std::string &pipeName);
 
     void SetAdapterName(const std::string adapterName);
     void SetAdapterSupportScene(const std::string adapterSupportScene);
@@ -153,7 +153,7 @@ struct AdapterDeviceInfo {
     AudioPortPin pin_ = PIN_NONE;
     DeviceRole role_ = DEVICE_ROLE_NONE;
 
-    PolicyAdapterInfo *adapterInfo_;
+    std::shared_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<std::string> supportPipes_ {};
     std::unordered_map<AudioFlagType, AdapterPipeInfo&> supportPipeMap_ {}; // flag <-> pipeInfo
 };
@@ -166,7 +166,7 @@ struct AdapterPipeInfo {
     AudioPreloadType preloadAttr = PRELOAD_TYPE_UNKNOWN;
     std::list<AudioFlagType> supportFlags_ {};
 
-    PolicyAdapterInfo *adapterInfo_;
+    std::shared_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<PipeStreamPropInfo> streamPropInfos_ {};
     std::list<AttributeInfo> attributeInfos_ {};
     std::unordered_map<DeviceType, AdapterDeviceInfo&> supportDeviceMap_ {};

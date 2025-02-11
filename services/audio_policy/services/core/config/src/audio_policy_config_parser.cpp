@@ -118,7 +118,7 @@ void AudioPolicyConfigParser::ParsePipes(std::shared_ptr<AudioXmlNode> curNode, 
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
             AdapterPipeInfo pipeInfo {};
-            pipeInfo.adapterInfo_ = &adapterInfo;
+            pipeInfo.adapterInfo_ = std::make_shared<PolicyAdapterInfo>(adapterInfo);
             curNode->GetProp("name", pipeInfo.name_);
             std::string pipeRole;
             curNode->GetProp("role", pipeRole);
@@ -179,7 +179,7 @@ void AudioPolicyConfigParser::ParseStreamProps(std::shared_ptr<AudioXmlNode> cur
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
             PipeStreamPropInfo streamPropInfo {};
-            streamPropInfo.pipeInfo_ = &pipeInfo;
+            streamPropInfo.pipeInfo_ = std::make_shared<AdapterPipeInfo>(pipeInfo);
             std::string formatStr;
             curNode->GetProp("format", formatStr);
             streamPropInfo.format_ = AudioDefinitionPolicyUtils::formatStrToEnum[formatStr];
@@ -248,7 +248,7 @@ void AudioPolicyConfigParser::ParseDevices(std::shared_ptr<AudioXmlNode> curNode
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
             AdapterDeviceInfo deviceInfo {};
-            deviceInfo.adapterInfo_ = &adapterInfo;
+            deviceInfo.adapterInfo_ = std::make_shared<PolicyAdapterInfo>(adapterInfo);
             curNode->GetProp("name", deviceInfo.name_);
             std::string type;
             curNode->GetProp("type", type);
