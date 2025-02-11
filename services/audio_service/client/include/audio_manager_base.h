@@ -495,6 +495,27 @@ public:
     virtual int32_t GenerateSessionId(uint32_t &sessionId) = 0;
 
     virtual void NotifyAccountsChanged() = 0;
+
+    /**
+     * Load adapter of hal.
+     *
+     * @param deviceManagerType specify which manager to load adapter, include local, bt, remote.
+     * @param adapterName name of adapter to load.
+     *
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t LoadHdiAdapter(uint32_t deviceManagerType, const std::string &adapterName) = 0;
+
+    /**
+     * Unload adapter of hal.
+     *
+     * @param deviceManagerType specify which manager to unload adapter, include local, bt, remote.
+     * @param adapterName name of adapter to unload.
+     * @param force need to force unload adapter.
+     *
+     * @return none.
+     */
+    virtual void UnloadHdiAdapter(uint32_t deviceManagerType, const std::string &adapterName, bool force) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -575,6 +596,8 @@ private:
     int HandleGetStandbyStatus(MessageParcel &data, MessageParcel &reply);
     int HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyAccountsChanged(MessageParcel &data, MessageParcel &reply);
+    int HandleLoadHdiAdapter(MessageParcel &data, MessageParcel &reply);
+    int HandleUnloadHdiAdapter(MessageParcel &data, MessageParcel &reply);
 
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

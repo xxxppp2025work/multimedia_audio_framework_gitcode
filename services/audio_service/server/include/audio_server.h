@@ -30,8 +30,9 @@
 #include "audio_server_dump.h"
 #include "audio_system_manager.h"
 #include "audio_inner_call.h"
-#include "i_audio_renderer_sink.h"
-#include "i_audio_capturer_source.h"
+#include "common/hdi_adapter_info.h"
+#include "sink/i_audio_render_sink.h"
+#include "source/i_audio_capture_source.h"
 #include "audio_effect_server.h"
 #include "audio_asr.h"
 #include "policy_handler.h"
@@ -113,12 +114,12 @@ public:
     sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode) override;
 
     // ISinkParameterCallback
-    void OnAudioSinkParamChange(const std::string &netWorkId, const AudioParamKey key,
+    void OnRenderSinkParamChange(const std::string &networkId, const AudioParamKey key,
         const std::string &condition, const std::string &value) override;
 
     // IAudioSourceCallback
     void OnWakeupClose() override;
-    void OnAudioSourceParamChange(const std::string &netWorkId, const AudioParamKey key,
+    void OnCaptureSourceParamChange(const std::string &networkId, const AudioParamKey key,
         const std::string &condition, const std::string &value) override;
 
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
@@ -174,7 +175,7 @@ public:
 
     int32_t UnsetOffloadMode(uint32_t sessionId) override;
 
-    void OnAudioSinkStateChange(uint32_t sinkId, bool started) override;
+    void OnRenderSinkStateChange(uint32_t sinkId, bool started) override;
 
     void CheckHibernateState(bool hibernate) override;
 
@@ -187,6 +188,9 @@ public:
     int32_t GenerateSessionId(uint32_t &sessionId) override;
     
     void NotifyAccountsChanged() override;
+
+    int32_t LoadHdiAdapter(uint32_t deviceManagerType, const std::string &adapterName) override;
+    void UnloadHdiAdapter(uint32_t deviceManagerType, const std::string &adapterName, bool force) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
