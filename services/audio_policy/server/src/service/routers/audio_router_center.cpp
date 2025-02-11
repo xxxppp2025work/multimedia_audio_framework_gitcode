@@ -285,5 +285,11 @@ bool AudioRouterCenter::isCallRenderRouter(StreamUsage streamUsage)
 {
     return renderConfigMap_[streamUsage] == CALL_RENDER_ROUTERS;
 }
+
+bool AudioRouterCenter::IsNoDeviceCaptureStream(SourceType sourceType)
+{
+    auto it = capturerConfigMap_.find(sourceType);
+    return it == capturerConfigMap_.end();
+}
 } // namespace AudioStandard
 } // namespace OHOS
