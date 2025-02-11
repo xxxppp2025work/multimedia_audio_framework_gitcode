@@ -95,6 +95,8 @@ public:
     int32_t SetSupportStreamUsageProxy(std::vector<int32_t> usage);
     int32_t SetCaptureSilentStateProxy(bool state);
     void NotifyAccountsChanged();
+    int32_t LoadHdiAdapterProxy(uint32_t deviceManagerType, const std::string &adapterName);
+    void UnloadHdiAdapterProxy(uint32_t deviceManagerType, const std::string &adapterName, bool force);
 private:
     AudioServerProxy() {}
     ~AudioServerProxy() {}

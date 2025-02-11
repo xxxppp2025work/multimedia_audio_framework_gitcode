@@ -90,7 +90,9 @@ namespace AudioStandard {
         GET_STANDBY_STATUS,
         GENERATE_SESSION_ID,
         NOTIFY_ACCOUNTS_CHANGED,
-        AUDIO_SERVER_CODE_MAX = NOTIFY_ACCOUNTS_CHANGED,
+        LOAD_HDI_ADAPTER,
+        UNLOAD_HDI_ADAPTER,
+        AUDIO_SERVER_CODE_MAX = UNLOAD_HDI_ADAPTER,
     };
 } // namespace AudioStandard
 } // namespace OHOS
