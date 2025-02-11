@@ -30,13 +30,8 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioDefinitionPolicyUtils {
 public:
-    static AudioDefinitionPolicyUtils& GetInstance()
-    {
-        static AudioDefinitionPolicyUtils instance;
-        return instance;
-    }
-    uint32_t PcmFormatToBytes(AudioSampleFormat format);
-    AudioChannel ConvertLayoutToAudioChannel(AudioChannelLayout layout);
+    static uint32_t PcmFormatToBytes(AudioSampleFormat format);
+    static AudioChannel ConvertLayoutToAudioChannel(AudioChannelLayout layout);
 private:
     AudioDefinitionPolicyUtils() {}
     ~AudioDefinitionPolicyUtils() {}
