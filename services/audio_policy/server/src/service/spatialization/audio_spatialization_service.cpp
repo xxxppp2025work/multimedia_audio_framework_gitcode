@@ -31,6 +31,9 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
+static const int32_t START_POS = 6;
+static const int32_t END_POS = 13;
+static const int32_t ADDRESS_STR_LEN = 17;
 static const int32_t SPATIALIZATION_SERVICE_OK = 0;
 static const std::string BLUETOOTH_EFFECT_CHAIN_NAME = "EFFECTCHAIN_BT_MUSIC";
 static const std::string SPATIALIZATION_AND_HEAD_TRACKING_SUPPORTED_LABEL = "SPATIALIZATION_AND_HEADTRACKING";
@@ -69,6 +72,19 @@ static bool IsAudioSpatialDeviceStateEqual(const AudioSpatialDeviceState &a, con
 static bool IsSpatializationSupportedUsage(StreamUsage usage)
 {
     return usage != STREAM_USAGE_GAME;
+}
+
+static std::string GetEncryptAddr(const std::string &addr)
+{
+    if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
+        return std::string("");
+    }
+    std::string tmp = "**:**:**:**:**:**";
+    std::string out = addr;
+    for (int i = START_POS; i <= END_POS; i++) {
+        out[i] = tmp[i];
+    }
+    return out;
 }
 
 AudioSpatializationService::~AudioSpatializationService()
@@ -165,7 +181,8 @@ int32_t AudioSpatializationService::SetSpatializationEnabled(
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     std::string address = selectedAudioDevice->macAddress_;
     std::string encryptedAddress = GetSha256EncryptAddress(address);
-    AUDIO_INFO_LOG("Device SpatializationEnabled is set to be: %{public}d", enable);
+    AUDIO_INFO_LOG("Device %{public}s SpatializationEnabled is set to be: %{public}d",
+        GetEncryptAddr(address).c_str(), enable);
     preSettingSpatialAddress_ = encryptedAddress;
     if (addressToSpatialEnabledMap_.find(encryptedAddress) != addressToSpatialEnabledMap_.end() &&
         addressToSpatialEnabledMap_[encryptedAddress].spatializationEnabled == enable) {
@@ -226,7 +243,8 @@ int32_t AudioSpatializationService::SetHeadTrackingEnabled(
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     std::string address = selectedAudioDevice->macAddress_;
     std::string encryptedAddress = GetSha256EncryptAddress(address);
-    AUDIO_INFO_LOG("Device HeadTrackingEnabled is set to be: %{public}d", enable);
+    AUDIO_INFO_LOG("Device %{public}s HeadTrackingEnabled is set to be: %{public}d",
+        GetEncryptAddr(address).c_str(), enable);
     preSettingSpatialAddress_ = encryptedAddress;
     if (addressToSpatialEnabledMap_.find(encryptedAddress) != addressToSpatialEnabledMap_.end() &&
         addressToSpatialEnabledMap_[encryptedAddress].headTrackingEnabled == enable) {
@@ -482,6 +500,9 @@ int32_t AudioSpatializationService::UpdateSpatializationStateReal(bool outputDev
             spatializationEnabled;
     }
 
+    AUDIO_INFO_LOG("currDevice: %{public}s state: %{public}d and %{public}d, previous state: %{public}d and %{public}d",
+        GetEncryptAddr(currentDeviceAddress_).c_str(), spatializationEnabled, headTrackingEnabled,
+        spatializationEnabledReal_, headTrackingEnabledReal_);
     if ((spatializationEnabledReal_ == spatializationEnabled) && (headTrackingEnabledReal_ == headTrackingEnabled)) {
         AUDIO_INFO_LOG("no need to update real spatialization state");
         UpdateHeadTrackingDeviceState(outputDeviceChange, preDeviceAddress);
