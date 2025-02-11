@@ -2368,15 +2368,15 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
     if (!strcmp(u->sink->name, DP_SINK_NAME)) {
         // dp update volume
         SetSinkVolumeByDeviceClass(u->sink, GetDeviceClass(u->primary.sinkAdapter->deviceClass));
-        pa_sink_render_full(u->sink, u->sink->thread_info.max_request, &chunk);
+    }
+    if (u->isEffectBufferAllocated || AllocateEffectBuffer(u)) {
+        u->isEffectBufferAllocated = true;
+        // limiter process only in normal render
+        CreateLimiter(u);
+        SinkRenderPrimary(u->sink, u->sink->thread_info.max_request, &chunk);
+    }
+    if (!strcmp(u->sink->name, DP_SINK_NAME)) {
         UnsetSinkVolume(u->sink); // reset volume 1.0f
-    } else {
-        if (u->isEffectBufferAllocated || AllocateEffectBuffer(u)) {
-            u->isEffectBufferAllocated = true;
-            // limiter process only in normal render
-            CreateLimiter(u);
-            SinkRenderPrimary(u->sink, u->sink->thread_info.max_request, &chunk);
-        }
     }
     pa_assert(chunk.length > 0);
 
