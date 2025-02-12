@@ -1966,12 +1966,7 @@ int32_t AudioEndpointInner::WriteToSpecialProcBuf(const std::shared_ptr<OHAudioB
     if (muteFlag) {
         memset_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength, 0, writeBuf.bufLength);
     } else {
-        if (endpointType_ == TYPE_VOIP_MMAP) {
-            ret = HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
-        } else {
-            ret = memcpy_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength,
-                static_cast<void *>(readBuf.buffer), readBuf.bufLength);
-        }
+        ret = HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
     }
 
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memcpy data to process buffer fail, "
@@ -1999,6 +1994,30 @@ int32_t AudioEndpointInner::HandleCapturerDataParams(const BufferDesc &writeBuf,
     if (clientConfig_.streamInfo.format == SAMPLE_S16LE && clientConfig_.streamInfo.channels == MONO) {
         int32_t ret = FormatConverter::S16StereoToS16Mono(readBuf, convertedBuffer);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "Convert channel from stereo to mono failed");
+        ret = memcpy_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength,
+            static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memcpy_s failed");
+        ret = memset_s(static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength, 0,
+            convertedBuffer.bufLength);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memset converted buffer to 0 failed");
+        return EOK;
+    }
+    if (clientConfig_.streamInfo.format == SAMPLE_F32LE && clientConfig_.streamInfo.channels == STEREO) {
+        int32_t ret = FormatConverter::S16StereoToF32Stereo(readBuf, convertedBuffer);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED,
+            "Convert channel from s16 stereo to f32 stereo failed");
+        ret = memcpy_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength,
+            static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memcpy_s failed");
+        ret = memset_s(static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength, 0,
+            convertedBuffer.bufLength);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memset converted buffer to 0 failed");
+        return EOK;
+    }
+    if (clientConfig_.streamInfo.format == SAMPLE_F32LE && clientConfig_.streamInfo.channels == MONO) {
+        int32_t ret = FormatConverter::S16StereoToF32Mono(readBuf, convertedBuffer);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED,
+            "Convert channel from s16 stereo to f32 mono failed");
         ret = memcpy_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength,
             static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength);
         CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memcpy_s failed");
