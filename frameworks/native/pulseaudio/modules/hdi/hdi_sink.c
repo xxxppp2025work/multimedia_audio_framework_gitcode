@@ -2301,47 +2301,6 @@ static void SinkRenderPrimary(pa_sink *si, size_t length, pa_memchunk *chunkIn)
     pa_sink_unref(si);
 }
 
-static void SetSinkVolumeByDeviceClass(pa_sink *s, const char *deviceClass)
-{
-    CHECK_AND_RETURN_LOG(s != NULL, "s is null");
-    void *state = NULL;
-    pa_sink_input *input;
-    while ((input = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL))) {
-        pa_sink_input_assert_ref(input);
-        if (input->thread_info.state != PA_SINK_INPUT_RUNNING) {
-            continue;
-        }
-        const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
-        const char *sessionIDStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
-        uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-        float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass);
-        float volumeBeg = GetPreVolume(sessionID);
-        if (volumeBeg != volumeEnd) {
-            AUDIO_INFO_LOG("sessionID:%{public}s, volumeBeg:%{public}f, volumeEnd:%{public}f",
-                sessionIDStr, volumeBeg, volumeEnd);
-            SetPreVolume(sessionID, volumeEnd);
-            MonitorVolume(sessionID, true);
-        }
-        uint32_t volume = pa_sw_volume_from_linear(volumeEnd);
-        pa_cvolume_set(&input->thread_info.soft_volume, input->thread_info.soft_volume.channels, volume);
-    }
-}
-
-static void UnsetSinkVolume(pa_sink *s)
-{
-    CHECK_AND_RETURN_LOG(s != NULL, "s is null");
-    void *state = NULL;
-    pa_sink_input *input;
-    while ((input = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL))) {
-        pa_sink_input_assert_ref(input);
-        if (input->thread_info.state != PA_SINK_INPUT_RUNNING) {
-            continue;
-        }
-        uint32_t volume = pa_sw_volume_from_linear(1.0f);
-        pa_cvolume_set(&input->thread_info.soft_volume, input->thread_info.soft_volume.channels, volume);
-    }
-}
-
 static void CreateLimiter(struct Userdata *u)
 {
     if (!u->isLimiterCreated) {
@@ -2364,19 +2323,11 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 
     AUTO_CTRACE("hdi_sink::SinkRenderPrimary");
     // Change from pa_sink_render to pa_sink_render_full for alignment issue in 3516
-
-    if (!strcmp(u->sink->name, DP_SINK_NAME)) {
-        // dp update volume
-        SetSinkVolumeByDeviceClass(u->sink, GetDeviceClass(u->primary.sinkAdapter->deviceClass));
-    }
     if (u->isEffectBufferAllocated || AllocateEffectBuffer(u)) {
         u->isEffectBufferAllocated = true;
         // limiter process only in normal render
         CreateLimiter(u);
         SinkRenderPrimary(u->sink, u->sink->thread_info.max_request, &chunk);
-    }
-    if (!strcmp(u->sink->name, DP_SINK_NAME)) {
-        UnsetSinkVolume(u->sink); // reset volume 1.0f
     }
     pa_assert(chunk.length > 0);
 
