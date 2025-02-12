@@ -219,6 +219,8 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     vector<std::shared_ptr<AudioDeviceDescriptor>> GetDeviceDescriptorInner(
         std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+    void UpdateRingDualToneOnPrimarySpeaker(const vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+        const int32_t sessionId);
 
     // fetchInput
     void FetchInputDeviceInner(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
@@ -247,6 +249,8 @@ private:
     bool isOpenRemoteDevice = false;
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     bool isFirstScreenOn_ = false;
+    bool isRingDualToneOnPrimarySpeaker_ = false;
+    int32_t ringDualToneOnPrimarySpeakerSessionId_ = -1;
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;
