@@ -163,7 +163,7 @@ struct AdapterPipeInfo {
     AudioPipeRole pipeRole_ = PIPE_ROLE_NONE;
     PaPropInfo paProp_ {};
 
-    AudioPreloadType preloadAttr = PRELOAD_TYPE_UNKNOWN;
+    AudioPreloadType preloadAttr_ = PRELOAD_TYPE_UNKNOWN;
     std::list<AudioFlagType> supportFlags_ {};
 
     std::shared_ptr<PolicyAdapterInfo> adapterInfo_;

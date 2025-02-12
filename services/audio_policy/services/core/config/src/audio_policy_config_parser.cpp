@@ -236,7 +236,7 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
             pipeInfo.supportFlags_.push_back(AudioDefinitionPolicyUtils::flagStrToEnum[flag]);
         }
     } else if (attributeInfo.name_ == "preload") {
-        pipeInfo.preloadAttr = AudioDefinitionPolicyUtils::preloadStrToEnum[attributeInfo.value_];
+        pipeInfo.preloadAttr_ = AudioDefinitionPolicyUtils::preloadStrToEnum[attributeInfo.value_];
     }
 }
 
