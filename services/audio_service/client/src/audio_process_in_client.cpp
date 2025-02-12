@@ -51,6 +51,7 @@ static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volum
 static const int64_t DELAY_RESYNC_TIME = 10000000000; // 10s
 constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
 constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
+#define PCM_FLOAT_EPS 1e-6f
 }
 
 class ProcessCbImpl;
@@ -569,6 +570,9 @@ static size_t GetFormatSize(const AudioStreamInfo &info)
         case SAMPLE_S32LE:
             bitWidthSize = 4; // size is 4
             break;
+        case SAMPLE_F32LE:
+            bitWidthSize = 4; // size is 4
+            break;
         default:
             bitWidthSize = 2; // size is 2
             break;
@@ -718,7 +722,7 @@ bool AudioProcessInClient::CheckIfSupport(const AudioProcessConfig &config)
         return false;
     }
 
-    if (config.streamInfo.format != SAMPLE_S16LE && config.streamInfo.format != SAMPLE_S32LE) {
+    if (config.streamInfo.format != SAMPLE_S16LE && config.streamInfo.format != SAMPLE_S32LE && config.streamInfo.format != SAMPLE_F32LE) {
         return false;
     }
 
@@ -726,6 +730,24 @@ bool AudioProcessInClient::CheckIfSupport(const AudioProcessConfig &config)
         return false;
     }
     return true;
+}
+
+static float CapMax(float v)
+{
+    float value = v;
+    if (v >= 1.0f) {
+        value = 1.0f - PCM_FLOAT_EPS;
+    } else if (v <= -1.0f) {
+        value = -1.0f + PCM_FLOAT_EPS;
+    }
+    return value;
+}
+
+static int16_t ConvertFromFloatTo16Bit(const float *a, int16_t *b) 
+{
+    float tmp = *a;
+    float v = CapMax(tmp) * (1 << (BIT_16 - 1));
+    return (int16_t)v;
 }
 
 inline bool S16MonoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
@@ -786,6 +808,45 @@ inline bool S32StereoS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstD
     return true;
 }
 
+inline bool F32MonoS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
+{
+    size_t quarter = 4;
+    if (srcDesc.bufLength != dstDesc.bufLength || srcDesc.buffer == nullptr || dstDesc.buffer == nullptr ||
+        srcDesc.bufLength % quarter != 0) {
+        return false;
+    }
+    float *stcPtr = reinterpret_cast<float *>(srcDesc.buffer);
+    int16_t *dstPtr = reinterpret_cast<int16_t *>(dstDesc.buffer);
+    size_t count = srcDesc.bufLength / quarter;
+
+    for (size_t idx = 0; idx < count; idx++) {
+        int16_t temp = ConvertFromFloatTo16Bit(stcPtr, dstPtr);
+        stcPtr++;
+        *(dstPtr++) = temp;
+        *(dstPtr++) = temp;
+    }
+    return true;
+}
+
+inline bool F32StereoS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
+{
+    size_t half = 2;
+    if (srcDesc.bufLength / half != dstDesc.bufLength || srcDesc.buffer == nullptr || dstDesc.buffer == nullptr ||
+        dstDesc.bufLength % half != 0) {
+        return false;
+    }
+    float *stcPtr = reinterpret_cast<float *>(srcDesc.buffer);
+    int16_t *dstPtr = reinterpret_cast<int16_t *>(dstDesc.buffer);
+    size_t count = srcDesc.bufLength / half / half;
+
+    for (size_t idx = 0; idx < count; idx++) {
+        int16_t temp = ConvertFromFloatTo16Bit(stcPtr, dstPtr);
+        stcPtr++;
+        *(dstPtr++) = temp;
+    }
+    return true;
+}
+
 // only support MONO to STEREO and SAMPLE_S32LE to SAMPLE_S16LE
 bool AudioProcessInClientInner::ChannelFormatConvert(const AudioStreamData &srcData, const AudioStreamData &dstData)
 {
@@ -804,6 +865,12 @@ bool AudioProcessInClientInner::ChannelFormatConvert(const AudioStreamData &srcD
     }
     if (srcData.streamInfo.format == SAMPLE_S32LE && srcData.streamInfo.channels == STEREO) {
         return S32StereoS16Stereo(srcData.bufferDesc, dstData.bufferDesc);
+    }
+    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == MONO) {
+        return F32MonoS16Stereo(srcData.bufferDesc, dstData.bufferDesc);
+    }
+    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == STEREO) {
+        return F32StereoS16Stereo(srcData.bufferDesc, dstData.bufferDesc);
     }
 
     return false;

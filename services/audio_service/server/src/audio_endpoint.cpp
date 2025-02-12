@@ -86,6 +86,9 @@ enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
         case AudioSampleFormat::SAMPLE_S32LE:
             adapterFormat = HdiAdapterFormat::SAMPLE_S32;
             break;
+        case AudioSampleFormat::SAMPLE_F32LE:
+            adapterFormat = HdiAdapterFormat::SAMPLE_F32;
+            break;
         default:
             adapterFormat = HdiAdapterFormat::INVALID_WIDTH;
             break;
@@ -1495,18 +1498,31 @@ void AudioEndpointInner::HandleRendererDataParams(const AudioStreamData &srcData
     if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == STEREO) {
         return ProcessSingleData(srcData, dstData, applyVol);
     }
+
+    CHECK_AND_RETURN_LOG(processList_.size() > 0 && processList_[0] != nullptr, "No avaliable process");
+    BufferDesc &convertedBuffer = processList_[0]->GetConvertedBuffer();
+
     if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == MONO) {
-        CHECK_AND_RETURN_LOG(processList_.size() > 0 && processList_[0] != nullptr, "No avaliable process");
-        BufferDesc &convertedBuffer = processList_[0]->GetConvertedBuffer();
         int32_t ret = FormatConverter::S16MonoToS16Stereo(srcData.bufferDesc, convertedBuffer);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "Convert channel from mono to stereo failed");
-        AudioStreamData dataAfterProcess = srcData;
-        dataAfterProcess.bufferDesc = convertedBuffer;
-        ProcessSingleData(dataAfterProcess, dstData, applyVol);
-        ret = memset_s(static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength, 0,
-            convertedBuffer.bufLength);
-        CHECK_AND_RETURN_LOG(ret == EOK, "memset converted buffer to 0 failed");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "Convert channel from s16 mono to s16 stereo failed");
     }
+
+    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == MONO) {
+        int32_t ret = FormatConverter::F32MonoToS16Stereo(srcData.bufferDesc, convertedBuffer);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "Convert channel from f32 mono to s16 stereo failed");
+    }
+
+    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == STEREO) {
+        int32_t ret = FormatConverter::F32StereoToS16Stereo(srcData.bufferDesc, convertedBuffer);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "Convert channel from f32 stereo to s16 stereo failed");
+    }
+
+    AudioStreamData dataAfterProcess = srcData;
+    dataAfterProcess.bufferDesc = convertedBuffer;
+    ProcessSingleData(dataAfterProcess, dstData, applyVol);
+    ret = memset_s(static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength, 0,
+        convertedBuffer.bufLength);
+    CHECK_AND_RETURN_LOG(ret == EOK, "memset converted buffer to 0 failed");
 }
 
 void AudioEndpointInner::ProcessSingleData(const AudioStreamData &srcData, const AudioStreamData &dstData,

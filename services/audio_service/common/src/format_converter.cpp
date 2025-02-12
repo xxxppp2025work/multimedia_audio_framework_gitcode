@@ -18,6 +18,26 @@
 
 namespace OHOS {
 namespace AudioStandard {
+#define PCM_FLOAT_EPS 1e-6f
+
+static float CapMax(float v)
+{
+    float value = v;
+    if (v >= 1.0f) {
+        value = 1.0f - PCM_FLOAT_EPS;
+    } else if (v <= -1.0f) {
+        value = -1.0f + PCM_FLOAT_EPS;
+    }
+    return value;
+}
+
+static int16_t ConvertFromFloatTo16Bit(const float *a, int16_t *b) 
+{
+    float tmp = *a;
+    float v = CapMax(tmp) * (1 << (BIT_16 - 1));
+    return (int16_t)v;
+}
+
 int32_t FormatConverter::S16MonoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
 {
     size_t half = 2; // mono(1) -> stereo(2)
@@ -49,5 +69,45 @@ int32_t FormatConverter::S16StereoToS16Mono(const BufferDesc &srcDesc, const Buf
     }
     return 0;
 }
+
+int32_t FormatConverter::F32MonoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
+{
+    size_t quarter = 4;
+    if (srcDesc.bufLength != dstDesc.bufLength || srcDesc.buffer == nullptr || dstDesc.buffer == nullptr ||
+        srcDesc.bufLength % quarter != 0) {
+        return false;
+    }
+    float *stcPtr = reinterpret_cast<float *>(srcDesc.buffer);
+    int16_t *dstPtr = reinterpret_cast<int16_t *>(dstDesc.buffer);
+    size_t count = srcDesc.bufLength / quarter;
+
+    for (size_t idx = 0; idx < count; idx++) {
+        int16_t temp = ConvertFromFloatTo16Bit(stcPtr, dstPtr);
+        stcPtr++;
+        *(dstPtr++) = temp;
+        *(dstPtr++) = temp;
+    }
+    return true;
+}
+
+int32_t FormatConverter::F32StereoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
+{
+    size_t half = 2;
+    if (srcDesc.bufLength / half != dstDesc.bufLength || srcDesc.buffer == nullptr || dstDesc.buffer == nullptr ||
+        dstDesc.bufLength % half != 0) {
+        return false;
+    }
+    float *stcPtr = reinterpret_cast<float *>(srcDesc.buffer);
+    int16_t *dstPtr = reinterpret_cast<int16_t *>(dstDesc.buffer);
+    size_t count = srcDesc.bufLength / half / half;
+
+    for (size_t idx = 0; idx < count; idx++) {
+        int16_t temp = ConvertFromFloatTo16Bit(stcPtr, dstPtr);
+        stcPtr++;
+        *(dstPtr++) = temp;
+    }
+    return true;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

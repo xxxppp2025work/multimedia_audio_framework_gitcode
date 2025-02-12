@@ -486,7 +486,7 @@ bool AudioRendererPrivate::IsDirectVoipParams(const AudioStreamParams &audioStre
     }
 
     // VoIP derect only supports 16bit and 32bit.
-    if (!(audioStreamParams.format == SAMPLE_S16LE || audioStreamParams.format == SAMPLE_S32LE)) {
+    if (!(audioStreamParams.format == SAMPLE_S16LE || audioStreamParams.format == SAMPLE_S32LE || audioStreamParams.format == SAMPLE_F32LE)) {
         AUDIO_ERR_LOG("The format %{public}d is not supported for direct VoIP mode",
             audioStreamParams.format);
         return false;
