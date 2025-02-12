@@ -120,7 +120,7 @@ bool AudioRouterCenter::NeedSkipSelectAudioOutputDeviceRefined(StreamUsage strea
         && Util::IsRingerOrAlarmerStreamUsage(streamUsage)
         && descs.size() == 1
         && descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        AUDIO_INFO_LOG("Don't add ring ext device when ringer mode is not normal add sco added");
+        AUDIO_INFO_LOG("Don't add ring ext device when ringer mode is not normal and sco added");
         return true;
     }
     return false;
