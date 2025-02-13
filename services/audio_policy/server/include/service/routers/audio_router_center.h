@@ -116,7 +116,7 @@ private:
     shared_ptr<AudioDeviceDescriptor> FetchVoiceMessageCaptureDevice(SourceType sourceType, int32_t clientUID,
         RouterType &routerType);
     bool NeedSkipSelectAudioOutputDeviceRefined(StreamUsage streamUsage,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+        std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs);
 
     std::vector<std::unique_ptr<RouterBase>> mediaRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> callRenderRouters_;
