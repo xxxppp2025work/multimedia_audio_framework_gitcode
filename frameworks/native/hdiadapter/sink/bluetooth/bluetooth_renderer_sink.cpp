@@ -402,7 +402,7 @@ int32_t BluetoothRendererSinkInner::InitAudioManager()
 {
     AUDIO_INFO_LOG("Initialize audio proxy manager");
 
-#if (defined(__aarch64__) || defined(__x86_64__))
+#if (defined(__aarch64__) || defined(__x86_64__) || defined(__loongarch_lp64))
     char resolvedPath[100] = "/vendor/lib64/chipsetsdk/libaudio_bluetooth_hdi_proxy_server.z.so";
 #else
     char resolvedPath[100] = "/vendor/lib/chipsetsdk/libaudio_bluetooth_hdi_proxy_server.z.so";

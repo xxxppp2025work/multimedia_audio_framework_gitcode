@@ -30,7 +30,7 @@ static constexpr int32_t AVS3METADATA_SIZE = 19824;
 static constexpr int32_t INVALID_FORMAT = -1;
 static constexpr uint64_t DEFAULT_LAYOUT = CH_LAYOUT_UNKNOWN;
 
-#if (defined(__aarch64__) || defined(__x86_64__))
+#if (defined(__aarch64__) || defined(__x86_64__) || defined(__loongarch_lp64))
 constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib64/"};
 #else
 constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib/"};
