@@ -24,7 +24,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-#if (defined(__aarch64__) || defined(__x86_64__))
+#if (defined(__aarch64__) || defined(__x86_64__) || defined(__loongarch_lp64))
 const char *DOWN_MIXER_FILE_NAME = "/system/lib64/libaudio_downmixer_mcr.z.so";
 #else
 const char *DOWN_MIXER_FILE_NAME = "/system/lib/libaudio_downmixer_mcr.z.so";
