@@ -114,7 +114,7 @@ bool AudioRouterCenter::HasScoDevice()
 }
 
 bool AudioRouterCenter::NeedSkipSelectAudioOutputDeviceRefined(StreamUsage streamUsage,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+    std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs)
 {
     if (AudioPolicyService::GetAudioPolicyService().GetRingerMode() != RINGER_MODE_NORMAL
         && Util::IsRingerOrAlarmerStreamUsage(streamUsage)
