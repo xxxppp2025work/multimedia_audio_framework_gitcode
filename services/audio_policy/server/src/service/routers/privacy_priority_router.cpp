@@ -118,7 +118,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
         switch (streamUsage) {
             case STREAM_USAGE_ALARM:
                 if (isAlarmFollowRingRouter_ && curRingerMode != RINGER_MODE_NORMAL) {
-                    AUDIO_INFO_LOG("Don't add alarm default device when follow ring and not normal mode.")
+                    AUDIO_INFO_LOG("Don't add alarm default device when follow ring and not normal mode.");
                     break;
                 }
                 // Add default device at same time for alarm.
