@@ -27,6 +27,7 @@ class RouterBase {
 public:
     std::string name_;
     IAudioPolicyInterface& audioPolicyManager_;
+    bool isAlarmFollowRingRouter_ = false;
     RouterBase() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()) {}
     virtual ~RouterBase() {};
 
@@ -86,6 +87,12 @@ public:
                 device->isEnable_, device->exceptionFlag_);
         }
         return std::make_shared<AudioDeviceDescriptor>();
+    }
+
+    void SetAlarmFollowRingRouter(bool flag)
+    {
+        AUDIO_INFO_LOG("Set alarm follow ring router: %{public}d", flag);
+        isAlarmFollowRingRouter_ = flag;
     }
 };
 } // namespace AudioStandard
