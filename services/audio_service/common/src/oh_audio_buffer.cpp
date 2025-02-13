@@ -742,5 +742,18 @@ size_t OHAudioBuffer::GetDataSize()
     return totalSizeInByte_;
 }
 
+void OHAudioBuffer::GetRestoreInfo(RestoreStatus &restoreStatus, RestoreInfo &restoreInfo)
+{
+    restoreStatus = basicBufferInfo_->restoreStatus;
+    restoreInfo = basicBufferInfo_->restoreInfo;
+    return;
+}
+
+void OHAudioBuffer::SetRestoreInfo(RestoreStatus restoreStatus, RestoreInfo restoreInfo)
+{
+    basicBufferInfo_->restoreStatus = restoreStatus;
+    basicBufferInfo_->restoreInfo = restoreInfo;
+    return;
+}
 } // namespace AudioStandard
 } // namespace OHOS

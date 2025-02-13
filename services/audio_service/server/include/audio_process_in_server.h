@@ -105,6 +105,7 @@ public:
 
     int32_t SetSilentModeAndMixWithOthers(bool on) override;
 
+     void RestoreSession();
 public:
     const AudioProcessConfig processConfig_;
 

@@ -101,6 +101,7 @@ public:
     void GetCreatedAudioStreamMostUid(int32_t &mostAppUid, int32_t &mostAppNum);
     void CleanAppUseNumMap(int32_t appUid);
     bool HasBluetoothEndpoint();
+    void RestoreSession(int32_t sessionId);
 
 private:
     AudioService();

@@ -258,6 +258,16 @@ enum AudioPipeType {
     PIPE_TYPE_DIRECT_VOIP = 14,
 };
 
+enum RestoreStatus : int32_t {
+    NO_NEED_FOR_RESTORE = 0,
+    NEED_RESTORE,
+    RESTORING,
+};
+
+struct RestoreInfo {
+    uint32_t targetStreamClass = 0;
+};
+
 struct AudioStreamParams {
     uint32_t samplingRate = 0;
     uint8_t encoding = 0;

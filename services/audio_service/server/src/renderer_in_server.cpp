@@ -1539,9 +1539,12 @@ void RendererInServer::SetNonInterruptMute(const bool muteFlag)
 
 void RendererInServer::RestoreSession()
 {
-    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    /*std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
-    stateListener->OnOperationHandled(RESTORE_SESSION, 0);
+    stateListener->OnOperationHandled(RESTORE_SESSION, 0);*/
+    RestoreInfo restoreInfo;
+    restoreInfo.targetStreamClass = AUDIO_FLAG_MMAP;
+    audioServerBuffer_->SetRestoreInfo(NEED_RESTORE, restoreInfo);
 }
 
 int32_t RendererInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)

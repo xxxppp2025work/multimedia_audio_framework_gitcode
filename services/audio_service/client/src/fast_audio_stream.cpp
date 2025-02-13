@@ -905,5 +905,11 @@ int32_t FastAudioStream::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::
 {
     return GetAudioTime(timestamp, base);
 }
+
+void FastAudioStream::GetRestoreInfo(RestoreStatus &restoreStatus, RestoreInfo &restoreInfo)
+{
+    processClient_->GetRestoreInfo(restoreStatus, restoreInfo);
+    return;
+}
 } // namespace AudioStandard
 } // namespace OHOS

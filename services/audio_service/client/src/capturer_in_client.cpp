@@ -212,6 +212,7 @@ public:
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
     DeviceType GetDefaultOutputDevice() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
+    void GetRestoreInfo(RestoreStatus &restoreStatus, RestoreInfo &restoreInfo) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -1992,6 +1993,12 @@ DeviceType CapturerInClientInner::GetDefaultOutputDevice()
 int32_t CapturerInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     return GetAudioTime(timestamp, base);
+}
+
+void CapturerInClientInner::GetRestoreInfo(RestoreStatus &restoreStatus, RestoreInfo &restoreInfo)
+{
+    clientBuffer_->GetRestoreInfo(restoreStatus, restoreInfo);
+    return;
 }
 } // namespace AudioStandard
 } // namespace OHOS

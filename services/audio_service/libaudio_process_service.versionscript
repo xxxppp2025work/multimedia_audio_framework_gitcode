@@ -50,6 +50,7 @@
     *GetOfflineAudioEffectChains*;
     *GetStandbyStatus*;
     *GenerateSessionId*;
+    *RestoreSession*;
   local:
     *;
 };

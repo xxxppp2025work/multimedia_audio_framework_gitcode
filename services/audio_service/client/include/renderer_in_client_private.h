@@ -193,6 +193,7 @@ public:
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
     DeviceType GetDefaultOutputDevice() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
+    void GetRestoreInfo(RestoreStatus &restoreStatus, RestoreInfo &restoreInfo) override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);

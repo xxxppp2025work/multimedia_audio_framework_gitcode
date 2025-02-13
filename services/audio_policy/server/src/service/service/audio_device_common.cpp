@@ -973,6 +973,7 @@ void AudioDeviceCommon::TriggerRecreateRendererStreamCallback(int32_t callerPid,
     } else {
         AUDIO_WARNING_LOG("No audio policy server handler");
     }
+    AudioServerProxy::GetInstance().RestoreSessionProxy(sessionId, true);
 }
 
 void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,

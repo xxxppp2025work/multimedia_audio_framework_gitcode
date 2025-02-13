@@ -283,6 +283,8 @@ public:
     virtual DeviceType GetDefaultOutputDevice() = 0;
 
     virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
+
+    virtual void GetRestoreInfo(RestoreStatus &restoreStatus, RestoreInfo &restoreInfo) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

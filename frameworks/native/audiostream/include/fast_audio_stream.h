@@ -182,6 +182,8 @@ public:
     DeviceType GetDefaultOutputDevice() override;
 
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
+
+    void GetRestoreInfo(RestoreStatus &restoreStatus, RestoreInfo &restoreInfo) override;
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
     int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);

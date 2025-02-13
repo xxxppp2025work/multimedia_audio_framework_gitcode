@@ -1201,5 +1201,40 @@ void AudioService::GetCreatedAudioStreamMostUid(int32_t &mostAppUid, int32_t &mo
     }
     return;
 }
+
+void AudioService::RestoreSession(int32_t sessionId)
+{
+    {
+        std::lock_guard<std::mutex> lock(rendererMapMutex_);
+        if (allRendererMap_.find(sessionId) != allRendererMap_.end()) {
+            std::shared_ptr<RendererInServer> rendererInServer = allRendererMap_[sessionId].lock();
+            CHECK_AND_RETURN_LOG(rendererInServer != nullptr, "Session could be released, restore failed");
+            rendererInServer->RestoreSession();
+            return;
+        }
+    }
+    {
+        std::lock_guard<std::mutex> lock(capturerMapMutex_);
+        if (allCapturerMap_.find(sessionId) != allCapturerMap_.end()) {
+            std::shared_ptr<CapturerInServer> capturerInServer = allCapturerMap_[sessionId].lock();
+            CHECK_AND_RETURN_LOG(capturerInServer != nullptr, "Session could be released, restore failed");
+            capturerInServer->RestoreSession();
+            return;
+        }
+    }
+    {
+        std::lock_guard<std::mutex> lock(processListMutex_);
+        for (auto processEndpointPair : linkedPairedList_) {
+            if (processEndpointPair.first->GetSessionId() != sessionId) {
+                continue;
+            }
+            auto audioProcessInServer = processEndpointPair.first;
+            CHECK_AND_RETURN_LOG(audioProcessInServer != nullptr, "Session could be released, restore failed");
+            audioProcessInServer->RestoreSession();
+            return;
+        }
+    }
+    AUDIO_WARNING_LOG("Session not exists, restore failed");
+}
 } // namespace AudioStandard
 } // namespace OHOS

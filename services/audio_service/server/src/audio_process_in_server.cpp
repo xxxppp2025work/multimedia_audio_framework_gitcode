@@ -593,5 +593,12 @@ int32_t AudioProcessInServer::SetSilentModeAndMixWithOthers(bool on)
     return SUCCESS;
 }
 
+void AudioProcessInServer::RestoreSession()
+{
+    RestoreInfo restoreInfo;
+    restoreInfo.targetStreamClass = AUDIO_FLAG_MMAP;
+    processBuffer_->SetRestoreInfo(NEED_RESTORE, restoreInfo);
+    return;
+}
 } // namespace AudioStandard
 } // namespace OHOS

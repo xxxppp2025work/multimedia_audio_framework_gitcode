@@ -121,6 +121,8 @@ public:
 
     int32_t SetSilentModeAndMixWithOthers(bool on) override;
 
+    void GetRestoreInfo(RestoreStatus &restoreStatus, RestoreInfo &restoreInfo) override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
     static constexpr AudioStreamInfo g_targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
@@ -1774,6 +1776,12 @@ int32_t AudioProcessInClientInner::SetSilentModeAndMixWithOthers(bool on)
 {
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "ipcProxy is null.");
     return processProxy_->SetSilentModeAndMixWithOthers(on);
+}
+
+void AudioProcessInClientInner::GetRestoreInfo(RestoreStatus &restoreStatus, RestoreInfo &restoreInfo)
+{
+    audioBuffer_->GetRestoreInfo(restoreStatus, restoreInfo);
+    return;
 }
 } // namespace AudioStandard
 } // namespace OHOS

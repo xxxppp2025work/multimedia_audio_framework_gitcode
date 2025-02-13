@@ -1644,5 +1644,11 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     timestamp.time.tv_nsec = static_cast<time_t>(timestampVal % AUDIO_NS_PER_SECOND);
     return ret;
 }
+
+void RendererInClientInner::GetRestoreInfo(RestoreStatus &restoreStatus, RestoreInfo &restoreInfo)
+{
+    clientBuffer_->GetRestoreInfo(restoreStatus, restoreInfo);
+    return;
+}
 } // namespace AudioStandard
 } // namespace OHOS
