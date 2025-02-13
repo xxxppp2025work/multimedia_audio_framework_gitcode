@@ -1726,6 +1726,18 @@ void AudioDeviceCommon::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &st
             UpdateDualToneState(false, enableDualHalToneSessionId_);
         }
     }
+    if ((mode == AUDIO_MODE_PLAYBACK)
+        && streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage != STREAM_USAGE_ALARM
+        && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_RELEASED)) {
+        audioRouterCenter_.SetAlarmFollowRingRouter(false);
+        if (isRingDualToneOnPrimarySpeaker_) {
+            AUDIO_INFO_LOG("disable bluetooth and speaker dual tone when ringer renderer stop/release.");
+            audioPolicyManager_.SetStreamMute(streamCollector_.GetStreamType(ringDualToneOnPrimarySpeakerSessionId_),
+                false, streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage);
+            ringDualToneOnPrimarySpeakerSessionId_ = -1;
+            isRingDualToneOnPrimarySpeaker_ = false;
+        }
+    }
 }
 
 bool AudioDeviceCommon::IsDeviceConnected(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptors) const
