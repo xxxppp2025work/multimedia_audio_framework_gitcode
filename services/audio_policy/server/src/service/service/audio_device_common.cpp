@@ -1727,6 +1727,7 @@ void AudioDeviceCommon::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &st
         }
     }
     if ((mode == AUDIO_MODE_PLAYBACK)
+        && Util::IsRingerOrAlarmerStreamUsage(streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage)
         && streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage != STREAM_USAGE_ALARM
         && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_RELEASED)) {
         audioRouterCenter_.SetAlarmFollowRingRouter(false);
