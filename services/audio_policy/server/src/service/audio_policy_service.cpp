@@ -765,6 +765,12 @@ int32_t AudioPolicyService::SetVirtualCall(const bool isVirtual)
     return audioDeviceCommon_.SetVirtualCall(isVirtual);
 }
 
+void AudioPolicyService::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
+{
+    const sptr<IStandardAudioService> gsp = AudioServerProxy::GetInstance().GetAudioServerProxy();
+    gsp->GetAllSinkInputs(sinkInputs);
+}
+
 void AudioPolicyService::RegisterNameMonitorHelper()
 {
     std::shared_ptr<DataShare::DataShareHelper> dataShareHelper

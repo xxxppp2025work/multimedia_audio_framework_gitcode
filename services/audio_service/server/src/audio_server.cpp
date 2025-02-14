@@ -2208,5 +2208,10 @@ int32_t AudioServer::GenerateSessionId(uint32_t &sessionId)
     sessionId = PolicyHandler::GetInstance().GenerateSessionId(uid);
     return SUCCESS;
 }
+
+void AudioServer::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
+{
+    AudioService::GetInstance()->GetAllSinkInputs(sinkInputs);
+}
 } // namespace AudioStandard
 } // namespace OHOS
