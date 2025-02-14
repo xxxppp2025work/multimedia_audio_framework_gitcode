@@ -18,6 +18,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
+#define BIT_16 16
+
 int32_t FormatConverter::S16MonoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
 {
     size_t half = 2; // mono(1) -> stereo(2)
@@ -46,6 +48,43 @@ int32_t FormatConverter::S16StereoToS16Mono(const BufferDesc &srcDesc, const Buf
     for (size_t idx = 0; idx < count; idx++) {
         *(dstPtr++) = (*stcPtr + *(stcPtr + 1)) / 2; // To obtain mono channel, add left to right, then divide by 2
         stcPtr += 2; // ptr++ on mono is equivalent to ptr+=2 on stereo
+    }
+    return 0;
+}
+
+int32_t FormatConverter::S16StereoToF32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
+{
+    size_t half = 2;
+    if (srcDesc.bufLength != dstDesc.bufLength / half || srcDesc.buffer == nullptr || dstDesc.buffer == nullptr) {
+        return -1;
+    }
+    int16_t *srcPtr = reinterpret_cast<int16_t *>(srcDesc.buffer);
+    float *dstPtr = reinterpret_cast<float *>(dstDesc.buffer);
+    size_t count = srcDesc.bufLength / sizeof(int16_t);
+    const float FLOAT_SCALE = 1.0f / (1 << (BIT_16 - 1));
+    for (size_t idx = 0; idx < count; idx++) {
+        *dstPtr = (*srcPtr) * FLOAT_SCALE;
+        dstPtr++;
+        srcPtr++;
+    }
+    return 0;
+}
+
+int32_t FormatConverter::S16StereoToF32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
+{
+    size_t half = 2;
+    if (srcDesc.bufLength != dstDesc.bufLength || srcDesc.buffer == nullptr || dstDesc.buffer == nullptr) {
+        return -1;
+    }
+    int16_t *srcPtr = reinterpret_cast<int16_t *>(srcDesc.buffer);
+    float *dstPtr = reinterpret_cast<float *>(dstDesc.buffer);
+    size_t count = srcDesc.bufLength / half / sizeof(int16_t);
+    const float FLOAT_SCALE = 1.0f / (1 << (BIT_16 - 1));
+    const size_t SRC_INCREMENT = 2;
+    for (size_t idx = 0; idx < count; idx++) {
+        *dstPtr = (static_cast<float>(*srcPtr + *(srcPtr + 1)) / 2) * FLOAT_SCALE;
+        dstPtr++;
+        srcPtr += SRC_INCREMENT;
     }
     return 0;
 }
