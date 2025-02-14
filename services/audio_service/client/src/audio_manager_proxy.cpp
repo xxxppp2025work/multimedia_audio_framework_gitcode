@@ -1442,5 +1442,40 @@ void AudioManagerProxy::NotifyAccountsChanged()
         static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_ACCOUNTS_CHANGED), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed,error:%d", error);
 }
+
+int32_t AudioManagerProxy::LoadHdiAdapter(uint32_t deviceManagerType, const std::string &adapterName)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_ERR, "WriteInterfaceToken failed");
+    data.WriteUint32(deviceManagerType);
+    data.WriteString(adapterName);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_HDI_ADAPTER), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "LoadHdiAdapter failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
+
+void AudioManagerProxy::UnloadHdiAdapter(uint32_t deviceManagerType, const std::string &adapterName, bool force)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+    data.WriteUint32(deviceManagerType);
+    data.WriteString(adapterName);
+    data.WriteBool(force);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::UNLOAD_HDI_ADAPTER), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "UnloadHdiAdapter failed, error: %{public}d", error);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

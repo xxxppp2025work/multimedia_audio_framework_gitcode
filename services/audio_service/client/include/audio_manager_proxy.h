@@ -114,6 +114,8 @@ public:
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
     int32_t GenerateSessionId(uint32_t &sessionId) override;
     void NotifyAccountsChanged() override;
+    int32_t LoadHdiAdapter(uint32_t deviceManagerType, const std::string &adapterName) override;
+    void UnloadHdiAdapter(uint32_t deviceManagerType, const std::string &adapterName, bool force) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };
