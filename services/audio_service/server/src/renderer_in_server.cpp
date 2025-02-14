@@ -694,6 +694,7 @@ int32_t RendererInServer::GetSessionId(uint32_t &sessionId)
 int32_t RendererInServer::Start()
 {
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
+    int32_t ret;
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
         CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
@@ -701,7 +702,9 @@ int32_t RendererInServer::Start()
         standByCounter_ = 0;
         startedTime_ = ClockTime::GetCurNano();
         audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
-        int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
+
+        ret = CoreServiceHandler::GetInstance().StartClient(streamIndex_);
+        ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
             IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
         return ret;
     }
@@ -717,7 +720,11 @@ int32_t RendererInServer::Start()
         AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
         fadeoutFlag_ = NO_FADING;
     }
-    int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
+    ret = CoreServiceHandler::GetInstance().StartClient(streamIndex_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
+
+
+    ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
 
@@ -959,7 +966,10 @@ int32_t RendererInServer::Release()
         AudioService::GetInstance()->CleanAppUseNumMap(processConfig_.appInfo.appUid);
     }
 
-    int32_t ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
+    int32_t ret = CoreServiceHandler::GetInstance().RemoveClient(streamIndex_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
+
+    ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
     AudioVolume::GetInstance()->RemoveStreamVolume(streamIndex_);
     AudioService::GetInstance()->RemoveRenderer(streamIndex_);
     if (ret < 0) {

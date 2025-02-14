@@ -82,7 +82,7 @@ namespace AudioStandard {
 
 class AudioA2dpOffloadManager;
 
-class AudioPolicyService : public IDeviceStatusObserver, public IPolicyProvider {
+class AudioPolicyService : public IPolicyProvider {
 public:
     static AudioPolicyService& GetAudioPolicyService()
     {
@@ -93,9 +93,6 @@ public:
     bool Init(void);
     void Deinit(void);
     void InitKVStore();
-    bool ConnectServiceAdapter();
-
-    void OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status);
 
     int32_t GetMaxVolumeLevel(AudioVolumeType volumeType) const;
 
@@ -218,22 +215,6 @@ public:
 
     std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype, const std::string &countryCode);
 #endif
-    void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
-        const std::string &macAddress, const std::string &deviceName,
-        const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE);
-    void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
-
-    void OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
-
-    void OnDeviceConfigurationChanged(DeviceType deviceType,
-        const std::string &macAddress, const std::string &deviceName,
-        const AudioStreamInfo &streamInfo);
-
-    void OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop = false);
-
-    void OnServiceDisconnected(AudioServiceIndex serviceIndex);
-
-    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
 
     void OnMonoAudioConfigChanged(bool audioMono);
 
@@ -374,8 +355,6 @@ public:
 
     DistributedRoutingInfo GetDistributedRoutingRoleInfo();
 
-    void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
-
     void UpdateA2dpOffloadFlagBySpatialService(
         const std::string& macAddress, std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnableMap);
 
@@ -489,7 +468,6 @@ private:
         audioDeviceLock_(AudioDeviceLock::GetInstance()),
         audioDeviceStatus_(AudioDeviceStatus::GetInstance())
     {
-        deviceStatusListener_ = std::make_unique<DeviceStatusListener>(*this);
     }
 
     ~AudioPolicyService();
@@ -528,8 +506,6 @@ private:
     void CreateRecoveryThread();
     void RecoveryPreferredDevices();
 
-    void LoadHdiEffectModel();
-
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
 
     bool IsA2dpOffloadConnected();
@@ -539,9 +515,7 @@ private:
     bool GetAudioEffectOffloadFlag();
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
-#ifdef HAS_FEATURE_INNERCAPTURER
-    void LoadModernInnerCapSink();
-#endif
+
     int32_t GetUid(int32_t sessionId);
 
     void UnregisterBluetoothListener();
@@ -552,7 +526,6 @@ private:
     BluetoothOffloadState GetA2dpOffloadFlag();
 private:
 
-    static bool isBtListenerRegistered;
     bool isPnpDeviceConnected = false;
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
@@ -566,7 +539,6 @@ private:
 
     AudioStreamCollector& streamCollector_;
     AudioRouterCenter& audioRouterCenter_;
-    std::unique_ptr<DeviceStatusListener> deviceStatusListener_;
 
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     AudioScene lastAudioScene_ = AUDIO_SCENE_DEFAULT;

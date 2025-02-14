@@ -103,6 +103,11 @@ void AudioConfigManager::GetDeviceClassInfo(std::unordered_map<ClassType, std::l
     deviceClassInfo = deviceClassInfo_;
 }
 
+void AudioConfigManager::ConfigCoreService(std::shared_ptr<AudioCoreService> coreService)
+{
+    coreService_ = coreService;
+}
+
 bool AudioConfigManager::GetModuleListByType(ClassType type, std::list<AudioModuleInfo>& moduleList)
 {
     auto modulesPos = deviceClassInfo_.find(type);
@@ -125,8 +130,8 @@ bool AudioConfigManager::GetUpdateRouteSupport()
 
 void AudioConfigManager::OnUpdateAnahsSupport(std::string anahsShowType)
 {
-    AUDIO_INFO_LOG("OnUpdateAnahsSupport show type: %{public}s", anahsShowType.c_str());
-    AudioPolicyService::GetAudioPolicyService().OnUpdateAnahsSupport(anahsShowType);
+    AUDIO_INFO_LOG("Show type: %{public}s", anahsShowType.c_str());
+    coreService_.OnUpdateAnahsSupport(anahsShowType);
 }
 
 void AudioConfigManager::OnVolumeGroupParsed(std::unordered_map<std::string, std::string>& volumeGroupData)

@@ -151,6 +151,8 @@ public:
 
     virtual int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo) = 0;
 
+    virtual int32_t CreateClient(const AudioStreamDescriptor &streamDesc, AudioFlag &audioFlag) = 0;
+
     virtual int32_t RegisterTracker(AudioMode &mode,
         AudioStreamChangeInfo &streamChangeInfo, const sptr<IRemoteObject> &object) = 0;
 

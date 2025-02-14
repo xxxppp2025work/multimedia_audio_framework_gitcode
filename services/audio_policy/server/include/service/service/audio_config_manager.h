@@ -66,6 +66,8 @@ public:
 
     // other
 
+    void ConfigCoreService(std::shared_ptr<AudioCoreService> coreService);
+
     bool GetModuleListByType(ClassType type, std::list<AudioModuleInfo>& moduleList);
 
     void GetDeviceClassInfo(std::unordered_map<ClassType, std::list<AudioModuleInfo>> &deviceClassInfo);
@@ -122,6 +124,7 @@ private:
 
     std::atomic<bool> isAdapterInfoMap_ = false;
     AudioDeviceManager &audioDeviceManager_;
+    std::shared_ptr<AudioCoreService> coreService_;
 };
 
 }

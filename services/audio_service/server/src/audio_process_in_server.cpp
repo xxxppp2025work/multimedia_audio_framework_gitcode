@@ -186,6 +186,9 @@ int32_t AudioProcessInServer::Start()
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
     }
 
+    int32_t ret = CoreServiceHandler::GetInstance().StartClient(sessionId_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
+
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
     }
@@ -320,6 +323,9 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
         PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     }
+    int32_t ret = CoreServiceHandler::GetInstance().RemoveClient(streamIndex_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
+
     int32_t ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
     AUDIO_INFO_LOG("notify service release result: %{public}d", ret);
     return SUCCESS;
