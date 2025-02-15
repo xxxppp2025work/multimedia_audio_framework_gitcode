@@ -683,8 +683,7 @@ bool AudioEndpointInner::ConfigInputPoint(const AudioDeviceDescriptor &deviceInf
 
     // eg: input_endpoint_hdi_audio_8_0_20240527202236189_48000_2_1.pcm
     dumpHdiName_ = "input_endpoint_hdi_audio_" + std::to_string(attr.deviceType) + '_' +
-        std::to_string(endpointType_) + '_' + GetTime() +
-        '_' + std::to_string(attr.sampleRate) + "_" +
+        std::to_string(endpointType_) + '_' + GetTime() + '_' + std::to_string(attr.sampleRate) + "_" +
         std::to_string(attr.channel) + "_" + std::to_string(attr.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpHdiName_, &dumpHdi_);
     return true;
@@ -726,8 +725,7 @@ void AudioEndpointInner::StartThread(const IAudioSinkAttr &attr)
 
     // eg: endpoint_hdi_audio_8_0_20240527202236189_48000_2_1.pcm
     dumpHdiName_ = "endpoint_hdi_audio_" + std::to_string(attr.deviceType) + '_' + std::to_string(endpointType_) +
-        '_' + GetTime() + '_' +
-        std::to_string(attr.sampleRate) + "_" +
+        '_' + GetTime() + '_' + std::to_string(attr.sampleRate) + "_" +
         std::to_string(attr.channel) + "_" + std::to_string(attr.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpHdiName_, &dumpHdi_);
 }
@@ -943,8 +941,7 @@ void AudioEndpointInner::RecordReSyncPosition()
     AUDIO_INFO_LOG("RecordReSyncPosition enter.");
     uint64_t curHdiWritePos = 0;
     int64_t writeTime = 0;
-    CHECK_AND_RETURN_LOG(GetDeviceHandleInfo(curHdiWritePos, writeTime),
-        "get device handle info fail.");
+    CHECK_AND_RETURN_LOG(GetDeviceHandleInfo(curHdiWritePos, writeTime), "get device handle info fail.");
     AUDIO_DEBUG_LOG("get capturer info, curHdiWritePos %{public}" PRIu64", writeTime %{public}" PRId64".",
         curHdiWritePos, writeTime);
     int64_t temp = ClockTime::GetCurNano() - writeTime;
@@ -1098,8 +1095,7 @@ bool AudioEndpointInner::StopDevice()
         CHECK_AND_RETURN_RET_LOG(fastSource_ != nullptr && fastSource_->Stop() == SUCCESS,
             false, "Source stop failed.");
     } else {
-        CHECK_AND_RETURN_RET_LOG(fastSink_ != nullptr && fastSink_->Stop() == SUCCESS,
-            false, "Sink stop failed.");
+        CHECK_AND_RETURN_RET_LOG(fastSink_ != nullptr && fastSink_->Stop() == SUCCESS, false, "Sink stop failed.");
     }
     endpointStatus_ = STOPPED;
     isStarted_ = false;
@@ -1966,12 +1962,7 @@ int32_t AudioEndpointInner::WriteToSpecialProcBuf(const std::shared_ptr<OHAudioB
     if (muteFlag) {
         memset_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength, 0, writeBuf.bufLength);
     } else {
-        if (endpointType_ == TYPE_VOIP_MMAP) {
-            ret = HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
-        } else {
-            ret = memcpy_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength,
-                static_cast<void *>(readBuf.buffer), readBuf.bufLength);
-        }
+        ret = HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
     }
 
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memcpy data to process buffer fail, "
@@ -2007,6 +1998,29 @@ int32_t AudioEndpointInner::HandleCapturerDataParams(const BufferDesc &writeBuf,
         CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memset converted buffer to 0 failed");
         return EOK;
     }
+    if (clientConfig_.streamInfo.format == SAMPLE_F32LE) {
+        int32_t ret = 0;
+        if (clientConfig_.streamInfo.channels == STEREO) {
+            ret = FormatConverter::S16StereoToF32Stereo(readBuf, convertedBuffer);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED,
+                "Convert channel from s16 stereo to f32 stereo failed");
+        } else if (clientConfig_.streamInfo.channels == MONO) {
+            ret = FormatConverter::S16StereoToF32Mono(readBuf, convertedBuffer);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED,
+                "Convert channel from s16 stereo to f32 mono failed");
+        } else {
+            return ERR_NOT_SUPPORTED;
+        }
+
+        ret = memcpy_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength,
+            static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memcpy_s failed");
+        ret = memset_s(static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength, 0,
+            convertedBuffer.bufLength);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memset converted buffer to 0 failed");
+        return EOK;
+    }
+
     return ERR_NOT_SUPPORTED;
 }
 
