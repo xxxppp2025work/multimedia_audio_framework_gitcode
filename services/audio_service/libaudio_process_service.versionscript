@@ -50,6 +50,8 @@
     *GetOfflineAudioEffectChains*;
     *GetStandbyStatus*;
     *GenerateSessionId*;
+    *LoadModernInnerCapSink*;
+    *UnloadModernInnerCapSink*;
   local:
     *;
 };

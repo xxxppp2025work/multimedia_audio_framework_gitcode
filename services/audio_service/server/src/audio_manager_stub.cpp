@@ -110,6 +110,8 @@ const char *g_audioServerCodeStrs[] = {
     "GET_STANDBY_STATUS",
     "GENERATE_SESSION_ID",
     "NOTIFY_ACCOUNTS_CHANGED",
+    "CHECK_CAPTURE_LIMIT",
+    "SET_CAPTURE_LIMIT",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -817,6 +819,12 @@ int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, Me
             return HandleGetStandbyStatus(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GENERATE_SESSION_ID):
             return HandleGenerateSessionId(data, reply);
+#ifdef HAS_FEATURE_INNERCAPTURER
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_CAPTURE_LIMIT):
+            return HandleCheckCaptureLimit(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_LIMIT):
+            return HandleSetInnerCapLimit(data, reply);
+#endif
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -1114,6 +1122,24 @@ int AudioManagerStub::HandleNotifyAccountsChanged(MessageParcel &data, MessagePa
     NotifyAccountsChanged();
     return AUDIO_OK;
 }
+#ifdef HAS_FEATURE_INNERCAPTURER
+int AudioManagerStub::HandleCheckCaptureLimit(MessageParcel &data, MessageParcel &reply)
+{
+    AudioPlaybackCaptureConfig config;
+    int32_t ret = ProcessConfig::ReadInnerCapConfigFromParcel(config, data);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "Read config failed");
+    int32_t innerCapId = 0;
+    reply.WriteInt32(CheckCaptureLimit(config, innerCapId));
+    reply.WriteInt32(innerCapId);
+    return AUDIO_OK;
+}
 
+int AudioManagerStub::HandleSetInnerCapLimit(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t innerCapId = data.ReadUint32();
+    reply.WriteInt32(SetInnerCapLimit(innerCapId));
+    return AUDIO_OK;
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS
