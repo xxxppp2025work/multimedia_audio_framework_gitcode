@@ -69,6 +69,11 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallCaptureDevice(So
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommCapturePrivacyDevices();
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(descs);
+    // 通话时蓝牙高清录音设备a2dp in不可用
+    if (desc != nullptr && desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
+        AUDIO_INFO_LOG("call scene, a2dp in not allowed");
+        return make_shared<AudioDeviceDescriptor>();
+    }
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
         clientUID, desc->deviceType_);
     return desc;
@@ -148,6 +153,11 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(descs);
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
         clientUID, desc->deviceType_);
+    // 如果蓝牙不支持高清录音，非通话录音场景默认选择本机Mic
+    if (desc == nullptr || desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        AUDIO_ERR_LOG("nullptr input device or bluetooth device");
+        return make_shared<AudioDeviceDescriptor>();
+    }
     return desc;
 }
 

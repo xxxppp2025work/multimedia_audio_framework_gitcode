@@ -317,10 +317,12 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
     }
 
     AudioScene scene = audioSceneManager_.GetAudioScene(true);
-    if (scene == AUDIO_SCENE_PHONE_CALL || scene == AUDIO_SCENE_PHONE_CHAT ||
-        srcType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+    AUDIO_INFO_LOG("scene is: %{public}d, srcType is: %{public}d.", 
+        static_cast<int32_t>(scene), static_cast<int32_t>(srcType));
+    if (scene == AUDIO_SCENE_PHONE_CALL || scene == AUDIO_SCENE_PHONE_CHAT) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE, selectedDesc[0]);
     } else {
+        // 非通话默认场景强选走该通道选择设备
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE, selectedDesc[0]);
     }
     audioDeviceCommon_.FetchDevice(false);

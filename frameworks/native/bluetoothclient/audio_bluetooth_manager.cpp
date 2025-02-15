@@ -545,6 +545,18 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
     int8_t newScoCategory = GetScoCategoryFromScene(scene);
     AUDIO_INFO_LOG("new sco category is %{public}d, last sco category is %{public}d", newScoCategory, lastScoCategory);
 
+    // 非通话录音场景时也需要支持蓝牙SCO的录音
+    if (newScoCategory == ScoCategory::SCO_DEFAULT) {
+        if (hfpInstance_ == nullptr) {
+            AUDIO_ERR_LOG("nullptr hfpInstance_");
+            return ERROR;
+        }
+        int32_t ret = hfpInstance_->ConnectSco(static_cast<uint8_t>(ScoCategory::SCO_CALLULAR));
+        AUDIO_INFO_LOG("sco connect result: %{public}d.", ret);
+        scene_ = scene;
+        return ret;
+    }
+
     if (lastScoCategory == newScoCategory) {
         AUDIO_INFO_LOG("sco category %{public}d not change", newScoCategory);
         return SUCCESS;
