@@ -3588,7 +3588,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_PauseTransitent_007, TestSize.Level
     std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
 
-    audioRendererPrivate->isSwitching_ = true;
+    audioRendererPrivate->rendererSwitchingInfo_.store({true, RENDERER_INVALID});
     bool ret = audioRendererPrivate->PauseTransitent(CMD_FROM_CLIENT);
     EXPECT_FALSE(ret);
 }
@@ -3604,7 +3604,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_PauseTransitent_008, TestSize.Level
     std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
 
-    audioRendererPrivate->isSwitching_ = false;
+    audioRendererPrivate->rendererSwitchingInfo_.store({false, RENDERER_INVALID});
     audioRendererPrivate->audioInterrupt_.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
     bool ret = audioRendererPrivate->PauseTransitent(CMD_FROM_SYSTEM);
     EXPECT_FALSE(ret);
@@ -8033,7 +8033,7 @@ HWTEST(AudioRendererUnitTest, PauseTransitent_001, TestSize.Level1)
     std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
     StateChangeCmdType cmdType = CMD_FROM_SYSTEM;
-    audioRendererPrivate->isSwitching_ = true;
+    audioRendererPrivate->rendererSwitchingInfo_.store({true, RENDERER_INVALID});
 
     bool ret = audioRendererPrivate->PauseTransitent(cmdType);
     EXPECT_EQ(ret, false);
