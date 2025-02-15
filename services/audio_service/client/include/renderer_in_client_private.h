@@ -193,6 +193,9 @@ public:
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
     DeviceType GetDefaultOutputDevice() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config) override;
+#endif
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
