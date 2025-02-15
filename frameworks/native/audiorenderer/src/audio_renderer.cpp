@@ -736,8 +736,8 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     CHECK_AND_RETURN_RET_LOG((state == RENDERER_PREPARED) || (state == RENDERER_STOPPED) || (state == RENDERER_PAUSED),
         false, "Start failed. Illegal state:%{public}u", state);
 
-    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
-        "Start failed. Switching state: %{public}d", isSwitching_);
+    CHECK_AND_RETURN_RET_LOG(!rendererSwitchingInfo_.load().isSwitching_, false,
+        "Start failed. Switching state: %{public}d", rendererSwitchingInfo_.load().isSwitching_);
 
     if (audioInterrupt_.audioFocusType.streamType == STREAM_DEFAULT ||
         audioInterrupt_.streamId == INVALID_SESSION_ID) {
@@ -797,10 +797,28 @@ int32_t AudioRendererPrivate::Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t 
     return size;
 }
 
+// Inner function. Must be called with AudioRendererPrivate::rendererMutex_
+// or AudioRendererPrivate::streamMutex_ held.
+RendererState AudioRendererPrivate::GetStatusInner()
+{
+    if (IsNoStreamRenderer()) {
+        return state_;
+    }
+    auto [isSwitching, rendererSwtichingState] = rendererSwitchingInfo_.load();
+    if (isSwitching && (rendererSwtichingState != RENDERER_INVALID)) {
+        return rendererSwtichingState;
+    }
+    return static_cast<RendererState>(audioStream_->GetState());
+}
+
 RendererState AudioRendererPrivate::GetStatus() const
 {
     if (IsNoStreamRenderer()) {
         return state_;
+    }
+    auto [isSwitching, rendererSwtichingState] = rendererSwitchingInfo_.load();
+    if (isSwitching && (rendererSwtichingState != RENDERER_INVALID)) {
+        return rendererSwtichingState;
     }
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, RENDERER_INVALID, "audioStream_ is nullptr");
@@ -842,8 +860,8 @@ bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType)
     Trace trace("AudioRenderer::PauseTransitent");
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::PauseTransitent. id: %{public}u", sessionID_);
-    if (isSwitching_) {
-        AUDIO_ERR_LOG("failed. Switching state: %{public}d", isSwitching_);
+    if (rendererSwitchingInfo_.load().isSwitching_) {
+        AUDIO_ERR_LOG("failed. Switching state: %{public}d", rendererSwitchingInfo_.load().isSwitching_);
         return false;
     }
 
@@ -895,7 +913,8 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
 
     AUDIO_INFO_LOG("StreamClientState for Renderer::Pause. id: %{public}u", sessionID_);
 
-    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Pause failed. Switching state: %{public}d", isSwitching_);
+    CHECK_AND_RETURN_RET_LOG(!rendererSwitchingInfo_.load().isSwitching_, false,
+        "Pause failed. Switching state: %{public}d", rendererSwitchingInfo_.load().isSwitching_);
 
     if (IsNoStreamRenderer()) {
         // When the cellular call stream is pausing, only need to deactivate audio interrupt.
@@ -928,8 +947,8 @@ bool AudioRendererPrivate::Stop()
 {
     AUDIO_INFO_LOG("StreamClientState for Renderer::Stop. id: %{public}u", sessionID_);
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
-    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
-        "AudioRenderer::Stop failed. Switching state: %{public}d", isSwitching_);
+    CHECK_AND_RETURN_RET_LOG(!rendererSwitchingInfo_.load().isSwitching_, false,
+        "AudioRenderer::Stop failed. Switching state: %{public}d", rendererSwitchingInfo_.load().isSwitching_);
     if (IsNoStreamRenderer()) {
         // When the cellular call stream is stopping, only need to deactivate audio interrupt.
         if (AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_) != 0) {
@@ -1640,16 +1659,6 @@ void AudioRendererPrivate::UpdateRendererAudioStream(const std::shared_ptr<IAudi
 
 // Inner function. Must be called with AudioRendererPrivate::rendererMutex_
 // or AudioRendererPrivate::streamMutex_ held.
-RendererState AudioRendererPrivate::GetStatusInner()
-{
-    if (IsNoStreamRenderer()) {
-        return state_;
-    }
-    return static_cast<RendererState>(audioStream_->GetState());
-}
-
-// Inner function. Must be called with AudioRendererPrivate::rendererMutex_
-// or AudioRendererPrivate::streamMutex_ held.
 void AudioRendererPrivate::SetAudioPrivacyTypeInner(AudioPrivacyType privacyType)
 {
     CHECK_AND_RETURN_LOG(audioStream_ != nullptr, "audioStream_ is nullptr");
@@ -1734,8 +1743,8 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         Trace trace("SwitchToTargetStream");
         std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
         std::lock_guard<std::shared_mutex> lock(rendererMutex_);
-        isSwitching_ = true;
         RendererState previousState = GetStatusInner();
+        RendererSwitchingInfoGuard infoGuard(rendererSwitchingInfo_, {true, previousState});
         AUDIO_INFO_LOG("Previous stream state: %{public}d, original sessionId: %{public}u", previousState, sessionID_);
         if (previousState == RENDERER_RUNNING) {
             CHECK_AND_RETURN_RET_LOG(audioStream_->StopAudioStream(), false, "StopAudioStream failed.");
@@ -1766,7 +1775,6 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         oldAudioStream = audioStream_;
         UpdateRendererAudioStream(newAudioStream);
         isFastRenderer_ = IAudioStream::IsFastStreamClass(targetClass);
-        isSwitching_ = false;
         audioStream_->GetAudioSessionID(newSessionId);
         switchResult = true;
     }
