@@ -86,6 +86,9 @@ enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
         case AudioSampleFormat::SAMPLE_S32LE:
             adapterFormat = HdiAdapterFormat::SAMPLE_S32;
             break;
+        case AudioSampleFormat::SAMPLE_F32LE:
+            adapterFormat = HdiAdapterFormat::SAMPLE_F32;
+            break;
         default:
             adapterFormat = HdiAdapterFormat::INVALID_WIDTH;
             break;
@@ -683,8 +686,7 @@ bool AudioEndpointInner::ConfigInputPoint(const AudioDeviceDescriptor &deviceInf
 
     // eg: input_endpoint_hdi_audio_8_0_20240527202236189_48000_2_1.pcm
     dumpHdiName_ = "input_endpoint_hdi_audio_" + std::to_string(attr.deviceType) + '_' +
-        std::to_string(endpointType_) + '_' + GetTime() +
-        '_' + std::to_string(attr.sampleRate) + "_" +
+        std::to_string(endpointType_) + '_' + GetTime() + '_' + std::to_string(attr.sampleRate) + "_" +
         std::to_string(attr.channel) + "_" + std::to_string(attr.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpHdiName_, &dumpHdi_);
     return true;
@@ -726,8 +728,7 @@ void AudioEndpointInner::StartThread(const IAudioSinkAttr &attr)
 
     // eg: endpoint_hdi_audio_8_0_20240527202236189_48000_2_1.pcm
     dumpHdiName_ = "endpoint_hdi_audio_" + std::to_string(attr.deviceType) + '_' + std::to_string(endpointType_) +
-        '_' + GetTime() + '_' +
-        std::to_string(attr.sampleRate) + "_" +
+        '_' + GetTime() + '_' + std::to_string(attr.sampleRate) + "_" +
         std::to_string(attr.channel) + "_" + std::to_string(attr.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpHdiName_, &dumpHdi_);
 }
@@ -943,8 +944,7 @@ void AudioEndpointInner::RecordReSyncPosition()
     AUDIO_INFO_LOG("RecordReSyncPosition enter.");
     uint64_t curHdiWritePos = 0;
     int64_t writeTime = 0;
-    CHECK_AND_RETURN_LOG(GetDeviceHandleInfo(curHdiWritePos, writeTime),
-        "get device handle info fail.");
+    CHECK_AND_RETURN_LOG(GetDeviceHandleInfo(curHdiWritePos, writeTime), "get device handle info fail.");
     AUDIO_DEBUG_LOG("get capturer info, curHdiWritePos %{public}" PRIu64", writeTime %{public}" PRId64".",
         curHdiWritePos, writeTime);
     int64_t temp = ClockTime::GetCurNano() - writeTime;
@@ -1098,8 +1098,7 @@ bool AudioEndpointInner::StopDevice()
         CHECK_AND_RETURN_RET_LOG(fastSource_ != nullptr && fastSource_->Stop() == SUCCESS,
             false, "Source stop failed.");
     } else {
-        CHECK_AND_RETURN_RET_LOG(fastSink_ != nullptr && fastSink_->Stop() == SUCCESS,
-            false, "Sink stop failed.");
+        CHECK_AND_RETURN_RET_LOG(fastSink_ != nullptr && fastSink_->Stop() == SUCCESS, false, "Sink stop failed.");
     }
     endpointStatus_ = STOPPED;
     isStarted_ = false;
@@ -1498,11 +1497,38 @@ void AudioEndpointInner::HandleRendererDataParams(const AudioStreamData &srcData
     if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == STEREO) {
         return ProcessSingleData(srcData, dstData, applyVol);
     }
+
     if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == MONO) {
         CHECK_AND_RETURN_LOG(processList_.size() > 0 && processList_[0] != nullptr, "No avaliable process");
         BufferDesc &convertedBuffer = processList_[0]->GetConvertedBuffer();
         int32_t ret = FormatConverter::S16MonoToS16Stereo(srcData.bufferDesc, convertedBuffer);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "Convert channel from mono to stereo failed");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "Convert channel from s16 mono to s16 stereo failed");
+        AudioStreamData dataAfterProcess = srcData;
+        dataAfterProcess.bufferDesc = convertedBuffer;
+        ProcessSingleData(dataAfterProcess, dstData, applyVol);
+        ret = memset_s(static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength, 0,
+            convertedBuffer.bufLength);
+        CHECK_AND_RETURN_LOG(ret == EOK, "memset converted buffer to 0 failed");
+    }
+
+    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == MONO) {
+        CHECK_AND_RETURN_LOG(processList_.size() > 0 && processList_[0] != nullptr, "No avaliable process");
+        BufferDesc &convertedBuffer = processList_[0]->GetConvertedBuffer();
+        int32_t ret = FormatConverter::F32MonoToS16Stereo(srcData.bufferDesc, convertedBuffer);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "Convert channel from f32 mono to s16 stereo failed");
+        AudioStreamData dataAfterProcess = srcData;
+        dataAfterProcess.bufferDesc = convertedBuffer;
+        ProcessSingleData(dataAfterProcess, dstData, applyVol);
+        ret = memset_s(static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength, 0,
+            convertedBuffer.bufLength);
+        CHECK_AND_RETURN_LOG(ret == EOK, "memset converted buffer to 0 failed");
+    }
+
+    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == STEREO) {
+        CHECK_AND_RETURN_LOG(processList_.size() > 0 && processList_[0] != nullptr, "No avaliable process");
+        BufferDesc &convertedBuffer = processList_[0]->GetConvertedBuffer();
+        int32_t ret = FormatConverter::F32StereoToS16Stereo(srcData.bufferDesc, convertedBuffer);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "Convert channel from f32 stereo to s16 stereo failed");
         AudioStreamData dataAfterProcess = srcData;
         dataAfterProcess.bufferDesc = convertedBuffer;
         ProcessSingleData(dataAfterProcess, dstData, applyVol);
@@ -1966,12 +1992,7 @@ int32_t AudioEndpointInner::WriteToSpecialProcBuf(const std::shared_ptr<OHAudioB
     if (muteFlag) {
         memset_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength, 0, writeBuf.bufLength);
     } else {
-        if (endpointType_ == TYPE_VOIP_MMAP) {
-            ret = HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
-        } else {
-            ret = memcpy_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength,
-                static_cast<void *>(readBuf.buffer), readBuf.bufLength);
-        }
+        ret = HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
     }
 
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memcpy data to process buffer fail, "
@@ -2007,6 +2028,29 @@ int32_t AudioEndpointInner::HandleCapturerDataParams(const BufferDesc &writeBuf,
         CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memset converted buffer to 0 failed");
         return EOK;
     }
+    if (clientConfig_.streamInfo.format == SAMPLE_F32LE) {
+        int32_t ret = 0;
+        if (clientConfig_.streamInfo.channels == STEREO) {
+            ret = FormatConverter::S16StereoToF32Stereo(readBuf, convertedBuffer);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED,
+                "Convert channel from s16 stereo to f32 stereo failed");
+        } else if (clientConfig_.streamInfo.channels == MONO) {
+            ret = FormatConverter::S16StereoToF32Mono(readBuf, convertedBuffer);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED,
+                "Convert channel from s16 stereo to f32 mono failed");
+        } else {
+            return ERR_NOT_SUPPORTED;
+        }
+
+        ret = memcpy_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength,
+            static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memcpy_s failed");
+        ret = memset_s(static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength, 0,
+            convertedBuffer.bufLength);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memset converted buffer to 0 failed");
+        return EOK;
+    }
+
     return ERR_NOT_SUPPORTED;
 }
 
