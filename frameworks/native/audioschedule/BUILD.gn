@@ -21,7 +21,9 @@ ohos_shared_library("audio_schedule") {
     cfi = true
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
-    debug = false
+    debug = falseinteger_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
 
   include_dirs = [
