@@ -70,6 +70,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_SINK_LATENCY",
     "GET_PREFERRED_OUTPUT_STREAM_TYPE",
     "GET_PREFERRED_INPUT_STREAM_TYPE",
+    "CREATE_CLIENT",
     "REGISTER_TRACKER",
     "UPDATE_TRACKER",
     "GET_RENDERER_CHANGE_INFOS",
@@ -576,6 +577,16 @@ void AudioPolicyManagerStub::GetPreferredInputStreamTypeInternal(MessageParcel &
     AudioCapturerInfo capturerInfo;
     capturerInfo.Unmarshalling(data);
     int32_t result = GetPreferredInputStreamType(capturerInfo);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::CreateClientInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioStreamDescriptor streamDesc;
+    streamDesc.Unmarshalling(data);
+    int32_t streamClass = 0;
+    int32_t result = CreateClient(streamDesc, streamClass);
+    reply.WriteInt32(streamClass);
     reply.WriteInt32(result);
 }
 
@@ -1524,6 +1535,9 @@ void AudioPolicyManagerStub::OnMiddleSecRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFERRED_INPUT_STREAM_TYPE):
             GetPreferredInputStreamTypeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::CREATE_CLIENT):
+            CreateClientInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_TRACKER):
             RegisterTrackerInternal(data, reply);

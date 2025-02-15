@@ -209,6 +209,8 @@ public:
 
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
 
+    int32_t CreateClient(const AudioStreamDescriptor &streamDesc, AudioFlag &audioFlag);
+
     int32_t RegisterAudioRendererEventListener(const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
 
     int32_t UnregisterAudioRendererEventListener(

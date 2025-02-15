@@ -588,6 +588,24 @@ int32_t AudioManagerProxy::RegiestPolicyProvider(const sptr<IRemoteObject> &obje
     return reply.ReadInt32();
 }
 
+int32_t AudioManagerProxy::RegiestCoreServiceProvider(const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT, "object is null");
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_CORE_SERVICE_PROVIDER),
+        data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
 int32_t AudioManagerProxy::SetWakeupSourceCallback(const sptr<IRemoteObject>& object)
 {
     MessageParcel data;

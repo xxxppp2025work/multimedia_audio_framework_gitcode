@@ -1110,6 +1110,18 @@ int32_t AudioServer::RegiestPolicyProvider(const sptr<IRemoteObject> &object)
     return SUCCESS;
 }
 
+int32_t AudioServer::RegiestCoreServiceProvider(const sptr<IRemoteObject> &object)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    CHECK_AND_RETURN_RET_LOG(coreServiceProvider != nullptr, ERR_INVALID_PARAM,
+        "coreServiceProvider obj cast failed");
+    bool ret = CoreServiceHandler::GetInstance().ConfigCoreServiceProvider(coreServiceProvider);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_OPERATION_FAILED, "ConfigCoreServiceProvider failed!");
+    return SUCCESS;
+}
+
 int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
 {
     AudioXCollie audioXCollie("AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName",
