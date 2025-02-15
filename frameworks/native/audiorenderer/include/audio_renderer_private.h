@@ -33,6 +33,26 @@ class RendererPolicyServiceDiedCallback;
 class OutputDeviceChangeWithInfoCallbackImpl;
 class AudioRendererConcurrencyCallbackImpl;
 
+struct RendererSwitchingInfo {
+    bool isSwitching_ = false;
+    RendererState rendererState_ = RENDERER_INVALID;
+};
+
+class RendererSwitchingInfoGuard {
+public:
+    RendererSwitchingInfoGuard(std::atomic<RendererSwitchingInfo> &ref, RendererSwitchingInfo initInfo) : rendererSwitchinfInfoRef_(ref)
+    {
+        ref.store(initInfo);
+    }
+
+    ~RendererSwitchingInfoGuard()
+    {
+        rendererSwitchinfInfoRef_.store(RendererSwitchingInfo());
+    }
+private:
+    std::atomic<RendererSwitchingInfo> &rendererSwitchinfInfoRef_;
+};
+
 class AudioRendererPrivate : public AudioRenderer {
 public:
     int32_t GetFrameCount(uint32_t &frameCount) const override;
@@ -213,7 +233,7 @@ private:
     std::atomic<bool> isFastRenderer_ = false;
     bool latencyMeasEnabled_ = false;
     std::shared_ptr<AudioLatencyMeasurement> latencyMeasurement_ = nullptr;
-    bool isSwitching_ = false;
+    std::atomic<RendererSwitchingInfo> rendererSwitchingInfo_;
     mutable std::shared_mutex rendererMutex_;
     mutable std::shared_mutex streamMutex_;
     mutable AudioRenderMode audioRenderMode_ = RENDER_MODE_NORMAL;
