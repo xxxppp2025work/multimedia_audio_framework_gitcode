@@ -78,9 +78,10 @@ public:
 
     virtual void Release() = 0;
 
-    virtual bool ShouldInnerCap() = 0;
-    virtual int32_t EnableFastInnerCap() = 0;
+    virtual bool ShouldInnerCap(int32_t innerCapId) = 0;
+    virtual int32_t EnableFastInnerCap(int32_t innerCapId) = 0;
     virtual int32_t DisableFastInnerCap() = 0;
+    virtual int32_t DisableFastInnerCap(int32_t innerCapId) = 0;
 
     virtual int32_t LinkProcessStream(IAudioProcessStream *processStream) = 0;
     virtual int32_t UnlinkProcessStream(IAudioProcessStream *processStream) = 0;
@@ -130,9 +131,10 @@ public:
     }
 
     // for inner-cap
-    bool ShouldInnerCap() override;
-    int32_t EnableFastInnerCap() override;
+    bool ShouldInnerCap(int32_t innerCapId) override;
+    int32_t EnableFastInnerCap(int32_t innerCapId) override;
     int32_t DisableFastInnerCap() override;
+    int32_t DisableFastInnerCap(int32_t innerCapId) override;
 
     int32_t SetVolume(AudioStreamType streamType, float volume) override;
 
