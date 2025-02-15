@@ -495,6 +495,21 @@ public:
     virtual int32_t GenerateSessionId(uint32_t &sessionId) = 0;
 
     virtual void NotifyAccountsChanged() = 0;
+#ifdef HAS_FEATURE_INNERCAPTURER
+    /**
+     * check capture limit.
+     *
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId) = 0;
+
+    /**
+     * set inner capture limit.
+     *
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t SetInnerCapLimit(uint32_t innerCapLimit) = 0;
+#endif
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -575,6 +590,10 @@ private:
     int HandleGetStandbyStatus(MessageParcel &data, MessageParcel &reply);
     int HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyAccountsChanged(MessageParcel &data, MessageParcel &reply);
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int HandleCheckCaptureLimit(MessageParcel &data, MessageParcel &reply);
+    int HandleSetInnerCapLimit(MessageParcel &data, MessageParcel &reply);
+#endif
 
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
