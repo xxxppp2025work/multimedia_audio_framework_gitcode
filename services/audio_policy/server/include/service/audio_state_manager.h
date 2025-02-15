@@ -34,7 +34,7 @@ public:
     void SetPreferredMediaRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     // Set call render device selected by the user
-    void SetPreferredCallRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+    void SetPreferredCallRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const int32_t pid);
 
     // Set call capture device selected by the user
     void SetPreferredCallCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
@@ -70,7 +70,9 @@ public:
     void UpdatePreferredCallRenderDeviceConnectState(ConnectState state);
     void UpdatePreferredCallCaptureDeviceConnectState(ConnectState state);
     void UpdatePreferredRecordCaptureDeviceConnectState(ConnectState state);
+    void SetAudioSceneOwnerPid(const int32_t pid);
 
+    int32_t ownerPid_;
 private:
     AudioStateManager() {};
     ~AudioStateManager() {};
@@ -80,7 +82,10 @@ private:
     std::shared_ptr<AudioDeviceDescriptor> preferredRingRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredRecordCaptureDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredToneRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
+    std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> forcedDeviceMapList_;
     std::mutex mutex_;
+
+    void RemoveForcedDeviceMapData(int32_t pid);
 };
 
 } // namespace AudioStandard

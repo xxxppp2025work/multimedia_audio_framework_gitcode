@@ -3240,11 +3240,12 @@ int32_t AudioPolicyServer::SetPreferredDevice(const PreferredType preferredType,
     const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
+    auto callerPid = IPCSkeleton::GetCallingPid();
     if (callerUid != UID_AUDIO) {
         AUDIO_ERR_LOG("No permission");
         return ERROR;
     }
-    return audioPolicyUtils_.SetPreferredDevice(preferredType, desc);
+    return audioPolicyUtils_.SetPreferredDevice(preferredType, desc, callerPid);
 }
 
 void AudioPolicyServer::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
@@ -3265,7 +3266,7 @@ void AudioPolicyServer::SaveRemoteInfo(const std::string &networkId, DeviceType 
     }
     if (networkId == newCallDescriptor->networkId_ && deviceType == newCallDescriptor->deviceType_) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>());
+            std::make_shared<AudioDeviceDescriptor>(), -1);
     }
     audioDeviceManager_.SaveRemoteInfo(networkId, deviceType);
 }
