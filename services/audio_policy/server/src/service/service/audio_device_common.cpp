@@ -26,6 +26,7 @@
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
+#include "audio_recovery_device.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -425,6 +426,9 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
                 std::make_shared<AudioDeviceDescriptor>());
         }
     }
+
+    AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(descForCb);
+
     audioConnectedDevice_.DelConnectedDevice(updatedDesc.networkId_, updatedDesc.deviceType_,
         updatedDesc.macAddress_, updatedDesc.deviceRole_);
 
@@ -485,6 +489,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>());
     }
+    AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(descForCb);
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForInputDevice(
