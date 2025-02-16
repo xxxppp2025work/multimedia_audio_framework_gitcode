@@ -187,6 +187,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "EXCLUDE_OUTPUT_DEVICES",
     "UNEXCLUDE_OUTPUT_DEVICES",
     "GET_EXCLUDED_OUTPUT_DEVICES",
+    "ON_VOICE_WAKEUP_STATE",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1157,6 +1158,8 @@ void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_EXCLUDED_OUTPUT_DEVICES):
             GetExcludedOutputDevicesInternal(data, reply);
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ON_VOICE_WAKEUP_STATE):
+            OnVoiceWakeupStateInternal(data, reply);
             break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
@@ -1808,6 +1811,13 @@ void AudioPolicyManagerStub::SetAudioDeviceAnahsCallbackInternal(MessageParcel &
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     int32_t result = SetAudioDeviceAnahsCallback(object);
     reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::OnVoiceWakeupStateInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool state = data.ReadBool();
+    int32_t result = OnVoiceWakeupState(state);
+    reply.WriteBool(state);
 }
 
 void AudioPolicyManagerStub::UnsetAudioDeviceAnahsCallbackInternal(MessageParcel &data, MessageParcel &reply)
