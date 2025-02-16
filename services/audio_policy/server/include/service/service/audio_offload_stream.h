@@ -66,6 +66,7 @@ public:
     bool GetOffloadAvailableFromXml() const;
     void ResetOffloadModeOnSpatializationChanged(std::vector<int32_t> &allSessions);
     int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
+    int32_t OnVoiceWakeupState(bool state);
 private:
     AudioOffloadStream() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
@@ -100,6 +101,7 @@ private:
     AudioIOHandleMap& audioIOHandleMap_;
     AudioRouteMap& audioRouteMap_;
     AudioActiveDevice& audioActiveDevice_;
+    std::atomic<bool> voiceWakeupState_ = false;
 };
 
 }

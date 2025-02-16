@@ -2133,5 +2133,10 @@ int32_t AudioPolicyService::UnloadModernInnerCapSink(int32_t innerCapId)
     return SUCCESS;
 }
 #endif
+
+int32_t AudioPolicyService::OnVoiceWakeupState(bool state)
+{
+    return audioOffloadStream_.OnVoiceWakeupState(state);
+}
 } // namespace AudioStandard
 } // namespace OHOS
