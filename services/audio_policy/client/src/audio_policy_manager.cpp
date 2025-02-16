@@ -1951,6 +1951,13 @@ int32_t AudioPolicyManager::SetVirtualCall(const bool isVirtual)
     return gsp->SetVirtualCall(isVirtual);
 }
 
+int32_t AudioPolicyManager::OnVoiceWakeupState(bool state)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->OnVoiceWakeupState(state);
+}
+
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;

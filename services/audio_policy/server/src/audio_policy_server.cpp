@@ -86,6 +86,7 @@ constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
 constexpr uid_t UID_CAR_DISTRIBUTED_ENGINE_SA = 65872;
 constexpr uid_t UID_RESOURCE_SCHEDULE_SERVICE = 1096;
+constexpr uid_t UID_INTELL_VOICE_SERVICR = 1042;
 constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
 constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 const char* MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
@@ -3552,6 +3553,14 @@ void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t ses
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID)
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
+}
+
+int32_t AudioPolicyServer::OnVoiceWakeupState(bool state)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == UID_INTELL_VOICE_SERVICR, ERROR,
+        "callerUid is error: not intell voice service %{public}d", callingUid);
+    return audioPolicyService_.OnVoiceWakeupState(state);
 }
 } // namespace AudioStandard
 } // namespace OHOS
