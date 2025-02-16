@@ -1,0 +1,5 @@
+export * from "./OHAudioNamespace"
+export * from "./OHGlobalScopeOhosMultimediaAudioMaterialized"
+export * from "././GlobalScope"
+export * from "././peers/type_check"
+export * from "././AUDIONativeModule"

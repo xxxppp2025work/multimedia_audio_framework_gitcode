@@ -107,6 +107,9 @@
               "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/modules:pa_extend_modules"
             ]
           },
+          "sub_component": [
+              "//foundation/multimedia/audio_framework/audio_idl_impl:audio_idl_impl"
+          ],
           "inner_kits": [
             {
                 "header": {
