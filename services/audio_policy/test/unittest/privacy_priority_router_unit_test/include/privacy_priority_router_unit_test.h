@@ -13,27 +13,27 @@
  * limitations under the License.
  */
 
- #ifndef PRIVACY_PRIORITY_ROUTER_UNIT_TEST_H
- #define PRIVACY_PRIORITY_ROUTER_UNIT_TEST_H
+#ifndef PRIVACY_PRIORITY_ROUTER_UNIT_TEST_H
+#define PRIVACY_PRIORITY_ROUTER_UNIT_TEST_H
  
- #include "gtest/gtest.h"
- #include "privacy_priority_router.h"
- #include "audio_system_manager.h"
+#include "gtest/gtest.h"
+#include "privacy_priority_router.h"
+#include "audio_system_manager.h"
  
- namespace OHOS {
- namespace AudioStandard {
+namespace OHOS {
+namespace AudioStandard {
  
- class PrivacyPriorityRouterUnitTest : public testing::Test {
- public:
-     // SetUpTestCase: Called before all test cases
-     static void SetUpTestCase(void);
-     // TearDownTestCase: Called after all test case
-     static void TearDownTestCase(void);
-     // SetUp: Called before each test cases
-     void SetUp(void);
-     // TearDown: Called after each test cases
-     void TearDown(void);
- };
- } // namespace AudioStandard
- } // namespace OHOS
- #endif // PRIVACY_PRIORITY_ROUTER_UNIT_TEST_H
+class PrivacyPriorityRouterUnitTest : public testing::Test {
+public:
+    // SetUpTestCase: Called before all test cases
+    static void SetUpTestCase(void);
+    // TearDownTestCase: Called after all test case
+    static void TearDownTestCase(void);
+    // SetUp: Called before each test cases
+    void SetUp(void);
+    // TearDown: Called after each test cases
+    void TearDown(void);
+};
+} // namespace AudioStandard
+} // namespace OHOS
+#endif // PRIVACY_PRIORITY_ROUTER_UNIT_TEST_H
