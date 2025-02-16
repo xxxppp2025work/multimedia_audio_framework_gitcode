@@ -89,11 +89,13 @@ void AudioOffloadStream::SetOffloadMode()
 
 void AudioOffloadStream::OffloadStreamSetCheck(uint32_t sessionId)
 {
-    AudioPipeType pipeType = PIPE_TYPE_OFFLOAD;
-    int32_t ret = AudioStreamCollector::GetAudioStreamCollector().ActivateAudioConcurrency(pipeType);
-    if (ret != SUCCESS) {
+    if (voiceWakeupState_) {
+        AUDIO_INFO_LOG("Voice wake-up is enabled, entry into offload playback mode is not allowed.");
         return;
     }
+    AudioPipeType pipeType = PIPE_TYPE_OFFLOAD;
+    int32_t ret = AudioStreamCollector::GetAudioStreamCollector().ActivateAudioConcurrency(pipeType);
+    if (ret != SUCCESS) { return; }
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     std::string curOutputNetworkId = audioActiveDevice_.GetCurrentOutputDeviceNetworkId();
     std::string curOutputMacAddr = audioActiveDevice_.GetCurrentOutputDeviceMacAddr();
@@ -101,9 +103,7 @@ void AudioOffloadStream::OffloadStreamSetCheck(uint32_t sessionId)
     streamCollector_.GetRendererDeviceInfo(sessionId, deviceInfo);
 
     AudioStreamType streamType = streamCollector_.GetStreamType(sessionId);
-    if (!CheckStreamOffloadMode(sessionId, streamType)) {
-        return;
-    }
+    if (!CheckStreamOffloadMode(sessionId, streamType)) { return; }
 
     auto CallingUid = IPCSkeleton::GetCallingUid();
     AUDIO_INFO_LOG("sessionId[%{public}d]  CallingUid[%{public}d] StreamType[%{public}d] "
@@ -557,6 +557,13 @@ void AudioOffloadStream::SetOffloadStatus(uint32_t sessionId)
                 sessionId, *(offloadSessionID_));
         }
     }
+}
+
+int32_t AudioOffloadStream::OnVoiceWakeupState(bool state)
+{
+    AUDIO_INFO_LOG("%{public}d", state);
+    voiceWakeupState_ = state;
+    return SUCCESS;
 }
 }
 }
