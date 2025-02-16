@@ -1,0 +1,44 @@
+import("//build/ohos.gni")
+import("//build/ohos/idlize/arkts_idlize.gni")
+import("//foundation/multimedia/audio_framework/config.gni")
+
+template("generate_and_build") {
+  forward_variables_from(invoker, "*")
+
+  # input-file
+  #idlize_idl2peer(target_name) {
+    #input_dir = "//foundation/multimedia/audio_framework/audio_idl_impl/idl"
+    #output = "//foundation/multimedia/audio_framework/audio_idl_impl"
+    #dirmode = "delete"
+    #default_package = "audio_idl_impl"
+    #mode = "idl2peer"
+  #}
+
+  ohos_source_set("audio_sourceset") {
+    include_dirs = [
+      "./impl/include",
+      "./generated/native/",
+    ]
+
+    sources = [ "./impl/src/idl_impl.cpp" ]
+    #deps = [ "$ace_root/build:libace_compatible" ]
+    part_name = "audio_framework"
+    subsystem_name = "multimedia"
+  }
+
+  idlize_shared_library(target_name) {
+    generated = "//foundation/multimedia/audio_framework/audio_idl_impl/generated"
+    module_install_dir = "module/audio_idl_impl"
+    relative_install_dir = "module/audio_idl_impl"
+    source_sets = [ "//foundation/multimedia/audio_framework/audio_idl_impl:audio_sourceset" ]
+    part_name = "audio_framework"
+    subsystem_name = "multimedia"
+  }
+}
+
+generate_and_build("AUDIO_NativeBridgeArk") {
+}
+
+group("audio_idl_impl") {
+  deps = [ ":AUDIO_NativeBridgeArk" ]
+}
