@@ -1125,7 +1125,7 @@ bool AudioDeviceCommon::IsBlueToothOnPrimarySpeaker(const std::shared_ptr<AudioD
     return false;
 }
 
-void AudioDeviceCommon::IsRingDualToneOnPrimarySpeaker(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+bool AudioDeviceCommon::IsRingDualToneOnPrimarySpeaker(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
     const int32_t sessionId)
 {
     if (descs.size() !=  AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT) {
@@ -1720,7 +1720,8 @@ void AudioDeviceCommon::SetHasDpFlag(bool flag)
     hasDpDevice_ = flag;
 }
 
-bool AudioDeviceCommon::IsStopOrReleasePlayback(AudioMode &mode, RendererState rendererState) {
+bool AudioDeviceCommon::IsStopOrReleasePlayback(AudioMode &mode, RendererState rendererState)
+{
     if (mode != AUDIO_MODE_PLAYBACK) {
         return false;
     }
