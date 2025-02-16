@@ -2012,7 +2012,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_091, TestSize.Level1)
     EXPECT_TRUE(audioDeviceCommon.IsStopOrReleasePlayback(mode, state));
 
     state = RENDERER_RELEASED;
-    EXPECT_TRUE(audioDeviceCommon.IsStopOrReleasePlayback(mode, state)); 
+    EXPECT_TRUE(audioDeviceCommon.IsStopOrReleasePlayback(mode, state));
 }
 
 /**
