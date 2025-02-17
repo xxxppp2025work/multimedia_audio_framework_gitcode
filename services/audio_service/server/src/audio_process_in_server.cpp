@@ -163,6 +163,8 @@ int32_t AudioProcessInServer::RequestHandleInfo(bool isAsync)
 int32_t AudioProcessInServer::Start()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
+    CHECK_AND_RETURN_RET_LOG(!AudioService::GetInstance()->GetHibernateState(),
+        ERR_ILLEGAL_STATE, "In hibernate, can't start");
 
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STARTING || streamStatus_->load() == STREAM_STAND_BY,

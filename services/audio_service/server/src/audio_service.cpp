@@ -1115,6 +1115,12 @@ void AudioService::CheckHibernateState(bool onHibernate)
     }
 }
 
+bool AudioService::GetHibernateState()
+{
+    std::unique_lock<std::mutex> lock(allRunningSinksMutex_);
+    return onHibernate_;
+}
+
 int32_t AudioService::UpdateSourceType(SourceType sourceType)
 {
     // specialSourceType need not updateaudioroute
