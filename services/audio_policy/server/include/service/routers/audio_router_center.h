@@ -44,6 +44,7 @@ public:
     int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object);
     int32_t UnsetAudioDeviceRefinerCallback();
     bool isCallRenderRouter(StreamUsage streamUsage);
+    bool IsNoDeviceCaptureStream(SourceType sourceType);
 
 private:
     AudioRouterCenter()

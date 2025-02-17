@@ -1183,7 +1183,8 @@ void AudioDeviceCommon::FetchInputDeviceInner(
     for (auto &capturerChangeInfo : capturerChangeInfos) {
         SourceType sourceType = capturerChangeInfo->capturerInfo.sourceType;
         int32_t clientUID = capturerChangeInfo->clientUID;
-        if ((sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE &&
+        if (IsNoDeviceCaptureStream(sourceType) ||
+            (sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE &&
             audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_PHONE_CALL) ||
             (sourceType != SOURCE_TYPE_VIRTUAL_CAPTURE && capturerChangeInfo->capturerState != CAPTURER_RUNNING)) {
             AUDIO_WARNING_LOG("stream %{public}d not running, no need fetch device", capturerChangeInfo->sessionId);
@@ -1934,6 +1935,11 @@ void AudioDeviceCommon::SetFirstScreenOn()
 int32_t AudioDeviceCommon::SetVirtualCall(const bool isVirtual)
 {
     return Bluetooth::AudioHfpManager::SetVirtualCall(isVirtual);
+}
+
+bool AudioDeviceCommon::IsNoDeviceCaptureStream(SourceType sourceType)
+{
+    return audioRouterCenter_.IsNoDeviceCaptureStream(sourceType);
 }
 }
 }
