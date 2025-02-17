@@ -905,5 +905,15 @@ int32_t FastAudioStream::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::
 {
     return GetAudioTime(timestamp, base);
 }
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t FastAudioStream::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config)
+{
+    return SUCCESS;
+}
+int32_t FastAudioStream::DelCaptureNum()
+{
+    return SUCCESS;
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

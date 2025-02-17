@@ -182,6 +182,10 @@ public:
     DeviceType GetDefaultOutputDevice() override;
 
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config) override;
+    int32_t DelCaptureNum() override;
+#endif
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
     int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);

@@ -201,6 +201,10 @@ public:
     void HandleStateChangeEvent(int64_t data);
     void HandleCapturerMarkReachedEvent(int64_t capturerMarkPosition);
     void HandleCapturerPeriodReachedEvent(int64_t capturerPeriodNumber);
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config) override;
+    int32_t DelCaptureNum() override;
+#endif
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
 
@@ -338,6 +342,7 @@ private:
 
     bool paramsIsSet_ = false;
     std::atomic_bool threadStatusFlag_ { false };
+    int32_t innerCapId_ = 0;
 
     enum {
         STATE_CHANGE_EVENT = 0,
@@ -740,6 +745,7 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
 
     config.isInnerCapturer = isInnerCapturer_;
     config.isWakeupCapturer = isWakeupCapturer_;
+    config.innerCapId = innerCapId_;
 
     clientConfig_ = config;
     return config;
@@ -1993,6 +1999,29 @@ int32_t CapturerInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
 {
     return GetAudioTime(timestamp, base);
 }
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t CapturerInClientInner::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config)
+{
+    sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("CheckCaptureLimit failed to get AudioServerProxy");
+        return ERROR;
+    }
+    int32_t ret = gasp->CheckCaptureLimit(config, innerCapId_);
+    return ret;
+}
+
+int32_t CapturerInClientInner::DelCaptureNum()
+{
+    sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("DelCaptureNum failed to get AudioServerProxy");
+        return ERROR;
+    }
+    int32_t ret = gasp->DelCaptureNum(innerCapId_);
+    return ret;
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // FAST_AUDIO_STREAM_H

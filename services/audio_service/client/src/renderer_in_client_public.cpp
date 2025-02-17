@@ -1639,5 +1639,15 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     timestamp.time.tv_nsec = static_cast<time_t>(timestampVal % AUDIO_NS_PER_SECOND);
     return ret;
 }
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t RendererInClientInner::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config)
+{
+    return SUCCESS;
+}
+int32_t RendererInClientInner::DelCaptureNum()
+{
+    return SUCCESS;
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS
