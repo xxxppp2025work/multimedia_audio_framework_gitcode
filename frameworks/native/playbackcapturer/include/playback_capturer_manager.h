@@ -52,7 +52,8 @@ public:
     // add for new playback-capturer
     std::vector<StreamUsage> GetDefaultUsages();
     bool RegisterCapturerFilterListener(ICapturerFilterListener *listener);
-    int32_t SetPlaybackCapturerFilterInfo(uint32_t sessionId, const AudioPlaybackCaptureConfig &config, int32_t innerCapId);
+    int32_t SetPlaybackCapturerFilterInfo(uint32_t sessionId, const AudioPlaybackCaptureConfig &config,
+        int32_t innerCapId);
     int32_t RemovePlaybackCapturerFilterInfo(uint32_t sessionId, int32_t innerCapId);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId);

@@ -40,6 +40,7 @@ const int32_t MEDIA_SERVICE_UID = 1013;
 #endif
 constexpr int32_t ERROR_62980101 = -62980101;
 
+
 class AudioServiceUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -579,7 +580,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceSetNonInterruptMute_001, TestSize.Level
     AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
     AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->OnUpdateInnerCapList(1);
-    AudioService::GetInstance()->SetNonInterruptMute(MAX_SESSIONID - 1, muteFlag);
+    AudioService::GetInstance()->SetNonInterruptMute(MAX_STREAMID - 1, muteFlag);
     EXPECT_EQ(0, floatRet);
 }
 

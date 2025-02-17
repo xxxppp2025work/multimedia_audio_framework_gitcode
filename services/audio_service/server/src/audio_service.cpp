@@ -314,7 +314,7 @@ void AudioService::RemoveCapturer(uint32_t sessionId)
 
 void AudioService::AddFilteredRender(int32_t innerCapId, std::shared_ptr<RendererInServer> renderer)
 {
-    if(!filteredRendererMap_.count(innerCapId)) {
+    if (!filteredRendererMap_.count(innerCapId)) {
         std::vector<std::weak_ptr<RendererInServer>> renders;
         filteredRendererMap_[innerCapId] = renders;
     }
@@ -386,7 +386,7 @@ bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, st
         return false;
     }
     bool ret = false;
-    for (auto& filter : workingConfigs_ ) {
+    for (auto& filter : workingConfigs_) {
         if (CheckShouldCap(rendererConfig, filter.first)) {
             ret = true;
             beCapIds.insert(filter.first);
@@ -407,7 +407,8 @@ bool AudioService::CheckShouldCap(const AudioProcessConfig &rendererConfig, int3
                 rendererConfig.rendererInfo.streamUsage, workingConfigs_[innerCapId].filterOptions.usageFilterMode);
             break;
         case POLICY_USAGES_AND_PIDS:
-            res = isFilterMatched(workingConfigs_[innerCapId].filterOptions.usages, rendererConfig.rendererInfo.streamUsage,
+            res = isFilterMatched(workingConfigs_[innerCapId].filterOptions.usages,
+                rendererConfig.rendererInfo.streamUsage,
                 workingConfigs_[innerCapId].filterOptions.usageFilterMode) &&
                 isFilterMatched(workingConfigs_[innerCapId].filterOptions.pids, rendererConfig.appInfo.appPid,
                 workingConfigs_[innerCapId].filterOptions.pidFilterMode);
@@ -640,7 +641,7 @@ int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId, int32_t innerCa
                 if (renderer == nullptr) {
                     AUDIO_WARNING_LOG("Find renderer is already released!");
                     continue;
-             }
+                }
                 renderer->DisableInnerCap(innerCapId);
                 renderers.push_back(std::move(renderer));
         }

@@ -590,13 +590,14 @@ struct CaptureFilterOptions {
     std::vector<int32_t> pids;
     FilterMode pidFilterMode {FilterMode::INCLUDE};
 
-    bool operator ==(CaptureFilterOptions& filter) {
+    bool operator ==(CaptureFilterOptions& filter)
+    {
         std::sort(filter.usages.begin(), filter.usages.end());
         std::sort(filter.pids.begin(), filter.pids.end());
         std::sort(usages.begin(), usages.end());
         std::sort(pids.begin(), pids.end());
-        return (filter.usages == usages && filter.usageFilterMode == usageFilterMode
-            && filter.pids == pids && filter.pidFilterMode == pidFilterMode);
+        return (filter.usages == usages && filter.usageFilterMode == usageFilterMode &&
+            filter.pids == pids && filter.pidFilterMode == pidFilterMode);
     }
 };
 
@@ -604,7 +605,8 @@ struct AudioPlaybackCaptureConfig {
     CaptureFilterOptions filterOptions;
     bool silentCapture {false}; // To be deprecated since 12
 
-    bool operator ==(AudioPlaybackCaptureConfig& filter) {
+    bool operator ==(AudioPlaybackCaptureConfig& filter)
+    {
         return (filter.filterOptions == filterOptions && filter.silentCapture == silentCapture);
     }
 };

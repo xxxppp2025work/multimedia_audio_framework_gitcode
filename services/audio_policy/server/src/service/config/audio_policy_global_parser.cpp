@@ -23,6 +23,8 @@
 namespace OHOS {
 namespace AudioStandard {
 
+constexpr int32_t CHANGE_NUMBER_SYSTEM = 10;
+
 bool AudioPolicyGlobalParser::LoadConfiguration()
 {
     mDoc_ = xmlReadFile(POLICY_GLOBAL_CONFIG_FILE, nullptr, 0);
@@ -75,13 +77,13 @@ void AudioPolicyGlobalParser::ParserAttribute(xmlNode *currNode)
         std::string name;
         uint32_t value;
         xmlChar *attrName = xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("name"));
-        xmlChar *attrValue = xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("value"));    
+        xmlChar *attrValue = xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("value"));
         if (attrName == nullptr || attrValue == nullptr) {
             currNode = currNode->next;
             continue;
         }
-        name = static_cast<char *>(reinterpret_cast<char *>(attrName));    
-        value = static_cast<uint32_t>(std::strtol(reinterpret_cast<char *>(attrValue), nullptr, 10));       
+        name = static_cast<char *>(reinterpret_cast<char *>(attrName));
+        value = static_cast<uint32_t>(std::strtol(reinterpret_cast<char *>(attrValue), nullptr, CHANGE_NUMBER_SYSTEM));
         globalConfigs_[name] = value;
         xmlFree(attrName);
         xmlFree(attrValue);

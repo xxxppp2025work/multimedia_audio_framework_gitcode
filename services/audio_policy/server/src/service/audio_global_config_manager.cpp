@@ -29,7 +29,7 @@ void AudioGlobalConfigManager::ParseGlobalConfigXml()
     if (globalConfigParser->LoadConfiguration()) {
         AUDIO_INFO_LOG("Audio global config manager load configuration successfully.");
         globalConfigParser->Parse();
-    }  
+    }
     globalConfigParser->GetConfigByKeyName(MAX_INNER_CAPTURE_KEY_NAME, innerCapLimit_);
 }
 

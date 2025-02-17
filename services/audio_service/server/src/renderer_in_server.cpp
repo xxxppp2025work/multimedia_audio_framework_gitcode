@@ -1053,7 +1053,7 @@ int32_t RendererInServer::SetLowPowerVolume(float volume)
     for (auto &capInfo : captureInfos_) {
         if (capInfo.second.isInnerCapEnabled) {
             AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(
-                    capInfo.second.dupStream->GetStreamIndex(), volume);
+                capInfo.second.dupStream->GetStreamIndex(), volume);
         }
     }
     if (isDualToneEnabled_) {
