@@ -76,6 +76,9 @@
 #include "audio_device_lock.h"
 #include "audio_capturer_session.h"
 #include "audio_device_status.h"
+#ifdef HAS_FEATURE_INNERCAPTURER
+#include "audio_global_config_manager.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -469,6 +472,10 @@ public:
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void SubscribeSafeVolumeEvent();
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int32_t LoadModernInnerCapSink(int32_t innerCapId);
+    int32_t UnloadModernInnerCapSink(int32_t innerCapId);
+#endif
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -481,6 +488,9 @@ private:
         audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
 #ifdef AUDIO_WIRED_DETECT
         audioPnpServer_(AudioPnpServer::GetAudioPnpServer()),
+#endif
+#ifdef HAS_FEATURE_INNERCAPTURER
+        audioGlobalConfigManager_(AudioGlobalConfigManager::GetAudioGlobalConfigManager()),
 #endif
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioRouteMap_(AudioRouteMap::GetInstance()),
@@ -499,6 +509,7 @@ private:
         audioCapturerSession_(AudioCapturerSession::GetInstance()),
         audioDeviceLock_(AudioDeviceLock::GetInstance()),
         audioDeviceStatus_(AudioDeviceStatus::GetInstance())
+        
     {
         deviceStatusListener_ = std::make_unique<DeviceStatusListener>(*this);
     }
@@ -551,9 +562,6 @@ private:
     bool GetAudioEffectOffloadFlag();
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
-#ifdef HAS_FEATURE_INNERCAPTURER
-    void LoadModernInnerCapSink();
-#endif
     int32_t GetUid(int32_t sessionId);
 
     void UnregisterBluetoothListener();
@@ -613,7 +621,9 @@ private:
 #ifdef AUDIO_WIRED_DETECT
     AudioPnpServer &audioPnpServer_;
 #endif
-
+#ifdef HAS_FEATURE_INNERCAPTURER
+    AudioGlobalConfigManager &audioGlobalConfigManager_;
+#endif
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,
         .type = CAST_TYPE_NULL
