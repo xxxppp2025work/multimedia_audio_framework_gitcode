@@ -43,6 +43,7 @@
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
+#include "audio_xml_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -110,6 +111,7 @@ bool AudioPolicyService::LoadAudioPolicyConfig()
 
 bool AudioPolicyService::Init(void)
 {
+    XmlDlopenUtils::KeepOpen(true);
     serviceFlag_.reset();
     audioPolicyManager_.Init();
     audioEffectService_.EffectServiceInit();
@@ -154,6 +156,7 @@ bool AudioPolicyService::Init(void)
     int32_t micRefEnableState = system::GetBoolParameter("const.multimedia.audio.fwk_pnr.enable", 0);
 
     audioEcManager_.Init(ecEnableState, micRefEnableState);
+    XmlDlopenUtils::KeepOpen(false);
     return true;
 }
 

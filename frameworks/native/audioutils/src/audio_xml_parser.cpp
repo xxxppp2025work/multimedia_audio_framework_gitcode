@@ -48,20 +48,23 @@ struct XmlFuncHandle {
     xmlChar *(*xmlNodeGetContent)(const xmlNode *cur);
 };
 
-class DlopenUtils {
+class DlopenUtils : public XmlDlopenUtils {
 public:
     static bool Init();
     static void DeInit();
+    static void KeepOpen(bool isOpen);
     static std::shared_ptr<XmlFuncHandle> GetHandle();
 private:
     static std::atomic<int32_t> refCount_;
     static std::shared_ptr<XmlFuncHandle> xmlFuncHandle_;
     static std::mutex dlMutex_;
+    static bool isKeepOpen_;
 };
 
 std::atomic<int32_t> DlopenUtils::refCount_{0};
 std::shared_ptr<XmlFuncHandle> DlopenUtils::xmlFuncHandle_ = nullptr;
 std::mutex DlopenUtils::dlMutex_;
+bool DlopenUtils::isKeepOpen_ = false;
 
 class AudioXmlNodeInner : public AudioXmlNode {
 public:
@@ -131,11 +134,20 @@ void DlopenUtils::DeInit()
 {
     std::lock_guard<std::mutex> lock(dlMutex_);
     refCount_.store(refCount_.load() - 1);
-    if (refCount_.load() == 0 && xmlFuncHandle_.use_count() == 1) {
+    if (!isKeepOpen_ && refCount_.load() == 0 && xmlFuncHandle_.use_count() == 1) {
+        xmlFuncHandle_->xmlCleanupParser();
         dlclose(xmlFuncHandle_->libHandle);
         xmlFuncHandle_ = nullptr;
         AUDIO_INFO_LOG("Libxml2 close success");
     }
+}
+
+void DlopenUtils::KeepOpen(bool isOpen)
+{
+    CHECK_AND_RETURN_LOG(DlopenUtils::Init(), "open so fail!");
+    std::lock_guard<std::mutex> lock(dlMutex_);
+    isKeepOpen_ = isOpen;
+    DlopenUtils::DeInit();
 }
 
 std::shared_ptr<XmlFuncHandle> DlopenUtils::GetHandle()
@@ -193,7 +205,6 @@ AudioXmlNodeInner::~AudioXmlNodeInner()
 {
     if (xmlFuncHandle_ != nullptr && doc_ != nullptr) {
         xmlFuncHandle_->xmlFreeDoc(doc_);
-        xmlFuncHandle_->xmlCleanupParser();
         doc_ = nullptr;
     }
     curNode_ = nullptr;
