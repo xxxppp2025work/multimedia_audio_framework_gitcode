@@ -905,5 +905,15 @@ int32_t FastAudioStream::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::
 {
     return GetAudioTime(timestamp, base);
 }
+
+void FastAudioStream::SetSwichingStatus(bool isSwitching)
+{
+    std::lock_guard lock(switchingMutex_);
+    if (isSwitching) {
+        switchingInfo_ = {true, state_};
+    } else {
+        switchingInfo_ = {false, INVALID};
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
