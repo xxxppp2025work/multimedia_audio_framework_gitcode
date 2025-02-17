@@ -2074,6 +2074,22 @@ float AudioRendererPrivate::GetSpeed()
     return speed_.value_or(1.0f);
 }
 
+bool AudioRendererPrivate::IsOffloadEnable()
+{
+    if (!rendererInfo_.isOffloadAllowed) {
+        AUDIO_INFO_LOG("isOffloadAllowed is false");
+        return false;
+    }
+    if (rendererInfo_.streamUsage == STREAM_USAGE_MUSIC || rendererInfo_.streamUsage == STREAM_USAGE_AUDIOBOOK) {
+        std::shared_ptr currentStream = GetInnerStream();
+        CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, false, "audioStream_ is nullptr");
+        bool result = currentStream->GetOffloadEnable();
+        AUDIO_INFO_LOG("GetOffloadEnable is [%{public}s]", (result ? "true" : "false"));
+        return result;
+    }
+    return false;
+}
+
 bool AudioRendererPrivate::IsFastRenderer()
 {
     return isFastRenderer_;
