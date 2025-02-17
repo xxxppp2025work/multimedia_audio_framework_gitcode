@@ -100,7 +100,7 @@ static std::shared_ptr<AudioEndpointInner> CreateOutputEndpointInner(AudioEndpoi
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(type, AUDIO_ENDPOINT_ID, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpointInner);
-    EXPECT_NE(nullptr, audioEndpointInner->fastSink_);
+    EXPECT_NE(HDI_INVALID_ID, audioEndpointInner->fastRenderId_);
 
     return audioEndpointInner;
 }
@@ -315,7 +315,7 @@ HWTEST_F(AudioEndpointUnitTest, HandleZeroVolumeCheckEvent_001, TestSize.Level1)
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpointInner);
-    EXPECT_NE(nullptr, audioEndpointInner->fastSink_);
+    EXPECT_NE(HDI_INVALID_ID, audioEndpointInner->fastRenderId_);
 
     audioEndpointInner->zeroVolumeStopDevice_ = true;
     audioEndpointInner->HandleZeroVolumeCheckEvent();
@@ -340,7 +340,7 @@ HWTEST_F(AudioEndpointUnitTest, HandleZeroVolumeCheckEvent_001, TestSize.Level1)
     audioEndpointInner->zeroVolumeStopDevice_ = false;
     audioEndpointInner->delayStopTimeForZeroVolume_ = 0;
     audioEndpointInner->isStarted_ = true;
-    audioEndpointInner->fastSink_ = nullptr;
+    HdiAdapterManager::GetInstance().ReleaseId(audioEndpointInner->fastRenderId_);
     audioEndpointInner->HandleZeroVolumeCheckEvent();
     EXPECT_TRUE(audioEndpointInner->zeroVolumeStopDevice_);
 }
@@ -392,7 +392,7 @@ HWTEST_F(AudioEndpointUnitTest, ZeroVolumeCheck_001, TestSize.Level1)
 
     audioEndpointInner->zeroVolumeStopDevice_ = true;
     audioEndpointInner->isStarted_ = false;
-    audioEndpointInner->fastSink_ = nullptr;
+    HdiAdapterManager::GetInstance().ReleaseId(audioEndpointInner->fastRenderId_);
     audioEndpointInner->ZeroVolumeCheck(1);
     EXPECT_FALSE(audioEndpointInner->isVolumeAlreadyZero_);
 }
@@ -532,7 +532,7 @@ HWTEST_F(AudioEndpointUnitTest, GetFastSink_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioEndpointInner);
 
     deviceInfo.networkId_ = REMOTE_NETWORK_ID;
-    IMmapAudioRendererSink *ret = audioEndpointInner->GetFastSink(deviceInfo, AudioEndpoint::TYPE_MMAP);
+    auto ret = audioEndpointInner->GetFastSink(deviceInfo, AudioEndpoint::TYPE_MMAP);
     EXPECT_NE(nullptr, ret);
 
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
@@ -683,8 +683,11 @@ HWTEST_F(AudioEndpointUnitTest, HandleStartDeviceFailed_001, TestSize.Level1)
 
     EXPECT_TRUE(audioEndpointInner->StopDevice());
 
-    audioEndpointInner->fastSource_->DeInit();
-    audioEndpointInner->fastSource_ = nullptr;
+    std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(
+        audioEndpointInner->fastCaptureId_);
+    ASSERT_NE(nullptr, source);
+    source->DeInit();
+    HdiAdapterManager::GetInstance().ReleaseId(audioEndpointInner->fastCaptureId_);
     audioEndpointInner->isInnerCapEnabled_ = true;
     EXPECT_FALSE(audioEndpointInner->StartDevice());
 }
@@ -735,8 +738,11 @@ HWTEST_F(AudioEndpointUnitTest, DelayStopDevice_001, TestSize.Level1)
 
     EXPECT_TRUE(audioEndpointInner->DelayStopDevice());
 
-    audioEndpointInner->fastSource_->DeInit();
-    audioEndpointInner->fastSource_ = nullptr;
+    std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(
+        audioEndpointInner->fastCaptureId_);
+    ASSERT_NE(nullptr, source);
+    source->DeInit();
+    HdiAdapterManager::GetInstance().ReleaseId(audioEndpointInner->fastCaptureId_);
     audioEndpointInner->isInnerCapEnabled_ = true;
     EXPECT_FALSE(audioEndpointInner->DelayStopDevice());
 
