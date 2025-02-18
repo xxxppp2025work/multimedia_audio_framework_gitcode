@@ -175,6 +175,13 @@ public:
     virtual void SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel) = 0;
 
     virtual void SetRestoreVolumeFlag(const bool safeVolumeCall) = 0;
+
+    virtual void SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName, std::string invocationTime) = 0;
+
+    virtual void GetRingerModeInfo(std::vector<RingerModeAdjustInfo>& ringerModeInfo) = 0;
+
+    virtual std::shared_ptr<AllDeviceVolumeInfo> GetAllDeviceVolumeInfo(DeviceType deviceType,
+        AudioStreamType streamType) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

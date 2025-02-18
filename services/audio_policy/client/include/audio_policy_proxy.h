@@ -352,6 +352,9 @@ public:
 
     int32_t SetVirtualCall(const bool isVirtual) override;
 
+    int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
+        uint32_t volumeType) override;
+
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

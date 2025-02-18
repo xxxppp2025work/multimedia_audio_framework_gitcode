@@ -473,6 +473,9 @@ public:
 
     void NotifyAccountsChanged(const int &id);
 
+    int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
+        uint32_t volumeType) override;
+
     // for hidump
     void AudioDevicesDump(std::string &dumpString);
     void AudioModeDump(std::string &dumpString);
