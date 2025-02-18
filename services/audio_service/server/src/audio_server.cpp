@@ -2208,5 +2208,26 @@ int32_t AudioServer::GenerateSessionId(uint32_t &sessionId)
     sessionId = PolicyHandler::GetInstance().GenerateSessionId(uid);
     return SUCCESS;
 }
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t AudioServer::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId)
+{
+    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
+    int32_t ret = playbackCapturerMgr->CheckCaptureLimit(config, innerCapId);
+    if (ret == SUCCESS) {
+        PolicyHandler::GetInstance().LoadModernInnerCapSink(innerCapId);
+    }
+    return ret;
+}
+
+int32_t AudioServer::SetInnerCapLimit(uint32_t innerCapLimit)
+{
+    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
+    int32_t ret = playbackCapturerMgr->SetInnerCapLimit(innerCapLimit);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("SetInnerCapLimit error");
+    }
+    return ret;
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

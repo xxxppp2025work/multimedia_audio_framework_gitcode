@@ -114,6 +114,10 @@ public:
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
     int32_t GenerateSessionId(uint32_t &sessionId) override;
     void NotifyAccountsChanged() override;
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId) override;
+    int32_t SetInnerCapLimit(uint32_t innerCapLimit) override;
+#endif
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

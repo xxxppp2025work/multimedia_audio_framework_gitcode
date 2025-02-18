@@ -1442,5 +1442,39 @@ void AudioManagerProxy::NotifyAccountsChanged()
         static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_ACCOUNTS_CHANGED), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed,error:%d", error);
 }
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t AudioManagerProxy::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), AUDIO_ERR, "Write descriptor failed!");
+
+    int32_t ret = ProcessConfig::WriteInnerCapConfigToParcel(config, data);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "Write config failed");
+
+    ret = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_CAPTURE_LIMIT),
+        data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "Failed, ipc error: %{public}d", ret);
+    ret = reply.ReadInt32();
+    innerCapId = reply.ReadInt32();
+    return ret;
+}
+
+int32_t AudioManagerProxy::SetInnerCapLimit(uint32_t innerCapLimit)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), AUDIO_ERR, "Write descriptor failed!");
+    data.WriteUint32(innerCapLimit);
+    int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_CAPTURE_LIMIT),
+        data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "Failed, ipc error: %{public}d", ret);
+    ret = reply.ReadInt32();
+    return ret;
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

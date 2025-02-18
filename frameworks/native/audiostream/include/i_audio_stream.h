@@ -283,6 +283,9 @@ public:
     virtual DeviceType GetDefaultOutputDevice() = 0;
 
     virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
+#ifdef HAS_FEATURE_INNERCAPTURER
+    virtual int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config) = 0;
+#endif
 };
 } // namespace AudioStandard
 } // namespace OHOS
