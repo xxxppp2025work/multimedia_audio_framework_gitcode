@@ -920,5 +920,15 @@ void FastAudioStream::SetSwitchingStatus(bool isSwitching)
         switchingInfo_ = {false, INVALID};
     }
 }
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t FastAudioStream::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config)
+{
+    return SUCCESS;
+}
+int32_t FastAudioStream::DelCaptureNum()
+{
+    return SUCCESS;
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS
