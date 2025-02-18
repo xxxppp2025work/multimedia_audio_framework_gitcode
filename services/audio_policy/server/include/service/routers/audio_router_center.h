@@ -45,6 +45,7 @@ public:
     int32_t UnsetAudioDeviceRefinerCallback();
     bool isCallRenderRouter(StreamUsage streamUsage);
     void SetAlarmFollowRingRouter(const bool flag);
+    bool IsNoDeviceCaptureStream(SourceType sourceType);
 
 private:
     AudioRouterCenter()
