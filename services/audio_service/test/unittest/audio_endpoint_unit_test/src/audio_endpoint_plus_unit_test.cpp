@@ -500,6 +500,19 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_017, TestSize.Level1)
     srcData.streamInfo.channels = AudioChannel::MONO;
 
     audioEndpointInner->HandleRendererDataParams(srcData, dstData);
+
+    clientConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    clientConfig.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    clientConfig.streamInfo.format = SAMPLE_F32LE;
+    clientConfig.streamInfo.channels = STEREO;
+    sptr<IAudioProcess> process = AudioService::GetInstance()->GetAudioProcess(clientConfig);
+    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_F32LE;
+
+    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
+
+    srcData.streamInfo.channels = AudioChannel::STEREO;
+
+    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
 }
 
 /*
@@ -760,6 +773,16 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_028, TestSize.Level1)
     BufferDesc convertedBuffer;
     audioEndpointInner->clientConfig_.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::STEREO;
+
+    audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
+
+    audioEndpointInner->clientConfig_.streamInfo.format = AudioSampleFormat::SAMPLE_F32LE;
+    audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::STEREO;
+
+    audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
+
+    audioEndpointInner->clientConfig_.streamInfo.format = AudioSampleFormat::SAMPLE_F32LE;
+    audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::MONO;
 
     audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
 }
