@@ -124,6 +124,9 @@ public:
 private:
     int32_t InitAudioInterruptCallback();
     int32_t InitInputDeviceChangeCallback();
+#ifdef HAS_FEATURE_INNERCAPTURER
+    void HandleCreateResult(int32_t ret);
+#endif
     int32_t SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     void InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId);

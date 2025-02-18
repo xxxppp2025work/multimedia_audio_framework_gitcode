@@ -197,6 +197,10 @@ public:
 
     void SetSwitchingStatus(bool isSwitching) override;
 
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config) override;
+    int32_t DelCaptureNum() override;
+#endif
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);

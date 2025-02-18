@@ -90,7 +90,10 @@ namespace AudioStandard {
         GET_STANDBY_STATUS,
         GENERATE_SESSION_ID,
         NOTIFY_ACCOUNTS_CHANGED,
-        AUDIO_SERVER_CODE_MAX = NOTIFY_ACCOUNTS_CHANGED,
+        CHECK_CAPTURE_LIMIT,
+        SET_CAPTURE_LIMIT,
+        DEL_CAPTURE_NUM,
+        AUDIO_SERVER_CODE_MAX = DEL_CAPTURE_NUM,
     };
 } // namespace AudioStandard
 } // namespace OHOS
