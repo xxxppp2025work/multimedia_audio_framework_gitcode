@@ -110,7 +110,8 @@ public:
 
     int32_t CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice) override;
 
-    sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode) override;
+    sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
+        const AudioPlaybackCaptureConfig &filterConfig = AudioPlaybackCaptureConfig()) override;
 
     // ISinkParameterCallback
     void OnAudioSinkParamChange(const std::string &netWorkId, const AudioParamKey key,
@@ -187,6 +188,9 @@ public:
     int32_t GenerateSessionId(uint32_t &sessionId) override;
     
     void NotifyAccountsChanged() override;
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int32_t SetInnerCapLimit(uint32_t innerCapLimit) override;
+#endif
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -249,6 +253,7 @@ private:
     sptr<IRemoteObject> CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid);
     int32_t SetAsrVoiceSuppressionControlMode(const AudioParamKey paramKey, AsrVoiceControlMode asrVoiceControlMode,
         bool on, int32_t modifyVolume);
+    int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId);
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;
