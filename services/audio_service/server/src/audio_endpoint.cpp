@@ -182,6 +182,8 @@ public:
     uint32_t GetLinkedProcessCount() override;
 
     AudioMode GetAudioMode() const final;
+
+    void BindCore();
 private:
     AudioProcessConfig GetInnerCapConfig();
     void StartThread(const IAudioSinkAttr &attr);
@@ -259,6 +261,7 @@ private:
     static constexpr int64_t THREE_MILLISECOND_DURATION = 3000000; // 3ms
     static constexpr int64_t WRITE_TO_HDI_AHEAD_TIME = -1000000; // ahead 1ms
     static constexpr int32_t UPDATE_THREAD_TIMEOUT = 1000; // 1000ms
+    static constexpr int32_t CPU_INDEX = 2;
     enum ThreadStatus : uint32_t {
         WAITTING = 0,
         SLEEPING,
@@ -357,6 +360,8 @@ private:
     bool isVolumeAlreadyZero_ = false;
     std::atomic_bool endpointWorkLoopFucThreadStatus_ { false };
     std::atomic_bool recordEndpointWorkLoopFucThreadStatus_ { false };
+
+    bool mCoreBinded_ = false;
 };
 
 std::string AudioEndpoint::GenerateEndpointKey(AudioDeviceDescriptor &deviceInfo, int32_t endpointFlag)
@@ -2167,8 +2172,27 @@ void AudioEndpointInner::WatchingEndpointWorkLoopFuc()
         WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
 }
 
+void AudioEndpointInner::BindCore()
+{
+    if (mCoreBinded_) {
+        return;
+    }
+    // bind cpu cores 2-7 for fast mixer
+    cpu_set_t targetCpus;
+    CPU_ZERO(&targetCpus);
+    int32_t cpuNum = sysconf(_SC_NPROCESSORS_CONF);
+    for (int32_t i = CPU_INDEX; i < cpuNum; i++) {
+        CPU_SET(i, &targetCpus);
+    }
+
+    sched_setaffinity(gettid(), sizeof(cpu_set_t), &targetCpus);
+    AUDIO_INFO_LOG("set pid: %{public}d, tid: %{public}d cpus", getpid(), gettid());
+    mCoreBinded_ = true;
+}
+
 void AudioEndpointInner::EndpointWorkLoopFuc()
 {
+    BindCore();
     SetThreadQosLevel();
     int64_t curTime = 0;
     uint64_t curWritePos = 0;
