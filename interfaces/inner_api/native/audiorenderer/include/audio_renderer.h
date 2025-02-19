@@ -938,7 +938,7 @@ public:
     * @return Returns <b>true</b> if offload is enabled.
     * @since 15
     */
-    virtual bool IsOffloadEnable() = 0;
+    virtual bool IsOffloadEnable() {};
 
     virtual bool IsFastRenderer() = 0;
 
