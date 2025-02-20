@@ -96,6 +96,9 @@ public:
     int32_t SetCaptureSilentStateProxy(bool state);
     void NotifyAccountsChanged();
     void GetAllSinkInputsProxy(std::vector<SinkInput> &sinkInputs);
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int32_t SetInnerCapLimitProxy(uint32_t innerCapLimit);
+#endif
 private:
     AudioServerProxy() {}
     ~AudioServerProxy() {}
