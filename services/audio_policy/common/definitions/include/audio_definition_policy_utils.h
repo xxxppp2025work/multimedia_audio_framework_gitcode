@@ -39,7 +39,8 @@ public:
     static std::unordered_map<std::string, DeviceRole> deviceRoleStrToEnum;
     static std::unordered_map<std::string, AudioPipeRole> pipeRoleStrToEnum;
     static std::unordered_map<std::string, DeviceType> deviceTypeStrToEnum;
-    static std::unordered_map<std::string, AudioPortPin> pinStrToEnum;
+    static std::unordered_map<std::string, DeviceType> deviceNameToTypeEnum;
+    static std::unordered_map<std::string, AudioPin> pinStrToEnum;
     static std::unordered_map<std::string, AudioSampleFormat> formatStrToEnum;
     static std::unordered_map<std::string, AudioChannelLayout> layoutStrToEnum;
     static std::unordered_map<std::string, AudioFlagType> flagStrToEnum;

@@ -595,19 +595,13 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioPolicyConfigManager_001, TestSize
     ret = audioPolicyConfigManager->Init();
     EXPECT_EQ(ret, true);
 
-    AudioPolicyConfigData configData = AudioPolicyConfigData::GetInstance();
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
     std::string version = configData.GetVersion();
     EXPECT_EQ(version, "1.0");
 
     std::unordered_map<AudioAdapterType, PolicyAdapterInfo> adapterInfoMap {};
     configData.GetPolicyConfig(adapterInfoMap);
     EXPECT_NE(adapterInfoMap.size(), 0);
-    std::unordered_map<DeviceType, AdapterDeviceInfo&> deviceInfoMap {};
-    configData.GetDeviceConfig(deviceInfoMap);
-    EXPECT_NE(deviceInfoMap.size(), 0);
-    std::unordered_map<AudioFlagType, AdapterPipeInfo&> pipeInfoMap {};
-    configData.GetPipeConfig(pipeInfoMap);
-    EXPECT_NE(pipeInfoMap.size(), 0);
 
     for (auto &pair : adapterInfoMap) {
         std::string adapterName = pair.second.GetAdapterName();
@@ -622,6 +616,27 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioPolicyConfigManager_001, TestSize
         EXPECT_NE(pipeInfos.size(), 0);
     }
 
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_002
+* @tc.desc  : Test AudioPolicyConfigManager.
+*/
+HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioPolicyConfigManager_002, TestSize.Level1)
+{
+    std::unique_ptr<AudioPolicyConfigManager> audioPolicyConfigManager = std::make_unique<AudioPolicyConfigManager>();
+    ASSERT_NE(nullptr, audioPolicyConfigManager);
+
+    bool ret = false;
+    ret = audioPolicyConfigManager->Init();
+    EXPECT_EQ(ret, true);
+
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    std::unordered_map<DeviceType, AdapterDeviceInfo&> deviceInfoMap {};
+    configData.GetDeviceConfig(deviceInfoMap);
+    EXPECT_NE(deviceInfoMap.size(), 0);
+
     for (auto &pair : deviceInfoMap) {
         EXPECT_NE(pair.second.name_, "");
         EXPECT_GT(pair.second.type_, 0);
@@ -631,6 +646,26 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioPolicyConfigManager_001, TestSize
         EXPECT_NE(pair.second.adapterInfo_, nullptr);
         EXPECT_NE(pair.second.supportPipeMap_.size(), 0);
     }
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_003
+* @tc.desc  : Test AudioPolicyConfigManager.
+*/
+HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioPolicyConfigManager_003, TestSize.Level1)
+{
+    std::unique_ptr<AudioPolicyConfigManager> audioPolicyConfigManager = std::make_unique<AudioPolicyConfigManager>();
+    ASSERT_NE(nullptr, audioPolicyConfigManager);
+
+    bool ret = false;
+    ret = audioPolicyConfigManager->Init();
+    EXPECT_EQ(ret, true);
+
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    std::unordered_map<AudioFlagType, AdapterPipeInfo&> pipeInfoMap {};
+    configData.GetPipeConfig(pipeInfoMap);
+    EXPECT_NE(pipeInfoMap.size(), 0);
 
     for (auto &pair : pipeInfoMap) {
         EXPECT_NE(pair.second.name_, "");
@@ -654,8 +689,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioPolicyConfigManager_001, TestSize
             EXPECT_NE(info.pipeInfo_, nullptr);
             EXPECT_NE(info.supportDeviceMap_.size(), 0);
         }
-
-        EXPECT_NE(pair.second.supportDeviceMap_.size(), 0);
     }
 }
 } // namespace AudioStandard

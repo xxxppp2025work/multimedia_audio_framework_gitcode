@@ -25,6 +25,7 @@ namespace AudioStandard {
 bool AudioPolicyConfigManager::Init()
 {
     std::unique_ptr<AudioPolicyConfigParser> audioPolicyConfigParser = make_unique<AudioPolicyConfigParser>(this);
+    CHECK_AND_RETURN_RET_LOG(audioPolicyConfigParser != nullptr, false, "AudioPolicyConfigParser create failed");
     bool ret = audioPolicyConfigParser->LoadConfiguration();
     if (!ret) {
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Policy Config Load Configuration failed");
@@ -36,58 +37,57 @@ bool AudioPolicyConfigManager::Init()
 
 void AudioPolicyConfigManager::OnAudioPolicyConfigXmlParsingCompleted()
 {
-    AudioPolicyConfigData configData = AudioPolicyConfigData::GetInstance();
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
     std::unordered_map<AudioAdapterType, PolicyAdapterInfo> adapterInfoMap {};
     configData.GetAdapterInfoMap(adapterInfoMap);
     AUDIO_INFO_LOG("AdapterInfo num [%{public}zu]", adapterInfoMap.size());
     CHECK_AND_RETURN_LOG(!adapterInfoMap.empty(), "Parse audio policy xml failed, received data is empty");
 
-    audioPolicyConfig_ = configData;
     audioPolicyConfig_.Reorganize();
 }
 
 void AudioPolicyConfigManager::GetDeviceDescriptorByDeviceType(DeviceType deviceType, AudioDeviceDescriptor &desc)
 {
-    std::unordered_map<DeviceType, AdapterDeviceInfo&> deviceInfoMap;
+    std::unordered_map<DeviceType, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap;
     audioPolicyConfig_.GetDeviceInfoMap(deviceInfoMap);
     auto it = deviceInfoMap.find(deviceType);
     if (it != deviceInfoMap.end()) {
-        AdapterDeviceInfo deviceInfo = it->second;
+        std::shared_ptr<AdapterDeviceInfo> deviceInfo = it->second;
         desc.deviceType_ = deviceType;
-        desc.deviceRole_ = deviceInfo.role_;
-        desc.deviceName_ = deviceInfo.name_;
+        desc.deviceRole_ = deviceInfo->role_;
+        desc.deviceName_ = deviceInfo->name_;
     }
 }
 
 std::string AudioPolicyConfigManager::GetSinkPortName(DeviceType deviceType, AudioFlagType flagType)
 {
     std::string portName = PORT_NONE;
-    std::unordered_map<DeviceType, AdapterDeviceInfo&> deviceInfoMap;
+    std::unordered_map<DeviceType, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap;
     audioPolicyConfig_.GetDeviceInfoMap(deviceInfoMap);
     auto deviceIt = deviceInfoMap.find(deviceType);
     CHECK_AND_RETURN_RET_LOG(deviceIt != deviceInfoMap.end(), portName, "Find deviceType failed");
-    auto pipeIt = deviceIt->second.supportPipeMap_.find(flagType);
-    CHECK_AND_RETURN_RET_LOG(pipeIt != deviceIt->second.supportPipeMap_.end(), portName, "Find flagType failed");
-    portName = pipeIt->second.paProp_.moduleName_;
+    auto pipeIt = deviceIt->second->supportPipeMap_.find(flagType);
+    CHECK_AND_RETURN_RET_LOG(pipeIt != deviceIt->second->supportPipeMap_.end(), portName, "Find flagType failed");
+    portName = pipeIt->second->paProp_.moduleName_;
     return portName;
 }
 
 void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> desc, PipeStreamPropInfo &info)
 {
     // device -> adapter -> flag -> stream
-    std::unordered_map<DeviceType, AdapterDeviceInfo&> deviceInfoMap;
+    std::unordered_map<DeviceType, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap;
     audioPolicyConfig_.GetDeviceInfoMap(deviceInfoMap);
     auto deviceIt = deviceInfoMap.find(desc->deviceDesc_->deviceType_);
     CHECK_AND_RETURN_LOG(deviceIt != deviceInfoMap.end(), "Find deviceType failed");
-    auto pipeIt = deviceIt->second.supportPipeMap_.find(desc->audioFlag); // audioFlag? two enum definitions
-    if (pipeIt == deviceIt->second.supportPipeMap_.end()) {
+    auto pipeIt = deviceIt->second->supportPipeMap_.find(desc->audioFlag); // audioFlag? two enum definitions
+    if (pipeIt == deviceIt->second->supportPipeMap_.end()) {
         AUDIO_ERR_LOG("Find audioFlag failed");
         AudioFlagType flag = desc->audioMode_ == AUDIO_MODE_PLAYBACK ?
             FLAG_TYPE_OUTPUT_NORMAL : FLAG_TYPE_INPUT_NORMAL;
-        pipeIt = deviceIt->second.supportPipeMap_.find(flag);
-        CHECK_AND_RETURN_LOG(pipeIt != deviceIt->second.supportPipeMap_.end(), "Find normal flag failed");
+        pipeIt = deviceIt->second->supportPipeMap_.find(flag);
+        CHECK_AND_RETURN_LOG(pipeIt != deviceIt->second->supportPipeMap_.end(), "Find normal flag failed");
     }
-    for (auto &streamProp : pipeIt->second.streamPropInfos_) {
+    for (auto &streamProp : pipeIt->second->streamPropInfos_) {
         if (streamProp.format_ == desc->audioStreamParams.format &&
             streamProp.sampleRate_ == desc->audioStreamParams.samplingRate &&
             streamProp.channelLayout_ == desc->audioStreamParams.channelLayout) {

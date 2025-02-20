@@ -88,40 +88,33 @@ struct PipeStreamPropInfo {
 
     std::shared_ptr<AdapterPipeInfo> pipeInfo_;
     std::list<DeviceType> supportDevices_ {};
-    std::unordered_map<DeviceType, AdapterDeviceInfo&> supportDeviceMap_ {};
+    std::unordered_map<DeviceType, std::shared_ptr<AdapterDeviceInfo>> supportDeviceMap_ {};
 };
 
 class AudioPolicyConfigData {
 public:
-    static AudioPolicyConfigData&  GetInstance()
-    {
-        static AudioPolicyConfigData instance;
-        return instance;
-    }
+    static AudioPolicyConfigData&  GetInstance();
     void Reorganize();
     void SetDeviceMaps(std::list<AdapterDeviceInfo> &deviceInfos);
     void SetPipeMaps(std::list<AdapterPipeInfo> &pipeInfos);
-    void SetSupportDeviceAndPipeMaps(AdapterPipeInfo &pipeInfo);
+    void SetSupportDeviceAndPipeMaps(std::shared_ptr<AdapterPipeInfo> pipeInfo);
 
     void SetVersion(const std::string version);
     void SetAdapterInfoMap(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap);
-    void AddAdapterInfoToMap(AudioAdapterType type, PolicyAdapterInfo &info);
 
     std::string GetVersion();
     void GetAdapterInfoMap(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap);
-    void GetDeviceInfoMap(std::unordered_map<DeviceType, AdapterDeviceInfo&> &deviceInfoMap);
-    void GetPipeInfoMap(std::unordered_map<AudioFlagType, AdapterPipeInfo&> &pipeInfoMap);
+    void GetDeviceInfoMap(std::unordered_map<DeviceType, std::shared_ptr<AdapterDeviceInfo>> &deviceInfoMap);
+    void GetPipeInfoMap(std::unordered_map<AudioFlagType, std::shared_ptr<AdapterPipeInfo>> &pipeInfoMap);
 
 private:
+    AudioPolicyConfigData() = default;
+    AudioPolicyConfigData(const AudioPolicyConfigData&) = delete;
+    AudioPolicyConfigData& operator=(const AudioPolicyConfigData&) = delete;
     std::string version_ = STR_INITED;
     std::unordered_map<AudioAdapterType, PolicyAdapterInfo> adapterInfoMap_ {};
-    std::unordered_map<DeviceType, AdapterDeviceInfo&> deviceInfoMap_ {};
-    std::unordered_map<AudioFlagType, AdapterPipeInfo&> pipeInfoMap_ {};
-    // check: use output/input deviceMap or interface in adapterInfo
-    // std::unordered_map<DeviceType, AdapterDeviceInfo&> outputDeviceMap_ {};
-    // std::unordered_map<DeviceType, AdapterDeviceInfo&> inputDeviceMap_ {};
-    // std::unordered_map<AudioFlagType, AdapterPipeInfo&> outputPipeMap_ {};
-    // std::unordered_map<AudioFlagType, AdapterPipeInfo&> inputPipeMap_ {};
+    std::unordered_map<DeviceType, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap_ {};
+    std::unordered_map<std::string, std::shared_ptr<AdapterPipeInfo>> pipeInfoMap_ {};
 };
 
 class PolicyAdapterInfo {
@@ -150,12 +143,12 @@ private:
 struct AdapterDeviceInfo {
     std::string name_ = STR_INITED;
     DeviceType type_ = DEVICE_TYPE_NONE;
-    AudioPortPin pin_ = PIN_NONE;
+    AudioPin pin_ = AUDIO_PIN_NONE;
     DeviceRole role_ = DEVICE_ROLE_NONE;
 
     std::shared_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<std::string> supportPipes_ {};
-    std::unordered_map<AudioFlagType, AdapterPipeInfo&> supportPipeMap_ {}; // flag <-> pipeInfo
+    std::unordered_map<AudioFlagType, std::shared_ptr<AdapterPipeInfo>> supportPipeMap_ {}; // flag <-> pipeInfo
 };
 
 struct AdapterPipeInfo {
@@ -169,7 +162,6 @@ struct AdapterPipeInfo {
     std::shared_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<PipeStreamPropInfo> streamPropInfos_ {};
     std::list<AttributeInfo> attributeInfos_ {};
-    std::unordered_map<DeviceType, AdapterDeviceInfo&> supportDeviceMap_ {};
 };
 } // namespace AudioStandard
 } // namespace OHOS

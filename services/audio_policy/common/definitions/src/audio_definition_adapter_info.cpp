@@ -21,44 +21,35 @@
 
 namespace OHOS {
 namespace AudioStandard {
+AudioPolicyConfigData& AudioPolicyConfigData::GetInstance()
+{
+    static AudioPolicyConfigData instance;
+    return instance;
+}
+
 void AudioPolicyConfigData::SetDeviceMaps(std::list<AdapterDeviceInfo> &deviceInfos)
 {
     for (AdapterDeviceInfo &deviceInfo : deviceInfos) {
-        deviceInfoMap_.insert({deviceInfo.type_, deviceInfo});
-
-        // if (deviceInfo.role_ == OUTPUT_DEVICE) {
-        //     outputDeviceMap_.insert({deviceInfo.type_, deviceInfo});
-        // } else if (deviceInfo.role_ == INPUT_DEVICE) {
-        //     inputDeviceMap_.insert({deviceInfo.type_, deviceInfo});
-        // }
+        deviceInfoMap_.insert({deviceInfo.type_, std::make_shared<AdapterDeviceInfo>(deviceInfo)});
     }
 }
 
 void AudioPolicyConfigData::SetPipeMaps(std::list<AdapterPipeInfo> &pipeInfos)
 {
     for (AdapterPipeInfo &pipeInfo : pipeInfos) {
-        for (auto &supportFlag : pipeInfo.supportFlags_) {
-            pipeInfoMap_.insert({supportFlag, pipeInfo});
-
-            // if (pipeInfo.pipeRole_ == PIPE_ROLE_OUT) {
-            //     outputPipeMap_.insert({supportFlag, pipeInfo});
-            // } else if (pipeInfo.pipeRole_ == PIPE_ROLE_IN) {
-            //     inputPipeMap_.insert({supportFlag, pipeInfo});
-            // }
-        }
+        pipeInfoMap_.insert({pipeInfo.name_, std::make_shared<AdapterPipeInfo>(pipeInfo)});
     }
 }
 
-void AudioPolicyConfigData::SetSupportDeviceAndPipeMaps(AdapterPipeInfo &pipeInfo)
+void AudioPolicyConfigData::SetSupportDeviceAndPipeMaps(std::shared_ptr<AdapterPipeInfo> pipeInfo)
 {
-    for (PipeStreamPropInfo &streamPropInfo : pipeInfo.streamPropInfos_) {
+    for (PipeStreamPropInfo &streamPropInfo : pipeInfo->streamPropInfos_) {
         for (DeviceType &supportDevice : streamPropInfo.supportDevices_) {
-            AdapterDeviceInfo &deviceInfo = deviceInfoMap_.find(supportDevice)->second;
+            std::shared_ptr<AdapterDeviceInfo> deviceInfo = deviceInfoMap_.find(supportDevice)->second;
 
-            pipeInfo.supportDeviceMap_.insert({supportDevice, deviceInfo});
             streamPropInfo.supportDeviceMap_.insert({supportDevice, deviceInfo});
-            for (auto &supportFlag : pipeInfo.supportFlags_) {
-                deviceInfo.supportPipeMap_.insert({supportFlag, pipeInfo});
+            for (auto &supportFlag : pipeInfo->supportFlags_) {
+                deviceInfo->supportPipeMap_.insert({supportFlag, pipeInfo});
             }
         }
     }
@@ -75,8 +66,8 @@ void AudioPolicyConfigData::Reorganize()
         SetPipeMaps(pipeInfos);
     }
 
-    for (auto &pair : pipeInfoMap_) {
-        SetSupportDeviceAndPipeMaps(pair.second);
+    for (auto &pipePair : pipeInfoMap_) {
+        SetSupportDeviceAndPipeMaps(pipePair.second);
     }
 }
 
@@ -98,11 +89,6 @@ void AudioPolicyConfigData::SetAdapterInfoMap(std::unordered_map<AudioAdapterTyp
     }
 }
 
-void AudioPolicyConfigData::AddAdapterInfoToMap(AudioAdapterType type, PolicyAdapterInfo &info)
-{
-    adapterInfoMap_[type] = std::move(info);
-}
-
 std::string AudioPolicyConfigData::GetVersion()
 {
     return version_;
@@ -110,17 +96,19 @@ std::string AudioPolicyConfigData::GetVersion()
 
 void AudioPolicyConfigData::GetAdapterInfoMap(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap)
 {
-    adapterInfoMap = std::move(adapterInfoMap_);
+    adapterInfoMap = adapterInfoMap_;
 }
 
-void AudioPolicyConfigData::GetDeviceInfoMap(std::unordered_map<DeviceType, AdapterDeviceInfo&> &deviceInfoMap)
+void AudioPolicyConfigData::GetDeviceInfoMap(std::unordered_map<DeviceType,
+    std::shared_ptr<AdapterDeviceInfo>> &deviceInfoMap)
 {
-    deviceInfoMap = std::move(deviceInfoMap_);
+    deviceInfoMap = deviceInfoMap_;
 }
 
-void AudioPolicyConfigData::GetPipeInfoMap(std::unordered_map<AudioFlagType, AdapterPipeInfo&> &pipeInfoMap)
+void AudioPolicyConfigData::GetPipeInfoMap(std::unordered_map<AudioFlagType,
+    std::shared_ptr<AdapterPipeInfo>> &pipeInfoMap)
 {
-    pipeInfoMap = std::move(pipeInfoMap_);
+    pipeInfoMap = pipeInfoMap_;
 }
 
 AudioAdapterType PolicyAdapterInfo::GetTypeEnum()
@@ -218,12 +206,12 @@ std::string PolicyAdapterInfo::GetAdapterSupportScene()
 
 void PolicyAdapterInfo::GetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos)
 {
-    deviceInfos = std::move(deviceInfos_);
+    deviceInfos = deviceInfos_;
 }
 
 void PolicyAdapterInfo::GetPipeInfos(std::list<AdapterPipeInfo> &pipeInfos)
 {
-    pipeInfos = std::move(pipeInfos_);
+    pipeInfos = pipeInfos_;
 }
 }
 }
