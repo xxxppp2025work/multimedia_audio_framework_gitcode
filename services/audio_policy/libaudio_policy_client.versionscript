@@ -15,8 +15,8 @@
   global:
     *GetInstance*;
     *AudioPolicyManager*;
-    *ParseGlobalConfigXml*;
     *AudioServiceLoad*;
+    *ParseGlobalConfigXml*;
   local:
     *;
 };
