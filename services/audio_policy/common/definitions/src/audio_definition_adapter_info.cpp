@@ -105,7 +105,7 @@ void AudioPolicyConfigData::GetDeviceInfoMap(std::unordered_map<DeviceType,
     deviceInfoMap = deviceInfoMap_;
 }
 
-void AudioPolicyConfigData::GetPipeInfoMap(std::unordered_map<AudioFlagType,
+void AudioPolicyConfigData::GetPipeInfoMap(std::unordered_map<std::string,
     std::shared_ptr<AdapterPipeInfo>> &pipeInfoMap)
 {
     pipeInfoMap = pipeInfoMap_;

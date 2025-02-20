@@ -105,7 +105,7 @@ public:
     std::string GetVersion();
     void GetAdapterInfoMap(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap);
     void GetDeviceInfoMap(std::unordered_map<DeviceType, std::shared_ptr<AdapterDeviceInfo>> &deviceInfoMap);
-    void GetPipeInfoMap(std::unordered_map<AudioFlagType, std::shared_ptr<AdapterPipeInfo>> &pipeInfoMap);
+    void GetPipeInfoMap(std::unordered_map<std::string, std::shared_ptr<AdapterPipeInfo>> &pipeInfoMap);
 
 private:
     AudioPolicyConfigData() = default;
