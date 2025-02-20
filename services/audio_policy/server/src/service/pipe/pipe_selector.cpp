@@ -17,15 +17,14 @@
 #endif
 
 #include "pipe_selector.h"
-#include "audio_concurrency_service.h" 
-#include "pipe_manager.h"
+#include "audio_stream_collector.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
 static std::map<int, AudioPipeType> flagPipeTypeMap_ = {
-    {AUDIO_OUTPUT_FLAG_PRIMARY,       PIPE_TYPE_NORMAL_OUT},
-    {AUDIO_INPUT_FLAG_PRIMARY,        PIPE_TYPE_NORMAL_IN},
+    {AUDIO_OUTPUT_FLAG_NORMAL,       PIPE_TYPE_NORMAL_OUT},
+    {AUDIO_INPUT_FLAG_NORMAL,        PIPE_TYPE_NORMAL_IN},
     {AUDIO_OUTPUT_FLAG_LOWLATENCY,    PIPE_TYPE_NORMAL_OUT},    //LOWLATEENCY对应NORMAL还是对应LOWLATENCY？其他不在表中的FLAG如何对应？
     {AUDIO_INPUT_FLAG_LOWLATENCY,     PIPE_TYPE_NORMAL_IN},
     {AUDIO_OUTPUT_FLAG_MMAP,          PIPE_TYPE_LOWLATENCY_OUT},
@@ -55,21 +54,24 @@ std::vector<std::pair<PipeInfo, PipeInfo>> PipeSelector::FetchPipeAndExecute(std
     std::vector<PipeInfo> pipeList = PipeManager::GetPipeManager().GetPipeList();
 
     for (auto it = pipeList.begin(); it != pipeList.end(); it++) {
-        switch (map[std::make_pair(flagPipeTypeMap_[it.streamDesc->flag], flagPipeTypeMap_[info.streamDesc->flag])]) {    //flag如果在flagPipeTypeMap_中不存在如何匹配？默认NORMAL？
+        ConcurrencyAction action = map[std::make_pair(flagPipeTypeMap_[it.streamDesc->audioFlag_],
+            flagPipeTypeMap_[info.streamDesc->audioFlag_])];
+        PipeInfo concedeInfo = {};
+        switch (action) {    //flag如果在flagPipeTypeMap_中不存在如何匹配？默认NORMAL？
         case PLAY_BOTH:
-            it.action = PIPE_ACTION_DEFAULT;
-            pipes.push_back(std::make_pair(it, it));
+            it->action = PIPE_ACTION_DEFAULT;
+            pipes.push_back(std::make_pair(*it, *it));
             break;
         case CONCEDE_INCOMING:
-            it.action = PIPE_ACTION_DEFAULT;
-            pipes.push_back(std::make_pair(it, it));
+            it->action = PIPE_ACTION_DEFAULT;
+            pipes.push_back(std::make_pair(*it, *it));
             info = GetPrimaryPipeInfo(info);    //新增流降级为primary流，  GetPrimaryPipeInfo待实现。
             break;
         case CONCEDE_EXISTING:
-            PipeInfo concedeInfo = GetPrimaryPipeInfo(it);
+            concedeInfo = GetPrimaryPipeInfo(it);
             concedeInfo.action = PIPE_ACTION_RECREATE;
-            pipes.push_back(std::make_pair(concedeInfo, it));    //existing流降级为primary流
-            break:
+            pipes.push_back(std::make_pair(concedeInfo, *it));    //existing流降级为primary流
+            break;
         default:
             break;
         }
@@ -101,17 +103,20 @@ std::vector<std::pair<PipeInfo, PipeInfo>> PipeSelector::FetchPipesAndExecute(co
             continue;
         }
 
-        for(auto iter = pipes.begin(); iter != pipes.end(); iter++) {
-            switch(map[std::make_pair(iter.streamDesc->flag, info.streamDesc->flag)]) {
+        for(auto iter = pipeList.begin(); iter != pipeList.end(); iter++) {
+            ConcurrencyAction action = map[std::make_pair(flagPipeTypeMap_[iter->streamDesc->audioFlag_],
+                flagPipeTypeMap_[info.streamDesc->audioFlag_])];
+            PipeInfo concedeInfo = {};
+            switch(action) {
             case PLAY_BOTH:
                 break;
             case CONCEDE_INCOMING:
                 info = GetPrimaryPipeInfo(info);
                 break;
             case CONCEDE_EXISTING:
-                PipeInfo concedeInfo = GetPrimaryPipeInfo(it);
-                PipeManager::GetPipeManager().Assign(iter.first, concedeInfo);    //existing流降级为primary流
-                break:
+                 = GetPrimaryPipeInfo(*iter);
+                PipeManager::GetPipeManager().Assign(*iter, concedeInfo);    //existing流降级为primary流
+                break;
             default:
                 break;
             }
@@ -123,11 +128,11 @@ std::vector<std::pair<PipeInfo, PipeInfo>> PipeSelector::FetchPipesAndExecute(co
     //更新pipes中pipe action
     for (auto it = pipes.begin(); it != pipes.end(); it++) {
         for (auto iter = pipeList.begin(); iter != pipeList.end(); iter++) {
-            if (it.first.streamDesc == iter.streamDesc) {
-                if (!PipeManager::GetPipeManager().IsSamePipe(it.first, iter)) {
-                    it.first.action = PIPE_ACTION_RECREATE;
+            if (it->first.streamDesc == iter->streamDesc) {
+                if (!PipeManager::GetPipeManager().IsSamePipe(it->first, *iter)) {
+                    it->first.action = PIPE_ACTION_RECREATE;
                 } else {
-                    it.first.action = PIPE_ACTION_DEFAULT;
+                    it->first.action = PIPE_ACTION_DEFAULT;
                 }
             }
             break;

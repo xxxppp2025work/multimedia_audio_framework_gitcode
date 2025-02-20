@@ -16,7 +16,7 @@
 #define ST_PIPE_SELECTOR_H
 
 #include <vector>
-#include "audio_concruuency_parse.h"
+#include "pipe_manager.h"
 #include "audio_stream_info.h"
 
 namespace OHOS {
@@ -27,8 +27,8 @@ public:
     PipeSelector() = default;
     ~PipeSelector() = default;
 
-    static void FetchPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    static void FetchPipesAndExecute(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
+    static std::vector<std::pair<PipeInfo, PipeInfo>> FetchPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    static std::vector<std::pair<PipeInfo, PipeInfo>> FetchPipesAndExecute(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
 };
 } // namespace AudioStandard
 } // namespace OHOS

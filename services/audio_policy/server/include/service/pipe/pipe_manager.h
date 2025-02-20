@@ -18,6 +18,7 @@
 #include <string>
 #include <mutex>
 #include <shared_mutex>
+#include "audio_stream_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -50,7 +51,7 @@ public:
 
     void AddPipeInfo(const PipeInfo& info);
     void RemovePipeInfo(const PipeInfo& info);
-    void UpdatePipeInfo(const PipeInfo& old, const PipeInfo& new);
+    void UpdatePipeInfo(const PipeInfo& oldPipe, const PipeInfo& newPipe);
 
     const std::vector<PipeInfo> GetPipeList();
     void Assign(PipeInfo& dst, const PipeInfo& src);

@@ -193,7 +193,7 @@ int32_t AudioConcurrencyService::ActivateAudioConcurrency(AudioPipeType incoming
 
 std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction>& AudioConcurrencyService::GetConcurrencyMap()
 {
-    return &concurrencyCfgMap_;
+    return concurrencyCfgMap_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

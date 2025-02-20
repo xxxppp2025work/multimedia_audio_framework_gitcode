@@ -27,7 +27,7 @@ PipeManager::PipeManager()
 
 PipeManager::~PipeManager()
 {
-    curPipeList.remove();
+    curPipeList.clear();
 }
 
 void PipeManager::AddPipeInfo(const PipeInfo& info)   //上层通过pipeselector获取pipeinfo
@@ -47,12 +47,12 @@ void PipeManager::RemovePipeInfo(const PipeInfo& info)
     }
 }
 
-void PipeManager::UpdatePipeInfo(const PipeInfo& old, const PipeInfo& new)
+void PipeManager::UpdatePipeInfo(const PipeInfo& oldPipe, const PipeInfo& newPipe)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock);
     for (auto iter = curPipeList.begin(); iter != curPipeList.end(); iter++) {
-        if (IsSamePipe(old, *iter)) {
-            Assign(*iter, new);
+        if (IsSamePipe(oldPipe, *iter)) {
+            Assign(*iter, newPipe);
             break;
         }
     }
