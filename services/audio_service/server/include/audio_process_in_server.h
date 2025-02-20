@@ -105,6 +105,12 @@ public:
 
     int32_t SetSilentModeAndMixWithOthers(bool on) override;
 
+    std::time_t GetStartMuteTime() override;
+    void SetStartMuteTime(std::time_t time) override;
+
+    int32_t GetSilentState() override;
+    void SetSilentState(int32_t state) override;
+
 public:
     const AudioProcessConfig processConfig_;
 
@@ -112,6 +118,7 @@ private:
     AudioProcessInServer(const AudioProcessConfig &processConfig, ProcessReleaseCallback *releaseCallback);
     int32_t InitBufferStatus();
     void WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby);
+    void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
 
 private:
     std::atomic<bool> muteFlag_ = false;
@@ -143,6 +150,8 @@ private:
     std::string dumpFileName_;
     FILE *dumpFile_ = nullptr;
     int64_t enterStandbyTime_ = 0;
+    std::time_t startMuteTime_ = 0;
+    int32_t silentState_ = 1; // 0:silent 1:unsilent
 };
 } // namespace AudioStandard
 } // namespace OHOS
