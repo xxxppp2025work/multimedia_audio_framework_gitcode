@@ -1794,7 +1794,7 @@ bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig 
         if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_CREATED)) {
             AUDIO_INFO_LOG("Recreating stream for callerUid:%{public}d need not VerifyBackgroundCapture",
                 config.callerUid);
-            SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);    
+            SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
             return true;
         }
         return false;

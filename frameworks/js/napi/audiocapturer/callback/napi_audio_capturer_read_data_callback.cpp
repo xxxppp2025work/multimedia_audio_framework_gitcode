@@ -160,7 +160,7 @@ void NapiCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr<
     napiCapturer_->isFrameCallbackDone_.store(false);
     std::unique_lock<std::mutex> readCallbackLock(napiCapturer_->readCallbackMutex_);
     if (napiCapturer_->isFrameCallbackDone_.load()) {
-        Audio_WARNING_LOG("Client onReadData operation has been done.");
+        AUDIO_WARNING_LOG("Client onReadData operation has been done.");
     }
     bool isTimeout = !napiCapturer_->readCallbackCv_.wait_for(readCallbackLock,
         std::chrono::milliseconds(READ_CALLBACK_TIMEOUT_IN_MS), [this] {
