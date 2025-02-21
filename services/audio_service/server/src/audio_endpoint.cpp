@@ -2380,7 +2380,9 @@ void AudioEndpointInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSiz
             payload["uid"] = std::to_string(tempProcess->GetAppInfo().appUid);
             payload["sessionId"] = std::to_string(tempProcess->GetAudioSessionId());
             payload["isSilent"] = std::to_string(true);
+#ifdef RESSCHE_ENABLE
             ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);
+#endif
         }
     } else {
         if (tempProcess->GetStartMuteTime() != 0) {
@@ -2394,7 +2396,9 @@ void AudioEndpointInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSiz
             payload["uid"] = std::to_string(tempProcess->GetAppInfo().appUid);
             payload["sessionId"] = std::to_string(tempProcess->GetAudioSessionId());
             payload["isSilent"] = std::to_string(false);
+#ifdef RESSCHE_ENABLE
             ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);
+#endif
         }
     }
 }
