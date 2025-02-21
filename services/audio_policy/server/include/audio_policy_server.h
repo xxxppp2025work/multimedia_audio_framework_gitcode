@@ -598,6 +598,7 @@ private:
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void HandleKvDataShareEvent();
     void InitMicrophoneMute();
+    void RegisterVoiceWakeupSwitchIfChecked();
     void InitKVStore();
     void ConnectServiceAdapter();
     void LoadEffectLibrary();
@@ -637,6 +638,8 @@ private:
     std::atomic<bool> isInitMuteState_ = false;
     std::atomic<bool> isInitSettingsData_ = false;
     std::atomic<bool> isScreenOffOrLock_ = false;
+    std::atomic<bool> isRegistedVoiceWakeupSwitch_ = false;
+    std::mutex registedVoiceWakeupSwitchMutex_;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
 #endif

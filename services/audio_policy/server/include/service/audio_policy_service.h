@@ -481,6 +481,8 @@ public:
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
     int32_t OnVoiceWakeupState(bool state);
+
+    int32_t RegisterVoiceWakeupSwitch();
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
