@@ -2103,5 +2103,29 @@ void AudioPolicyService::UpdateSafeVolumeByS4()
 {
     return audioVolumeManager_.UpdateSafeVolumeByS4();
 }
+
+void AudioPolicyService::SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel,
+    std::string callerName, std::string invocationTime)
+{
+    audioVolumeManager_.SaveSystemVolumeLevelInfo(streamType, volumeLevel, callerName, invocationTime);
+}
+    
+int32_t AudioPolicyService::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
+    uint32_t volumeType)
+{
+    return audioVolumeManager_.SaveAdjustStreamVolumeInfo(volume, sessionId, invocationTime, volumeType);
+}
+    
+void AudioPolicyService::SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName,
+    std::string invocationTime)
+{
+    audioPolicyManager_.SaveRingerModeInfo(ringMode, callerName, invocationTime);
+}
+    
+void AudioPolicyService::SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime,
+    int32_t subscriptionId, bool registrationResult)
+{
+    audioVolumeManager_.SaveVolumeKeyRegistrationInfo(keyType, registrationTime, subscriptionId, registrationResult);
+}
 } // namespace AudioStandard
 } // namespace OHOS
