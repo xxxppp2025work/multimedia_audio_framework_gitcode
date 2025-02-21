@@ -18,6 +18,7 @@
 
 #include "remote_audio_renderer_sink.h"
 
+#include <array>
 #include <chrono>
 #include <cinttypes>
 #include <cstdio>
@@ -77,13 +78,20 @@ const uint32_t PCM_16_BIT = 16;
 
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 
-const string MEDIA_STREAM_TYPE = "1";
-const string COMMUNICATION_STREAM_TYPE = "2";
-const string NAVIGATION_STREAM_TYPE = "13";
 uint32_t MEDIA_RENDERID = 0;
 uint32_t NAVIGATION_RENDERID = 1;
 uint32_t COMMUNICATION_RENDERID = 2;
 const char* DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink";
+
+constexpr const char* MEDIA_STREAM_TYPE = "1";
+constexpr const char* string COMMUNICATION_STREAM_TYPE = "2";
+constexpr const char* string NAVIGATION_STREAM_TYPE = "13";
+const std::unordered_map<std::string, AudioCategory> SPLIT_STREAM_MAP = {
+    {MEDIA_STREAM_TYPE, AudioCategory::AUDIO_IN_MEDIA},
+    {COMMUNICATION_STREAM_TYPE, AudioCategory::AUDIO_IN_COMMUNICATION},
+    {NAVIGATION_STREAM_TYPE, AudioCategory::AUDIO_IN_NAVIGATION}
+}; 
+
 }
 class RemoteAudioRendererSinkInner : public RemoteAudioRendererSink, public IAudioDeviceAdapterCallback {
 public:
@@ -162,7 +170,6 @@ private:
     IAudioSinkCallback *callback_ = nullptr;
     unordered_map<AudioCategory, sptr<IAudioRender>> audioRenderMap_;
     unordered_map<AudioCategory, AudioPort> audioPortMap_;
-    unordered_map<string, AudioCategory> splitStreamMap_;
     IAudioSinkAttr attr_ = {};
     unordered_map<AudioCategory, FILE*> dumpFileMap_;
     unordered_map<AudioCategory, std::string> dumpFileNameMap_;
@@ -298,9 +305,6 @@ int32_t RemoteAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::Init");
     attr_ = attr;
-    splitStreamMap_[MEDIA_STREAM_TYPE] = AudioCategory::AUDIO_IN_MEDIA;
-    splitStreamMap_[NAVIGATION_STREAM_TYPE] = AudioCategory::AUDIO_IN_NAVIGATION;
-    splitStreamMap_[COMMUNICATION_STREAM_TYPE] = AudioCategory::AUDIO_IN_COMMUNICATION;
     vector<string> splitStreamVector;
     splitStreamInit(attr_.aux, splitStreamVector);
 
@@ -320,7 +324,7 @@ int32_t RemoteAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
             AUDIO_INFO_LOG("current audio stream type is %{public}s, port index is %{public}d",
                 splitStreamTypeIter->c_str(), port);
             while (splitStreamTypeIter != splitStreamVector.end()) {
-                audioPortMap_[splitStreamMap_[*splitStreamTypeIter]] = desc->ports[port];
+                audioPortMap_[SPLIT_STREAM_MAP.at(*splitStreamTypeIter)] = desc->ports[port];
                 splitStreamTypeIter++;
             }
         }
@@ -456,7 +460,7 @@ int32_t RemoteAudioRendererSinkInner::RenderFrameLogic(char &data, uint64_t len,
     AUDIO_DEBUG_LOG("RemoteAudioRendererSinkInner::RenderFrameLogic, streamType is %{public}s", streamType);
     Trace trace("RemoteAudioRendererSinkInner::RenderFrameLogic");
     int64_t start = ClockTime::GetCurNano();
-    sptr<IAudioRender> audioRender_ = audioRenderMap_[splitStreamMap_[streamType]];
+    sptr<IAudioRender> audioRender_ = audioRenderMap_[SPLIT_STREAM_MAP.at(streamType)];
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "RenderFrame: Audio render is null.");
 
     if (!started_.load()) {
@@ -479,8 +483,8 @@ int32_t RemoteAudioRendererSinkInner::RenderFrameLogic(char &data, uint64_t len,
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "Render frame fail, ret %{public}x.", ret);
     writeLen = len;
 
-    FILE *dumpFile = dumpFileMap_[splitStreamMap_[streamType]];
-    std::string dumpFileName = dumpFileNameMap_[splitStreamMap_[streamType]];
+    FILE *dumpFile = dumpFileMap_[SPLIT_STREAM_MAP.at(streamType)];
+    std::string dumpFileName = dumpFileNameMap_[SPLIT_STREAM_MAP.at(streamType)];
     DumpFileUtil::WriteDumpFile(dumpFile, static_cast<void *>(&data), len);
     AudioCacheMgr::GetInstance().CacheData(dumpFileName, static_cast<void *>(&data), len);
 
