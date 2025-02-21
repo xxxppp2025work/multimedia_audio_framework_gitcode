@@ -29,6 +29,7 @@
 #include "policy_handler.h"
 #include "media_monitor_manager.h"
 #include "audio_dump_pcm.h"
+#include "volume_tools.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -133,6 +134,7 @@ int32_t CapturerInServer::Init()
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterReadCallback(shared_from_this());
 
+    traceTag_ = "[" + std::to_string(streamIndex_) + "]CapturerInServer"; // [100001]CapturerInServer
     AudioStreamInfo tempInfo = processConfig_.streamInfo;
     // eg: /data/data/.pulse_dir/10000_100009_capturer_server_out_48000_2_1.pcm
     dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + "_" + std::to_string(streamIndex_)
@@ -222,7 +224,7 @@ void CapturerInServer::ReadData(size_t length)
     if (IsReadDataOverFlow(length, currentWriteFrame, stateListener)) {
         return;
     }
-    Trace trace("CapturerInServer::ReadData:" + std::to_string(currentWriteFrame));
+    Trace trace(traceTag_ + "::ReadData:" + std::to_string(currentWriteFrame));
     OptResult result = ringCache_->GetWritableSize();
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "RingCache write invalid size %{public}zu", result.size);
     BufferDesc srcBuffer = stream_->DequeueBuffer(result.size);
@@ -246,6 +248,7 @@ void CapturerInServer::ReadData(size_t length)
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
     }
     ringCache_->Dequeue({dstBuffer.buffer, dstBuffer.bufLength});
+    VolumeTools::DfxOperation(dstBuffer, processConfig_.streamInfo, traceTag_, volumeDataCount_);
     if (AudioDump::GetInstance().GetVersionType() == BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpS2C_, static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
         AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
@@ -262,7 +265,7 @@ void CapturerInServer::ReadData(size_t length)
 
 int32_t CapturerInServer::OnReadData(size_t length)
 {
-    Trace trace("CapturerInServer::OnReadData:" + std::to_string(length));
+    Trace trace(traceTag_ + "::OnReadData:" + std::to_string(length));
     ReadData(length);
     return SUCCESS;
 }
