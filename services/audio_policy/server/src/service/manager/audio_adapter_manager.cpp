@@ -869,6 +869,34 @@ AudioRingerMode AudioAdapterManager::GetRingerMode() const
     return ringerMode_;
 }
 
+void AudioAdapterManager::SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName,
+    std::string invocationTime)
+{
+    RingerModeAdjustInfo ringerModeAdjustInfo;
+    ringerModeAdjustInfo.ringMode = ringMode;
+    ringerModeAdjustInfo.callerName = callerName;
+    ringerModeAdjustInfo.invocationTime = invocationTime;
+    saveRingerModeInfo_->Add(ringerModeAdjustInfo);
+}
+
+void AudioAdapterManager::GetRingerModeInfo(std::vector<RingerModeAdjustInfo>& ringerModeInfo)
+{
+    ringerModeInfo = saveRingerModeInfo_->GetData();
+}
+
+std::shared_ptr<AllDeviceVolumeInfo> AudioAdapterManager::GetAllDeviceVolumeInfo(DeviceType deviceType,
+    AudioStreamType streamType)
+{
+    std::shared_ptr<AllDeviceVolumeInfo> deviceVolumeInfo = nullptr;
+    if (volumeDataMaintainer_.GetVolume(deviceType, streamType)) {
+        deviceVolumeInfo = std::make_shared<AllDeviceVolumeInfo>();
+        deviceVolumeInfo->deviceType = deviceType;
+        deviceVolumeInfo->streamType = streamType;
+        deviceVolumeInfo->volumeValue = volumeDataMaintainer_.GetStreamVolume(streamType);
+    }
+    return deviceVolumeInfo;
+}
+
 // LCOV_EXCL_START
 AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioModuleInfo)
 {

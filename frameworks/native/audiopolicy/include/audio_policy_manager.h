@@ -116,6 +116,8 @@ public:
 
     int32_t SetRingerMode(AudioRingerMode ringMode);
 
+    int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime, uint32_t volumeType);
+
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones(const std::string &countryCode);
 
