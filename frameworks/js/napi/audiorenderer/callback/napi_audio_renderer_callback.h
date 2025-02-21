@@ -24,15 +24,15 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string INTERRUPT_CALLBACK_NAME = "interrupt";
-const std::string AUDIO_INTERRUPT_CALLBACK_NAME = "audioInterrupt";
-const std::string STATE_CHANGE_CALLBACK_NAME = "stateChange";
-const std::string MARK_REACH_CALLBACK_NAME = "markReach";
-const std::string PERIOD_REACH_CALLBACK_NAME = "periodReach";
-const std::string DATA_REQUEST_CALLBACK_NAME = "dataRequest";
-const std::string DEVICECHANGE_CALLBACK_NAME = "outputDeviceChange";
-const std::string OUTPUT_DEVICECHANGE_WITH_INFO = "outputDeviceChangeWithInfo";
-const std::string WRITE_DATA_CALLBACK_NAME = "writeData";
+inline const std::string INTERRUPT_CALLBACK_NAME = "interrupt";
+inline const std::string AUDIO_INTERRUPT_CALLBACK_NAME = "audioInterrupt";
+inline const std::string STATE_CHANGE_CALLBACK_NAME = "stateChange";
+inline const std::string MARK_REACH_CALLBACK_NAME = "markReach";
+inline const std::string PERIOD_REACH_CALLBACK_NAME = "periodReach";
+inline const std::string DATA_REQUEST_CALLBACK_NAME = "dataRequest";
+inline const std::string DEVICECHANGE_CALLBACK_NAME = "outputDeviceChange";
+inline const std::string OUTPUT_DEVICECHANGE_WITH_INFO = "outputDeviceChangeWithInfo";
+inline const std::string WRITE_DATA_CALLBACK_NAME = "writeData";
 
 class NapiAudioRendererCallback : public AudioRendererCallback {
 public:

@@ -34,13 +34,13 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const int ARGS_ONE = 1;
-const int ARGS_TWO = 2;
-const int ARGS_THREE = 3;
+inline const int ARGS_ONE = 1;
+inline const int ARGS_TWO = 2;
+inline const int ARGS_THREE = 3;
 
-const int PARAM0 = 0;
-const int PARAM1 = 1;
-const int PARAM2 = 2;
+inline const int PARAM0 = 0;
+inline const int PARAM1 = 1;
+inline const int PARAM2 = 2;
 
 /* check condition related to argc/argv, return and logging. */
 #define NAPI_CHECK_ARGS_RETURN_VOID(context, condition, message, code)               \

@@ -44,20 +44,20 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const uint32_t DEFAULT_FRAMELEN = 1440;
-const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
-const uint32_t DEFAULT_MCH_NUM_CHANNEL = CHANNEL_6;
-const uint32_t DSP_MAX_NUM_CHANNEL = CHANNEL_16;
-const uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
-const uint64_t DEFAULT_MCH_NUM_CHANNELLAYOUT = CH_LAYOUT_5POINT1;
-const uint32_t BASE_TEN = 10;
-const std::string DEFAULT_DEVICE_SINK = "Speaker";
-const std::string BLUETOOTH_DEVICE_SINK = "Bt_Speaker";
-const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
-const uint32_t MAX_UINT_VOLUME_NUM = 10000;
-const uint32_t MAX_UINT_DSP_VOLUME = 65535;
-const std::string DEFAULT_SCENE_TYPE = "SCENE_DEFAULT";
-const std::string DEFAULT_PRESET_SCENE = "SCENE_MUSIC";
+inline const uint32_t DEFAULT_FRAMELEN = 1440;
+inline const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
+inline const uint32_t DEFAULT_MCH_NUM_CHANNEL = CHANNEL_6;
+inline const uint32_t DSP_MAX_NUM_CHANNEL = CHANNEL_16;
+inline const uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
+inline const uint64_t DEFAULT_MCH_NUM_CHANNELLAYOUT = CH_LAYOUT_5POINT1;
+inline const uint32_t BASE_TEN = 10;
+inline const std::string DEFAULT_DEVICE_SINK = "Speaker";
+inline const std::string BLUETOOTH_DEVICE_SINK = "Bt_Speaker";
+inline const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
+inline const uint32_t MAX_UINT_VOLUME_NUM = 10000;
+inline const uint32_t MAX_UINT_DSP_VOLUME = 65535;
+inline const std::string DEFAULT_SCENE_TYPE = "SCENE_DEFAULT";
+inline const std::string DEFAULT_PRESET_SCENE = "SCENE_MUSIC";
 
 struct SessionEffectInfo {
     std::string sceneMode;

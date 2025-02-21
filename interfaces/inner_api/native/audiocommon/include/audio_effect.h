@@ -31,7 +31,7 @@
 namespace OHOS {
 namespace AudioStandard {
 // audio effect manager info
-constexpr int32_t AUDIO_EFFECT_COUNT_UPPER_LIMIT = 20;
+inline constexpr int32_t AUDIO_EFFECT_COUNT_UPPER_LIMIT = 20;
 
 enum HdiSetParamCommandCode {
     HDI_INIT = 0,
@@ -217,7 +217,7 @@ struct AudioSceneEffectInfo {
     std::vector<AudioEffectMode> mode;
 };
 
-const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TYPES {
+inline const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TYPES {
     {SCENE_OTHERS, "SCENE_OTHERS"},
     {SCENE_MUSIC, "SCENE_MUSIC"},
     {SCENE_MOVIE, "SCENE_MOVIE"},
@@ -227,7 +227,7 @@ const std::unordered_map<AudioEffectScene, std::string> AUDIO_SUPPORTED_SCENE_TY
     {SCENE_VOIP_DOWN, "SCENE_VOIP_DOWN"},
 };
 
-const std::unordered_map<AudioEnhanceScene, std::string> AUDIO_ENHANCE_SUPPORTED_SCENE_TYPES {
+inline const std::unordered_map<AudioEnhanceScene, std::string> AUDIO_ENHANCE_SUPPORTED_SCENE_TYPES {
     {SCENE_VOIP_UP, "SCENE_VOIP_UP"},
     {SCENE_RECORD, "SCENE_RECORD"},
     {SCENE_ASR, "SCENE_ASR"},
@@ -235,12 +235,12 @@ const std::unordered_map<AudioEnhanceScene, std::string> AUDIO_ENHANCE_SUPPORTED
     {SCENE_VOICE_MESSAGE, "SCENE_VOICE_MESSAGE"},
 };
 
-const std::unordered_map<AudioEffectMode, std::string> AUDIO_SUPPORTED_SCENE_MODES {
+inline const std::unordered_map<AudioEffectMode, std::string> AUDIO_SUPPORTED_SCENE_MODES {
     {EFFECT_NONE, "EFFECT_NONE"},
     {EFFECT_DEFAULT, "EFFECT_DEFAULT"},
 };
 
-const std::unordered_map<DeviceType, std::string> SUPPORTED_DEVICE_TYPE {
+inline const std::unordered_map<DeviceType, std::string> SUPPORTED_DEVICE_TYPE {
     {DEVICE_TYPE_NONE, "DEVICE_TYPE_NONE"},
     {DEVICE_TYPE_INVALID, "DEVICE_TYPE_INVALID"},
     {DEVICE_TYPE_EARPIECE, "DEVICE_TYPE_EARPIECE"},

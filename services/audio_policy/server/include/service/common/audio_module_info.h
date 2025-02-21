@@ -27,37 +27,37 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-static const char* PRIMARY_CLASS = "primary";
-static const char* A2DP_CLASS = "a2dp";
-static const char* USB_CLASS = "usb";
-static const char* DP_CLASS = "dp";
-static const char* FILE_CLASS = "file_io";
-static const char* REMOTE_CLASS = "remote";
-static const char* OFFLOAD_CLASS = "offload";
-static const char* MCH_CLASS = "multichannel";
-static const char* INVALID_CLASS = "invalid";
-static const char* DIRECT_VOIP_CLASS = "primary_direct_voip";
-static const char* MMAP_VOIP_CLASS = "primary_mmap_voip";
-static const char* BLUETOOTH_SPEAKER = "Bt_Speaker";
-static const char* BLUETOOTH_MIC = "Bt_Mic";
-static const char* PRIMARY_SPEAKER = "Speaker";
-static const char* OFFLOAD_PRIMARY_SPEAKER = "Offload_Speaker";
-static const char* MCH_PRIMARY_SPEAKER = "MCH_Speaker";
-static const char* USB_SPEAKER = "Usb_arm_speaker";
-static const char* DP_SINK = "DP_speaker";
-static const char* USB_MIC = "Usb_arm_mic";
-static const char* PRIMARY_MIC = "Built_in_mic";
-static const char* PRIMARY_WAKEUP_MIC = "Built_in_wakeup";
-static const char* FILE_SINK = "file_sink";
-static const char* FILE_SOURCE = "file_source";
-static const char* PIPE_SINK = "fifo_output";
-static const char* PIPE_SOURCE = "fifo_input";
-static const char* INTERNAL_PORT = "internal";
-static const char* ROLE_SOURCE = "source";
-static const char* ROLE_SINK = "sink";
-static const char* PORT_NONE = "none";
-static const char* PRIMARY_DIRECT_VOIP = "direct_voip";
-static const char* PRIMARY_MMAP_VOIP = "mmap_voip";
+inline static const char* PRIMARY_CLASS = "primary";
+inline static const char* A2DP_CLASS = "a2dp";
+inline static const char* USB_CLASS = "usb";
+inline static const char* DP_CLASS = "dp";
+inline static const char* FILE_CLASS = "file_io";
+inline static const char* REMOTE_CLASS = "remote";
+inline static const char* OFFLOAD_CLASS = "offload";
+inline static const char* MCH_CLASS = "multichannel";
+inline static const char* INVALID_CLASS = "invalid";
+inline static const char* DIRECT_VOIP_CLASS = "primary_direct_voip";
+inline static const char* MMAP_VOIP_CLASS = "primary_mmap_voip";
+inline static const char* BLUETOOTH_SPEAKER = "Bt_Speaker";
+inline static const char* BLUETOOTH_MIC = "Bt_Mic";
+inline static const char* PRIMARY_SPEAKER = "Speaker";
+inline static const char* OFFLOAD_PRIMARY_SPEAKER = "Offload_Speaker";
+inline static const char* MCH_PRIMARY_SPEAKER = "MCH_Speaker";
+inline static const char* USB_SPEAKER = "Usb_arm_speaker";
+inline static const char* DP_SINK = "DP_speaker";
+inline static const char* USB_MIC = "Usb_arm_mic";
+inline static const char* PRIMARY_MIC = "Built_in_mic";
+inline static const char* PRIMARY_WAKEUP_MIC = "Built_in_wakeup";
+inline static const char* FILE_SINK = "file_sink";
+inline static const char* FILE_SOURCE = "file_source";
+inline static const char* PIPE_SINK = "fifo_output";
+inline static const char* PIPE_SOURCE = "fifo_input";
+inline static const char* INTERNAL_PORT = "internal";
+inline static const char* ROLE_SOURCE = "source";
+inline static const char* ROLE_SINK = "sink";
+inline static const char* PORT_NONE = "none";
+inline static const char* PRIMARY_DIRECT_VOIP = "direct_voip";
+inline static const char* PRIMARY_MMAP_VOIP = "mmap_voip";
 }
 
 enum NodeName {

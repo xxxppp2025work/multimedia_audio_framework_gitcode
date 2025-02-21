@@ -37,42 +37,42 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-constexpr int32_t INVALID_UID = -1;
-constexpr int32_t NETWORK_ID_SIZE = 80;
-constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
-constexpr int32_t AUDIO_FLAG_INVALID = -1;
-constexpr int32_t AUDIO_FLAG_NORMAL = 0;
-constexpr int32_t AUDIO_FLAG_MMAP = 1;
-constexpr int32_t AUDIO_FLAG_VOIP_FAST = 2;
-constexpr int32_t AUDIO_FLAG_DIRECT = 3;
-constexpr int32_t AUDIO_FLAG_VOIP_DIRECT = 4;
-constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
-constexpr int32_t AUDIO_USAGE_NORMAL = 0;
-constexpr int32_t AUDIO_USAGE_VOIP = 1;
-constexpr uint32_t STREAM_FLAG_FAST = 1;
-constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
-constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
-constexpr int32_t EMPTY_UID = 0;
-constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
-constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
-
-constexpr uint32_t MIN_STREAMID = 100000;
-constexpr uint32_t MAX_STREAMID = UINT32_MAX - MIN_STREAMID;
-
-const float MIN_FLOAT_VOLUME = 0.0f;
-const float MAX_FLOAT_VOLUME = 1.0f;
-
-const char* MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
-const char* MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
-const char* ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
-const char* CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO";
-const char* RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
-
-const char* PRIMARY_WAKEUP = "Built_in_wakeup";
-
-const char* INNER_CAPTURER_SINK = "InnerCapturerSink";
-const char* REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
-const char* DUP_STREAM = "DupStream";
+inline constexpr int32_t INVALID_UID = -1;
+inline constexpr int32_t NETWORK_ID_SIZE = 80;
+inline constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
+inline constexpr int32_t AUDIO_FLAG_INVALID = -1;
+inline constexpr int32_t AUDIO_FLAG_NORMAL = 0;
+inline constexpr int32_t AUDIO_FLAG_MMAP = 1;
+inline constexpr int32_t AUDIO_FLAG_VOIP_FAST = 2;
+inline constexpr int32_t AUDIO_FLAG_DIRECT = 3;
+inline constexpr int32_t AUDIO_FLAG_VOIP_DIRECT = 4;
+inline constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
+inline constexpr int32_t AUDIO_USAGE_NORMAL = 0;
+inline constexpr int32_t AUDIO_USAGE_VOIP = 1;
+inline constexpr uint32_t STREAM_FLAG_FAST = 1;
+inline constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
+inline constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
+inline constexpr int32_t EMPTY_UID = 0;
+inline constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
+inline constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
+inline 
+inline constexpr uint32_t MIN_STREAMID = 100000;
+inline constexpr uint32_t MAX_STREAMID = UINT32_MAX - MIN_STREAMID;
+inline 
+inline const float MIN_FLOAT_VOLUME = 0.0f;
+inline const float MAX_FLOAT_VOLUME = 1.0f;
+inline 
+inline const char* MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
+inline const char* MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
+inline const char* ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
+inline const char* CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO";
+inline const char* RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
+inline 
+inline const char* PRIMARY_WAKEUP = "Built_in_wakeup";
+inline 
+inline const char* INNER_CAPTURER_SINK = "InnerCapturerSink";
+inline const char* REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
+inline const char* DUP_STREAM = "DupStream";
 }
 
 #ifdef FEATURE_DTMF_TONE

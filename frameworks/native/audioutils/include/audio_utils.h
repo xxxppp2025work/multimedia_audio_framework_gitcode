@@ -47,18 +47,18 @@
 #define BIT_32 32
 namespace OHOS {
 namespace AudioStandard {
-const uint32_t STRING_BUFFER_SIZE = 4096;
-const size_t MILLISECOND_PER_SECOND = 1000;
-const int32_t GET_EXTRA_PARAM_LEN = 200;
+inline const uint32_t STRING_BUFFER_SIZE = 4096;
+inline const size_t MILLISECOND_PER_SECOND = 1000;
+inline const int32_t GET_EXTRA_PARAM_LEN = 200;
 
 // Ringer or alarmer dual tone
-const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;
+inline const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;
 
 /* Define AudioXcollie timeout flag, consistent with xcollie_define.h in hiviewdfx  */
-static constexpr unsigned int AUDIO_XCOLLIE_FLAG_DEFAULT = (~0); // do all callback function
-static constexpr unsigned int AUDIO_XCOLLIE_FLAG_NOOP = (0); // do nothing but the caller defined function
-static constexpr unsigned int AUDIO_XCOLLIE_FLAG_LOG = (1 << 0); // generate log file
-static constexpr unsigned int AUDIO_XCOLLIE_FLAG_RECOVERY = (1 << 1); // die when timeout
+inline static constexpr unsigned int AUDIO_XCOLLIE_FLAG_DEFAULT = (~0); // do all callback function
+inline static constexpr unsigned int AUDIO_XCOLLIE_FLAG_NOOP = (0); // do nothing but the caller defined function
+inline static constexpr unsigned int AUDIO_XCOLLIE_FLAG_LOG = (1 << 0); // generate log file
+inline static constexpr unsigned int AUDIO_XCOLLIE_FLAG_RECOVERY = (1 << 1); // die when timeout
 
 class Util {
 public:
