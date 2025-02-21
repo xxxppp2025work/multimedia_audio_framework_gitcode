@@ -1604,12 +1604,5 @@ int32_t AudioSystemManager::SetVirtualCall(const bool isVirtual)
 {
     return AudioPolicyManager::GetInstance().SetVirtualCall(isVirtual);
 }
-
-int32_t AudioSystemManager::OnVoiceWakeupState(bool state)
-{
-    AUDIO_INFO_LOG("%{public}d", state);
-
-    return AudioPolicyManager::GetInstance().OnVoiceWakeupState(state);
-}
 } // namespace AudioStandard
 } // namespace OHOS
