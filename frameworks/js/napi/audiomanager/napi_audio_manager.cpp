@@ -22,6 +22,7 @@
 #include "napi_audio_volume_manager.h"
 #include "napi_audio_interrupt_manager.h"
 #include "napi_audio_spatialization_manager.h"
+#include "napi_appvolume_change_callback.h"
 #include "napi_audio_enum.h"
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
@@ -1390,7 +1391,7 @@ napi_value NapiAudioManager::On(napi_env env, napi_callback_info info)
 
     if (argCount == minArgCount) {
         napi_valuetype handler = napi_undefined;
-        if (napi_typeof(env, argv[PARAM1], &handler) != napi_ok || handler != napi_function) {
+        if (napi_typeof(env, argv[argc - 1], &handler) != napi_ok || handler != napi_function) {
             AUDIO_ERR_LOG("NapiAudioManager::On type mismatch for parameter 2");
             NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
             return undefinedResult;
