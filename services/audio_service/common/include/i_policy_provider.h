@@ -26,7 +26,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-    static const std::vector<std::pair<AudioVolumeType, DeviceGroup>> g_volumeIndexVector = {
+    inline static const std::vector<std::pair<AudioVolumeType, DeviceGroup>> g_volumeIndexVector = {
         {STREAM_VOICE_CALL, DEVICE_GROUP_EARPIECE},
         {STREAM_VOICE_CALL, DEVICE_GROUP_BUILT_IN},
         {STREAM_VOICE_CALL, DEVICE_GROUP_WIRELESS},

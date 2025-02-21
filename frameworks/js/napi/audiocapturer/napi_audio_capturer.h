@@ -29,7 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-const std::string NAPI_AUDIO_CAPTURER_CLASS_NAME = "AudioCapturer";
+inline const std::string NAPI_AUDIO_CAPTURER_CLASS_NAME = "AudioCapturer";
 
 class NapiAudioCapturer {
 public:

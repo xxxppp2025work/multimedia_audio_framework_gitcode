@@ -24,7 +24,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const int32_t REFERENCE_CREATION_COUNT = 1;
+inline const int32_t REFERENCE_CREATION_COUNT = 1;
 
 class NapiAudioEnum {
 public:

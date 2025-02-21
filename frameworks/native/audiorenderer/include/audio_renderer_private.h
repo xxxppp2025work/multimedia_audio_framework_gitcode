@@ -28,7 +28,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
+inline constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
 class RendererPolicyServiceDiedCallback;
 class OutputDeviceChangeWithInfoCallbackImpl;
 class AudioRendererConcurrencyCallbackImpl;

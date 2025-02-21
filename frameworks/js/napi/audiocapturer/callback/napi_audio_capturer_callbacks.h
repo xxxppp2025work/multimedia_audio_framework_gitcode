@@ -23,14 +23,14 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string INTERRUPT_CALLBACK_NAME = "interrupt";
-const std::string AUDIO_INTERRUPT_CALLBACK_NAME = "audioInterrupt";
-const std::string STATE_CHANGE_CALLBACK_NAME = "stateChange";
-const std::string MARK_REACH_CALLBACK_NAME = "markReach";
-const std::string PERIOD_REACH_CALLBACK_NAME = "periodReach";
-const std::string INPUTDEVICE_CHANGE_CALLBACK_NAME = "inputDeviceChange";
-const std::string AUDIO_CAPTURER_CHANGE_CALLBACK_NAME = "audioCapturerChange";
-const std::string READ_DATA_CALLBACK_NAME = "readData";
+inline const std::string INTERRUPT_CALLBACK_NAME = "interrupt";
+inline const std::string AUDIO_INTERRUPT_CALLBACK_NAME = "audioInterrupt";
+inline const std::string STATE_CHANGE_CALLBACK_NAME = "stateChange";
+inline const std::string MARK_REACH_CALLBACK_NAME = "markReach";
+inline const std::string PERIOD_REACH_CALLBACK_NAME = "periodReach";
+inline const std::string INPUTDEVICE_CHANGE_CALLBACK_NAME = "inputDeviceChange";
+inline const std::string AUDIO_CAPTURER_CHANGE_CALLBACK_NAME = "audioCapturerChange";
+inline const std::string READ_DATA_CALLBACK_NAME = "readData";
 
 class NapiAudioCapturerCallback : public AudioCapturerCallback {
 public:

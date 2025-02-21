@@ -28,7 +28,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-static std::map<uint8_t, AudioChannelLayout> defaultChCountToLayoutMap = {
+inline static std::map<uint8_t, AudioChannelLayout> defaultChCountToLayoutMap = {
     {1, CH_LAYOUT_MONO}, {2, CH_LAYOUT_STEREO}, {3, CH_LAYOUT_SURROUND},
     {4, CH_LAYOUT_2POINT0POINT2}, {5, CH_LAYOUT_5POINT0_BACK}, {6, CH_LAYOUT_5POINT1},
     {7, CH_LAYOUT_6POINT1_BACK}, {8, CH_LAYOUT_5POINT1POINT2}, {9, CH_LAYOUT_HOA_ORDER2_ACN_N3D},
@@ -36,7 +36,7 @@ static std::map<uint8_t, AudioChannelLayout> defaultChCountToLayoutMap = {
     {16, CH_LAYOUT_9POINT1POINT6}
 };
 
-static std::map<AudioChannelSet, pa_channel_position> chSetToPaPositionMap = {
+inline static std::map<AudioChannelSet, pa_channel_position> chSetToPaPositionMap = {
     {FRONT_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {FRONT_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
     {FRONT_CENTER, PA_CHANNEL_POSITION_FRONT_CENTER}, {LOW_FREQUENCY, PA_CHANNEL_POSITION_LFE},
     {SIDE_LEFT, PA_CHANNEL_POSITION_SIDE_LEFT}, {SIDE_RIGHT, PA_CHANNEL_POSITION_SIDE_RIGHT},

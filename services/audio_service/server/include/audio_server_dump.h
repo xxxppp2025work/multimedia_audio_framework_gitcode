@@ -33,8 +33,8 @@
 namespace OHOS {
 namespace AudioStandard {
 
-static const int32_t AUDIO_DUMP_SUCCESS = 0;
-static const int32_t AUDIO_DUMP_INIT_ERR = -1;
+inline static const int32_t AUDIO_DUMP_SUCCESS = 0;
+inline static const int32_t AUDIO_DUMP_INIT_ERR = -1;
 
 typedef struct {
     std::string name;
