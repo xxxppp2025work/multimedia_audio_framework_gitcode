@@ -2306,5 +2306,53 @@ void AudioServer::UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapt
 
     HdiAdapterManager::GetInstance().UnloadAdapter(static_cast<HdiDeviceManagerType>(devMgrType), adapterName, force);
 }
+
+uint32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std::string &idInfo,
+    const IAudioSinkAttr &attr)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), 0, "refused for %{public}d", callingUid);
+
+    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, idInfo, true);
+    CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);  
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
+    if (sink == nullptr) {
+        HdiAdapterManager::GetInstance().ReleaseId(id);
+        return HDI_INVALID_ID;
+    }
+    if (!sink->IsInited()) {
+        sink->Init(attr);
+    }
+    return id;
+}
+
+uint32_t AudioServer::CreateHdiSourcePort(const std::string &deviceClass, const std::string &idInfo,
+    const IAudioSourceAttr &attr)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), HDI_INVALID_ID, "refused for %{public}d", callingUid);
+
+    uint32_t id = HdiAdapterManager::GetInstance().GetCaptureIdByDeviceClass(deviceClass,
+        static_cast<SourceType>(attr.sourceType), idInfo, true);
+    CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
+    std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(id);
+    if (source == nullptr) {
+        HdiAdapterManager::GetInstance().ReleaseId(id);
+        return HDI_INVALID_ID;
+    }
+    if (!source->IsInited()) {
+        source->Init(attr);
+    }
+    return id;
+}
+
+void AudioServer::DestroyHdiPort(uint32_t id)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
+
+    HdiAdapterManager::GetInstance().ReleaseId(id);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

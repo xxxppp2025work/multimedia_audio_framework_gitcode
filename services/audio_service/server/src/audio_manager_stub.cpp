@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_manager_base.h"
+#include <sstream>
 #include "audio_system_manager.h"
 #include "audio_service_log.h"
 #include "i_audio_process.h"
@@ -115,6 +116,9 @@ const char *g_audioServerCodeStrs[] = {
     "SET_CAPTURE_LIMIT",
     "LOAD_HDI_ADAPTER",
     "UNLOAD_HDI_ADAPTER",
+    "CREATE_HDI_SINK_PORT",
+    "CREATE_HDI_SOURCE_PORT",
+    "DESTROY_HDI_PORT",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -834,6 +838,12 @@ int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, Me
             return HandleLoadHdiAdapter(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UNLOAD_HDI_ADAPTER):
             return HandleUnloadHdiAdapter(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_HDI_SINK_PORT):
+            return HandleCreateHdiSinkPort(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_HDI_SOURCE_PORT):
+            return HandleCreateHdiSourcePort(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::DESTROY_HDI_PORT):
+            return HandleDestroyHdiPort(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -1176,6 +1186,57 @@ int AudioManagerStub::HandleUnloadHdiAdapter(MessageParcel &data, MessageParcel 
     const std::string adapterName = data.ReadString();
     bool force = data.ReadBool();
     UnloadHdiAdapter(devMgrType, adapterName, force);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleCreateHdiSinkPort(MessageParcel &data, MessageParcel &reply)
+{
+    std::string deviceClass = data.ReadString();
+    std::string idInfo = data.ReadString();
+    IAudioSinkAttr attr;
+
+    std::string attrStr = data.ReadString();
+    if (attrStr.size() != sizeof(IAudioSinkAttr)) {
+        return AUDIO_ERR;
+    }
+    std::istringstream iss(attrStr);
+    iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSinkAttr));
+    attr.adapterName = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.filePath = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.deviceNetworkId = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.address = data.ReadString();
+    attr.aux = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+
+    uint32_t id = CreateHdiSinkPort(deviceClass, idInfo, attr);
+    reply.WriteUint32(id);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleCreateHdiSourcePort(MessageParcel &data, MessageParcel &reply)
+{
+    std::string deviceClass = data.ReadString();
+    std::string idInfo = data.ReadString();
+    IAudioSourceAttr attr;
+
+    std::string attrStr = data.ReadString();
+    if (attrStr.size() != sizeof(IAudioSourceAttr)) {
+        return AUDIO_ERR;
+    }
+    std::istringstream iss(attrStr);
+    iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSourceAttr));
+    attr.adapterName = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.filePath = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.deviceNetworkId = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+
+    uint32_t id = CreateHdiSourcePort(deviceClass, idInfo, attr);
+    reply.WriteUint32(id);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleDestroyHdiPort(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t id = data.ReadUint32();
+    DestroyHdiPort(id);
     return AUDIO_OK;
 }
 
