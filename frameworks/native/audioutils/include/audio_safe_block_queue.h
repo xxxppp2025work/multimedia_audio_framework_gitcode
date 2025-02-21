@@ -15,6 +15,11 @@
 #ifndef AUDIO_SAFE_BLOCK_QUEUE_H
 #define AUDIO_SAFE_BLOCK_QUEUE_H
 
+#include <mutex>
+#include <queue>
+#include <condition_variable>
+#include <climits>
+
 namespace OHOS {
 namespace AudioStandard {
 
