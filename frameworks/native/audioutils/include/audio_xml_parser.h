@@ -21,6 +21,11 @@
 namespace OHOS {
 namespace AudioStandard {
 
+class XmlDlopenUtils {
+public:
+    static void KeepOpen(bool isOpen);
+};
+
 class AudioXmlNode {
 public:
     static std::shared_ptr<AudioXmlNode> Create();
