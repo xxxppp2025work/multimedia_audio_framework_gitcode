@@ -25,14 +25,14 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const uint32_t CH_MODE_OFFSET = 44;
-const uint32_t CH_HOA_ORDNUM_OFFSET = 0;
-const uint32_t CH_HOA_COMORD_OFFSET = 8;
-const uint32_t CH_HOA_NOR_OFFSET = 12;
-const uint64_t CH_MODE_MASK = ((1ULL << 4) - 1ULL) << CH_MODE_OFFSET;
-const uint64_t CH_HOA_ORDNUM_MASK = ((1ULL << 8) - 1ULL) << CH_HOA_ORDNUM_OFFSET;
-const uint64_t CH_HOA_COMORD_MASK = ((1ULL << 4) - 1ULL) << CH_HOA_COMORD_OFFSET;
-const uint64_t CH_HOA_NOR_MASK = ((1ULL << 4) - 1ULL) << CH_HOA_NOR_OFFSET;
+inline const uint32_t CH_MODE_OFFSET = 44;
+inline const uint32_t CH_HOA_ORDNUM_OFFSET = 0;
+inline const uint32_t CH_HOA_COMORD_OFFSET = 8;
+inline const uint32_t CH_HOA_NOR_OFFSET = 12;
+inline const uint64_t CH_MODE_MASK = ((1ULL << 4) - 1ULL) << CH_MODE_OFFSET;
+inline const uint64_t CH_HOA_ORDNUM_MASK = ((1ULL << 8) - 1ULL) << CH_HOA_ORDNUM_OFFSET;
+inline const uint64_t CH_HOA_COMORD_MASK = ((1ULL << 4) - 1ULL) << CH_HOA_COMORD_OFFSET;
+inline const uint64_t CH_HOA_NOR_MASK = ((1ULL << 4) - 1ULL) << CH_HOA_NOR_OFFSET;
 
 enum AudioStreamType {
     /**

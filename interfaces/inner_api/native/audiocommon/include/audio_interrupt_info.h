@@ -22,7 +22,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static constexpr int32_t AUDIO_INTERRUPT_INFO_SIZE_LIMIT = 65535;
+inline static constexpr int32_t AUDIO_INTERRUPT_INFO_SIZE_LIMIT = 65535;
 
 enum ActionTarget {
     CURRENT = 0,

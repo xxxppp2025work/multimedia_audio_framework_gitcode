@@ -32,7 +32,7 @@ namespace AudioStandard {
 using namespace HiviewDFX;
 using namespace std;
 
-const std::string NAPI_AUDIO_RENDERER_CLASS_NAME = "AudioRenderer";
+inline const std::string NAPI_AUDIO_RENDERER_CLASS_NAME = "AudioRenderer";
 
 class NapiAudioRenderer {
 public:

@@ -20,11 +20,11 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static const int32_t MAX_ID = 10000;
-static const int32_t GROUP_ID_NONE = -1;
-static const int32_t NO_REMOTE_ID = -2;
-static const char* GROUP_NAME_NONE = "NO_GROUP";
-static const char* GROUP_NAME_DEFAULT = "DEFULT_GROUP";
+inline static const int32_t MAX_ID = 10000;
+inline static const int32_t GROUP_ID_NONE = -1;
+inline static const int32_t NO_REMOTE_ID = -2;
+inline static const char* GROUP_NAME_NONE = "NO_GROUP";
+inline static const char* GROUP_NAME_DEFAULT = "DEFULT_GROUP";
 
 enum GroupType {
     VOLUME_TYPE = 1,

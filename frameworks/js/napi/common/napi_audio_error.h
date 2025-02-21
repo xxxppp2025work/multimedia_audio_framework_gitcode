@@ -25,17 +25,17 @@
 namespace OHOS {
 namespace AudioStandard {
 
-constexpr int32_t NAPI_ERROR_INVALID_PARAM = 6800101;
-constexpr int32_t NAPI_ERR_NO_PERMISSION = 201;
-constexpr int32_t NAPI_ERR_PERMISSION_DENIED = 202;
-constexpr int32_t NAPI_ERR_INPUT_INVALID = 401;
-constexpr int32_t NAPI_ERR_INVALID_PARAM = 6800101;
-constexpr int32_t NAPI_ERR_NO_MEMORY = 6800102;
-constexpr int32_t NAPI_ERR_ILLEGAL_STATE = 6800103;
-constexpr int32_t NAPI_ERR_UNSUPPORTED = 6800104;
-constexpr int32_t NAPI_ERR_TIMEOUT = 6800105;
-constexpr int32_t NAPI_ERR_STREAM_LIMIT = 6800201;
-constexpr int32_t NAPI_ERR_SYSTEM = 6800301;
+inline constexpr int32_t NAPI_ERROR_INVALID_PARAM = 6800101;
+inline constexpr int32_t NAPI_ERR_NO_PERMISSION = 201;
+inline constexpr int32_t NAPI_ERR_PERMISSION_DENIED = 202;
+inline constexpr int32_t NAPI_ERR_INPUT_INVALID = 401;
+inline constexpr int32_t NAPI_ERR_INVALID_PARAM = 6800101;
+inline constexpr int32_t NAPI_ERR_NO_MEMORY = 6800102;
+inline constexpr int32_t NAPI_ERR_ILLEGAL_STATE = 6800103;
+inline constexpr int32_t NAPI_ERR_UNSUPPORTED = 6800104;
+inline constexpr int32_t NAPI_ERR_TIMEOUT = 6800105;
+inline constexpr int32_t NAPI_ERR_STREAM_LIMIT = 6800201;
+inline constexpr int32_t NAPI_ERR_SYSTEM = 6800301;
 
 class NapiAudioError {
 public:

@@ -24,19 +24,19 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const int64_t AUDIO_NS_PER_MS = 1000 * 1000;
-const int64_t INIT_LASTWRITTEN_TIME = -1;
-const int64_t MIN_REPORT_INTERVAL_MS = 5 * 1000;  // 5s
+inline const int64_t AUDIO_NS_PER_MS = 1000 * 1000;
+inline const int64_t INIT_LASTWRITTEN_TIME = -1;
+inline const int64_t MIN_REPORT_INTERVAL_MS = 5 * 1000;  // 5s
 
 // jank defination: receive one silent frame, then receive MIN_SILENCE_FRAME_COUNT <= y <= MAX_SILENCE_FRAME_COUNT
 // not silent frames, and then receive a silent frame, in this case we will report SILENCE_EVENT
-const uint32_t MIN_SILENCE_FRAME_COUNT = 1;
-const uint32_t MAX_SILENCE_FRAME_COUNT = 2;
-const size_t MAX_RECORD_QUEUE_SIZE = 20;
-const size_t MAX_MAP_SIZE = 1024;
+inline const uint32_t MIN_SILENCE_FRAME_COUNT = 1;
+inline const uint32_t MAX_SILENCE_FRAME_COUNT = 2;
+inline const size_t MAX_RECORD_QUEUE_SIZE = 20;
+inline const size_t MAX_MAP_SIZE = 1024;
 
-const int64_t NORMAL_MAX_LASTWRITTEN_TIME = 100;    // 100 * AUDIO_NS_PER_MS
-const int64_t FAST_MAX_LASTWRITTEN_TIME = 8;    // 8 * AUDIO_NS_PER_MS
+inline const int64_t NORMAL_MAX_LASTWRITTEN_TIME = 100;    // 100 * AUDIO_NS_PER_MS
+inline const int64_t FAST_MAX_LASTWRITTEN_TIME = 8;    // 8 * AUDIO_NS_PER_MS
 
 enum DetectEvent : uint8_t {
     OVERTIME_EVENT = 0,

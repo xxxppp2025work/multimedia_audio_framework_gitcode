@@ -31,7 +31,7 @@
 namespace OHOS {
 namespace AudioStandard {
 // audio effect manager info
-constexpr int32_t AUDIO_EFFECT_COUNT_UPPER_LIMIT = 20;
+inline constexpr int32_t AUDIO_EFFECT_COUNT_UPPER_LIMIT = 20;
 
 enum HdiSetParamCommandCode {
     HDI_INIT = 0,

@@ -27,9 +27,9 @@ namespace OHOS {
 namespace AudioStandard {
 
 #ifdef SENSOR_ENABLE
-const uint32_t NONE_SPATIALIZER_ENGINE = 0;
-const uint32_t ARM_SPATIALIZER_ENGINE = 1;
-const uint32_t DSP_SPATIALIZER_ENGINE = 2;
+inline const uint32_t NONE_SPATIALIZER_ENGINE = 0;
+inline const uint32_t ARM_SPATIALIZER_ENGINE = 1;
+inline const uint32_t DSP_SPATIALIZER_ENGINE = 2;
 
 class HeadTracker {
 public:

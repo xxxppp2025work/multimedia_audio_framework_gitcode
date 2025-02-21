@@ -19,7 +19,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static const size_t CHANNEL_MAX = 16; // same with CHANNEL_16
+inline static const size_t CHANNEL_MAX = 16; // same with CHANNEL_16
 
 struct ChannelVolumes {
     AudioChannel channel = STEREO;

@@ -21,9 +21,9 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-const uint32_t IS_READY = 0;
-const uint32_t IS_NOT_READY = 1;
-const uint32_t IS_PRE_EXIT = 2;
+inline const uint32_t IS_READY = 0;
+inline const uint32_t IS_NOT_READY = 1;
+inline const uint32_t IS_PRE_EXIT = 2;
 }
 enum FutexCode : int32_t {
     FUTEX_SUCCESS = 0,

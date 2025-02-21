@@ -26,8 +26,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static const int32_t UPDATE_CALLBACK_CLIENT = 0;
-static const int32_t API_VERSION_MAX = 1000;
+inline static const int32_t UPDATE_CALLBACK_CLIENT = 0;
+inline static const int32_t API_VERSION_MAX = 1000;
 
 enum class AudioPolicyClientCode {
     ON_VOLUME_KEY_EVENT = 0,

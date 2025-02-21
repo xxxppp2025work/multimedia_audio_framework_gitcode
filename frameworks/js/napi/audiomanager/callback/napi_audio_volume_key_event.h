@@ -25,7 +25,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const std::string VOLUME_KEY_EVENT_CALLBACK_NAME = "volumeChange";
+inline const std::string VOLUME_KEY_EVENT_CALLBACK_NAME = "volumeChange";
 
 class NapiAudioVolumeKeyEvent : public VolumeKeyEventCallback {
 public:
