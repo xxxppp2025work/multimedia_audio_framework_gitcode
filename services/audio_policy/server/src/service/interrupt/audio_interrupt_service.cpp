@@ -91,6 +91,7 @@ inline int GetAudioScenePriority(const AudioScene audioScene)
 
 AudioInterruptService::AudioInterruptService()
 {
+    AUDIO_INFO_LOG("In");
 }
 
 AudioInterruptService::~AudioInterruptService()
