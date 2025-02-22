@@ -319,14 +319,22 @@ int32_t RemoteAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
     struct AudioAdapterDescriptor *desc = audioManager->GetTargetAdapterDesc(deviceNetworkId_, false);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NOT_STARTED, "Get target adapters descriptor fail.");
     auto splitStreamTypeIter = splitStreamVector.begin();
-    for (uint32_t port = 0; port < desc->ports.size(); port++) {
-        if (desc->ports[port].portId == AudioPortPin::PIN_OUT_SPEAKER) {
+    for (uint32_t idx = 0; idx < desc->ports.size(); idx++) {
+        if (desc->ports[idx].portId == AudioPortPin::PIN_OUT_SPEAKER) {
             AUDIO_INFO_LOG("current audio stream type is %{public}s, port index is %{public}d",
-                splitStreamTypeIter->c_str(), port);
+                splitStreamTypeIter->c_str(), idx);
+
             while (splitStreamTypeIter != splitStreamVector.end()) {
-                audioPortMap_[SPLIT_STREAM_MAP.at(*splitStreamTypeIter)] = desc->ports[port];
+                const auto iter = SPLIT_STREAM_MAP.find(*splitStreamTypeIter);
+                if (iter == SPLIT_STREAM_MAP.end()) {
+                    AUDIO_WARNING_LOG("splitStreamTypeIter->%{public}s not in SPLIT_STREAM_MAP.key",
+                        *splitStreamTypeIter);
+                    splitStreamTypeIter++;
+                    continue;
+                }
+                audioPortMap_[iter->second] = desc->ports[idx];
                 splitStreamTypeIter++;
-            }
+            } 
         }
     }
 
@@ -362,6 +370,7 @@ void RemoteAudioRendererSinkInner::splitStreamInit(const char *splitStreamString
         splitStreamVector.push_back(currentSplitStream);
         AUDIO_INFO_LOG("current split stream type is %{public}s", currentSplitStream.c_str());
     }
+    // Lexicographic order ["1", "13", "2"]
     sort(splitStreamVector.begin(), splitStreamVector.end());
 }
 
@@ -460,7 +469,10 @@ int32_t RemoteAudioRendererSinkInner::RenderFrameLogic(char &data, uint64_t len,
     AUDIO_DEBUG_LOG("RemoteAudioRendererSinkInner::RenderFrameLogic, streamType is %{public}s", streamType);
     Trace trace("RemoteAudioRendererSinkInner::RenderFrameLogic");
     int64_t start = ClockTime::GetCurNano();
-    sptr<IAudioRender> audioRender_ = audioRenderMap_[SPLIT_STREAM_MAP.at(streamType)];
+    const auto iter = SPLIT_STREAM_MAP.find(streamType); 
+    CHECK_AND_RETURN_RET_LOG(iter != SPLIT_STREAM_MAP.end(), ERR_INVALID_HANDLE,
+        "streamType->%{public}s is not in SPLIT_STREAM_MAP.keys", streamType);
+    sptr<IAudioRender> audioRender_ = audioRenderMap_[iter->second];
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "RenderFrame: Audio render is null.");
 
     if (!started_.load()) {
@@ -483,8 +495,8 @@ int32_t RemoteAudioRendererSinkInner::RenderFrameLogic(char &data, uint64_t len,
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "Render frame fail, ret %{public}x.", ret);
     writeLen = len;
 
-    FILE *dumpFile = dumpFileMap_[SPLIT_STREAM_MAP.at(streamType)];
-    std::string dumpFileName = dumpFileNameMap_[SPLIT_STREAM_MAP.at(streamType)];
+    FILE *dumpFile = dumpFileMap_[iter->second];
+    std::string dumpFileName = dumpFileNameMap_[iter->second];
     DumpFileUtil::WriteDumpFile(dumpFile, static_cast<void *>(&data), len);
     AudioCacheMgr::GetInstance().CacheData(dumpFileName, static_cast<void *>(&data), len);
 
