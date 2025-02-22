@@ -3281,11 +3281,12 @@ int32_t AudioPolicyServer::SetPreferredDevice(const PreferredType preferredType,
     const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
+    auto callerPid = IPCSkeleton::GetCallingPid();
     if (callerUid != UID_AUDIO) {
         AUDIO_ERR_LOG("No permission");
         return ERROR;
     }
-    return audioPolicyUtils_.SetPreferredDevice(preferredType, desc);
+    return audioPolicyUtils_.SetPreferredDevice(preferredType, desc, callerPid);
 }
 
 void AudioPolicyServer::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
@@ -3301,12 +3302,14 @@ void AudioPolicyServer::SaveRemoteInfo(const std::string &networkId, DeviceType 
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
         ROUTER_TYPE_USER_SELECT).front();
     if (networkId == newMediaDescriptor->networkId_ && deviceType == newMediaDescriptor->deviceType_) {
+        AUDIO_INFO_LOG("SetPreferredDevice pid: INVALID_PID");
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
             std::make_shared<AudioDeviceDescriptor>());
     }
     if (networkId == newCallDescriptor->networkId_ && deviceType == newCallDescriptor->deviceType_) {
+        AUDIO_INFO_LOG("SetPreferredDevice pid: -1");
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>());
+            std::make_shared<AudioDeviceDescriptor>(), -1);
     }
     audioDeviceManager_.SaveRemoteInfo(networkId, deviceType);
 }
@@ -3562,11 +3565,13 @@ int32_t AudioPolicyServer::SetVirtualCall(const bool isVirtual)
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionID);
+    audioPolicyService_.TriggerFetchDevice();
 }
 
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID)
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
+    audioPolicyService_.TriggerFetchDevice();
 }
 } // namespace AudioStandard
 } // namespace OHOS
