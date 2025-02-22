@@ -27,8 +27,18 @@ public:
     PipeSelector() = default;
     ~PipeSelector() = default;
 
-    static std::vector<std::pair<PipeInfo, PipeInfo>> FetchPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    static std::vector<std::pair<PipeInfo, PipeInfo>> FetchPipesAndExecute(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
+    static std::vector<std::shared_ptr<AudioPipeInfo>> FetchPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    static std::vector<std::shared_ptr<AudioPipeInfo>> FetchPipesAndExecute(
+        std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
+
+private:
+    int32_t GetRouteFlagByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    int32_t GetPipeInfoByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc, AudioPipeInfo &info);
+    void ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        const PipeStreamPropInfo streamPropInfo, AudioPipeInfo &info);
+    AudioStreamAction JudgeStreamAction(AudioFlag oldFlag, AudioFlag newFlag);
+    void SortStreamDescsByStartTime(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
+    std::shared_ptr<AudioPolicyConfigManager> configManager_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

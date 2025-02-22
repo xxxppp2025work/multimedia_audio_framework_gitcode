@@ -19,26 +19,24 @@
 #include <mutex>
 #include <shared_mutex>
 #include "audio_stream_descriptor.h"
+#include "audio_module_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
 enum PipeAction {
     PIPE_ACTION_DEFAULT,
-    PIPE_ACTION_RECREATE,
+    PIPE_ACTION_UPDATE,
     PIPE_ACTION_NEW
 };
 
-class PipeInfo {
+class AudioPipeInfo {
 public:
-    std::string moduleName;
-    std::string adapterName;
-    int samplingRate;
-    int format;
-    int channelLayout;
-    int pin;
-    enum PipeAction action;
-    std::shared_ptr<AudioStreamDescriptor> streamDesc;  //AudioStreamDescriptor中包含流ID信息？？？
+    int32_t sinkId_;
+    AudioModuleInfo moduleInfo_;
+    PipeAction action_;
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs_;  //AudioStreamDescriptor中包含流ID信息？？？
+    std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> streamDescMap_;
 };
 
 class PipeManager {
@@ -49,19 +47,24 @@ public:
         return pipeManager;
     }
 
-    void AddPipeInfo(const PipeInfo& info);
-    void RemovePipeInfo(const PipeInfo& info);
-    void UpdatePipeInfo(const PipeInfo& oldPipe, const PipeInfo& newPipe);
+    void AddAudioPipeInfo(const AudioPipeInfo& info);
+    void RemoveAudioPipeInfo(const AudioPipeInfo& info);
+    void UpdateAudioPipeInfo(const AudioPipeInfo& oldPipe, const AudioPipeInfo& newPipe);
 
-    const std::vector<PipeInfo> GetPipeList();
-    void Assign(PipeInfo& dst, const PipeInfo& src);
-    bool IsSamePipe(const PipeInfo& info, const PipeInfo& cmpInfo);
+    const std::vector<AudioPipeInfo> GetPipeList();
+    std::shared_ptr<AudioPipeInfo> GetPipeinfoByFlag(AudioFlag audioFlag);
+    void Assign(AudioPipeInfo& dst, const AudioPipeInfo& src);
+    bool IsSamePipe(const AudioPipeInfo& info, const AudioPipeInfo& cmpInfo);
+
+    void StartClient(uint32_t sessionId);
+    void PauseClient(uint32_t sessionId);
+    void RemoveClient(uint32_t sessionId);
 
 private:
     PipeManager();
     ~PipeManager();
 
-    std::vector<PipeInfo> curPipeList;    //只保存当前存在的pipe信息？？？如果并发是否需要保存原始pipe信息，还是通过AudioStreamDescriptor获取？？？
+    std::vector<AudioPipeInfo> curPipeList;    //只保存当前存在的pipe信息？？？如果并发是否需要保存原始pipe信息，还是通过AudioStreamDescriptor获取？？？
     std::shared_mutex pipeListLock;
 };
 } // namespace AudioStandard
