@@ -78,9 +78,10 @@ const uint32_t PCM_16_BIT = 16;
 
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 
-uint32_t MEDIA_RENDERID = 0;
-uint32_t NAVIGATION_RENDERID = 1;
-uint32_t COMMUNICATION_RENDERID = 2;
+constexpr uint32_t MAX_NUM_OF_AUDIO_STREAM = 3;
+constexpr uint32_t MEDIA_RENDERID = 0;
+constexpr uint32_t NAVIGATION_RENDERID = 1;
+constexpr uint32_t COMMUNICATION_RENDERID = 2;
 const char* DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink";
 
 constexpr const char* MEDIA_STREAM_TYPE = "1";
@@ -174,7 +175,7 @@ private:
     unordered_map<AudioCategory, FILE*> dumpFileMap_;
     unordered_map<AudioCategory, std::string> dumpFileNameMap_;
     std::mutex createRenderMutex_;
-    vector<uint32_t> renderIdVector_ = {MEDIA_RENDERID, NAVIGATION_RENDERID, COMMUNICATION_RENDERID};
+    std::array<uint32_t, MAX_NUM_OF_AUDIO_STREAM> renderIdArr_ = {MEDIA_RENDERID, NAVIGATION_RENDERID, COMMUNICATION_RENDERID};
     // for get amplitude
     float maxAmplitude_ = 0;
     int64_t lastGetMaxAmplitudeTime_ = 0;
@@ -225,7 +226,6 @@ void RemoteAudioRendererSinkInner::ClearRender()
     started_.store(false);
     paused_.store(false);
 
-    auto renderId = renderIdVector_.begin();
     std::shared_ptr<IAudioDeviceAdapter> audioAdapter;
     {
         std::lock_guard<std::mutex> lock(audioAdapterMutex_);
@@ -234,7 +234,12 @@ void RemoteAudioRendererSinkInner::ClearRender()
     }
 
     if (audioAdapter != nullptr) {
+        auto renderId = renderIdArr_.begin();
         for (auto &audioRender : audioRenderMap_) {
+            if (renderId == renderIdArr_.end()) {
+                AUDIO_ERR_LOG("renderArr_.len != audioRenderMap_.len");
+                break;
+            }
             audioAdapter->DestroyRender(audioRender.second, *renderId);
             audioRender.second = nullptr;
             renderId++;
@@ -543,9 +548,13 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
     Trace trace("RemoteAudioRendererSinkInner::Start");
     AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::Start");
     std::lock_guard<std::mutex> lock(createRenderMutex_);
-    auto renderId = renderIdVector_.begin();
     if (!isRenderCreated_.load()) {
+        auto renderId = renderIdArr_.begin();
         for (const auto &audioPort : audioPortMap_) {
+            if (renderId == renderIdArr_.end()) {
+                AUDIO_ERR_LOG("renderIdArr_.len != audioPortMap_.len");
+                break;
+            }
             CHECK_AND_RETURN_RET_LOG(CreateRender(audioPort.second, audioPort.first, *renderId) == SUCCESS,
                 ERR_NOT_STARTED, "Create render fail, audio port %{public}d", audioPort.second.portId);
             renderId++;
