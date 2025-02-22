@@ -74,6 +74,7 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
 
 static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
 static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
+static const char* CONFIG_VOICE_WAKEUP_KEY = "intell_voice_trigger_enabled";
 const int32_t UID_AUDIO = 1041;
 static const int64_t WATI_PLAYBACK_TIME = 200000; // 200ms
 
@@ -858,6 +859,25 @@ void AudioPolicyService::RegisterAccessiblilityMono()
     if (ret != ERR_OK) {
         AUDIO_ERR_LOG("RegisterObserver mono failed");
     }
+}
+
+int32_t AudioPolicyService::RegisterVoiceWakeupSwitch()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncMono = [this](const std::string &key) {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        bool value = false;
+        ErrCode ret = settingProvider.GetBoolValue(CONFIG_VOICE_WAKEUP_KEY, value);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get failed");
+        OnVoiceWakeupState(value);
+    };
+    sptr observer = settingProvider.CreateObserver(CONFIG_VOICE_WAKEUP_KEY, updateFuncMono);
+    ErrCode ret = settingProvider.RegisterObserver(observer);
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterObserver failed");
+        return ret;
+    }
+    return SUCCESS;
 }
 
 void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
@@ -2122,5 +2142,10 @@ int32_t AudioPolicyService::UnloadModernInnerCapSink(int32_t innerCapId)
     return SUCCESS;
 }
 #endif
+
+int32_t AudioPolicyService::OnVoiceWakeupState(bool state)
+{
+    return audioOffloadStream_.OnVoiceWakeupState(state);
+}
 } // namespace AudioStandard
 } // namespace OHOS

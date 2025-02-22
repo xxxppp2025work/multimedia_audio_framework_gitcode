@@ -86,6 +86,7 @@ constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
 constexpr uid_t UID_CAR_DISTRIBUTED_ENGINE_SA = 65872;
 constexpr uid_t UID_RESOURCE_SCHEDULE_SERVICE = 1096;
+constexpr uid_t UID_INTELL_VOICE_SERVICR = 1042;
 constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
 constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 const char* MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
@@ -341,10 +342,17 @@ void AudioPolicyServer::NotifyProcessStatus(bool isStart)
 void AudioPolicyServer::HandleKvDataShareEvent()
 {
     AUDIO_INFO_LOG("OnAddSystemAbility kv data service start");
-    if (isInitMuteState_ == false && audioPolicyService_.IsDataShareReady()) {
+    if (!audioPolicyService_.IsDataShareReady()) {
+        AUDIO_INFO_LOG("datashare is not ready");
+        return;
+    }
+
+    if (isInitMuteState_ == false) {
         AUDIO_INFO_LOG("datashare is ready and need init mic mute state");
         InitMicrophoneMute();
     }
+
+    RegisterVoiceWakeupSwitchIfChecked();
 }
 
 void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
@@ -690,9 +698,10 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         audioPolicyService_.SetDataShareReady(true);
         RegisterDataObserver();
         if (isInitMuteState_ == false) {
-            AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
+            AUDIO_INFO_LOG("receive DATA_SHARE_READY action");
             InitMicrophoneMute();
         }
+        RegisterVoiceWakeupSwitchIfChecked();
         if (isInitSettingsData_ == false) {
             AUDIO_INFO_LOG("First receive DATA_SHARE_READY action and need init SettingsData");
             InitKVStore();
@@ -1574,6 +1583,22 @@ void AudioPolicyServer::InitMicrophoneMute()
         micStateChangeEvent.mute = isMute;
         audioPolicyServerHandler_->SendMicStateUpdatedCallback(micStateChangeEvent);
     }
+}
+
+void AudioPolicyServer::RegisterVoiceWakeupSwitchIfChecked()
+{
+    AUDIO_INFO_LOG("In");
+    std::lock_guard lock(registedVoiceWakeupSwitchMutex_);
+    if (isRegistedVoiceWakeupSwitch_) {
+        AUDIO_INFO_LOG("has already been registed");
+        return;
+    }
+    int32_t ret = audioPolicyService_.RegisterVoiceWakeupSwitch();
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("RegisterVoiceWakeupSwitch result %{public}d", ret);
+        return;
+    }
+    isRegistedVoiceWakeupSwitch_ = true;
 }
 
 int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, bool isLegacy)
