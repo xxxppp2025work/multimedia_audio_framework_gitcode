@@ -245,6 +245,7 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
 
     // Original session id for re-create stream
     parcel.WriteUint32(config.originalSessionId);
+    parcel.WriteInt32(config.innerCapId);
 
     return SUCCESS;
 }
@@ -303,6 +304,7 @@ int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
 
     // Original session id for re-create stream
     config.originalSessionId = parcel.ReadUint32();
+    config.innerCapId = parcel.ReadInt32();
     return SUCCESS;
 }
 
