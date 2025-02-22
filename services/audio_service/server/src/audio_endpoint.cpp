@@ -44,10 +44,6 @@
 #include "volume_tools.h"
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
-#ifdef DAUDIO_ENABLE
-#include "remote_fast_audio_renderer_sink.h"
-#include "remote_fast_audio_capturer_source.h"
-#endif
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
 #include "res_sched_client.h"
