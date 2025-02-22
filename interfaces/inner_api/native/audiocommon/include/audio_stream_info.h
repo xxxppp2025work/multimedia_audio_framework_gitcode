@@ -462,7 +462,8 @@ const std::vector<AudioSampleFormat> AUDIO_SUPPORTED_FORMATS {
     SAMPLE_U8,
     SAMPLE_S16LE,
     SAMPLE_S24LE,
-    SAMPLE_S32LE
+    SAMPLE_S32LE,
+    SAMPLE_F32LE
 };
 
 const std::vector<AudioChannel> RENDERER_SUPPORTED_CHANNELS {
@@ -636,7 +637,7 @@ struct AudioStreamData {
     BufferDesc bufferDesc;
     int32_t volumeStart;
     int32_t volumeEnd;
-    bool isInnerCaped = false;
+    std::unordered_map<int32_t, bool> isInnerCapeds;
 };
 } // namespace AudioStandard
 } // namespace OHOS

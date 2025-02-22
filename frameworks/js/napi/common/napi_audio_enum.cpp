@@ -180,6 +180,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
     {"USB_HEADSET", DEVICE_TYPE_USB_HEADSET},
     {"DISPLAY_PORT", DEVICE_TYPE_DP},
     {"REMOTE_CAST", DEVICE_TYPE_REMOTE_CAST},
+    {"USB_DEVICE", DEVICE_TYPE_USB_DEVICE},
     {"DEFAULT", DEVICE_TYPE_DEFAULT},
     {"MAX", DEVICE_TYPE_MAX},
 };
@@ -375,6 +376,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::toneTypeMap = {
     {"TONE_TYPE_COMMON_SUPERVISORY_RADIO_NOT_AVAILABLE", TONE_TYPE_COMMON_SUPERVISORY_RADIO_NOT_AVAILABLE},
     {"TONE_TYPE_COMMON_SUPERVISORY_CALL_WAITING", TONE_TYPE_COMMON_SUPERVISORY_CALL_WAITING},
     {"TONE_TYPE_COMMON_SUPERVISORY_RINGTONE", TONE_TYPE_COMMON_SUPERVISORY_RINGTONE},
+    {"TONE_TYPE_COMMON_SUPERVISORY_CALL_HOLDING", TONE_TYPE_COMMON_SUPERVISORY_CALL_HOLDING},
     {"TONE_TYPE_COMMON_PROPRIETARY_BEEP", TONE_TYPE_COMMON_PROPRIETARY_BEEP},
     {"TONE_TYPE_COMMON_PROPRIETARY_ACK", TONE_TYPE_COMMON_PROPRIETARY_ACK},
     {"TONE_TYPE_COMMON_PROPRIETARY_PROMPT", TONE_TYPE_COMMON_PROPRIETARY_PROMPT},
@@ -476,6 +478,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::asrNoiseSuppressionModeMap =
     {"STANDARD", static_cast<int32_t>(AsrNoiseSuppressionMode::STANDARD)},
     {"NEAR_FIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::NEAR_FIELD)},
     {"FAR_FIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::FAR_FIELD)},
+    {"FULL_DUPLEX_STANDARD", static_cast<int32_t>(AsrNoiseSuppressionMode::FULL_DUPLEX_STANDARD)},
+    {"FULL_DUPLEX_NEAR_FIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::FULL_DUPLEX_NEAR_FIELD)},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::asrAecModeMap = {
@@ -1195,6 +1199,7 @@ bool NapiAudioEnum::IsLegalInputArgumentDeviceType(int32_t deviceType)
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
         case DeviceType::DEVICE_TYPE_MIC:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_USB_DEVICE:
         case DeviceType::DEVICE_TYPE_FILE_SINK:
         case DeviceType::DEVICE_TYPE_FILE_SOURCE:
             result = true;
@@ -1412,6 +1417,7 @@ bool NapiAudioEnum::IsLegalOutputDeviceType(int32_t deviceType)
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
         case DeviceType::DEVICE_TYPE_REMOTE_CAST:
+        case DeviceType::DEVICE_TYPE_USB_DEVICE:
             result = true;
             break;
         default:

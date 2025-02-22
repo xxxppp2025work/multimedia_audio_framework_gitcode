@@ -207,7 +207,8 @@ void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInf
 }
 
 int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
-    const std::shared_ptr<AudioClientTracker> &proxyObj)
+    const std::shared_ptr<AudioClientTracker> &proxyObj,
+    const AudioPlaybackCaptureConfig &config)
 {
     // In plan: If paramsIsSet_ is true, and new info is same as old info, return
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
@@ -284,6 +285,11 @@ void RendererInClientInner::GetAudioPipeType(AudioPipeType &pipeType)
 
 State RendererInClientInner::GetState()
 {
+    std::lock_guard lock(switchingMutex_);
+    if (switchingInfo_.isSwitching_) {
+        AUDIO_INFO_LOG("switching, return state in switchingInfo");
+        return switchingInfo_.state_;
+    }
     return state_;
 }
 
@@ -910,8 +916,9 @@ bool RendererInClientInner::StopAudioStream()
     Trace trace("RendererInClientInner::StopAudioStream " + std::to_string(sessionId_));
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
-    std::lock_guard<std::mutex> lock(writeMutex_);
+    std::unique_lock<std::mutex> lock(writeMutex_, std::defer_lock);
     if (!offloadEnable_) {
+        lock.lock();
         DrainAudioStreamInner(true);
     }
 
@@ -1600,12 +1607,6 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     uint64_t timestampVal = 0;
     uint64_t latency = 0;
     int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency);
-    // first enter, reset latency and timestamp
-    if (lastFrameTimestamp_ == 0) {
-        lastFrameTimestamp_ = timestampVal;
-        lastLatency_ = latency;
-        lastLatencyPosition_ = latency * speed_;
-    }
     readIdx = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
     uint64_t framePosition = lastFramePosition_;
     if (readIdx >= latency + lastReadIdx_) { // happen when last speed latency consumed
@@ -1643,6 +1644,16 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(timestampVal % AUDIO_NS_PER_SECOND);
     return ret;
+}
+
+void RendererInClientInner::SetSwitchingStatus(bool isSwitching)
+{
+    std::lock_guard lock(switchingMutex_);
+    if (isSwitching) {
+        switchingInfo_ = {true, state_};
+    } else {
+        switchingInfo_ = {false, INVALID};
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

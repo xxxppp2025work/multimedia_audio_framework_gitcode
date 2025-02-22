@@ -304,6 +304,14 @@ void AudioAdapterManager::SetDataShareReady(std::atomic<bool> isDataShareReady)
     volumeDataMaintainer_.SetDataShareReady(std::atomic_load(&isDataShareReady));
 }
 
+void AudioAdapterManager::UpdateSafeVolumeByS4()
+{
+    AUDIO_INFO_LOG("Update Safevolume by S4 reboot,reset wired and bt once");
+    isWiredBoot_ = true;
+    isBtBoot_ = true;
+    UpdateSafeVolume();
+}
+
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
@@ -432,7 +440,8 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
 
     float volumeDb = 1.0f;
     if (useNonlinearAlgo_) {
-        if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_ != DEVICE_TYPE_REMOTE_CAST) {
+        if (Util::IsDualToneStreamType(streamType) &&
+            currentActiveDevice_ != DEVICE_TYPE_REMOTE_CAST && !VolumeUtils::IsPCVolumeEnable()) {
             volumeDb = CalculateVolumeDbNonlinear(streamType, DEVICE_TYPE_SPEAKER, volumeLevel);
         } else {
             volumeDb = CalculateVolumeDbNonlinear(streamType, currentActiveDevice_, volumeLevel);
@@ -659,15 +668,9 @@ vector<SinkInfo> AudioAdapterManager::GetAllSinks()
     return audioServiceAdapter_->GetAllSinks();
 }
 
-vector<SinkInput> AudioAdapterManager::GetAllSinkInputs()
+void AudioAdapterManager::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
 {
-    if (!audioServiceAdapter_) {
-        AUDIO_ERR_LOG("GetAllSinkInputs audio adapter null");
-        vector<SinkInput> sinkInputList;
-        return sinkInputList;
-    }
-
-    return audioServiceAdapter_->GetAllSinkInputs();
+    AudioPolicyService::GetAudioPolicyService().GetAllSinkInputs(sinkInputs);
 }
 
 vector<SourceOutput> AudioAdapterManager::GetAllSourceOutputs()
@@ -1205,6 +1208,7 @@ DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
             return HEADSET_VOLUME_TYPE;
         default:
             return SPEAKER_VOLUME_TYPE;
@@ -2127,6 +2131,13 @@ void AudioAdapterManager::SafeVolumeDump(std::string &dumpString)
         AppendFormat(dumpString, "   volumeLevel: %d\n", volumeDataMaintainer_.GetStreamVolume(streamType));
         AppendFormat(dumpString, "  - AudioStreamType: %d", streamType);
         AppendFormat(dumpString, "   streamMuteStatus: %d\n", volumeDataMaintainer_.GetStreamMute(streamType));
+    }
+    if (isSafeBoot_) {
+        safeStatusBt_ = GetCurrentDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP);
+        safeStatus_ = GetCurrentDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET);
+        safeActiveBtTime_ = GetCurentDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP);
+        safeActiveTime_ = GetCurentDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET);
+        isSafeBoot_ = false;
     }
     std::string statusBt = (safeStatusBt_ == SAFE_ACTIVE) ? "SAFE_ACTIVE" : "SAFE_INACTIVE";
     std::string status = (safeStatus_ == SAFE_ACTIVE) ? "SAFE_ACTIVE" : "SAFE_INACTIVE";

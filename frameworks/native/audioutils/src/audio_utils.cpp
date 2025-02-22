@@ -1246,6 +1246,9 @@ int32_t GetFormatByteSize(int32_t format)
         case SAMPLE_S32LE:
             formatByteSize = 4; // size is 4
             break;
+        case SAMPLE_F32LE:
+            formatByteSize = 4; // size is 4
+            break;
         default:
             formatByteSize = 2; // size is 2
             break;
@@ -1458,6 +1461,7 @@ void LatencyMonitor::ShowTimestamp(bool isRenderer)
                        "DspBeforeSmartPa:%{public}s, DspAfterSmartPa:%{public}s", rendererMockTime_.c_str(),
                        sinkDetectedTime_.c_str(), dspBeforeSmartPa_.c_str(), dspAfterSmartPa_.c_str());
     } else {
+        AUDIO_INFO_LOG("renderer mock time %{public}s", rendererMockTime_.c_str());
         if (dspDetectedTime_.length() == 0) {
             AUDIO_ERR_LOG("LatencyMeas GetExtraParam failed!");
             AUDIO_INFO_LOG("LatencyMeas CapturerDetectedTime:%{public}s, SourceDetectedTime:%{public}s",

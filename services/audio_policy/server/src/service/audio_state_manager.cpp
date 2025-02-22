@@ -23,11 +23,13 @@ namespace AudioStandard {
 
 void AudioStateManager::SetPreferredMediaRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     preferredMediaRenderDevice_ = deviceDescriptor;
 }
 
 void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     preferredCallRenderDevice_ = deviceDescriptor;
 }
 
@@ -39,27 +41,68 @@ void AudioStateManager::SetPreferredCallCaptureDevice(const std::shared_ptr<Audi
 
 void AudioStateManager::SetPreferredRingRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     preferredRingRenderDevice_ = deviceDescriptor;
 }
 
 void AudioStateManager::SetPreferredRecordCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     preferredRecordCaptureDevice_ = deviceDescriptor;
 }
 
 void AudioStateManager::SetPreferredToneRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     preferredToneRenderDevice_ = deviceDescriptor;
+}
+
+void AudioStateManager::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    if (audioDevUsage == MEDIA_OUTPUT_DEVICES) {
+        lock_guard<shared_mutex> lock(mediaExcludedDevicesMutex_);
+        for (const auto &desc : audioDeviceDescriptors) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
+            mediaExcludedDevices_.insert(desc);
+        }
+    } else if (audioDevUsage == CALL_OUTPUT_DEVICES) {
+        lock_guard<shared_mutex> lock(callExcludedDevicesMutex_);
+        for (const auto &desc : audioDeviceDescriptors) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
+            callExcludedDevices_.insert(desc);
+        }
+    }
+}
+
+void AudioStateManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    if (audioDevUsage == MEDIA_OUTPUT_DEVICES) {
+        lock_guard<shared_mutex> lock(mediaExcludedDevicesMutex_);
+        for (const auto &desc : audioDeviceDescriptors) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
+            mediaExcludedDevices_.erase(desc);
+        }
+    } else if (audioDevUsage == CALL_OUTPUT_DEVICES) {
+        lock_guard<shared_mutex> lock(callExcludedDevicesMutex_);
+        for (const auto &desc : audioDeviceDescriptors) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
+            callExcludedDevices_.erase(desc);
+        }
+    }
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredMediaRenderDevice()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredMediaRenderDevice_);
     return devDesc;
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevice()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredCallRenderDevice_);
     return devDesc;
 }
@@ -73,18 +116,21 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallCaptureDevi
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRingRenderDevice()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredRingRenderDevice_);
     return devDesc;
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRecordCaptureDevice()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredRecordCaptureDevice_);
     return devDesc;
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredToneRenderDevice()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredToneRenderDevice_);
     return devDesc;
 }
@@ -111,6 +157,41 @@ void AudioStateManager::UpdatePreferredRecordCaptureDeviceConnectState(ConnectSt
 {
     CHECK_AND_RETURN_LOG(preferredRecordCaptureDevice_ != nullptr, "preferredRecordCaptureDevice_ is nullptr");
     preferredRecordCaptureDevice_->connectState_ = state;
+}
+
+vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedOutputDevices(AudioDeviceUsage usage)
+{
+    vector<shared_ptr<AudioDeviceDescriptor>> devices;
+    if (usage == MEDIA_OUTPUT_DEVICES) {
+        shared_lock<shared_mutex> lock(mediaExcludedDevicesMutex_);
+        for (const auto &desc : mediaExcludedDevices_) {
+            devices.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+        }
+    } else if (usage == CALL_OUTPUT_DEVICES) {
+        shared_lock<shared_mutex> lock(callExcludedDevicesMutex_);
+        vector<shared_ptr<AudioDeviceDescriptor>> devices;
+        for (const auto &desc : callExcludedDevices_) {
+            devices.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+        }
+    }
+
+    return devices;
+}
+
+bool AudioStateManager::IsExcludedDevice(AudioDeviceUsage audioDevUsage,
+    shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
+{
+    CHECK_AND_RETURN_RET(audioDevUsage == MEDIA_OUTPUT_DEVICES || audioDevUsage == CALL_OUTPUT_DEVICES, false);
+
+    if (audioDevUsage == MEDIA_OUTPUT_DEVICES) {
+        shared_lock<shared_mutex> lock(mediaExcludedDevicesMutex_);
+        return mediaExcludedDevices_.contains(audioDeviceDescriptor);
+    } else if (audioDevUsage == CALL_OUTPUT_DEVICES) {
+        shared_lock<shared_mutex> lock(callExcludedDevicesMutex_);
+        return callExcludedDevices_.contains(audioDeviceDescriptor);
+    }
+
+    return false;
 }
 } // namespace AudioStandard
 } // namespace OHOS

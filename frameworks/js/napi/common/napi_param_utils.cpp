@@ -43,6 +43,7 @@ const std::vector<DeviceType> DEVICE_TYPE_SET = {
     DEVICE_TYPE_USB_HEADSET,
     DEVICE_TYPE_DP,
     DEVICE_TYPE_REMOTE_CAST,
+    DEVICE_TYPE_USB_DEVICE,
     DEVICE_TYPE_USB_ARM_HEADSET,
     DEVICE_TYPE_FILE_SINK,
     DEVICE_TYPE_FILE_SOURCE,
@@ -912,6 +913,22 @@ napi_status NapiParamUtils::GetAudioRendererFilter(const napi_env &env, sptr<Aud
     return napi_ok;
 }
 
+napi_status NapiParamUtils::GetAudioDeviceUsage(const napi_env &env, AudioDeviceUsage &audioDevUsage, napi_value in)
+{
+    napi_valuetype valueType = napi_undefined;
+    napi_status status = napi_typeof(env, in, &valueType);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && valueType == napi_number, napi_invalid_arg, "valueType invalid");
+
+    int32_t intValue = 0;
+    status = napi_get_value_int32(env, in, &intValue);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && NapiAudioEnum::IsLegalDeviceUsage(intValue),
+        napi_invalid_arg, "invalid deviceusage");
+
+    audioDevUsage = static_cast<AudioDeviceUsage>(intValue);
+
+    return napi_ok;
+}
+
 napi_status NapiParamUtils::SetValueDeviceChangeAction(const napi_env& env, const DeviceChangeAction &action,
     napi_value &result)
 {
@@ -1136,7 +1153,7 @@ napi_status NapiParamUtils::GetEffectPropertyArray(napi_env env,
         status = napi_get_named_property(env, element, "name", &propValue);
         CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get name failed");
         prop.name = GetStringArgument(env, propValue);
-		
+
         status = napi_get_named_property(env, element, "category", &propValue);
         CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get category failed");
         prop.category = GetStringArgument(env, propValue);

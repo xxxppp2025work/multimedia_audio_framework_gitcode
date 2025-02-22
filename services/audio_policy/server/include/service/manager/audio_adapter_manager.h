@@ -86,7 +86,7 @@ public:
 
     std::vector<SinkInfo> GetAllSinks();
 
-    std::vector<SinkInput> GetAllSinkInputs();
+    void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
 
     std::vector<SourceOutput> GetAllSourceOutputs();
 
@@ -204,6 +204,8 @@ public:
     void SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel);
 
     void SetRestoreVolumeFlag(const bool safeVolumeCall);
+
+    void UpdateSafeVolumeByS4();
 private:
     friend class PolicyCallbackImpl;
 
@@ -311,6 +313,7 @@ private:
     bool isBtBoot_ = true;
     int32_t curActiveCount_ = 0;
     bool safeVolumeCall_ = false;
+    bool isSafeBoot_ = true;
 
     std::shared_ptr<AudioAdapterManagerHandler> handler_ = nullptr;
 
