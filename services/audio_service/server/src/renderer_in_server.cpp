@@ -172,7 +172,7 @@ int32_t RendererInServer::Init()
     bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
     AudioVolume::GetInstance()->AddStreamVolume(streamIndex_, processConfig_.streamType,
         processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
-        isSystemApp);
+        isSystemApp, processConfig_.rendererInfo.volumeMode);
     traceTag_ = "[" + std::to_string(streamIndex_) + "]RendererInServer"; // [100001]RendererInServer:
     ret = ConfigServerBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
@@ -1110,7 +1110,7 @@ int32_t RendererInServer::InitDupStream()
     bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
     AudioVolume::GetInstance()->AddStreamVolume(dupStreamIndex_, processConfig_.streamType,
         processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
-        isSystemApp);
+        isSystemApp, processConfig_.rendererInfo.volumeMode);
 
     dupStreamCallback_ = std::make_shared<StreamCallbacks>(dupStreamIndex_);
     dupStream_->RegisterStatusCallback(dupStreamCallback_);
@@ -1181,7 +1181,7 @@ int32_t RendererInServer::InitDualToneStream()
         bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
         AudioVolume::GetInstance()->AddStreamVolume(dualToneStreamIndex_, processConfig_.streamType,
             processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
-            isSystemApp);
+            isSystemApp, processConfig_.rendererInfo.volumeMode);
 
         isDualToneEnabled_ = true;
     }

@@ -32,8 +32,14 @@ private:
     void GetMinVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void SetSystemVolumeLevelLegacyInternal(MessageParcel &data, MessageParcel &reply);
     void SetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAppVolumeMutedInternal(MessageParcel &data, MessageParcel &reply);
+    void SetSelfAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemActiveVolumeTypeInternal(MessageParcel& data, MessageParcel& reply);
     void GetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
+    void GetAppVolumeIsMuteInternal(MessageParcel &data, MessageParcel &reply);
+    void GetAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
+    void GetSelfAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void SetStreamMuteLegacyInternal(MessageParcel &data, MessageParcel &reply);
     void SetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
