@@ -89,8 +89,11 @@ namespace AudioStandard {
         GET_OFFLINE_AUDIO_EFFECT_CHAINS,
         GET_STANDBY_STATUS,
         GENERATE_SESSION_ID,
+        GET_ALL_SINK_INPUTS,
         NOTIFY_ACCOUNTS_CHANGED,
-        AUDIO_SERVER_CODE_MAX = NOTIFY_ACCOUNTS_CHANGED,
+        NOTIFY_AUDIO_POLICY_READY,
+        SET_CAPTURE_LIMIT,
+        AUDIO_SERVER_CODE_MAX = SET_CAPTURE_LIMIT,
     };
 } // namespace AudioStandard
 } // namespace OHOS

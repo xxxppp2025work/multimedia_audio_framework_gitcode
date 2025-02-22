@@ -56,19 +56,25 @@ std::string AudioEndpointSeparate::GetEndpointName()
     return deviceInfo_.networkId_ + std::to_string(deviceInfo_.deviceId_) + "_" + std::to_string(id_);
 }
 
-bool AudioEndpointSeparate::ShouldInnerCap()
+bool AudioEndpointSeparate::ShouldInnerCap(int32_t innerCapId)
 {
     AUDIO_WARNING_LOG("AudioEndpointSeparate is not supported");
     return false;
 }
 
-int32_t AudioEndpointSeparate::EnableFastInnerCap()
+int32_t AudioEndpointSeparate::EnableFastInnerCap(int32_t innerCapId)
 {
     AUDIO_WARNING_LOG("AudioEndpointSeparate is not supported");
     return ERR_INVALID_OPERATION;
 }
 
 int32_t AudioEndpointSeparate::DisableFastInnerCap()
+{
+    AUDIO_WARNING_LOG("AudioEndpointSeparate is not supported");
+    return ERR_INVALID_OPERATION;
+}
+
+int32_t AudioEndpointSeparate::DisableFastInnerCap(int32_t innerCapId)
 {
     AUDIO_WARNING_LOG("AudioEndpointSeparate is not supported");
     return ERR_INVALID_OPERATION;
@@ -475,7 +481,7 @@ int32_t AudioEndpointSeparate::OnUpdateHandleInfo(IAudioProcessStream *processSt
     return SUCCESS;
 }
 
-int32_t AudioEndpointSeparate::LinkProcessStream(IAudioProcessStream *processStream)
+int32_t AudioEndpointSeparate::LinkProcessStream(IAudioProcessStream *processStream, bool startWhenLinking)
 {
     CHECK_AND_RETURN_RET_LOG(processStream != nullptr, ERR_INVALID_PARAM, "IAudioProcessStream is null");
     std::shared_ptr<OHAudioBuffer> processBuffer = processStream->GetStreamBuffer();

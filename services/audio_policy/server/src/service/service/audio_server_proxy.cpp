@@ -156,6 +156,15 @@ void AudioServerProxy::ResetAudioEndpointProxy()
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
+void AudioServerProxy::GetAllSinkInputsProxy(std::vector<SinkInput> &sinkInputs)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->GetAllSinkInputs(sinkInputs);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
 bool AudioServerProxy::NotifyStreamVolumeChangedProxy(AudioStreamType streamType, float volume)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
@@ -486,6 +495,26 @@ void AudioServerProxy::NotifyAccountsChanged()
     gsp->NotifyAccountsChanged();
     IPCSkeleton::SetCallingIdentity(identity);
 }
- 
+
+void AudioServerProxy::NotifyAudioPolicyReady()
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->NotifyAudioPolicyReady();
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t AudioServerProxy::SetInnerCapLimitProxy(uint32_t innerCapLimit)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t res = gsp->SetInnerCapLimit(innerCapLimit);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return res;
+}
+#endif
 }
 }

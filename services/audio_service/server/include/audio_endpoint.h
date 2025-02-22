@@ -24,6 +24,10 @@
 #include "i_process_status_listener.h"
 #include "linear_pos_time_model.h"
 #include "audio_device_descriptor.h"
+#include "i_stream_manager.h"
+#include "i_renderer_stream.h"
+#include "audio_utils.h"
+#include "i_audio_capturer_source.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -78,11 +82,12 @@ public:
 
     virtual void Release() = 0;
 
-    virtual bool ShouldInnerCap() = 0;
-    virtual int32_t EnableFastInnerCap() = 0;
+    virtual bool ShouldInnerCap(int32_t innerCapId) = 0;
+    virtual int32_t EnableFastInnerCap(int32_t innerCapId) = 0;
     virtual int32_t DisableFastInnerCap() = 0;
+    virtual int32_t DisableFastInnerCap(int32_t innerCapId) = 0;
 
-    virtual int32_t LinkProcessStream(IAudioProcessStream *processStream) = 0;
+    virtual int32_t LinkProcessStream(IAudioProcessStream *processStream, bool startWhenLinking = true) = 0;
     virtual int32_t UnlinkProcessStream(IAudioProcessStream *processStream) = 0;
 
     virtual int32_t GetPreferBufferInfo(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe) = 0;
@@ -116,7 +121,7 @@ public:
     int32_t OnPause(IAudioProcessStream *processStream) override;
     // when audio process request update handle info.
     int32_t OnUpdateHandleInfo(IAudioProcessStream *processStream) override;
-    int32_t LinkProcessStream(IAudioProcessStream *processStream) override;
+    int32_t LinkProcessStream(IAudioProcessStream *processStream, bool startWhenLinking = true) override;
     int32_t UnlinkProcessStream(IAudioProcessStream *processStream) override;
     int32_t GetPreferBufferInfo(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe) override;
 
@@ -130,9 +135,10 @@ public:
     }
 
     // for inner-cap
-    bool ShouldInnerCap() override;
-    int32_t EnableFastInnerCap() override;
+    bool ShouldInnerCap(int32_t innerCapId) override;
+    int32_t EnableFastInnerCap(int32_t innerCapId) override;
     int32_t DisableFastInnerCap() override;
+    int32_t DisableFastInnerCap(int32_t innerCapId) override;
 
     int32_t SetVolume(AudioStreamType streamType, float volume) override;
 
@@ -206,7 +212,6 @@ private:
     bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
     bool needResyncPosition_ = true;
 };
-
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_ENDPOINT_H
