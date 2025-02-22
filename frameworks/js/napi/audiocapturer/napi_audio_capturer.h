@@ -45,6 +45,7 @@ public:
     std::mutex readCallbackMutex_;
     std::condition_variable readCallbackCv_;
     std::list<std::shared_ptr<NapiAudioCapturerCallbackInner>> audioCapturerCallbacks_;
+    std::atomic<bool> isFrameCallbackDone_;
 
 private:
     struct AudioCapturerAsyncContext : public ContextBase {
