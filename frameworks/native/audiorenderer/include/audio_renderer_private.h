@@ -168,7 +168,7 @@ protected:
     void SwitchStream(bool isLowLatencyDevice, bool isHalNeedChange);
 
 private:
-    int32_t PrepareAudioStream(const AudioStreamParams &audioStreamParams,
+    int32_t PrepareAudioStream(AudioStreamParams &audioStreamParams,
         const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass);
     int32_t InitAudioInterruptCallback(bool isRestoreAudio = false);
     int32_t InitOutputDeviceChangeCallback();

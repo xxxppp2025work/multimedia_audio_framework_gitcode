@@ -287,6 +287,17 @@ std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int
     }
 }
 
+std::string AudioPolicyUtils::GetSinkName(std::shared_ptr<AudioDeviceDescriptor> desc, int32_t sessionId)
+{
+    if (desc->networkId_ == LOCAL_NETWORK_ID) {
+        AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
+        streamCollector_.GetPipeType(sessionId, pipeType);
+        return GetSinkPortName(desc->deviceType_, pipeType);
+    } else {
+        return GetRemoteModuleName(desc->networkId_, desc->deviceRole_);
+    }
+}
+
 std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType)
 {
     std::string portName = PORT_NONE;

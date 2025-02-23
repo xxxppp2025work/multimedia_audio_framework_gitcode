@@ -18,6 +18,7 @@
 
 #include "audio_policy_server_handler.h"
 #include "audio_policy_service.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -985,8 +986,13 @@ void AudioPolicyServerHandler::HandleCapturerCreateEvent(const AppExecFwk::Inner
     SessionInfo sessionInfo{eventContextObj->capturerInfo_.sourceType, eventContextObj->streamInfo_.samplingRate,
         eventContextObj->streamInfo_.channels};
 
+#ifndef AUDIO_UNIFY
     eventContextObj->error_ = AudioPolicyService::GetAudioPolicyService().OnCapturerSessionAdded(sessionId,
         sessionInfo, eventContextObj->streamInfo_);
+#else
+    eventContextObj->error_ = AudioCoreService::GetCoreService()->GetEventEntry()->OnCapturerSessionAdded(sessionId,
+        sessionInfo, eventContextObj->streamInfo_);
+#endif
 }
 
 void AudioPolicyServerHandler::HandleCapturerRemovedEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -996,7 +1002,11 @@ void AudioPolicyServerHandler::HandleCapturerRemovedEvent(const AppExecFwk::Inne
 
     uint64_t sessionId = *eventContextObj;
 
+#ifndef AUDIO_UNIFY
     AudioPolicyService::GetAudioPolicyService().OnCapturerSessionRemoved(sessionId);
+#else
+    AudioCoreService::GetCoreService()->GetEventEntry()->OnCapturerSessionRemoved(sessionId);
+#endif
 }
 
 void AudioPolicyServerHandler::HandleWakeupCloseEvent(const AppExecFwk::InnerEvent::Pointer &event)

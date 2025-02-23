@@ -36,6 +36,8 @@
 #include "hisysevent.h"
 #include "parameters.h"
 
+#include "core_service_handler.h"
+#include "i_core_service_provider_ipc.h"
 #include "manager/hdi_adapter_manager.h"
 #include "sink/i_audio_render_sink.h"
 #include "source/i_audio_capture_source.h"
@@ -1118,6 +1120,18 @@ int32_t AudioServer::RegiestPolicyProvider(const sptr<IRemoteObject> &object)
         "policyProvider obj cast failed");
     bool ret = PolicyHandler::GetInstance().ConfigPolicyProvider(policyProvider);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_OPERATION_FAILED, "ConfigPolicyProvider failed!");
+    return SUCCESS;
+}
+
+int32_t AudioServer::RegiestCoreServiceProvider(const sptr<IRemoteObject> &object)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    CHECK_AND_RETURN_RET_LOG(coreServiceProvider != nullptr, ERR_INVALID_PARAM,
+        "coreServiceProvider obj cast failed");
+    int32_t ret = CoreServiceHandler::GetInstance().ConfigCoreServiceProvider(coreServiceProvider);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ConfigCoreServiceProvider failed!");
     return SUCCESS;
 }
 

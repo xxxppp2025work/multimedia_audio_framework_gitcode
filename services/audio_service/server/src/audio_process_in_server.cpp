@@ -29,6 +29,7 @@
 #include "media_monitor_manager.h"
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
+#include "core_service_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -191,6 +192,10 @@ int32_t AudioProcessInServer::Start()
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
     }
 
+#ifdef AUDIO_UNIFY
+    int32_t ret = CoreServiceHandler::GetInstance().StartClient(sessionId_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
+#endif
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
     }
@@ -325,7 +330,14 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
         PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     }
+#ifndef AUDIO_UNIFY
     int32_t ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
+#else
+    int32_t ret = CoreServiceHandler::GetInstance().RemoveClient(sessionId_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
+
+    ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
+#endif
     AUDIO_INFO_LOG("notify service release result: %{public}d", ret);
     return SUCCESS;
 }

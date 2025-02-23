@@ -30,6 +30,7 @@
 #include "audio_policy_manager.h"
 
 #include "media_monitor_manager.h"
+#include "audio_stream_descriptor.h"
 #include "audio_scope_exit.h"
 
 namespace OHOS {
@@ -67,6 +68,20 @@ static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_SYSTEM_ENFORCED, STREAM_USAGE_ENFORCED_TONE},
     {STREAM_ULTRASONIC, STREAM_USAGE_ULTRASONIC},
     {STREAM_VOICE_RING, STREAM_USAGE_VOICE_RINGTONE},
+};
+
+static const std::map<AudioFlag, IAudioStream::StreamClass> AUDIO_FLAG_GROUP_MAP = {
+    {AUDIO_OUTPUT_FLAG_NORAML, IAudioStream::StreamClass::PA_STREAM},
+    {AUDIO_OUTPUT_FLAG_DIRECT, IAudioStream::StreamClass::PA_STREAM},
+    {AUDIO_OUTPUT_FLAG_MULTICHANNEL, IAudioStream::StreamClass::PA_STREAM},
+    {AUDIO_OUTPUT_FLAG_LOWPOWER, IAudioStream::StreamClass::PA_STREAM},
+    {AUDIO_OUTPUT_FLAG_FAST, IAudioStream::StreamClass::FAST_STREAM},
+    {AUDIO_OUTPUT_FLAG_VOIP_FAST, IAudioStream::StreamClass::VOIP_STREAM},
+    {AUDIO_OUTPUT_FLAG_HWDECODING, IAudioStream::StreamClass::PA_STREAM},
+    {AUDIO_INPUT_FLAG_NORAML, IAudioStream::StreamClass::PA_STREAM},
+    {AUDIO_INPUT_FLAG_FAST, IAudioStream::StreamClass::FAST_STREAM},
+    {AUDIO_INPUT_FLAG_VOIP_FAST, IAudioStream::StreamClass::VOIP_STREAM},
+    {AUDIO_INPUT_FLAG_WAKEUP, IAudioStream::StreamClass::PA_STREAM},
 };
 
 static const std::vector<StreamUsage> AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STREAM_USAGES {
@@ -549,7 +564,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     return InitAudioInterruptCallback();
 }
 
-int32_t AudioRendererPrivate::PrepareAudioStream(const AudioStreamParams &audioStreamParams,
+int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamParams,
     const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass)
 {
     AUDIO_INFO_LOG("Create stream with flag: %{public}d, original flag: %{public}d, streamClass: %{public}d",
@@ -557,7 +572,36 @@ int32_t AudioRendererPrivate::PrepareAudioStream(const AudioStreamParams &audioS
 
     // check AudioStreamParams for fast stream
     // As fast stream only support specified audio format, we should call GetPlaybackStream with audioStreamParams.
+#ifndef AUDIO_UNIFY
     ActivateAudioConcurrency(audioStreamParams, audioStreamType, streamClass);
+#else
+    // Create Client
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+
+    streamDesc->streamInfo_.format = static_cast<AudioSampleFormat>(audioStreamParams.format);
+    streamDesc->streamInfo_.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
+    streamDesc->streamInfo_.channels = static_cast<AudioChannel>(audioStreamParams.channels);
+    streamDesc->streamInfo_.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
+    streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
+    
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->rendererInfo_ = rendererInfo_;
+    streamDesc->appInfo_ = appInfo_;
+    streamDesc->callerUid_ = getuid();
+
+    AudioFlag flag = AUDIO_OUTPUT_FLAG_NORAML;
+
+    int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag, audioStreamParams.originalSessionId);
+    CHECK_AND_RETURN_RET_LOG(ret != SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
+
+    auto it = AUDIO_FLAG_GROUP_MAP.find(flag);
+    if (it != AUDIO_FLAG_GROUP_MAP.end()) {
+        streamClass = it->second;
+    } else {
+        streamClass = IAudioStream::StreamClass::PA_STREAM;
+    }
+#endif
     if (audioStream_ == nullptr) {
         audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType,
             appInfo_.appUid);

@@ -78,11 +78,15 @@ const int32_t UID_AUDIO = 1041;
 static const int64_t WATI_PLAYBACK_TIME = 200000; // 200ms
 
 #ifdef BLUETOOTH_ENABLE
+#ifndef AUDIO_UNIFY
 static sptr<IStandardAudioService> g_btProxy = nullptr;
+#endif
 #endif
 mutex g_dataShareHelperMutex;
 #ifdef BLUETOOTH_ENABLE
+#ifndef AUDIO_UNIFY
 mutex g_btProxyMutex;
+#endif
 #endif
 bool AudioPolicyService::isBtListenerRegistered = false;
 bool AudioPolicyService::isBtCrashed = false;
@@ -121,8 +125,10 @@ bool AudioPolicyService::Init(void)
     audioPnpServer_.init();
 #endif
     audioGlobalConfigManager_.ParseGlobalConfigXml();
+#ifndef AUDIO_UNIFY
     audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
     if (audioA2dpOffloadManager_ != nullptr) {audioA2dpOffloadManager_->Init();}
+#endif
 
     bool ret = LoadAudioPolicyConfig();
     if (!ret) {
@@ -141,6 +147,7 @@ bool AudioPolicyService::Init(void)
     }
     CHECK_AND_RETURN_RET_LOG(status == SUCCESS, false, "[Policy Service] Register for device status events failed");
 
+#ifndef AUDIO_UNIFY
     audioVolumeManager_.Init(audioPolicyServerHandler_);
     audioDeviceCommon_.Init(audioPolicyServerHandler_);
     audioRecoveryDevice_.Init(audioA2dpOffloadManager_);
@@ -148,6 +155,7 @@ bool AudioPolicyService::Init(void)
     audioDeviceStatus_.Init(audioA2dpOffloadManager_, audioPolicyServerHandler_);
     audioDeviceLock_.Init(audioA2dpOffloadManager_);
     audioCapturerSession_.Init(audioA2dpOffloadManager_);
+#endif
 
     CreateRecoveryThread();
     std::string versionType = OHOS::system::GetParameter("const.logsystem.versiontype", "commercial");
@@ -1395,6 +1403,7 @@ int32_t AudioPolicyService::GetMaxRendererInstances()
 }
 
 #ifdef BLUETOOTH_ENABLE
+#ifndef AUDIO_UNIFY
 const sptr<IStandardAudioService> RegisterBluetoothDeathCallback()
 {
     lock_guard<mutex> lock(g_btProxyMutex);
@@ -1438,6 +1447,7 @@ void AudioPolicyService::BluetoothServiceCrashedCallback(pid_t pid, pid_t uid)
     Bluetooth::AudioHfpManager::DisconnectBluetoothHfpSink();
 }
 #endif
+#endif
 
 void AudioPolicyService::RegisterBluetoothListener()
 {
@@ -1456,11 +1466,13 @@ void AudioPolicyService::RegisterBluetoothListener()
     
     isBtListenerRegistered = true;
     isBtCrashed = false;
+#ifndef AUDIO_UNIFY
     const sptr<IStandardAudioService> gsp = RegisterBluetoothDeathCallback();
     AudioPolicyUtils::GetInstance().SetBtConnecting(true);
     Bluetooth::AudioA2dpManager::CheckA2dpDeviceReconnect();
     Bluetooth::AudioHfpManager::CheckHfpDeviceReconnect();
     AudioPolicyUtils::GetInstance().SetBtConnecting(false);
+#endif
 #endif
 }
 

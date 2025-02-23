@@ -50,9 +50,14 @@ ohos_shared_library("audio_renderer") {
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
 
+  if (enable_audio_unify) {
+    defines += [ "AUDIO_UNIFY" ]
+  }
+
   deps = [
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_service:audio_client",
+    "../audiodefinitions:audio_definitions",
     "../audioutils:audio_utils",
   ]
   external_deps = [

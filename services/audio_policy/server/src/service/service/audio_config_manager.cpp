@@ -28,6 +28,7 @@
 
 #include "audio_policy_utils.h"
 #include "audio_policy_service.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -125,8 +126,13 @@ bool AudioConfigManager::GetUpdateRouteSupport()
 
 void AudioConfigManager::OnUpdateAnahsSupport(std::string anahsShowType)
 {
+#ifndef AUDIO_UNIFY
     AUDIO_INFO_LOG("OnUpdateAnahsSupport show type: %{public}s", anahsShowType.c_str());
     AudioPolicyService::GetAudioPolicyService().OnUpdateAnahsSupport(anahsShowType);
+#else
+    AUDIO_INFO_LOG("Show type: %{public}s", anahsShowType.c_str());
+    AudioCoreService::GetCoreService()->OnUpdateAnahsSupport(anahsShowType);
+#endif
 }
 
 void AudioConfigManager::OnVolumeGroupParsed(std::unordered_map<std::string, std::string>& volumeGroupData)

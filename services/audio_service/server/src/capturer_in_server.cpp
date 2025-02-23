@@ -32,6 +32,7 @@
 #include "media_monitor_manager.h"
 #include "audio_dump_pcm.h"
 #include "volume_tools.h"
+#include "core_service_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -343,11 +344,15 @@ int32_t CapturerInServer::Start()
             ERR_PERMISSION_DENIED, "NotifyPrivacyStart failed!");
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
     }
+    int32_t ret;
 
+#ifdef AUDIO_UNIFY
+    ret = CoreServiceHandler::GetInstance().StartClient(streamIndex_);
+#endif
     AudioService::GetInstance()->UpdateSourceType(processConfig_.capturerInfo.sourceType);
 
     status_ = I_STATUS_STARTING;
-    int ret = stream_->Start();
+    ret = stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
     resetTime_ = true;
     return SUCCESS;
@@ -457,7 +462,14 @@ int32_t CapturerInServer::Release()
         }
     }
     AUDIO_INFO_LOG("Start release capturer");
+#ifndef AUDIO_UNIFY
     int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
+#else
+    int32_t ret = CoreServiceHandler::GetInstance().RemoveClient(streamIndex_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
+
+    ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
+#endif
     if (ret < 0) {
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
         status_ = I_STATUS_INVALID;

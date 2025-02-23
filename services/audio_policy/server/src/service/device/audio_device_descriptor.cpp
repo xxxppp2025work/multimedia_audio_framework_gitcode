@@ -341,6 +341,14 @@ bool AudioDeviceDescriptor::IsSameDeviceDesc(const AudioDeviceDescriptor &device
         (!IsUsb(deviceType_) || deviceDescriptor.deviceRole_ == deviceRole_);
 }
 
+bool AudioDeviceDescriptor::IsSameDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const
+{
+    return deviceDescriptor->deviceType_ == deviceType_ &&
+        deviceDescriptor->macAddress_ == macAddress_ &&
+        deviceDescriptor->networkId_ == networkId_ &&
+        (!IsUsb(deviceType_) || deviceDescriptor->deviceRole_ == deviceRole_);
+}
+
 bool AudioDeviceDescriptor::IsSameDeviceInfo(const AudioDeviceDescriptor &deviceInfo) const
 {
     return deviceType_ == deviceInfo.deviceType_ &&

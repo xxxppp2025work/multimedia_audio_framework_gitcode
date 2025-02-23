@@ -340,6 +340,8 @@ audio_ohos_library("audio_process_service") {
     "server/src/audio_process_stub.cpp",
     "server/src/audio_service.cpp",
     "server/src/capturer_in_server.cpp",
+    "server/src/core_service_handler.cpp",
+    "server/src/core_service_provider_proxy.cpp",
     "server/src/i_stream_manager.cpp",
     "server/src/ipc_offline_stream_stub.cpp",
     "server/src/ipc_stream_in_server.cpp",
@@ -397,6 +399,10 @@ audio_ohos_library("audio_process_service") {
   if (audio_framework_feature_power_manager) {
     external_deps += [ "power_manager:powermgr_client" ]
     defines += [ "FEATURE_POWER_MANAGER" ]
+  }
+
+  if (enable_audio_unify) {
+    defines += [ "AUDIO_UNIFY" ]
   }
 
   if (ressche_enable == true) {
@@ -558,6 +564,7 @@ ohos_shared_library("audio_sasdk") {
   include_dirs = [
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiosasdk/include",
+    "../../frameworks/native/audiodefinitions/include",
   ]
 
   public_configs = [ ":audio_sasdk_public_config" ]
@@ -565,6 +572,7 @@ ohos_shared_library("audio_sasdk") {
   deps = [
     ":audio_common",
     "../audio_policy:audio_policy_client",
+    "../../frameworks/native/audiodefinitions:audio_definitions",
   ]
 
   external_deps = [

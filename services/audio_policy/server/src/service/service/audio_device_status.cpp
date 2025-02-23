@@ -29,6 +29,7 @@
 
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -151,7 +152,11 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+#ifndef AUDIO_UNIFY
         audioDeviceCommon_.FetchDevice(true, reason); // fix pop, fetch device before unload module
+#else
+        AudioCoreService::GetCoreService()->SelectOutputDeviceAndRoute(reason);
+#endif
         result = HandleLocalDeviceDisconnected(updatedDesc);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
     }
@@ -160,8 +165,13 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
     TriggerAvailableDeviceChangedCallback(descForCb, isConnected);
 
     // fetch input&output device
+#ifndef AUDIO_UNIFY
     audioDeviceCommon_.FetchDevice(true, reason);
     audioDeviceCommon_.FetchDevice(false);
+#else
+    AudioCoreService::GetCoreService()->SelectOutputDeviceAndRoute(reason);
+    AudioCoreService::GetCoreService()->SelectInputDeviceAndRoute();
+#endif
 
     // update a2dp offload
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();

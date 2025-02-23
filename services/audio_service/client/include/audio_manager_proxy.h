@@ -66,6 +66,7 @@ public:
     bool CreatePlaybackCapturerManager() override;
     int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
+    int32_t RegiestCoreServiceProvider(const sptr<IRemoteObject> &object) override;
     int32_t SetCaptureSilentState(bool state) override;
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
     int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType) override;
