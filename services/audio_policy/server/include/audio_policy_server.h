@@ -94,7 +94,8 @@ public:
 
     int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0) override;
 
-    int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType, int32_t volumeFlag = 0) override;
+    int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
+        int32_t volumeFlag = 0) override;
 
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid) override;
 
@@ -550,9 +551,17 @@ private:
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode ringMode, bool hasUpdatedVolume = false);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
+<<<<<<< HEAD
+    int32_t SetSystemVolumeLevelWithDeviceInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi,
+        DeviceType deviceType);
+    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi, bool mute);
+    int32_t SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi, bool mute,
+        DeviceType deviceType);
+=======
     int32_t SetSystemVolumeLevelWithDeviceInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi, DeviceType deviceType);
     int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi, bool mute);
     int32_t SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi, bool mute, DeviceType deviceType);
+>>>>>>> c45e5cbe8d57d883054949b25c82fc5892f31d2a
     AudioStreamType GetSystemActiveVolumeTypeInternal(const int32_t clientUid);
     int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType);
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
