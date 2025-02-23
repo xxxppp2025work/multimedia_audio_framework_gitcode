@@ -1720,11 +1720,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
                 SetSystemVolumeLevelInternal(data, reply);
                 break;
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL_WITH_DEVICE):
-<<<<<<< HEAD
                 SetSystemVolumeLevelWithDeviceInternal(data, reply);
-=======
-                SetSystemVolumeLevelInternal(data, reply);
->>>>>>> c45e5cbe8d57d883054949b25c82fc5892f31d2a
                 break;
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_ACTIVEVOLUME_TYPE):
                 GetSystemActiveVolumeTypeInternal(data, reply);
