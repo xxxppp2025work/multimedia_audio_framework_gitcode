@@ -1037,10 +1037,9 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
 
     if (endpointStatus_ == UNLINKED) {
         endpointStatus_ = IDEL; // handle push_back in IDEL
-        if (isDeviceRunningInIdel_) {
+        if (isDeviceRunningInIdel_ && clientConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
             CHECK_AND_RETURN_RET_LOG(StartDevice(), ERR_OPERATION_FAILED, "StartDevice failed");
-            delayStopTime_ = ClockTime::GetCurNano() + ((clientConfig_.audioMode == AUDIO_MODE_PLAYBACK)
-                ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : RECORDER_DELAY_STOP_HDI_TIME_NS);
+            delayStopTime_ = ClockTime::GetCurNano() + PLAYBACK_DELAY_STOP_HDI_TIME_NS;
         }
     }
 
