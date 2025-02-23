@@ -824,12 +824,8 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int3
     return SetSystemVolumeLevelInternal(streamType, volumeLevel, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI);
 }
 
-<<<<<<< HEAD
 int32_t AudioPolicyServer::SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel,
     DeviceType deviceType, int32_t volumeFlag)
-=======
-int32_t AudioPolicyServer::SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType, int32_t volumeFlag)
->>>>>>> c45e5cbe8d57d883054949b25c82fc5892f31d2a
 {
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("SetSystemVolumeLevelWithDevice: No system permission");
@@ -844,12 +840,8 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelWithDevice(AudioStreamType stream
     }
 
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-<<<<<<< HEAD
     return SetSystemVolumeLevelWithDeviceInternal(streamType, volumeLevel,
         volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI, deviceType);
-=======
-    return SetSystemVolumeLevelWithDeviceInternal(streamType, volumeLevel, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI, deviceType);
->>>>>>> c45e5cbe8d57d883054949b25c82fc5892f31d2a
 }
 
 AudioStreamType AudioPolicyServer::GetSystemActiveVolumeType(const int32_t clientUid)
