@@ -961,6 +961,12 @@ void AudioDeviceCommon::MuteSinkPort(const std::string &oldSinkname, const std::
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkname == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = NEW_DEVICE_AVALIABLE_OFFLOAD_MUTE_MS;
         }
+        if (oldSinkname == OFFLOAD_PRIMARY_SPEAKER) {
+            audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, muteTime, true);
+        } 
+        if (oldSinkname == PRIMARY_SPEAKER) {
+            audioIOHandleMap_.MuteSinkPort(OFFLOAD_PRIMARY_SPEAKER, muteTime, true);
+        }
         audioIOHandleMap_.MuteSinkPort(newSinkName, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
         audioIOHandleMap_.MuteSinkPort(oldSinkname, muteTime, true);
     } else if (reason.IsOldDeviceUnavaliable() && ((scene == AUDIO_SCENE_DEFAULT) ||
