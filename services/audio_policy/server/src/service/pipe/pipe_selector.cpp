@@ -18,6 +18,7 @@
 
 #include "pipe_selector.h"
 #include "audio_stream_collector.h"
+#include <algorithm>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -120,6 +121,9 @@ std::vector<std::shared_ptr<AudioPipeInfo>> PipeSelector::FetchPipesAndExecute(
         AudioStreamCollector::GetAudioStreamCollector().GetConcurrencyMap();
     std::vector<AudioPipeInfo> pipeList = PipeManager::GetPipeManager().GetPipeList();
 
+    // streamDescs中流信息按时间排序
+    SortStreamDescsByStartTime(streamDescs);
+
     std::vector<std::shared_ptr<AudioPipeInfo>> newPipeList;
     for (auto it : pipeList) {
         it.streamDescs_.clear();
@@ -129,9 +133,9 @@ std::vector<std::shared_ptr<AudioPipeInfo>> PipeSelector::FetchPipesAndExecute(
 
     for (auto streamDesc : streamDescs) {
         streamDesc->routeFlag_ = GetRouteFlagByStreamDesc(streamDesc);
-        for (auto i = 0; i < pipeList.size(); i++) {
+        for (auto it : newPipeList) {
             bool isUpdate = false;
-            for (auto &streamIt : pipeList[i].streamDescs_) {
+            for (auto &streamIt = it.streamDescs_.begin(); streamIt!= it.streamDescs_.end();) {
                 ConcurrencyAction action = ruleMap[std::make_pair(flagPipeTypeMap_[streamIt->streamDesc->routeFlag_],
                     flagPipeTypeMap_[streamDesc->routeFlag_])];
                 switch (action) {
@@ -153,37 +157,24 @@ std::vector<std::shared_ptr<AudioPipeInfo>> PipeSelector::FetchPipesAndExecute(
                 }
 
                 if (streamIt->streamAction_ == STREAM_ACTION_DEFAULT) {
-                    newPipeList[i]->streamDescs_.push_back(streamIt);
-                    newPipeList[i]->streamDescMap_[streamIt->sessionId_] = streamIt;
+                    it->streamDescs_.push_back(streamIt);
+                    it->streamDescMap_[streamIt->sessionId_] = streamIt;
+                    streamIt++;
                     continue;
                 }
                 for (auto &newPipe : newPipeList) {
-                    if (newPipe->adapterName_ == pipeList[i].adapterName_ && newPipe->routeFlag_ == streamIt.routeFlag_) {
+                    if (newPipe->adapterName_ == it.adapterName_ && newPipe->routeFlag_ == streamIt.routeFlag_) {
                         newPipe->streamDescs_.push_back(streamIt);
                         newPipe->streamDescMap_[streamIt->sessionId_] = streamIt;
+                        streamIt = it.streamDescs_.erase(streamIt);
                         break;
                     }
                 }
             }
-            newPipeList[i]->aciton_ = isUpdate ? PIPE_ACTION_UPDATE : PIPE_ACTION_DEFAULT;
+            it->aciton_ = isUpdate ? PIPE_ACTION_UPDATE : PIPE_ACTION_DEFAULT;
         }
     }
 
-    PipeStreamPropInfo streamPropInfo = {};
-    configManager_->GetStreamPropInfo(streamDesc, streamPropInfo);
-    for (auto it : newPipeList) {
-        if (it->adapterName_ == streamPropInfo.pipeInfo_->adapterInfo_->GetAdapterName() &&
-            it->routeFlag_ == streamDesc.routeFlag_) {
-            it->streamDescs_.push_back(streamDesc);
-            it->streamDescMap_[streamDesc->sessionId_] = streamDesc;
-            it->aciton_ = PIPE_ACTION_UPDATE;
-            return newPipeList;
-        }
-    }
-    AudioPipeInfo info = {};
-    ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
-    info.action_ = PIPE_ACTION_NEW;
-    newPipeList.push_back(std::make_shared<AudioPipeInfo>(info));
     return newPipeList;
 }
 
@@ -251,7 +242,10 @@ std::shared_ptr<AudioPipeInfo> PipeSelector::GetPipeinfoByNameAndFlag(const std:
 
 void PipeSelector::SortStreamDescsByStartTime(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
-    
+    sort(streamDescs.begin(), streamDescs.end(), [](const std::shared_ptr<AudioStreamDescriptor> &streamDesc1,
+        const std::shared_ptr<AudioStreamDescriptor> &streamDesc2) {
+            return streamDesc1->startTimeStamp_ < streamDesc2->startTimeStamp_;
+        });
 }
 
 } // namespace AudioStandard
