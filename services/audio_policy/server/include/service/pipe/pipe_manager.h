@@ -33,6 +33,8 @@ enum PipeAction {
 class AudioPipeInfo {
 public:
     int32_t sinkId_;
+    std::string adapterName_;
+    AudioFlag routeFlag_;
     AudioModuleInfo moduleInfo_;
     PipeAction action_;
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs_;  //AudioStreamDescriptor中包含流ID信息？？？
@@ -52,7 +54,7 @@ public:
     void UpdateAudioPipeInfo(const AudioPipeInfo& oldPipe, const AudioPipeInfo& newPipe);
 
     const std::vector<AudioPipeInfo> GetPipeList();
-    std::shared_ptr<AudioPipeInfo> GetPipeinfoByFlag(AudioFlag audioFlag);
+    std::shared_ptr<AudioPipeInfo> GetPipeinfoByNameAndFlag(const std::string name, const AudioFlag routeFlag);
     void Assign(AudioPipeInfo& dst, const AudioPipeInfo& src);
     bool IsSamePipe(const AudioPipeInfo& info, const AudioPipeInfo& cmpInfo);
 

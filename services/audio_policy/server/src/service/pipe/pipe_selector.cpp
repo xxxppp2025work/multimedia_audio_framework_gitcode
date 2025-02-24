@@ -42,18 +42,22 @@ static std::map<int, AudioPipeType> flagPipeTypeMap_ = {
 std::vector<std::shared_ptr<AudioPipeInfo>> PipeSelector::FetchPipeAndExecute(
     std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipes;
-    streamDesc->routeFlag_ = GetRouteFlagByStreamDesc(streamDesc);
-
     std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> ruleMap =
         AudioStreamCollector::GetAudioStreamCollector().GetConcurrencyMap();
     std::vector<AudioPipeInfo> pipeList = PipeManager::GetPipeManager().GetPipeList();
 
-    // 遍历list，根据并发策略确定每条stream应该选择的routeFlag，并标记action
-    for (auto &it : pipeList) {
+    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeList;
+    for (auto it : pipeList) {
+        it.streamDescs_.clear();
+        it.streamDescMap_.clear();
+        newPipeList.push_back(std::make_shared<AudioPipeInfo>(it));
+    }
+
+    streamDesc->routeFlag_ = GetRouteFlagByStreamDesc(streamDesc);
+    for (auto i = 0; i < pipeList.size(); i++) {
         bool isUpdate = false;
-        for (auto &streamIt : it.streamDescs_) {
-            ConcurrencyAction action = ruleMap[std::make_pair(flagPipeTypeMap_[streamIt->streamDesc->audioFlag_],
+        for (auto &streamIt : pipeList[i].streamDescs_) {
+            ConcurrencyAction action = ruleMap[std::make_pair(flagPipeTypeMap_[streamIt->streamDesc->routeFlag_],
                 flagPipeTypeMap_[streamDesc->routeFlag_])];
             switch (action) {
                 case PLAY_BOTH:
@@ -72,17 +76,39 @@ std::vector<std::shared_ptr<AudioPipeInfo>> PipeSelector::FetchPipeAndExecute(
                 default:
                     break;
             }
+
+            if (streamIt->streamAction_ == STREAM_ACTION_DEFAULT) {
+                newPipeList[i]->streamDescs_.push_back(streamIt);
+                newPipeList[i]->streamDescMap_[streamIt->sessionId_] = streamIt;
+                continue;
+            }
+            for (auto &newPipe : newPipeList) {
+                if (newPipe->adapterName_ == pipeList[i].adapterName_ && newPipe->routeFlag_ == streamIt.routeFlag_) {
+                    newPipe->streamDescs_.push_back(streamIt);
+                    newPipe->streamDescMap_[streamIt->sessionId_] = streamIt;
+                    break;
+                }
+            }
         }
-        it.aciton_ = isUpdate ? PIPE_ACTION_UPDATE : PIPE_ACTION_DEFAULT;
-        pipes.push_back(std::make_shared<AudioPipeInfo>(it));
+        newPipeList[i]->aciton_ = isUpdate ? PIPE_ACTION_UPDATE : PIPE_ACTION_DEFAULT;
     }
 
+    PipeStreamPropInfo streamPropInfo = {};
+    configManager_->GetStreamPropInfo(streamDesc, streamPropInfo);
+    for (auto it : newPipeList) {
+        if (it->adapterName_ == streamPropInfo.pipeInfo_->adapterInfo_->GetAdapterName() &&
+            it->routeFlag_ == streamDesc.routeFlag_) {
+            it->streamDescs_.push_back(streamDesc);
+            it->streamDescMap_[streamDesc->sessionId_] = streamDesc;
+            it->aciton_ = PIPE_ACTION_UPDATE;
+            return newPipeList;
+        }
+    }
     AudioPipeInfo info = {};
-    int ret = GetPipeInfoByStreamDesc(streamDesc, &info);
-    CHECK_AND_RETURN_RET_LOG(ret, pipes, "GetPipeInfoByStreamDesc failed");
-    info->action_ = PIPE_ACTION_NEW;
-    pipes.push_back(std::make_shared<AudioPipeInfo>(info));
-    return pipes;
+    ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    info.action_ = PIPE_ACTION_NEW;
+    newPipeList.push_back(std::make_shared<AudioPipeInfo>(info));
+    return newPipeList;
 }
 
 //更新流时使用，比如设备更新，下发所有流信息，AudioStreamDescriptor中包含时间信息，以此排序，生成pipelist中修改后信息，并通过流信息查询现存pipelist，获取原始pipe信息
@@ -90,23 +116,23 @@ std::vector<std::shared_ptr<AudioPipeInfo>> PipeSelector::FetchPipeAndExecute(
 std::vector<std::shared_ptr<AudioPipeInfo>> PipeSelector::FetchPipesAndExecute(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipes;
     std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> ruleMap =
         AudioStreamCollector::GetAudioStreamCollector().GetConcurrencyMap();
     std::vector<AudioPipeInfo> pipeList = PipeManager::GetPipeManager().GetPipeList();
-    
-    // streamDescs中流信息按时间排序
-    SortStreamDescsByStartTime(streamDescs);
 
-    // 对流遍历，每条流和当前list中的流进行并发管控，最后通过流的pipe是否变化确定streamAction
-    // 遍历list时，是否需要判断是否是当前在做判断的流
-    // 和新增的逻辑一样，对每个pipe的streamDesc做并发
-    for (auto &streamDesc : streamDescs) {
+    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeList;
+    for (auto it : pipeList) {
+        it.streamDescs_.clear();
+        it.streamDescMap_.clear();
+        newPipeList.push_back(std::make_shared<AudioPipeInfo>(it));
+    }
+
+    for (auto streamDesc : streamDescs) {
         streamDesc->routeFlag_ = GetRouteFlagByStreamDesc(streamDesc);
-        for (auto &it : pipeList) {
+        for (auto i = 0; i < pipeList.size(); i++) {
             bool isUpdate = false;
-            for (auto &streamIt : it.streamDescs_) {
-                ConcurrencyAction action = ruleMap[std::make_pair(flagPipeTypeMap_[streamIt->streamDesc->audioFlag_],
+            for (auto &streamIt : pipeList[i].streamDescs_) {
+                ConcurrencyAction action = ruleMap[std::make_pair(flagPipeTypeMap_[streamIt->streamDesc->routeFlag_],
                     flagPipeTypeMap_[streamDesc->routeFlag_])];
                 switch (action) {
                     case PLAY_BOTH:
@@ -125,20 +151,40 @@ std::vector<std::shared_ptr<AudioPipeInfo>> PipeSelector::FetchPipesAndExecute(
                     default:
                         break;
                 }
+
+                if (streamIt->streamAction_ == STREAM_ACTION_DEFAULT) {
+                    newPipeList[i]->streamDescs_.push_back(streamIt);
+                    newPipeList[i]->streamDescMap_[streamIt->sessionId_] = streamIt;
+                    continue;
+                }
+                for (auto &newPipe : newPipeList) {
+                    if (newPipe->adapterName_ == pipeList[i].adapterName_ && newPipe->routeFlag_ == streamIt.routeFlag_) {
+                        newPipe->streamDescs_.push_back(streamIt);
+                        newPipe->streamDescMap_[streamIt->sessionId_] = streamIt;
+                        break;
+                    }
+                }
             }
-            it.aciton_ = isUpdate ? PIPE_ACTION_UPDATE : PIPE_ACTION_DEFAULT;
-            pipes.push_back(std::make_shared<AudioPipeInfo>(it));
+            newPipeList[i]->aciton_ = isUpdate ? PIPE_ACTION_UPDATE : PIPE_ACTION_DEFAULT;
         }
     }
 
-    AudioPipeInfo info = {};
-    for (auto &streamDesc : streamDescs) {
-        int ret = GetPipeInfoByStreamDesc(streamDesc, &info);
-        CHECK_AND_RETURN_RET_LOG(ret, pipes, "GetPipeInfoByStreamDesc failed");
-        info->action_ = PIPE_ACTION_NEW;
-        pipes.push_back(std::make_shared<AudioPipeInfo>(info));
+    PipeStreamPropInfo streamPropInfo = {};
+    configManager_->GetStreamPropInfo(streamDesc, streamPropInfo);
+    for (auto it : newPipeList) {
+        if (it->adapterName_ == streamPropInfo.pipeInfo_->adapterInfo_->GetAdapterName() &&
+            it->routeFlag_ == streamDesc.routeFlag_) {
+            it->streamDescs_.push_back(streamDesc);
+            it->streamDescMap_[streamDesc->sessionId_] = streamDesc;
+            it->aciton_ = PIPE_ACTION_UPDATE;
+            return newPipeList;
+        }
     }
-    return pipes;
+    AudioPipeInfo info = {};
+    ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    info.action_ = PIPE_ACTION_NEW;
+    newPipeList.push_back(std::make_shared<AudioPipeInfo>(info));
+    return newPipeList;
 }
 
 int32_t PipeSelector::GetRouteFlagByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc)
@@ -190,6 +236,16 @@ AudioStreamAction PipeSelector::JudgeStreamAction(AudioFlag oldFlag, AudioFlag n
             return STREAM_ACTION_RECREATE;
     } else {
         return STREAM_ACTION_MOVE;
+    }
+}
+
+std::shared_ptr<AudioPipeInfo> PipeSelector::GetPipeinfoByNameAndFlag(const std::string name, const AudioFlag routeFlag)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock);
+    for (auto it : curPipeList) {
+        if (it.name_ == name && it.routeFlag_ == routeFlag) {
+            return std::make_shared<AudioPipeInfo>(it);
+        }
     }
 }
 

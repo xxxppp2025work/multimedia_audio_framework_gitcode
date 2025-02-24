@@ -110,11 +110,11 @@ const std::vector<AudioPipeInfo> PipeManager::GetPipeList()
     return curPipeList;
 }
 
-std::shared_ptr<AudioPipeInfo> PipeManager::GetPipeinfoByFlag(AudioFlag audioFlag)
+std::shared_ptr<AudioPipeInfo> PipeManager::GetPipeinfoByNameAndFlag(const std::string name, const AudioFlag routeFlag)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock);
     for (auto it : curPipeList) {
-        if (it.audioFlag_ == audioFlag) {
+        if (it.name_ == name && it.routeFlag_ == routeFlag) {
             return std::make_shared<AudioPipeInfo>(it);
         }
     }
