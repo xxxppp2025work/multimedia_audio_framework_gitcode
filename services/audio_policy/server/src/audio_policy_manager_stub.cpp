@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 #include "audio_utils.h"
+#include "ipc_skeleton.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,7 +33,13 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_MIN_VOLUMELEVEL",
     "SET_SYSTEM_VOLUMELEVEL_LEGACY",
     "SET_SYSTEM_VOLUMELEVEL",
+    "SET_APP_VOLUMELEVEL",
+    "SET_APP_VOLUME_MUTED",
+    "IS_APP_MUTE",
+    "SET_SELF_APP_VOLUMELEVEL",
     "GET_SYSTEM_VOLUMELEVEL",
+    "GET_APP_VOLUMELEVEL",
+    "GET_SELF_APP_VOLUME_LEVEL",
     "SET_STREAM_MUTE_LEGACY",
     "SET_STREAM_MUTE",
     "GET_STREAM_MUTE",
@@ -237,6 +244,41 @@ void AudioPolicyManagerStub::SetSystemVolumeLevelInternal(MessageParcel &data, M
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SetSelfAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t volumeLevel = data.ReadInt32();
+    int32_t volumeFlag = data.ReadInt32();
+    int result = SetSelfAppVolumeLevel(volumeLevel, volumeFlag);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetAppVolumeMutedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t appUid = data.ReadInt32();
+    bool muted = data.ReadBool();
+    int32_t volumeFlag = data.ReadInt32();
+    int result = SetAppVolumeMuted(appUid, muted, volumeFlag);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetAppVolumeIsMuteInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t appUid = data.ReadInt32();
+    bool owned = data.ReadBool();
+    int result = IsAppVolumeMute(appUid, owned);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_ERR_LOG("zhangjinqi Test --- 3");
+    int32_t appUid = data.ReadInt32();
+    int32_t volumeLevel = data.ReadInt32();
+    int32_t volumeFlag = data.ReadInt32();
+    int result = SetAppVolumeLevel(appUid, volumeLevel, volumeFlag);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::SetRingerModeLegacyInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioRingerMode rMode = static_cast<AudioRingerMode>(data.ReadInt32());
@@ -330,6 +372,20 @@ void AudioPolicyManagerStub::GetSystemVolumeLevelInternal(MessageParcel &data, M
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
     int32_t volumeLevel = GetSystemVolumeLevel(streamType);
+    reply.WriteInt32(volumeLevel);
+}
+
+void AudioPolicyManagerStub::GetAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t appUid = data.ReadInt32();
+    int32_t volumeLevel = GetAppVolumeLevel(appUid);
+    reply.WriteInt32(volumeLevel);
+}
+
+void AudioPolicyManagerStub::GetSelfAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t appUid = IPCSkeleton::GetCallingUid();
+    int32_t volumeLevel = GetAppVolumeLevel(appUid);
     reply.WriteInt32(volumeLevel);
 }
 
@@ -1667,6 +1723,12 @@ void AudioPolicyManagerStub::OnMidRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_VOLUMELEVEL):
             GetSystemVolumeLevelInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_APP_VOLUMELEVEL):
+            GetAppVolumeLevelInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SELF_APP_VOLUME_LEVEL):
+            GetSelfAppVolumeLevelInternal(data, reply);
+            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STREAM_MUTE_LEGACY):
             SetStreamMuteLegacyInternal(data, reply);
             break;
@@ -1717,6 +1779,18 @@ int AudioPolicyManagerStub::OnRemoteRequest(
                 break;
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL):
                 SetSystemVolumeLevelInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_APP_VOLUMELEVEL):
+                SetAppVolumeLevelInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SELF_APP_VOLUMELEVEL):
+                SetSelfAppVolumeLevelInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_APP_VOLUME_MUTED):
+                SetAppVolumeMutedInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_APP_MUTE):
+                GetAppVolumeIsMuteInternal(data, reply);
                 break;
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_ACTIVEVOLUME_TYPE):
                 GetSystemActiveVolumeTypeInternal(data, reply);
