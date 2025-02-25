@@ -97,8 +97,8 @@ const std::unordered_map<std::string, AudioCategory> SPLIT_STREAM_MAP = {
  */
 bool isValidStreamSplitAudioCategory(AudioCategory type)
 {
-    for (const AudioCategory value: SPLIT_STREAM_MAP.values()) {
-        if (type == value) {
+    for (const auto &[str, audioType]: SPLIT_STREAM_MAP) {
+        if (type == audioType) {
             return true;
         }
     }
