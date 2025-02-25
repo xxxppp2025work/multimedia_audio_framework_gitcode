@@ -90,6 +90,11 @@ const std::unordered_map<std::string, AudioCategory> SPLIT_STREAM_MAP = {
     {std::to_string(StreamUsage::STREAM_USAGE_NAVIGATION), AudioCategory::AUDIO_IN_NAVIGATION}
 };
 
+/**
+ * @brief whether the arg is valid
+ * @param type audio type, it should in split audio stream type set [media, communication, navigation]
+ * @return return true if type in SPLIT_STREAM_MAP.values(), false otherwise
+ */
 bool isValidStreamSplitAudioCategory(AudioCategory type)
 {
     for (const AudioCategory value: SPLIT_STREAM_MAP.values()) {
@@ -389,6 +394,9 @@ void RemoteAudioRendererSinkInner::splitStreamInit(const char *splitStreamString
     sort(splitStreamVector.begin(), splitStreamVector.end());
 }
 
+/**
+ * @param type must in const map SPLIT_STREAM_MAP.values(), or will return and record error info to log
+ */
 int32_t RemoteAudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort, AudioCategory type,
     uint32_t &renderId)
 {
