@@ -33,6 +33,7 @@ enum PipeAction {
 class AudioPipeInfo {
 public:
     int32_t sinkId_;
+    AudioPipeRole role_;
     std::string adapterName_;
     AudioFlag routeFlag_;
     AudioModuleInfo moduleInfo_;
@@ -52,15 +53,21 @@ public:
     void AddAudioPipeInfo(const AudioPipeInfo& info);
     void RemoveAudioPipeInfo(const AudioPipeInfo& info);
     void UpdateAudioPipeInfo(const AudioPipeInfo& oldPipe, const AudioPipeInfo& newPipe);
-
-    const std::vector<AudioPipeInfo> GetPipeList();
-    std::shared_ptr<AudioPipeInfo> GetPipeinfoByNameAndFlag(const std::string name, const AudioFlag routeFlag);
     void Assign(AudioPipeInfo& dst, const AudioPipeInfo& src);
     bool IsSamePipe(const AudioPipeInfo& info, const AudioPipeInfo& cmpInfo);
+
+    const std::vector<AudioPipeInfo> GetPipeList();
+    std::vector<AudioPipeInfo> GetUnusedPipe();
+    std::shared_ptr<AudioPipeInfo> GetPipeinfoByNameAndFlag(const std::string name, const AudioFlag routeFlag);
 
     void StartClient(uint32_t sessionId);
     void PauseClient(uint32_t sessionId);
     void RemoveClient(uint32_t sessionId);
+
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescs();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllInputStreamDescs();
+    std::shared_ptr<AudioStreamDescriptor> GetStreamDescById(uint32_t sessionId);
+    int32_t GetStreamCount(const std::string adapterName, const AudioFlag routeFlag);
 
 private:
     PipeManager();

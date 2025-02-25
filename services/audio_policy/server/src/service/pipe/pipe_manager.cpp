@@ -60,12 +60,8 @@ void PipeManager::UpdateAudioPipeInfo(const AudioPipeInfo& oldPipe, const AudioP
 
 bool PipeManager::IsSamePipe(const AudioPipeInfo& info, const AudioPipeInfo& cmpInfo)     //相同pipe判断是否直接通过stream id？？？
 {
-    if (info.moduleName == cmpInfo.moduleName &&
-        info.adapterName == cmpInfo.adapterName &&
-        info.samplingRate == cmpInfo.samplingRate &&
-        info.format == cmpInfo.format &&
-        info.channelLayout == cmpInfo.channelLayout &&
-        info.streamDesc == cmpInfo.streamDesc) {
+    if ((info.adapterName_ == cmpInfo.adapterName_ && info.routeFlag_ == cmpInfo.routeFlag_) ||
+        info.sinkId_ == cmpInfo.sinkId_) {
         return true;
     }
 
@@ -74,13 +70,14 @@ bool PipeManager::IsSamePipe(const AudioPipeInfo& info, const AudioPipeInfo& cmp
 
 void PipeManager::Assign(AudioPipeInfo& dst, const AudioPipeInfo& src)
 {
-    dst.moduleName = src.moduleName;
-    dst.adapterName = src.adapterName;
-    dst.samplingRate = src.samplingRate;
-    dst.format = src.format;
-    dst.channelLayout = src.channelLayout;
-    dst.pin = src.pin;
-    dst.streamDesc = src.streamDesc;
+    dst.sinkId_ = src.sinkId_;
+    dst.role_ = src.role_;
+    dst.adapterName_ = src.adapterName_;
+    dst.routeFlag_ = src.routeFlag_;
+    dst.moduleInfo_ = src.moduleInfo_;
+    dst.action_ = src.action_;
+    dst.streamDescs_ = src.streamDescs_;
+    dst.streamDescMap_ = src.streamDescMap_;
 }
 
 void PipeManager::StartClient(uint32_t sessionId)
@@ -110,6 +107,20 @@ const std::vector<AudioPipeInfo> PipeManager::GetPipeList()
     return curPipeList;
 }
 
+std::vector<AudioPipeInfo> PipeManager::GetUnusedPipe()
+{
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock);
+    std::vector<AudioPipeInfo> newList = curPipeList;
+    for (auto iter = newList.begin(); iter != newList.end();) {
+        if (iter->streamDescs_.empty()) {
+            curPipeList.erase(iter);
+        } else {
+            iter++;
+        }
+    }
+    return newList;
+}
+
 std::shared_ptr<AudioPipeInfo> PipeManager::GetPipeinfoByNameAndFlag(const std::string name, const AudioFlag routeFlag)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock);
@@ -118,6 +129,55 @@ std::shared_ptr<AudioPipeInfo> PipeManager::GetPipeinfoByNameAndFlag(const std::
             return std::make_shared<AudioPipeInfo>(it);
         }
     }
+}
+
+std::vector<std::shared_ptr<AudioStreamDescriptor>> PipeManager::GetAllOutputStreamDescs()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    for (auto it : curPipeList) {
+        if (it.role_ == PIPE_ROLE_OUTPUT) {
+            streamDescs.insert(streamDescs.end(), it.streamDescs_.begin(), it.streamDescs_.end());
+        }
+    }
+    return streamDescs;
+}
+
+std::vector<std::shared_ptr<AudioStreamDescriptor>> PipeManager::GetAllInputStreamDescs()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    for (auto it : curPipeList) {
+        if (it.role_ == PIPE_ROLE_INPUT) {
+            streamDescs.insert(streamDescs.end(), it.streamDescs_.begin(), it.streamDescs_.end());
+        }
+    }
+    return streamDescs;
+}
+
+std::shared_ptr<AudioStreamDescriptor> PipeManager::GetStreamDescById(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock);
+    for (auto it : curPipeList) {
+        for (auto desc : it.streamDescs_) {
+            if (desc->sessionId_ == sessionId) {
+                return desc;
+            }
+        }
+    }
+    return nullptr;
+}
+
+int32_t PipeManager::GetStreamCount(const std::string adapterName, const AudioFlag routeFlag)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock);
+    int32_t count = 0;
+    for (auto it : curPipeList) {
+        if (it.adapterName_ == adapterName && it.routeFlag_ == routeFlag) {
+            count = it.streamDescs_.size();
+        }
+    }
+    return count;
 }
 
 } // namespace AudioStandard

@@ -38,6 +38,7 @@ private:
         const PipeStreamPropInfo streamPropInfo, AudioPipeInfo &info);
     AudioStreamAction JudgeStreamAction(AudioFlag oldFlag, AudioFlag newFlag);
     void SortStreamDescsByStartTime(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
+
     std::shared_ptr<AudioPolicyConfigManager> configManager_ = nullptr;
 };
 } // namespace AudioStandard

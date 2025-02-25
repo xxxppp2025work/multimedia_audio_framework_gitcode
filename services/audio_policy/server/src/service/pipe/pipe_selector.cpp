@@ -24,8 +24,8 @@ namespace OHOS {
 namespace AudioStandard {
 
 static std::map<int, AudioPipeType> flagPipeTypeMap_ = {
-    {AUDIO_OUTPUT_FLAG_NORMAL,       PIPE_TYPE_NORMAL_OUT},
-    {AUDIO_INPUT_FLAG_NORMAL,        PIPE_TYPE_NORMAL_IN},
+    {AUDIO_OUTPUT_FLAG_NORMAL,        PIPE_TYPE_NORMAL_OUT},
+    {AUDIO_INPUT_FLAG_NORMAL,         PIPE_TYPE_NORMAL_IN},
     {AUDIO_OUTPUT_FLAG_LOWLATENCY,    PIPE_TYPE_NORMAL_OUT},    //LOWLATEENCY对应NORMAL还是对应LOWLATENCY？其他不在表中的FLAG如何对应？
     {AUDIO_INPUT_FLAG_LOWLATENCY,     PIPE_TYPE_NORMAL_IN},
     {AUDIO_OUTPUT_FLAG_MMAP,          PIPE_TYPE_LOWLATENCY_OUT},
@@ -227,16 +227,6 @@ AudioStreamAction PipeSelector::JudgeStreamAction(AudioFlag oldFlag, AudioFlag n
             return STREAM_ACTION_RECREATE;
     } else {
         return STREAM_ACTION_MOVE;
-    }
-}
-
-std::shared_ptr<AudioPipeInfo> PipeSelector::GetPipeinfoByNameAndFlag(const std::string name, const AudioFlag routeFlag)
-{
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock);
-    for (auto it : curPipeList) {
-        if (it.name_ == name && it.routeFlag_ == routeFlag) {
-            return std::make_shared<AudioPipeInfo>(it);
-        }
     }
 }
 
