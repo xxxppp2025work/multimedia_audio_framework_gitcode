@@ -593,7 +593,7 @@ int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamP
     AudioFlag flag = AUDIO_OUTPUT_FLAG_NORAML;
 
     int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag, audioStreamParams.originalSessionId);
-    CHECK_AND_RETURN_RET_LOG(ret != SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
 
     auto it = AUDIO_FLAG_GROUP_MAP.find(flag);
     if (it != AUDIO_FLAG_GROUP_MAP.end()) {

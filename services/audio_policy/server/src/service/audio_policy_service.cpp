@@ -116,7 +116,9 @@ bool AudioPolicyService::LoadAudioPolicyConfig()
 
 bool AudioPolicyService::Init(void)
 {
+#ifndef AUDIO_UNIFY
     serviceFlag_.reset();
+#endif
     audioPolicyManager_.Init();
     audioEffectService_.EffectServiceInit();
     audioDeviceManager_.ParseDeviceXml();
@@ -140,12 +142,14 @@ bool AudioPolicyService::Init(void)
     CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Tone Load Configuration failed");
 #endif
 
+#ifndef AUDIO_UNIFY
     int32_t status = deviceStatusListener_->RegisterDeviceStatusListener();
     if (status != SUCCESS) {
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("[Policy Service] Register for device status "
             "events failed");
     }
     CHECK_AND_RETURN_RET_LOG(status == SUCCESS, false, "[Policy Service] Register for device status events failed");
+#endif
 
 #ifndef AUDIO_UNIFY
     audioVolumeManager_.Init(audioPolicyServerHandler_);
@@ -875,6 +879,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSt
 
 void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 {
+#ifndef AUDIO_UNIFY
     AUDIO_INFO_LOG("[module_load]::OnServiceConnected for [%{public}d]", serviceIndex);
     CHECK_AND_RETURN_LOG(serviceIndex >= HDI_SERVICE_INDEX && serviceIndex <= AUDIO_SERVICE_INDEX, "invalid index");
 
@@ -897,6 +902,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
     // load hdi-effect-model
     LoadHdiEffectModel();
     AudioServerProxy::GetInstance().NotifyAudioPolicyReady();
+#endif
 }
 
 void AudioPolicyService::OnServiceDisconnected(AudioServiceIndex serviceIndex)

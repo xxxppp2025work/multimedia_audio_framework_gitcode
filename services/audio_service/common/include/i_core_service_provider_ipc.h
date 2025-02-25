@@ -32,8 +32,7 @@ public:
 
     // IPC code.
     enum ICoreServiceProviderMsg : uint32_t {
-        START_CLIENT = 0,
-        REMOVE_CLIENT,
+        UPDATE_SESSION_OPERATION = 0,
         CORE_SERVICE_PROVIDER_MAX_MSG,
     };
 

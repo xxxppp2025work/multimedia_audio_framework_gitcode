@@ -291,7 +291,36 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         streamClass = IAudioStream::PA_STREAM;
 #endif
     }
+#ifndef AUDIO_UNIFY
     ActivateAudioConcurrency(streamClass);
+#else
+    // Create Client
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+
+    streamDesc->streamInfo_.format = static_cast<AudioSampleFormat>(audioStreamParams.format);
+    streamDesc->streamInfo_.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
+    streamDesc->streamInfo_.channels = static_cast<AudioChannel>(audioStreamParams.channels);
+    streamDesc->streamInfo_.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
+    streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
+    
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->capturerInfo_ = capturerInfo_;
+    streamDesc->appInfo_ = appInfo_;
+    streamDesc->callerUid_ = getuid();
+
+    AudioFlag flag = AUDIO_INPUT_FLAG_NORAML;
+
+    int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(streamDesc, flag, audioStreamParams.originalSessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
+
+    auto it = AUDIO_FLAG_GROUP_MAP.find(flag);
+    if (it != AUDIO_FLAG_GROUP_MAP.end()) {
+        streamClass = it->second;
+    } else {
+        streamClass = IAudioStream::StreamClass::PA_STREAM;
+    }
+#endif
 
     // check AudioStreamParams for fast stream
     if (audioStream_ == nullptr) {

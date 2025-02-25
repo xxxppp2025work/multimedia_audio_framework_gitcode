@@ -23,6 +23,7 @@
 #include "device_status_listener.h"
 #include "core_service_provider_stub.h"
 #include "audio_pipe_info.h"
+#include "audio_service_enum.h"
 
 
 namespace OHOS {
@@ -38,8 +39,7 @@ public:
         int32_t CreateCapturerClient(std::shared_ptr<AudioStreamDescriptor> streamDesc, AudioFlag &flag, uint32_t &sessionId);
 
         // ICoreServiceProvider
-        int32_t StartClient(uint32_t sessionId) override;
-        int32_t RemoveClient(uint32_t sessionId) override;
+        int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation) override;
 
         // IDeviceStatusObserver
         void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command) override;
@@ -124,7 +124,9 @@ private:
     int32_t CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> streamDesc, AudioFlag &audioFlag, uint32_t &sessionId);
     int32_t CreateCapturerClient(std::shared_ptr<AudioStreamDescriptor> streamDesc, AudioFlag &audioFlag, uint32_t &sessionId);
     int32_t StartClient(uint32_t sessionId);
-    int32_t RemoveClient(uint32_t sessionId);
+    int32_t PauseClient(uint32_t sessionId);
+    int32_t StopClient(uint32_t sessionId);
+    int32_t ReleaseClient(uint32_t sessionId);
 
     int32_t SetAudioScene(AudioScene audioScene);
     bool IsArmUsbDevice(const AudioDeviceDescriptor &deviceDesc);

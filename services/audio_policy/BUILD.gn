@@ -41,6 +41,7 @@ group("audio_policy_packages") {
 config("audio_policy_public_config") {
   include_dirs = [
     "util/include",
+    "common/definitions/include",
     "common/include",
     "client/include",
     "server/include",

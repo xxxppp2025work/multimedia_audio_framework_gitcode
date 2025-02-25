@@ -193,7 +193,7 @@ int32_t AudioProcessInServer::Start()
     }
 
 #ifdef AUDIO_UNIFY
-    int32_t ret = CoreServiceHandler::GetInstance().StartClient(sessionId_);
+    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
 #endif
     for (size_t i = 0; i < listenerList_.size(); i++) {
@@ -333,7 +333,7 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
 #ifndef AUDIO_UNIFY
     int32_t ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
 #else
-    int32_t ret = CoreServiceHandler::GetInstance().RemoveClient(sessionId_);
+    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
 
     ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);

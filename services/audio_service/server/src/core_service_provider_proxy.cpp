@@ -30,7 +30,7 @@ CoreServiceProviderProxy::~CoreServiceProviderProxy()
 {
 }
 
-int32_t CoreServiceProviderProxy::StartClient(uint32_t sessionId)
+int32_t CoreServiceProviderProxy::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -38,24 +38,9 @@ int32_t CoreServiceProviderProxy::StartClient(uint32_t sessionId)
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
     data.WriteUint32(sessionId);
+    data.WriteUint32(operation);
 
-    int ret = Remote()->SendRequest(ICoreServiceProviderMsg::START_CLIENT, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "failed, error: %{public}d", ret);
-
-    return reply.ReadInt32();
-}
-
-
-int32_t CoreServiceProviderProxy::RemoveClient(uint32_t sessionId)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
-    data.WriteUint32(sessionId);
-
-    int ret = Remote()->SendRequest(ICoreServiceProviderMsg::REMOVE_CLIENT, data, reply, option);
+    int ret = Remote()->SendRequest(ICoreServiceProviderMsg::UPDATE_SESSION_OPERATION, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "failed, error: %{public}d", ret);
 
     return reply.ReadInt32();

@@ -690,8 +690,13 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
     bufferAttr.minreq = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
 
     std::string dupSinkName = AppendDeviceName(innerCapId, AppendType::APPEND_RENDER);
+#ifndef AUDIO_UNIFY
     const char *sinkName = managerType_ == DUP_PLAYBACK ? dupSinkName.c_str() :
         (managerType_ == DUAL_PLAYBACK ? "Speaker" : nullptr);
+#else
+    const char *sinkName = managerType_ == DUP_PLAYBACK ? dupSinkName.c_str() :
+        (managerType_ == DUAL_PLAYBACK ? "Speaker" : "Speaker");
+#endif
     uint32_t flags = PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
         PA_STREAM_VARIABLE_RATE;
     if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
@@ -719,7 +724,11 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
     AUDIO_INFO_LOG("bufferAttr, maxLength: %{public}d, fragsize: %{public}d",
         bufferAttr.maxlength, bufferAttr.fragsize);
 
+#ifndef AUDIO_UNIFY
     const char *cDeviceName = (deviceName == "") ? nullptr : deviceName.c_str();
+#else
+    const char *cDeviceName = "Built_in_mic";
+#endif
 
     uint32_t flags = PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED | PA_STREAM_VARIABLE_RATE;
     if (source == SOURCE_TYPE_PLAYBACK_CAPTURE) {

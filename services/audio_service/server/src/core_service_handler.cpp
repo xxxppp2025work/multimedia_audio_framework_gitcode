@@ -55,16 +55,10 @@ int32_t CoreServiceHandler::ConfigCoreServiceProvider(const sptr<ICoreServicePro
     return ERR_INVALID_OPERATION;
 }
 
-int32_t CoreServiceHandler::StartClient(uint32_t sessionId)
+int32_t CoreServiceHandler::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation)
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
-    return iCoreServiceProvider_->StartClient(sessionId);
-}
-
-int32_t CoreServiceHandler::RemoveClient(uint32_t sessionId)
-{
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
-    return iCoreServiceProvider_->RemoveClient(sessionId);
+    return iCoreServiceProvider_->UpdateSessionOperation(sessionId, operation);
 }
 } // namespace AudioStandard
 } // namespace OHOS

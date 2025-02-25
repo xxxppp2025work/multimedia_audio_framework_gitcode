@@ -25,9 +25,7 @@ public:
     explicit CoreServiceProviderProxy(const sptr<IRemoteObject>& impl);
     virtual ~CoreServiceProviderProxy();
 
-    int32_t StartClient(uint32_t sessionId) override;
-    int32_t RemoveClient(uint32_t sessionId) override;
-
+    int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation) override;
 private:
     static inline BrokerDelegator<CoreServiceProviderProxy> delegator_;
 };

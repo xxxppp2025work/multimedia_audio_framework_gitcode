@@ -26,8 +26,7 @@ public:
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
 private:
     static bool CheckInterfaceToken(MessageParcel &data);
-    int32_t HandleStartClient(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleRemoveClient(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleUpdateSessionOperation(MessageParcel &data, MessageParcel &reply);
 };
 
 class CoreServiceProviderWrapper : public CoreServiceProviderStub {
@@ -35,8 +34,7 @@ public:
     ~CoreServiceProviderWrapper();
     CoreServiceProviderWrapper(ICoreServiceProvider *coreServiceWorker);
 
-    int32_t StartClient(uint32_t sessionId) override;
-    int32_t RemoveClient(uint32_t sessionId) override;
+    int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation) override;
 private:
     ICoreServiceProvider *coreServiceWorker_;
 };

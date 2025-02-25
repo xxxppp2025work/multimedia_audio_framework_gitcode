@@ -174,19 +174,17 @@ void AudioPolicyServer::OnStart()
 
     interruptService_->SetCallbackHandler(audioPolicyServerHandler_);
 
+    if (audioPolicyService_.SetAudioStreamRemovedCallback(this)) {
+        AUDIO_ERR_LOG("SetAudioStreamRemovedCallback failed");
+    }
+    audioPolicyService_.Init();
+
 #ifdef AUDIO_UNIFY
     coreService_ = AudioCoreService::GetCoreService();
     coreService_->SetCallbackHandler(audioPolicyServerHandler_);
     coreService_->Init();
     eventEntry_ = coreService_->GetEventEntry();
-
-    audioPolicyServerHandler_->Init(interruptService_);
 #endif
-
-    if (audioPolicyService_.SetAudioStreamRemovedCallback(this)) {
-        AUDIO_ERR_LOG("SetAudioStreamRemovedCallback failed");
-    }
-    audioPolicyService_.Init();
 
     AddSystemAbilityListeners();
     bool res = Publish(this);

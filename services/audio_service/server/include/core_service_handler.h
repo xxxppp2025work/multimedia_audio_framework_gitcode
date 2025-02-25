@@ -34,10 +34,7 @@ public:
     // would be called only once
     int32_t ConfigCoreServiceProvider(const sptr<ICoreServiceProviderIpc> policyProvider);
 
-    int32_t StartClient(uint32_t sessionId);
-
-    int32_t RemoveClient(uint32_t sessionId);
-
+    int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation);
 private:
     CoreServiceHandler();
     sptr<ICoreServiceProviderIpc> iCoreServiceProvider_ = nullptr;

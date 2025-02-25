@@ -17,13 +17,13 @@
 #define I_CORE_SERVICE_PROVIDER_H
 
 #include <cstdint>
+#include "audio_service_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
 class ICoreServiceProvider {
 public:
-    virtual int32_t StartClient(uint32_t sessionId) = 0;
-    virtual int32_t RemoveClient(uint32_t sessionId) = 0;
+    virtual int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation) = 0;
 
     virtual ~ICoreServiceProvider() = default;
 };

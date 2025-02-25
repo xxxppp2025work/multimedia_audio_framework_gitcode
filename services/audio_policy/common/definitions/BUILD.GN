@@ -34,8 +34,7 @@ ohos_shared_library("audio_server_definitions") {
   ]
 
   sources = [
-    "./src/audio_sink_attr.cpp",
-    "./src/audio_source_attr.cpp",
+    "./src/audio_service_definiton.cpp",
   ]
 
   public_external_deps = [ "bounds_checking_function:libsec_shared" ]

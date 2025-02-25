@@ -347,7 +347,7 @@ int32_t CapturerInServer::Start()
     int32_t ret;
 
 #ifdef AUDIO_UNIFY
-    ret = CoreServiceHandler::GetInstance().StartClient(streamIndex_);
+    ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
 #endif
     AudioService::GetInstance()->UpdateSourceType(processConfig_.capturerInfo.sourceType);
 
@@ -465,7 +465,7 @@ int32_t CapturerInServer::Release()
 #ifndef AUDIO_UNIFY
     int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
 #else
-    int32_t ret = CoreServiceHandler::GetInstance().RemoveClient(streamIndex_);
+    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
 
     ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);

@@ -40,28 +40,19 @@ int CoreServiceProviderStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
         return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
     }
     switch (code) {
-        case START_CLIENT:
-            return HandleStartClient(data, reply);
-        case REMOVE_CLIENT:
-            return HandleRemoveClient(data, reply);
+        case UPDATE_SESSION_OPERATION:
+            return HandleUpdateSessionOperation(data, reply);
         default:
             AUDIO_WARNING_LOG("Unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
     }
 }
 
-int32_t CoreServiceProviderStub::HandleStartClient(MessageParcel &data, MessageParcel &reply)
+int32_t CoreServiceProviderStub::HandleUpdateSessionOperation(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t sessionId = data.ReadUint32();
-    int32_t ret = StartClient(sessionId);
-    reply.WriteInt32(ret);
-    return AUDIO_OK;
-}
-
-int32_t CoreServiceProviderStub::HandleRemoveClient(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t sessionId = data.ReadUint32();
-    int32_t ret = RemoveClient(sessionId);
+    SessionOperation operation = static_cast<SessionOperation>(data.ReadUint32());
+    int32_t ret = UpdateSessionOperation(sessionId, operation);
     reply.WriteInt32(ret);
     return AUDIO_OK;
 }
@@ -75,16 +66,10 @@ CoreServiceProviderWrapper::CoreServiceProviderWrapper(ICoreServiceProvider *cor
 {
 }
 
-int32_t CoreServiceProviderWrapper::StartClient(uint32_t sessionId)
+int32_t CoreServiceProviderWrapper::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    return coreServiceWorker_->StartClient(sessionId);
-}
-
-int32_t CoreServiceProviderWrapper::RemoveClient(uint32_t sessionId)
-{
-    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    return coreServiceWorker_->RemoveClient(sessionId);
+    return coreServiceWorker_->UpdateSessionOperation(sessionId, operation);
 }
 } // namespace AudioStandard
 } // namespace OHOS

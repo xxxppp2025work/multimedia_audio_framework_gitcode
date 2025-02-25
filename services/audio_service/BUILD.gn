@@ -294,6 +294,7 @@ config("audio_service_config") {
     "server/include",
     "server/include/config",
     "../audio_policy/server/include/service/effect",
+    "../audio_policy/common/definitions/include",
     "../../frameworks/native/audioeffect/include",
     "../../frameworks/native/offlineaudioeffect/include",
     "../../frameworks/native/audioinnercall/include",

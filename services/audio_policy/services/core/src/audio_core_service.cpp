@@ -38,6 +38,8 @@ constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
 static const char* SETTINGS_DATA_BASE_URI =
     "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true";
+static const char* SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
+static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
 static const char* PREDICATES_STRING = "settings.general.device_name";
 static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
 }
@@ -217,31 +219,64 @@ void AudioCoreService::SetRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor
 int32_t AudioCoreService::StartClient(uint32_t sessionId)
 {
     // std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
-    std::shared_ptr<AudioStreamDescriptor> streamDesc; // in plan : wait for impl
-    if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
-        audioActiveDevice_.UpdateActiveDeviceRoute(streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
-    } else {
-        audioActiveDevice_.UpdateActiveDeviceRoute(streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG);
-    }
+    // std::shared_ptr<AudioStreamDescriptor> streamDesc; // in plan : wait for impl
+    // if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+    //     audioActiveDevice_.UpdateActiveDeviceRoute(streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
+    // } else {
+    //     audioActiveDevice_.UpdateActiveDeviceRoute(streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG);
+    // }
+    audioActiveDevice_.UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG);
 
     // int32_t ret = pipeManager_->StartClient(sessionId);
     int32_t ret = SUCCESS; // In plan : change pipeMananger
     return ret;
 }
 
-int32_t AudioCoreService::RemoveClient(uint32_t sessionId)
+int32_t AudioCoreService::PauseClient(uint32_t sessionId)
+{
+    // std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
+    // std::shared_ptr<AudioStreamDescriptor> streamDesc; // in plan : wait for impl
+    // if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+    //     audioActiveDevice_.UpdateActiveDeviceRoute(streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
+    // } else {
+    //     audioActiveDevice_.UpdateActiveDeviceRoute(streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG);
+    // }
+    audioActiveDevice_.UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG);
+
+    // int32_t ret = pipeManager_->StartClient(sessionId);
+    int32_t ret = SUCCESS; // In plan : change pipeMananger
+    return ret;
+}
+
+int32_t AudioCoreService::StopClient(uint32_t sessionId)
+{
+    // std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
+    // std::shared_ptr<AudioStreamDescriptor> streamDesc; // in plan : wait for impl
+    // if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+    //     audioActiveDevice_.UpdateActiveDeviceRoute(streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
+    // } else {
+    //     audioActiveDevice_.UpdateActiveDeviceRoute(streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG);
+    // }
+    audioActiveDevice_.UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG);
+
+    // int32_t ret = pipeManager_->StartClient(sessionId);
+    int32_t ret = SUCCESS; // In plan : change pipeMananger
+    return ret;
+}
+
+int32_t AudioCoreService::ReleaseClient(uint32_t sessionId)
 {
 
     // int32_t DestoryRender(); // In plan : 确认下这里是否可以直接调用接口，怎么确定要不要关闭renderer
 
-    std::shared_ptr<AudioPipeInfo> pipeInfo = nullptr;
-    // std::shared_ptr<AudioPipeInfo> pipeInfo = pipeManager_->GetPipeInfo(sessionId);
+    // std::shared_ptr<AudioPipeInfo> pipeInfo = nullptr;
+    // // std::shared_ptr<AudioPipeInfo> pipeInfo = pipeManager_->GetPipeInfo(sessionId);
 
-    if (pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT) {
-        audioPolicyManager_.CloseAudioPort(pipeInfo->id_);
-    } else {
-        audioPolicyManager_.CloseAudioPort(pipeInfo->id_);
-    }
+    // if (pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT) {
+    //     audioPolicyManager_.CloseAudioPort(pipeInfo->id_);
+    // } else {
+    //     audioPolicyManager_.CloseAudioPort(pipeInfo->id_);
+    // }
 
     // pipeManager_->RemoveClient(sessionId); In plan : wait for pipemananger
 
@@ -1356,7 +1391,7 @@ void AudioCoreService::TriggerRecreateCapturerStreamCallback(int32_t callerPid, 
 
 uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
-    // uint32_t id = AudioServerProxy::GetInstance().OpenAudioRoute(pipeInfo->audioModuleInfo_) // in plan : need re code
+    // uint32_t id = AudioServerProxy::GetInstance().OpenAudioRoute(attr, attr) // in plan : need re code
     // uint32_t id = audioPolicyManager_.OpenAudioPort(moduleInfo); // in plan : need re code
     uint32_t id = 1;
     AUDIO_INFO_LOG("Get HDI id: %{public}u", id);
@@ -1782,18 +1817,21 @@ int32_t AudioCoreService::EventEntry::CreateCapturerClient(std::shared_ptr<Audio
     return SUCCESS;
 }
 
-int32_t AudioCoreService::EventEntry::StartClient(uint32_t sessionId)
+int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    coreService_->StartClient(sessionId);
-    return SUCCESS;
-}
-
-int32_t AudioCoreService::EventEntry::RemoveClient(uint32_t sessionId)
-{
-    std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    coreService_->RemoveClient(sessionId);
-    return SUCCESS;
+    switch (operation) {
+        case SESSION_OPERATION_START:
+            return coreService_->StartClient(sessionId);
+        case SESSION_OPERATION_PAUSE:
+            return coreService_->PauseClient(sessionId);
+        case SESSION_OPERATION_STOP:
+            return coreService_->StopClient(sessionId);
+        case SESSION_OPERATION_RELEASE:
+            return coreService_->ReleaseClient(sessionId);
+        default:
+            return SUCCESS;
+    }
 }
 
 // device status listener
@@ -1864,6 +1902,7 @@ void AudioCoreService::EventEntry::OnServiceConnected(AudioServiceIndex serviceI
     // RegisterBluetoothListener() will be called when bluetooth_host is online
     // load hdi-effect-model
     LoadHdiEffectModel();
+    AudioServerProxy::GetInstance().NotifyAudioPolicyReady();
 }
 
 void AudioCoreService::EventEntry::OnServiceDisconnected(AudioServiceIndex serviceIndex)
