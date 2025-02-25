@@ -25,6 +25,7 @@
 #include "audio_info.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
+#include "audio_stream_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -43,7 +44,7 @@ public:
     static std::unordered_map<std::string, AudioPin> pinStrToEnum;
     static std::unordered_map<std::string, AudioSampleFormat> formatStrToEnum;
     static std::unordered_map<std::string, AudioChannelLayout> layoutStrToEnum;
-    static std::unordered_map<std::string, AudioFlagType> flagStrToEnum;
+    static std::unordered_map<std::string, AudioFlag> flagStrToEnum;
     static std::unordered_map<std::string, AudioPreloadType> preloadStrToEnum;
 };
 

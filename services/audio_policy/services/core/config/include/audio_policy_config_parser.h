@@ -20,7 +20,6 @@
 #include <string>
 #include <regex>
 
-#include "audio_definition_adapter_info.h"
 #include "audio_device_info.h"
 #include "audio_stream_info.h"
 #include "parser.h"

@@ -23,6 +23,7 @@
 #include "audio_module_info.h"
 #include "audio_info.h"
 #include "audio_policy_log.h"
+#include "audio_definition_policy_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -148,7 +149,7 @@ struct AdapterDeviceInfo {
 
     std::shared_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<std::string> supportPipes_ {};
-    std::unordered_map<AudioFlagType, std::shared_ptr<AdapterPipeInfo>> supportPipeMap_ {}; // flag <-> pipeInfo
+    std::unordered_map<AudioFlag, std::shared_ptr<AdapterPipeInfo>> supportPipeMap_ {}; // flag <-> pipeInfo
 };
 
 struct AdapterPipeInfo {
@@ -157,7 +158,7 @@ struct AdapterPipeInfo {
     PaPropInfo paProp_ {};
 
     AudioPreloadType preloadAttr_ = PRELOAD_TYPE_UNKNOWN;
-    std::list<AudioFlagType> supportFlags_ {};
+    std::list<AudioFlag> supportFlags_ {};
 
     std::shared_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<PipeStreamPropInfo> streamPropInfos_ {};

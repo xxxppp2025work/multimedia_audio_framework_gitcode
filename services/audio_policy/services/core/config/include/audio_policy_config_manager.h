@@ -23,7 +23,6 @@
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_definition_adapter_info.h"
-#include "audio_stream_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,8 +35,9 @@ public:
     void OnAudioPolicyConfigXmlParsingCompleted();
 
     void GetDeviceDescriptorByDeviceType(DeviceType deviceType, AudioDeviceDescriptor &desc);
-    std::string GetSinkPortName(DeviceType deviceType, AudioFlagType flagType);
-    void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> desc, PipeStreamPropInfo &info);
+    std::string GetSinkPortName(DeviceType deviceType, AudioFlag flagType);
+    AudioFlag GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> desc);
+    void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, PipeStreamPropInfo &info);
 
 private:
     AudioPolicyConfigData &audioPolicyConfig_;

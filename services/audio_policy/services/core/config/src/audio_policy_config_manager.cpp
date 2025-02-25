@@ -59,7 +59,7 @@ void AudioPolicyConfigManager::GetDeviceDescriptorByDeviceType(DeviceType device
     }
 }
 
-std::string AudioPolicyConfigManager::GetSinkPortName(DeviceType deviceType, AudioFlagType flagType)
+std::string AudioPolicyConfigManager::GetSinkPortName(DeviceType deviceType, AudioFlag flagType)
 {
     std::string portName = PORT_NONE;
     std::unordered_map<DeviceType, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap;
@@ -72,32 +72,65 @@ std::string AudioPolicyConfigManager::GetSinkPortName(DeviceType deviceType, Aud
     return portName;
 }
 
-void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> desc, PipeStreamPropInfo &info)
+AudioFlag AudioPolicyConfigManager::GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> desc)
 {
     // device -> adapter -> flag -> stream
+    AudioFlag flag = AUDIO_OUTPUT_FLAG_NONE; // input or output? default?
     std::unordered_map<DeviceType, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap;
     audioPolicyConfig_.GetDeviceInfoMap(deviceInfoMap);
-    auto deviceIt = deviceInfoMap.find(desc->deviceDesc_->deviceType_);
-    CHECK_AND_RETURN_LOG(deviceIt != deviceInfoMap.end(), "Find deviceType failed");
-    auto pipeIt = deviceIt->second->supportPipeMap_.find(desc->audioFlag); // audioFlag? two enum definitions
-    if (pipeIt == deviceIt->second->supportPipeMap_.end()) {
-        AUDIO_ERR_LOG("Find audioFlag failed");
-        AudioFlagType flag = desc->audioMode_ == AUDIO_MODE_PLAYBACK ?
-            FLAG_TYPE_OUTPUT_NORMAL : FLAG_TYPE_INPUT_NORMAL;
-        pipeIt = deviceIt->second->supportPipeMap_.find(flag);
-        CHECK_AND_RETURN_LOG(pipeIt != deviceIt->second->supportPipeMap_.end(), "Find normal flag failed");
+    auto deviceIt = deviceInfoMap.find(desc->newDeviceDescs_.back()->deviceType_);
+    CHECK_AND_RETURN_RET_LOG(deviceIt != deviceInfoMap.end(), flag, "Find deviceType failed");
+
+    for (auto pipeIt : deviceIt->second->supportPipeMap_) {
+        if (desc->audioFlag_ & pipeIt.first) {
+            flag = pipeIt.first;
+            break;
+        }
     }
+    if (flag == AUDIO_OUTPUT_FLAG_NONE) {
+        AUDIO_INFO_LOG("Find audioFlag failed, choose normal flag");
+        flag = desc->audioMode_ == AUDIO_MODE_PLAYBACK ?
+            AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL;
+    }
+    return flag;
+}
+
+void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, PipeStreamPropInfo &info)
+{
+    std::unordered_map<DeviceType, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap;
+    audioPolicyConfig_.GetDeviceInfoMap(deviceInfoMap);
+    auto deviceIt = deviceInfoMap.find(desc->newDeviceDescs_.back()->deviceType_);
+    CHECK_AND_RETURN_LOG(deviceIt != deviceInfoMap.end(), "Find deviceType failed");
+    auto pipeIt = deviceIt->second->supportPipeMap_.find(desc->routeFlag_);
+    CHECK_AND_RETURN_LOG(pipeIt != deviceIt->second->supportPipeMap_.end(), "Find routeFlag failed");
+
     for (auto &streamProp : pipeIt->second->streamPropInfos_) {
-        if (streamProp.format_ == desc->audioStreamParams.format &&
-            streamProp.sampleRate_ == desc->audioStreamParams.samplingRate &&
-            streamProp.channelLayout_ == desc->audioStreamParams.channelLayout) {
+        if (streamProp.format_ == desc->streamInfo_.format &&
+            streamProp.sampleRate_ == desc->streamInfo_.samplingRate &&
+            streamProp.channelLayout_ == desc->streamInfo_.channelLayout) {
             info = streamProp;
             return;
         }
     }
-    if (streamProp.format_ == INVALID_WIDTH && streamProp.sampleRate_ == 0 &&
-        streamProp.channelLayout_ == CH_LAYOUT_UNKNOWN) {
-        AUDIO_ERR_LOG("Find streamPropInfo failed");
+    if (info.format_ == INVALID_WIDTH && info.sampleRate_ == 0 && info.channelLayout_ == CH_LAYOUT_UNKNOWN &&
+        desc->routeFlag_ != (AUDIO_OUTPUT_FLAG_NORMAL || AUDIO_INPUT_FLAG_NORMAL)) {
+        AUDIO_INFO_LOG("Find streamPropInfo failed, choose normal flag");
+        desc->routeFlag_ = desc->audioMode_ == AUDIO_MODE_PLAYBACK ?
+            AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL;
+        auto pipeIt = deviceIt->second->supportPipeMap_.find(desc->routeFlag_);
+        for (auto &streamProp : pipeIt->second->streamPropInfos_) {
+            if (streamProp.format_ == desc->streamInfo_.format &&
+                streamProp.sampleRate_ == desc->streamInfo_.samplingRate &&
+                streamProp.channelLayout_ == desc->streamInfo_.channelLayout) {
+                info = streamProp;
+                return;
+            }
+        }
+    }
+    if (info.format_ == INVALID_WIDTH && info.sampleRate_ == 0 && info.channelLayout_ == CH_LAYOUT_UNKNOWN &&
+        desc->routeFlag_ == (AUDIO_OUTPUT_FLAG_NORMAL || AUDIO_INPUT_FLAG_NORMAL) &&
+        !pipeIt->second->streamPropInfos_.empty()) {
+        info = pipeIt->second->streamPropInfos_.front(); // if not match, choose first?
     }
 }
 

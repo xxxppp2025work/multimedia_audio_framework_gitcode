@@ -16,10 +16,9 @@
 #define LOG_TAG "AudioPolicyConfigParser"
 #endif
 
-#include "audio_policy_config_parser.h"
-#include "audio_definition_policy_utils.h"
-#include "audio_errors.h"
 #include <sstream>
+#include "audio_policy_config_parser.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
