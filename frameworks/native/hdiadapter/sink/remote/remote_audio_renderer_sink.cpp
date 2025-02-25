@@ -84,13 +84,10 @@ constexpr uint32_t NAVIGATION_RENDERID = 1;
 constexpr uint32_t COMMUNICATION_RENDERID = 2;
 const char* DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink";
 
-constexpr const char *MEDIA_STREAM_TYPE = "1";
-constexpr const char *COMMUNICATION_STREAM_TYPE = "2";
-constexpr const char *NAVIGATION_STREAM_TYPE = "13";
 const std::unordered_map<std::string, AudioCategory> SPLIT_STREAM_MAP = {
-    {MEDIA_STREAM_TYPE, AudioCategory::AUDIO_IN_MEDIA},
-    {COMMUNICATION_STREAM_TYPE, AudioCategory::AUDIO_IN_COMMUNICATION},
-    {NAVIGATION_STREAM_TYPE, AudioCategory::AUDIO_IN_NAVIGATION}
+    {std::to_string(StreamUsage::STREAM_USAGE_MEDIA), AudioCategory::AUDIO_IN_MEDIA},
+    {std::to_string(StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION), AudioCategory::AUDIO_IN_COMMUNICATION},
+    {std::to_string(StreamUsage::STREAM_USAGE_NAVIGATION), AudioCategory::AUDIO_IN_NAVIGATION}
 };
 
 }
