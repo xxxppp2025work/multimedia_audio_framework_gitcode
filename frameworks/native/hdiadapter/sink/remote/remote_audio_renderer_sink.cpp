@@ -181,7 +181,10 @@ private:
     std::mutex audioAdapterMutex_;
 
     IAudioSinkCallback *callback_ = nullptr;
+    
     unordered_map<AudioCategory, sptr<IAudioRender>> audioRenderMap_;
+    std::mutex audioRenderMutex_;
+    
     unordered_map<AudioCategory, AudioPort> audioPortMap_;
     IAudioSinkAttr attr_ = {};
     unordered_map<AudioCategory, FILE*> dumpFileMap_;
@@ -247,17 +250,18 @@ void RemoteAudioRendererSinkInner::ClearRender()
         audioAdapter_ = nullptr;
     }
 
+    std::lock_guard<std::mutex> lock(this->audioRenderMutex_);
     if (audioAdapter != nullptr) {
         auto renderId = renderIdArr_.begin();
-        for (auto &audioRender : audioRenderMap_) {
+        for (auto &[category, audioRenderPtr] : audioRenderMap_) {
             if (renderId == renderIdArr_.end()) {
                 AUDIO_ERR_LOG("renderArr_.len != audioRenderMap_.len");
-                break;
+                return;
             }
-            audioAdapter->DestroyRender(audioRender.second, *renderId);
-            audioRender.second = nullptr;
+            audioAdapter->DestroyRender(audioRenderPtr, *renderId);
+            audioRenderPtr = nullptr;
             renderId++;
-            FILE *dumpFile = dumpFileMap_[audioRender.first];
+            FILE *dumpFile = dumpFileMap_[category];
             DumpFileUtil::CloseDumpFile(&dumpFile);
         }
         audioAdapter->Release();
@@ -426,7 +430,10 @@ int32_t RemoteAudioRendererSinkInner::CreateRender(const struct AudioPort &rende
     CHECK_AND_RETURN_RET_LOG(audioAdapter != nullptr, ERR_INVALID_HANDLE, "CreateRender: Audio adapter is null.");
     sptr<IAudioRender> audioRender = nullptr;
     int32_t ret = audioAdapter->CreateRender(deviceDesc, param, audioRender, this, renderId);
-    audioRenderMap_[type] = audioRender;
+    {
+        std::lock_guard<std::mutex> lock(this->audioRenderMutex_);
+        audioRenderMap_[type] = audioRender;
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && audioRender != nullptr, ret,
         "AudioDeviceCreateRender fail, ret %{public}d.", ret);
 
@@ -496,7 +503,10 @@ int32_t RemoteAudioRendererSinkInner::RenderFrameLogic(char &data, uint64_t len,
     const auto iter = SPLIT_STREAM_MAP.find(streamType);
     CHECK_AND_RETURN_RET_LOG(iter != SPLIT_STREAM_MAP.end(), ERR_INVALID_HANDLE,
         "streamType->%{public}s is not in SPLIT_STREAM_MAP.keys", streamType);
-    sptr<IAudioRender> audioRender_ = audioRenderMap_[iter->second];
+    {
+        std::lock_guard<std::mutex> lock(this->audioRenderMutex_);
+        sptr<IAudioRender> audioRender_ = audioRenderMap_[iter->second];
+    }
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "RenderFrame: Audio render is null.");
 
     if (!started_.load()) {
@@ -595,12 +605,14 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
         dumpFileNameMap_[audioPort.first] = dumpFileName;
     }
 
-    for (const auto &audioRender : audioRenderMap_) {
-        CHECK_AND_RETURN_RET_LOG(audioRender.second != nullptr, ERR_INVALID_HANDLE,
-            "Start: Audio render is null. Audio steam type is %{public}d", audioRender.first);
-        int32_t ret = audioRender.second->Start();
+    std:unique_lock<std::mutex> audioRenderLock(this->audioRenderMutex_);
+    for (const auto &[category, audioRenderPtr] : audioRenderMap_) {
+        CHECK_AND_RETURN_RET_LOG(audioRenderPrt != nullptr, ERR_INVALID_HANDLE,
+            "Start: Audio render is null. Audio steam type is %{public}d", category);
+        int32_t ret = audioRenderPrt->Start();
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_NOT_STARTED, "Start fail, ret %{public}d.", ret);
     }
+    audioRenderLock.unlock();
     started_.store(true);
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_REMOTE, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
@@ -615,10 +627,11 @@ int32_t RemoteAudioRendererSinkInner::Stop(void)
         return SUCCESS;
     }
 
-    for (const auto &audioRender : audioRenderMap_) {
-        CHECK_AND_RETURN_RET_LOG(audioRender.second != nullptr, ERR_INVALID_HANDLE,
-            "Stop: Audio render is null.Audio stream type is %{public}d", audioRender.first);
-        int32_t ret = audioRender.second->Stop();
+    std::lock_guard<std::mutex> lock(this->audioRenderMutex_);
+    for (const auto &[category, audioRenderPtr] : audioRenderMap_) {
+        CHECK_AND_RETURN_RET_LOG(audioRenderPtr != nullptr, ERR_INVALID_HANDLE,
+            "Stop: Audio render is null.Audio stream type is %{public}d", category);
+        int32_t ret = audioRenderPtr->Stop();
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Stop fail, ret %{public}d.", ret);
     }
     started_.store(false);
@@ -635,10 +648,11 @@ int32_t RemoteAudioRendererSinkInner::Pause(void)
         return SUCCESS;
     }
 
-    for (const auto &audioRender : audioRenderMap_) {
-        CHECK_AND_RETURN_RET_LOG(audioRender.second != nullptr, ERR_INVALID_HANDLE,
-            "Pause: Audio render is null. Audio stream type is %{public}d", audioRender.first);
-        int32_t ret = audioRender.second->Pause();
+    std::lock_guard<std::mutex> lock(this->audioRenderMutex_);
+    for (const auto &[category, audioRenderPtr] : audioRenderMap_) {
+        CHECK_AND_RETURN_RET_LOG(audioRenderPtr != nullptr, ERR_INVALID_HANDLE,
+            "Pause: Audio render is null. Audio stream type is %{public}d", category);
+        int32_t ret = audioRenderPtr->Pause();
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Pause fail, ret %{public}d.", ret);
     }
     paused_.store(true);
@@ -656,12 +670,14 @@ int32_t RemoteAudioRendererSinkInner::Resume(void)
         return SUCCESS;
     }
 
-    for (const auto &audioRender : audioRenderMap_) {
-        CHECK_AND_RETURN_RET_LOG(audioRender.second != nullptr, ERR_INVALID_HANDLE,
-            "Resume: Audio render is null.Audio stream type is %{public}d", audioRender.first);
-        int32_t ret = audioRender.second->Resume();
+
+    std:unique_lock<std::mutex> audioRenderLock(this->audioRenderMutex_);
+    for (const auto &[category, audioRenderPtr] : audioRenderMap_) {
+        CHECK_AND_RETURN_RET_LOG(audioRenderPtr != nullptr, ERR_INVALID_HANDLE,
+            "Resume: Audio render is null.Audio stream type is %{public}d", );
+        int32_t ret =  audioRenderPtr->Resume();
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Resume fail, ret %{public}d.", ret);
-    }
+    }audioRenderLock.unlock();
 
     paused_.store(false);
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_REMOTE, INIT_LASTWRITTEN_TIME);
@@ -674,10 +690,11 @@ int32_t RemoteAudioRendererSinkInner::Reset(void)
     AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::Reset");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "Reset invalid state!");
 
-    for (const auto &audioRender : audioRenderMap_) {
-        CHECK_AND_RETURN_RET_LOG(audioRender.second != nullptr, ERR_INVALID_HANDLE,
-            "Reset: Audio render is null.Audio stream type is %{public}d", audioRender.first);
-        int32_t ret = audioRender.second->Flush();
+    std::lock_guard<std::mutex> lock(this->audioRenderMutex_);
+    for (const auto &[category, audioRenderPtr] : audioRenderMap_) {
+        CHECK_AND_RETURN_RET_LOG( audioRenderPtr != nullptr, ERR_INVALID_HANDLE,
+            "Reset: Audio render is null.Audio stream type is %{public}d", category);
+        int32_t ret = audioRenderPtr->Flush();
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Reset fail, ret %{public}d.", ret);
     }
     return SUCCESS;
@@ -689,10 +706,11 @@ int32_t RemoteAudioRendererSinkInner::Flush(void)
     AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::Flush");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "Flush invalid state!");
 
-    for (const auto &audioRender : audioRenderMap_) {
-        CHECK_AND_RETURN_RET_LOG(audioRender.second != nullptr, ERR_INVALID_HANDLE,
-            "Flush: Audio render is null.Audio stream type is %{public}d", audioRender.first);
-        int32_t ret = audioRender.second->Flush();
+    std::lock_guard<std::mutex> lock(this->audioRenderMutex_);
+    for (const auto &[category, audioRenderPtr] : audioRenderMap_) {
+        CHECK_AND_RETURN_RET_LOG(audioRenderPtr != nullptr, ERR_INVALID_HANDLE,
+            "Flush: Audio render is null.Audio stream type is %{public}d", category);
+        int32_t ret = audioRenderPtr->Flush();
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Flush fail, ret %{public}d.", ret);
     }
     return SUCCESS;
@@ -720,10 +738,11 @@ int32_t RemoteAudioRendererSinkInner::SetVolume(float left, float right)
     } else {
         volume = (leftVolume_ + rightVolume_) / HALF_FACTOR;
     }
-    for (const auto &audioRender : audioRenderMap_) {
-        CHECK_AND_RETURN_RET_LOG(audioRender.second != nullptr, ERR_INVALID_HANDLE,
-            "SetVolume: Audio render is null. Audio stream type is %{public}d", audioRender.first);
-        int32_t ret = audioRender.second->SetVolume(volume);
+    std::lock_guard<std::mutex> lock(this->audioRenderMutex_);
+    for (const auto &[category, audioRenderPtr] : audioRenderMap_) {
+        CHECK_AND_RETURN_RET_LOG(audioRenderPtr != nullptr, ERR_INVALID_HANDLE,
+            "SetVolume: Audio render is null. Audio stream type is %{public}d", category);
+        int32_t ret = audioRenderPtr->SetVolume(volume);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Set volume fail, ret %{public}d.", ret);
     }
     return SUCCESS;
@@ -742,10 +761,11 @@ int32_t RemoteAudioRendererSinkInner::GetLatency(uint32_t *latency)
         "GetLatency failed latency null");
 
     uint32_t hdiLatency = 0;
-    for (const auto &audioRender : audioRenderMap_) {
-        CHECK_AND_RETURN_RET_LOG(audioRender.second != nullptr, ERR_INVALID_HANDLE,
-            "GetLatency: Audio render is null. Audio stream type is %{public}d", audioRender.first);
-        int32_t ret = audioRender.second->GetLatency(hdiLatency);
+    std::lock_guard<std::mutex> lock(this->audioRenderMutex_);
+    for (const auto &[category, audioRenderPtr] : audioRenderMap_) {
+        CHECK_AND_RETURN_RET_LOG(audioRenderPtr != nullptr, ERR_INVALID_HANDLE,
+            "GetLatency: Audio render is null. Audio stream type is %{public}d", category);
+        int32_t ret = audioRenderPtr->GetLatency(hdiLatency);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Get latency fail, ret %{public}d.", ret);
     }
 
@@ -869,10 +889,11 @@ int32_t RemoteAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::
     scene.desc.pins = AudioPortPin::PIN_OUT_SPEAKER;
 
     AUDIO_DEBUG_LOG("SelectScene start");
-    for (const auto &audioRender : audioRenderMap_) {
-        CHECK_AND_RETURN_RET_LOG(audioRender.second != nullptr, ERR_INVALID_HANDLE,
-            "SetAudioScene: Audio render is null. Audio stream type is %{public}d", audioRender.first);
-        ret = audioRender.second->SelectScene(scene);
+    std::lock_guard<std::mutex> lock(this->audioRenderMutex_);
+    for (const auto &[category, audioRenderPtr] : audioRenderMap_) {
+        CHECK_AND_RETURN_RET_LOG(audioRenderPtr != nullptr, ERR_INVALID_HANDLE,
+            "SetAudioScene: Audio render is null. Audio stream type is %{public}d", category);
+        ret = audioRenderPtr->SelectScene(scene);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED,
             "Audio render Select scene fail, ret %{public}d.", ret);
     }
