@@ -55,6 +55,7 @@ config("audio_policy_public_config") {
     "server/include/service/routers",
     "server/include/service/service",
     "server/include/service/spatialization",
+    "server/include/service/pipe",
     "server/src/interface",
     "server/src/service/concurrency",
     "server/src/service/interrupt",
@@ -69,6 +70,7 @@ config("audio_policy_public_config") {
     "../../frameworks/native/audioutils/include",
     "../../frameworks/native/bluetoothclient",
     "../../frameworks/native/hdiadapter_new/include",
+    "../../frameworks/native/aduodefinitions/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
   ]
@@ -234,6 +236,8 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/session/audio_session_state_monitor.cpp",
     "server/src/service/spatialization/audio_spatialization_service.cpp",
     "util/src/audio_ability_manager.cpp",
+    "server/src/service/pipe/pipe_manager.cpp",
+    "server/src/service/pipe/pipe_selector.cpp",
   ]
 
   defines = []
@@ -277,6 +281,7 @@ audio_ohos_library("audio_policy_service") {
 
   deps = [
     "../../frameworks/native/audioadapter:pulse_audio_service_adapter",
+    "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioinnercall:audio_inner_call",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/audioutils:audio_xml_utils",
