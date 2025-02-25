@@ -48,6 +48,8 @@ struct ContextBase {
     napi_value self = nullptr;
     void* native = nullptr;
     std::string taskName;
+    int32_t groupId;
+    std::shared_ptr<AudioGroupManager> manager;
 
 private:
     napi_deferred deferred = nullptr;
@@ -122,6 +124,9 @@ struct AutoRef {
 class NapiAsyncWork {
 public:
     static napi_value Enqueue(napi_env env, std::shared_ptr<ContextBase> ctxt, const std::string &name,
+        NapiAsyncExecute execute = NapiAsyncExecute(),
+        NapiAsyncComplete complete = NapiAsyncComplete());
+    static napi_value EnqueueAsync(napi_env env, std::shared_ptr<ContextBase> ctxt, const std::string &name,
         NapiAsyncExecute execute = NapiAsyncExecute(),
         NapiAsyncComplete complete = NapiAsyncComplete());
 

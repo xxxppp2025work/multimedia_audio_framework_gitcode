@@ -257,10 +257,9 @@ napi_value NapiAudioVolumeManager::GetVolumeGroupManager(napi_env env, napi_call
     context->GetCbInfo(env, info, inputParser);
 
     auto complete = [env, context](napi_value &output) {
-        output = NapiAudioVolumeGroupManager::CreateAudioVolumeGroupManagerWrapper(env, context->groupId);
-        NapiAudioVolumeGroupManager::isConstructSuccess_ = SUCCESS;
+        output = NapiAudioVolumeGroupManager::CreateAudioVolumeGroupManagerWrapperAsync(env, context->groupId);
     };
-    return NapiAsyncWork::Enqueue(env, context, "GetVolumeGroupManager", nullptr, complete);
+    return NapiAsyncWork::EnqueueAsync(env, context, "GetVolumeGroupManager", nullptr, complete);
 }
 
 napi_value NapiAudioVolumeManager::GetVolumeGroupManagerSync(napi_env env, napi_callback_info info)

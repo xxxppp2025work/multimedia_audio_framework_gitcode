@@ -17,6 +17,7 @@
 #endif
 
 #include "napi_async_work.h"
+#include "napi_audio_volume_group_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -126,6 +127,61 @@ napi_value NapiAsyncWork::Enqueue(napi_env env, std::shared_ptr<ContextBase> ctx
             }
             if ((ctxt->complete) && (status == napi_ok) && (ctxt->status == napi_ok)) {
                 ctxt->complete(ctxt->output);
+            }
+            CommonCallbackRoutine(ctxt);
+        },
+        reinterpret_cast<void*>(ctxt.get()), &ctxt->work);
+    napi_queue_async_work_with_qos(ctxt->env, ctxt->work, napi_qos_user_initiated);
+    ctxt->hold = ctxt; // save crossing-thread ctxt.
+    return promise;
+}
+
+napi_value NapiAsyncWork::EnqueueAsync(napi_env env, std::shared_ptr<ContextBase> ctxt, const std::string &name,
+    NapiAsyncExecute execute, NapiAsyncComplete complete)
+{
+    AUDIO_DEBUG_LOG("name=%{public}s", name.c_str());
+    ctxt->execute = std::move(execute);
+    ctxt->complete = std::move(complete);
+    ctxt->taskName = name;
+    napi_value promise = nullptr;
+    if (ctxt->callbackRef == nullptr) {
+        napi_create_promise(ctxt->env, &ctxt->deferred, &promise);
+        AUDIO_DEBUG_LOG("create deferred promise");
+    } else {
+        napi_get_undefined(ctxt->env, &promise);
+    }
+
+    napi_value resource = nullptr;
+    napi_create_string_utf8(ctxt->env, name.c_str(), NAPI_AUTO_LENGTH, &resource);
+    napi_create_async_work(
+        ctxt->env, nullptr, resource,
+        [](napi_env env, void* data) {
+            CHECK_AND_RETURN_LOG(data != nullptr, "napi_async_execute_callback nullptr");
+            auto ctxt = reinterpret_cast<ContextBase*>(data);
+            AUDIO_DEBUG_LOG("napi_async_execute_callback ctxt->status=%{public}d", ctxt->status);
+            if (ctxt->execute && ctxt->status == napi_ok) {
+                ctxt->manager  = AudioSystemManager::GetInstance()->GetGroupManager(ctxt->groupId);
+                ctxt->execute();
+            }
+        },
+        [](napi_env env, napi_status status, void* data) {
+            CHECK_AND_RETURN_LOG(data != nullptr, "napi_async_complete_callback nullptr");
+            auto ctxt = reinterpret_cast<ContextBase*>(data);
+            AUDIO_DEBUG_LOG("napi_async_complete_callback status=%{public}d, ctxt->status=%{public}d",
+                status, ctxt->status);
+            if ((status != napi_ok) && (ctxt->status == napi_ok)) {
+                ctxt->status = status;
+            }
+            if ((ctxt->complete) && (status == napi_ok) && (ctxt->status == napi_ok)) {
+                if (ctxt->manager == nullptr) {
+                    AUDIO_ERR_LOG("Failed to get group manager!");
+                    NapiAudioVolumeGroupManager::isConstructSuccess_ = NAPI_ERR_INVALID_PARAM;
+                    ctxt->output = NapiParamUtils::GetUndefinedValue(env);
+                } else {
+                    ctxt->complete(ctxt->output);
+                }
+
+                NapiAudioVolumeGroupManager::isConstructSuccess_ = SUCCESS;
             }
             CommonCallbackRoutine(ctxt);
         },
