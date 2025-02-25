@@ -1170,16 +1170,28 @@ void AudioPolicyServer::SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType st
 void AudioPolicyServer::UpdateMuteStateAccordingToVolLevel(AudioStreamType streamType, int32_t volumeLevel,
     bool mute)
 {
+    bool muteStatus = mute;
     if (volumeLevel == 0 && !mute) {
+        muteStatus = true;
         audioPolicyService_.SetStreamMute(streamType, true);
     } else if (volumeLevel > 0 && mute) {
+        muteStatus = false;
         audioPolicyService_.SetStreamMute(streamType, false);
     }
-    if (VolumeUtils::IsPCVolumeEnable() && GetSystemVolumeLevelNoMuteState(STREAM_MUSIC) > 0 &&
-        GetStreamMuteInternal(STREAM_SYSTEM) && !GetStreamMuteInternal(STREAM_MUSIC)) {
-        AUDIO_WARNING_LOG("music volume level beyond 0 and set system unmute.");
-        audioPolicyService_.SetStreamMute(STREAM_SYSTEM, false);
-        SendVolumeKeyEventCbWithUpdateUiOrNot(STREAM_SYSTEM, false);
+    
+    if (VolumeUtils::IsPCVolumeEnable()) {
+        if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC &&
+            muteStatus != GetStreamMuteInternal(STREAM_SYSTEM)) {
+            AUDIO_DEBUG_LOG("set system mute to %{public}d when STREAM_MUSIC.", muteStatus);
+            audioPolicyService_.SetStreamMute(STREAM_SYSTEM, muteStatus);
+            SendVolumeKeyEventCbWithUpdateUiOrNot(STREAM_SYSTEM, muteStatus);
+        } else if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_SYSTEM &&
+            muteStatus != GetStreamMuteInternal(STREAM_MUSIC)) {
+            bool musicMuted = GetStreamMuteInternal(STREAM_MUSIC);
+            AUDIO_DEBUG_LOG("set system same to music mute state to %{public}d.", musicMuted);
+            audioPolicyService_.SetStreamMute(STREAM_SYSTEM, musicMuted);
+            SendVolumeKeyEventCbWithUpdateUiOrNot(STREAM_SYSTEM, musicMuted);
+        }
     }
 }
 
