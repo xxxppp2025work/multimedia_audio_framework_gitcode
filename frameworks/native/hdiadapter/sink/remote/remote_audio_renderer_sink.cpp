@@ -90,6 +90,16 @@ const std::unordered_map<std::string, AudioCategory> SPLIT_STREAM_MAP = {
     {std::to_string(StreamUsage::STREAM_USAGE_NAVIGATION), AudioCategory::AUDIO_IN_NAVIGATION}
 };
 
+bool isValidStreamSplitAudioCategory(AudioCategory type)
+{
+    for (const AudioCategory value: SPLIT_STREAM_MAP.values()) {
+        if (type == value) {
+            return true;
+        }
+    }
+    return false;
+}
+
 }
 class RemoteAudioRendererSinkInner : public RemoteAudioRendererSink, public IAudioDeviceAdapterCallback {
 public:
@@ -382,6 +392,7 @@ void RemoteAudioRendererSinkInner::splitStreamInit(const char *splitStreamString
 int32_t RemoteAudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort, AudioCategory type,
     uint32_t &renderId)
 {
+    CHECK_AND_RETURN_RET_LOG(isValidStreamSplitAudioCategory(type), ERR_INVALID_PARAM, "type: %{public}d is valid");
     int64_t start = ClockTime::GetCurNano();
     struct AudioSampleAttributes param;
     InitAttrs(param);
