@@ -24,6 +24,7 @@
 
 #include "audio_renderer.h"
 #include "audio_renderer_private.h"
+#include "shared_audio_renderer_wrapper.h"
 
 #include "audio_renderer_log.h"
 #include "audio_errors.h"
@@ -220,16 +221,17 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     return Create(cachePath, rendererOptions, appInfo);
 }
 
-std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRendererOptions &rendererOptions,
-    const AppInfo &appInfo)
-{
-    auto tempUniquePtr = Create("", rendererOptions, appInfo);
-    std::shared_ptr<AudioRenderer> sharedPtr(tempUniquePtr.release());
-    return sharedPtr;
-}
-
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath,
     const AudioRendererOptions &rendererOptions, const AppInfo &appInfo)
+{
+    auto sharedRenderer = CreateRenderer(rendererOptions, appInfo);
+    CHECK_AND_RETURN_RET_LOG(sharedRenderer != nullptr, nullptr, "renderer is null");
+
+    return std::make_unique<SharedAudioRendererWrapper>(sharedRenderer);
+}
+
+std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRendererOptions &rendererOptions,
+    const AppInfo &appInfo)
 {
     Trace trace("AudioRenderer::Create");
     std::lock_guard<std::mutex> lock(createRendererMutex_);
@@ -244,7 +246,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
         return nullptr;
     }
 
-    auto audioRenderer = std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo, false);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(audioStreamType, appInfo, false);
     if (audioRenderer == nullptr) {
         AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
             ERR_OPERATION_FAILED);
