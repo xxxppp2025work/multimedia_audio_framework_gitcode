@@ -152,7 +152,7 @@ private:
     FILE *dumpFile_ = nullptr;
     int64_t enterStandbyTime_ = 0;
     std::time_t startMuteTime_ = 0;
-    int32_t silentState_ = 1; // 0:silent 1:unsilent
+    bool isInSilentState_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS
