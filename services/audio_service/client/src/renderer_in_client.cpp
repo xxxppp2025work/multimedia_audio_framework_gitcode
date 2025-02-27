@@ -699,7 +699,7 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
     if (silentModeAndMixWithOthers_) {
         return;
     }
-    if (CheckBuffer(buffer, bufferSize)) {
+    if (IsInvalidBuffer(buffer, bufferSize)) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         }
@@ -718,7 +718,7 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
     }
 }
 
-bool RendererInClientInner::CheckBuffer(uint8_t *buffer, size_t bufferSize)
+bool RendererInClientInner::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize)
 {
     bool isInvalid = false;
     uint8_t ui8Data = 0;
