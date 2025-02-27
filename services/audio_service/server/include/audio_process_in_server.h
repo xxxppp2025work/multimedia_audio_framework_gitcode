@@ -108,9 +108,9 @@ public:
 
     std::time_t GetStartMuteTime() override;
     void SetStartMuteTime(std::time_t time) override;
-
-    int32_t GetSilentState() override;
-    void SetSilentState(int32_t state) override;
+ 
+    bool GetSilentState() override;
+    void SetSilentState(bool state) override;
 
 public:
     const AudioProcessConfig processConfig_;
