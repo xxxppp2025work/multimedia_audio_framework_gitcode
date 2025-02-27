@@ -30,7 +30,7 @@ void CjAudioCapturerStateChangeCallback::OnCapturerStateChange(
     if (func_ == nullptr) {
         return;
     }
-    CArrAudioCapturerChangeInfo arrInfo;
+    CArrAudioCapturerChangeInfo arrInfo {};
     arrInfo.size = static_cast<int64_t>(audioCapturerChangeInfos.size());
     int32_t mallocSize = static_cast<int32_t>(sizeof(CAudioCapturerChangeInfo)) * static_cast<int32_t>(arrInfo.size);
     if (mallocSize <= 0 || mallocSize > static_cast<int32_t>(sizeof(CAudioCapturerChangeInfo) * MAX_MEM_MALLOC_SIZE)) {
@@ -40,12 +40,13 @@ void CjAudioCapturerStateChangeCallback::OnCapturerStateChange(
     if (head == nullptr) {
         return;
     }
-    int32_t errorCode = SUCCESS_CODE;
-    arrInfo.head = head;
     if (memset_s(head, mallocSize, 0, mallocSize) != EOK) {
-        FreeCArrAudioCapturerChangeInfo(arrInfo);
+        free(head);
+        arrInfo.size = 0;
         return;
     }
+    arrInfo.head = head;
+    int32_t errorCode = SUCCESS_CODE;
     for (int64_t i = 0; i < arrInfo.size; i++) {
         Convert2CAudioCapturerChangeInfo(head[i], *(audioCapturerChangeInfos[i]), &errorCode);
         if (errorCode != SUCCESS_CODE) {
@@ -69,7 +70,7 @@ void CjAudioRendererStateChangeCallback::OnRendererStateChange(
     if (func_ == nullptr) {
         return;
     }
-    CArrAudioRendererChangeInfo arrInfo;
+    CArrAudioRendererChangeInfo arrInfo {};
     arrInfo.size = static_cast<int64_t>(audioRendererChangeInfos.size());
     int32_t mallocSize = static_cast<int32_t>(sizeof(CAudioRendererChangeInfo)) * static_cast<int32_t>(arrInfo.size);
     if (mallocSize <= 0 || mallocSize > static_cast<int32_t>(sizeof(CAudioRendererChangeInfo) * MAX_MEM_MALLOC_SIZE)) {
@@ -79,12 +80,13 @@ void CjAudioRendererStateChangeCallback::OnRendererStateChange(
     if (head == nullptr) {
         return;
     }
-    int32_t errorCode = SUCCESS_CODE;
-    arrInfo.head = head;
     if (memset_s(head, mallocSize, 0, mallocSize) != EOK) {
-        FreeCArrAudioRendererChangeInfo(arrInfo);
+        free(head);
+        arrInfo.size = 0;
         return;
     }
+    arrInfo.head = head;
+    int32_t errorCode = SUCCESS_CODE;
     for (int64_t i = 0; i < arrInfo.size; i++) {
         Convert2CAudioRendererChangeInfo(head[i], *(audioRendererChangeInfos[i]), &errorCode);
         if (errorCode != SUCCESS_CODE) {

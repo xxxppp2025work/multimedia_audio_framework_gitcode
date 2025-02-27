@@ -56,10 +56,11 @@ void CjAudioRendererOutputDeviceChangeCallback::OnOutputDeviceChange(const Audio
     if (func_ == nullptr) {
         return;
     }
-    CArrDeviceDescriptor arr;
+    CArrDeviceDescriptor arr {};
     int32_t errorCode = SUCCESS_CODE;
     Convert2CArrDeviceDescriptorByDeviceInfo(arr, deviceInfo, &errorCode);
     if (errorCode != SUCCESS_CODE) {
+        FreeCArrDeviceDescriptor(arr);
         return;
     }
     func_(arr);
@@ -79,11 +80,12 @@ void CjAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChange(con
     if (func_ == nullptr) {
         return;
     }
-    CAudioStreamDeviceChangeInfo info;
-    CArrDeviceDescriptor arr;
+    CAudioStreamDeviceChangeInfo info {};
+    CArrDeviceDescriptor arr {};
     int32_t errorCode = SUCCESS_CODE;
     Convert2CArrDeviceDescriptorByDeviceInfo(arr, deviceInfo, &errorCode);
     if (errorCode != SUCCESS_CODE) {
+        FreeCArrDeviceDescriptor(arr);
         return;
     }
     info.deviceDescriptors = arr;
@@ -105,8 +107,8 @@ void CjAudioRendererWriteCallback::OnWriteData(size_t length)
     if (func_ == nullptr) {
         return;
     }
-    CArrUI8 arr;
-    BufferDesc buf;
+    CArrUI8 arr {};
+    BufferDesc buf {};
     audioRenderer_->GetBufferDesc(buf);
     if (buf.buffer == nullptr) {
         return;
