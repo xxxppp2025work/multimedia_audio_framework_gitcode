@@ -57,9 +57,9 @@ public:
 
     virtual std::time_t GetStartMuteTime() = 0;
     virtual void SetStartMuteTime(std::time_t time) = 0;
-
-    virtual int32_t GetSilentState() = 0;
-    virtual void SetSilentState(int32_t state) = 0;
+ 
+    virtual bool GetSilentState() = 0;
+    virtual void SetSilentState(bool state) = 0;
 
     virtual ~IAudioProcessStream() = default;
 };
