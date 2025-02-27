@@ -128,7 +128,8 @@ bool VolumeDataMaintainer::SaveVolume(DeviceType type, AudioStreamType streamTyp
 bool VolumeDataMaintainer::GetVolume(DeviceType deviceType, AudioStreamType streamType)
 {
     std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
-    return GetVolumeInternal(deviceType, streamType);
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    return GetVolumeInternal(deviceType, streamForVolumeMap);
 }
 
 bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamType streamType)
@@ -266,7 +267,8 @@ bool VolumeDataMaintainer::SetStreamMuteStatus(AudioStreamType streamType, bool 
 bool VolumeDataMaintainer::GetMuteStatus(DeviceType deviceType, AudioStreamType streamType)
 {
     std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
-    return GetMuteStatusInternal(deviceType, streamType);
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    return GetMuteStatusInternal(deviceType, streamForVolumeMap);
 }
 
 bool VolumeDataMaintainer::GetMuteStatusInternal(DeviceType deviceType, AudioStreamType streamType)
@@ -649,12 +651,13 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
 std::string VolumeDataMaintainer::GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType)
 {
     std::string type = "";
-    if (!AUDIO_STREAMTYPE_VOLUME_MAP.count(streamType)) {
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (!AUDIO_STREAMTYPE_VOLUME_MAP.count(streamForVolumeMap)) {
         return "";
     }
-    type = AUDIO_STREAMTYPE_VOLUME_MAP[streamType];
+    type = AUDIO_STREAMTYPE_VOLUME_MAP[streamForVolumeMap];
     if (type == "") {
-        AUDIO_ERR_LOG("streamType %{public}d is not supported for datashare", streamType);
+        AUDIO_ERR_LOG("streamType %{public}d is not supported for datashare", streamForVolumeMap);
         return "";
     }
 
@@ -669,12 +672,13 @@ std::string VolumeDataMaintainer::GetVolumeKeyForDataShare(DeviceType deviceType
 std::string VolumeDataMaintainer::GetMuteKeyForDataShare(DeviceType deviceType, AudioStreamType streamType)
 {
     std::string type = "";
-    if (!AUDIO_STREAMTYPE_MUTE_STATUS_MAP.count(streamType)) {
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (!AUDIO_STREAMTYPE_MUTE_STATUS_MAP.count(streamForVolumeMap)) {
         return "";
     }
-    type = AUDIO_STREAMTYPE_MUTE_STATUS_MAP[streamType];
+    type = AUDIO_STREAMTYPE_MUTE_STATUS_MAP[streamForVolumeMap];
     if (type == "") {
-        AUDIO_ERR_LOG("streamType %{public}d is not supported for datashare", streamType);
+        AUDIO_ERR_LOG("streamType %{public}d is not supported for datashare", streamForVolumeMap);
         return "";
     }
 

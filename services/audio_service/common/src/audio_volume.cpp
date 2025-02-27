@@ -487,6 +487,16 @@ void AudioVolume::RemoveStopFadeoutState(uint32_t streamIndex)
     std::unique_lock<std::shared_mutex> lock(fadoutMutex_);
     stopFadeoutState_.erase(streamIndex);
 }
+
+void AudioVolume::SetVgsVolumeSupported(bool isVgsSupported)
+{
+    isVgsVolumeSupported_ = isVgsSupported;
+}
+
+bool AudioVolume::IsVgsVolumeSupported() const
+{
+    return isVgsVolumeSupported_;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -501,7 +511,12 @@ float GetCurVolume(uint32_t sessionId, const char *streamType, const char *devic
     CHECK_AND_RETURN_RET_LOG(deviceClass != nullptr, 1.0f, "deviceClass is nullptr");
     int32_t stream = AudioVolume::GetInstance()->ConvertStreamTypeStrToInt(streamType);
     AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(stream));
-    return AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass);
+    float volumeDB = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass);
+    if (AudioVolume::GetInstance()->IsVgsVolumeSupported() && volumeDB > 0.0f &&
+        (stream == STREAM_VOICE_CALL || stream == STREAM_VOICE_COMMUNICATION)) {
+        return 1.0f;
+    }
+    return volumeDB;
 }
 
 float GetStreamVolume(uint32_t sessionId)

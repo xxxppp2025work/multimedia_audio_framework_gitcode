@@ -72,7 +72,8 @@ public:
     void SetStopFadeoutState(uint32_t streamIndex, uint32_t fadeoutState);
     uint32_t GetStopFadeoutState(uint32_t streamIndex);
     void RemoveStopFadeoutState(uint32_t streamIndex);
-
+    void SetVgsVolumeSupported(bool isVgsSupported);
+    bool IsVgsVolumeSupported() const;
 private:
     AudioVolume();
 
@@ -83,7 +84,7 @@ private:
     std::unordered_map<uint32_t, std::pair<float, int32_t>> monitorVolume_ {};
     std::shared_mutex volumeMutex_ {};
     std::shared_mutex systemMutex_ {};
-
+    bool isVgsVolumeSupported_ = false;
     std::shared_mutex fadoutMutex_ {};
     std::unordered_map<uint32_t, uint32_t> fadeoutState_{};
     std::unordered_map<uint32_t, uint32_t> stopFadeoutState_{};
