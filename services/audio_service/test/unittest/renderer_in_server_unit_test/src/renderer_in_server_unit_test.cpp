@@ -651,7 +651,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_001, Te
 
     bufferDesc.buffer[0] = 0;
     rendererInServer->WriteMuteDataSysEvent(bufferDesc.buffer, bufferDesc.bufLength);
-    EXPECT_EQ(1, rendererInServer->silentState_);
+    EXPECT_EQ(1, rendererInServer->silentState_ddasdsdasd);
 }
 
 /**
