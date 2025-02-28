@@ -272,7 +272,7 @@ private:
 
     bool DrainAudioStreamInner(bool stopFlag = false);
 
-    bool ProcessVolume();
+    void ProcessVolume();
 
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
