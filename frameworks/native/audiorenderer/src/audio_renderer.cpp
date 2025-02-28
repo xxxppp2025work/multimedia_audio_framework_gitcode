@@ -1997,6 +1997,7 @@ int32_t AudioRendererPrivate::RemoveRendererPolicyServiceDiedCallback()
     if (audioPolicyServiceDiedCallback_) {
         int32_t ret = AudioPolicyManager::GetInstance().UnregisterAudioStreamPolicyServerDiedCb(
             audioPolicyServiceDiedCallback_);
+        audioPolicyServiceDiedCallback_->UnsetAudioRendererObj();
         if (ret != 0) {
             AUDIO_ERR_LOG("RemoveRendererPolicyServiceDiedCallback failed");
             audioPolicyServiceDiedCallback_ = nullptr;
@@ -2022,11 +2023,6 @@ RendererPolicyServiceDiedCallback::~RendererPolicyServiceDiedCallback()
     }
 }
 
-void RendererPolicyServiceDiedCallback::SetAudioRendererObj(AudioRendererPrivate *rendererObj)
-{
-    renderer_ = rendererObj;
-}
-
 void RendererPolicyServiceDiedCallback::SetAudioInterrupt(AudioInterrupt &audioInterrupt)
 {
     audioInterrupt_ = audioInterrupt;
@@ -2047,6 +2043,7 @@ void RendererPolicyServiceDiedCallback::RestoreTheadLoop()
     int32_t tryCounter = 10;
     uint32_t sleepTime = 300000;
     bool restoreResult = false;
+    std::lock_guard<std::mutex> lock(mutex_);
     while (!restoreResult && tryCounter > 0) {
         tryCounter--;
         usleep(sleepTime);
