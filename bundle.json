@@ -92,6 +92,7 @@
             "opensles",
             "qos_manager",
             "media_foundation",
+            "memmgr",
             "usb_manager"
             ],
           "third_party": [
