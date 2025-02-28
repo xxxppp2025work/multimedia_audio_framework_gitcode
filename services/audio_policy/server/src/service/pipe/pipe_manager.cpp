@@ -27,93 +27,93 @@ PipeManager::PipeManager()
 
 PipeManager::~PipeManager()
 {
-    curPipeList.clear();
+    curPipeList_.clear();
 }
 
-void PipeManager::AddAudioPipeInfo(const AudioPipeInfo& info)   //上层通过pipeselector获取AudioPipeInfo
+void PipeManager::AddAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)   //上层通过pipeselector获取AudioPipeInfo
 {
-    std::unique_lock<std::shared_mutex> pLock(pipeListLock);
-    curPipeList.push_back(info);
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    curPipeList_.push_back(info);
 }
 
-void PipeManager::RemoveAudioPipeInfo(const AudioPipeInfo& info)
+void PipeManager::RemoveAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
 {
-    std::unique_lock<std::shared_mutex> pLock(pipeListLock);
-    for (auto iter = curPipeList.begin(); iter != curPipeList.end(); iter++) {
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto iter = curPipeList_.begin(); iter != curPipeList_.end(); iter++) {
         if (IsSamePipe(info, *iter)) {
-            curPipeList.erase(iter);
+            curPipeList_.erase(iter);
             break;
         }
     }
 }
 
-void PipeManager::UpdateAudioPipeInfo(const AudioPipeInfo& oldPipe, const AudioPipeInfo& newPipe)
+void PipeManager::UpdateAudioPipeInfo(std::shared_ptr<AudioPipeInfo> newPipe)
 {
-    std::unique_lock<std::shared_mutex> pLock(pipeListLock);
-    for (auto iter = curPipeList.begin(); iter != curPipeList.end(); iter++) {
-        if (IsSamePipe(oldPipe, *iter)) {
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto iter = curPipeList_.begin(); iter != curPipeList_.end(); iter++) {
+        if (IsSamePipe(newPipe, *iter)) {
             Assign(*iter, newPipe);
             break;
         }
     }
 }
 
-bool PipeManager::IsSamePipe(const AudioPipeInfo& info, const AudioPipeInfo& cmpInfo)     //相同pipe判断是否直接通过stream id？？？
+bool PipeManager::IsSamePipe(std::shared_ptr<AudioPipeInfo> info, std::shared_ptr<AudioPipeInfo> cmpInfo)     //相同pipe判断是否直接通过stream id？？？
 {
-    if ((info.adapterName_ == cmpInfo.adapterName_ && info.routeFlag_ == cmpInfo.routeFlag_) ||
-        info.sinkId_ == cmpInfo.sinkId_) {
+    if ((info->adapterName_ == cmpInfo->adapterName_ && info->routeFlag_ == cmpInfo->routeFlag_) ||
+        info->id_ == cmpInfo->id_) {
         return true;
     }
 
     return false;
 }
 
-void PipeManager::Assign(AudioPipeInfo& dst, const AudioPipeInfo& src)
+void PipeManager::Assign(std::shared_ptr<AudioPipeInfo> dst, std::shared_ptr<AudioPipeInfo> src)
 {
-    dst.sinkId_ = src.sinkId_;
-    dst.role_ = src.role_;
-    dst.adapterName_ = src.adapterName_;
-    dst.routeFlag_ = src.routeFlag_;
-    dst.moduleInfo_ = src.moduleInfo_;
-    dst.action_ = src.action_;
-    dst.streamDescs_ = src.streamDescs_;
-    dst.streamDescMap_ = src.streamDescMap_;
+    dst = src;
 }
 
 void PipeManager::StartClient(uint32_t sessionId)
 {
-    std::unique_lock<std::shared_mutex> pLock(pipeListLock);
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = streamDescMap[sessionId];
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
     streamDesc->streamStatus_ = STREAM_STATUS_STARTTING;
 }
 
 void PipeManager::PauseClient(uint32_t sessionId)
 {
-    std::unique_lock<std::shared_mutex> pLock(pipeListLock);
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = streamDescMap[sessionId];
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
     streamDesc->streamStatus_ = STREAM_STATUS_PAUSED;
+}
+
+void PipeManager::StopClient(uint32_t sessionId)
+{
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
+    streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
 }
 
 void PipeManager::RemoveClient(uint32_t sessionId)
 {
-    std::unique_lock<std::shared_mutex> pLock(pipeListLock);
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = streamDescMap[sessionId];
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
     streamDesc->streamStatus_ = STREAM_STATUS_RELEASED;
 }
 
-const std::vector<AudioPipeInfo> PipeManager::GetPipeList()
+const std::vector<std::shared_ptr<AudioPipeInfo>> PipeManager::GetPipeList()
 {
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock);
-    return curPipeList;
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    return curPipeList_;
 }
 
-std::vector<AudioPipeInfo> PipeManager::GetUnusedPipe()
+std::vector<std::shared_ptr<AudioPipeInfo>> PipeManager::RemoveUnusedPipe()
 {
-    std::unique_lock<std::shared_mutex> pLock(pipeListLock);
-    std::vector<AudioPipeInfo> newList = curPipeList;
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::vector<std::shared_ptr<AudioPipeInfo>> newList = curPipeList_;
     for (auto iter = newList.begin(); iter != newList.end();) {
-        if (iter->streamDescs_.empty()) {
-            curPipeList.erase(iter);
+        if ((*iter)->streamDescs_.empty()) {
+            curPipeList_.erase(iter);
         } else {
             iter++;
         }
@@ -121,23 +121,23 @@ std::vector<AudioPipeInfo> PipeManager::GetUnusedPipe()
     return newList;
 }
 
-std::shared_ptr<AudioPipeInfo> PipeManager::GetPipeinfoByNameAndFlag(const std::string name, const AudioFlag routeFlag)
+std::shared_ptr<AudioPipeInfo> PipeManager::GetPipeinfoByNameAndFlag(const std::string adapterName, const AudioFlag routeFlag)
 {
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock);
-    for (auto it : curPipeList) {
-        if (it.name_ == name && it.routeFlag_ == routeFlag) {
-            return std::make_shared<AudioPipeInfo>(it);
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto it : curPipeList_) {
+        if (it->adapterName_ == adapterName && it->routeFlag_ == routeFlag) {
+            return it;
         }
     }
 }
 
 std::vector<std::shared_ptr<AudioStreamDescriptor>> PipeManager::GetAllOutputStreamDescs()
 {
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock);
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
-    for (auto it : curPipeList) {
-        if (it.role_ == PIPE_ROLE_OUTPUT) {
-            streamDescs.insert(streamDescs.end(), it.streamDescs_.begin(), it.streamDescs_.end());
+    for (auto it : curPipeList_) {
+        if (it->role_ == PIPE_ROLE_OUTPUT) {
+            streamDescs.insert(streamDescs.end(), it->streamDescs_.begin(), it->streamDescs_.end());
         }
     }
     return streamDescs;
@@ -145,11 +145,11 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> PipeManager::GetAllOutputStr
 
 std::vector<std::shared_ptr<AudioStreamDescriptor>> PipeManager::GetAllInputStreamDescs()
 {
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock);
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
-    for (auto it : curPipeList) {
-        if (it.role_ == PIPE_ROLE_INPUT) {
-            streamDescs.insert(streamDescs.end(), it.streamDescs_.begin(), it.streamDescs_.end());
+    for (auto it : curPipeList_) {
+        if (it->role_ == PIPE_ROLE_INPUT) {
+            streamDescs.insert(streamDescs.end(), it->streamDescs_.begin(), it->streamDescs_.end());
         }
     }
     return streamDescs;
@@ -158,8 +158,13 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> PipeManager::GetAllInputStre
 std::shared_ptr<AudioStreamDescriptor> PipeManager::GetStreamDescById(uint32_t sessionId)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock);
-    for (auto it : curPipeList) {
-        for (auto desc : it.streamDescs_) {
+    return GetStreamDescByIdInner(sessionId);
+}
+
+std::shared_ptr<AudioStreamDescriptor> PipeManager::GetStreamDescByIdInner(uint32_t sessionId)
+{
+    for (auto it : curPipeList_) {
+        for (auto desc : it->streamDescs_) {
             if (desc->sessionId_ == sessionId) {
                 return desc;
             }
@@ -170,11 +175,11 @@ std::shared_ptr<AudioStreamDescriptor> PipeManager::GetStreamDescById(uint32_t s
 
 int32_t PipeManager::GetStreamCount(const std::string adapterName, const AudioFlag routeFlag)
 {
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock);
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     int32_t count = 0;
-    for (auto it : curPipeList) {
-        if (it.adapterName_ == adapterName && it.routeFlag_ == routeFlag) {
-            count = it.streamDescs_.size();
+    for (auto it : curPipeList_) {
+        if (it->adapterName_ == adapterName && it->routeFlag_ == routeFlag) {
+            count = it->streamDescs_.size();
         }
     }
     return count;

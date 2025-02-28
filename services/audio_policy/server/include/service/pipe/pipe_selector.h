@@ -18,6 +18,7 @@
 #include <vector>
 #include "pipe_manager.h"
 #include "audio_stream_info.h"
+#include "audio_policy_config_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -27,12 +28,12 @@ public:
     PipeSelector() = default;
     ~PipeSelector() = default;
 
-    static std::vector<std::shared_ptr<AudioPipeInfo>> FetchPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    static std::vector<std::shared_ptr<AudioPipeInfo>> FetchPipesAndExecute(
+    std::vector<std::shared_ptr<AudioPipeInfo>> FetchPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    std::vector<std::shared_ptr<AudioPipeInfo>> FetchPipesAndExecute(
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
 
 private:
-    int32_t GetRouteFlagByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    AudioFlag GetRouteFlagByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     int32_t GetPipeInfoByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc, AudioPipeInfo &info);
     void ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         const PipeStreamPropInfo streamPropInfo, AudioPipeInfo &info);

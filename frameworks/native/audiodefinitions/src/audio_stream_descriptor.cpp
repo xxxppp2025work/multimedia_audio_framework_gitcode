@@ -13,42 +13,42 @@
  * limitations under the License.
  */
 
- #include "audio_stream_descriptor.h"
+#include "audio_stream_descriptor.h"
 
- namespace OHOS {
- namespace AudioStandard {
- AudioStreamDescriptor::AudioStreamDescriptor()
- {
- }
- 
- AudioStreamDescriptor::~AudioStreamDescriptor()
- {
- }
- 
- bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
- {
-     return streamInfo_.Marshalling(parcel) &&
-         parcel.WriteUint32(audioMode_) &&
-         parcel.WriteUint32(audioFlag_) &&
-         deviceDesc_->Marshalling(parcel) &&
-         parcel.WriteInt64(startTimeStamp_) &&
-         rendererInfo_.Marshalling(parcel) &&
-         capturerInfo_.Marshalling(parcel) &&
-         parcel.WriteInt32(appInfo_.appUid) &&
-         parcel.WriteUint32(sessionId_);
- }
- 
- void AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
- {
-     streamInfo_.Unmarshalling(parcel);
-     audioMode_ = static_cast<AudioMode>(parcel.ReadUint32());
-     deviceDesc_ = AudioDeviceDescriptor::UnmarshallingPtr(parcel);
-     startTimeStamp_ = parcel.ReadInt64();
-     rendererInfo_.Unmarshalling(parcel);
-     capturerInfo_.Unmarshalling(parcel);
-     appInfo_.appUid = parcel.ReadInt32();
-     sessionId_ = parcel.ReadUint32();
- }
- } // AudioStandard
- } // namespace OHOS
+namespace OHOS {
+namespace AudioStandard {
+AudioStreamDescriptor::AudioStreamDescriptor()
+{
+}
+
+AudioStreamDescriptor::~AudioStreamDescriptor()
+{
+}
+
+bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
+{
+    return streamInfo_.Marshalling(parcel) &&
+        parcel.WriteUint32(audioMode_) &&
+        parcel.WriteUint32(audioFlag_) &&
+        deviceDesc_->Marshalling(parcel) &&
+        parcel.WriteInt64(startTimeStamp_) &&
+        rendererInfo_.Marshalling(parcel) &&
+        capturerInfo_.Marshalling(parcel) &&
+        parcel.WriteInt32(appInfo_.appUid) &&
+        parcel.WriteUint32(sessionId_);
+}
+
+void AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
+{
+    streamInfo_.Unmarshalling(parcel);
+    audioMode_ = static_cast<AudioMode>(parcel.ReadUint32());
+    deviceDesc_ = AudioDeviceDescriptor::UnmarshallingPtr(parcel);
+    startTimeStamp_ = parcel.ReadInt64();
+    rendererInfo_.Unmarshalling(parcel);
+    capturerInfo_.Unmarshalling(parcel);
+    appInfo_.appUid = parcel.ReadInt32();
+    sessionId_ = parcel.ReadUint32();
+}
+} // AudioStandard
+} // namespace OHOS
  

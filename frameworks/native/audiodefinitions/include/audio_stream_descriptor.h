@@ -36,8 +36,8 @@ class AudioStreamDescriptor{
 public:
     AudioStreamInfo streamInfo_;
     AudioMode audioMode_ = AUDIO_MODE_PLAYBACK;
-    AudioFlag audioFlag_ = AUDIO_FLAG_NONE;
-    AudioFlag routeFlag_ = AUDIO_FLAG_NONE;
+    AudioFlag audioFlag_ = AUDIO_OUTPUT_FLAG_NONE;
+    AudioFlag routeFlag_ = AUDIO_OUTPUT_FLAG_NONE;
     int64_t startTimeStamp_ = 0;
     AudioRendererInfo rendererInfo_ = {};
     AudioCapturerInfo capturerInfo_ = {};
