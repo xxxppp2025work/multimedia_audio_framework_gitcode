@@ -97,6 +97,8 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedOutputDevices(AudioDeviceUsage audioDevUsage);
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
             AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
+        int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
+        int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
 
 private:
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -183,6 +185,8 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
+    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
+    int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
     int32_t GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRendererChangeInfo>>
         &audioRendererChangeInfos, bool hasBTPermission, bool hasSystemPermission);
     int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
@@ -262,6 +266,7 @@ private:
 
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
     void OnAudioBalanceChanged(float audioBalance);
+    bool GetFastControlParam();
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;
@@ -299,6 +304,7 @@ private:
     int32_t enableDualHalToneSessionId_ = -1;
     bool enableDualHalToneState_ = false;
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
+    bool isFastControlled_ = true;
     std::mutex serviceFlagMutex_;
 };
 static std::string GetEncryptAddr(const std::string &addr);

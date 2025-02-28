@@ -2109,14 +2109,25 @@ int32_t AudioPolicyServer::GetPreferredOutputStreamType(AudioRendererInfo &rende
     if (isFastControlled && rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
         bundleName = GetBundleName();
         AUDIO_INFO_LOG("bundleName %{public}s", bundleName.c_str());
+#ifndef AUDIO_UNIFY
         return audioPolicyService_.GetPreferredOutputStreamType(rendererInfo, bundleName);
     }
     return audioPolicyService_.GetPreferredOutputStreamType(rendererInfo, "");
+#else
+        return eventEntry_->GetPreferredOutputStreamType(rendererInfo, bundleName);
+    }
+    return eventEntry_->GetPreferredOutputStreamType(rendererInfo, "");
+#endif
+
 }
 
 int32_t AudioPolicyServer::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
 {
+#ifndef AUDIO_UNIFY
     return audioPolicyService_.GetPreferredInputStreamType(capturerInfo);
+#else
+    return eventEntry_->GetPreferredInputStreamType(capturerInfo);
+#endif
 }
 
 int32_t AudioPolicyServer::CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> streamDesc, AudioFlag &flag, uint32_t &sessionId)

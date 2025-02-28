@@ -24,6 +24,7 @@
 #include "hdi_adapter_info.h"
 #include "audio_usb_manager.h"
 #include "data_share_observer_callback.h"
+#include "audio_spatialization_service.h"
 
 
 namespace OHOS {
@@ -42,6 +43,7 @@ static const char* SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.D
 static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
 static const char* PREDICATES_STRING = "settings.general.device_name";
 static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
+static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 }
 
 static const std::vector<std::string> SourceNames = {
@@ -131,7 +133,7 @@ void AudioCoreService::Init()
     audioCapturerSession_.Init(audioA2dpOffloadManager_);
 #endif
     deviceStatusListener_ = std::make_shared<DeviceStatusListener>(*eventEntry_); // shared_ptr.get() -> *
-
+    isFastControlled_ = GetFastControlParam();
     // Register device status listener
     int32_t status = deviceStatusListener_->RegisterDeviceStatusListener();
     if (status != SUCCESS) {
@@ -202,17 +204,151 @@ int32_t AudioCoreService::CreateCapturerClient(std::shared_ptr<AudioStreamDescri
     return SUCCESS;
 }
 
+bool IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescriptor> streamDesc) {
+    Trace trace("IsStreamSupportLowpower");
+    // if (PipeManager->GetPipeStreamCount(PIPE_TYPE_OFFLOAD) > 0) {
+    //     AUDIO_INFO_LOG("PIPE_TYPE_OFFLOAD already exist.");
+    //     return false;
+    // }
+    if (!streamDesc->rendererInfo_.isOffloadAllowed) {
+        AUDIO_INFO_LOG("normal stream beacuse renderInfo not support offload.");
+        return false;
+    }
+    if (streamDesc->streamInfo_.channels < MONO || streamDesc->streamInfo_.channels > STEREO) {
+        AUDIO_INFO_LOG("normal stream beacuse channels.");
+        return false;
+    }
+    if (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MUSIC &&
+        streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_AUDIOBOOK) {
+            AUDIO_INFO_LOG("normal stream beacuse streamUsage.");
+            return false;
+        }
+    
+    AudioSpatializationState spatialState =
+        AudioSpatializationService::GetAudioSpatializationService().GetSpatializationState();
+    bool effectOffloadFlag = AudioServerProxy::GetInstance().GetEffectOffloadEnabledProxy();
+    if (spatialState.spatializationEnabled && !effectOffloadFlag) {
+        AUDIO_INFO_LOG("spatialization effect in arm, Skipped.");
+        return false;
+    }
+
+    if (streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        // a2dp offload
+        return true;
+    }
+
+    // In plan: stream running on multi-devices
+    if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_SPEAKER &&
+        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_USB_HEADSET &&
+        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_USB_ARM_HEADSET) {
+            AUDIO_INFO_LOG("normal stream, deviceType: %{public}d",
+                streamDesc->newDeviceDescs_[0]->deviceType_);
+            return false;
+        }
+    return true;
+}
+
+bool IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDescriptor> streamDesc) {
+    Trace trace("IsStreamSupportMultiChannel");
+
+    if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_SPEAKER &&
+        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
+        AUDIO_INFO_LOG("normal stream, deviceType: %{public}d",
+            streamDesc->newDeviceDescs_[0]->deviceType_);
+        return false;
+    }
+    if (streamDesc->streamInfo_.channels <= STEREO) {
+        AUDIO_INFO_LOG("normal stream beacuse channels.");
+        return false;
+    }
+    // The multi-channel algorithm needs to be supported in the dsp
+    return AudioServerProxy::GetInstance().GetEffectOffloadEnabledProxy();
+}
+
+bool IsStreamSupportDirect(std::shared_ptr<AudioStreamDescriptor> streamDesc) {
+    Trace trace("IsStreamSupportDirect");
+    // if (PipeManager->GetStreamCount(PIPE_TYPE_DIRECT_MUSIC) > 0) {
+    //     AUDIO_INFO_LOG("PIPE_TYPE_DIRECT_MUSIC already exist.");
+    //     return false;
+    // }
+
+    // In plan: stream running on multi-devices
+    if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_WIRED_HEADSET &&
+        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_USB_HEADSET) {
+            AUDIO_INFO_LOG("normal stream, deviceType: %{public}d",
+                streamDesc->newDeviceDescs_[0]->deviceType_);
+            return false;
+        }
+    if (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MUSIC ||
+        streamDesc->streamInfo_.samplingRate < SAMPLE_RATE_48000 ||
+        streamDesc->streamInfo_.format < SAMPLE_S24LE ||
+        streamDesc->rendererInfo_.pipeType != PIPE_TYPE_DIRECT_MUSIC) {
+            AUDIO_INFO_LOG("normal stream because stream info");
+            return false;
+        }
+    if (streamDesc->streamInfo_.samplingRate > SAMPLE_RATE_192000) {
+        AUDIO_INFO_LOG("sample rate over 192k");
+        return false;
+    }
+    return true;
+}
+
 void AudioCoreService::SetPlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
-    // In plan: streamDesc to audioFlag
-    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NONE;
-    
+    // fast/normal has done in audioRendererPrivate
+    if (streamDesc->rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL) {
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NONE;
+        return;
+    }
+    switch (streamDesc->rendererInfo_.rendererFlags)
+    {
+    case AUDIO_FLAG_MMAP:
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+        return;
+    case AUDIO_FLAG_VOIP_FAST:
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_VOIP_FAST;
+        return;
+    case AUDIO_FLAG_VOIP_DIRECT:
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_VOIP;
+        return;
+    default:
+        break;
+    }
+
+    if (IsStreamSupportDirect(streamDesc)) {
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_HD;
+        return;
+    }
+    if (IsStreamSupportLowpower(streamDesc)) {
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+        return;
+    }
+    if (IsStreamSupportMultiChannel(streamDesc)) {
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_MULTICHANNEL;
+        return;
+    }
+    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORAML;
 }
 
 void AudioCoreService::SetRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
+    // fast/normal has done in audioCapturerPrivate
+    if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_WAKEUP) {
+        streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_WAKEUP;
+    }
+    switch (streamDesc->capturerInfo_.capturerFlags)
+    {
+    case AUDIO_FLAG_MMAP:
+        streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_FAST;
+        return;
+    case AUDIO_FLAG_VOIP_FAST:
+        streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_VOIP_FAST;
+        return;
+    default:
+        break;
+    }
     // In plan: streamDesc to audioFlag;
-    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NONE;
+    streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NONE;
 }
 
 
@@ -393,6 +529,53 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
     }
 
     return deviceList;
+}
+
+int32_t AudioCoreService::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo,
+    const std::string &bundleName)
+{
+    // Use GetPreferredOutputDeviceDescriptors instead of currentActiveDevice, if prefer != current, recreate stream
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
+        GetPreferredOutputDeviceDescInner(rendererInfo, LOCAL_NETWORK_ID);
+    if (preferredDeviceList.size() == 0) {
+        return AUDIO_FLAG_NORMAL;
+    }
+
+    int32_t flag = audioDeviceCommon_.GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage,
+        preferredDeviceList[0]->deviceType_, rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_,
+        rendererInfo.samplingRate);
+    if (isFastControlled_ && (rendererInfo.playerType != PLAYER_TYPE_SOUND_POOL) &&
+        (flag == AUDIO_FLAG_MMAP || flag == AUDIO_FLAG_VOIP_FAST)) {
+        std::string bundleNamePre = CHECK_FAST_BLOCK_PREFIX + bundleName;
+        std::string result = AudioServerProxy::GetInstance().GetAudioParameterProxy(bundleNamePre);
+        if (result == "true") {
+            AUDIO_INFO_LOG("%{public}s not in fast list", bundleName.c_str());
+            return AUDIO_FLAG_NORMAL;
+        }
+    }
+    if (flag == AUDIO_FLAG_VOIP_FAST && audioSceneManager_.GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
+        AUDIO_INFO_LOG("Current scene is phone call, concede incoming voip fast output stream");
+        flag = AUDIO_FLAG_NORMAL;
+    }
+    return flag;
+}
+
+int32_t AudioCoreService::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
+{
+    // Use GetPreferredInputDeviceDescriptors instead of currentActiveDevice, if prefer != current, recreate stream
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
+        GetPreferredInputDeviceDescInner(capturerInfo, LOCAL_NETWORK_ID);
+    if (preferredDeviceList.size() == 0) {
+        return AUDIO_FLAG_NORMAL;
+    }
+    int32_t flag = audioDeviceCommon_.GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
+        preferredDeviceList[0]->deviceType_,
+        capturerInfo.originalFlag, preferredDeviceList[0]->networkId_, capturerInfo.samplingRate);
+    if (flag == AUDIO_FLAG_VOIP_FAST && audioSceneManager_.GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
+        AUDIO_INFO_LOG("Current scene is phone call, concede incoming voip fast input stream");
+        flag = AUDIO_FLAG_NORMAL;
+    }
+    return flag;
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetActiveBluetoothDevice()
@@ -1723,6 +1906,16 @@ void AudioCoreService::OnAudioBalanceChanged(float audioBalance)
     AudioServerProxy::GetInstance().SetAudioBalanceValueProxy(audioBalance);
 }
 
+bool AudioCoreService::GetFastControlParam()
+{
+    int32_t fastControlFlag = 1; // default 1, set isFastControlled_ true
+    GetSysPara("persist.multimedia.audioflag.fastcontrolled", fastControlFlag);
+    if (fastControlFlag == 0) {
+        isFastControlled_ = false;
+    }
+    return isFastControlled_;
+}
+
 void AudioCoreService::RegisterAccessiblilityMono()
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
@@ -2152,5 +2345,19 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->GetExcludedOutputDevices(audioDevUsage);
 }
+
+int32_t AudioCoreService::EventEntry::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo,
+    const std::string &bundleName)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->GetPreferredOutputStreamType(rendererInfo, bundleName);
+}
+
+int32_t AudioCoreService::EventEntry::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->GetPreferredInputStreamType(capturerInfo);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
