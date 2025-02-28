@@ -820,7 +820,7 @@ int32_t AudioInterruptService::CreateAudioInterruptZoneInternal(const int32_t zo
         return SUCCESS;
     }
 
-    std::shared_ptr<AudioInterruptZone> zone = std::make_shared<>(AudioInterruptZone);
+    std::shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
     if (zone == nullptr) {
         return ERROR;
     }
@@ -847,7 +847,7 @@ int32_t AudioInterruptService::ReleaseAudioInterruptZone(const int32_t zoneId, G
 
     bool updateScene = false;
     auto &releaseZone = zonesMap_[zoneId];
-    for (auto it = releaseZone->audioFocusInfoList.begin(), it != releaseZone->audioFocusInfoList.end(), it++) {
+    for (auto it = releaseZone->audioFocusInfoList.begin(); it != releaseZone->audioFocusInfoList.end(); it++) {
         if ((it->second != ACTIVE && it->second != DUCK) ||
             (it->first.streamUsage == STREAM_USAGE_UNKNOWN ||
             it->first.streamUsage == STREAM_USAGE_MEDIA ||
@@ -898,7 +898,7 @@ int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, G
     AUDIO_INFO_LOG("migrate interrupt size %{public}zu from zone %{public}d", focusInfoList.size(), zoneId);
     bool isMigrate = false;
     bool updateScene = false;
-    for (auto itFocus = focusInfoList.begin(), itFocus != focusInfoList.end();) {
+    for (auto itFocus = focusInfoList.begin(); itFocus != focusInfoList.end();) {
         int32_t toZoneId = func(itFocus->first.uid, itFocus->first.deviceTag, "");
         if (toZoneId == zoneId) {
             ++itFocus;
@@ -956,12 +956,12 @@ int32_t AudioInterruptService::InjectInterruptToAudiotZone(const int32_t zoneId,
     AUDIO_INFO_LOG("inject interrupt size %{public}zu to zone %{public}d", interrupts.size(), zoneId);
     auto oldFocusList = zonesMap_[zoneId]->audioFocusInfoList;
     AudioFocusList newFocusList = interrupts;
-    for (auto itOld = oldFocusList.begin(), itOld != oldFocusList.end(), itOld++) {
+    for (auto itOld = oldFocusList.begin(); itOld != oldFocusList.end(); itOld++) {
         auto isPresent = [itOld](const std::pair<AudioInterrupt, AudioFocuState> &item) {
             return item.first.streamId == itOld->first.streamId;
-        }
+        };
         auto itNew = std::find_if(newFocusList.begin(), newFocusList.end(), isPresent);
-        if (itNew == newFocusList,end()) {
+        if (itNew == newFocusList.end()) {
             ForceStopAudioFocusInZone(zoneId, itOld->first);
         } else {
             AUDIO_INFO_LOG("try to refresh interrupt %{public}d,%{public}d,%{public}d"
@@ -1007,7 +1007,7 @@ int32_t AudioInterruptService::InjectInterruptToAudiotZone(const int32_t zoneId,
     }
 
     AUDIO_INFO_LOG("inject interrupt size %{public}zu with device tag %{public}s to zone %{public}d",
-        interrupt.size(), deviceTag.c_str(), zoneId);
+        interrupts.size(), deviceTag.c_str(), zoneId);
     AudioFocusList newFocusList = interrupts;
     AudioFocusList activeFocusList;
     AudioFocusIterator oldDeviceList = QueryAudioFocusFromZone(zoneId, deviceTag);
@@ -1016,7 +1016,7 @@ int32_t AudioInterruptService::InjectInterruptToAudiotZone(const int32_t zoneId,
         auto isPresent = [itNew, deviceTag](const std::list<std::pair<AudioInterrupt,
             AudioFocuState>>::iterator &iter) {
             return iter->first.streamId == itNew.first.streamId && iter->first.deviceTag == deviceTag;
-        }
+        };
         auto itOld = std::find_if(oldDeviceList.begin(), oldDeviceList.end(), isPresent);
         if (itOld == oldDeviceList.end()) {
             AUDIO_DEBUG_LOG("record new interrupt %{public}d", itNew.first.streamId);
@@ -1050,7 +1050,7 @@ AudioFocusIterator AudioInterruptService::QueryAudioFocusFromZone(int32_t zoneId
 {
     auto &focusInfoList = zonesMap_[zoneId]->audioFocusInfoList;
     AudioFocusIterator deviceList;
-    for (auto it = focusInfoList.begin; it != focusInfoList.end(); it++) {
+    for (auto it = focusInfoList.begin(); it != focusInfoList.end(); it++) {
         if (it->first.deviceTag != deviceTag) {
             continue;
         }
@@ -1082,7 +1082,6 @@ void AudioInterruptService::TryActiveAudioFocusForZone(int32_t zoneId, AudioFocu
             bool updateScene = false;
             ActivateAudioInterruptInternal(zoneId, itActive.first, false, updateScene);
         }
-
     } else {
         TryResumeAudioFocusForZone(zoneId);
     }
