@@ -561,7 +561,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_024, TestSize.Level1)
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
         const std::string &streamTag)->int32_t {
         return 0;
-    }
+    };
 
     interruptServiceTest->Init(GetPolicyServerTest());
     interruptServiceTest->zonesMap_.clear();
@@ -590,7 +590,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_025, TestSize.Level1)
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
         const std::string &streamTag)->int32_t {
         return 0;
-    }
+    };
 
     interruptServiceTest->Init(GetPolicyServerTest());
     MessageParcel data;
@@ -622,7 +622,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_026, TestSize.Level1)
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
         const std::string &streamTag)->int32_t {
         return 0;
-    }
+    };
 
     interruptServiceTest->Init(GetPolicyServerTest());
     interruptServiceTest->zonesMap_.clear();
@@ -1864,7 +1864,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceReleaseAudioInterruptZone_00
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
         const std::string &streamTag)->int32_t {
         return 0;
-    }
+    };
 
     auto retStatus = interruptServiceTest->ReleaseAudioInterruptZone(-1, getZoneFunc);
     EXPECT_EQ(retStatus, ERR_INVALID_PARAM);
@@ -1926,7 +1926,7 @@ HWTEST(AudioInterruptUnitTest, MigrateAudioInterruptZone_001, TestSize.Level1)
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
         const std::string &streamTag)->int32_t {
         return 1;
-    }
+    };
 
     SetUid1041();
     interruptServiceTest->zonesMap_.clear();
@@ -1948,7 +1948,7 @@ HWTEST(AudioInterruptUnitTest, MigrateAudioInterruptZone_002, TestSize.Level1)
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
         const std::string &streamTag)->int32_t {
         return 1;
-    }
+    };
 
     SetUid1041();
     interruptServiceTest->zonesMap_.clear();
@@ -1975,7 +1975,7 @@ HWTEST(AudioInterruptUnitTest, MigrateAudioInterruptZone_003, TestSize.Level1)
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
         const std::string &streamTag)->int32_t {
         return 1;
-    }
+    };
 
     SetUid1041();
     interruptServiceTest->zonesMap_.clear();
@@ -2000,7 +2000,7 @@ HWTEST(AudioInterruptUnitTest, MigrateAudioInterruptZone_004, TestSize.Level1)
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
         const std::string &streamTag)->int32_t {
         return 1;
-    }
+    };
 
     SetUid1041();
     interruptServiceTest->zonesMap_.clear();
@@ -2025,7 +2025,7 @@ HWTEST(AudioInterruptUnitTest, MigrateAudioInterruptZone_005, TestSize.Level1)
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
         const std::string &streamTag)->int32_t {
         return 1;
-    }
+    };
 
     SetUid1041();
     interruptServiceTest->zonesMap_.clear();
@@ -2087,11 +2087,11 @@ HWTEST(AudioInterruptUnitTest, MigrateAudioInterruptZone_006, TestSize.Level1)
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
         const std::string &streamTag)->int32_t {
-        if (uid == 2);{
+        if (uid == 2) {
             return 1;
         }
         return 0;
-    }
+    };
 
     SetUid1041();
     interruptServiceTest->zonesMap_.clear();
