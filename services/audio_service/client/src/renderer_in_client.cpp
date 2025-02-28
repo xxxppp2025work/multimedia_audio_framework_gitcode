@@ -573,6 +573,11 @@ void RendererInClientInner::GetAudioPipeType(AudioPipeType &pipeType)
 
 State RendererInClientInner::GetState()
 {
+    std::lock_guard lock(switchingMutex_);
+    if (switchingInfo_.isSwitching_) {
+        AUDIO_INFO_LOG("switching, return state in switchingInfo");
+        return switchingInfo_.state_;
+    }
     return state_;
 }
 
@@ -1813,9 +1818,7 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
         CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "left buffer memset output failed");
     }
 
-    if (!ProcessVolume()) {
-        return ERR_OPERATION_FAILED;
-    }
+    ProcessVolume();
 
     DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
     DfxOperation(desc, clientConfig_.streamInfo.format, clientConfig_.streamInfo.channels);
@@ -1835,10 +1838,8 @@ bool RendererInClientInner::ProcessVolume()
         clientVolume_ = volumeRamp_.GetRampVolume();
         AUDIO_INFO_LOG("clientVolume_:%{public}f", clientVolume_);
         Trace traceVolume("RendererInClientInner::WriteCacheData:Ramp:clientVolume_:" + std::to_string(clientVolume_));
-        CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "buffer is not inited");
-        clientBuffer_->SetStreamVolume(clientVolume_);
+        SetInnerVolume(clientVolume_);
     }
-    return true;
 }
 
 void RendererInClientInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const
@@ -2384,6 +2385,16 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(timestampVal % AUDIO_NS_PER_SECOND);
     return ret;
+}
+
+void RendererInClientInner::SetSwitchingStatus(bool isSwitching)
+{
+    std::lock_guard lock(switchingMutex_);
+    if (isSwitching) {
+        switchingInfo_ = {true, state_};
+    } else {
+        switchingInfo_ = {false, INVALID};
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

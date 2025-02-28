@@ -178,6 +178,11 @@ void FastAudioStream::GetAudioPipeType(AudioPipeType &pipeType)
 
 State FastAudioStream::GetState()
 {
+    std::lock_guard lock(switchingMutex_);
+    if (switchingInfo_.isSwitching_) {
+        AUDIO_INFO_LOG("switching, return state in switchingInfo");
+        return switchingInfo_.state_;
+    }
     return state_;
 }
 
@@ -848,23 +853,18 @@ bool FastAudioStream::RestoreAudioStream(bool needStoreState)
         processClient_->Release();
         processClient_ = nullptr;
     }
-    int32_t ret = SetAudioStreamInfo(streamInfo_, proxyObj_);
-    if (ret != SUCCESS) {
+    if (SetAudioStreamInfo(streamInfo_, proxyObj_) != SUCCESS || SetCallbacksWhenRestore() != SUCCESS) {
         goto error;
     }
     switch (oldState) {
         case RUNNING:
-            CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null");
-            ret = processClient_->SaveDataCallback(spkProcClientCb_);
-            if (ret != SUCCESS) {
-                goto error;
-            }
             result = StartAudioStream();
             break;
         case PAUSED:
             result = StartAudioStream() && PauseAudioStream();
             break;
         case STOPPED:
+            [[fallthrough]];
         case STOPPING:
             result = StartAudioStream() && StopAudioStream();
             break;
@@ -904,6 +904,28 @@ bool FastAudioStream::GetHighResolutionEnabled()
 int32_t FastAudioStream::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     return GetAudioTime(timestamp, base);
+}
+
+void FastAudioStream::SetSwitchingStatus(bool isSwitching)
+{
+    std::lock_guard lock(switchingMutex_);
+    if (isSwitching) {
+        switchingInfo_ = {true, state_};
+    } else {
+        switchingInfo_ = {false, INVALID};
+    }
+}
+
+int32_t FastAudioStream::SetCallbacksWhenRestore()
+{
+    int32_t ret = SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERROR_INVALID_PARAM, "processClient_ is null");
+    if (eMode_ == AUDIO_MODE_PLAYBACK) {
+        ret = processClient_->SaveDataCallback(spkProcClientCb_);
+    } else if (eMode_ == AUDIO_MODE_RECORD) {
+        ret = processClient_->SaveDataCallback(micProcClientCb_);
+    }
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS
