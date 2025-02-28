@@ -61,6 +61,7 @@ config("audio_policy_public_config") {
     "server/src/service/interrupt",
     "server/src/service/session",
     "services/core/include",
+    "services/pipe/include",
     "safe_volume_notification/include",
     "../audio_service/client/include",
     "../audio_service/common/include",
@@ -239,6 +240,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/session/audio_session_state_monitor.cpp",
     "server/src/service/spatialization/audio_spatialization_service.cpp",
     "services/core/src/audio_core_service.cpp",
+    "services/pipe/src/audio_pipe_manager.cpp",
     "util/src/audio_ability_manager.cpp",
   ]
 

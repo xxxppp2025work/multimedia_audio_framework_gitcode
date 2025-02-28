@@ -1577,7 +1577,11 @@ int32_t AudioPolicyServer::SetRingerModeInner(AudioRingerMode ringMode)
 int32_t AudioPolicyServer::SetRingerModeInternal(AudioRingerMode ringerMode, bool hasUpdatedVolume)
 {
     AUDIO_INFO_LOG("Set ringer mode to %{public}d. hasUpdatedVolume %{public}d", ringerMode, hasUpdatedVolume);
+#ifndef AUDIO_UNIFY
     int32_t ret = audioPolicyService_.SetRingerMode(ringerMode);
+#else
+    int32_t ret = coreService_->SetRingerMode(ringerMode);
+#endif
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set ringer mode!");
 
     if (!hasUpdatedVolume) {
@@ -2908,7 +2912,11 @@ int32_t AudioPolicyServer::ConfigDistributedRoutingRole(
         return ERR_PERMISSION_DENIED;
     }
     std::lock_guard<std::mutex> lock(descLock_);
+#ifndef AUDIO_UNIFY
     audioPolicyService_.ConfigDistributedRoutingRole(descriptor, type);
+#else
+    coreService_->ConfigDistributedRoutingRole(descriptor, type);
+#endif
     OnDistributedRoutingRoleChange(descriptor, type);
     return SUCCESS;
 }

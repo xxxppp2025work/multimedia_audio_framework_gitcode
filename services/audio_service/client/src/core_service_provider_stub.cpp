@@ -42,6 +42,8 @@ int CoreServiceProviderStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
     switch (code) {
         case UPDATE_SESSION_OPERATION:
             return HandleUpdateSessionOperation(data, reply);
+        case SET_DEFAULT_OUTPUT_DEVICE:
+            return HandleSetDefaultOutputDevice(data, reply);
         default:
             AUDIO_WARNING_LOG("Unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -54,6 +56,17 @@ int32_t CoreServiceProviderStub::HandleUpdateSessionOperation(MessageParcel &dat
     SessionOperation operation = static_cast<SessionOperation>(data.ReadUint32());
     int32_t ret = UpdateSessionOperation(sessionId, operation);
     reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int32_t CoreServiceProviderStub::HandleSetDefaultOutputDevice(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t deviceType = data.ReadInt32();
+    uint32_t sessionID = data.ReadUint32();
+    int32_t streamUsage = data.ReadInt32();
+    bool isRunning = data.ReadBool();
+    reply.WriteInt32(SetDefaultOutputDevice(static_cast<OHOS::AudioStandard::DeviceType>(deviceType),
+        sessionID, static_cast<OHOS::AudioStandard::StreamUsage>(streamUsage), isRunning));
     return AUDIO_OK;
 }
 
@@ -70,6 +83,13 @@ int32_t CoreServiceProviderWrapper::UpdateSessionOperation(uint32_t sessionId, S
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
     return coreServiceWorker_->UpdateSessionOperation(sessionId, operation);
+}
+
+int32_t CoreServiceProviderWrapper::SetDefaultOutputDevice(const DeviceType defaultOutputDevice,
+    const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return coreServiceWorker_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);
 }
 } // namespace AudioStandard
 } // namespace OHOS

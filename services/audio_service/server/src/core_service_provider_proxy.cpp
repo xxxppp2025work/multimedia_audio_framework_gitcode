@@ -45,5 +45,22 @@ int32_t CoreServiceProviderProxy::UpdateSessionOperation(uint32_t sessionId, Ses
 
     return reply.ReadInt32();
 }
+
+int32_t CoreServiceProviderProxy::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
+    const StreamUsage streamUsage, bool isRunning)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteInt32(defaultOutputDevice);
+    data.WriteUint32(sessionID);
+    data.WriteInt32(streamUsage);
+    data.WriteBool(isRunning);
+    int ret = Remote()->SendRequest(ICoreServiceProviderMsg::SET_DEFAULT_OUTPUT_DEVICE, data, reply, option);
+    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "set default output device failed, ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -33,6 +33,7 @@ public:
     // IPC code.
     enum ICoreServiceProviderMsg : uint32_t {
         UPDATE_SESSION_OPERATION = 0,
+        SET_DEFAULT_OUTPUT_DEVICE,
         CORE_SERVICE_PROVIDER_MAX_MSG,
     };
 

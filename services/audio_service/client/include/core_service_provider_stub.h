@@ -18,6 +18,7 @@
 
 #include "i_core_service_provider_ipc.h"
 
+
 namespace OHOS {
 namespace AudioStandard {
 class CoreServiceProviderStub : public IRemoteStub<ICoreServiceProviderIpc> {
@@ -27,6 +28,7 @@ public:
 private:
     static bool CheckInterfaceToken(MessageParcel &data);
     int32_t HandleUpdateSessionOperation(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleSetDefaultOutputDevice(MessageParcel &data, MessageParcel &reply);
 };
 
 class CoreServiceProviderWrapper : public CoreServiceProviderStub {
@@ -35,6 +37,8 @@ public:
     CoreServiceProviderWrapper(ICoreServiceProvider *coreServiceWorker);
 
     int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation) override;
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning) override;
+
 private:
     ICoreServiceProvider *coreServiceWorker_;
 };

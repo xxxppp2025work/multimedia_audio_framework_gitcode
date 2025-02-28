@@ -30,6 +30,7 @@ namespace AudioStandard {
 enum AudioPipeAction {
     PIPE_ACTION_DEFAULT = 0,
     PIPE_ACTION_UPDATE,
+    PIPE_ACTION_RELOAD,
     PIPE_ACTION_NEW,
 };
 
@@ -43,6 +44,10 @@ public:
     uint32_t id_ = HDI_INVALID_ID;
 
     AudioPipeRole pipeRole_ = PIPE_ROLE_OUTPUT;
+
+    AudioFlag routeFlag_ = AUDIO_OUTPUT_FLAG_NONE;
+
+    std::string adapterName_;
 
     AudioModuleInfo moduleInfo_;
 

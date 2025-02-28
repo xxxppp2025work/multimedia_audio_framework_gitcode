@@ -26,6 +26,8 @@ public:
     virtual ~CoreServiceProviderProxy();
 
     int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation) override;
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning) override;
+
 private:
     static inline BrokerDelegator<CoreServiceProviderProxy> delegator_;
 };

@@ -24,6 +24,7 @@
 #include "core_service_provider_stub.h"
 #include "audio_pipe_info.h"
 #include "audio_service_enum.h"
+#include "audio_pipe_manager.h"
 
 
 namespace OHOS {
@@ -40,6 +41,7 @@ public:
 
         // ICoreServiceProvider
         int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation) override;
+        int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning) override;
 
         // IDeviceStatusObserver
         void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command) override;
@@ -207,6 +209,9 @@ private:
     int32_t FetchCapturerPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     int32_t SelectInputDeviceAndRoute();
     int32_t SelectOutputDeviceAndRoute(const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
+    void ConfigDistributedRoutingRole(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
+    int32_t SetRingerMode(AudioRingerMode ringMode);
+    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning);
 
 private:
 
@@ -216,7 +221,7 @@ private:
     static void BluetoothServiceCrashedCallback(pid_t pid, pid_t uid);
 #endif
 
-    int32_t SelectDeviceAndRoute(const AudioStreamDeviceChangeReasonExt reason);
+    int32_t SelectDeviceAndRoute(const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t FetchOutputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc, const AudioStreamDeviceChangeReasonExt reason);
     int32_t FetchInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     int32_t FetchOutputDevices(std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputStreamDescs, const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
@@ -267,6 +272,9 @@ private:
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
     void OnAudioBalanceChanged(float audioBalance);
     bool GetFastControlParam();
+    void StoreDistributedRoutingRoleInfo(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType);
+    float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) const;
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;
@@ -295,6 +303,7 @@ private:
 
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     std::shared_ptr<DeviceStatusListener> deviceStatusListener_;
+    std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
 
     static bool isBtListenerRegistered;
     static constexpr int32_t MIN_SERVICE_COUNT = 2;
@@ -306,6 +315,10 @@ private:
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     bool isFastControlled_ = true;
     std::mutex serviceFlagMutex_;
+    DistributedRoutingInfo distributedRoutingInfo_ = {
+        .descriptor = nullptr,
+        .type = CAST_TYPE_NULL
+    };
 };
 static std::string GetEncryptAddr(const std::string &addr);
 }

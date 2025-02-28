@@ -40,3 +40,11 @@ enum AudioFlag : uint32_t {
     AUDIO_INPUT_FLAG_WAKEUP, // select, route
     AUDIO_FLAG_MAX,
 };
+
+enum AudioStreamStatus : uint32_t {
+    STREAM_STATUS_NEW = 0,
+    STREAM_STATUS_STARTTING,
+    STREAM_STATUS_PAUSED,
+    STREAM_STATUS_STOPPED,
+    STREAM_STATUS_RELEASED,
+};

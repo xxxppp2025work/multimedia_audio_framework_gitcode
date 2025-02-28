@@ -44,6 +44,7 @@ public:
     AppInfo appInfo_ = {}; // Only use pid in binder call
     uint32_t sessionId_ = 0;
     int32_t callerUid_ = -1;
+    AudioStreamStatus streamStatus_ = STREAM_STATUS_NEW;
     AudioStreamAction streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDeviceDescs_;
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs_;
