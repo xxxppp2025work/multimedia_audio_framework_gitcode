@@ -34,6 +34,12 @@ public:
     void TearDown();
 };
 
+class AudioManagerAppVolumeChangeCallbackTest : public AudioManagerAppVolumeChangeCallback {
+public:
+    void OnAppVolumeChangedForUid(int32_t appUid, const VolumeEvent &event) override {}
+    void OnSelfAppVolumeChanged(const VolumeEvent &event) override {}
+};
+
 /**
  * @tc.name  : Test GetMaxVolume API
  * @tc.type  : FUNC
@@ -166,6 +172,252 @@ HWTEST(AudioSystemManagerUnitTest, ConfigDistributedRoutingRoleTest_001, TestSiz
     int32_t result = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(nullptr, castType);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest ConfigDistributedRoutingRoleTest_001() result:%{public}d", result);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name   : Test SetSelfAppVolume API
+* @tc.number : SetAppVolume_001
+* @tc.desc   : Test SetAppVolume interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, SetAppVolume_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetAppVolume_001 start");
+    int32_t appUid = 30003000;
+    int volume = 100;
+    int32_t result = AudioSystemManager::GetInstance()->SetAppVolume(appUid, volume);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetAppVolume_001() result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+}
+
+/**
+* @tc.name   : Test SetSelfAppVolume API
+* @tc.number : SetSelfAppVolume_001
+* @tc.desc   : Test SetSelfAppVolume interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, SetSelfAppVolume_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolume_001 start");
+    int volume = 100;
+    int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolume(volume);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolume_001() result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+}
+
+/**
+* @tc.name   : Test GetAppVolume API
+* @tc.number : GetAppVolume_001
+* @tc.desc   : Test GetAppVolume interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, GetAppVolume_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetAppVolume_001 start");
+    int appUid = 30003000;
+    int volume = 100;
+    int32_t result = AudioSystemManager::GetInstance()->SetAppVolume(appUid, volume);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetAppVolume() result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->GetAppVolume(appUid);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetAppVolume_001() result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+}
+
+/**
+* @tc.name   : Test GetAppVolume API
+* @tc.number : GetAppVolume_002
+* @tc.desc   : Test GetAppVolume interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, GetAppVolume_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetAppVolume_002 start");
+    int appUid = 30003003;
+    int32_t result = AudioSystemManager::GetInstance()->GetAppVolume(appUid);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetAppVolume_002() result:%{public}d", result);
+    EXPECT_GT(result, TEST_RET_NUM);
+}
+
+/**
+* @tc.name   : Test GetSelfAppVolume API
+* @tc.number : GetSelfAppVolume_001
+* @tc.desc   : Test GetSelfAppVolume interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, GetSelfAppVolume_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSelfAppVolume_001 start");
+    int volume = 100;
+    int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolume(volume);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolume() result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->GetSelfAppVolume();
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSelfAppVolume() result:%{public}d", result);
+    EXPECT_GT(result, TEST_RET_NUM);
+}
+
+/**
+* @tc.name   : Test SetAppVolumeMuted API
+* @tc.number : SetAppVolumeMuted_001
+* @tc.desc   : Test SetAppVolumeMuted interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, SetAppVolumeMuted_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetAppVolumeMuted_001 start");
+    int appUid = 30003000;
+    bool mute = true;
+    int32_t result = AudioSystemManager::GetInstance()->SetAppVolumeMuted(appUid, mute);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetAppVolumeMuted_001() result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+}
+
+/**
+* @tc.name   : Test IsAppVolumeMute API
+* @tc.number : IsAppVolumeMute_001
+* @tc.desc   : Test IsAppVolumeMute interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, IsAppVolumeMute_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsAppVolumeMute_001 start");
+    int appUid = 30003000;
+    bool owned = true;
+    bool mute = true;
+    int32_t result = AudioSystemManager::GetInstance()->SetAppVolumeMuted(appUid, mute);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetAppVolumeMuted() result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    bool isMute = AudioSystemManager::GetInstance()->IsAppVolumeMute(appUid, owned);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsAppVolumeMute1() isMute:%{public}d", isMute);
+    EXPECT_EQ(isMute, true);
+    isMute = AudioSystemManager::GetInstance()->IsAppVolumeMute(appUid + 1, owned);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsAppVolumeMute2() isMute:%{public}d", isMute);
+    EXPECT_EQ(isMute, false);
+}
+
+/**
+* @tc.name   : Test IsAppVolumeMute API
+* @tc.number : IsAppVolumeMute_002
+* @tc.desc   : Test IsAppVolumeMute interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, IsAppVolumeMute_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsAppVolumeMute_002 start");
+    int appUid = 30003000;
+    bool owned = false;
+    bool mute = true;
+    int32_t result = AudioSystemManager::GetInstance()->SetAppVolumeMuted(appUid, mute);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetAppVolumeMuted() result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    bool isMute = AudioSystemManager::GetInstance()->IsAppVolumeMute(appUid, owned);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsAppVolumeMute1() isMute:%{public}d", isMute);
+    EXPECT_EQ(isMute, true);
+    isMute = AudioSystemManager::GetInstance()->IsAppVolumeMute(appUid + 1, owned);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsAppVolumeMute2() isMute:%{public}d", isMute);
+    EXPECT_EQ(isMute, false);
+}
+
+/**
+* @tc.name   : Test SetSelfAppVolumeCallback API
+* @tc.number : SetSelfAppVolumeCallback_001
+* @tc.desc   : Test SetSelfAppVolumeCallback interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, SetSelfAppVolumeCallback_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback_001 start");
+    std::shared_ptr<AudioManagerAppVolumeChangeCallback> callback = nullptr;
+    int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolumeCallback(callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback() result:%{public}d", result);
+    EXPECT_NE(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->UnsetSelfAppVolumeCallback(callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnsetSelfAppVolumeCallback() result:%{public}d", result);
+    EXPECT_NE(result, TEST_RET_NUM);
+}
+
+/**
+* @tc.name   : Test SetSelfAppVolumeCallback API
+* @tc.number : SetSelfAppVolumeCallback_002
+* @tc.desc   : Test SetSelfAppVolumeCallback interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, SetSelfAppVolumeCallback_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback_002 start");
+    std::shared_ptr<AudioManagerAppVolumeChangeCallback> callback =
+        std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
+    int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolumeCallback(callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback() result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->UnsetSelfAppVolumeCallback(callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnsetSelfAppVolumeCallback() result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+}
+
+/**
+* @tc.name   : Test SetSelfAppVolumeCallback API
+* @tc.number : SetSelfAppVolumeCallback_003
+* @tc.desc   : Test SetSelfAppVolumeCallback interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, SetSelfAppVolumeCallback_003, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback_003 start");
+    std::shared_ptr<AudioManagerAppVolumeChangeCallback> callback =
+        std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
+    int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolumeCallback(callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback() result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->UnsetSelfAppVolumeCallback(nullptr);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnsetSelfAppVolumeCallback() result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+}
+
+/**
+* @tc.name   : Test SetAppVolumeCallbackForUid API
+* @tc.number : SetAppVolumeCallbackForUid_001
+* @tc.desc   : Test SetAppVolumeCallbackForUid interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, SetAppVolumeCallbackForUid_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetAppVolumeCallbackForUid_001 start");
+    int appUid = 30003000;
+    std::shared_ptr<AudioManagerAppVolumeChangeCallback> callback = nullptr;
+    int32_t result = AudioSystemManager::GetInstance()->SetAppVolumeCallbackForUid(appUid, callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetAppVolumeCallbackForUid() result:%{public}d", result);
+    EXPECT_NE(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->UnsetAppVolumeCallbackForUid(callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnsetAppVolumeCallbackForUid() result:%{public}d", result);
+    EXPECT_NE(result, TEST_RET_NUM);
+}
+
+/**
+* @tc.name   : Test SetAppVolumeCallbackForUid API
+* @tc.number : SetAppVolumeCallbackForUid_002
+* @tc.desc   : Test SetAppVolumeCallbackForUid interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, SetAppVolumeCallbackForUid_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetAppVolumeCallbackForUid_002 start");
+    std::shared_ptr<AudioManagerAppVolumeChangeCallback> callback =
+        std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
+    int appUid = 30003000;
+    int32_t result = AudioSystemManager::GetInstance()->SetAppVolumeCallbackForUid(appUid, callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetAppVolumeCallbackForUid() result:%{public}d", result);
+    EXPECT_NE(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->UnsetAppVolumeCallbackForUid(callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnsetAppVolumeCallbackForUid() result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+}
+
+/**
+* @tc.name   : Test SetAppVolumeCallbackForUid API
+* @tc.number : SetAppVolumeCallbackForUid_003
+* @tc.desc   : Test SetAppVolumeCallbackForUid interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, SetAppVolumeCallbackForUid_003, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetAppVolumeCallbackForUid_003 start");
+    std::shared_ptr<AudioManagerAppVolumeChangeCallback> callback =
+        std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
+    int appUid = 30003000;
+    int32_t result = AudioSystemManager::GetInstance()->SetAppVolumeCallbackForUid(appUid, callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetAppVolumeCallbackForUid() result:%{public}d", result);
+    EXPECT_NE(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->UnsetAppVolumeCallbackForUid(nullptr);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnsetAppVolumeCallbackForUid() result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);     
 }
 } // namespace AudioStandard
 } // namespace OHOS
