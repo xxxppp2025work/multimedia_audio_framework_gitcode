@@ -97,7 +97,10 @@ ohos_unittest("audio_endpoint_plus_unit_test") {
 
   cflags = [ "-fno-access-control" ]
 
-  sources = [ "./src/audio_endpoint_plus_unit_test.cpp" ]
+  sources = [
+    "../../../audio_service/client/src/audio_manager_proxy.cpp",
+    "./src/audio_endpoint_plus_unit_test.cpp",
+  ]
 
   include_dirs = [
     "../../../server/include",
