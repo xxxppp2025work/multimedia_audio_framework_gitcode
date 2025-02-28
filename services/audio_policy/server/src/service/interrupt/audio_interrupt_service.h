@@ -221,7 +221,7 @@ private:
     void TryActiveAudioFocusForZone(int32_t zoneId, AudioFocusList &activeFocusList);
     void TryResumeAudioFocusForZone(int32_t zoneId);
     AudioFocusIterator QueryAudioFocusFromZone(int32_t zoneId, const std::string &deviceTag);
-    void ForceStopAudioFocusInZone(int32_t zoneId, AudioInterrupt &audioInterrupt);
+    void ForceStopAudioFocusInZone(int32_t zoneId, const AudioInterrupt &audioInterrupt);
     void ForceStopAllAudioFocusInZone(std::shared_ptr<AudioInterruptZone> &zone);
     void WriteFocusMigrateEvent(const int32_t &toZoneId);
     void WriteServiceStartupError();

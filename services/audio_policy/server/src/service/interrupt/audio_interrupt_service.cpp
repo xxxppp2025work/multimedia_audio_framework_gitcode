@@ -116,7 +116,7 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
     clientOnFocus_ = 0;
     focussedAudioInterruptInfo_ = nullptr;
 
-    CreateAudioInterruptZoneInternal(ZONEID_DEFAULT);
+    CreateAudioInterruptZoneInternal(ZONEID_DEFAULT, AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY);
 
     sessionService_ = std::make_shared<AudioSessionService>();
     sessionService_->SetSessionTimeOutCallback(shared_from_this());
@@ -662,15 +662,17 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
     lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
+    return SUCCESS;
 }
 
 int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zoneId,
-    const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy, bool &updateScene);
+    const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy, bool &updateScene)
+{
     AudioInterrupt currAudioInterrupt = audioInterrupt;
     HandleAppStreamType(currAudioInterrupt);
     AudioStreamType streamType = currAudioInterrupt.audioFocusType.streamType;
     uint32_t incomingStreamId = currAudioInterrupt.streamId;
-    AUDIO_INFO_LOG("streamId: %{public}u pid: %{public}d streamType: %{public}d "\
+    AUDIO_INFO_LOG("streamId: %{public}u pid: %{public}d streamType: %{public}d "
         "usage: %{public}d source: %{public}d",
         incomingStreamId, currAudioInterrupt.pid, streamType,
         currAudioInterrupt.streamUsage, (currAudioInterrupt.audioFocusType).sourceType);
