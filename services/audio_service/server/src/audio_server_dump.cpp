@@ -23,6 +23,7 @@
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
 #include "manager/hdi_adapter_manager.h"
+#include "audio_pipe_manager.h"
 
 using namespace std;
 
@@ -55,6 +56,7 @@ void AudioServerDump::InitDumpFuncMap()
     dumpFuncMap[u"-cm"] = &AudioServerDump::AudioCacheMemoryDump;
     dumpFuncMap[u"-pm"] = &AudioServerDump::AudioPerformMonitorDump;
     dumpFuncMap[u"-ha"] = &AudioServerDump::HdiAdapterDump;
+    dumpFuncMap[u"-ap"] = &AudioServerDump::AudioPipeManagerDump;
 }
 
 void AudioServerDump::ResetPAAudioDump()
@@ -213,6 +215,7 @@ void AudioServerDump::HelpInfoDump(string &dumpString)
     AppendFormat(dumpString, "  -cm\t\t\t|dump AudioCached memory info\n");
     AppendFormat(dumpString, "  -pm\t\t\t|dump AudioPerformMonitor info\n");
     AppendFormat(dumpString, "  -ha\t\t\t|dump HdiAdapter info\n");
+    AppendFormat(dumpString, "  -ap\t\t\t|dump AudioPipeManager info\n");
 }
 
 void AudioServerDump::AudioDataDump(string &dumpString, std::queue<std::u16string>& argQue)
@@ -563,6 +566,13 @@ void AudioServerDump::HdiAdapterDump(std::string &dumpString)
     AUDIO_INFO_LOG("HdiAdapterDump");
     dumpString += "\nHdiAdapter Info\n";
     HdiAdapterManager::GetInstance().DumpInfo(dumpString);
+}
+
+void AudioServerDump::AudioPipeManagerDump(std::string &dumpString)
+{
+    AUDIO_INFO_LOG("AudioPipeManagerDump");
+    dumpString += "\nAudioPipeManager Info\n";
+    AudioPipeManager::GetPipeMananger()->Dump(dumpString);
 }
 
 } // namespace AudioStandard

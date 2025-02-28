@@ -43,6 +43,7 @@ ohos_shared_library("audio_common") {
     "common/include",
     "common/include/limiter",
     "../audio_policy/server/include",
+    "../audio_policy/services/pipe/include",
     "../../frameworks/native/audioschedule/include",
     "../../interfaces/inner_api/native/audiocommon/include",
   ]

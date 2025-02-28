@@ -56,6 +56,7 @@ public:
     void Unmarshalling(Parcel &parcel);
     bool WriteDeviceDescVectorToParcel(Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs) const;
     void UnmarshallingDeviceDescVector(Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+    void Dump(std::string &dumpString);
 };
 } // namespace AudioStandard
 } // namespace OHOS

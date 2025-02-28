@@ -193,5 +193,31 @@ int32_t AudioPipeManager::GetStreamCount(const std::string adapterName, const Au
     return count;
 }
 
+void AudioPipeManager::Dump(std::string &dumpString)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    AUDIO_INFO_LOG("AudioPipeManager Dump Start!");
+    dumpString += "\n^^^^^^^^^^AudioPipeManager Infos^^^^^^^^^^\n";
+    dumpString += "\nTotalPipeNums: " + std::to_string(curPipeList_.size()) + "\n\n";
+
+    std::shared_ptr<AudioPipeInfo> curPipeInfo = nullptr;
+    for (size_t pipeIdx = 0; pipeIdx < curPipeList_.size(); ++pipeIdx) {
+        curPipeInfo = curPipeList_[pipeIdx];
+        dumpString += "\n**********Pipe " + std::to_string(pipeIdx + 1) + "**********\n"; // pipeinfo start
+        dumpString += "\nadapterName_: " + curPipeInfo->adapterName_ + "\tid_: " + std::to_string(curPipeInfo->id_);
+        dumpString += "\nPipeRole_: ";
+        dumpString += (curPipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT ? "OUTPUT" : "INPUT");
+        dumpString += "\npipeAction_: " + std::to_string(curPipeInfo->pipeAction_);
+        dumpString += "\nrouteFlag_: " + std::to_string(curPipeInfo->routeFlag_);
+        for (size_t streamIdx = 0; streamIdx < curPipeInfo->streamDescriptors_.size(); ++streamIdx) {
+            dumpString += "\n----------Stream " + std::to_string(streamIdx + 1) + " in Pipe " + std::to_string(pipeIdx + 1) + "----------\n"; // streaminfo start
+            curPipeInfo->streamDescriptors_[streamIdx]->Dump(dumpString);
+            dumpString += "\n"; //streaminfo end
+        }
+        dumpString += "\n"; // pipeinfo end
+    }
+    dumpString += "\n^^^^^^^^^^AudioPipeManager Infos^^^^^^^^^^\n";
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

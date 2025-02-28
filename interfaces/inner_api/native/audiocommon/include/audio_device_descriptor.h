@@ -121,6 +121,8 @@ public:
 
     DeviceType MapInternalToExternalDeviceType() const;
 
+    void Dump(std::string &dumpString);
+    
     struct AudioDeviceDescriptorComparer {
         bool operator()(const std::shared_ptr<AudioDeviceDescriptor> &lhs,
             const std::shared_ptr<AudioDeviceDescriptor> &rhs) const

@@ -92,6 +92,7 @@ private:
     void AudioCacheMemoryDump(std::string &dumpString);
     void AudioPerformMonitorDump(std::string &dumpString);
     void HdiAdapterDump(std::string &dumpString);
+    void AudioPipeManagerDump(std::string &dumpString);
     void InitDumpFuncMap();
     void HelpInfoDump(std::string& dumpString);
     static bool IsEndWith(const std::string &mainStr, const std::string &toMatch);

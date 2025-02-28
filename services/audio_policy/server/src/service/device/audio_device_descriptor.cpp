@@ -366,6 +366,16 @@ bool AudioDeviceDescriptor::IsPairedDeviceDesc(const AudioDeviceDescriptor &devi
         deviceDescriptor.networkId_ == networkId_;
 }
 
+void AudioDeviceDescriptor::Dump(std::string &dumpString) {
+    dumpString += "deviceName: " + deviceName_ + " deviceRole: ";
+    if (deviceRole_ != INPUT_DEVICE && deviceRole_ != OUTPUT_DEVICE) {
+        dumpString += "INVALID";
+    } else {
+        dumpString += deviceRole_ == INPUT_DEVICE ? "INPUT" : "OUTPUT";
+    }
+    dumpString += " deviceType: " + std::to_string(deviceType_);
+}
+
 DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType() const
 {
     switch (deviceType_) {

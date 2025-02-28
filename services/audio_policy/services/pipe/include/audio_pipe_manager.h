@@ -57,6 +57,8 @@ public:
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescByIdInner(uint32_t sessionId);
     int32_t GetStreamCount(const std::string adapterName, const AudioFlag routeFlag);
 
+    void Dump(std::string &dumpString);
+
 private:
     std::vector<std::shared_ptr<AudioPipeInfo>> curPipeList_;    //只保存当前存在的pipe信息？？？如果并发是否需要保存原始pipe信息，还是通过AudioStreamDescriptor获取？？？
     std::shared_mutex pipeListLock_;
