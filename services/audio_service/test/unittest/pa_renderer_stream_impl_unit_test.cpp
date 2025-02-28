@@ -26,11 +26,15 @@
 #include "pa_adapter_manager.h"
 #include "audio_capturer_private.h"
 #include "audio_system_manager.h"
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
+#include "audio_manager_base.h"
 
 using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 const int32_t CAPTURER_FLAG = 10;
+static const uint32_t CALLER_UID = 1041;
 static std::shared_ptr<PaAdapterManager> adapterManager;
 
 class PaRendererStreamUnitTest : public ::testing::Test {
@@ -49,6 +53,26 @@ void PaRendererStreamUnitTest::TearDown(void)
     // input testcase teardown step，teardown invoked after each testcases
 }
 
+void LoadPaPort()
+{
+    setuid(CALLER_UID);
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<IStandardAudioService> g_adProxy = iface_cast<IStandardAudioService>(object);
+    AudioPlaybackCaptureConfig checkConfig;
+    int32_t checkInnerCapId = 0;
+    g_adProxy->CheckCaptureLimit(checkConfig, checkInnerCapId);
+}
+
+void ReleasePaPort()
+{
+    setuid(CALLER_UID);
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<IStandardAudioService> g_adProxy = iface_cast<IStandardAudioService>(object);
+    g_adProxy->ReleaseCaptureLimit(1);
+}
+
 static AudioProcessConfig GetInnerCapConfig()
 {
     AudioProcessConfig config;
@@ -61,6 +85,7 @@ static AudioProcessConfig GetInnerCapConfig()
     config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
     config.streamType = AudioStreamType::STREAM_MUSIC;
     config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    config.innerCapId = 1;
     return config;
 }
 
@@ -85,6 +110,7 @@ std::shared_ptr<PaRendererStreamImpl> PaRendererStreamUnitTest::CreatePaRenderer
  */
 HWTEST_F(PaRendererStreamUnitTest, GetCurrentTimeStamp_001, TestSize.Level1)
 {
+    LoadPaPort();
     auto unit = CreatePaRendererStreamImpl();
     unit->paStream_ = nullptr;
     uint64_t timestamp = 0;
@@ -829,6 +855,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_051, TestSize.Level1)
     unit->paStream_ = nullptr;
     int32_t rate = RENDER_RATE_NORMAL;
     EXPECT_EQ(unit->SetRate(rate), ERR_ILLEGAL_STATE);
+    ReleasePaPort();
 }
 }
 }

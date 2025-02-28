@@ -26,11 +26,15 @@
 #include "pa_adapter_manager.h"
 #include "audio_capturer_private.h"
 #include "audio_system_manager.h"
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
+#include "audio_manager_base.h"
 
 using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 const int32_t CAPTURER_FLAG = 10;
+const uint32_t CALLER_UID = 1041;
 
 class PaRendererStreamUnitTestP2 : public ::testing::Test {
 public:
@@ -48,6 +52,26 @@ void PaRendererStreamUnitTestP2::TearDown(void)
     // input testcase teardown step，teardown invoked after each testcases
 }
 
+void LoadPaPort()
+{
+    setuid(CALLER_UID);
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<IStandardAudioService> g_adProxy = iface_cast<IStandardAudioService>(object);
+    AudioPlaybackCaptureConfig checkConfig;
+    int32_t checkInnerCapId = 0;
+    g_adProxy->CheckCaptureLimit(checkConfig, checkInnerCapId);
+}
+
+void ReleasePaPort()
+{
+    setuid(CALLER_UID);
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<IStandardAudioService> g_adProxy = iface_cast<IStandardAudioService>(object);
+    g_adProxy->ReleaseCaptureLimit(1);
+}
+
 static AudioProcessConfig GetInnerCapConfig()
 {
     AudioProcessConfig config;
@@ -60,6 +84,7 @@ static AudioProcessConfig GetInnerCapConfig()
     config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
     config.streamType = AudioStreamType::STREAM_MUSIC;
     config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    config.innerCapId = 1;
     return config;
 }
 
@@ -84,6 +109,7 @@ std::shared_ptr<PaRendererStreamImpl> PaRendererStreamUnitTestP2::CreatePaRender
  */
 HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_004, TestSize.Level1)
 {
+    LoadPaPort();
     auto unit = CreatePaRendererStreamImpl();
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
     adapterManager->InitPaContext();
@@ -345,6 +371,7 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_015, TestSize.Level1)
     unit->firstGetLatency_= false;
     int32_t ret = unit->GetLatency(latency);
     EXPECT_EQ(ret, SUCCESS);
+    ReleasePaPort();
 }
 }
 }

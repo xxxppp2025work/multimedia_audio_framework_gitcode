@@ -59,6 +59,7 @@ static const size_t NUMFIVE = 5;
 static constexpr uint32_t MORE_SESSIONID = MAX_STREAMID + 1;
 static const int32_t CAPTURER_FLAG = 10;
 static const uint32_t SESSIONID = 123456;
+static const uint32_t CALLER_UID = 1041;
 
 /*
  * @tc.name  : Test AudioEndpointInner API
@@ -1049,7 +1050,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_037, TestSize.Level1)
     config.originalSessionId = MORE_SESSIONID;
     config.innerCapId = 1;
     uint32_t sessionId = SESSIONID;
-    
+    setuid(CALLER_UID);
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
     sptr<IStandardAudioService> g_adProxy = iface_cast<IStandardAudioService>(object);
@@ -1061,6 +1062,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_037, TestSize.Level1)
     auto &info = audioEndpointInner->fastCaptureInfos_[1];
     info.dupStream = adapterManager->CreateRendererStream(config, stream);
     audioEndpointInner->ProcessToDupStream(audioDataList, dstStreamData, 1);
+    g_adProxy->ReleaseCaptureLimit(1);
     EXPECT_EQ(dstStreamData.bufferDesc.bufLength, audioEndpointInner->dupBufferSize_);
 }
 #endif
