@@ -313,7 +313,10 @@ ohos_unittest("pa_renderer_stream_impl_unit_test") {
     "../../../../frameworks/native/audiocapturer/include",
     "../../../../services/audio_service/server/include",
   ]
-  sources = [ "pa_renderer_stream_impl_unit_test.cpp" ]
+  sources = [
+    "../../../audio_service/client/src/audio_manager_proxy.cpp",
+    "pa_renderer_stream_impl_unit_test.cpp",
+  ]
 
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
@@ -335,6 +338,11 @@ ohos_unittest("pa_renderer_stream_impl_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
 }
 
 ohos_unittest("pa_renderer_stream_impl_unit_test_p2") {
@@ -344,7 +352,10 @@ ohos_unittest("pa_renderer_stream_impl_unit_test_p2") {
     "../../../../frameworks/native/audiocapturer/include",
     "../../../../services/audio_service/server/include",
   ]
-  sources = [ "pa_renderer_stream_impl_unit_test_p2.cpp" ]
+  sources = [
+    "../../../audio_service/client/src/audio_manager_proxy.cpp",
+    "pa_renderer_stream_impl_unit_test_p2.cpp",
+  ]
 
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
@@ -366,6 +377,11 @@ ohos_unittest("pa_renderer_stream_impl_unit_test_p2") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
 }
 
 ohos_unittest("ipc_stream_in_server_unit_test") {
@@ -560,7 +576,10 @@ ohos_unittest("pa_capturer_stream_impl_unit_test") {
     "../../../../frameworks/native/audiocapturer/include",
     "../../../../services/audio_service/server/include",
   ]
-  sources = [ "pa_capturer_stream_impl_unit_test.cpp" ]
+  sources = [
+    "../../../audio_service/client/src/audio_manager_proxy.cpp",
+    "pa_capturer_stream_impl_unit_test.cpp",
+  ]
 
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
@@ -582,6 +601,11 @@ ohos_unittest("pa_capturer_stream_impl_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
 }
 
 ohos_unittest("audio_process_in_client_unit_test") {
