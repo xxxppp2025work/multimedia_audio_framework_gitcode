@@ -116,7 +116,8 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
     clientOnFocus_ = 0;
     focussedAudioInterruptInfo_ = nullptr;
 
-    zoneManager_.CreateAudioInterruptZone(ZONEID_DEFAULT);
+    zoneManager_.CreateAudioInterruptZone(ZONEID_DEFAULT,
+        AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY, false);
 
     sessionService_ = std::make_shared<AudioSessionService>();
     sessionService_->SetSessionTimeOutCallback(shared_from_this());

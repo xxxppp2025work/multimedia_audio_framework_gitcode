@@ -1943,7 +1943,10 @@ HWTEST(AudioInterruptUnitTest, MigrateAudioInterruptZone_001, TestSize.Level1)
 */
 HWTEST(AudioInterruptUnitTest, MigrateAudioInterruptZone_002, TestSize.Level1)
 {
-    auto interruptServiceTest = GetTnterruptServiceTest();
+    sptr<AudioPolicyServer> server = new (std::nothrow) AudioPolicyServer(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    server->interruptService_->Init(server);
+    auto interruptServiceTest = server->interruptService_;
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
         const std::string &streamTag)->int32_t {
@@ -1970,7 +1973,6 @@ HWTEST(AudioInterruptUnitTest, MigrateAudioInterruptZone_002, TestSize.Level1)
 HWTEST(AudioInterruptUnitTest, MigrateAudioInterruptZone_003, TestSize.Level1)
 {
     auto interruptServiceTest = GetTnterruptServiceTest();
-    std::set<int32_t> pids;
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
         const std::string &streamTag)->int32_t {
@@ -1994,8 +1996,10 @@ HWTEST(AudioInterruptUnitTest, MigrateAudioInterruptZone_003, TestSize.Level1)
 */
 HWTEST(AudioInterruptUnitTest, MigrateAudioInterruptZone_004, TestSize.Level1)
 {
-    auto interruptServiceTest = GetTnterruptServiceTest();
-    std::set<int32_t> pids = {100};
+    sptr<AudioPolicyServer> server = new (std::nothrow) AudioPolicyServer(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    server->interruptService_->Init(server);
+    auto interruptServiceTest = server->interruptService_;
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
         const std::string &streamTag)->int32_t {
@@ -2018,9 +2022,10 @@ HWTEST(AudioInterruptUnitTest, MigrateAudioInterruptZone_004, TestSize.Level1)
 */
 HWTEST(AudioInterruptUnitTest, MigrateAudioInterruptZone_005, TestSize.Level1)
 {
-    auto interruptServiceTest = GetTnterruptServiceTest();
-    AudioInterrupt audiointerrupt;
-    std::set<int32_t> pids = {100, 200, 300};
+    sptr<AudioPolicyServer> server = new (std::nothrow) AudioPolicyServer(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    server->interruptService_->Init(server);
+    auto interruptServiceTest = server->interruptService_;
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
         const std::string &streamTag)->int32_t {

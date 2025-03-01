@@ -82,7 +82,7 @@ int32_t AudioInterruptZoneManager::CreateAudioInterruptZone(const int32_t zoneId
     auto &tempMap = service_->zonesMap_;
     if (tempMap.find(zoneId) != tempMap.end() && tempMap[zoneId] != nullptr) {
         AUDIO_INFO_LOG("zone %{public}d already exist", zoneId);
-        return SUCCESS;
+        return ERR_INVALID_PARAM;
     }
 
     std::shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
