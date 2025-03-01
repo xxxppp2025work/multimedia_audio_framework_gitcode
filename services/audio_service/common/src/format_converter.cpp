@@ -169,15 +169,15 @@ int32_t FormatConverter::F32StereoToS16Stereo(const BufferDesc &srcDesc, const B
     return 0;
 }
 
-int32_t FormatConverter::S32MonoToS16Mono(std::vector<char> &audioBuffer, std::vector<char> &audioBufferConverted)
+void FormatConverter::S32MonoToS16Mono(std::vector<char> &audioBuffer, std::vector<char> &audioBufferConverted)
 {
     size_t half = 2;
-    int32_t size = audioBuffer.size();
+    size_t size = audioBuffer.size();
     if (size == 0) {
-        return -1;
+        return;
     }
 
-    audioBufferConverted.resize(size / half);
+    audioBufferConverted.resize(size / half, 0);
     int32_t *stcPtr = reinterpret_cast<int32_t *>(audioBuffer.data());
     int16_t *dstPtr = reinterpret_cast<int16_t *>(audioBufferConverted.data());
     size_t count = size / sizeof(int32_t);
@@ -189,18 +189,18 @@ int32_t FormatConverter::S32MonoToS16Mono(std::vector<char> &audioBuffer, std::v
         *(dstPtr++) = temp;
         stcPtr++;
     }
-    return 0;
+    return;
 }
 
-int32_t FormatConverter::S32StereoToS16Stereo(std::vector<char> &audioBuffer, std::vector<char> &audioBufferConverted)
+void FormatConverter::S32StereoToS16Stereo(std::vector<char> &audioBuffer, std::vector<char> &audioBufferConverted)
 {
     size_t half = 2;
-    int32_t size = audioBuffer.size();
+    size_t size = audioBuffer.size();
     if (size == 0) {
-        return -1;
+        return;
     }
 
-    audioBufferConverted.resize(size / half);
+    audioBufferConverted.resize(size / half, 0);
     int32_t *stcPtr = reinterpret_cast<int32_t *>(audioBuffer.data());
     int16_t *dstPtr = reinterpret_cast<int16_t *>(audioBufferConverted.data());
     size_t count = size / sizeof(int32_t);
@@ -212,7 +212,7 @@ int32_t FormatConverter::S32StereoToS16Stereo(std::vector<char> &audioBuffer, st
         *(dstPtr++) = temp;
         stcPtr++;
     }
-    return 0;
+    return;
 }
 
 } // namespace AudioStandard

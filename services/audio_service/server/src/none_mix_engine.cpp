@@ -282,6 +282,25 @@ void NoneMixEngine::AdjustVoipVolume()
     }
 }
 
+void NoneMixEngine::ChannelFormatConvert(std::vector<char> &audioBuffer, std::vector<char> &audioBufferConverted,
+    AudioStreamInfo audioStreamInfo)
+{
+    if (audioStreamInfo.format == SAMPLE_F32LE && isVoip_ == true) {
+        if (audioStreamInfo.channels == MONO) {
+            //srcdata has actually been converted to int32_t.
+            FormatConverter::S32MonoToS16Mono(audioBuffer, audioBufferConverted);
+        } else if (audioStreamInfo.channels == STEREO) {
+            //srcdata has actually been converted to int32_t.
+            FormatConverter::S32StereoToS16Stereo(audioBuffer, audioBufferConverted);
+        } else {
+            AUDIO_ERR_LOG("not support multi-channel");
+            return;
+        }
+    } else {
+        audioBufferConverted = audioBuffer;
+    }
+}
+
 void NoneMixEngine::DoRenderFrame(std::vector<char> &audioBufferConverted, int32_t index, int32_t appUid)
 {
     uint64_t written = 0;
@@ -308,6 +327,11 @@ void NoneMixEngine::MixStreams()
     int32_t index = -1;
     int32_t result = stream_->Peek(&audioBuffer, index);
 
+    AudioStreamInfo configStreamInfo = stream_->GetAudioProcessConfig().streamInfo;
+    std::vector<char> audioBufferConverted;
+    ChannelFormatConvert(audioBuffer, audioBufferConverted, configStreamInfo);
+    CHECK_AND_RETURN_LOG(audioBufferConverted.size() != 0, "audioBufferConverted size is 0");
+
     uint32_t sessionId = stream_->GetStreamIndex();
     writeCount_++;
     if (index < 0) {
@@ -331,10 +355,10 @@ void NoneMixEngine::MixStreams()
         if (startFadeout_) {
             stream_->BlockStream();
         }
-        DoFadeinOut(startFadeout_, audioBuffer.data(), audioBuffer.size());
+        DoFadeinOut(startFadeout_, audioBufferConverted.data(), audioBufferConverted.size());
         cvFading_.notify_all();
     }
-    DoRenderFrame(audioBuffer, index, appUid);
+    DoRenderFrame(audioBufferConverted, index, appUid);
     StandbySleep();
 }
 
@@ -444,6 +468,10 @@ int32_t NoneMixEngine::InitSink(const AudioStreamInfo &streamInfo)
 {
     uint32_t targetChannel = streamInfo.channels >= STEREO_CHANNEL_COUNT ? STEREO_CHANNEL_COUNT : 1;
     AudioSampleFormat format = GetDirectDeviceFormate(streamInfo.format);
+    if (format == AudioSampleFormat::SAMPLE_F32LE && isVoip_ == true) {
+        format = AudioSampleFormat::SAMPLE_S16LE;
+    }
+
     uint32_t sampleRate =
         isVoip_ ? GetDirectVoipSampleRate(streamInfo.samplingRate) : GetDirectSampleRate(streamInfo.samplingRate);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
