@@ -31,6 +31,7 @@
 #include "parameters.h"
 #include "media_monitor_manager.h"
 #include "client_type_manager.h"
+#include "dfx_msg_manager.h"
 #ifdef USB_ENABLE
 #include "audio_usb_manager.h"
 #endif
@@ -209,6 +210,8 @@ void AudioPolicyServer::OnStart()
     InitKVStore();
     isScreenOffOrLock_ = !PowerMgr::PowerMgrClient::GetInstance().IsScreenOn(true);
     DlopenUtils::DeInit();
+    DfxMsgManager::GetInstance().Init();
+    RegisterAppStateListener();
     AUDIO_INFO_LOG("Audio policy server start end");
 }
 
@@ -3015,6 +3018,22 @@ void AudioPolicyServer::UnRegisterPowerStateListener()
     }
 }
 
+void AudioPolicyServer::RegisterAppStateListener()
+{
+    if (appStateListener_ == nullptr) {
+        appStateListener_ = new(std::nothrow) AppStateListener(weak_from_this());
+    }
+
+    if (appStateListener_ == nullptr) {
+        AUDIO_ERR_LOG("create app state listener failed");
+        return;
+    }
+
+    if (appManager_.RegisterAppStateCallback(appStateListener_) != AppExecFwk::AppMgrResultCode::RESULT_OK) {
+        AUDIO_ERR_LOG("register app state callback failed");
+    }
+}
+
 void AudioPolicyServer::RegisterSyncHibernateListener()
 {
     if (syncHibernateListener_ == nullptr) {
@@ -3312,7 +3331,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioPolicyServer::GetActiveBluetoothDevi
 
 std::string AudioPolicyServer::GetBundleName()
 {
-    AppExecFwk::BundleInfo bundleInfo = GetBundleInfoFromUid();
+    AppExecFwk::BundleInfo bundleInfo = GetBundleInfoFromUid(IPCSkeleton::GetCallingUid());
     return bundleInfo.name;
 }
 
@@ -3356,7 +3375,7 @@ int32_t AudioPolicyServer::DisableSafeMediaVolume()
     return audioPolicyService_.DisableSafeMediaVolume();
 }
 
-AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid()
+AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid(int32_t callingUid)
 {
     AudioXCollie audioXCollie("AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName",
         GET_BUNDLE_TIME_OUT_SECONDS);
@@ -3373,7 +3392,6 @@ AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid()
     sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, bundleInfo, "bundleMgrProxy is nullptr");
 
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
     WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetBundleInfoFromUid");
     bundleMgrProxy->GetNameForUid(callingUid, bundleName);
 
@@ -3391,7 +3409,7 @@ AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid()
 
 int32_t AudioPolicyServer::GetApiTargerVersion()
 {
-    AppExecFwk::BundleInfo bundleInfo = GetBundleInfoFromUid();
+    AppExecFwk::BundleInfo bundleInfo = GetBundleInfoFromUid(IPCSkeleton::GetCallingUid());
 
     // Taking remainder of large integers
     int32_t apiTargetversion = bundleInfo.applicationInfo.apiTargetVersion % API_VERSION_REMAINDER;
@@ -3750,6 +3768,11 @@ void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t ses
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
     audioPolicyService_.TriggerFetchDevice();
+}
+
+void AudioPolicyServer::NotifyAppStateChanged(int32_t pid, int32_t uid, int32_t state)
+{
+    interruptService_->HandleAppStateChange(pid, uid, state);
 }
 } // namespace AudioStandard
 } // namespace OHOS
