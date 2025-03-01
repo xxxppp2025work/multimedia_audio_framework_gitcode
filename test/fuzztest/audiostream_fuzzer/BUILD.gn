@@ -60,6 +60,7 @@ ohos_fuzztest("AudioStreamFuzzTest") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "power_manager:powermgr_client",
+    "memmgr:memmgrclient",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
   ]

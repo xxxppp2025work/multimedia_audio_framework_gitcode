@@ -75,6 +75,8 @@ ohos_unittest("audio_interrupt_service_unit_test") {
   include_dirs = [
     "./unittest/audio_interrupt_service_test/include",
     "../../audio_policy/server/src/service/interrupt",
+    "../../audio_policy/server/include/service/listener",
+    "../../audio_service/common/include/dfx",
   ]
 
   use_exceptions = true
@@ -121,6 +123,7 @@ ohos_unittest("audio_interrupt_service_unit_test") {
     "kv_store:distributeddata_inner",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
@@ -223,6 +226,7 @@ ohos_unittest("audio_policy_service_first_unit_test") {
     "../../audio_policy/server/include/service",
     "../../audio_policy/server/include/service/service",
     "../../audio_policy/server/include",
+    "../../audio_policy/server/include/service/listener",
   ]
 
   use_exceptions = true
@@ -270,6 +274,7 @@ ohos_unittest("audio_policy_service_first_unit_test") {
     "kv_store:distributeddata_inner",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
@@ -406,6 +411,7 @@ ohos_unittest("audio_policy_service_second_unit_test") {
   include_dirs = [
     "./unittest/audio_policy_service_unit_test/include",
     "../../audio_policy/server/include/service",
+    "../../audio_policy/server/include/service/listener",
     "../../audio_policy/server/include/service/service",
     "../../audio_policy/server/include",
     "../../audio_policy/client/include",
@@ -456,6 +462,7 @@ ohos_unittest("audio_policy_service_second_unit_test") {
     "kv_store:distributeddata_inner",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
@@ -593,6 +600,7 @@ ohos_unittest("audio_policy_service_third_unit_test") {
   include_dirs = [
     "./unittest/audio_policy_service_unit_test/include",
     "../../audio_policy/server/include/service",
+    "../../audio_policy/server/include/service/listener",
     "../../audio_policy/server/include/service/service",
     "../../audio_policy/server/include",
   ]
@@ -642,6 +650,7 @@ ohos_unittest("audio_policy_service_third_unit_test") {
     "kv_store:distributeddata_inner",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
@@ -778,6 +787,7 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
   include_dirs = [
     "./unittest/audio_policy_service_unit_test/include",
     "../../audio_policy/server/include/service",
+    "../../audio_policy/server/include/service/listener",
     "../../audio_policy/server/include/service/service",
     "../../audio_policy/server/include",
   ]
@@ -827,6 +837,7 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
     "kv_store:distributeddata_inner",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
@@ -1037,6 +1048,7 @@ ohos_unittest("audio_pnp_server_unit_test") {
     "kv_store:distributeddata_inner",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
@@ -1104,6 +1116,7 @@ ohos_unittest("audio_socket_thread_unit_test") {
     "kv_store:distributeddata_inner",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
@@ -1158,6 +1171,7 @@ ohos_unittest("audio_offload_stream_unit_test") {
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
+    "memmgr:memmgrclient",
     "power_manager:powermgr_client",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
@@ -1196,6 +1210,7 @@ ohos_unittest("audio_policy_server_unit_test") {
   include_dirs = [
     "./unittest/audio_interrupt_service_test/include",
     "../../audio_policy/server/src/service/interrupt",
+    "../../audio_policy/server/include/service/listener",
     "../../audio_policy/server/include",
     "../../audio_policy/test/unittest/audio_interrupt_service_test/include",
   ]
@@ -1230,6 +1245,7 @@ ohos_unittest("audio_policy_server_unit_test") {
     "kv_store:distributeddata_inner",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
     "pulseaudio:pulse",
@@ -1300,6 +1316,7 @@ ohos_unittest("audio_routing_manager_listener_stub_unit_test") {
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
+    "memmgr:memmgrclient",
     "power_manager:powermgr_client",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
@@ -1402,6 +1419,7 @@ ohos_unittest("audio_client_tracker_callback_stub_unit_test") {
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
+    "memmgr:memmgrclient",
     "power_manager:powermgr_client",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
@@ -1473,6 +1491,7 @@ ohos_unittest("audio_spatialization_service_unit_test") {
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
+    "memmgr:memmgrclient",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
   ]
@@ -1523,6 +1542,7 @@ ohos_unittest("stream_filter_router_unit_test") {
     "kv_store:distributeddata_inner",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
     "pulseaudio:pulse",
@@ -1618,6 +1638,7 @@ ohos_unittest("audio_router_center_unit_test") {
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
+    "memmgr:memmgrclient",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
@@ -1711,6 +1732,7 @@ ohos_unittest("privacy_priority_router_unit_test") {
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
+    "memmgr:memmgrclient",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
@@ -1818,6 +1840,7 @@ ohos_unittest("audio_affinity_parser_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
+    "memmgr:memmgrclient",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
@@ -1947,6 +1970,7 @@ ohos_unittest("audio_stream_collector_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
+    "memmgr:memmgrclient",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
@@ -2013,6 +2037,7 @@ ohos_unittest("audio_effect_service_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
+    "memmgr:memmgrclient",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
@@ -2062,8 +2087,10 @@ ohos_unittest("audio_policy_server_handler_unit_test") {
     "kv_store:distributeddata_inner",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
+    "memmgr:memmgrclient",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
   ]
@@ -2181,6 +2208,7 @@ ohos_unittest("volume_data_maintainer_unit_test") {
     "kv_store:distributeddata_inner",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
@@ -2286,6 +2314,7 @@ ohos_unittest("audio_affinity_manager_unit_test") {
     "kv_store:distributeddata_inner",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
@@ -2355,6 +2384,7 @@ ohos_unittest("audio_device_common_unit_test") {
     "kv_store:distributeddata_inner",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
@@ -2406,6 +2436,7 @@ ohos_unittest("audio_policy_manager_stub_unit_test") {
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
+    "memmgr:memmgrclient",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
   ]
@@ -2486,6 +2517,7 @@ ohos_unittest("audio_effect_config_parser_unit_test") {
     "kv_store:distributeddata_inner",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
@@ -2504,6 +2536,8 @@ ohos_unittest("audio_policy_manager_stub_test") {
   include_dirs = [
     "../client/include",
     "./unittest/audio_policy_manager_stub_test/include",
+    "../../audio_service/common/include/dfx",
+    "../../audio_policy/server/include/service/listener",
   ]
 
   use_exceptions = true
@@ -2551,6 +2585,7 @@ ohos_unittest("audio_policy_manager_stub_test") {
     "kv_store:distributeddata_inner",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
@@ -2620,6 +2655,7 @@ ohos_unittest("device_status_listener_unit_test") {
     "kv_store:distributeddata_inner",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
@@ -2766,6 +2802,7 @@ ohos_unittest("audio_active_device_unit_test") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
@@ -2830,6 +2867,7 @@ ohos_unittest("audio_connected_device_unit_test") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "memmgr:memmgrclient",
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
@@ -2874,6 +2912,7 @@ ohos_unittest("audio_volume_manager_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
+    "memmgr:memmgrclient",
   ]
 
   sources = [ "./unittest/audio_volume_manager_unit_test/src/audio_volume_manager_unit_test.cpp" ]
@@ -2949,6 +2988,7 @@ ohos_unittest("audio_recovery_device_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
+    "memmgr:memmgrclient",
   ]
 
   sources = [ "./unittest/audio_recovery_device_unit_test/src/audio_recovery_device_unit_test.cpp" ]
@@ -2990,6 +3030,7 @@ ohos_unittest("audio_input_thread_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
+    "memmgr:memmgrclient",
   ]
 
   sources = [ "./unittest/audio_input_thread_unit_test/src/audio_input_thread_unit_test.cpp" ]
@@ -3063,6 +3104,7 @@ ohos_unittest("audio_device_status_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
+    "memmgr:memmgrclient",
   ]
 
   sources = [ "./unittest/audio_device_status_unit_test/src/audio_device_status_unit_test.cpp" ]
@@ -3098,6 +3140,7 @@ ohos_unittest("audio_policy_client_proxy_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
+    "memmgr:memmgrclient",
   ]
 
   sources = [ "./unittest/audio_policy_client_proxy_unit_test/src/audio_policy_client_proxy_unit_test.cpp" ]
