@@ -535,6 +535,10 @@ audio_ohos_library("audio_service") {
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
 
+  if (audio_framework_feature_memory_management) {
+    defines += [ "WATCH_MEMORY_MANAGEMENT" ]
+  }
+
   cflags = [ "-Os" ]
   cflags_cc = cflags
 
