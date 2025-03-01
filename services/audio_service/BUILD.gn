@@ -46,6 +46,7 @@ ohos_shared_library("audio_common") {
     "common/include",
     "common/include/limiter",
     "../audio_policy/server/include",
+    "common/include/dfx",
     "../../frameworks/native/audioschedule/include",
     "../../interfaces/inner_api/native/audiocommon/include",
   ]
@@ -69,6 +70,11 @@ ohos_shared_library("audio_common") {
     "common/src/linear_pos_time_model.cpp",
     "common/src/oh_audio_buffer.cpp",
     "common/src/volume_tools.cpp",
+    "common/src/dfx/audio_renderer_dfx_collector.cpp",
+    "common/src/dfx/audio_capturer_dfx_collector.cpp",
+    "common/src/dfx/player_dfx_writer.cpp",
+    "common/src/dfx/recorder_dfx_writer.cpp",
+    "common/src/dfx/dfx_msg_manager.cpp"
   ]
 
   cflags = [
@@ -293,6 +299,7 @@ config("audio_service_config") {
   include_dirs = [
     "common/include",
     "common/include/limiter",
+    "common/include/dfx",
     "client/include",
     "server/include",
     "server/include/config",
