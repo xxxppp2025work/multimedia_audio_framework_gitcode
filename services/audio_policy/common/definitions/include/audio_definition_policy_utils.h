@@ -43,8 +43,10 @@ public:
     static std::unordered_map<std::string, DeviceType> deviceNameToTypeEnum;
     static std::unordered_map<std::string, AudioPin> pinStrToEnum;
     static std::unordered_map<std::string, AudioSampleFormat> formatStrToEnum;
+    static std::unordered_map<AudioSampleFormat, std::string> enumToFormatStr;
     static std::unordered_map<std::string, AudioChannelLayout> layoutStrToEnum;
     static std::unordered_map<std::string, AudioFlag> flagStrToEnum;
+    static std::unordered_map<std::string, uint32_t> usageStrToEnum;
     static std::unordered_map<std::string, AudioPreloadType> preloadStrToEnum;
 };
 

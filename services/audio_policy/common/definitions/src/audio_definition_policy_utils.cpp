@@ -97,6 +97,13 @@ std::unordered_map<std::string, AudioSampleFormat> AudioDefinitionPolicyUtils::f
     {"s32le", SAMPLE_S32LE},
 };
 
+// for moduleInfo
+std::unordered_map<AudioSampleFormat, std::string> AudioDefinitionPolicyUtils::enumToFormatStr = {
+    {SAMPLE_S16LE, "s16le"},
+    {SAMPLE_S24LE, "s24le"},
+    {SAMPLE_S32LE, "s32le"},
+};
+
 std::unordered_map<std::string, AudioChannelLayout> AudioDefinitionPolicyUtils::layoutStrToEnum = {
     {"CH_LAYOUT_MONO", CH_LAYOUT_MONO},
     {"CH_LAYOUT_STEREO", CH_LAYOUT_STEREO},
@@ -130,6 +137,11 @@ std::unordered_map<std::string, AudioFlag> AudioDefinitionPolicyUtils::flagStrTo
 std::unordered_map<std::string, AudioPreloadType> AudioDefinitionPolicyUtils::preloadStrToEnum = {
     {"false", PRELOAD_TYPE_NOTSUPPORT},
     {"true", PRELOAD_TYPE_SUPPORT},
+};
+
+std::unordered_map<std::string, uint32_t> AudioDefinitionPolicyUtils::usageStrToEnum = {
+    {"AUDIO_USAGE_NORMAL", AUDIO_USAGE_NORMAL},
+    {"AUDIO_USAGE_VOIP", AUDIO_USAGE_VOIP},
 };
 
 uint32_t AudioDefinitionPolicyUtils::PcmFormatToBytes(AudioSampleFormat format)

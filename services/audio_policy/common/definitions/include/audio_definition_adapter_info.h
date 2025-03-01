@@ -39,7 +39,10 @@ static const char* ADAPTER_TYPE_SLE = "sle";
 
 enum class PolicyXmlNodeType {
     ADAPTERS,
-    XML_UNKNOWN
+    XML_UNKNOWN,
+    VOLUME_GROUPS,
+    INTERRUPT_GROUPS,
+    GLOBAL_CONFIGS,
 };
 
 enum class AudioAdapterType {
@@ -75,6 +78,8 @@ struct PaPropInfo {
     std::string lib_ = STR_INITED;
     std::string paPropRole_ = STR_INITED;
     std::string moduleName_ = STR_INITED;
+    std::string fixedLatency_ = STR_INITED;
+    std::string renderInIdleState_ = STR_INITED;
 };
 
 struct AdapterPipeInfo;
@@ -159,11 +164,35 @@ struct AdapterPipeInfo {
 
     AudioPreloadType preloadAttr_ = PRELOAD_TYPE_UNKNOWN;
     std::list<AudioFlag> supportFlags_ {};
+    int32_t audioUsage_ = AUDIO_USAGE_NORMAL;
 
     std::shared_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<PipeStreamPropInfo> streamPropInfos_ {};
     std::list<AttributeInfo> attributeInfos_ {};
 };
+
+struct ConfigInfo {
+    std::string name_ = STR_INIT;
+    std::string value_ = STR_INIT;
+    std::string type_ = STR_INIT;
+};
+
+struct GlobalPaConfigs {
+    std::string audioLatency_ = STR_INIT;
+    std::string sinkLatency_ = STR_INIT;
+};
+
+struct GlobalConfigs {
+    std::string adapter_ = STR_INIT;
+    std::string pipe_ = STR_INIT;
+    std::string device_ = STR_INIT;
+    std::list<ConfigInfo> commonConfigs_ {};
+    bool updateRouteSupport_ = false;
+    GlobalPaConfigs globalPaConfigs_;
+    std::list<ConfigInfo> outputConfigInfos_ {};
+    std::list<ConfigInfo> inputConfigInfos_ {};
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 

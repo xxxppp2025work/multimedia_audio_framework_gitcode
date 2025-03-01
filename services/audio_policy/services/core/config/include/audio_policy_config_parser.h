@@ -51,6 +51,7 @@ private:
     PolicyXmlNodeType GetXmlNodeTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
     AdapterInfoType GetAdapterInfoTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
     PipeInfoType GetPipeInfoTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
+    GlobalConfigType GetGlobalConfigTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
 
     bool ParseInternal(std::shared_ptr<AudioXmlNode> curNode);
     void ParseAdapters(std::shared_ptr<AudioXmlNode> curNode);
@@ -63,9 +64,34 @@ private:
     void ParseAttributeByName(AttributeInfo &attributeInfo, AdapterPipeInfo &pipeInfo);
     void ParseDevices(std::shared_ptr<AudioXmlNode> curNode, PolicyAdapterInfo &adapterInfo);
     void SplitStringToList(std::string &str, std::list<std::string> &result, const char *delim);
+    void ParseGroups(std::shared_ptr<AudioXmlNode> curNode, PolicyXmlNodeType type);
+    void ParseGroup(std::shared_ptr<AudioXmlNode> curNode, PolicyXmlNodeType type);
+    void ParseGroupSink(std::shared_ptr<AudioXmlNode> curNode, PolicyXmlNodeType type, std::string &groupName);
+    void ParseGlobalConfigs(std::shared_ptr<AudioXmlNode> curNode);
+    void ParsePAConfigs(std::shared_ptr<AudioXmlNode> curNode);
+    void ParseDefaultMaxInstances(std::shared_ptr<AudioXmlNode> curNode);
+    void ParseOutputMaxInstances(std::shared_ptr<AudioXmlNode> curNode);
+    void ParseInputMaxInstances(std::shared_ptr<AudioXmlNode> curNode);
+    void ParseCommonConfigs(std::shared_ptr<AudioXmlNode> curNode);
+    void HandleUpdateRouteSupportParsed(std::string &value);
+    void HandleUpdateAnahsSupportParsed(std::string &value);
+    
+    void ConvertAdapterInfoToGroupInfo(std::unordered_map<std::string, std::string> &volumeGroupMap,
+        std::unordered_map<std::string, std::string> &interruptGroupMap);
+    void ConvertAdapterInfoToAudioModuleInfo(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> adapterInfoMap_);
+    void GetOffloadAndOpenMicState(PolicyAdapterInfo &adapterInfo, bool &shouldEnableOffload);
+    void GetCommontAudioModuleInfo(AdapterPipeInfo &pipeInfo, AudioModuleInfo &audioModuleInfo);
+    std::string GetAudioModuleInfoName(std::string &pipeInfoName, std::list<AdapterDeviceInfo> &deviceInfos);
+    ClassType AudioPolicyConfigParser::GetClassTypeByAdapterType(AudioAdapterType adapterType);
 
     std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
     AudioPolicyConfigManager *configManager_ = nullptr;
+
+    
+    std::unordered_map<ClassType, std::list<AudioModuleInfo>> xmlParsedDataMap_ {};
+    std::unordered_map<std::string, std::string> volumeGroupMap_;
+    std::unordered_map<std::string, std::string> interruptGroupMap_;
+    GlobalConfigs globalConfigs_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
