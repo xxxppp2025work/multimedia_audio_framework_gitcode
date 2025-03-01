@@ -133,6 +133,7 @@ void AudioPolicyServer::OnDump()
 
 void AudioPolicyServer::OnStart()
 {
+    std::lock_guard<std::mutex> lock(onStartLock_);
     AUDIO_INFO_LOG("Audio policy server on start");
 
     interruptService_ = std::make_shared<AudioInterruptService>();
@@ -203,7 +204,9 @@ void AudioPolicyServer::OnStop()
 #endif
     UnRegisterPowerStateListener();
     UnRegisterSyncHibernateListener();
+#ifndef WATCH_MEMORY_MANAGEMENT
     NotifyProcessStatus(false);
+#endif
     return;
 }
 
@@ -263,7 +266,9 @@ void AudioPolicyServer::OnAddSystemAbilityExtract(int32_t systemAbilityId, const
     AUDIO_INFO_LOG("SA Id is :%{public}d", systemAbilityId);
     switch (systemAbilityId) {
         case MEMORY_MANAGER_SA_ID:
+#ifndef WATCH_MEMORY_MANAGEMENT
             NotifyProcessStatus(true);
+#endif
             break;
         default:
             AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
