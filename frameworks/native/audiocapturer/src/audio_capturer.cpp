@@ -309,7 +309,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     streamDesc->appInfo_ = appInfo_;
     streamDesc->callerUid_ = getuid();
 
-    AudioFlag flag = AUDIO_INPUT_FLAG_NORAML;
+    AudioFlag flag = AUDIO_INPUT_FLAG_NORMAL;
 
     int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(streamDesc, flag, audioStreamParams.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");

@@ -19,12 +19,14 @@
 #include "audio_manager_proxy.h"
 
 #include <cinttypes>
+#include <sstream>
 
 #include <audio_errors.h>
 #include "audio_system_manager.h"
 #include "audio_service_log.h"
 #include "audio_utils.h"
 #include "i_audio_process.h"
+#include "common/hdi_adapter_info.h"
 
 using namespace std;
 
@@ -1549,6 +1551,70 @@ void AudioManagerProxy::UnloadHdiAdapter(uint32_t devMgrType, const std::string 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::UNLOAD_HDI_ADAPTER), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "UnloadHdiAdapter failed, error: %{public}d", error);
+}
+
+uint32_t AudioManagerProxy::CreateHdiSinkPort(const std::string &deviceClass, const std::string &idInfo,
+    const IAudioSinkAttr &attr)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, HDI_INVALID_ID, "WriteInterfaceToken failed");
+    data.WriteString(deviceClass);
+    data.WriteString(idInfo);
+    std::ostringstream oss;
+    oss.write(reinterpret_cast<const char *>(&attr), sizeof(IAudioSinkAttr));
+    data.WriteString(oss.str());
+    data.WriteString(attr.adapterName == nullptr ? "nullptr" : std::string(attr.adapterName));
+    data.WriteString(attr.filePath == nullptr ? "nullptr" : std::string(attr.filePath));
+    data.WriteString(attr.deviceNetworkId == nullptr ? "nullptr" : std::string(attr.deviceNetworkId));
+    data.WriteString(attr.address);
+    data.WriteString(attr.aux == nullptr ? "nullptr" : std::string(attr.aux));
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_HDI_SINK_PORT), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, HDI_INVALID_ID, "CreateHdiSinkPort failed, error: %{public}d", error);
+    return reply.ReadUint32();
+}
+
+uint32_t AudioManagerProxy::CreateHdiSourcePort(const std::string &deviceClass, const std::string &idInfo,
+    const IAudioSourceAttr &attr)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, HDI_INVALID_ID, "WriteInterfaceToken failed");
+    data.WriteString(deviceClass);
+    data.WriteString(idInfo);
+    std::ostringstream oss;
+    oss.write(reinterpret_cast<const char *>(&attr), sizeof(IAudioSinkAttr));
+    data.WriteString(oss.str());
+    data.WriteString(attr.adapterName == nullptr ? "nullptr" : std::string(attr.adapterName));
+    data.WriteString(attr.filePath == nullptr ? "nullptr" : std::string(attr.filePath));
+    data.WriteString(attr.deviceNetworkId == nullptr ? "nullptr" : std::string(attr.deviceNetworkId));
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_HDI_SOURCE_PORT), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, HDI_INVALID_ID, "CreateHdiSourcePort failed, error: %{public}d", error);
+    return reply.ReadUint32();
+}
+
+void AudioManagerProxy::DestroyHdiPort(uint32_t id)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+    data.WriteUint32(id);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::DESTROY_HDI_PORT), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "DestroyHdiPort failed, error: %{public}d", error);
 }
 
 } // namespace AudioStandard

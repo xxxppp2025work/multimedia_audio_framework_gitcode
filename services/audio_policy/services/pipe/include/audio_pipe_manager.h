@@ -30,7 +30,7 @@ public:
     AudioPipeManager();
     ~AudioPipeManager();
 
-    std::shared_ptr<AudioPipeManager> GetPipeMananger()
+    std::shared_ptr<AudioPipeManager> GetPipeManager()
     {
         static std::shared_ptr<AudioPipeManager> instance = std::make_shared<AudioPipeManager>();
         return instance;

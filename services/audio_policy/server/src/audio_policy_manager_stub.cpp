@@ -585,7 +585,7 @@ void AudioPolicyManagerStub::CreateRendererClientInternal(MessageParcel &data, M
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->Unmarshalling(data);
-    AudioFlag flag = AUDIO_OUTPUT_FLAG_NORAML;
+    AudioFlag flag = AUDIO_OUTPUT_FLAG_NORMAL;
     uint32_t sessionId = 0;
     int32_t ret = CreateRendererClient(streamDesc, flag, sessionId);
     reply.WriteUint32(flag);
@@ -597,7 +597,7 @@ void AudioPolicyManagerStub::CreateCapturerClientInternal(MessageParcel &data, M
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->Unmarshalling(data);
-    AudioFlag flag = AUDIO_INPUT_FLAG_NORAML;
+    AudioFlag flag = AUDIO_INPUT_FLAG_NORMAL;
     uint32_t sessionId = 0;
     int32_t ret = CreateCapturerClient(streamDesc, flag, sessionId);
     reply.WriteUint32(flag);

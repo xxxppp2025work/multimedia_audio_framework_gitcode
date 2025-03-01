@@ -879,8 +879,18 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
 
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     curActiveCount_++;
-    AudioIOHandle ioHandle = audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
-    AUDIO_INFO_LOG("Open %{public}d port end.", static_cast<int32_t>(ioHandle));
+    AudioIOHandle ioHandle = HDI_INVALID_ID;
+    if (audioModuleInfo.role == HDI_AUDIO_PORT_SINK_ROLE) {
+        std::string idInfo = GetHdiSinkIdInfo(audioModuleInfo);
+        IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
+        ioHandle = audioServerProxy_->CreateHdiSinkPort(audioModuleInfo.className, idInfo, attr);
+    } else if (audioModuleInfo.role == HDI_AUDIO_PORT_SOURCE_ROLE) {
+        std::string idInfo = GetHdiSourceIdInfo(audioModuleInfo);
+        IAudioSourceAttr attr = GetAudioSourceAttr(audioModuleInfo);
+        ioHandle = audioServerProxy_->CreateHdiSourcePort(audioModuleInfo.className, idInfo, attr);
+    }
+    (void)audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
+    AUDIO_INFO_LOG("Open %{public}u port end.", ioHandle);
     return ioHandle;
 }
 
@@ -889,7 +899,9 @@ int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle, bool isSync)
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     curActiveCount_--;
     int32_t ret = audioServiceAdapter_->CloseAudioPort(ioHandle, isSync);
-    AUDIO_INFO_LOG("Close %{public}d port end.", static_cast<int32_t>(ioHandle));
+    AudioIOHandle tempHandle = ioHandle;
+    audioServerProxy_->DestroyHdiPort(ioHandle);
+    AUDIO_INFO_LOG("Close %{public}u port end.", tempHandle);
     return ret;
 }
 
@@ -1127,6 +1139,127 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
         }
     }
     return args;
+}
+
+std::string AudioAdapterManager::GetHdiSinkIdInfo(const AudioModuleInfo &audioModuleInfo) const
+{
+    if (audioModuleInfo.className == "remote") {
+        return audioModuleInfo.networkId;
+    }
+    return HDI_ID_INFO_DEFAULT;
+}
+
+std::string AudioAdapterManager::GetHdiSourceIdInfo(const AudioModuleInfo &audioModuleInfo) const
+{
+    if (audioModuleInfo.className == "primary" && audioModuleInfo.sourceType == "SOURCE_TYPE_WAKEUP") {
+        return audioModuleInfo.name;
+    }
+    if (audioModuleInfo.className == "remote") {
+        return audioModuleInfo.networkId;
+    }
+    return HDI_ID_INFO_DEFAULT;
+}
+
+static AudioSampleFormat ParseSinkAudioSampleFormat(const std::string &format)
+{
+    if (format == "u8") {
+        return SAMPLE_U8;
+    } else if (format == "s16le") {
+        return SAMPLE_S16LE;
+    } else if (format == "s24le") {
+        return SAMPLE_S24LE;
+    } else if (format == "s32le") {
+        return SAMPLE_S32LE;
+    }
+    return INVALID_WIDTH;
+}
+
+static AudioSampleFormat ParseSourceAudioSampleFormat(const std::string &format)
+{
+    if (format == "u8") {
+        return SAMPLE_U8;
+    } else if (format == "s16le" || format == "s16be") {
+        return SAMPLE_S16LE;
+    } else if (format == "s24le" || format == "s24be") {
+        return SAMPLE_S24LE;
+    } else if (format == "s32le" || format == "s32be") {
+        return SAMPLE_S32LE;
+    }
+    return SAMPLE_S16LE;
+}
+
+static bool IsBigEndian(const std::string &format)
+{
+    if (format == "s16be" || format == "s24be" || format == "s32be" || format == "f32be") {// TODO: S24_32BE?
+        return true;
+    }
+    return false;
+}
+
+IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audioModuleInfo) const
+{
+    IAudioSinkAttr attr;
+    attr.adapterName = audioModuleInfo.adapterName.c_str();
+    if (!audioModuleInfo.OpenMicSpeaker.empty()) {
+        attr.openMicSpeaker = static_cast<uint32_t>(std::stoul(audioModuleInfo.OpenMicSpeaker));
+    }
+    attr.format = ParseSinkAudioSampleFormat(audioModuleInfo.format);
+    if (!audioModuleInfo.rate.empty()) {
+        attr.sampleRate = static_cast<uint32_t>(std::stoul(audioModuleInfo.rate));
+    }
+    if (!audioModuleInfo.channels.empty()) {
+        attr.channel = static_cast<uint32_t>(std::stoul(audioModuleInfo.channels));
+    }
+    attr.volume = HDI_MAX_SINK_VOLUME_LEVEL;
+    attr.filePath = audioModuleInfo.fileName.c_str();
+    attr.deviceNetworkId = audioModuleInfo.networkId.c_str();
+    if (!audioModuleInfo.deviceType.empty()) {
+        attr.deviceType = std::stoi(audioModuleInfo.deviceType);
+    }
+    if (audioModuleInfo.className == "multichannel") {
+        attr.channelLayout = HDI_DEFAULT_MULTICHANNEL_CHANNELLAYOUT; 
+    }
+    return attr;
+}
+
+IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &audioModuleInfo) const
+{
+    IAudioSourceAttr attr;
+    attr.adapterName = audioModuleInfo.adapterName.c_str();
+    if (!audioModuleInfo.OpenMicSpeaker.empty()) {
+        attr.openMicSpeaker = static_cast<uint32_t>(std::stoul(audioModuleInfo.OpenMicSpeaker));
+    }
+    attr.format = ParseSourceAudioSampleFormat(audioModuleInfo.format);
+    if (!audioModuleInfo.OpenMicSpeaker.empty()) {
+        attr.sampleRate = static_cast<uint32_t>(std::stoul(audioModuleInfo.rate));
+    }
+    if (!audioModuleInfo.channels.empty()) {
+        attr.channel = static_cast<uint32_t>(std::stoul(audioModuleInfo.channels));
+    }
+    if (!audioModuleInfo.bufferSize.empty()) {
+        attr.bufferSize = static_cast<uint32_t>(std::stoul(audioModuleInfo.bufferSize));
+    }
+    attr.isBigEndian = IsBigEndian(audioModuleInfo.format);
+    attr.filePath = audioModuleInfo.fileName.c_str();
+    attr.deviceNetworkId = audioModuleInfo.networkId.c_str();
+    if (!audioModuleInfo.deviceType.empty()) {
+        attr.deviceType = std::stoi(audioModuleInfo.deviceType);
+    }
+    if (!audioModuleInfo.sourceType.empty()) {
+        attr.sourceType = std::stoi(audioModuleInfo.sourceType);
+    }
+    if ((!audioModuleInfo.ecType.empty()) && static_cast<uint32_t>(std::stoul(audioModuleInfo.ecType)) ==
+        HDI_EC_SAME_ADAPTER) {
+        attr.hasEcConfig = true;
+        attr.formatEc = ParseSourceAudioSampleFormat(audioModuleInfo.ecFormat);
+        if (!audioModuleInfo.ecSamplingRate.empty()) {
+            attr.sampleRateEc = static_cast<uint32_t>(std::stoul(audioModuleInfo.ecSamplingRate));
+        }
+        if (!audioModuleInfo.ecChannels.empty()) {
+            attr.channelEc = static_cast<uint32_t>(std::stoul(audioModuleInfo.ecChannels));
+        }
+    }
+    return attr;
 }
 
 std::string AudioAdapterManager::GetVolumeKeyForKvStore(DeviceType deviceType, AudioStreamType streamType)

@@ -12,34 +12,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef ST_PIPE_SELECTOR_H
-#define ST_PIPE_SELECTOR_H
+#ifndef AUDIO_PIPE_SELECTOR_H
+#define AUDIO_PIPE_SELECTOR_H
 
 #include <vector>
 #include "audio_stream_info.h"
+#include "audio_pipe_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class PipeSelector {
+class AudioPipeSelector {
 public:
-    PipeSelector() = default;
-    ~PipeSelector() = default;
+    AudioPipeSelector() = default;
+    ~AudioPipeSelector() = default;
 
-    static std::vector<std::shared_ptr<AudioPipeInfo>> FetchPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    static std::vector<std::shared_ptr<AudioPipeInfo>> FetchPipesAndExecute(
-        std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
+    static std::shared_ptr<AudioPipeSelector> GetPipeSelector()
+    {
+        static std::shared_ptr<AudioPipeSelector> instance = std::make_shared<AudioPipeSelector>();
+        return instance;
+    }
 
-private:
-    int32_t GetRouteFlagByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    int32_t GetPipeInfoByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc, AudioPipeInfo &info);
-    void ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc,
-        const PipeStreamPropInfo streamPropInfo, AudioPipeInfo &info);
-    AudioStreamAction JudgeStreamAction(AudioFlag oldFlag, AudioFlag newFlag);
-    void SortStreamDescsByStartTime(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
+    std::vector<std::shared_ptr<AudioPipeInfo>> FetchPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
 
-    std::shared_ptr<AudioPolicyConfigManager> configManager_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // ST_PIPE_SELECTOR_H
+#endif // AUDIO_PIPE_SELECTOR_H

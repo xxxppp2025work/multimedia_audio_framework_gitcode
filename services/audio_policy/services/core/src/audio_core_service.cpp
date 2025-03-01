@@ -99,7 +99,8 @@ AudioCoreService::AudioCoreService() :
     audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
     audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
     audioRouteMap_(AudioRouteMap::GetInstance()),
-    audioIOHandleMap_(AudioIOHandleMap::GetInstance())
+    audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
+    audioPipeSelector_(AudioPipeSelector::GetPipeSelector())
 {
     AUDIO_INFO_LOG("Ctor");
 }
@@ -182,7 +183,7 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
 void AudioCoreService::GetPlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
 
-    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORAML;
+    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
 
 }
 
@@ -328,7 +329,7 @@ void AudioCoreService::SetPlaybackStreamFlag(std::shared_ptr<AudioStreamDescript
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_MULTICHANNEL;
         return;
     }
-    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORAML;
+    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
 }
 
 void AudioCoreService::SetRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc)
@@ -928,7 +929,8 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
     streamDesc->sessionId_ = GenerateSessionId(streamDesc->appInfo_.appUid);
     sessionId = GenerateSessionId(streamDesc->appInfo_.appUid);
     // In plan : GetPipeInfosBystreamDesc std::vector<PipeInfo> pipeInfos
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos;
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipeAndExecute(streamDesc);
+    AUDIO_INFO_LOG("LYH pipeInfo size %{public}zu", pipeInfos.size());
 
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
 
@@ -1570,9 +1572,7 @@ void AudioCoreService::TriggerRecreateCapturerStreamCallback(int32_t callerPid, 
 
 uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
-    // uint32_t id = AudioServerProxy::GetInstance().OpenAudioRoute(attr, attr) // in plan : need re code
-    // uint32_t id = audioPolicyManager_.OpenAudioPort(moduleInfo); // in plan : need re code
-    uint32_t id = 1;
+    uint32_t id = audioPolicyManager_.OpenAudioPort(pipeInfo->moduleInfo_); // in plan : need re code
     AUDIO_INFO_LOG("Get HDI id: %{public}u", id);
     return id;
 }

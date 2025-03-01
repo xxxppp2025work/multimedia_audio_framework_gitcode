@@ -55,6 +55,8 @@ public:
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescriptors_;
 
+    std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> streamDescMap_;
+
     AudioPipeInfo();
     virtual ~AudioPipeInfo();
 };

@@ -71,14 +71,14 @@ static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
 };
 
 static const std::map<AudioFlag, IAudioStream::StreamClass> AUDIO_FLAG_GROUP_MAP = {
-    {AUDIO_OUTPUT_FLAG_NORAML, IAudioStream::StreamClass::PA_STREAM},
+    {AUDIO_OUTPUT_FLAG_NORMAL, IAudioStream::StreamClass::PA_STREAM},
     {AUDIO_OUTPUT_FLAG_DIRECT, IAudioStream::StreamClass::PA_STREAM},
     {AUDIO_OUTPUT_FLAG_MULTICHANNEL, IAudioStream::StreamClass::PA_STREAM},
     {AUDIO_OUTPUT_FLAG_LOWPOWER, IAudioStream::StreamClass::PA_STREAM},
     {AUDIO_OUTPUT_FLAG_FAST, IAudioStream::StreamClass::FAST_STREAM},
     {AUDIO_OUTPUT_FLAG_VOIP_FAST, IAudioStream::StreamClass::VOIP_STREAM},
     {AUDIO_OUTPUT_FLAG_HWDECODING, IAudioStream::StreamClass::PA_STREAM},
-    {AUDIO_INPUT_FLAG_NORAML, IAudioStream::StreamClass::PA_STREAM},
+    {AUDIO_INPUT_FLAG_NORMAL, IAudioStream::StreamClass::PA_STREAM},
     {AUDIO_INPUT_FLAG_FAST, IAudioStream::StreamClass::FAST_STREAM},
     {AUDIO_INPUT_FLAG_VOIP_FAST, IAudioStream::StreamClass::VOIP_STREAM},
     {AUDIO_INPUT_FLAG_WAKEUP, IAudioStream::StreamClass::PA_STREAM},
@@ -590,7 +590,7 @@ int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamP
     streamDesc->appInfo_ = appInfo_;
     streamDesc->callerUid_ = getuid();
 
-    AudioFlag flag = AUDIO_OUTPUT_FLAG_NORAML;
+    AudioFlag flag = AUDIO_OUTPUT_FLAG_NORMAL;
 
     int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag, audioStreamParams.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");

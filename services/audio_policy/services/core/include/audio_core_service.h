@@ -25,6 +25,7 @@
 #include "audio_pipe_info.h"
 #include "audio_service_enum.h"
 #include "audio_pipe_manager.h"
+#include "audio_pipe_selector.h"
 
 
 namespace OHOS {
@@ -300,6 +301,7 @@ private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioRouteMap& audioRouteMap_;
     AudioIOHandleMap& audioIOHandleMap_;
+    std::shared_ptr<AudioPipeSelector> audioPipeSelector_;
 
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     std::shared_ptr<DeviceStatusListener> deviceStatusListener_;
