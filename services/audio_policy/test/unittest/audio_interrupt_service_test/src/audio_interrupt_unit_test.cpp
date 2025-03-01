@@ -1857,9 +1857,10 @@ HWTEST(AudioInterruptUnitTest, SendFocusChangeEvent_002, TestSize.Level1)
 */
 HWTEST(AudioInterruptUnitTest, AudioInterruptServiceReleaseAudioInterruptZone_001, TestSize.Level1)
 {
-    sptr<AudioPolicyServer> server = nullptr;
-    auto interruptServiceTest = GetTnterruptServiceTest();
-    interruptServiceTest->Init(server);
+    sptr<AudioPolicyServer> server = new (std::nothrow) AudioPolicyServer(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    server->interruptService_->Init(server);
+    auto interruptServiceTest = server->interruptService_;
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
         const std::string &streamTag)->int32_t {
@@ -1874,7 +1875,6 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceReleaseAudioInterruptZone_00
     EXPECT_EQ(retStatus, ERR_INVALID_PARAM);
 
     SetUid1041();
-    interruptServiceTest->zonesMap_.clear();
     retStatus = interruptServiceTest->ReleaseAudioInterruptZone(0, getZoneFunc);
     EXPECT_EQ(retStatus, ERR_INVALID_PARAM);
 

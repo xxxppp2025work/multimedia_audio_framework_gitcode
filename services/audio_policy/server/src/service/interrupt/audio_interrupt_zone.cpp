@@ -21,13 +21,17 @@
 
 namespace OHOS {
 namespace AudioStandard {
+static constexpr uid_t UID_AUDIO = 1041;
+
 AudioInterruptZoneManager::AudioInterruptZoneManager()
 {}
 
 AudioInterruptZoneManager::~AudioInterruptZoneManager()
-{}
+{
+    service_ = nullptr;
+}
 
-void AudioInterruptZoneManager::InitService(std::shared_ptr<AudioInterruptService> service)
+void AudioInterruptZoneManager::InitService(AudioInterruptService *service)
 {
     service_ = service;
 }
@@ -66,13 +70,15 @@ int32_t AudioInterruptZoneManager::GetAudioFocusInfoList(const int32_t zoneId,
 }
 
 int32_t AudioInterruptZoneManager::CreateAudioInterruptZone(const int32_t zoneId,
-    AudioZoneFocusStrategy focusStrategy)
+    AudioZoneFocusStrategy focusStrategy, bool checkPermission)
 {
     CHECK_AND_RETURN_RET_LOG(service_ != nullptr, ERR_INVALID_PARAM, "interrupt service is nullptr");
-    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zone id is invalid");
-    CHECK_AND_RETURN_RET_LOG(CheckAudioInterruptZonePermission(), ERR_INVALID_PARAM,
-        "audio zone permission deny");
-    
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "zone id is invalid");
+    if (checkPermission) {
+        CHECK_AND_RETURN_RET_LOG(CheckAudioInterruptZonePermission(), ERR_INVALID_PARAM,
+            "audio zone permission deny");
+    }
+
     auto &tempMap = service_->zonesMap_;
     if (tempMap.find(zoneId) != tempMap.end() && tempMap[zoneId] != nullptr) {
         AUDIO_INFO_LOG("zone %{public}d already exist", zoneId);
@@ -359,6 +365,14 @@ int32_t AudioInterruptZoneManager::FindZoneByPid(int32_t pid)
     AUDIO_WARNING_LOG("pid %{public}d not in audio zone, use default", pid);
     return ZONEID_DEFAULT;
 }
-// LCOV_EXCL_STOP
+
+bool AudioInterruptZoneManager::CheckAudioInterruptZonePermission()
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid == UID_AUDIO) {
+        return true;
+    }
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS

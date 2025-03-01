@@ -90,7 +90,7 @@ inline int GetAudioScenePriority(const AudioScene audioScene)
 
 AudioInterruptService::AudioInterruptService()
 {
-    zoneManager_.InitService(shared_from_this);
+    zoneManager_.InitService(this);
 }
 
 AudioInterruptService::~AudioInterruptService()
@@ -769,13 +769,13 @@ void AudioInterruptService::ClearAudioFocusInfoListOnAccountsChanged(const int &
 int32_t AudioInterruptService::CreateAudioInterruptZone(const int32_t zoneId,
     AudioZoneFocusStrategy focusStrategy)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     return zoneManager_.CreateAudioInterruptZone(zoneId, focusStrategy);
 }
 
 int32_t AudioInterruptService::ReleaseAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     int32_t ret = zoneManager_.ReleaseAudioInterruptZone(zoneId, func);
     if (ret != SUCCESS) {
         return ret;
@@ -789,7 +789,7 @@ int32_t AudioInterruptService::ReleaseAudioInterruptZone(const int32_t zoneId, G
 
 int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     int32_t ret = zoneManager_.MigrateAudioInterruptZone(zoneId, func);
     if (ret != SUCCESS) {
         return ret;
@@ -804,7 +804,7 @@ int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, G
 int32_t AudioInterruptService::InjectInterruptToAudiotZone(const int32_t zoneId,
     const AudioFocusList &interrupts)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     int32_t ret = zoneManager_.InjectInterruptToAudiotZone(zoneId, interrupts);
     if (ret != SUCCESS) {
         return ret;
@@ -822,7 +822,7 @@ int32_t AudioInterruptService::InjectInterruptToAudiotZone(const int32_t zoneId,
 int32_t AudioInterruptService::InjectInterruptToAudiotZone(const int32_t zoneId,
     const std::string &deviceTag, const AudioFocusList &interrupts)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     int32_t ret = zoneManager_.InjectInterruptToAudiotZone(zoneId, deviceTag, interrupts);
     if (ret != SUCCESS) {
         return ret;
@@ -839,14 +839,14 @@ int32_t AudioInterruptService::InjectInterruptToAudiotZone(const int32_t zoneId,
 
 int32_t AudioInterruptService::GetAudioFocusInfoList(const int32_t zoneId, AudioFocusList &focusInfoList)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     return zoneManager_.GetAudioFocusInfoList(zoneId, focusInfoList);
 }
 
 int32_t AudioInterruptService::GetAudioFocusInfoList(const int32_t zoneId, const std::string &deviceTag,
     AudioFocusList &focusInfoList)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     return zoneManager_.GetAudioFocusInfoList(zoneId, deviceTag, focusInfoList);
 }
 
@@ -1830,15 +1830,6 @@ void AudioInterruptService::SendFocusChangeEvent(const int32_t zoneId, int32_t c
 }
 
 // LCOV_EXCL_START
-bool AudioInterruptService::CheckAudioInterruptZonePermission()
-{
-    auto callerUid = IPCSkeleton::GetCallingUid();
-    if (callerUid == UID_AUDIO) {
-        return true;
-    }
-    return false;
-}
-
 void AudioInterruptService::DispatchInterruptEventWithStreamId(uint32_t streamId,
     InterruptEventInternal &interruptEvent)
 {

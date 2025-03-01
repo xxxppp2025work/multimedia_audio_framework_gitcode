@@ -22,6 +22,8 @@
 #include <unordered_map>
 #include <functional>
 #include "audio_interrupt_info.h"
+#include "audio_interrupt_callback.h"
+#include "audio_policy_client.h"
 #include "i_audio_interrupt_event_dispatcher.h"
 
 namespace OHOS {
@@ -56,15 +58,15 @@ protected:
     AudioInterruptZoneManager();
     virtual ~AudioInterruptZoneManager();
 
-    void InitService(std::shared_ptr<AudioInterruptService> service);
+    void InitService(AudioInterruptService *service);
     int32_t CreateAudioInterruptZone(const int32_t zoneId, AudioZoneFocusStrategy focusStrategy =
-        AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY);
+        AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY, bool checkPermission = true);
     int32_t ReleaseAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
     int32_t MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
     int32_t InjectInterruptToAudiotZone(const int32_t zoneId, const AudioFocusList &interrupts);
     int32_t InjectInterruptToAudiotZone(const int32_t zoneId, const std::string &deviceTag,
         const AudioFocusList &interrupts);
-
+    int32_t GetAudioFocusInfoList(const int32_t zoneId, AudioFocusList &focusInfoList);
     int32_t GetAudioFocusInfoList(const int32_t zoneId, const std::string &deviceTag,
         AudioFocusList &focusInfoList);
 
@@ -78,9 +80,9 @@ private:
     void ForceStopAudioFocusInZone(int32_t zoneId, const AudioInterrupt &audioInterrupt);
     void ForceStopAllAudioFocusInZone(std::shared_ptr<AudioInterruptZone> &zone);
 
-    std::shared_ptr<AudioInterruptService> service_;
+    AudioInterruptService *service_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // ST_AUDIO_INTERRUPT_SERVICE_H
+#endif // ST_AUDIO_INTERRUPT_ZONE_H
