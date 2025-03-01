@@ -382,7 +382,9 @@ void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string&
             OnAddResSchedService(getpid());
             break;
         case MEMORY_MANAGER_SA_ID:
+#ifndef WATCH_MEMORY_MANAGEMENT
             NotifyProcessStatus(true);
+#endif
             break;
         default:
             AUDIO_ERR_LOG("unhandled sysabilityId:%{public}d", systemAbilityId);
@@ -420,7 +422,9 @@ void AudioServer::NotifyProcessStatus(bool isStart)
 void AudioServer::OnStop()
 {
     AUDIO_DEBUG_LOG("OnStop");
+#ifndef WATCH_MEMORY_MANAGEMENT
     NotifyProcessStatus(false);
+#endif
 }
 
 bool AudioServer::SetPcmDumpParameter(const std::vector<std::pair<std::string, std::string>> &params)

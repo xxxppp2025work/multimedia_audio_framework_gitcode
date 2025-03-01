@@ -279,6 +279,10 @@ audio_ohos_library("audio_policy_service") {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
 
+  if (audio_framework_feature_memory_management) {
+    defines += [ "WATCH_MEMORY_MANAGEMENT" ]
+  }
+
   public_configs = [ ":audio_policy_public_config" ]
 
   deps = [
