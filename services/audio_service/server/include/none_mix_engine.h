@@ -55,6 +55,8 @@ private:
     AudioSamplingRate GetDirectVoipSampleRate(AudioSamplingRate sampleRate);
     AudioSampleFormat GetDirectDeviceFormate(AudioSampleFormat format);
     int32_t GetDirectFormatByteSize(AudioSampleFormat format);
+    void ChannelFormatConvert(std::vector<char> &audioBuffer, std::vector<char> &audioBufferConverted,
+        AudioStreamInfo audioStreamInfo);
 
 private:
     bool isVoip_;

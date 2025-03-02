@@ -109,7 +109,7 @@ AudioSampleFormat ProRendererStreamImpl::GetDirectFormat(AudioSampleFormat forma
         return AudioSampleFormat::SAMPLE_S32LE;
     }
 
-    // Both SAMPLE_S16LE and SAMPLE_S32LE are supported for direct VoIP stream.
+    // SAMPLE_S16LE, SAMPLE_S32LE, SAMPLE_F32LE are supported for direct VoIP stream.
     if (format == SAMPLE_S16LE || format == SAMPLE_S32LE || format == SAMPLE_F32LE) {
         return format;
     } else {
