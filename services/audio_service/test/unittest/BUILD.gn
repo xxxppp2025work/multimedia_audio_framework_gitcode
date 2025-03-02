@@ -311,6 +311,7 @@ ohos_unittest("pa_renderer_stream_impl_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "../../../../frameworks/native/audiocapturer/include",
+    "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../services/audio_service/server/include",
   ]
   sources = [ "pa_renderer_stream_impl_unit_test.cpp" ]
@@ -335,6 +336,11 @@ ohos_unittest("pa_renderer_stream_impl_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
 }
 
 ohos_unittest("pa_renderer_stream_impl_unit_test_p2") {
@@ -342,6 +348,7 @@ ohos_unittest("pa_renderer_stream_impl_unit_test_p2") {
   module_out_path = module_output_path
   include_dirs = [
     "../../../../frameworks/native/audiocapturer/include",
+    "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../services/audio_service/server/include",
   ]
   sources = [ "pa_renderer_stream_impl_unit_test_p2.cpp" ]
@@ -366,6 +373,11 @@ ohos_unittest("pa_renderer_stream_impl_unit_test_p2") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
 }
 
 ohos_unittest("ipc_stream_in_server_unit_test") {
@@ -558,6 +570,8 @@ ohos_unittest("pa_capturer_stream_impl_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "../../../../frameworks/native/audiocapturer/include",
+    "../../../../frameworks/native/audiocapturer:audio_capturer",
+    "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../services/audio_service/server/include",
   ]
   sources = [ "pa_capturer_stream_impl_unit_test.cpp" ]
@@ -582,6 +596,11 @@ ohos_unittest("pa_capturer_stream_impl_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
 }
 
 ohos_unittest("audio_process_in_client_unit_test") {
