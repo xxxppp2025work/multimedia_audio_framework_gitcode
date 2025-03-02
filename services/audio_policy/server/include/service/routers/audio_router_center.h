@@ -45,6 +45,8 @@ public:
     int32_t UnsetAudioDeviceRefinerCallback();
     bool isCallRenderRouter(StreamUsage streamUsage);
     void SetAlarmFollowRingRouter(const bool flag);
+    bool MediaFollowCall(StreamUsage streamUsage, vector<shared_ptr<AudioDeviceDescriptor>> &descs, int32_t clientUID,
+        bool isCallScene);
 
 private:
     AudioRouterCenter()

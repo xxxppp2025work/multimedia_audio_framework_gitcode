@@ -173,6 +173,18 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
     }
+    MediaFollowCall(streamUsage, desc, clientUID, isCallScene);
+    int32_t audioId_ = descs[0]->deviceId_;
+    DeviceType type = descs[0]->deviceType_;
+    AUDIO_PRERELEASE_LOGI("usage:%{public}d uid:%{public}d size:[%{public}zu], 1st type:[%{public}d], id:[%{public}d],"
+        " router:%{public}d ", streamUsage, clientUID, descs.size(), type, audioId_, routerType);
+    return descs;
+}
+
+void AudioRouterCenter::MediaFollowCall(StreamUsage streamUsage, vector<shared_ptr<AudioDeviceDescriptor>> &descs,
+    int32_t clientUID, bool isCallScene)
+{
+    RouterType routerType = ROUTER_TYPE_NONE;
     if (audioDeviceRefinerCb_ != nullptr &&
         !NeedSkipSelectAudioOutputDeviceRefined(streamUsage, descs)) {
         if (isCallScene) {
@@ -181,17 +193,12 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
             AUDIO_INFO_LOG("Media follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
                 callStreamUsage);
             audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, routerType,
-            callStreamUsage, clientUID, PIPE_TYPE_NORMAL_OUT);
+                callStreamUsage, clientUID, PIPE_TYPE_NORMAL_OUT);
         } else {
             audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, routerType,
-            streamUsage, clientUID, PIPE_TYPE_NORMAL_OUT);
+                streamUsage, clientUID, PIPE_TYPE_NORMAL_OUT);
         }
     }
-    int32_t audioId_ = descs[0]->deviceId_;
-    DeviceType type = descs[0]->deviceType_;
-    AUDIO_PRERELEASE_LOGI("usage:%{public}d uid:%{public}d size:[%{public}zu], 1st type:[%{public}d], id:[%{public}d],"
-        " router:%{public}d ", streamUsage, clientUID, descs.size(), type, audioId_, routerType);
-    return descs;
 }
 
 void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
