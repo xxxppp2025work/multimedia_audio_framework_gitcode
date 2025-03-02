@@ -41,76 +41,27 @@ static std::map<int, AudioPipeType> flagPipeTypeMap_ = {
 //返回的信息包含原始pipe信息和修改后pipe信息
 //FetchPipeAndExecute   FetchPipe？？？ 此处是否应该只实现获取pipe功能，打开在主流程中实现
 std::vector<std::shared_ptr<AudioPipeInfo>> PipeSelector::FetchPipeAndExecute(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc)
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
-    std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> ruleMap =
-        AudioStreamCollector::GetAudioStreamCollector().GetConcurrencyMap();
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = PipeManager::GetPipeManager().GetPipeList();
-
-    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeList;
-    for (auto it : pipeList) {
-        it->streamDescs_.clear();
-        it->streamDescMap_.clear();
-        newPipeList.push_back(it);
-    }
-
-    streamDesc->routeFlag_ = GetRouteFlagByStreamDesc(streamDesc);
-    for (size_t i = 0; i < pipeList.size(); i++) {
-        bool isUpdate = false;
-        for (auto &streamIt : pipeList[i]->streamDescs_) {
-            ConcurrencyAction action = ruleMap[std::make_pair(flagPipeTypeMap_[streamIt->routeFlag_],
-                flagPipeTypeMap_[streamDesc->routeFlag_])];
-            AudioFlag newFlag;
-            switch (action) {
-                case PLAY_BOTH:
-                    streamIt->streamAction_ = STREAM_ACTION_DEFAULT;
-                    break;
-                case CONCEDE_INCOMING: // 新增流降级为primary流
-                    streamIt->streamAction_ = STREAM_ACTION_DEFAULT;
-                    streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL; // 降级后flag，未考虑不是normal的情况，input/output在哪判断？
-                    break;
-                case CONCEDE_EXISTING: // existing流降级为primary流
-                    isUpdate = true;
-                    newFlag = AUDIO_OUTPUT_FLAG_NORMAL; // 降级后flag，未考虑不是normal的情况，input/output在哪判断？
-                    streamIt->streamAction_ = JudgeStreamAction(streamIt->routeFlag_, newFlag);
-                    streamIt->routeFlag_ = newFlag;
-                    break;
-                default:
-                    break;
-            }
-
-            if (streamIt->streamAction_ == STREAM_ACTION_DEFAULT) {
-                newPipeList[i]->streamDescs_.push_back(streamIt);
-                newPipeList[i]->streamDescMap_[streamIt->sessionId_] = streamIt;
-                continue;
-            }
-            for (auto &newPipe : newPipeList) {
-                if (newPipe->adapterName_ == pipeList[i]->adapterName_ && newPipe->routeFlag_ == streamIt->routeFlag_) {
-                    newPipe->streamDescs_.push_back(streamIt);
-                    newPipe->streamDescMap_[streamIt->sessionId_] = streamIt;
-                    break;
-                }
-            }
-        }
-        newPipeList[i]->action_ = isUpdate ? PIPE_ACTION_UPDATE : PIPE_ACTION_DEFAULT;
-    }
+    ScanPipeListForStreamDesc(pipeList, streamDesc);
 
     PipeStreamPropInfo streamPropInfo = {};
     configManager_->GetStreamPropInfo(streamDesc, streamPropInfo);
-    for (auto it : newPipeList) {
+    for (auto &it : pipeList) {
         if (it->adapterName_ == streamPropInfo.pipeInfo_->adapterInfo_->GetAdapterName() &&
             it->routeFlag_ == streamDesc->routeFlag_) {
             it->streamDescs_.push_back(streamDesc);
             it->streamDescMap_[streamDesc->sessionId_] = streamDesc;
             it->action_ = PIPE_ACTION_UPDATE;
-            return newPipeList;
+            return pipeList;
         }
     }
     AudioPipeInfo info = {};
     ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
     info.action_ = PIPE_ACTION_NEW;
-    newPipeList.push_back(std::make_shared<AudioPipeInfo>(info));
-    return newPipeList;
+    pipeList.push_back(std::make_shared<AudioPipeInfo>(info));
+    return pipeList;
 }
 
 //更新流时使用，比如设备更新，下发所有流信息，AudioStreamDescriptor中包含时间信息，以此排序，生成pipelist中修改后信息，并通过流信息查询现存pipelist，获取原始pipe信息
@@ -118,13 +69,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> PipeSelector::FetchPipeAndExecute(
 std::vector<std::shared_ptr<AudioPipeInfo>> PipeSelector::FetchPipesAndExecute(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
-    std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> ruleMap =
-        AudioStreamCollector::GetAudioStreamCollector().GetConcurrencyMap();
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = PipeManager::GetPipeManager().GetPipeList();
-
-    // streamDescs中流信息按时间排序
-    SortStreamDescsByStartTime(streamDescs);
-
     std::vector<std::shared_ptr<AudioPipeInfo>> newPipeList;
     for (auto it : pipeList) {
         it->streamDescs_.clear();
@@ -132,52 +77,76 @@ std::vector<std::shared_ptr<AudioPipeInfo>> PipeSelector::FetchPipesAndExecute(
         newPipeList.push_back(it);
     }
 
+    SortStreamDescsByStartTime(streamDescs);
     for (auto streamDesc : streamDescs) {
-        streamDesc->routeFlag_ = GetRouteFlagByStreamDesc(streamDesc);
+        std::string adapterName = GetAdapterNameByStreamDesc(streamDesc);
+        ScanPipeListForStreamDesc(newPipeList, streamDesc);
         for (auto it : newPipeList) {
-            bool isUpdate = false;
-            for (auto streamIt = it->streamDescs_.begin(); streamIt!= it->streamDescs_.end();) {
-                ConcurrencyAction action = ruleMap[std::make_pair(flagPipeTypeMap_[(*streamIt)->routeFlag_],
-                    flagPipeTypeMap_[streamDesc->routeFlag_])];
-                AudioFlag newFlag;
-                switch (action) {
-                    case PLAY_BOTH:
-                        (*streamIt)->streamAction_ = STREAM_ACTION_DEFAULT;
-                        break;
-                    case CONCEDE_INCOMING: // 新增流降级为primary流
-                        (*streamIt)->streamAction_ = STREAM_ACTION_DEFAULT;
-                        streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL; // 降级后flag，未考虑不是normal的情况，input/output在哪判断？
-                        break;
-                    case CONCEDE_EXISTING: // existing流降级为primary流
-                        isUpdate = true;
-                        newFlag = AUDIO_OUTPUT_FLAG_NORMAL; // 降级后flag，未考虑不是normal的情况，input/output在哪判断？
-                        (*streamIt)->streamAction_ = JudgeStreamAction((*streamIt)->routeFlag_, newFlag);
-                        (*streamIt)->routeFlag_ = newFlag;
-                        break;
-                    default:
-                        break;
-                }
-
-                if ((*streamIt)->streamAction_ == STREAM_ACTION_DEFAULT) {
-                    it->streamDescs_.push_back((*streamIt));
-                    it->streamDescMap_[(*streamIt)->sessionId_] = (*streamIt);
-                    streamIt++;
-                    continue;
-                }
-                for (auto &newPipe : newPipeList) {
-                    if (newPipe->adapterName_ == it->adapterName_ && newPipe->routeFlag_ == (*streamIt)->routeFlag_) {
-                        newPipe->streamDescs_.push_back((*streamIt));
-                        newPipe->streamDescMap_[(*streamIt)->sessionId_] = (*streamIt);
-                        streamIt = it->streamDescs_.erase(streamIt);
-                        break;
-                    }
-                }
+            if (it->adapterName_ == adapterName && it->routeFlag_ == streamDesc->routeFlag_) {
+                it->streamDescs_.push_back(streamDesc);
+                it->streamDescMap_[streamDesc->sessionId_] = streamDesc;
+                it->action_ = PIPE_ACTION_UPDATE;
             }
-            it->action_ = isUpdate ? PIPE_ACTION_UPDATE : PIPE_ACTION_DEFAULT;
         }
     }
 
     return newPipeList;
+}
+
+void PipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
+    std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    streamDesc->routeFlag_ = GetRouteFlagByStreamDesc(streamDesc);
+    for (auto &it : pipeList) {
+        bool isUpdate = false;
+        for (auto streamIt = it->streamDescs_.begin(); streamIt!= it->streamDescs_.end();) {
+            isUpdate = ProcessConcurrency(*streamIt, streamDesc);
+            if ((*streamIt)->streamAction_ == STREAM_ACTION_DEFAULT) {
+                streamIt++;
+                continue;
+            }
+            for (auto &newPipe : pipeList) {
+                if (newPipe->adapterName_ == it->adapterName_ && newPipe->routeFlag_ == (*streamIt)->routeFlag_) {
+                    newPipe->streamDescs_.push_back(*streamIt);
+                    newPipe->streamDescMap_[(*streamIt)->sessionId_] = *streamIt;
+                    streamIt = it->streamDescs_.erase(streamIt);
+                    break;
+                }
+            }
+        }
+        it->action_ = isUpdate ? PIPE_ACTION_UPDATE : PIPE_ACTION_DEFAULT;
+    }
+}
+
+bool PipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> stream,
+    std::shared_ptr<AudioStreamDescriptor> cmpStream)
+{
+    bool isUpdate = false;
+    std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> ruleMap =
+        AudioStreamCollector::GetAudioStreamCollector().GetConcurrencyMap();
+    ConcurrencyAction action = ruleMap[std::make_pair(flagPipeTypeMap_[stream->routeFlag_],
+        flagPipeTypeMap_[cmpStream->routeFlag_])];
+    AudioFlag newFlag;
+    switch (action) {
+        case PLAY_BOTH:
+            stream->streamAction_ = STREAM_ACTION_DEFAULT;
+            break;
+        case CONCEDE_INCOMING: // 新增流降级为primary流
+            stream->streamAction_ = STREAM_ACTION_DEFAULT;
+            cmpStream->routeFlag_ = cmpStream->audioMode_ == AUDIO_MODE_PLAYBACK ?
+                AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL; // 降级后flag，未考虑不是normal的情况
+            break;
+        case CONCEDE_EXISTING: // existing流降级为primary流
+            isUpdate = true;
+            newFlag = stream->audioMode_ == AUDIO_MODE_PLAYBACK ?
+                AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL; // 降级后flag，未考虑不是normal的情况
+            stream->streamAction_ = JudgeStreamAction(stream->routeFlag_, newFlag);
+            stream->routeFlag_ = newFlag;
+            break;
+        default:
+            break;
+    }
+    return isUpdate;
 }
 
 AudioFlag PipeSelector::GetRouteFlagByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc)
@@ -188,13 +157,14 @@ AudioFlag PipeSelector::GetRouteFlagByStreamDesc(std::shared_ptr<AudioStreamDesc
     return flag;
 }
 
-int32_t PipeSelector::GetPipeInfoByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc, AudioPipeInfo &info)
+std::string PipeSelector::GetAdapterNameByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
-    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERROR, "streamDesc is nullptr");
+    std::string name == "";
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, name, "streamDesc is nullptr");
     PipeStreamPropInfo streamPropInfo = {};
     configManager_->GetStreamPropInfo(streamDesc, streamPropInfo);
-    ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
-    return SUCCESS;
+    name = streamPropInfo.pipeInfo_->adapterInfo_->GetAdapterName();
+    return name;
 }
 
 void PipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc,

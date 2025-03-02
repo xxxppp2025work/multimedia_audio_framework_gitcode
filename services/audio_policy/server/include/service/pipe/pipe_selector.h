@@ -28,19 +28,24 @@ public:
     PipeSelector() = default;
     ~PipeSelector() = default;
 
-    std::vector<std::shared_ptr<AudioPipeInfo>> FetchPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    std::vector<std::shared_ptr<AudioPipeInfo>> FetchPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     std::vector<std::shared_ptr<AudioPipeInfo>> FetchPipesAndExecute(
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
 
 private:
+    void ScanPipeListForStreamDesc(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
+        std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> stream,
+        std::shared_ptr<AudioStreamDescriptor> cmpStream);
     AudioFlag GetRouteFlagByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    int32_t GetPipeInfoByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc, AudioPipeInfo &info);
+    std::string GetAdapterNameByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         const PipeStreamPropInfo streamPropInfo, AudioPipeInfo &info);
     AudioStreamAction JudgeStreamAction(AudioFlag oldFlag, AudioFlag newFlag);
     void SortStreamDescsByStartTime(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
 
     std::shared_ptr<AudioPolicyConfigManager> configManager_ = nullptr;
+
 };
 } // namespace AudioStandard
 } // namespace OHOS
