@@ -41,14 +41,14 @@ bool MMAAudioStreamManagerImpl::IsActive(int32_t volumeType)
 
 CArrI32 MMAAudioStreamManagerImpl::GetAudioEffectInfoArray(int32_t usage, int32_t *errorCode)
 {
-    AudioSceneEffectInfo audioSceneEffectInfo;
+    AudioSceneEffectInfo audioSceneEffectInfo {};
     int32_t ret = streamMgr_->GetEffectInfoArray(audioSceneEffectInfo, static_cast<StreamUsage>(usage));
     if (ret != AUDIO_OK) {
         AUDIO_ERR_LOG("GetEffectInfoArray failure!");
         *errorCode = CJ_ERR_SYSTEM;
         return CArrI32();
     }
-    CArrI32 arr;
+    CArrI32 arr {};
     arr.size = static_cast<int64_t>(audioSceneEffectInfo.mode.size());
     int32_t mallocSize = static_cast<int32_t>(sizeof(int32_t)) * static_cast<int32_t>(arr.size);
     if (mallocSize <= 0 || mallocSize > static_cast<int32_t>(sizeof(int32_t) * MAX_MEM_MALLOC_SIZE)) {
@@ -82,7 +82,7 @@ CArrAudioRendererChangeInfo MMAAudioStreamManagerImpl::GetCurrentRendererChangeI
         *errorCode = CJ_ERR_SYSTEM;
         return CArrAudioRendererChangeInfo();
     }
-    CArrAudioRendererChangeInfo arrInfo;
+    CArrAudioRendererChangeInfo arrInfo {};
     arrInfo.size = static_cast<int64_t>(audioRendererChangeInfos.size());
     int32_t mallocSize = static_cast<int32_t>(sizeof(CAudioRendererChangeInfo)) * static_cast<int32_t>(arrInfo.size);
     if (mallocSize <= 0 || mallocSize > static_cast<int32_t>(sizeof(CAudioRendererChangeInfo) * MAX_MEM_MALLOC_SIZE)) {
@@ -94,19 +94,19 @@ CArrAudioRendererChangeInfo MMAAudioStreamManagerImpl::GetCurrentRendererChangeI
         *errorCode = CJ_ERR_NO_MEMORY;
         return CArrAudioRendererChangeInfo();
     }
-    arrInfo.head = head;
     if (memset_s(head, arrInfo.size, 0, arrInfo.size) != EOK) {
-        FreeCArrAudioRendererChangeInfo(arrInfo);
+        free(head);
         *errorCode = CJ_ERR_SYSTEM;
         return CArrAudioRendererChangeInfo();
     }
+    arrInfo.head = head;
     for (int32_t i = 0; i < static_cast<int32_t>(audioRendererChangeInfos.size()); i++) {
         Convert2CAudioRendererChangeInfo(head[i], *(audioRendererChangeInfos[i]), errorCode);
-    }
-    if (*errorCode != SUCCESS_CODE) {
-        FreeCArrAudioRendererChangeInfo(arrInfo);
-        *errorCode = CJ_ERR_SYSTEM;
-        return CArrAudioRendererChangeInfo();
+        if (*errorCode != SUCCESS_CODE) {
+            FreeCArrAudioRendererChangeInfo(arrInfo);
+            *errorCode = CJ_ERR_SYSTEM;
+            return CArrAudioRendererChangeInfo();
+        }
     }
     return arrInfo;
 }
@@ -120,7 +120,7 @@ CArrAudioCapturerChangeInfo MMAAudioStreamManagerImpl::GetAudioCapturerInfoArray
         *errorCode = CJ_ERR_SYSTEM;
         return CArrAudioCapturerChangeInfo();
     }
-    CArrAudioCapturerChangeInfo arrInfo;
+    CArrAudioCapturerChangeInfo arrInfo {};
     arrInfo.size = static_cast<int64_t>(audioCapturerChangeInfos.size());
     int32_t mallocSize = static_cast<int32_t>(sizeof(CAudioRendererChangeInfo)) * static_cast<int32_t>(arrInfo.size);
     if (mallocSize <= 0 || mallocSize > static_cast<int32_t>(sizeof(AudioCapturerChangeInfo) * MAX_MEM_MALLOC_SIZE)) {
@@ -132,19 +132,20 @@ CArrAudioCapturerChangeInfo MMAAudioStreamManagerImpl::GetAudioCapturerInfoArray
         *errorCode = CJ_ERR_NO_MEMORY;
         return CArrAudioCapturerChangeInfo();
     }
-    arrInfo.head = head;
+
     if (memset_s(head, arrInfo.size, 0, arrInfo.size) != EOK) {
-        FreeCArrAudioCapturerChangeInfo(arrInfo);
+        free(head);
         *errorCode = CJ_ERR_SYSTEM;
         return CArrAudioCapturerChangeInfo();
     }
+    arrInfo.head = head;
     for (int32_t i = 0; i < static_cast<int32_t>(audioCapturerChangeInfos.size()); i++) {
         Convert2CAudioCapturerChangeInfo(head[i], *(audioCapturerChangeInfos[i]), errorCode);
-    }
-    if (*errorCode != SUCCESS_CODE) {
-        FreeCArrAudioCapturerChangeInfo(arrInfo);
-        *errorCode = CJ_ERR_SYSTEM;
-        return CArrAudioCapturerChangeInfo();
+        if (*errorCode != SUCCESS_CODE) {
+            FreeCArrAudioCapturerChangeInfo(arrInfo);
+            *errorCode = CJ_ERR_SYSTEM;
+            return CArrAudioCapturerChangeInfo();
+        }
     }
     return arrInfo;
 }
