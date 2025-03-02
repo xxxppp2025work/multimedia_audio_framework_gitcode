@@ -90,7 +90,10 @@ ohos_unittest("audio_balance_unit_test") {
     "../../../../services/audio_service/server/include",
     "../../../../frameworks/native/playbackcapturer/include",
   ]
-  sources = [ "audio_service_common_unit_test.cpp" ]
+  sources = [
+    "audio_group_manager_unit_test.cpp",
+    "audio_service_common_unit_test.cpp",
+  ]
 
   if (audio_framework_feature_low_latency) {
     sources += [
