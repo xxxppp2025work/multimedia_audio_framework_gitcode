@@ -69,6 +69,26 @@ enum class PipeInfoType {
     UNKNOWN
 };
 
+enum class PolicyGlobalConfigType {
+    DEFAULT_OUTPUT,
+    COMMON_CONFIGS,
+    PA_CONFIGS,
+    DEFAULT_MAX_CON_CURRENT_INSTANCE,
+    UNKNOWN
+};
+
+enum class PolicyPAConfigType {
+    AUDIO_LATENCY,
+    SINK_LATENCY,
+    UNKNOWN
+};
+
+enum class PolicyMaxInstanceType {
+    OUTPUT,
+    INPUT,
+    UNKNOWN
+};
+
 struct AttributeInfo {
     std::string name_ = STR_INITED;
     std::string value_ = STR_INITED;
@@ -136,7 +156,7 @@ public:
     void SetPipeInfos(std::list<AdapterPipeInfo> &pipeInfos);
     std::string GetAdapterName();
     std::string GetAdapterSupportScene();
-    void GetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos);
+    void GetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos) const;
     void GetPipeInfos(std::list<AdapterPipeInfo> &pipeInfos);
 
 private:
@@ -171,26 +191,26 @@ struct AdapterPipeInfo {
     std::list<AttributeInfo> attributeInfos_ {};
 };
 
-struct ConfigInfo {
-    std::string name_ = STR_INIT;
-    std::string value_ = STR_INIT;
-    std::string type_ = STR_INIT;
+struct PolicyConfigInfo {
+    std::string name_ = STR_INITED;
+    std::string value_ = STR_INITED;
+    std::string type_ = STR_INITED;
 };
 
-struct GlobalPaConfigs {
-    std::string audioLatency_ = STR_INIT;
-    std::string sinkLatency_ = STR_INIT;
+struct PolicyGlobalPaConfigs {
+    std::string audioLatency_ = STR_INITED;
+    std::string sinkLatency_ = STR_INITED;
 };
 
-struct GlobalConfigs {
-    std::string adapter_ = STR_INIT;
-    std::string pipe_ = STR_INIT;
-    std::string device_ = STR_INIT;
-    std::list<ConfigInfo> commonConfigs_ {};
+struct PolicyGlobalConfigs {
+    std::string adapter_ = STR_INITED;
+    std::string pipe_ = STR_INITED;
+    std::string device_ = STR_INITED;
+    std::list<PolicyConfigInfo> commonConfigs_ {};
     bool updateRouteSupport_ = false;
-    GlobalPaConfigs globalPaConfigs_;
-    std::list<ConfigInfo> outputConfigInfos_ {};
-    std::list<ConfigInfo> inputConfigInfos_ {};
+    PolicyGlobalPaConfigs globalPaConfigs_;
+    std::list<PolicyConfigInfo> outputConfigInfos_ {};
+    std::list<PolicyConfigInfo> inputConfigInfos_ {};
 };
 
 } // namespace AudioStandard

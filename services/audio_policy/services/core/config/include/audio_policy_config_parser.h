@@ -51,7 +51,10 @@ private:
     PolicyXmlNodeType GetXmlNodeTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
     AdapterInfoType GetAdapterInfoTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
     PipeInfoType GetPipeInfoTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
-    GlobalConfigType GetGlobalConfigTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
+    PolicyGlobalConfigType GetGlobalConfigTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
+    PolicyPAConfigType GetPaConfigType(std::string &name);
+    PolicyMaxInstanceType GetDefaultMaxInstanceTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
+    ClassType AudioPolicyConfigParser::GetClassTypeByAdapterType(AudioAdapterType adapterType);
 
     bool ParseInternal(std::shared_ptr<AudioXmlNode> curNode);
     void ParseAdapters(std::shared_ptr<AudioXmlNode> curNode);
@@ -82,16 +85,14 @@ private:
     void GetOffloadAndOpenMicState(PolicyAdapterInfo &adapterInfo, bool &shouldEnableOffload);
     void GetCommontAudioModuleInfo(AdapterPipeInfo &pipeInfo, AudioModuleInfo &audioModuleInfo);
     std::string GetAudioModuleInfoName(std::string &pipeInfoName, std::list<AdapterDeviceInfo> &deviceInfos);
-    ClassType AudioPolicyConfigParser::GetClassTypeByAdapterType(AudioAdapterType adapterType);
 
     std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
     AudioPolicyConfigManager *configManager_ = nullptr;
-
     
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> xmlParsedDataMap_ {};
     std::unordered_map<std::string, std::string> volumeGroupMap_;
     std::unordered_map<std::string, std::string> interruptGroupMap_;
-    GlobalConfigs globalConfigs_;
+    PolicyGlobalConfigs globalConfigs_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -19,9 +19,13 @@
 #include "audio_policy_config_manager.h"
 #include "audio_policy_config_parser.h"
 #include "audio_policy_utils.h"
+#include "audio_policy_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+const int32_t DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES = 128;
+
 bool AudioPolicyConfigManager::Init()
 {
     std::unique_ptr<AudioPolicyConfigParser> audioPolicyConfigParser = make_unique<AudioPolicyConfigParser>(this);
@@ -46,9 +50,12 @@ void AudioPolicyConfigManager::OnAudioPolicyConfigXmlParsingCompleted()
     audioPolicyConfig_.Reorganize();
 
     isAdapterInfoMap_.store(true);
+
+    OnHasEarpiece(adapterInfoMap);
 }
 
-void AudioPolicyConfigManager::OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmlData)
+void AudioPolicyConfigManager::OnXmlParsingCompleted(
+    const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmlData)
 {
     AUDIO_INFO_LOG("device class num [%{public}zu]", xmlData.size());
     CHECK_AND_RETURN_LOG(!xmlData.empty(), "failed to parse xml file. Received data is empty");
@@ -87,7 +94,7 @@ void AudioPolicyConfigManager::OnUpdateRouteSupport(bool isSupported)
     isUpdateRouteSupported_ = isSupported;
 }
 
-void AudioPolicyConfigManager::OnGlobalConfigsParsed(GlobalConfigs &globalConfigs)
+void AudioPolicyConfigManager::OnGlobalConfigsParsed(PolicyGlobalConfigs &globalConfigs)
 {
     globalConfigs_ = globalConfigs;
 }
@@ -107,10 +114,10 @@ void AudioPolicyConfigManager::OnHasEarpiece(std::unordered_map<AudioAdapterType
 {
     for (const auto &adapterInfo : adapterInfoMap) {
         std::list<AdapterDeviceInfo> deviceInfoList;
-        (adapterInfo.second).GetDeviceInfos(deviceInfoList);
+        adapterInfo.second.GetDeviceInfos(deviceInfoList);
         hasEarpiece_ = std::any_of(deviceInfoList.begin(), deviceInfoList.end(),
             [](const auto& deviceInfo) {
-                return deviceInfo.type_ == EARPIECE_TYPE_NAME;
+                return deviceInfo.type_ == DEVICE_TYPE_EARPIECE;
             });
         if (hasEarpiece_) {
             break;
@@ -134,7 +141,8 @@ bool AudioPolicyConfigManager::GetModuleListByType(ClassType type, std::list<Aud
     return false;
 }
 
-void AudioPolicyConfigManager::GetDeviceClassInfo(std::unordered_map<ClassType, std::list<AudioModuleInfo>> &deviceClassInfo)
+void AudioPolicyConfigManager::GetDeviceClassInfo(
+    std::unordered_map<ClassType, std::list<AudioModuleInfo>> &deviceClassInfo)
 {
     deviceClassInfo = deviceClassInfo_;
 }
@@ -200,10 +208,10 @@ uint32_t AudioPolicyConfigManager::GetSinkLatencyFromXml() const
     return sinkLatencyInMsec_;
 }
 
-void AudioPolicyConfigManager::GetAudioAdapterInfos(std::unordered_map<AdaptersType, AudioAdapterInfo> &adapterInfoMap)
+void AudioPolicyConfigManager::GetAudioAdapterInfos(
+    std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap)
 {
-    // TODO: no adapterInfoMap
-    // adapterInfoMap = adapterInfoMap_;
+    audioPolicyConfig_.GetAdapterInfoMap(adapterInfoMap);
 }
 
 void AudioPolicyConfigManager::GetVolumeGroupData(std::unordered_map<std::string, std::string>& volumeGroupData)
@@ -216,7 +224,7 @@ void AudioPolicyConfigManager::GetInterruptGroupData(std::unordered_map<std::str
     interruptGroupData = interruptGroupData_;
 }
 
-void AudioPolicyConfigManager::GetGlobalConfigs(GlobalConfigs &globalConfigs)
+void AudioPolicyConfigManager::GetGlobalConfigs(PolicyGlobalConfigs &globalConfigs)
 {
     globalConfigs = globalConfigs_;
 }
@@ -236,8 +244,10 @@ bool AudioPolicyConfigManager::GetAdapterInfoFlag()
     return isAdapterInfoMap_.load();
 }
 
-bool AudioPolicyConfigManager::GetAdapterInfoByType(AdaptersType type, AudioAdapterInfo &info)
+bool AudioPolicyConfigManager::GetAdapterInfoByType(AudioAdapterType type, PolicyAdapterInfo &info)
 {
+    std::unordered_map<AudioAdapterType, PolicyAdapterInfo> adapterInfoMap_;
+    audioPolicyConfig_.GetAdapterInfoMap(adapterInfoMap_);
     auto it = adapterInfoMap_.find(type);
     if (it == adapterInfoMap_.end()) {
         AUDIO_ERR_LOG("can not find adapter info");

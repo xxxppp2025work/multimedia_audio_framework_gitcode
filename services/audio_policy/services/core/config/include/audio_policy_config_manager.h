@@ -18,11 +18,13 @@
 #include <string>
 #include "iport_observer.h"
 #include "singleton.h"
+#include "audio_group_handle.h"
 #include "audio_info.h"
 #include "audio_manager_base.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_definition_adapter_info.h"
+#include "audio_device_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,7 +46,7 @@ public:
     void OnSinkLatencyParsed(uint32_t latency);
     void OnVolumeGroupParsed(std::unordered_map<std::string, std::string>& volumeGroupData);
     void OnInterruptGroupParsed(std::unordered_map<std::string, std::string>& interruptGroupData);
-    void OnGlobalConfigsParsed(GlobalConfigs &globalConfigs);
+    void OnGlobalConfigsParsed(PolicyGlobalConfigs &globalConfigs);
     void OnVoipConfigParsed(bool enableFastVoip);
     void OnUpdateRouteSupport(bool isSupported);
     void OnUpdateAnahsSupport(std::string anahsShowType);
@@ -62,14 +64,14 @@ public:
         const AudioSamplingRate &samplingRate);
     int32_t GetAudioLatencyFromXml() const;
     uint32_t GetSinkLatencyFromXml() const;
-    void GetAudioAdapterInfos(std::unordered_map<AdaptersType, AudioAdapterInfo> &adapterInfoMap);
+    void GetAudioAdapterInfos(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap);
     void GetVolumeGroupData(std::unordered_map<std::string, std::string>& volumeGroupData);
     void GetInterruptGroupData(std::unordered_map<std::string, std::string>& interruptGroupData);
-    void GetGlobalConfigs(GlobalConfigs &globalConfigs);
+    void GetGlobalConfigs(PolicyGlobalConfigs &globalConfigs);
     bool GetVoipConfig();
     bool GetUpdateRouteSupport();
     bool GetAdapterInfoFlag();
-    bool GetAdapterInfoByType(AdaptersType type, AudioAdapterInfo &info);
+    bool GetAdapterInfoByType(AudioAdapterType type, PolicyAdapterInfo &info);
     bool GetHasEarpiece();
 
     void GetDeviceDescriptorByDeviceType(DeviceType deviceType, AudioDeviceDescriptor &desc);
@@ -77,8 +79,8 @@ public:
     AudioFlag GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> desc);
     void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, PipeStreamPropInfo &info);
 private:
-    AudioPolicyConfigManager() : audioPolicyConfig_(AudioPolicyConfigData::GetInstance()),
-        audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager())
+    AudioPolicyConfigManager() : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
+        audioPolicyConfig_(AudioPolicyConfigData::GetInstance())
     {
     }
     ~AudioPolicyConfigManager()
@@ -90,7 +92,7 @@ private:
     bool isUpdateRouteSupported_ = true;
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;
-    GlobalConfigs globalConfigs_;
+    PolicyGlobalConfigs globalConfigs_;
     bool enableFastVoip_ = false;
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};

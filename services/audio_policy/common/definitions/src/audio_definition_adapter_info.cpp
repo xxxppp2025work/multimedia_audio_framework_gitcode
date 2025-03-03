@@ -204,7 +204,7 @@ std::string PolicyAdapterInfo::GetAdapterSupportScene()
     return adapterSupportScene_;
 }
 
-void PolicyAdapterInfo::GetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos)
+void PolicyAdapterInfo::GetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos) const
 {
     deviceInfos = deviceInfos_;
 }
