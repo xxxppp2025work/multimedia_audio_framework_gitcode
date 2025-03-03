@@ -54,7 +54,7 @@ private:
     PolicyGlobalConfigType GetGlobalConfigTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
     PolicyPAConfigType GetPaConfigType(std::string &name);
     PolicyMaxInstanceType GetDefaultMaxInstanceTypeAsInt(std::shared_ptr<AudioXmlNode> curNode);
-    ClassType AudioPolicyConfigParser::GetClassTypeByAdapterType(AudioAdapterType adapterType);
+    ClassType GetClassTypeByAdapterType(AudioAdapterType adapterType);
 
     bool ParseInternal(std::shared_ptr<AudioXmlNode> curNode);
     void ParseAdapters(std::shared_ptr<AudioXmlNode> curNode);
@@ -93,6 +93,7 @@ private:
     std::unordered_map<std::string, std::string> volumeGroupMap_;
     std::unordered_map<std::string, std::string> interruptGroupMap_;
     PolicyGlobalConfigs globalConfigs_;
+    bool shouldOpenMicSpeaker_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

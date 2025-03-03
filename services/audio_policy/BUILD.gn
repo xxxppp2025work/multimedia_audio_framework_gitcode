@@ -69,6 +69,7 @@ config("audio_policy_public_config") {
     "../../frameworks/native/audiopolicy/include",
     "../../frameworks/native/audioutils/include",
     "../../frameworks/native/bluetoothclient",
+    "../../frameworks/native/aduodefinitions/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
   ]
@@ -282,6 +283,7 @@ audio_ohos_library("audio_policy_service") {
     "../../frameworks/native/audioinnercall:audio_inner_call",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/audioutils:audio_xml_utils",
+    "../../frameworks/native/aduodefinitions:audio_definitions",
     "../audio_policy:audio_config.para",
     "../audio_policy:audio_config.para.dac",
     "../audio_policy:audio_foundation",

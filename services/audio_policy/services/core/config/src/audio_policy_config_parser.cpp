@@ -209,33 +209,34 @@ void AudioPolicyConfigParser::ParseStreamProps(std::shared_ptr<AudioXmlNode> cur
     std::list<PipeStreamPropInfo> streamPropInfos = {};
 
     while (curNode->IsNodeValid()) {
-        if (curNode->IsElementNode()) {
-            PipeStreamPropInfo streamPropInfo = {};
-            streamPropInfo.pipeInfo_ = std::make_shared<AdapterPipeInfo>(pipeInfo);
-            std::string formatStr;
-            curNode->GetProp("format", formatStr);
-            streamPropInfo.format_ = AudioDefinitionPolicyUtils::formatStrToEnum[formatStr];
-            std::string sampleRateStr;
-            curNode->GetProp("sampleRates", sampleRateStr);
-            StringConverter(sampleRateStr, streamPropInfo.sampleRate_);
-            std::string channelLayoutStr;
-            curNode->GetProp("channelLayout", channelLayoutStr);
-            streamPropInfo.channelLayout_ = AudioDefinitionPolicyUtils::layoutStrToEnum[channelLayoutStr];
-            std::string bufferSizeStr;
-            curNode->GetProp("bufferSize", bufferSizeStr);
-            StringConverter(bufferSizeStr, streamPropInfo.bufferSize_);
-            std::string supportDevicesStr;
-            curNode->GetProp("supportDevices", supportDevicesStr);
-            if (supportDevicesStr != "") {
-                std::list<std::string> supportDevices {};
-                SplitStringToList(supportDevicesStr, supportDevices, ", ");
-                for (auto device : supportDevices) {
-                    streamPropInfo.supportDevices_.push_back(AudioDefinitionPolicyUtils::deviceNameToTypeEnum[device]);
-                }
-            }
-
-            streamPropInfos.push_back(std::move(streamPropInfo));
+        if (!curNode->IsElementNode()) {
+            curNode->MoveToNext();
         }
+        PipeStreamPropInfo streamPropInfo = {};
+        streamPropInfo.pipeInfo_ = std::make_shared<AdapterPipeInfo>(pipeInfo);
+        std::string formatStr;
+        curNode->GetProp("format", formatStr);
+        streamPropInfo.format_ = AudioDefinitionPolicyUtils::formatStrToEnum[formatStr];
+        std::string sampleRateStr;
+        curNode->GetProp("sampleRates", sampleRateStr);
+        StringConverter(sampleRateStr, streamPropInfo.sampleRate_);
+        std::string channelLayoutStr;
+        curNode->GetProp("channelLayout", channelLayoutStr);
+        streamPropInfo.channelLayout_ = AudioDefinitionPolicyUtils::layoutStrToEnum[channelLayoutStr];
+        std::string bufferSizeStr;
+        curNode->GetProp("bufferSize", bufferSizeStr);
+        StringConverter(bufferSizeStr, streamPropInfo.bufferSize_);
+        std::string supportDevicesStr;
+        curNode->GetProp("supportDevices", supportDevicesStr);
+        if (supportDevicesStr != "") {
+            std::list<std::string> supportDevices {};
+            SplitStringToList(supportDevicesStr, supportDevices, ", ");
+            for (auto device : supportDevices) {
+                streamPropInfo.supportDevices_.push_back(AudioDefinitionPolicyUtils::deviceNameToTypeEnum[device]);
+            }
+        }
+
+        streamPropInfos.push_back(std::move(streamPropInfo));
         curNode->MoveToNext();
     }
     pipeInfo.streamPropInfos_ = std::move(streamPropInfos);
@@ -261,7 +262,7 @@ void AudioPolicyConfigParser::ParseAttributes(std::shared_ptr<AudioXmlNode> curN
         pipeInfo.supportFlags_.begin(), pipeInfo.supportFlags_.end(), AUDIO_FLAG_MMAP)
             != pipeInfo.supportFlags_.end()
         ) {
-        portObserver_->OnVoipConfigParsed(true);
+        configManager_->OnVoipConfigParsed(true);
     }
     pipeInfo.attributeInfos_ = std::move(attributeInfos);
 }
@@ -528,7 +529,7 @@ void AudioPolicyConfigParser::ParseCommonConfigs(std::shared_ptr<AudioXmlNode> c
 
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
-            Policy ConfigInfo configInfo = {};
+            PolicyConfigInfo configInfo = {};
             curNode->GetProp("name", configInfo.name_);
             curNode->GetProp("value", configInfo.value_);
             configInfos.push_back(configInfo);
