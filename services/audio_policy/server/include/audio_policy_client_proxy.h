@@ -57,6 +57,7 @@ public:
     void OnHeadTrackingEnabledChangeForAnyDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override;
     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override;
+    void OnAudioSceneChange(const AudioScene &audioScene) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyClientProxy> delegator_;

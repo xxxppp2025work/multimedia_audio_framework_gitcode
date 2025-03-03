@@ -58,6 +58,9 @@ void AudioPolicyClientStub::OnFirMaxRemoteRequest(uint32_t updateCode, MessagePa
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_AUDIO_SESSION_DEACTIVE):
             HandleAudioSessionCallback(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_AUDIO_SCENE_CHANGED):
+            HandleAudioSceneChange(data, reply);
+            break;
         default:
             break;
     }
@@ -344,6 +347,15 @@ void AudioPolicyClientStub::HandleSpatializationEnabledChangeForAnyDevice(Messag
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
     bool enabled = data.ReadBool();
     OnSpatializationEnabledChangeForAnyDevice(audioDeviceDescriptor, enabled);
+}
+
+void AudioPolicyClientStub::HandleAudioSceneChange(MessageParcel &data, MessageParcel &reply)
+{
+    AudioScene audioScene = static_cast<AudioScene>(data.ReadInt32());
+    CHECK_AND_RETURN_LOG(audioScene < AUDIO_SCENE_MAX && audioScene > AUDIO_SCENE_INVALID, \
+        "get invalid audioScene : %{public}d", audioScene);
+
+    OnAudioSceneChange(audioScene);
 }
 
 void AudioPolicyClientStub::HandleHeadTrackingEnabledChange(MessageParcel &data, MessageParcel &reply)

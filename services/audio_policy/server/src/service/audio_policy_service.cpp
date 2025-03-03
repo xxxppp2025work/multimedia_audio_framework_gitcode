@@ -3574,7 +3574,8 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     }
     IPCSkeleton::SetCallingIdentity(identity);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "SetAudioScene failed [%{public}d]", result);
-
+    OnAudioSceneChange(audioScene);
+    
     if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
         // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.
         SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
@@ -9298,6 +9299,15 @@ bool AudioPolicyService::IsVoiceCallRelatedScene()
         audioScene_ == AUDIO_SCENE_PHONE_CALL ||
         audioScene_ == AUDIO_SCENE_PHONE_CHAT ||
         audioScene_ == AUDIO_SCENE_VOICE_RINGING;
+}
+
+void AudioPolicyService::OnAudioSceneChange(const AudioScene& audioScene)
+{
+    Trace trace("AudioPolicyService::OnAudioSceneChange:" + std::to_string(audioScene));
+    AUDIO_INFO_LOG("Start");
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendAudioSceneChangeEvent(audioScene);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

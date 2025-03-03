@@ -494,6 +494,18 @@ bool AudioPolicyServerHandler::SendHeadTrackingDeviceChangeEvent(
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendAudioSceneChangeEvent(const AudioScene &audioScene)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->audioScene = audioScene;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::AUDIO_SCENE_CHANGE,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send HEAD_TRACKING_ENABLED_CHANGE event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendSpatializatonEnabledChangeEvent(const bool &enabled)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -1057,6 +1069,25 @@ void AudioPolicyServerHandler::HandleHeadTrackingDeviceChangeEvent(const AppExec
     }
 }
 
+void AudioPolicyServerHandler::HandleAudioSceneChange(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        sptr<IAudioPolicyClient> audioSceneChangeCb = it->second;
+        if (audioSceneChangeCb == nullptr) {
+            AUDIO_ERR_LOG("audioSceneChangeCb : nullptr for client : %{public}d", it->first);
+            continue;
+        }
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_SET_AUDIO_SCENE_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_SET_AUDIO_SCENE_CHANGE]) {
+            audioSceneChangeCb->OnAudioSceneChange(eventContextObj->audioScene);
+        }
+    }
+}
+
 void AudioPolicyServerHandler::HandleSpatializatonEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -1236,6 +1267,9 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::MICROPHONE_BLOCKED:
             HandleMicrophoneBlockedCallback(event);
+            break;
+        case EventAudioServerCmd::AUDIO_SCENE_CHANGE:
+            HandleAudioSceneChange(event);
             break;
         default:
             break;
