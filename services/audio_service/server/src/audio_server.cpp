@@ -1499,7 +1499,7 @@ bool AudioServer::HandleCheckCaptureLimit(AudioProcessConfig &resetConfig,
 {
     if (resetConfig.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         int32_t innerCapId = 0;
-        if (CheckCaptureLimit(filterConfig, innerCapId) == SUCCESS) {
+        if (InnerCheckCaptureLimit(filterConfig, innerCapId) == SUCCESS) {
             resetConfig.innerCapId = innerCapId;
         } else {
             AUDIO_ERR_LOG("CheckCaptureLimit fail!");
@@ -1507,6 +1507,16 @@ bool AudioServer::HandleCheckCaptureLimit(AudioProcessConfig &resetConfig,
         }
     }
     return true;
+}
+
+int32_t AudioServer::InnerCheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId)
+{
+    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
+    int32_t ret = playbackCapturerMgr->CheckCaptureLimit(config, innerCapId);
+    if (ret == SUCCESS) {
+        PolicyHandler::GetInstance().LoadModernInnerCapSink(innerCapId);
+    }
+    return ret;
 }
 #endif
 
@@ -2272,14 +2282,13 @@ void AudioServer::NotifyAudioPolicyReady()
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER
+// 该IPC接口仅DT测试使用
 int32_t AudioServer::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId)
 {
-    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
-    int32_t ret = playbackCapturerMgr->CheckCaptureLimit(config, innerCapId);
-    if (ret == SUCCESS) {
-        PolicyHandler::GetInstance().LoadModernInnerCapSink(innerCapId);
-    }
-    return ret;
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED,
+        "refused for %{public}d", callingUid);
+    return InnerCheckCaptureLimit(config, innerCapId);
 }
 
 int32_t AudioServer::SetInnerCapLimit(uint32_t innerCapLimit)
@@ -2293,6 +2302,15 @@ int32_t AudioServer::SetInnerCapLimit(uint32_t innerCapLimit)
         AUDIO_ERR_LOG("SetInnerCapLimit error");
     }
     return ret;
+}
+// 该IPC接口仅DT测试使用
+int32_t AudioServer::ReleaseCaptureLimit(int32_t innerCapId)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED,
+        "refused for %{public}d", callingUid);
+    PlaybackCapturerManager::GetInstance()->CheckReleaseUnloadModernInnerCapSink(innerCapId);
+    return SUCCESS;
 }
 #endif
 
