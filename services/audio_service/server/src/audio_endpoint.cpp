@@ -34,6 +34,7 @@
 #include "audio_service_log.h"
 #include "audio_schedule.h"
 #include "audio_qosmanager.h"
+#include "audio_utils.h"
 #include "manager/hdi_adapter_manager.h"
 #include "sink/i_audio_render_sink.h"
 #include "source/i_audio_capture_source.h"

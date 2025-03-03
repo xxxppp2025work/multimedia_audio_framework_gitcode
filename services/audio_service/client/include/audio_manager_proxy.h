@@ -123,6 +123,11 @@ public:
 #endif
     int32_t LoadHdiAdapter(uint32_t devMgrType, const std::string &adapterName) override;
     void UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapterName, bool force) override;
+    uint32_t CreateHdiSinkPort(const std::string &deviceClass, const std::string &idInfo,
+        const IAudioSinkAttr &attr) override;
+    uint32_t CreateHdiSourcePort(const std::string &deviceClass, const std::string &idInfo,
+        const IAudioSourceAttr &attr) override;
+    void DestroyHdiPort(uint32_t id) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

@@ -25,6 +25,7 @@
 #include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
+#include "common/hdi_adapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -533,6 +534,37 @@ void AudioServerProxy::UnloadHdiAdapterProxy(uint32_t devMgrType, const std::str
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->UnloadHdiAdapter(devMgrType, adapterName, force);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
+uint32_t AudioServerProxy::CreateHdiSinkPortProxy(const std::string &deviceClass, const std::string &idInfo,
+    const IAudioSinkAttr &attr)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, HDI_INVALID_ID, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    uint32_t res = gsp->CreateHdiSinkPort(deviceClass, idInfo, attr);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return res;
+}
+
+uint32_t AudioServerProxy::CreateHdiSourcePortProxy(const std::string &deviceClass, const std::string &idInfo,
+    const IAudioSourceAttr &attr)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, HDI_INVALID_ID, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    uint32_t res = gsp->CreateHdiSourcePort(deviceClass, idInfo, attr);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return res;
+}
+
+void AudioServerProxy::DestroyHdiPortProxy(uint32_t id)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->DestroyHdiPort(id);
     IPCSkeleton::SetCallingIdentity(identity);
 }
 

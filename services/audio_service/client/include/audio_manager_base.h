@@ -23,6 +23,7 @@
 #include "audio_effect.h"
 #include "pulseaudio_ipc_interface_code.h"
 #include "audio_asr.h"
+#include "common/hdi_adapter_type.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -536,6 +537,40 @@ public:
      * @return none.
      */
     virtual void UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapterName, bool force) = 0;
+
+    /**
+     * Create render of hal.
+     *
+     * @param deviceClass specify render type.
+     * @param idInfo info of render id.
+     * @param attr attribute string of render.
+     *
+     * @return Returns render id if success, HDI_INVALID_ID else.
+     */
+    virtual uint32_t CreateHdiSinkPort(const std::string &deviceClass, const std::string &idInfo,
+        const IAudioSinkAttr &attr) = 0;
+
+    /**
+     * Create capture of hal.
+     *
+     * @param deviceClass specify capture type.
+     * @param idInfo info of capture id.
+     * @param attr attribute string of capture.
+     *
+     * @return Returns capture id if success, HDI_INVALID_ID else.
+     */
+     virtual uint32_t CreateHdiSourcePort(const std::string &deviceClass, const std::string &idInfo,
+        const IAudioSourceAttr &attr) = 0;
+
+    /**
+     * Destroy render/capture of hal.
+     *
+     * @param id specify which render or capture to destroy.
+     *
+     * @return none.
+     */
+    virtual void DestroyHdiPort(uint32_t id) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -623,6 +658,9 @@ private:
 #endif
     int HandleLoadHdiAdapter(MessageParcel &data, MessageParcel &reply);
     int HandleUnloadHdiAdapter(MessageParcel &data, MessageParcel &reply);
+    int HandleCreateHdiSinkPort(MessageParcel &data, MessageParcel &reply);
+    int HandleCreateHdiSourcePort(MessageParcel &data, MessageParcel &reply);
+    int HandleDestroyHdiPort(MessageParcel &data, MessageParcel &reply);
 
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
