@@ -15,6 +15,7 @@
 
 #include "get_server_util.h"
 #include "audio_policy_service_thirdext_unit_test.h"
+#include "audio_policy_config_manager.h"
 #include "audio_server_proxy.h"
 #include "nativetoken_kit.h"
 #include "audio_errors.h"
@@ -1172,6 +1173,111 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsAllowedPlayback_002, TestSize.Level
     const int32_t uid = 1003;
     const int32_t pid = 0;
     EXPECT_TRUE(server->audioPolicyService_.IsAllowedPlayback(uid, pid));
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_001
+* @tc.desc  : Test AudioPolicyConfigManager.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_001, TestSize.Level1)
+{
+    std::unique_ptr<AudioPolicyConfigManager> audioPolicyConfigManager = std::make_unique<AudioPolicyConfigManager>();
+    ASSERT_NE(nullptr, audioPolicyConfigManager);
+
+    bool ret = false;
+    ret = audioPolicyConfigManager->Init();
+    EXPECT_EQ(ret, true);
+
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    std::string version = configData.GetVersion();
+    EXPECT_EQ(version, "1.0");
+
+    std::unordered_map<AudioAdapterType, PolicyAdapterInfo> adapterInfoMap {};
+    configData.GetAdapterInfoMap(adapterInfoMap);
+    EXPECT_NE(adapterInfoMap.size(), 0);
+
+    for (auto &pair : adapterInfoMap) {
+        std::string adapterName = pair.second.GetAdapterName();
+        EXPECT_NE(adapterName, "");
+        std::list<AdapterDeviceInfo> deviceInfos {};
+        pair.second.GetDeviceInfos(deviceInfos);
+        EXPECT_NE(deviceInfos.size(), 0);
+        std::list<AdapterPipeInfo> pipeInfos {};
+        pair.second.GetPipeInfos(pipeInfos);
+        EXPECT_NE(pipeInfos.size(), 0);
+    }
+
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_002
+* @tc.desc  : Test AudioPolicyConfigManager.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_002, TestSize.Level1)
+{
+    std::unique_ptr<AudioPolicyConfigManager> audioPolicyConfigManager = std::make_unique<AudioPolicyConfigManager>();
+    ASSERT_NE(nullptr, audioPolicyConfigManager);
+
+    bool ret = false;
+    ret = audioPolicyConfigManager->Init();
+    EXPECT_EQ(ret, true);
+
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    std::unordered_map<DeviceType, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap {};
+    configData.GetDeviceInfoMap(deviceInfoMap);
+    EXPECT_NE(deviceInfoMap.size(), 0);
+
+    for (auto &pair : deviceInfoMap) {
+        EXPECT_NE(pair.second->name_, "");
+        EXPECT_GT(pair.second->type_, 0);
+        EXPECT_GT(pair.second->pin_, 0);
+        EXPECT_GT(pair.second->role_, 0);
+
+        EXPECT_NE(pair.second->adapterInfo_, nullptr);
+        EXPECT_NE(pair.second->supportPipeMap_.size(), 0);
+    }
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_003
+* @tc.desc  : Test AudioPolicyConfigManager.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_003, TestSize.Level1)
+{
+    std::unique_ptr<AudioPolicyConfigManager> audioPolicyConfigManager = std::make_unique<AudioPolicyConfigManager>();
+    ASSERT_NE(nullptr, audioPolicyConfigManager);
+
+    bool ret = false;
+    ret = audioPolicyConfigManager->Init();
+    EXPECT_EQ(ret, true);
+
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    std::unordered_map<std::string, std::shared_ptr<AdapterPipeInfo>> pipeInfoMap {};
+    configData.GetPipeInfoMap(pipeInfoMap);
+    EXPECT_NE(pipeInfoMap.size(), 0);
+
+    for (auto &pair : pipeInfoMap) {
+        EXPECT_NE(pair.second->name_, "");
+        EXPECT_GT(pair.second->pipeRole_, 0);
+
+        EXPECT_TRUE(pair.second->preloadAttr_ >= -1 && pair.second->preloadAttr_ <= 1);
+        EXPECT_NE(pair.second->supportFlags_.size(), 0);
+
+        EXPECT_NE(pair.second->adapterInfo_, nullptr);
+        EXPECT_NE(pair.second->streamPropInfos_.size(), 0);
+        for (auto &info : pair.second->streamPropInfos_) {
+            EXPECT_GT(info.format_, 0);
+            EXPECT_GT(info.sampleRate_, 0);
+            EXPECT_GT(info.channelLayout_, 0);
+            EXPECT_GT(info.bufferSize_, 0);
+
+            EXPECT_NE(info.pipeInfo_, nullptr);
+            EXPECT_NE(info.supportDeviceMap_.size(), 0);
+        }
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
