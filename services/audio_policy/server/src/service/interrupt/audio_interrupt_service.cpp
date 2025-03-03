@@ -812,7 +812,7 @@ int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, G
     lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
-    return SUCCESS; 
+    return SUCCESS;
 }
 
 int32_t AudioInterruptService::InjectInterruptToAudiotZone(const int32_t zoneId,
@@ -842,7 +842,7 @@ int32_t AudioInterruptService::InjectInterruptToAudiotZone(const int32_t zoneId,
         return ret;
     }
     if (zoneId == ZONEID_DEFAULT) {
-        return SUCCESS; 
+        return SUCCESS;
     }
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     lock.unlock();
@@ -1989,7 +1989,7 @@ void AudioInterruptService::HandleAppStateChange(int32_t pid, int32_t uid, int32
 {
     CHECK_AND_RETURN_LOG(dfxCollector_ != nullptr, "dfxCollector is null");
     AUDIO_INFO_LOG("app state changed, pid=%{public}d state=%{public}d", pid, state);
-    auto itZone = zonesMap_.find(DEFAULT_ZONE_ID);
+    auto itZone = zonesMap_.find(ZONEID_DEFAULT);
     CHECK_AND_RETURN_LOG(itZone != zonesMap_.end(), "can not find zoneid");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
@@ -2061,7 +2061,7 @@ void AudioInterruptService::WriteStartDfxMsg(InterruptDfxBuilder &dfxBuilder, co
 
 void AudioInterruptService::WriteSessionTimeoutDfxEvent(const int32_t pid)
 {
-    auto itZone = zonesMap_.find(DEFAULT_ZONE_ID);
+    auto itZone = zonesMap_.find(ZONEID_DEFAULT);
     CHECK_AND_RETURN_LOG(itZone != zonesMap_.end(), "can not find zoneid");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList{};
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
