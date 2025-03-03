@@ -161,7 +161,7 @@ AudioFlag PipeSelector::GetRouteFlagByStreamDesc(std::shared_ptr<AudioStreamDesc
 
 std::string PipeSelector::GetAdapterNameByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
-    std::string name == "";
+    std::string name = "";
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, name, "streamDesc is nullptr");
     PipeStreamPropInfo streamPropInfo = {};
     configManager_->GetStreamPropInfo(streamDesc, streamPropInfo);
@@ -175,7 +175,7 @@ void PipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescri
     // xml解析后保存枚举类型，AudioModuleInfo中对应变量是否要修改？
     info.moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[streamPropInfo.format_];
     info.moduleInfo_.rate = std::to_string(streamPropInfo.sampleRate_);
-    info.moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConverLayoutToAudioChannel(
+    info.moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
         streamPropInfo.channelLayout_));
     info.moduleInfo_.bufferSize = std::to_string(streamPropInfo.bufferSize_);
 
