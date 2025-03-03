@@ -46,6 +46,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> PipeSelector::FetchPipeAndExecute(
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = PipeManager::GetPipeManager().GetPipeList();
     ScanPipeListForStreamDesc(pipeList, streamDesc);
 
+    streamDesc->streamAction_ = STREAM_ACTION_NEW;
     PipeStreamPropInfo streamPropInfo = {};
     configManager_->GetStreamPropInfo(streamDesc, streamPropInfo);
     for (auto &it : pipeList) {
@@ -78,10 +79,11 @@ std::vector<std::shared_ptr<AudioPipeInfo>> PipeSelector::FetchPipesAndExecute(
     }
 
     SortStreamDescsByStartTime(streamDescs);
-    for (auto streamDesc : streamDescs) {
+    for (auto &streamDesc : streamDescs) {
         std::string adapterName = GetAdapterNameByStreamDesc(streamDesc);
         ScanPipeListForStreamDesc(newPipeList, streamDesc);
-        for (auto it : newPipeList) {
+        streamDesc->streamAction_ = STREAM_ACTION_NEW;
+        for (auto &it : newPipeList) {
             if (it->adapterName_ == adapterName && it->routeFlag_ == streamDesc->routeFlag_) {
                 it->streamDescs_.push_back(streamDesc);
                 it->streamDescMap_[streamDesc->sessionId_] = streamDesc;
@@ -171,10 +173,11 @@ void PipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescri
     const PipeStreamPropInfo streamPropInfo, AudioPipeInfo &info)
 {
     // xml解析后保存枚举类型，AudioModuleInfo中对应变量是否要修改？
-    info.moduleInfo_.format = streamPropInfo.format_;
-    info.moduleInfo_.rate = streamPropInfo.sampleRate_;
-    info.moduleInfo_.channels = streamPropInfo.channelLayout_;
-    info.moduleInfo_.bufferSize = streamPropInfo.bufferSize_;
+    info.moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[streamPropInfo.format_];
+    info.moduleInfo_.rate = std::to_string(streamPropInfo.sampleRate_);
+    info.moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConverLayoutToAudioChannel(
+        streamPropInfo.channelLayout_));
+    info.moduleInfo_.bufferSize = std::to_string(streamPropInfo.bufferSize_);
 
     info.moduleInfo_.lib = streamPropInfo.pipeInfo_->paProp_.lib_;
     info.moduleInfo_.role = streamPropInfo.pipeInfo_->paProp_.paPropRole_;
@@ -183,11 +186,10 @@ void PipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescri
     // className和adapterName是一个值，是否可以去掉一个？
     // file_io时className和adapterName不一致？
     info.moduleInfo_.adapterName = streamPropInfo.pipeInfo_->adapterInfo_->GetAdapterName();
-    info.moduleInfo_.deviceType = streamDesc->newDeviceDescs_[0]->deviceType_;
+    info.moduleInfo_.deviceType = std::to_string(streamDesc->newDeviceDescs_[0]->deviceType_);
     // AudioModuleInfo中的networkId是和newDeviceDesc中的一致吗？
     info.moduleInfo_.networkId = streamDesc->newDeviceDescs_[0]->networkId_;
 
-    streamDesc->streamAction_ = STREAM_ACTION_NEW; // 新增流可以这样用，切换时呢？
     info.streamDescs_.push_back(streamDesc);
     info.streamDescMap_[streamDesc->sessionId_] = streamDesc;
 }
