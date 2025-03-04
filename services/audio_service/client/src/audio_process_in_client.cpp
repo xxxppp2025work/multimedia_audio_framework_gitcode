@@ -126,6 +126,8 @@ public:
 
     int32_t SetSilentModeAndMixWithOthers(bool on) override;
 
+    int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName, BoostTriggerMethod method) override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
     static constexpr AudioStreamInfo g_targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
@@ -631,7 +633,8 @@ void AudioProcessInClientInner::InitPlaybackThread()
         if (strongRef != nullptr) {
             AUDIO_INFO_LOG("Callback loop of session %{public}u start", strongRef->sessionId_);
             strongRef->processProxy_->RegisterThreadPriority(gettid(),
-                AudioSystemManager::GetInstance()->GetSelfBundleName(strongRef->processConfig_.appInfo.appUid));
+                AudioSystemManager::GetInstance()->GetSelfBundleName(strongRef->processConfig_.appInfo.appUid),
+                METHOD_WRITE_OR_READ);
         } else {
             AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
         }
@@ -666,7 +669,8 @@ void AudioProcessInClientInner::InitRecordThread()
         if (strongRef != nullptr) {
             AUDIO_INFO_LOG("Callback loop of session %{public}u start", strongRef->sessionId_);
             strongRef->processProxy_->RegisterThreadPriority(gettid(),
-                AudioSystemManager::GetInstance()->GetSelfBundleName(strongRef->processConfig_.appInfo.appUid));
+                AudioSystemManager::GetInstance()->GetSelfBundleName(strongRef->processConfig_.appInfo.appUid),
+                METHOD_WRITE_OR_READ);
             strongRef->WatchingRecordProcessCallbackFuc(); // add watchdog
         } else {
             AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
@@ -1739,7 +1743,7 @@ void AudioProcessInClientInner::ProcessCallbackFucIndependent()
 {
     AUDIO_INFO_LOG("multi play loop start");
     processProxy_->RegisterThreadPriority(gettid(),
-        AudioSystemManager::GetInstance()->GetSelfBundleName(processConfig_.appInfo.appUid));
+        AudioSystemManager::GetInstance()->GetSelfBundleName(processConfig_.appInfo.appUid), METHOD_WRITE_OR_READ);
     int64_t curTime = 0;
     uint64_t curWritePos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
@@ -1866,6 +1870,13 @@ int32_t AudioProcessInClientInner::SetSilentModeAndMixWithOthers(bool on)
 {
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "ipcProxy is null.");
     return processProxy_->SetSilentModeAndMixWithOthers(on);
+}
+
+int32_t AudioProcessInClientInner::RegisterThreadPriority(uint32_t tid, const std::string &bundleName,
+    BoostTriggerMethod method)
+{
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "ipcProxy is null.");
+    return processProxy_->RegisterThreadPriority(tid, bundleName, method);
 }
 } // namespace AudioStandard
 } // namespace OHOS

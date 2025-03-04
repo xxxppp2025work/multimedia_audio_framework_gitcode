@@ -194,10 +194,13 @@ public:
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
 
     void SetSwitchingStatus(bool isSwitching) override;
+
+    void SetCallStartByUserTid(uint32_t tid) override;
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
     int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);
     int32_t SetCallbacksWhenRestore();
+    void RegisterThreadPriorityOnStart(uint32_t tid, StateChangeCmdType cmdType);
 
     AudioStreamType eStreamType_;
     AudioMode eMode_;
@@ -237,6 +240,10 @@ private:
 
     std::mutex switchingMutex_;
     StreamSwitchingInfo switchingInfo_ {false, INVALID};
+
+    std::mutex lastCallStartByUserTidMutex_;
+    std::optional<uint32_t> lastCallStartByUserTid_ = std::nullopt;
+
     enum {
         STATE_CHANGE_EVENT = 0
     };
