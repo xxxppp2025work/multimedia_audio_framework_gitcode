@@ -140,6 +140,13 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevic
                 return make_shared<AudioDeviceDescriptor>(std::move(it->begin()->second));
             }
         }
+        for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
+            if (1 == it->begin()->first) {
+                AUDIO_INFO_LOG("bluetooth or system app already force selected, deviceType: %{public}d",
+                    it->begin()->second->deviceType_);
+                return make_shared<AudioDeviceDescriptor>(std::move(it->begin()->second));
+            }
+        }
     }
     return std::make_shared<AudioDeviceDescriptor>();
 }
@@ -247,10 +254,12 @@ void AudioStateManager::RemoveForcedDeviceMapData(int32_t pid)
     if (forcedDeviceMapList_.empty()) {
         return;
     }
-    
-    for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
+    auto it = forcedDeviceMapList_.begin();
+    while (it != forcedDeviceMapList_.end()) {
         if (pid == it->begin()->first) {
             it = forcedDeviceMapList_.erase(it);
+        } else {
+            it++;
         }
     }
 }
