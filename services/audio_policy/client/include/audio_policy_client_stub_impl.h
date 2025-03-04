@@ -165,6 +165,7 @@ private:
     mutable std::mutex audioSessionMutex_;
     mutable std::mutex microphoneBlockedMutex_;
     mutable std::mutex audioSceneChangedMutex_;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_POLICY_CLIENT_STUB_IMPL_H
