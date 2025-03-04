@@ -298,7 +298,6 @@ void AddAudioInterruptZonePidsFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
 
-
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
 
     int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);

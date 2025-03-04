@@ -830,7 +830,7 @@ int32_t AudioInterruptService::InjectInterruptToAudiotZone(const int32_t zoneId,
     lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
-    return SUCCESS; 
+    return SUCCESS;
 }
 
 int32_t AudioInterruptService::InjectInterruptToAudiotZone(const int32_t zoneId,

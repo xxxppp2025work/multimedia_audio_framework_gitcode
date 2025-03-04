@@ -28,7 +28,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-#define ZONEID_DEFAULT 0
+static constexpr int32_t ZONEID_DEFAULT = 0;
 
 enum class AudioZoneFocusStrategy {
     LOCAL_FOCUS_STRATEGY = 0,
