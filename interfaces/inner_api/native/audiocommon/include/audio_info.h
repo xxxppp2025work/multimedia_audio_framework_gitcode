@@ -1250,6 +1250,17 @@ struct RestoreInfo {
     int32_t deviceChangeReason = 0;
     int32_t targetStreamFlag = AUDIO_FLAG_NORMAL;
 };
+
+/**
+ * Enumerates the method sources that trigger priority boosting.
+ * Used to distinguish between different triggering entry points.
+ */
+enum BoostTriggerMethod : uint32_t {
+    METHOD_START = 0,
+    METHOD_WRITE_OR_READ,
+    METHOD_MAX
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

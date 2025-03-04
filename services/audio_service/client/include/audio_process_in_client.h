@@ -122,6 +122,8 @@ public:
     virtual RestoreStatus CheckRestoreStatus() = 0;
 
     virtual RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) = 0;
+
+    virtual int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName, BoostTriggerMethod method) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
