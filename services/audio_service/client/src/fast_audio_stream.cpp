@@ -570,6 +570,25 @@ int32_t FastAudioStream::ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
     return ERR_OPERATION_FAILED;
 }
 
+// only call from StartAudioStream
+void FastAudioStream::RegisterThreadPriorityOnStart(uint32_t tid, StateChangeCmdType cmdType)
+{
+    if (cmdType == CMD_FROM_CLIENT) {
+        std::lock_guard lock(lastCallStartByUserTidMutex_);
+        lastCallStartByUserTid_ = tid;
+    } else if (cmdType == CMD_FROM_SYSTEM) {
+        std::lock_guard lock(lastCallStartByUserTidMutex_);
+        CHECK_AND_RETURN_LOG(lastCallStartByUserTid_.has_value(), "has not value");
+        tid = lastCallStartByUserTid_.value();
+    } else {
+        AUDIO_ERR_LOG("illeagl param");
+        return;
+    }
+
+    processClient_->RegisterThreadPriority(tid,
+        AudioSystemManager::GetInstance()->GetSelfBundleName(processconfig_.appInfo.appUid), METHOD_START);
+}
+
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
@@ -601,6 +620,8 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Running");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
+
+    RegisterThreadPriorityOnStart(gettid(), cmdType);
 
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
     return true;
@@ -866,6 +887,11 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
         info.userSettedPreferredFrameSize = userSettedPreferredFrameSize_;
     }
 
+    {
+        std::lock_guard<std::mutex> lock(lastCallStartByUserTidMutex_);
+        info.lastCallStartByUserTid = lastCallStartByUserTid_;
+    }
+
     if (spkProcClientCb_) {
         info.rendererWriteCallback = spkProcClientCb_->GetRendererWriteCallback();
     }
@@ -1075,6 +1101,12 @@ void FastAudioStream::FetchDeviceForSplitStream()
     if (processClient_) {
         processClient_->SetRestoreStatus(NO_NEED_FOR_RESTORE);
     }
+}
+
+void FastAudioStream::SetCallStartByUserTid(uint32_t tid)
+{
+    std::lock_guard lock(lastCallStartByUserTidMutex_);
+    lastCallStartByUserTid_ = tid;
 }
 } // namespace AudioStandard
 } // namespace OHOS
