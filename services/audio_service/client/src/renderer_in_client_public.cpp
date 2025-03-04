@@ -905,6 +905,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
         // start the callback-write thread
         cbThreadCv_.notify_all();
     }
+    RegisterThreadPriorityOnStart(gettid(), cmdType);
     statusLock.unlock();
     // in plan: call HiSysEventWrite
     int64_t param = -1;
@@ -1341,6 +1342,11 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
         std::lock_guard<std::mutex> lock(setPreferredFrameSizeMutex_);
         info.userSettedPreferredFrameSize = userSettedPreferredFrameSize_;
     }
+
+    {
+        std::lock_guard<std::mutex> lock(lastCallStartByUserTidMutex_);
+        info.lastCallStartByUserTid = lastCallStartByUserTid_;
+    }
 }
 
 void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
@@ -1625,14 +1631,14 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
 
     switch (oldState) {
         case RUNNING:
-            result = StartAudioStream();
+            result = StartAudioStream(CMD_FROM_SYSTEM);
             break;
         case PAUSED:
-            result = StartAudioStream() && PauseAudioStream();
+            result = StartAudioStream(CMD_FROM_SYSTEM) && PauseAudioStream();
             break;
         case STOPPED:
         case STOPPING:
-            result = StartAudioStream() && StopAudioStream();
+            result = StartAudioStream(CMD_FROM_SYSTEM) && StopAudioStream();
             break;
         default:
             state_ = oldState;
@@ -1760,6 +1766,12 @@ void RendererInClientInner::FetchDeviceForSplitStream()
         AUDIO_WARNING_LOG("Tracker is nullptr, fail to split stream %{public}u", sessionId_);
     }
     SetRestoreStatus(NO_NEED_FOR_RESTORE);
+}
+
+void RendererInClientInner::SetCallStartByUserTid(uint32_t tid)
+{
+    std::lock_guard lock(lastCallStartByUserTidMutex_);
+    lastCallStartByUserTid_ = tid;
 }
 } // namespace AudioStandard
 } // namespace OHOS
