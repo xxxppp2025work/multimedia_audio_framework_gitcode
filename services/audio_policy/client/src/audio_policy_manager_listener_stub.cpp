@@ -136,6 +136,15 @@ bool AudioPolicyManagerListenerStub::OnQueryClientType(const std::string &bundle
     return audioQueryClientTypeCallback->OnQueryClientType(bundleName, uid);
 }
 
+bool AudioPolicyManagerListenerStub::OnCheckClientInfo(const std::string &bundleName, uint32_t uid, int32_t &pid)
+{
+    std::shared_ptr<AudioClientInfoMgrCallback> audioClientInfoMgrCallback = audioClientInfoMgrCallback_.lock();
+
+    CHECK_AND_RETURN_RET_LOG(audioClientInfoMgrCallback != nullptr, false, "audioClientInfoMgrCallback is nullptr");
+
+    return audioClientInfoMgrCallback->OnCheckClientInfo(bundleName, uid, pid);
+}
+
 bool AudioPolicyManagerListenerStub::OnQueryAllowedPlayback(int32_t uid, int32_t pid)
 {
     std::shared_ptr<AudioQueryAllowedPlaybackCallback> audioQueryAllowedPlaybackCallback =
@@ -161,6 +170,11 @@ void AudioPolicyManagerListenerStub::SetAvailableDeviceChangeCallback(
 void AudioPolicyManagerListenerStub::SetQueryClientTypeCallback(const std::weak_ptr<AudioQueryClientTypeCallback> &cb)
 {
     audioQueryClientTypeCallback_ = cb;
+}
+
+void AudioPolicyManagerListenerStub::SetAudioClientInfoMgrCallback(const std::weak_ptr<AudioClientInfoMgrCallback> &cb)
+{
+    audioClientInfoMgrCallback_ = cb;
 }
 
 void AudioPolicyManagerListenerStub::SetQueryAllowedPlaybackCallback(
