@@ -304,6 +304,8 @@ private:
     std::atomic<bool> isAudioPolicyReady_ = false;
     std::mutex isAudioPolicyReadyMutex_;
     std::condition_variable isAudioPolicyReadyCv_;
+
+    int32_t waitCreateStreamInServerCount_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
