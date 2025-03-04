@@ -138,7 +138,8 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
 };
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
-static constexpr unsigned int WAIT_AUDIO_POLICY_READY_TIMEOUT_SECONDS = 10;
+static constexpr unsigned int WAIT_AUDIO_POLICY_READY_TIMEOUT_SECONDS = 5;
+static constexpr unsigned int32_t MAX_WAIT_IN_SERVER_COUNT = 5;
 
 static const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
     SOURCE_TYPE_INVALID,
@@ -1443,9 +1444,15 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
 
     if (!isAudioPolicyReady_) {
         std::unique_lock lock(isAudioPolicyReadyMutex_);
+        if (waitCreateStreamInServerCount_ > MAX_WAIT_IN_SERVER_COUNT) {
+            errorCode = ERR_RETRY_IN_CLIENT;
+            return nullptr;
+        }
+        waitCreateStreamInServerCount_++;
         isAudioPolicyReadyCv_.wait_for(lock, std::chrono::seconds(WAIT_AUDIO_POLICY_READY_TIMEOUT_SECONDS), [this] () {
             return isAudioPolicyReady_.load();
         });
+        waitCreateStreamInServerCount_--;
     }
 
     AudioProcessConfig resetConfig = ResetProcessConfig(config);
