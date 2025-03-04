@@ -203,7 +203,7 @@ public:
     virtual int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) = 0;
 
     virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
-        AudioRendererInfo &rendererInfo) = 0;
+        AudioRendererInfo &rendererInfo, bool forceNoBTPermission) = 0;
 
     virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) = 0;
@@ -436,6 +436,8 @@ public:
     virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) = 0;
 
     virtual int32_t SetVirtualCall(const bool isVirtual) = 0;
+
+    virtual int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

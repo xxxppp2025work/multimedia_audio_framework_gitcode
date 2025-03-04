@@ -142,6 +142,25 @@ const char *g_audioPolicyCodeStrs[] = {
     "ADD_AUDIO_INTERRUPT_ZONE_PIDS",
     "REMOVE_AUDIO_INTERRUPT_ZONE_PIDS",
     "RELEASE_AUDIO_INTERRUPT_ZONE",
+    "REGISTER_AUDIO_ZONE_CLIENT",
+    "CREATE_AUDIO_ZONE",
+    "RELEASE_AUDIO_ZONE",
+    "GET_ALL_AUDIO_ZONE",
+    "GET_AUDIO_ZONE_BY_ID",
+    "BIND_AUDIO_ZONE_DEVICE",
+    "UNBIND_AUDIO_ZONE_DEVICE",
+    "ENABLE_AUDIO_ZONE_REPORT",
+    "ENABLE_AUDIO_ZONE_CHANGE_REPORT",
+    "ADD_UID_TO_AUDIO_ZONE",
+    "REMOVE_UID_FROM_AUDIO_ZONE",
+    "ENABLE_SYSTEM_VOLUME_PROXY",
+    "SET_SYSTEM_VOLUME_LEVEL_FOR_ZONE",
+    "GET_SYSTEM_VOLUME_LEVEL_FOR_ZONE",
+    "GET_AUDIO_INTERRUPT_FOR_ZONE",
+    "GET_AUDIO_INTERRUPT_OF_DEVICE_FOR_ZONE",
+    "ENABLE_AUDIO_ZONE_INTERRUPT_REPORT",
+    "INJECT_INTERRUPT_TO_AUDIO_ZONE",
+    "INJECT_INTERRUPT_OF_DEVICE_TO_AUDIO_ZONE",
     "SET_CALL_DEVICE_ACTIVE",
     "GET_AUDIO_CONVERTER_CONFIG",
     "GET_ACTIVE_BLUETOOTH_DESCRIPTOR",
@@ -196,6 +215,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "UNEXCLUDE_OUTPUT_DEVICES",
     "GET_EXCLUDED_OUTPUT_DEVICES",
     "IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE",
+    "SET_QUERY_ALLOWED_PLAYBACK_CALLBACK",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1230,6 +1250,9 @@ void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_EXCLUDED_OUTPUT_DEVICES):
             GetExcludedDevicesInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_ALLOWED_PLAYBACK_CALLBACK):
+            SetQueryAllowedPlaybackCallbackInternal(data, reply);
+            break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
             IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -1809,6 +1832,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
                 break;
             default:
                 OnMidRemoteRequest(code, data, reply, option);
+                OnAudioZoneRemoteRequest(code, data, reply, option);
                 break;
         }
         return AUDIO_OK;
@@ -2136,6 +2160,14 @@ void AudioPolicyManagerStub::SetVirtualCallInternal(MessageParcel &data, Message
 {
     bool isVirtual = data.ReadBool();
     int32_t result = SetVirtualCall(isVirtual);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetQueryAllowedPlaybackCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_LOG(object != nullptr, "SetQueryAllowedPlaybackCallback is null");
+    int32_t result = SetQueryAllowedPlaybackCallback(object);
     reply.WriteInt32(result);
 }
 } // namespace audio_policy

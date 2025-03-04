@@ -173,6 +173,31 @@ struct AudioFocusType {
     }
 };
 
+enum InterruptStage {
+    INTERRUPT_STAGE_START = 0x10,
+    INTERRUPT_STAGE_RESTART = 0x11,
+    INTERRUPT_STAGE_STOP = 0x12,
+    INTERRUPT_STAGE_PAUSED = 0x20,
+    INTERRUPT_STAGE_RESUMED = 0x21,
+    INTERRUPT_STAGE_STOPPED = 0x30,
+    INTERRUPT_STAGE_DUCK_BEGIN = 0x40,
+    INTERRUPT_STAGE_DUCK_END = 0x41,
+    INTERRUPT_STAGE_TIMEOUT = 0x50
+};
+
+enum InterruptSummary {
+    INTERRUPT_SUMMARY_INTERRUPT_OTHERS = 0,
+    INTERRUPT_SUMMARY_INTERRUPTED,
+    INTERRUPT_SUMMARY_INTERRUPT_BACKGROUND,
+};
+
+enum InterruptAppState {
+    INTERRUPT_APP_STATE_START = 0,
+    INTERRUPT_APP_STATE_FOREGROUND = 2,
+    INTERRUPT_APP_STATE_BACKGROUND = 4,
+    INTERRUPT_APP_STATE_END = 16,
+};
+
 class AudioInterrupt {
 public:
     static constexpr int32_t MAX_SOURCE_TYPE_NUM = 20;
@@ -183,10 +208,13 @@ public:
     bool pauseWhenDucked = false;
     int32_t pid { -1 };
     int32_t uid { -1 };
+    int32_t deviceId { -1 };
     InterruptMode mode { SHARE_MODE };
     bool parallelPlayFlag {false};
     AudioFocusConcurrency currencySources;
     AudioSessionStrategy sessionStrategy = { AudioConcurrencyMode::INVALID };
+    int32_t api = 0;
+    int32_t state {-1};
 
     AudioInterrupt() = default;
     AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,
@@ -204,6 +232,7 @@ public:
         res = res && parcel.WriteBool(interrupt.pauseWhenDucked);
         res = res && parcel.WriteInt32(interrupt.pid);
         res = res && parcel.WriteInt32(interrupt.uid);
+        res = res && parcel.WriteInt32(interrupt.deviceId);
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.mode));
         res = res && parcel.WriteBool(interrupt.parallelPlayFlag);
         size_t vct = interrupt.currencySources.sourcesTypes.size();
@@ -212,6 +241,8 @@ public:
             res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.currencySources.sourcesTypes[i]));
         }
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.sessionStrategy.concurrencyMode));
+        res = res && parcel.WriteInt32(interrupt.api);
+        res = res && parcel.WriteInt32(interrupt.state);
         return res;
     }
     static void Unmarshalling(Parcel &parcel, AudioInterrupt &interrupt)
@@ -225,6 +256,7 @@ public:
         interrupt.pauseWhenDucked = parcel.ReadBool();
         interrupt.pid = parcel.ReadInt32();
         interrupt.uid = parcel.ReadInt32();
+        interrupt.deviceId = parcel.ReadInt32();
         interrupt.mode = static_cast<InterruptMode>(parcel.ReadInt32());
         interrupt.parallelPlayFlag = parcel.ReadBool();
         int32_t vct = parcel.ReadInt32();
@@ -237,6 +269,8 @@ public:
             interrupt.currencySources.sourcesTypes.push_back(sourceType);
         }
         interrupt.sessionStrategy.concurrencyMode = static_cast<AudioConcurrencyMode>(parcel.ReadInt32());
+        interrupt.api = parcel.ReadInt32();
+        interrupt.state = parcel.ReadInt32();
     }
 };
 } // namespace AudioStandard

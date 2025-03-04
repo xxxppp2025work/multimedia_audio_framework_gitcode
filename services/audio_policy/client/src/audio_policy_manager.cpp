@@ -44,6 +44,8 @@ std::mutex g_cBMapMutex;
 std::mutex g_cBDiedMapMutex;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
 std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> AudioPolicyManager::audioStreamCBMap_;
+std::vector<AudioServerDiedCallBack> AudioPolicyManager::serverDiedCbks_;
+std::mutex AudioPolicyManager::serverDiedCbkMutex;
 std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackStub>> AudioPolicyManager::clientTrackerStubMap_;
 
 static bool RegisterDeathRecipientInner(sptr<IRemoteObject> object)
@@ -248,6 +250,22 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
             }
         }
     }
+
+    {
+        std::lock_guard<std::mutex> lockCbMap(serverDiedCbkMutex);
+        for (auto func : serverDiedCbks_) {
+            if (func != nullptr) {
+                func();
+            }
+        }
+    }
+}
+
+void AudioPolicyManager::RegisterServerDiedCallBack(AudioServerDiedCallBack func)
+{
+    CHECK_AND_RETURN_LOG(func != nullptr, "func is null");
+    std::lock_guard<std::mutex> lock(serverDiedCbkMutex);
+    serverDiedCbks_.emplace_back(func);
 }
 
 int32_t AudioPolicyManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
@@ -2199,6 +2217,24 @@ int32_t AudioPolicyManager::SetVirtualCall(const bool isVirtual)
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->SetVirtualCall(isVirtual);
+}
+
+int32_t AudioPolicyManager::SetQueryAllowedPlaybackCallback(
+    const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback)
+{
+    AUDIO_INFO_LOG("In");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    sptr<AudioPolicyManagerListenerStub> listener = new(std::nothrow) AudioPolicyManagerListenerStub();
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERROR, "object null");
+    listener->SetQueryAllowedPlaybackCallback(callback);
+
+    sptr<IRemoteObject> object = listener->AsObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "listenerStub->AsObject is nullptr.");
+
+    return gsp->SetQueryAllowedPlaybackCallback(object);
 }
 
 AudioPolicyManager& AudioPolicyManager::GetInstance()

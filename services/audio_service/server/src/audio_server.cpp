@@ -720,7 +720,7 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
 
 const std::string AudioServer::GetDPParameter(const std::string &condition)
 {
-    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DP);
+    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DP, true);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, "", "get dp sink fail");
 
     return sink->GetAudioParameter(AudioParamKey::GET_DP_DEVICE_INFO, condition);
@@ -1485,7 +1485,6 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         GetBundleNameFromUid(resetConfig.appInfo.appUid));
 #endif
 #ifdef HAS_FEATURE_INNERCAPTURER
-    // 如果是创建内录流，检测内录实例上限
     if (!HandleCheckCaptureLimit(resetConfig, filterConfig)) {
         return nullptr;
     }
@@ -1499,7 +1498,7 @@ bool AudioServer::HandleCheckCaptureLimit(AudioProcessConfig &resetConfig,
 {
     if (resetConfig.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         int32_t innerCapId = 0;
-        if (CheckCaptureLimit(filterConfig, innerCapId) == SUCCESS) {
+        if (InnerCheckCaptureLimit(filterConfig, innerCapId) == SUCCESS) {
             resetConfig.innerCapId = innerCapId;
         } else {
             AUDIO_ERR_LOG("CheckCaptureLimit fail!");
@@ -1507,6 +1506,16 @@ bool AudioServer::HandleCheckCaptureLimit(AudioProcessConfig &resetConfig,
         }
     }
     return true;
+}
+
+int32_t AudioServer::InnerCheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId)
+{
+    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
+    int32_t ret = playbackCapturerMgr->CheckCaptureLimit(config, innerCapId);
+    if (ret == SUCCESS) {
+        PolicyHandler::GetInstance().LoadModernInnerCapSink(innerCapId);
+    }
+    return ret;
 }
 #endif
 
@@ -2274,12 +2283,15 @@ void AudioServer::NotifyAudioPolicyReady()
 #ifdef HAS_FEATURE_INNERCAPTURER
 int32_t AudioServer::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId)
 {
-    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
-    int32_t ret = playbackCapturerMgr->CheckCaptureLimit(config, innerCapId);
-    if (ret == SUCCESS) {
-        PolicyHandler::GetInstance().LoadModernInnerCapSink(innerCapId);
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    // root user case for auto test
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    if (callingUid == ROOT_UID) {
+        return InnerCheckCaptureLimit(config, innerCapId);
     }
-    return ret;
+    return ERR_NOT_SUPPORTED;
+#endif
+    return ERR_NOT_SUPPORTED;
 }
 
 int32_t AudioServer::SetInnerCapLimit(uint32_t innerCapLimit)
@@ -2293,6 +2305,20 @@ int32_t AudioServer::SetInnerCapLimit(uint32_t innerCapLimit)
         AUDIO_ERR_LOG("SetInnerCapLimit error");
     }
     return ret;
+}
+
+int32_t AudioServer::ReleaseCaptureLimit(int32_t innerCapId)
+{
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    // root user case for auto test
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    if (callingUid == ROOT_UID) {
+        PlaybackCapturerManager::GetInstance()->CheckReleaseUnloadModernInnerCapSink(innerCapId);
+        return SUCCESS;
+    }
+    return ERR_NOT_SUPPORTED;
+#endif
+    return ERR_NOT_SUPPORTED;
 }
 #endif
 

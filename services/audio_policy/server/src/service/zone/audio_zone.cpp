@@ -340,7 +340,7 @@ int32_t AudioZone::SetDeviceDescriptorState(const sptr<AudioDeviceDescriptor> de
     }
     itDev->second = enable;
     AUDIO_INFO_LOG("%{public}s device %{public}d,%{public}d,%{public}s of zone %{public}d",
-        enable? "enable" : "disable", device->deviceType_, device->deviceId_, device->deviceName_.c_str();
+        enable ? "enable" : "disable", device->deviceType_, device->deviceId_, device->deviceName_.c_str();
     return SUCCESS;
 }
 
@@ -392,7 +392,7 @@ int32_t AudioZone::EnableChangeReport(pid_t clientPid, bool enable)
         changeReportClientList_.erase(clientPid); 
     }
     AUDIO_INFO_LOG(" %{public}s zone %{public}d change report to client %{public}d",
-        enable? "enable" : "disable", zoneId_, clientPid);
+        enable ? "enable" : "disable", zoneId_, clientPid);
     return SUCCESS;
 }
 
@@ -405,3 +405,44 @@ void AudioZone::SendZoneChangeEvent(AudioZoneChangeReason reason)
     }
 }
 
+int32_t AudioZone::EnableSystemVolumeProxy(pid_t clientPid, bool enable)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    volumeProxyClientPid_ = clientPid;
+    isVolumeProxyEnabled_ = enable;
+    AUDIO_INFO_LOG("volume proxy is %{public}s by %{public}d",
+        enable ? "enable" : "disable", clientPid);
+    return SUCCESS;
+}
+
+const int32_t AudioZone::SetSystemVolumeLevel(AudioVolumeType volumeType,
+    int32_t volumeLevel, int32_t volumeFlag)
+{
+    std::shared_ptr<AudioZoneClientManager> mgr;
+    {
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        if (clientManager_ == nullptr || !isVolumeProxyEnabled_) {
+            AUDIO_ERR_LOG("volume proxy is not enable for zone %{public}d", zoneId_);
+            return ERROR;
+        }
+        mgr = clientManager_;
+    }
+    return mgr->SetSystemVolumeLevel(volumeProxyClientPid_, zoneId_,
+        volumeType, volumeLevel, volumeFlag);
+}
+
+int32_t AudioZone::GetSystemVolumeLevel(AudioVolumeType volumeType)
+{
+    std::shared_ptr<AudioZoneClientManager> mgr;
+    {
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        if (clientManager_ == nullptr || !isVolumeProxyEnabled_) {
+           AUDIO_ERR_LOG("volume proxy is not enable for zone %{public}d", zoneId_);
+           return ERROR;
+        }
+        mgr = clientManager_;
+    }
+    return mgr->GetSystemVolumeLevel(volumeProxyClientPid_, zoneId_, volumeType);
+}
+} // namespace AudioStandard
+} // namespace OHOS
