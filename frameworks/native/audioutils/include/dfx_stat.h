@@ -29,6 +29,15 @@ enum DfxType {
     DFX_TYPE_INTERRUPT,
 };
 
+enum DfxPlayerType {
+    DFX_PLAYER_TYPE_TS_RENDER = 0,
+    DFX_PLAYER_TYPE_NATIVE_RENDER,
+    DFX_PLAYER_TYPE_OPENSL_ES,
+    DFX_PLAYER_TYPE_AVPLAYER,
+    DFX_PLAYER_TYPE_SOUNDPOOL,
+    DFX_PLAYER_TYPE_TONEPLAYER,
+};
+
 struct DfxStatInt32 {
     DfxStatInt32() = default;
     DfxStatInt32(uint8_t param1, uint8_t param2, uint8_t param3, uint8_t param4)
@@ -83,13 +92,14 @@ struct InterruptDfxInfo {
     DfxStatAction interruptAction;
     DfxStatInt32 interruptInfo;
     std::vector<InterruptEffect> interruptEffectVec{};
-    std::vector<DfxStatAction> appStateVec{};
 };
 
-struct DfxBundleInfo {
+struct DfxRunningAppInfo {
     int32_t appUid{-1};
     std::string appName{};
     int32_t versionCode{};
+    std::vector<uint8_t> appStateVec{};
+    std::vector<std::string> appStateTimeStampVec{};
 };
 
 } // namespace AudioStandard

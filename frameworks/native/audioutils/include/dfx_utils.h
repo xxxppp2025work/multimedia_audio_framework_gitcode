@@ -25,6 +25,7 @@ namespace AudioStandard {
 static const int32_t MIN_DFX_NUMERIC_COUNT = 1;
 static const int32_t MAX_DFX_NUMERIC_PERCENTAGE = 100;
 static const int32_t MAX_DFX_ACTION_SIZE = 100;
+static const uint32_t DFX_INVALID_APP_UID = -1;
 
 class DfxUtils {
 public:

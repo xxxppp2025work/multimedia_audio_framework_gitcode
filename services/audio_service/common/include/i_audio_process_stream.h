@@ -54,7 +54,6 @@ public:
     virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
 
     virtual void EnableStandby();
-    virtual void SetStandbyState(RendererStage state) = 0;
 
     virtual ~IAudioProcessStream() = default;
  

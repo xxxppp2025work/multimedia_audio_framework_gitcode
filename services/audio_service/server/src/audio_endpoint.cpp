@@ -1168,7 +1168,6 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
                 AUDIO_INFO_LOG("change the status to stand-by, session %{public}u", sessionId);
                 processList_[i]->EnableStandby();
                 needCheckStandby = true;
-                processList_[i]->SetStandbyState(RENDERER_STAGE_STANDBY_BEGIN);
                 continue;
             }
             uint64_t curRead = tempBuffer->GetCurReadFrame();

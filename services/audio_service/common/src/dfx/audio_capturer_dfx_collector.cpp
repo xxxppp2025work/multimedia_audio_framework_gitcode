@@ -27,7 +27,7 @@ namespace AudioStandard {
 
 void AudioCapturerDfxCollector::FlushDfxMsg(uint32_t index, uint32_t appUid)
 {
-    if (!IsExist(index) || appUid == -1) {
+    if (!IsExist(index) || appUid == DFX_INVALID_APP_UID) {
         AUDIO_INFO_LOG("flush failed index=%{public}d, appUid=%{public}d", index, appUid);
         return;
     }

@@ -26,9 +26,19 @@
 namespace OHOS {
 namespace AudioStandard {
 
+static const std::map<PlayerType, DfxPlayerType> DFX_PLAYER_TYPE_MAP = {
+    {PLAYER_TYPE_DEFAULT, DFX_PLAYER_TYPE_NATIVE_RENDER},
+    {PLAYER_TYPE_OH_AUDIO_RENDERER, DFX_PLAYER_TYPE_NATIVE_RENDER},
+    {PLAYER_TYPE_ARKTS_AUDIO_RENDERER, DFX_PLAYER_TYPE_TS_RENDER},
+    {PLAYER_TYPE_OPENSL_ES, DFX_PLAYER_TYPE_OPENSL_ES},
+    {PLAYER_TYPE_SOUND_POOL, DFX_PLAYER_TYPE_SOUNDPOOL},
+    {PLAYER_TYPE_AV_PLAYER, DFX_PLAYER_TYPE_AVPLAYER},
+    {PLAYER_TYPE_TONE_PLAYER, DFX_PLAYER_TYPE_TONEPLAYER},
+};
+
 void AudioRenderDfxCollector::FlushDfxMsg(uint32_t index, uint32_t appUid)
 {
-    if (!IsExist(index) || appUid == -1) {
+    if (!IsExist(index) || appUid == DFX_INVALID_APP_UID) {
         AUDIO_INFO_LOG("flush failed index=%{public}d, appUid=%{public}d", index, appUid);
         return;
     }
@@ -52,8 +62,12 @@ RenderDfxBuilder& RenderDfxBuilder::WriteInfoMsg(int64_t sourceDuration, const A
         durationSec, static_cast<int64_t>(MIN_DFX_NUMERIC_COUNT),
             static_cast<int64_t>(std::numeric_limits<uint16_t>::max())));
     AUDIO_INFO_LOG("[Start] duration=%{public}" PRId16, dfxDurationSec);
+
+    auto pos = DFX_PLAYER_TYPE_MAP.find(rendererInfo.playerType);
+    DfxPlayerType playerType = (pos == DFX_PLAYER_TYPE_MAP.end()) ? DFX_PLAYER_TYPE_NATIVE_RENDER : pos->second;
+
     dfxInfo_.rendererInfo = {(dfxDurationSec >> 8) & 0xFF, dfxDurationSec & 0xFF,
-        rendererInfo.playerType, rendererInfo.streamUsage};
+        playerType, rendererInfo.streamUsage};
     return *this;
 }
 
