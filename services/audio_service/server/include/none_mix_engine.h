@@ -54,11 +54,11 @@ private:
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate);
     AudioSamplingRate GetDirectVoipSampleRate(AudioSamplingRate sampleRate);
     AudioSampleFormat GetDirectDeviceFormate(AudioSampleFormat format);
-    AudioSampleFormat GetDirectVoipDeviceFormate(AudioSampleFormat format);
+    AudioSampleFormat GetDirectVoipDeviceFormat(AudioSampleFormat format);
     int32_t GetDirectFormatByteSize(AudioSampleFormat format);
 
     void GetTargetSinkStreamInfo(const AudioStreamInfo &clientStreamInfo, uint32_t &targetSampleRate,
-        uint32_t &targetChannel, AudioSampleFormat &targetFormat);
+        uint32_t &targetChannel, AudioSampleFormat &targetFormat, bool &isVoip);
 
 private:
     bool isVoip_;
