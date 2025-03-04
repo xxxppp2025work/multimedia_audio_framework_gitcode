@@ -824,7 +824,7 @@ int32_t AudioInterruptService::InjectInterruptToAudiotZone(const int32_t zoneId,
         return ret;
     }
     if (zoneId == ZONEID_DEFAULT) {
-        return SUCCESS; 
+        return SUCCESS;
     }
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     lock.unlock();

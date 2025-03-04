@@ -298,6 +298,7 @@ void AddAudioInterruptZonePidsFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
 
+
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
 
     int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
@@ -308,7 +309,11 @@ void AddAudioInterruptZonePidsFuzzTest(const uint8_t *rawData, size_t size)
     std::set<int32_t> pids;
     pids.insert(data.ReadInt32());
 
-    interruptService->AddAudioInterruptZonePids(zoneId, pids);
+    auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
+        const std::string &streamTag)->int32_t {
+        return 0;
+    };
+    interruptService->MigrateAudioInterruptZone(zoneId, getZoneFunc);
 }
 
 void UpdateAudioSceneFromInterruptFuzzTest(const uint8_t *rawData, size_t size)
