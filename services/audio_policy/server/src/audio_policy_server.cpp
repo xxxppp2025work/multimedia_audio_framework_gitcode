@@ -31,6 +31,7 @@
 #include "parameters.h"
 #include "media_monitor_manager.h"
 #include "client_type_manager.h"
+#include "dfx_msg_manager.h"
 #ifdef USB_ENABLE
 #include "audio_usb_manager.h"
 #endif
@@ -164,6 +165,8 @@ void AudioPolicyServer::OnDump()
 
 void AudioPolicyServer::OnStart()
 {
+    std::lock_guard<std::mutex> lock(onStartLock_);
+    if (isOnStart) {return;}
     AUDIO_INFO_LOG("Audio policy server on start");
     DlopenUtils::Init();
     interruptService_ = std::make_shared<AudioInterruptService>();
@@ -209,6 +212,9 @@ void AudioPolicyServer::OnStart()
     InitKVStore();
     isScreenOffOrLock_ = !PowerMgr::PowerMgrClient::GetInstance().IsScreenOn(true);
     DlopenUtils::DeInit();
+    isOnStart = true;
+    DfxMsgManager::GetInstance().Init();
+    RegisterAppStateListener();
     AUDIO_INFO_LOG("Audio policy server start end");
 }
 
@@ -1574,11 +1580,16 @@ int32_t AudioPolicyServer::VerifyVoiceCallPermission(
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredOutputDeviceDescriptors(
-    AudioRendererInfo &rendererInfo)
+    AudioRendererInfo &rendererInfo, bool forceNoBTPermission)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs =
         audioPolicyService_.GetPreferredOutputDeviceDescriptors(rendererInfo);
-    bool hasBTPermission = VerifyBluetoothPermission();
+
+    bool hasBTPermission = false;
+    if (!forceNoBTPermission) {
+        hasBTPermission = VerifyBluetoothPermission();
+    }
+
     if (!hasBTPermission) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);
     }
@@ -3015,6 +3026,22 @@ void AudioPolicyServer::UnRegisterPowerStateListener()
     }
 }
 
+void AudioPolicyServer::RegisterAppStateListener()
+{
+    if (appStateListener_ == nullptr) {
+        appStateListener_ = new(std::nothrow) AppStateListener(weak_from_this());
+    }
+
+    if (appStateListener_ == nullptr) {
+        AUDIO_ERR_LOG("create app state listener failed");
+        return;
+    }
+
+    if (appManager_.RegisterAppStateCallback(appStateListener_) != AppExecFwk::AppMgrResultCode::RESULT_OK) {
+        AUDIO_ERR_LOG("register app state callback failed");
+    }
+}
+
 void AudioPolicyServer::RegisterSyncHibernateListener()
 {
     if (syncHibernateListener_ == nullptr) {
@@ -3312,7 +3339,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioPolicyServer::GetActiveBluetoothDevi
 
 std::string AudioPolicyServer::GetBundleName()
 {
-    AppExecFwk::BundleInfo bundleInfo = GetBundleInfoFromUid();
+    AppExecFwk::BundleInfo bundleInfo = GetBundleInfoFromUid(IPCSkeleton::GetCallingUid());
     return bundleInfo.name;
 }
 
@@ -3356,7 +3383,7 @@ int32_t AudioPolicyServer::DisableSafeMediaVolume()
     return audioPolicyService_.DisableSafeMediaVolume();
 }
 
-AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid()
+AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid(int32_t callingUid)
 {
     AudioXCollie audioXCollie("AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName",
         GET_BUNDLE_TIME_OUT_SECONDS);
@@ -3373,7 +3400,6 @@ AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid()
     sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, bundleInfo, "bundleMgrProxy is nullptr");
 
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
     WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetBundleInfoFromUid");
     bundleMgrProxy->GetNameForUid(callingUid, bundleName);
 
@@ -3391,7 +3417,7 @@ AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid()
 
 int32_t AudioPolicyServer::GetApiTargerVersion()
 {
-    AppExecFwk::BundleInfo bundleInfo = GetBundleInfoFromUid();
+    AppExecFwk::BundleInfo bundleInfo = GetBundleInfoFromUid(IPCSkeleton::GetCallingUid());
 
     // Taking remainder of large integers
     int32_t apiTargetversion = bundleInfo.applicationInfo.apiTargetVersion % API_VERSION_REMAINDER;
@@ -3740,6 +3766,16 @@ int32_t AudioPolicyServer::SetVirtualCall(const bool isVirtual)
     return audioPolicyService_.SetVirtualCall(isVirtual);
 }
 
+int32_t AudioPolicyServer::SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object)
+{
+    constexpr int32_t avSessionUid = 6700; // "uid" : "av_session"
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    // This function can only be used by av_session
+    CHECK_AND_RETURN_RET_LOG(callerUid == avSessionUid, ERROR,
+        "UpdateStreamState callerUid is error: not av_session");
+    return audioPolicyService_.SetQueryAllowedPlaybackCallback(object);
+}
+
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionID);
@@ -3750,6 +3786,11 @@ void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t ses
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
     audioPolicyService_.TriggerFetchDevice();
+}
+
+void AudioPolicyServer::NotifyAppStateChanged(int32_t pid, int32_t uid, int32_t state)
+{
+    interruptService_->HandleAppStateChange(pid, uid, state);
 }
 } // namespace AudioStandard
 } // namespace OHOS
