@@ -650,7 +650,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_001, Te
     EXPECT_NE(nullptr, rendererInServer);
 
     bufferDesc.buffer[0] = 0;
-    rendererInServer->WriteMuteDataSysEvent(bufferDesc.buffer, bufferDesc.bufLength);
+    rendererInServer->WriteMuteDataSysEvent(bufferDesc);
     EXPECT_EQ(false, rendererInServer->isInSilentState_);
 }
 
@@ -670,7 +670,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_002, Te
 
     bufferDesc.buffer[0] = 0;
     rendererInServer->startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    rendererInServer->WriteMuteDataSysEvent(bufferDesc.buffer, bufferDesc.bufLength);
+    rendererInServer->WriteMuteDataSysEvent(bufferDesc);
     EXPECT_EQ(false, rendererInServer->isInSilentState_);
 }
 
@@ -690,7 +690,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_003, Te
 
     bufferDesc.buffer[0] = 0;
     rendererInServer->isInSilentState_ = 0;
-    rendererInServer->WriteMuteDataSysEvent(bufferDesc.buffer, bufferDesc.bufLength);
+    rendererInServer->WriteMuteDataSysEvent(bufferDesc);
     EXPECT_EQ(false, rendererInServer->isInSilentState_);
 }
 
@@ -710,7 +710,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_004, Te
     EXPECT_NE(nullptr, rendererInServer);
 
     bufferDesc.buffer[0] = 1;
-    rendererInServer->WriteMuteDataSysEvent(bufferDesc.buffer, bufferDesc.bufLength);
+    rendererInServer->WriteMuteDataSysEvent(bufferDesc);
     EXPECT_EQ(0, rendererInServer->startMuteTime_);
     EXPECT_EQ(false, rendererInServer->isInSilentState_);
 }
@@ -732,7 +732,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_005, Te
     bufferDesc.buffer[0] = 1;
     rendererInServer->startMuteTime_ = 1;
     rendererInServer->isInSilentState_ = 0;
-    rendererInServer->WriteMuteDataSysEvent(bufferDesc.buffer, bufferDesc.bufLength);
+    rendererInServer->WriteMuteDataSysEvent(bufferDesc);
     EXPECT_EQ(0, rendererInServer->startMuteTime_);
     EXPECT_EQ(false, rendererInServer->isInSilentState_);
 }

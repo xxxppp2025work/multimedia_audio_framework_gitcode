@@ -65,8 +65,7 @@ const std::list<AudioStreamType> CAN_MIX_MUTED_STREAM = {
 
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyManagerStub,
-                          public AudioStreamRemovedCallback,
-                          public std::enable_shared_from_this<AudioPolicyServer> {
+                          public AudioStreamRemovedCallback {
     DECLARE_SYSTEM_ABILITY(AudioPolicyServer);
 
 public:
@@ -505,7 +504,6 @@ public:
     int32_t SetHighResolutionExist(bool highResExist) override;
 
     void NotifyAccountsChanged(const int &id);
-    void NotifyAppStateChanged(int32_t pid, int32_t uid, int32_t state);
 
     // for hidump
     void AudioDevicesDump(std::string &dumpString);
