@@ -17,6 +17,7 @@
 #define LINEAR_POS_TIME_MODEL_H
 
 #include "stdint.h"
+#include <vector>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -39,6 +40,7 @@ public:
     virtual ~LinearPosTimeModel() = default;
 private:
     bool IsReasonable(uint64_t frame, int64_t nanoTime);
+    bool IsNewReasonable();
 
 private:
     bool isConfiged = false;
@@ -48,6 +50,9 @@ private:
 
     uint64_t stampFrame_ = 0;
     int64_t stampNanoTime_ = 0;
+    std::vector<int64_t> frameVec_;
+    std::vector<uint64_t> nanoTimeVec_;
+    int curIndex_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

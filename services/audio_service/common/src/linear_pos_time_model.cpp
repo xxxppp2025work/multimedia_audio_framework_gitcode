@@ -28,11 +28,15 @@ namespace AudioStandard {
 namespace {
     static constexpr int64_t NANO_COUNT_PER_SECOND = 1000000000;
     static constexpr int32_t MAX_SUPPORT_SAMPLE_RETE = 384000;
+    static constexpr int32_t MAX_STATISTICS_COUNT = 5;
+    static constexpr int64_t NEW_REASONABLE_BOUND_IN_NANO = 3000000; // 3ms
     static constexpr int64_t REASONABLE_BOUND_IN_NANO = 10000000; // 10ms
 }
 LinearPosTimeModel::LinearPosTimeModel()
 {
     AUDIO_INFO_LOG("New LinearPosTimeModel");
+    frameVec_.reserve(MAX_STATISTICS_COUNT);
+    nanoTimeVec_.reserve(MAX_STATISTICS_COUNT);
 }
 
 bool LinearPosTimeModel::ConfigSampleRate(int32_t sampleRate)
@@ -53,6 +57,7 @@ bool LinearPosTimeModel::ConfigSampleRate(int32_t sampleRate)
 void LinearPosTimeModel::ResetFrameStamp(uint64_t frame, int64_t nanoTime)
 {
     AUDIO_INFO_LOG("Reset frame:%{public}" PRIu64" with time:%{public}" PRId64".", frame, nanoTime);
+    curIndex_ = 0;
     stampFrame_ = frame;
     stampNanoTime_ = nanoTime;
     return;
@@ -80,17 +85,53 @@ bool LinearPosTimeModel::IsReasonable(uint64_t frame, int64_t nanoTime)
     return false;
 }
 
+bool LinearPosTimeModel::IsNewReasonable()
+{
+    if (curIndex_ < MAX_STATISTICS_COUNT) {
+        return false;
+    }
+    curIndex_ = 0;
+    int64_t deltaFrame = frameVec_[4] - frameVec_[0];
+
+    if (deltaFrame == 0) {
+        return false;
+    }
+    double k = (nanoTimeVec_[4] - nanoTimeVec_[0]) / deltaFrame;
+    double c = nanoTimeVec_[4] - k * frameVec_[4];
+
+    bool reasonable = true;
+    for (int i = 0; i < MAX_STATISTICS_COUNT; i++) {
+        double delta = k * frameVec_[i] + c - nanoTimeVec_[i];
+        if (delta > NEW_REASONABLE_BOUND_IN_NANO || delta < -NEW_REASONABLE_BOUND_IN_NANO) {
+            reasonable = false;
+            AUDIO_WARNING_LOG("Unreasonable new data delta:%{public}f", delta);
+            break;
+        }
+    }
+    return reasonable;
+}
+
 bool LinearPosTimeModel::UpdataFrameStamp(uint64_t frame, int64_t nanoTime)
 {
     if (IsReasonable(frame, nanoTime)) {
         AUDIO_DEBUG_LOG("Updata frame:%{public}" PRIu64" with time:%{public}" PRId64".", frame, nanoTime);
         stampFrame_ = frame;
         stampNanoTime_ = nanoTime;
+        curIndex_ = 0;
         return true;
     }
     AUDIO_WARNING_LOG("Unreasonable pos-time[ %{public}" PRIu64" %{public}" PRId64"] "
         " stamp pos-time[ %{public}" PRIu64" %{public}" PRId64"].", frame, nanoTime, stampFrame_, stampNanoTime_);
-    // note: keep it in queue.
+
+    frameVec_[curIndex_] = frame;
+    nanoTimeVec_[curIndex_] = nanoTime;
+    ++curIndex_;
+    if (IsNewReasonable()) {
+        AUDIO_ERR_LOG("Updata new frame:%{public}" PRIu64" with time:%{public}" PRId64".", frame, nanoTime);
+        stampFrame_ = frame;
+        stampNanoTime_ = nanoTime;
+        return true;
+    }
     return false;
 }
 
