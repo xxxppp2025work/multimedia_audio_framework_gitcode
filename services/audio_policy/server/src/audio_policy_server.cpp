@@ -215,7 +215,6 @@ void AudioPolicyServer::OnStart()
     DlopenUtils::DeInit();
     isOnStart = true;
     DfxMsgManager::GetInstance().Init();
-    RegisterAppStateListener();
     AUDIO_INFO_LOG("Audio policy server start end");
 }
 
@@ -225,6 +224,7 @@ void AudioPolicyServer::AddSystemAbilityListeners()
     AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
     AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
     AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
+    AddSystemAbilityListener(APP_MGR_SERVICE_ID);
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
 #endif
@@ -308,6 +308,9 @@ void AudioPolicyServer::OnAddSystemAbilityExtract(int32_t systemAbilityId, const
     switch (systemAbilityId) {
         case MEMORY_MANAGER_SA_ID:
             NotifyProcessStatus(true);
+            break;
+        case APP_MGR_SERVICE_ID:
+            RegisterAppStateListener();
             break;
         default:
             AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
@@ -3048,8 +3051,9 @@ void AudioPolicyServer::UnRegisterPowerStateListener()
 
 void AudioPolicyServer::RegisterAppStateListener()
 {
+    AUDIO_INFO_LOG("OnAddSystemAbility app manager service start");
     if (appStateListener_ == nullptr) {
-        appStateListener_ = new(std::nothrow) AppStateListener(weak_from_this());
+        appStateListener_ = new(std::nothrow) AppStateListener();
     }
 
     if (appStateListener_ == nullptr) {
@@ -3057,8 +3061,17 @@ void AudioPolicyServer::RegisterAppStateListener()
         return;
     }
 
-    if (appManager_.RegisterAppStateCallback(appStateListener_) != AppExecFwk::AppMgrResultCode::RESULT_OK) {
-        AUDIO_ERR_LOG("register app state callback failed");
+    int retryCount = 0;
+    static constexpr int RETRY_COUNT_MAX = 5;
+    static constexpr int RETRY_INTERVAL_TIME = 500;
+    while (retryCount < RETRY_COUNT_MAX) {
+        if (appManager_.RegisterAppStateCallback(appStateListener_) != AppExecFwk::AppMgrResultCode::RESULT_OK) {
+            AUDIO_ERR_LOG("register app state callback failed");
+            retryCount++;
+            std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_INTERVAL_TIME));
+            continue;
+        }
+        break;
     }
 }
 
@@ -3809,11 +3822,6 @@ void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t ses
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
     audioPolicyService_.TriggerFetchDevice();
-}
-
-void AudioPolicyServer::NotifyAppStateChanged(int32_t pid, int32_t uid, int32_t state)
-{
-    interruptService_->HandleAppStateChange(pid, uid, state);
 }
 } // namespace AudioStandard
 } // namespace OHOS

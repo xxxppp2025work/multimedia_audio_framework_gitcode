@@ -17,6 +17,7 @@
 #include "audio_policy_service_thirdext_unit_test.h"
 #include "audio_server_proxy.h"
 #include "nativetoken_kit.h"
+#include "dfx_msg_manager.h"
 #include "audio_errors.h"
 #include <thread>
 #include <memory>
@@ -35,6 +36,7 @@ const int32_t A2DP_INVALID = 3;
 const uint32_t ROTATE = 1;
 const int32_t SESSION_ID = 1000001;
 const int32_t STATE = 1;
+const uint32_t TEST_APP_UID = 1;
 
 void AudioPolicyServiceFourthUnitTest::SetUpTestCase(void)
 {
@@ -1199,5 +1201,155 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UnloadModernInnerCapSink_001, TestSiz
     int32_t ret = server->audioPolicyService_.UnloadModernInnerCapSink(1);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+* @tc.name  : Test DFX_MSG_MANAGER
+* @tc.number: DfxMsgManagerPrcess_001
+* @tc.desc  : Test DFX_MSG_MANAGER interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerPrcess_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    auto &manager = DfxMsgManager::GetInstance();
+    const int DFX_MSG_ACTION_LOOP_TIMES = 100;
+    std::list<RenderDfxInfo> renderInfo{};
+    std::list<InterruptDfxInfo> interruptInfo{};
+    for (size_t i = 0; i < DFX_MSG_ACTION_LOOP_TIMES; i++) {
+        renderInfo.push_back({});
+        interruptInfo.push_back({});
+    }
+
+    const int DFX_MSG_LOOP_TIMES = 20;
+    DfxMessage renderMsg = {.appUid = TEST_APP_UID, .renderInfo = renderInfo};
+    DfxMessage interruptMsg = {.appUid = TEST_APP_UID, .interruptInfo = interruptInfo};
+    for (size_t i = 0; i < DFX_MSG_LOOP_TIMES; i++) {
+        manager.Process(renderMsg);
+        manager.Process(interruptMsg);
+    }
+
+    EXPECT_EQ(DFX_MSG_LOOP_TIMES, manager.reportQueue_.size());
+    bool checkFlag = true;
+    for (auto &item : manager.reportQueue_) {
+        if (item.second.renderInfo.size() != DFX_MSG_ACTION_LOOP_TIMES ||
+            item.second.interruptInfo.size() != DFX_MSG_ACTION_LOOP_TIMES) {
+            checkFlag = false;
+            break;
+        }
+    }
+    EXPECT_TRUE(checkFlag);
+    manager.reportQueue_.clear();
+}
+
+/**
+* @tc.name  : Test DFX_MSG_MANAGER
+* @tc.number: DfxMsgManagerPrcess_002
+* @tc.desc  : Test DFX_MSG_MANAGER interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerPrcess_002, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    auto &manager = DfxMsgManager::GetInstance();
+    const int DFX_MSG_ACTION_LOOP_TIMES = 100;
+    const int DFX_MSG_ACTION_LOOP_TIMES_1 = 50;
+    const int DFX_MSG_ACTION_LOOP_TIMES_2 = 60;
+    std::list<RenderDfxInfo> renderInfo{};
+    for (size_t i = 1; i <= DFX_MSG_ACTION_LOOP_TIMES_1; i++) {
+        DfxStatAction rendererAction{};
+        rendererAction.firstByte = i;
+        renderInfo.push_back({.rendererAction = rendererAction});
+    }
+
+    std::list<RenderDfxInfo> renderInfo2{};
+    for (size_t i = 1; i <= DFX_MSG_ACTION_LOOP_TIMES_2; i++) {
+        DfxStatAction rendererAction{};
+        rendererAction.firstByte = DFX_MSG_ACTION_LOOP_TIMES_1 + i;
+        renderInfo2.push_back({.rendererAction = rendererAction});
+    }
+
+    std::list<InterruptDfxInfo> interruptInfo{};
+    for (size_t i = 0; i < DFX_MSG_ACTION_LOOP_TIMES; i++) {
+        interruptInfo.push_back({});
+    }
+
+    const int DFX_MSG_LOOP_TIMES = 20;
+    for (size_t i = 0; i < DFX_MSG_LOOP_TIMES; i++) {
+        DfxMessage renderMsg = {.appUid = TEST_APP_UID, .renderInfo = renderInfo};
+        DfxMessage renderMsg2 = {.appUid = TEST_APP_UID, .renderInfo = renderInfo2};
+        DfxMessage interruptMsg = {.appUid = TEST_APP_UID, .interruptInfo = interruptInfo};
+        manager.Process(renderMsg);
+        manager.Process(renderMsg2);
+        manager.Process(interruptMsg);
+    }
+
+    EXPECT_EQ(DFX_MSG_LOOP_TIMES, manager.reportQueue_.size());
+    auto upper = manager.reportQueue_.upper_bound(TEST_APP_UID);
+    auto lastIt = --upper;
+    auto checkValue = static_cast<int>(lastIt->second.renderInfo.back().rendererAction.firstByte);
+
+    EXPECT_EQ(DFX_MSG_ACTION_LOOP_TIMES - (DFX_MSG_ACTION_LOOP_TIMES_2 - DFX_MSG_ACTION_LOOP_TIMES_1), checkValue);
+    manager.reportQueue_.clear();
+}
+
+/**
+* @tc.name  : Test DFX_MSG_MANAGER
+* @tc.number: DfxMsgManagerPrcess_003
+* @tc.desc  : Test DFX_MSG_MANAGER interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerPrcess_003, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    uint32_t testSize = 110;
+    static constexpr int32_t MAX_DFX_MSG_MEMBER_SIZE = 100;
+    int32_t vacancy = MAX_DFX_MSG_MEMBER_SIZE - testSize;
+    AUDIO_INFO_LOG("testSize vacancy=%{public}d", vacancy);
+    vacancy = std::max(vacancy, 0);
+    AUDIO_INFO_LOG("testSize vacancy=%{public}d", vacancy);
+
+    auto &manager = DfxMsgManager::GetInstance();
+    const int DFX_MSG_ACTION_LOOP_TIMES_1 = 50;
+    const int DFX_MSG_ACTION_LOOP_TIMES_2 = 60;
+    std::list<RenderDfxInfo> renderInfo{};
+    for (size_t i = 1; i <= DFX_MSG_ACTION_LOOP_TIMES_1; i++) {
+        DfxStatAction rendererAction{};
+        rendererAction.firstByte = i;
+        renderInfo.push_back({.rendererAction = rendererAction});
+    }
+
+    std::list<RenderDfxInfo> renderInfo2{};
+    for (size_t i = 1; i <= DFX_MSG_ACTION_LOOP_TIMES_2; i++) {
+        DfxStatAction rendererAction{};
+        rendererAction.firstByte = DFX_MSG_ACTION_LOOP_TIMES_1 + i;
+        renderInfo2.push_back({.rendererAction = rendererAction});
+    }
+
+    DfxMessage renderMsg = {.appUid = TEST_APP_UID, .renderInfo = renderInfo};
+    manager.Process(renderMsg);
+    DfxMessage renderMsg2 = {.appUid = TEST_APP_UID, .renderInfo = renderInfo2};
+    manager.Process(renderMsg2);
+
+    int loopTimes = 0;
+    int checkValue1 = 0;
+    int checkValue2 = 0;
+    const int DFX_MSG_MAX_ACTION_SIZE = 100;
+    for (auto &item : manager.reportQueue_) {
+        loopTimes++;
+        if (loopTimes == 1) {
+            checkValue1 = item.second.renderInfo.size();
+        } else if (loopTimes == 2) {
+            checkValue2 = item.second.renderInfo.size();
+        }
+    }
+
+    EXPECT_EQ(DFX_MSG_MAX_ACTION_SIZE, checkValue1);
+    EXPECT_EQ(DFX_MSG_ACTION_LOOP_TIMES_2 + DFX_MSG_ACTION_LOOP_TIMES_1 - DFX_MSG_MAX_ACTION_SIZE, checkValue2);
+    manager.reportQueue_.clear();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
