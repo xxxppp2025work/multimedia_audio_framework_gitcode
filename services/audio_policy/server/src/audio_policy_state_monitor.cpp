@@ -60,6 +60,7 @@ int32_t AudioPolicyStateMonitor::RegisterCallback(
     }
 
     int32_t cbId = AllocateCbId();
+    std::unique_lock<std::mutex> lock(monitorMutex_);
     if (cbId != INVALID_CB_ID) {
         cb->startTimeStamp_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         cb->delayTime_ = delayTime_;
@@ -92,6 +93,7 @@ void AudioPolicyStateMonitor::TraverseAndInvokeTimeoutCallbacks()
     auto it = monitoredObj_.begin();
     while (it != monitoredObj_.end()) {
         auto cb = it->second;
+        CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr!");
         if (now - cb->startTimeStamp_ < cb->delayTime_) {
             ++it;
             continue;
