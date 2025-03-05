@@ -341,26 +341,36 @@ void AudioPolicyDump::GetGroupInfoDump(std::string &dumpString)
 }
 
 void AudioPolicyDump::AudioPolicyParserDumpInner(std::string &dumpString,
-    const std::unordered_map<AdaptersType, AudioAdapterInfo>& adapterInfoMap,
+    const std::unordered_map<AudioAdapterType, PolicyAdapterInfo>& adapterInfoMap,
     const std::unordered_map<std::string, std::string>& volumeGroupData,
     std::unordered_map<std::string, std::string>& interruptGroupData,
-    GlobalConfigs globalConfigs)
+    PolicyGlobalConfigs globalConfigs)
 {
     for (auto &[adapterType, adapterInfo] : adapterInfoMap) {
         AppendFormat(dumpString, " - adapter : %s -- adapterType:%u\n", adapterInfo.adapterName_.c_str(), adapterType);
-        for (auto &deviceInfo : adapterInfo.deviceInfos_) {
+        std::list<AdapterDeviceInfo> deviceInfos_;
+        adapterInfo.GetDeviceInfos(deviceInfos_);
+        for (auto &deviceInfo : deviceInfos_) {
             AppendFormat(dumpString, "     - device --  name:%s, pin:%s, type:%s, role:%s\n", deviceInfo.name_.c_str(),
                 deviceInfo.pin_.c_str(), deviceInfo.type_.c_str(), deviceInfo.role_.c_str());
         }
-        for (auto &pipeInfo : adapterInfo.pipeInfos_) {
-            AppendFormat(dumpString, "     - module : -- name:%s, pipeRole:%s, pipeFlags:%s, lib:%s, paPropRole:%s, "
+        std::list<AdapterPipeInfo> pipeInfos_;
+        adapterInfo.GetPipeInfos(pipeInfos_);
+        for (auto &pipeInfo : pipeInfos_) {
+            AppendFormat(dumpString, "     - module : -- name:%s, pipeRole:%s, lib:%s, paPropRole:%s, "
                 "fixedLatency:%s, renderInIdleState:%s\n", pipeInfo.name_.c_str(),
-                pipeInfo.pipeRole_.c_str(), pipeInfo.pipeFlags_.c_str(), pipeInfo.lib_.c_str(),
-                pipeInfo.paPropRole_.c_str(), pipeInfo.fixedLatency_.c_str(), pipeInfo.renderInIdleState_.c_str());
+                pipeInfo.pipeRole_.c_str(), pipeInfo.paProp_.lib_.c_str(),
+                pipeInfo.paProp_.paPropRole_.c_str(), pipeInfo.paProp_.fixedLatency_.c_str(),
+                pipeInfo.paProp_.renderInIdleState_.c_str());
+            
+            for(auto flags : pipeInfo.supportFlags_) {
+                AppendFormat(dumpString, "     - module : -- name:%s, supportFlags_:%u\n",
+                    pipeInfo.name_.c_str(), flags);
+            }
 
-            for (auto &configInfo : pipeInfo.configInfos_) {
-                AppendFormat(dumpString, "         - config : -- name:%s, value:%s\n", configInfo.name_.c_str(),
-                    configInfo.value_.c_str());
+            for (auto &attributeInfo : pipeInfo.attributeInfos_) {
+                AppendFormat(dumpString, "         - config : -- name:%s, value:%s\n", attributeInfo.name_.c_str(),
+                    attributeInfo.value_.c_str());
             }
         }
     }
@@ -392,10 +402,10 @@ void AudioPolicyDump::AudioPolicyParserDumpInner(std::string &dumpString,
 void AudioPolicyDump::AudioPolicyParserDump(std::string &dumpString)
 {
     dumpString += "\nAudioPolicyParser:\n";
-    std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap;
+    std::unordered_map<AudioAdapterType, PolicyAdapterInfo> adapterInfoMap;
     std::unordered_map<std::string, std::string> volumeGroupData;
     std::unordered_map<std::string, std::string> interruptGroupData;
-    GlobalConfigs globalConfigs;
+    PolicyGlobalConfigs globalConfigs;
 
     audioConfigManager_.GetAudioAdapterInfos(adapterInfoMap);
     audioConfigManager_.GetVolumeGroupData(volumeGroupData);
@@ -524,7 +534,7 @@ void AudioPolicyDump::EffectManagerInfoDump(string &dumpString)
     int32_t count = 0;
     GetEffectManagerInfo();
 
-    std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap;
+    std::unordered_map<AudioAdapterType, PolicyAdapterInfo> adapterInfoMap;
     audioConfigManager_.GetAudioAdapterInfos(adapterInfoMap);
 
     dumpString += "==== Audio Effect Manager INFO ====\n";

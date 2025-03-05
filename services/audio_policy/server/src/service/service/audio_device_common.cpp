@@ -224,26 +224,27 @@ int32_t AudioDeviceCommon::GetPreferredOutputStreamTypeInner(StreamUsage streamU
     if (!audioConfigManager_.GetAdapterInfoFlag()) {
         return AUDIO_FLAG_NORMAL;
     }
-    AudioAdapterInfo adapterInfo;
-    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AdaptersType>(
+    PolicyAdapterInfo adapterInfo;
+    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AudioAdapterType>(
         AudioPolicyUtils::portStrToEnum[sinkPortName]), adapterInfo);
     if (!ret) {
         AUDIO_ERR_LOG("Invalid adapter");
         return AUDIO_FLAG_NORMAL;
     }
 
-    AudioPipeDeviceInfo* deviceInfo = adapterInfo.GetDeviceInfoByDeviceType(deviceType);
+    AdapterDeviceInfo* deviceInfo = adapterInfo.GetDeviceInfoByType(deviceType);
     CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, AUDIO_FLAG_NORMAL, "Device type is not supported");
     for (auto &supportPipe : deviceInfo->supportPipes_) {
-        PipeInfo* pipeInfo = adapterInfo.GetPipeByName(supportPipe);
+        AdapterPipeInfo* pipeInfo = adapterInfo.GetPipeInfoByName(supportPipe);
         if (pipeInfo == nullptr) {
             continue;
         }
-        if (flags == AUDIO_FLAG_MMAP && pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
+        // TODO: AUDIO_FLAG_MMAP??
+        if (flags == AUDIO_FLAG_MMAP && pipeInfo->IsSupportFlag(AUDIO_FLAG_MMAP)) {
             return AUDIO_FLAG_MMAP;
         }
         if (flags == AUDIO_FLAG_VOIP_FAST && pipeInfo->audioUsage_ == AUDIO_USAGE_VOIP &&
-            pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
+            pipeInfo->IsSupportFlag(AUDIO_FLAG_MMAP)) {
             return AUDIO_FLAG_VOIP_FAST;
         }
     }
@@ -273,26 +274,27 @@ int32_t AudioDeviceCommon::GetPreferredInputStreamTypeInner(SourceType sourceTyp
     if (!audioConfigManager_.GetAdapterInfoFlag()) {
         return AUDIO_FLAG_NORMAL;
     }
-    AudioAdapterInfo adapterInfo;
-    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AdaptersType>(
+    PolicyAdapterInfo adapterInfo;
+    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AudioAdapterType>(
         AudioPolicyUtils::portStrToEnum[sourcePortName]), adapterInfo);
     if (!ret) {
         AUDIO_ERR_LOG("Invalid adapter");
         return AUDIO_FLAG_NORMAL;
     }
 
-    AudioPipeDeviceInfo* deviceInfo = adapterInfo.GetDeviceInfoByDeviceType(deviceType);
+    AdapterDeviceInfo* deviceInfo = adapterInfo.GetDeviceInfoByType(deviceType);
     CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, AUDIO_FLAG_NORMAL, "Device type is not supported");
     for (auto &supportPipe : deviceInfo->supportPipes_) {
-        PipeInfo* pipeInfo = adapterInfo.GetPipeByName(supportPipe);
+        AdapterPipeInfo* pipeInfo = adapterInfo.GetPipeInfoByName(supportPipe);
         if (pipeInfo == nullptr) {
             continue;
         }
-        if (flags == AUDIO_FLAG_MMAP && pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
+        // TODO: AUDIO_FLAG_MMAP??
+        if (flags == AUDIO_FLAG_MMAP && pipeInfo->IsSupportFlag(AUDIO_FLAG_MMAP)) {
             return AUDIO_FLAG_MMAP;
         }
         if (flags == AUDIO_FLAG_VOIP_FAST && pipeInfo->audioUsage_ == AUDIO_USAGE_VOIP &&
-            pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
+            pipeInfo->IsSupportFlag(AUDIO_FLAG_MMAP)) {
             // Avoid voip stream existing with other
             if (streamCollector_.ChangeVoipCapturerStreamToNormal()) {
                 AUDIO_WARNING_LOG("Voip Change To Normal By DeviceInfo");

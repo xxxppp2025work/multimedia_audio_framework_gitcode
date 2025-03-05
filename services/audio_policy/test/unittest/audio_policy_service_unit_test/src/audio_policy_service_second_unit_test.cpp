@@ -1040,7 +1040,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, UpdateStreamCommonInfo_001, TestSize.Lev
 {
     auto server = GetServerUtil::GetServerPtr();
     AudioModuleInfo moduleInfo;
-    StreamPropInfo targetInfo;
+    PipeStreamPropInfo targetInfo;
     SourceType sourceType = SourceType::SOURCE_TYPE_MIC;
 
     server->audioPolicyService_.audioEcManager_.isEcFeatureEnable_ = true;

@@ -177,7 +177,8 @@ struct AdapterDeviceInfo {
     std::unordered_map<AudioFlag, std::shared_ptr<AdapterPipeInfo>> supportPipeMap_ {}; // flag <-> pipeInfo
 };
 
-struct AdapterPipeInfo {
+class AdapterPipeInfo {
+public:
     std::string name_ = STR_INITED;
     AudioPipeRole pipeRole_ = PIPE_ROLE_NONE;
     PaPropInfo paProp_ {};
@@ -189,6 +190,8 @@ struct AdapterPipeInfo {
     std::shared_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<PipeStreamPropInfo> streamPropInfos_ {};
     std::list<AttributeInfo> attributeInfos_ {};
+
+    bool IsSupportFlag(AudioFlag flag_);
 };
 
 struct PolicyConfigInfo {

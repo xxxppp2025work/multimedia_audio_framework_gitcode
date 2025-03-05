@@ -32,7 +32,7 @@
 #include "audio_effect_service.h"
 
 #include "audio_active_device.h"
-#include "audio_config_manager.h"
+#include "audio_policy_config_manager.h"
 #include "audio_scene_manager.h"
 #include "audio_volume_manager.h"
 #include "audio_connected_device.h"
@@ -91,7 +91,7 @@ private:
         audioEffectService_(AudioEffectService::GetAudioEffectService()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioActiveDevice_(AudioActiveDevice::GetInstance()),
-        audioConfigManager_(AudioConfigManager::GetInstance()),
+        audioConfigManager_(AudioPolicyConfigManager::GetInstance()),
         audioSceneManager_(AudioSceneManager::GetInstance()),
         audioVolumeManager_(AudioVolumeManager::GetInstance()),
         audioConnectedDevice_(AudioConnectedDevice::GetInstance()),
@@ -105,7 +105,7 @@ private:
     AudioEffectService& audioEffectService_;
     AudioStreamCollector& streamCollector_;
     AudioActiveDevice& audioActiveDevice_;
-    AudioConfigManager& audioConfigManager_;
+    AudioPolicyConfigManager& audioConfigManager_;
     AudioSceneManager& audioSceneManager_;
     AudioVolumeManager& audioVolumeManager_;
     AudioConnectedDevice& audioConnectedDevice_;

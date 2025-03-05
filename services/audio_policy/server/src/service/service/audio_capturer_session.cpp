@@ -143,7 +143,7 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
     }
     if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {
         // normal source types, dynamic open
-        StreamPropInfo targetInfo;
+        PipeStreamPropInfo targetInfo;
         SourceType targetSource;
         int32_t res = audioEcManager_.FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSource);
         CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res,
@@ -232,15 +232,16 @@ bool AudioCapturerSession::ConstructWakeupAudioModuleInfo(const AudioStreamInfo 
         return false;
     }
 
-    AudioAdapterInfo info;
-    AdaptersType type = static_cast<AdaptersType>(AudioPolicyUtils::portStrToEnum[std::string(PRIMARY_WAKEUP)]);
+    PolicyAdapterInfo info;
+    AudioAdapterType type = static_cast<AudioAdapterType>(
+        AudioPolicyUtils::portStrToEnum[std::string(PRIMARY_WAKEUP)]);
     bool ret = audioConfigManager_.GetAdapterInfoByType(type, info);
     if (!ret) {
         AUDIO_ERR_LOG("can not find adapter info");
         return false;
     }
 
-    auto pipeInfo = info.GetPipeByName(PIPE_WAKEUP_INPUT);
+    auto pipeInfo = info.GetPipeInfoByName(PIPE_WAKEUP_INPUT);
     if (pipeInfo == nullptr) {
         AUDIO_ERR_LOG("wakeup pipe info is nullptr");
         return false;
@@ -251,9 +252,9 @@ bool AudioCapturerSession::ConstructWakeupAudioModuleInfo(const AudioStreamInfo 
         return false;
     }
 
-    audioModuleInfo.adapterName = info.adapterName_;
-    audioModuleInfo.name = pipeInfo->moduleName_;
-    audioModuleInfo.lib = pipeInfo->lib_;
+    audioModuleInfo.adapterName = info.GetAdapterName();
+    audioModuleInfo.name = pipeInfo->paProp_.moduleName_;
+    audioModuleInfo.lib = pipeInfo->paProp_.lib_;
     audioModuleInfo.networkId = "LocalDevice";
     audioModuleInfo.className = "primary";
     audioModuleInfo.fileName = "";
@@ -293,7 +294,7 @@ int32_t AudioCapturerSession::CloseWakeUpAudioCapturer()
 }
 
 // private method
-bool AudioCapturerSession::FillWakeupStreamPropInfo(const AudioStreamInfo &streamInfo, PipeInfo *pipeInfo,
+bool AudioCapturerSession::FillWakeupStreamPropInfo(const AudioStreamInfo &streamInfo, AdapterPipeInfo *pipeInfo,
     AudioModuleInfo &audioModuleInfo)
 {
     if (pipeInfo == nullptr) {
@@ -314,7 +315,7 @@ bool AudioCapturerSession::FillWakeupStreamPropInfo(const AudioStreamInfo &strea
         }
     }
 
-    audioModuleInfo.format = targetIt->format_;
+    audioModuleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetIt->format_];
     audioModuleInfo.channels = std::to_string(targetIt->channelLayout_);
     audioModuleInfo.rate = std::to_string(targetIt->sampleRate_);
     audioModuleInfo.bufferSize =  std::to_string(targetIt->bufferSize_);

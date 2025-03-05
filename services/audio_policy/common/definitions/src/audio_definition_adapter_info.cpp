@@ -213,5 +213,16 @@ void PolicyAdapterInfo::GetPipeInfos(std::list<AdapterPipeInfo> &pipeInfos)
 {
     pipeInfos = pipeInfos_;
 }
+
+bool AdapterPipeInfo::IsSupportFlag(AudioFlag flag_)
+{
+    for (auto supportedFlag : supportFlags_) {
+        if (flag_ & supportedFlag) {
+            return true;
+        }
+    }
+    return false;
+}
+
 }
 }

@@ -1872,6 +1872,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionAdded_001, TestSize.Level1
     pipeInfos_.push_back(pipeInfo);
     adapterInfo.pipeInfos_ = pipeInfos_;
     GetServerPtr()->audioPolicyService_.audioConfigManager_.adapterInfoMap_ = {};
+    // TODO: ????
     GetServerPtr()->audioPolicyService_.audioConfigManager_.adapterInfoMap_.insert({AdaptersType::TYPE_PRIMARY,
         adapterInfo});
 

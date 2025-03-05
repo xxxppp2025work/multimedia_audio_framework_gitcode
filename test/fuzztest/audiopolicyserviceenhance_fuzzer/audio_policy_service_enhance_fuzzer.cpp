@@ -414,14 +414,14 @@ void AudioPolicyServiceEnhanceNineFuzzTest()
     GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleDistributedDeviceUpdate(statusInfo, descForCb);
     GetServerPtr()->audioPolicyDump_.GetEffectManagerInfo();
     GetServerPtr()->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(true);
-    std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap;
+    std::unordered_map<AudioAdapterType, PolicyAdapterInfo> adapterInfoMap;
     GetServerPtr()->audioPolicyService_.audioConfigManager_.GetAudioAdapterInfos(adapterInfoMap);
     std::unordered_map<std::string, std::string> volumeGroupData;
     GetServerPtr()->audioPolicyService_.audioConfigManager_.GetVolumeGroupData(volumeGroupData);
     GetServerPtr()->audioPolicyService_.audioConfigManager_.GetInterruptGroupData(volumeGroupData);
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo;
     GetServerPtr()->audioPolicyService_.audioConfigManager_.GetDeviceClassInfo(deviceClassInfo);
-    GlobalConfigs globalConfigs;
+    PolicyGlobalConfigs globalConfigs;
     GetServerPtr()->audioPolicyService_.audioConfigManager_.GetGlobalConfigs(globalConfigs);
     GetServerPtr()->audioPolicyService_.audioConfigManager_.GetVoipConfig();
     int32_t clientId = GetData<int32_t>();

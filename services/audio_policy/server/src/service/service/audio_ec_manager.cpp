@@ -172,7 +172,7 @@ void AudioEcManager::Init(int32_t ecEnableState, int32_t micRefEnableState)
 }
 
 void AudioEcManager::PrepareAndOpenNormalSource(SessionInfo &sessionInfo,
-    StreamPropInfo &targetInfo, SourceType targetSource)
+    PipeStreamPropInfo &targetInfo, SourceType targetSource)
 {
     AudioModuleInfo moduleInfo;
     UpdateEnhanceEffectState(targetSource);
@@ -231,7 +231,7 @@ void AudioEcManager::UpdateEnhanceEffectState(SourceType source)
         isEcFeatureEnable_, isMicRefFeatureEnable_, isMicRefRecordOn_, isMicRefVoipUpOn_);
 }
 
-void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamPropInfo &targetInfo,
+void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStreamPropInfo &targetInfo,
     SourceType sourceType)
 {
     if (!isEcFeatureEnable_) {
@@ -240,7 +240,7 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamP
         moduleInfo.channels = std::to_string(targetInfo.channelLayout_);
         moduleInfo.rate = std::to_string(targetInfo.sampleRate_);
         moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
-        moduleInfo.format = targetInfo.format_;
+        moduleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
         moduleInfo.sourceType = std::to_string(sourceType);
     } else {
         shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
@@ -253,13 +253,13 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamP
             moduleInfo.channels = std::to_string(targetInfo.channelLayout_);
             moduleInfo.rate = std::to_string(targetInfo.sampleRate_);
             moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
-            moduleInfo.format = targetInfo.format_;
+            moduleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
             moduleInfo.sourceType = std::to_string(sourceType);
             moduleInfo.deviceType = std::to_string(static_cast<int32_t>(inputDesc->deviceType_));
             // update primary info for ec config to get later
             primaryMicModuleInfo_.channels = std::to_string(targetInfo.channelLayout_);
             primaryMicModuleInfo_.rate = std::to_string(targetInfo.sampleRate_);
-            primaryMicModuleInfo_.format = targetInfo.format_;
+            primaryMicModuleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
         }
     }
 }
@@ -375,7 +375,7 @@ std::string AudioEcManager::GetPipeNameByDeviceForEc(const std::string &role, co
 }
 
 int32_t AudioEcManager::GetPipeInfoByDeviceTypeForEc(const std::string &role, const DeviceType deviceType,
-    PipeInfo &pipeInfo)
+    AdapterPipeInfo &pipeInfo)
 {
     std::string portName;
     if (role == ROLE_SOURCE) {
@@ -383,8 +383,8 @@ int32_t AudioEcManager::GetPipeInfoByDeviceTypeForEc(const std::string &role, co
     } else {
         portName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
     }
-    AudioAdapterInfo info;
-    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AdaptersType>(
+    PolicyAdapterInfo info;
+    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AudioAdapterType>(
         AudioPolicyUtils::portStrToEnum[portName]), info);
     if (!ret) {
         AUDIO_ERR_LOG("no adapter found for deviceType: %{public}d, portName: %{public}s",
@@ -392,7 +392,7 @@ int32_t AudioEcManager::GetPipeInfoByDeviceTypeForEc(const std::string &role, co
         return ERROR;
     }
     std::string pipeName = GetPipeNameByDeviceForEc(role, deviceType);
-    auto pipe = info.GetPipeByName(pipeName);
+    auto pipe = info.GetPipeInfoByName(pipeName);
     if (pipe == nullptr) {
         AUDIO_ERR_LOG("no pipe info found for pipeName: %{public}s, deviceType: %{public}d, portName: %{public}s",
             pipeName.c_str(), deviceType, portName.c_str());
@@ -400,7 +400,7 @@ int32_t AudioEcManager::GetPipeInfoByDeviceTypeForEc(const std::string &role, co
     }
     pipeInfo = *pipe;
     AUDIO_INFO_LOG("pipe name: %{public}s, moduleName: %{public}s found for device: %{public}d",
-        pipeInfo.name_.c_str(), pipeInfo.moduleName_.c_str(), deviceType);
+        pipeInfo.name_.c_str(), pipeInfo.paProp_.moduleName_.c_str(), deviceType);
     return SUCCESS;
 }
 
@@ -622,7 +622,7 @@ void AudioEcManager::ReloadSourceForSession(SessionInfo sessionInfo)
 {
     AUDIO_INFO_LOG("reload source for session");
 
-    StreamPropInfo targetInfo;
+    PipeStreamPropInfo targetInfo;
     SourceType targetSource = sessionInfo.sourceType;
     int32_t res = FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSource);
     CHECK_AND_RETURN_LOG(res == SUCCESS, "fetch target source info error");
@@ -634,14 +634,14 @@ void AudioEcManager::ReloadSourceForSession(SessionInfo sessionInfo)
         DeviceFlag::INPUT_DEVICES_FLAG);
 }
 
-int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, StreamPropInfo &targetInfo,
+int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, PipeStreamPropInfo &targetInfo,
     SourceType &targetSourceType)
 {
-    const PipeInfo *pipeInfoPtr = nullptr;
-    AudioAdapterInfo adapterInfo;
-    bool ret = audioConfigManager_.GetAdapterInfoByType(AdaptersType::TYPE_PRIMARY, adapterInfo);
+    const AdapterPipeInfo *pipeInfoPtr = nullptr;
+    PolicyAdapterInfo adapterInfo;
+    bool ret = audioConfigManager_.GetAdapterInfoByType(AudioAdapterType::TYPE_PRIMARY, adapterInfo);
     if (ret) {
-        pipeInfoPtr = adapterInfo.GetPipeByName(PIPE_PRIMARY_INPUT);
+        pipeInfoPtr = adapterInfo.GetPipeInfoByName(PIPE_PRIMARY_INPUT);
     }
     CHECK_AND_RETURN_RET_LOG(pipeInfoPtr != nullptr, ERROR, "pipeInfoPtr is null");
 
@@ -653,7 +653,7 @@ int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionIn
     }
 
     // use first profile as default
-    StreamPropInfo targetStreamPropInfo = *streamPropInfoList.begin();
+    PipeStreamPropInfo targetStreamPropInfo = *streamPropInfoList.begin();
     bool useMatchingPropInfo = false;
     GetTargetSourceTypeAndMatchingFlag(sessionInfo.sourceType, targetSourceType, useMatchingPropInfo);
 
@@ -671,6 +671,7 @@ int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionIn
     if (isEcFeatureEnable_) {
         std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(targetSourceType, -1);
         if (inputDesc != nullptr && inputDesc->deviceType_ != DEVICE_TYPE_MIC &&
+            // TODO: PC_MIC_CHANNEL_NUM?HEADPHONE_CHANNEL_NUM?
             targetInfo.channelLayout_ == PC_MIC_CHANNEL_NUM) {
             // only built-in mic can use 4 channel, update later by using xml to describe
             targetInfo.channelLayout_ = HEADPHONE_CHANNEL_NUM;
@@ -680,8 +681,7 @@ int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionIn
 #ifndef IS_EMULATOR
     // need change to use profile for all devices later
     if (primaryMicModuleInfo_.OpenMicSpeaker == "1") {
-        uint32_t sampleFormatBits = AudioPolicyUtils::GetInstance().PcmFormatToBytes(
-            static_cast<AudioSampleFormat>(formatFromParserStrToEnum[targetInfo.format_]));
+        uint32_t sampleFormatBits = AudioPolicyUtils::GetInstance().PcmFormatToBytes(targetInfo.format_);
         targetInfo.bufferSize_ = BUFFER_CALC_20MS * targetInfo.sampleRate_ / static_cast<uint32_t>(MS_PER_S)
             * targetInfo.channelLayout_ * sampleFormatBits;
     }
@@ -730,11 +730,11 @@ std::string AudioEcManager::GetHalNameForDevice(const std::string &role, const D
     } else {
         portName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
     }
-    AudioAdapterInfo info;
-    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AdaptersType>(
+    PolicyAdapterInfo info;
+    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AudioAdapterType>(
         AudioPolicyUtils::portStrToEnum[portName]), info);
     if (ret) {
-        halName = info.adapterName_;
+        halName = info.GetAdapterName();
     }
     AUDIO_INFO_LOG("role: %{public}s, device: %{public}d, halName: %{public}s",
         role.c_str(), deviceType, halName.c_str());
