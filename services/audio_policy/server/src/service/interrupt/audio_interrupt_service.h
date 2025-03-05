@@ -103,6 +103,7 @@ public:
     void HandleAppStateChange(int32_t pid, int32_t uid, int32_t state);
 
 private:
+    static constexpr int32_t ZONEID_DEFAULT = 0;
     static constexpr float DUCK_FACTOR = 0.2f;
     static constexpr int32_t DEFAULT_APP_PID = -1;
     static constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;

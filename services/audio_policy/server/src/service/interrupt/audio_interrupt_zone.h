@@ -28,8 +28,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static constexpr int32_t ZONEID_DEFAULT = 0;
-
 enum class AudioZoneFocusStrategy {
     LOCAL_FOCUS_STRATEGY = 0,
     DISTRIBUTED_FOCUS_STRATEGY,

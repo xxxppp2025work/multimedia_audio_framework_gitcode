@@ -107,7 +107,7 @@ int32_t AudioInterruptZoneManager::ReleaseAudioInterruptZone(const int32_t zoneI
         AUDIO_WARNING_LOG("zone %{public}d not exist", zoneId);
         return ERR_INVALID_PARAM;
     }
-    if (zoneId == ZONEID_DEFAULT) {
+    if (zoneId == AudioInterruptService::ZONEID_DEFAULT) {
         return ERR_INVALID_PARAM;
     }
 
@@ -363,7 +363,7 @@ int32_t AudioInterruptZoneManager::FindZoneByPid(int32_t pid)
         }
     }
     AUDIO_WARNING_LOG("pid %{public}d not in audio zone, use default", pid);
-    return ZONEID_DEFAULT;
+    return AudioInterruptService::ZONEID_DEFAULT;
 }
 
 bool AudioInterruptZoneManager::CheckAudioInterruptZonePermission()
