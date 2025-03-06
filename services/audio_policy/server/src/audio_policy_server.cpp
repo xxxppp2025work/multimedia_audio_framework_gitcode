@@ -3779,6 +3779,19 @@ int32_t AudioPolicyServer::SetVirtualCall(const bool isVirtual)
     return audioPolicyService_.SetVirtualCall(isVirtual);
 }
 
+int32_t AudioPolicyServer::SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+    const std::shared_ptr<AudioStreamInfo> &streamInfo, const bool isConnected)
+{
+    AUDIO_INFO_LOG("deviceType: %{public}d, deviceRole: %{public}d, isConnected: %{public}d",
+        desc->deviceType_, desc->deviceRole_, isConnected);
+    const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
+    bool ret = VerifyPermission(MANAGE_AUDIO_CONFIG);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "MANAGE_AUDIO_CONFIG permission denied");
+    audioPolicyService_.OnDeviceStatusUpdated(desc->deviceType_, isConnected, desc->macAddress_,
+        desc->deviceName_, *streamInfo, desc->deviceRole_);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object)
 {
     constexpr int32_t avSessionUid = 6700; // "uid" : "av_session"
