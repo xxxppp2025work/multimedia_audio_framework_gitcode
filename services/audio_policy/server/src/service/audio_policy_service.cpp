@@ -107,6 +107,7 @@ bool AudioPolicyService::LoadAudioPolicyConfig()
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Config Parse failed");
     }
     CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Config Parse failed");
+    SetTvSupported(audioConfigManager_.GetTvSupported());
     return ret;
 }
 
@@ -2114,6 +2115,11 @@ BluetoothOffloadState AudioPolicyService::GetA2dpOffloadFlag()
         return audioA2dpOffloadManager_->GetA2dpOffloadFlag();
     }
     return NO_A2DP_DEVICE;
+}
+
+void AudioPolicyService::SetTvSupported(bool isSupported)
+{
+    return AudioServerProxy::GetInstance().SetTvSupportedProxy(isSupported);
 }
 
 int32_t AudioPolicyService::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)

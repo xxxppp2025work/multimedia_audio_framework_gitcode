@@ -583,6 +583,7 @@ private:
 
     void SetA2dpOffloadFlag(BluetoothOffloadState state);
     BluetoothOffloadState GetA2dpOffloadFlag();
+    void SetTvSupported(bool isSupported);
 private:
 
     static bool isBtListenerRegistered;
