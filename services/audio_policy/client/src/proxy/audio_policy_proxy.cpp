@@ -76,6 +76,22 @@ int32_t AudioPolicyProxy::SetRingerMode(AudioRingerMode ringMode)
     return reply.ReadInt32();
 }
 
+void AudioPolicyProxy::SetDeviceConnection(AudioDeviceDescriptor *desc, bool status)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(GetDescriptor());
+    desc->Marshalling(data);
+    data.WriteBool(state);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_CONNECTION), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get ringermode failed, error: %d", error);
+    }
+    reply.ReadInt32();
+}
+
 #ifdef FEATURE_DTMF_TONE
 std::vector<int32_t> AudioPolicyProxy::GetSupportedTones(const std::string &countryCode)
 {

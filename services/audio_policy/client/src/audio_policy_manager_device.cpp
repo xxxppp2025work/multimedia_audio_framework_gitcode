@@ -140,6 +140,16 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetOutpu
     return gsp->GetOutputDevice(audioRendererFilter);
 }
 
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::SetDeviceConnection(
+    sptr<AudioRendererFilter> audioRendererFilter)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
+    }
+    gsp->GetOutputDevice(audioRendererFilter);
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetInputDevice(
     sptr<AudioCapturerFilter> audioCapturerFilter)
 {

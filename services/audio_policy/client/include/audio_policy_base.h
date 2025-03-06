@@ -109,6 +109,8 @@ public:
 
     virtual int32_t SetAudioScene(AudioScene scene) = 0;
 
+    virtual void SetDeviceConnection(AudioDeviceDescriptor *desc, bool status) = 0;
+
     virtual int32_t SetMicrophoneMute(bool isMute) = 0;
 
     virtual int32_t SetMicrophoneMuteAudioConfig(bool isMute) = 0;

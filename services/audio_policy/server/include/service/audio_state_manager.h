@@ -80,6 +80,7 @@ public:
     void UpdatePreferredMediaRenderDeviceConnectState(ConnectState state);
     void UpdatePreferredCallRenderDeviceConnectState(ConnectState state);
     void UpdatePreferredCallCaptureDeviceConnectState(ConnectState state);
+    void SetDeviceConnection(AudioDeviceDescriptor *desc, bool status);
     void UpdatePreferredRecordCaptureDeviceConnectState(ConnectState state);
 
     vector<shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);

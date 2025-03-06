@@ -197,6 +197,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "UNEXCLUDE_OUTPUT_DEVICES",
     "GET_EXCLUDED_OUTPUT_DEVICES",
     "IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE",
+    "SET_DEVICE_CONNECTION",
     "SET_QUERY_ALLOWED_PLAYBACK_CALLBACK",
 };
 
@@ -1774,6 +1775,9 @@ void AudioPolicyManagerStub::OnMidRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::LOAD_SPLIT_MODULE):
             LoadSplitModuleInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_CONNECTION):
+            SetDeviceConnectionInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ALLOWED_PLAYBACK):
             IsAllowedPlaybackInternal(data, reply);

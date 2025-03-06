@@ -159,6 +159,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_USB_DEVICE = 25,
     /**
+     * Indicates a external device.
+     */
+    DEVICE_TYPE_EXTERNAL = 26,
+    /**
      * Indicates a debug sink device
      */
     DEVICE_TYPE_FILE_SINK = 50,
@@ -193,6 +197,7 @@ inline const std::unordered_set<DeviceType> INPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_USB_HEADSET,
     DeviceType::DEVICE_TYPE_USB_ARM_HEADSET,
     DeviceType::DEVICE_TYPE_FILE_SOURCE,
+    DeviceType::DEVICE_TYPE_EXTERNAL,
 };
 
 inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_ROLE_NONE)
@@ -290,6 +295,11 @@ enum DeviceCategory {
     BT_HEARAID = 1 << 5,
     BT_UNWEAR_HEADPHONE = 1 << 6,
 };
+
+enum DmDeviceType {
+    DM_DEVICE_TYPE_DEFAULT = 0,
+    DM_DEVICE_TYPE_PENCIL = 0xA07,
+}
 
 enum DeviceUsage {
     MEDIA = 1 << 0,

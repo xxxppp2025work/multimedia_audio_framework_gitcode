@@ -1731,6 +1731,7 @@ bool AudioDeviceCommon::HasLowLatencyCapability(DeviceType deviceType, bool isRe
 
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DeviceType::DEVICE_TYPE_EXTERNAL:
             return false;
         default:
             return false;

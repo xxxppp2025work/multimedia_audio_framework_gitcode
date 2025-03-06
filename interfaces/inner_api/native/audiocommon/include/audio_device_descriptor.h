@@ -68,6 +68,7 @@ public:
     int32_t descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
     bool spatializationSupported_ = false;
     bool hasPair_{false};
+    DmDeviceType dmDeviceType_ = DM_DEVICE_TYPE_DEFAULT;
 
     AudioDeviceDescriptor(int32_t descriptorType = AUDIO_DEVICE_DESCRIPTOR);
 
@@ -75,6 +76,8 @@ public:
 
     AudioDeviceDescriptor(DeviceType type, DeviceRole role, int32_t interruptGroupId, int32_t volumeGroupId,
         std::string networkId);
+
+    AudioDeviceDescriptor(DeviceType type, DeviceRole role, DmDeviceType dmDevice);
 
     AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor);
 

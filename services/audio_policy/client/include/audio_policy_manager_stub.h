@@ -82,6 +82,7 @@ private:
     void GetPreferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterTrackerInternal(MessageParcel &data, MessageParcel &reply);
+    void SetDeviceConnectionInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
     void GetCapturerChangeInfosInternal(MessageParcel &data, MessageParcel &reply);

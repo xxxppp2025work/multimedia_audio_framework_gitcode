@@ -61,6 +61,8 @@ public:
     int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
         int32_t volumeFlag = 0);
 
+    void SetDeviceConnection(AudioDeviceDescriptor *desc, bool status);
+
     int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
         int32_t volumeFlag = 0);
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag = 0);

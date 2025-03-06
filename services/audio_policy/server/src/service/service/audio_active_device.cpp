@@ -220,6 +220,11 @@ void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDevice
 #endif
 }
 
+void AudioActiveDevice::SetDeviceConnection(AudioDeviceDescriptor *desc, bool status)
+{
+    AudioPolicyUtils::GetInstance().SetDeviceConnection(desc, state);
+}
+
 void AudioActiveDevice::WriteOutputRouteChangeEvent(std::shared_ptr<AudioDeviceDescriptor> &desc,
     const AudioStreamDeviceChangeReason reason)
 {

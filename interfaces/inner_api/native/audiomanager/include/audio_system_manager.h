@@ -350,6 +350,16 @@ public:
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
 
     /**
+     * @brief Set device connection.
+     *
+     * @param desc Indicates the descriptor needed by client.
+     * @param status Connect or disconnect.
+     * @return Returns Audio streamType.
+     * @since 8
+     */
+     void SetDeviceConnection(AudioDeviceDescriptor *desc, bool status);
+
+    /**
      * @brief Set the stream volume.
      *
      * @param volumeType Enumerates the audio volume type.

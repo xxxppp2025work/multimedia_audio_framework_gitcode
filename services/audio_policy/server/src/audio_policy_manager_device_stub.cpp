@@ -48,6 +48,15 @@ void AudioPolicyManagerStub::GetDevicesInnerInternal(MessageParcel &data, Messag
     }
 }
 
+void AudioPolicyManagerStub::SetDeviceConnection(AudioDeviceDescriptor *desc, bool status);
+{
+    AudioDeviceDescriptor desc;
+    desc.Unmarshalling(data);
+    bool state = data.ReadBool();
+    SetDeviceConnection(&desc, state);
+    reply.WriteInt32(AUDIO_OK);
+}
+
 void AudioPolicyManagerStub::GetPreferredOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioRendererInfo rendererInfo;
