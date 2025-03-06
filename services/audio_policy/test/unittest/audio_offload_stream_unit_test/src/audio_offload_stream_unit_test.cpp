@@ -260,5 +260,53 @@ HWTEST_F(AudioOffloadStreamTest, SpatializationEnabledAndEffectOffloadEnabled, T
     EXPECT_EQ(audioOffloadStream.currentPowerState_, PowerMgr::PowerState::AWAKE);
 }
 
+/**
+ * @tc.name  : ConstructMchAudioModuleInfo
+ * @tc.number: AudioOffloadStreamTest_015
+ * @tc.desc  : Test ConstructMchAudioModuleInfo Function.
+ */
+HWTEST_F(AudioOffloadStreamTest, ConstructMchAudioModuleInfo, TestSize.Level0)
+{
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_EARPIECE;
+    AudioModuleInfo audioModuleInfo = audioOffloadStream_->ConstructMchAudioModuleInfo(deviceType);
+    std::stringstream typeValue;
+    typeValue << static_cast<int32_t>(deviceType);
+
+    EXPECT_EQ(audioModuleInfo.deviceType, typeValue.str());
+}
+
+/**
+ * @tc.name  : MoveToNewPipeInner
+ * @tc.number: AudioOffloadStreamTest_016
+ * @tc.desc  : Test MoveToNewPipeInner Function.
+ */
+HWTEST_F(AudioOffloadStreamTest, MoveToNewPipeInner, TestSize.Level0)
+{
+    uint32_t sessionId = 1;
+    AudioPipeType oldPipeType;
+    audioOffloadStream_->streamCollector_.GetPipeType(sessionId, oldPipeType);
+    EXPECT_EQ(audioOffloadStream_->MoveToNewPipeInner(sessionId, oldPipeType), SUCCESS);
+
+    AudioPipeType pipeType = AudioPipeType::PIPE_TYPE_OFFLOAD;
+    EXPECT_EQ(audioOffloadStream_->MoveToNewPipeInner(sessionId, pipeType), ERROR);
+
+    pipeType = AudioPipeType::PIPE_TYPE_MULTICHANNEL;
+    EXPECT_EQ(audioOffloadStream_->MoveToNewPipeInner(sessionId, pipeType), ERROR);
+}
+
+/**
+ * @tc.name  : SetOffloadMode
+ * @tc.number: AudioOffloadStreamTest_017
+ * @tc.desc  : Test SetOffloadMode Function.
+ */
+HWTEST_F(AudioOffloadStreamTest, SetOffloadMode, TestSize.Level0)
+{
+    audioOffloadStream_->isOffloadAvailable_ = true;
+    audioOffloadStream_->SetOffloadMode();
+
+    audioOffloadStream_->isOffloadAvailable_ = false;
+    audioOffloadStream_->SetOffloadMode();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
