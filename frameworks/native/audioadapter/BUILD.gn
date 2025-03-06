@@ -15,7 +15,7 @@ import("//build/ohos.gni")
 
 ohos_shared_library("pulse_audio_service_adapter") {
   sanitize = {
-    cfi = false
+    cfi = true
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
