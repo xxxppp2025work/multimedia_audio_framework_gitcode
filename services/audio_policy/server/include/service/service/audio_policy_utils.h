@@ -78,6 +78,8 @@ public:
     PreferredType GetPreferredTypeByStreamUsage(StreamUsage streamUsage);
 
     int32_t UnexcludeOutputDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+    void SetScoExcluded(bool scoExcluded);
+    bool GetScoExcluded();
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
@@ -90,6 +92,7 @@ public:
     static std::map<std::string, ClassType> portStrToEnum;
 private:
     bool isBTReconnecting_ = false;
+    bool isScoExcluded = false;
     DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
     AudioStreamCollector& streamCollector_;
     AudioStateManager &audioStateManager_;

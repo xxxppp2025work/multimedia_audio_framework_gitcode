@@ -52,6 +52,7 @@ void AudioSceneManager::SetAudioScenePre(AudioScene audioScene)
             std::make_shared<AudioDeviceDescriptor>());
 #ifdef BLUETOOTH_ENABLE
         Bluetooth::AudioHfpManager::DisconnectSco();
+        AudioPolicyUtils::GetInstance().SetScoExcluded(false);
 #endif
     }
     if (audioScene_ == AUDIO_SCENE_DEFAULT) {

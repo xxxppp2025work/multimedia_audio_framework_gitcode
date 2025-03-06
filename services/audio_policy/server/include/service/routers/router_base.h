@@ -20,6 +20,7 @@
 #include "audio_device_manager.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_policy_log.h"
+#include "audio_policy_utils.h"
 #include "audio_state_manager.h"
 
 namespace OHOS {
@@ -51,7 +52,8 @@ public:
         // remove abnormal device or excluded device
         for (size_t i = 0; i < descs.size(); i++) {
             if (descs[i]->exceptionFlag_ || !descs[i]->isEnable_ ||
-                (descs[i]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && descs[i]->connectState_ == SUSPEND_CONNECTED) ||
+                (descs[i]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+                (descs[i]->connectState_ == SUSPEND_CONNECTED || AudioPolicyUtils::GetInstance().GetScoExcluded())) ||
                 AudioStateManager::GetAudioStateManager().IsExcludedDevice(audioDevUsage, descs[i])) {
                 descs.erase(descs.begin() + i);
                 i--;
