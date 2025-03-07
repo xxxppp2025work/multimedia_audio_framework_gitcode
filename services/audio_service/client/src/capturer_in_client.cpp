@@ -218,7 +218,7 @@ public:
     DeviceType GetDefaultOutputDevice() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     void SetSwitchingStatus(bool isSwitching) override;
-
+    void SetCallStartByUserTid(uint32_t tid) override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -1742,7 +1742,7 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     if (needSetThreadPriority_) {
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is null");
         ipcStream_->RegisterThreadPriority(gettid(),
-            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid));
+            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_WRITE_OR_READ);
         needSetThreadPriority_ = false;
     }
 
@@ -2052,6 +2052,11 @@ int32_t CapturerInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
 }
 
 void CapturerInClientInner::SetSwitchingStatus(bool isSwitching)
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+}
+
+void CapturerInClientInner::SetCallStartByUserTid(uint32_t tid)
 {
     AUDIO_WARNING_LOG("not supported in capturer");
 }

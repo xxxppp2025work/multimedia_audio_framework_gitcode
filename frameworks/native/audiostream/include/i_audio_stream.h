@@ -102,6 +102,8 @@ public:
         std::optional<int32_t> userSettedPreferredFrameSize = std::nullopt;
         bool silentModeAndMixWithOthers = false;
         DeviceType defaultOutputDevice = DEVICE_TYPE_NONE;
+
+        std::optional<uint32_t> lastCallStartByUserTid = std::nullopt;
     };
 
     virtual ~IAudioStream() = default;
@@ -287,6 +289,8 @@ public:
 
     virtual void SetSwitchingStatus(bool isSwitching) = 0;
     virtual int32_t SetSourceDuration(int64_t duration) { return 0; }
+
+    virtual void SetCallStartByUserTid(uint32_t tid) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

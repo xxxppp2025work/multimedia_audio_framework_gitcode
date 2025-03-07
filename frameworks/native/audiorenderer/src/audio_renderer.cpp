@@ -1645,6 +1645,10 @@ int32_t AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
         audioStream->SetSpeed(speed_.value());
     }
 
+    if (info.lastCallStartByUserTid.has_value()) {
+        audioStream->SetCallStartByUserTid(info.lastCallStartByUserTid.value());
+    }
+
     // set callback
     if ((info.renderPositionCb != nullptr) && (info.frameMarkPosition > 0)) {
         audioStream->SetRendererPositionCallback(info.frameMarkPosition, info.renderPositionCb);
@@ -1810,7 +1814,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
 
         if (previousState == RENDERER_RUNNING) {
             // restart audio stream
-            switchResult = newAudioStream->StartAudioStream(CMD_FROM_CLIENT, reason);
+            switchResult = newAudioStream->StartAudioStream(CMD_FROM_SYSTEM, reason);
             CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
         }
 

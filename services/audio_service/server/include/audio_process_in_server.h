@@ -23,6 +23,7 @@
 #include "i_audio_process_stream.h"
 #include "i_process_status_listener.h"
 #include "player_dfx_writer.h"
+#include "audio_schedule_guard.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -99,7 +100,9 @@ public:
 
     AppInfo GetAppInfo() override final;
     BufferDesc &GetConvertedBuffer() override;
-    int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) override;
+
+    int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName,
+        BoostTriggerMethod method) override;
 
     void WriteDumpFile(void *buffer, size_t bufferSize) override final;
 
@@ -142,7 +145,6 @@ private:
 
     uint32_t clientTid_ = 0;
     std::string clientBundleName_;
-    bool clientThreadPriorityRequested_ = false;
 
     uint32_t totalSizeInframe_ = 0;
     uint32_t spanSizeInframe_ = 0;
@@ -160,6 +162,9 @@ private:
     RendererStage standByState_ = RENDERER_STAGE_UNKNOWN;
     int64_t sourceDuration_ = -1;
     std::unique_ptr<PlayerDfxWriter> playerDfx_;
+
+    std::array<std::shared_ptr<SharedAudioScheduleGuard>, METHOD_MAX> scheduleGuards_ = {};
+    std::mutex scheduleGuardsMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
