@@ -345,6 +345,12 @@ void AudioPolicyServer::NotifyProcessStatus(bool isStart)
 #endif
 }
 
+void AudioPolicyServer::SetDeviceConnection(AudioDeviceDescriptor *desc, bool status);
+{
+    AUDIO_INFO_LOG("AudioPolicyServer::SetDeviceConnection");
+    audioPolicyService_.OnDeviceStatusUpdated(*desc, status);
+}
+
 void AudioPolicyServer::HandleKvDataShareEvent()
 {
     AUDIO_INFO_LOG("OnAddSystemAbility kv data service start");

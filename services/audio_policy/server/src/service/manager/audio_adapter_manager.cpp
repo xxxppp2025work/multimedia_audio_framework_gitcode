@@ -1304,6 +1304,7 @@ DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
         case DEVICE_TYPE_SPEAKER:
         case DEVICE_TYPE_FILE_SOURCE:
         case DEVICE_TYPE_DP:
+        case DEVICE_TYPE_EXTERNAL:
         case DEVICE_TYPE_HDMI:
             return SPEAKER_VOLUME_TYPE;
         case DEVICE_TYPE_WIRED_HEADSET:
@@ -1865,6 +1866,7 @@ std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, Aud
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_EXTERNAL:
             type = "wireless";
             break;
         case DEVICE_TYPE_WIRED_HEADSET:

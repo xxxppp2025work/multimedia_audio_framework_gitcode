@@ -536,6 +536,7 @@ DeviceRole AudioPolicyUtils::GetDeviceRole(DeviceType deviceType) const
             return DeviceRole::OUTPUT_DEVICE;
         case DeviceType::DEVICE_TYPE_MIC:
         case DeviceType::DEVICE_TYPE_WAKEUP:
+        case DeviceType::DEVICE_TYPE_EXTERNAL:
             return DeviceRole::INPUT_DEVICE;
         default:
             return DeviceRole::DEVICE_ROLE_NONE;

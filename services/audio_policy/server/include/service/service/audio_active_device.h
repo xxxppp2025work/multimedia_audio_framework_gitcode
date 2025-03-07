@@ -77,6 +77,7 @@ public:
     DeviceCategory GetCurrentOutputDeviceCategory();
     std::string GetCurrentOutputDeviceNetworkId();
     std::string GetCurrentOutputDeviceMacAddr();
+    void SetDeviceConnection(AudioDeviceDescriptor *desc, bool status);
     void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag,
         const std::string &deviceName = "");
     void UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices,

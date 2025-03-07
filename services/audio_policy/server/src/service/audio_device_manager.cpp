@@ -414,6 +414,8 @@ void AudioDeviceManager::AddCaptureDevices(const shared_ptr<AudioDeviceDescripto
         capturePublicDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, RECOGNITION, "capture recognition privacy device",
         reconCapturePrivacyDevices_);
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_NEGATIVE, INPUT_DEVICE, MEDIA, "capture media negtive device",
+        reconCapturePrivacyDevices_);
 }
 
 void AudioDeviceManager::HandleScoWithDefaultCategory(const shared_ptr<AudioDeviceDescriptor> &devDesc)

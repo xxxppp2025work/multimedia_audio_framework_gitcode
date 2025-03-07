@@ -176,6 +176,8 @@ public:
 
     int32_t SetRingerMode(AudioRingerMode ringMode) override;
 
+    void SetDeviceConnection(AudioDeviceDescriptor *desc, bool status) override;
+
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones(const std::string &countryCode) override;
 

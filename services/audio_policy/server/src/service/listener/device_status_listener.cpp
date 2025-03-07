@@ -63,6 +63,9 @@ static DeviceType GetInternalDeviceType(PnpDeviceType pnpDeviceType)
         case PnpDeviceType::PNP_DEVICE_DP_DEVICE:
             internalDeviceType = DEVICE_TYPE_DP;
             break;
+        case PnpDeviceType::PNP_DEVICE_EXTERNAL:
+            internalDeviceType = DEVICE_TYPE_EXTERNAL;
+            break;
         case PnpDeviceType::PNP_DEVICE_MIC:
             internalDeviceType = DEVICE_TYPE_MIC;
             break;

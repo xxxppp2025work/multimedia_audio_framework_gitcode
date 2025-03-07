@@ -114,6 +114,7 @@ public:
     void OnDeviceConfigurationChanged(DeviceType deviceType,
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo);
+    void SetDeviceConnection(AudioDeviceDescriptor *desc, bool status);
     int32_t OnServiceConnected(AudioServiceIndex serviceIndex);
     void OnServiceDisconnected(AudioServiceIndex serviceIndex);
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);

@@ -91,6 +91,12 @@ bool AudioDeviceLock::IsArmUsbDevice(const AudioDeviceDescriptor &desc)
     return audioDeviceManager_.IsArmUsbDevice(desc);
 }
 
+bool AudioDeviceLock::SetDeviceConnection(AudioDeviceDescriptor *desc, bool status)
+{
+    std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
+    return audioDeviceManager_.SetDeviceConnection(desc, state);
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetDevices(DeviceFlag deviceFlag)
 {
     std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);

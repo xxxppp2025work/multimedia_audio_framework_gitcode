@@ -1093,6 +1093,11 @@ void AudioSystemManager::SetAudioMonoState(bool monoState)
     gasp->SetAudioMonoState(monoState);
 }
 
+void AudioSystemManager::SetDeviceConnection(AudioDeviceDescriptor *desc, bool status)
+{
+    AudioPolicyManager::GetInstance().SetDeviceConnection(desc, state);
+}
+
 void AudioSystemManager::SetAudioBalanceValue(float balanceValue)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();

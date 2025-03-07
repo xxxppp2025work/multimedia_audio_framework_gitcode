@@ -281,6 +281,8 @@ public:
     AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage) override;
 
     bool IsSpatializationSupported() override;
+    
+    void SetDeviceConnection(AudioDeviceDescriptor *desc, bool status) override;
 
     bool IsSpatializationSupportedForDevice(const std::string address) override;
 

@@ -29,6 +29,32 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(int32_t descriptorType)
     }
 }
 
+AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role,
+    DmDeviceType dmDevice)
+    : deviceType_(type), deviceRole_(role), dmDeviceType_(dmDevice)
+{
+    deviceId_ = 0;
+    audioStreamInfo_ = {};
+    channelMasks_ = 0;
+    channelIndexMasks_ = 0;
+    deviceName_ = "";
+    macAddress_ = "";
+    volumeGroupId_ = 0;
+    interruptGroupId_ = 0;
+    networkId_ = LOCAL_NETWORK_ID;
+    displayName_ = "";
+    deviceCategory_ = CATEGORY_DEFAULT;
+    connectTimeStamp_ = 0;
+    connectState_ = CONNECTED;
+    pairDeviceDescriptor_ = nullptr;
+    isScoRealConnected_ = false;
+    isEnable_ = true;
+    exceptionFlag_ = false;
+    isLowLatencyDevice_ = false;
+    a2dpOffloadFlag_ = 0;
+    descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
+}
+
 AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     : deviceType_(type), deviceRole_(role)
 {
