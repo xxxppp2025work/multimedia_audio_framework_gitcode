@@ -536,7 +536,6 @@ void VolumeTools::DfxOperation(BufferDesc &buffer, AudioStreamInfo streamInfo, s
             + static_cast<int64_t>(vols.volStart[1]) / HALF_FACTOR);
         }
         AudioLogUtils::ProcessVolumeData(logTag, vols, volumeDataCount);
-        AUDIO_ERR_LOG("volumeDataCount=%{public}" PRId64, volumeDataCount);
     }
     Trace::Count(logTag, minVolume);
 }

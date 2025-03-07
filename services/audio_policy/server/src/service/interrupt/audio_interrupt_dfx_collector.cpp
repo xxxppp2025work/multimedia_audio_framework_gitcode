@@ -28,14 +28,18 @@ namespace AudioStandard {
 
 void AudioInterruptDfxCollector::FlushDfxMsg(uint32_t index, uint32_t appUid)
 {
-    if (!IsExist(index) || appUid == -1) {
+    if (!IsExist(index) || appUid == DFX_INVALID_APP_UID) {
         AUDIO_INFO_LOG("flush failed index=%{public}d, appUid=%{public}d", index, appUid);
         return;
     }
     AUDIO_INFO_LOG("FlushDfxMsg...");
     auto &item = dfxInfos_[index];
     DfxMsgManager::GetInstance().Enqueue({.appUid = appUid, .interruptInfo = item});
+
     dfxInfos_.erase(index);
+    if (dfxIdx2InfoIdx_.count(index) != 0) {
+        dfxIdx2InfoIdx_.erase(index);
+    }
 }
 
 std::tuple<uint8_t, uint8_t> &AudioInterruptDfxCollector::GetDfxIndexes(uint32_t index)
@@ -71,13 +75,6 @@ InterruptDfxBuilder &InterruptDfxBuilder::WriteEffectMsg(uint8_t appstate, const
 {
     InterruptEffect interruptEffect{bundleName, audioInterrupt.streamUsage, appstate, hintType};
     dfxInfo_.interruptEffectVec.push_back(interruptEffect);
-    return *this;
-}
-
-InterruptDfxBuilder &InterruptDfxBuilder::WriteAppStateMsg(InterruptAppState state)
-{
-    DfxStatAction dfxAppState = {state, 0, 0, 0};
-    dfxInfo_.appStateVec.push_back(dfxAppState);
     return *this;
 }
 
