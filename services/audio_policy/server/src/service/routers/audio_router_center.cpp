@@ -316,5 +316,11 @@ void AudioRouterCenter::SetAlarmFollowRingRouter(const bool flag)
         router->SetAlarmFollowRingRouter(flag);
     }
 }
+
+bool AudioRouterCenter::IsNoDeviceCaptureStream(SourceType sourceType)
+{
+    auto it = capturerConfigMap_.find(sourceType);
+    return it == capturerConfigMap_.end();
+}
 } // namespace AudioStandard
 } // namespace OHOS
