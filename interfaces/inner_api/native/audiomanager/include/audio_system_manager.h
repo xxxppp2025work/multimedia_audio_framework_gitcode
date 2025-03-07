@@ -357,7 +357,7 @@ public:
      * @return Returns Audio streamType.
      * @since 8
      */
-     void SetDeviceConnection(AudioDeviceDescriptor *desc, bool status);
+    void SetDeviceConnection(AudioDeviceDescriptor *desc, bool status);
 
     /**
      * @brief Set the stream volume.

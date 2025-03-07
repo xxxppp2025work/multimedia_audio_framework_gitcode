@@ -299,7 +299,7 @@ enum DeviceCategory {
 enum DmDeviceType {
     DM_DEVICE_TYPE_DEFAULT = 0,
     DM_DEVICE_TYPE_PENCIL = 0xA07,
-}
+};
 
 enum DeviceUsage {
     MEDIA = 1 << 0,
