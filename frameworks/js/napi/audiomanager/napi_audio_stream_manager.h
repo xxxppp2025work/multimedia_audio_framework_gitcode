@@ -85,10 +85,7 @@ private:
         const std::string &cbName, NapiAudioStreamMgr *napiStreamMgr);
     static void RegisterRendererStateChangeCallback(napi_env env, napi_value *args,
         const std::string &cbName, NapiAudioStreamMgr *napiStreamMgr);
-    static void UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *args,
-        const std::string &cbName);
-    static void UnregisterRendererChangeCallback(NapiAudioStreamMgr *napiStreamMgr, size_t argc, napi_value *args);
-    static void UnregisterCapturerChangeCallback(NapiAudioStreamMgr *napiStreamMgr, size_t argc, napi_value *args);
+    static void  UnregisterCallback(napi_env env, napi_value jsThis, const std::string &cbName);
 
     napi_env env_;
     AudioStreamManager *audioStreamMngr_;

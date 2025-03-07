@@ -113,10 +113,6 @@ const char *g_audioServerCodeStrs[] = {
     "NOTIFY_ACCOUNTS_CHANGED",
     "NOTIFY_AUDIO_POLICY_READY",
     "SET_CAPTURE_LIMIT",
-    "LOAD_HDI_ADAPTER",
-    "UNLOAD_HDI_ADAPTER",
-    "CHECK_CAPTURE_LIMIT",
-    "RELEASE_CAPTURE_LIMIT",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -461,18 +457,10 @@ int AudioManagerStub::HandleCreateAudioProcess(MessageParcel &data, MessageParce
     AudioPlaybackCaptureConfig filterConfig;
     ProcessConfig::ReadInnerCapConfigFromParcel(filterConfig, data);
     sptr<IRemoteObject> process = CreateAudioProcess(config, errorCode, filterConfig);
-    if (process == nullptr) {
-        AUDIO_ERR_LOG("CREATE_AUDIOPROCESS AudioManagerStub CreateAudioProcess failed");
-        if (errorCode == 0) {
-            errorCode = AUDIO_ERR;
-        }
-        reply.WriteInt32(errorCode);
-        // Only ipc failed need return err. Here using errorCode send information.
-        return AUDIO_OK;
-    }
-
-    reply.WriteInt32(errorCode);
+    CHECK_AND_RETURN_RET_LOG(process != nullptr, AUDIO_ERR,
+        "CREATE_AUDIOPROCESS AudioManagerStub CreateAudioProcess failed");
     reply.WriteRemoteObject(process);
+    reply.WriteInt32(errorCode);
     return AUDIO_OK;
 }
 
@@ -839,15 +827,7 @@ int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, Me
 #ifdef HAS_FEATURE_INNERCAPTURER
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_LIMIT):
             return HandleSetInnerCapLimit(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_CAPTURE_LIMIT):
-            return HandleCheckCaptureLimit(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::RELEASE_CAPTURE_LIMIT):
-            return HandleReleaseCaptureLimit(data, reply);
 #endif
-        case static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_HDI_ADAPTER):
-            return HandleLoadHdiAdapter(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::UNLOAD_HDI_ADAPTER):
-            return HandleUnloadHdiAdapter(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -1173,41 +1153,6 @@ int AudioManagerStub::HandleSetInnerCapLimit(MessageParcel &data, MessageParcel 
     reply.WriteInt32(SetInnerCapLimit(innerCapId));
     return AUDIO_OK;
 }
-
-int AudioManagerStub::HandleCheckCaptureLimit(MessageParcel &data, MessageParcel &reply)
-{
-    AudioPlaybackCaptureConfig filterConfig;
-    ProcessConfig::ReadInnerCapConfigFromParcel(filterConfig, data);
-    int32_t innerCapId = 0;
-    reply.WriteInt32(CheckCaptureLimit(filterConfig, innerCapId));
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleReleaseCaptureLimit(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t innerCapId = data.ReadInt32();
-    reply.WriteInt32(ReleaseCaptureLimit(innerCapId));
-    return AUDIO_OK;
-}
 #endif
-
-int AudioManagerStub::HandleLoadHdiAdapter(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t devMgrType = data.ReadUint32();
-    const std::string adapterName = data.ReadString();
-    int32_t result = LoadHdiAdapter(devMgrType, adapterName);
-    reply.WriteInt32(result);
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleUnloadHdiAdapter(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t devMgrType = data.ReadUint32();
-    const std::string adapterName = data.ReadString();
-    bool force = data.ReadBool();
-    UnloadHdiAdapter(devMgrType, adapterName, force);
-    return AUDIO_OK;
-}
-
 } // namespace AudioStandard
 } // namespace OHOS

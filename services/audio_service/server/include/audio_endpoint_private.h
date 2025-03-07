@@ -20,15 +20,14 @@
 #include <memory>
 #include <thread>
 
+#include "i_audio_renderer_sink.h"
 #include "i_process_status_listener.h"
 #include "linear_pos_time_model.h"
 #include "audio_device_descriptor.h"
 #include "i_stream_manager.h"
 #include "i_renderer_stream.h"
 #include "audio_utils.h"
-#include "common/hdi_adapter_info.h"
-#include "sink/i_audio_render_sink.h"
-#include "source/i_audio_capture_source.h"
+#include "i_audio_capturer_source.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -119,8 +118,6 @@ public:
     uint32_t GetLinkedProcessCount() override;
 
     AudioMode GetAudioMode() const final;
-
-    void BindCore();
 private:
     AudioProcessConfig GetInnerCapConfig();
     void StartThread(const IAudioSinkAttr &attr);
@@ -180,10 +177,8 @@ private:
     void AsyncGetPosTime();
     bool DelayStopDevice();
 
-    std::shared_ptr<IAudioRenderSink> GetFastSink(const AudioDeviceDescriptor &deviceInfo, EndpointType type);
-    std::shared_ptr<IAudioCaptureSource> GetFastSource(const std::string &networkId, EndpointType type,
-        IAudioSourceAttr &attr);
-    void InitSinkAttr(IAudioSinkAttr &attr, const AudioDeviceDescriptor &deviceInfo);
+    IMmapAudioRendererSink *GetFastSink(const AudioDeviceDescriptor &deviceInfo, EndpointType type);
+    IMmapAudioCapturerSource *GetFastSource(const std::string &networkId, EndpointType type, IAudioSourceAttr &attr);
 
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
@@ -195,17 +190,13 @@ private:
     void ProcessUpdateAppsUidForPlayback();
     void ProcessUpdateAppsUidForRecord();
 
+    void WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby);
     int32_t HandleDisableFastCap(CaptureInfo &captureInfo);
-
-    void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize, int32_t index);
-    bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize, AudioSampleFormat format);
-    void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t THREE_MILLISECOND_DURATION = 3000000; // 3ms
     static constexpr int64_t WRITE_TO_HDI_AHEAD_TIME = -1000000; // ahead 1ms
     static constexpr int32_t UPDATE_THREAD_TIMEOUT = 1000; // 1000ms
-    static constexpr int32_t CPU_INDEX = 2;
     enum ThreadStatus : uint32_t {
         WAITTING = 0,
         SLEEPING,
@@ -244,8 +235,8 @@ private:
     FILE *dumpC2SDup_ = nullptr; // client to server inner-cap dump file
     std::string dupDumpName_ = "";
 
-    uint32_t fastRenderId_ = HDI_INVALID_ID;
-    uint32_t fastCaptureId_ = HDI_INVALID_ID;
+    IMmapAudioRendererSink *fastSink_ = nullptr;
+    IMmapAudioCapturerSource *fastSource_ = nullptr;
     FastSinkType fastSinkType_ = NONE_FAST_SINK;
     FastSourceType fastSourceType_ = NONE_FAST_SOURCE;
 
@@ -302,7 +293,6 @@ private:
     std::atomic_bool endpointWorkLoopFucThreadStatus_ { false };
     std::atomic_bool recordEndpointWorkLoopFucThreadStatus_ { false };
     std::unordered_map<int32_t, CaptureInfo> fastCaptureInfos_;
-    bool coreBinded_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

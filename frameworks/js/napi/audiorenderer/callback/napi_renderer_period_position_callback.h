@@ -22,20 +22,13 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class NapiRendererPeriodPositionCallback : public RendererPeriodPositionCallback,
-    public NapiAudioRendererCallbackInner {
+class NapiRendererPeriodPositionCallback : public RendererPeriodPositionCallback {
 public:
     explicit NapiRendererPeriodPositionCallback(napi_env env);
-    ~NapiRendererPeriodPositionCallback() override;
-    void SaveCallbackReference(const std::string &callbackName, napi_value args) override;
+    virtual ~NapiRendererPeriodPositionCallback();
+    void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnPeriodReached(const int64_t &frameNumber) override;
     void CreatePeriodReachTsfn(napi_env env);
-    void RemoveCallbackReference(const std::string &callbackName, napi_env env,
-        napi_value callback, napi_value args = nullptr) override;
-    bool CheckIfTargetCallbackName(const std::string &callbackName) override;
-protected:
-    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
-    napi_env &GetEnv() override;
 
 private:
     struct RendererPeriodPositionJsCallback {

@@ -17,7 +17,6 @@
 #endif
 
 #include "audio_capturer.h"
-#include "shared_audio_capturer_wrapper.h"
 
 #include <cinttypes>
 
@@ -78,42 +77,36 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStream
 
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStreamType, const AppInfo &appInfo)
 {
-    std::shared_ptr<AudioCapturer> sharedCapturer = std::make_shared<AudioCapturerPrivate>(audioStreamType,
-        appInfo, true);
-    CHECK_AND_RETURN_RET_LOG(sharedCapturer != nullptr, nullptr, "capturer is nullptr");
-
-    return std::make_unique<SharedCapturerWrapper>(sharedCapturer);
+    return std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo, true);
 }
 
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &options)
 {
     AppInfo appInfo = {};
-    return Create(options, appInfo);
+    return Create(options, "", appInfo);
+}
+
+std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &options, const AppInfo &appInfo)
+{
+    return Create(options, "", appInfo);
 }
 
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &options, const std::string cachePath)
 {
     AppInfo appInfo = {};
-    return Create(options, appInfo);
+    return Create(options, cachePath, appInfo);
 }
 
-std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &options,
+std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturerOptions &options,
+    const AppInfo &appInfo)
+{
+    auto tempUniquePtr = Create(options, "", appInfo);
+    std::shared_ptr<AudioCapturer> sharedPtr(tempUniquePtr.release());
+    return sharedPtr;
+}
+
+std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &capturerOptions,
     const std::string cachePath, const AppInfo &appInfo)
-{
-    return Create(options, appInfo);
-}
-
-std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &options,
-    const AppInfo &appInfo)
-{
-    auto tempSharedPtr = CreateCapturer(options, appInfo);
-    CHECK_AND_RETURN_RET_LOG(tempSharedPtr != nullptr, nullptr, "capturer is nullptr");
-
-    return std::make_unique<SharedCapturerWrapper>(tempSharedPtr);
-}
-
-std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturerOptions &capturerOptions,
-    const AppInfo &appInfo)
 {
     Trace trace("AudioCapturer::Create");
     auto sourceType = capturerOptions.capturerInfo.sourceType;
@@ -140,7 +133,7 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
     }
     params.audioEncoding = capturerOptions.streamInfo.encoding;
     params.channelLayout = capturerOptions.streamInfo.channelLayout;
-    auto capturer = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    auto capturer = std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo, false);
     if (capturer == nullptr) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_OPERATION_FAILED);
         AUDIO_ERR_LOG("Failed to create capturer object");
@@ -470,7 +463,7 @@ int32_t AudioCapturerPrivate::SetCapturerCallback(const std::shared_ptr<AudioCap
 
     // Save and Set reference for stream callback. Order is important here.
     if (audioStreamCallback_ == nullptr) {
-        audioStreamCallback_ = std::make_shared<AudioStreamCallbackCapturer>(weak_from_this());
+        audioStreamCallback_ = std::make_shared<AudioStreamCallbackCapturer>();
         CHECK_AND_RETURN_RET_LOG(audioStreamCallback_ != nullptr, ERROR,
             "Failed to allocate memory for audioStreamCallback_");
     }
@@ -813,11 +806,6 @@ void AudioCapturerInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
     HandleAndNotifyForcedEvent(interruptEvent);
 }
 
-AudioStreamCallbackCapturer::AudioStreamCallbackCapturer(std::weak_ptr<AudioCapturerPrivate> capturer)
-    : capturer_(capturer)
-{
-}
-
 void AudioStreamCallbackCapturer::SaveCallback(const std::weak_ptr<AudioCapturerCallback> &callback)
 {
     callback_ = callback;
@@ -826,18 +814,11 @@ void AudioStreamCallbackCapturer::SaveCallback(const std::weak_ptr<AudioCapturer
 void AudioStreamCallbackCapturer::OnStateChange(const State state,
     const StateChangeCmdType __attribute__((unused)) cmdType)
 {
-    std::shared_ptr<AudioCapturerPrivate> capturerObj = capturer_.lock();
-    CHECK_AND_RETURN_LOG(capturerObj != nullptr, "capturerObj is nullptr");
     std::shared_ptr<AudioCapturerCallback> cb = callback_.lock();
+
     CHECK_AND_RETURN_LOG(cb != nullptr, "AudioStreamCallbackCapturer::OnStateChange cb == nullptr.");
 
-    auto captureState = static_cast<CapturerState>(state);
-    cb->OnStateChange(captureState);
-
-    AudioInterrupt audioInterrupt;
-    capturerObj->GetAudioInterrupt(audioInterrupt);
-    audioInterrupt.state = state;
-    capturerObj->SetAudioInterrupt(audioInterrupt);
+    cb->OnStateChange(static_cast<CapturerState>(state));
 }
 
 std::vector<AudioSampleFormat> AudioCapturer::GetSupportedFormats()
@@ -1047,11 +1028,6 @@ bool AudioCapturerPrivate::IsDeviceChanged(AudioDeviceDescriptor &newDeviceInfo)
 void AudioCapturerPrivate::GetAudioInterrupt(AudioInterrupt &audioInterrupt)
 {
     audioInterrupt = audioInterrupt_;
-}
-
-void AudioCapturerPrivate::SetAudioInterrupt(const AudioInterrupt &audioInterrupt)
-{
-    audioInterrupt_ = audioInterrupt;
 }
 
 void AudioCapturerPrivate::WriteOverflowEvent() const

@@ -29,9 +29,7 @@
 #include "audio_effect_chain_manager.h"
 #include "audio_errors.h"
 #include "audio_service_log.h"
-#include "common/hdi_adapter_info.h"
-#include "manager/hdi_adapter_manager.h"
-#include "sink/i_audio_render_sink.h"
+#include "i_audio_renderer_sink.h"
 #include "policy_handler.h"
 #include "audio_volume.h"
 #include "audio_limiter_manager.h"
@@ -983,10 +981,13 @@ int32_t PaRendererStreamImpl::OffloadSetVolume(float volume)
     if (!offloadEnable_) {
         return ERR_OPERATION_FAILED;
     }
-    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_OFFLOAD);
-    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
-    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "Renderer is null.");
-    return sink->SetVolume(volume, volume);
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
+
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_ERR_LOG("Renderer is null.");
+        return ERROR;
+    }
+    return audioRendererSinkInstance->SetVolume(volume, volume);
 }
 
 int32_t PaRendererStreamImpl::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
@@ -1015,18 +1016,20 @@ int32_t PaRendererStreamImpl::UpdateSpatializationState(bool spatializationEnabl
 
 int32_t PaRendererStreamImpl::OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
 {
-    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_OFFLOAD);
-    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
-    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "Renderer is null.");
-    return sink->GetPresentationPosition(frames, timeSec, timeNanoSec);
+    auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(
+        "offload", ""));
+
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "Renderer is null.");
+    return audioRendererSinkInstance->GetPresentationPosition(frames, timeSec, timeNanoSec);
 }
 
 int32_t PaRendererStreamImpl::OffloadSetBufferSize(uint32_t sizeMs)
 {
-    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_OFFLOAD);
-    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
-    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "Renderer is null.");
-    return sink->SetBufferSize(sizeMs);
+    auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(
+        "offload", ""));
+
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "Renderer is null.");
+    return audioRendererSinkInstance->SetBufferSize(sizeMs);
 }
 
 int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
@@ -1303,9 +1306,10 @@ void PaRendererStreamImpl::UpdatePaTimingInfo()
     if (operation != nullptr) {
         auto start_time = std::chrono::steady_clock::now();
         while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-            auto update_time = std::chrono::steady_clock::now() - start_time;
-            CHECK_AND_BREAK_LOG(update_time <= std::chrono::seconds(PA_STREAM_IMPL_TIMEOUT << 1),
-                "pa_stream_update_timing_info timeout");
+            if ((std::chrono::steady_clock::now() - start_time) > std::chrono::seconds(PA_STREAM_IMPL_TIMEOUT + 1)) {
+                AUDIO_ERR_LOG("pa_stream_update_timing_info timeout");
+                break;
+            }
             pa_threaded_mainloop_wait(mainloop_);
         }
         pa_operation_unref(operation);

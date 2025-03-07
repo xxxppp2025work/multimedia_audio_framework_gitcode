@@ -48,20 +48,6 @@ void PaRendererStreamUnitTestP2::TearDown(void)
     // input testcase teardown step，teardown invoked after each testcases
 }
 
-#ifdef HAS_FEATURE_INNERCAPTURER
-void LoadPaPort()
-{
-    AudioPlaybackCaptureConfig checkConfig;
-    int32_t checkInnerCapId = 0;
-    AudioSystemManager::GetInstance()->CheckCaptureLimit(checkConfig, checkInnerCapId);
-}
-
-void ReleasePaPort()
-{
-    AudioSystemManager::GetInstance()->ReleaseCaptureLimit(1);
-}
-#endif
-
 static AudioProcessConfig GetInnerCapConfig()
 {
     AudioProcessConfig config;
@@ -74,7 +60,6 @@ static AudioProcessConfig GetInnerCapConfig()
     config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
     config.streamType = AudioStreamType::STREAM_MUSIC;
     config.deviceType = DEVICE_TYPE_USB_HEADSET;
-    config.innerCapId = 1;
     return config;
 }
 
@@ -99,9 +84,6 @@ std::shared_ptr<PaRendererStreamImpl> PaRendererStreamUnitTestP2::CreatePaRender
  */
 HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_004, TestSize.Level1)
 {
-#ifdef HAS_FEATURE_INNERCAPTURER
-    LoadPaPort();
-#endif
     auto unit = CreatePaRendererStreamImpl();
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
     adapterManager->InitPaContext();
@@ -362,45 +344,6 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_015, TestSize.Level1)
     uint64_t latency = 0;
     unit->firstGetLatency_= false;
     int32_t ret = unit->GetLatency(latency);
-    EXPECT_EQ(ret, SUCCESS);
-#ifdef HAS_FEATURE_INNERCAPTURER
-    ReleasePaPort();
-#endif
-}
-
-/**
- * @tc.name  : Test
- * @tc.type  : FUNC
- * @tc.number: PaRenderer_016
- * @tc.desc  : Test PAStreamMovedCb.
- */
-HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_016, TestSize.Level1)
-{
-    auto unit = CreatePaRendererStreamImpl();
-    std::shared_ptr<PaAdapterManager> adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
-    adapterManager->InitPaContext();
-    uint32_t sessionId = 123456;
-    AudioProcessConfig processConfig = GetInnerCapConfig();
-    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
-    unit->paStream_ = stream;
-    void *userdataRet = nullptr;
-
-    EXPECT_EQ(userdataRet, nullptr);
-    unit->PAStreamMovedCb(stream, userdataRet);
-    unit->PAStreamMovedCb(stream, (void *)1);
-}
-
-/**
- * @tc.name  : Test
- * @tc.type  : FUNC
- * @tc.number: PaRenderer_017
- * @tc.desc  : Test UpdateBufferSize.
- */
-HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_017, TestSize.Level1)
-{
-    auto unit = CreatePaRendererStreamImpl();
-    uint32_t bufferLength = 10;
-    int32_t ret = unit->UpdateBufferSize(bufferLength);
     EXPECT_EQ(ret, SUCCESS);
 }
 }

@@ -19,7 +19,7 @@
 #include <iostream>
 #include <cstring>
 #include <unordered_map>
-#include <unordered_set>
+#include <set>
 #include <mutex>
 #include <v1_0/iaudio_manager.h>
 #include <v1_0/iaudio_callback.h>
@@ -56,10 +56,8 @@ typedef struct RemoteAdapterWrapper {
 
     sptr<RemoteIAudioAdapter> adapter_ = nullptr;
     RemoteAudioAdapterDescriptor adapterDesc_ = {};
-    std::unordered_set<uint32_t> hdiRenderIds_;
-    std::unordered_set<uint32_t> hdiCaptureIds_;
-    std::mutex renderMtx_;
-    std::mutex captureMtx_;
+    uint32_t renderNum_ = 0;
+    uint32_t captureNum_ = 0;
     int32_t routeHandle_ = -1;
     std::unordered_map<uint32_t, IDeviceManagerCallback *> renderCallbacks_;
     std::unordered_map<uint32_t, IDeviceManagerCallback *> captureCallbacks_;
@@ -75,9 +73,6 @@ public:
 
     int32_t LoadAdapter(const std::string &adapterName) override;
     void UnloadAdapter(const std::string &adapterName, bool force = false) override;
-
-    void AllAdapterSetMicMute(bool isMute) override;
-
     void SetAudioParameter(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
     std::string GetAudioParameter(const std::string &adapterName, const AudioParamKey key,

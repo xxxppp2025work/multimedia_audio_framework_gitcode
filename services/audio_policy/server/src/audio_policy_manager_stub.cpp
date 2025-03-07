@@ -21,7 +21,6 @@
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 #include "audio_utils.h"
-#include "ipc_skeleton.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,14 +32,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_MIN_VOLUMELEVEL",
     "SET_SYSTEM_VOLUMELEVEL_LEGACY",
     "SET_SYSTEM_VOLUMELEVEL",
-    "SET_APP_VOLUMELEVEL",
-    "SET_APP_VOLUME_MUTED",
-    "IS_APP_MUTE",
-    "SET_SELF_APP_VOLUMELEVEL",
-    "SET_SYSTEM_VOLUMELEVEL_WITH_DEVICE",
     "GET_SYSTEM_VOLUMELEVEL",
-    "GET_APP_VOLUMELEVEL",
-    "GET_SELF_APP_VOLUME_LEVEL",
     "SET_STREAM_MUTE_LEGACY",
     "SET_STREAM_MUTE",
     "GET_STREAM_MUTE",
@@ -61,7 +53,6 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_CALLBACK",
     "UNSET_CALLBACK",
     "SET_QUERY_CLIENT_TYPE_CALLBACK",
-    "SET_CLIENT_INFO_MGR_CALLBACK",
     "ACTIVATE_INTERRUPT",
     "DEACTIVATE_INTERRUPT",
     "SET_INTERRUPT_CALLBACK",
@@ -196,8 +187,6 @@ const char *g_audioPolicyCodeStrs[] = {
     "EXCLUDE_OUTPUT_DEVICES",
     "UNEXCLUDE_OUTPUT_DEVICES",
     "GET_EXCLUDED_OUTPUT_DEVICES",
-    "IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE",
-    "SET_QUERY_ALLOWED_PLAYBACK_CALLBACK",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -244,50 +233,6 @@ void AudioPolicyManagerStub::SetSystemVolumeLevelInternal(MessageParcel &data, M
     int32_t volumeLevel = data.ReadInt32();
     int32_t volumeFlag = data.ReadInt32();
     int result = SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag);
-    reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::SetSystemVolumeLevelWithDeviceInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
-    int32_t volumeLevel = data.ReadInt32();
-    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
-    int32_t volumeFlag = data.ReadInt32();
-    int result = SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType, volumeFlag);
-    reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::SetSelfAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t volumeLevel = data.ReadInt32();
-    int32_t volumeFlag = data.ReadInt32();
-    int result = SetSelfAppVolumeLevel(volumeLevel, volumeFlag);
-    reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::SetAppVolumeMutedInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t appUid = data.ReadInt32();
-    bool muted = data.ReadBool();
-    int32_t volumeFlag = data.ReadInt32();
-    int result = SetAppVolumeMuted(appUid, muted, volumeFlag);
-    reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::GetAppVolumeIsMuteInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t appUid = data.ReadInt32();
-    bool owned = data.ReadBool();
-    int result = IsAppVolumeMute(appUid, owned);
-    reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::SetAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t appUid = data.ReadInt32();
-    int32_t volumeLevel = data.ReadInt32();
-    int32_t volumeFlag = data.ReadInt32();
-    int result = SetAppVolumeLevel(appUid, volumeLevel, volumeFlag);
     reply.WriteInt32(result);
 }
 
@@ -384,19 +329,6 @@ void AudioPolicyManagerStub::GetSystemVolumeLevelInternal(MessageParcel &data, M
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
     int32_t volumeLevel = GetSystemVolumeLevel(streamType);
-    reply.WriteInt32(volumeLevel);
-}
-
-void AudioPolicyManagerStub::GetAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t appUid = data.ReadInt32();
-    int32_t volumeLevel = GetAppVolumeLevel(appUid);
-    reply.WriteInt32(volumeLevel);
-}
-
-void AudioPolicyManagerStub::GetSelfAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t volumeLevel = GetSelfAppVolumeLevel();
     reply.WriteInt32(volumeLevel);
 }
 
@@ -989,12 +921,6 @@ void AudioPolicyManagerStub::IsSpatializationEnabledForDeviceInternal(MessagePar
     reply.WriteBool(result);
 }
 
-void AudioPolicyManagerStub::IsSpatializationEnabledForCurrentDeviceInternal(MessageParcel &data, MessageParcel &reply)
-{
-    bool result = IsSpatializationEnabledForCurrentDevice();
-    reply.WriteBool(result);
-}
-
 void AudioPolicyManagerStub::SetSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply)
 {
     bool enable = data.ReadBool();
@@ -1195,21 +1121,10 @@ void AudioPolicyManagerStub::SetQueryClientTypeCallbackInternal(MessageParcel &d
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::SetAudioClientInfoMgrCallbackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    sptr<IRemoteObject> object = data.ReadRemoteObject();
-    CHECK_AND_RETURN_LOG(object != nullptr, "AudioClientInfoMgrCallback is null");
-    int32_t result = SetAudioClientInfoMgrCallback(object);
-    reply.WriteInt32(result);
-}
-
 void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     switch (code) {
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CLIENT_INFO_MGR_CALLBACK):
-            SetAudioClientInfoMgrCallbackInternal(data, reply);
-            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_DEVICE_ANAHS_CALLBACK):
             SetAudioDeviceAnahsCallbackInternal(data, reply);
             break;
@@ -1241,10 +1156,7 @@ void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
             UnexcludeOutputDevicesInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_EXCLUDED_OUTPUT_DEVICES):
-            GetExcludedDevicesInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_ALLOWED_PLAYBACK_CALLBACK):
-            SetQueryAllowedPlaybackCallbackInternal(data, reply);
+            GetExcludedOutputDevicesInternal(data, reply);
             break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
@@ -1274,9 +1186,6 @@ void AudioPolicyManagerStub::OnMiddleNinRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HEAD_TRACKING_ENABLED_FOR_DEVICE):
             SetHeadTrackingEnabledForDeviceInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE):
-            IsSpatializationEnabledForCurrentDeviceInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_CLIENT_TYPE_CALLBACK):
             SetQueryClientTypeCallbackInternal(data, reply);
@@ -1748,12 +1657,6 @@ void AudioPolicyManagerStub::OnMidRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_VOLUMELEVEL):
             GetSystemVolumeLevelInternal(data, reply);
             break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_APP_VOLUMELEVEL):
-            GetAppVolumeLevelInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SELF_APP_VOLUME_LEVEL):
-            GetSelfAppVolumeLevelInternal(data, reply);
-            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STREAM_MUTE_LEGACY):
             SetStreamMuteLegacyInternal(data, reply);
             break;
@@ -1804,21 +1707,6 @@ int AudioPolicyManagerStub::OnRemoteRequest(
                 break;
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL):
                 SetSystemVolumeLevelInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL_WITH_DEVICE):
-                SetSystemVolumeLevelWithDeviceInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_APP_VOLUMELEVEL):
-                SetAppVolumeLevelInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SELF_APP_VOLUMELEVEL):
-                SetSelfAppVolumeLevelInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_APP_VOLUME_MUTED):
-                SetAppVolumeMutedInternal(data, reply);
-                break;
-            case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_APP_MUTE):
-                GetAppVolumeIsMuteInternal(data, reply);
                 break;
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_ACTIVEVOLUME_TYPE):
                 GetSystemActiveVolumeTypeInternal(data, reply);
@@ -2152,14 +2040,6 @@ void AudioPolicyManagerStub::SetVirtualCallInternal(MessageParcel &data, Message
 {
     bool isVirtual = data.ReadBool();
     int32_t result = SetVirtualCall(isVirtual);
-    reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::SetQueryAllowedPlaybackCallbackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    sptr<IRemoteObject> object = data.ReadRemoteObject();
-    CHECK_AND_RETURN_LOG(object != nullptr, "SetQueryAllowedPlaybackCallback is null");
-    int32_t result = SetQueryAllowedPlaybackCallback(object);
     reply.WriteInt32(result);
 }
 } // namespace audio_policy

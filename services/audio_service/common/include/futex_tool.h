@@ -17,7 +17,6 @@
 
 #include <atomic>
 #include <unistd.h>
-#include <functional>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -39,7 +38,7 @@ public:
      * FutexWait will first try change futexPtr from IS_READY to IS_NOT_READY, then acomicly wait on IS_NOT_READY.
      * After Waked up, will check futexPtr == IS_NOT_READY
      */
-    static FutexCode FutexWait(std::atomic<uint32_t> *futexPtr, int64_t timeout, const std::function<bool(void)> &pred);
+    static FutexCode FutexWait(std::atomic<uint32_t> *futexPtr, int64_t timeout);
     static FutexCode FutexWake(std::atomic<uint32_t> *futexPtr, uint32_t wakeVal = IS_READY);
 };
 } // namespace AudioStandard

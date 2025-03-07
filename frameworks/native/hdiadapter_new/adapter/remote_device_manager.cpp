@@ -98,9 +98,9 @@ void RemoteDeviceManager::UnloadAdapter(const std::string &adapterName, bool for
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
         adapterName.c_str());
-    CHECK_AND_RETURN_LOG(force || (wrapper->hdiRenderIds_.size() == 0 && wrapper->hdiCaptureIds_.size() == 0),
-        "adapter %{public}s has some ports busy, renderNum: %{public}zu, captureNum: %{public}zu", adapterName.c_str(),
-        wrapper->hdiRenderIds_.size(), wrapper->hdiCaptureIds_.size());
+    CHECK_AND_RETURN_LOG(force || (wrapper->renderNum_ == 0 && wrapper->captureNum_ == 0),
+        "adapter %{public}s has some ports busy, renderNum: %{public}u, captureNum: %{public}u", adapterName.c_str(),
+        wrapper->renderNum_, wrapper->captureNum_);
 
     if (wrapper->routeHandle_ != -1) {
         wrapper->adapter_->ReleaseAudioRoute(wrapper->routeHandle_);
@@ -113,11 +113,6 @@ void RemoteDeviceManager::UnloadAdapter(const std::string &adapterName, bool for
         audioManager_ = nullptr;
     }
     AUDIO_INFO_LOG("unload adapter %{public}s success", adapterName.c_str());
-}
-
-void RemoteDeviceManager::AllAdapterSetMicMute(bool isMute)
-{
-    AUDIO_INFO_LOG("not support");
 }
 
 void RemoteDeviceManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
@@ -318,8 +313,7 @@ void *RemoteDeviceManager::CreateRender(const std::string &adapterName, void *pa
     AUDIO_INFO_LOG("create render success, hdiRenderId: %{public}u, desc: %{public}s", hdiRenderId,
         remoteDeviceDesc.desc.c_str());
 
-    std::lock_guard<std::mutex> lock(wrapper->renderMtx_);
-    wrapper->hdiRenderIds_.insert(hdiRenderId);
+    ++(wrapper->renderNum_);
     return rawRender;
 }
 
@@ -330,11 +324,9 @@ void RemoteDeviceManager::DestroyRender(const std::string &adapterName, uint32_t
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
         adapterName.c_str());
-    CHECK_AND_RETURN_LOG(wrapper->hdiRenderIds_.count(hdiRenderId) != 0, "render not exist");
     wrapper->adapter_->DestroyRender(hdiRenderId);
 
-    std::lock_guard<std::mutex> lock(wrapper->renderMtx_);
-    wrapper->hdiRenderIds_.erase(hdiRenderId);
+    --(wrapper->renderNum_);
     UnloadAdapter(adapterName);
 }
 
@@ -358,8 +350,7 @@ void *RemoteDeviceManager::CreateCapture(const std::string &adapterName, void *p
     AUDIO_INFO_LOG("create capture success, hdiCaptureId: %{public}u, desc: %{public}s", hdiCaptureId,
         remoteDeviceDesc.desc.c_str());
 
-    std::lock_guard<std::mutex> lock(wrapper->captureMtx_);
-    wrapper->hdiCaptureIds_.insert(hdiCaptureId);
+    ++(wrapper->captureNum_);
     return rawCapture;
 }
 
@@ -370,21 +361,17 @@ void RemoteDeviceManager::DestroyCapture(const std::string &adapterName, uint32_
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
         adapterName.c_str());
-    CHECK_AND_RETURN_LOG(wrapper->hdiCaptureIds_.count(hdiCaptureId) != 0, "capture not exist");
     wrapper->adapter_->DestroyCapture(hdiCaptureId);
 
-    std::lock_guard<std::mutex> lock(wrapper->captureMtx_);
-    wrapper->hdiCaptureIds_.erase(hdiCaptureId);
+    --(wrapper->captureNum_);
     UnloadAdapter(adapterName);
 }
 
 void RemoteDeviceManager::DumpInfo(std::string &dumpString)
 {
-    for (auto &item : adapters_) {
-        uint32_t renderNum = item.second == nullptr ? 0 : item.second->hdiRenderIds_.size();
-        uint32_t captureNum = item.second == nullptr ? 0 : item.second->hdiCaptureIds_.size();
-        dumpString += "  - remote/" + item.first + "\trenderNum: " + std::to_string(renderNum) + "\tcaptureNum: " +
-            std::to_string(captureNum) + "\n";
+    for (auto &item :adapters_) {
+        dumpString += "  - remote/" + item.first + "\trenderNum: " + std::to_string(item.second->renderNum_) +
+            "\tcaptureNum: " + std::to_string(item.second->captureNum_) + "\n";
     }
 }
 
@@ -413,7 +400,7 @@ std::shared_ptr<RemoteAdapterWrapper> RemoteDeviceManager::GetAdapter(const std:
     }
     LoadAdapter(adapterName);
     std::lock_guard<std::mutex> lock(adapterMtx_);
-    return adapters_.count(adapterName) == 0 ? nullptr : adapters_[adapterName];
+    return adapters_[adapterName];
 }
 
 int32_t RemoteDeviceManager::SwitchAdapterDesc(const std::vector<AudioAdapterDescriptor> &descs,

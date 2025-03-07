@@ -19,23 +19,20 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-void AudioRendererProxyObj::SaveRendererObj(std::weak_ptr<AudioRenderer> rendererObj)
+void AudioRendererProxyObj::SaveRendererObj(AudioRenderer *rendererObj)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    renderer_ = rendererObj;
+    renderer = rendererObj;
 }
 
 void AudioRendererProxyObj::UnsetRendererObj()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    renderer_.reset();
+    renderer = nullptr;
 }
 
 void AudioRendererProxyObj::MuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
-    std::unique_lock<std::mutex> lock(mutex_);
-    std::shared_ptr<AudioRenderer> renderer = renderer_.lock();
-    lock.unlock();
+    std::lock_guard<std::mutex> lock(mutex_);
     if (renderer != nullptr) {
         renderer->Mute(CMD_FROM_SYSTEM);
     }
@@ -43,9 +40,7 @@ void AudioRendererProxyObj::MuteStreamImpl(const StreamSetStateEventInternal &st
 
 void AudioRendererProxyObj::UnmuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
-    std::unique_lock<std::mutex> lock(mutex_);
-    std::shared_ptr<AudioRenderer> renderer = renderer_.lock();
-    lock.unlock();
+    std::lock_guard<std::mutex> lock(mutex_);
     if (renderer != nullptr) {
         renderer->Unmute(CMD_FROM_SYSTEM);
     }
@@ -53,9 +48,7 @@ void AudioRendererProxyObj::UnmuteStreamImpl(const StreamSetStateEventInternal &
 
 void AudioRendererProxyObj::PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
-    std::unique_lock<std::mutex> lock(mutex_);
-    std::shared_ptr<AudioRenderer> renderer = renderer_.lock();
-    lock.unlock();
+    std::lock_guard<std::mutex> lock(mutex_);
     if (renderer != nullptr) {
         renderer->Pause(CMD_FROM_SYSTEM);
     }
@@ -63,9 +56,6 @@ void AudioRendererProxyObj::PausedStreamImpl(const StreamSetStateEventInternal &
 
 void AudioRendererProxyObj::ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
-    std::unique_lock<std::mutex> lock(mutex_);
-    std::shared_ptr<AudioRenderer> renderer = renderer_.lock();
-    lock.unlock();
     if (renderer != nullptr) {
         renderer->Start(CMD_FROM_SYSTEM);
     }
@@ -73,9 +63,6 @@ void AudioRendererProxyObj::ResumeStreamImpl(const StreamSetStateEventInternal &
 
 void AudioRendererProxyObj::SetLowPowerVolumeImpl(float volume)
 {
-    std::unique_lock<std::mutex> lock(mutex_);
-    std::shared_ptr<AudioRenderer> renderer = renderer_.lock();
-    lock.unlock();
     if (renderer != nullptr) {
         renderer->SetLowPowerVolume(volume);
     }
@@ -83,9 +70,6 @@ void AudioRendererProxyObj::SetLowPowerVolumeImpl(float volume)
 
 void AudioRendererProxyObj::GetLowPowerVolumeImpl(float &volume)
 {
-    std::unique_lock<std::mutex> lock(mutex_);
-    std::shared_ptr<AudioRenderer> renderer = renderer_.lock();
-    lock.unlock();
     if (renderer != nullptr) {
         volume = renderer->GetLowPowerVolume();
     }
@@ -93,9 +77,6 @@ void AudioRendererProxyObj::GetLowPowerVolumeImpl(float &volume)
 
 void AudioRendererProxyObj::SetOffloadModeImpl(int32_t state, bool isAppBack)
 {
-    std::unique_lock<std::mutex> lock(mutex_);
-    std::shared_ptr<AudioRenderer> renderer = renderer_.lock();
-    lock.unlock();
     if (renderer != nullptr) {
         renderer->SetOffloadMode(state, isAppBack);
     }
@@ -103,9 +84,7 @@ void AudioRendererProxyObj::SetOffloadModeImpl(int32_t state, bool isAppBack)
 
 void AudioRendererProxyObj::UnsetOffloadModeImpl()
 {
-    std::unique_lock<std::mutex> lock(mutex_);
-    std::shared_ptr<AudioRenderer> renderer = renderer_.lock();
-    lock.unlock();
+    std::lock_guard<std::mutex> lock(mutex_);
     if (renderer != nullptr) {
         renderer->UnsetOffloadMode();
     }
@@ -113,9 +92,6 @@ void AudioRendererProxyObj::UnsetOffloadModeImpl()
 
 void AudioRendererProxyObj::GetSingleStreamVolumeImpl(float &volume)
 {
-    std::unique_lock<std::mutex> lock(mutex_);
-    std::shared_ptr<AudioRenderer> renderer = renderer_.lock();
-    lock.unlock();
     if (renderer != nullptr) {
         volume = renderer->GetSingleStreamVolume();
     }

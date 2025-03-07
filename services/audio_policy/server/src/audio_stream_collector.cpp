@@ -26,12 +26,6 @@
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-const std::vector<StreamUsage> BACKGROUND_MUTE_STREAM_USAGE {
-    STREAM_USAGE_MUSIC,
-    STREAM_USAGE_MOVIE,
-    STREAM_USAGE_GAME,
-    STREAM_USAGE_AUDIOBOOK
-};
 
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 
@@ -146,7 +140,6 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     rendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;
     rendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
     rendererChangeInfo->channelCount = streamChangeInfo.audioRendererChangeInfo.channelCount;
-    rendererChangeInfo->appVolume = streamChangeInfo.audioRendererChangeInfo.appVolume;
     audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_MEMORY_ALLOC_FAILED,
@@ -334,7 +327,6 @@ void AudioStreamCollector::SetRendererStreamParam(AudioStreamChangeInfo &streamC
     rendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;
     rendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
     rendererChangeInfo->prerunningState = streamChangeInfo.audioRendererChangeInfo.prerunningState;
-    rendererChangeInfo->appVolume = streamChangeInfo.audioRendererChangeInfo.appVolume;
 }
 
 void AudioStreamCollector::SetCapturerStreamParam(AudioStreamChangeInfo &streamChangeInfo,
@@ -669,17 +661,6 @@ int32_t AudioStreamCollector::UpdateTracker(const AudioMode &mode, AudioDeviceDe
     }
 
     return SUCCESS;
-}
-
-void AudioStreamCollector::UpdateAppVolume(int32_t appUid, int32_t volume)
-{
-    for (auto itemInfo : audioRendererChangeInfos_) {
-        if (itemInfo->clientUID != appUid) {
-            continue;
-        }
-        itemInfo->appVolume = volume;
-        AUDIO_INFO_LOG("UpdateAppVolume success, appuid = %{public}d, volume = %{public}d", appUid, volume);
-    }
 }
 
 int32_t AudioStreamCollector::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)

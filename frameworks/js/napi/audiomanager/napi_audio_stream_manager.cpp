@@ -565,8 +565,7 @@ napi_value NapiAudioStreamMgr::On(napi_env env, napi_callback_info info)
     return undefinedResult;
 }
 
-void NapiAudioStreamMgr::UnregisterCallback(napi_env env, napi_value jsThis,
-    size_t argc, napi_value *args, const std::string &cbName)
+void NapiAudioStreamMgr::UnregisterCallback(napi_env env, napi_value jsThis, const std::string &cbName)
 {
     AUDIO_INFO_LOG("UnregisterCallback");
     NapiAudioStreamMgr *napiStreamMgr = nullptr;
@@ -575,10 +574,30 @@ void NapiAudioStreamMgr::UnregisterCallback(napi_env env, napi_value jsThis,
         (napiStreamMgr->audioStreamMngr_ != nullptr), "Failed to retrieve stream mgr napi instance.");
 
     if (!cbName.compare(RENDERERCHANGE_CALLBACK_NAME)) {
-        UnregisterRendererChangeCallback(napiStreamMgr, argc, args);
+        int32_t ret = napiStreamMgr->audioStreamMngr_->
+            UnregisterAudioRendererEventListener(napiStreamMgr->cachedClientId_);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnRegistering of Renderer State Change Callback Failed");
+
+        if (napiStreamMgr->rendererStateChangeCallbackNapi_ != nullptr) {
+            std::shared_ptr<NapiAudioRendererStateCallback> cb =
+                std::static_pointer_cast<NapiAudioRendererStateCallback>(napiStreamMgr->
+                    rendererStateChangeCallbackNapi_);
+            cb->RemoveCallbackReference();
+            napiStreamMgr->rendererStateChangeCallbackNapi_.reset();
+        }
         AUDIO_INFO_LOG("UnRegistering of renderer State Change Callback successful");
     } else if (!cbName.compare(CAPTURERCHANGE_CALLBACK_NAME)) {
-        UnregisterCapturerChangeCallback(napiStreamMgr, argc, args);
+        int32_t ret = napiStreamMgr->audioStreamMngr_->
+            UnregisterAudioCapturerEventListener(napiStreamMgr->cachedClientId_);
+        if (ret) {
+            AUDIO_ERR_LOG("UnRegistering of capturer State Change Callback Failed");
+            return;
+        }
+        if (napiStreamMgr->capturerStateChangeCallbackNapi_ != nullptr) {
+            std::lock_guard<std::mutex> lock(napiStreamMgr->capturerStateChangeCallbackNapi_->cbMutex_);
+            napiStreamMgr->capturerStateChangeCallbackNapi_.reset();
+            napiStreamMgr->capturerStateChangeCallbackNapi_ = nullptr;
+        }
         AUDIO_INFO_LOG("UnRegistering of capturer State Change Callback successful");
     } else {
         AUDIO_ERR_LOG("No such callback supported");
@@ -587,55 +606,15 @@ void NapiAudioStreamMgr::UnregisterCallback(napi_env env, napi_value jsThis,
     }
 }
 
-void NapiAudioStreamMgr::UnregisterRendererChangeCallback(NapiAudioStreamMgr *napiStreamMgr,
-    size_t argc, napi_value *args)
-{
-    CHECK_AND_RETURN_LOG(napiStreamMgr->rendererStateChangeCallbackNapi_ != nullptr,
-        "rendererStateChangeCallbackNapi is nullptr");
-    std::shared_ptr<NapiAudioRendererStateCallback> cb =
-        std::static_pointer_cast<NapiAudioRendererStateCallback>(napiStreamMgr->rendererStateChangeCallbackNapi_);
-    napi_value callback = nullptr;
-    if (argc == ARGS_TWO) {
-        callback = args[PARAM1];
-        CHECK_AND_RETURN_LOG(cb->IsSameCallback(callback),
-            "The callback need to be unregistered is not the same as the registered callback");
-    }
-    int32_t ret = napiStreamMgr->audioStreamMngr_->
-        UnregisterAudioRendererEventListener(napiStreamMgr->cachedClientId_);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Unregister renderer state change callback failed");
-    cb->RemoveCallbackReference(callback);
-    napiStreamMgr->rendererStateChangeCallbackNapi_.reset();
-}
-
-void NapiAudioStreamMgr::UnregisterCapturerChangeCallback(NapiAudioStreamMgr *napiStreamMgr,
-    size_t argc, napi_value *args)
-{
-    CHECK_AND_RETURN_LOG(napiStreamMgr->capturerStateChangeCallbackNapi_ != nullptr,
-        "capturerStateChangeCallbackNapi is nullptr");
-    std::shared_ptr<NapiAudioCapturerStateCallback> cb =
-        std::static_pointer_cast<NapiAudioCapturerStateCallback>(napiStreamMgr->capturerStateChangeCallbackNapi_);
-    napi_value callback = nullptr;
-    if (argc == ARGS_TWO) {
-        callback = args[PARAM1];
-        CHECK_AND_RETURN_LOG(cb->IsSameCallback(callback),
-            "The callback need to be unregistered is not the same as the registered callback");
-    }
-    int32_t ret = napiStreamMgr->audioStreamMngr_->
-        UnregisterAudioCapturerEventListener(napiStreamMgr->cachedClientId_);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Unregister capturer state change callback failed");
-    cb->RemoveCallbackReference(callback);
-    napiStreamMgr->capturerStateChangeCallbackNapi_.reset();
-}
-
 napi_value NapiAudioStreamMgr::Off(napi_env env, napi_callback_info info)
 {
     const size_t requireArgc = ARGS_ONE;
-    size_t argc = ARGS_TWO;
+    size_t argc = ARGS_ONE;
 
     napi_value undefinedResult = nullptr;
     napi_get_undefined(env, &undefinedResult);
 
-    napi_value args[requireArgc + PARAM2] = {nullptr, nullptr, nullptr};
+    napi_value args[requireArgc] = {nullptr};
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && argc >= requireArgc, NapiAudioError::ThrowErrorAndReturn(env,
@@ -643,14 +622,15 @@ napi_value NapiAudioStreamMgr::Off(napi_env env, napi_callback_info info)
         "mandatory parameters are left unspecified"), "status or arguments error");
 
     napi_valuetype eventType = napi_undefined;
-    CHECK_AND_RETURN_RET_LOG(napi_typeof(env, args[PARAM0], &eventType) == napi_ok && eventType == napi_string,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of eventType must be string"), "eventType error");
+    napi_typeof(env, args[PARAM0], &eventType);
+    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of eventType must be string"),
+        "eventType error");
 
     std::string callbackName = NapiParamUtils::GetStringArgument(env, args[0]);
     AUDIO_DEBUG_LOG("NapiAudioStreamMgr: Off callbackName: %{public}s", callbackName.c_str());
 
-    UnregisterCallback(env, jsThis, argc, args, callbackName);
+    UnregisterCallback(env, jsThis, callbackName);
     return undefinedResult;
 }
 

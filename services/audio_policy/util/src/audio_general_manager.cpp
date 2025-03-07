@@ -63,14 +63,6 @@ int32_t AudioGeneralManager::SetAudioDeviceRefinerCallback(const std::shared_ptr
     return AudioPolicyManager::GetInstance().SetAudioDeviceRefinerCallback(callback);
 }
 
-int32_t AudioGeneralManager::SetAudioClientInfoMgrCallback(
-    const std::shared_ptr<AudioClientInfoMgrCallback> &callback)
-{
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
-
-    return AudioPolicyManager::GetInstance().SetAudioClientInfoMgrCallback(callback);
-}
-
 int32_t AudioGeneralManager::GetPreferredOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
@@ -369,29 +361,6 @@ void AudioFocusInfoChangeCallbackImpl::RemoveCallback(const std::weak_ptr<AudioF
     callbackList_.remove_if([&callback](std::weak_ptr<AudioFocusInfoChangeCallback> &callback_) {
         return callback_.lock() == callback.lock();
     });
-}
-
-int32_t AudioGeneralManager::GetPreferredInputDeviceForCapturerInfo(
-    AudioCapturerInfo captureInfo, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
-{
-    desc = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(captureInfo);
-    return SUCCESS;
-}
- 
-int32_t AudioGeneralManager::SetPreferredInputDeviceChangeCallback(
-    AudioCapturerInfo &capturerInfo, const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback)
-{
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
- 
-    return AudioPolicyManager::GetInstance().SetPreferredInputDeviceChangeCallback(capturerInfo, callback);
-}
- 
-int32_t AudioGeneralManager::GetCurrentCapturerChangeInfos(
-    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
-{
-    AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos");
-    return AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
 
 } // namespace AudioStandard

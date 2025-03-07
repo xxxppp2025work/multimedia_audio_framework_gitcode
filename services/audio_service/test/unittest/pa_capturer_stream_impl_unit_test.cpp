@@ -19,7 +19,6 @@
 #include "pa_adapter_manager.h"
 #include <pulse/pulseaudio.h>
 #include "pulse/stream.h"
-#include "audio_system_manager.h"
 
 using namespace testing::ext;
 namespace OHOS {
@@ -56,20 +55,6 @@ void PaCapturerStreamUnitTest::TearDown(void)
     // input testcase teardown step，teardown invoked after each testcases
 }
 
-#ifdef HAS_FEATURE_INNERCAPTURER
-void LoadPaPort()
-{
-    AudioPlaybackCaptureConfig checkConfig;
-    int32_t checkInnerCapId = 0;
-    AudioSystemManager::GetInstance()->CheckCaptureLimit(checkConfig, checkInnerCapId);
-}
-
-void ReleasePaPort()
-{
-    AudioSystemManager::GetInstance()->ReleaseCaptureLimit(1);
-}
-#endif
-
 static AudioProcessConfig GetInnerCapConfig()
 {
     AudioProcessConfig config;
@@ -83,7 +68,6 @@ static AudioProcessConfig GetInnerCapConfig()
     config.streamType = AudioStreamType::STREAM_MUSIC;
     config.deviceType = DEVICE_TYPE_USB_HEADSET;
     config.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    config.innerCapId = 1;
     return config;
 }
 
@@ -108,9 +92,6 @@ std::shared_ptr<PaCapturerStreamImpl> PaCapturerStreamUnitTest::CreatePaCapturer
  */
 HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_001, TestSize.Level1)
 {
-#ifdef HAS_FEATURE_INNERCAPTURER
-    LoadPaPort();
-#endif
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
     uint64_t framesReadRet = 0;
     capturerStreamImplRet->byteSizePerFrame_ = 0;
@@ -545,9 +526,6 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_019, TestSize.Level1)
     size_t length = 1;
     capturerStreamImplRet->DequeueBuffer(length);
     EXPECT_EQ(capturerStreamImplRet != nullptr, true);
-#ifdef HAS_FEATURE_INNERCAPTURER
-    ReleasePaPort();
-#endif
 }
 }
 }

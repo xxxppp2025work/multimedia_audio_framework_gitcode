@@ -17,13 +17,12 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "i_audio_renderer_sink.h"
 #include "audio_manager_base.h"
 #include "audio_policy_manager_listener_stub.h"
 #include "audio_server.h"
 #include "audio_service.h"
-#include "sink/i_audio_render_sink.h"
-#include "common/hdi_adapter_info.h"
-#include "manager/hdi_adapter_manager.h"
+#include "fast_audio_renderer_sink.h"
 #include "audio_endpoint.h"
 #include "access_token.h"
 #include "message_parcel.h"
@@ -199,8 +198,7 @@ void AudioEndPointSeparateConfigFuzzTest()
 
     AudioEndPointSeparateStartDeviceFuzzTest(audioEndpoint);
 
-    audioEndpoint->fastRenderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST,
-        HDI_ID_INFO_DEFAULT, true);
+    audioEndpoint->fastSink_ = FastAudioRendererSink::CreateFastRendererSink();
     float volume = GetData<float>();
     audioEndpoint->SetVolume(streamType, volume);
 

@@ -20,24 +20,17 @@
 #include "napi/native_node_api.h"
 #include "napi_async_work.h"
 #include "audio_capturer.h"
-#include "napi_audio_capturer_callback_inner.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class NapiCapturerPositionCallback : public CapturerPositionCallback,
-    public NapiAudioCapturerCallbackInner {
+class NapiCapturerPositionCallback : public CapturerPositionCallback {
 public:
     explicit NapiCapturerPositionCallback(napi_env env);
-    ~NapiCapturerPositionCallback() override;
-    void SaveCallbackReference(const std::string &callbackName, napi_value args) override;
-    void RemoveCallbackReference(const std::string &callbackName, napi_env env, napi_value callback) override;
+    virtual ~NapiCapturerPositionCallback();
+    void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnMarkReached(const int64_t &framePosition) override;
     void CreateCapturePositionTsfn(napi_env env);
     bool GetCapturePositionFlag();
-    bool CheckIfTargetCallbackName(const std::string &callbackName) override;
-protected:
-    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
-    napi_env &GetEnv() override;
 
 private:
     struct CapturerPositionJsCallback {

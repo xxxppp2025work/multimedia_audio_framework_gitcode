@@ -76,8 +76,6 @@ static const int32_t MEDIA_SERVICE_UID = 1013;
 static const int32_t MAX_WRITE_INTERVAL_MS = 40;
 constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
 constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
-constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
-constexpr int32_t MAX_RETRY_COUNT = 8;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -275,11 +273,6 @@ int32_t RendererInClientInner::InitIpcStream()
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
     int32_t errorCode = 0;
     sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config, errorCode);
-    for (int32_t retrycount = 0; (errorCode == ERR_RETRY_IN_CLIENT) && (retrycount < MAX_RETRY_COUNT); retrycount++) {
-        AUDIO_WARNING_LOG("retry in client");
-        std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
-        ipcProxy = gasp->CreateAudioProcess(config, errorCode);
-    }
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
     ipcStream_ = iface_cast<IpcStream>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "failed when iface_cast.");
@@ -389,7 +382,7 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     return result;
 }
 
-void RendererInClientInner::RendererRemoveWatchdog(const std::string &message, const std::int32_t sessionId)
+void RendererRemoveWatchdog(const std::string &message, const std::int32_t sessionId)
 {
     std::string watchDogMessage = message;
     watchDogMessage += std::to_string(sessionId);
@@ -414,57 +407,65 @@ void RendererInClientInner::WatchingWriteCallbackFunc()
         WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
 }
 
-bool RendererInClientInner::WriteCallbackFunc()
+void RendererInClientInner::WriteCallbackFunc()
 {
-    if (cbThreadReleased_) {
-        AUDIO_INFO_LOG("Callback thread released");
-        return false;
-    }
-    Trace traceLoop("RendererInClientInner::WriteCallbackFunc");
-    if (!WaitForRunning()) {
-        writeCallbackFuncThreadStatusFlag_ = true;
-        return true;
-    }
-    if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
-        AUDIO_WARNING_LOG("The queue is too long, reducing data through loops");
-    }
-    BufferDesc temp;
-    while (cbBufferQueue_.PopNotWait(temp)) {
-        Trace traceQueuePop("RendererInClientInner::QueueWaitPop");
-        if (state_ != RUNNING) {
-            cbBufferQueue_.Push(temp);
-            AUDIO_INFO_LOG("Repush left buffer in queue");
-            break;
-        }
-        traceQueuePop.End();
-        // call write here.
-        int32_t result = ProcessWriteInner(temp);
-        // only run in pause scene
-        if (result > 0 && static_cast<size_t>(result) < temp.dataLength) {
-            BufferDesc tmp = {temp.buffer + static_cast<size_t>(result),
-                temp.bufLength - static_cast<size_t>(result), temp.dataLength - static_cast<size_t>(result)};
-            cbBufferQueue_.Push(tmp);
-            AUDIO_INFO_LOG("Repush %{public}zu bytes in queue", temp.dataLength - static_cast<size_t>(result));
-            break;
-        }
-    }
-    if (state_ != RUNNING) {
-        writeCallbackFuncThreadStatusFlag_ = true;
-        return true;
-    }
-    // call client write
-    std::unique_lock<std::mutex> lockCb(writeCbMutex_);
-    if (writeCb_ != nullptr) {
-        Trace traceCb("RendererInClientInner::OnWriteData");
-        writeCb_->OnWriteData(cbBufferSize_);
-    }
-    lockCb.unlock();
+    AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", sessionId_);
+    cbThreadReleased_ = false;
 
-    Trace traceQueuePush("RendererInClientInner::QueueWaitPush");
-    std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
-    cbBufferQueue_.WaitNotEmptyFor(std::chrono::milliseconds(WRITE_BUFFER_TIMEOUT_IN_MS));
-    writeCallbackFuncThreadStatusFlag_ = true;
-    return true;
+    // Modify thread priority is not need as first call write will do these work.
+    cbThreadCv_.notify_one();
+
+    // add watchdog
+    WatchingWriteCallbackFunc();
+    // start loop
+    while (!cbThreadReleased_) {
+        Trace traceLoop("RendererInClientInner::WriteCallbackFunc");
+        if (!WaitForRunning()) {
+            writeCallbackFuncThreadStatusFlag_ = true;
+            continue;
+        }
+        if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
+            AUDIO_WARNING_LOG("The queue is too long, reducing data through loops");
+        }
+        BufferDesc temp;
+        while (cbBufferQueue_.PopNotWait(temp)) {
+            Trace traceQueuePop("RendererInClientInner::QueueWaitPop");
+            if (state_ != RUNNING) {
+                cbBufferQueue_.Push(temp);
+                AUDIO_INFO_LOG("Repush left buffer in queue");
+                break;
+            }
+            traceQueuePop.End();
+            // call write here.
+            int32_t result = ProcessWriteInner(temp);
+            // only run in pause scene
+            if (result > 0 && static_cast<size_t>(result) < temp.dataLength) {
+                BufferDesc tmp = {temp.buffer + static_cast<size_t>(result),
+                    temp.bufLength - static_cast<size_t>(result), temp.dataLength - static_cast<size_t>(result)};
+                cbBufferQueue_.Push(tmp);
+                AUDIO_INFO_LOG("Repush %{public}zu bytes in queue", temp.dataLength - static_cast<size_t>(result));
+                break;
+            }
+        }
+        if (state_ != RUNNING) {
+            writeCallbackFuncThreadStatusFlag_ = true;
+            continue;
+        }
+        // call client write
+        std::unique_lock<std::mutex> lockCb(writeCbMutex_);
+        if (writeCb_ != nullptr) {
+            Trace traceCb("RendererInClientInner::OnWriteData");
+            writeCb_->OnWriteData(cbBufferSize_);
+        }
+        lockCb.unlock();
+
+        Trace traceQueuePush("RendererInClientInner::QueueWaitPush");
+        std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
+        cbBufferQueue_.WaitNotEmptyFor(std::chrono::milliseconds(WRITE_BUFFER_TIMEOUT_IN_MS));
+        writeCallbackFuncThreadStatusFlag_ = true;
+    }
+    AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", sessionId_);
+    RendererRemoveWatchdog("WatchingWriteCallbackFunc", sessionId_);
 }
 
 int32_t RendererInClientInner::FlushRingCache()
@@ -698,7 +699,7 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
     if (silentModeAndMixWithOthers_) {
         return;
     }
-    if (IsInvalidBuffer(buffer, bufferSize)) {
+    if (CheckBuffer(buffer, bufferSize)) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         }
@@ -717,11 +718,11 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
     }
 }
 
-bool RendererInClientInner::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize)
+bool RendererInClientInner::CheckBuffer(uint8_t *buffer, size_t bufferSize)
 {
     bool isInvalid = false;
     uint8_t ui8Data = 0;
-    int16_t i16Data = 0;
+    uint16_t ui16Data = 0;
     switch (clientConfig_.streamInfo.format) {
         case SAMPLE_U8:
             CHECK_AND_RETURN_RET_LOG(bufferSize > 0, false, "buffer size is too small");
@@ -730,8 +731,8 @@ bool RendererInClientInner::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize)
             break;
         case SAMPLE_S16LE:
             CHECK_AND_RETURN_RET_LOG(bufferSize > 1, false, "buffer size is too small");
-            i16Data = *(reinterpret_cast<const int16_t*>(buffer));
-            isInvalid = i16Data == 0;
+            ui16Data = *(reinterpret_cast<const uint16_t*>(buffer));
+            isInvalid = ui16Data == 0;
             break;
         default:
             break;
@@ -770,17 +771,17 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
     int32_t sizeInFrame = clientBuffer_->GetAvailableDataFrames();
     CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetAvailableDataFrames invalid, %{public}d", sizeInFrame);
 
+    int32_t tryCount = 2; // try futex wait for 2 times.
     FutexCode futexRes = FUTEX_OPERATION_FAILED;
-    if (static_cast<uint32_t>(sizeInFrame) < spanSizeInFrame_) {
+    while (static_cast<uint32_t>(sizeInFrame) < spanSizeInFrame_ && tryCount > 0) {
+        tryCount--;
         int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
-        futexRes = FutexTool::FutexWait(clientBuffer_->GetFutex(), static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
-            [this] () {
-                return (state_ != RUNNING) || (clientBuffer_->GetAvailableDataFrames() >= spanSizeInFrame_);
-            });
+        futexRes = FutexTool::FutexWait(clientBuffer_->GetFutex(), static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND);
         CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "failed with state:%{public}d", state_.load());
         CHECK_AND_RETURN_RET_LOG(futexRes != FUTEX_TIMEOUT, ERROR,
             "write data time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal"));
         sizeInFrame = clientBuffer_->GetAvailableDataFrames();
+        if (futexRes == FUTEX_SUCCESS && sizeInFrame > 0) { break; }
     }
 
     if (sizeInFrame < 0 || static_cast<uint32_t>(clientBuffer_->GetAvailableDataFrames()) < spanSizeInFrame_) {
@@ -799,9 +800,9 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
     }
     result = ringCache_->Dequeue({desc.buffer, targetSize});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
-    if (isDrain && targetSize < clientSpanSizeInByte_ && clientConfig_.streamInfo.format == SAMPLE_U8) {
-        size_t leftSize = clientSpanSizeInByte_ - targetSize;
-        int32_t ret = memset_s(desc.buffer + targetSize, leftSize, 0X7F, leftSize);
+    if (isDrain && targetSize < clientSpanSizeInByte_) {
+        int32_t leftSize = clientSpanSizeInByte_ - targetSize;
+        int32_t ret = memset_s(desc.buffer + targetSize, leftSize, 0, leftSize);
         CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "left buffer memset output failed");
     }
     if (!ProcessVolume()) {

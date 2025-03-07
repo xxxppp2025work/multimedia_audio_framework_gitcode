@@ -351,8 +351,7 @@ void AudioCacheMgrInner::ReleaseOverTimeMemBlock()
 
     int32_t recycleNums = 0;
     int64_t curTime = ClockTime::GetRealNano();
-    int64_t startTime;
-    int64_t endTime;
+    int64_t startTime, endTime;
 
     while (recycleNums < MAX_RECYCLE_TIMES) {
         Trace trace1("AudioCacheMgrInner::ReleaseOneMemChunk");

@@ -15,11 +15,10 @@
 #include <algorithm>
 #include "audio_playback_engine.h"
 #include "audio_errors.h"
-#include "common/hdi_adapter_info.h"
 namespace OHOS {
 namespace AudioStandard {
 AudioPlaybackEngine::AudioPlaybackEngine()
-    : renderId_(HDI_INVALID_ID), playbackThread_(nullptr), streams_(0) {}
+    : renderSink_(nullptr), playbackThread_(nullptr), streams_(0) {}
 
 AudioPlaybackEngine::~AudioPlaybackEngine() {}
 

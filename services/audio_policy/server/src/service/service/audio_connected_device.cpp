@@ -25,7 +25,6 @@
 #include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
-#include "audio_spatialization_service.h"
 
 
 #include "audio_policy_utils.h"
@@ -299,8 +298,7 @@ DeviceType AudioConnectedDevice::FindConnectedHeadset()
             (devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADPHONES) ||
             (devDesc->deviceType_ == DEVICE_TYPE_USB_HEADSET) ||
             (devDesc->deviceType_ == DEVICE_TYPE_DP) ||
-            (devDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) ||
-            (devDesc->deviceType_ == DEVICE_TYPE_HDMI));
+            (devDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET));
     });
 
     DeviceType retType = DEVICE_TYPE_NONE;
@@ -369,28 +367,5 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetUsbDeviceDescrip
     return nullptr;
 }
 
-static std::string GetSha256EncryptAddress(const std::string& address)
-{
-    const int32_t HexWidth = 2;
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256(reinterpret_cast<const unsigned char *>(address.c_str()), address.size(), hash);
-    std::stringstream ss;
-    for (int32_t i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
-        ss << std::hex << std::setw(HexWidth) << std::setfill('0') << (int32_t)hash[i];
-    }
-    return ss.str();
-}
-
-void AudioConnectedDevice::UpdateSpatializationSupported(const std::string macAddress, const bool support)
-{
-    for (auto device : connectedDevices_) {
-        std::string encryAddress = GetSha256EncryptAddress(device->macAddress_);
-        if (encryAddress == macAddress && device->deviceType_ ==  DEVICE_TYPE_BLUETOOTH_A2DP &&
-            device->spatializationSupported_ != support) {
-            device->spatializationSupported_ = support;
-            AUDIO_INFO_LOG("spatializationSupported is set to %{public}d", support);
-        }
-    }
-}
 }
 }

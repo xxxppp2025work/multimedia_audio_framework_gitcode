@@ -48,23 +48,22 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetLatestNonExcludedConnectDevice(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
     {
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> filteredDescs;
         // remove abnormal device or excluded device
-        for (const auto &desc : descs) {
-            if (desc->exceptionFlag_ || !desc->isEnable_ ||
-                (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->connectState_ == SUSPEND_CONNECTED) ||
-                AudioStateManager::GetAudioStateManager().IsExcludedDevice(audioDevUsage, *desc)) {
-                continue;
+        for (size_t i = 0; i < descs.size(); i++) {
+            if (descs[i]->exceptionFlag_ || !descs[i]->isEnable_ ||
+                (descs[i]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && descs[i]->connectState_ == SUSPEND_CONNECTED) ||
+                AudioStateManager::GetAudioStateManager().IsExcludedDevice(audioDevUsage, descs[i])) {
+                descs.erase(descs.begin() + i);
+                i--;
             }
-            filteredDescs.push_back(desc);
         }
-        if (filteredDescs.size() > 0) {
+        if (descs.size() > 0) {
             auto compare = [&] (std::shared_ptr<AudioDeviceDescriptor> &desc1,
                 std::shared_ptr<AudioDeviceDescriptor> &desc2) {
                 return desc1->connectTimeStamp_ < desc2->connectTimeStamp_;
             };
-            sort(filteredDescs.begin(), filteredDescs.end(), compare);
-            return std::move(filteredDescs.back());
+            sort(descs.begin(), descs.end(), compare);
+            return std::move(descs.back());
         }
         return std::make_shared<AudioDeviceDescriptor>();
     }
@@ -96,19 +95,6 @@ public:
     {
         AUDIO_INFO_LOG("Set alarm follow ring router: %{public}d", flag);
         isAlarmFollowRingRouter_ = flag;
-    }
-
-    bool NeedLatestConnectWithDefaultDevices(DeviceType type)
-    {
-        if (type == DEVICE_TYPE_WIRED_HEADSET ||
-            type == DEVICE_TYPE_WIRED_HEADPHONES ||
-            type == DEVICE_TYPE_BLUETOOTH_SCO ||
-            type == DEVICE_TYPE_USB_HEADSET ||
-            type == DEVICE_TYPE_BLUETOOTH_A2DP ||
-            type == DEVICE_TYPE_USB_ARM_HEADSET) {
-            return true;
-        }
-        return false;
     }
 };
 } // namespace AudioStandard

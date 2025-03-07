@@ -102,7 +102,6 @@ ohos_unittest("audio_endpoint_plus_unit_test") {
   include_dirs = [
     "../../../server/include",
     "../../../../audio_service/common/include",
-    "../../../../audio_service/common/include/dfx",
     "../../../../audio_service/common",
     "./include",
     "../../../../../frameworks/native/audioqosmanager/include",
@@ -124,7 +123,6 @@ ohos_unittest("audio_endpoint_plus_unit_test") {
     "../../../../../frameworks/native/hdiadapter/sink/bluetooth",
     "../../../../../frameworks/native/hdiadapter/sink/fast",
     "../../../../../frameworks/native/hdiadapter/source/fast",
-    "../../../../../frameworks/native/hdiadapter_new/include",
   ]
 
   deps = [
@@ -139,7 +137,6 @@ ohos_unittest("audio_endpoint_plus_unit_test") {
     "../../../../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "../../../../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
     "../../../../../frameworks/native/hdiadapter/source:remote_fast_audio_capturer_source",
-    "../../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../../../../../frameworks/native/playbackcapturer:playback_capturer",
     "../../../../../services/audio_service:audio_client",
     "../../../../../services/audio_service:audio_common",

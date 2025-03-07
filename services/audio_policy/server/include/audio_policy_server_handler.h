@@ -49,7 +49,6 @@ public:
         ABANDON_CATEGORY_EVENT,
         FOCUS_INFOCHANGE,
         RINGER_MODEUPDATE_EVENT,
-        APP_VOLUME_CHANGE_EVENT,
         MIC_STATE_CHANGE_EVENT,
         MIC_STATE_CHANGE_EVENT_WITH_CLIENTID,
         INTERRUPT_EVENT,
@@ -76,8 +75,6 @@ public:
         AUDIO_SESSION_DEACTIVE_EVENT,
         MICROPHONE_BLOCKED,
         NN_STATE_CHANGE,
-        AUDIO_SCENE_CHANGE,
-        SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     };
     /* event data */
     class EventContextObj {
@@ -96,12 +93,10 @@ public:
         CastType type;
         bool spatializationEnabled;
         bool headTrackingEnabled;
-        AudioScene audioScene;
         int32_t nnState;
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
         int32_t streamFlag;
-        int32_t appUid;
         std::unordered_map<std::string, bool> headTrackingDeviceChangeInfo;
         AudioStreamDeviceChangeReasonExt reason_ = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
         std::pair<int32_t, AudioSessionDeactiveEvent> sessionDeactivePair;
@@ -154,7 +149,6 @@ public:
     bool SendAudioFocusInfoChangeCallback(int32_t callbackCategory, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
     bool SendRingerModeUpdatedCallback(const AudioRingerMode &ringMode);
-    bool SendAppVolumeChangeCallback(int32_t appUid, const VolumeEvent &volumeEvent);
     bool SendMicStateUpdatedCallback(const MicStateChangeEvent &micStateChangeEvent);
     bool SendMicStateWithClientIdCallback(const MicStateChangeEvent &micStateChangeEvent, int32_t clientId);
     bool SendInterruptEventInternalCallback(const InterruptEventInternal &interruptEvent);
@@ -184,7 +178,6 @@ public:
     bool SendSpatializatonEnabledChangeEvent(const bool &enabled);
     bool SendSpatializatonEnabledChangeForAnyDeviceEvent(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
-    bool SendSpatializatonEnabledChangeForCurrentDeviceEvent(const bool &enabled);
     bool SendHeadTrackingEnabledChangeEvent(const bool &enabled);
     bool SendHeadTrackingEnabledChangeForAnyDeviceEvent(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
@@ -193,7 +186,6 @@ public:
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
     int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo);
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo);
-    bool SendAudioSceneChangeEvent(const AudioScene &audioScene);
     bool SendAudioSessionDeactiveCallback(const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair);
     bool SendNnStateChangeCallback(const int32_t &state);
 
@@ -228,15 +220,13 @@ private:
     void HandleHeadTrackingDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleSpatializatonEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleSpatializatonEnabledChangeForAnyDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
-    void HandleSpatializatonEnabledChangeForCurrentDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleHeadTrackingEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleHeadTrackingEnabledChangeForAnyDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandlePipeStreamCleanEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleConcurrencyEventWithSessionID(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSessionDeactiveCallback(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleNnStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
-    void HandleAudioSceneChange(const AppExecFwk::InnerEvent::Pointer &event);
-    void HandleAppVolumeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);

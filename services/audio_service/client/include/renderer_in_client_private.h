@@ -90,7 +90,6 @@ public:
 
     // callback mode api
     int32_t SetRenderMode(AudioRenderMode renderMode) override;
-    void InitCallbackLoop();
     AudioRenderMode GetRenderMode() override;
     int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
     int32_t SetCaptureMode(AudioCaptureMode captureMode) override;
@@ -110,7 +109,6 @@ public:
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) override;
     int64_t GetFramesWritten() override;
     int64_t GetFramesRead() override;
-    int32_t SetSourceDuration(int64_t duration) override;
 
     void SetInnerCapturerState(bool isInnerCapturer) override;
     void SetWakeupCapturerState(bool isWakeupCapturer) override;
@@ -222,17 +220,15 @@ private:
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     void WatchingWriteCallbackFunc();
-    void RendererRemoveWatchdog(const std::string &message, const std::int32_t sessionId);
-    bool WriteCallbackFunc();
+    void WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
     bool ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached);
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
-    bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
+    bool CheckBuffer(uint8_t *buffer, size_t bufferSize);
     void DfxWriteInterval();
-    void HandleStatusChangeOperation(Operation operation);
 
     int32_t RegisterSpatializationStateEventListener();
 
@@ -304,6 +300,7 @@ private:
 
     // callback mode releated
     AudioRenderMode renderMode_ = RENDER_MODE_NORMAL;
+    std::thread callbackLoop_; // thread for callback to client and write.
     std::atomic<bool> cbThreadReleased_ = true;
     std::mutex writeCbMutex_;
     std::condition_variable cbThreadCv_;

@@ -53,7 +53,6 @@
 #include "policy_handler.h"
 #include "volume_tools.h"
 #include "audio_manager_util.h"
-#include "audio_effect_map.h"
 
 #include "media_monitor_manager.h"
 
@@ -143,35 +142,25 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
     notifiedResult_ = result;
 
     if (notifiedResult_ == SUCCESS) {
-        HandleStatusChangeOperation(operation);
+        switch (operation) {
+            case START_STREAM :
+                state_ = RUNNING;
+                break;
+            case PAUSE_STREAM :
+                state_ = PAUSED;
+                break;
+            case STOP_STREAM :
+                state_ = STOPPED;
+                break;
+            default :
+                break;
+        }
     } else {
         AUDIO_ERR_LOG("operation %{public}d failed, result: %{public}" PRId64 "", operation, result);
     }
 
     callServerCV_.notify_all();
     return SUCCESS;
-}
-
-void RendererInClientInner::HandleStatusChangeOperation(Operation operation)
-{
-    std::unique_lock<std::mutex> lock(streamCbMutex_);
-    std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
-    switch (operation) {
-        case START_STREAM :
-            state_ = RUNNING;
-            break;
-        case PAUSE_STREAM :
-            state_ = PAUSED;
-            break;
-        case STOP_STREAM :
-            state_ = STOPPED;
-            break;
-        default :
-            break;
-    }
-    if (streamCb != nullptr) {
-        streamCb->OnStateChange(state_, CMD_FROM_SYSTEM);
-    }
 }
 
 void RendererInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId)
@@ -195,9 +184,7 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
 
     rendererInfo_.sceneType = AudioManagerUtil::GetEffectSceneName(rendererInfo_.streamUsage);
 
-    const std::unordered_map<AudioEffectScene, std::string> &audioSupportedSceneTypes = GetSupportedSceneType();
-
-    if (rendererInfo_.sceneType == audioSupportedSceneTypes.find(SCENE_OTHERS)->second) {
+    if (rendererInfo_.sceneType == AUDIO_SUPPORTED_SCENE_TYPES.find(SCENE_OTHERS)->second) {
         effectMode_ = EFFECT_NONE;
         rendererInfo_.effectMode = EFFECT_NONE;
     }
@@ -581,40 +568,6 @@ int32_t RendererInClientInner::ChangeSpeed(uint8_t *buffer, int32_t bufferSize, 
     return audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, outBuffer, outBufferSize);
 }
 
-void RendererInClientInner::InitCallbackLoop()
-{
-    cbThreadReleased_ = false;
-    auto weakRef = weak_from_this();
-    // OS_AudioWriteCB
-    std::thread callbackLoop = std::thread([weakRef] {
-        bool keepRunning = true;
-        std::shared_ptr<RendererInClientInner> strongRef = weakRef.lock();
-        if (strongRef != nullptr) {
-            strongRef->cbThreadCv_.notify_one();
-            strongRef->WatchingWriteCallbackFunc(); // add watchdog
-            AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", strongRef->sessionId_);
-        } else {
-            AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
-        }
-        strongRef = nullptr;
-        // start loop
-        while (keepRunning) {
-            strongRef = weakRef.lock();
-            if (strongRef == nullptr) {
-                AUDIO_INFO_LOG("RendererInClientInner destroyed");
-                break;
-            }
-            keepRunning = strongRef->WriteCallbackFunc(); // Main operation in callback loop
-        }
-        if (strongRef != nullptr) {
-            AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", strongRef->sessionId_);
-            strongRef->RendererRemoveWatchdog("WatchingWriteCallbackFunc", strongRef->sessionId_); // Remove watchdog
-        }
-    });
-    pthread_setname_np(callbackLoop.native_handle(), "OS_AudioWriteCB");
-    callbackLoop.detach();
-}
-
 int32_t RendererInClientInner::SetRenderMode(AudioRenderMode renderMode)
 {
     AUDIO_INFO_LOG("SetRenderMode to %{public}s", renderMode == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" :
@@ -637,7 +590,8 @@ int32_t RendererInClientInner::SetRenderMode(AudioRenderMode renderMode)
     renderMode_ = renderMode;
 
     // init callbackLoop_
-    InitCallbackLoop();
+    callbackLoop_ = std::thread([this] { this->WriteCallbackFunc(); });
+    pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioWriteCB");
 
     std::unique_lock<std::mutex> threadStartlock(statusMutex_);
     bool stopWaiting = cbThreadCv_.wait_for(threadStartlock, std::chrono::milliseconds(SHORT_TIMEOUT_IN_MS), [this] {
@@ -1045,6 +999,9 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
         cbThreadReleased_ = true; // stop loop
         cbThreadCv_.notify_all();
         FutexTool::FutexWake(clientBuffer_->GetFutex(), IS_PRE_EXIT);
+        if (callbackLoop_.joinable()) {
+            callbackLoop_.join();
+        }
     }
     paramsIsSet_ = false;
 
@@ -1545,17 +1502,6 @@ void RendererInClientInner::UpdateLatencyTimestamp(std::string &timestamp, bool 
         return;
     }
     gasp->UpdateLatencyTimestamp(timestamp, isRenderer);
-}
-
-int32_t RendererInClientInner::SetSourceDuration(int64_t duration)
-{
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->SetSourceDuration(duration);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Set Source Duration failed:%{public}d", ret);
-        return ERROR;
-    }
-    return SUCCESS;
 }
 
 bool RendererInClientInner::GetOffloadEnable()

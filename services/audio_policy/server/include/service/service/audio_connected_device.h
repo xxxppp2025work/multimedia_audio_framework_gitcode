@@ -65,13 +65,14 @@ public:
     bool HasHifi(const DeviceRole role);
     bool IsArmDevice(const std::string &address, const DeviceRole role);
     std::shared_ptr<AudioDeviceDescriptor> GetUsbDeviceDescriptor(const std::string &address, const DeviceRole role);
-    void UpdateSpatializationSupported(const std::string macAddress, const bool support);
 private:
     AudioConnectedDevice() {}
     ~AudioConnectedDevice() {}
 private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> connectedDevices_;
 };
+
 }
 }
+
 #endif

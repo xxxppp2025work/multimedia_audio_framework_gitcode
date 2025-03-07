@@ -62,14 +62,12 @@ config("audio_policy_public_config") {
     "safe_volume_notification/include",
     "../audio_service/client/include",
     "../audio_service/common/include",
-    "../audio_service/common/include/dfx",
     "../../frameworks/native/audioinnercall/include",
     "../../frameworks/native/audiorenderer/include",
     "../../frameworks/native/audioadapter/include",
     "../../frameworks/native/audiopolicy/include",
     "../../frameworks/native/audioutils/include",
     "../../frameworks/native/bluetoothclient",
-    "../../frameworks/native/hdiadapter_new/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
   ]
@@ -105,9 +103,6 @@ ohos_shared_library("audio_setting_provider") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
   }
   install_enable = true
 
@@ -148,9 +143,6 @@ audio_ohos_library("audio_policy_service") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
   }
   install_enable = true
   sources = [
@@ -160,7 +152,6 @@ audio_ohos_library("audio_policy_service") {
     "../audio_service/client/src/policy_provider_stub.cpp",
     "client/src/audio_interrupt_group_info.cpp",
     "client/src/audio_volume_group_info.cpp",
-    "server/src/app_state_listener.cpp",
     "server/src/audio_anahs_manager_listener_proxy.cpp",
     "server/src/audio_client_tracker_callback_proxy.cpp",
     "server/src/audio_concurrency_state_listener_proxy.cpp",
@@ -197,9 +188,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/device_init_callback.cpp",
     "server/src/service/effect/audio_effect_config_parser.cpp",
     "server/src/service/effect/audio_effect_service.cpp",
-    "server/src/service/interrupt/audio_interrupt_dfx_collector.cpp",
     "server/src/service/interrupt/audio_interrupt_service.cpp",
-    "server/src/service/interrupt/audio_interrupt_service_ext.cpp",
     "server/src/service/listener/device_status_listener.cpp",
     "server/src/service/listener/power_state_listener.cpp",
     "server/src/service/manager/audio_adapter_manager.cpp",
@@ -304,7 +293,6 @@ audio_ohos_library("audio_policy_service") {
     "ability_runtime:ability_connect_callback_stub",
     "ability_runtime:ability_context_native",
     "ability_runtime:app_context",
-    "ability_runtime:app_manager",
     "ability_runtime:dataobs_manager",
     "ability_runtime:extension_manager",
     "access_token:libaccesstoken_sdk",
@@ -367,6 +355,15 @@ audio_ohos_library("audio_policy_service") {
   if (bluetooth_part_enable == true) {
     deps += [ "../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
     external_deps += [ "bluetooth:btframework" ]
+  }
+
+  if (avsession_part_enable == true) {
+    external_deps += [
+      "ability_base:want",
+      "ability_runtime:wantagent_innerkits",
+      "av_session:avsession_client",
+      "input:libmmi-client",
+    ]
   }
 
   if (audio_framework_feature_input) {
@@ -573,9 +570,6 @@ ohos_executable("audio_dump_test") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
   }
   sources = [ "test/example/audio_dump_test.cpp" ]
 
@@ -642,16 +636,11 @@ ohos_shared_library("audio_foundation") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
   }
   install_enable = true
   sources = [
     "../audio_service/client/src/audio_filter.cpp",
     "server/src/service/device/audio_device_descriptor.cpp",
-    "util/src/audio_device_type.cpp",
-    "util/src/audio_effect_map.cpp",
   ]
 
   public_configs = [ ":audio_foundation_public_config" ]
@@ -685,9 +674,6 @@ ohos_shared_library("audio_manager_client") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
   }
   install_enable = true
   sources = [
@@ -744,9 +730,6 @@ ohos_shared_library("audio_policy_common") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
   }
   install_enable = true
   sources = [

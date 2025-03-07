@@ -101,7 +101,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyUtils::GetAvailab
 }
 
 int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
-    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     if (desc == nullptr) {
         AUDIO_ERR_LOG("desc is null");
@@ -113,7 +113,7 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
             audioStateManager_.SetPreferredMediaRenderDevice(desc);
             break;
         case AUDIO_CALL_RENDER:
-            audioStateManager_.SetPreferredCallRenderDevice(desc, pid);
+            audioStateManager_.SetPreferredCallRenderDevice(desc);
             break;
         case AUDIO_CALL_CAPTURE:
             audioStateManager_.SetPreferredCallCaptureDevice(desc);
@@ -251,9 +251,6 @@ std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeTy
             } else {
                 portName = PRIMARY_SPEAKER;
             }
-            break;
-        case DeviceType::DEVICE_TYPE_HDMI:
-            portName = PRIMARY_SPEAKER;
             break;
         default:
             portName = GetNewSinkPortName(deviceType);
@@ -435,8 +432,7 @@ void AudioPolicyUtils::UpdateEffectDefaultSink(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_DP:
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
-        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
-        case DeviceType::DEVICE_TYPE_HDMI: {
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {
             std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
             AudioServerProxy::GetInstance().SetOutputDeviceSinkProxy(deviceType, sinkName);
             break;
@@ -494,7 +490,6 @@ DeviceRole AudioPolicyUtils::GetDeviceRole(DeviceType deviceType) const
         case DeviceType::DEVICE_TYPE_DP:
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
         case DeviceType::DEVICE_TYPE_REMOTE_CAST:
-        case DeviceType::DEVICE_TYPE_HDMI:
             return DeviceRole::OUTPUT_DEVICE;
         case DeviceType::DEVICE_TYPE_MIC:
         case DeviceType::DEVICE_TYPE_WAKEUP:

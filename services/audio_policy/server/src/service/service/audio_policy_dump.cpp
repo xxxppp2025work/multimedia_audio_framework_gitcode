@@ -427,7 +427,6 @@ void AudioPolicyDump::AudioStreamDump(std::string &dumpString)
         AppendFormat(dumpString, " - samplingRate : %d\n", (*it)->rendererInfo.samplingRate);
         AppendFormat(dumpString, " - pipeType : %d\n", (*it)->rendererInfo.pipeType);
         AppendFormat(dumpString, " - rendererState : %d\n", (*it)->rendererState);
-        AppendFormat(dumpString, " - appVolume : %d\n", (*it)->appVolume);
     }
     GetCapturerStreamDump(dumpString);
 }

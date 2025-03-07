@@ -68,11 +68,6 @@ public:
     int32_t OnExtPnpDeviceStatusChanged(std::string anahsStatus, std::string anahsShowType) override { return 0; }
 };
 
-class ConcreteAudioManagerAudioSceneChangedCallback : public AudioManagerAudioSceneChangedCallback {
-public:
-    void OnAudioSceneChange(const AudioScene audioScene) override {}
-};
-
 class AudioPolicyManagerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases

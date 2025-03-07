@@ -2735,8 +2735,7 @@ HWTEST(AudioUtilsUnitTest, ShowTimestamp_002, TestSize.Level1)
 {
     bool isRenderer = false;
     LatencyMonitor latencyMonitor = LatencyMonitor::GetInstance();
-    latencyMonitor.extraStrLen_ = 1;
-    latencyMonitor.UpdateDspTime("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    latencyMonitor.UpdateDspTime("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     latencyMonitor.ShowTimestamp(isRenderer);
 }
 

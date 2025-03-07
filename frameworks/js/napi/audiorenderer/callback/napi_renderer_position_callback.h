@@ -22,25 +22,18 @@
 #include "napi/native_node_api.h"
 #include "napi_async_work.h"
 #include "audio_renderer.h"
-#include "napi_audio_renderer_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class NapiRendererPositionCallback : public RendererPositionCallback,
-    public NapiAudioRendererCallbackInner {
+class NapiRendererPositionCallback : public RendererPositionCallback {
 public:
     explicit NapiRendererPositionCallback(napi_env env);
-    ~NapiRendererPositionCallback() override;
-    void SaveCallbackReference(const std::string &callbackName, napi_value args) override;
+    virtual ~NapiRendererPositionCallback();
+    void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnMarkReached(const int64_t &framePosition) override;
     void CreateMarkReachedTsfn(napi_env env);
     bool GetMarkReachedTsfnFlag();
-    void RemoveCallbackReference(const std::string &callbackName, napi_env env,
-        napi_value callback, napi_value args = nullptr) override;
-    bool CheckIfTargetCallbackName(const std::string &callbackName) override;
-protected:
-    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
-    napi_env &GetEnv() override;
+
 private:
     struct RendererPositionJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;

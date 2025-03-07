@@ -80,7 +80,11 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> CockpitPhoneRouter::GetRingRender
         return descs;
     }
 
-    if (NeedLatestConnectWithDefaultDevices(latestConnDesc->getType())) {
+    if (latestConnDesc->getType() == DEVICE_TYPE_WIRED_HEADSET ||
+        latestConnDesc->getType() == DEVICE_TYPE_WIRED_HEADPHONES ||
+        latestConnDesc->getType() == DEVICE_TYPE_BLUETOOTH_SCO ||
+        latestConnDesc->getType() == DEVICE_TYPE_USB_HEADSET ||
+        latestConnDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
         // Add the latest connected device.
         descs.push_back(move(latestConnDesc));
         switch (streamUsage) {

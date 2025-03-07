@@ -280,7 +280,7 @@ public:
         return true;
     }
     
-    AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat, uint16_t audioFormat) const
+    AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat) const
     {
         switch (wavSampleFormat) {
             case SAMPLE_FORMAT_U8:
@@ -290,11 +290,7 @@ public:
             case SAMPLE_FORMAT_S24LE:
                 return AudioSampleFormat::SAMPLE_S24LE;
             case SAMPLE_FORMAT_S32LE:
-                if (audioFormat == 3) { // 3 - IEEE float
-                    return AudioSampleFormat::SAMPLE_F32LE;
-                } else {
-                    return AudioSampleFormat::SAMPLE_S32LE;
-                }
+                return AudioSampleFormat::SAMPLE_S32LE;
             default:
                 return AudioSampleFormat::INVALID_WIDTH;
         }
@@ -340,7 +336,7 @@ public:
         AudioRendererOptions rendererOptions = {};
         rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
         rendererOptions.streamInfo.samplingRate = static_cast<AudioSamplingRate>(wavHeader.SamplesPerSec);
-        rendererOptions.streamInfo.format = GetSampleFormat(wavHeader.bitsPerSample, wavHeader.AudioFormat);
+        rendererOptions.streamInfo.format = GetSampleFormat(wavHeader.bitsPerSample);
         rendererOptions.streamInfo.channels = static_cast<AudioChannel>(wavHeader.NumOfChan);
         rendererOptions.rendererInfo.contentType = contentType;
         rendererOptions.rendererInfo.streamUsage = streamUsage;

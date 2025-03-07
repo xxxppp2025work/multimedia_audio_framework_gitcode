@@ -20,9 +20,8 @@
 extern "C" {
 #endif
 
-void SetThreadQosLevel(void);
-void SetThreadQosLevelAsync(void);
-void ReSetThreadQosLevel(void);
+void SetThreadQosLevel();
+void ReSetThreadQosLevel();
 
 #ifdef __cplusplus
 }

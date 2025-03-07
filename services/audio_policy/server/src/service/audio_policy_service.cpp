@@ -36,6 +36,7 @@
 #include "media_monitor_manager.h"
 #include "client_type_manager.h"
 #include "audio_safe_volume_notification.h"
+#include "avsession_manager.h"
 #include "audio_setting_provider.h"
 #include "audio_spatialization_service.h"
 #include "audio_usb_manager.h"
@@ -85,7 +86,6 @@ mutex g_btProxyMutex;
 #endif
 bool AudioPolicyService::isBtListenerRegistered = false;
 bool AudioPolicyService::isBtCrashed = false;
-mutex g_policyMgrListenerMutex;
 
 AudioPolicyService::~AudioPolicyService()
 {
@@ -303,29 +303,6 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
     return audioVolumeManager_.SetSystemVolumeLevel(streamType, volumeLevel);
 }
 
-int32_t AudioPolicyService::SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel,
-    DeviceType deviceType)
-{
-    return audioVolumeManager_.SetSystemVolumeLevelWithDevice(streamType, volumeLevel, deviceType);
-}
-
-int32_t AudioPolicyService::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel)
-{
-    // update dump appvolume
-    audioDeviceLock_.UpdateAppVolume(appUid, volumeLevel);
-    return audioVolumeManager_.SetAppVolumeLevel(appUid, volumeLevel);
-}
-
-int32_t AudioPolicyService::SetAppVolumeMuted(int32_t appUid, bool muted)
-{
-    return audioVolumeManager_.SetAppVolumeMuted(appUid, muted);
-}
-
-bool AudioPolicyService::IsAppVolumeMute(int32_t appUid, bool owned)
-{
-    return audioVolumeManager_.IsAppVolumeMute(appUid, owned);
-}
-
 int32_t AudioPolicyService::SetVoiceRingtoneMute(bool isMute)
 {
     return audioVolumeManager_.SetVoiceRingtoneMute(isMute);
@@ -334,11 +311,6 @@ int32_t AudioPolicyService::SetVoiceRingtoneMute(bool isMute)
 int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType)
 {
     return audioVolumeManager_.GetSystemVolumeLevel(streamType);
-}
-
-int32_t AudioPolicyService::GetAppVolumeLevel(int32_t appUid)
-{
-    return audioVolumeManager_.GetAppVolumeLevel(appUid);
 }
 
 int32_t AudioPolicyService::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
@@ -468,10 +440,10 @@ int32_t AudioPolicyService::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsag
     return audioDeviceLock_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
 
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetExcludedDevices(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetExcludedOutputDevices(
     AudioDeviceUsage audioDevUsage)
 {
-    return audioDeviceLock_.GetExcludedDevices(audioDevUsage);
+    return audioDeviceLock_.GetExcludedOutputDevices(audioDevUsage);
 }
 
 bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const
@@ -633,9 +605,9 @@ std::string AudioPolicyService::GetSystemSoundUri(const std::string &key)
     return audioPolicyManager_.GetSystemSoundUri(key);
 }
 
-int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid)
+int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool active)
 {
-    return audioDeviceLock_.SetDeviceActive(deviceType, active, pid);
+    return audioDeviceLock_.SetDeviceActive(deviceType, active);
 }
 
 bool AudioPolicyService::IsDeviceActive(InternalDeviceType deviceType)
@@ -1014,18 +986,6 @@ int32_t AudioPolicyService::SetQueryClientTypeCallback(const sptr<IRemoteObject>
         AUDIO_ERR_LOG("Client type callback is null");
     }
 #endif
-    return SUCCESS;
-}
-
-int32_t AudioPolicyService::SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object)
-{
-    sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
-
-    if (callback != nullptr) {
-        return audioRecoveryDevice_.SetAudioClientInfoMgrCallback(callback);
-    } else {
-        AUDIO_ERR_LOG("Client info manager callback is null");
-    }
     return SUCCESS;
 }
 
@@ -1724,10 +1684,9 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     audioDeviceLock_.OnDeviceInfoUpdated(desc, command);
 }
 
-int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-    const int32_t pid)
+int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
 {
-    return audioDeviceLock_.SetCallDeviceActive(deviceType, active, address, pid);
+    return audioDeviceLock_.SetCallDeviceActive(deviceType, active, address);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveBluetoothDevice()
@@ -2068,17 +2027,12 @@ bool AudioPolicyService::IsAllowedPlayback(const int32_t &uid, const int32_t &pi
     if (uid == BOOTUP_MUSIC_UID) {
         return true;
     }
-    lock_guard<mutex> lock(g_policyMgrListenerMutex);
     bool allowed = false;
-    if (policyManagerListener_ != nullptr) {
-        allowed = policyManagerListener_->OnQueryAllowedPlayback(uid, pid);
-    }
+    allowed = OHOS::AVSession::AVSessionManager::GetInstance().IsAudioPlaybackAllowed(uid, pid);
     if (!allowed) {
         usleep(WATI_PLAYBACK_TIME); //wait for 200ms
         AUDIO_INFO_LOG("IsAudioPlaybackAllowed Try again after 200ms");
-        if (policyManagerListener_ != nullptr) {
-            allowed = policyManagerListener_->OnQueryAllowedPlayback(uid, pid);
-        }
+        allowed = OHOS::AVSession::AVSessionManager::GetInstance().IsAudioPlaybackAllowed(uid, pid);
     }
     return allowed;
 #endif
@@ -2140,10 +2094,6 @@ void AudioPolicyService::UpdateSafeVolumeByS4()
     return audioVolumeManager_.UpdateSafeVolumeByS4();
 }
 
-void AudioPolicyService::UpdateSpatializationSupported(const std::string macAddress, const bool support)
-{
-    audioDeviceLock_.UpdateSpatializationSupported(macAddress, support);
-}
 #ifdef HAS_FEATURE_INNERCAPTURER
 int32_t AudioPolicyService::LoadModernInnerCapSink(int32_t innerCapId)
 {
@@ -2172,12 +2122,5 @@ int32_t AudioPolicyService::UnloadModernInnerCapSink(int32_t innerCapId)
     return SUCCESS;
 }
 #endif
-
-int32_t AudioPolicyService::SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object)
-{
-    lock_guard<mutex> lock(g_policyMgrListenerMutex);
-    policyManagerListener_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
-    return SUCCESS;
-}
 } // namespace AudioStandard
 } // namespace OHOS

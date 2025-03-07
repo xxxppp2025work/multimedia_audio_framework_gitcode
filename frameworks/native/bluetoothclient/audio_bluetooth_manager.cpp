@@ -464,8 +464,8 @@ int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag, BluetoothRem
             AudioHfpManager::scoCategory != ScoCategory::SCO_RECOGNITION) {
             AUDIO_INFO_LOG("Recongnition sco connect");
             AudioHfpManager::recognitionStatus = RecognitionStatus::RECOGNITION_CONNECTING;
-            ret = BluetoothScoManager::HandleScoConnect(ScoCategory::SCO_RECOGNITION, &device);
-            if (ret == SUCCESS) {
+            ret = hfpInstance_->OpenVoiceRecognition(device);
+            if (ret) {
                 AudioHfpManager::scoCategory = ScoCategory::SCO_RECOGNITION;
                 AudioHfpManager::recognitionStatus = RecognitionStatus::RECOGNITION_CONNECTED;
             }
@@ -476,8 +476,8 @@ int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag, BluetoothRem
         if (AudioHfpManager::scoCategory == ScoCategory::SCO_RECOGNITION) {
             AUDIO_INFO_LOG("Recongnition sco close");
             AudioHfpManager::recognitionStatus = RecognitionStatus::RECOGNITION_DISCONNECTING;
-            ret = BluetoothScoManager::HandleScoDisconnect(ScoCategory::SCO_RECOGNITION, &device);
-            if (ret == SUCCESS) {
+            ret = hfpInstance_->CloseVoiceRecognition(device);
+            if (ret) {
                 AudioHfpManager::scoCategory = ScoCategory::SCO_DEFAULT;
                 AudioHfpManager::recognitionStatus = RecognitionStatus::RECOGNITION_DISCONNECTED;
             }
@@ -539,17 +539,6 @@ std::string AudioHfpManager::GetActiveHfpDevice()
     return device.GetDeviceAddr();
 }
 
-int32_t AudioHfpManager::ConnectScoUponDefaultScene(int8_t category)
-{
-    if (category != ScoCategory::SCO_DEFAULT) {
-        return SUCCESS;
-    }
-    CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
-    int32_t ret = hfpInstance_->ConnectSco(static_cast<uint8_t>(ScoCategory::SCO_VIRTUAL));
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "ConnectSco failed, result: %{public}d", ret);
-    return ret;
-}
-
 int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
 {
     if (scoCategory == ScoCategory::SCO_RECOGNITION) {
@@ -562,7 +551,6 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
     int8_t newScoCategory = GetScoCategoryFromScene(scene);
     AUDIO_INFO_LOG("new sco category is %{public}d, last sco category is %{public}d", newScoCategory, lastScoCategory);
 
-    int32_t ret = ConnectScoUponDefaultScene(newScoCategory); // default scene need support bluetooth sco
     if (lastScoCategory == newScoCategory) {
         AUDIO_INFO_LOG("sco category %{public}d not change", newScoCategory);
         return SUCCESS;
@@ -575,14 +563,15 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
         AUDIO_WARNING_LOG("The inbarding switch is off, ignore the ring scene.");
         return SUCCESS;
     }
+    int32_t ret;
     if (lastScoCategory != ScoCategory::SCO_DEFAULT) {
         AUDIO_INFO_LOG("Entered to disConnectSco for last audioScene category.");
         if (!IsVirtualCall()) {
             AUDIO_INFO_LOG("voip change to call disconnect sco.");
-            ret = BluetoothScoManager::HandleScoDisconnect(ScoCategory::SCO_CALLULAR);
+            ret = hfpInstance_->DisconnectSco(static_cast<uint8_t>(ScoCategory::SCO_CALLULAR));
             SetVirtualCall(true);
         } else {
-            ret = BluetoothScoManager::HandleScoDisconnect(static_cast<ScoCategory> (lastScoCategory));
+            ret = hfpInstance_->DisconnectSco(static_cast<uint8_t>(lastScoCategory));
         }
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR,
             "ConnectScoWithAudioScene failed as the last SCO failed to be disconnected, result: %{public}d", ret);
@@ -591,9 +580,9 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
         AUDIO_INFO_LOG("Entered to connectSco for new audioScene category.");
         if (newScoCategory == ScoCategory::SCO_VIRTUAL && !IsVirtualCall()) {
             AUDIO_INFO_LOG("voip change to call connect sco.");
-            ret = BluetoothScoManager::HandleScoConnect(ScoCategory::SCO_CALLULAR);
+            ret = hfpInstance_->ConnectSco(static_cast<uint8_t>(ScoCategory::SCO_CALLULAR));
         } else {
-            ret = BluetoothScoManager::HandleScoConnect(static_cast<ScoCategory> (newScoCategory));
+            ret = hfpInstance_->ConnectSco(static_cast<uint8_t>(newScoCategory));
         }
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "ConnectScoWithAudioScene failed, result: %{public}d", ret);
     }
@@ -606,9 +595,7 @@ int32_t AudioHfpManager::DisconnectSco()
     std::lock_guard<std::mutex> sceneLock(g_audioSceneLock);
     int8_t currentScoCategory = GetScoCategoryFromScene(scene_);
     if (currentScoCategory == ScoCategory::SCO_DEFAULT) {
-        CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "nullptr hfpInstance_");
-        int32_t ret = BluetoothScoManager::HandleScoDisconnect(ScoCategory::SCO_VIRTUAL);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "DisconnectSco failed, result: %{public}d", ret);
+        AUDIO_WARNING_LOG("Current sco category is DEFAULT, not need to disconnect sco.");
         return SUCCESS;
     }
     AUDIO_INFO_LOG("current sco category %{public}d", currentScoCategory);
@@ -617,9 +604,9 @@ int32_t AudioHfpManager::DisconnectSco()
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
     int32_t ret;
     if (currentScoCategory == ScoCategory::SCO_VIRTUAL && !IsVirtualCall()) {
-        ret = BluetoothScoManager::HandleScoDisconnect(ScoCategory::SCO_CALLULAR);
+        ret = hfpInstance_->DisconnectSco(static_cast<uint8_t>(ScoCategory::SCO_CALLULAR));
     } else {
-        ret = BluetoothScoManager::HandleScoDisconnect(static_cast<ScoCategory> (currentScoCategory));
+        ret = hfpInstance_->DisconnectSco(static_cast<uint8_t>(currentScoCategory));
     }
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "DisconnectSco failed, result: %{public}d", ret);
     scene_ = AUDIO_SCENE_DEFAULT;
@@ -748,7 +735,6 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
             AudioHfpManager::UpdateCurrentActiveHfpDevice(device);
         }
         bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
-        BluetoothScoManager::UpdateScoState(scoState);
         HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected, reason);
     }
 }

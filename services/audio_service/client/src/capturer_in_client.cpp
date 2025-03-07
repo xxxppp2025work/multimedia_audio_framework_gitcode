@@ -67,8 +67,6 @@ static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
 constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
-constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
-constexpr int32_t MAX_RETRY_COUNT = 8;
 }
 
 class CapturerInClientInner : public CapturerInClient, public IStreamListener, public IHandler,
@@ -115,7 +113,6 @@ public:
     int32_t SetRenderMode(AudioRenderMode renderMode) override;
     int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
     int32_t SetCaptureMode(AudioCaptureMode captureMode) override;
-    void InitCallbackLoop();
     AudioCaptureMode GetCaptureMode() override;
     int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
     int32_t GetBufferDesc(BufferDesc &bufDesc) override;
@@ -239,9 +236,8 @@ private:
     int32_t ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
-    bool ReadCallbackFunc();
+    void ReadCallbackFunc();
     void WatchingReadData();
-    void CapturerRemoveWatchdog(const std::string &message, const std::int32_t sessionId);
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
 
@@ -417,27 +413,6 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     std::unique_lock<std::mutex> lock(callServerMutex_);
     notifiedOperation_ = operation;
     notifiedResult_ = result;
-
-    if (notifiedResult_ == SUCCESS) {
-        std::unique_lock<std::mutex> lock(streamCbMutex_);
-        std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
-        switch (operation) {
-            case START_STREAM :
-                state_ = RUNNING;
-                break;
-            case PAUSE_STREAM :
-                state_ = PAUSED;
-                break;
-            case STOP_STREAM :
-                state_ = STOPPED;
-            default :
-                break;
-        }
-        if (streamCb != nullptr) {
-            streamCb->OnStateChange(state_, CMD_FROM_SYSTEM);
-        }
-    }
-
     callServerCV_.notify_all();
     return SUCCESS;
 }
@@ -828,11 +803,6 @@ int32_t CapturerInClientInner::InitIpcStream(const AudioPlaybackCaptureConfig &f
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
     int32_t errorCode = 0;
     sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config, errorCode, filterConfig);
-    for (int32_t retrycount = 0; (errorCode == ERR_RETRY_IN_CLIENT) && (retrycount < MAX_RETRY_COUNT); retrycount++) {
-        AUDIO_WARNING_LOG("retry in client");
-        std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
-        ipcProxy = gasp->CreateAudioProcess(config, errorCode);
-    }
     CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, errorCode, "failed with create audio stream fail.");
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
     ipcStream_ = iface_cast<IpcStream>(ipcProxy);
@@ -1061,40 +1031,6 @@ void CapturerInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
     cbBufferQueue_.Push(temp);
 }
 
-void CapturerInClientInner::InitCallbackLoop()
-{
-    cbThreadReleased_ = false;
-    auto weakRef = weak_from_this();
-
-    // OS_AudioWriteCB
-    callbackLoop_ = std::thread([weakRef] {
-        bool keepRunning = true;
-        std::shared_ptr<CapturerInClientInner> strongRef = weakRef.lock();
-        if (strongRef != nullptr) {
-            strongRef->cbThreadCv_.notify_one();
-            strongRef->WatchingReadData(); // add watchdog
-            AUDIO_INFO_LOG("Thread start, sessionID :%{public}d", strongRef->sessionId_);
-        } else {
-            AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
-        }
-        strongRef = nullptr;
-        // start loop
-        while (keepRunning) {
-            strongRef = weakRef.lock();
-            if (strongRef == nullptr) {
-                AUDIO_INFO_LOG("CapturerInClientInner destroyed");
-                break;
-            }
-            keepRunning = strongRef->ReadCallbackFunc(); // Main operation in callback loop
-        }
-        if (strongRef != nullptr) {
-            AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", strongRef->sessionId_);
-            strongRef->CapturerRemoveWatchdog("WatchingReadCallbackFunc", strongRef->sessionId_); // stop watchdog
-        }
-    });
-    pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioReadCb");
-}
-
 int32_t CapturerInClientInner::SetCaptureMode(AudioCaptureMode captureMode)
 {
     AUDIO_INFO_LOG("Set mode to %{public}s", captureMode == CAPTURE_MODE_NORMAL ? "CAPTURE_MODE_NORMAL" :
@@ -1117,7 +1053,8 @@ int32_t CapturerInClientInner::SetCaptureMode(AudioCaptureMode captureMode)
     capturerMode_ = captureMode;
 
     // init callbackLoop_
-    InitCallbackLoop();
+    callbackLoop_ = std::thread([this] { this->ReadCallbackFunc(); });
+    pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioReadCB");
 
     std::unique_lock<std::mutex> threadStartlock(statusMutex_);
     bool stopWaiting = cbThreadCv_.wait_for(threadStartlock, std::chrono::milliseconds(SHORT_TIMEOUT_IN_MS), [this] {
@@ -1171,7 +1108,7 @@ bool CapturerInClientInner::WaitForRunning()
     return true;
 }
 
-void CapturerInClientInner::CapturerRemoveWatchdog(const std::string &message, const std::int32_t sessionId)
+void CapturerRemoveWatchdog(const std::string &message, const std::int32_t sessionId)
 {
     std::string watchDogMessage = message;
     watchDogMessage += std::to_string(sessionId);
@@ -1197,46 +1134,56 @@ void CapturerInClientInner::WatchingReadData()
         WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
 }
 
-bool CapturerInClientInner::ReadCallbackFunc()
+void CapturerInClientInner::ReadCallbackFunc()
 {
-    if (cbThreadReleased_) {
-        return false;
-    }
-    Trace traceLoop("CapturerInClientInner::WriteCallbackFunc");
-    if (!WaitForRunning()) {
+    AUDIO_INFO_LOG("Thread start, sessionID :%{public}d", sessionId_);
+    cbThreadReleased_ = false;
+
+    // Modify thread priority is not need as first call read will do these work.
+    cbThreadCv_.notify_one();
+
+    // add watchdog
+    WatchingReadData();
+    // start loop
+    while (!cbThreadReleased_) {
+        Trace traceLoop("CapturerInClientInner::WriteCallbackFunc");
+        if (!WaitForRunning()) {
+            threadStatusFlag_ = true;
+            continue;
+        }
+
+        // If client didn't call GetBufferDesc/Enqueue in OnReadData, pop will block here.
+        BufferDesc temp = cbBufferQueue_.Pop();
+        if (temp.buffer == nullptr) {
+            AUDIO_WARNING_LOG("Queue pop error: get nullptr.");
+            break;
+        }
+
+        std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
+        // call read here.
+        int32_t result = Read(*temp.buffer, temp.bufLength, true); // blocking read
+        if (result < 0 || result != static_cast<int32_t>(cbBufferSize_)) {
+            AUDIO_WARNING_LOG("Call read error, ret:%{public}d, cbBufferSize_:%{public}zu", result, cbBufferSize_);
+        }
+        if (state_ != RUNNING) {
+            threadStatusFlag_ = true;
+            continue;
+        }
+        lockBuffer.unlock();
+
+        // call client read
+        Trace traceCb("CapturerInClientInner::OnReadData");
+        std::unique_lock<std::mutex> lockCb(readCbMutex_);
+        if (readCb_ != nullptr) {
+            readCb_->OnReadData(cbBufferSize_);
+        }
         threadStatusFlag_ = true;
-        return true;
+        lockCb.unlock();
+        traceCb.End();
     }
-
-    // If client didn't call GetBufferDesc/Enqueue in OnReadData, pop will block here.
-    BufferDesc temp = cbBufferQueue_.Pop();
-    if (temp.buffer == nullptr) {
-        AUDIO_WARNING_LOG("Queue pop error: get nullptr.");
-        return false;
-    }
-
-    std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
-    // call read here.
-    int32_t result = Read(*temp.buffer, temp.bufLength, true); // blocking read
-    if (result < 0 || result != static_cast<int32_t>(cbBufferSize_)) {
-        AUDIO_WARNING_LOG("Call read error, ret:%{public}d, cbBufferSize_:%{public}zu", result, cbBufferSize_);
-    }
-    if (state_ != RUNNING) {
-        threadStatusFlag_ = true;
-        return true;
-    }
-    lockBuffer.unlock();
-
-    // call client read
-    Trace traceCb("CapturerInClientInner::OnReadData");
-    std::unique_lock<std::mutex> lockCb(readCbMutex_);
-    if (readCb_ != nullptr) {
-        readCb_->OnReadData(cbBufferSize_);
-    }
-    threadStatusFlag_ = true;
-    lockCb.unlock();
-    traceCb.End();
-    return true;
+    AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", sessionId_);
+    // stop watchdog
+    CapturerRemoveWatchdog("WatchingCaptureInClientReadData", sessionId_);
 }
 
 
@@ -1567,7 +1514,9 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
         }
         cbThreadCv_.notify_all();
         readDataCV_.notify_all();
-        callbackLoop_.detach();
+        if (callbackLoop_.joinable()) {
+            callbackLoop_.join();
+        }
     }
     paramsIsSet_ = false;
 

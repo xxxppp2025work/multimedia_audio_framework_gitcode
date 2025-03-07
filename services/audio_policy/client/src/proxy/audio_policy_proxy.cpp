@@ -305,7 +305,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredOutputDeviceDescriptors(
-    AudioRendererInfo &rendererInfo, bool forceNoBTPermission)
+    AudioRendererInfo &rendererInfo)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -317,8 +317,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferr
 
     bool res = rendererInfo.Marshalling(data);
     CHECK_AND_RETURN_RET_LOG(res, deviceInfo, "AudioRendererInfo Marshalling() failed");
-
-    data.WriteBool(forceNoBTPermission);
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS), data, reply, option);
@@ -418,7 +416,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetInputDe
     return deviceInfo;
 }
 
-int32_t AudioPolicyProxy::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid)
+int32_t AudioPolicyProxy::SetDeviceActive(InternalDeviceType deviceType, bool active)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -428,7 +426,6 @@ int32_t AudioPolicyProxy::SetDeviceActive(InternalDeviceType deviceType, bool ac
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(static_cast<int32_t>(deviceType));
     data.WriteBool(active);
-    data.WriteInt32(pid);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_ACTIVE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set device active failed, error: %d", error);
@@ -667,7 +664,7 @@ int32_t AudioPolicyProxy::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     return reply.ReadInt32();
 }
 
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetExcludedDevices(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetExcludedOutputDevices(
     AudioDeviceUsage audioDevUsage)
 {
     MessageParcel data;
@@ -1454,21 +1451,6 @@ bool AudioPolicyProxy::IsSpatializationEnabled(const std::string address)
     return reply.ReadBool();
 }
 
-bool AudioPolicyProxy::IsSpatializationEnabledForCurrentDevice()
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
-
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE),
-            data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "IsSpatializationEnabled failed, error: %{public}d", error);
-    return reply.ReadBool();
-}
 
 int32_t AudioPolicyProxy::SetSpatializationEnabled(const bool enable)
 {
@@ -1762,8 +1744,7 @@ int32_t AudioPolicyProxy::ReleaseAudioInterruptZone(const int32_t zoneID)
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-    const int32_t pid)
+int32_t AudioPolicyProxy::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1774,7 +1755,6 @@ int32_t AudioPolicyProxy::SetCallDeviceActive(InternalDeviceType deviceType, boo
     data.WriteInt32(static_cast<int32_t>(deviceType));
     data.WriteBool(active);
     data.WriteString(address);
-    data.WriteInt32(pid);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALL_DEVICE_ACTIVE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %d", error);

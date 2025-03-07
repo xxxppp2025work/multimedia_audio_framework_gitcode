@@ -23,20 +23,13 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class NapiRendererDataRequestCallback : public AudioRendererWriteCallback,
-    public NapiAudioRendererCallbackInner {
+class NapiRendererDataRequestCallback : public AudioRendererWriteCallback {
 public:
     NapiRendererDataRequestCallback(napi_env env, NapiAudioRenderer *napiRenderer);
-    ~NapiRendererDataRequestCallback() override;
-    void SaveCallbackReference(const std::string &callbackName, napi_value args) override;
+    virtual ~NapiRendererDataRequestCallback();
+    void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnWriteData(size_t length) override;
     void CreateWriteDataTsfn(napi_env env);
-    void RemoveCallbackReference(const std::string &callbackName, napi_env env,
-        napi_value callback, napi_value args = nullptr) override;
-    bool CheckIfTargetCallbackName(const std::string &callbackName) override;
-protected:
-    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
-    napi_env &GetEnv() override;
 
 private:
     struct RendererDataRequestJsCallback {

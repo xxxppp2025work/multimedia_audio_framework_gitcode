@@ -21,23 +21,13 @@
 #include "parameters.h"
 #include "audio_policy_log.h"
 
-#include "bundle_mgr_interface.h"
-#include "bundle_mgr_proxy.h"
-#include "iservice_registry.h"
-#include "system_ability_definition.h"
-
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
-
 namespace {
-constexpr int32_t RECOVERY_ATTEMPT_LIMIT = 5;
-constexpr uint32_t INITIAL_STREAM_RESTORATION_WAIT_US = 1000000;
-constexpr uint32_t RETRY_INTERVAL_US = 300000;
 constexpr int32_t EXCLUDED = 0;
 constexpr int32_t UNEXCLUDED = 1;
 } // namespace
@@ -71,17 +61,16 @@ void AudioRecoveryDevice::DeInit()
 void AudioRecoveryDevice::RecoveryPreferredDevices()
 {
     AUDIO_DEBUG_LOG("Start recovery preferred devices.");
-    int32_t tryCounter = RECOVERY_ATTEMPT_LIMIT;
+    int32_t tryCounter = 5;
     // Waiting for 1000000 μs. Ensure that the playback/recording stream is restored first
-    uint32_t firstSleepTime = INITIAL_STREAM_RESTORATION_WAIT_US;
+    uint32_t firstSleepTime = 1000000;
     // Retry interval
-    uint32_t sleepTime = RETRY_INTERVAL_US;
+    uint32_t sleepTime = 300000;
     int32_t result = -1;
     std::map<Media::MediaMonitor::PreferredType,
         std::shared_ptr<Media::MediaMonitor::MonitorDeviceInfo>> preferredDevices;
     usleep(firstSleepTime);
-    while (result != SUCCESS && tryCounter > 0) {
-        tryCounter--;
+    while (result != SUCCESS && tryCounter-- > 0) {
         Media::MediaMonitor::MediaMonitorManager::GetInstance().GetAudioRouteMsg(preferredDevices);
         if (preferredDevices.size() == 0) {
             continue;
@@ -133,17 +122,16 @@ int32_t AudioRecoveryDevice::HandleRecoveryPreferredDevices(int32_t preferredTyp
 void AudioRecoveryDevice::RecoverExcludedOutputDevices()
 {
     AUDIO_INFO_LOG("Start recover excluded output devices.");
-    int32_t tryCounter = RECOVERY_ATTEMPT_LIMIT;
+    int32_t tryCounter = 5;
     // Waiting for 1000000 μs. Ensure that the playback/recording stream is restored first
-    uint32_t firstSleepTime = INITIAL_STREAM_RESTORATION_WAIT_US;
+    uint32_t firstSleepTime = 1000000;
     // Retry interval
-    uint32_t sleepTime = RETRY_INTERVAL_US;
+    uint32_t sleepTime = 300000;
     int32_t result = -1;
     map<Media::MediaMonitor::AudioDeviceUsage,
         vector<shared_ptr<Media::MediaMonitor::MonitorDeviceInfo>>> excludedDevicesMap;
     usleep(firstSleepTime);
-    while (result != SUCCESS && tryCounter > 0) {
-        tryCounter--;
+    while (result != SUCCESS && tryCounter-- > 0) {
         Media::MediaMonitor::MediaMonitorManager::GetInstance().GetAudioExcludedDevicesMsg(excludedDevicesMap);
         for (auto iter = excludedDevicesMap.begin(); iter != excludedDevicesMap.end(); ++iter) {
             result = HandleExcludedOutputDevicesRecovery(static_cast<AudioDeviceUsage>(iter->first), iter->second);
@@ -186,7 +174,7 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
     int32_t res = SUCCESS;
     StreamUsage strUsage = audioRendererFilter->rendererInfo.streamUsage;
     auto audioDevUsage = AudioPolicyUtils::GetInstance().GetAudioDeviceUsageByStreamUsage(strUsage);
-    if (audioStateManager_.IsExcludedDevice(audioDevUsage, *selectedDesc[0])) {
+    if (audioStateManager_.IsExcludedDevice(audioDevUsage, selectedDesc[0])) {
         res = UnexcludeOutputDevicesInner(audioDevUsage, selectedDesc);
         CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "UnexcludeOutputDevicesInner fail");
     }
@@ -281,45 +269,8 @@ int32_t AudioRecoveryDevice::SetRenderDeviceForUsage(StreamUsage streamUsage,
     // set preferred device
     std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>(**itr);
     CHECK_AND_RETURN_RET_LOG(descriptor != nullptr, ERR_INVALID_OPERATION, "Create device descriptor failed");
-
-    auto callerUid = IPCSkeleton::GetCallingUid();
-    auto callerPid = IPCSkeleton::GetCallingPid();
-    std::string bundleName = GetBundleNameFromUid(callerUid);
-    AUDIO_INFO_LOG("uid: %{public}u, pid: %{public}d, bundle name: %{public}s",
-        callerUid, callerPid, bundleName.c_str());
-    if (audioClientInfoMgrCallback_ != nullptr) {
-        audioClientInfoMgrCallback_->OnCheckClientInfo(bundleName, callerUid, callerPid);
-    }
-    AUDIO_INFO_LOG("check result pid: %{public}d", callerPid);
-    if (preferredType == AUDIO_CALL_RENDER) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType, descriptor, callerPid);
-    } else {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType, descriptor);
-    }
+    AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType, descriptor);
     return SUCCESS;
-}
-
-const std::string AudioRecoveryDevice::GetBundleNameFromUid(int32_t uid)
-{
-    AudioXCollie audioXCollie("AudioRecoveryDevice::GetBundleNameFromUid",
-        GET_BUNDLE_TIME_OUT_SECONDS);
-    std::string bundleName {""};
-    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetBundleNameFromUid");
-    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, "", "systemAbilityManager is nullptr");
-    guard.CheckCurrTimeout();
-
-    sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, "", "remoteObject is nullptr");
-
-    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
-    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, "", "bundleMgrProxy is nullptr");
-
-    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetBundleNameFromUid");
-    bundleMgrProxy->GetNameForUid(uid, bundleName);
-    reguard.CheckCurrTimeout();
-
-    return bundleName;
 }
 
 int32_t AudioRecoveryDevice::ConnectVirtualDevice(std::shared_ptr<AudioDeviceDescriptor> &selectedDesc)
@@ -433,8 +384,6 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
     }
     audioDeviceCommon_.FetchDevice(false);
 
-    audioDeviceCommon_.OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(),
-        audioActiveDevice_.GetCurrentInputDevice().networkId_);
     WriteSelectInputSysEvents(selectedDesc, srcType, scene);
     audioCapturerSession_.ReloadSourceForDeviceChange(
         audioActiveDevice_.GetCurrentInputDevice(),
@@ -606,12 +555,6 @@ void AudioRecoveryDevice::WriteUnexcludeOutputSysEvents(const AudioDeviceUsage a
     bean->Add("DEVICE_NAME", desc->deviceName_);
     bean->Add("BT_TYPE", desc->deviceCategory_);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
-}
-
-int32_t AudioRecoveryDevice::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
-{
-    audioClientInfoMgrCallback_ = callback;
-    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

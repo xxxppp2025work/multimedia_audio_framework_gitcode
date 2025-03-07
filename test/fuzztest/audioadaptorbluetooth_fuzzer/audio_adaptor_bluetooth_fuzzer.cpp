@@ -20,10 +20,10 @@
 #include "audio_policy_server.h"
 #include "audio_policy_service.h"
 #include "audio_bluetooth_manager.h"
-#include "common/hdi_adapter_info.h"
-#include "manager/hdi_adapter_manager.h"
-#include "sink/i_audio_render_sink.h"
+#include "audio_hdiadapter_info.h"
+#include "bluetooth_renderer_sink.h"
 #include "audio_device_info.h"
+#include "i_audio_renderer_sink.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,23 +33,11 @@ const uint64_t COMMON_UINT64_NUM = 2;
 static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
-static uint32_t g_renderId = HDI_INVALID_ID;
 const size_t THRESHOLD = 10;
 
-void GetRenderId()
+IMmapAudioRendererSink *GetAdaptorBlueToothSink()
 {
-    g_renderId = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_MMAP,
-        true);
-}
-
-void ReleaseRenderId()
-{
-    HdiAdapterManager::GetInstance().ReleaseId(g_renderId);
-}
-
-std::shared_ptr<IAudioRenderSink> GetAdaptorBlueToothSink()
-{
-    return HdiAdapterManager::GetInstance().GetRenderSink(g_renderId, true);
+    return BluetoothRendererSink::GetMmapInstance();
 }
 
 /*
@@ -87,6 +75,12 @@ void IsInitedFuzzTest()
     GetAdaptorBlueToothSink()->IsInited();
 }
 
+void SetVoiceVolumeFuzzTest()
+{
+    float volume = GetData<float>();
+    GetAdaptorBlueToothSink()->SetVoiceVolume(volume);
+}
+
 void SetAudioSceneFuzzTest()
 {
     AudioScene audioScene = GetData<AudioScene>();
@@ -99,7 +93,7 @@ void SetOutputRoutesFuzzTest()
 {
     DeviceType deviceType = GetData<DeviceType>();
     std::vector<DeviceType> outputDevices = {deviceType};
-    GetAdaptorBlueToothSink()->UpdateActiveDevice(outputDevices);
+    GetAdaptorBlueToothSink()->SetOutputRoutes(outputDevices);
 }
 
 void SetAudioParameterFuzzTest()
@@ -120,7 +114,7 @@ void GetAudioParameterFuzzTest()
 void RegisterParameterCallbackFuzzTest()
 {
     IAudioSinkCallback *callback_ = nullptr;
-    GetAdaptorBlueToothSink()->RegistCallback(HDI_CB_RENDER_STATE, callback_);
+    GetAdaptorBlueToothSink()->RegisterAudioSinkCallback(callback_);
 }
 
 void InitFuzzTest()
@@ -129,7 +123,7 @@ void InitFuzzTest()
     attr.adapterName = SINK_ADAPTER_NAME;
     attr.sampleRate = GetData<uint32_t>();
     attr.channel = GetData<uint32_t>();
-    attr.format = GetData<AudioSampleFormat>();
+    attr.format = GetData<HdiAdapterFormat>();
     attr.channelLayout = COMMON_UINT64_NUM;
     attr.deviceType = GetData<DeviceType>();
     attr.volume = GetData<float>();
@@ -178,7 +172,7 @@ void GetVolumeFuzzTest()
 void GetTransactionIdFuzzTest()
 {
     uint64_t transactionId = GetData<uint64_t>();
-    GetAdaptorBlueToothSink()->GetTransactionId(transactionId);
+    GetAdaptorBlueToothSink()->GetTransactionId(&transactionId);
 }
 
 void StopFuzzTest()
@@ -227,19 +221,13 @@ void GetPresentationPositionFuzzTest()
 void ResetOutputRouteForDisconnectFuzzTest()
 {
     DeviceType deviceType = GetData<DeviceType>();
-    GetAdaptorBlueToothSink()->ResetActiveDeviceForDisconnect(deviceType);
+    GetAdaptorBlueToothSink()->ResetOutputRouteForDisconnect(deviceType);
 }
 
 void SetPaPowerFuzzTest()
 {
     int32_t flag = GetData<int32_t>();
     GetAdaptorBlueToothSink()->SetPaPower(flag);
-}
-
-void ReleaseRenderIdFuzzTest()
-{
-    g_renderId = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_MMAP,
-        true);
 }
 
 typedef void (*TestFuncs[23])();
@@ -249,6 +237,7 @@ TestFuncs g_testFuncs = {
     RenderFrameFuzzTest,
     StartFuzzTest,
     IsInitedFuzzTest,
+    SetVoiceVolumeFuzzTest,
     SetAudioSceneFuzzTest,
     SetOutputRoutesFuzzTest,
     SetAudioParameterFuzzTest,
@@ -279,7 +268,6 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
     RAW_DATA = rawData;
     g_dataSize = size;
     g_pos = 0;
-    GetRenderId();
 
     uint32_t code = GetData<uint32_t>();
     uint32_t len = GetArrLength(g_testFuncs);
@@ -289,8 +277,6 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
         AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
     }
 
-    // release data
-    ReleaseRenderId();
     return true;
 }
 } // namespace AudioStandard

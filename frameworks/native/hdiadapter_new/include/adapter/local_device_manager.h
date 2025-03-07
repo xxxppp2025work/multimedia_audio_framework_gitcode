@@ -19,7 +19,6 @@
 #include <iostream>
 #include <cstring>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 #include <mutex>
 #include "v4_0/iaudio_manager.h"
@@ -31,10 +30,8 @@ namespace AudioStandard {
 typedef struct LocalAdapterWrapper {
     struct IAudioAdapter *adapter_ = nullptr;
     struct AudioAdapterDescriptor adapterDesc_ = {};
-    std::unordered_set<uint32_t> hdiRenderIds_;
-    std::unordered_set<uint32_t> hdiCaptureIds_;
-    std::mutex renderMtx_;
-    std::mutex captureMtx_;
+    uint32_t renderNum_ = 0;
+    uint32_t captureNum_ = 0;
     int32_t routeHandle_ = -1;
 } LocalAdapterWrapper;
 
@@ -52,9 +49,6 @@ public:
 
     int32_t LoadAdapter(const std::string &adapterName) override;
     void UnloadAdapter(const std::string &adapterName, bool force = false) override;
-
-    void AllAdapterSetMicMute(bool isMute) override;
-
     void SetAudioParameter(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
     std::string GetAudioParameter(const std::string &adapterName, const AudioParamKey key,

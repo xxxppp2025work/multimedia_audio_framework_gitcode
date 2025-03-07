@@ -22,7 +22,6 @@
 #include "bluetooth_hfp_ag.h"
 #include "audio_info.h"
 #include "bluetooth_device_utils.h"
-#include "bluetooth_sco_manager.h"
 
 namespace OHOS {
 namespace Bluetooth {
@@ -148,9 +147,6 @@ public:
     static int32_t Connect(const std::string &macAddress);
     static int32_t SetVirtualCall(const bool isVirtual);
     static bool IsVirtualCall();
-
-private:
-    static int32_t ConnectScoUponDefaultScene(int8_t category);
 
 private:
     static HandsFreeAudioGateway *hfpInstance_;

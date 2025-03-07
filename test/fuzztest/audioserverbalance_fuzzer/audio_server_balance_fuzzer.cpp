@@ -19,6 +19,7 @@
 
 #include "message_parcel.h"
 
+#include "i_audio_renderer_sink.h"
 #include "audio_manager_base.h"
 #include "audio_server.h"
 using namespace std;

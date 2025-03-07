@@ -55,7 +55,7 @@ private:
 
 class WakeupAudioCaptureSource : public IAudioCaptureSource {
 public:
-    WakeupAudioCaptureSource(const uint32_t captureId);
+    WakeupAudioCaptureSource() = default;
     ~WakeupAudioCaptureSource() = default;
 
     int32_t Init(const IAudioSourceAttr &attr) override;
@@ -95,7 +95,7 @@ public:
     void DumpInfo(std::string &dumpString) override;
 
 private:
-    AudioCaptureSource audioCaptureSource_;
+    static inline AudioCaptureSource audioCaptureSource_;
     static inline std::unique_ptr<WakeupBuffer> wakeupBuffer_ = nullptr;
     static inline std::mutex wakeupMutex_;
     static inline int sourceInitCount_ = 0;

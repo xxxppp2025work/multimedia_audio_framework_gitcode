@@ -43,13 +43,14 @@
 #include "source_userdata.h"
 #include "securec.h"
 #include "audio_hdi_log.h"
+#include "audio_hdiadapter_info.h"
 #include "audio_schedule.h"
 #include "audio_source_type.h"
-#include "common/hdi_adapter_info.h"
-#include "source/source_intf.h"
+#include "capturer_source_adapter.h"
 #include "v4_0/audio_types.h"
 #include "v4_0/iaudio_manager.h"
 #include "audio_enhance_chain_adapter.h"
+#include "hdi_adapter_manager_api.h"
 #include "audio_utils_c.h"
 
 #define DEFAULT_SOURCE_NAME "hdi_input"
@@ -129,10 +130,9 @@ static uint64_t CalculateFrameLen(uint32_t sampleRate, uint32_t channels, int32_
     return sampleRate * channels * GetByteSizeByFormat(format) * FRAME_DURATION_DEFAULT / MILLISECOND_PER_SECOND;
 }
 
-static struct SourceAdapterFrameDesc *AllocateFrameDesc(char *frame, uint64_t frameLen)
+static FrameDesc *AllocateFrameDesc(char *frame, uint64_t frameLen)
 {
-    struct SourceAdapterFrameDesc *fdesc = (struct SourceAdapterFrameDesc *)calloc(1,
-        sizeof(struct SourceAdapterFrameDesc));
+    FrameDesc *fdesc = (struct FrameDesc *)calloc(1, sizeof(FrameDesc));
     if (fdesc != NULL) {
         fdesc->frame = frame;
         fdesc->frameLen = frameLen;
@@ -141,7 +141,7 @@ static struct SourceAdapterFrameDesc *AllocateFrameDesc(char *frame, uint64_t fr
     return fdesc;
 }
 
-static void FreeFrameDesc(struct SourceAdapterFrameDesc *fdesc)
+static void FreeFrameDesc(FrameDesc *fdesc)
 {
     if (fdesc != NULL) {
         // frame in desc is allocated outside, do not free here
@@ -151,41 +151,41 @@ static void FreeFrameDesc(struct SourceAdapterFrameDesc *fdesc)
 
 static void InitAuxCapture(struct Userdata *u)
 {
-    if (u->sourceAdapterEc != NULL) {
-        u->sourceAdapterEc->SourceAdapterInit(u->sourceAdapterEc, u->sourceAdapterEc->attr);
+    if (u->captureHandleEc != NULL) {
+        u->captureHandleEc->Init(u->captureHandleEc->capture);
     }
-    if (u->sourceAdapterMicRef != NULL) {
-        u->sourceAdapterMicRef->SourceAdapterInit(u->sourceAdapterMicRef, u->sourceAdapterMicRef->attr);
+    if (u->captureHandleMicRef != NULL) {
+        u->captureHandleMicRef->Init(u->captureHandleMicRef->capture);
     }
 }
 
 static void DeinitAuxCapture(struct Userdata *u)
 {
-    if (u->sourceAdapterEc != NULL) {
-        u->sourceAdapterEc->SourceAdapterDeInit(u->sourceAdapterEc);
+    if (u->captureHandleEc != NULL) {
+        u->captureHandleEc->Deinit(u->captureHandleEc->capture);
     }
-    if (u->sourceAdapterMicRef != NULL) {
-        u->sourceAdapterMicRef->SourceAdapterDeInit(u->sourceAdapterMicRef);
+    if (u->captureHandleMicRef != NULL) {
+        u->captureHandleMicRef->Deinit(u->captureHandleMicRef->capture);
     }
 }
 
 static void StartAuxCapture(struct Userdata *u)
 {
-    if (u->sourceAdapterEc != NULL) {
-        u->sourceAdapterEc->SourceAdapterStart(u->sourceAdapterEc);
+    if (u->captureHandleEc != NULL) {
+        u->captureHandleEc->Start(u->captureHandleEc->capture);
     }
-    if (u->sourceAdapterMicRef != NULL) {
-        u->sourceAdapterMicRef->SourceAdapterStart(u->sourceAdapterMicRef);
+    if (u->captureHandleMicRef != NULL) {
+        u->captureHandleMicRef->Start(u->captureHandleMicRef->capture);
     }
 }
 
 static void StopAuxCapture(struct Userdata *u)
 {
-    if (u->sourceAdapterEc != NULL) {
-        u->sourceAdapterEc->SourceAdapterStop(u->sourceAdapterEc);
+    if (u->captureHandleEc != NULL) {
+        u->captureHandleEc->Stop(u->captureHandleEc->capture);
     }
-    if (u->sourceAdapterMicRef != NULL) {
-        u->sourceAdapterMicRef->SourceAdapterStop(u->sourceAdapterMicRef);
+    if (u->captureHandleMicRef != NULL) {
+        u->captureHandleMicRef->Stop(u->captureHandleMicRef->capture);
     }
 }
 
@@ -270,16 +270,15 @@ static void UserdataFree(struct Userdata *u)
     }
 
     if (u->sourceAdapter) {
-        u->sourceAdapter->SourceAdapterStop(u->sourceAdapter);
-        u->sourceAdapter->SourceAdapterDeInit(u->sourceAdapter);
+        u->sourceAdapter->CapturerSourceStop(u->sourceAdapter->wapper);
+        u->sourceAdapter->CapturerSourceDeInit(u->sourceAdapter->wapper);
         StopAuxCapture(u);
         DeinitAuxCapture(u);
-        ReleaseSourceAdapter(u->sourceAdapterEc);
-        u->sourceAdapterEc = NULL;
-        ReleaseSourceAdapter(u->sourceAdapterMicRef);
-        u->sourceAdapterMicRef = NULL;
-        ReleaseSourceAdapter(u->sourceAdapter);
-        u->sourceAdapter = NULL;
+        ReleaseCaptureHandle(u->captureHandleEc);
+        u->captureHandleEc = NULL;
+        ReleaseCaptureHandle(u->captureHandleMicRef);
+        u->captureHandleMicRef = NULL;
+        UnLoadSourceAdapter(u->sourceAdapter);
     }
 
     if (u->bufferEc) {
@@ -331,13 +330,13 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
     struct Userdata *u = s->userdata;
     CHECK_AND_RETURN_RET_LOG(u != NULL, 0, "userdata is null");
     AUDIO_INFO_LOG("Source[%{public}s] state change:[%{public}s]-->[%{public}s]",
-        u->sourceAdapter->deviceClass, GetStateInfo(s->thread_info.state), GetStateInfo(newState));
+        GetDeviceClass(u->sourceAdapter->deviceClass), GetStateInfo(s->thread_info.state), GetStateInfo(newState));
 
     if ((s->thread_info.state == PA_SOURCE_SUSPENDED || s->thread_info.state == PA_SOURCE_INIT) &&
         PA_SOURCE_IS_OPENED(newState)) {
         u->timestamp = pa_rtclock_now();
         if (newState == PA_SOURCE_RUNNING && !u->isCapturerStarted) {
-            if (u->sourceAdapter->SourceAdapterStart(u->sourceAdapter)) {
+            if (u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper)) {
                 AUDIO_ERR_LOG("HDI capturer start failed");
                 return -PA_ERR_IO;
             }
@@ -348,7 +347,7 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
     } else if (s->thread_info.state == PA_SOURCE_IDLE) {
         if (newState == PA_SOURCE_SUSPENDED) {
             if (u->isCapturerStarted) {
-                u->sourceAdapter->SourceAdapterStop(u->sourceAdapter);
+                u->sourceAdapter->CapturerSourceStop(u->sourceAdapter->wapper);
                 u->isCapturerStarted = false;
                 AUDIO_DEBUG_LOG("Stopped HDI capturer");
                 StopAuxCapture(u);
@@ -356,7 +355,7 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
             }
         } else if (newState == PA_SOURCE_RUNNING && !u->isCapturerStarted) {
             AUDIO_DEBUG_LOG("Idle to Running starting HDI capturing device");
-            if (u->sourceAdapter->SourceAdapterStart(u->sourceAdapter)) {
+            if (u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper)) {
                 AUDIO_ERR_LOG("Idle to Running HDI capturer start failed");
                 return -PA_ERR_IO;
             }
@@ -522,12 +521,12 @@ static int32_t HandleCaptureFrame(struct Userdata *u, char *buffer, uint64_t req
 {
     uint64_t replyBytesEc = 0;
     if (u->ecType == EC_NONE) {
-        u->sourceAdapter->SourceAdapterCaptureFrame(u->sourceAdapter, buffer, requestBytes, replyBytes);
+        u->sourceAdapter->CapturerSourceFrame(u->sourceAdapter->wapper, buffer, requestBytes, replyBytes);
     }
     if (u->ecType == EC_SAME_ADAPTER) {
-        struct SourceAdapterFrameDesc *fdesc = AllocateFrameDesc(buffer, requestBytes);
-        struct SourceAdapterFrameDesc *fdescEc = AllocateFrameDesc((char *)(u->bufferEc), u->requestBytesEc);
-        u->sourceAdapter->SourceAdapterCaptureFrameWithEc(u->sourceAdapter,
+        FrameDesc *fdesc = AllocateFrameDesc(buffer, requestBytes);
+        FrameDesc *fdescEc = AllocateFrameDesc((char *)(u->bufferEc), u->requestBytesEc);
+        u->sourceAdapter->CapturerSourceFrameWithEc(u->sourceAdapter->wapper,
             fdesc, replyBytes, fdescEc, &replyBytesEc);
         FreeFrameDesc(fdesc);
         FreeFrameDesc(fdescEc);
@@ -536,12 +535,12 @@ static int32_t HandleCaptureFrame(struct Userdata *u, char *buffer, uint64_t req
         }
     }
     if (u->ecType == EC_DIFFERENT_ADAPTER) {
-        u->sourceAdapter->SourceAdapterCaptureFrame(u->sourceAdapter, buffer, requestBytes, replyBytes);
-        if (u->sourceAdapterEc != NULL) {
-            struct SourceAdapterFrameDesc *fdesc = AllocateFrameDesc(NULL, requestBytes);
-            struct SourceAdapterFrameDesc *fdescEc = AllocateFrameDesc((char *)(u->bufferEc), u->requestBytesEc);
+        u->sourceAdapter->CapturerSourceFrame(u->sourceAdapter->wapper, buffer, requestBytes, replyBytes);
+        if (u->captureHandleEc != NULL) {
+            FrameDesc *fdesc = AllocateFrameDesc(NULL, requestBytes);
+            FrameDesc *fdescEc = AllocateFrameDesc((char *)(u->bufferEc), u->requestBytesEc);
             uint64_t replyBytesUnused = 0;
-            u->sourceAdapterEc->SourceAdapterCaptureFrameWithEc(u->sourceAdapterEc,
+            u->captureHandleEc->CaptureFrameWithEc(u->captureHandleEc->capture,
                 fdesc, &replyBytesUnused, fdescEc, &replyBytesEc);
             FreeFrameDesc(fdesc);
             FreeFrameDesc(fdescEc);
@@ -552,7 +551,7 @@ static int32_t HandleCaptureFrame(struct Userdata *u, char *buffer, uint64_t req
     }
     uint64_t replyBytesMicRef = 0;
     if (u->micRef == REF_ON) {
-        u->sourceAdapterMicRef->SourceAdapterCaptureFrame(u->sourceAdapterMicRef,
+        u->captureHandleMicRef->CaptureFrame(u->captureHandleMicRef->capture,
             (char *)(u->bufferMicRef), u->requestBytesMicRef, &replyBytesMicRef);
         if ((replyBytesMicRef == 0) && (u->requestBytesMicRef != replyBytesMicRef)) {
             u->bufferMicRef = 0;
@@ -836,7 +835,7 @@ static void PaRtpollProcessFunc(struct Userdata *u)
     }
 
     if (u->sourceAdapter) {
-        u->sourceAdapter->SourceAdapterUpdateAppsUid(u->sourceAdapter, appsUid, count);
+        u->sourceAdapter->CapturerSourceAppsUid(u->sourceAdapter->wapper, appsUid, count);
     }
 
     pa_usec_t costTime = pa_rtclock_now() - now;
@@ -898,15 +897,20 @@ static void ThreadFuncProcessTimer(void *userdata)
 static int PaHdiCapturerInit(struct Userdata *u)
 {
     int ret;
-    ret = u->sourceAdapter->SourceAdapterInit(u->sourceAdapter, &u->attrs);
+    ret = u->sourceAdapter->CapturerSourceInit(u->sourceAdapter->wapper, &u->attrs);
     if (ret != 0) {
         AUDIO_ERR_LOG("Audio capturer init failed!");
         return ret;
     }
     InitAuxCapture(u);
 
-    u->captureId = u->sourceAdapter->captureId;
+    u->captureId = 0;
     u->renderId = 0;
+    ret = u->sourceAdapter->CapturerSourceGetCaptureId(u->sourceAdapter->wapper, &u->captureId);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("Audio capturer get capturer id failed!");
+        return ret;
+    }
 
 #ifdef IS_EMULATOR
     // Due to the peculiar implementation of the emulator's HDI,
@@ -924,8 +928,8 @@ static void PaHdiCapturerExit(struct Userdata *u)
 {
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
     CHECK_AND_RETURN_LOG((u->sourceAdapter) != NULL, " u->sourceAdapter is null");
-    u->sourceAdapter->SourceAdapterStop(u->sourceAdapter);
-    u->sourceAdapter->SourceAdapterDeInit(u->sourceAdapter);
+    u->sourceAdapter->CapturerSourceStop(u->sourceAdapter->wapper);
+    u->sourceAdapter->CapturerSourceDeInit(u->sourceAdapter->wapper);
     StopAuxCapture(u);
     DeinitAuxCapture(u);
 }
@@ -979,9 +983,9 @@ static int PaSetSourceProperties(pa_module *m, pa_modargs *ma, const pa_sample_s
     return 0;
 }
 
-static enum AudioSampleFormatIntf ConvertPaToHdiAdapterFormat(pa_sample_format_t format)
+static enum HdiAdapterFormat ConvertPaToHdiAdapterFormat(pa_sample_format_t format)
 {
-    enum AudioSampleFormatIntf adapterFormat;
+    enum HdiAdapterFormat adapterFormat;
     switch (format) {
         case PA_SAMPLE_U8:
             adapterFormat = SAMPLE_U8;
@@ -1069,7 +1073,7 @@ static void InitUserdataAttrs(pa_modargs *ma, struct Userdata *u, const pa_sampl
         pa_xfree, (pa_free_cb_t) pa_resampler_free);
 }
 
-static void InitDifferentAdapterEcAttr(struct Userdata *u, struct SourceAdapterAttr *attr)
+static void InitDifferentAdapterEcAttr(struct Userdata *u, CaptureAttr *attr)
 {
     // set attr for different adapter ec
     attr->sourceType = SOURCE_TYPE_EC;
@@ -1078,13 +1082,13 @@ static void InitDifferentAdapterEcAttr(struct Userdata *u, struct SourceAdapterA
     attr->deviceType = DEVICE_TYPE_MIC; // not needed, updateAudioRoute later
     // common audio attrs
     attr->sampleRate = u->ecSamplingRate;
-    attr->channel = u->ecChannels;
+    attr->channelCount = u->ecChannels;
     attr->format = u->ecFormat;
     attr->isBigEndian = false;
     attr->openMicSpeaker = u->openMicSpeaker;
 }
 
-static void InitMicRefAttr(struct Userdata *u, struct SourceAdapterAttr *attr)
+static void InitMicRefAttr(struct Userdata *u, CaptureAttr *attr)
 {
     // set attr for mic ref
     attr->sourceType = SOURCE_TYPE_MIC_REF;
@@ -1093,7 +1097,7 @@ static void InitMicRefAttr(struct Userdata *u, struct SourceAdapterAttr *attr)
     attr->deviceType = DEVICE_TYPE_MIC;
     // common audio attrs
     attr->sampleRate = u->micRefRate;
-    attr->channel = u->micRefChannels;
+    attr->channelCount = u->micRefChannels;
     attr->format = u->micRefFormat;
     attr->isBigEndian = false;
     attr->openMicSpeaker = u->openMicSpeaker;
@@ -1145,7 +1149,7 @@ static void PrepareEcCapture(struct Userdata *u)
 {
     // init to avoid unexpeceted condition
     u->attrs.hasEcConfig = false;
-    u->sourceAdapterEc = NULL;
+    u->captureHandleEc = NULL;
     u->requestBytesEc = 0;
     u->bufferEc = NULL;
 
@@ -1169,19 +1173,18 @@ static void PrepareEcCapture(struct Userdata *u)
 
     if (u->ecType == EC_DIFFERENT_ADAPTER) {
         // only ec different adapter need create aux capture
-        struct SourceAdapterAttr *attr = (struct SourceAdapterAttr *)calloc(1, sizeof(struct SourceAdapterAttr));
+        CaptureAttr *attr = (struct CaptureAttr *)calloc(1, sizeof(CaptureAttr));
         if (attr == NULL) {
             AUDIO_ERR_LOG("capture attr allocate failed");
             return;
         }
         InitDifferentAdapterEcAttr(u, attr);
-        u->sourceAdapterEc = GetSourceAdapter(DEFAULT_DEVICE_CLASS, -1, HDI_ID_INFO_EC);
-        if (u->sourceAdapterEc == NULL) {
+        int32_t res = CreateCaptureHandle(&u->captureHandleEc, attr);
+        if (res) {
             AUDIO_ERR_LOG("create ec handle failed");
             free(attr);
             return;
         }
-        u->sourceAdapterEc->attr = attr;
         u->requestBytesEc = CalculateFrameLen(u->ecSamplingRate, u->ecChannels, u->ecFormat);
         u->bufferEc = malloc(u->requestBytesEc);
         if (u->bufferEc == NULL) {
@@ -1192,7 +1195,7 @@ static void PrepareEcCapture(struct Userdata *u)
 
 static void PrepareMicRefCapture(struct Userdata *u)
 {
-    u->sourceAdapterMicRef = NULL;
+    u->captureHandleMicRef = NULL;
     u->bufferMicRef = NULL;
     u->requestBytesMicRef = 0;
 
@@ -1200,20 +1203,20 @@ static void PrepareMicRefCapture(struct Userdata *u)
         return;
     }
 
-    struct SourceAdapterAttr *attr = (struct SourceAdapterAttr *)calloc(1, sizeof(struct SourceAdapterAttr));
+    CaptureAttr *attr = (struct CaptureAttr *)calloc(1, sizeof(CaptureAttr));
     if (attr == NULL) {
         AUDIO_ERR_LOG("capture attr allocate failed");
         return;
     }
 
     InitMicRefAttr(u, attr);
-    u->sourceAdapterMicRef = GetSourceAdapter(DEFAULT_DEVICE_CLASS, -1, HDI_ID_INFO_MIC_REF);
-    if (u->sourceAdapterMicRef == NULL) {
+    int32_t res = CreateCaptureHandle(&u->captureHandleMicRef, attr);
+    if (res) {
         AUDIO_ERR_LOG("create mic ref handle failed");
         free(attr);
         return;
     }
-    u->sourceAdapterMicRef->attr = attr;
+
     u->requestBytesMicRef = CalculateFrameLen(u->micRefRate, u->micRefChannels, u->micRefFormat);
     u->bufferMicRef = malloc(u->requestBytesMicRef);
     if (u->bufferMicRef == NULL) {
@@ -1254,18 +1257,12 @@ int32_t CreateCaptureDataThread(pa_module *m, struct Userdata *u)
     return 0;
 }
 
-static struct SourceAdapter *GetSourceAdapterBySourceType(const char *deviceClass, const int32_t sourceType,
-    const char *sourceName, const char *networkId)
-{
-    if (sourceType == SOURCE_TYPE_WAKEUP) {
-        return GetSourceAdapter(deviceClass, sourceType, sourceName);
-    }
-    return GetSourceAdapter(deviceClass, sourceType, networkId);
-}
-
 pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
 {
-    CHECK_AND_RETURN_RET_LOG(m != NULL && ma != NULL, NULL, "m or ma is null");
+    int ret;
+
+    CHECK_AND_RETURN_RET_LOG(m != NULL, NULL, "m is null");
+    CHECK_AND_RETURN_RET_LOG(ma != NULL, NULL, "ma is null");
 
     pa_sample_spec ss = m->core->default_sample_spec;
     pa_channel_map map = m->core->default_channel_map;
@@ -1295,10 +1292,10 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
 
     InitEcAndMicRefAttrs(ma, u);
 
-    const char *deviceClass = pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS);
-    u->sourceAdapter = GetSourceAdapterBySourceType(deviceClass, u->attrs.sourceType, pa_modargs_get_value(ma,
-        "source_name", DEFAULT_SOURCE_NAME), pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID));
-    if (u->sourceAdapter == NULL) {
+    ret = LoadSourceAdapter(pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS),
+        pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID), u->attrs.sourceType,
+        pa_modargs_get_value(ma, "source_name", DEFAULT_SOURCE_NAME), &u->sourceAdapter);
+    if (ret) {
         AUDIO_ERR_LOG("Load adapter failed");
         goto fail;
     }

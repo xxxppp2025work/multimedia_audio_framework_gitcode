@@ -104,17 +104,7 @@ public:
 
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
 
-    int32_t SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
-
-    int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
-
-    int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
-
-    bool IsAppVolumeMute(int32_t appUid, bool owned);
-
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
-
-    int32_t GetAppVolumeLevel(int32_t appUid);
 
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
 
@@ -156,7 +146,7 @@ public:
     int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedOutputDevices(
         AudioDeviceUsage audioDevUsage);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
@@ -176,7 +166,7 @@ public:
 
     bool IsAbsVolumeSupported();
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = -1);
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
     bool IsDeviceActive(InternalDeviceType deviceType);
 
@@ -285,8 +275,6 @@ public:
     int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage);
 
     int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object);
-
-    int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object);
 
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object, const int32_t apiVersion);
@@ -406,8 +394,7 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> DeviceFilterByUsageInner(AudioDeviceUsage usage,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descs);
 
-    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t pid = -1);
+    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address);
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
 
@@ -485,12 +472,10 @@ public:
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void SubscribeSafeVolumeEvent();
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
-    void UpdateSpatializationSupported(const std::string macAddress, const bool support);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId);
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
-    int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -611,8 +596,7 @@ private:
         DEVICE_TYPE_DP,
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_WIRED_HEADSET,
-        DEVICE_TYPE_SPEAKER,
-        DEVICE_TYPE_HDMI
+        DEVICE_TYPE_SPEAKER
     };
     std::vector<DeviceType> inputPriorityList_ = {
         DEVICE_TYPE_BLUETOOTH_SCO,
@@ -671,8 +655,6 @@ private:
     AudioCapturerSession& audioCapturerSession_;
     AudioDeviceLock& audioDeviceLock_;
     AudioDeviceStatus& audioDeviceStatus_;
-
-    sptr<IStandardAudioPolicyManagerListener> policyManagerListener_;
 };
 
 class SafeVolumeEventSubscriber : public EventFwk::CommonEventSubscriber {

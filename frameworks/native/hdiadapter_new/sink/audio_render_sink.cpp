@@ -33,8 +33,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
-AudioRenderSink::AudioRenderSink(const uint32_t renderId, const std::string &halName)
-    : renderId_(renderId), halName_(halName)
+AudioRenderSink::AudioRenderSink(const std::string &halName)
+    : halName_(halName)
 {
     if (halName_ == HDI_ID_INFO_DIRECT || halName_ == HDI_ID_INFO_VOIP) {
         sinkType_ = ADAPTER_TYPE_DIRECT;
@@ -309,11 +309,11 @@ std::string AudioRenderSink::GetAudioParameter(const AudioParamKey key, const st
 int32_t AudioRenderSink::SetVolume(float left, float right)
 {
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+    CHECK_AND_RETURN_RET_LOG(halName_ == "voip" && switchDeviceMute_ && (abs(left) > FLOAT_EPS ||
+        abs(right) > FLOAT_EPS), ERR_ILLEGAL_STATE, "mute for switch device at voip scene, not support set volume");
 
     leftVolume_ = left;
     rightVolume_ = right;
-    CHECK_AND_RETURN_RET_LOG(!(halName_ == "voip" && switchDeviceMute_ && (abs(left) > FLOAT_EPS ||
-        abs(right) > FLOAT_EPS)), ERR_ILLEGAL_STATE, "mute for switch device at voip scene, not support set volume");
     float volume;
     if ((abs(leftVolume_) < FLOAT_EPS) && (abs(rightVolume_) > FLOAT_EPS)) {
         volume = rightVolume_;
@@ -457,9 +457,6 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<Device
         int32_t ret = audioRender_->SelectScene(audioRender_, &sceneDesc);
         CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "select scene fail, ret: %{public}d", ret);
         currentAudioScene_ = audioScene;
-        if (currentAudioScene_ == AUDIO_SCENE_PHONE_CALL || currentAudioScene_ == AUDIO_SCENE_PHONE_CHAT) {
-            forceSetRouteFlag_ = true;
-        }
     }
     int32_t ret = UpdateActiveDevice(activeDevices);
     if (ret != SUCCESS) {
@@ -478,11 +475,10 @@ int32_t AudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevic
     CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "invalid device");
     if (currentActiveDevice_ == outputDevices[0] && outputDevices.size() ==
-        static_cast<uint32_t>(currentDevicesSize_) && !forceSetRouteFlag_) {
+        static_cast<uint32_t>(currentDevicesSize_)) {
         AUDIO_INFO_LOG("output device not change, device: %{public}d", outputDevices[0]);
         return SUCCESS;
     }
-    forceSetRouteFlag_ = false;
     currentActiveDevice_ = outputDevices[0];
     currentDevicesSize_ = static_cast<int32_t>(outputDevices.size());
     SetAudioRouteInfoForEnhanceChain();
@@ -811,12 +807,13 @@ void AudioRenderSink::SetAudioRouteInfoForEnhanceChain(void)
 {
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
+    uint32_t uniqueId = GetUniqueId();
     if (halName_ == HDI_ID_INFO_USB) {
-        audioEnhanceChainManager->SetOutputDevice(renderId_, DEVICE_TYPE_USB_ARM_HEADSET);
+        audioEnhanceChainManager->SetOutputDevice(uniqueId, DEVICE_TYPE_USB_ARM_HEADSET);
     } else if (halName_ == HDI_ID_INFO_DP) {
-        audioEnhanceChainManager->SetOutputDevice(renderId_, DEVICE_TYPE_DP);
+        audioEnhanceChainManager->SetOutputDevice(uniqueId, DEVICE_TYPE_DP);
     } else {
-        audioEnhanceChainManager->SetOutputDevice(renderId_, currentActiveDevice_);
+        audioEnhanceChainManager->SetOutputDevice(uniqueId, currentActiveDevice_);
     }
 }
 

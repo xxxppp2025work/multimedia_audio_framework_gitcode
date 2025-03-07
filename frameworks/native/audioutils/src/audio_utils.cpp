@@ -70,7 +70,6 @@ constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
 constexpr int32_t UID_THPEXTRA_SA = 5000;
 constexpr int32_t TIME_OUT_SECONDS = 10;
-constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 
 const uint32_t UNIQUE_ID_INTERVAL = 8;
 
@@ -209,11 +208,6 @@ void WatchTimeout::CheckCurrTimeout()
 
 bool CheckoutSystemAppUtil::CheckoutSystemApp(int32_t uid)
 {
-    if (uid == BOOTUP_MUSIC_UID) {
-        // boot animation must be system app, no need query from BMS, to redeuce boot latency.
-        AUDIO_INFO_LOG("boot animation must be system app, no need query from BMS.");
-        return true;
-    }
     bool isSystemApp = false;
     WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():CheckoutSystemApp");
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -1033,10 +1027,6 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
 template <typename T>
 bool StringConverter(const std::string &str, T &result)
 {
-    if (str == "-0") {
-        result = 0;
-        return true;
-    }
     auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), result);
     return ec == std::errc{} && ptr == str.data() + str.size();
 }
@@ -1209,13 +1199,6 @@ static void MemcpyToI32FromI24(uint8_t *src, int32_t *dst, size_t count)
     }
 }
 
-static void MemcpyToI32FromF32(float *src, int32_t *dst, size_t count)
-{
-    for (size_t i = 0; i < count; i++) {
-        *(dst + i) = static_cast<int32_t>(*(src + i));
-    }
-}
-
 bool NearZero(int16_t number)
 {
     return number >= -DETECTED_ZERO_THRESHOLD && number <= DETECTED_ZERO_THRESHOLD;
@@ -1287,9 +1270,6 @@ bool SignalDetectAgent::CheckAudioData(uint8_t *buffer, size_t bufferLen)
         int32_t ret = memcpy_s(cache, sizeof(int32_t) * cacheAudioData_.capacity(), buffer, bufferLen);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "LatencyMeas checkAudioData failed, dstSize "
             "%{public}zu, srcSize %{public}zu", sizeof(int32_t) * cacheAudioData_.capacity(), bufferLen);
-    } else if (sampleFormat_ == SAMPLE_F32LE) {
-        float *cp = reinterpret_cast<float*>(buffer);
-        MemcpyToI32FromF32(cp, cache, frameCountIgnoreChannel_);
     } else if (sampleFormat_ == SAMPLE_S24LE) {
         MemcpyToI32FromI24(buffer, cache, frameCountIgnoreChannel_);
     } else {
@@ -1542,9 +1522,6 @@ const std::string AudioInfoDumpUtils::GetDeviceTypeName(DeviceType deviceType)
         case DEVICE_TYPE_MIC:
             device = "MIC";
             break;
-        case DEVICE_TYPE_HDMI:
-            device = "HDMI";
-            break;
         case DEVICE_TYPE_WAKEUP:
             device = "WAKEUP";
             break;
@@ -1664,7 +1641,6 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_ACCESSIBILITY, STREAM_ACCESSIBILITY},
     {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
     {STREAM_ALL, STREAM_ALL},
-    {STREAM_APP, STREAM_APP}
 };
 
 std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeMap_ = {
@@ -1693,7 +1669,6 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeM
     {STREAM_SYSTEM_ENFORCED, STREAM_SYSTEM},
 
     {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
-    {STREAM_APP, STREAM_APP}
 };
 
 std::unordered_map<AudioStreamType, AudioVolumeType>& VolumeUtils::GetVolumeMap()
