@@ -163,6 +163,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_HDMI = 27,
     /**
+     * Indicates a line digital device
+     */
+    DEVICE_TYPE_LINE_DIGITAL = 28,
+    /**
      * Indicates a debug sink device
      */
     DEVICE_TYPE_FILE_SINK = 50,
