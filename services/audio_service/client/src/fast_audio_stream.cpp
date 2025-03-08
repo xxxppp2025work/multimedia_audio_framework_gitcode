@@ -1009,9 +1009,10 @@ int32_t FastAudioStream::SetDefaultOutputDevice(const DeviceType defaultOutputDe
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "set failed: null process");
     int32_t ret = processClient_->SetDefaultOutputDevice(defaultOutputDevice);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDefaultOutputDevice error.");
-    defaultOutputDevice_ = defaultOutputDevice;
-    return SUCCESS;
+    if (ret == SUCCESS) {
+        defaultOutputDevice_ = defaultOutputDevice;
+    }
+    return ret;
 }
 
 DeviceType FastAudioStream::GetDefaultOutputDevice()
