@@ -3265,7 +3265,7 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
     const uint64_t pos = u->offload.pos;
     const uint64_t hdiPos = u->offload.hdiPos + (pa_rtclock_now() - u->offload.hdiPosTs);
     const uint64_t pw = u->offload.prewrite;
-    int64_t blockTime = (int64_t)pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
+    uint64_t blockTime = (uint64_t)pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
 
     int32_t nInput = -1;
     const int hdistate = (int)pa_atomic_load(&u->offload.hdistate);
@@ -3273,7 +3273,7 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
         bool wait;
         ProcessRenderUseTimingOffload(u, &wait, &nInput);
         if (wait) {
-            blockTime = (int64_t)(timeWait * PA_USEC_PER_MSEC); // timeWait ms for first write no data
+            blockTime = timeWait * PA_USEC_PER_MSEC; // timeWait ms for first write no data
             if (timeWait < 20) { // 20ms max wait no data
                 timeWait++;
             }
@@ -3282,10 +3282,8 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
             blockTime = 10 * PA_USEC_PER_MSEC; // 10ms for render write wait
         }
     } else if (hdistate == 1) {
-        blockTime = (int64_t)(pos - hdiPos - HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC);
-        if (blockTime < 0) {
-            blockTime = OFFLOAD_FRAME_SIZE * PA_USEC_PER_MSEC; // block for one frame
-        }
+        blockTime = pos > hdiPos + HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC ?
+            pos - hdiPos - HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC : OFFLOAD_FRAME_SIZE * PA_USEC_PER_MSEC;
     }
     if (pos < hdiPos) {
         if (pos != 0) {
@@ -3449,8 +3447,8 @@ static void ProcessNormalData(struct Userdata *u)
 
     if (flag) {
         pa_usec_t frameUsec = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
-        pa_usec_t blockTime = u->primary.timestamp + frameUsec - now;
-        if (blockTime > frameUsec) { blockTime = frameUsec; }
+        pa_usec_t blockTime = u->primary.timestamp + frameUsec > now ? u->primary.timestamp + frameUsec - now :
+            frameUsec;
         if (pa_atomic_load(&u->primary.dflag) == 1) {
             sleepForUsec = (int64_t)blockTime -
                 ((int64_t)pa_rtclock_now() - (int64_t)(u->primary.lastProcessDataTime));
