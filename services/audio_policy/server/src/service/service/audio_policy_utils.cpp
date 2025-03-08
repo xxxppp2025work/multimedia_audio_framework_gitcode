@@ -203,6 +203,8 @@ std::string AudioPolicyUtils::GetNewSinkPortName(DeviceType deviceType)
             portName = USB_SPEAKER;
             break;
         case DeviceType::DEVICE_TYPE_DP:
+        case DeviceType::DEVICE_TYPE_HDMI:
+        case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
             portName = DP_SINK;
             break;
         case DeviceType::DEVICE_TYPE_FILE_SINK:
@@ -247,7 +249,8 @@ std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeTy
             } else if (pipeType == PIPE_TYPE_MULTICHANNEL) {
                 portName = MCH_PRIMARY_SPEAKER;
             } else if (pipeType == PIPE_TYPE_CALL_OUT) {
-                portName = PRIMARY_DIRECT_VOIP;
+                bool normalVoipFlag = audioConfigManager_.GetNormalVoipFlag();
+                portName = (normalVoipFlag ? PRIMARY_SPEAKER : PRIMARY_DIRECT_VOIP);
             } else {
                 portName = PRIMARY_SPEAKER;
             }

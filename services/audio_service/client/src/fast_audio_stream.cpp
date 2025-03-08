@@ -1008,12 +1008,10 @@ bool FastAudioStream::GetHighResolutionEnabled()
 int32_t FastAudioStream::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "set failed: null process");
-    auto ret = processClient_->SetDefaultOutputDevice(defaultOutputDevice);
-    
-    if (ret == SUCCESS) {
-        defaultOutputDevice_ = defaultOutputDevice;
-    }
-    return ret;
+    int32_t ret = processClient_->SetDefaultOutputDevice(defaultOutputDevice);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDefaultOutputDevice error.");
+    defaultOutputDevice_ = defaultOutputDevice;
+    return SUCCESS;
 }
 
 DeviceType FastAudioStream::GetDefaultOutputDevice()
