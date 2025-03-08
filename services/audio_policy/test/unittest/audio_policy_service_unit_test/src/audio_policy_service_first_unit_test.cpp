@@ -1062,6 +1062,10 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSourcePortName_001, TestSize.Level1)
     deviceType = DEVICE_TYPE_MAX;
     retPortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceType);
     EXPECT_EQ(PORT_NONE, retPortName);
+
+    deviceType = DEVICE_TYPE_HDMI;
+    retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
+    EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
 }
 
 /**
