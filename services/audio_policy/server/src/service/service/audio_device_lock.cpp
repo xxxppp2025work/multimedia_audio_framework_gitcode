@@ -130,7 +130,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioDeviceLock::GetActiveBluetoothDevice
     std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
 
     std::shared_ptr<AudioDeviceDescriptor> preferredDesc = audioStateManager_.GetPreferredCallRenderDevice();
-    if (preferredDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+    if (preferredDesc && preferredDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         return preferredDesc;
     }
 
@@ -391,9 +391,11 @@ void AudioDeviceLock::OnDeviceConfigurationChanged(DeviceType deviceType, const 
 static void UpdateRendererInfoWhenNoPermission(const shared_ptr<AudioRendererChangeInfo> &audioRendererChangeInfos,
     bool hasSystemPermission)
 {
-    if (!hasSystemPermission) {
+    if (!hasSystemPermission && audioRendererChangeInfos) {
         audioRendererChangeInfos->clientUID = 0;
         audioRendererChangeInfos->rendererState = RENDERER_INVALID;
+    } else {
+        throw std::invalid_argument("audioRendererChangeInfos cannot be nullptr");
     }
 }
 
@@ -424,9 +426,13 @@ int32_t AudioDeviceLock::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRe
     if (itr != outputDevices.end()) {
         size_t rendererInfosSize = audioRendererChangeInfos.size();
         for (size_t i = 0; i < rendererInfosSize; i++) {
-            UpdateRendererInfoWhenNoPermission(audioRendererChangeInfos[i], hasSystemPermission);
-            audioDeviceCommon_.UpdateDeviceInfo(audioRendererChangeInfos[i]->outputDeviceInfo, *itr,
-                hasBTPermission, hasSystemPermission);
+            if (audioRendererChangeInfos[i]) {
+                UpdateRendererInfoWhenNoPermission(audioRendererChangeInfos[i], hasSystemPermission);
+                audioDeviceCommon_.UpdateDeviceInfo(audioRendererChangeInfos[i]->outputDeviceInfo, *itr,
+                    hasBTPermission, hasSystemPermission);
+            } else {
+                continue;
+            }
         }
     }
 
