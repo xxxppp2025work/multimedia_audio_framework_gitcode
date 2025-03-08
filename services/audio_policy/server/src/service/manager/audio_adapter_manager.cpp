@@ -1731,7 +1731,10 @@ void AudioAdapterManager::InitSafeTime(bool isFirstBoot)
             }
             if (!volumeDataMaintainer_.GetSafeVolumeTime(DEVICE_TYPE_BLUETOOTH_A2DP, safeActiveBtTime_) &&
                 (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP)) {
-                volumeDataMaintainer_.SaveSafeVolumeTime(DEVICE_TYPE_BLUETOOTH_A2DP, 0);
+                auto ret = volumeDataMaintainer_.SaveSafeVolumeTime(DEVICE_TYPE_BLUETOOTH_A2DP, 0);
+                if (!ret) {
+                    SetFirstBoot();
+                }
             }
             ConvertSafeTime();
             isNeedConvertSafeTime_ = false;
