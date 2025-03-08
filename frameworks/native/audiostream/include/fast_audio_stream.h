@@ -187,7 +187,7 @@ public:
 
     bool GetSilentModeAndMixWithOthers() override;
 
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) override;
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
 
     DeviceType GetDefaultOutputDevice() override;
 
