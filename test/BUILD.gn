@@ -42,6 +42,7 @@ group("audio_unit_test") {
     "../frameworks/native/audiopolicy/test/unittest/stream_manager_test:audio_stream_manager_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/volume_change_test:audio_volume_change_unit_test",
     "../frameworks/native/audiorenderer/test/multithreadtest:audio_renderer_multi_test",
+    "../frameworks/native/audiorenderer/test/unittest/renderer_test:audio_renderer_proxy_obj_unit_test",
     "../frameworks/native/audiorenderer/test/unittest/renderer_test:capture_renderer_interrupt_unit_test",
     "../frameworks/native/audiorenderer/test/unittest/renderer_test:renderer_capture_interrupt_unit_test",
     "../frameworks/native/audioutils/test/unittest:audio_speed_unit_test",
