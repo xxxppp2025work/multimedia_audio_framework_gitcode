@@ -142,6 +142,12 @@ public:
         int32_t error_;
     };
 
+    struct ClientProxyMapEvent {
+        ClientProxyMapEvent() = delete;
+        int32_t clientPid_;
+        sptr<IAudioPolicyClient> client_;
+    };
+
     void Init(std::shared_ptr<IAudioInterruptEventDispatcher> dispatcher);
 
     void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient> &cb);
