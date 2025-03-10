@@ -42,6 +42,7 @@ static uint64_t g_id = 1;
 static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
+static const uint32_t RECORD_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 #endif
 static const uint32_t BLOCK_HIBERNATE_CALLBACK_IN_MS = 5000; // 5s
@@ -135,6 +136,10 @@ void AudioService::ReleaseProcess(const std::string endpointName, const int32_t 
 
 int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream)
 {
+    if (endpoint->GetAudioMode() == AudioMode::AUDIO_MODE_RECORD) {
+        return RECORD_ENDPOINT_RELEASE_DELAY_TIME;
+    }
+
     if (endpoint->GetEndpointType() == AudioEndpoint::EndpointType::TYPE_VOIP_MMAP) {
         return VOIP_ENDPOINT_RELEASE_DELAY_TIME;
     }
