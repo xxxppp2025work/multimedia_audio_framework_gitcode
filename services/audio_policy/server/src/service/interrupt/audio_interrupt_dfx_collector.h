@@ -40,7 +40,6 @@ public:
     InterruptDfxBuilder &WriteInfoMsg(const AudioInterrupt &audioInterrupt);
     InterruptDfxBuilder &WriteEffectMsg(uint8_t appstate, const std::string &bundleName,
         const AudioInterrupt &audioInterrupt, const InterruptHint &hintType);
-    InterruptDfxBuilder &WriteAppStateMsg(InterruptAppState state);
     InterruptDfxInfo GetResult();
 private:
     InterruptDfxInfo dfxInfo_{};
