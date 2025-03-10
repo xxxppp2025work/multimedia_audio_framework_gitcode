@@ -464,12 +464,15 @@ bool RendererInServer::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize)
     return isInvalid;
 }
 
-void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
+void RendererInServer::WriteMuteDataSysEvent(BufferDesc &bufferDesc)
 {
+    int64_t muteFrameCnt = 0;
+    VolumeTools::CalcMuteFrame(bufferDesc, processConfig_.streamInfo, traceTag_, muteFrameCnt);
+    lastWriteMuteFrame_ += muteFrameCnt;
     if (silentModeAndMixWithOthers_) {
         return;
     }
-    if (IsInvalidBuffer(buffer, bufferSize)) {
+    if (IsInvalidBuffer(bufferDesc.buffer, bufferDesc.bufLength)) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         }
@@ -595,7 +598,7 @@ int32_t RendererInServer::WriteData()
 
         OtherStreamEnqueue(bufferDesc);
 
-        WriteMuteDataSysEvent(bufferDesc.buffer, bufferDesc.bufLength);
+        WriteMuteDataSysEvent(bufferDesc);
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength); // clear is needed for reuse.
         // Client may write the buffer immediately after SetCurReadFrame, so put memset_s before it!
         uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
