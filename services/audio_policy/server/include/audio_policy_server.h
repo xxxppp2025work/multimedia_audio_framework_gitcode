@@ -225,6 +225,8 @@ public:
 
     int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) override;
 
+    int32_t SetQueryAppWhiteListCallback(const sptr<IRemoteObject> &object) override;
+
     int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
     int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
@@ -699,6 +701,7 @@ private:
     int32_t sessionIdByRemote_ = -1;
     std::mutex onStartLock_;
     bool isOnStart = false;
+    sptr<IStandardAudioPolicyManagerListener> queryAppWhiteListCallback_ = nullptr;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

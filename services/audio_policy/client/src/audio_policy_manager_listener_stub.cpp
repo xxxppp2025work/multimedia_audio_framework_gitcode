@@ -103,6 +103,11 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
             OnCheckClientInfo(bundleName, uid, pid);
             return AUDIO_OK;
         }
+        case ON_QUERY_APP_WHITE_LIST: {
+            std::string bundleName = data.ReadString();
+            OnQueryAppIsInWhiteList(bundleName);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -163,6 +168,17 @@ bool AudioPolicyManagerListenerStub::OnQueryAllowedPlayback(int32_t uid, int32_t
     return audioQueryAllowedPlaybackCallback->OnQueryAllowedPlayback(uid, pid);
 }
 
+bool AudioPolicyManagerListenerStub::OnQueryAppIsInWhiteList(const std::string &bundleName)
+{
+    std::shared_ptr<AudioQueryAppWhiteListCallback> audioQueryAppWhiteListCallback =
+        audioQueryAppWhiteListCallback_.lock();
+
+    CHECK_AND_RETURN_RET_LOG(audioQueryAppWhiteListCallback != nullptr, false,
+        "audioQueryAppWhiteListCallback_ is nullptr");
+
+    return audioQueryAppWhiteListCallback->OnQueryAppIsInWhiteList(bundleName);
+}
+
 void AudioPolicyManagerListenerStub::SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback)
 {
     callback_ = callback;
@@ -188,6 +204,12 @@ void AudioPolicyManagerListenerStub::SetQueryAllowedPlaybackCallback(
     const std::weak_ptr<AudioQueryAllowedPlaybackCallback> &cb)
 {
     audioQueryAllowedPlaybackCallback_ = cb;
+}
+
+void AudioPolicyManagerListenerStub::SetQueryAppWhiteListCallback(
+    const std::weak_ptr<AudioQueryAppWhiteListCallback> &cb)
+{
+    audioQueryAppWhiteListCallback_ = cb;
 }
 } // namespace AudioStandard
 } // namespace OHOS

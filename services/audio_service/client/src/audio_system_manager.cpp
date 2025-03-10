@@ -782,6 +782,14 @@ int32_t AudioSystemManager::SetAudioClientInfoMgrCallback(const std::shared_ptr<
     return AudioPolicyManager::GetInstance().SetAudioClientInfoMgrCallback(callback);
 }
 
+int32_t AudioSystemManager::SetQueryAppWhiteListCallback(
+    const std::shared_ptr<AudioQueryAppWhiteListCallback> &callback)
+{
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetQueryAppWhiteListCallback(callback);
+}
+
 int32_t AudioSystemManager::SetRingerModeCallback(const int32_t clientId,
                                                   const std::shared_ptr<AudioRingerModeCallback> &callback)
 {

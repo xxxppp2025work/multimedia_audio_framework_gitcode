@@ -62,6 +62,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "UNSET_CALLBACK",
     "SET_QUERY_CLIENT_TYPE_CALLBACK",
     "SET_CLIENT_INFO_MGR_CALLBACK",
+    "SET_QUERY_APP_WHITE_LIST_CALLBACK",
     "ACTIVATE_INTERRUPT",
     "DEACTIVATE_INTERRUPT",
     "SET_INTERRUPT_CALLBACK",
@@ -881,9 +882,7 @@ void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParce
     for (uint32_t i = 0; i < ss; i++) {
         int32_t tmp_usage = data.ReadInt32();
         if (std::find(AUDIO_SUPPORTED_STREAM_USAGES.begin(), AUDIO_SUPPORTED_STREAM_USAGES.end(), tmp_usage) ==
-            AUDIO_SUPPORTED_STREAM_USAGES.end()) {
-            continue;
-        }
+            AUDIO_SUPPORTED_STREAM_USAGES.end()) { continue; }
         config.filterOptions.usages.push_back(static_cast<StreamUsage>(tmp_usage));
     }
     uint32_t appTokenId = data.ReadUint32();
@@ -1204,6 +1203,28 @@ void AudioPolicyManagerStub::SetAudioClientInfoMgrCallbackInternal(MessageParcel
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SetQueryAppWhiteListCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_LOG(object != nullptr, "SetQueryAppWhiteListCallback is null");
+    int32_t result = SetQueryAppWhiteListCallback(object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_APP_WHITE_LIST_CALLBACK):
+            SetQueryAppWhiteListCallbackInternal(data, reply);
+            break;
+        default:
+            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
+            IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            break;
+    }
+}
+
 void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -1250,9 +1271,11 @@ void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_ALLOWED_PLAYBACK_CALLBACK):
             SetQueryAllowedPlaybackCallbackInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_APP_WHITE_LIST_CALLBACK):
+            SetQueryAppWhiteListCallbackInternal(data, reply);
+            break;
         default:
-            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
-            IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            OnMiddleEleRemoteRequest(code, data, reply, option);
             break;
     }
 }
