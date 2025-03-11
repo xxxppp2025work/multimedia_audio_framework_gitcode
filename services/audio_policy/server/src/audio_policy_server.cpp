@@ -86,6 +86,8 @@ void AudioPolicyServer::OnDump()
 
 void AudioPolicyServer::OnStart()
 {
+    std::lock_guard<std::mutex> lock(onStartLock_);
+    CHECK_AND_RETURN_LOG(!isOnStart, "Audio policy already started, retrun")
     AUDIO_INFO_LOG("Audio policy server on start");
 
     interruptService_ = std::make_shared<AudioInterruptService>();
@@ -135,6 +137,7 @@ void AudioPolicyServer::OnStart()
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     SubscribeVolumeKeyEvents();
 #endif
+    isOnStart = true;
     AUDIO_INFO_LOG("Audio policy server start end");
 }
 
