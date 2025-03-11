@@ -490,6 +490,9 @@ AudioCapturerSource *AudioCapturerSource::GetInstance(const std::string &halName
     if (halName == "usb") {
         static AudioCapturerSourceInner audioCapturerUsb(halName);
         return &audioCapturerUsb;
+    } else if (halname == "pencil") {
+        static AudioCapturerSourceInner audioCapturerPencil(halName);
+        return &audioCapturerPencil;
     }
 
     switch (sourceType) {
@@ -748,6 +751,8 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     deviceDesc.pins = PIN_IN_MIC;
     if (halName_ == "usb") {
         deviceDesc.pins = PIN_IN_USB_HEADSET;
+    } else if (halName_ == "pencil") {
+        deviceDesc.pins = PIN_IN_PENCIL;
     }
     std::string desc = address_;
     deviceDesc.desc = const_cast<char*>(desc.c_str());
@@ -1262,6 +1267,10 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
             source.ext.device.type = PIN_IN_BLUETOOTH_SCO_HEADSET;
             source.ext.device.desc = (char *)"pin_in_bluetooth_sco_headset";
             break;
+        case DEVICE_TYPE_PENCIL:
+            source.ext.device.type = PIN_IN_PENCIL;
+            source.ext.device.desc = (char *)"pin_in_pencil";
+            break;
         default:
             ret = ERR_NOT_SUPPORTED;
             break;
@@ -1344,6 +1353,8 @@ int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceTyp
         AudioPortPin audioSceneInPort = PIN_IN_MIC;
         if (halName_ == "usb") {
             audioSceneInPort = PIN_IN_USB_HEADSET;
+        } else if (halName_ == "pencil") {
+            audioSceneInPort = PIN_IN_PENCIL;
         }
 
         int32_t ret = SUCCESS;
@@ -1647,6 +1658,8 @@ int32_t AudioCapturerSourceInner::InitAdapterAndCapture()
         AudioPortPin inputPortPin = PIN_IN_MIC;
         if (halName_ == "usb") {
             ret = SetInputRoute(DEVICE_TYPE_USB_ARM_HEADSET, inputPortPin);
+        } else if (halName_ == "pencil") {
+            ret = SetInputRoute(DEVICE_TYPE_PENCIL, inputPortPin);
         } else {
             DeviceType deviceType = static_cast<DeviceType>(attr_.deviceType);
             ret = SetInputRoute(deviceType, inputPortPin);
@@ -1751,6 +1764,8 @@ int32_t AudioCapturerSourceInner::GetCaptureId(uint32_t &captureId) const
 {
     if (halName_ == "usb") {
         captureId = GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_USB);
+    } else if (halName_ == "pencil") {
+        captureId = GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PENCIL);
     } else {
         captureId = GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
     }
@@ -1773,6 +1788,8 @@ int32_t AudioCapturerSourceInner::SetAudioRouteInfoForEnhanceChain(const DeviceT
     }
     if (halName_ == "usb") {
         audioEnhanceChainManager->SetInputDevice(captureId, DEVICE_TYPE_USB_ARM_HEADSET, deviceName);
+    } else if (halName_ == "pencil") {
+        audioEnhanceChainManager->SetInputDevice(captureId, DEVICE_TYPE_PENCIL, deviceName);
     } else {
         audioEnhanceChainManager->SetInputDevice(captureId, inputDevice, deviceName);
     }

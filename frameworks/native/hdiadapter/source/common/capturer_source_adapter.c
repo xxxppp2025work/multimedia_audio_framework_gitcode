@@ -37,12 +37,14 @@ const int32_t CLASS_TYPE_A2DP = 1;
 const int32_t CLASS_TYPE_FILE = 2;
 const int32_t CLASS_TYPE_REMOTE = 3;
 const int32_t CLASS_TYPE_USB = 4;
+const int32_t CLASS_TYPE_PENCIL = 5;
 
 const char *DEVICE_CLASS_PRIMARY = "primary";
 const char *DEVICE_CLASS_USB = "usb";
 const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_FILE = "file_io";
 const char *DEVICE_CLASS_REMOTE = "remote";
+const char *DEVICE_CLASS_PENCIL = "pencil";
 
 int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, const int32_t sourceType,
     const char *sourceName, struct CapturerSourceAdapter **sourceAdapter)
@@ -74,6 +76,9 @@ int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, const
     }
     if (!strcmp(device, DEVICE_CLASS_REMOTE)) {
         adapter->deviceClass = CLASS_TYPE_REMOTE;
+    }
+    if (!strcmp(device, DEVICE_CLASS_REMOTE)) {
+        adapter->deviceClass = CLASS_TYPE_PENCIL;
     }
     adapter->CapturerSourceInit = IAudioCapturerSourceInit;
     adapter->CapturerSourceDeInit = IAudioCapturerSourceDeInit;
@@ -114,6 +119,8 @@ const char *GetDeviceClass(int32_t deviceClass)
         return DEVICE_CLASS_FILE;
     } else if (deviceClass == CLASS_TYPE_REMOTE) {
         return DEVICE_CLASS_REMOTE;
+    } else if (deviceClass == CLASS_TYPE_PENCIL) {
+        return DEVICE_CLASS_PENCIL;
     } else {
         return "";
     }

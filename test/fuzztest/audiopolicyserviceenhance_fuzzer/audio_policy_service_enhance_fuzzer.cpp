@@ -211,6 +211,7 @@ void AudioPolicyServiceEnhanceThreeFuzzTest()
         AUDIO_PIN_IN_HS_MIC,
         AUDIO_PIN_IN_LINEIN,
         AUDIO_PIN_IN_USB_EXT,
+        AUDIO_PIN_IN_PENCIL,
         AUDIO_PIN_IN_DAUDIO_DEFAULT,
         AUDIO_PIN_OUT_DP,
     };
@@ -256,6 +257,7 @@ void AudioPolicyServiceEnhanceFourFuzzTest()
         AUDIO_PIN_OUT_USB_HEADSET,
         AUDIO_PIN_IN_USB_HEADSET,
         AUDIO_PIN_IN_MIC,
+        AUDIO_PIN_IN_PENCIL,
         AUDIO_PIN_IN_DAUDIO_DEFAULT,
         AUDIO_PIN_IN_HS_MIC,
         AUDIO_PIN_IN_LINEIN,

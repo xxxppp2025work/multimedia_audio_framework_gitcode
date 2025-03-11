@@ -1754,6 +1754,7 @@ bool AudioDeviceCommon::HasLowLatencyCapability(DeviceType deviceType, bool isRe
         case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
         case DeviceType::DEVICE_TYPE_DP:
+        case DeviceType::DEVICE_TYPE_PENCIL:
             return true;
 
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:

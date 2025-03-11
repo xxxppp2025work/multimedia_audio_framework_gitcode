@@ -108,6 +108,8 @@ private:
     int32_t RehandlePnpDevice(DeviceType deviceType, DeviceRole deviceRole, const std::string &address);
     int32_t HandleArmUsbDevice(DeviceType deviceType, DeviceRole deviceRole, const std::string &address);
     int32_t HandleDpDevice(DeviceType deviceType, const std::string &address);
+    int32_t HandlePencilDevice(DeviceType deviceType, const std::string &address);
+    int32_t LoadPencilModule(std::string deviceInfo);
     int32_t HandleSpecialDeviceType(DeviceType &devType, bool &isConnected,
         const std::string &address, DeviceRole role);
     void TriggerAvailableDeviceChangedCallback(

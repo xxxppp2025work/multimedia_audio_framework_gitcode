@@ -31,6 +31,7 @@ static const char* PRIMARY_CLASS = "primary";
 static const char* A2DP_CLASS = "a2dp";
 static const char* USB_CLASS = "usb";
 static const char* DP_CLASS = "dp";
+static const char* PENCIL_CLASS = "pencil";
 static const char* FILE_CLASS = "file_io";
 static const char* REMOTE_CLASS = "remote";
 static const char* OFFLOAD_CLASS = "offload";
@@ -45,6 +46,7 @@ static const char* OFFLOAD_PRIMARY_SPEAKER = "Offload_Speaker";
 static const char* MCH_PRIMARY_SPEAKER = "MCH_Speaker";
 static const char* USB_SPEAKER = "Usb_arm_speaker";
 static const char* DP_SINK = "DP_speaker";
+static const char* PENCIL_SOURCE = "pencil_mic";
 static const char* USB_MIC = "Usb_arm_mic";
 static const char* PRIMARY_MIC = "Built_in_mic";
 static const char* PRIMARY_WAKEUP_MIC = "Built_in_wakeup";
@@ -82,6 +84,7 @@ enum ClassType {
     TYPE_FILE_IO,
     TYPE_REMOTE_AUDIO,
     TYPE_DP,
+    TYPE_PENCIL,
     TYPE_INVALID
 };
 
