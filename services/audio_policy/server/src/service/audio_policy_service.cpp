@@ -866,8 +866,10 @@ void AudioPolicyService::RegisterNameMonitorHelper()
 
 void AudioPolicyService::RegisterAccessibilityMonitorHelper()
 {
+    AUDIO_INFO_LOG("Start registering accessibility monitoring aids");
     RegisterAccessiblilityBalance();
     RegisterAccessiblilityMono();
+    AUDIO_INFO_LOG("End registering accessibility monitoring aids");
 }
 
 void AudioPolicyService::RegisterAccessiblilityBalance()
@@ -951,13 +953,13 @@ void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::s
 
 void AudioPolicyService::OnMonoAudioConfigChanged(bool audioMono)
 {
-    AUDIO_DEBUG_LOG("audioMono = %{public}s", audioMono? "true": "false");
+    AUDIO_INFO_LOG("audioMono = %{public}s", audioMono? "true": "false");
     AudioServerProxy::GetInstance().SetAudioMonoStateProxy(audioMono);
 }
 
 void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
 {
-    AUDIO_DEBUG_LOG("audioBalance = %{public}f", audioBalance);
+    AUDIO_INFO_LOG("audioBalance = %{public}f", audioBalance);
     AudioServerProxy::GetInstance().SetAudioBalanceValueProxy(audioBalance);
 }
 
