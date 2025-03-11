@@ -866,10 +866,10 @@ void AudioPolicyService::RegisterNameMonitorHelper()
 
 void AudioPolicyService::RegisterAccessibilityMonitorHelper()
 {
-    AUDIO_INFO_LOG("Register accessibility monitor helper start");
+    AUDIO_INFO_LOG("Start registering accessibility monitoring aids");
     RegisterAccessiblilityBalance();
     RegisterAccessiblilityMono();
-    AUDIO_INFO_LOG("Register accessibility monitor helper end");
+    AUDIO_INFO_LOG("End registering accessibility monitoring aids");
 }
 
 void AudioPolicyService::RegisterAccessiblilityBalance()
