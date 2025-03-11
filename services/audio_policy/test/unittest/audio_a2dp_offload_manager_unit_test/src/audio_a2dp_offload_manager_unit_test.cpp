@@ -315,5 +315,300 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, UpdateA2dpOffloadFlag_004, TestSize.Le
     EXPECT_NE(manager, nullptr);
 }
 
+/**
+ * @tc.name: HandleA2dpDeviceOutOffload_001
+ * @tc.desc: Test HandleA2dpDeviceOutOffload with current output device type being BLUETOOTH_A2DP.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleA2dpDeviceOutOffload_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP);
+    BluetoothOffloadState a2dpOffloadFlag = NO_A2DP_DEVICE;
+    int32_t result = manager->HandleA2dpDeviceOutOffload(a2dpOffloadFlag);
+    EXPECT_EQ(result, manager->HandleActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP));
+    EXPECT_EQ(manager->audioA2dpOffloadFlag_.GetA2dpOffloadFlag(), a2dpOffloadFlag);
+}
+
+/**
+ * @tc.name: HandleA2dpDeviceInOffload_001
+ * @tc.desc: Test HandleA2dpDeviceInOffload with A2DP offload connected.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleA2dpDeviceInOffload_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    manager->SetA2dpOffloadFlag(A2DP_OFFLOAD);
+    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP);
+    manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(CONNECTION_STATUS_CONNECTED);
+    int32_t result = manager->HandleA2dpDeviceInOffload(A2DP_OFFLOAD);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name: GetA2dpOffloadCodecAndSendToDsp_001
+ * @tc.desc: Test GetA2dpOffloadCodecAndSendToDsp without entering the if branch.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetA2dpOffloadCodecAndSendToDsp_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_SPEAKER);
+    manager->GetA2dpOffloadCodecAndSendToDsp();
+    EXPECT_NE(manager, nullptr);
+}
+
+/**
+ * @tc.name: FetchStreamForA2dpOffload_001
+ * @tc.desc: Test FetchStreamForA2dpOffload when IsRendererStreamRunning returns false.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, FetchStreamForA2dpOffload_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    auto changeInfo = std::make_shared<AudioRendererChangeInfo>();
+    changeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    changeInfo->clientUID = 123;
+    rendererChangeInfos.push_back(changeInfo);
+    manager->streamCollector_.audioRendererChangeInfos_ = rendererChangeInfos;
+    manager->FetchStreamForA2dpOffload(false);
+    EXPECT_NE(manager, nullptr);
+}
+
+/**
+ * @tc.name: FetchStreamForA2dpOffload_002
+ * @tc.desc: Test FetchStreamForA2dpOffload when deviceType is not BLUETOOTH_A2DP.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, FetchStreamForA2dpOffload_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    auto changeInfo = std::make_shared<AudioRendererChangeInfo>();
+    changeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    changeInfo->clientUID = 123;
+    rendererChangeInfos.push_back(changeInfo);
+    manager->streamCollector_.audioRendererChangeInfos_ = rendererChangeInfos;
+    manager->FetchStreamForA2dpOffload(false);
+    EXPECT_NE(manager, nullptr);
+}
+
+/**
+ * @tc.name: FetchStreamForA2dpOffload_003
+ * @tc.desc: Test FetchStreamForA2dpOffload when requireReset is false and rendererFlags is not AUDIO_FLAG_MMAP.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, FetchStreamForA2dpOffload_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    auto changeInfo = std::make_shared<AudioRendererChangeInfo>();
+    changeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    changeInfo->clientUID = 123;
+    changeInfo->rendererInfo.rendererFlags = STREAM_USAGE_UNKNOWN;
+    rendererChangeInfos.push_back(changeInfo);
+    manager->streamCollector_.audioRendererChangeInfos_ = rendererChangeInfos;
+    manager->FetchStreamForA2dpOffload(false);
+    EXPECT_NE(manager, nullptr);
+}
+
+/**
+ * @tc.name: FetchStreamForA2dpOffload_004
+ * @tc.desc: Test FetchStreamForA2dpOffload when requireReset is true and rendererFlags is not AUDIO_FLAG_MMAP.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, FetchStreamForA2dpOffload_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+
+    // 创建 rendererChangeInfos
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    auto changeInfo = std::make_shared<AudioRendererChangeInfo>();
+    changeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    changeInfo->clientUID = 123;
+    changeInfo->rendererInfo.rendererFlags = STREAM_USAGE_UNKNOWN;
+    rendererChangeInfos.push_back(changeInfo);
+    manager->streamCollector_.audioRendererChangeInfos_ = rendererChangeInfos;
+    manager->FetchStreamForA2dpOffload(true);
+    EXPECT_NE(manager, nullptr);
+}
+
+/**
+ * @tc.name: FetchStreamForA2dpOffload_005
+ * @tc.desc: Test FetchStreamForA2dpOffload when requireReset is true and rendererFlags is AUDIO_FLAG_MMAP.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, FetchStreamForA2dpOffload_005, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    auto changeInfo = std::make_shared<AudioRendererChangeInfo>();
+    changeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    changeInfo->clientUID = 123;
+    changeInfo->rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererChangeInfos.push_back(changeInfo);
+    manager->streamCollector_.audioRendererChangeInfos_ = rendererChangeInfos;
+    manager->FetchStreamForA2dpOffload(true);
+    EXPECT_NE(manager, nullptr);
+}
+
+/**
+ * @tc.name: GetAllRunningStreamSession_001
+ * @tc.desc: Test GetAllRunningStreamSession when rendererState is not RUNNING and doStop is true.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetAllRunningStreamSession_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    auto changeInfo = std::make_shared<AudioRendererChangeInfo>();
+    changeInfo->rendererState = RENDERER_PAUSED;
+    changeInfo->sessionId = 123;
+    rendererChangeInfos.push_back(changeInfo);
+    manager->streamCollector_.audioRendererChangeInfos_ = rendererChangeInfos;
+    std::vector<int32_t> allSessions;
+    manager->GetAllRunningStreamSession(allSessions, true);
+    EXPECT_TRUE(allSessions.empty());
+}
+
+/**
+ * @tc.name: GetAllRunningStreamSession_002
+ * @tc.desc: Test GetAllRunningStreamSession when rendererState is not RUNNING and doStop is false.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetAllRunningStreamSession_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    auto changeInfo = std::make_shared<AudioRendererChangeInfo>();
+    changeInfo->rendererState = RENDERER_PAUSED; // 不是 RUNNING
+    changeInfo->sessionId = 123;
+    rendererChangeInfos.push_back(changeInfo);
+    manager->streamCollector_.audioRendererChangeInfos_ = rendererChangeInfos;
+    std::vector<int32_t> allSessions;
+    manager->GetAllRunningStreamSession(allSessions, false);
+    EXPECT_TRUE(allSessions.empty());
+}
+
+/**
+ * @tc.name: GetAllRunningStreamSession_003
+ * @tc.desc: Test GetAllRunningStreamSession when rendererState is RUNNING and doStop is true.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetAllRunningStreamSession_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    auto changeInfo = std::make_shared<AudioRendererChangeInfo>();
+    changeInfo->rendererState = RENDERER_RUNNING;
+    changeInfo->sessionId = 123;
+    rendererChangeInfos.push_back(changeInfo);
+    manager->streamCollector_.audioRendererChangeInfos_ = rendererChangeInfos;
+    std::vector<int32_t> allSessions;
+    manager->GetAllRunningStreamSession(allSessions, true);
+    EXPECT_EQ(allSessions.size(), 1);
+    EXPECT_EQ(allSessions[0], 123);
+}
+
+/**
+ * @tc.name: GetAllRunningStreamSession_004
+ * @tc.desc: Test GetAllRunningStreamSession when rendererState is RUNNING and doStop is false.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetAllRunningStreamSession_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    auto changeInfo = std::make_shared<AudioRendererChangeInfo>();
+    changeInfo->rendererState = RENDERER_RUNNING;
+    changeInfo->sessionId = 123;
+    rendererChangeInfos.push_back(changeInfo);
+    manager->streamCollector_.audioRendererChangeInfos_ = rendererChangeInfos;
+    std::vector<int32_t> allSessions;
+    manager->GetAllRunningStreamSession(allSessions, false);
+    EXPECT_EQ(allSessions.size(), 1);
+    EXPECT_EQ(allSessions[0], 123);
+}
+
+/**
+ * @tc.name: GetVolumeGroupType_001
+ * @tc.desc: Test GetVolumeGroupType when deviceType is DEVICE_TYPE_HDMI.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetVolumeGroupType_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    std::string volumeGroupType = manager->GetVolumeGroupType(DEVICE_TYPE_HDMI);
+    EXPECT_EQ(volumeGroupType, "build-in");
+}
+
+/**
+ * @tc.name: GetVolumeGroupType_002
+ * @tc.desc: Test GetVolumeGroupType when deviceType is DEVICE_TYPE_BLUETOOTH_SCO.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetVolumeGroupType_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    std::string volumeGroupType = manager->GetVolumeGroupType(DEVICE_TYPE_BLUETOOTH_SCO);
+    EXPECT_EQ(volumeGroupType, "wireless");
+}
+
+/**
+ * @tc.name: GetVolumeGroupType_003
+ * @tc.desc: Test GetVolumeGroupType when deviceType is DEVICE_TYPE_USB_ARM_HEADSET.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetVolumeGroupType_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    std::string volumeGroupType = manager->GetVolumeGroupType(DEVICE_TYPE_USB_ARM_HEADSET);
+    EXPECT_EQ(volumeGroupType, "wired");
+}
+
+/**
+ * @tc.name: GetVolumeGroupType_004
+ * @tc.desc: Test GetVolumeGroupType when deviceType is not supported.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetVolumeGroupType_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    std::string volumeGroupType = manager->GetVolumeGroupType(DEVICE_TYPE_MAX);
+    EXPECT_EQ(volumeGroupType, "");
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -22,8 +22,8 @@ import("../../../config.gni")
 group("audio_policy_unittest_packages") {
   testonly = true
   deps = [
-    ":audio_active_device_unit_test",
     ":audio_a2dp_offload_manager_unit_test",
+    ":audio_active_device_unit_test",
     ":audio_affinity_manager_unit_test",
     ":audio_affinity_parser_test",
     ":audio_client_tracker_callback_proxy_unit_test",
