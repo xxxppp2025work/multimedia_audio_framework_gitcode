@@ -94,6 +94,7 @@ int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct 
     adapter->RendererSinkUpdateAppsUid = IAudioRendererSinkUpdateAppsUid;
     adapter->RendererSinkGetRenderId = IAudioRendererSinkGetRenderId;
     adapter->RendererSinkGetAudioScene = IAudioRendererSinkGetAudioScene;
+    adapter->RendererSinkSetDeviceConnectedFlag = IAudioRendererSinkSetDeviceConnectedFlag;
 
     *sinkAdapter = adapter;
 

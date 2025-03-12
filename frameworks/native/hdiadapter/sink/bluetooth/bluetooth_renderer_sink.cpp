@@ -128,6 +128,7 @@ public:
         const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
     int32_t GetRenderId(uint32_t &renderId) const override;
+    int32_t SetDeviceConnectedFlag(bool flag) override;
 
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
@@ -1258,5 +1259,12 @@ int32_t BluetoothRendererSinkInner::GetRenderId(uint32_t &renderId) const
     renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_BLUETOOTH);
     return SUCCESS;
 }
+
+int32_t BluetoothRendererSinkInner::SetDeviceConnectedFlag(bool flag)
+{
+    AUDIO_ERR_LOG("BluetoothRendererSinkInner SetDeviceConnectedFlag not supported.");
+    return ERR_NOT_SUPPORTED;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

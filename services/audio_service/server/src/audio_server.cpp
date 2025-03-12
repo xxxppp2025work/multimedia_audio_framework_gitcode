@@ -2321,5 +2321,17 @@ void AudioServer::UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapt
 
     HdiAdapterManager::GetInstance().UnloadAdapter(static_cast<HdiDeviceManagerType>(devMgrType), adapterName, force);
 }
+
+void AudioServer::SetDeviceConnectedFlag(bool flag)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    if (deviceManager== nullptr) {
+        AUDIO_WARNING_LOG("has no valid sink");
+        return;
+    }
+    deviceManager->SetDeviceConnectedFlag(flag);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

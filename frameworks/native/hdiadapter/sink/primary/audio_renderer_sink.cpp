@@ -201,6 +201,7 @@ public:
     int32_t GetRenderId(uint32_t &renderId) const override;
 
     void SetAddress(const std::string &address) override;
+    int32_t SetDeviceConnectedFlag(bool flag) override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS],
         const size_t size) final;
@@ -270,6 +271,7 @@ private:
     AudioParamKey audioParamKey_ = AudioParamKey::NONE;
     string audioParamCondition_ = "";
     string audioParamValue_ = "";
+    bool deviceConnectedFlag_ = false;
 
 private:
     int32_t CreateRender(const struct AudioPort &renderPort);
@@ -812,7 +814,8 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
 
     CheckUpdateState(&data, len);
 
-    if (switchDeviceMute_) {
+    if (switchDeviceMute_ || deviceConnectedFlag_) {
+        AUDIO_INFO_LOG("deviceConnectedFlag_: %{public}d", deviceConnectedFlag_);
         Trace traceEmpty("AudioRendererSinkInner::RenderFrame::renderEmpty");
         if (memset_s(reinterpret_cast<void*>(&data), static_cast<size_t>(len), 0,
             static_cast<size_t>(len)) != EOK) {
@@ -1851,6 +1854,13 @@ void AudioRendererSinkInner::UpdateSinkState(bool started)
     } else {
         AUDIO_WARNING_LOG("AudioSinkCallback is nullptr");
     }
+}
+
+int32_t AudioRendererSinkInner::SetDeviceConnectedFlag(bool flag)
+{
+    AUDIO_INFO_LOG("SetDeviceConnectedFlag: %{public}d", flag);
+    deviceConnectedFlag_ = flag;
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

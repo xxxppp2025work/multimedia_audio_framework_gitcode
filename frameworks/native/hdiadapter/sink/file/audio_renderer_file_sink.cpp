@@ -259,5 +259,11 @@ int32_t AudioRendererFileSink::GetRenderId(uint32_t &renderId) const
 {
     return ERR_NOT_SUPPORTED;
 }
+
+int32_t AudioRendererFileSink::SetDeviceConnectedFlag(bool flag)
+{
+    AUDIO_ERR_LOG("AudioRendererFileSink SetDeviceConnectedFlag not supported.");
+    return ERR_NOT_SUPPORTED;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -3612,6 +3612,16 @@ int32_t AudioPolicyServer::GetAudioEffectProperty(AudioEffectPropertyArray &prop
     return audioPolicyService_.GetAudioEffectProperty(propertyArray);
 }
 
+void AudioPolicyServer::CheckConnectedDevice()
+{
+    audioPolicyService_.CheckConnectedDevice();
+}
+
+void AudioPolicyServer::SetDeviceConnectedFlagFalseAfterDuration()
+{
+    audioPolicyService_.SetDeviceConnectedFlagFalseAfterDuration();
+}
+
 int32_t AudioPolicyServer::InjectInterruption(const std::string networkId, InterruptEvent &event)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
