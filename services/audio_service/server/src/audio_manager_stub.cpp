@@ -815,7 +815,7 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleNotifyAccountsChanged(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_AUDIO_POLICY_READY):
             return HandleNotifyAudioPolicyReady(data, reply);
-       case static_cast<uint32_t>(AudioServerInterfaceCode::DEVICE_CONNECTED_FLAG):
+        case static_cast<uint32_t>(AudioServerInterfaceCode::DEVICE_CONNECTED_FLAG):
             return HandleDeviceConnectedFlag(data, reply);    
         default:
             return HandleFifthPartCode(code, data, reply, option);
