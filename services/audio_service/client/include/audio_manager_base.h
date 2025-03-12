@@ -504,6 +504,8 @@ public:
 
     virtual void NotifyAudioPolicyReady() = 0;
 
+    virtual void SetDeviceConnectedFlag(bool flag) = 0;
+
 #ifdef HAS_FEATURE_INNERCAPTURER
     /**
      * set inner capture limit.
@@ -629,6 +631,7 @@ private:
     int HandleGetAllSinkInputs(MessageParcel &data, MessageParcel &reply);
     int HandleSetDefaultAdapterEnable(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyAudioPolicyReady(MessageParcel &data, MessageParcel &reply);
+    int HandleDeviceConnectedFlag(MessageParcel &data, MessageParcel &reply);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int HandleSetInnerCapLimit(MessageParcel &data, MessageParcel &reply);
     int HandleCheckCaptureLimit(MessageParcel &data, MessageParcel &reply);

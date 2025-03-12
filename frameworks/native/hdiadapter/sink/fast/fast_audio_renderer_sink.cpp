@@ -112,6 +112,7 @@ public:
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
     int32_t GetRenderId(uint32_t &renderId) const override;
+    int32_t SetDeviceConnectedFlag(bool flag) override;
 
     FastAudioRendererSinkInner();
     ~FastAudioRendererSinkInner();
@@ -1038,6 +1039,12 @@ int32_t FastAudioRendererSinkInner::GetRenderId(uint32_t &renderId) const
 {
     renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_FAST);
     return SUCCESS;
+}
+
+int32_t FastAudioRendererSinkInner::SetDeviceConnectedFlag(bool flag)
+{
+    AUDIO_ERR_LOG("FastAudioRendererSink SetDeviceConnectedFlag not supported.");
+    return ERR_NOT_SUPPORTED;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -2357,5 +2357,17 @@ void AudioServer::UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapt
 
     HdiAdapterManager::GetInstance().UnloadAdapter(static_cast<HdiDeviceManagerType>(devMgrType), adapterName, force);
 }
+
+void AudioServer::SetDeviceConnectedFlag(bool flag)
+{
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_INFO_LOG("has no valid sink");
+        return;
+    }
+
+    audioRendererSinkInstance->SetDeviceConnectedFlag(flag);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

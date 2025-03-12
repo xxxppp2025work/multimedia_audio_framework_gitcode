@@ -70,6 +70,7 @@ public:
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
     int32_t GetRenderId(uint32_t &renderId) const override;
+    int32_t SetDeviceConnectedFlag(bool flag) override;
 private:
     AudioRendererFileSink();
     ~AudioRendererFileSink();

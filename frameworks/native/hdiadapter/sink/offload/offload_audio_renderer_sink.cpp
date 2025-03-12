@@ -130,6 +130,7 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
     void UpdateSinkState(bool started);
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
+    int32_t SetDeviceConnectedFlag(bool flag) override;
 
     OffloadAudioRendererSinkInner();
     ~OffloadAudioRendererSinkInner();
@@ -1179,6 +1180,12 @@ void OffloadAudioRendererSinkInner::UpdateSinkState(bool started)
     } else {
         AUDIO_WARNING_LOG("AudioSinkCallback is nullptr");
     }
+}
+
+int32_t OffloadAudioRendererSinkInner::SetDeviceConnectedFlag(bool flag)
+{
+    AUDIO_ERR_LOG("OffloadAudioRendererSinkInner SetDeviceConnectedFlag not supported.");
+    return ERR_NOT_SUPPORTED;
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

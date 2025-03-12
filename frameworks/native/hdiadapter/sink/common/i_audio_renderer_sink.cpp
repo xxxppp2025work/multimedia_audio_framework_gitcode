@@ -451,6 +451,21 @@ int32_t IAudioRendererSinkGetAudioScene(struct RendererSinkAdapter *adapter)
     int32_t ret = audioRendererSink->GetAudioScene();
     return ret;
 }
+
+int32_t IAudioRendererSinkSetDeviceConnectedFlag(struct RendererSinkAdapter *adapter, bool flag)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null RendererSinkAdapter");
+
+    IAudioRendererSink *audioRendererSink = static_cast<IAudioRendererSink *>(adapter->wapper);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    bool isInited = audioRendererSink->IsInited();
+    CHECK_AND_RETURN_RET_LOG(isInited, ERR_NOT_STARTED,
+        "audioRenderer Not Inited! Init the renderer first, Renderer SetDeviceConnectedFlag failed");
+
+    int32_t ret = audioRendererSink->SetDeviceConnectedFlag(flag);
+    return ret;
+}
+
 #ifdef __cplusplus
 }
 #endif

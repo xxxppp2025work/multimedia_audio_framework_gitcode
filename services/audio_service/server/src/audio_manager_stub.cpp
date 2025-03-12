@@ -113,6 +113,7 @@ const char *g_audioServerCodeStrs[] = {
     "GENERATE_SESSION_ID",
     "NOTIFY_ACCOUNTS_CHANGED",
     "NOTIFY_AUDIO_POLICY_READY",
+    "DEVICE_CONNECTED_FLAG",
     "SET_CAPTURE_LIMIT",
     "LOAD_HDI_ADAPTER",
     "UNLOAD_HDI_ADAPTER",
@@ -814,6 +815,8 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleNotifyAccountsChanged(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_AUDIO_POLICY_READY):
             return HandleNotifyAudioPolicyReady(data, reply);
+       case static_cast<uint32_t>(AudioServerInterfaceCode::DEVICE_CONNECTED_FLAG):
+            return HandleDeviceConnectedFlag(data, reply);    
         default:
             return HandleFifthPartCode(code, data, reply, option);
     }
@@ -1177,6 +1180,13 @@ int AudioManagerStub::HandleSetDefaultAdapterEnable(MessageParcel &data, Message
 int AudioManagerStub::HandleNotifyAudioPolicyReady(MessageParcel &data, MessageParcel &reply)
 {
     NotifyAudioPolicyReady();
+    return AUDIO_OK;
+}
+
+nt AudioManagerStub::HandleDeviceConnectedFlag(MessageParcel &data, MessageParcel &reply)
+{
+    bool flag = data.ReadBool();
+    SetDeviceConnectedFlag(flag);
     return AUDIO_OK;
 }
 

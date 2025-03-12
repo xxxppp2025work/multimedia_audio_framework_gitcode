@@ -112,6 +112,7 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
     void UpdateSinkState(bool started);
     int32_t GetRenderId(uint32_t &renderId) const override;
+    int32_t SetDeviceConnectedFlag(bool flag) override;
 
     explicit MultiChannelRendererSinkInner(const std::string &halName = "multichannel");
     ~MultiChannelRendererSinkInner();
@@ -1262,6 +1263,12 @@ void MultiChannelRendererSinkInner::DumpData(std::string fileName, void *buffer,
     if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
         AudioCacheMgr::GetInstance().CacheData(fileName, buffer, len);
     }
+}
+
+int32_t MultiChannelRendererSinkInner::SetDeviceConnectedFlag(bool flag)
+{
+    AUDIO_ERR_LOG("MultiChannelRendererSinkInner SetDeviceConnectedFlag not supported.");
+    return ERR_NOT_SUPPORTED;
 }
 
 // LCOV_EXCL_STOP

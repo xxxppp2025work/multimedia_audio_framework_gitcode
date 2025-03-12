@@ -121,6 +121,8 @@ public:
     {
         return;
     }
+    
+    virtual int32_t SetDeviceConnectedFlag(bool flag) = 0;
 };
 
 class IMmapAudioRendererSink : public IAudioRendererSink {

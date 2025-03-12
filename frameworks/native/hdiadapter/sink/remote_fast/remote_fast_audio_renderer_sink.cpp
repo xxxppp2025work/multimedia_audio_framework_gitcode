@@ -124,6 +124,7 @@ public:
 
     std::string GetNetworkId();
     IAudioSinkCallback* GetParamCallback();
+    int32_t SetDeviceConnectedFlag(bool flag) override;
 
 private:
     int32_t CreateRender(const struct AudioPort &renderPort);
@@ -779,6 +780,12 @@ int32_t RemoteFastAudioRendererSinkInner::GetRenderId(uint32_t &renderId) const
 {
     renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_REMOTE_FAST);
     return SUCCESS;
+}
+
+int32_t RemoteFastAudioRendererSinkInner::SetDeviceConnectedFlag(bool flag)
+{
+    AUDIO_ERR_LOG("RemoteFastAudioRendererSinkInner SetDeviceConnectedFlag not supported.");
+    return ERR_NOT_SUPPORTED;
 }
 } // namespace AudioStandard
 } // namespace OHOS

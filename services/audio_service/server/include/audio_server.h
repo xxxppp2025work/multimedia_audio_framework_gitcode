@@ -196,6 +196,8 @@ public:
     void SetDefaultAdapterEnable(bool isEnable) override;
 
     void NotifyAudioPolicyReady() override;
+    
+    void SetDeviceConnectedFlag(bool flag) override;
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t SetInnerCapLimit(uint32_t innerCapLimit) override;
     int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId) override;
