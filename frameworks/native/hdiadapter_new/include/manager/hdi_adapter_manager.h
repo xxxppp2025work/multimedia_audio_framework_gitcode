@@ -21,11 +21,48 @@
 #include <mutex>
 #include <unordered_map>
 #include <memory>
+#include <functional>
+#include <utility>
 #include "common/hdi_adapter_info.h"
 #include "sink/i_audio_render_sink.h"
 #include "source/i_audio_capture_source.h"
 #include "adapter/i_device_manager.h"
 #include "util/callback_wrapper.h"
+
+// generate func, real func name is prefix + func name
+// eg: IAudioRenderSink::Init(const IAudioSinkAttr *attr) -> SinkInit(uint32_t id, const IAudioSinkAttr *attr)
+#define SINK_FORWARD_FUNC(func, default_ret) \
+    FORWARD_FUNC(Sink, func, default_ret, GetRenderSinkHandle)
+#define SINK_FORWARD_FUNC_VOID(func) \
+    FORWARD_FUNC_VOID(Sink, func, GetRenderSinkHandle)
+
+#define SOURCE_FORWARD_FUNC(func, default_ret) \
+    FORWARD_FUNC(Source, func, default_ret, GetCaptureSourceHandle)
+#define SOURCE_FORWARD_FUNC_VOID(func) \
+    FORWARD_FUNC_VOID(Source, func, GetCaptureSourceHandle)
+
+#define DEV_MGR_FORWARD_FUNC(func, default_ret) \
+    FORWARD_FUNC(DevMgr, func, default_ret, GetDeviceManagerHandle)
+#define DEV_MGR_FORWARD_FUNC_VOID(func) \
+    FORWARD_FUNC_VOID(DevMgr, func, GetDeviceManagerHandle)
+
+#define FORWARD_FUNC(prefix, func, default_ret, get_handle_func) \
+    template <typename T, typename... Args> \
+    auto prefix##func(T id, Args &&... args) -> decltype(get_handle_func(id)->func(std::forward<Args>(args)...)) \
+    { \
+        auto item = get_handle_func(id); \
+        if (item == nullptr) { return default_ret; } \
+        return item->func(std::forward<Args>(args)...); \
+    }
+
+#define FORWARD_FUNC_VOID(prefix, func, get_handle_func) \
+    template <typename T, typename... Args> \
+    auto prefix##func(T id, Args &&... args) -> decltype(get_handle_func(id)->func(std::forward<Args>(args)...)) \
+    { \
+        auto item = get_handle_func(id); \
+        if (item == nullptr) { return; } \
+        item->func(std::forward<Args>(args)...); \
+    }
 
 namespace OHOS {
 namespace AudioStandard {
@@ -39,40 +76,48 @@ typedef struct CaptureSourceInfo {
     std::atomic<uint32_t> refCount_ = 0;
 } CaptureSourceInfo;
 
+typedef std::vector<std::pair<HdiIdType, std::vector<std::string> > > HdiIdDesc;
+
 class HdiAdapterManager {
 public:
     static HdiAdapterManager &GetInstance(void);
 
-    std::shared_ptr<IDeviceManager> GetDeviceManager(HdiDeviceManagerType type);
-    void ReleaseDeviceManager(HdiDeviceManagerType type);
+    uint32_t CreateRenderSink(const IAudioSinkAttr &attr, HdiIdType type,
+        const std::string &info = HDI_ID_INFO_DEFAULT);
+    uint32_t CreateRenderSink(const IAudioSinkAttr &attr, const std::string &deviceClass,
+        const std::string &info = HDI_ID_INFO_DEFAULT);
+    uint32_t CreateCaptureSource(const IAudioSourceAttr &attr, HdiIdType type,
+        const std::string &info = HDI_ID_INFO_DEFAULT);
+    uint32_t CreateCaptureSource(const IAudioSourceAttr &attr, const std::string &deviceClass,
+        const SourceType sourceType, const std::string &info = HDI_ID_INFO_DEFAULT);
 
-    uint32_t GetId(HdiIdBase base, HdiIdType type, const std::string &info = HDI_ID_INFO_DEFAULT,
-        bool isResident = false);
-    uint32_t GetRenderIdByDeviceClass(const std::string &deviceClass, const std::string &info = HDI_ID_INFO_DEFAULT,
-        bool isResident = false);
-    uint32_t GetCaptureIdByDeviceClass(const std::string &deviceClass, const SourceType sourceType,
-        const std::string &info = HDI_ID_INFO_DEFAULT, bool isResident = false);
-    void ReleaseId(uint32_t &id);
+    void ReleaseRenderSink(uint32_t &renderId);
+    void ReleaseCaptureSource(uint32_t &captureId);
 
-    std::shared_ptr<IAudioRenderSink> GetRenderSink(uint32_t renderId, bool tryCreate = false);
-    std::shared_ptr<IAudioCaptureSource> GetCaptureSource(uint32_t captureId, bool tryCreate = false);
+    uint32_t GetRenderSink(HdiIdType type, const std::string &info = HDI_ID_INFO_DEFAULT);
+    uint32_t GetRenderSink(const std::string &deviceClass, const std::string &info = HDI_ID_INFO_DEFAULT);
+    uint32_t GetCaptureSource(HdiIdType type, const std::string &info = HDI_ID_INFO_DEFAULT);
+    uint32_t GetCaptureSource(const std::string &deviceClass, const SourceType sourceType,
+        const std::string &info = HDI_ID_INFO_DEFAULT);
+
+    std::vector<uint32_t> GetRenderSinkList(const HdiIdDesc &renderIdDesc);
+    std::vector<uint32_t> GetCaptureSourceList(const HdiIdDesc &captureIdDesc);
 
     int32_t LoadAdapter(HdiDeviceManagerType type, const std::string &adapterName);
     void UnloadAdapter(HdiDeviceManagerType type, const std::string &adapterName, bool force = false);
 
-    int32_t ProcessSink(const std::function<int32_t(uint32_t, std::shared_ptr<IAudioRenderSink>)> &processFunc);
-    int32_t ProcessSource(const std::function<int32_t(uint32_t, std::shared_ptr<IAudioCaptureSource>)> &processFunc);
-
-    void RegistSinkCallback(HdiAdapterCallbackType type, std::shared_ptr<IAudioSinkCallback> cb,
-        const std::function<bool(uint32_t)> &limitFunc = [](uint32_t id) -> bool { return false; });
-    void RegistSinkCallback(HdiAdapterCallbackType type, IAudioSinkCallback *cb,
-        const std::function<bool(uint32_t)> &limitFunc = [](uint32_t id) -> bool { return false; });
-    void RegistSourceCallback(HdiAdapterCallbackType type, std::shared_ptr<IAudioSourceCallback> cb,
-        const std::function<bool(uint32_t)> &limitFunc = [](uint32_t id) -> bool { return false; });
-    void RegistSourceCallback(HdiAdapterCallbackType type, IAudioSourceCallback *cb,
-        const std::function<bool(uint32_t)> &limitFunc = [](uint32_t id) -> bool { return false; });
+    template <typename CbPtr>
+    void RegistSinkCallback(HdiAdapterCallbackType type, CbPtr cb, const HdiIdDesc &renderIdDesc);
+    template <typename CbPtr>
+    void RegistSourceCallback(HdiAdapterCallbackType type, CbPtr cb, const HdiIdDesc &renderIdDesc);
 
     void DumpInfo(std::string &dumpString);
+
+    // TODO: sink/source operation
+    SINK_FORWARD_FUNC(Init, ERR_INVALID_HANDLE);
+
+
+    // TODO: device adapter operation
 
 private:
     HdiAdapterManager() = default;
@@ -82,10 +127,14 @@ private:
     HdiAdapterManager(HdiAdapterManager &&) = delete;
     HdiAdapterManager &operator=(HdiAdapterManager &&) = delete;
 
-    void IncRefCount(uint32_t id);
-    void DecRefCount(uint32_t id);
+    std::function<bool(uint32_t)> GetLimicFunc(const HdiIdDesc &idDesc);
+
     void DoRegistSinkCallback(uint32_t id, std::shared_ptr<IAudioRenderSink> sink);
     void DoRegistSourceCallback(uint32_t id, std::shared_ptr<IAudioCaptureSource> source);
+
+    std::shared_ptr<IAudioRenderSink> GetRenderSinkHandle(uint32_t renderId);
+    std::shared_ptr<IAudioCaptureSource> GetCaptureSourceHandle(uint32_t captureId);
+    std::shared_ptr<IDeviceManager> GetDeviceManagerHandle(HdiDeviceManagerType type);
 
 private:
     std::unordered_map<uint32_t, RenderSinkInfo> renderSinks_;

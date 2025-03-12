@@ -50,211 +50,242 @@ HdiAdapterManager &HdiAdapterManager::GetInstance(void)
     return instance;
 }
 
-std::shared_ptr<IDeviceManager> HdiAdapterManager::GetDeviceManager(HdiDeviceManagerType type)
+uint32_t HdiAdapterManager::CreateRenderSink(const IAudioSinkAttr &attr, HdiIdType type, const std::string &info)
 {
-    CHECK_AND_RETURN_RET_LOG(type < HDI_DEVICE_MANAGER_TYPE_NUM, nullptr, "invalid type");
-
-    std::lock_guard<std::mutex> lock(deviceManagerMtx_);
-    if (deviceManagers_[type] == nullptr) {
-        HdiAdapterFactory &fac = HdiAdapterFactory::GetInstance();
-        deviceManagers_[type] = fac.CreateDeviceManager(type);
-    }
-    return deviceManagers_[type];
-}
-
-void HdiAdapterManager::ReleaseDeviceManager(HdiDeviceManagerType type)
-{
-    CHECK_AND_RETURN_LOG(type < HDI_DEVICE_MANAGER_TYPE_NUM, "invalid type");
-
-    std::lock_guard<std::mutex> lock(deviceManagerMtx_);
-    if (deviceManagers_[type] == nullptr) {
-        return;
-    }
-    deviceManagers_[type].reset();
-}
-
-uint32_t HdiAdapterManager::GetId(HdiIdBase base, HdiIdType type, const std::string &info, bool isResident)
-{
-    uint32_t id = IdHandler::GetInstance().GetId(base, type, info);
+    uint32_t id = IdHandler::GetInstance().GetId(HDI_ID_BASE_RENDER, type, info);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
-    if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
+
+    std::lock_guard<std::mutex> lock(renderSinkMtx_);
+    if (renderSinks_.count(id) == 0) {
         IdHandler::GetInstance().IncInfoIdUseCount(id);
+        AUDIO_INFO_LOG("create sink, renderId: %{public}d, type: %{public}u, info: %{public}s", id, type, info.c_str());
+        std::shared_ptr<IAudioRenderSink> sink = HdiAdapterFactory::GetInstance().CreateRenderSink(id);
+        if (sink == nullptr) {
+            AUDIO_ERR_LOG("create sink fail, renderId: %{public}u", id);
+            IdHandler::GetInstance().DecInfoIdUseCount(id);
+            return HDI_INVALID_ID;
+        }
+        DoRegistSinkCallback(id, sink);
+        sink->Init(attr);
+        renderSinks_[id].sink_ = sink;
     }
-    CHECK_AND_RETURN_RET(isResident, id);
-    AUDIO_INFO_LOG("base: %{public}u, type: %{public}u, info: %{public}s", base, type, info.c_str());
-    IncRefCount(id);
+    renderSinks_[id].refCount_++;
     return id;
 }
 
-uint32_t HdiAdapterManager::GetRenderIdByDeviceClass(const std::string &deviceClass, const std::string &info,
-    bool isResident)
+uint32_t HdiAdapterManager::CreateRenderSink(const IAudioSinkAttr &attr, const std::string &deviceClass,
+    const std::string &info)
 {
     uint32_t id = IdHandler::GetInstance().GetRenderIdByDeviceClass(deviceClass, info);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
-    if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
+
+    std::lock_guard<std::mutex> lock(renderSinkMtx_);
+    if (renderSinks_.count(id) == 0) {
         IdHandler::GetInstance().IncInfoIdUseCount(id);
+        AUDIO_INFO_LOG("create sink, renderId: %{public}d, deviceClass: %{public}s, info: %{public}s", id,
+            deviceClass.c_str(), info.c_str());
+        std::shared_ptr<IAudioRenderSink> sink = HdiAdapterFactory::GetInstance().CreateRenderSink(id);
+        if (sink == nullptr) {
+            AUDIO_ERR_LOG("create sink fail, renderId: %{public}u", id);
+            IdHandler::GetInstance().DecInfoIdUseCount(id);
+            return HDI_INVALID_ID;
+        }
+        DoRegistSinkCallback(id, sink);
+        if (attr.adapterName != nullptr) {
+            sink->Init(attr);
+        }
+        renderSinks_[id].sink_ = sink;
     }
-    CHECK_AND_RETURN_RET(isResident, id);
-    AUDIO_INFO_LOG("deviceClass: %{public}s, info: %{public}s", deviceClass.c_str(), info.c_str());
-    IncRefCount(id);
+    renderSinks_[id].refCount_++;
     return id;
 }
 
-uint32_t HdiAdapterManager::GetCaptureIdByDeviceClass(const std::string &deviceClass, const SourceType sourceType,
-    const std::string &info, bool isResident)
+uint32_t HdiAdapterManager::CreateCaptureSource(const IAudioSourceAttr &attr, HdiIdType type, const std::string &info)
+{
+    uint32_t id = IdHandler::GetInstance().GetId(HDI_ID_BASE_CAPTURE, type, info);
+    CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
+
+    std::lock_guard<std::mutex> lock(captureSourceMtx_);
+    if (captureSources_.count(id) == 0) {
+        IdHandler::GetInstance().IncInfoIdUseCount(id);
+        AUDIO_INFO_LOG("create source, captureId: %{public}d, type: %{public}u, info: %{public}s", id, type,
+            info.c_str());
+        std::shared_ptr<IAudioCaptureSource> source = HdiAdapterFactory::GetInstance().CreateCaptureSource(id);
+        if (source == nullptr) {
+            AUDIO_ERR_LOG("create source fail, captureId: %{public}u", id);
+            IdHandler::GetInstance().DecInfoIdUseCount(id);
+            return HDI_INVALID_ID;
+        }
+        DoRegistSourceCallback(id, source);
+        if (attr.adapterName != nullptr) {
+            source->Init(attr);
+        }
+        captureSources_[id].source_ = source;
+    }
+    captureSources_[id].refCount_++;
+    return id;
+}
+
+uint32_t HdiAdapterManager::CreateCaptureSource(const IAudioSourceAttr &attr, const std::string &deviceClass,
+    const SourceType sourceType, const std::string &info)
 {
     uint32_t id = IdHandler::GetInstance().GetCaptureIdByDeviceClass(deviceClass, sourceType, info);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
-    if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
+
+    std::lock_guard<std::mutex> lock(captureSourceMtx_);
+    if (captureSources_.count(id) == 0) {
         IdHandler::GetInstance().IncInfoIdUseCount(id);
+        AUDIO_INFO_LOG("create source, captureId: %{public}d, deviceClass: %{public}s, sourceType: %{public}d, "
+            "info: %{public}s", id, deviceClass.c_str(), sourceType, info.c_str());
+        std::shared_ptr<IAudioCaptureSource> source = HdiAdapterFactory::GetInstance().CreateCaptureSource(id);
+        if (source == nullptr) {
+            AUDIO_ERR_LOG("create source fail, captureId: %{public}u", id);
+            IdHandler::GetInstance().DecInfoIdUseCount(id);
+            return HDI_INVALID_ID;
+        }
+        DoRegistSourceCallback(id, source);
+        source->Init(attr);
+        captureSources_[id].source_ = source;
     }
-    CHECK_AND_RETURN_RET(isResident, id);
-    AUDIO_INFO_LOG("deviceClass: %{public}s, sourceType: %{public}d, info: %{public}s", deviceClass.c_str(), sourceType,
-        info.c_str());
-    IncRefCount(id);
+    captureSources_[id].refCount_++;
     return id;
 }
 
-void HdiAdapterManager::ReleaseId(uint32_t &id)
+void HdiAdapterManager::ReleaseRenderSink(uint32_t &renderId)
 {
-    uint32_t tempId = id;
-    id = HDI_INVALID_ID;
-    CHECK_AND_RETURN(tempId != HDI_INVALID_ID && (renderSinks_.count(tempId) || captureSources_.count(tempId)));
-    DecRefCount(tempId);
-}
-
-std::shared_ptr<IAudioRenderSink> HdiAdapterManager::GetRenderSink(uint32_t renderId, bool tryCreate)
-{
-    CHECK_AND_RETURN_RET(IdHandler::GetInstance().CheckId(renderId, HDI_ID_BASE_RENDER), nullptr);
+    uint32_t tempId = renderId;
+    renderId = HDI_INVALID_ID;
+    CHECK_AND_RETURN(tempId != HDI_INVALID_ID && renderSinks_.count(tempId));
 
     std::lock_guard<std::mutex> lock(renderSinkMtx_);
-    if (renderSinks_.count(renderId) != 0 && renderSinks_[renderId].sink_ != nullptr) {
-        return renderSinks_[renderId].sink_;
+    if (renderSinks_[tempId].refCount_.load() > 0) {
+        renderSinks_[tempId].refCount_--;
     }
-    if (!tryCreate) {
-        AUDIO_ERR_LOG("no available sink, renderId: %{public}u", renderId);
-        return nullptr;
+    CHECK_AND_RETURN(renderSinks_[tempId].refCount_.load() == 0);
+    AUDIO_INFO_LOG("no reference of renderId %{public}u, try remove the sink", tempId);
+    std::shared_ptr<IAudioRenderSink> sink = renderSinks_[tempId].sink_;
+    if (sink->IsInited()) {
+        sink->DeInit();
     }
-    AUDIO_INFO_LOG("create sink, renderId: %{public}u", renderId);
-    HdiAdapterFactory &fac = HdiAdapterFactory::GetInstance();
-    std::shared_ptr<IAudioRenderSink> renderSink = fac.CreateRenderSink(renderId);
-    if (renderSink == nullptr) {
-        AUDIO_ERR_LOG("create sink fail, renderId: %{public}u", renderId);
-        return nullptr;
-    }
-    DoRegistSinkCallback(renderId, renderSink);
-    renderSinks_[renderId].sink_ = renderSink;
-    return renderSinks_[renderId].sink_;
+    renderSinks_.erase(tempId);
+    IdHandler::GetInstance().DecInfoIdUseCount(tempId);
 }
 
-std::shared_ptr<IAudioCaptureSource> HdiAdapterManager::GetCaptureSource(uint32_t captureId, bool tryCreate)
+void HdiAdapterManager::ReleaseCaptureSource(uint32_t &captureId)
 {
-    CHECK_AND_RETURN_RET(IdHandler::GetInstance().CheckId(captureId, HDI_ID_BASE_CAPTURE), nullptr);
+    uint32_t tempId = captureId;
+    captureId = HDI_INVALID_ID;
+    CHECK_AND_RETURN(tempId != HDI_INVALID_ID && captureSources_.count(tempId));
 
     std::lock_guard<std::mutex> lock(captureSourceMtx_);
-    if (captureSources_.count(captureId) != 0 && captureSources_[captureId].source_ != nullptr) {
-        return captureSources_[captureId].source_;
+    if (captureSources_[tempId].refCount_.load() > 0) {
+        captureSources_[tempId].refCount_--;
     }
-    if (!tryCreate) {
-        AUDIO_ERR_LOG("no available source, captureId: %{public}u", captureId);
-        return nullptr;
+    CHECK_AND_RETURN(captureSources_[tempId].refCount_.load() == 0);
+    AUDIO_INFO_LOG("no reference of captureId %{public}u, try remove the source", tempId);
+    std::shared_ptr<IAudioCaptureSource> source = captureSources_[tempId].source_;
+    if (source->IsInited()) {
+        source->DeInit();
     }
-    AUDIO_INFO_LOG("create source, captureId: %{public}u", captureId);
-    HdiAdapterFactory &fac = HdiAdapterFactory::GetInstance();
-    std::shared_ptr<IAudioCaptureSource> captureSource = fac.CreateCaptureSource(captureId);
-    if (captureSource == nullptr) {
-        AUDIO_ERR_LOG("create source fail, captureId: %{public}u", captureId);
-        return nullptr;
+    captureSources_.erase(tempId);
+    IdHandler::GetInstance().DecInfoIdUseCount(tempId);
+}
+
+uint32_t HdiAdapterManager::GetRenderSink(HdiIdType type, const std::string &info)
+{
+    uint32_t id = IdHandler::GetInstance().GetId(HDI_ID_BASE_RENDER, type, info);
+    CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
+
+    std::lock_guard<std::mutex> lock(renderSinkMtx_);
+    return renderSinks_.count(id) ? id : HDI_INVALID_ID;
+}
+
+uint32_t HdiAdapterManager::GetRenderSink(const std::string &deviceClass, const std::string &info)
+{
+    uint32_t id = IdHandler::GetInstance().GetRenderIdByDeviceClass(deviceClass, info);
+    CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
+
+    std::lock_guard<std::mutex> lock(renderSinkMtx_);
+    return renderSinks_.count(id) ? id : HDI_INVALID_ID;
+}
+
+uint32_t HdiAdapterManager::GetCaptureSource(HdiIdType type, const std::string &info)
+{
+    uint32_t id = IdHandler::GetInstance().GetId(HDI_ID_BASE_CAPTURE, type, info);
+    CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
+
+    std::lock_guard<std::mutex> lock(captureSourceMtx_);
+    return captureSources_.count(id) ? id : HDI_INVALID_ID;
+}
+
+uint32_t HdiAdapterManager::GetCaptureSource(const std::string &deviceClass, const SourceType sourceType,
+    const std::string &info)
+{
+    uint32_t id = IdHandler::GetInstance().GetCaptureIdByDeviceClass(deviceClass, sourceType, info);
+    CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
+
+    std::lock_guard<std::mutex> lock(captureSourceMtx_);
+    return captureSources_.count(id) ? id : HDI_INVALID_ID;
+}
+
+std::vector<uint32_t> HdiAdapterManager::GetRenderSinkList(const HdiIdDesc &renderIdDesc)
+{
+    std::vector<uint32_t> renderIds;
+    auto limitFunc = GetLimicFunc(renderIdDesc);
+    std::lock_guard<std::mutex> lock(renderSinkMtx_);
+    for (auto &item : renderSinks_) {
+        if (limitFunc(item.first)) {
+            renderIds.push_back(item.first);
+        }
     }
-    DoRegistSourceCallback(captureId, captureSource);
-    captureSources_[captureId].source_ = captureSource;
-    return captureSources_[captureId].source_;
+    return renderIds;
+}
+
+std::vector<uint32_t> HdiAdapterManager::GetCaptureSourceList(const HdiIdDesc &captureIdDesc)
+{
+    std::vector<uint32_t> captureIds;
+    auto limitFunc = GetLimicFunc(captureIdDesc);
+    std::lock_guard<std::mutex> lock(captureSourceMtx_);
+    for (auto &item : captureSources_) {
+        if (limitFunc(item.first)) {
+            captureIds.push_back(item.first);
+        }
+    }
+    return captureIds;
+}
+
+template <typename CbPtr>
+void HdiAdapterManager::RegistSinkCallback(HdiAdapterCallbackType type, CbPtr cb, const HdiIdDesc &renderIdDesc)
+{
+    CHECK_AND_RETURN_LOG(cb != nullptr, "callback of type %{public}u is nullptr", type);
+
+    sinkCbs_.RegistCallback(type, cb);
+    cbLimitFunc_[HDI_ID_BASE_RENDER][type] = GetLimicFunc(renderIdDesc);
+    AUDIO_INFO_LOG("regist sink callback succ, type: %{public}u", type);
+}
+
+template <typename CbPtr>
+void HdiAdapterManager::RegistSourceCallback(HdiAdapterCallbackType type, CbPtr cb, const HdiIdDesc &captureIdDesc)
+{
+    CHECK_AND_RETURN_LOG(cb != nullptr, "callback of type %{public}u is nullptr", type);
+
+    sourceCbs_.RegistCallback(type, cb);
+    cbLimitFunc_[HDI_ID_BASE_CAPTURE][type] = GetLimicFunc(captureIdDesc);
+    AUDIO_INFO_LOG("regist source callback succ, type: %{public}u", type);
 }
 
 int32_t HdiAdapterManager::LoadAdapter(HdiDeviceManagerType type, const std::string &adapterName)
 {
-    std::shared_ptr<IDeviceManager> deviceManager = GetDeviceManager(type);
-    CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
+    std::shared_ptr<IDeviceManager> deviceManager = GetDeviceManagerHandle(type);
+    CHECK_AND_RETURN_RET(deviceManager != nullptr, HDI_INVALID_ID);
     return deviceManager->LoadAdapter(adapterName);
 }
 
 void HdiAdapterManager::UnloadAdapter(HdiDeviceManagerType type, const std::string &adapterName, bool force)
 {
-    std::shared_ptr<IDeviceManager> deviceManager = GetDeviceManager(type);
+    std::shared_ptr<IDeviceManager> deviceManager = GetDeviceManagerHandle(type);
     CHECK_AND_RETURN(deviceManager != nullptr);
     deviceManager->UnloadAdapter(adapterName, force);
-}
-
-int32_t HdiAdapterManager::ProcessSink(const std::function<int32_t(uint32_t,
-    std::shared_ptr<IAudioRenderSink>)> &processFunc)
-{
-    int32_t ret = SUCCESS;
-    auto func = [&ret, &processFunc](const std::pair<const uint32_t, RenderSinkInfo> &item) -> void {
-        uint32_t renderId = item.first;
-        if (processFunc(renderId, item.second.sink_) != SUCCESS) {
-            AUDIO_ERR_LOG("process render sink fail, renderId: %{public}u", renderId);
-            ret = ERR_OPERATION_FAILED;
-        }
-    };
-    std::lock_guard<std::mutex> lock(renderSinkMtx_);
-    std::for_each(renderSinks_.begin(), renderSinks_.end(), func);
-    return ret;
-}
-
-int32_t HdiAdapterManager::ProcessSource(const std::function<int32_t(uint32_t,
-    std::shared_ptr<IAudioCaptureSource>)> &processFunc)
-{
-    int32_t ret = SUCCESS;
-    auto func = [&ret, &processFunc](const std::pair<const uint32_t, CaptureSourceInfo> &item) -> void {
-        uint32_t captureId = item.first;
-        if (processFunc(captureId, item.second.source_) != SUCCESS) {
-            AUDIO_ERR_LOG("process capture source fail, captureId: %{public}u", captureId);
-            ret = ERR_OPERATION_FAILED;
-        }
-    };
-    std::lock_guard<std::mutex> lock(captureSourceMtx_);
-    std::for_each(captureSources_.begin(), captureSources_.end(), func);
-    return ret;
-}
-
-void HdiAdapterManager::RegistSinkCallback(HdiAdapterCallbackType type, std::shared_ptr<IAudioSinkCallback> cb,
-    const std::function<bool(uint32_t)> &limitFunc)
-{
-    CHECK_AND_RETURN_LOG(cb != nullptr, "callback of type %{public}u is nullptr", type);
-
-    sinkCbs_.RegistCallback(type, cb);
-    cbLimitFunc_[HDI_ID_BASE_RENDER][type] = limitFunc;
-    AUDIO_INFO_LOG("regist sink callback succ, type: %{public}u", type);
-}
-
-void HdiAdapterManager::RegistSinkCallback(HdiAdapterCallbackType type, IAudioSinkCallback *cb,
-    const std::function<bool(uint32_t)> &limitFunc)
-{
-    CHECK_AND_RETURN_LOG(cb != nullptr, "callback of type %{public}u is nullptr", type);
-
-    sinkCbs_.RegistCallback(type, cb);
-    cbLimitFunc_[HDI_ID_BASE_RENDER][type] = limitFunc;
-    AUDIO_INFO_LOG("regist sink callback succ, type: %{public}u", type);
-}
-
-void HdiAdapterManager::RegistSourceCallback(HdiAdapterCallbackType type, std::shared_ptr<IAudioSourceCallback> cb,
-    const std::function<bool(uint32_t)> &limitFunc)
-{
-    CHECK_AND_RETURN_LOG(cb != nullptr, "callback of type %{public}u is nullptr", type);
-
-    sourceCbs_.RegistCallback(type, cb);
-    cbLimitFunc_[HDI_ID_BASE_CAPTURE][type] = limitFunc;
-    AUDIO_INFO_LOG("regist source callback succ, type: %{public}u", type);
-}
-
-void HdiAdapterManager::RegistSourceCallback(HdiAdapterCallbackType type, IAudioSourceCallback *cb,
-    const std::function<bool(uint32_t)> &limitFunc)
-{
-    CHECK_AND_RETURN_LOG(cb != nullptr, "callback of type %{public}u is nullptr", type);
-
-    sourceCbs_.RegistCallback(type, cb);
-    cbLimitFunc_[HDI_ID_BASE_CAPTURE][type] = limitFunc;
-    AUDIO_INFO_LOG("regist source callback succ, type: %{public}u", type);
 }
 
 void HdiAdapterManager::DumpInfo(std::string &dumpString)
@@ -297,46 +328,29 @@ void HdiAdapterManager::DumpInfo(std::string &dumpString)
     }
 }
 
-void HdiAdapterManager::IncRefCount(uint32_t id)
+std::function<bool(uint32_t)> HdiAdapterManager::GetLimicFunc(const HdiIdDesc &idDesc)
 {
-    uint32_t base = IdHandler::GetInstance().ParseBase(id);
-    if (base == HDI_ID_BASE_RENDER) {
-        std::lock_guard<std::mutex> lock(renderSinkMtx_);
-        renderSinks_[id].refCount_++;
-    } else {
-        std::lock_guard<std::mutex> lock(captureSourceMtx_);
-        captureSources_[id].refCount_++;
-    }
-}
-
-void HdiAdapterManager::DecRefCount(uint32_t id)
-{
-    uint32_t base = IdHandler::GetInstance().ParseBase(id);
-    if (base == HDI_ID_BASE_RENDER) {
-        std::lock_guard<std::mutex> lock(renderSinkMtx_);
-        if (renderSinks_[id].refCount_.load() > 0) {
-            renderSinks_[id].refCount_--;
-            if (renderSinks_[id].refCount_.load() > 0) {
-                return;
+    return [&idDesc](uint32_t id) -> bool {
+        uint32_t idType = IdHandler::GetInstance().ParseType(id);
+        std::string idInfo = IdHandler::GetInstance().ParseInfo(id);
+        if (idDesc.size() == 0) {
+            return true;
+        }
+        for (auto &item : idDesc) {
+            if (idType != item.first) {
+                continue;
+            }
+            if (item.second.size() == 0) {
+                return true;
+            }
+            for (auto &info : item.second) {
+                if (idInfo == info) {
+                    return true;
+                }
             }
         }
-        AUDIO_INFO_LOG("no reference of id %{public}u, try remove the sink", id);
-        renderSinks_[id].sink_.reset();
-        renderSinks_.erase(id);
-        IdHandler::GetInstance().DecInfoIdUseCount(id);
-    } else {
-        std::lock_guard<std::mutex> lock(captureSourceMtx_);
-        if (captureSources_[id].refCount_.load() > 0) {
-            captureSources_[id].refCount_--;
-            if (captureSources_[id].refCount_.load() > 0) {
-                return;
-            }
-        }
-        AUDIO_INFO_LOG("no reference of id %{public}u, try remove the source", id);
-        captureSources_[id].source_.reset();
-        captureSources_.erase(id);
-        IdHandler::GetInstance().DecInfoIdUseCount(id);
-    }
+        return false;
+    };
 }
 
 void HdiAdapterManager::DoRegistSinkCallback(uint32_t id, std::shared_ptr<IAudioRenderSink> sink)
@@ -377,6 +391,33 @@ void HdiAdapterManager::DoRegistSourceCallback(uint32_t id, std::shared_ptr<IAud
             AUDIO_ERR_LOG("callback is nullptr, callback type: %{public}u", type);
         }
     }
+}
+
+std::shared_ptr<IAudioRenderSink> HdiAdapterManager::GetRenderSinkHandle(uint32_t renderId)
+{
+    std::lock_guard<std::mutex> lock(renderSinkMtx_);
+    CHECK_AND_RETURN_RET_LOG(renderSinks_.count(renderId) != 0, nullptr, "no valid sink, renderId: %{public}u",
+        renderId);
+    return renderSinks_[renderId].sink_;
+}
+
+std::shared_ptr<IAudioCaptureSource> HdiAdapterManager::GetCaptureSourceHandle(uint32_t captureId)
+{
+    std::lock_guard<std::mutex> lock(captureSourceMtx_);
+    CHECK_AND_RETURN_RET_LOG(captureSources_.count(captureId) != 0, nullptr, "no valid source, captureId: %{public}u",
+        captureId);
+    return captureSources_[captureId].source_;
+}
+
+std::shared_ptr<IDeviceManager> HdiAdapterManager::GetDeviceManagerHandle(HdiDeviceManagerType type)
+{
+    CHECK_AND_RETURN_RET_LOG(type < HDI_DEVICE_MANAGER_TYPE_NUM, nullptr, "invalid type %{public}u", type);
+
+    std::lock_guard<std::mutex> lock(deviceManagerMtx_);
+    if (deviceManagers_[type] == nullptr) {
+        deviceManagers_[type] = HdiAdapterFactory::GetInstance().CreateDeviceManager(type);
+    }
+    return deviceManagers_[type];
 }
 
 } // namespace AudioStandard
