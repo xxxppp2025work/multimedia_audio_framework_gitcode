@@ -100,6 +100,8 @@ public:
     void ConcedeStream();
     void RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter);
 
+    int32_t SetInputDevice(DeviceType deviceType) override;
+
     std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
     AudioPlaybackCaptureConfig filterConfig_ = {{{}, FilterMode::INCLUDE, {}, FilterMode::INCLUDE}, false};
@@ -184,6 +186,7 @@ private:
     std::mutex capturerPolicyServiceDiedCbMutex_;
     std::mutex audioCapturerErrCallbackMutex_;
     std::mutex policyServiceDiedCallbackMutex_;
+    DeviceType selectedInputDevice_ = DEVICE_TYPE_NONE;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {

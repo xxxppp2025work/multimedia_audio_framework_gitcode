@@ -2119,6 +2119,17 @@ int32_t AudioPolicyService::SetDefaultOutputDevice(const DeviceType deviceType, 
     return ret;
 }
 
+int32_t AudioPolicyService::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const StreamUsage streamUsage, bool isRunning)
+{
+    int32_t ret = audioDeviceManager_.SetInputDevice(deviceType, sessionID, streamUsage, isRunning);
+    if (ret == NEED_TO_FETCH) {
+        audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::SET_INPUT_DEVICE);
+        return SUCCESS;
+    }
+    return ret;
+}
+
 bool AudioPolicyService::GetAudioEffectOffloadFlag()
 {
     // check if audio effect offload

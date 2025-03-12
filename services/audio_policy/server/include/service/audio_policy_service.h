@@ -481,6 +481,9 @@ public:
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
 
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning);
+
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object);
 
     int32_t UnsetAudioDeviceAnahsCallback();
@@ -568,6 +571,8 @@ private:
     void LoadHdiEffectModel();
 
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
+
+    void UpdateInputDeviceWhenStopping(const bool &isSupported);
 
     bool IsA2dpOffloadConnected();
 
