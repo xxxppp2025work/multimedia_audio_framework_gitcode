@@ -42,7 +42,7 @@ struct AudioZoneEvent {
 
 class IAudioZoneEventDispatcher {
 public:
-    virtual void DispatchZoneEvent(std::shared_ptr<AudioZoneEvent> event) = 0; 
+    virtual void DispatchZoneEvent(std::shared_ptr<AudioZoneEvent> event) = 0;
 }:
 } // namespace AudioStandard
 } // namespace OHOS

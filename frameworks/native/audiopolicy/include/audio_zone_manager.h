@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#ifdef ST_AUDIO_ZONE_MANAGER_H
+#ifndef ST_AUDIO_ZONE_MANAGER_H
 #define ST_AUDIO_ZONE_MANAGER_H
 
 #include <vector>

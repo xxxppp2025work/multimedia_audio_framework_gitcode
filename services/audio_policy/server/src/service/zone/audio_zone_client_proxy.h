@@ -22,7 +22,7 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioZoneClientProxy : public IRemoteProxy<IStandardAudioZoneClient> {
 public:
-    AudioZoneClientProxy(const sptr<IRemoteObject> &impl);
+    explicit AudioZoneClientProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioZoneClientProxy() = default;
 
     void OnAudioZoneAdded(const sptr<AudioZoneDescriptor> &zoneDescriptor) override;
@@ -41,3 +41,4 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
+#endif // ST_AUDIO_ZONE_CLIENT_PROXY_H

@@ -138,10 +138,11 @@ int32_t AudioZoneManagerInner::BindDeviceToAudioZone(int32_t zoneId,
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
-    CHECK_AND_RETURN_RET_LOG(devices.size() > 0, ERR_INVALID_PARAM, "devices is empty"); 
+    CHECK_AND_RETURN_RET_LOG(devices.size() > 0, ERR_INVALID_PARAM, "devices is empty");
 
     int32_t result = AudioPolicyManager::GetInstance().BindDeviceToAudioZone(zoneId, devices);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "BindDeviceToAudioZone result:%{public}d", result);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        "BindDeviceToAudioZone result:%{public}d", result);
     return result;
 }
 
@@ -154,14 +155,14 @@ int32_t AudioZoneManagerInner::UnBindDeviceToAudioZone(int32_t zoneId,
 
     int32_t result = AudioPolicyManager::GetInstance().UnBindDeviceToAudioZone(zoneId, devices);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "UnBindDeviceToAudioZone result:%{public}d", result);
-    return result; 
+    return result;
 }
 
 void AudioZoneManagerInner::ReleaseAudioZone(int32_t zoneId)
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_LOG(zoneId > 0, "zoneId is invalid");
-    int32_t result = AudioPolicyManager::GetInstance().ReleaseAudioZone(zoneId); 
+    int32_t result = AudioPolicyManager::GetInstance().ReleaseAudioZone(zoneId);
 }
 
 const std::vector<sptr<AudioZoneDescriptor>> AudioZoneManagerInner::GetAllAudioZone()
@@ -174,7 +175,7 @@ const sptr<AudioZoneDescriptor> AudioZoneManagerInner::GetAudioZone(int32_t zone
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, nullptr, "zoneId is invalid");
-    return AudioPolicyManager::GetInstance().GetAudioZone(zoneId); 
+    return AudioPolicyManager::GetInstance().GetAudioZone(zoneId);
 }
 
 int32_t AudioZoneManagerInner::RegisterAudioZoneCallback(const std::shared_ptr<AudioZoneCallback> &callback)
@@ -209,7 +210,7 @@ int32_t AudioZoneManagerInner::RegisterAudioZoneChangeCallback(int32_t zoneId,
 
     std::unique_lock<std::mutex> lock(clientMutex_);
     if (RegisterAudioZoneClient() == SUCCESS) {
-        client_->AddAudioZoneChangeCallback(zoneId, callback); 
+        client_->AddAudioZoneChangeCallback(zoneId, callback);
         return SUCCESS;
     }
     return ERROR;
@@ -222,7 +223,7 @@ int32_t AudioZoneManagerInner::UnRegisterAudioZoneChangeCallback(int32_t zoneId)
 
     std::unique_lock<std::mutex> lock(clientMutex_);
     if (client_!= nullptr) {
-        client_->RemoveAudioZoneChangeCallback(zoneId); 
+        client_->RemoveAudioZoneChangeCallback(zoneId);
     }
     return SUCCESS;
 }
@@ -261,7 +262,7 @@ int32_t AudioZoneManagerInner::UnRegisterSystemVolumeProxy(int32_t zoneId)
 
     std::unique_lock<std::mutex> lock(clientMutex_);
     if (client_!= nullptr) {
-        client_->RemoveAudioZoneVolumeProxy(zoneId); 
+        client_->RemoveAudioZoneVolumeProxy(zoneId);
     }
     return SUCCESS;
 }
@@ -284,10 +285,11 @@ const int32_t AudioZoneManagerInner::GetSystemVolumeLevelForZone(int32_t zoneId,
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
 
-    return AudioPolicyManager::GetInstance().GetSystemVolumeLevelForZone(zoneId, volumeType); 
+    return AudioPolicyManager::GetInstance().GetSystemVolumeLevelForZone(zoneId, volumeType);
 }
 
-const std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioZoneManagerInner::GetAudioInterruptForZone(int32_t zoneId)
+const std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioZoneManagerInner::GetAudioInterruptForZone(
+    int32_t zoneId)
 {
     AUDIO_INFO_LOG("in");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts;
@@ -328,7 +330,7 @@ int32_t AudioZoneManagerInner::UnRegisterAudioZoneInterruptCallback(int32_t zone
 
     std::unique_lock<std::mutex> lock(clientMutex_);
     if (client_!= nullptr) {
-        client_->RemoveAudioInterruptCallback(zoneId); 
+        client_->RemoveAudioInterruptCallback(zoneId);
     }
     return SUCCESS;
 }
@@ -385,7 +387,3 @@ int32_t AudioZoneManagerInner::InjectInterruptToAudioZone(int32_t zoneId, int32_
 }
 } // namespace AudioStandard
 } // namespace OHOS
-
-
-
-

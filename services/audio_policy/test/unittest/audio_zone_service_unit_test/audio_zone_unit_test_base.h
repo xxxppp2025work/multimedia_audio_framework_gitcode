@@ -186,7 +186,7 @@ public:
     sptr<AudioZoneUnitTestClient> client2000_;
 };
 
-static sptr<AudioDeviceDescriptor> CreateDevice(DeviceType type, DeviceRole role,
+sptr<AudioDeviceDescriptor> CreateDevice(DeviceType type, DeviceRole role,
     const std::string &macAddress, const std::string &networkId)
 {
     sptr<AudioDeviceDescriptor> desc = new AudioDeviceDescriptor(type, role);

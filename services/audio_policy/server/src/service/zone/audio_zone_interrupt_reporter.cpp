@@ -96,7 +96,7 @@ AudioZoneInterruptReporter::ReporterVector AudioZoneInterruptReporter::CreateRep
     std::shared_ptr<AudioZoneClientManager> zoneClientManager,
     AudioZoneInterruptReason reason)
 {
-   return CreateReporter(-1, interruptService, zoneClientManager, reason); 
+   return CreateReporter(-1, interruptService, zoneClientManager, reason);
 }
 
 AudioZoneInterruptReporter::ReporterVector AudioZoneInterruptReporter::CreateReporter(

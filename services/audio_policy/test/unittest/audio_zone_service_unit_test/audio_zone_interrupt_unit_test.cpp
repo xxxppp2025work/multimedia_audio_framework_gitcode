@@ -101,7 +101,7 @@ static void AddInterruptToList(std::list<std::pair<AudioInterrupt, AudioFocuStat
     interrupt.uid = uid;
     interrupt.deviceId = deviceId;
 
-    interrupts.emplace_back(std::make_pair(interrupt, state)); 
+    interrupts.emplace_back(std::make_pair(interrupt, state));
 }
 
 static void AddMusicInterruptToList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
@@ -140,7 +140,7 @@ static void AddGameInterruptToList(std::list<std::pair<AudioInterrupt, AudioFocu
 HWTEST_F(AudioZoneInterruptUnitTest, AudioZoneInterrupt_001, TestSize.Level1)
 {
     ActivateMusicInterrupt(0, 10, 10, 10, -1);
-    ActivateVoipInterrupt(0, 20, 20, 20,-1);
+    ActivateVoipInterrupt(0, 20, 20, 20, -1);
     auto interruptList = AudioZoneService::GetInstance().GetAudioInterruptForZone(0);
     EXPECT_EQ(interruptList.size(), 2);
     AudioZoneService::GetInstance().AddUidToAudioZone(zoneId1_, 10);

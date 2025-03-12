@@ -103,7 +103,7 @@ void AudioZoneService::ReleaseAudioZone(int32_t zoneId)
     }
 
     if (zoneClientManager_!= nullptr) {
-       for (auto &pid : zoneReportClientList_) {
+        for (auto &pid : zoneReportClientList_) {
             zoneClientManager_->SendZoneRemoveEvent(pid, zoneId);
         }
     }
@@ -214,7 +214,7 @@ int32_t AudioZoneService::EnableAudioZoneReport(pid_t clientPid, bool enable)
     if (enable) {
         zoneReportClientList_.insert(clientPid); 
     } else {
-        zoneReportClientList_.erase(clientPid); 
+        zoneReportClientList_.erase(clientPid);
     }
     AUDIO_INFO_LOG("%{public}ds zone event report to client %{public}d",
         enable ? "enable" : "disable", clientPid);
@@ -262,7 +262,7 @@ int32_t AudioZoneService::AddKeyToAudioZone(int32_t zoneId, int32_t uid,
             zoneClientManager_, AudioZOneInterruptReason::BIND_APP_TO_ZONE);
         interruptService_->MigrateAudioInterruptZone(srcZoneId,
             [this](int32_t uid, int32_t deviceId, const std::string &tag)->int32_t {
-                return this->FindAudioZoneByKey(uid, deviceId, tag); 
+                return this->FindAudioZoneByKey(uid, deviceId, tag);
         });
         for (auto &report : reporter) {
             report->ReportInterrupt();
@@ -449,7 +449,7 @@ int32_t AudioZoneService::DeactivateAudioInterrupt(int32_t zoneId,
         "zoneClientManager or interruptService is nullptr");
     if (!CheckIsZoneValid(zoneId)) {
         AUDIO_ERR_LOG("zone id %{public}d is not valid", zoneId);
-        return ERROR; 
+        return ERROR;
     }
 
     auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
@@ -488,7 +488,7 @@ int32_t AudioZoneService::InjectInterruptToAudioZone(int32_t zoneId, int32_t dev
     if (deviceId == -1) {
         ret = interruptService_->InjectInterruptToAudioZone(zoneId, interrupts); 
     } else {
-        ret = interruptService_->InjectInterruptToAudioZone(zoneId, deviceId, interrupts); 
+        ret = interruptService_->InjectInterruptToAudioZone(zoneId, deviceId, interrupts);
     }
     for (auto &report : reporters) {
         report->ReportInterrupt(); 

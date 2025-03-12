@@ -63,7 +63,7 @@ int32_t AudioPolicyProxy::ReleaseAudioZone(int32_t zoneId)
     int32_t error = Remote()->SendRequest(
         static_cast<int32_t>(AudioPolicyInterfaceCode::RELEASE_AUDIO_ZONE), data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("ReleaseAudioZone failed, error: %{public}d", error); 
+        AUDIO_ERR_LOG("ReleaseAudioZone failed, error: %{public}d", error);
     }
 }
 
@@ -117,7 +117,7 @@ int32_t AudioPolicyProxy::BindDeviceToAudioZone(int32_t zoneId, std::vector<sptr
     data.WriteInt32(static_cast<int32_t>(devices.size()));
     for (auto &device : devices) {
        bool ret = device->Marshalling(data);
-       CHECK_AND_RETURN_RET_LOG(ret, ERROR, "Marshalling device failed"); 
+       CHECK_AND_RETURN_RET_LOG(ret, ERROR, "Marshalling device failed");
     }
     int32_t error = Remote()->SendRequest(
         static_cast<int32_t>(AudioPolicyInterfaceCode::BIND_AUDIO_ZONE_DEVICE), data, reply, option);
@@ -152,7 +152,7 @@ int32_t AudioPolicyProxy::EnableAudioZoneReport(bool enable)
     
     (void)data.WriteBool(enable);
     int32_t error = Remote()->SendRequest(
-        static_cast<int32_t>(AudioPolicyInterfaceCode::ENABLE_AUDIO_ZONE_REPORT), data, reply, option); 
+        static_cast<int32_t>(AudioPolicyInterfaceCode::ENABLE_AUDIO_ZONE_REPORT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
     return reply.ReadInt32();
 }
@@ -169,7 +169,7 @@ int32_t AudioPolicyProxy::EnableAudioZoneChangeReport(int32_t zoneId, bool enabl
     int32_t error = Remote()->SendRequest(
         static_cast<int32_t>(AudioPolicyInterfaceCode::ENABLE_AUDIO_ZONE_CHANGE_REPORT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
-    return reply.ReadInt32(); 
+    return reply.ReadInt32();
 }
 
 int32_t AudioPolicyProxy::AddUidToAudioZone(int32_t zoneId, int32_t uid)
@@ -184,7 +184,7 @@ int32_t AudioPolicyProxy::AddUidToAudioZone(int32_t zoneId, int32_t uid)
     int32_t error = Remote()->SendRequest(
         static_cast<int32_t>(AudioPolicyInterfaceCode::ADD_UID_TO_AUDIO_ZONE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
-    return reply.ReadInt32(); 
+    return reply.ReadInt32();
 }
 
 int32_t AudioPolicyProxy::RemoveUidFromAudioZone(int32_t zoneId, int32_t uid)
@@ -230,7 +230,7 @@ int32_t AudioPolicyProxy::SetSystemVolumeLevelForZone(const int32_t zoneId, cons
     (void)data.WriteInt32(volumeLevel);
     (void)data.WriteInt32(volumeFlag);
     int32_t error = Remote()->SendRequest(
-        static_cast<int32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUME_LEVEL_FOR_ZONE), data, reply, option); 
+        static_cast<int32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUME_LEVEL_FOR_ZONE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
     return reply.ReadInt32();
 }
@@ -301,7 +301,7 @@ const std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyProxy::Get
         AudioInterrupt temp;
         AudioInterrupt.Unmarshalling(reply, temp);
         AudioFocuState state = static_cast<AudioFocuState>(reply.ReadInt32());
-        interrupts.emplace_back(std::make_pair(temp, state)); 
+        interrupts.emplace_back(std::make_pair(temp, state));
     }
     return interrupts;
 }
@@ -339,7 +339,7 @@ int32_t AudioPolicyProxy::InjectInterruptToAudioZone(int32_t zoneId,
     int32_t error = Remote()->SendRequest(
         static_cast<int32_t>(AudioPolicyInterfaceCode::INJECT_INTERRUPT_TO_AUDIO_ZONE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
-    return reply.ReadInt32(); 
+    return reply.ReadInt32();
 }
 
 int32_t AudioPolicyProxy::InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
@@ -355,12 +355,12 @@ int32_t AudioPolicyProxy::InjectInterruptToAudioZone(int32_t zoneId, int32_t dev
     (void)data.WriteInt32(static_cast<int32_t>(interrupts.size()));
     for (auto &it : interrupts) {
         AudioInterrupt::Marshalling(data, it.first);
-        (void)data.WriteInt32(static_cast<int32_t>(it.second)); 
+        (void)data.WriteInt32(static_cast<int32_t>(it.second));
     }
     int32_t error = Remote()->SendRequest(
         static_cast<int32_t>(AudioPolicyInterfaceCode::INJECT_INTERRUPT_OF_DEVICE_TO_AUDIO_ZONE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
-    return reply.ReadInt32(); 
+    return reply.ReadInt32();
 }
 } // namespace AudioStandard
 } // namespace OHOS

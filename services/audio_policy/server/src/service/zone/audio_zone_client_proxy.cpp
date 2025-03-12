@@ -61,7 +61,7 @@ void AudioZoneClientProxy::OnAudioZoneChanged(int32_t zoneId, const AudioZoneDes
     CHECK_AND_RETURN_LOG(zoneDescriptor!= nullptr, "zoneDescriptor is null");
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option; 
+    MessageOption option;
     CHECK_AND_RETURN_LOG(data.WriteInterfaceToken(GetDescriptor()), "write interface token failed");
 
     data.WriteInt32(zoneId);
@@ -69,7 +69,7 @@ void AudioZoneClientProxy::OnAudioZoneChanged(int32_t zoneId, const AudioZoneDes
     data.WriteInt32(static_cast<int32_t>(reason));
     int32_t error = Remote()->SendRequest(
         static_cast<uint_32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_CHANGE), data, reply, option);
-    CHECK_AND_RETURN_LOG(error == ERR_NONE, "send request failed, error: %{public}d", error); 
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "send request failed, error: %{public}d", error);
 }
 
 void AudioZoneClientProxy::OnInterruptEvnet(int32_t zoneId,
@@ -89,7 +89,7 @@ void AudioZoneClientProxy::OnInterruptEvnet(int32_t zoneId,
     }
     data.WriteInt32(static_cast<int32_t>(reason));
     int32_t error = Remote()->SendRequest(
-        static_cast<uint_32_t>(AudioZoneClientCode::ON_INTERRUPT_EVENT), data, reply, option); 
+        static_cast<uint_32_t>(AudioZoneClientCode::ON_INTERRUPT_EVENT), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "send request failed, error: %{public}d", error);
 }
 
@@ -111,7 +111,7 @@ void AudioZoneClientProxy::OnInterruptEvnet(int32_t zoneId, int32_t deviceId,
     }
     data.WriteInt32(static_cast<int32_t>(reason));
     int32_t error = Remote()->SendRequest(
-        static_cast<uint_32_t>(AudioZoneClientCode::ON_INTERRUPT_EVENT), data, reply, option); 
+        static_cast<uint_32_t>(AudioZoneClientCode::ON_INTERRUPT_EVENT), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "send request failed, error: %{public}d", error);
 }
 
@@ -145,7 +145,7 @@ const int32_t AudioZoneClientProxy::GetSystemVolumeLevel(int32_t zoneId, AudioVo
     int32_t error = Remote()->SendRequest(
         static_cast<uint_32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_SYSTEM_VOLUME_GET), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "send request failed, error: %{public}d", error);
-    return reply.ReadInt32(); 
+    return reply.ReadInt32();
 }
 } // namespace AudioStandard
 } // namespace OHOS

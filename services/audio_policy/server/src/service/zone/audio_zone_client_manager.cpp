@@ -84,10 +84,10 @@ void AudioZoneClientManager::DispatchEvent(std::shared_ptr<AudioZoneEvent> event
         case AudioZoneEventType::AUDIO_ZONE_INTERRUPT_EVENT:
             if (event->deviceId == -1) {
                 clients_[event->clientPid]->OnInterruptEvnet(event->zoneId,
-                    event->interrupts, event->zoneInterruptReason); 
+                    event->interrupts, event->zoneInterruptReason);
             } else {
-                clients_[event->clientPid]->OnInterruptEvnet(event->zonhao     eId,
-                    event->deviceId, event->interrupts, event->zoneInterruptReason); 
+                clients_[event->clientPid]->OnInterruptEvnet(event->zoneId,
+                    event->deviceId, event->interrupts, event->zoneInterruptReason);
             }
             break;
         default:
@@ -126,7 +126,7 @@ void AudioZoneClientManager::SendZoneRemoveEvent(pid_t clientPid, int32_t zoneId
     event->type = AudioZoneEventType::AUDIO_ZONE_REMOVE_EVENT;
     handler_->SendAudioZoneEvent(event);
     AUDIO_DEBUG_LOG("sned remove audio zone %{public}d to client %{public}d",
-        zoneId, clientPid); 
+        zoneId, clientPid);
 }
 
 void AudioZoneClientManager::SendZoneChangeEvent(pid_t clientPid, sptr<AudioDeviceDescriptor> descriptor,
@@ -167,7 +167,7 @@ void AudioZoneClientManager::SnedZoneInterruptEvent(pid_t clientPid, int32_t zon
     event->zoneInterruptReason = reason;
     handler_->SendAudioZoneEvent(event);
     AUDIO_DEBUG_LOG("send audio zone %{public}d interrupt event to client %{public}d",
-        zoneId, clientPid); 
+        zoneId, clientPid);
 }
 
 int32_t AudioZoneClientManager::SetSystemVolumeLevel(const pid_t clientPid, const pid_t zoneId,
@@ -193,7 +193,7 @@ const int32_t AudioZoneClientManager::GetSystemVolumeLevel(const pid_t clientPid
     {
         std::lock_guard<std::mutex> lock(clientMutex_);
         if (clients_.find(clientPid) == clients_.end()) {
-           return ERROR; 
+           return ERROR;
         }
         client = clients_[clientPid];
     }
