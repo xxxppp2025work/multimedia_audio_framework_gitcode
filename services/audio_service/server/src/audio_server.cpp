@@ -2360,13 +2360,10 @@ void AudioServer::UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapt
 
 void AudioServer::SetDeviceConnectedFlag(bool flag)
 {
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    if (audioRendererSinkInstance == nullptr) {
-        AUDIO_INFO_LOG("has no valid sink");
-        return;
-    }
-
-    audioRendererSinkInstance->SetDeviceConnectedFlag(flag);
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    deviceManager->SetDeviceConnectedFlag(flag);
 }
 
 } // namespace AudioStandard
