@@ -133,6 +133,19 @@ public:
     virtual void OnStateChange(const AudioCapturerChangeInfo &capturerChangeInfo) = 0;
 };
 
+class AudioCapturerErrorCallback {
+public:
+    virtual ~AudioCapturerErrorCallback() = default;
+
+    /**
+     * Called when an unrecoverable exception occurs in the capturer.
+     *
+     * @param errorCode Indicates error code of the exception.
+     * since 12
+     */
+    virtual void OnError(AudioErrors errorCode) = 0;
+};
+
 /**
  * @brief Provides functions for applications to implement audio capturing.
  */
@@ -259,6 +272,14 @@ public:
     virtual int32_t SetCapturerCallback(const std::shared_ptr<AudioCapturerCallback> &callback) = 0;
 
     /**
+     * @brief Registers the renderer error event callback listener.
+     *
+     * @param errorCallback Error callback pointer
+     * @since 10
+     */
+    virtual void SetAudioCapturerErrorCallback(std::shared_ptr<AudioCapturerErrorCallback> errorCallback) = 0;
+
+    /**
      * @brief Obtains audio capturer parameters.
      *
      * This function can be called after {@link SetParams} is successful.
@@ -303,7 +324,7 @@ public:
      * @return Returns <b>true</b> if the capturing is successfully started; returns <b>false</b> otherwise.
      * @since 8
      */
-    virtual bool Start() const = 0;
+    virtual bool Start() = 0;
 
     /**
      * @brief capture audio data.
@@ -320,7 +341,7 @@ public:
      * <b>ERR_INVALID_READ</b>: The read size < 0.
      * @since 8
      */
-    virtual int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) const = 0;
+    virtual int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) = 0;
 
     /**
      * @brief Obtains the audio capture state.
@@ -438,6 +459,17 @@ public:
     virtual void UnsetCapturerPeriodPositionCallback() = 0;
 
     /**
+     * @brief Register audio policy service died callback.
+     *
+     * @param clientPid client PID
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    virtual int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
+        const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback) = 0;
+
+    /**
      * @brief set the buffer duration for capturer, minimum buffer duration is 5msec
      *         maximum is 20msec
      *
@@ -519,7 +551,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    virtual int32_t GetBufferDesc(BufferDesc &bufDesc) const = 0;
+    virtual int32_t GetBufferDesc(BufferDesc &bufDesc) = 0;
 
     /**
      * @brief Enqueues used buffer to the bufferQueue for recording new data.
@@ -529,7 +561,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    virtual int32_t Enqueue(const BufferDesc &bufDesc) const = 0;
+    virtual int32_t Enqueue(const BufferDesc &bufDesc) = 0;
 
     /**
      * @brief Clears the bufferQueue.
@@ -659,6 +691,17 @@ public:
      * @since 11
      */
     virtual int32_t SetCaptureSilentState(bool state) = 0;
+
+    /**
+     * @brief Obtains the position info after speed convert.
+     *
+     * @param timestamp Indicates a {@link Timestamp} instance reference provided by the caller.
+     * @param base Indicates the time base, which can be {@link Timestamp.Timestampbase#BOOTTIME} or
+     * {@link Timestamp.Timestampbase#MONOTONIC}.
+     * @return Returns <b>true</b> if the timestamp is successfully obtained; returns <b>false</b> otherwise.
+     * @since 15
+     */
+    virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
 
     virtual uint32_t GetOverflowCount() const = 0;
 

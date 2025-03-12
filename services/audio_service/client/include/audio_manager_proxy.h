@@ -73,7 +73,7 @@ public:
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) override;
     int32_t ResetRouteForDisconnect(DeviceType type) override;
     uint32_t GetEffectLatency(const std::string &sessionId) override;
-    float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
+    float GetMaxAmplitude(bool isOutputDevice, std::string deviceClass, SourceType sourceType) override;
     void ResetAudioEndpoint() override;
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
     int32_t SetAsrAecMode(AsrAecMode asrAecMode) override;
@@ -109,13 +109,14 @@ public:
     int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack) override;
     int32_t UnsetOffloadMode(uint32_t sessionId) override;
     void CheckHibernateState(bool onHibernate) override;
-    void RestoreSession(const int32_t &sessionID, bool isOutput) override;
+    void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo) override;
     sptr<IRemoteObject> CreateIpcOfflineStream(int32_t &errorCode) override;
     int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) override;
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
     int32_t GenerateSessionId(uint32_t &sessionId) override;
     void NotifyAccountsChanged() override;
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
+    void SetDefaultAdapterEnable(bool isEnable) override;
     void NotifyAudioPolicyReady() override;
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t SetInnerCapLimit(uint32_t innerCapLimit) override;

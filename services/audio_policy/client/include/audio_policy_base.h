@@ -149,6 +149,8 @@ public:
 
     virtual int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object) = 0;
 
+    virtual int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) = 0;
+
     virtual int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) = 0;
 
     virtual int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) = 0;
@@ -416,6 +418,9 @@ public:
     virtual int32_t SetVoiceRingtoneMute(bool isMute) = 0;
 
     virtual void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) = 0;
+
+    virtual int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+        const bool isConnected) = 0;
 
     virtual int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) = 0;
 

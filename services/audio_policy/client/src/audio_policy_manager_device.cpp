@@ -225,6 +225,27 @@ int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, cons
     return SUCCESS;
 }
 
+int32_t AudioPolicyManager::SetDistribuitedOutputChangeCallback(
+    const std::shared_ptr<AudioDistribuitedOutputChangeCallback> &cb)
+{
+    if (!isAudioPolicyClientRegisted_) {
+        const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_DISTRIBUTED_OUTPUT_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->SetDistribuitedOutputChangeCallback(cb);
+        callbackChangeInfos_[CALLBACK_DISTRIBUTED_OUTPUT_CHANGE].isEnable = true;
+        SetClientCallbacksEnable(CALLBACK_DISTRIBUTED_OUTPUT_CHANGE, true);
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag,
     std::shared_ptr<AudioManagerDeviceChangeCallback> &cb)
 {
@@ -519,6 +540,14 @@ void AudioPolicyManager::SaveRemoteInfo(const std::string &networkId, DeviceType
     } else {
         AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
     }
+}
+
+int32_t AudioPolicyManager::SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+    const bool isConnected)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetDeviceConnectionStatus(desc, isConnected);
 }
 } // namespace AudioStandard
 } // namespace OHOS

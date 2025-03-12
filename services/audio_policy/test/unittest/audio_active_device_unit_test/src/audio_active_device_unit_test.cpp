@@ -49,7 +49,8 @@ HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_002, TestSize.Leve
 {
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
     int32_t deviceId = AudioActiveDevice::GetInstance().GetCurrentInputDevice().deviceId_;
-    float result = audioActiveDevice->GetMaxAmplitude(deviceId);
+    AudioInterrupt audioInterrupt;
+    float result = audioActiveDevice->GetMaxAmplitude(deviceId, audioInterrupt);
     EXPECT_NE(audioActiveDevice, nullptr);
 }
 

@@ -99,17 +99,6 @@ bool AudioActiveDevice::CheckActiveOutputDeviceSupportOffload()
         dev == DEVICE_TYPE_USB_HEADSET;
 }
 
-void AudioActiveDevice::SetCurrenInputDevice(const AudioDeviceDescriptor &desc)
-{
-    std::lock_guard<std::mutex> lock(curInputDevice_);
-    currentActiveInputDevice_ = AudioDeviceDescriptor(desc);
-}
-
-void AudioActiveDevice::SetCurrenOutputDevice(const AudioDeviceDescriptor &desc)
-{
-    currentActiveDevice_ = AudioDeviceDescriptor(desc);
-}
-
 void AudioActiveDevice::SetCurrentInputDevice(const AudioDeviceDescriptor &desc)
 {
     std::lock_guard<std::mutex> lock(curInputDevice_);
@@ -183,14 +172,22 @@ std::string AudioActiveDevice::GetCurrentOutputDeviceMacAddr()
     return currentActiveDevice_.macAddress_;
 }
 
-float AudioActiveDevice::GetMaxAmplitude(const int32_t deviceId)
+float AudioActiveDevice::GetMaxAmplitude(const int32_t deviceId, AudioInterrupt audioInterrupt)
 {
-    if (deviceId == GetCurrentOutputDevice().deviceId_) {
-        return AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(true, GetCurrentOutputDeviceType());
+    AudioDeviceDescriptor descriptor = GetCurrentOutputDevice();
+    if (deviceId == descriptor.deviceId_) {
+        uint32_t sessionId = audioInterrupt.streamId;
+        std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(descriptor, static_cast<int32_t>(sessionId));
+        std::string deviceClass = AudioPolicyUtils::GetInstance().GetOutputDeviceClassBySinkPortName(sinkName);
+        return AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(true, deviceClass);
     }
 
-    if (deviceId == GetCurrentInputDevice().deviceId_) {
-        return AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(false, GetCurrentInputDeviceType());
+    descriptor = GetCurrentInputDevice();
+    if (deviceId == descriptor.deviceId_) {
+        std::string sourceName = AudioPolicyUtils::GetInstance().GetSourcePortName(GetCurrentInputDeviceType());
+        std::string deviceClass = AudioPolicyUtils::GetInstance().GetInputDeviceClassBySourcePortName(sourceName);
+        return AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(false, deviceClass,
+            audioInterrupt.audioFocusType.sourceType);
     }
 
     return 0;

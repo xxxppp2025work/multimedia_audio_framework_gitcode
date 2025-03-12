@@ -51,6 +51,7 @@ public:
     int32_t interruptGroupId_ = 0;
     int32_t volumeGroupId_ = 0;
     std::string networkId_;
+    uint16_t dmDeviceType_{0};
     std::string displayName_;
     DeviceStreamInfo audioStreamInfo_ = {};
     DeviceCategory deviceCategory_ = CATEGORY_DEFAULT;
@@ -122,11 +123,30 @@ public:
 
     DeviceType MapInternalToExternalDeviceType() const;
 
-    struct AudioDeviceDescriptorComparer {
+    struct AudioDeviceDescriptorHash {
+        size_t operator()(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const
+        {
+            if (deviceDescriptor == nullptr) {
+                return 0;
+            }
+            return std::hash<int32_t>{}(static_cast<int32_t>(deviceDescriptor->deviceType_)) ^
+                std::hash<int32_t>{}(static_cast<int32_t>(deviceDescriptor->deviceRole_)) ^
+                std::hash<std::string>{}(deviceDescriptor->macAddress_) ^
+                std::hash<std::string>{}(deviceDescriptor->networkId_);
+        }
+    };
+
+    struct AudioDeviceDescriptorEqual {
         bool operator()(const std::shared_ptr<AudioDeviceDescriptor> &lhs,
             const std::shared_ptr<AudioDeviceDescriptor> &rhs) const
         {
-            return !lhs->IsSameDeviceDesc(*rhs);
+            if (lhs == nullptr && rhs == nullptr) {
+                return true;
+            }
+            if (lhs == nullptr || rhs == nullptr) {
+                return false;
+            }
+            return lhs->IsSameDeviceDesc(*rhs);
         }
     };
 };

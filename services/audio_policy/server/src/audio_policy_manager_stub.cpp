@@ -61,6 +61,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_CALLBACK",
     "UNSET_CALLBACK",
     "SET_QUERY_CLIENT_TYPE_CALLBACK",
+    "SET_CLIENT_INFO_MGR_CALLBACK",
     "ACTIVATE_INTERRUPT",
     "DEACTIVATE_INTERRUPT",
     "SET_INTERRUPT_CALLBACK",
@@ -211,6 +212,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_PREFERRED_DEVICE",
     "SAVE_REMOTE_INFO",
     "SET_VIRTUAL_CALL",
+    "SET_DEVICE_CONNECTION_STATUS",
     "EXCLUDE_OUTPUT_DEVICES",
     "UNEXCLUDE_OUTPUT_DEVICES",
     "GET_EXCLUDED_OUTPUT_DEVICES",
@@ -1213,10 +1215,21 @@ void AudioPolicyManagerStub::SetQueryClientTypeCallbackInternal(MessageParcel &d
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SetAudioClientInfoMgrCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_LOG(object != nullptr, "AudioClientInfoMgrCallback is null");
+    int32_t result = SetAudioClientInfoMgrCallback(object);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CLIENT_INFO_MGR_CALLBACK):
+            SetAudioClientInfoMgrCallbackInternal(data, reply);
+            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_DEVICE_ANAHS_CALLBACK):
             SetAudioDeviceAnahsCallbackInternal(data, reply);
             break;
@@ -1240,6 +1253,9 @@ void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SAVE_REMOTE_INFO):
             SaveRemoteInfoInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_CONNECTION_STATUS):
+            SetDeviceConnectionStatusInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::EXCLUDE_OUTPUT_DEVICES):
             ExcludeOutputDevicesInternal(data, reply);
@@ -2160,6 +2176,14 @@ void AudioPolicyManagerStub::SetVirtualCallInternal(MessageParcel &data, Message
 {
     bool isVirtual = data.ReadBool();
     int32_t result = SetVirtualCall(isVirtual);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetDeviceConnectionStatusInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceDescriptor::UnmarshallingPtr(data);
+    bool isConnected = data.ReadBool();
+    int32_t result = SetDeviceConnectionStatus(desc, isConnected);
     reply.WriteInt32(result);
 }
 

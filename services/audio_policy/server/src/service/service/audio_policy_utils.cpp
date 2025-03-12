@@ -29,6 +29,7 @@
 #include "audio_policy_manager_factory.h"
 #include "device_init_callback.h"
 #include "audio_recovery_device.h"
+#include "audio_config_manager.h"
 
 #include "audio_server_proxy.h"
 
@@ -247,10 +248,15 @@ std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeTy
             } else if (pipeType == PIPE_TYPE_MULTICHANNEL) {
                 portName = MCH_PRIMARY_SPEAKER;
             } else if (pipeType == PIPE_TYPE_CALL_OUT) {
-                portName = PRIMARY_DIRECT_VOIP;
+                bool normalVoipFlag = audioConfigManager_.GetNormalVoipFlag();
+                portName = (normalVoipFlag ? PRIMARY_SPEAKER : PRIMARY_DIRECT_VOIP);
             } else {
                 portName = PRIMARY_SPEAKER;
             }
+            break;
+        case DeviceType::DEVICE_TYPE_HDMI:
+        case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
+            portName = AudioConfigManager::GetInstance().GetDefaultAdapterEnable() ? DP_SINK : PRIMARY_SPEAKER;
             break;
         default:
             portName = GetNewSinkPortName(deviceType);
@@ -312,6 +318,44 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType)
     }
 
     return portName;
+}
+
+std::string AudioPolicyUtils::GetOutputDeviceClassBySinkPortName(std::string sinkPortName)
+{
+    std::map<std::string, std::string> sinkPortStrToClassStrMap_ = {
+        {PRIMARY_SPEAKER, PRIMARY_CLASS},
+        {OFFLOAD_PRIMARY_SPEAKER, OFFLOAD_CLASS},
+        {BLUETOOTH_SPEAKER, A2DP_CLASS},
+        {USB_SPEAKER, USB_CLASS},
+        {PRIMARY_DIRECT_VOIP, DIRECT_VOIP_CLASS},
+        {DP_SINK, DP_CLASS},
+        {FILE_SINK, FILE_CLASS},
+        {REMOTE_CAST_INNER_CAPTURER_SINK_NAME, REMOTE_CLASS},
+        {MCH_PRIMARY_SPEAKER, MCH_CLASS},
+        {PORT_NONE, INVALID_CLASS}
+    };
+    std::string deviceClass = INVALID_CLASS;
+    if (sinkPortStrToClassStrMap_.count(sinkPortName) > 0) {
+        deviceClass = sinkPortStrToClassStrMap_.at(sinkPortName);
+    }
+    return deviceClass;
+}
+
+std::string AudioPolicyUtils::GetInputDeviceClassBySourcePortName(std::string sourcePortName)
+{
+    std::map<std::string, std::string> sourcePortStrToClassStrMap_ = {
+        {PRIMARY_MIC, PRIMARY_CLASS},
+        {USB_MIC, USB_CLASS},
+        {PRIMARY_WAKEUP, PRIMARY_CLASS},
+        {FILE_SOURCE, FILE_CLASS},
+        {BLUETOOTH_MIC, A2DP_CLASS},
+        {PORT_NONE, INVALID_CLASS}
+    };
+    std::string deviceClass = INVALID_CLASS;
+    if (sourcePortStrToClassStrMap_.count(sourcePortName) > 0) {
+        deviceClass = sourcePortStrToClassStrMap_.at(sourcePortName);
+    }
+    return deviceClass;
 }
 
 std::shared_ptr<DataShare::DataShareHelper> AudioPolicyUtils::CreateDataShareHelperInstance()
@@ -432,7 +476,8 @@ void AudioPolicyUtils::UpdateEffectDefaultSink(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_DP:
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
-        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+        case DeviceType::DEVICE_TYPE_HDMI: {
             std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
             AudioServerProxy::GetInstance().SetOutputDeviceSinkProxy(deviceType, sinkName);
             break;
@@ -490,6 +535,7 @@ DeviceRole AudioPolicyUtils::GetDeviceRole(DeviceType deviceType) const
         case DeviceType::DEVICE_TYPE_DP:
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
         case DeviceType::DEVICE_TYPE_REMOTE_CAST:
+        case DeviceType::DEVICE_TYPE_HDMI:
             return DeviceRole::OUTPUT_DEVICE;
         case DeviceType::DEVICE_TYPE_MIC:
         case DeviceType::DEVICE_TYPE_WAKEUP:
@@ -608,5 +654,16 @@ int32_t AudioPolicyUtils::UnexcludeOutputDevices(std::vector<std::shared_ptr<Aud
 
     return SUCCESS;
 }
+
+void AudioPolicyUtils::SetScoExcluded(bool scoExcluded)
+{
+    isScoExcluded_ = scoExcluded;
+}
+
+bool AudioPolicyUtils::GetScoExcluded()
+{
+    return isScoExcluded_;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

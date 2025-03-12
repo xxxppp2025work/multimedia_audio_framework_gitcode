@@ -417,6 +417,16 @@ bool AudioPolicyServerHandler::SendRendererDeviceChangeEvent(const int32_t clien
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendDistribuitedOutputChangeEvent(const AudioDeviceDescriptor &desc, bool isRemote)
+{
+    AUDIO_INFO_LOG("Send Event DISTRIBUTED_OUTPUT_CHANGE. isRemote=%{public}d", isRemote);
+    auto event = make_shared<DistributedOutputChangeEvent>(desc, isRemote);
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::DISTRIBUTED_OUTPUT_CHANGE, event));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "SendDistribuitedOutputChangeEvent event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendCapturerCreateEvent(AudioCapturerInfo capturerInfo,
     AudioStreamInfo streamInfo, uint64_t sessionId, bool isSync, int32_t &error)
 {
@@ -781,7 +791,7 @@ void AudioPolicyServerHandler::HandleAppVolumeChangeEvent(const AppExecFwk::Inne
             AUDIO_ERR_LOG("appVolumeChangeListenerCb nullptr for client %{public}d", it->first);
             continue;
         }
-        
+
         AUDIO_INFO_LOG("appVolumeChangeListenerCb client %{public}d :volumeMode %{public}d :appUid%{public}d",
             it->first, static_cast<int32_t>(eventContextObj->volumeEvent.volumeMode), eventContextObj->appUid);
         if (clientCallbacksMap_.count(it->first) > 0 &&
@@ -1040,6 +1050,21 @@ void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk:
     }
 }
 
+void AudioPolicyServerHandler::HandleDistributedOutputChange(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    auto eventContextObj = event->GetSharedObject<DistributedOutputChangeEvent>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "eventContextObj is nullptr");
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        sptr<IAudioPolicyClient> audioPolicyClient = it->second;
+        CHECK_AND_RETURN_LOG(audioPolicyClient, "Client(Pid[%{public}d]) Callback is nullptr.", it->first);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_DISTRIBUTED_OUTPUT_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_DISTRIBUTED_OUTPUT_CHANGE]) {
+            audioPolicyClient->OnDistribuitedOutputChange(eventContextObj->deviceDesc_, eventContextObj->isRemote_);
+        }
+    }
+}
+
 void AudioPolicyServerHandler::HandleCapturerCreateEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<CapturerCreateEvent> eventContextObj = event->GetSharedObject<CapturerCreateEvent>();
@@ -1073,19 +1098,11 @@ void AudioPolicyServerHandler::HandleSendRecreateRendererStreamEvent(const AppEx
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     std::lock_guard<std::mutex> lock(handleMapMutex_);
-    if (audioPolicyClientProxyAPSCbsMap_.count(eventContextObj->clientId) == 0) {
-        AUDIO_ERR_LOG("No client id %{public}d", eventContextObj->clientId);
-        return;
-    }
-    sptr<IAudioPolicyClient> rendererCb = audioPolicyClientProxyAPSCbsMap_.at(eventContextObj->clientId);
-    CHECK_AND_RETURN_LOG(rendererCb != nullptr, "Callback for id %{public}d is null", eventContextObj->clientId);
-
-    if (clientCallbacksMap_.count(eventContextObj->clientId) > 0 &&
-        clientCallbacksMap_[eventContextObj->clientId].count(CALLBACK_DEVICE_CHANGE_WITH_INFO) > 0 &&
-        clientCallbacksMap_[eventContextObj->clientId][CALLBACK_DEVICE_CHANGE_WITH_INFO]) {
-        rendererCb->OnRecreateRendererStreamEvent(eventContextObj->sessionId, eventContextObj->streamFlag,
-            eventContextObj->reason_);
-    }
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = DEVICE_CHANGED;
+    restoreInfo.targetStreamFlag = eventContextObj->streamFlag;
+    restoreInfo.deviceChangeReason = static_cast<int32_t>(eventContextObj->reason_);
+    AudioPolicyService::GetAudioPolicyService().RestoreSession(eventContextObj->sessionId, restoreInfo);
 }
 
 void AudioPolicyServerHandler::HandleSendRecreateCapturerStreamEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -1093,19 +1110,11 @@ void AudioPolicyServerHandler::HandleSendRecreateCapturerStreamEvent(const AppEx
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     std::lock_guard<std::mutex> lock(handleMapMutex_);
-    if (audioPolicyClientProxyAPSCbsMap_.count(eventContextObj->clientId) == 0) {
-        AUDIO_ERR_LOG("No client id %{public}d", eventContextObj->clientId);
-        return;
-    }
-    sptr<IAudioPolicyClient> capturerCb = audioPolicyClientProxyAPSCbsMap_.at(eventContextObj->clientId);
-    CHECK_AND_RETURN_LOG(capturerCb != nullptr, "Callback for id %{public}d is null", eventContextObj->clientId);
-
-    if (clientCallbacksMap_.count(eventContextObj->clientId) > 0 &&
-        clientCallbacksMap_[eventContextObj->clientId].count(CALLBACK_DEVICE_CHANGE_WITH_INFO) > 0 &&
-        clientCallbacksMap_[eventContextObj->clientId][CALLBACK_DEVICE_CHANGE_WITH_INFO]) {
-        capturerCb->OnRecreateCapturerStreamEvent(eventContextObj->sessionId, eventContextObj->streamFlag,
-            eventContextObj->reason_);
-    }
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = DEVICE_CHANGED;
+    restoreInfo.targetStreamFlag = eventContextObj->streamFlag;
+    restoreInfo.deviceChangeReason = static_cast<int32_t>(eventContextObj->reason_);
+    AudioPolicyService::GetAudioPolicyService().RestoreSession(eventContextObj->sessionId, restoreInfo);
 }
 
 void AudioPolicyServerHandler::HandleNnStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -1280,11 +1289,10 @@ void AudioPolicyServerHandler::HandleConcurrencyEventWithSessionID(const AppExec
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
 
     std::unique_lock<std::mutex> lock(handleMapMutex_);
-    std::shared_ptr<IAudioConcurrencyEventDispatcher> dispatcher = concurrencyEventDispatcher_.lock();
-    lock.unlock();
-    if (dispatcher != nullptr) {
-        dispatcher->DispatchConcurrencyEventWithSessionId(eventContextObj->sessionId);
-    }
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = STREAM_CONCEDED;
+    restoreInfo.targetStreamFlag = AUDIO_FLAG_FORCED_NORMAL;
+    AudioPolicyService::GetAudioPolicyService().RestoreSession(eventContextObj->sessionId, restoreInfo);
 }
 
 // Run with event-runner mutex hold, lock any mutex that SendSyncEvent-calling holds may cause dead lock.
@@ -1355,6 +1363,9 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::MICROPHONE_BLOCKED:
             HandleMicrophoneBlockedCallback(event);
+            break;
+        case EventAudioServerCmd::DISTRIBUTED_OUTPUT_CHANGE:
+            HandleDistributedOutputChange(event);
             break;
         case EventAudioServerCmd::NN_STATE_CHANGE:
             HandleNnStateChangeEvent(event);

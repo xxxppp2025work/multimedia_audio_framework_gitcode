@@ -123,8 +123,6 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
     AudioDeviceDescriptor updatedDesc(devType, role == DEVICE_ROLE_NONE ?
         AudioPolicyUtils::GetInstance().GetDeviceRole(devType) : role);
     updatedDesc.hasPair_ = hasPair;
-    updatedDesc.spatializationSupported_ = AudioSpatializationService::GetAudioSpatializationService().
-        IsSpatializationSupportedForDevice(updatedDesc.macAddress_);
     UpdateLocalGroupInfo(isConnected, macAddress, deviceName, streamInfo, updatedDesc);
 
     if (isConnected) {
@@ -153,7 +151,6 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
-        audioDeviceCommon_.FetchDevice(true, reason); // fix pop, fetch device before unload module
         result = HandleLocalDeviceDisconnected(updatedDesc);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
     }
@@ -711,7 +708,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSto
     TriggerDeviceChangedCallback(descForCb, statusInfo.isConnected);
     TriggerAvailableDeviceChangedCallback(descForCb, statusInfo.isConnected);
 
-    audioDeviceCommon_.FetchDevice(true);
+    audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
     audioDeviceCommon_.FetchDevice(false);
 
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
@@ -745,6 +742,11 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     const std::string networkId = statusInfo.networkId;
     AudioDeviceDescriptor deviceDesc(devType, AudioPolicyUtils::GetInstance().GetDeviceRole(devType));
+    // need fix to detect dmDeviceType and displayName
+    if (devType == DEVICE_TYPE_SPEAKER && networkId != LOCAL_NETWORK_ID) {
+        deviceDesc.dmDeviceType_ = 0x0B8;
+        statusInfo.deviceName = "HiCar";
+    }
     deviceDesc.SetDeviceInfo(statusInfo.deviceName, statusInfo.macAddress);
     deviceDesc.SetDeviceCapability(statusInfo.streamInfo, 0);
     deviceDesc.networkId_ = networkId;
@@ -752,8 +754,6 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
         statusInfo.isConnected, statusInfo.mappingVolumeId);
     audioVolumeManager_.UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, networkId,
         statusInfo.isConnected, statusInfo.mappingInterruptId);
-    deviceDesc.spatializationSupported_ = AudioSpatializationService::GetAudioSpatializationService().
-        IsSpatializationSupportedForDevice(deviceDesc.macAddress_);
     if (statusInfo.isConnected) {
         if (audioConnectedDevice_.GetConnectedDeviceByType(networkId, devType) != nullptr) {
             return ERROR;
@@ -930,7 +930,7 @@ void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::st
     audioDeviceDescriptors[0]->isEnable_ = true;
     audioDeviceManager_.UpdateDevicesListInfo(audioDeviceDescriptors[0], ENABLE_UPDATE);
     if (devType == DEVICE_TYPE_BLUETOOTH_SCO) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, audioDeviceDescriptors[0], -1);
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, audioDeviceDescriptors[0], 1);
         AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(audioDeviceDescriptors[0]->macAddress_);
     } else {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER, audioDeviceDescriptors[0]);
@@ -947,12 +947,20 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     AUDIO_WARNING_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d], mac[%{public}s]",
         devType, isConnected, GetEncryptStr(macAddress).c_str());
 
+    auto devDesc = make_shared<AudioDeviceDescriptor>(updatedDesc);
+    if (!isActualConnection && audioDeviceManager_.IsConnectedDevices(devDesc)) {
+        audioDeviceManager_.UpdateVirtualDevices(devDesc, isConnected);
+        return;
+    }
+
     UpdateLocalGroupInfo(isConnected, macAddress, deviceName, streamInfo, updatedDesc);
     // fill device change action for callback
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
-    updatedDesc.spatializationSupported_ = AudioSpatializationService::GetAudioSpatializationService().
-        IsSpatializationSupportedForDevice(updatedDesc.macAddress_);
+    updatedDesc.spatializationSupported_ = (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)
+        && AudioSpatializationService::GetAudioSpatializationService().
+        IsSpatializationSupportedForDevice(updatedDesc.macAddress_)
+        && AudioSpatializationService::GetAudioSpatializationService().IsSpatializationSupported();
     UpdateDeviceList(updatedDesc, isConnected, descForCb, reason);
 
     TriggerDeviceChangedCallback(descForCb, isConnected);
@@ -1196,8 +1204,9 @@ void AudioDeviceStatus::HandleOfflineDistributedDevice()
 
     TriggerDeviceChangedCallback(deviceChangeDescriptor, false);
     TriggerAvailableDeviceChangedCallback(deviceChangeDescriptor, false);
-
-    audioDeviceCommon_.FetchDevice(true);
+    AUDIO_INFO_LOG("onDeviceStatusUpdated reson:%{public}d",
+        AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
+    audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
     audioDeviceCommon_.FetchDevice(false);
 }
 

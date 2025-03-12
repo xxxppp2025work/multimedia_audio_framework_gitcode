@@ -28,6 +28,7 @@
 #include "audio_policy_server_handler.h"
 #include "audio_policy_server.h"
 #include "audio_session_service.h"
+#include "audio_interrupt_zone.h"
 #include "client_type_manager.h"
 #include "audio_interrupt_dfx_collector.h"
 #include "audio_zone_info.h"
@@ -127,7 +128,6 @@ private:
     static constexpr float DUCK_FACTOR = 0.2f;
     static constexpr int32_t DEFAULT_APP_PID = -1;
     static constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
-    static constexpr uid_t UID_AUDIO = 1041;
     static constexpr int32_t STREAM_DEFAULT_PRIORITY = 100;
     std::mutex audioServerProxyMutex_;
     void HandleAppStreamType(AudioInterrupt &audioInterrupt);
@@ -180,6 +180,8 @@ private:
     int32_t AbandonAudioFocusInternal(const int32_t clientId, const AudioInterrupt &audioInterrupt);
 
     // modern interrupt interfaces
+    int32_t ActivateAudioInterruptInternal(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
+        const bool isUpdatedAudioStrategy, bool &updateScene);
     void ProcessAudioScene(const AudioInterrupt &audioInterrupt, const uint32_t &incomingStreamId,
         const int32_t &zoneId, bool &shouldReturnSuccess);
     bool IsAudioSourceConcurrency(const SourceType &existSourceType, const SourceType &incomingSourceType,
@@ -279,6 +281,8 @@ private:
     sptr<AudioPolicyServer> policyServer_;
     std::shared_ptr<AudioPolicyServerHandler> handler_;
     std::shared_ptr<AudioSessionService> sessionService_;
+    friend class AudioInterruptZoneManager;
+    AudioInterruptZoneManager zoneManager_;
 
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusCfgMap_ = {};
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> zonesMap_;
@@ -290,7 +294,7 @@ private:
     int32_t clientOnFocus_ = 0;
 
     std::mutex mutex_;
-    mutable int32_t ownerPid_;
+    mutable int32_t ownerPid_ = 0;
     std::unique_ptr<AudioInterruptDfxCollector> dfxCollector_;
 };
 } // namespace AudioStandard

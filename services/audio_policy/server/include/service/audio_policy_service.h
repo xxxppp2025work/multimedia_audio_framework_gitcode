@@ -224,6 +224,8 @@ public:
 
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
 
+    void SetDmDeviceType(const uint16_t dmDeviceType);
+
     bool IsDataShareReady();
 
     void SetDataShareReady(std::atomic<bool> isDataShareReady);
@@ -285,6 +287,8 @@ public:
     int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage);
 
     int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object);
+
+    int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object);
 
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object, const int32_t apiVersion);
@@ -416,7 +420,7 @@ public:
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
 
-    float GetMaxAmplitude(const int32_t deviceId);
+    float GetMaxAmplitude(const int32_t deviceId, const AudioInterrupt audioInterrupt);
 
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
@@ -489,6 +493,7 @@ public:
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object);
+    void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -531,8 +536,6 @@ private:
     void GetSupportedEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray);
     int32_t CheckSupportedAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray, const EffectFlag& flag);
     int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray);
-
-    void RestoreSession(const int32_t &sessionID, bool isOutput);
 
     std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelperInstance();
 
@@ -581,6 +584,7 @@ private:
 
     void SetA2dpOffloadFlag(BluetoothOffloadState state);
     BluetoothOffloadState GetA2dpOffloadFlag();
+    void SetDefaultAdapterEnable(bool isEnable);
 private:
 
     static bool isBtListenerRegistered;
@@ -609,7 +613,8 @@ private:
         DEVICE_TYPE_DP,
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_WIRED_HEADSET,
-        DEVICE_TYPE_SPEAKER
+        DEVICE_TYPE_SPEAKER,
+        DEVICE_TYPE_HDMI
     };
     std::vector<DeviceType> inputPriorityList_ = {
         DEVICE_TYPE_BLUETOOTH_SCO,

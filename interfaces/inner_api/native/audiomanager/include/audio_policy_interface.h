@@ -65,6 +65,12 @@ public:
         RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType) = 0;
 };
 
+class AudioClientInfoMgrCallback {
+public:
+    virtual ~AudioClientInfoMgrCallback() = default;
+    virtual bool OnCheckClientInfo(const std::string &bundleName, uint32_t uid, int32_t &pid) = 0;
+};
+
 class AudioPreferredOutputDeviceChangeCallback {
 public:
     virtual ~AudioPreferredOutputDeviceChangeCallback() = default;
@@ -98,6 +104,19 @@ public:
      * @since 8
      */
     virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) = 0;
+};
+
+class AudioDistribuitedOutputChangeCallback {
+public:
+    virtual ~AudioDistribuitedOutputChangeCallback() = default;
+    /**
+     * Called when Distribuited output device changed
+     *
+     * @param deviceDesc selected device
+     * @param isRemote is cast direction remote
+     * @since 16
+     */
+    virtual void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) = 0;
 };
 
 class AudioQueryClientTypeCallback {

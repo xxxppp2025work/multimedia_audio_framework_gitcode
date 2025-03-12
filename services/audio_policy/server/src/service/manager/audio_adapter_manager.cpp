@@ -399,6 +399,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevelWithDevice(AudioStreamType stre
     if (currentActiveDevice_ != deviceType) {
         handler_->SendSaveVolume(deviceType, streamType, volumeLevel);
     } else {
+        volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
         handler_->SendSaveVolume(currentActiveDevice_, streamType, volumeLevel);
     }
     SetDeviceSafeVolume(streamType, volumeLevel);
@@ -568,6 +569,7 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
         {DEVICE_TYPE_DP, {DP_CLASS}},
         {DEVICE_TYPE_FILE_SINK, {FILE_CLASS}},
         {DEVICE_TYPE_FILE_SOURCE, {FILE_CLASS}},
+        {DEVICE_TYPE_HDMI, {PRIMARY_CLASS}},
     };
 
     std::lock_guard<std::mutex> lock(audioVolumeMutex_);
@@ -889,7 +891,7 @@ int32_t AudioAdapterManager::SetDeviceActive(InternalDeviceType deviceType,
 
 void AudioAdapterManager::MaximizeVoiceAssistantVolume(InternalDeviceType deviceType)
 {
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene()) {
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene() && !VolumeUtils::IsPCVolumeEnable()) {
         volumeDataMaintainer_.SetStreamVolume(STREAM_VOICE_ASSISTANT, MAX_VOLUME_LEVEL);
         SetVolumeDb(STREAM_VOICE_ASSISTANT);
         AUDIO_INFO_LOG("MaximizeVoiceAssistantVolume ok");
@@ -1172,6 +1174,11 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
         args.append(" offload_enable=");
         args.append(audioModuleInfo.offloadEnable);
     }
+
+    if (!audioModuleInfo.defaultAdapterEnable.empty()) {
+        args.append(" default_adapter_enable=");
+        args.append(audioModuleInfo.defaultAdapterEnable);
+    }
     AUDIO_INFO_LOG("[Adapter load-module] [PolicyManager] common args:%{public}s", args.c_str());
 }
 
@@ -1303,6 +1310,7 @@ DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
         case DEVICE_TYPE_SPEAKER:
         case DEVICE_TYPE_FILE_SOURCE:
         case DEVICE_TYPE_DP:
+        case DEVICE_TYPE_HDMI:
             return SPEAKER_VOLUME_TYPE;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_WIRED_HEADPHONES:
@@ -1858,6 +1866,7 @@ std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, Aud
         case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
         case DEVICE_TYPE_DP:
+        case DEVICE_TYPE_HDMI:
             type = "build-in";
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
@@ -2097,12 +2106,14 @@ void AudioAdapterManager::InitVolumeMapIndex()
 
 void AudioAdapterManager::UpdateVolumeMapIndex()
 {
+    bool isAppConfigVolumeInit = false;
     for (auto streamVolInfoPair : streamVolumeInfos_) {
         auto streamVolInfo = streamVolInfoPair.second;
         if (streamVolInfo->streamType == STREAM_APP) {
             appConfigVolume_.defaultVolume = streamVolInfo->defaultLevel;
             appConfigVolume_.maxVolume = streamVolInfo->maxLevel;
             appConfigVolume_.minVolume = streamVolInfo->minLevel;
+            isAppConfigVolumeInit = true;
             AUDIO_DEBUG_LOG("AppConfigVolume default = %{public}d, max = %{public}d, min = %{public}d",
                 appConfigVolume_.defaultVolume, appConfigVolume_.maxVolume, appConfigVolume_.minVolume);
             continue;
@@ -2115,6 +2126,22 @@ void AudioAdapterManager::UpdateVolumeMapIndex()
             maxVolumeIndexMap_[streamVolInfo->streamType],
             volumeDataMaintainer_.GetStreamVolume(streamVolInfo->streamType));
     }
+    if (isAppConfigVolumeInit) {
+        return;
+    }
+    if (minVolumeIndexMap_.find(STREAM_MUSIC) != minVolumeIndexMap_.end() &&
+        maxVolumeIndexMap_.find(STREAM_MUSIC) != maxVolumeIndexMap_.end()) {
+        appConfigVolume_.defaultVolume = maxVolumeIndexMap_[STREAM_MUSIC];
+        appConfigVolume_.maxVolume = maxVolumeIndexMap_[STREAM_MUSIC];
+        appConfigVolume_.minVolume = minVolumeIndexMap_[STREAM_MUSIC];
+    } else {
+        appConfigVolume_.defaultVolume = MAX_VOLUME_LEVEL;
+        appConfigVolume_.maxVolume = MAX_VOLUME_LEVEL;
+        appConfigVolume_.minVolume = MIN_VOLUME_LEVEL;
+    }
+    isAppConfigVolumeInit = true;
+    AUDIO_DEBUG_LOG("next AppConfigVolume default = %{public}d, max = %{public}d, min = %{public}d",
+        appConfigVolume_.defaultVolume, appConfigVolume_.maxVolume, appConfigVolume_.minVolume);
 }
 
 void AudioAdapterManager::GetVolumePoints(AudioVolumeType streamType, DeviceVolumeType deviceType,

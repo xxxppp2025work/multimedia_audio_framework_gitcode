@@ -144,8 +144,10 @@ private:
     void UpdateConnectedDevicesWhenConnectingForInputDevice(const AudioDeviceDescriptor &updatedDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
 
-    void MuteOldSinkForFixPop(const std::string &oldSinkname, int64_t muteTime);
-    void MuteSinkPort(const std::string &oldSinkname, const std::string &newSinkName,
+    void MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime);
+    void MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
+        AudioStreamDeviceChangeReasonExt reason);
+    void MuteSinkPortLogic(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason);
 
     void UpdateRoute(shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
@@ -205,6 +207,9 @@ private:
     void MuteSinkForSwitchBluetoothDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices,
         const AudioStreamDeviceChangeReasonExt reason);
+    void MuteSinkForSwitchDistributedDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices,
+        const AudioStreamDeviceChangeReasonExt reason);
     int32_t ActivateA2dpDeviceWhenDescEnabled(shared_ptr<AudioDeviceDescriptor> &desc,
         vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -223,8 +228,8 @@ private:
         std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     bool IsRingDualToneOnPrimarySpeaker(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         const int32_t sessionId);
-    bool IsBlueToothOnPrimarySpeaker(const std::shared_ptr<AudioDeviceDescriptor> &desc);
     bool IsStopOrReleasePlayback(AudioMode &mode, RendererState rendererState);
+    bool IsDualStreamWhenRingDual(AudioStreamType streamType);
 
     // fetchInput
     void FetchInputDeviceInner(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
@@ -254,7 +259,7 @@ private:
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     bool isFirstScreenOn_ = false;
     bool isRingDualToneOnPrimarySpeaker_ = false;
-    int32_t ringDualToneOnPrimarySpeakerSessionId_ = -1;
+    std::vector<std::pair<AudioStreamType, StreamUsage>> streamsWhenRingDualOnPrimarySpeaker_;
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;

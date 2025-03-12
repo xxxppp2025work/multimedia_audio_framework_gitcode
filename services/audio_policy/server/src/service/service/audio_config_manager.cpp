@@ -123,6 +123,16 @@ bool AudioConfigManager::GetUpdateRouteSupport()
     return isUpdateRouteSupported_;
 }
 
+void AudioConfigManager::OnUpdateDefaultAdapter(bool isEnable)
+{
+    isDefaultAdapterEnable_ = isEnable;
+}
+
+bool AudioConfigManager::GetDefaultAdapterEnable()
+{
+    return isDefaultAdapterEnable_;
+}
+
 void AudioConfigManager::OnUpdateAnahsSupport(std::string anahsShowType)
 {
     AUDIO_INFO_LOG("OnUpdateAnahsSupport show type: %{public}s", anahsShowType.c_str());
@@ -193,6 +203,11 @@ void AudioConfigManager::OnVoipConfigParsed(bool enableFastVoip)
 void AudioConfigManager::SetNormalVoipFlag(const bool &normalVoipFlag)
 {
     normalVoipFlag_ = normalVoipFlag;
+}
+
+bool AudioConfigManager::GetNormalVoipFlag()
+{
+    return normalVoipFlag_;
 }
 
 int32_t AudioConfigManager::GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,

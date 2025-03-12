@@ -397,11 +397,12 @@ public:
      * Get max amplitude for device.
      *
      * @param isOutputDevice specified if the device is output device
-     * @param deviceType specified deviceType to get max amplitude
+     * @param deviceClass specified deviceClass to get max amplitude
+     * @param sourceType specified sourceType when capture
      *
      * @return result of max amplitude.
      */
-    virtual float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) = 0;
+    virtual float GetMaxAmplitude(bool isOutputDevice, std::string deviceClass, SourceType sourceType) = 0;
 
     /**
      * Release old endpoint and re-create one.
@@ -444,7 +445,7 @@ public:
     /**
      * Restore Session
      */
-    virtual void RestoreSession(const int32_t &sessionID, bool isOutput) = 0;
+    virtual void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo) = 0;
 
     /**
      * Set Rotation To Effect.
@@ -498,6 +499,8 @@ public:
     virtual void NotifyAccountsChanged() = 0;
 
     virtual void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) = 0;
+
+    virtual void SetDefaultAdapterEnable(bool isEnable) = 0;
 
     virtual void NotifyAudioPolicyReady() = 0;
 
@@ -624,6 +627,7 @@ private:
     int HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyAccountsChanged(MessageParcel &data, MessageParcel &reply);
     int HandleGetAllSinkInputs(MessageParcel &data, MessageParcel &reply);
+    int HandleSetDefaultAdapterEnable(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyAudioPolicyReady(MessageParcel &data, MessageParcel &reply);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int HandleSetInnerCapLimit(MessageParcel &data, MessageParcel &reply);

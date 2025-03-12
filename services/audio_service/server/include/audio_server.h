@@ -146,7 +146,7 @@ public:
 
     uint32_t GetEffectLatency(const std::string &sessionId) override;
 
-    float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
+    float GetMaxAmplitude(bool isOutputDevice, std::string deviceClass, SourceType sourceType) override;
 
     void ResetAudioEndpoint() override;
 
@@ -165,7 +165,7 @@ public:
 
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
 
-    void RestoreSession(const int32_t &sessionID, bool isOutput) override;
+    void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo) override;
 
     void SetRotationToEffect(const uint32_t rotate) override;
 
@@ -192,6 +192,8 @@ public:
     void NotifyAccountsChanged() override;
 
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
+
+    void SetDefaultAdapterEnable(bool isEnable) override;
 
     void NotifyAudioPolicyReady() override;
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -236,7 +238,6 @@ private:
     bool CheckConfigFormat(const AudioProcessConfig &config);
     int32_t GetHapBuildApiVersion(int32_t callerUid);
 
-    void NotifyProcessStatus(bool isStart);
     void AudioServerDied(pid_t pid, pid_t uid);
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
@@ -269,6 +270,7 @@ private:
     sptr<IRemoteObject> CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid);
     int32_t SetAsrVoiceSuppressionControlMode(const AudioParamKey paramKey, AsrVoiceControlMode asrVoiceControlMode,
         bool on, int32_t modifyVolume);
+    int32_t CheckAndWaitAudioPolicyReady();
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;
@@ -304,6 +306,8 @@ private:
     std::atomic<bool> isAudioPolicyReady_ = false;
     std::mutex isAudioPolicyReadyMutex_;
     std::condition_variable isAudioPolicyReadyCv_;
+
+    int32_t waitCreateStreamInServerCount_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

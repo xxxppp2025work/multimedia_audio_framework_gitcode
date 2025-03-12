@@ -103,7 +103,7 @@ public:
 
     void WriteDumpFile(void *buffer, size_t bufferSize) override final;
 
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) override;
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
 
     int32_t SetSilentModeAndMixWithOthers(bool on) override;
 
@@ -116,6 +116,7 @@ public:
 
     void SetStandbyState(RendererStage state) override;
 
+    RestoreStatus RestoreSession(RestoreInfo restoreInfo);
 public:
     const AudioProcessConfig processConfig_;
 

@@ -73,7 +73,7 @@ int32_t AudioDeviceLock::SetAudioScene(AudioScene audioScene)
     int32_t result = audioSceneManager_.SetAudioSceneAfter(audioScene, audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "failed [%{public}d]", result);
     audioDeviceCommon_.OnAudioSceneChange(audioScene);
-    
+
     if (audioScene == AUDIO_SCENE_PHONE_CALL) {
         // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.
         audioVolumeManager_.SetVoiceCallVolume(audioVolumeManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL));
@@ -165,6 +165,12 @@ std::shared_ptr<AudioDeviceDescriptor> AudioDeviceLock::GetActiveBluetoothDevice
     }
     shared_ptr<AudioDeviceDescriptor> res = std::move(activeDeviceDescriptors[index]);
     return res;
+}
+
+void AudioDeviceLock::UpdateAppVolume(int32_t appUid, int32_t volume)
+{
+    AUDIO_INFO_LOG("appUid = %{public}d, volume = %{public}d", appUid, volume);
+    streamCollector_.UpdateAppVolume(appUid, volume);
 }
 
 void AudioDeviceLock::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
@@ -624,6 +630,18 @@ void AudioDeviceLock::SetDisplayName(const std::string &deviceName, bool isLocal
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
     audioConnectedDevice_.SetDisplayName(deviceName, isLocalDevice);
+}
+
+void AudioDeviceLock::UpdateSpatializationSupported(const std::string macAddress, const bool support)
+{
+    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
+    audioConnectedDevice_.UpdateSpatializationSupported(macAddress, support);
+}
+
+void AudioDeviceLock::SetDmDeviceType(const uint16_t dmDeviceType)
+{
+    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
+    audioConnectedDevice_.SetDmDeviceType(dmDeviceType);
 }
 
 int32_t AudioDeviceLock::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)

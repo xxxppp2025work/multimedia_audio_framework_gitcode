@@ -44,6 +44,7 @@
 #include "volume_tools.h"
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
+#include "audio_service.h"
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
 #include "res_sched_client.h"
@@ -603,7 +604,12 @@ std::shared_ptr<IAudioRenderSink> AudioEndpointInner::GetFastSink(const AudioDev
 
 void AudioEndpointInner::InitSinkAttr(IAudioSinkAttr &attr, const AudioDeviceDescriptor &deviceInfo)
 {
-    attr.adapterName = deviceInfo.networkId_ == LOCAL_NETWORK_ID ? "primary" : "remote";
+    bool isDefaultAdapterEnable = AudioService::GetInstance()->GetDefaultAdapterEnable();
+    if (isDefaultAdapterEnable) {
+        attr.adapterName = "dp";
+    } else {
+        attr.adapterName = deviceInfo.networkId_ == LOCAL_NETWORK_ID ? "primary" : "remote";
+    }
     attr.sampleRate = dstStreamInfo_.samplingRate; // 48000hz
     attr.channel = dstStreamInfo_.channels; // STEREO = 2
     attr.format = ConvertToHdiAdapterFormat(dstStreamInfo_.format); // SAMPLE_S16LE = 1
@@ -1034,7 +1040,6 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
         workThreadCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_IN_DEFAULT), [this] {
             return endpointStatus_ != STARTING;
         });
-        AUDIO_DEBUG_LOG("LinkProcessStream wait start end.");
     }
 
     if (endpointStatus_ == RUNNING) {
@@ -1045,6 +1050,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
     if (endpointStatus_ == UNLINKED) {
         endpointStatus_ = IDEL; // handle push_back in IDEL
         if (isDeviceRunningInIdel_) {
+            delayStopTime_ = INT64_MAX;
             CHECK_AND_RETURN_RET_LOG(StartDevice(), ERR_OPERATION_FAILED, "StartDevice failed");
             delayStopTime_ = ClockTime::GetCurNano() + ((clientConfig_.audioMode == AUDIO_MODE_PLAYBACK)
                 ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : LINK_RECORDER_DELAY_STOP_HDI_TIME_NS);
@@ -1389,16 +1395,17 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
         DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
         bool muteFlag = processList_[i]->GetMuteState();
+        bool getVolumeRet = PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
         if (deviceInfo_.networkId_ == LOCAL_NETWORK_ID &&
             !(deviceInfo_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && volumeType == STREAM_MUSIC &&
-                PolicyHandler::GetInstance().IsAbsVolumeSupported()) &&
-            PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol)) {
+                PolicyHandler::GetInstance().IsAbsVolumeSupported()) && getVolumeRet) {
             streamData.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(curReadSpan->volumeStart * vol.volumeFloat *
                 AudioVolume::GetInstance()->GetAppVolume(clientConfig_.appInfo.appUid,
                 clientConfig_.rendererInfo.volumeMode));
         } else {
-            PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
-            streamData.volumeStart = vol.isMute ? 0 : curReadSpan->volumeStart;
+            streamData.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(curReadSpan->volumeStart *
+                AudioVolume::GetInstance()->GetAppVolume(clientConfig_.appInfo.appUid,
+                clientConfig_.rendererInfo.volumeMode));
         }
         Trace traceVol("VolumeProcess " + std::to_string(streamData.volumeStart) +
             " sessionid:" + std::to_string(processList_[i]->GetAudioSessionId()));
@@ -1546,7 +1553,9 @@ int64_t AudioEndpointInner::GetPredictNextReadTime(uint64_t posInFrame)
     int64_t readtime = 0;
     if (readTimeModel_.GetFrameStamp(readFrame, readtime)) {
         if (readFrame != posInFrame_) {
-            readTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_);
+            if (!readTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_)) {
+                updateThreadCV_.notify_all();
+            }
         }
     }
 
@@ -1566,7 +1575,9 @@ int64_t AudioEndpointInner::GetPredictNextWriteTime(uint64_t posInFrame)
     int64_t writetime = 0;
     if (writeTimeModel_.GetFrameStamp(writeFrame, writetime)) {
         if (writeFrame != posInFrame_) {
-            writeTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_);
+            if (!writeTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_)) {
+                updateThreadCV_.notify_all();
+            }
         }
     }
     int64_t nextHdiWriteTime = writeTimeModel_.GetTimeOfPos(posInFrame);

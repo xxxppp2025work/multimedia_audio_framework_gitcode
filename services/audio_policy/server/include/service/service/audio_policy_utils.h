@@ -33,6 +33,7 @@
 #include "audio_stream_collector.h"
 
 #include "audio_a2dp_offload_flag.h"
+#include "audio_config_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -78,11 +79,16 @@ public:
     PreferredType GetPreferredTypeByStreamUsage(StreamUsage streamUsage);
 
     int32_t UnexcludeOutputDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+    std::string GetOutputDeviceClassBySinkPortName(std::string sinkPortName);
+    std::string GetInputDeviceClassBySourcePortName(std::string sourcePortName);
+    void SetScoExcluded(bool scoExcluded);
+    bool GetScoExcluded();
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
-        audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()) {}
+        audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
+        audioConfigManager_(AudioConfigManager::GetInstance()) {}
     ~AudioPolicyUtils() {}
     int32_t ErasePreferredDeviceByType(const PreferredType preferredType);
 public:
@@ -90,11 +96,13 @@ public:
     static std::map<std::string, ClassType> portStrToEnum;
 private:
     bool isBTReconnecting_ = false;
+    bool isScoExcluded_ = false;
     DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
     AudioStreamCollector& streamCollector_;
     AudioStateManager &audioStateManager_;
     AudioDeviceManager &audioDeviceManager_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
+    AudioConfigManager& audioConfigManager_;
 };
 
 }

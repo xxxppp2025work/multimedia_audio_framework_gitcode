@@ -57,13 +57,13 @@ int32_t AudioServerProxy::SetAudioSceneProxy(AudioScene audioScene, std::vector<
     return result;
 }
 
-float AudioServerProxy::GetMaxAmplitudeProxy(bool flag, DeviceType type)
+float AudioServerProxy::GetMaxAmplitudeProxy(bool flag, std::string portName, SourceType sourceType)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, 0, "Service proxy unavailable");
 
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    float maxAmplitude = gsp->GetMaxAmplitude(flag, type);
+    float maxAmplitude = gsp->GetMaxAmplitude(flag, portName, sourceType);
     IPCSkeleton::SetCallingIdentity(identity);
     return maxAmplitude;
 }
@@ -165,6 +165,15 @@ void AudioServerProxy::GetAllSinkInputsProxy(std::vector<SinkInput> &sinkInputs)
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
+void AudioServerProxy::SetDefaultAdapterEnableProxy(bool isEnable)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->SetDefaultAdapterEnable(isEnable);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
 bool AudioServerProxy::NotifyStreamVolumeChangedProxy(AudioStreamType streamType, float volume)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
@@ -220,12 +229,12 @@ void AudioServerProxy::CheckHibernateStateProxy(bool hibernate)
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
-void AudioServerProxy::RestoreSessionProxy(const int32_t &sessionID, bool isOutput)
+void AudioServerProxy::RestoreSessionProxy(const uint32_t &sessionID, RestoreInfo restoreInfo)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->RestoreSession(sessionID, isOutput);
+    gsp->RestoreSession(sessionID, restoreInfo);
     IPCSkeleton::SetCallingIdentity(identity);
 }
 

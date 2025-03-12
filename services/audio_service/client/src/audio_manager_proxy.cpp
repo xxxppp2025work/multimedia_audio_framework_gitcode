@@ -649,8 +649,9 @@ sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConf
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOPROCESS), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, nullptr, "CreateAudioProcess failed, error: %{public}d", error);
-    sptr<IRemoteObject> process = reply.ReadRemoteObject();
     errorCode = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, nullptr, "errcode: %{public}d", errorCode);
+    sptr<IRemoteObject> process = reply.ReadRemoteObject();
     return process;
 }
 
@@ -967,7 +968,7 @@ uint32_t AudioManagerProxy::GetEffectLatency(const std::string &sessionId)
     return reply.ReadUint32();
 }
 
-float AudioManagerProxy::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType)
+float AudioManagerProxy::GetMaxAmplitude(bool isOutputDevice, std::string deviceClass, SourceType sourceType)
 {
     int32_t error;
     MessageParcel data;
@@ -977,7 +978,8 @@ float AudioManagerProxy::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteBool(isOutputDevice);
-    data.WriteInt32(deviceType);
+    data.WriteString(deviceClass);
+    data.WriteInt32(static_cast<int32_t>(sourceType));
 
     error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::GET_MAX_AMPLITUDE), data, reply, option);
@@ -1323,7 +1325,7 @@ int32_t AudioManagerProxy::UnsetOffloadMode(uint32_t sessionId)
     return reply.ReadInt32();
 }
 
-void AudioManagerProxy::RestoreSession(const int32_t &sessionID, bool isOutput)
+void AudioManagerProxy::RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1331,8 +1333,10 @@ void AudioManagerProxy::RestoreSession(const int32_t &sessionID, bool isOutput)
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
-    data.WriteInt32(sessionID);
-    data.WriteInt32(isOutput);
+    data.WriteUint32(sessionID);
+    data.WriteInt32(restoreInfo.restoreReason);
+    data.WriteInt32(restoreInfo.deviceChangeReason);
+    data.WriteInt32(restoreInfo.targetStreamFlag);
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::RESTORE_SESSION), data, reply, option);
@@ -1451,6 +1455,9 @@ void AudioManagerProxy::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
     MessageParcel reply;
     MessageOption option;
 
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::GET_ALL_SINK_INPUTS), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "getallsinkinputs failed, error: %{public}d", error);
@@ -1462,6 +1469,22 @@ void AudioManagerProxy::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
         sinkInputs.push_back(sinkInput);
         size--;
     }
+}
+
+void AudioManagerProxy::SetDefaultAdapterEnable(bool isEnable)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "AudioManagerProxy: WriteInterfaceToken failed");
+    data.WriteBool(isEnable);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_DEFAULT_ADAPTER_ENABLE), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "SetDefaultAdapterEnable failed, error: %{public}d", error);
+    return;
 }
 
 void AudioManagerProxy::NotifyAudioPolicyReady()

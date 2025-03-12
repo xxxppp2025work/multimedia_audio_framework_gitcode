@@ -29,7 +29,6 @@
 #include "audio_manager_proxy.h"
 #include "audio_server_death_recipient.h"
 #include "audio_policy_manager.h"
-#include "audio_service_load.h"
 #include "audio_utils.h"
 #include "audio_manager_listener_stub.h"
 #include "audio_policy_interface.h"
@@ -167,12 +166,7 @@ inline const sptr<IStandardAudioService> GetAudioSystemManagerProxy()
 
         AudioXCollie xcollieGetSystemAbility("GetSystemAbility", XCOLLIE_TIME_OUT_SECONDS);
         sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-        if (object == nullptr) {
-            AUDIO_ERR_LOG("get audio server SA failed, try loading");
-            AudioServiceLoad::GetInstance()->LoadAudioService();
-            object = samgr->CheckSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-            CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "Loading SA failed.");
-        }
+        CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "get audio service remote object failed");
         g_asProxy = iface_cast<IStandardAudioService>(object);
         CHECK_AND_RETURN_RET_LOG(g_asProxy != nullptr, nullptr, "get audio service proxy failed");
         xcollieGetSystemAbility.CancelXCollieTimer();
@@ -249,7 +243,19 @@ int32_t AudioSystemManager::SetAudioScene(const AudioScene &scene)
 
 AudioScene AudioSystemManager::GetAudioScene() const
 {
-    return AudioPolicyManager::GetInstance().GetAudioScene();
+    auto audioScene = AudioPolicyManager::GetInstance().GetAudioScene();
+    AUDIO_DEBUG_LOG("origin audioScene: %{public}d", audioScene);
+    switch (audioScene) {
+        case AUDIO_SCENE_CALL_START:
+        case AUDIO_SCENE_CALL_END:
+            return AUDIO_SCENE_DEFAULT;
+
+        case AUDIO_SCENE_VOICE_RINGING:
+            return AUDIO_SCENE_RINGING;
+    
+        default:
+            return audioScene;
+    }
 }
 
 int32_t AudioSystemManager::SetDeviceActive(DeviceType deviceType, bool flag) const
@@ -430,7 +436,9 @@ int32_t AudioSystemManager::SetSelfAppVolume(int32_t volume, int32_t flag)
 int32_t AudioSystemManager::SetAppVolume(int32_t appUid, int32_t volume, int32_t flag)
 {
     AUDIO_INFO_LOG("enter AudioSystemManager::SetAppVolume");
-    bool ret = PermissionUtil::VerifySelfPermission();
+    bool ret = PermissionUtil::VerifyIsSystemApp();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "SetAppVolume: No system permission");
+    ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppVolume: No system permission");
     return AudioPolicyManager::GetInstance().SetAppVolumeLevel(appUid, volume);
 }
@@ -438,7 +446,9 @@ int32_t AudioSystemManager::SetAppVolume(int32_t appUid, int32_t volume, int32_t
 int32_t AudioSystemManager::GetAppVolume(int32_t appUid) const
 {
     AUDIO_INFO_LOG("enter AudioSystemManager::GetAppVolume");
-    bool ret = PermissionUtil::VerifySelfPermission();
+    bool ret = PermissionUtil::VerifyIsSystemApp();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "GetAppVolume: No system permission");
+    ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "GetAppVolume: No system permission");
     return AudioPolicyManager::GetInstance().GetAppVolumeLevel(appUid);
 }
@@ -453,7 +463,9 @@ int32_t AudioSystemManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_
 {
     AUDIO_INFO_LOG("SetAppVolumeMuted: appUid[%{public}d], muted[%{public}d], flag[%{public}d]",
         appUid, muted, volumeFlag);
-    bool ret = PermissionUtil::VerifySelfPermission();
+    bool ret = PermissionUtil::VerifyIsSystemApp();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "SetAppVolumeMuted: No system permission");
+    ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppVolumeMuted: No system permission");
     return AudioPolicyManager::GetInstance().SetAppVolumeMuted(appUid, muted, volumeFlag);
 }
@@ -489,7 +501,9 @@ int32_t AudioSystemManager::UnsetAppVolumeCallbackForUid(
 bool AudioSystemManager::IsAppVolumeMute(int32_t appUid, bool owned)
 {
     AUDIO_INFO_LOG("IsAppVolumeMute: appUid[%{public}d], muted[%{public}d]", appUid, owned);
-    bool ret = PermissionUtil::VerifySelfPermission();
+    bool ret = PermissionUtil::VerifyIsSystemApp();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "IsAppVolumeMute: No system permission");
+    ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "IsAppVolumeMute: No system permission");
     return AudioPolicyManager::GetInstance().IsAppVolumeMute(appUid, owned);
 }
@@ -755,6 +769,13 @@ int32_t AudioSystemManager::SetQueryClientTypeCallback(const std::shared_ptr<Aud
     return AudioPolicyManager::GetInstance().SetQueryClientTypeCallback(callback);
 }
 
+int32_t AudioSystemManager::SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback)
+{
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetAudioClientInfoMgrCallback(callback);
+}
+
 int32_t AudioSystemManager::SetRingerModeCallback(const int32_t clientId,
                                                   const std::shared_ptr<AudioRingerModeCallback> &callback)
 {
@@ -925,6 +946,9 @@ int32_t AudioSystemManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsag
     CHECK_AND_RETURN_RET_LOG(audioDevUsage == MEDIA_OUTPUT_DEVICES || audioDevUsage == CALL_OUTPUT_DEVICES,
         ERR_INVALID_PARAM, "invalid parameter: only support output device");
     auto unexcludeOutputDevices = GetExcludedDevices(audioDevUsage);
+    if (unexcludeOutputDevices.empty()) {
+        return SUCCESS;
+    }
     for (const auto &devDesc : unexcludeOutputDevices) {
         CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, ERR_INVALID_PARAM, "invalid parameter: mull pointer in list");
         CHECK_AND_RETURN_RET_LOG(!(devDesc->deviceType_ == DEVICE_TYPE_SPEAKER &&
@@ -1417,6 +1441,9 @@ AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRo
             } else {
                 pin = AUDIO_PIN_OUT_USB_HEADSET;
             }
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_HDMI:
+            pin = AUDIO_PIN_OUT_HDMI;
             break;
         default:
             OtherDeviceTypeCases(deviceType);

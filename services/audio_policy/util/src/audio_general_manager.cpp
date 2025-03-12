@@ -63,6 +63,14 @@ int32_t AudioGeneralManager::SetAudioDeviceRefinerCallback(const std::shared_ptr
     return AudioPolicyManager::GetInstance().SetAudioDeviceRefinerCallback(callback);
 }
 
+int32_t AudioGeneralManager::SetAudioClientInfoMgrCallback(
+    const std::shared_ptr<AudioClientInfoMgrCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    return AudioPolicyManager::GetInstance().SetAudioClientInfoMgrCallback(callback);
+}
+
 int32_t AudioGeneralManager::GetPreferredOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
@@ -138,6 +146,14 @@ int32_t AudioGeneralManager::SetDeviceChangeCallback(const DeviceFlag flag,
 
     int32_t clientId = GetCallingPid();
     return AudioPolicyManager::GetInstance().SetDeviceChangeCallback(clientId, flag, callback);
+}
+
+int32_t AudioGeneralManager::SetDistribuitedOutputChangeCallback(
+    const std::shared_ptr<AudioDistribuitedOutputChangeCallback> &cb)
+{
+    AUDIO_INFO_LOG("Entry.");
+    CHECK_AND_RETURN_RET_LOG(cb, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetDistribuitedOutputChangeCallback(cb);
 }
 
 int32_t AudioGeneralManager::SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback>& callback)

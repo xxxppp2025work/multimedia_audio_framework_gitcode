@@ -1030,6 +1030,8 @@ AudioPortPin AudioRendererSinkInner::GetAudioPortPin() const noexcept
             return PIN_OUT_BLUETOOTH_SCO;
         case DEVICE_TYPE_USB_HEADSET:
             return PIN_OUT_USB_EXT;
+        case DEVICE_TYPE_HDMI:
+            return PIN_OUT_HDMI;
         case DEVICE_TYPE_NONE:
             return PIN_NONE;
         default:
@@ -1069,6 +1071,10 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
         case DEVICE_TYPE_BLUETOOTH_A2DP:
             sink.ext.device.type = PIN_OUT_BLUETOOTH_A2DP;
             sink.ext.device.desc = (char *)"pin_out_bluetooth_a2dp";
+            break;
+        case DEVICE_TYPE_HDMI:
+            sink.ext.device.type = PIN_OUT_HDMI;
+            sink.ext.device.desc = (char *)"pin_out_hdmi";
             break;
         case DEVICE_TYPE_NONE:
             sink.ext.device.type = PIN_NONE;
@@ -1770,8 +1776,6 @@ int32_t AudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
 {
     std::lock_guard<std::mutex> lock(switchDeviceMutex_);
     AUDIO_INFO_LOG("set %{public}s mute %{public}d", halName_.c_str(), mute);
-    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
-        "SetSinkMuteForSwitchDevice failed, audioRender_  is null");
 
     if (mute) {
         muteCount_++;
@@ -1780,7 +1784,7 @@ int32_t AudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
             return SUCCESS;
         }
         switchDeviceMute_ = true;
-        if (halName_ == VOIP_HAL_NAME) {
+        if (halName_ == VOIP_HAL_NAME && audioRender_ != nullptr) {
             audioRender_->SetVolume(audioRender_, 0.0f);
         }
     } else {

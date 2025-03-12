@@ -106,6 +106,7 @@ const char *g_audioServerCodeStrs[] = {
     "SET_SINGLE_STREAM_MUTE",
     "RESTORE_SESSION",
     "GET_ALL_SINK_INPUTS",
+    "SET_DEFAULT_ADAPTER_ENABLE",
     "CREATE_IPC_OFFLINE_STREAM",
     "GET_OFFLINE_AUDIO_EFFECT_CHAINS",
     "GET_STANDBY_STATUS",
@@ -461,10 +462,18 @@ int AudioManagerStub::HandleCreateAudioProcess(MessageParcel &data, MessageParce
     AudioPlaybackCaptureConfig filterConfig;
     ProcessConfig::ReadInnerCapConfigFromParcel(filterConfig, data);
     sptr<IRemoteObject> process = CreateAudioProcess(config, errorCode, filterConfig);
-    CHECK_AND_RETURN_RET_LOG(process != nullptr, AUDIO_ERR,
-        "CREATE_AUDIOPROCESS AudioManagerStub CreateAudioProcess failed");
-    reply.WriteRemoteObject(process);
+    if (process == nullptr) {
+        AUDIO_ERR_LOG("CREATE_AUDIOPROCESS AudioManagerStub CreateAudioProcess failed");
+        if (errorCode == 0) {
+            errorCode = AUDIO_ERR;
+        }
+        reply.WriteInt32(errorCode);
+        // Only ipc failed need return err. Here using errorCode send information.
+        return AUDIO_OK;
+    }
+
     reply.WriteInt32(errorCode);
+    reply.WriteRemoteObject(process);
     return AUDIO_OK;
 }
 
@@ -698,8 +707,9 @@ int AudioManagerStub::HandleGetEffectLatency(MessageParcel &data, MessageParcel 
 int AudioManagerStub::HandleGetMaxAmplitude(MessageParcel &data, MessageParcel &reply)
 {
     bool isOutputDevice = data.ReadBool();
-    int32_t deviceType = data.ReadInt32();
-    float result = GetMaxAmplitude(isOutputDevice, deviceType);
+    std::string deviceClass = data.ReadString();
+    SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
+    float result = GetMaxAmplitude(isOutputDevice, deviceClass, sourceType);
     reply.WriteFloat(result);
     return AUDIO_OK;
 }
@@ -742,9 +752,12 @@ int AudioManagerStub::HandleSetRotationToEffect(MessageParcel &data, MessageParc
 
 int AudioManagerStub::HandleRestoreSession(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t sessionID = data.ReadInt32();
-    int32_t isOutput = data.ReadBool();
-    RestoreSession(sessionID, isOutput);
+    RestoreInfo restoreInfo;
+    uint32_t sessionID = data.ReadUint32();
+    restoreInfo.restoreReason = static_cast<RestoreReason>(data.ReadInt32());
+    restoreInfo.deviceChangeReason = data.ReadInt32();
+    restoreInfo.targetStreamFlag = data.ReadInt32();
+    RestoreSession(sessionID, restoreInfo);
     return AUDIO_OK;
 }
 
@@ -971,6 +984,8 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
                 return HandleNotifyDeviceInfo(data, reply);
             case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ALL_SINK_INPUTS):
                 return HandleGetAllSinkInputs(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::SET_DEFAULT_ADAPTER_ENABLE):
+                return HandleSetDefaultAdapterEnable(data, reply);
             default:
                 return HandleSecondPartCode(code, data, reply, option);
         }
@@ -1149,6 +1164,13 @@ int AudioManagerStub::HandleGetAllSinkInputs(MessageParcel &data, MessageParcel 
     for (auto &sinkInput : sinkInputs) {
         sinkInput.Marshalling(reply);
     }
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetDefaultAdapterEnable(MessageParcel &data, MessageParcel &reply)
+{
+    bool isEnable = data.ReadBool();
+    SetDefaultAdapterEnable(isEnable);
     return AUDIO_OK;
 }
 

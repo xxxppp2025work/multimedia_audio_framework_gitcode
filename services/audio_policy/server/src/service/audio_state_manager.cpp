@@ -105,13 +105,19 @@ void AudioStateManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         lock_guard<shared_mutex> lock(mediaExcludedDevicesMutex_);
         for (const auto &desc : audioDeviceDescriptors) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
-            mediaExcludedDevices_.erase(desc);
+            auto it = mediaExcludedDevices_.find(desc);
+            if (it != mediaExcludedDevices_.end()) {
+                mediaExcludedDevices_.erase(it);
+            }
         }
     } else if (audioDevUsage == CALL_OUTPUT_DEVICES) {
         lock_guard<shared_mutex> lock(callExcludedDevicesMutex_);
         for (const auto &desc : audioDeviceDescriptors) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
-            callExcludedDevices_.erase(desc);
+            auto it = callExcludedDevices_.find(desc);
+            if (it != callExcludedDevices_.end()) {
+                callExcludedDevices_.erase(it);
+            }
         }
     }
 }
@@ -128,7 +134,7 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevic
     std::lock_guard<std::mutex> lock(mutex_);
     if (ownerPid_ == 0) {
         if (!forcedDeviceMapList_.empty()) {
-            AUDIO_INFO_LOG("deviceType: %{public}d ownerPid_:0",
+            AUDIO_INFO_LOG("deviceType: %{public}d",
                 forcedDeviceMapList_.rbegin()->begin()->second->deviceType_);
             return make_shared<AudioDeviceDescriptor>(std::move(forcedDeviceMapList_.rbegin()->begin()->second));
         }
@@ -137,6 +143,13 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevic
             if (ownerPid_ == it->begin()->first) {
                 AUDIO_INFO_LOG("deviceType: %{public}d, ownerPid_: %{public}d", it->begin()->second->deviceType_,
                     ownerPid_);
+                return make_shared<AudioDeviceDescriptor>(std::move(it->begin()->second));
+            }
+        }
+        for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
+            if (1 == it->begin()->first) {
+                AUDIO_INFO_LOG("bluetooth already force selected, deviceType: %{public}d",
+                    it->begin()->second->deviceType_);
                 return make_shared<AudioDeviceDescriptor>(std::move(it->begin()->second));
             }
         }
@@ -216,7 +229,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedDevices(
 }
 
 bool AudioStateManager::IsExcludedDevice(AudioDeviceUsage audioDevUsage,
-    shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
+    const shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
 {
     CHECK_AND_RETURN_RET(audioDevUsage == MEDIA_OUTPUT_DEVICES || audioDevUsage == CALL_OUTPUT_DEVICES, false);
 
@@ -247,10 +260,12 @@ void AudioStateManager::RemoveForcedDeviceMapData(int32_t pid)
     if (forcedDeviceMapList_.empty()) {
         return;
     }
-    
-    for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
+    auto it = forcedDeviceMapList_.begin();
+    while (it != forcedDeviceMapList_.end()) {
         if (pid == it->begin()->first) {
             it = forcedDeviceMapList_.erase(it);
+        } else {
+            it++;
         }
     }
 }

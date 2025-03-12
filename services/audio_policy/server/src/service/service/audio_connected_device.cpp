@@ -222,6 +222,15 @@ void AudioConnectedDevice::SetDisplayName(const std::string &deviceName, bool is
     }
 }
 
+void AudioConnectedDevice::SetDmDeviceType(const uint16_t dmDeviceType)
+{
+    for (const auto& deviceInfo : connectedDevices_) {
+        if (deviceInfo->networkId_ != LOCAL_NETWORK_ID) {
+            deviceInfo->dmDeviceType_ = dmDeviceType;
+        }
+    }
+}
+
 void AudioConnectedDevice::SetDisplayName(const std::string macAddress, const std::string deviceName)
 {
     for (auto device : connectedDevices_) {
@@ -299,7 +308,8 @@ DeviceType AudioConnectedDevice::FindConnectedHeadset()
             (devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADPHONES) ||
             (devDesc->deviceType_ == DEVICE_TYPE_USB_HEADSET) ||
             (devDesc->deviceType_ == DEVICE_TYPE_DP) ||
-            (devDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET));
+            (devDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) ||
+            (devDesc->deviceType_ == DEVICE_TYPE_HDMI));
     });
 
     DeviceType retType = DEVICE_TYPE_NONE;
@@ -384,7 +394,8 @@ void AudioConnectedDevice::UpdateSpatializationSupported(const std::string macAd
 {
     for (auto device : connectedDevices_) {
         std::string encryAddress = GetSha256EncryptAddress(device->macAddress_);
-        if (encryAddress == macAddress && device->spatializationSupported_ != support) {
+        if (encryAddress == macAddress && device->deviceType_ ==  DEVICE_TYPE_BLUETOOTH_A2DP &&
+            device->spatializationSupported_ != support) {
             device->spatializationSupported_ = support;
             AUDIO_INFO_LOG("spatializationSupported is set to %{public}d", support);
         }

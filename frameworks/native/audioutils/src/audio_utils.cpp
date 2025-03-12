@@ -1027,7 +1027,7 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
             curMaxAmplitude = value;
         }
     }
-    return float(curMaxAmplitude) / static_cast<double>(LONG_MAX);
+    return float(curMaxAmplitude) / static_cast<float>(INT_MAX);
 }
 
 template <typename T>
@@ -1541,6 +1541,9 @@ const std::string AudioInfoDumpUtils::GetDeviceTypeName(DeviceType deviceType)
             break;
         case DEVICE_TYPE_MIC:
             device = "MIC";
+            break;
+        case DEVICE_TYPE_HDMI:
+            device = "HDMI";
             break;
         case DEVICE_TYPE_WAKEUP:
             device = "WAKEUP";

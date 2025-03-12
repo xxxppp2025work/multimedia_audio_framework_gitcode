@@ -45,7 +45,7 @@ public:
     const sptr<IStandardAudioService> GetAudioServerProxy();
     int32_t SetAudioSceneProxy(AudioScene audioScene, std::vector<DeviceType> activeOutputDevices,
         DeviceType deviceType, BluetoothOffloadState state);
-    float GetMaxAmplitudeProxy(bool flag, DeviceType type);
+    float GetMaxAmplitudeProxy(bool flag, std::string portName, SourceType sourceType = SOURCE_TYPE_INVALID);
     void UpdateEffectBtOffloadSupportedProxy(const bool &isSupported);
     void SetOutputDeviceSinkProxy(DeviceType deviceType, std::string sinkName);
     bool GetEffectOffloadEnabledProxy();
@@ -62,7 +62,7 @@ public:
     void UnsetOffloadModeProxy(uint32_t sessionId);
     void SetOffloadModeProxy(uint32_t sessionId, int32_t state, bool isAppBack);
     void CheckHibernateStateProxy(bool hibernate);
-    void RestoreSessionProxy(const int32_t &sessionID, bool isOutput);
+    void RestoreSessionProxy(const uint32_t &sessionID, RestoreInfo RestoreInfo);
     int32_t GetAudioEnhancePropertyProxy(AudioEnhancePropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE);
     int32_t SetAudioEnhancePropertyProxy(const AudioEnhancePropertyArray &propertyArray,
@@ -97,6 +97,7 @@ public:
     void NotifyAccountsChanged();
     void GetAllSinkInputsProxy(std::vector<SinkInput> &sinkInputs);
     void NotifyAudioPolicyReady();
+    void SetDefaultAdapterEnableProxy(bool isEnable);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t SetInnerCapLimitProxy(uint32_t innerCapLimit);
 #endif

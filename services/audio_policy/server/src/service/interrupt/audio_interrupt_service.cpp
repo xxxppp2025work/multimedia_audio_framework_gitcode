@@ -29,7 +29,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const int32_t DEFAULT_ZONE_ID = 0;
 constexpr uint32_t MEDIA_SA_UID = 1013;
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 static const int32_t INTERRUPT_SERVICE_TIMEOUT = 10; // 10s
@@ -104,6 +103,7 @@ inline int GetAudioScenePriority(const AudioScene audioScene)
 
 AudioInterruptService::AudioInterruptService()
 {
+    zoneManager_.InitService(this);
 }
 
 AudioInterruptService::~AudioInterruptService()
@@ -130,6 +130,8 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
     focussedAudioInterruptInfo_ = nullptr;
 
     CreateAudioInterruptZoneInternal(ZONEID_DEFAULT, AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY);
+    zoneManager_.CreateAudioInterruptZone(ZONEID_DEFAULT,
+        AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY, false);
 
     sessionService_ = std::make_shared<AudioSessionService>();
     sessionService_->SetSessionTimeOutCallback(shared_from_this());
@@ -666,7 +668,24 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
             AUDIO_ERR_LOG("ActivateAudioInterrupt timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(mutex_);
+    bool updateScene = false;
+    int ret = ActivateAudioInterruptInternal(zoneId, audioInterrupt, isUpdatedAudioStrategy, updateScene);
+    if (ret != SUCCESS || !updateScene) {
+        return ret;
+    }
 
+    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+    // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
+    // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
+    lock.unlock();
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
+    return SUCCESS;
+}
+
+int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zoneId,
+    const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy, bool &updateScene)
+{
     AudioInterrupt currAudioInterrupt = audioInterrupt;
     HandleAppStreamType(currAudioInterrupt);
     AudioStreamType streamType = currAudioInterrupt.audioFocusType.streamType;
@@ -697,14 +716,9 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
     // Process ProcessFocusEntryTable for current audioFocusInfoList
     int32_t ret = ProcessFocusEntry(zoneId, currAudioInterrupt);
     CHECK_AND_RETURN_RET_LOG(!ret, ERR_FOCUS_DENIED, "request rejected");
-
-    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
-
-    // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
-    // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
-    lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
+    if (zoneId == ZONEID_DEFAULT) {
+        updateScene = true;
+    }
     return SUCCESS;
 }
 
@@ -789,20 +803,35 @@ const int32_t AudioInterruptService::GetAudioFocusInfoList(const int32_t zoneId,
     return SUCCESS;
 }
 
-// LCOV_EXCL_START
-int32_t AudioInterruptService::GetAudioFocusInfoList(const int32_t zoneId,
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
+int32_t AudioInterruptService::InjectInterruptToAudiotZone(const int32_t zoneId,
+    const std::string &deviceTag, const AudioFocusList &interrupts)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-
-    auto itZone = zonesMap_.find(zoneId);
-    if (itZone != zonesMap_.end() && itZone->second != nullptr) {
-        focusInfoList = itZone->second->audioFocusInfoList;
-    } else {
-        focusInfoList = {};
+    std::unique_lock<std::mutex> lock(mutex_);
+    int32_t ret = zoneManager_.InjectInterruptToAudiotZone(zoneId, deviceTag, interrupts);
+    if (ret != SUCCESS) {
+        return ret;
     }
-
+    if (zoneId == ZONEID_DEFAULT) {
+        return SUCCESS;
+    }
+    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+    lock.unlock();
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
     return SUCCESS;
+}
+
+int32_t AudioInterruptService::GetAudioFocusInfoList(const int32_t zoneId, AudioFocusList &focusInfoList)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    return zoneManager_.GetAudioFocusInfoList(zoneId, focusInfoList);
+}
+
+int32_t AudioInterruptService::GetAudioFocusInfoList(const int32_t zoneId, const std::string &deviceTag,
+    AudioFocusList &focusInfoList)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    return zoneManager_.GetAudioFocusInfoList(zoneId, deviceTag, focusInfoList);
 }
 
 int32_t AudioInterruptService::GetStreamTypePriority(AudioStreamType streamType)
@@ -2204,7 +2233,7 @@ void AudioInterruptService::HandleAppStateChange(int32_t pid, int32_t uid, int32
 {
     CHECK_AND_RETURN_LOG(dfxCollector_ != nullptr, "dfxCollector is null");
     AUDIO_INFO_LOG("app state changed, pid=%{public}d state=%{public}d", pid, state);
-    auto itZone = zonesMap_.find(DEFAULT_ZONE_ID);
+    auto itZone = zonesMap_.find(ZONEID_DEFAULT);
     CHECK_AND_RETURN_LOG(itZone != zonesMap_.end(), "can not find zoneid");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
@@ -2276,7 +2305,7 @@ void AudioInterruptService::WriteStartDfxMsg(InterruptDfxBuilder &dfxBuilder, co
 
 void AudioInterruptService::WriteSessionTimeoutDfxEvent(const int32_t pid)
 {
-    auto itZone = zonesMap_.find(DEFAULT_ZONE_ID);
+    auto itZone = zonesMap_.find(ZONEID_DEFAULT);
     CHECK_AND_RETURN_LOG(itZone != zonesMap_.end(), "can not find zoneid");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList{};
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {

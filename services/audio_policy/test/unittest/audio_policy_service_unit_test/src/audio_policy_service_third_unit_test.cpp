@@ -513,7 +513,9 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetMaxAmplitude_001, TestSize.Level1)
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
 
     const int32_t deviceId = 0;
-    GetServerPtr()->audioPolicyService_.GetMaxAmplitude(deviceId);
+    AudioInterrupt audioInterrupt;
+    float amplitude = GetServerPtr()->audioPolicyService_.GetMaxAmplitude(deviceId, audioInterrupt);
+    EXPECT_EQ((std::abs(amplitude - 0.0f) <= std::abs(FLOAT_EPS)), true);
 }
 
 /**
@@ -579,6 +581,51 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioToneParser_003, TestSize.Level1)
     std::unordered_map<std::string, std::unordered_map<int32_t, std::shared_ptr<ToneInfo>>> customToneDescriptorMap;
     audioToneParser->ParseCustom(node, customToneDescriptorMap);
     EXPECT_EQ(0, customToneDescriptorMap.size());
+}
+
+/**
+ * @tc.name  : Test NotifyRecreateRendererStream.
+ * @tc.number: NotifyRecreateRendererStream_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, NotifyRecreateRendererStream_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    bool ret = true;
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    ret = server->audioPolicyService_.audioDeviceCommon_.NotifyRecreateRendererStream(audioDeviceDescriptor,
+        rendererChangeInfo, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+    EXPECT_EQ(ret, false);
+
+    rendererChangeInfo->outputDeviceInfo.networkId_ == LOCAL_NETWORK_ID;
+    ret = server->audioPolicyService_.audioDeviceCommon_.NotifyRecreateRendererStream(audioDeviceDescriptor,
+        rendererChangeInfo, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test NotifyRecreateCapturerStream.
+ * @tc.number: NotifyRecreateCapturerStream_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, NotifyRecreateCapturerStream_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    bool ret = true;
+
+    shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
+    ret = server->audioPolicyService_.audioDeviceCommon_.NotifyRecreateCapturerStream(true, capturerChangeInfo,
+        AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+    EXPECT_EQ(ret, false);
+
+    capturerChangeInfo->inputDeviceInfo.networkId_ == LOCAL_NETWORK_ID;
+    ret = server->audioPolicyService_.audioDeviceCommon_.NotifyRecreateCapturerStream(true, capturerChangeInfo,
+        AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+    EXPECT_EQ(ret, true);
 }
 } // namespace AudioStandard
 } // namespace OHOS

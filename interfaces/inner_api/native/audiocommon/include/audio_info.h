@@ -294,6 +294,7 @@ enum CallbackChange : int32_t {
     CALLBACK_NN_STATE_CHANGE,
     CALLBACK_SET_AUDIO_SCENE_CHANGE,
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+    CALLBACK_DISTRIBUTED_OUTPUT_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -320,6 +321,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_NN_STATE_CHANGE,
     CALLBACK_SET_AUDIO_SCENE_CHANGE,
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+    CALLBACK_DISTRIBUTED_OUTPUT_CHANGE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -361,6 +363,7 @@ struct AudioParameters {
     StreamUsage usage;
     DeviceRole deviceRole;
     DeviceType deviceType;
+    AudioVolumeMode mode;
 };
 
 struct A2dpDeviceConfigInfo {
@@ -389,7 +392,7 @@ struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
     int32_t rendererFlags = AUDIO_FLAG_NORMAL;
-    AudioVolumeMode volumeMode = SYSTEM_GLOBAL;
+    AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     std::string sceneType = "";
     bool spatializationEnabled = false;
     bool headTrackingEnabled = false;
@@ -1002,6 +1005,17 @@ public:
     virtual void OnAudioPolicyServiceDied() = 0;
 };
 
+class AudioCapturerPolicyServiceDiedCallback {
+public:
+    virtual ~AudioCapturerPolicyServiceDiedCallback() = default;
+
+    /**
+     * Called when audio policy service died.
+     * @since 10
+     */
+    virtual void OnAudioPolicyServiceDied() = 0;
+};
+
 class AudioStreamPolicyServiceDiedCallback {
 public:
     virtual ~AudioStreamPolicyServiceDiedCallback() = default;
@@ -1086,7 +1100,7 @@ static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
         {DEVICE_TYPE_DP, DEVICE_GROUP_BUILT_IN}, {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED},
         {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED},
         {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS},
-        {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
+        {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST}, {DEVICE_TYPE_HDMI, DEVICE_GROUP_BUILT_IN},
     };
     auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
     return it == DEVICE_GROUP_FOR_VOLUME.end() ? DEVICE_GROUP_INVALID : it->second;
@@ -1182,6 +1196,59 @@ enum WriteDataCallbackType {
     WRITE_DATA_CALLBACK_WITH_RESULT = 1
 };
 
+enum ReadDataCallbackType {
+    /**
+     * Use OH_AudioCapturer_Callbacks.OH_AudioCapturer_OnReadData
+     * @since 12
+     */
+    READ_DATA_CALLBACK_WITHOUT_RESULT = 0,
+    /**
+     * Use OH_AudioCapturer_OnReadDataCallback.
+     * @since 12
+     */
+    READ_DATA_CALLBACK_WITH_RESULT = 1
+};
+
+enum StreamEventCallbackType {
+    /**
+     * Use OH_AudioCapturer_Callbacks.OH_AudioCapturer_OnStreamEvent
+     * @since 12
+     */
+    STREAM_EVENT_CALLBACK_WITHOUT_RESULT = 0,
+    /**
+     * Use OH_AudioCapturer_OnStreamEventCallback.
+     * @since 12
+     */
+    STREAM_EVENT_CALLBACK_WITH_RESULT = 1
+};
+
+enum InterruptEventCallbackType {
+    /**
+     * Use OH_AudioRenderer_Callbacks.OH_AudioRenderer_OnInterruptEvent
+     * @since 12
+     */
+    INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT = 0,
+    /**
+     * Use OH_AudioRenderer_OnInterruptEventCallback.
+     * @since 12
+     */
+    INTERRUPT_EVENT_CALLBACK_WITH_RESULT = 1
+};
+
+enum ErrorCallbackType {
+    /**
+     * Use OH_AudioRenderer_Callbacks.OH_AudioRenderer_OnError
+     *
+     * @since 12
+     */
+    ERROR_CALLBACK_WITHOUT_RESULT = 0,
+    /**
+     * Use OH_AudioRenderer_OnErrorCallback.
+     * @since 12
+     */
+    ERROR_CALLBACK_WITH_RESULT = 1
+};
+
 enum PolicyType {
     EDM_POLICY_TYPE = 0,
     PRIVACY_POLCIY_TYPE = 1,
@@ -1227,6 +1294,27 @@ enum CapturerStage {
     CAPTURER_STAGE_STOP_OK = 0x30,
 };
 
+
+enum RestoreStatus : int32_t {
+    NO_NEED_FOR_RESTORE = 0,
+    NEED_RESTORE,
+    RESTORING,
+    RESTORE_ERROR,
+};
+
+enum RestoreReason : int32_t {
+    DEFAULT_REASON = 0,
+    DEVICE_CHANGED,
+    STREAM_CONCEDED,
+    STREAM_SPLIT,
+    SERVER_DIED,
+};
+
+struct RestoreInfo {
+    RestoreReason restoreReason = DEFAULT_REASON;
+    int32_t deviceChangeReason = 0;
+    int32_t targetStreamFlag = AUDIO_FLAG_NORMAL;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

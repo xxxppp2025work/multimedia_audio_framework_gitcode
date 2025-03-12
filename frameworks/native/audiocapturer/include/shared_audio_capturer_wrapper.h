@@ -58,12 +58,12 @@ public:
         return sharedAudioCapturer_->GetStreamInfo(streamInfo);
     }
 
-    bool Start() const override
+    bool Start() override
     {
         return sharedAudioCapturer_->Start();
     }
 
-    int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) const override
+    int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override
     {
         return sharedAudioCapturer_->Read(buffer, userSize, isBlockingRead);
     }
@@ -155,12 +155,12 @@ public:
         return sharedAudioCapturer_->SetCapturerReadCallback(callback);
     }
 
-    int32_t GetBufferDesc(BufferDesc &bufDesc) const override
+    int32_t GetBufferDesc(BufferDesc &bufDesc) override
     {
         return sharedAudioCapturer_->GetBufferDesc(bufDesc);
     }
 
-    int32_t Enqueue(const BufferDesc &bufDesc) const override
+    int32_t Enqueue(const BufferDesc &bufDesc) override
     {
         return sharedAudioCapturer_->Enqueue(bufDesc);
     }
@@ -247,6 +247,22 @@ public:
     int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) override
     {
         return sharedAudioCapturer_->SetAudioSourceConcurrency(targetSources);
+    }
+
+    void SetAudioCapturerErrorCallback(std::shared_ptr<AudioCapturerErrorCallback> errorCallback) override
+    {
+        return sharedAudioCapturer_->SetAudioCapturerErrorCallback(errorCallback);
+    }
+
+    int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
+        const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback) override
+    {
+        return sharedAudioCapturer_->RegisterAudioPolicyServerDiedCb(clientPid, callback);
+    }
+
+    int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override
+    {
+        return sharedAudioCapturer_->GetAudioTimestampInfo(timestamp, base);
     }
 
     ~SharedCapturerWrapper() override = default;
