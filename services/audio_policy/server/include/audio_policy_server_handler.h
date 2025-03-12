@@ -28,6 +28,7 @@
 #include "i_standard_audio_routing_manager_listener.h"
 #include "i_audio_interrupt_event_dispatcher.h"
 #include "i_audio_concurrency_event_dispatcher.h"
+#include "i_audio_zone_event_dispatcher.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -106,6 +107,7 @@ public:
         std::unordered_map<std::string, bool> headTrackingDeviceChangeInfo;
         AudioStreamDeviceChangeReasonExt reason_ = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
         std::pair<int32_t, AudioSessionDeactiveEvent> sessionDeactivePair;
+        std::shared_ptr<AudioZoneEvent> audioZoneEvent;
     };
 
     struct RendererDeviceChangeEvent {
@@ -207,6 +209,8 @@ public:
     bool SendAudioSceneChangeEvent(const AudioScene &audioScene);
     bool SendAudioSessionDeactiveCallback(const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair);
     bool SendNnStateChangeCallback(const int32_t &state);
+    void SetAudioZoneEventDispatcher(const std::shared_ptr<IAudioZoneEventDispatcher> dispatcher);
+    bool SendAudioZoneEvent(std::shared_ptr<AudioZoneEvent> event);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -247,6 +251,7 @@ private:
     void HandleConcurrencyEventWithSessionID(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSessionDeactiveCallback(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleNnStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleAudioZoneEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSceneChange(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAppVolumeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
@@ -264,6 +269,7 @@ private:
     std::mutex clientCbCapturerInfoMapMutex_;
     std::weak_ptr<IAudioInterruptEventDispatcher> interruptEventDispatcher_;
     std::weak_ptr<IAudioConcurrencyEventDispatcher> concurrencyEventDispatcher_;
+    std::weak_ptr<IAudioZoneEventDispatcher> audioZoneEventDispatcher_;
 
     std::unordered_map<int32_t, sptr<IAudioPolicyClient>> audioPolicyClientProxyAPSCbsMap_;
     std::string pidsStrForPrinting_ = "[]";
