@@ -1183,7 +1183,7 @@ int AudioManagerStub::HandleNotifyAudioPolicyReady(MessageParcel &data, MessageP
     return AUDIO_OK;
 }
 
-nt AudioManagerStub::HandleDeviceConnectedFlag(MessageParcel &data, MessageParcel &reply)
+int AudioManagerStub::HandleDeviceConnectedFlag(MessageParcel &data, MessageParcel &reply)
 {
     bool flag = data.ReadBool();
     SetDeviceConnectedFlag(flag);
