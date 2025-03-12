@@ -396,6 +396,23 @@ OH_AudioStream_Result OHAudioCapturerErrorCallback::GetErrorResult(AudioErrors e
     }
 }
 
+OH_AudioStream_Result OH_AudioCapturer_SetInputDevice(
+    OH_AudioCapturer* capturer, OH_AudioDevice_Type deviceType)
+{
+    OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
+    CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert Capturer failed");
+    CHECK_AND_RETURN_RET_LOG(result != false, AUDIOSTREAM_ERROR_INVALID_PARAM, "deviceType is not valid");
+    int32_t ret = audioCapturer->SetInputDevice((OHOS::AudioStandard::DeviceType)deviceType);
+    if (ret == OHOS::AudioStandard::ERR_NOT_SUPPORTED) {
+        AUDIO_ERR_LOG("This audioCapturer can not reset the input device");
+        return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
+    } else if (ret != AUDIOSTREAM_SUCCESS) {
+        AUDIO_ERR_LOG("system error when calling this function");
+        return AUDIOSTREAM_ERROR_SYSTEM;
+    }
+    return AUDIOSTREAM_SUCCESS;
+}
+
 void OHAudioCapturerErrorCallback::OnError(AudioErrors errorCode)
 {
     OHAudioCapturer* audioCapturer = (OHAudioCapturer*)ohAudioCapturer_;
@@ -522,6 +539,12 @@ void OHAudioCapturer::SetStreamEventCallback(CapturerCallback capturerCallbacks,
     } else {
         AUDIO_WARNING_LOG("The stream event callback function is not set");
     }
+}
+
+int32_t OHAudioCapturer::SetInputDevice(DeviceType deviceType)
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+    return audioCapturer_->SetInputDevice(deviceType);
 }
 
 void OHAudioCapturer::SetInterruptCallback(CapturerCallback capturerCallbacks, void *userData)

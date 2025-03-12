@@ -39,7 +39,10 @@ shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallRenderDevice(StreamUsa
 shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
 {
     shared_ptr<AudioDeviceDescriptor> device =
-        AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
+    AudioAffinityManager::GetAudioAffinityManager().GetSelectedCallCaptureDevice();
+    if (desc == nullptr) {
+        desc = AudioDeviceManager::GetAudioDeviceManager().GetCaptureDefaultDevice();
+    }
     return device;
 }
 
@@ -53,7 +56,10 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> AppSelectRouter::GetRingRenderDev
 shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
 {
     shared_ptr<AudioDeviceDescriptor> device =
-        AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
+        AudioAffinityManager::GetAudioAffinityManager().GetSelectedMediaCaptureDevice();
+    if (desc == nullptr) {
+        desc = AudioDeviceManager::GetAudioDeviceManager().GetCaptureDefaultDevice();
+    }
     return device;
 }
 

@@ -1430,6 +1430,117 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCallRenderDevic
     return devDesc;
 }
 
+int32_t AudioDeviceManager::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const StreamUsage streamUsage, bool isRunning)
+{
+    std::lock_guard<std::mutex> lock(selectInputDeviceMutex_);
+    selectedInputDeviceInfo_[sessionID] = std::make_pair(deviceType, streamUsage);
+    AUDIO_INFO_LOG("stream %{public}u with usage %{public}d selects input device %{public}d",
+        sessionID, streamUsage, deviceType);
+    if (!isRunning) {
+        AUDIO_WARNING_LOG("current stream has not started");
+        return SUCCESS;
+    }
+    if (streamUsage != STREAM_USAGE_INVALID) {
+        auto it = std::find_if(inputDevices_.begin(), inputDevices_.end(),
+            [&sessionID](const std::pair<uint32_t, DeviceType> &inputDevice) {
+                return inputDevice.first == sessionID;
+            });
+        if (it != inputDevices_.end()) {
+            inputDevices_.erase(it);
+        }
+        inputDevices_.push_back(std::make_pair(sessionID, deviceType));
+        if (selectedinputDevice_ != deviceType) {
+            AUDIO_WARNING_LOG("default input device changes from %{public}d to %{public}d",
+                selectedinputDevice_, deviceType);
+            selectedinputDevice_ = deviceType;
+            return NEED_TO_FETCH;
+        }
+    } else {
+        AUDIO_ERR_LOG("Invalid stream usage %{public}d", streamUsage);
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+int32_t AudioDeviceManager::UpdateInputDeviceWhenStarting(const uint32_t sessionID)
+{
+    std::lock_guard<std::mutex> lock(selectInputDeviceMutex_);
+    if (!selectedInputDeviceInfo_.count(sessionID)) {
+        AUDIO_WARNING_LOG("no need to update default input device since current stream has not set");
+        return SUCCESS;
+    }
+    DeviceType deviceType = selectedInputDeviceInfo_[sessionID].first;
+    StreamUsage streamUsage = selectedInputDeviceInfo_[sessionID].second;
+    if (streamUsage != STREAM_USAGE_INVALID) {
+        auto it = std::find_if(inputDevices_.begin(), inputDevices_.end(),
+            [&sessionID](const std::pair<uint32_t, DeviceType> &inputDevice) {
+                return inputDevice.first == sessionID;
+            });
+        if (it != inputDevices_.end()) {
+            inputDevices_.erase(it);
+        }
+        inputDevices_.push_back(std::make_pair(sessionID, deviceType));
+        AUDIO_WARNING_LOG("changes from %{public}d to %{public}d because media stream %{public}u starts",
+            selectedinputDevice_, deviceType, sessionID);
+        selectedinputDevice_ = deviceType;
+    }
+    return SUCCESS;
+}
+
+int32_t AudioDeviceManager::UpdateInputDeviceWhenStopping(const uint32_t sessionID)
+{
+    std::lock_guard<std::mutex> lock(selectInputDeviceMutex_);
+    if (!selectedInputDeviceInfo_.count(sessionID)) {
+        AUDIO_WARNING_LOG("no need to update default input device since current stream has not set");
+        return SUCCESS;
+    }
+    StreamUsage streamUsage = selectedInputDeviceInfo_[sessionID].second;
+    if (streamUsage != STREAM_USAGE_INVALID) {
+        auto it = std::find_if(inputDevices_.begin(), inputDevices_.end(),
+            [&sessionID](const std::pair<uint32_t, DeviceType> &inputDevice) {
+                return inputDevice.first == sessionID;
+            });
+        if (it == inputDevices_.end()) {
+            return SUCCESS;
+        }
+        inputDevices_.erase(it);
+        DeviceType currDeviceType;
+        if (inputDevices_.empty()) {
+            currDeviceType = DEVICE_TYPE_DEFAULT;
+        } else {
+            currDeviceType = inputDevices_.back().second;
+        }
+        AUDIO_WARNING_LOG("changes from %{public}d to %{public}d because media stream %{public}u stops",
+            selectedinputDevice_, currDeviceType, sessionID);
+        selectedinputDevice_ = currDeviceType;
+    }
+    return SUCCESS;
+}
+
+int32_t AudioDeviceManager::RemoveSelectedInputDevice(const uint32_t sessionID)
+{
+    std::lock_guard<std::mutex> lock(selectInputDeviceMutex_);
+    selectedInputDeviceInfo_.erase(sessionID);
+    return SUCCESS;
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedMediaCaptureDevice()
+{
+    std::lock_guard<std::mutex> lock(selectInputDeviceMutex_);
+    shared_ptr<AudioDeviceDescriptor> devDesc = nullptr;
+        devDesc = make_shared<AudioDeviceDescriptor>(defalutMic_);
+    return devDesc;
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCallCaptureDevice()
+{
+    std::lock_guard<std::mutex> lock(selectInputDeviceMutex_);
+    shared_ptr<AudioDeviceDescriptor> devDesc = nullptr;
+        devDesc = make_shared<AudioDeviceDescriptor>(defalutMic_);
+    return devDesc;
+}
+
 void AudioDeviceManager::Dump(std::string &dumpString)
 {
     std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
