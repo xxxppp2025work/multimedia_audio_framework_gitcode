@@ -2362,7 +2362,10 @@ void AudioServer::SetDeviceConnectedFlag(bool flag)
 {
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    if (deviceManager== nullptr) {
+        AUDIO_WARNING_LOG("has no valid sink");
+        return;
+    }
     deviceManager->SetDeviceConnectedFlag(flag);
 }
 
