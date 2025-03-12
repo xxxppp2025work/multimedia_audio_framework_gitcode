@@ -152,6 +152,40 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, OffloadStartPlaying_003, TestSize.Leve
 }
 
 /**
+ * @tc.name: OffloadStartPlaying_004
+ * @tc.desc: Test OffloadStartPlaying
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, OffloadStartPlaying_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    manager->SetA2dpOffloadFlag(A2DP_NOT_OFFLOAD);
+    std::vector<int32_t> sessionIds = {1, 2, 3};
+    manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(CONNECTION_STATUS_CONNECTED);
+    int32_t ret = manager->OffloadStartPlaying(sessionIds);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name: OffloadStartPlaying_005
+ * @tc.desc: Test OffloadStartPlaying
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, OffloadStartPlaying_005, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    manager->SetA2dpOffloadFlag(A2DP_OFFLOAD);
+    std::vector<int32_t> sessionIds = {};
+    manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(CONNECTION_STATUS_CONNECTED);
+    int32_t ret = manager->OffloadStartPlaying(sessionIds);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
  * @tc.name: OffloadStopPlaying_001
  * @tc.desc: Test OffloadStopPlaying without entering the if branch.
  * @tc.type: FUNC
@@ -333,6 +367,23 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleA2dpDeviceOutOffload_001, TestSi
 }
 
 /**
+ * @tc.name: HandleA2dpDeviceOutOffload_002
+ * @tc.desc: Test HandleA2dpDeviceOutOffload with current output device type not being BLUETOOTH_A2DP.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleA2dpDeviceOutOffload_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP_IN);
+    BluetoothOffloadState a2dpOffloadFlag = NO_A2DP_DEVICE;
+    int32_t result = manager->HandleA2dpDeviceOutOffload(a2dpOffloadFlag);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(manager->audioA2dpOffloadFlag_.GetA2dpOffloadFlag(), a2dpOffloadFlag);
+}
+
+/**
  * @tc.name: HandleA2dpDeviceInOffload_001
  * @tc.desc: Test HandleA2dpDeviceInOffload with A2DP offload connected.
  * @tc.type: FUNC
@@ -350,12 +401,42 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleA2dpDeviceInOffload_001, TestSiz
 }
 
 /**
+ * @tc.name: HandleA2dpDeviceInOffload_002
+ * @tc.desc: Test HandleA2dpDeviceInOffload when the if condition is not met.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleA2dpDeviceInOffload_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    manager->SetA2dpOffloadFlag(A2DP_NOT_OFFLOAD);
+    manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(CONNECTION_STATUS_CONNECTING);
+    int32_t result = manager->HandleA2dpDeviceInOffload(A2DP_NOT_OFFLOAD);
+    EXPECT_EQ(result, SUCCESS);
+}
+/**
  * @tc.name: GetA2dpOffloadCodecAndSendToDsp_001
  * @tc.desc: Test GetA2dpOffloadCodecAndSendToDsp without entering the if branch.
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
 HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetA2dpOffloadCodecAndSendToDsp_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_SPEAKER);
+    manager->GetA2dpOffloadCodecAndSendToDsp();
+    EXPECT_NE(manager, nullptr);
+}
+
+/**
+ * @tc.name: GetA2dpOffloadCodecAndSendToDsp_002
+ * @tc.desc: Test GetA2dpOffloadCodecAndSendToDsp when entering the if branch.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetA2dpOffloadCodecAndSendToDsp_002, TestSize.Level1)
 {
     std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
@@ -610,5 +691,192 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetVolumeGroupType_004, TestSize.Level
     std::string volumeGroupType = manager->GetVolumeGroupType(DEVICE_TYPE_MAX);
     EXPECT_EQ(volumeGroupType, "");
 }
+
+/**
+ * @tc.name: OnA2dpPlayingStateChanged_001
+ * @tc.desc: Test OnA2dpPlayingStateChanged.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, OnA2dpPlayingStateChanged_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    const std::string deviceAddress = "123";
+    int32_t playingState = 1;
+    manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(CONNECTION_STATUS_CONNECTED);
+    manager->OnA2dpPlayingStateChanged(deviceAddress, playingState);
+    EXPECT_NE(manager, nullptr);
+}
+
+/**
+ * @tc.name: OnA2dpPlayingStateChanged_002
+ * @tc.desc: Test OnA2dpPlayingStateChanged.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, OnA2dpPlayingStateChanged_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    const std::string deviceAddress = "123";
+    int32_t playingState = 2;
+    manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(CONNECTION_STATUS_CONNECTED);
+    manager->OnA2dpPlayingStateChanged(deviceAddress, playingState);
+    EXPECT_NE(manager, nullptr);
+}
+
+/**
+ * @tc.name: OnA2dpPlayingStateChanged_003
+ * @tc.desc: Test OnA2dpPlayingStateChanged.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, OnA2dpPlayingStateChanged_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    const std::string deviceAddress = "123";
+    int32_t playingState = 1;
+    manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(CONNECTION_STATUS_CONNECTING);
+    manager->OnA2dpPlayingStateChanged(deviceAddress, playingState);
+    EXPECT_NE(manager, nullptr);
+}
+
+/**
+ * @tc.name: OnA2dpPlayingStateChanged_004
+ * @tc.desc: Test OnA2dpPlayingStateChanged.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, OnA2dpPlayingStateChanged_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    const std::string deviceAddress = manager->a2dpOffloadDeviceAddress_;
+    int32_t playingState = 2;
+    manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(CONNECTION_STATUS_CONNECTING);
+    manager->OnA2dpPlayingStateChanged(deviceAddress, playingState);
+    EXPECT_NE(manager, nullptr);
+}
+
+/**
+ * @tc.name: OnA2dpPlayingStateChanged_005
+ * @tc.desc: Test OnA2dpPlayingStateChanged.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, OnA2dpPlayingStateChanged_005, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    const std::string deviceAddress = manager->a2dpOffloadDeviceAddress_;
+    int32_t playingState = 2;
+    manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(CONNECTION_STATUS_CONNECTED);
+    manager->OnA2dpPlayingStateChanged(deviceAddress, playingState);
+    EXPECT_NE(manager, nullptr);
+}
+
+/**
+ * @tc.name: OnA2dpPlayingStateChanged_006
+ * @tc.desc: Test OnA2dpPlayingStateChanged.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, OnA2dpPlayingStateChanged_006, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    const std::string deviceAddress = manager->a2dpOffloadDeviceAddress_;
+    int32_t playingState = 1;
+    manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(CONNECTION_STATUS_CONNECTED);
+    manager->OnA2dpPlayingStateChanged(deviceAddress, playingState);
+    EXPECT_NE(manager, nullptr);
+}
+
+/**
+ * @tc.name: OnA2dpPlayingStateChanged_007
+ * @tc.desc: Test OnA2dpPlayingStateChanged.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, OnA2dpPlayingStateChanged_007, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    const std::string deviceAddress = manager->a2dpOffloadDeviceAddress_;
+    int32_t playingState = 3;
+    manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(CONNECTION_STATUS_CONNECTED);
+    manager->OnA2dpPlayingStateChanged(deviceAddress, playingState);
+    EXPECT_NE(manager, nullptr);
+}
+
+/**
+ * @tc.name: IsA2dpOffloadConnecting_001
+ * @tc.desc: Test IsA2dpOffloadConnecting when entering the if branch.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, IsA2dpOffloadConnecting_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    manager->connectionTriggerSessionIds_ = {123};
+    manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(CONNECTION_STATUS_CONNECTING);
+    bool result = manager->IsA2dpOffloadConnecting(123);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: HandleActiveDevice_001
+ * @tc.desc: Test HandleActiveDevice.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleActiveDevice_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    DeviceType deviceType = DEVICE_TYPE_NONE;
+    manager->audioActiveDevice_.SetCurrentOutputDeviceType(deviceType);
+    manager->audioConfigManager_.isUpdateRouteSupported_ = true;
+    int32_t result = manager->HandleActiveDevice(deviceType);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name: HandleActiveDevice_002
+ * @tc.desc: Test HandleActiveDevice.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleActiveDevice_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_EARPIECE);
+    manager->audioConfigManager_.isUpdateRouteSupported_ = false;
+    int32_t result = manager->HandleActiveDevice(deviceType);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name: HandleActiveDevice_003
+ * @tc.desc: Test HandleActiveDevice.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleActiveDevice_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    DeviceType deviceType = DEVICE_TYPE_MIC;
+    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_EARPIECE);
+    manager->audioConfigManager_.isUpdateRouteSupported_ = false;
+    int32_t result = manager->HandleActiveDevice(deviceType);
+    EXPECT_EQ(result, SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
