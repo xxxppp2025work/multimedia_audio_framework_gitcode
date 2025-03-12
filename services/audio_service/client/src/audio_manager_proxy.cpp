@@ -1592,6 +1592,7 @@ void AudioManagerProxy::SetDeviceConnectedFlag(bool flag)
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::DEVICE_CONNECTED_FLAG), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed,error:%d", error);
+}
 
 } // namespace AudioStandard
 } // namespace OHOS
