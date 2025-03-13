@@ -61,6 +61,7 @@ group("audio_policy_unittest_packages") {
     ":audio_socket_thread_unit_test",
     ":audio_spatialization_service_unit_test",
     ":audio_stream_collector_unit_test",
+    ":audio_tone_parser_unit_test",
     ":audio_volume_manager_unit_test",
     ":device_status_listener_unit_test",
     ":power_state_listener_unit_test",
@@ -3297,4 +3298,47 @@ ohos_unittest("power_state_listener_unit_test") {
   sources = [ "./unittest/power_state_listener_unit_test/src/power_state_listener_unit_test.cpp" ]
 
   deps = [ "../../audio_policy:audio_policy_service_static" ]
+}
+
+ohos_unittest("audio_tone_parser_unit_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "./unittest/audio_tone_parser_unit_test/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
+  external_deps = [
+    "bluetooth:btframework",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+  ]
+
+  sources = [ "./unittest/audio_tone_parser_unit_test/src/audio_tone_parser_unit_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_service_static" ]
+
+  defines = [ "FEATURE_DTMF_TONE" ]
 }
