@@ -218,7 +218,7 @@ public:
         return SUCCESS;
     };
 
-    void DestroyRender(sptr<IAudioRender> audioRender, uint32_t &renderId) override
+    void DestroyRender(sptr<IAudioRender> audioRender, uint32_t renderId) override
     {
     };
 

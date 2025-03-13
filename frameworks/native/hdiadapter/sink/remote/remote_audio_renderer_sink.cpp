@@ -31,6 +31,7 @@
 #include <mutex>
 #include "securec.h"
 #include <algorithm>
+#include <array>
 
 #include <v1_0/iaudio_manager.h>
 
@@ -80,12 +81,12 @@ const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 const string MEDIA_STREAM_TYPE = "1";
 const string COMMUNICATION_STREAM_TYPE = "2";
 const string NAVIGATION_STREAM_TYPE = "13";
-uint32_t MEDIA_RENDERID = 0;
-uint32_t NAVIGATION_RENDERID = 1;
-uint32_t COMMUNICATION_RENDERID = 2;
+constexpr uint32_t MEDIA_RENDERID = 0;
+constexpr uint32_t NAVIGATION_RENDERID = 1;
+constexpr uint32_t COMMUNICATION_RENDERID = 2;
 const char* DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink";
 constexpr uint32_t MAX_NUM_OF_SPLIT_STREAM_CATEGORY = 3;
-const std::array<AudioCategory, MAX_NUM_OF_SPLIT_STREAM_CATEGORY> STREAM_SPLIT_CATEGORY = {
+constexpr std::array<AudioCategory, MAX_NUM_OF_SPLIT_STREAM_CATEGORY> STREAM_SPLIT_CATEGORY = {
     AudioCategory::AUDIO_IN_MEDIA,
     AudioCategory::AUDIO_IN_NAVIGATION,
     AudioCategory::AUDIO_IN_COMMUNICATION,
@@ -157,7 +158,7 @@ public:
     IAudioSinkCallback* GetParamCallback();
 
 private:
-    int32_t CreateRender(const struct AudioPort &renderPort, AudioCategory type, uint32_t &renderId);
+    int32_t CreateRender(const struct AudioPort &renderPort, AudioCategory type, uint32_t renderId);
     void InitAttrs(struct AudioSampleAttributes &attrs);
     void splitStreamInit(const char *splitStreamString, vector<string> &splitStreamVector);
     int32_t RenderFrameLogic(char &data, uint64_t len, uint64_t &writeLen, const char *streamType);
@@ -189,7 +190,8 @@ private:
     unordered_map<AudioCategory, FILE*> dumpFileMap_;
     unordered_map<AudioCategory, std::string> dumpFileNameMap_;
     std::mutex createRenderMutex_;
-    vector<uint32_t> renderIdVector_ = {MEDIA_RENDERID, NAVIGATION_RENDERID, COMMUNICATION_RENDERID};
+    static constexpr std::array<uint32_t, MAX_NUM_OF_SPLIT_STREAM_CATEGORY> renderIdVector_ =
+        {MEDIA_RENDERID, NAVIGATION_RENDERID, COMMUNICATION_RENDERID};
     // for get amplitude
     float maxAmplitude_ = 0;
     int64_t lastGetMaxAmplitudeTime_ = 0;
@@ -385,10 +387,12 @@ void RemoteAudioRendererSinkInner::splitStreamInit(const char *splitStreamString
 }
 
 int32_t RemoteAudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort, AudioCategory type,
-    uint32_t &renderId)
+    uint32_t renderId)
 {
-    CHECK_AND_RETURN_RET_LOG(isValidStreamSplitAudioCategory(type), ERR_INVALID_PARAM, "type: %{public}d is valid",
-        static_cast<int32_t>(type));
+    if (!isValidStreamSplitAudioCategory(type)) {
+        AUDIO_ERR_LOG("It can't be handled here, let it crash!");
+        _Exit(0);
+    }
     int64_t start = ClockTime::GetCurNano();
     struct AudioSampleAttributes param;
     InitAttrs(param);
