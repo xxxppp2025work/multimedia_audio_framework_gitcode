@@ -697,7 +697,10 @@ void AudioDeviceCommon::FetchOutputDeviceWhenNoRunningStream()
     AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", audioActiveDevice_.GetCurrentOutputDeviceType());
     audioVolumeManager_.SetVolumeForSwitchDevice(descs.front()->deviceType_);
     if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        SwitchActiveA2dpDevice(std::make_shared<AudioDeviceDescriptor>(*descs.front()));
+        int32_t ret = SwitchActiveA2dpDevice(std::make_shared<AudioDeviceDescriptor>(*descs.front()));
+        if (ret != SUCCESS) {
+            audioActiveDevice_.SetCurrentOutputDevice(tmpOutputDeviceDesc);
+        }
     }
     OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
 }
