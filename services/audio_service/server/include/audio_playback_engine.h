@@ -17,6 +17,7 @@
 #include <memory>
 #include "i_audio_engine.h"
 #include "i_renderer_stream.h"
+#include "audio_renderer_sink.h"
 #include "audio_thread_task.h"
 
 namespace OHOS {
@@ -41,7 +42,7 @@ protected:
     virtual void MixStreams() {}
 
 protected:
-    uint32_t renderId_;
+    IAudioRendererSink *renderSink_;
     std::unique_ptr<AudioThreadTask> playbackThread_;
     std::vector<std::shared_ptr<IRendererStream>> streams_;
 };

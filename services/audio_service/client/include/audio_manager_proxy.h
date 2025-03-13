@@ -121,8 +121,6 @@ public:
     int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId) override;
     int32_t ReleaseCaptureLimit(int32_t innerCapId) override;
 #endif
-    int32_t LoadHdiAdapter(uint32_t devMgrType, const std::string &adapterName) override;
-    void UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapterName, bool force) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

@@ -42,7 +42,6 @@ ohos_fuzztest("AudioServiceServerSrcFuzzTest") {
   cflags_cc = [ "-std=c++20" ]
 
   deps = [
-    "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_service:audio_client",
     "../../../services/audio_service:audio_common",

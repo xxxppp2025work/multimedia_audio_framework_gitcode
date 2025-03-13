@@ -48,7 +48,6 @@ ohos_unittest("audio_endpoint_separate_unit_test") {
 
   deps = [
     "../../../../frameworks/native/audioutils:audio_utils",
-    "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../../../audio_service:audio_client",
     "../../../audio_service:audio_common",
     "../../../audio_service:audio_process_service_static",
@@ -190,7 +189,6 @@ ohos_unittest("none_mix_engine_unit_test") {
 
   deps = [
     "../../../../frameworks/native/audioutils:audio_utils",
-    "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../../../../services/audio_service:audio_common",
     "../../../../services/audio_service:audio_process_service_static",
   ]
