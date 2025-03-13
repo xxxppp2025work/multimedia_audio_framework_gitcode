@@ -268,7 +268,7 @@ int32_t AudioDeviceAdapterImpl::CreateRender(const AudioDeviceDescriptor &devDes
     return SUCCESS;
 }
 
-void AudioDeviceAdapterImpl::DestroyRender(sptr<IAudioRender> audioRender, uint32_t &renderId)
+void AudioDeviceAdapterImpl::DestroyRender(sptr<IAudioRender> audioRender, uint32_t renderId)
 {
     CHECK_AND_RETURN_LOG(audioRender != nullptr, "DestroyRender: Audio render is null.");
     {

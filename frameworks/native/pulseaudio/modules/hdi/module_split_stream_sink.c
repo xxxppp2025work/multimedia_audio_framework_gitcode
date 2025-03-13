@@ -337,6 +337,7 @@ do_nothing:
     pa_sink_process_rewind(u->sink, 0);
 }
 
+// this code copy from flcOffload, it is not need by split stream sink!
 static void StartSplitStreamHdiIfRunning(struct userdata *u)
 {
     AUTO_CTRACE("split_stream_sink::StartPrimaryHdiIfRunning");
@@ -345,8 +346,8 @@ static void StartSplitStreamHdiIfRunning(struct userdata *u)
     }
 
     if (u->sinkAdapter->SinkAdapterStart(u->sinkAdapter)) {
-        AUDIO_ERR_LOG("split_stream_sink,audiorenderer control start failed!");
-        u->sinkAdapter->SinkAdapterDeInit(u->sinkAdapter);
+        AUDIO_ERR_LOG("It can't be handled here, let it crash!");
+        _Exit(0);
     } else {
         u->isHDISinkStarted = true;
         u->writeCount = 0;

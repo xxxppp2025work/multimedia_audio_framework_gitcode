@@ -45,7 +45,7 @@ public:
     int32_t RegExtraParamObserver() override;
     int32_t CreateRender(const AudioDeviceDescriptor &devDesc, const AudioSampleAttributes &attr,
         sptr<IAudioRender> &audioRender, IAudioDeviceAdapterCallback *renderCb, uint32_t &renderId) override;
-    void DestroyRender(sptr<IAudioRender> audioRender, uint32_t &renderId) override;
+    void DestroyRender(sptr<IAudioRender> audioRender, uint32_t renderId) override;
     int32_t CreateCapture(const AudioDeviceDescriptor &devDesc, const AudioSampleAttributes &attr,
         sptr<IAudioCapture> &audioCapture, IAudioDeviceAdapterCallback *captureCb, uint32_t &captureId) override;
     void DestroyCapture(sptr<IAudioCapture> audioCapture, uint32_t &captureId) override;
