@@ -889,6 +889,7 @@ void AudioPolicyService::RegisterAccessiblilityBalance()
     if (ret != ERR_OK) {
         AUDIO_ERR_LOG("RegisterObserver balance failed");
     }
+    AUDIO_INFO_LOG("Register accessibility balance successfully");
 }
 
 void AudioPolicyService::RegisterAccessiblilityMono()
@@ -906,6 +907,7 @@ void AudioPolicyService::RegisterAccessiblilityMono()
     if (ret != ERR_OK) {
         AUDIO_ERR_LOG("RegisterObserver mono failed");
     }
+    AUDIO_INFO_LOG("Register accessibility mono successfully");
 }
 
 void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
@@ -951,13 +953,13 @@ void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::s
 
 void AudioPolicyService::OnMonoAudioConfigChanged(bool audioMono)
 {
-    AUDIO_DEBUG_LOG("audioMono = %{public}s", audioMono? "true": "false");
+    AUDIO_INFO_LOG("audioMono = %{public}s", audioMono? "true": "false");
     AudioServerProxy::GetInstance().SetAudioMonoStateProxy(audioMono);
 }
 
 void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
 {
-    AUDIO_DEBUG_LOG("audioBalance = %{public}f", audioBalance);
+    AUDIO_INFO_LOG("audioBalance = %{public}f", audioBalance);
     AudioServerProxy::GetInstance().SetAudioBalanceValueProxy(audioBalance);
 }
 
@@ -1582,35 +1584,6 @@ void AudioPolicyService::RegisterDataObserver()
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterDataObserver get devicesName failed");
     SetDisplayName(devicesName, true);
     RegisterNameMonitorHelper();
-}
-
-int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    int32_t ret = AudioServerProxy::GetInstance().SetCaptureSilentStateProxy(config.silentCapture);
-    CHECK_AND_RETURN_RET_LOG(!ret, ERR_OPERATION_FAILED, "SetCaptureSilentState failed");
-
-    std::vector<int32_t> targetUsages;
-    AUDIO_INFO_LOG("start");
-    for (size_t i = 0; i < config.filterOptions.usages.size(); i++) {
-        if (count(targetUsages.begin(), targetUsages.end(), config.filterOptions.usages[i]) == 0) {
-            targetUsages.emplace_back(config.filterOptions.usages[i]); // deduplicate
-        }
-    }
-
-    return AudioServerProxy::GetInstance().SetSupportStreamUsageProxy(targetUsages);
-#else
-    return ERROR;
-#endif
-}
-
-int32_t AudioPolicyService::SetCaptureSilentState(bool state)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    return AudioServerProxy::GetInstance().SetCaptureSilentStateProxy(state);
-#else
-    return ERROR;
-#endif
 }
 
 int32_t AudioPolicyService::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)

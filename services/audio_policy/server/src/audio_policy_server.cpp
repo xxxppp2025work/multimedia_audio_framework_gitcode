@@ -17,7 +17,6 @@
 #endif
 
 #include "audio_policy_server.h"
-#include <dlfcn.h>
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
@@ -71,9 +70,10 @@ const std::vector<AudioStreamType> GET_PC_STREAM_ALL_VOLUME_TYPES {
     STREAM_MUSIC
 };
 
-constexpr int32_t SYSTEM_STATUS_START = 1;
-constexpr int32_t SYSTEM_STATUS_STOP = 0;
-constexpr int32_t SYSTEM_PROCESS_TYPE = 1;
+const std::list<AudioStreamType> CAN_MIX_MUTED_STREAM = {
+    STREAM_NOTIFICATION
+};
+
 constexpr int32_t PARAMS_VOLUME_NUM = 5;
 constexpr int32_t PARAMS_INTERRUPT_NUM = 4;
 constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
@@ -110,7 +110,8 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
       audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
       audioSpatializationService_(AudioSpatializationService::GetAudioSpatializationService()),
       audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
-      audioPolicyDump_(AudioPolicyDump::GetInstance())
+      audioPolicyDump_(AudioPolicyDump::GetInstance()),
+      audioActiveDevice_(AudioActiveDevice::GetInstance())
 {
     volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
     AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
@@ -166,8 +167,6 @@ void AudioPolicyServer::OnDump()
 
 void AudioPolicyServer::OnStart()
 {
-    std::lock_guard<std::mutex> lock(onStartLock_);
-    if (isOnStart) {return;}
     AUDIO_INFO_LOG("Audio policy server on start");
     DlopenUtils::Init();
     interruptService_ = std::make_shared<AudioInterruptService>();
@@ -213,7 +212,6 @@ void AudioPolicyServer::OnStart()
     InitKVStore();
     isScreenOffOrLock_ = !PowerMgr::PowerMgrClient::GetInstance().IsScreenOn(true);
     DlopenUtils::DeInit();
-    isOnStart = true;
     DfxMsgManager::GetInstance().Init();
     RegisterAppStateListener();
     AUDIO_INFO_LOG("Audio policy server start end");
@@ -224,7 +222,6 @@ void AudioPolicyServer::AddSystemAbilityListeners()
     AddSystemAbilityListener(DISTRIBUTED_HARDWARE_DEVICEMANAGER_SA_ID);
     AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
     AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
-    AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
 #endif
@@ -248,7 +245,6 @@ void AudioPolicyServer::OnStop()
 #endif
     UnRegisterPowerStateListener();
     UnRegisterSyncHibernateListener();
-    NotifyProcessStatus(false);
     return;
 }
 
@@ -294,56 +290,12 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
 #endif
         default:
-            OnAddSystemAbilityExtract(systemAbilityId, deviceId);
+            AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
     }
     // eg. done systemAbilityId: [3001] cost 780ms
     AUDIO_INFO_LOG("done systemAbilityId: [%{public}d] cost %{public}" PRId64 " ms", systemAbilityId,
         (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
-}
-
-void AudioPolicyServer::OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string& deviceId)
-{
-    AUDIO_INFO_LOG("SA Id is :%{public}d", systemAbilityId);
-    switch (systemAbilityId) {
-        case MEMORY_MANAGER_SA_ID:
-            NotifyProcessStatus(true);
-            break;
-        default:
-            AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
-            break;
-    }
-}
-
-void AudioPolicyServer::NotifyProcessStatus(bool isStart)
-{
-    int pid = getpid();
-    void *libMemMgrClientHandle = dlopen("libmemmgrclient.z.so", RTLD_NOW);
-    if (!libMemMgrClientHandle) {
-        AUDIO_ERR_LOG("dlopen libmemmgrclient library failed");
-        return;
-    }
-    void *notifyProcessStatusFunc = dlsym(libMemMgrClientHandle, "notify_process_status");
-    if (!notifyProcessStatusFunc) {
-        AUDIO_ERR_LOG("dlsm notify_process_status failed");
-#ifndef TEST_COVERAGE
-        dlclose(libMemMgrClientHandle);
-#endif
-        return;
-    }
-    auto notifyProcessStatus = reinterpret_cast<int(*)(int, int, int, int)>(notifyProcessStatusFunc);
-    if (isStart) {
-        AUDIO_ERR_LOG("notify to memmgr when audio_policy_server is started");
-        // 1 indicates the service is started
-        notifyProcessStatus(pid, SYSTEM_PROCESS_TYPE, SYSTEM_STATUS_START, AUDIO_POLICY_SERVICE_ID);
-    } else {
-        AUDIO_ERR_LOG("notify to memmgr when audio_policy_server is stopped");
-        // 0 indicates the service is stopped
-        notifyProcessStatus(pid, SYSTEM_PROCESS_TYPE, SYSTEM_STATUS_STOP, AUDIO_POLICY_SERVICE_ID);
-    }
-#ifndef TEST_COVERAGE
-    dlclose(libMemMgrClientHandle);
-#endif
 }
 
 void AudioPolicyServer::HandleKvDataShareEvent()
@@ -1398,17 +1350,13 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
 int32_t AudioPolicyServer::SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel,
     bool isUpdateUi, bool mute, DeviceType deviceType)
 {
-    int32_t ret = audioPolicyService_.SetSystemVolumeLevelWithDevice(streamType, volumeLevel, deviceType);
-    if (ret == SUCCESS) {
-        UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute);
-        SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
-    } else if (ret == ERR_SET_VOL_FAILED_BY_SAFE_VOL) {
-        SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
-        AUDIO_ERR_LOG("fail to set system volume level by safe vol");
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    int32_t ret = SUCCESS;
+    if (curOutputDeviceType != deviceType) {
+        ret = audioPolicyService_.SetSystemVolumeLevelWithDevice(streamType, volumeLevel, deviceType);
     } else {
-        AUDIO_ERR_LOG("fail to set system volume level, ret is %{public}d", ret);
+        ret = SetSingleStreamVolume(streamType, volumeLevel, isUpdateUi, mute);
     }
-
     return ret;
 }
 
@@ -2782,40 +2730,6 @@ int32_t AudioPolicyServer::QueryEffectSceneMode(SupportedEffectConfig &supported
 {
     int32_t ret = audioPolicyService_.QueryEffectManagerSceneMode(supportedEffectConfig);
     return ret;
-}
-
-int32_t AudioPolicyServer::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config,
-    uint32_t appTokenId)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    for (auto &usg : config.filterOptions.usages) {
-        if (usg != STREAM_USAGE_VOICE_COMMUNICATION) {
-            continue;
-        }
-
-        if (!VerifyPermission(CAPTURER_VOICE_DOWNLINK_PERMISSION, appTokenId)) {
-            AUDIO_ERR_LOG("downlink capturer permission check failed");
-            return ERR_PERMISSION_DENIED;
-        }
-    }
-    return audioPolicyService_.SetPlaybackCapturerFilterInfos(config);
-#else
-    return ERROR;
-#endif
-}
-
-int32_t AudioPolicyServer::SetCaptureSilentState(bool state)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    auto callerUid = IPCSkeleton::GetCallingUid();
-    if (callerUid != UID_CAST_ENGINE_SA) {
-        AUDIO_ERR_LOG("SetCaptureSilentState callerUid is Error: not cast_engine");
-        return ERROR;
-    }
-    return audioPolicyService_.SetCaptureSilentState(state);
-#else
-    return ERROR;
-#endif
 }
 
 int32_t AudioPolicyServer::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)

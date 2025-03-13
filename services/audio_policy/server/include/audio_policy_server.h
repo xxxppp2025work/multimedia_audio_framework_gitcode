@@ -59,10 +59,6 @@ class AudioPolicyServerHandler;
 class AudioSessionService;
 class BluetoothEventSubscriber;
 
-const std::list<AudioStreamType> CAN_MIX_MUTED_STREAM = {
-    STREAM_NOTIFICATION
-};
-
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyManagerStub,
                           public AudioStreamRemovedCallback,
@@ -323,10 +319,6 @@ public:
 
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
 
-    int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId) override;
-
-    int32_t SetCaptureSilentState(bool state) override;
-
     int32_t GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc) override;
 
     std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) override;
@@ -529,7 +521,6 @@ public:
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
-    void OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string& deviceId);
     void RegisterParamCallback();
 
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -568,7 +559,6 @@ private:
     // offload session
     void OffloadStreamCheck(int64_t activateSessionId, int64_t deactivateSessionId);
     void CheckSubscribePowerStateChange();
-    void NotifyProcessStatus(bool isStart);
     void CheckStreamMode(const int64_t activateSessionId);
     bool CheckAudioSessionStrategy(const AudioSessionStrategy &sessionStrategy);
 
@@ -697,8 +687,7 @@ private:
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
     AudioPolicyDump &audioPolicyDump_;
     int32_t sessionIdByRemote_ = -1;
-    std::mutex onStartLock_;
-    bool isOnStart = false;
+    AudioActiveDevice& audioActiveDevice_;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

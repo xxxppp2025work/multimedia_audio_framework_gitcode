@@ -27,7 +27,6 @@
 #include "audio_utils.h"
 #include "audio_policy_proxy.h"
 #include "audio_server_death_recipient.h"
-#include "audio_service_load.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -63,14 +62,9 @@ static bool RegisterDeathRecipientInner(sptr<IRemoteObject> object)
 static sptr<IAudioPolicy> GetAudioPolicyProxyFromSamgr()
 {
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "get samgr failed.");
-    sptr<IRemoteObject> object = samgr->CheckSystemAbility(AUDIO_POLICY_SERVICE_ID);
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("get audio policy SA failed, try loading");
-        AudioServiceLoad::GetInstance()->LoadAudioService();
-        object = samgr->CheckSystemAbility(AUDIO_POLICY_SERVICE_ID);
-        CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "Loading SA failed.");
-    }
+    CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "samgr init failed.");
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "Object is NULL.");
     sptr<IAudioPolicy> apProxy = iface_cast<IAudioPolicy>(object);
     CHECK_AND_RETURN_RET_LOG(apProxy != nullptr, nullptr, "Init apProxy is NULL.");
     return apProxy;
@@ -1346,34 +1340,6 @@ int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supporte
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     int error = gsp->QueryEffectSceneMode(supportedEffectConfig);
     return error;
-}
-
-int32_t AudioPolicyManager::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config,
-    uint32_t appTokenId)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-
-    return gsp->SetPlaybackCapturerFilterInfos(config, appTokenId);
-#else
-    return ERROR;
-#endif
-}
-
-int32_t AudioPolicyManager::SetCaptureSilentState(bool state)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("SetCaptureSilentState: audio policy manager proxy is NULL");
-        return ERROR;
-    }
-
-    return gsp->SetCaptureSilentState(state);
-#else
-    return ERROR;
-#endif
 }
 
 int32_t AudioPolicyManager::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)

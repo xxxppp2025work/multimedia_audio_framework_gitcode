@@ -17,12 +17,9 @@
 #endif
 
 #include <sstream>
-#include "securec.h"
 #include <atomic>
 #include <cinttypes>
-#include <memory>
 
-#include "audio_renderer.h"
 #include "audio_renderer_private.h"
 #include "shared_audio_renderer_wrapper.h"
 
@@ -164,10 +161,10 @@ int32_t AudioRenderer::CheckMaxRendererInstances()
     return SUCCESS;
 }
 
-size_t GetFormatSize(const AudioStreamParams& info)
+size_t GetAudioFormatSize(AudioSampleFormat format)
 {
-    size_t bitWidthSize = 0;
-    switch (info.format) {
+    size_t bitWidthSize = 2;
+    switch (format) {
         case SAMPLE_U8:
             bitWidthSize = 1; // size is 1
             break;
@@ -186,6 +183,35 @@ size_t GetFormatSize(const AudioStreamParams& info)
             break;
     }
     return bitWidthSize;
+}
+
+size_t GetFormatSize(const AudioStreamParams& info)
+{
+    return GetAudioFormatSize(static_cast<AudioSampleFormat>(info.format));
+}
+ 
+int32_t AudioRenderer::MuteAudioBuffer(uint8_t *addr, size_t offset, size_t length, AudioSampleFormat format)
+{
+    CHECK_AND_RETURN_RET_LOG(addr != nullptr && length != 0, ERR_INVALID_PARAM, "Invalid addr or length");
+ 
+    bool formatValid = std::find(AUDIO_SUPPORTED_FORMATS.begin(), AUDIO_SUPPORTED_FORMATS.end(), format)
+        != AUDIO_SUPPORTED_FORMATS.end();
+    CHECK_AND_RETURN_RET_LOG(formatValid, ERR_INVALID_PARAM, "Invalid AudioSampleFormat");
+ 
+    size_t bitWidthSize = GetAudioFormatSize(format);
+    if (bitWidthSize != 0 && length % bitWidthSize != 0) {
+        AUDIO_ERR_LOG("length is %{public}zu, can not be divided by %{public}zu", length, bitWidthSize);
+        return ERR_INVALID_PARAM;
+    }
+ 
+    int32_t ret = 0;
+    if (format == SAMPLE_U8) {
+        ret = memset_s(addr + offset, length, 0X7F, length);
+    } else {
+        ret = memset_s(addr + offset, length, 0, length);
+    }
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "Mute failed!");
+    return SUCCESS;
 }
 
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStreamType)
@@ -1466,20 +1492,22 @@ void AudioRendererPrivate::SetSilentModeAndMixWithOthers(bool on)
     Trace trace(std::string("AudioRenderer::SetSilentModeAndMixWithOthers:") + (on ? "on" : "off"));
     std::shared_lock<std::shared_mutex> sharedLockSwitch(rendererMutex_);
     std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
-    if (static_cast<RendererState>(audioStream_->GetState()) == RENDERER_RUNNING) {
-        if (audioStream_->GetSilentModeAndMixWithOthers() && !on) {
-            audioInterrupt_.sessionStrategy.concurrencyMode = originalStrategy_.concurrencyMode;
+    if (audioStream_->GetSilentModeAndMixWithOthers() && !on) {
+        audioInterrupt_.sessionStrategy.concurrencyMode = originalStrategy_.concurrencyMode;
+        if (static_cast<RendererState>(audioStream_->GetState()) == RENDERER_RUNNING) {
             int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "ActivateAudioInterrupt Failed");
-            audioStream_->SetSilentModeAndMixWithOthers(on);
-            return;
-        } else if (!audioStream_->GetSilentModeAndMixWithOthers() && on) {
-            audioStream_->SetSilentModeAndMixWithOthers(on);
-            audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
-            int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "ActivateAudioInterrupt Failed");
-            return;
         }
+        audioStream_->SetSilentModeAndMixWithOthers(on);
+        return;
+    } else if (!audioStream_->GetSilentModeAndMixWithOthers() && on) {
+        audioStream_->SetSilentModeAndMixWithOthers(on);
+        audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
+        if (static_cast<RendererState>(audioStream_->GetState()) == RENDERER_RUNNING) {
+            int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "ActivateAudioInterrupt Failed");
+        }
+        return;
     }
     audioStream_->SetSilentModeAndMixWithOthers(on);
 }
@@ -1804,6 +1832,7 @@ bool AudioRendererPrivate::InitTargetStream(IAudioStream::SwitchInfo &info,
 bool AudioRendererPrivate::FinishOldStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo,
     RendererState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
+    audioStream_->SetMute(true); // Do not record this status in recover(InitSwitchInfo)
     bool switchResult = false;
     if (previousState == RENDERER_RUNNING) {
         switchResult = audioStream_->StopAudioStream();
@@ -1891,7 +1920,7 @@ bool AudioRendererPrivate::ContinueAfterSplit(RestoreInfo restoreInfo)
 bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo)
 {
     bool switchResult = false;
-    Trace trace("SwitchToTargetStream");
+    Trace trace("SwitchToTargetStream:" + std::to_string(sessionID_));
     AUDIO_INFO_LOG("Restore AudioRenderer %{public}u, target class %{public}d, reason: %{public}d, "
         "device change reason %{public}d, target flag %{public}d", sessionID_, targetClass,
         restoreInfo.restoreReason, restoreInfo.deviceChangeReason, restoreInfo.targetStreamFlag);
