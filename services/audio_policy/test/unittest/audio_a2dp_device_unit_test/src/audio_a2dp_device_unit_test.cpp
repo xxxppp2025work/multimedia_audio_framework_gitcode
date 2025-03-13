@@ -346,5 +346,5 @@ HWTEST_F(AudioA2dpDeviceUnitTest, SetA2dpDeviceVolumeLevel_003, TestSize.Level1)
     EXPECT_EQ(info.volumeLevel, volumeLevel);
     AudioA2dpDevice::GetInstance().DelA2dpDevice(device);
 }
-}// namespace AudioStandard
+} // namespace AudioStandard
 } // namespace OHOS
