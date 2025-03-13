@@ -31,6 +31,7 @@
 #include <mutex>
 #include "securec.h"
 #include <algorithm>
+#include <array>
 
 #include <v1_0/iaudio_manager.h>
 
@@ -85,7 +86,7 @@ uint32_t NAVIGATION_RENDERID = 1;
 uint32_t COMMUNICATION_RENDERID = 2;
 const char* DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink";
 constexpr uint32_t MAX_NUM_OF_SPLIT_STREAM_CATEGORY = 3;
-const std::array<AudioCategory, MAX_NUM_OF_SPLIT_STREAM_CATEGORY> STREAM_SPLIT_CATEGORY = {
+constexpr std::array<AudioCategory, MAX_NUM_OF_SPLIT_STREAM_CATEGORY> STREAM_SPLIT_CATEGORY = {
     AudioCategory::AUDIO_IN_MEDIA,
     AudioCategory::AUDIO_IN_NAVIGATION,
     AudioCategory::AUDIO_IN_COMMUNICATION,
@@ -387,8 +388,10 @@ void RemoteAudioRendererSinkInner::splitStreamInit(const char *splitStreamString
 int32_t RemoteAudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort, AudioCategory type,
     uint32_t &renderId)
 {
-    CHECK_AND_RETURN_RET_LOG(isValidStreamSplitAudioCategory(type), ERR_INVALID_PARAM, "type: %{public}d is valid",
-        static_cast<int32_t>(type));
+    if (!isValidStreamSplitAudioCategory(type)) {
+        AUDIO_ERR_LOG("It can't be handled here, let it crash!");
+        _Exit(0);
+    }
     int64_t start = ClockTime::GetCurNano();
     struct AudioSampleAttributes param;
     InitAttrs(param);
