@@ -984,5 +984,84 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_030, testi
     reply.ReadBool(result);
     EXPECT_FALSE(result);
 }
+
+/**
+ * @tc.name  : IsHeadTrackingEnabledInternal_001
+ * @tc.number: AudioPolicyManagerStubUnitTest_031
+ * @tc.desc  : Test IsHeadTrackingEnabledInternal.
+ */
+HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_031, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    std::shared_ptr<AudioPolicyManagerStub> AudioPolicyManage_ = std::make_shared<AudioPolicyServer>(systemAbilityId, false);
+    AudioPolicyManage_->OnMiddleTenRemoteRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CLIENT_INFO_MGR_CALLBACK), data, reply, option);
+    EXPECT_NE(AudioPolicyManage_, nullptr);
+
+    AudioPolicyManage_->OnMiddleTenRemoteRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::EXCLUDE_OUTPUT_DEVICES), data, reply, option);
+    EXPECT_NE(AudioPolicyManage_, nullptr);
+
+    AudioPolicyManage_->OnMiddleTenRemoteRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNEXCLUDE_OUTPUT_DEVICES), data, reply, option);
+    EXPECT_NE(AudioPolicyManage_, nullptr);
+
+    AudioPolicyManage_->OnMiddleTenRemoteRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_EXCLUDED_OUTPUT_DEVICES), data, reply, option);
+    EXPECT_NE(AudioPolicyManage_, nullptr);
+
+        AudioPolicyManage_->OnMiddleTenRemoteRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_ALLOWED_PLAYBACK_CALLBACK), data, reply, option);
+    EXPECT_NE(AudioPolicyManage_, nullptr);
+}
+/**
+ * @tc.name  : IsHeadTrackingEnabledInternal_001
+ * @tc.number: AudioPolicyManagerStubUnitTest_032
+ * @tc.desc  : Test IsHeadTrackingEnabledInternal.
+ */
+HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_032, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    std::shared_ptr<AudioPolicyManagerStub> AudioPolicyManage_ = std::make_shared<AudioPolicyServer>(systemAbilityId, false);
+    AudioPolicyManage_->OnMiddleEigRemoteRequest(static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DEVICES_INNER),
+        data, reply, option);
+    EXPECT_NE(AudioPolicyManage_, nullptr);
+
+    AudioPolicyManage_->OnMiddleEigRemoteRequest(static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_CONCURRENCY_CALLBACK),
+        data, reply, option);
+    EXPECT_NE(AudioPolicyManage_, nullptr);
+
+    AudioPolicyManage_->OnMiddleEigRemoteRequest(static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_AUDIO_CONCURRENCY_CALLBACK),
+        data, reply, option);
+    EXPECT_NE(AudioPolicyManage_, nullptr);
+
+    AudioPolicyManage_->OnMiddleEigRemoteRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_AUDIO_CONCURRENCY), data, reply, option);
+    EXPECT_NE(AudioPolicyManage_, nullptr);
+
+    AudioPolicyManage_->OnMiddleEigRemoteRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_MICROPHONE_MUTE_PERSISTENT), data, reply, option);
+    EXPECT_NE(AudioPolicyManage_, nullptr);
+
+    AudioPolicyManage_->OnMiddleEigRemoteRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MICROPHONE_MUTE_PERSISTENT), data, reply, option);
+    EXPECT_NE(AudioPolicyManage_, nullptr);
+
+    AudioPolicyManage_->OnMiddleEigRemoteRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::INJECT_INTERRUPTION), data, reply, option);
+    EXPECT_NE(AudioPolicyManage_, nullptr);
+
+    AudioPolicyManage_->OnMiddleEigRemoteRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::DEACTIVATE_AUDIO_SESSION), data, reply, option);
+    EXPECT_NE(AudioPolicyManage_, nullptr);
+
+    AudioPolicyManage_->OnMiddleEigRemoteRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VIRTUAL_CALL), data, reply, option);
+    EXPECT_NE(AudioPolicyManage_, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS
