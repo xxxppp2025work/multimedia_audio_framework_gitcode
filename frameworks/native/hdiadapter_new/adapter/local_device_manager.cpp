@@ -27,6 +27,7 @@ namespace OHOS {
 namespace AudioStandard {
 int32_t LocalDeviceManager::LoadAdapter(const std::string &adapterName)
 {
+    return SUCCESS;
     CHECK_AND_RETURN_RET_LOG(adapters_.count(adapterName) == 0 || adapters_[adapterName] == nullptr, SUCCESS,
         "adapter %{public}s already loaded", adapterName.c_str());
 
@@ -68,6 +69,7 @@ int32_t LocalDeviceManager::LoadAdapter(const std::string &adapterName)
 
 void LocalDeviceManager::UnloadAdapter(const std::string &adapterName, bool force)
 {
+    return;
     CHECK_AND_RETURN_LOG(audioManager_ != nullptr, "audio manager is nullptr");
 
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName);

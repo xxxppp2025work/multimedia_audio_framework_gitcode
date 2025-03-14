@@ -188,6 +188,7 @@ void HdiAdapterManager::UnloadAdapter(HdiDeviceManagerType type, const std::stri
 int32_t HdiAdapterManager::ProcessSink(const std::function<int32_t(uint32_t,
     std::shared_ptr<IAudioRenderSink>)> &processFunc)
 {
+    return SUCCESS;
     int32_t ret = SUCCESS;
     auto func = [&ret, &processFunc](const std::pair<const uint32_t, RenderSinkInfo> &item) -> void {
         uint32_t renderId = item.first;
@@ -204,6 +205,7 @@ int32_t HdiAdapterManager::ProcessSink(const std::function<int32_t(uint32_t,
 int32_t HdiAdapterManager::ProcessSource(const std::function<int32_t(uint32_t,
     std::shared_ptr<IAudioCaptureSource>)> &processFunc)
 {
+    return SUCCESS;
     int32_t ret = SUCCESS;
     auto func = [&ret, &processFunc](const std::pair<const uint32_t, CaptureSourceInfo> &item) -> void {
         uint32_t captureId = item.first;
@@ -220,6 +222,7 @@ int32_t HdiAdapterManager::ProcessSource(const std::function<int32_t(uint32_t,
 void HdiAdapterManager::RegistSinkCallback(HdiAdapterCallbackType type, std::shared_ptr<IAudioSinkCallback> cb,
     const std::function<bool(uint32_t)> &limitFunc)
 {
+    return;
     CHECK_AND_RETURN_LOG(cb != nullptr, "callback of type %{public}u is nullptr", type);
 
     sinkCbs_.RegistCallback(type, cb);
@@ -230,6 +233,7 @@ void HdiAdapterManager::RegistSinkCallback(HdiAdapterCallbackType type, std::sha
 void HdiAdapterManager::RegistSinkCallback(HdiAdapterCallbackType type, IAudioSinkCallback *cb,
     const std::function<bool(uint32_t)> &limitFunc)
 {
+    return;
     CHECK_AND_RETURN_LOG(cb != nullptr, "callback of type %{public}u is nullptr", type);
 
     sinkCbs_.RegistCallback(type, cb);
@@ -240,6 +244,7 @@ void HdiAdapterManager::RegistSinkCallback(HdiAdapterCallbackType type, IAudioSi
 void HdiAdapterManager::RegistSourceCallback(HdiAdapterCallbackType type, std::shared_ptr<IAudioSourceCallback> cb,
     const std::function<bool(uint32_t)> &limitFunc)
 {
+    return;
     CHECK_AND_RETURN_LOG(cb != nullptr, "callback of type %{public}u is nullptr", type);
 
     sourceCbs_.RegistCallback(type, cb);
@@ -250,6 +255,7 @@ void HdiAdapterManager::RegistSourceCallback(HdiAdapterCallbackType type, std::s
 void HdiAdapterManager::RegistSourceCallback(HdiAdapterCallbackType type, IAudioSourceCallback *cb,
     const std::function<bool(uint32_t)> &limitFunc)
 {
+    return;
     CHECK_AND_RETURN_LOG(cb != nullptr, "callback of type %{public}u is nullptr", type);
 
     sourceCbs_.RegistCallback(type, cb);

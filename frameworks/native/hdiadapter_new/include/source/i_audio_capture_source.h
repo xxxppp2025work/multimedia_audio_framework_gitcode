@@ -66,40 +66,40 @@ class IAudioCaptureSource {
 public:
     virtual ~IAudioCaptureSource() = default;
 
-    virtual int32_t Init(const IAudioSourceAttr &attr) = 0;
-    virtual void DeInit(void) = 0;
-    virtual bool IsInited(void) = 0;
+    virtual int32_t Init(const IAudioSourceAttr &attr) SUCCESS_RET
+    virtual void DeInit(void) {}
+    virtual bool IsInited(void) { return false; }
 
-    virtual int32_t Start(void) = 0;
-    virtual int32_t Stop(void) = 0;
-    virtual int32_t Resume(void) = 0;
-    virtual int32_t Pause(void) = 0;
-    virtual int32_t Flush(void) = 0;
-    virtual int32_t Reset(void) = 0;
-    virtual int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) = 0;
+    virtual int32_t Start(void) SUCCESS_RET
+    virtual int32_t Stop(void) SUCCESS_RET
+    virtual int32_t Resume(void) SUCCESS_RET
+    virtual int32_t Pause(void) SUCCESS_RET
+    virtual int32_t Flush(void) SUCCESS_RET
+    virtual int32_t Reset(void) SUCCESS_RET
+    virtual int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) SUCCESS_RET
     virtual int32_t CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
-        uint64_t &replyBytesEc) = 0;
+        uint64_t &replyBytesEc) SUCCESS_RET
 
-    virtual std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) = 0;
+    virtual std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) { return ""; }
 
-    virtual int32_t SetVolume(float left, float right) = 0;
-    virtual int32_t GetVolume(float &left, float &right) = 0;
-    virtual int32_t SetMute(bool isMute) = 0;
-    virtual int32_t GetMute(bool &isMute) = 0;
+    virtual int32_t SetVolume(float left, float right) SUCCESS_RET
+    virtual int32_t GetVolume(float &left, float &right) SUCCESS_RET
+    virtual int32_t SetMute(bool isMute) { return 0; }
+    virtual int32_t GetMute(bool &isMute) { return 0; }
 
-    virtual uint64_t GetTransactionId(void) = 0;
-    virtual int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) = 0;
-    virtual float GetMaxAmplitude(void) = 0;
+    virtual uint64_t GetTransactionId(void) { return 0; }
+    virtual int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) { return 0; }
+    virtual float GetMaxAmplitude(void) { return 0; }
 
-    virtual int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) = 0;
+    virtual int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) SUCCESS_RET
 
-    virtual int32_t UpdateActiveDevice(DeviceType inputDevice) = 0;
+    virtual int32_t UpdateActiveDevice(DeviceType inputDevice) SUCCESS_RET
     virtual int32_t UpdateSourceType(SourceType sourceType) SUCCESS_RET
     virtual void RegistCallback(uint32_t type, IAudioSourceCallback *callback) {}
     virtual void RegistCallback(uint32_t type, std::shared_ptr<IAudioSourceCallback> callback) {}
 
-    virtual int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) = 0;
-    virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) = 0;
+    virtual int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) SUCCESS_RET
+    virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) SUCCESS_RET
 
     virtual void SetAddress(const std::string &address) {}
 
