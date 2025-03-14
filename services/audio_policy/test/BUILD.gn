@@ -57,10 +57,13 @@ group("audio_policy_unittest_packages") {
     ":audio_recovery_device_unit_test",
     ":audio_router_center_unit_test",
     ":audio_routing_manager_listener_stub_unit_test",
+    ":audio_session_service_unit_test",
     ":audio_session_state_monitor_test",
+    ":audio_session_unit_test",
     ":audio_socket_thread_unit_test",
     ":audio_spatialization_service_unit_test",
     ":audio_stream_collector_unit_test",
+    ":audio_usb_manager_unit_test",
     ":audio_volume_manager_unit_test",
     ":device_status_listener_unit_test",
     ":power_state_listener_unit_test",
@@ -3393,6 +3396,116 @@ ohos_unittest("power_state_listener_unit_test") {
   ]
 
   sources = [ "./unittest/power_state_listener_unit_test/src/power_state_listener_unit_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_service_static" ]
+}
+
+ohos_unittest("audio_usb_manager_unit_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "./unittest/audio_usb_manager_unit_test/include",
+    "../../server/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "bluetooth:btframework",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "googletest:gmock",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+  ]
+
+  sources = [ "./unittest/audio_usb_manager_unit_test/src/audio_usb_manager_unit_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_service_static" ]
+}
+
+ohos_unittest("audio_session_unit_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [ "./unittest/audio_session_unit_test/include" ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "bluetooth:btframework",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+  ]
+
+  sources =
+      [ "./unittest/audio_session_unit_test/src/audio_session_unit_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_service_static" ]
+}
+
+ohos_unittest("audio_session_service_unit_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [ "./unittest/audio_session_service_unit_test/include" ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "bluetooth:btframework",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+  ]
+
+  sources = [ "./unittest/audio_session_service_unit_test/src/audio_session_service_unit_test.cpp" ]
 
   deps = [ "../../audio_policy:audio_policy_service_static" ]
 }
