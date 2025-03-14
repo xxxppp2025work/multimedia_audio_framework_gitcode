@@ -24,20 +24,20 @@
 #include "common/hdi_adapter_info.h"
 #include "util/id_handler.h"
 #include "sink/audio_render_sink.h"
-#include "sink/bluetooth_audio_render_sink.h"
-#include "sink/fast_audio_render_sink.h"
-#include "sink/file_audio_render_sink.h"
-#include "sink/multichannel_audio_render_sink.h"
-#include "sink/offload_audio_render_sink.h"
-#include "sink/remote_audio_render_sink.h"
-#include "sink/remote_fast_audio_render_sink.h"
-#include "source/audio_capture_source.h"
-#include "source/bluetooth_audio_capture_source.h"
-#include "source/wakeup_audio_capture_source.h"
-#include "source/fast_audio_capture_source.h"
-#include "source/file_audio_capture_source.h"
-#include "source/remote_audio_capture_source.h"
-#include "source/remote_fast_audio_capture_source.h"
+// #include "sink/bluetooth_audio_render_sink.h"
+// #include "sink/fast_audio_render_sink.h"
+// #include "sink/file_audio_render_sink.h"
+// #include "sink/multichannel_audio_render_sink.h"
+// #include "sink/offload_audio_render_sink.h"
+// #include "sink/remote_audio_render_sink.h"
+// #include "sink/remote_fast_audio_render_sink.h"
+// #include "source/audio_capture_source.h"
+// #include "source/bluetooth_audio_capture_source.h"
+// #include "source/wakeup_audio_capture_source.h"
+// #include "source/fast_audio_capture_source.h"
+// #include "source/file_audio_capture_source.h"
+// #include "source/remote_audio_capture_source.h"
+// #include "source/remote_fast_audio_capture_source.h"
 #include "adapter/local_device_manager.h"
 #include "adapter/bluetooth_device_manager.h"
 #include "adapter/remote_device_manager.h"
@@ -52,6 +52,7 @@ HdiAdapterFactory &HdiAdapterFactory::GetInstance(void)
 
 std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t renderId)
 {
+    return std::make_shared<IAudioRenderSink>();
     IdHandler &idHandler = IdHandler::GetInstance();
     CHECK_AND_RETURN_RET(idHandler.CheckId(renderId, HDI_ID_BASE_RENDER), nullptr);
     uint32_t type = idHandler.ParseType(renderId);
@@ -62,27 +63,27 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t r
         case HDI_ID_TYPE_PRIMARY:
             sink = CreatePrimaryRenderSink(renderId, info);
             break;
-        case HDI_ID_TYPE_BLUETOOTH:
-            sink = CreateBluetoothRenderSink(info);
-            break;
-        case HDI_ID_TYPE_FAST:
-            sink = std::make_shared<FastAudioRenderSink>();
-            break;
-        case HDI_ID_TYPE_FILE:
-            sink = std::make_shared<FileAudioRenderSink>();
-            break;
-        case HDI_ID_TYPE_MULTICHANNEL:
-            sink = std::make_shared<MultichannelAudioRenderSink>();
-            break;
-        case HDI_ID_TYPE_OFFLOAD:
-            sink = std::make_shared<OffloadAudioRenderSink>();
-            break;
-        case HDI_ID_TYPE_REMOTE:
-            sink = CreateRemoteRenderSink(info);
-            break;
-        case HDI_ID_TYPE_REMOTE_FAST:
-            sink = CreateRemoteFastRenderSink(info);
-            break;
+        // case HDI_ID_TYPE_BLUETOOTH:
+        //     sink = CreateBluetoothRenderSink(info);
+        //     break;
+        // case HDI_ID_TYPE_FAST:
+        //     sink = std::make_shared<FastAudioRenderSink>();
+        //     break;
+        // case HDI_ID_TYPE_FILE:
+        //     sink = std::make_shared<FileAudioRenderSink>();
+        //     break;
+        // case HDI_ID_TYPE_MULTICHANNEL:
+        //     sink = std::make_shared<MultichannelAudioRenderSink>();
+        //     break;
+        // case HDI_ID_TYPE_OFFLOAD:
+        //     sink = std::make_shared<OffloadAudioRenderSink>();
+        //     break;
+        // case HDI_ID_TYPE_REMOTE:
+        //     sink = CreateRemoteRenderSink(info);
+        //     break;
+        // case HDI_ID_TYPE_REMOTE_FAST:
+        //     sink = CreateRemoteFastRenderSink(info);
+        //     break;
         default:
             AUDIO_ERR_LOG("invalid type");
             break;
@@ -92,6 +93,7 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t r
 
 std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateCaptureSource(uint32_t captureId)
 {
+    return std::make_shared<IAudioCaptureSource>();
     IdHandler &idHandler = IdHandler::GetInstance();
     CHECK_AND_RETURN_RET(idHandler.CheckId(captureId, HDI_ID_BASE_CAPTURE), nullptr);
     uint32_t type = idHandler.ParseType(captureId);
@@ -99,27 +101,27 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateCaptureSource(uint
 
     std::shared_ptr<IAudioCaptureSource> source = nullptr;
     switch (type) {
-        case HDI_ID_TYPE_PRIMARY:
-            source = CreatePrimaryCaptureSource(captureId, info);
-            break;
-        case HDI_ID_TYPE_BLUETOOTH:
-            source = std::make_shared<BluetoothAudioCaptureSource>(captureId);
-            break;
-        case HDI_ID_TYPE_WAKEUP:
-            source = std::make_shared<WakeupAudioCaptureSource>(captureId);
-            break;
-        case HDI_ID_TYPE_FAST:
-            source = std::make_shared<FastAudioCaptureSource>();
-            break;
-        case HDI_ID_TYPE_FILE:
-            source = std::make_shared<FileAudioCaptureSource>();
-            break;
-        case HDI_ID_TYPE_REMOTE:
-            source = CreateRemoteCaptureSource(info);
-            break;
-        case HDI_ID_TYPE_REMOTE_FAST:
-            source = CreateRemoteFastCaptureSource(info);
-            break;
+        // case HDI_ID_TYPE_PRIMARY:
+        //     source = CreatePrimaryCaptureSource(captureId, info);
+        //     break;
+        // case HDI_ID_TYPE_BLUETOOTH:
+        //     source = std::make_shared<BluetoothAudioCaptureSource>(captureId);
+        //     break;
+        // case HDI_ID_TYPE_WAKEUP:
+        //     source = std::make_shared<WakeupAudioCaptureSource>(captureId);
+        //     break;
+        // case HDI_ID_TYPE_FAST:
+        //     source = std::make_shared<FastAudioCaptureSource>();
+        //     break;
+        // case HDI_ID_TYPE_FILE:
+        //     source = std::make_shared<FileAudioCaptureSource>();
+        //     break;
+        // case HDI_ID_TYPE_REMOTE:
+        //     source = CreateRemoteCaptureSource(info);
+        //     break;
+        // case HDI_ID_TYPE_REMOTE_FAST:
+        //     source = CreateRemoteFastCaptureSource(info);
+        //     break;
         default:
             AUDIO_ERR_LOG("invalid type");
             break;
@@ -157,46 +159,46 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreatePrimaryRenderSink(con
     return std::make_shared<AudioRenderSink>(renderId);
 }
 
-std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateBluetoothRenderSink(const std::string &info)
-{
-    if (info == HDI_ID_INFO_MMAP) {
-        return std::make_shared<BluetoothAudioRenderSink>(true);
-    }
-    return std::make_shared<BluetoothAudioRenderSink>();
-}
+// std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateBluetoothRenderSink(const std::string &info)
+// {
+//     if (info == HDI_ID_INFO_MMAP) {
+//         return std::make_shared<BluetoothAudioRenderSink>(true);
+//     }
+//     return std::make_shared<BluetoothAudioRenderSink>();
+// }
 
-std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRemoteRenderSink(const std::string &info)
-{
-    CHECK_AND_RETURN_RET_LOG(!info.empty(), nullptr, "deviceNetworkId is nullptr");
-    return std::make_shared<RemoteAudioRenderSink>(info);
-}
+// std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRemoteRenderSink(const std::string &info)
+// {
+//     CHECK_AND_RETURN_RET_LOG(!info.empty(), nullptr, "deviceNetworkId is nullptr");
+//     return std::make_shared<RemoteAudioRenderSink>(info);
+// }
 
-std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRemoteFastRenderSink(const std::string &info)
-{
-    CHECK_AND_RETURN_RET_LOG(!info.empty(), nullptr, "deviceNetworkId is nullptr");
-    return std::make_shared<RemoteFastAudioRenderSink>(info);
-}
+// std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRemoteFastRenderSink(const std::string &info)
+// {
+//     CHECK_AND_RETURN_RET_LOG(!info.empty(), nullptr, "deviceNetworkId is nullptr");
+//     return std::make_shared<RemoteFastAudioRenderSink>(info);
+// }
 
-std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreatePrimaryCaptureSource(const uint32_t captureId,
-    const std::string &info)
-{
-    if (info == HDI_ID_INFO_USB) {
-        return std::make_shared<AudioCaptureSource>(captureId, info);
-    }
-    return std::make_shared<AudioCaptureSource>(captureId);
-}
+// std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreatePrimaryCaptureSource(const uint32_t captureId,
+//     const std::string &info)
+// {
+//     if (info == HDI_ID_INFO_USB) {
+//         return std::make_shared<AudioCaptureSource>(captureId, info);
+//     }
+//     return std::make_shared<AudioCaptureSource>(captureId);
+// }
 
-std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateRemoteCaptureSource(const std::string &info)
-{
-    CHECK_AND_RETURN_RET_LOG(!info.empty(), nullptr, "deviceNetworkId is nullptr");
-    return std::make_shared<RemoteAudioCaptureSource>(info);
-}
+// std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateRemoteCaptureSource(const std::string &info)
+// {
+//     CHECK_AND_RETURN_RET_LOG(!info.empty(), nullptr, "deviceNetworkId is nullptr");
+//     return std::make_shared<RemoteAudioCaptureSource>(info);
+// }
 
-std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateRemoteFastCaptureSource(const std::string &info)
-{
-    CHECK_AND_RETURN_RET_LOG(!info.empty(), nullptr, "deviceNetworkId is nullptr");
-    return std::make_shared<RemoteFastAudioCaptureSource>(info);
-}
+// std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateRemoteFastCaptureSource(const std::string &info)
+// {
+//     CHECK_AND_RETURN_RET_LOG(!info.empty(), nullptr, "deviceNetworkId is nullptr");
+//     return std::make_shared<RemoteFastAudioCaptureSource>(info);
+// }
 
 } // namespace AudioStandard
 } // namespace OHOS
