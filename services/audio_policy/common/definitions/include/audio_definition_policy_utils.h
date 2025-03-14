@@ -26,6 +26,7 @@
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_stream_descriptor.h"
+#include "audio_pipe_info.h"
 
 namespace OHOS {
 namespace AudioStandard {

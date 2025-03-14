@@ -53,7 +53,7 @@ bool AudioPolicyConfigParser::LoadConfiguration()
     volumeGroupMap_ = volumeGroupMap;
     interruptGroupMap_ = interruptGroupMap;
 
-    configManager_->OnAudioPolicyConfigXmlParsingCompleted(); // how to notify manager?
+    configManager_->OnAudioPolicyConfigXmlParsingCompleted();
     configManager_->OnXmlParsingCompleted(xmlParsedDataMap_);
     configManager_->OnVolumeGroupParsed(volumeGroupMap_);
     configManager_->OnInterruptGroupParsed(interruptGroupMap_);
@@ -97,30 +97,29 @@ bool AudioPolicyConfigParser::ParseInternal(std::shared_ptr<AudioXmlNode> curNod
 void AudioPolicyConfigParser::ParseAdapters(std::shared_ptr<AudioXmlNode> curNode)
 {
     curNode->MoveToChildren();
-    std::unordered_map<AudioAdapterType, PolicyAdapterInfo> adapterInfoMap = {};
-    PolicyAdapterInfo adapterInfo = {};
+    AudioPolicyConfigData &config = AudioPolicyConfigData::GetInstance();
 
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
-            ParseAdapter(curNode->GetCopyNode(), adapterInfo);
-            adapterInfoMap.insert({adapterInfo.GetTypeEnum(), std::move(adapterInfo)});
+            PolicyAdapterInfo adapterInfo = {};
+            std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>(adapterInfo);
+            ParseAdapter(curNode->GetCopyNode(), adapterInfoPtr);
+            config.adapterInfoMap.insert({adapterInfoPtr->GetTypeEnum(), adapterInfoPtr});
         }
         curNode->MoveToNext();
     }
-    AudioPolicyConfigData &config = AudioPolicyConfigData::GetInstance();
-    config.SetAdapterInfoMap(adapterInfoMap);
-    ConvertAdapterInfoToAudioModuleInfo(adapterInfoMap);
+    ConvertAdapterInfoToAudioModuleInfo();
 }
 
-void AudioPolicyConfigParser::ParseAdapter(std::shared_ptr<AudioXmlNode> curNode, PolicyAdapterInfo &adapterInfo)
+void AudioPolicyConfigParser::ParseAdapter(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<PolicyAdapterInfo> &adapterInfo)
 {
     std::string adapterName;
     CHECK_AND_RETURN_LOG(curNode->GetProp("name", adapterName) == SUCCESS, "Get prop name failed");
     std::string supportScene;
     curNode->GetProp("supportSelectScene", supportScene);
 
-    adapterInfo.SetAdapterName(adapterName);
-    adapterInfo.SetAdapterSupportScene(supportScene);
+    adapterInfo->adapterName = adapterName;
+    adapterInfo->adapterSupportScene = supportScene;
 
     curNode->MoveToChildren();
     while (curNode->IsNodeValid()) {
@@ -141,28 +140,29 @@ void AudioPolicyConfigParser::ParseAdapter(std::shared_ptr<AudioXmlNode> curNode
     }
 }
 
-void AudioPolicyConfigParser::ParsePipes(std::shared_ptr<AudioXmlNode> curNode, PolicyAdapterInfo &adapterInfo)
+void AudioPolicyConfigParser::ParsePipes(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<PolicyAdapterInfo> &adapterInfo)
 {
     curNode->MoveToChildren();
-    std::list<AdapterPipeInfo> pipeInfos = {};
+    std::list<std::shared_ptr<AdapterPipeInfo>> pipeInfos = {};
 
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
             AdapterPipeInfo pipeInfo {};
-            pipeInfo.adapterInfo_ = std::make_shared<PolicyAdapterInfo>(adapterInfo);
+            std::shared_ptrM<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>(pipeInfo);
+            pipeInfoPtr->adapterInfo_ = adapterInfo;
             curNode->GetProp("name", pipeInfo.name_);
             std::string pipeRole;
             curNode->GetProp("role", pipeRole);
-            pipeInfo.pipeRole_ = AudioDefinitionPolicyUtils::pipeRoleStrToEnum[pipeRole];
-            ParsePipeInfos(curNode->GetCopyNode(), pipeInfo);
-            pipeInfos.push_back(std::move(pipeInfo));
+            pipeInfoPtr->role_ = AudioDefinitionPolicyUtils::pipeRoleStrToEnum[pipeRole];
+            ParsePipeInfos(curNode->GetCopyNode(), pipeInfoPtr);
+            pipeInfos.push_back(pipeInfoPtr);
         }
         curNode->MoveToNext();
     }
-    adapterInfo.SetPipeInfos(pipeInfos);
+    adapterInfo->pipeInfos = std::move(pipeInfos);
 }
 
-void AudioPolicyConfigParser::ParsePipeInfos(std::shared_ptr<AudioXmlNode> curNode, AdapterPipeInfo &pipeInfo)
+void AudioPolicyConfigParser::ParsePipeInfos(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<AdapterPipeInfo> &pipeInfo)
 {
     curNode->MoveToChildren();
     while (curNode->IsNodeValid()) {
@@ -186,34 +186,34 @@ void AudioPolicyConfigParser::ParsePipeInfos(std::shared_ptr<AudioXmlNode> curNo
     }
 }
 
-void AudioPolicyConfigParser::ParsePaProp(std::shared_ptr<AudioXmlNode> curNode, AdapterPipeInfo &pipeInfo)
+void AudioPolicyConfigParser::ParsePaProp(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<AdapterPipeInfo> &pipeInfo)
 {
     PaPropInfo paProp = {};
 
     if (!curNode->IsNodeValid() || !curNode->IsElementNode()) {
-        pipeInfo.paProp_ = paProp;
+        pipeInfo->paProp_ = paProp;
         return;
     }
 
     curNode->GetProp("lib", paProp.lib_);
-    curNode->GetProp("role", paProp.paPropRole_);
+    curNode->GetProp("role", paProp.role_);
     curNode->GetProp("moduleName", paProp.moduleName_);
     curNode->GetProp("fixed_latency", paProp.fixedLatency_);
     curNode->GetProp("render_in_idle_state", paProp.renderInIdleState_);
-    pipeInfo.paProp_ = std::move(paProp);
+    pipeInfo->paProp_ = std::move(paProp);
 }
 
-void AudioPolicyConfigParser::ParseStreamProps(std::shared_ptr<AudioXmlNode> curNode, AdapterPipeInfo &pipeInfo)
+void AudioPolicyConfigParser::ParseStreamProps(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<AdapterPipeInfo> &pipeInfo)
 {
     curNode->MoveToChildren();
-    std::list<PipeStreamPropInfo> streamPropInfos = {};
+    std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos = {};
 
     while (curNode->IsNodeValid()) {
         if (!curNode->IsElementNode()) {
             curNode->MoveToNext();
         }
         PipeStreamPropInfo streamPropInfo = {};
-        streamPropInfo.pipeInfo_ = std::make_shared<AdapterPipeInfo>(pipeInfo);
+        streamPropInfo.pipeInfo_ = pipeInfo;
         std::string formatStr;
         curNode->GetProp("format", formatStr);
         streamPropInfo.format_ = AudioDefinitionPolicyUtils::formatStrToEnum[formatStr];
@@ -223,29 +223,27 @@ void AudioPolicyConfigParser::ParseStreamProps(std::shared_ptr<AudioXmlNode> cur
         std::string channelLayoutStr;
         curNode->GetProp("channelLayout", channelLayoutStr);
         streamPropInfo.channelLayout_ = AudioDefinitionPolicyUtils::layoutStrToEnum[channelLayoutStr];
+        streamPropInfo.channels_ = AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
+                streamPropInfo.channelLayout_);
         std::string bufferSizeStr;
         curNode->GetProp("bufferSize", bufferSizeStr);
         StringConverter(bufferSizeStr, streamPropInfo.bufferSize_);
         std::string supportDevicesStr;
         curNode->GetProp("supportDevices", supportDevicesStr);
         if (supportDevicesStr != "") {
-            std::list<std::string> supportDevices {};
-            SplitStringToList(supportDevicesStr, supportDevices, ", ");
-            for (auto device : supportDevices) {
-                streamPropInfo.supportDevices_.push_back(AudioDefinitionPolicyUtils::deviceNameToTypeEnum[device]);
-            }
+            SplitStringToList(supportDevicesStr, streamPropInfo.supportDevices, ", ");
         }
 
-        streamPropInfos.push_back(std::move(streamPropInfo));
+        streamPropInfos.push_back(std::make_shared<PipeStreamPropInfo>(streamPropInfo));
         curNode->MoveToNext();
     }
-    pipeInfo.streamPropInfos_ = std::move(streamPropInfos);
+    pipeInfo->streamPropInfos_ = std::move(streamPropInfos);
 }
 
-void AudioPolicyConfigParser::ParseAttributes(std::shared_ptr<AudioXmlNode> curNode, AdapterPipeInfo &pipeInfo)
+void AudioPolicyConfigParser::ParseAttributes(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<AdapterPipeInfo> &pipeInfo)
 {
     curNode->MoveToChildren();
-    std::list<AttributeInfo> attributeInfos = {};
+    std::list<std:;shared_ptr<AttributeInfo>> attributeInfos = {};
 
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
@@ -253,47 +251,41 @@ void AudioPolicyConfigParser::ParseAttributes(std::shared_ptr<AudioXmlNode> curN
             curNode->GetProp("name", attributeInfo.name_);
             curNode->GetProp("value", attributeInfo.value_);
             ParseAttributeByName(attributeInfo, pipeInfo);
-            attributeInfos.push_back(std::move(attributeInfo));
+            attributeInfos.push_back(std::make_shared<AttributeInfo>(attributeInfo));
         }
         curNode->MoveToNext();
     }
-    // TODO: AUDIO_FLAG_MMAP?
-    if (pipeInfo.audioUsage_ == AUDIO_USAGE_VOIP && std::find(
-        pipeInfo.supportFlags_.begin(), pipeInfo.supportFlags_.end(), AUDIO_FLAG_MMAP)
-            != pipeInfo.supportFlags_.end()
-        ) {
-        configManager_->OnVoipConfigParsed(true);
-    }
-    pipeInfo.attributeInfos_ = std::move(attributeInfos);
+    pipeInfo->attributeInfos_ = std::move(attributeInfos);
 }
 
-void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo, AdapterPipeInfo &pipeInfo)
+void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo, std::shared_ptr<AdapterPipeInfo> &pipeInfo)
 {
     if (attributeInfo.name_ == "flag") {
         std::list<std::string> supportFlags = {};
-        SplitStringToList(attributeInfo.value_, supportFlags, "|");
+        std::string tmpValue = attributeInfo.value_;
+        SplitStringToList(tmpValue, supportFlags, "|");
         for (auto flag : supportFlags) {
-            pipeInfo.supportFlags_.push_back(AudioDefinitionPolicyUtils::flagStrToEnum[flag]);
+            pipeInfo->supportFlags_ |= AudioDefinitionPolicyUtils::flagStrToEnum[flag];
         }
-    } else if (attributeInfo.name_ == "usage") {
-        auto it = AudioDefinitionPolicyUtils::usageStrToEnum.find(attributeInfo.value_);
-        if (it != AudioDefinitionPolicyUtils::usageStrToEnum.end()) {
-            pipeInfo.audioUsage_ = static_cast<int32_t>(it->second);
+
+        if (pipeInfo->supportFlags_ & AUDIO_OUTPUT_FLAG_VOIP) {
+            AUDIO_INFO_LOG("use fast voip");
+            configManager_->OnvoipConfigParsed(true);
         }
     } else if (attributeInfo.name_ == "preload") {
-        pipeInfo.preloadAttr_ = AudioDefinitionPolicyUtils::preloadStrToEnum[attributeInfo.value_];
+        pipeInfo->preloadAttr_ = AudioDefinitionPolicyUtils::preloadStrToEnum[attributeInfo.value_];
     }
 }
 
-void AudioPolicyConfigParser::ParseDevices(std::shared_ptr<AudioXmlNode> curNode, PolicyAdapterInfo &adapterInfo)
+void AudioPolicyConfigParser::ParseDevices(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<PolicyAdapterInfo> &adapterInfo)
 {
     curNode->MoveToChildren();
-    std::list<AdapterDeviceInfo> deviceInfos = {};
+    std::list<std::shared_ptr<AdapterDeviceInfo>> deviceInfos = {};
 
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
             AdapterDeviceInfo deviceInfo {};
-            deviceInfo.adapterInfo_ = std::make_shared<PolicyAdapterInfo>(adapterInfo);
+            deviceInfo.adapterInfo_ = adapterInfo;
             curNode->GetProp("name", deviceInfo.name_);
             std::string type;
             curNode->GetProp("type", type);
@@ -307,11 +299,11 @@ void AudioPolicyConfigParser::ParseDevices(std::shared_ptr<AudioXmlNode> curNode
             std::string supportPipeInStr;
             curNode->GetProp("supportPipes", supportPipeInStr);
             SplitStringToList(supportPipeInStr, deviceInfo.supportPipes_, ",");
-            deviceInfos.push_back(std::move(deviceInfo));
+            deviceInfos.push_back(std::make_shared<AdapterDeviceInfo>(deviceInfo));
         }
         curNode->MoveToNext();
     }
-    adapterInfo.SetDeviceInfos(deviceInfos);
+    adapterInfo->deviceInfos = std::move(deviceInfos);
 }
 
 void AudioPolicyConfigParser::ParseGroups(std::shared_ptr<AudioXmlNode> curNode, PolicyXmlNodeType type)
@@ -376,9 +368,6 @@ void AudioPolicyConfigParser::ParseGlobalConfigs(std::shared_ptr<AudioXmlNode> c
                 case PolicyGlobalConfigType::PA_CONFIGS:
                     ParsePAConfigs(curNode->GetCopyNode());
                     break;
-                case PolicyGlobalConfigType::DEFAULT_MAX_CON_CURRENT_INSTANCE:
-                    ParseDefaultMaxInstances(curNode->GetCopyNode());
-                    break;
                 default:
                     ParseGlobalConfigs(curNode->GetChildrenNode());
                     break;
@@ -396,8 +385,6 @@ PolicyGlobalConfigType AudioPolicyConfigParser::GetGlobalConfigTypeAsInt(std::sh
         return PolicyGlobalConfigType::COMMON_CONFIGS;
     } else if (curNode->CompareName("paConfigs")) {
         return PolicyGlobalConfigType::PA_CONFIGS;
-    } else if (curNode->CompareName("maxConcurrentInstances")) {
-        return PolicyGlobalConfigType::DEFAULT_MAX_CON_CURRENT_INSTANCE;
     } else {
         return PolicyGlobalConfigType::UNKNOWN;
     }
@@ -450,78 +437,6 @@ PolicyPAConfigType AudioPolicyConfigParser::GetPaConfigType(std::string &name)
 }
 
 
-void AudioPolicyConfigParser::ParseDefaultMaxInstances(std::shared_ptr<AudioXmlNode> curNode)
-{
-    curNode->MoveToChildren();
-    while (curNode->IsNodeValid()) {
-        if (curNode->IsElementNode()) {
-            std::string sExtendInfo;
-            curNode->GetContent(sExtendInfo);
-            switch (GetDefaultMaxInstanceTypeAsInt(curNode)) {
-                case PolicyMaxInstanceType::OUTPUT:
-                    ParseOutputMaxInstances(curNode->GetCopyNode());
-                    break;
-                case PolicyMaxInstanceType::INPUT:
-                    ParseInputMaxInstances(curNode->GetCopyNode());
-                    break;
-                default:
-                    ParseDefaultMaxInstances(curNode->GetChildrenNode());
-                    break;
-            }
-        }
-        curNode->MoveToNext();
-    }
-}
-
-
-PolicyMaxInstanceType AudioPolicyConfigParser::GetDefaultMaxInstanceTypeAsInt(std::shared_ptr<AudioXmlNode> curNode)
-{
-    if (curNode->CompareName("output")) {
-        return PolicyMaxInstanceType::OUTPUT;
-    } else if (curNode->CompareName("input")) {
-        return PolicyMaxInstanceType::INPUT;
-    } else {
-        return PolicyMaxInstanceType::UNKNOWN;
-    }
-}
-
-
-void AudioPolicyConfigParser::ParseOutputMaxInstances(std::shared_ptr<AudioXmlNode> curNode)
-{
-    curNode->MoveToChildren();
-    std::list<PolicyConfigInfo> configInfos;
-
-    while (curNode->IsNodeValid()) {
-        if (curNode->IsElementNode()) {
-            PolicyConfigInfo configInfo = {};
-            curNode->GetProp("name", configInfo.name_);
-            curNode->GetProp("flag", configInfo.type_);
-            curNode->GetProp("value", configInfo.value_);
-            configInfos.push_back(configInfo);
-        }
-        curNode->MoveToNext();
-    }
-    globalConfigs_.outputConfigInfos_ = configInfos;
-}
-
-void AudioPolicyConfigParser::ParseInputMaxInstances(std::shared_ptr<AudioXmlNode> curNode)
-{
-    curNode->MoveToChildren();
-    std::list<PolicyConfigInfo> configInfos;
-
-    while (curNode->IsNodeValid()) {
-        if (curNode->IsElementNode()) {
-            PolicyConfigInfo configInfo = {};
-            curNode->GetProp("name", configInfo.name_);
-            curNode->GetProp("flag", configInfo.type_);
-            curNode->GetProp("value", configInfo.value_);
-            configInfos.push_back(configInfo);
-        }
-        curNode->MoveToNext();
-    }
-    globalConfigs_.inputConfigInfos_ = configInfos;
-}
-
 void AudioPolicyConfigParser::ParseCommonConfigs(std::shared_ptr<AudioXmlNode> curNode)
 {
     curNode->MoveToChildren();
@@ -539,11 +454,25 @@ void AudioPolicyConfigParser::ParseCommonConfigs(std::shared_ptr<AudioXmlNode> c
             } else if (configInfo.name_ == "anahsShowType") {
                 AUDIO_INFO_LOG("anahs pc support: %{public}s", configInfo.value_.c_str());
                 HandleUpdateAnahsSupportParsed(configInfo.value_);
+            } else if (configInfo.name_ == "setDefaultAdapter") {
+                AUDIO_INFO_LOG("default adapter support: %{public}s", configInfo.value_.c_str());
+                HandleDefaultAdapterSupportParsed(configInfo.value_);
             }
         }
         curNode->MoveToNext();
     }
     globalConfigs_.commonConfigs_ = configInfos;
+}
+
+void AudioPolicyConfigParser::HandleDefaultAdapterSupportParsed(std::string &value)
+{
+    if (value == "true") {
+        configManager_->OnUpdateDefaultAdapter(true);
+        shouldSetDefaultAdapter_ = true;
+    } else {
+        configManager_->OnUpdateDefaultAdapter(false);
+        shouldSetDefaultAdapter_ = false;
+    }
 }
 
 void AudioPolicyConfigParser::HandleUpdateRouteSupportParsed(std::string &value)
@@ -627,41 +556,39 @@ void AudioPolicyConfigParser::ConvertAdapterInfoToGroupInfo(
     }
 }
 
-void AudioPolicyConfigParser::ConvertAdapterInfoToAudioModuleInfo(
-    std::unordered_map<AudioAdapterType, PolicyAdapterInfo> adapterInfoMap_)
+void AudioPolicyConfigParser::ConvertAdapterInfoToAudioModuleInfo()
 {
-    for (auto &[adapterType, adapterInfo] : adapterInfoMap_) {
+    AudioPolicyConfigData &config = AudioPolicyConfigData.GetInstance();
+    for (auto &adapterInfoIt : config.adapterInfoMap) {
         std::list<AudioModuleInfo> audioModuleList = {};
         bool shouldEnableOffload = false;
-        if (adapterType == AudioAdapterType::TYPE_PRIMARY) {
-            GetOffloadAndOpenMicState(adapterInfo, shouldEnableOffload);
+        if (adapterInfoIt.first == AudioAdapterType::TYPE_PRIMARY) {
+            GetOffloadAndOpenMicState(adapterInfoIt.second, shouldEnableOffload);
         }
 
-        std::list<AdapterPipeInfo> pipeInfos_;
-        adapterInfo.GetPipeInfos(pipeInfos_);
         AudioPipeRole currentRole = PIPE_ROLE_NONE;
-        for (auto &pipeInfo : pipeInfos_) {
-            if (currentRole == pipeInfo.pipeRole_) {
+        for (auto &pipeInfo : adapterInfoIt.second->pipeInfos) {
+            if (currentRole == pipeInfo->role_) {
                 continue;
             }
-            currentRole = pipeInfo.pipeRole_;
-            CHECK_AND_CONTINUE_LOG(pipeInfo.name_.find(MODULE_SINK_OFFLOAD) == std::string::npos,
+            currentRole = pipeInfo->role_;
+            CHECK_AND_CONTINUE_LOG(pipeInfo->name_.find(MODULE_SINK_OFFLOAD) == std::string::npos,
                 "skip offload out sink.");
             AudioModuleInfo audioModuleInfo = {};
             GetCommontAudioModuleInfo(pipeInfo, audioModuleInfo);
 
-            audioModuleInfo.className = adapterInfo.GetAdapterName();
+            audioModuleInfo.className = adapterInfoIt.second->adapterName;
             // The logic here strongly depends on the moduleName in the XML
-            if (pipeInfo.paProp_.moduleName_ != "") {
-                audioModuleInfo.name = pipeInfo.paProp_.moduleName_;
+            if (pipeInfo->paProp_.moduleName_ != "") {
+                audioModuleInfo.name = pipeInfo->paProp_.moduleName_;
             } else {
                 std::list<AdapterDeviceInfo> deviceInfos_;
                 adapterInfo.GetDeviceInfos(deviceInfos_);
-                audioModuleInfo.name = GetAudioModuleInfoName(pipeInfo.name_, deviceInfos_);
+                audioModuleInfo.name = GetAudioModuleInfoName(pipeInfo->name_, adapterInfoIt.second->deviceInfos);
             }
 
-            audioModuleInfo.adapterName = adapterInfo.GetAdapterName();
-            if (adapterType == AudioAdapterType::TYPE_FILE_IO) {
+            audioModuleInfo.adapterName = adapterInfo->adapterName;
+            if (adapterInfoIt.first == AudioAdapterType::TYPE_FILE_IO) {
                 audioModuleInfo.adapterName = STR_INIT;
                 audioModuleInfo.format = STR_INIT;
                 audioModuleInfo.className = FILE_CLASS;
@@ -669,8 +596,8 @@ void AudioPolicyConfigParser::ConvertAdapterInfoToAudioModuleInfo(
             audioModuleInfo.sinkLatency = globalConfigs_.globalPaConfigs_.sinkLatency_;
 
             shouldOpenMicSpeaker_ ? audioModuleInfo.OpenMicSpeaker = "1" : audioModuleInfo.OpenMicSpeaker = "0";
-            if (adapterType == AudioAdapterType::TYPE_PRIMARY &&
-                shouldEnableOffload && pipeInfo.paProp_.paPropRole_ == MODULE_TYPE_SINK) {
+            if (adapterInfoIt.first == AudioAdapterType::TYPE_PRIMARY &&
+                shouldEnableOffload && pipeInfo->paProp_.role_ == MODULE_TYPE_SINK) {
                 audioModuleInfo.offloadEnable = "1";
             }
             audioModuleList.push_back(audioModuleInfo);
@@ -681,62 +608,61 @@ void AudioPolicyConfigParser::ConvertAdapterInfoToAudioModuleInfo(
             audioModuleInfo.ports = audioModuleListTmp;
             audioModuleListData.push_back(audioModuleInfo);
             AUDIO_WARNING_LOG("name:%{public}s, adapter name:%{public}s, adapter type:%{public}d",
-                audioModuleInfo.name.c_str(), audioModuleInfo.adapterName.c_str(), adapterType);
+                audioModuleInfo.name.c_str(), audioModuleInfo.adapterName.c_str(), adapterInfoIt.first);
         }
-        ClassType classType = GetClassTypeByAdapterType(adapterType);
+        ClassType classType = GetClassTypeByAdapterType(adapterInfoIt.first);
         xmlParsedDataMap_[classType] = audioModuleListData;
     }
 }
 
-void AudioPolicyConfigParser::GetOffloadAndOpenMicState(PolicyAdapterInfo &adapterInfo,
+void AudioPolicyConfigParser::GetOffloadAndOpenMicState(std::shared_ptr<PolicyAdapterInfo> &adapterInfo,
     bool &shouldEnableOffload)
 {
-    std::list<AdapterPipeInfo> pipeInfos_;
-    adapterInfo.GetPipeInfos(pipeInfos_);
-    for (auto &pipeInfo : pipeInfos_) {
-        if (pipeInfo.paProp_.paPropRole_ == MODULE_TYPE_SINK &&
-            pipeInfo.name_.find(MODULE_SINK_OFFLOAD) != std::string::npos) {
+    for (auto &pipeInfo : adapterInfo->pipeInfos) {
+        if (pipeInfo->paProp_.role_ == MODULE_TYPE_SINK &&
+            pipeInfo->name_.find(MODULE_SINK_OFFLOAD) != std::string::npos) {
             shouldEnableOffload = true;
         }
     }
 }
 
-void AudioPolicyConfigParser::GetCommontAudioModuleInfo(AdapterPipeInfo &pipeInfo, AudioModuleInfo &audioModuleInfo)
+void AudioPolicyConfigParser::GetCommontAudioModuleInfo(std::shared_ptr<AdapterPipeInfo> &pipeInfo,
+    AudioModuleInfo &audioModuleInfo)
 {
-    audioModuleInfo.role = pipeInfo.paProp_.paPropRole_;
+    audioModuleInfo.role = pipeInfo->paProp_.role_;
 
-    for (auto streamPropInfo : pipeInfo.streamPropInfos_) {
-        audioModuleInfo.supportedRate_.insert(streamPropInfo.sampleRate_);
-        audioModuleInfo.supportedChannels_.insert(streamPropInfo.channelLayout_);
+    for (auto &streamPropInfo : pipeInfo->streamPropInfos_) {
+        audioModuleInfo.supportedRate_.insert(streamPropInfo->sampleRate_);
+        audioModuleInfo.supportedChannels_.insert(streamPropInfo->channels_);
     }
 
-    audioModuleInfo.lib = pipeInfo.paProp_.lib_;
+    audioModuleInfo.lib = pipeInfo->paProp_.lib_;
 
-    if (pipeInfo.streamPropInfos_.size() != 0) {
-        audioModuleInfo.rate = std::to_string((*pipeInfo.streamPropInfos_.begin()).sampleRate_);
+    if (pipeInfo->streamPropInfos_.size() != 0) {
+        audioModuleInfo.rate = std::to_string(pipeInfo->streamPropInfos_.front()->sampleRate_);
         audioModuleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[
-            (*pipeInfo.streamPropInfos_.begin()).format_];
-        audioModuleInfo.channels = std::to_string((*pipeInfo.streamPropInfos_.begin()).channelLayout_);
-        audioModuleInfo.bufferSize = std::to_string((*pipeInfo.streamPropInfos_.begin()).bufferSize_);
+            pipeInfo->streamPropInfos_.front()->format_];
+        audioModuleInfo.channels = std::to_string(pipeInfo->streamPropInfos_.front()->channels_);
+        audioModuleInfo.bufferSize = std::to_string(pipeInfo->streamPropInfos_.front()->bufferSize_);
     }
 
-    for (auto &attributeInfo : pipeInfo.attributeInfos_) {
-        if (attributeInfo.name_ == "filePath") {
-            audioModuleInfo.fileName = attributeInfo.value_;
+    for (auto &attributeInfo : pipeInfo->attributeInfos_) {
+        if (attributeInfo->name_ == "filePath") {
+            audioModuleInfo.fileName = attributeInfo->value_;
         }
     }
 
-    audioModuleInfo.fixedLatency = pipeInfo.paProp_.fixedLatency_;
-    audioModuleInfo.renderInIdleState = pipeInfo.paProp_.renderInIdleState_;
+    audioModuleInfo.fixedLatency = pipeInfo->paProp_.fixedLatency_;
+    audioModuleInfo.renderInIdleState = pipeInfo->paProp_.renderInIdleState_;
 }
 
 std::string AudioPolicyConfigParser::GetAudioModuleInfoName(std::string &pipeInfoName,
-    std::list<AdapterDeviceInfo> &deviceInfos)
+    std::list<std::shared_ptr<AdapterDeviceInfo>> &deviceInfos)
 {
     for (auto &deviceInfo : deviceInfos) {
-        if (std::find(deviceInfo.supportPipes_.begin(), deviceInfo.supportPipes_.end(), pipeInfoName) !=
-            deviceInfo.supportPipes_.end()) {
-            return deviceInfo.name_;
+        if (std::find(deviceInfo->supportPipes_.begin(), deviceInfo->supportPipes_.end(), pipeInfoName) !=
+            deviceInfo->supportPipes_.end()) {
+            return deviceInfo->name_;
         }
     }
     return "";

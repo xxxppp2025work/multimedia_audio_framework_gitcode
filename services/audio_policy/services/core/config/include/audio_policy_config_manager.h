@@ -49,8 +49,9 @@ public:
     void OnGlobalConfigsParsed(PolicyGlobalConfigs &globalConfigs);
     void OnVoipConfigParsed(bool enableFastVoip);
     void OnUpdateRouteSupport(bool isSupported);
+    void OnUpdateDefaultAdapter(bool isEnable);
     void OnUpdateAnahsSupport(std::string anahsShowType);
-    void OnHasEarpiece(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap);
+    void OnHasEarpiece();
     
     // update
     void SetNormalVoipFlag(const bool &normalVoipFlag);
@@ -60,24 +61,25 @@ public:
     void GetDeviceClassInfo(std::unordered_map<ClassType, std::list<AudioModuleInfo>> &deviceClassInfo);
     std::string GetGroupName(const std::string& deviceName, const GroupType type);
     int32_t GetMaxRendererInstances();
+    int32_t GetMaxCapturersInstances();
+    int32_t GetMaxFastRenderersInstances();
     int32_t GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
         const AudioSamplingRate &samplingRate);
     int32_t GetAudioLatencyFromXml() const;
     uint32_t GetSinkLatencyFromXml() const;
-    void GetAudioAdapterInfos(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap);
+    void GetAudioAdapterInfos(std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> &adapterInfoMap);
     void GetVolumeGroupData(std::unordered_map<std::string, std::string>& volumeGroupData);
     void GetInterruptGroupData(std::unordered_map<std::string, std::string>& interruptGroupData);
     void GetGlobalConfigs(PolicyGlobalConfigs &globalConfigs);
     bool GetVoipConfig();
     bool GetUpdateRouteSupport();
+    void GetDefaultAdapter();
     bool GetAdapterInfoFlag();
-    bool GetAdapterInfoByType(AudioAdapterType type, PolicyAdapterInfo &info);
+    bool GetAdapterInfoByType(AudioAdapterType type, std::shared_ptr<PolicyAdapterInfo> &info);
     bool GetHasEarpiece();
 
-    void GetDeviceDescriptorByDeviceType(DeviceType deviceType, AudioDeviceDescriptor &desc);
-    std::string GetSinkPortName(DeviceType deviceType, AudioFlag flagType);
-    AudioFlag GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> desc);
-    void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, PipeStreamPropInfo &info);
+    uint32_t GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> desc);
+    void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<PipeStreamPropInfo> &info);
 private:
     AudioPolicyConfigManager() : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioPolicyConfig_(AudioPolicyConfigData::GetInstance())
@@ -90,6 +92,7 @@ private:
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
     bool hasEarpiece_ = false;
     bool isUpdateRouteSupported_ = true;
+    bool isDefaultAdapterEnable_ = false;
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;
     PolicyGlobalConfigs globalConfigs_;

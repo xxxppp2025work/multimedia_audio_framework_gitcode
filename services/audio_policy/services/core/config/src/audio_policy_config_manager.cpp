@@ -24,7 +24,13 @@
 namespace OHOS {
 namespace AudioStandard {
 
+staic const char* MAX_RENDERERS_NAME = "maxRenderers";
+staic const char* MAX_CAPTURERS_NAME = "maxCapturers";
+staic const char* MAX_FAST_RENDERERS_NAME = "maxFastRenderers";
+
 const int32_t DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES = 128;
+const int32_t DEFAULT_MAX_INPUT_NORMAL_INSTANCES = 16;
+const int32_t DEFAULT_MAX_FAST_NORMAL_INSTANCES = 8;
 
 bool AudioPolicyConfigManager::Init()
 {
@@ -41,17 +47,15 @@ bool AudioPolicyConfigManager::Init()
 
 void AudioPolicyConfigManager::OnAudioPolicyConfigXmlParsingCompleted()
 {
-    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
-    std::unordered_map<AudioAdapterType, PolicyAdapterInfo> adapterInfoMap {};
-    configData.GetAdapterInfoMap(adapterInfoMap);
-    AUDIO_INFO_LOG("AdapterInfo num [%{public}zu]", adapterInfoMap.size());
-    CHECK_AND_RETURN_LOG(!adapterInfoMap.empty(), "Parse audio policy xml failed, received data is empty");
+    AUDIO_INFO_LOG("AdapterInfo num [%{public}zu]", audioPolicyCOnfig_.adapterInfoMap.size());
+    CHECK_AND_RETURN_LOG(!audioPolicyCOnfig_.adapterInfoMap.empty(),
+        "Parse audio policy xml failed, received data is empty");
 
     audioPolicyConfig_.Reorganize();
 
     isAdapterInfoMap_.store(true);
 
-    OnHasEarpiece(adapterInfoMap);
+    OnHasEarpiece();
 }
 
 void AudioPolicyConfigManager::OnXmlParsingCompleted(
@@ -94,6 +98,16 @@ void AudioPolicyConfigManager::OnUpdateRouteSupport(bool isSupported)
     isUpdateRouteSupported_ = isSupported;
 }
 
+void AudioPolicyConfigManager::OnUpdateDefaultAdapter(bool isEnable)
+{
+    isDefaultAdapterEnable_ = false;
+}
+
+bool AudioPolicyConfigManager::GetDefaultAdapterEnable()
+{
+    return isDefaultAdapterEnable_;
+}
+
 void AudioPolicyConfigManager::OnGlobalConfigsParsed(PolicyGlobalConfigs &globalConfigs)
 {
     globalConfigs_ = globalConfigs;
@@ -110,14 +124,12 @@ void AudioPolicyConfigManager::OnUpdateAnahsSupport(std::string anahsShowType)
     AudioPolicyService::GetAudioPolicyService().OnUpdateAnahsSupport(anahsShowType);
 }
 
-void AudioPolicyConfigManager::OnHasEarpiece(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap)
+void AudioPolicyConfigManager::OnHasEarpiece()
 {
-    for (const auto &adapterInfo : adapterInfoMap) {
-        std::list<AdapterDeviceInfo> deviceInfoList;
-        adapterInfo.second.GetDeviceInfos(deviceInfoList);
-        hasEarpiece_ = std::any_of(deviceInfoList.begin(), deviceInfoList.end(),
+    for (const auto &adapterInfo : audioPolicyConfig_.adapterInfoMap) {
+        hasEarpiece_ = std::any_of(adapterInfo.secnod->deviceInfos.begin(), adapterInfo.secnod->deviceInfos.end(),
             [](const auto& deviceInfo) {
-                return deviceInfo.type_ == DEVICE_TYPE_EARPIECE;
+                return deviceInfo->type_ == DEVICE_TYPE_EARPIECE;
             });
         if (hasEarpiece_) {
             break;
@@ -166,19 +178,50 @@ std::string AudioPolicyConfigManager::GetGroupName(const std::string& deviceName
 
 int32_t AudioPolicyConfigManager::GetMaxRendererInstances()
 {
-    auto configIter = std::find_if(globalConfigs_.outputConfigInfos_.begin(), globalConfigs_.outputConfigInfos_.end(),
-        [](const auto& configInfo) {
-            return configInfo.name_ == "normal" && configInfo.value_ != "";
-        });
-    if (configIter != globalConfigs_.outputConfigInfos_.end()) {
-        AUDIO_INFO_LOG("Max output normal instance is %{public}s", configIter->value_.c_str());
+    for (auto commonConfig : globalConfigs_.commonConfigs_) {
+        if (commonConfig.name_ != MAX_RENDERERS_NAME) {
+            continue
+        }
+        AUDIO_INFO_LOG("Max output normal instance is %{public}s", commonConfig->value_.c_str());
         int32_t convertValue = 0;
-        CHECK_AND_RETURN_RET_LOG(StringConverter(configIter->value_, convertValue),
+        CHECK_AND_RETURN_RET_LOG(StringConverter(commonConfig->value_, convertValue),
             DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES,
-            "convert invalid configInfo.value_: %{public}s", configIter->value_.c_str());
+            "convert invalid configInfo.value_: %{public}s", commonConfig->value_.c_str());
         return convertValue;
     }
     return DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES;
+}
+
+int32_t AudioPolicyConfigManager::GetMaxCapturersInstances()
+{
+    for (auto commonConfig : globalConfigs_.commonConfigs_) {
+        if (commonConfig.name_ != MAX_CAPTURERS_NAME) {
+            continue
+        }
+        AUDIO_INFO_LOG("Max input normal instance is %{public}s", commonConfig->value_.c_str());
+        int32_t convertValue = 0;
+        CHECK_AND_RETURN_RET_LOG(StringConverter(commonConfig->value_, convertValue),
+            DEFAULT_MAX_INPUT_NORMAL_INSTANCES,
+            "convert invalid configInfo.value_: %{public}s", commonConfig->value_.c_str());
+        return convertValue;
+    }
+    return DEFAULT_MAX_INPUT_NORMAL_INSTANCES;
+}
+
+int32_t AudioPolicyConfigManager::GetMaxFastRenderersInstances()
+{
+    for (auto commonConfig : globalConfigs_.commonConfigs_) {
+        if (commonConfig.name_ != MAX_FAST_RENDERERS_NAME) {
+            continue
+        }
+        AUDIO_INFO_LOG("Max Fast Renderer instance is %{public}s", commonConfig->value_.c_str());
+        int32_t convertValue = 0;
+        CHECK_AND_RETURN_RET_LOG(StringConverter(commonConfig->value_, convertValue),
+            DEFAULT_MAX_FAST_NORMAL_INSTANCES,
+            "convert invalid configInfo.value_: %{public}s", commonConfig->value_.c_str());
+        return convertValue;
+    }
+    return DEFAULT_MAX_FAST_NORMAL_INSTANCES;
 }
 
 int32_t AudioPolicyConfigManager::GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
@@ -209,9 +252,9 @@ uint32_t AudioPolicyConfigManager::GetSinkLatencyFromXml() const
 }
 
 void AudioPolicyConfigManager::GetAudioAdapterInfos(
-    std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap)
+    std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> &adapterInfoMap)
 {
-    audioPolicyConfig_.GetAdapterInfoMap(adapterInfoMap);
+    adapterInfoMap = audioPolicyConfig_.adapterInfoMap;
 }
 
 void AudioPolicyConfigManager::GetVolumeGroupData(std::unordered_map<std::string, std::string>& volumeGroupData)
@@ -244,12 +287,10 @@ bool AudioPolicyConfigManager::GetAdapterInfoFlag()
     return isAdapterInfoMap_.load();
 }
 
-bool AudioPolicyConfigManager::GetAdapterInfoByType(AudioAdapterType type, PolicyAdapterInfo &info)
+bool AudioPolicyConfigManager::GetAdapterInfoByType(AudioAdapterType type, std::shared_ptr<PolicyAdapterInfo> &info)
 {
-    std::unordered_map<AudioAdapterType, PolicyAdapterInfo> adapterInfoMap_;
-    audioPolicyConfig_.GetAdapterInfoMap(adapterInfoMap_);
-    auto it = adapterInfoMap_.find(type);
-    if (it == adapterInfoMap_.end()) {
+    auto it = audioPolicyConfig_.adpaterInfoMap.find(type);
+    if (it == audioPolicyConfig_.adapterInfoMap.end()) {
         AUDIO_ERR_LOG("can not find adapter info");
         return false;
     }
@@ -262,92 +303,80 @@ bool AudioPolicyConfigManager::GetHasEarpiece()
     return hasEarpiece_;
 }
 
-void AudioPolicyConfigManager::GetDeviceDescriptorByDeviceType(DeviceType deviceType, AudioDeviceDescriptor &desc)
-{
-    std::unordered_map<DeviceType, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap;
-    audioPolicyConfig_.GetDeviceInfoMap(deviceInfoMap);
-    auto it = deviceInfoMap.find(deviceType);
-    if (it != deviceInfoMap.end()) {
-        std::shared_ptr<AdapterDeviceInfo> deviceInfo = it->second;
-        desc.deviceType_ = deviceType;
-        desc.deviceRole_ = deviceInfo->role_;
-        desc.deviceName_ = deviceInfo->name_;
-    }
-}
-
-std::string AudioPolicyConfigManager::GetSinkPortName(DeviceType deviceType, AudioFlag flagType)
-{
-    std::string portName = PORT_NONE;
-    std::unordered_map<DeviceType, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap;
-    audioPolicyConfig_.GetDeviceInfoMap(deviceInfoMap);
-    auto deviceIt = deviceInfoMap.find(deviceType);
-    CHECK_AND_RETURN_RET_LOG(deviceIt != deviceInfoMap.end(), portName, "Find deviceType failed");
-    auto pipeIt = deviceIt->second->supportPipeMap_.find(flagType);
-    CHECK_AND_RETURN_RET_LOG(pipeIt != deviceIt->second->supportPipeMap_.end(), portName, "Find flagType failed");
-    portName = pipeIt->second->paProp_.moduleName_;
-    return portName;
-}
-
-AudioFlag AudioPolicyConfigManager::GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> desc)
+uint32_t AudioPolicyConfigManager::GetRouteFlag(std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     // device -> adapter -> flag -> stream
-    AudioFlag flag = AUDIO_OUTPUT_FLAG_NONE; // input or output? default?
-    std::unordered_map<DeviceType, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap;
-    audioPolicyConfig_.GetDeviceInfoMap(deviceInfoMap);
-    auto deviceIt = deviceInfoMap.find(desc->newDeviceDescs_.back()->deviceType_);
-    CHECK_AND_RETURN_RET_LOG(deviceIt != deviceInfoMap.end(), flag, "Find deviceType failed");
+    uint32_t flag = AUDIO_FLAG_NONE; // input or output? default?
+    auto newDeviceDesc = desc->newDeviceDescs_.front();
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
+        newDeviceDesc->deviceType_, newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_);
+    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, flag, "Find device failed; use none flag");
 
-    for (auto pipeIt : deviceIt->second->supportPipeMap_) {
-        if (desc->audioFlag_ & pipeIt.first) {
+    for (auto &pipeIt : deviceInfo->supportPipeMap_) {
+        if ((desc->audioMode_ == static_cast<AudioMode>(pipeIt.second->role_)) && (desc->audioFlag_ & pipeIt.first)) {
             flag = pipeIt.first;
             break;
         }
     }
-    if (flag == AUDIO_OUTPUT_FLAG_NONE) {
-        AUDIO_INFO_LOG("Find audioFlag failed, choose normal flag");
+    if (flag == AUDIO_FLAG_NONE) {
         flag = desc->audioMode_ == AUDIO_MODE_PLAYBACK ?
             AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL;
     }
+    AUDIO_INFO_LOG("flag:0x%{public}x, target flag:0x%{public}x", desc->audioFlag_, flag);
     return flag;
 }
 
-void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, PipeStreamPropInfo &info)
+void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
+    std::shared_ptr<PipeStreamPropInfo> &info)
 {
-    std::unordered_map<DeviceType, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap;
-    audioPolicyConfig_.GetDeviceInfoMap(deviceInfoMap);
-    auto deviceIt = deviceInfoMap.find(desc->newDeviceDescs_.back()->deviceType_);
-    CHECK_AND_RETURN_LOG(deviceIt != deviceInfoMap.end(), "Find deviceType failed");
-    auto pipeIt = deviceIt->second->supportPipeMap_.find(desc->routeFlag_);
-    CHECK_AND_RETURN_LOG(pipeIt != deviceIt->second->supportPipeMap_.end(), "Find routeFlag failed");
+    auto newDeviceDesc = desc->newDeviceDescs_.front();
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetDeviceInfo(
+        newDeviceDesc->deviceType_, newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_);
+    CHECK_AND_RETURN_LOG(deviceInfo != nullptr, flag, "Find device failed;none streamProp");
+
+    auto pipeIt = deviceInfo->supportPipeMap_.find(desc->routeFlag_);
+    CHECK_AND_RETURN_LOG(pipeIt != deviceInfo->supportPipeMap_.end(), "Find pipeInfo failed;none streamProp");
+
+    AudioChannel tempChannel = desc->streamInfo_.channels;
+    if ((desc->routeFlag_ == (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST)) ||
+        (desc->routeFlag_ == (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_FAST))) {
+        tempChannel = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
+    }
 
     for (auto &streamProp : pipeIt->second->streamPropInfos_) {
-        if (streamProp.format_ == desc->streamInfo_.format &&
-            streamProp.sampleRate_ == desc->streamInfo_.samplingRate &&
-            streamProp.channelLayout_ == desc->streamInfo_.channelLayout) {
+        if (streamProp->format_ == desc->streamInfo_.format &&
+            streamProp->sampleRate_ == desc->streamInfo_.samplingRate &&
+            streamProp->channels_ == tempChannel) {
             info = streamProp;
+            AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout:%{public}u, channels:%{public}u, desc channels:%{public}u",
+                info->format_, info->sampleRate_, info->channelLayout_, info->channels_, tempChannel);
             return;
         }
     }
-    if (info.format_ == INVALID_WIDTH && info.sampleRate_ == 0 && info.channelLayout_ == CH_LAYOUT_UNKNOWN &&
+    if (info->format_ == INVALID_WIDTH && info->sampleRate_ == 0 && info->channelLayout_ == CH_LAYOUT_UNKNOWN &&
         desc->routeFlag_ != (AUDIO_OUTPUT_FLAG_NORMAL || AUDIO_INPUT_FLAG_NORMAL)) {
         AUDIO_INFO_LOG("Find streamPropInfo failed, choose normal flag");
         desc->routeFlag_ = desc->audioMode_ == AUDIO_MODE_PLAYBACK ?
             AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL;
-        auto pipeIt = deviceIt->second->supportPipeMap_.find(desc->routeFlag_);
+        auto pipeIt = deviceInfo->supportPipeMap_.find(desc->routeFlag_);
         for (auto &streamProp : pipeIt->second->streamPropInfos_) {
-            if (streamProp.format_ == desc->streamInfo_.format &&
-                streamProp.sampleRate_ == desc->streamInfo_.samplingRate &&
-                streamProp.channelLayout_ == desc->streamInfo_.channelLayout) {
+            if (streamProp->format_ == desc->streamInfo_.format &&
+                streamProp->sampleRate_ == desc->streamInfo_.samplingRate &&
+                streamProp->channels_ == desc->streamInfo_.channels_) {
                 info = streamProp;
+                AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout:%{public}u, channels:%{public}u, desc channels:%{public}u",
+                    info->format_, info->sampleRate_, info->channelLayout_, info->channels_, desc->streamInfo_.channels_);
                 return;
             }
         }
     }
-    if (info.format_ == INVALID_WIDTH && info.sampleRate_ == 0 && info.channelLayout_ == CH_LAYOUT_UNKNOWN &&
+    if (info->format_ == INVALID_WIDTH && info->sampleRate_ == 0 && info->channelLayout_ == CH_LAYOUT_UNKNOWN &&
         desc->routeFlag_ == (AUDIO_OUTPUT_FLAG_NORMAL || AUDIO_INPUT_FLAG_NORMAL) &&
         !pipeIt->second->streamPropInfos_.empty()) {
         info = pipeIt->second->streamPropInfos_.front(); // if not match, choose first?
     }
+    AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout:%{public}u, channels:%{public}u",
+        info->format_, info->sampleRate_, info->channelLayout_, info->channels_);
 }
 
 }

@@ -24,6 +24,7 @@
 #include "audio_info.h"
 #include "audio_policy_log.h"
 #include "audio_definition_policy_utils.h"
+#include "audio_pipe_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,6 +37,15 @@ static const char* ADAPTER_TYPE_FILE = "file";
 static const char* ADAPTER_TYPE_USB = "usb";
 static const char* ADAPTER_TYPE_DP = "dp";
 static const char* ADAPTER_TYPE_SLE = "sle";
+
+struct PairHash
+{
+    template <class T1, clas T2>
+    std::size_t operator() (const std::pair<T1, T2> &tp) const
+    {
+        return std::has<T1>()(std::get<0>(tp)) ^ std::has<T2>()(std::get<1>(tp));
+    }
+}
 
 enum class PolicyXmlNodeType {
     ADAPTERS,
@@ -73,19 +83,12 @@ enum class PolicyGlobalConfigType {
     DEFAULT_OUTPUT,
     COMMON_CONFIGS,
     PA_CONFIGS,
-    DEFAULT_MAX_CON_CURRENT_INSTANCE,
     UNKNOWN
 };
 
 enum class PolicyPAConfigType {
     AUDIO_LATENCY,
     SINK_LATENCY,
-    UNKNOWN
-};
-
-enum class PolicyMaxInstanceType {
-    OUTPUT,
-    INPUT,
     UNKNOWN
 };
 
@@ -96,102 +99,77 @@ struct AttributeInfo {
 
 struct PaPropInfo {
     std::string lib_ = STR_INITED;
-    std::string paPropRole_ = STR_INITED;
+    std::string role_ = STR_INITED;
     std::string moduleName_ = STR_INITED;
     std::string fixedLatency_ = STR_INITED;
     std::string renderInIdleState_ = STR_INITED;
 };
 
-struct AdapterPipeInfo;
-struct AdapterDeviceInfo;
+class PipeStreamPropInfo;
+class AdapterPipeInfo;
+class AdapterDeviceInfo;
 class PolicyAdapterInfo;
 
-struct PipeStreamPropInfo {
+class PipeStreamPropInfo {
+public:
+    void SelfCheck();
+
     AudioSampleFormat format_ = INVALID_WIDTH;
     uint32_t sampleRate_ = 0;
     AudioChannelLayout channelLayout_ = CH_LAYOUT_UNKNOWN;
+    AudioChannel channels_ = CHANNEL_UNKNOWN;
     uint32_t bufferSize_ = 0;
 
-    std::shared_ptr<AdapterPipeInfo> pipeInfo_;
-    std::list<DeviceType> supportDevices_ {};
+    std::weak_ptr<AdapterPipeInfo> pipeInfo_;
+    std::list<std::string> supportDevices_ {};
     std::unordered_map<DeviceType, std::shared_ptr<AdapterDeviceInfo>> supportDeviceMap_ {};
-};
-
-class AudioPolicyConfigData {
-public:
-    static AudioPolicyConfigData&  GetInstance();
-    void Reorganize();
-    void SetDeviceMaps(std::list<AdapterDeviceInfo> &deviceInfos);
-    void SetPipeMaps(std::list<AdapterPipeInfo> &pipeInfos);
-    void SetSupportDeviceAndPipeMaps(std::shared_ptr<AdapterPipeInfo> pipeInfo);
-
-    void SetVersion(const std::string version);
-    void SetAdapterInfoMap(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap);
-
-    std::string GetVersion();
-    void GetAdapterInfoMap(std::unordered_map<AudioAdapterType, PolicyAdapterInfo> &adapterInfoMap);
-    void GetDeviceInfoMap(std::unordered_map<DeviceType, std::shared_ptr<AdapterDeviceInfo>> &deviceInfoMap);
-    void GetPipeInfoMap(std::unordered_map<std::string, std::shared_ptr<AdapterPipeInfo>> &pipeInfoMap);
-
-private:
-    AudioPolicyConfigData() = default;
-    AudioPolicyConfigData(const AudioPolicyConfigData&) = delete;
-    AudioPolicyConfigData& operator=(const AudioPolicyConfigData&) = delete;
-    std::string version_ = STR_INITED;
-    std::unordered_map<AudioAdapterType, PolicyAdapterInfo> adapterInfoMap_ {};
-    std::unordered_map<DeviceType, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap_ {};
-    std::unordered_map<std::string, std::shared_ptr<AdapterPipeInfo>> pipeInfoMap_ {};
-};
-
-class PolicyAdapterInfo {
-public:
-    static AudioAdapterType GetAdapterType(const std::string &adapterName);
-    AudioAdapterType GetTypeEnum();
-    std::shared_ptr<AdapterDeviceInfo> GetDeviceInfoByType(DeviceType deviceType);
-    std::shared_ptr<AdapterPipeInfo> GetPipeInfoByName(const std::string &pipeName);
-
-    void SetAdapterName(const std::string adapterName);
-    void SetAdapterSupportScene(const std::string adapterSupportScene);
-    void SetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos);
-    void SetPipeInfos(std::list<AdapterPipeInfo> &pipeInfos);
-    std::string GetAdapterName();
-    std::string GetAdapterSupportScene();
-    void GetDeviceInfos(std::list<AdapterDeviceInfo> &deviceInfos) const;
-    void GetPipeInfos(std::list<AdapterPipeInfo> &pipeInfos);
-
-private:
-    std::string adapterName_ = STR_INITED;
-    std::string adapterSupportScene_ = STR_INITED;
-    std::list<AdapterDeviceInfo> deviceInfos_ {};
-    std::list<AdapterPipeInfo> pipeInfos_ {};
-};
-
-struct AdapterDeviceInfo {
-    std::string name_ = STR_INITED;
-    DeviceType type_ = DEVICE_TYPE_NONE;
-    AudioPin pin_ = AUDIO_PIN_NONE;
-    DeviceRole role_ = DEVICE_ROLE_NONE;
-
-    std::shared_ptr<PolicyAdapterInfo> adapterInfo_;
-    std::list<std::string> supportPipes_ {};
-    std::unordered_map<AudioFlag, std::shared_ptr<AdapterPipeInfo>> supportPipeMap_ {}; // flag <-> pipeInfo
 };
 
 class AdapterPipeInfo {
 public:
+    void SelfCheck();
+
     std::string name_ = STR_INITED;
-    AudioPipeRole pipeRole_ = PIPE_ROLE_NONE;
+    AudioPipeRole role_ = PIPE_ROLE_NONE;
     PaPropInfo paProp_ {};
 
     AudioPreloadType preloadAttr_ = PRELOAD_TYPE_UNKNOWN;
     std::list<AudioFlag> supportFlags_ {};
     int32_t audioUsage_ = AUDIO_USAGE_NORMAL;
 
-    std::shared_ptr<PolicyAdapterInfo> adapterInfo_;
-    std::list<PipeStreamPropInfo> streamPropInfos_ {};
-    std::list<AttributeInfo> attributeInfos_ {};
+    std::weak_ptr<PolicyAdapterInfo> adapterInfo_;
+    std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos_ {};
+    std::list<std::shared_ptr<AttributeInfo>> attributeInfos_ {};
 
     bool IsSupportFlag(AudioFlag flag_);
+};
+
+class AdapterDeviceInfo {
+    void SelfCheck();
+
+    std::string name_ = STR_INITED;
+    DeviceType type_ = DEVICE_TYPE_NONE;
+    AudioPin pin_ = AUDIO_PIN_NONE;
+    DeviceRole role_ = DEVICE_ROLE_NONE;
+
+    std::weak_ptr<PolicyAdapterInfo> adapterInfo_;
+    std::list<std::string> supportPipes_ {};
+    std::unordered_map<uint32_t, std::shared_ptr<AdapterPipeInfo>> supportPipeMap_ {}; // flag <-> pipeInfo
+};
+
+class PolicyAdapterInfo {
+public:
+    void SelfCheck();
+
+    static AudioAdapterType GetAdapterType(const std::string &adapterName);
+    AudioAdapterType GetTypeEnum();
+    std::shared_ptr<AdapterDeviceInfo> GetDeviceInfoByType(DeviceType deviceType, DeviceRole role);
+    std::shared_ptr<AdapterPipeInfo> GetPipeInfoByName(const std::string &pipeName);
+
+    std::string adapterName = STR_INITED;
+    std::string adapterSupportScene = STR_INITED;
+    std::list<std::shared_ptr<AdapterDeviceInfo>> deviceInfos_ {};
+    std::list<std::shared_ptr<AdapterPipeInfo>> pipeInfos_ {};
 };
 
 struct PolicyConfigInfo {
@@ -212,8 +190,34 @@ struct PolicyGlobalConfigs {
     std::list<PolicyConfigInfo> commonConfigs_ {};
     bool updateRouteSupport_ = false;
     PolicyGlobalPaConfigs globalPaConfigs_;
-    std::list<PolicyConfigInfo> outputConfigInfos_ {};
-    std::list<PolicyConfigInfo> inputConfigInfos_ {};
+};
+
+class AudioPolicyConfigData {
+public:
+    static AudioPolicyConfigData&  GetInstance();
+    void Reorganize();
+    void SelfCheck();
+
+    void SetVersion(const std::string &version);
+
+    std::string GetVersion();
+    std::shared_ptr<AdapterDeviceInfo> GetAdapterDeviceInfo(DeviceType type_, DeviceRole role_,
+        const std::string &networkId, uint32_t flags);
+
+    std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo> adapterInfoMap {};
+    std::unordered_map<std::pair<DeviceType, DeviceRole>,
+        std::vector<std::shared_ptr<AdapterDeviceInfo>>, pairHash> deviceInfoMap {};
+private:
+    AudioPolicyConfigData() = default;
+    AudioPolicyConfigData(const AudioPolicyConfigData&) = delete;
+    AudioPolicyConfigData& operator=(const AudioPolicyConfigData&) = delete;
+
+    void SetDeviceInfoMaps(std::list<std::shared_ptr<AdapterDeviceInfo>> &deviceInfos,
+        std::unordered_map<std::string, std::shared_ptr<AdapterDeviceInfo>> tmpDeviceInfoMap_);
+    void SetSupportDeviceAndPipeMaps(std::shared_ptr<AdapterPipeInfo> &pipeInfo_,
+        std::unordered_map<std::string, std::shared_ptr<AdapterDeviceInfo>> tmpDeviceInfoMap_);
+
+    std::string version_ = STR_INITED;
 };
 
 } // namespace AudioStandard
