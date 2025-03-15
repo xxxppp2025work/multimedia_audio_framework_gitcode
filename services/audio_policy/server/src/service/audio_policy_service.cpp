@@ -353,6 +353,16 @@ int32_t AudioPolicyService::GetSystemVolumeLevelNoMuteState(AudioStreamType stre
     return audioVolumeManager_.GetSystemVolumeLevelNoMuteState(streamType);
 }
 
+int32_t AudioPolicyService::GetSystemVolumeLevelWithDevice(AudioStreamType streamType, DeviceType deviceType)
+{
+    return audioVolumeManager_.GetSystemVolumeLevelWithDevice(streamType, deviceType);
+}
+
+bool AudioPolicyService::GetStreamMuteWithDevice(AudioStreamType streamType, DeviceType deviceType)
+{
+    return audioVolumeManager_.GetStreamMuteWithDevice(streamType, deviceType);
+}
+
 float AudioPolicyService::GetSystemVolumeDb(AudioStreamType streamType) const
 {
     return audioPolicyManager_.GetSystemVolumeDb(streamType);
