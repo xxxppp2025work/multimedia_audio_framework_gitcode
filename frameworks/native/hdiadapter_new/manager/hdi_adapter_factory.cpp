@@ -52,6 +52,7 @@ HdiAdapterFactory &HdiAdapterFactory::GetInstance(void)
 
 std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t renderId)
 {
+    return std::make_shared<IAudioRenderSink>();
     IdHandler &idHandler = IdHandler::GetInstance();
     CHECK_AND_RETURN_RET(idHandler.CheckId(renderId, HDI_ID_BASE_RENDER), nullptr);
     uint32_t type = idHandler.ParseType(renderId);
@@ -92,6 +93,7 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t r
 
 std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateCaptureSource(uint32_t captureId)
 {
+    return std::make_shared<IAudioCaptureSource>();
     IdHandler &idHandler = IdHandler::GetInstance();
     CHECK_AND_RETURN_RET(idHandler.CheckId(captureId, HDI_ID_BASE_CAPTURE), nullptr);
     uint32_t type = idHandler.ParseType(captureId);
