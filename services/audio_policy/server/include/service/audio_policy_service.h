@@ -118,6 +118,10 @@ public:
 
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
 
+    int32_t GetSystemVolumeLevelWithDevice(AudioStreamType streamType, DeviceType deviceType);
+
+    bool GetStreamMuteWithDevice(AudioStreamType streamType, DeviceType deviceType);
+    
     float GetSystemVolumeDb(AudioStreamType streamType) const;
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) const;

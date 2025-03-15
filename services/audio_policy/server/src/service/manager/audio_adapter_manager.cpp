@@ -475,7 +475,6 @@ void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
         volumeDataMaintainer_.GetStreamVolume(STREAM_RING) * ((ringerMode != RINGER_MODE_NORMAL) ? 0 : 1);
     // Save volume in local prop for bootanimation
     SaveRingtoneVolumeToLocal(STREAM_RING, volumeLevel);
-
     volumeDataMaintainer_.SaveRingerMode(ringerMode);
 }
 
@@ -487,8 +486,7 @@ void AudioAdapterManager::SetAudioServerProxy(sptr<IStandardAudioService> gsp)
 
 int32_t AudioAdapterManager::SetAppVolumeDb(int32_t appUid)
 {
-    int32_t volumeLevel =
-        volumeDataMaintainer_.GetAppVolume(appUid) * (GetAppMute(appUid) ? 0 : 1);
+    int32_t volumeLevel = volumeDataMaintainer_.GetAppVolume(appUid) * (GetAppMute(appUid) ? 0 : 1);
     float volumeDb = 1.0f;
     volumeDb = CalculateVolumeDbNonlinear(STREAM_APP, currentActiveDevice_, volumeLevel);
     AUDIO_INFO_LOG("volumeDb:%{public}f volume:%{public}d devicetype:%{public}d",
@@ -502,16 +500,14 @@ int32_t AudioAdapterManager::SetAppVolumeMutedDB(int32_t appUid, bool muted)
     std::lock_guard<std::mutex> lock(audioVolumeMutex_);
     auto audioVolume = AudioVolume::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
-    AUDIO_INFO_LOG("appUid:%{public}d muted:%{public}d devicetype:%{public}d",
-        appUid, muted, currentActiveDevice_);
+    AUDIO_INFO_LOG("appUid:%{public}d muted:%{public}d devicetype:%{public}d", appUid, muted, currentActiveDevice_);
     audioVolume->SetAppVolumeMute(appUid, muted);
     return SUCCESS;
 }
 
 int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
 {
-    int32_t volumeLevel =
-        volumeDataMaintainer_.GetStreamVolume(streamType) * (GetStreamMute(streamType) ? 0 : 1);
+    int32_t volumeLevel = volumeDataMaintainer_.GetStreamVolume(streamType) * (GetStreamMute(streamType) ? 0 : 1);
     // Save volume in local prop for bootanimation
     SaveRingtoneVolumeToLocal(streamType, volumeLevel);
 
@@ -531,8 +527,7 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
         volumeDb = 1.0f;
     }
 
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
-        "SetSystemVolumeLevel audio adapter null");
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED, "SetSystemVolumeLevel audio adapter null");
 
     AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volume:%{public}d devicetype:%{public}d",
         streamType, volumeDb, volumeLevel, currentActiveDevice_);
@@ -672,6 +667,19 @@ int32_t AudioAdapterManager::GetAppVolumeLevel(int32_t appUid)
 int32_t AudioAdapterManager::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
 {
     return volumeDataMaintainer_.GetStreamVolume(streamType);
+}
+
+int32_t AudioAdapterManager::GetSystemVolumeLevelWithDevice(AudioStreamType streamType, DeviceType deviceType)
+{
+    if (GetStreamMuteWithDevice(streamType, deviceType)) {
+        return MIN_VOLUME_LEVEL;
+    }
+    return volumeDataMaintainer_.GetDeviceVolume(deviceType, streamType);
+}
+
+bool AudioAdapterManager::GetStreamMuteWithDevice(AudioStreamType streamType, DeviceType deviceType)
+{
+    return volumeDataMaintainer_.GetMuteStatus(deviceType, streamType);
 }
 
 float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
@@ -1984,8 +1992,7 @@ std::string AudioAdapterManager::GetSystemSoundUri(const std::string &key)
     std::lock_guard<std::mutex> lock(systemSoundMutex_);
     if (systemSoundUriMap_.size() == 0) {
         InitSystemSoundUriMap();
-        CHECK_AND_RETURN_RET_LOG(systemSoundUriMap_.size() != 0, "",
-            "Failed to init system sound uri map.");
+        CHECK_AND_RETURN_RET_LOG(systemSoundUriMap_.size() != 0, "", "Failed to init system sound uri map.");
     }
     return systemSoundUriMap_[key];
 }
@@ -2074,8 +2081,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
         AUDIO_DEBUG_LOG("position = 0, return 0.0");
         return 0.0f;
     } else if (position >= static_cast<int32_t>(pointSize)) {
-        AUDIO_DEBUG_LOG("position > pointSize, return %{public}f",
-            exp(volumePoints[pointSize - 1].dbValue * 0.115129f));
+        AUDIO_DEBUG_LOG("position>pointSize,return %{public}f", exp(volumePoints[pointSize - 1].dbValue * 0.115129f));
         return exp((volumePoints[pointSize - 1].dbValue / 100.0f) * 0.115129f);
     }
     float indexFactor = (static_cast<float>(idxRatio - static_cast<int32_t>(volumePoints[position - 1].index))) /
@@ -2156,8 +2162,7 @@ void AudioAdapterManager::GetVolumePoints(AudioVolumeType streamType, DeviceVolu
     if (streamVolInfo == streamVolumeInfos_.end()) {
         AUDIO_DEBUG_LOG("Cannot find stream type %{public}d and try to use STREAM_MUSIC", streamType);
         streamVolInfo = streamVolumeInfos_.find(STREAM_MUSIC);
-        CHECK_AND_RETURN_LOG(streamVolInfo != streamVolumeInfos_.end(),
-            "Cannot find stream type STREAM_MUSIC");
+        CHECK_AND_RETURN_LOG(streamVolInfo != streamVolumeInfos_.end(), "Cannot find stream type STREAM_MUSIC");
     }
     auto deviceVolInfo = streamVolInfo->second->deviceVolumeInfos.find(deviceType);
     if (deviceVolInfo == streamVolInfo->second->deviceVolumeInfos.end()) {
