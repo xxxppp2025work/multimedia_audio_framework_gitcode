@@ -2485,6 +2485,7 @@ void AudioPolicyService::MuteSinkPort(const std::string &oldSinkName, const std:
     } else if (reason.IsOldDeviceUnavaliable() && ((audioScene_ == AUDIO_SCENE_DEFAULT) ||
         ((audioScene_ == AUDIO_SCENE_RINGING || audioScene_ == AUDIO_SCENE_VOICE_RINGING) &&
         ringermode != RINGER_MODE_NORMAL))) {
+        MutePrimaryOrOffloadSink(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS);
         MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
         usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
     } else if (reason.IsOldDeviceUnavaliableExt() && ((audioScene_ == AUDIO_SCENE_DEFAULT) ||
