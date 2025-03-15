@@ -100,6 +100,16 @@ bool VolumeDataMaintainer::CheckOsAccountReady()
     return AudioSettingProvider::CheckOsAccountReady();
 }
 
+void VolumeDataMaintainer::StoreVolumeLevelMap()
+{
+    volumeLevelBackMap_ = volumeLevelMap_;
+}
+
+void VolumeDataMaintainer::LoadVolumeLevelMap()
+{
+    volumeLevelMap_ = volumeLevelBackMap_;
+}
+
 void VolumeDataMaintainer::SetDataShareReady(std::atomic<bool> isDataShareReady)
 {
     AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);

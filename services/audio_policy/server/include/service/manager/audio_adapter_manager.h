@@ -119,7 +119,7 @@ public:
     int32_t SetDeviceActive(InternalDeviceType deviceType, std::string name, bool active,
         DeviceFlag flag = ALL_DEVICES_FLAG);
 
-    void SetVolumeForSwitchDevice(InternalDeviceType deviceType);
+    void SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor);
 
     int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName);
 
@@ -153,9 +153,11 @@ public:
 
     DeviceVolumeType GetDeviceCategory(DeviceType deviceType);
 
-    void SetActiveDevice(DeviceType deviceType);
+    void SetActiveDeviceDescriptor(AudioDeviceDescriptor deviceDescriptor);
 
     DeviceType GetActiveDevice();
+
+    AudioDeviceDescriptor GetActiveDeviceDescriptor();
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
 
@@ -174,6 +176,8 @@ public:
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
 
     void ResetRemoteCastDeviceVolume();
+
+    void SetMaxVolumeForDeviceUpdate();
 
     int32_t GetStreamVolume(AudioStreamType streamType);
 
@@ -299,6 +303,8 @@ private:
     void SetVolumeCallbackAfterClone();
     void SetFirstBoot();
     void MaximizeVoiceAssistantVolume(InternalDeviceType deviceType);
+    bool CheckAndSetVolumeForDeviceUpdate(AudioDeviceDescriptor deviceDescriptor);
+    bool IsNeedSaveVolumeToDateBaseForDeviceUpdate();
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
     {
@@ -323,6 +329,7 @@ private:
     std::mutex systemSoundMutex_;
     std::unordered_map<std::string, std::string> systemSoundUriMap_;
     StreamVolumeInfoMap streamVolumeInfos_;
+    AudioDeviceDescriptor currentActiveDeviceDescriptor_;
     DeviceType currentActiveDevice_ = DeviceType::DEVICE_TYPE_SPEAKER;
     AudioRingerMode ringerMode_;
     int32_t safeVolume_ = 0;
