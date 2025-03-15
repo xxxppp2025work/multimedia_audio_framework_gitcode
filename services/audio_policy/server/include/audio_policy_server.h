@@ -456,7 +456,8 @@ public:
 
     void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false);
     void SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false);
-    void UpdateMuteStateAccordingToVolLevel(AudioStreamType streamType, int32_t volumeLevel, bool mute);
+    void UpdateMuteStateAccordingToVolLevel(AudioStreamType streamType, int32_t volumeLevel,
+        bool mute, DeviceType deviceType = DEVICE_TYPE_NONE);
 
     void ProcUpdateRingerMode();
     uint32_t TranslateErrorCode(int32_t result);
@@ -578,10 +579,13 @@ private:
     int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType);
     int32_t GetAppVolumeLevelInternal(int32_t appUid);
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
+    int32_t GetSystemVolumeLevelWithDevice(AudioStreamType streamType, DeviceType deviceType);
+    bool GetStreamMuteWithDevice(AudioStreamType streamType, DeviceType deviceType);
     float GetSystemVolumeDb(AudioStreamType streamType);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi,
         const DeviceType &deviceType = DEVICE_TYPE_NONE);
-    void UpdateSystemMuteStateAccordingMusicState(AudioStreamType streamType, bool mute, bool isUpdateUi);
+    void UpdateSystemMuteStateAccordingMusicState(AudioStreamType streamType, bool mute,
+        bool isUpdateUi, const DeviceType &deviceType);
     void ProcUpdateRingerModeForMute(bool updateRingerMode, bool mute);
     int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi,
         const DeviceType &deviceType = DEVICE_TYPE_NONE);
