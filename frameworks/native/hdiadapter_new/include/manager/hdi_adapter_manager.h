@@ -46,7 +46,9 @@ public:
         b = new char[128 * 1024 * 1024];
     }
     ~HdiAdapterManager() {
-        delete[] b;
+        if (b != nullptr) {
+            delete[] b;
+        }
     }
     static HdiAdapterManager &GetInstance(void);
 
