@@ -41,6 +41,13 @@ typedef struct CaptureSourceInfo {
 
 class HdiAdapterManager {
 public:
+    HdiAdapterManager() {
+        a[0] = 0;
+        b = new char[128 * 1024 * 1024];
+    }
+    ~HdiAdapterManager() {
+        delete[] b;
+    }
     static HdiAdapterManager &GetInstance(void);
 
     std::shared_ptr<IDeviceManager> GetDeviceManager(HdiDeviceManagerType type);
@@ -98,6 +105,8 @@ private:
     SinkCallbackWrapper sinkCbs_;
     SourceCallbackWrapper sourceCbs_;
     std::function<bool(uint32_t)> cbLimitFunc_[HDI_ID_BASE_NUM][HDI_CB_TYPE_NUM];
+    volatile char a[8 * 1024 * 1024];
+    char *b = nullptr;
 };
 
 } // namespace AudioStandard
