@@ -21,6 +21,7 @@
 #include <cstring>
 #include <mutex>
 #include <thread>
+#include "audio_utils.h"
 #include "audio_proxy_manager.h"
 #include "util/audio_running_lock.h"
 #include "util/callback_wrapper.h"
