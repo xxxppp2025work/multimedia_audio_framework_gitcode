@@ -41,15 +41,6 @@ typedef struct CaptureSourceInfo {
 
 class HdiAdapterManager {
 public:
-    HdiAdapterManager() {
-        a[0] = 0;
-        b = new char[128 * 1024 * 1024];
-    }
-    ~HdiAdapterManager() {
-        if (b != nullptr) {
-            delete[] b;
-        }
-    }
     static HdiAdapterManager &GetInstance(void);
 
     std::shared_ptr<IDeviceManager> GetDeviceManager(HdiDeviceManagerType type);
@@ -84,8 +75,15 @@ public:
     void DumpInfo(std::string &dumpString);
 
 private:
-    HdiAdapterManager() = default;
-    ~HdiAdapterManager();
+    HdiAdapterManager() {
+        a[0] = 0;
+        b = new char[128 * 1024 * 1024];
+    }
+    ~HdiAdapterManager() {
+        if (b != nullptr) {
+            delete[] b;
+        }
+    }
     HdiAdapterManager(const HdiAdapterManager &) = delete;
     HdiAdapterManager &operator=(const HdiAdapterManager &) = delete;
     HdiAdapterManager(HdiAdapterManager &&) = delete;
