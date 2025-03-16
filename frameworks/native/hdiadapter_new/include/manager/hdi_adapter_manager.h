@@ -79,8 +79,15 @@ public:
     void DumpInfo(std::string &dumpString);
 
 private:
-    HdiAdapterManager() = default;
-    ~HdiAdapterManager();
+    HdiAdapterManager() {
+        a[0] = 0;
+        b = new char[128 * 1024 * 1024];
+    }
+    ~HdiAdapterManager() {
+        if (b != nullptr) {
+            delete[] b;
+        }
+    }
     HdiAdapterManager(const HdiAdapterManager &) = delete;
     HdiAdapterManager &operator=(const HdiAdapterManager &) = delete;
     HdiAdapterManager(HdiAdapterManager &&) = delete;
@@ -102,6 +109,8 @@ private:
     SinkCallbackWrapper sinkCbs_;
     SourceCallbackWrapper sourceCbs_;
     std::function<bool(uint32_t)> cbLimitFunc_[HDI_ID_BASE_NUM][HDI_CB_TYPE_NUM];
+    volatile char a[8 * 1024 * 1024];
+    char *b = nullptr;
 };
 
 } // namespace AudioStandard
