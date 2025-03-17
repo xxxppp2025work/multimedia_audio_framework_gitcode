@@ -22,7 +22,7 @@ namespace OHOS {
 namespace AudioStandard {
 #define PCM_FLOAT_EPS 1e-6f
 #define BIT_16 16
-static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
+constexpr int32_t VOLUME_MAX = 65536;
 
 static float CapMax(float v)
 {
@@ -54,7 +54,7 @@ void FormatConverter::DataAccumulationFromVolume(const std::vector<AudioStreamDa
         for (size_t i = 0; i < srcListSize; i++) {
             int32_t vol = srcDataList[i].volumeStart; // change to modify volume of each channel
             int16_t *srcPtr = reinterpret_cast<int16_t *>(srcDataList[i].bufferDesc.buffer) + offset;
-            sum += (*srcPtr * static_cast<int64_t>(vol)) >> VOLUME_SHIFT_NUMBER; // 1/65536
+            sum += (*srcPtr * static_cast<int64_t>(vol)) / VOLUME_MAX; // 1/65536
         }
         offset++;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
