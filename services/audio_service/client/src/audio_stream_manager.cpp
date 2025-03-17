@@ -206,6 +206,13 @@ int32_t AudioStreamManager::GetHardwareOutputSamplingRate(std::shared_ptr<AudioD
     return result;
 }
 
+bool AudioStreamManager::IsPlaybackSupported(const AudioStreamInfo &streamInfo, const AudioRendererInfo &rendererInfo)
+{
+    bool ret = AudioPolicyManager::GetInstance().IsPlaybackSupported(streamInfo, rendererInfo);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "current stream not supported");
+    return ret;
+}
+
 int32_t AudioStreamManager::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     return AudioPolicyManager::GetInstance().GetSupportedAudioEffectProperty(propertyArray);

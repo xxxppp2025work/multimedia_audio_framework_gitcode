@@ -2244,6 +2244,13 @@ int32_t AudioPolicyManager::SetQueryAllowedPlaybackCallback(
     return gsp->SetQueryAllowedPlaybackCallback(object);
 }
 
+bool AudioPolicyManager::IsPlaybackSupported(const AudioStreamInfo &streamInfo, const AudioRendererInfo &rendererInfo)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    return gsp->IsPlaybackSupported(streamInfo, rendererInfo);
+}
+
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;

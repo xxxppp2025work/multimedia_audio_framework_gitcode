@@ -123,7 +123,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::samplingRateMap = {
 
 const std::map<std::string, int32_t> NapiAudioEnum::encodingTypeMap = {
     {"ENCODING_TYPE_INVALID", ENCODING_INVALID},
-    {"ENCODING_TYPE_RAW", ENCODING_PCM}
+    {"ENCODING_TYPE_RAW", ENCODING_PCM},
+    {"ENCODING_TYPE_AC3", ENCODING_AC3}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::contentTypeMap = {

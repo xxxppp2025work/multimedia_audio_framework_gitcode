@@ -2206,5 +2206,10 @@ int32_t AudioPolicyService::SetQueryAllowedPlaybackCallback(const sptr<IRemoteOb
     policyManagerListener_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
     return SUCCESS;
 }
+
+bool AudioPolicyService::IsPlaybackSupported(const AudioStreamInfo &streamInfo, const AudioRendererInfo &rendererInfo)
+{
+    return audioConfigManager_.IsPlaybackSupported(streamInfo, rendererInfo);
+}
 } // namespace AudioStandard
 } // namespace OHOS

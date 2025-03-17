@@ -2291,5 +2291,25 @@ int32_t AudioPolicyProxy::SetDeviceConnectionStatus(const std::shared_ptr<AudioD
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %d", error);
     return reply.ReadInt32();
 }
+
+bool AudioPolicyProxy::IsPlaybackSupported(const AudioStreamInfo &streamInfo, const AudioRendererInfo &rendererInfo)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    bool res = streamInfo.Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(res, -1, "streamInfo Marshalling() failed");
+    res = rendererInfo.Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(res, -1, "rendererInfo Marshalling() failed");
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_PLAYBACK_SUPPORTED), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %d", error);
+    return reply.ReadBool();
+}
 } // namespace AudioStandard
 } // namespace OHOS

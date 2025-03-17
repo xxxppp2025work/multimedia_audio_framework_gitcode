@@ -2385,5 +2385,13 @@ int32_t AudioRendererPrivate::GetAudioTimestampInfo(Timestamp &timestamp, Timest
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->GetAudioTimestampInfo(timestamp, base);
 }
+
+bool AudioRendererPrivate::IsPlaybackSupported(const AudioStreamInfo &streamInfo,
+    const AudioRendererInfo &rendererInfo)
+{
+    bool ret = AudioPolicyManager::GetInstance().IsPlaybackSupported(streamInfo, rendererInfo);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "current stream not supported");
+    return ret;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

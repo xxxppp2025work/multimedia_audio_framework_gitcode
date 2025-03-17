@@ -284,6 +284,16 @@ public:
      */
     int32_t GetHardwareOutputSamplingRate(std::shared_ptr<AudioDeviceDescriptor> &desc);
 
+    /**
+     * @brief Judges whether the playback is supported by the renderer.
+     *
+     * @param streamInfo
+     * @param rendererInfo
+     * @return Returns <b>true</b> if the playback is supported; returns <b>false</b> otherwise.
+     * @since 16
+     */
+    bool IsPlaybackSupported(const AudioStreamInfo &streamInfo, const AudioRendererInfo &rendererInfo);
+
 private:
     std::mutex rendererStateChangeCallbacksMutex_;
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbacks_;

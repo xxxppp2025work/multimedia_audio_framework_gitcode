@@ -107,6 +107,7 @@ napi_status NapiAudioRenderer::InitNapiAudioRenderer(napi_env env, napi_value &c
         DECLARE_NAPI_FUNCTION("getAudioTimestampInfo", GetAudioTimestampInfo),
         DECLARE_NAPI_FUNCTION("getAudioTimestampInfoSync", GetAudioTimestampInfoSync),
         DECLARE_NAPI_FUNCTION("setDefaultOutputDevice", SetDefaultOutputDevice),
+        DECLARE_NAPI_FUNCTION("isPlaybackSupported", IsPlaybackSupported),
     };
 
     napi_status status = napi_define_class(env, NAPI_AUDIO_RENDERER_CLASS_NAME.c_str(),
@@ -1743,6 +1744,52 @@ napi_value NapiAudioRenderer::SetDefaultOutputDevice(napi_env env, napi_callback
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "SetDefaultOutputDevice", executor, complete);
+}
+
+napi_value NapiAudioRenderer::IsPlaybackSupported(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRendererAsyncContext>();
+    if (context == nullptr) {
+        NapiAudioError::ThrowError(env, "IsPlaybackSupported failed : no memory",
+            NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);   
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "mandatory parameters are left unspecified",
+            NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetStreamInfo(env, &(context->streamInfo), argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "get streamInfo failed", NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetRendererInfo(env, &(context->rendererInfo), argv[PARAM1]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "get rendererInfo failed", NAPI_ERR_INPUT_INVALID);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    if (context->status != napi_ok && context->errCode == NAPI_ERR_INPUT_INVALID) {
+        NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioRenderer = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
+            "context object state is error.");
+        context->isTrue = napiAudioRenderer->audioRenderer_->IsPlaybackSupported(context->streamInfo,
+            context->rendererInfo);
+        if (!context->isTrue) {
+            context->SignError(NAPI_ERR_ILLEGAL_STATE);
+        }
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "IsPlaybackSupported", executor, complete);
 }
 
 napi_value NapiAudioRenderer::RegisterCallback(napi_env env, napi_value jsThis,
