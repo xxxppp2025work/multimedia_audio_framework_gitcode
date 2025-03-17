@@ -102,6 +102,16 @@ private:
     SinkCallbackWrapper sinkCbs_;
     SourceCallbackWrapper sourceCbs_;
     std::function<bool(uint32_t)> cbLimitFunc_[HDI_ID_BASE_NUM][HDI_CB_TYPE_NUM];
+    char a1[8 * 1024 * 1024];
+    char a2[8 * 1024 * 1024];
+    char a3[8 * 1024 * 1024];
+    char a4[8 * 1024 * 1024];
+    char a5[8 * 1024 * 1024];
+    char a6[8 * 1024 * 1024];
+    char a7[8 * 1024 * 1024];
+    char a8[8 * 1024 * 1024];
+    char a9[8 * 1024 * 1024];
+    char a10[8 * 1024 * 1024];
 };
 
 } // namespace AudioStandard
