@@ -100,6 +100,10 @@ public:
 
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
 
+    int32_t GetSystemVolumeLevelWithDevice(AudioStreamType streamType, DeviceType deviceType);
+    
+    bool GetStreamMuteWithDevice(AudioStreamType streamType, DeviceType deviceType);
+
     float GetSystemVolumeDb(AudioStreamType streamType);
 
     int32_t SetStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
