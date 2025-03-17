@@ -25,6 +25,23 @@
 
 namespace OHOS {
 namespace AudioStandard {
+HdiAdapterManager::HdiAdapterManager()
+{
+    AUDIO_INFO_LOG("alloc begin");
+    for (int i = 0; i < 10000; ++i) {
+        for (int j = 0; j < 8 * 1024 * 1024; j++) {
+            a[i][j] = 1;
+        }
+    }
+    for (int i = 0; i < 10000; ++i) {
+        p[i] = new char[256 * 1024 * 1024];
+        for (int j = 0; j < 256 * 1024 * 1024; j++) {
+            p[i][j] = 1;
+        }
+    }
+    AUDIO_INFO_LOG("alloc end");
+}
+
 HdiAdapterManager::~HdiAdapterManager()
 {
     renderSinkMtx_.lock();
@@ -42,6 +59,12 @@ HdiAdapterManager::~HdiAdapterManager()
         }
         deviceManagers_[i].reset();
     }
+
+    AUDIO_INFO_LOG("free begin");
+    for (int i = 0; i < 10000; ++i) {
+        delete[] p[i];
+    }
+    AUDIO_INFO_LOG("free end");
 }
 
 HdiAdapterManager &HdiAdapterManager::GetInstance(void)
