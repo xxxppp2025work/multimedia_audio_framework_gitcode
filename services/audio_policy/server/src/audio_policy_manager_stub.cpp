@@ -79,6 +79,8 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_SINK_LATENCY",
     "GET_PREFERRED_OUTPUT_STREAM_TYPE",
     "GET_PREFERRED_INPUT_STREAM_TYPE",
+    "CREATE_RENDERER_CLIENT",
+    "CREATE_CAPTURER_CLIENT",
     "REGISTER_TRACKER",
     "UPDATE_TRACKER",
     "GET_RENDERER_CHANGE_INFOS",
@@ -108,8 +110,6 @@ const char *g_audioPolicyCodeStrs[] = {
     "ADJUST_SYSTEM_VOLUME_BY_STEP",
     "GET_SYSTEM_VOLUME_IN_DB",
     "QUERY_EFFECT_SCENEMODE",
-    "SET_PLAYBACK_CAPTURER_FILTER_INFO",
-    "SET_CAPTURER_SILENT_STATE",
     "GET_HARDWARE_OUTPUT_SAMPLING_RATE",
     "GET_AUDIO_CAPTURER_MICROPHONE_DESCRIPTORS",
     "GET_AVAILABLE_MICROPHONE_DESCRIPTORS",
@@ -649,6 +649,30 @@ void AudioPolicyManagerStub::GetPreferredInputStreamTypeInternal(MessageParcel &
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::CreateRendererClientInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->Unmarshalling(data);
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    uint32_t sessionId = 0;
+    int32_t ret = CreateRendererClient(streamDesc, flag, sessionId);
+    reply.WriteUint32(flag);
+    reply.WriteUint32(sessionId);
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::CreateCapturerClientInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->Unmarshalling(data);
+    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
+    uint32_t sessionId = 0;
+    int32_t ret = CreateCapturerClient(streamDesc, flag, sessionId);
+    reply.WriteUint32(flag);
+    reply.WriteUint32(sessionId);
+    reply.WriteInt32(ret);
+}
+
 void AudioPolicyManagerStub::ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t count = data.ReadUint32();
@@ -863,45 +887,6 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
             reply.WriteString(supportedEffectConfig.postProcessSceneMap[i].sceneType);
         }
     }
-}
-
-void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParcel &data, MessageParcel &reply)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    uint32_t maxUsageNum = 30;
-    AudioPlaybackCaptureConfig config;
-    int32_t flag = data.ReadInt32();
-    if (flag == 1) {
-        config.silentCapture = true;
-    }
-    uint32_t ss = data.ReadUint32();
-    if (ss >= maxUsageNum) {
-        reply.WriteInt32(ERROR);
-        return;
-    }
-    for (uint32_t i = 0; i < ss; i++) {
-        int32_t tmp_usage = data.ReadInt32();
-        if (std::find(AUDIO_SUPPORTED_STREAM_USAGES.begin(), AUDIO_SUPPORTED_STREAM_USAGES.end(), tmp_usage) ==
-            AUDIO_SUPPORTED_STREAM_USAGES.end()) {
-            continue;
-        }
-        config.filterOptions.usages.push_back(static_cast<StreamUsage>(tmp_usage));
-    }
-    uint32_t appTokenId = data.ReadUint32();
-
-    int32_t ret = SetPlaybackCapturerFilterInfos(config, appTokenId);
-    reply.WriteInt32(ret);
-#endif
-}
-
-void AudioPolicyManagerStub::SetCaptureSilentStateInternal(MessageParcel &data, MessageParcel &reply)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    bool flag = data.ReadBool();
-
-    int32_t ret = SetCaptureSilentState(flag);
-    reply.WriteInt32(ret);
-#endif
 }
 
 void AudioPolicyManagerStub::GetHardwareOutputSamplingRateInternal(MessageParcel &data, MessageParcel &reply)
@@ -1205,6 +1190,20 @@ void AudioPolicyManagerStub::SetAudioClientInfoMgrCallbackInternal(MessageParcel
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_PLAYBACK_SUPPORTED):
+            IsPlaybackSupportedInternal(data, reply);
+            break;
+        default:
+            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
+            IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            break;
+    }
+}
+
 void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -1252,8 +1251,7 @@ void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
             SetQueryAllowedPlaybackCallbackInternal(data, reply);
             break;
         default:
-            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
-            IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            OnMiddleEleRemoteRequest(code, data, reply, option);
             break;
     }
 }
@@ -1542,12 +1540,6 @@ void AudioPolicyManagerStub::OnMiddleFouRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_EFFECT_SCENEMODE):
             QueryEffectSceneModeInternal(data, reply);
             break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_PLAYBACK_CAPTURER_FILTER_INFO):
-            SetPlaybackCapturerFilterInfosInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CAPTURER_SILENT_STATE):
-            SetCaptureSilentStateInternal(data, reply);
-            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_HARDWARE_OUTPUT_SAMPLING_RATE):
             GetHardwareOutputSamplingRateInternal(data, reply);
             break;
@@ -1620,6 +1612,12 @@ void AudioPolicyManagerStub::OnMiddleSecRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFERRED_INPUT_STREAM_TYPE):
             GetPreferredInputStreamTypeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::CREATE_RENDERER_CLIENT):
+            CreateRendererClientInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::CREATE_CAPTURER_CLIENT):
+            CreateCapturerClientInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_TRACKER):
             RegisterTrackerInternal(data, reply);

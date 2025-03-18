@@ -64,9 +64,8 @@ public:
         const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam) override;
     void SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
     bool CreatePlaybackCapturerManager() override;
-    int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
-    int32_t SetCaptureSilentState(bool state) override;
+    int32_t RegistCoreServiceProvider(const sptr<IRemoteObject> &object) override;
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
     int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType) override;
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume) override;
@@ -125,6 +124,16 @@ public:
 #endif
     int32_t LoadHdiAdapter(uint32_t devMgrType, const std::string &adapterName) override;
     void UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapterName, bool force) override;
+    uint32_t CreateHdiSinkPort(const std::string &deviceClass, const std::string &idInfo,
+        const IAudioSinkAttr &attr) override;
+    uint32_t CreateSinkPort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo,
+        const IAudioSinkAttr &attr) override;
+    uint32_t CreateHdiSourcePort(const std::string &deviceClass, const std::string &idInfo,
+        const IAudioSourceAttr &attr) override;
+    uint32_t CreateSourcePort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo,
+        const IAudioSourceAttr &attr) override;
+    void DestroyHdiPort(uint32_t id) override;
+    void SetDeviceConnectedFlag(bool flag) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

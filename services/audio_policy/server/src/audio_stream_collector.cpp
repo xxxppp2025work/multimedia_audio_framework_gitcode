@@ -20,6 +20,7 @@
 
 #include "audio_client_tracker_callback_proxy.h"
 #include "audio_spatialization_service.h"
+#include "audio_volume_manager.h"
 
 #include "media_monitor_manager.h"
 
@@ -455,7 +456,9 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
                 audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
             }
             AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
-
+            RendererState rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
+            StreamUsage streamUsage = streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage;
+            ResetRingerModeMute(rendererState, streamUsage);
             if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
                 audioRendererChangeInfos_.erase(it);
                 rendererStatequeue_.erase(make_pair(audioRendererChangeInfo.clientUID,
@@ -471,6 +474,16 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
     return SUCCESS;
 }
 
+void AudioStreamCollector::ResetRingerModeMute(RendererState rendererState, StreamUsage streamUsage)
+{
+    if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && (rendererState == RENDERER_PAUSED ||
+        rendererState == RENDERER_STOPPED || rendererState == RENDERER_RELEASED) &&
+        !AudioVolumeManager::GetInstance().IsRingerModeMute()) {
+        AUDIO_INFO_LOG("reset ringer mode mute, stream usage:%{public}d, renderer state:%{public}d",
+            streamUsage, rendererState);
+        AudioVolumeManager::GetInstance().ResetRingerModeMute();
+    }
+}
 
 int32_t AudioStreamCollector::UpdateRendererStreamInternal(AudioStreamChangeInfo &streamChangeInfo)
 {
@@ -568,6 +581,29 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(AudioDeviceDescriptor &ou
     return SUCCESS;
 }
 
+int32_t AudioStreamCollector::UpdateRendererDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> outputDeviceInfo)
+{
+    bool deviceInfoUpdated = false;
+
+    for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
+        if (!(*it)->outputDeviceInfo.IsSameDeviceDescPtr(outputDeviceInfo)) {
+            AUDIO_DEBUG_LOG("UpdateRendererDeviceInfo: old device: %{public}d new device: %{public}d",
+                (*it)->outputDeviceInfo.deviceType_, outputDeviceInfo->deviceType_);
+            (*it)->outputDeviceInfo = outputDeviceInfo;
+            deviceInfoUpdated = true;
+        }
+    }
+
+    if (deviceInfoUpdated && audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
+    }
+    if (deviceInfoUpdated) {
+        AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
+    }
+
+    return SUCCESS;
+}
+
 int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(AudioDeviceDescriptor &inputDeviceInfo)
 {
     bool deviceInfoUpdated = false;
@@ -576,6 +612,26 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(AudioDeviceDescriptor &in
         if (!(*it)->inputDeviceInfo.IsSameDeviceInfo(inputDeviceInfo)) {
             AUDIO_DEBUG_LOG("UpdateCapturerDeviceInfo: old device: %{public}d new device: %{public}d",
                 (*it)->inputDeviceInfo.deviceType_, inputDeviceInfo.deviceType_);
+            (*it)->inputDeviceInfo = inputDeviceInfo;
+            deviceInfoUpdated = true;
+        }
+    }
+
+    if (deviceInfoUpdated && audioPolicyServerHandler_ != nullptr) {
+        SendCapturerInfoEvent(audioCapturerChangeInfos_);
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> inputDeviceInfo)
+{
+    bool deviceInfoUpdated = false;
+
+    for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
+        if (!(*it)->inputDeviceInfo.IsSameDeviceDescPtr(inputDeviceInfo)) {
+            AUDIO_DEBUG_LOG("UpdateCapturerDeviceInfo: old device: %{public}d new device: %{public}d",
+                (*it)->inputDeviceInfo.deviceType_, inputDeviceInfo->deviceType_);
             (*it)->inputDeviceInfo = inputDeviceInfo;
             deviceInfoUpdated = true;
         }
@@ -1193,6 +1249,11 @@ int32_t AudioStreamCollector::ActivateAudioConcurrency(const AudioPipeType &pipe
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     return audioConcurrencyService_->ActivateAudioConcurrency(pipeType,
         audioRendererChangeInfos_, audioCapturerChangeInfos_);
+}
+
+std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction>& AudioStreamCollector::GetConcurrencyMap()
+{
+    return audioConcurrencyService_->GetConcurrencyMap();
 }
 
 void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)

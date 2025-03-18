@@ -859,7 +859,7 @@ void AudioVolumeManager::SetAbsVolumeSceneAsync(const std::string &macAddress, c
         audioPolicyManager_.SetAbsVolumeScene(support);
         SetSharedAbsVolumeScene(support);
         int32_t volumeLevel = audioPolicyManager_.GetSystemVolumeLevelNoMuteState(STREAM_MUSIC);
-        audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel);
+        SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel);
     }
 }
 
@@ -870,7 +870,9 @@ int32_t AudioVolumeManager::SetDeviceAbsVolumeSupported(const std::string &macAd
     int retryCount = 0;
     while (retryCount < maxRetries) {
         retryCount++;
-        if (audioA2dpDevice_.SetA2dpDeviceAbsVolumeSupport(macAddress, support)) {
+        int32_t currentVolume =  audioPolicyManager_.GetSystemVolumeLevelNoMuteState(STREAM_MUSIC);
+        bool currentMute =  audioPolicyManager_.GetStreamMute(STREAM_MUSIC);
+        if (audioA2dpDevice_.SetA2dpDeviceAbsVolumeSupport(macAddress, support, currentVolume, currentMute)) {
             break;
         }
         CHECK_AND_RETURN_RET_LOG(retryCount != maxRetries, ERROR,
@@ -1049,18 +1051,8 @@ int32_t AudioVolumeManager::DealWithEventVolume(const int32_t notificationId)
 
 int32_t AudioVolumeManager::ResetRingerModeMute()
 {
-    if (!ringerModeMute_.load()) {
-        std::unique_lock<std::mutex> lock(ringerModeMuteMutex_);
-        bool resetWaiting = ringerModeMuteCondition_.wait_for(lock,
-            std::chrono::milliseconds(WAIT_RINGER_MODE_MUTE_RESET_TIME_MS),
-            [this] { return !ringerModeMute_.load(); }
-        );
-        if (!resetWaiting || audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_DEFAULT) {
-            AUDIO_INFO_LOG("reset ringer mode mute after time out.");
-            if (audioPolicyManager_.SetStreamMute(STREAM_RING, true) == SUCCESS) {
-                ringerModeMute_.store(true);
-            }
-        }
+    if (audioPolicyManager_.SetStreamMute(STREAM_RING, true) == SUCCESS) {
+        SetRingerModeMute(true);
     }
     return SUCCESS;
 }

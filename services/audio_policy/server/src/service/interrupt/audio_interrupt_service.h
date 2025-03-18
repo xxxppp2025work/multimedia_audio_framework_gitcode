@@ -100,7 +100,6 @@ public:
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
     ClientType GetClientTypeByStreamId(int32_t streamId);
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
-    void HandleAppStateChange(int32_t pid, int32_t uid, int32_t state);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -218,6 +217,8 @@ private:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
     bool ShouldCallbackToClient(uint32_t uid, int32_t streamId, InterruptEventInternal &interruptEvent);
 
+    AudioFocuState GetNewIncomingState(InterruptHint hintType, AudioFocuState oldState);
+    void RemoveAllPlaceholderInterrupt(std::list<int32_t> &removeFocusInfoPidList);
     bool IsLowestPriorityRecording(const AudioInterrupt &audioInterrupt);
     bool IsRecordingInterruption(const AudioInterrupt &audioInterrupt);
     void CheckIncommingFoucsValidity(AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,

@@ -128,11 +128,9 @@ public:
 
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
 
+    int32_t RegistCoreServiceProvider(const sptr<IRemoteObject> &object) override;
+
     int32_t SetWakeupSourceCallback(const sptr<IRemoteObject>& object) override;
-
-    int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
-
-    int32_t SetCaptureSilentState(bool state) override;
 
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
 
@@ -204,6 +202,16 @@ public:
 
     int32_t LoadHdiAdapter(uint32_t devMgrType, const std::string &adapterName) override;
     void UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapterName, bool force) override;
+    uint32_t CreateHdiSinkPort(const std::string &deviceClass, const std::string &idInfo,
+        const IAudioSinkAttr &attr) override;
+    uint32_t CreateSinkPort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo,
+        const IAudioSinkAttr &attr) override;
+    uint32_t CreateHdiSourcePort(const std::string &deviceClass, const std::string &idInfo,
+        const IAudioSourceAttr &attr) override;
+    uint32_t CreateSourcePort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo,
+        const IAudioSourceAttr &attr) override;
+    void DestroyHdiPort(uint32_t id) override;
+    void SetDeviceConnectedFlag(bool flag) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -297,7 +305,7 @@ private:
     std::mutex audioParameterMutex_;
     std::mutex audioSceneMutex_;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
-    bool isFastControlled_ = true;
+    bool isFastControlled_ = false;
     int32_t maxRendererStreamCntPerUid_ = 0;
     std::mutex streamLifeCycleMutex_ {};
     // Temporary resolution to avoid pcm driver problem

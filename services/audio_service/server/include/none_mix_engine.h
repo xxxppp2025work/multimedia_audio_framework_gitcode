@@ -44,7 +44,7 @@ protected:
 private:
     void StandbySleep();
     int32_t InitSink(const AudioStreamInfo &clientStreamInfo);
-    int32_t InitSink(uint32_t channel, AudioSampleFormat format, uint32_t rate);
+    int32_t InitSink(uint32_t channel, AudioSampleFormat format, uint32_t rate, AudioEncodingType encoding);
     int32_t SwitchSink(const AudioStreamInfo &streamInfo, bool isVoip);
     void PauseAsync();
     int32_t StopAudioSink();

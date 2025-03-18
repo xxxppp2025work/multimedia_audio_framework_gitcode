@@ -81,6 +81,8 @@ private:
     void ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
+    void CreateRendererClientInternal(MessageParcel &data, MessageParcel &reply);
+    void CreateCapturerClientInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
@@ -111,8 +113,6 @@ private:
     void AdjustSystemVolumeByStepInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemVolumeInDbInternal(MessageParcel &data, MessageParcel &reply);
     void QueryEffectSceneModeInternal(MessageParcel &data, MessageParcel &reply);
-    void SetPlaybackCapturerFilterInfosInternal(MessageParcel &data, MessageParcel &reply);
-    void SetCaptureSilentStateInternal(MessageParcel &data, MessageParcel &reply);
     void GetHardwareOutputSamplingRateInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioCapturerMicrophoneDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void GetAvailableMicrophonesInternal(MessageParcel &data, MessageParcel &reply);
@@ -200,6 +200,7 @@ private:
     void IsPlaybackSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryAllowedPlaybackCallbackInternal(MessageParcel &data, MessageParcel &reply);
 
+    void OnMiddleEleRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleTenRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleNinRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleEigRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

@@ -18,6 +18,7 @@
 
 #include "audio_policy_server_handler.h"
 #include "audio_policy_service.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -477,29 +478,27 @@ bool AudioPolicyServerHandler::SendWakeupCloseEvent(bool isSync)
 }
 
 bool AudioPolicyServerHandler::SendRecreateRendererStreamEvent(
-    int32_t clientId, uint32_t sessionID, int32_t streamFlag,
-    const AudioStreamDeviceChangeReasonExt reason)
+    int32_t clientId, uint32_t sessionID, uint32_t routeFlag, const AudioStreamDeviceChangeReasonExt reason)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     eventContextObj->clientId = clientId;
     eventContextObj->sessionId = sessionID;
-    eventContextObj->streamFlag = streamFlag;
     eventContextObj->reason_ = reason;
+    eventContextObj->routeFlag = routeFlag;
     return SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::RECREATE_RENDERER_STREAM_EVENT,
         eventContextObj));
 }
 
 bool AudioPolicyServerHandler::SendRecreateCapturerStreamEvent(
-    int32_t clientId, uint32_t sessionID, int32_t streamFlag,
-    const AudioStreamDeviceChangeReasonExt reason)
+    int32_t clientId, uint32_t sessionID, uint32_t routeFlag, const AudioStreamDeviceChangeReasonExt reason)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     eventContextObj->clientId = clientId;
     eventContextObj->sessionId = sessionID;
-    eventContextObj->streamFlag = streamFlag;
     eventContextObj->reason_ = reason;
+    eventContextObj->routeFlag = routeFlag;
     return SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::RECREATE_CAPTURER_STREAM_EVENT,
         eventContextObj));
 }
@@ -982,30 +981,10 @@ void AudioPolicyServerHandler::HandleRendererInfoEvent(const AppExecFwk::InnerEv
             clientCallbacksMap_[it->first][CALLBACK_RENDERER_STATE_CHANGE]) {
                 Trace traceCallback("rendererStateChangeCb->OnRendererStateChange");
             rendererStateChangeCb->OnRendererStateChange(eventContextObj->audioRendererChangeInfos);
-            ResetRingerModeMute(eventContextObj->audioRendererChangeInfos);
         }
     }
     AUDIO_INFO_LOG("pids: %{public}s size: %{public}zu", pidsStrForPrinting_.c_str(),
         audioPolicyClientProxyAPSCbsMap_.size());
-}
-
-void AudioPolicyServerHandler::ResetRingerModeMute(const std::vector<std::shared_ptr<AudioRendererChangeInfo>>
-    &audioRendererChangeInfos)
-{
-    for (const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo: audioRendererChangeInfos) {
-        if (!rendererChangeInfo) {
-            AUDIO_ERR_LOG("Renderer change info null, something wrong!!");
-            continue;
-        }
-        StreamUsage streamUsage = rendererChangeInfo->rendererInfo.streamUsage;
-        RendererState rendererState = rendererChangeInfo->rendererState;
-        if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && (rendererState == RENDERER_PAUSED ||
-            rendererState == RENDERER_STOPPED || rendererState == RENDERER_RELEASED)) {
-            AUDIO_INFO_LOG("reset ringer mode mute, stream usage:%{public}d, renderer state:%{public}d",
-                streamUsage, rendererState);
-            AudioPolicyService::GetAudioPolicyService().ResetRingerModeMute();
-        }
-    }
 }
 
 void AudioPolicyServerHandler::HandleCapturerInfoEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -1074,7 +1053,7 @@ void AudioPolicyServerHandler::HandleCapturerCreateEvent(const AppExecFwk::Inner
     SessionInfo sessionInfo{eventContextObj->capturerInfo_.sourceType, eventContextObj->streamInfo_.samplingRate,
         eventContextObj->streamInfo_.channels};
 
-    eventContextObj->error_ = AudioPolicyService::GetAudioPolicyService().OnCapturerSessionAdded(sessionId,
+    eventContextObj->error_ = AudioCoreService::GetCoreService()->GetEventEntry()->OnCapturerSessionAdded(sessionId,
         sessionInfo, eventContextObj->streamInfo_);
 }
 
@@ -1085,7 +1064,7 @@ void AudioPolicyServerHandler::HandleCapturerRemovedEvent(const AppExecFwk::Inne
 
     uint64_t sessionId = *eventContextObj;
 
-    AudioPolicyService::GetAudioPolicyService().OnCapturerSessionRemoved(sessionId);
+    AudioCoreService::GetCoreService()->GetEventEntry()->OnCapturerSessionRemoved(sessionId);
 }
 
 void AudioPolicyServerHandler::HandleWakeupCloseEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -1100,8 +1079,8 @@ void AudioPolicyServerHandler::HandleSendRecreateRendererStreamEvent(const AppEx
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     RestoreInfo restoreInfo;
     restoreInfo.restoreReason = DEVICE_CHANGED;
-    restoreInfo.targetStreamFlag = eventContextObj->streamFlag;
     restoreInfo.deviceChangeReason = static_cast<int32_t>(eventContextObj->reason_);
+    restoreInfo.routeFlag = static_cast<uint32_t>(eventContextObj->routeFlag);
     AudioPolicyService::GetAudioPolicyService().RestoreSession(eventContextObj->sessionId, restoreInfo);
 }
 
@@ -1112,8 +1091,8 @@ void AudioPolicyServerHandler::HandleSendRecreateCapturerStreamEvent(const AppEx
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     RestoreInfo restoreInfo;
     restoreInfo.restoreReason = DEVICE_CHANGED;
-    restoreInfo.targetStreamFlag = eventContextObj->streamFlag;
     restoreInfo.deviceChangeReason = static_cast<int32_t>(eventContextObj->reason_);
+    restoreInfo.routeFlag = static_cast<uint32_t>(eventContextObj->routeFlag);
     AudioPolicyService::GetAudioPolicyService().RestoreSession(eventContextObj->sessionId, restoreInfo);
 }
 
@@ -1292,6 +1271,7 @@ void AudioPolicyServerHandler::HandleConcurrencyEventWithSessionID(const AppExec
     RestoreInfo restoreInfo;
     restoreInfo.restoreReason = STREAM_CONCEDED;
     restoreInfo.targetStreamFlag = AUDIO_FLAG_FORCED_NORMAL;
+    restoreInfo.routeFlag = AUDIO_FLAG_NONE;
     AudioPolicyService::GetAudioPolicyService().RestoreSession(eventContextObj->sessionId, restoreInfo);
 }
 

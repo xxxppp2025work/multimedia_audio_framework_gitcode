@@ -20,7 +20,7 @@
 #include "OHAudioStreamManager.h"
 
 using OHOS::AudioStandard::OHAudioStreamManager;
-using OHOS::AudioStandard::AudioStreamManager; // 这里指的是audiopolicyservice中的吗？
+using OHOS::AudioStandard::AudioStreamManager;
 using OHOS::AudioStandard::StreamUsage;
 using OHOS::AudioStandard::AudioEncodingType;
 using OHOS::AudioStandard::AudioSampleFormat;
