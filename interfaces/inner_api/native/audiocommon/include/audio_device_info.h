@@ -163,6 +163,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_REMOTE_DAUDIO = 29,
     /**
+     * Indicates a pencil device
+     */
+    DEVICE_TYPE_PENCIL = 26,
+    /**
      * Indicates a hdmi device
      */
     DEVICE_TYPE_HDMI = 27,
@@ -204,6 +208,7 @@ inline const std::unordered_set<DeviceType> INPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_WAKEUP,
     DeviceType::DEVICE_TYPE_USB_HEADSET,
     DeviceType::DEVICE_TYPE_USB_ARM_HEADSET,
+    DeviceType::DEVICE_TYPE_PENCIL,
     DeviceType::DEVICE_TYPE_FILE_SOURCE,
 };
 

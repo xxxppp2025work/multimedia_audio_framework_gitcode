@@ -33,6 +33,7 @@ static const char* PIPE_PRIMARY_OUTPUT = "primary_output";
 static const char* PIPE_PRIMARY_INPUT = "primary_input";
 static const char* PIPE_USB_ARM_OUTPUT = "usb_arm_output";
 static const char* PIPE_USB_ARM_INPUT = "usb_arm_input";
+static const char* PIPE_PENCIL_INPUT = "pencil_input";
 static const char* PIPE_DP_OUTPUT = "dp_output";
 const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
 

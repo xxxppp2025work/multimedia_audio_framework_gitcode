@@ -43,6 +43,7 @@ IAudioCapturerSource *IAudioCapturerSource::GetInstance(const char *deviceClass,
     const char *deviceClassPrimary = "primary";
     const char *deviceClassUsb = "usb";
     const char *deviceClassA2DP = "a2dp";
+    const char *deviceClassPencil = "pencil";
 #ifdef FEATURE_FILE_IO
     const char *deviceClassFile = "file_io";
 #endif
@@ -58,6 +59,9 @@ IAudioCapturerSource *IAudioCapturerSource::GetInstance(const char *deviceClass,
     }
     if (!strcmp(deviceClass, deviceClassA2DP)) {
         return BluetoothCapturerSource::GetInstance();
+    }
+    if (!strcmp(deviceClass, deviceClassPencil)) {
+        return AudioCapturerSource::GetInstance("pencil", sourceType, sourceName);
     }
 #ifdef FEATURE_FILE_IO
     if (!strcmp(deviceClass, deviceClassFile)) {
@@ -82,6 +86,7 @@ void IAudioCapturerSource::GetAllInstance(std::vector<IAudioCapturerSource *> &a
 #endif
     allInstance.push_back(AudioCapturerSource::GetInstance());
     allInstance.push_back(AudioCapturerSource::GetInstance("usb", SourceType::SOURCE_TYPE_MIC, "Usb_Arm_Speaker_In"));
+    allInstance.push_back(AudioCapturerSource::GetInstance("pencil", SourceType::SOURCE_TYPE_MIC, "Pencil_Mic_In"));    
     allInstance.push_back(BluetoothCapturerSource::GetInstance());
 }
 

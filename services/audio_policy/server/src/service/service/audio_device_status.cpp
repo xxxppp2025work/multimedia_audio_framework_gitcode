@@ -310,6 +310,10 @@ int32_t AudioDeviceStatus::RehandlePnpDevice(DeviceType deviceType, DeviceRole d
             if (HandleDpDevice(deviceType, address)  == SUCCESS) {
                 return SUCCESS;
             }
+        } else if (deviceType == DEVICE_TYPE_PENCIL) {
+            if (HandlePencilDevice(deviceType, address)  == SUCCESS) {
+                return SUCCESS;
+            }
         }
         usleep(REHANDLE_DEVICE_RETRY_INTERVAL_IN_MICROSECONDS);
     }
@@ -347,6 +351,30 @@ int32_t AudioDeviceStatus::HandleDpDevice(DeviceType deviceType, const std::stri
     return SUCCESS;
 }
 
+int32_t AudioDeviceStatus::HandlePencilDevice(DeviceType deviceType, const std::string &address)
+{
+    Trace trace("AudioDeviceStatus::HandlePencilDevice");
+    if (deviceType == DEVICE_TYPE_PENCIL) {
+        std::string defaulyPencilInfo = "";
+        std::string getPencilInfo = "";
+        GetModuleInfo(ClassType::TYPE_PENCIL, defaulyPencilInfo);
+        CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
+
+        AUDIO_INFO_LOG("device info from pencil hal is \n defaulyPencilInfo:%{public}s", defaulyPencilInfo.c_str());
+
+        getPencilInfo = defaulyPencilInfo;
+        int32_t ret = LoadPencilModule(getPencilInfo);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG ("load pencil module failed");
+            return ERR_OPERATION_FAILED;
+        }
+        std::string activePort = AudioPolicyUtils::GetInstance().GetSinkPortName(DEVICE_TYPE_PENCIL);
+        AUDIO_INFO_LOG("port %{public}s, active pencil device", activePort.c_str());
+    }
+
+    return SUCCESS;
+}
+
 int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &updatedDesc)
 {
     if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -367,6 +395,9 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_HEADSET ||
         updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "usb");
+    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_PENCIL) {
+        int32_t result = HandlePencilDevice(updatedDesc.deviceType_, updatedDesc.macAddress_);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Load pencil failed.");
     }
     return SUCCESS;
 }
@@ -399,6 +430,8 @@ int32_t AudioDeviceStatus::HandleLocalDeviceDisconnected(const AudioDeviceDescri
         audioIOHandleMap_.ClosePortAndEraseIOHandle(DP_SINK);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         audioEcManager_.CloseUsbArmDevice(updatedDesc);
+    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_PENCIL) {
+        audioEcManager_.ClosePortAndEraseIOHandle(PENCIL_SOURCE);
     }
 
     AudioServerProxy::GetInstance().ResetRouteForDisconnectProxy(updatedDesc.deviceType_);
@@ -453,6 +486,27 @@ int32_t AudioDeviceStatus::LoadDpModule(std::string deviceInfo)
                 AUDIO_INFO_LOG("save dp sink module info for cust param");
                 audioEcManager_.SetDpSinkModuleInfo(moduleInfo);
             }
+            return audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+        }
+    }
+
+    return SUCCESS;
+}
+
+
+int32_t AudioDeviceStatus::LoadPencilModule(std::string deviceInfo)
+{
+    AUDIO_INFO_LOG("LoadPencilModule");
+    std::list<AudioModuleInfo> moduleInfoList;
+    {
+        bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_PENCIL, moduleInfoList);
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_OPERATION_FAILED,
+            "pencil module is not exist in the configuration file");
+    }
+    for (auto &moduleInfo : moduleInfoList) {
+        AUDIO_INFO_LOG("[module_load]::load module[%{public}s]", moduleInfo.name.c_str());
+        if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name) == false) {
+            GetDPModuleInfo(moduleInfo, deviceInfo);
             return audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
         }
     }
@@ -681,6 +735,7 @@ DeviceType AudioDeviceStatus::GetDeviceTypeFromPin(AudioPin hdiPin)
             return DeviceType::DEVICE_TYPE_USB_ARM_HEADSET;
         case OHOS::AudioStandard::AUDIO_PIN_IN_MIC:
         case OHOS::AudioStandard::AUDIO_PIN_IN_DAUDIO_DEFAULT:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_PENCIL:
             return DeviceType::DEVICE_TYPE_MIC;
         case OHOS::AudioStandard::AUDIO_PIN_IN_HS_MIC:
             break;

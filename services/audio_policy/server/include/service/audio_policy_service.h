@@ -620,7 +620,8 @@ private:
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_WIRED_HEADSET,
         DEVICE_TYPE_WAKEUP,
-        DEVICE_TYPE_MIC
+        DEVICE_TYPE_MIC,
+        DEVICE_TYPE_PENCIL
     };
 
     AudioEffectService& audioEffectService_;
