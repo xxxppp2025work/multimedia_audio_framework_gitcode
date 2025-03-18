@@ -152,7 +152,7 @@ void AudioPolicyConfigManager::SetNormalVoipFlag(const bool &normalVoipFlag)
 
 bool AudioPolicyConfigManager::GetNormalVoipFlag()
 {
-    normalVoipFlag_;
+    return normalVoipFlag_;
 }
 
 bool AudioPolicyConfigManager::GetModuleListByType(ClassType type, std::list<AudioModuleInfo>& moduleList)
