@@ -399,6 +399,26 @@ void AudioPolicyClientProxy::OnHeadTrackingDeviceChange(const std::unordered_map
     reply.ReadInt32();
 }
 
+void AudioPolicyClientProxy::OnAudioSceneChange(const AudioScene &audioScene)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_AUDIO_SCENE_CHANGED));
+    data.WriteInt32(static_cast<int32_t>(audioScene));
+
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != 0) {
+        AUDIO_ERR_LOG("Error while sending enabled info: %{public}d", error);
+    }
+    reply.ReadInt32();
+}
+
 void AudioPolicyClientProxy::OnSpatializationEnabledChange(const bool &enabled)
 {
     MessageParcel data;

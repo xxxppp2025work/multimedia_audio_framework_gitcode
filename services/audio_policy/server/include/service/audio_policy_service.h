@@ -695,6 +695,8 @@ private:
 
     void OnPreferredDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor, DeviceType activeInputDevice);
 
+    void OnAudioSceneChange(const AudioScene& audioScene);
+
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
 
     void SetVolumeForSwitchDevice(DeviceType deviceType, const std::string &newSinkName = PORT_NONE);

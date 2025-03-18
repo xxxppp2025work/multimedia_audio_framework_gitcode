@@ -140,6 +140,12 @@ public:
 
     int32_t UnsetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
 
+    int32_t SetAudioSceneChangeCallback(const int32_t clientId,
+        const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
+
+    int32_t UnsetAudioSceneChangeCallback(
+        const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
+
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
         const std::shared_ptr<AudioInterruptCallback> &callback, uint32_t clientUid, const int32_t zoneID = 0);
 
