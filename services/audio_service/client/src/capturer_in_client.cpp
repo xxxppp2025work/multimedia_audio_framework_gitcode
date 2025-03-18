@@ -251,6 +251,7 @@ private:
     bool WaitForRunning();
 
     int32_t HandleCapturerRead(size_t &readSize, size_t &userSize, uint8_t &buffer, bool isBlockingRead);
+    bool ConvertFormat(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     int32_t RegisterCapturerInClientPolicyServerDiedCb();
     int32_t UnregisterCapturerInClientPolicyServerDiedCb();
 private:
@@ -1244,6 +1245,82 @@ bool CapturerInClientInner::ReadCallbackFunc()
     return true;
 }
 
+inline bool S16StereoToS16Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
+{
+    size_t quarter = 4;
+    int32_t half = 2;
+    int32_t one = 1;
+
+    if (srcDesc.buffer == nullptr) {
+        return false;
+    }
+
+    int16_t *srcPtr = reinterpret_cast<int16_t *>(srcDesc.buffer);
+    int16_t *dstPtr = reinterpret_cast<int16_t *>(dstDesc.buffer);
+    size_t count = srcDesc.bufLength / quarter;
+
+    for (size_t idx = 0; idx < count; idx++) {
+        int16_t leftSample = *srcPtr++;
+        int16_t rightSample = *srcPtr++;
+        *dstPtr++ = static_cast<int16_t>((leftSample + rightSample) * (one / sqrt(half)));
+    }
+    return true;
+}
+
+inline bool S32StereoToS32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
+{
+    size_t eighth = 8;
+    int32_t half = 2;
+    int32_t one = 1;
+
+    if (srcDesc.buffer == nullptr) {
+        return false;
+    }
+    int32_t *srcPtr = reinterpret_cast<int32_t *>(srcDesc.buffer);
+    int32_t *dstPtr = reinterpret_cast<int32_t *>(dstDesc.buffer);
+    size_t count = srcDesc.bufLength / eighth;
+
+    for (size_t idx = 0; idx < count; idx++) {
+        int32_t leftSample = *srcPtr++;
+        int32_t rightSample = *srcPtr++;
+        *dstPtr++ = static_cast<int32_t>((leftSample + rightSample) * (one / sqrt(half)));
+    }
+    return true;
+}
+
+inline bool F32StereoToF32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
+{
+    size_t eighth = 8;
+    int32_t half = 2;
+    int32_t one = 1;
+
+    if (srcDesc.buffer == nullptr) {
+        return false;
+    }
+    float *srcPtr = reinterpret_cast<float *>(srcDesc.buffer);
+    float *dstPtr = reinterpret_cast<float *>(dstDesc.buffer);
+    size_t count = srcDesc.bufLength / eighth;
+    for (size_t idx = 0; idx < count; idx++) {
+        float leftSample = *srcPtr++;
+        float rightSample = *srcPtr++;
+        *dstPtr++ = static_cast<float>((leftSample + rightSample) * (one / sqrt(half)));
+    }
+    return true;
+}
+
+bool CapturerInClientInner::ConvertFormat(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
+{
+    if (static_cast<AudioSampleFormat>(streamParams_.format) == SAMPLE_S16LE) {
+        return S16StereoToS16Mono(srcDesc, srcDesc);
+    }
+    if (static_cast<AudioSampleFormat>(streamParams_.format) == SAMPLE_S32LE) {
+        return S32StereoToS32Mono(srcDesc, srcDesc);
+    }
+    if (static_cast<AudioSampleFormat>(streamParams_.format) == SAMPLE_F32LE) {
+        return F32StereoToF32Mono(srcDesc, srcDesc);
+    }
+    return true;
+}
 
 int32_t CapturerInClientInner::GetBufferDesc(BufferDesc &bufDesc)
 {
@@ -1253,9 +1330,24 @@ int32_t CapturerInClientInner::GetBufferDesc(BufferDesc &bufDesc)
         return ERR_INCORRECT_MODE;
     }
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
+    int half = 2;
     bufDesc.buffer = cbBuffer_.get();
     bufDesc.bufLength = cbBufferSize_;
     bufDesc.dataLength = cbBufferSize_;
+
+    if (streamParams_.channels == MONO) {
+        BufferDesc srcDesc = {cbBuffer_.get(), cbBufferSize_, cbBufferSize_};
+        BufferDesc dstDesc;
+        dstDesc.bufLength = cbBufferSize_ / half;
+        dstDesc.dataLength = cbBufferSize_ / half;
+        std::unique_ptr<uint8_t[]> buffer(new uint8_t[dstDesc.bufLength]);
+        dstDesc.buffer = buffer.get();
+        if (ConvertFormat(srcDesc, dstDesc)) {
+            bufDesc = dstDesc;
+        } else {
+            AUDIO_ERR_LOG("ConvertFormat failed.");
+        }
+    }
     return SUCCESS;
 }
 
