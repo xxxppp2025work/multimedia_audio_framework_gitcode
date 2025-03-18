@@ -470,7 +470,7 @@ int32_t FastAudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
     CHECK_AND_RETURN_RET_LOG(tmp, ERR_NOT_STARTED, "Create capture failed");
     if (PrepareMmapBuffer() != SUCCESS) {
         AUDIO_ERR_LOG("Prepare mmap buffer failed");
-        audioAdapter->DestroyCapture(audioAdapter_, captureId_);
+        audioAdapter_->DestroyCapture(audioAdapter_, captureId_);
         return ERR_NOT_STARTED;
     }
     ret = SetInputRoute(static_cast<DeviceType>(attr_.deviceType));
