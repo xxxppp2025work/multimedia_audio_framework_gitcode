@@ -1645,22 +1645,22 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_002, TestSiz
     EXPECT_EQ(configData.adapterInfoMap.size(), adapterMapSize);
 
     for (auto &item : adapterSizeMap) {
-        auto &adapterInfoIt = configData.adapterInfoMap.find(item.first);
+        auto adapterInfoIt = configData.adapterInfoMap.find(item.first);
         EXPECT_NE(adapterInfoIt, configData.adapterInfoMap.end());
 
-        EXPECT_NE(adapterInfoIt.second->adapterName, "");
-        EXPECT_NE(adapterInfoIt.second->deviceInfos.size(), 0);
-        EXPECT_NE(adapterInfoIt.second->pipeInfos.size(), 0);
+        EXPECT_NE(adapterInfoIt->second->adapterName, "");
+        EXPECT_NE(adapterInfoIt->second->deviceInfos.size(), 0);
+        EXPECT_NE(adapterInfoIt->second->pipeInfos.size(), 0);
 
-        std::pair<size_t, size_t> sizePair = std::make_pair(adapterInfoIt.second.deviceInfos.size(),
-            adapterInfoIt.second.pipeInfos.size());
+        std::pair<size_t, size_t> sizePair = std::make_pair(adapterInfoIt->second->deviceInfos.size(),
+            adapterInfoIt->second->pipeInfos.size());
         EXPECT_EQ(item.second, sizePair);
 
-        for (auto &deviceInfo : adapterInfoIt.second->deviceInfos) {
+        for (auto &deviceInfo : adapterInfoIt->second->deviceInfos) {
             EXPECT_NE(deviceInfo->supportPipeMap_.size(), 0);
         }
 
-        for (auto &pipeInfo : adapterInfoIt.second->pipeInfos) {
+        for (auto &pipeInfo : adapterInfoIt->second->pipeInfos) {
             for (auto &streamPropInfo : pipeInfo->streamPropInfos_) {
                 EXPECT_NE(streamPropInfo->supportDeviceMap_.size(), 0);
             }
@@ -1690,9 +1690,9 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_003, TestSiz
     EXPECT_NE(configData.deviceInfoMap.size(), 0);
     EXPECT_EQ(configData.deviceInfoMap.size(), deviceMapSize);
     for (auto &pair : deviceSizeMap) {
-        auto &deviceSetIt = configData.deviceInfoMap.find(pair.first);
+        auto deviceSetIt = configData.deviceInfoMap.find(pair.first);
         EXPECT_NE(deviceSetIt, configData.deviceInfoMap.end());
-        EXPECT_EQ(deviceSetIt.size(), pair.second);
+        EXPECT_EQ(deviceSetIt->second.size(), pair.second);
     }
 }
 

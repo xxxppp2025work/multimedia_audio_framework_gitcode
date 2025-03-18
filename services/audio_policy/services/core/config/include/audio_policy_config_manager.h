@@ -65,6 +65,7 @@ public:
     int32_t GetMaxFastRenderersInstances();
     int32_t GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
         const AudioSamplingRate &samplingRate);
+    bool GetNormalVoipFlag();
     int32_t GetAudioLatencyFromXml() const;
     uint32_t GetSinkLatencyFromXml() const;
     void GetAudioAdapterInfos(std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> &adapterInfoMap);

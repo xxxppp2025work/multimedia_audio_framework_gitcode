@@ -33,7 +33,7 @@
 #include "audio_stream_collector.h"
 
 #include "audio_a2dp_offload_flag.h"
-#include "audio_config_manager.h"
+#include "audio_policy_config_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
