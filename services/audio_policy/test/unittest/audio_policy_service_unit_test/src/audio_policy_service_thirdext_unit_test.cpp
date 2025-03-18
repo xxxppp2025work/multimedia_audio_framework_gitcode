@@ -1629,12 +1629,12 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_002, TestSiz
 {
     AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
     size_t adapterMapSize = configData.adapterInfoMap.size();
-    std::unordered_map<std::string, std::pair<size_t, size_t>> adapterSizeMap;
+    std::unordered_map<AudioAdapterType, std::pair<size_t, size_t>> adapterSizeMap {};
 
     for (auto &item : configData.adapterInfoMap) {
-        std::pair<size_t, size_t> sizePair = std::make_pair(item.second.deviceInfos.size(),
-            item.second.pipeInfos.size());
-        adapterSizeMap.insert({item.first, sizePair});
+        std::pair<size_t, size_t> sizePair = std::make_pair(item->second->deviceInfos.size(),
+            item->second->pipeInfos.size());
+        adapterSizeMap.insert({item->first, sizePair});
     }
 
     AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
