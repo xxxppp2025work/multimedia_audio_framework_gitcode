@@ -89,7 +89,7 @@ private:
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
-        audioConfigManager_(AudioConfigManager::GetInstance()) {}
+        audioConfigManager_(AudioPolicyConfigManager::GetInstance()) {}
     ~AudioPolicyUtils() {}
     int32_t ErasePreferredDeviceByType(const PreferredType preferredType);
 public:
@@ -103,7 +103,7 @@ private:
     AudioStateManager &audioStateManager_;
     AudioDeviceManager &audioDeviceManager_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
-    AudioConfigManager& audioConfigManager_;
+    AudioPolicyConfigManager& audioConfigManager_;
 };
 
 }
