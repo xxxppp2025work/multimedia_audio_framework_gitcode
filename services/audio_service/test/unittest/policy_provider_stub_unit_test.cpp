@@ -216,7 +216,7 @@ HWTEST_F(PolicyProviderStubUnitTest, PolicyProviderStub_003, TestSize.Level1)
     auto policyProviderStub = std::make_shared<PolicyProviderWrapper>(&mockProvider);
     EXPECT_NE(policyProviderStub, nullptr);
 
-    uint32_t code = IPolicyProviderIpc::IPolicyProviderMsg::SET_WAKEUP_ADUIO_CAPTURER;
+    uint32_t code = IPolicyProviderIpc::IPolicyProviderMsg::SET_WAKEUP_Audio_CAPTURER;
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
