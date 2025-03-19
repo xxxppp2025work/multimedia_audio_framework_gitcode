@@ -28,24 +28,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-/**
- * @brief Defines information about audio renderer parameters.
- * @since 8
- */
-
-struct AudioRendererParams {
-    /** Sample Format */
-    AudioSampleFormat sampleFormat = SAMPLE_S16LE;
-    /** Sampling rate */
-    AudioSamplingRate sampleRate = SAMPLE_RATE_8000;
-    /** Number of channels */
-    AudioChannel channelCount = MONO;
-    /** Encoding Type */
-    AudioEncodingType encodingType = ENCODING_PCM;
-    /** Channel Layout */
-    AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
-};
-
 class AudioRendererCallback {
 public:
     virtual ~AudioRendererCallback() = default;
@@ -169,29 +151,6 @@ public:
     /**
      * @brief create renderer instance.
      *
-     * @param audioStreamType The audio streamtype to be created.
-     * refer AudioStreamType in audio_info.h.
-     * @return Returns unique pointer to the AudioRenderer object
-     * @since 8
-     * @deprecated since 12
-    */
-    static std::unique_ptr<AudioRenderer> Create(AudioStreamType audioStreamType);
-
-    /**
-     * @brief create renderer instance.
-     *
-     * @param audioStreamType The audio streamtype to be created.
-     * refer AudioStreamType in audio_info.h.
-     * @param appInfo Originating application's uid and token id can be passed here
-     * @return Returns unique pointer to the AudioRenderer object
-     * @since 9
-     * @deprecated since 12
-    */
-    static std::unique_ptr<AudioRenderer> Create(AudioStreamType audioStreamType, const AppInfo &appInfo);
-
-    /**
-     * @brief create renderer instance.
-     *
      * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
      * refer AudioRendererOptions in audio_info.h.
      * @return Returns unique pointer to the AudioRenderer object
@@ -267,18 +226,6 @@ public:
      * @since 12
      */
     virtual AudioPrivacyType GetAudioPrivacyType() = 0;
-
-    /**
-     * @brief Sets audio renderer parameters.
-     *
-     * @param params Indicates information about audio renderer parameters to set. For details, see
-     * {@link AudioRendererParams}.
-     * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
-     * in {@link audio_errors.h} otherwise.
-     * @since 8
-     * @deprecated since 12
-     */
-    virtual int32_t SetParams(const AudioRendererParams params) = 0;
 
     /**
      * @brief Registers the renderer callback listener.

@@ -41,11 +41,6 @@ public:
         return sharedAudioRenderer_->GetAudioPrivacyType();
     }
 
-    int32_t SetParams(const AudioRendererParams params) override
-    {
-        return sharedAudioRenderer_->SetParams(params);
-    }
-
     int32_t SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback) override
     {
         return sharedAudioRenderer_->SetRendererCallback(callback);

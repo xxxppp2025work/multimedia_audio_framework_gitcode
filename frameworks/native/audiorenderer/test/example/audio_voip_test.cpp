@@ -43,17 +43,8 @@ namespace AudioTestConstants {
 
 class AudioVoIPTest {
 public:
-    bool InitRender(const unique_ptr<AudioRenderer> &audioRenderer, const AudioRendererParams &rendererParams) const
+    bool InitRender(const auto &audioRenderer) const
     {
-        if (audioRenderer->SetParams(rendererParams) !=  AudioTestConstants::SUCCESS) {
-            AUDIO_ERR_LOG("AudioVoIPTest: Set audio renderer parameters failed");
-            if (!audioRenderer->Release()) {
-                AUDIO_ERR_LOG("AudioVoIPTest: Release failed");
-            }
-            return false;
-        }
-        AUDIO_INFO_LOG("AudioVoIPTest: Playback renderer created");
-
         AUDIO_INFO_LOG("AudioVoIPTest: Starting renderer");
         if (!audioRenderer->Start()) {
             AUDIO_ERR_LOG("AudioVoIPTest: Start failed");
@@ -67,7 +58,7 @@ public:
         return true;
     }
 
-    bool StartRender(const unique_ptr<AudioRenderer> &audioRenderer, FILE* wavFile) const
+    bool StartRender(const auto &audioRenderer, FILE* wavFile) const
     {
         size_t bufferLen = 0;
         if (audioRenderer->GetBufferSize(bufferLen)) {
@@ -144,15 +135,17 @@ public:
         size_t bytesRead = fread(&wavHeader, 1, headerSize, wavFile);
         AUDIO_INFO_LOG("AudioVoIPTest: Header Read in bytes %{public}zu", bytesRead);
 
-        AudioStreamType streamType = AudioStreamType::STREAM_VOICE_CALL;
-        unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(streamType);
-
         AudioRendererParams rendererParams;
         rendererParams.sampleFormat = GetSampleFormat(wavHeader.bitsPerSample);
         rendererParams.sampleRate = static_cast<AudioSamplingRate>(wavHeader.SamplesPerSec);
         rendererParams.channelCount = static_cast<AudioChannel>(wavHeader.NumOfChan);
         rendererParams.encodingType = static_cast<AudioEncodingType>(ENCODING_PCM);
-        if (!InitRender(audioRenderer, rendererParams)) {
+        AudioRendererOptions options {
+            AudioStreamInfo(rendererParams),
+            {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_COMMUNICATION}
+        }
+        auto audioRenderer = AudioRenderer::CreateRenderer(options);
+        if (!InitRender(audioRenderer)) {
             AUDIO_ERR_LOG("AudioVoIPTest: Init render failed");
             fclose(wavFile);
             return false;

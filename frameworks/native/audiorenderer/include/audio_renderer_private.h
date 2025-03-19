@@ -42,7 +42,6 @@ public:
     int32_t GetLatency(uint64_t &latency) const override;
     void SetAudioPrivacyType(AudioPrivacyType privacyType) override;
     AudioPrivacyType GetAudioPrivacyType() override;
-    int32_t SetParams(const AudioRendererParams params) override;
     int32_t GetParams(AudioRendererParams &params) const override;
     int32_t GetRendererInfo(AudioRendererInfo &rendererInfo) const override;
     int32_t GetStreamInfo(AudioStreamInfo &streamInfo) const override;
@@ -143,6 +142,7 @@ public:
 
     int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
+    int32_t SetParams(const AudioRendererParams params);
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {

@@ -89,7 +89,8 @@ public:
     // TearDown: Called after each test cases
     void TearDown(void);
     // Init Renderer
-    static int32_t InitializeRenderer(std::unique_ptr<AudioRenderer> &audioRenderer);
+    static void InitializeRenderer(std::unique_ptr<AudioRenderer> &audioRenderer,
+        StreamUsage streamUsage);
     // Init Renderer Options
     static void InitializeRendererOptions(AudioRendererOptions &rendererOptions);
     // Init 3DRenderer Options

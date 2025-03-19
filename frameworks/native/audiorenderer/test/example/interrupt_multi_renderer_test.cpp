@@ -201,7 +201,8 @@ AudioSampleFormat InterruptMultiRendererTest::GetSampleFormat(int32_t wavSampleF
     }
 }
 
-bool InterruptMultiRendererTest::InitRender(const unique_ptr<AudioRenderer> &audioRenderer, FILE* &wavFile) const
+bool InterruptMultiRendererTest::InitRender(const unique_ptr<AudioRenderer> &audioRenderer, FILE* &wavFile,
+    StreamUsage streamUsage) const
 {
     wav_hdr wavHeader;
     size_t headerSize = sizeof(wav_hdr);
@@ -217,13 +218,12 @@ bool InterruptMultiRendererTest::InitRender(const unique_ptr<AudioRenderer> &aud
     rendererParams.channelCount = static_cast<AudioChannel>(wavHeader.NumOfChan);
     rendererParams.encodingType = static_cast<AudioEncodingType>(ENCODING_PCM);
 
-    if (audioRenderer->SetParams(rendererParams)) {
-        AUDIO_ERR_LOG("InterruptMultiRendererTest: Set audio renderer parameters failed");
-        if (!audioRenderer->Release()) {
-            AUDIO_ERR_LOG("InterruptMultiRendererTest: Release failed");
-        }
-        return false;
+    AudioRendererOptions options {
+        AudioStreamInfo(rendererParams),
+        {CONTENT_TYPE_UNKNOWN, streamUsage}
     }
+    audioRenderer = AudioRenderer::Create(options);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer, false, "renderer is null");
     AUDIO_INFO_LOG("InterruptMultiRendererTest: Playback renderer created");
 
     return true;
@@ -263,17 +263,17 @@ int32_t InterruptMultiRendererTest::TestPlayback(int argc, char *argv[]) const
         }
     }
 
-    AudioStreamType streamType1 = STREAM_MUSIC;
-    AudioStreamType streamType2 = STREAM_VOICE_CALL;
+    StreamUsage streamUsage1 = STREAM_USAGE_MUSIC;
+    StreamUsage streamUsage2 = STREAM_USAGE_VOICE_COMMUNICATION;
     if (argc > MIN_NO_OF_ARGS) {
-        streamType1 = static_cast<AudioStreamType>(strtol(argv[ARG_INDEX_3], NULL, NUM_BASE));
+        streamUsage1 = static_cast<StreamUsage>(strtol(argv[ARG_INDEX_3], NULL, NUM_BASE));
     }
     if (argc > MIN_NO_OF_ARGS + 1) {
-        streamType2 = static_cast<AudioStreamType>(strtol(argv[ARG_INDEX_4], NULL, NUM_BASE));
+        streamUsage2 = static_cast<StreamUsage>(strtol(argv[ARG_INDEX_4], NULL, NUM_BASE));
     }
 
-    unique_ptr<AudioRenderer> audioRenderer1 = AudioRenderer::Create(streamType1);
-    unique_ptr<AudioRenderer> audioRenderer2 = AudioRenderer::Create(streamType2);
+    unique_ptr<AudioRenderer> audioRenderer1 = nullptr;
+    unique_ptr<AudioRenderer> audioRenderer2 = nullptr;
 
     shared_ptr<AudioRendererCallback> cb1 = make_shared<AudioRendererCallbackTestImpl>();
     if (InitRender(audioRenderer1, wavFile1)) {
