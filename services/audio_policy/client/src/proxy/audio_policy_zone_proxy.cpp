@@ -116,8 +116,8 @@ int32_t AudioPolicyProxy::BindDeviceToAudioZone(int32_t zoneId, std::vector<sptr
     data.WriteInt32(zoneId);
     data.WriteInt32(static_cast<int32_t>(devices.size()));
     for (auto &device : devices) {
-       bool ret = device->Marshalling(data);
-       CHECK_AND_RETURN_RET_LOG(ret, ERROR, "Marshalling device failed");
+        bool ret = device->Marshalling(data);
+        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "Marshalling device failed");
     }
     int32_t error = Remote()->SendRequest(
         static_cast<int32_t>(AudioPolicyInterfaceCode::BIND_AUDIO_ZONE_DEVICE), data, reply, option);
@@ -134,8 +134,8 @@ int32_t AudioPolicyProxy::UnBindDeviceToAudioZone(int32_t zoneId, std::vector<sp
     data.WriteInt32(zoneId);
     data.WriteInt32(static_cast<int32_t>(devices.size()));
     for (auto &device : devices) {
-       bool ret = device->Marshalling(data);
-       CHECK_AND_RETURN_RET_LOG(ret, ERROR, "Marshalling device failed");
+        bool ret = device->Marshalling(data);
+        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "Marshalling device failed");
     }
     int32_t error = Remote()->SendRequest(
         static_cast<int32_t>(AudioPolicyInterfaceCode::UNBIND_AUDIO_ZONE_DEVICE), data, reply, option);
@@ -268,7 +268,8 @@ const std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyProxy::Get
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, interrupts, "SendRequest failed, error: %{public}d", error);
 
     int32_t retCode = reply.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(retCode == ERR_NONE, interrupts, "GetAudioInterruptForZone failed, error: %{public}d", retCode);
+    CHECK_AND_RETURN_RET_LOG(retCode == ERR_NONE, interrupts,
+        "GetAudioInterruptForZone failed, error: %{public}d", retCode);
     int32_t size = reply.ReadInt32();
     for (int i = 0; i < size; i++) {
         AudioInterrupt temp;
@@ -295,7 +296,8 @@ const std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyProxy::Get
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, interrupts, "SendRequest failed, error: %{public}d", error);
     
     int32_t retCode = reply.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(retCode == ERR_NONE, interrupts, "GetAudioInterruptForZone failed, error: %{public}d", retCode);
+    CHECK_AND_RETURN_RET_LOG(retCode == ERR_NONE, interrupts,
+        "GetAudioInterruptForZone failed, error: %{public}d", retCode);
     int32_t size = reply.ReadInt32();
     for (int i = 0; i < size; i++) {
         AudioInterrupt temp;

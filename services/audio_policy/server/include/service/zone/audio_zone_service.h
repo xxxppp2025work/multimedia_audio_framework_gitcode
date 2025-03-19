@@ -55,7 +55,7 @@ public:
     int32_t EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, bool enable);
     int32_t SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
         const int32_t volumeLebel, const int32_t volumeFlag);
-    const int32_t GetSystemVolumeForZone(int32_t zoneId, AudioVolumeType volumeType);
+    int32_t GetSystemVolumeForZone(int32_t zoneId, AudioVolumeType volumeType);
 
     const std::list<std::pair<AudioInerrupt, AudioFocusState>> GetAudioInterruptForZone(int32_t zoneId);
     const std::list<std::pair<AudioInerrupt, AudioFocusState>> GetAudioInterruptForZone(int32_t zoneId,

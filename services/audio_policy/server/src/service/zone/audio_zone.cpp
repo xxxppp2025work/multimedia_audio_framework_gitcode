@@ -72,7 +72,7 @@ AudioZoneBindKey &AudioZoneBindKey::operator=(const AudioZoneBindKey &other)
 
 AudioZoneBindKey &AudioZoneBindKey::operator=(AudioZoneBindKey &&other)
 {
-    if (this!= &other) {
+    if (this != &other) {
         Swap(std::move(other));
     }
     return *this;
@@ -99,9 +99,9 @@ void AudioZoneBindKey::Assign(const AudioZoneBindKey &other)
 
 void AudioZoneBindKey::Swap(AudioZoneBindKey &&other)
 {
-   this->uid_ = other.uid_;
-   this->deviceId_ = other.deviceId_;
-   this->streamTag_ = std::move(other.streamTag_);
+    this->uid_ = other.uid_;
+    this->deviceId_ = other.deviceId_;
+    this->streamTag_ = std::move(other.streamTag_);
 }
 
 const int32_t AudioZoneBindKey::GetUid() const
@@ -149,9 +149,9 @@ const std::vector<AudioZoneBindKey> AudioZoneBindKey::GetSupportKeys(int32_t uid
         for (auto &key : keys) {
             if (key == temp) {
                 return;
-            } 
+            }
         }
-       keys.push_back(temp);
+        keys.push_back(temp);
     };
     pushBack(AudioZoneBindKey(uid, -1, streamTag));
     pushBack(AudioZoneBindKey(uid));
@@ -437,8 +437,8 @@ int32_t AudioZone::GetSystemVolumeLevel(AudioVolumeType volumeType)
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
         if (clientManager_ == nullptr || !isVolumeProxyEnabled_) {
-           AUDIO_ERR_LOG("volume proxy is not enable for zone %{public}d", zoneId_);
-           return ERROR;
+            AUDIO_ERR_LOG("volume proxy is not enable for zone %{public}d", zoneId_);
+            return ERROR;
         }
         mgr = clientManager_;
     }

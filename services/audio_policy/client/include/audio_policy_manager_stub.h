@@ -233,6 +233,7 @@ private:
     void OnMiddlesRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMidRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnAudioZoneRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnAudioZoneRemoteRequestExt(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
 };
 } // namespace AudioStandard
 } // namespace OHOS

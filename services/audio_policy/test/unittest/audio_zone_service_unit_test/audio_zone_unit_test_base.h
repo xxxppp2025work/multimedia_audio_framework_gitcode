@@ -111,7 +111,7 @@ public:
         return 0;
     }
 
-    const int32_t GetSystemVolume(int32_t zoneId, AudioVolumeType volumeType) override
+    int32_t GetSystemVolume(int32_t zoneId, AudioVolumeType volumeType) override
     {
         Notify();
         return volumeLevel_;
@@ -129,7 +129,7 @@ public:
     {
         std::unique_lock<std::mutex> lock(waitLock_);
         if (waitStatus_ == 0) {
-            waiter_.wait(lock, [this] { 
+            waiter_.wait(lock, [this] {
                 return waitStatus_ != 0;
             });
         }
@@ -143,12 +143,12 @@ public:
     int32_t volumeLevel_ = 0;
 };
 
-static sptr<AudioZoneUnitTestClient> RegisterTestClient(pid_t clientPid)
+sptr<AudioZoneUnitTestClient> RegisterTestClient(pid_t clientPid)
 {
     sptr<AudioZoneUnitTestClient> client = new AudioZoneUnitTestClient();
     EXPECT_NE(client, nullptr);
     AudioZoneClientManager::GetInstance().RegisterClient(clientPid, client);
-    return client;
+    cdeokreturn client;
 }
 
 #define TEST_PID_1000 1000

@@ -69,6 +69,16 @@ void AudioPolicyManagerStub::OnAudioZoneRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyManagerInterfaceCode::GET_SYSTEM_VOLUME_LEVEL_FOR_ZONE):
             HandleGetSystemVolumeLevelForZone(data, reply);
             break;
+        default:
+            OnAudioZoneRemoteRequestExt(code, data, reply, option);
+            break;
+    }
+}
+
+void AudioPolicyManagerStub::OnAudioZoneRemoteRequestExt(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
         case static_cast<uint32_t>(AudioPolicyManagerInterfaceCode::GET_AUDIO_INTERRUPT_FOR_ZONE):
             HandleGetAudioInterruptForZone(data, reply);
             break;
@@ -88,7 +98,6 @@ void AudioPolicyManagerStub::OnAudioZoneRemoteRequest(
             break;
     }
 }
-
 void AudioPolicyManagerStub::HandleRegisterAudioZoneClient(MessageParcel &data, MessageParcel &reply)
 {
     sptr<IRemoteObject> object = data.ReadRemoteObject();
@@ -168,7 +177,7 @@ void AudioPolicyManagerStub::HandleUnBindAudioZoneDevice(MessageParcel &data, Me
 
 void AudioPolicyManagerStub::HandleEnableAudioZoneReport(MessageParcel &data, MessageParcel &reply)
 {
-   reply.WriteInt32(EnableAudioZoneReport(data.ReadBool()));
+    reply.WriteInt32(EnableAudioZoneReport(data.ReadBool()));
 }
 
 void AudioPolicyManagerStub::HandleEnableAudioZoneChangeReport(MessageParcel &data, MessageParcel &reply)

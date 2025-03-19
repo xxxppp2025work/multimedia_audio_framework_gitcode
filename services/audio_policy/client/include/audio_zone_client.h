@@ -82,7 +82,8 @@ private:
         void OnInterruptEvent(int32_t zoneId, int32_t deviceId,
             const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
             AudioZoneInterruptReason reason) override;
-        int32_t SetSystemVolume(int32_t zoneId, AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag) override;
+        int32_t SetSystemVolume(const int32_t zoneId, const AudioVolumeType volumeType,
+            const int32_t volumeLevel, const int32_t volumeFlag) override;
         int32_t GetSystemVolume(int32_t zoneId, AudioVolumeType volumeType, int32_t &volumeLevel) override;
 };
 } // namespace AudioStandard

@@ -41,7 +41,7 @@ public:
     bool operator==(const AudioZoneBindKey &other) const;
     bool operator!=(const AudioZoneBindKey &other) const;
 
-    const int32_t GetUid() const;
+    int32_t GetUid() const;
     std::string GetString() const;
     bool IsContain(const AudioZoneBindKey &other) const;
     const static std::vector<AudioZoneBindKey> GetSupportKeys(int32_t uid, int32_t deviceId,
@@ -83,7 +83,7 @@ public:
     int32_t EnableSystemVolumeProxy(pid_t clientPid, bool enable);
     int32_t SetSystemVolumeLevel(const AudioVolumeType volumeType,
         const int32_t volumeLevel, const int32_t volumeFlag = 0);
-    const int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
 
     int32_t EnableChangeReport(pid_t clientPid, bool enable);
 
@@ -98,7 +98,7 @@ private:
     pid_t volumeProxyClientPid_ = 0;
     bool isVolumeProxyEnabled_ = false;
 
-    int32_t SetDeviceDescriptorState(const sptr<AudioDeviceDescriptor> device,const bool enable);
+    int32_t SetDeviceDescriptorState(const sptr<AudioDeviceDescriptor> device, const bool enable);
     void SendZoneChangeEvent(AudioZoneChangeReason reason);
     const sptr<AudioZoneDescriptor> GetDescriptorNoLock();
 };

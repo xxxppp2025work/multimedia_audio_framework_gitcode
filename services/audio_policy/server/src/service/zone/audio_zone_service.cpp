@@ -16,7 +16,7 @@
 #define LOG_TAG "AudioZoneService"
 
 #include "audio_zone_service.h"
-#include "audio_log.h"  
+#include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_zone.h"
 #include "audio_zone_client_proxy.h"
@@ -147,7 +147,7 @@ int32_t AudioZoneService::BindDeviceToAudioZone(int32_t zoneId,
     }
 
     for (auto device : devices) {
-       RemoveDeviceFromGlobal(device); 
+        RemoveDeviceFromGlobal(device);
     }
     return SUCCESS;
 }
@@ -212,7 +212,7 @@ int32_t AudioZoneService::EnableAudioZoneReport(pid_t clientPid, bool enable)
     std::lock_guard<std::mutex> lock(zoneMutex_);
     CHECK_AND_RETURN_RET_LOG(zoneClientManager_!= nullptr, ERROR, "zoneClientManager is nullptr");
     if (enable) {
-        zoneReportClientList_.insert(clientPid); 
+        zoneReportClientList_.insert(clientPid);
     } else {
         zoneReportClientList_.erase(clientPid);
     }
@@ -306,7 +306,7 @@ int32_t AudioZoneService::RemoveKeyFromAudioZone(int32_t zoneId, int32_t uid,
     auto zone = FindZone(zoneId);
     if (zone == nullptr) {
         AUDIO_ERR_LOG("zone id %{public}d is not found", zoneId);
-        return ERROR; 
+        return ERROR;
     }
     zone->RemoveKey(AudioZoneBindKey(uid, deviceId, tag));
 
@@ -319,7 +319,7 @@ int32_t AudioZoneService::RemoveKeyFromAudioZone(int32_t zoneId, int32_t uid,
         });
         for (auto &report : reporter) {
             report->ReportInterrupt();
-        } 
+        }
     }
     return SUCCESS;
 }
@@ -426,7 +426,7 @@ int32_t AudioZoneService::ActivateAudioInterrupt(int32_t zoneId,
         "zoneClientManager or interruptService is nullptr");
     if (!CheckIsZoneValid(zoneId)) {
         AUDIO_ERR_LOG("zone id %{public}d is not valid", zoneId);
-        return ERROR; 
+        return ERROR;
     }
 
     auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
@@ -486,12 +486,12 @@ int32_t AudioZoneService::InjectInterruptToAudioZone(int32_t zoneId, int32_t dev
         AudioZOneInterruptReason::REMOTE_INJECT);
     int32_t ret;
     if (deviceId == -1) {
-        ret = interruptService_->InjectInterruptToAudioZone(zoneId, interrupts); 
+        ret = interruptService_->InjectInterruptToAudioZone(zoneId, interrupts);
     } else {
         ret = interruptService_->InjectInterruptToAudioZone(zoneId, deviceId, interrupts);
     }
     for (auto &report : reporters) {
-        report->ReportInterrupt(); 
+        report->ReportInterrupt();
     }
     return ret;
 }

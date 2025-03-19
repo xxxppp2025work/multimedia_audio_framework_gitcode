@@ -425,11 +425,12 @@ public:
     int32_t SetSystemVolumeLevelForZone(conts int32_t zoneId, const AudioVolumeType volumeType,
         const int32_t volumeLevel, const int32_t volumeFlag = 0) override;
 
-    const int32_t GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType) override;
+    int32_t GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType) override;
 
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId) override;
 
-    const std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId, int32_t deviceId) override;
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
+        int32_t zoneId, int32_t deviceId) override;
 
     int32_t EnableAudioZoneInterruptReport(int32_t zoneId, int32_t deviceId, bool enable) override;
 

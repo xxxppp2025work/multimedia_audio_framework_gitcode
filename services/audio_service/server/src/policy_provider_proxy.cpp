@@ -72,7 +72,7 @@ int32_t PolicyProviderProxy::SetWakeUpAudioCapturerFromAudioServer(const AudioPr
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
 
     ProcessConfig::WriteConfigToParcel(config, data);
-    int ret = Remote()->SendRequest(IPolicyProviderMsg::SET_WAKEUP_ADUIO_CAPTURER, data, reply, option);
+    int ret = Remote()->SendRequest(IPolicyProviderMsg::SET_WAKEUP_Audio_CAPTURER, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "failed, error: %{public}d", ret);
 
     return reply.ReadInt32();

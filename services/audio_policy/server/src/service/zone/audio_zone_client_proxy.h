@@ -29,12 +29,12 @@ public:
     void OnAudioZoneRemoved(int32_t zoneId) override;
     void OnAudioZoneChanged(int32_t zoneId, const AudioZoneDescriptor &zoneDescriptor,
         AudioZoneChangeReason reason) override;
-    void OnInterruptEvnet(int32_t zoneId, int32_t deviceId,
+    void OnInterruptEvent(int32_t zoneId, int32_t deviceId,
         std::list<std::pair<AudioInerrupt, AudioFocusState>> interrupts,
         AudioInterruptReason reason) override;
     int32_t SetSystemVolumeLevel(const int32_t zoneId, const AudioVolumeType volumeType,
         const int32_t volumeLevel, const int32_t volumeFlag) override;
-    const int32_t GetSystemVolumeLevel(int32_t zoneId, AudioVolumeType volumeType) override;
+    int32_t GetSystemVolumeLevel(int32_t zoneId, AudioVolumeType volumeType) override;
 
 private:
     static inline BrokerDelegator<AudioZoneClientProxy> delegator_;

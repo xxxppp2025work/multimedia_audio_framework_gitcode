@@ -219,8 +219,8 @@ void AudioInterruptService::AddActiveInterruptToSession(const int32_t callerPid)
     }
     auto audioSession = sessionService_->GetAudioSessionByPid(callerPid);
 
-    int32_t zoneId =FindZoneByPid(callerPid);
-    CHECK_AND_RETURN_LOG(zoneId!= -1, "pid %{public}d not in audio zone", callerPid);
+    int32_t zoneId = FindZoneByPid(callerPid);
+    CHECK_AND_RETURN_LOG(zoneId != -1, "pid %{public}d not in audio zone", callerPid);
     auto itZone = zonesMap_.find(zoneId);
     CHECK_AND_RETURN_LOG(itZone != zonesMap_.end(), "can not find zoneid");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
@@ -267,7 +267,7 @@ void AudioInterruptService::RemovePlaceholderInterruptForSession(const int32_t c
         return;
     }
 
-    int32_t zoneId =FindZoneByPid(callerPid);
+    int32_t zoneId = FindZoneByPid(callerPid);
     CHECK_AND_RETURN_LOG(zoneId != -1, "pid %{public}d not in audio zone", callerPid);
     auto itZone = zonesMap_.find(zoneId);
     CHECK_AND_RETURN_LOG(itZone != zonesMap_.end(), "can not find zoneid");
@@ -1730,7 +1730,8 @@ bool AudioInterruptService::IsHandleIter(
 }
 
 const std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::GetAudioFocusInfoList(
-    const int32_t zoneId) {
+    const int32_t zoneId)
+{
     auto itZone = zonesMap_.find(zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
@@ -1985,8 +1986,8 @@ void AudioInterruptService::InjectInterruptToAudioZone(int32_t zoneId,
                 itOld->first.uid, itOld->first.pid, itOld->first.sessionId,
                 itOld->second, itNew->second);
             if (itOld->second != itNew->second) {
-               bool removeFocusInfo = false;
-               SendInterruptEvent(itOld->second, itNew->second, itOld, removeFocusInfo);
+                bool removeFocusInfo = false;
+                SendInterruptEvent(itOld->second, itNew->second, itOld, removeFocusInfo);
             }
             newFocusInfoList.erase(itNew);
         }
@@ -2018,7 +2019,6 @@ void AudioInterruptService::InjectInterruptToAudioZone(int32_t zoneId, int32_t d
         return SUCCESS;
     }
 
-
     AUDIO_INFO_LOG("inject interrupt size %{public}zu with device id %{public}d to zone %{public}d",
         interrupts.size(), deviceId, zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> newFocusInfoList = interrupts;
@@ -2032,24 +2032,23 @@ void AudioInterruptService::InjectInterruptToAudioZone(int32_t zoneId, int32_t d
                 iter->first.deviceId == deviceId;
         };
         auto itOld = std::find_if(oldDeviceList.begin(), oldDeviceList.end(), isPresent);
-
         if (itOld == oldDeviceList.end()) {
             AUDIO_DEBUG_LOG("activate new interrupt %{public}d", itNew.first.sessionId);
             itNew.first.deviceId = deviceId;
             bool updateScene = false;
             ActivateAudioInterruptInternal(zoneId, itNew.first, false, updateScene);
             skipResume = true;
-        } else {
-            if ((*itOld)->second != itNew.second) {
-                AUDIO_DEBUG_LOG("ref interrupt %{public}d state from %{public}d to %{public}d",
-                    itNew.first.sessionId, (*itOld)->second, itNew.second);
-                (*itOld)->second = itNew.second;
-                if (itNew.second == PLACEHOLDER) {
-                    skipResume = true;
-                }
-            }
-            oldDeviceList.erase(itOld);
+            continue;
         }
+        if ((*itOld)->second != itNew.second) {
+            AUDIO_DEBUG_LOG("ref interrupt %{public}d state from %{public}d to %{public}d",
+                itNew.first.sessionId, (*itOld)->second, itNew.second);
+            (*itOld)->second = itNew.second;
+            if (itNew.second == PLACEHOLDER) {
+                skipResume = true;
+            }
+        }
+        oldDeviceList.erase(itOld);
     }
 
     RemoveAudioZoneInterrupts(zoneId, oldDeviceList);

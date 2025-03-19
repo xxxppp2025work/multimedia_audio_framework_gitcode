@@ -115,7 +115,8 @@ static void AddVoipInterruptToList(std::list<std::pair<AudioInterrupt, AudioFocu
     uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId,
     AudioFocuState state)
 {
-    AddInterruptToList(interrupts, STREAM_USAGE_VOICE_COMMUNICATION, STREAM_VOICE_CALL, sessionId, pid, uid, deviceId, state);
+    AddInterruptToList(interrupts, STREAM_USAGE_VOICE_COMMUNICATION,
+        STREAM_VOICE_CALL, sessionId, pid, uid, deviceId, state);
 }
 
 static void AddMovieInterruptToList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
@@ -157,7 +158,7 @@ HWTEST_F(AudioZoneInterruptUnitTest, AudioZoneInterrupt_002, TestSize.Level1)
 {
     ActivateMusicInterrupt(0, 10, 10, 10, -1);
     AudioZoneService::GetInstance().AddUidToAudioZone(zoneId1_, 20);
-    ActivateVoipInterrupt(zoneId1_, 20, 20, 20,-1);
+    ActivateVoipInterrupt(zoneId1_, 20, 20, 20, -1);
     AudioZoneService::GetInstance().RemoveUidFromAudioZone(zoneId1_, 20);
     auto interruptList = AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId1_);
     EXPECT_EQ(interruptList.size(), 0);
@@ -175,7 +176,7 @@ HWTEST_F(AudioZoneInterruptUnitTest, AudioZoneInterrupt_003, TestSize.Level1)
     AudioZoneService::GetInstance().EnableAudioZoneInterruptReport(1000, zoneId1_, -1, true);
     ActivateMusicInterrupt(0, 10, 10, 10, -1);
     AudioZoneService::GetInstance().AddUidToAudioZone(zoneId1_, 20);
-    ActivateVoipInterrupt(zoneId1_, 20, 20, 20,-1);
+    ActivateVoipInterrupt(zoneId1_, 20, 20, 20, -1);
     client1000_->Wait();
     EXPECT_EQ(client1000_->recvEvent_.type, AUDIO_ZONE_INTERRUPT_EVENT);
     AudioZoneService::GetInstance().EnableAudioZoneInterruptReport(1000, zoneId1_, -1, false);

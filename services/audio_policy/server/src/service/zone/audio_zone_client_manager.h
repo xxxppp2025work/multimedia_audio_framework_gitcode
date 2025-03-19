@@ -43,7 +43,7 @@ public:
 
     int32_t SetSystemVolumeLevel(const pid_t clientPid, const pid_t zoneId,
         const AudioVolumeType volumeType, const int32_t volumeLevel, const int32_t volumeFlag = 0);
-    const int32_t GetSystemVolumeLevel(const pid_t clientPid, const pid_t zoneId, AudioVolumeType volumeType);
+    int32_t GetSystemVolumeLevel(const pid_t clientPid, const pid_t zoneId, AudioVolumeType volumeType);
 
 private:
     std::unordered_map<pid_t, sptr<IStandardAudioZoneClient>> clients_;

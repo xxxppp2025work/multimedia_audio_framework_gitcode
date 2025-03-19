@@ -48,7 +48,7 @@ enum class AudioZoneFocusStrategy {
 
 class AudioZoneContext {
 public:
-    AudioZoneFocusStrategy focusStrategy_ = AudioZoneFocusStrategy:LOCAL_FOCUS_STRATEGY;
+    AudioZoneFocusStrategy focusStrategy_ = AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY;
 
     AudioZoneContext() = default;
 
@@ -117,7 +117,7 @@ public:
 
     static sptr<AudioZoneDescriptor> UnmarshallingPtr(Parcel &parcel)
     {
-        sptr<AudioZoneDescriptor> desc = new(std::northrow) AudioZoneDescriptor();
+        sptr<AudioZoneDescriptor> desc = new(std::nothrow) AudioZoneDescriptor();
         if (desc == nullptr) {
             return nullptr;
         }

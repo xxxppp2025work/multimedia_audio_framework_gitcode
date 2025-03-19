@@ -83,10 +83,10 @@ void AudioZoneClientManager::DispatchEvent(std::shared_ptr<AudioZoneEvent> event
             break;
         case AudioZoneEventType::AUDIO_ZONE_INTERRUPT_EVENT:
             if (event->deviceId == -1) {
-                clients_[event->clientPid]->OnInterruptEvnet(event->zoneId,
+                clients_[event->clientPid]->OnInterruptEvent(event->zoneId,
                     event->interrupts, event->zoneInterruptReason);
             } else {
-                clients_[event->clientPid]->OnInterruptEvnet(event->zoneId,
+                clients_[event->clientPid]->OnInterruptEvent(event->zoneId,
                     event->deviceId, event->interrupts, event->zoneInterruptReason);
             }
             break;
@@ -193,7 +193,7 @@ const int32_t AudioZoneClientManager::GetSystemVolumeLevel(const pid_t clientPid
     {
         std::lock_guard<std::mutex> lock(clientMutex_);
         if (clients_.find(clientPid) == clients_.end()) {
-           return ERROR;
+            return ERROR;
         }
         client = clients_[clientPid];
     }

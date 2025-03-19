@@ -1490,7 +1490,7 @@ void AudioPolicyServerHandler::SetAudioZoneEventDispatcher(const std::weak_ptr<I
     audioZoneEventDispatcher_ = dispatcher;
 }
 
-bool AudioPolicyServerHandler::SendAudioZoneEvent(std::shared_ptr<AudioZoneEvent> evnet)
+bool AudioPolicyServerHandler::SendAudioZoneEvent(std::shared_ptr<AudioZoneEvent> event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");

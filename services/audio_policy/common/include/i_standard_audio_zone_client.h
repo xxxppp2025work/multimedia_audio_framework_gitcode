@@ -46,7 +46,8 @@ public:
 
     virtual void OnAudioZoneRemove(int32_t zoneId) = 0;
 
-    virtual void OnAudioZoneChange(int32_t zoneId, const AudioZoneDescriptor &zoneDescriptor, AudioZoneChangeReason reason) = 0;
+    virtual void OnAudioZoneChange(int32_t zoneId, const AudioZoneDescriptor &zoneDescriptor,
+        AudioZoneChangeReason reason) = 0;
 
     virtual void OnInterruptEvent(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
@@ -57,7 +58,7 @@ public:
 
     virtual int32_t SetSystemVolume(int32_t zoneId, AudioVolumeType volumeType, int32_t volumeLevel) = 0;
 
-    virtual const int32_t GetSystemVolume(int32_t zoneId, AudioVolumeType volumeType) = 0;
+    virtual int32_t GetSystemVolume(int32_t zoneId, AudioVolumeType volumeType) = 0;
 
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;

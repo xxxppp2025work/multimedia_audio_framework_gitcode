@@ -85,8 +85,8 @@ public:
     int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt);
 
     // modern interrupt interfaces
-    int32_t ActivateAudioInterruptInternal(const int32_t zoneId, const AudioInterrupt &audioInterrupt
-        , const bool isUpdatedAudioStrategy, bool &updateScene);
+    int32_t ActivateAudioInterruptInternal(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
+        const bool isUpdatedAudioStrategy, bool &updateScene);
     int32_t SetAudioInterruptCallback(const int32_t zoneId, const uint32_t streamId,
         const sptr<IRemoteObject> &object, uint32_t uid);
     int32_t UnsetAudioInterruptCallback(const int32_t zoneId, const uint32_t streamId);
@@ -104,17 +104,17 @@ public:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     int32_t InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
-    const int32_t GetAudioFocusInfoList(const int32_t zoneId, int32_t deviceId,
+    int32_t GetAudioFocusInfoList(const int32_t zoneId, int32_t deviceId,
         std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
-    const int32_t GetAudioFocusInfoList(const int32_t zoneId,
+    int32_t GetAudioFocusInfoList(const int32_t zoneId,
         std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
 
     int32_t SetAudioFocusInfoCallback(const int32_t zoneId, const sptr<IRemoteObject> &object);
-    const int32_t GetStreamTypePriority(AudioStreamType streamType);
+    int32_t GetStreamTypePriority(AudioStreamType streamType);
     unordered_map<AudioStreamType, int> GetStreamPriorityMap() const;
     AudioStreamType GetStreamInFocus(const int32_t zoneId);
     AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneId);
-    const int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
+    int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
     void ClearAudioFocusInfoListOnAccountsChanged(const int &id);
     void AudioInterruptZoneDump(std::string &dumpString);
     void AudioSessionInfoDump(std::string &dumpString);

@@ -72,7 +72,7 @@ void AudioZoneClientProxy::OnAudioZoneChanged(int32_t zoneId, const AudioZoneDes
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "send request failed, error: %{public}d", error);
 }
 
-void AudioZoneClientProxy::OnInterruptEvnet(int32_t zoneId,
+void AudioZoneClientProxy::OnInterruptEvent(int32_t zoneId,
     std::list<std::pair<AudioInerrupt, AudioFocusState>> interrupts,
     AudioInterruptReason reason)
 {
@@ -93,7 +93,7 @@ void AudioZoneClientProxy::OnInterruptEvnet(int32_t zoneId,
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "send request failed, error: %{public}d", error);
 }
 
-void AudioZoneClientProxy::OnInterruptEvnet(int32_t zoneId, int32_t deviceId,
+void AudioZoneClientProxy::OnInterruptEvent(int32_t zoneId, int32_t deviceId,
     std::list<std::pair<AudioInerrupt, AudioFocusState>> interrupts,
     AudioInterruptReason reason)
 {
