@@ -176,6 +176,12 @@ public:
 
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo) override;
 
+    int32_t CreateRendererClient(
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId) override;
+
+    int32_t CreateCapturerClient(
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId) override;
+
     int32_t RegisterTracker(AudioMode &mode,
         AudioStreamChangeInfo &streamChangeInfo, const sptr<IRemoteObject> &object) override;
 
@@ -234,10 +240,6 @@ public:
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) override;
 
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
-
-    int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId) override;
-
-    int32_t  SetCaptureSilentState(bool state) override;
 
     int32_t GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc) override;
 

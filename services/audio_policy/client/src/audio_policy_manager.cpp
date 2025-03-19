@@ -1186,6 +1186,22 @@ int32_t AudioPolicyManager::GetPreferredInputStreamType(AudioCapturerInfo &captu
     return gsp->GetPreferredInputStreamType(capturerInfo);
 }
 
+int32_t AudioPolicyManager::CreateRendererClient(
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");
+    return gsp->CreateRendererClient(streamDesc, flag, sessionId);
+}
+
+int32_t AudioPolicyManager::CreateCapturerClient(
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");
+    return gsp->CreateCapturerClient(streamDesc, flag, sessionId);
+}
+
 int32_t AudioPolicyManager::GetCurrentRendererChangeInfos(
     vector<shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
@@ -1358,34 +1374,6 @@ int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supporte
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     int error = gsp->QueryEffectSceneMode(supportedEffectConfig);
     return error;
-}
-
-int32_t AudioPolicyManager::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config,
-    uint32_t appTokenId)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-
-    return gsp->SetPlaybackCapturerFilterInfos(config, appTokenId);
-#else
-    return ERROR;
-#endif
-}
-
-int32_t AudioPolicyManager::SetCaptureSilentState(bool state)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("SetCaptureSilentState: audio policy manager proxy is NULL");
-        return ERROR;
-    }
-
-    return gsp->SetCaptureSilentState(state);
-#else
-    return ERROR;
-#endif
 }
 
 int32_t AudioPolicyManager::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)

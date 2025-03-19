@@ -108,6 +108,7 @@ public:
         AudioStreamDeviceChangeReasonExt reason_ = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
         std::pair<int32_t, AudioSessionDeactiveEvent> sessionDeactivePair;
         std::shared_ptr<AudioZoneEvent> audioZoneEvent;
+        uint32_t routeFlag;
     };
 
     struct RendererDeviceChangeEvent {
@@ -187,9 +188,9 @@ public:
         uint64_t sessionId, bool isSync, int32_t &error);
     bool SendCapturerRemovedEvent(uint64_t sessionId, bool isSync);
     bool SendWakeupCloseEvent(bool isSync);
-    bool SendRecreateRendererStreamEvent(int32_t clientId, uint32_t sessionID, int32_t streamFlag,
+    bool SendRecreateRendererStreamEvent(int32_t clientId, uint32_t sessionID, uint32_t routeFlag,
         const AudioStreamDeviceChangeReasonExt reason);
-    bool SendRecreateCapturerStreamEvent(int32_t clientId, uint32_t sessionID, int32_t streamFlag,
+    bool SendRecreateCapturerStreamEvent(int32_t clientId, uint32_t sessionID, uint32_t routeFlag,
         const AudioStreamDeviceChangeReasonExt reason);
     bool SendHeadTrackingDeviceChangeEvent(const std::unordered_map<std::string, bool> &changeInfo);
     void AddAudioDeviceRefinerCb(const sptr<IStandardAudioRoutingManagerListener> &callback);
@@ -257,8 +258,6 @@ private:
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
-
-    void ResetRingerModeMute(const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
 
     std::vector<AudioRendererInfo> GetCallbackRendererInfoList(int32_t clientPid);
     std::vector<AudioCapturerInfo> GetCallbackCapturerInfoList(int32_t clientPid);

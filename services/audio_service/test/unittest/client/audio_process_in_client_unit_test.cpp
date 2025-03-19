@@ -20,6 +20,7 @@
 #include "audio_errors.h"
 #include "audio_process_in_client.h"
 #include "audio_process_in_client.cpp"
+#include "fast_audio_stream.h"
 
 using namespace testing::ext;
 
@@ -36,7 +37,6 @@ public:
 
 constexpr int32_t DEFAULT_STREAM_ID = 10;
 constexpr size_t NUMBER1 = 1;
-constexpr size_t NUMBER2 = 2;
 constexpr size_t NUMBER4 = 4;
 constexpr size_t NUMBER6 = 6;
 
@@ -198,7 +198,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_008, TestSize.Lev
     info.channels = AudioChannel::MONO;
     auto ret = GetFormatSize(info);
 
-    EXPECT_EQ(ret, NUMBER2);
+    EXPECT_EQ(ret, NUMBER4);
 }
 
 /**
@@ -1402,9 +1402,10 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_070, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = false;
     auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
-
+    auto ptrFastAudioStream = std::make_shared<FastAudioStream>(config.streamType,
+        AUDIO_MODE_RECORD, config.appInfo.appUid);
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
-    bool ret = ptrAudioProcessInClientInner->Init(config);
+    bool ret = ptrAudioProcessInClientInner->Init(config, ptrFastAudioStream);
     EXPECT_EQ(ret, false);
 }
 } // namespace AudioStandard

@@ -38,6 +38,7 @@
 #include "audio_spatialization_state_change_listener_stub.h"
 #include "i_standard_spatialization_state_change_listener.h"
 #include "audio_combine_denoising_manager.h"
+#include "audio_stream_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -237,6 +238,12 @@ public:
 
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
 
+    int32_t CreateRendererClient(
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId);
+
+    int32_t CreateCapturerClient(
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId);
+
     int32_t RegisterAudioRendererEventListener(const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
 
     int32_t UnregisterAudioRendererEventListener(
@@ -330,10 +337,6 @@ public:
     int32_t GetMaxRendererInstances();
 
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig);
-
-    int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId);
-
-    int32_t SetCaptureSilentState(bool state);
 
     int32_t GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc);
 

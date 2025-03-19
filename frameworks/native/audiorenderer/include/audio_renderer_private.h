@@ -19,12 +19,15 @@
 #include <shared_mutex>
 #include <optional>
 
+#include "securec.h"
+
 #include "audio_interrupt_callback.h"
 #include "audio_concurrency_callback.h"
 #include "audio_renderer.h"
 #include "audio_renderer_proxy_obj.h"
 #include "audio_utils.h"
 #include "i_audio_stream.h"
+#include "audio_stream_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -98,7 +101,6 @@ public:
     float GetMaxStreamVolume() const override;
     int32_t GetCurrentOutputDevices(AudioDeviceDescriptor &deviceInfo) const override;
     uint32_t GetUnderflowCount() const override;
-    IAudioStream::StreamClass GetTargetStreamClass(int32_t streamFlag);
 
     int32_t RegisterOutputDeviceChangeWithInfoCallback(
         const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback) override;
@@ -175,8 +177,12 @@ protected:
 
 private:
     int32_t CheckAndRestoreAudioRenderer(std::string callingFunc);
-    int32_t PrepareAudioStream(const AudioStreamParams &audioStreamParams,
+    int32_t PrepareAudioStream(AudioStreamParams &audioStreamParams,
         const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass);
+    std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
+    std::shared_ptr<AudioStreamDescriptor> GetStreamDescBySwitchInfo(
+        const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);
+    void SetClientInfo(uint32_t flag, IAudioStream::StreamClass &streamClass);
     int32_t InitAudioInterruptCallback(bool isRestoreAudio = false);
     int32_t InitOutputDeviceChangeCallback();
     int32_t InitAudioStream(AudioStreamParams audioStreamParams);
