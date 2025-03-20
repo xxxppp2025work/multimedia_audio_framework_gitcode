@@ -200,6 +200,8 @@ public:
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
 
+    int32_t SetQueryBundleNameListCallback(const std::shared_ptr<AudioQueryBundleNameListCallback> &callback);
+
     int32_t SetAudioManagerInterruptCallback(const int32_t clientId,
         const std::shared_ptr<AudioInterruptCallback> &callback);
 
@@ -453,7 +455,7 @@ public:
 
     int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable);
 
-    int32_t SetSystemVolumeLevelForZone(conts int32_t zoneId, const AudioVolumeType volumeType,
+    int32_t SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
         const int32_t volumeLevel, const int32_t volumeFlag = 0);
 
     int32_t GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType);
@@ -572,7 +574,6 @@ public:
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

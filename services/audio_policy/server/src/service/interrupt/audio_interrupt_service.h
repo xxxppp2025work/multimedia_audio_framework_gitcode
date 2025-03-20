@@ -49,51 +49,6 @@ typedef struct {
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList;
 } AudioInterruptZone;
 
-static const map<InterruptHint, AudioFocuState> HINT_STATE_MAP = {
-    {INTERRUPT_HINT_PAUSE, PAUSE},
-    {INTERRUPT_HINT_DUCK, DUCK},
-    {INTERRUPT_HINT_NONE, ACTIVE},
-    {INTERRUPT_HINT_RESUME, ACTIVE},
-    {INTERRUPT_HINT_UNDUCK, ACTIVE}
-};
-
-static const map<InterruptHint, InterruptStage> HINT_STAGE_MAP = {
-    {INTERRUPT_HINT_PAUSE, INTERRUPT_STAGE_PAUSED},
-    {INTERRUPT_HINT_DUCK, INTERRUPT_STAGE_DUCK_BEGIN},
-    {INTERRUPT_HINT_STOP, INTERRUPT_STAGE_STOPPED},
-    {INTERRUPT_HINT_RESUME, INTERRUPT_STAGE_RESUMED},
-    {INTERRUPT_HINT_UNDUCK, INTERRUPT_STAGE_DUCK_END}
-};
-
-static const std::unordered_map<const AudioScene, const int> SCENE_PRIORITY = {
-    // from high to low
-    {AUDIO_SCENE_PHONE_CALL, 5},
-    {AUDIO_SCENE_VOICE_RINGING, 4},
-    {AUDIO_SCENE_PHONE_CHAT, 3},
-    {AUDIO_SCENE_RINGING, 2},
-    {AUDIO_SCENE_DEFAULT, 1}
-};
-
-static const unordered_map<AudioStreamType, int> DEFAULT_STREAM_PRIORITY = {
-    {STREAM_VOICE_CALL, 0},
-    {STREAM_VOICE_CALL_ASSISTANT, 0},
-    {STREAM_VOICE_COMMUNICATION, 0},
-    {STREAM_VOICE_MESSAGE, 1},
-    {STREAM_NOTIFICATION, 2},
-    {STREAM_VOICE_ASSISTANT, 3},
-    {STREAM_RING, 4},
-    {STREAM_VOICE_RING, 4},
-    {STREAM_ALARM, 5},
-    {STREAM_NAVIGATION, 6},
-    {STREAM_MUSIC, 7},
-    {STREAM_MOVIE, 7},
-    {STREAM_SPEECH, 7},
-    {STREAM_GAME, 7},
-    {STREAM_DTMF, 8},
-    {STREAM_SYSTEM, 8},
-    {STREAM_SYSTEM_ENFORCED, 9},
-};
-
 class AudioPolicyServerHandler;
 
 class SessionTimeOutCallback;
@@ -166,6 +121,7 @@ public:
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
     ClientType GetClientTypeByStreamId(int32_t streamId);
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
+    int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -231,6 +187,11 @@ private:
     bool IsAudioSourceConcurrency(const SourceType &existSourceType, const SourceType &incomingSourceType,
         const std::vector<SourceType> &existConcurrentSources,
         const std::vector<SourceType> &incomingConcurrentSources);
+    bool IsMediaStream(AudioStreamType audioStreamType);
+    void UpdateAudioFocusStrategy(AudioFocusType existAudioFocusType, AudioFocusType incomingAudioFocusType,
+        AudioFocusEntry &focusEntry);
+    bool FocusEntryContinue(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
+        AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt);
     int32_t ProcessFocusEntry(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
     void SendInterruptEventToIncomingStream(InterruptEventInternal &interruptEvent,
         const AudioInterrupt &incomingInterrupt);
@@ -343,6 +304,7 @@ private:
     std::mutex mutex_;
     mutable int32_t ownerPid_ = 0;
     std::unique_ptr<AudioInterruptDfxCollector> dfxCollector_;
+    sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

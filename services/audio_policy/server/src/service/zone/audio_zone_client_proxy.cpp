@@ -28,7 +28,7 @@ AudioZoneClientProxy::AudioZoneClientProxy(const sptr<IRemoteObject> &impl)
 AudioZoneClientProxy::~AudioZoneClientProxy()
 {}
 
-void AudioZoneClientProxy::OnAudioZoneAdded(const sptr<AudioZoneDescriptor> &zoneDescriptor)
+void AudioZoneClientProxy::OnAudioZoneAdd(const sptr<AudioZoneDescriptor> &zoneDescriptor)
 {
     CHECK_AND_RETURN_LOG(zoneDescriptor!= nullptr, "zoneDescriptor is null");
     MessageParcel data;
@@ -42,7 +42,7 @@ void AudioZoneClientProxy::OnAudioZoneAdded(const sptr<AudioZoneDescriptor> &zon
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "send request failed, error: %{public}d", error);
 }
 
-void AudioZoneClientProxy::OnAudioZoneRemoved(int32_t zoneId)
+void AudioZoneClientProxy::OnAudioZoneRemove(int32_t zoneId)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -55,7 +55,7 @@ void AudioZoneClientProxy::OnAudioZoneRemoved(int32_t zoneId)
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "send request failed, error: %{public}d", error);
 }
 
-void AudioZoneClientProxy::OnAudioZoneChanged(int32_t zoneId, const AudioZoneDescriptor &zoneDescriptor,
+void AudioZoneClientProxy::OnAudioZoneChange(int32_t zoneId, const AudioZoneDescriptor &zoneDescriptor,
     AudioZoneChangeReason reason)
 {
     CHECK_AND_RETURN_LOG(zoneDescriptor!= nullptr, "zoneDescriptor is null");
