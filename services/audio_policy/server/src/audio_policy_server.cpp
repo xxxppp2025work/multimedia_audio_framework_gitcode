@@ -181,7 +181,7 @@ void AudioPolicyServer::OnStart()
         AUDIO_ERR_LOG("SetAudioStreamRemovedCallback failed");
     }
     audioPolicyService_.Init();
-
+    InitApiVersionGetter();
     coreService_ = AudioCoreService::GetCoreService();
     coreService_->SetCallbackHandler(audioPolicyServerHandler_);
     coreService_->Init();
@@ -292,7 +292,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
 #ifdef USB_ENABLE
         case USB_SYSTEM_ABILITY_ID:
-            AudioUsbManager::GetInstance().Init(eventEntry_.get()); // shared_ptr -> *
+            AudioUsbManager::GetInstance().Init();
             break;
 #endif
         default:
@@ -638,7 +638,6 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     SubscribeCommonEvent("usual.event.SCREEN_LOCKED");
     SubscribeCommonEvent("usual.event.SCREEN_UNLOCKED");
 #ifdef USB_ENABLE
-    AudioUsbManager::GetInstance().Init(&audioPolicyService_);
     AudioUsbManager::GetInstance().SubscribeEvent();
 #endif
     SubscribeSafeVolumeEvent();
@@ -746,6 +745,13 @@ void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnAsyncPowerStateCh
 void AudioPolicyServer::InitKVStore()
 {
     audioPolicyService_.InitKVStore();
+}
+
+void AudioPolicyServer::InitApiVersionGetter()
+{
+    SetApiVersionGetter([this] {
+        return GetApiTargerVersion();
+    });
 }
 
 void AudioPolicyServer::ConnectServiceAdapter()
@@ -1840,7 +1846,7 @@ int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
         case AUDIO_SCENE_PHONE_CALL:
         case AUDIO_SCENE_PHONE_CHAT:
             return eventEntry_->SetAudioScene(audioScene);
-    
+
         default:
             AUDIO_ERR_LOG("param is invalid: %{public}d", audioScene);
             return ERR_INVALID_PARAM;
@@ -1908,6 +1914,19 @@ int32_t AudioPolicyServer::SetAudioClientInfoMgrCallback(const sptr<IRemoteObjec
         return ERR_OPERATION_FAILED;
     }
     return audioPolicyService_.SetAudioClientInfoMgrCallback(object);
+}
+
+int32_t AudioPolicyServer::SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object)
+{
+    if (!PermissionUtil::VerifyIsAudio()) {
+        AUDIO_ERR_LOG("not audio calling!");
+        return ERR_OPERATION_FAILED;
+    }
+
+    if (interruptService_ != nullptr) {
+        return interruptService_->SetQueryBundleNameListCallback(object);
+    }
+    return ERR_UNKNOWN;
 }
 
 int32_t AudioPolicyServer::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
