@@ -980,6 +980,21 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
     AUDIO_INFO_LOG("Output stream size: %{public}zu", outputStreamDescs.size());
     CheckModemScene(reason);
     if (outputStreamDescs.empty()) {
+        AUDIO_PRERELEASE_LOGI("when no stream in");
+        vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
+            audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1);
+        CHECK_AND_RETURN_RET_LOG(!descs.empty(), ERROR, "descs is empty");
+        AudioDeviceDescriptor tmpOutputDeviceDesc = audioActiveDevice_.GetCurrentOutputDevice();
+        if (descs.front()->deviceType_ == DEVICE_TYPE_NONE || IsSameDevice(descs.front(), tmpOutputDeviceDesc)) {
+            AUDIO_DEBUG_LOG("output device is not change");
+            return SUCCESS;
+        }
+        audioActiveDevice_.SetCurrentOutputDevice(*descs.front());
+        AUDIO_DEBUG_LOG("currentActiveDevice %{public}d", audioActiveDevice_.GetCurrentOutputDeviceType());
+        audioVolumeManager_.SetVolumeForSwitchDevice(descs.front());
+        if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            SwitchActiveA2dpDevice(std::make_shared<AudioDeviceDescriptor>(*descs.front()));
+        }
         return HandleFetchOutputWhenNoRunningStream();
     }
 
