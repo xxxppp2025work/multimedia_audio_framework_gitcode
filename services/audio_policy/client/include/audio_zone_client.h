@@ -76,9 +76,9 @@ private:
         void OnAudioZoneAdd(const AudioZoneDescriptor &zoneDescriptor) override;
         void OnAudioZoneRemove(int32_t zoneId) override;
         void OnAudioZoneChange(int32_t zoneId, const AudioZoneDescriptor &zoneDescriptor,
-            AudioZoneInterruptReason reason) override;
+            AudioZoneChangeReason reason) override;
         void OnInterruptEvent(int32_t zoneId, const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
-            AudioZoneInterruptReason reason)
+            AudioZoneInterruptReason reason) override;
         void OnInterruptEvent(int32_t zoneId, int32_t deviceId,
             const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
             AudioZoneInterruptReason reason) override;
