@@ -3361,7 +3361,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelForZone(const int32_t zoneId, con
     return AudioZoneService::GetInstance().SetSystemVolumeLevelForZone(zoneId, volumeType, volumeLevel, volumeFlag);
 }
 
-const int32_t AudioPolicyServer::GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType)
+int32_t AudioPolicyServer::GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType)
 {
     return AudioZoneService::GetInstance().GetSystemVolumeLevelForZone(zoneId, volumeType);
 }

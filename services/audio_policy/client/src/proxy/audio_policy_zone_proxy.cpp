@@ -236,7 +236,7 @@ int32_t AudioPolicyProxy::SetSystemVolumeLevelForZone(const int32_t zoneId, cons
 }
 
 
-const int32_t AudioPolicyProxy::GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType)
+int32_t AudioPolicyProxy::GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType)
 {
     MessageParcel data;
     MessageParcel reply;

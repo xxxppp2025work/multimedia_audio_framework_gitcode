@@ -281,7 +281,7 @@ int32_t AudioZoneManagerInner::SetSystemVolumeLevelForZone(const int32_t zoneId,
     return result;
 }
 
-const int32_t AudioZoneManagerInner::GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType)
+int32_t AudioZoneManagerInner::GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType)
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
