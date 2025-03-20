@@ -2250,6 +2250,14 @@ int32_t AudioPolicyManager::SetQueryAllowedPlaybackCallback(
     return gsp->SetQueryAllowedPlaybackCallback(object);
 }
 
+int32_t AudioPolicyManager::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
+    uint32_t VolumeType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->SaveAdjustStreamVolumeInfo(volume, sessionId, invocationTime, VolumeType);
+}
+
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;
