@@ -47,7 +47,7 @@ void NapiAudioSpatializationEnabledChangeCallback::CreateSpatEnableTsfn(napi_env
 {
     napi_value cbName;
     regAmSpatEnable_ = true;
-    std::string callbackName = "volumeChange";
+    std::string callbackName = "SpatializationEnabledChange";
     napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
     napi_create_threadsafe_function(env_, nullptr, nullptr, cbName, 0, 1, nullptr,
         SpatializationEnabledTsfnFinalize, nullptr, SafeJsCallbackSpatializationEnabledWork,
