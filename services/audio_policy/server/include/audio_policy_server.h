@@ -221,6 +221,8 @@ public:
 
     int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) override;
 
+    int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object) override;
+
     int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
     int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
@@ -422,7 +424,7 @@ public:
 
     int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) override;
 
-    int32_t SetSystemVolumeLevelForZone(conts int32_t zoneId, const AudioVolumeType volumeType,
+    int32_t SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
         const int32_t volumeLevel, const int32_t volumeFlag = 0) override;
 
     int32_t GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType) override;
@@ -664,6 +666,7 @@ private:
     void HandleKvDataShareEvent();
     void InitMicrophoneMute();
     void InitKVStore();
+    void InitApiVersionGetter();
     void ConnectServiceAdapter();
     void LoadEffectLibrary();
     void RegisterBluetoothListener();
@@ -743,6 +746,7 @@ private:
     AudioPolicyDump &audioPolicyDump_;
     int32_t sessionIdByRemote_ = -1;
     AudioActiveDevice& audioActiveDevice_;
+    sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

@@ -21,7 +21,7 @@
 #include "audio_errors.h"
 #include "audio_server_death_recipient.h"
 #include "audio_policy_log.h"
-#include "audio_util.h"
+#include "audio_utils.h"
 #include "audio_zone_client.h"
 
 namespace OHOS {
@@ -50,7 +50,7 @@ void AudioPolicyManager::ReleaseAudioZone(int32_t zoneId)
     gsp->ReleaseAudioZone(zoneId);
 }
 
-std::vector<sptr<AudioZoneDescriptor>> AudioPolicyManager::GetAllAudioZone()
+const std::vector<sptr<AudioZoneDescriptor>> AudioPolicyManager::GetAllAudioZone()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     std::vector<sptr<AudioZoneDescriptor>> zoneDescriptors;
@@ -59,7 +59,7 @@ std::vector<sptr<AudioZoneDescriptor>> AudioPolicyManager::GetAllAudioZone()
     return gsp->GetAllAudioZone();
 }
 
-sptr<AudioZoneDescriptor> AudioPolicyManager::GetAudioZone(int32_t zoneId)
+const sptr<AudioZoneDescriptor> AudioPolicyManager::GetAudioZone(int32_t zoneId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp!= nullptr, nullptr, "audio policy manager proxy is NULL.");

@@ -25,9 +25,9 @@ public:
     explicit AudioZoneClientProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioZoneClientProxy() = default;
 
-    void OnAudioZoneAdded(const sptr<AudioZoneDescriptor> &zoneDescriptor) override;
-    void OnAudioZoneRemoved(int32_t zoneId) override;
-    void OnAudioZoneChanged(int32_t zoneId, const AudioZoneDescriptor &zoneDescriptor,
+    void OnAudioZoneAdd(const sptr<AudioZoneDescriptor> &zoneDescriptor) override;
+    void OnAudioZoneRemove(int32_t zoneId) override;
+    void OnAudioZoneChange(int32_t zoneId, const AudioZoneDescriptor &zoneDescriptor,
         AudioZoneChangeReason reason) override;
     void OnInterruptEvent(int32_t zoneId, int32_t deviceId,
         std::list<std::pair<AudioInerrupt, AudioFocusState>> interrupts,

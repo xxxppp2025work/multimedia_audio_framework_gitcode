@@ -44,7 +44,7 @@ int PolicyProviderStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Mess
             return HandleGetProcessDeviceInfo(data, reply);
         case INIT_VOLUME_MAP:
             return HandleInitSharedVolume(data, reply);
-        case SET_WAKEUP_Audio_CAPTURER:
+        case SET_WAKEUP_ADUIO_CAPTURER:
             return HandleSetWakeupCapturer(data, reply);
         case SET_AUDIO_CAPTURER:
             return HandleSetCapturer(data, reply);

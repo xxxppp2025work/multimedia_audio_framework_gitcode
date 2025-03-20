@@ -152,6 +152,8 @@ public:
 
     virtual int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) = 0;
 
+    virtual int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object) = 0;
+
     virtual int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) = 0;
 
     virtual int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) = 0;
@@ -323,15 +325,15 @@ public:
 
     virtual int32_t ReleaseAudioInterruptZone(const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
-    int32_t RegisterAudioZoneClient(const sptr<IRemoteObject>& object) = 0;
+    virtual int32_t RegisterAudioZoneClient(const sptr<IRemoteObject>& object) = 0;
 
-    int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context) = 0;
+    virtual int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context) = 0;
 
     virtual void ReleaseAudioZone(int32_t zoneId) = 0;
 
-    virtual std::vector<sptr<AudioZoneDescriptor>> GetAllAudioZone() = 0;
+    virtual const std::vector<sptr<AudioZoneDescriptor>> GetAllAudioZone() = 0;
 
-    virtual sptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId) = 0;
+    virtual const sptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId) = 0;
 
     virtual int32_t BindDeviceToAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices) = 0;
 
@@ -347,14 +349,14 @@ public:
 
     virtual int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) = 0;
 
-    virtual int32_t SetSystemVolumeLevelForZone(conts int32_t zoneId, const AudioVolumeType volumeType,
+    virtual int32_t SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
         const int32_t volumeLevel, const int32_t volumeFlag = 0) = 0;
 
     virtual int32_t GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType) = 0;
 
-    virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId) = 0;
+    virtual const std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId) = 0;
 
-    virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
+    virtual const std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
         int32_t zoneId, int32_t deviceId) = 0;
 
     virtual int32_t EnableAudioZoneInterruptReport(int32_t zoneId, int32_t deviceId, bool enable) = 0;

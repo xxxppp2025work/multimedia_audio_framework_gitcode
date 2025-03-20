@@ -35,7 +35,7 @@ public:
     enum IPolicyProviderMsg : uint32_t {
         GET_DEVICE_INFO = 0,
         INIT_VOLUME_MAP,
-        SET_WAKEUP_Audio_CAPTURER,
+        SET_WAKEUP_ADUIO_CAPTURER,
         SET_AUDIO_CAPTURER,
         REMOVE_WAKEUP_CAPUTER,
         IS_ABS_VOLUME_SUPPORTED,

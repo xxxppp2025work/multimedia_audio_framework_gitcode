@@ -52,6 +52,26 @@ const char *g_audioPolicyCodeStrs[] = {
     "IS_MICROPHONE_MUTE",
     "SET_CALLBACK",
     "UNSET_CALLBACK",
+    "GET_SELF_APP_VOLUME_LEVEL",
+    "SET_STREAM_MUTE_LEGACY",
+    "SET_STREAM_MUTE",
+    "GET_STREAM_MUTE",
+    "IS_STREAM_ACTIVE",
+    "SET_DEVICE_ACTIVE",
+    "IS_DEVICE_ACTIVE",
+    "GET_ACTIVE_OUTPUT_DEVICE",
+    "GET_ACTIVE_INPUT_DEVICE",
+    "SET_RINGER_MODE_LEGACY",
+    "SET_RINGER_MODE",
+    "GET_RINGER_MODE",
+    "SET_AUDIO_SCENE",
+    "GET_AUDIO_SCENE",
+    "SET_MICROPHONE_MUTE",
+    "SET_MICROPHONE_MUTE_AUDIO_CONFIG",
+    "IS_MICROPHONE_MUTE_LEGACY",
+    "IS_MICROPHONE_MUTE",
+    "SET_CALLBACK",
+    "UNSET_CALLBACK",
     "SET_QUERY_CLIENT_TYPE_CALLBACK",
     "SET_CLIENT_INFO_MGR_CALLBACK",
     "ACTIVATE_INTERRUPT",
@@ -211,6 +231,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE",
     "SET_QUERY_ALLOWED_PLAYBACK_CALLBACK",
 };
+
 class AudioPolicyManagerStub : public IRemoteStub<IAudioPolicy> {
 public:
     virtual int32_t OnRemoteRequest(uint32_t code, MessageParcel &data,
@@ -410,7 +431,9 @@ private:
     void SetVirtualCallInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceConnectionStatusInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryAllowedPlaybackCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void SetQueryBundleNameListCallbackInternal(MessageParcel &data, MessageParcel &reply);
 
+    void OnMiddleEleRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleTenRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleNinRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleEigRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

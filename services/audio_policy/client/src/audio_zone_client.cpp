@@ -64,12 +64,12 @@ void AudioZoneClientStub::HandleAudioZoneAdd(MessageParcel &data, MessageParcel 
 {
     AudioZoneDescriptor desc;
     desc.Unmarshalling(data);
-    OnAudioZoneAdded(desc);
+    OnAudioZoneAdd(desc);
 }
 
 void AudioZoneClientStub::HandleAudioZoneRemove(MessageParcel &data, MessageParcel &reply)
 {
-    OnAudioZoneRemoved(data.ReadInt32());
+    OnAudioZoneRemove(data.ReadInt32());
 }
 
 void AudioZoneClientStub::HandleAudioZoneChange(MessageParcel &data, MessageParcel &reply)
@@ -78,7 +78,7 @@ void AudioZoneClientStub::HandleAudioZoneChange(MessageParcel &data, MessageParc
     AudioZoneDescriptor desc;
     desc.Unmarshalling(data);
     AudioZoneChangeReason reason = static_cast<AudioZoneChangeReason>(data.ReadInt32());
-    OnAudioZoneChanged(zoneId, desc, reason);
+    OnAudioZoneChange(zoneId, desc, reason);
 }
 
 void AudioZoneClientStub::HandleAudioZoneInterrupt(MessageParcel &data, MessageParcel &reply)
