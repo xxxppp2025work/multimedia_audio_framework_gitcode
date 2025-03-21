@@ -96,6 +96,23 @@ static const std::vector<StreamUsage> AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STRE
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
 };
 
+static void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
+    uint32_t volumeType)
+{
+    AudioPolicyManager::GetInstance().SaveAdjustStreamVolumeInfo(volume, sessionId, invocationTime, volumeType);
+}
+
+static void HandleDuckStreamVolumeInfo(int32_t result, float volume, uint32_t sessionId)
+{
+    if (result == SUCCESS) {
+        std::string currentTime = GetTime();
+        AUDIO_INFO_LOG("SetDuckVolumeInfo volume: %{public}f, sessionID: %{public}d, adjustTime: %{public}s",
+            volume, sessionId, currentTime.c_str());
+        SaveAdjustStreamVolumeInfo(volume, sessionId, currentTime,
+            static_cast<uint32_t>(AdjustStreamVolume::DUCK_VOLUME_INFO));
+    }
+}
+
 static AudioRendererParams SetStreamInfoToParams(const AudioStreamInfo &streamInfo)
 {
     AudioRendererParams params;
@@ -1076,8 +1093,8 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
     if (ret != 0) {
         AUDIO_ERR_LOG("DeactivateAudioInterrupt Failed");
     }
-    (void)audioStream_->SetDuckVolume(1.0f);
-
+    int32_t rets = audioStream_->SetDuckVolume(1.0f);
+    HandleDuckStreamVolumeInfo(rets, 1.0f, sessionID_);
     return result;
 }
 
@@ -1105,7 +1122,8 @@ bool AudioRendererPrivate::Stop()
     if (ret != 0) {
         AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
     }
-    (void)audioStream_->SetDuckVolume(1.0f);
+    int32_t rets = audioStream_->SetDuckVolume(1.0f);
+    HandleDuckStreamVolumeInfo(rets, 1.0f, sessionID_);
 
     return result;
 }
@@ -1180,7 +1198,15 @@ int32_t AudioRendererPrivate::SetVolume(float volume) const
     UpdateAudioInterruptStrategy(volume);
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
-    return currentStream->SetVolume(volume);
+    int32_t result = currentStream->SetVolume(volume);
+    if (result == SUCCESS) {
+        std::string currentTime = GetTime();
+        AUDIO_INFO_LOG("SetVolumeInfo volume: %{public}f, sessionID: %{public}d, adjustTime: %{public}s",
+            volume, sessionID_, currentTime.c_str());
+        SaveAdjustStreamVolumeInfo(volume, sessionID_, currentTime,
+            static_cast<uint32_t>(AdjustStreamVolume::STREAM_VOLUME_INFO));
+    }
+    return result;
 }
 
 void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume) const
@@ -1298,6 +1324,9 @@ bool AudioRendererInterruptCallbackImpl::HandleForceDucking(const InterruptEvent
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Failed to set duckVolumeFactor(instance) %{public}f",
         duckVolumeFactor);
 
+    audioStream_->GetAudioSessionID(sessionID_);
+    HandleDuckStreamVolumeInfo(ret, 1.0f, sessionID_);
+
     AUDIO_INFO_LOG("Set duckVolumeFactor %{public}f successfully.", duckVolumeFactor);
     return true;
 }
@@ -1313,13 +1342,15 @@ void AudioRendererInterruptCallbackImpl::NotifyForcePausedToResume(const Interru
 InterruptCallbackEvent AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(
     const InterruptEventInternal &interruptEvent)
 {
+    int32_t ret = -1;
     State currentState = audioStream_->GetState();
     audioStream_->GetAudioSessionID(sessionID_);
     switch (interruptEvent.hintType) {
         case INTERRUPT_HINT_PAUSE:
             if (currentState == RUNNING || currentState == PREPARED) {
                 (void)audioStream_->PauseAudioStream(); // Just Pause, do not deactivate here
-                (void)audioStream_->SetDuckVolume(1.0f);
+                ret = audioStream_->SetDuckVolume(1.0f);
+                HandleDuckStreamVolumeInfo(ret, 1.0f, sessionID_);
                 isForcePaused_ = true;
             } else {
                 AUDIO_WARNING_LOG("sessionId: %{public}u, state: %{public}d. No need to pause",
@@ -1337,7 +1368,8 @@ InterruptCallbackEvent AudioRendererInterruptCallbackImpl::HandleAndNotifyForced
             return FORCE_PAUSED_TO_RESUME_EVENT;
         case INTERRUPT_HINT_STOP:
             (void)audioStream_->StopAudioStream();
-            (void)audioStream_->SetDuckVolume(1.0f);
+            ret = audioStream_->SetDuckVolume(1.0f);
+            HandleDuckStreamVolumeInfo(ret, 1.0f, sessionID_);
             break;
         case INTERRUPT_HINT_DUCK:
             if (!HandleForceDucking(interruptEvent)) {
@@ -1348,7 +1380,8 @@ InterruptCallbackEvent AudioRendererInterruptCallbackImpl::HandleAndNotifyForced
             break;
         case INTERRUPT_HINT_UNDUCK:
             CHECK_AND_RETURN_RET_LOG(isForceDucked_, NO_EVENT, "It is not forced ducked, don't unduck or notify app");
-            (void)audioStream_->SetDuckVolume(1.0f);
+            ret = audioStream_->SetDuckVolume(1.0f);
+            HandleDuckStreamVolumeInfo(ret, 1.0f, sessionID_);
             AUDIO_INFO_LOG("Unduck Volume successfully");
             isForceDucked_ = NO_EVENT;
             break;
@@ -1587,7 +1620,15 @@ int32_t AudioRendererPrivate::SetLowPowerVolume(float volume) const
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
-    return currentStream->SetLowPowerVolume(volume);
+    int32_t result = currentStream->SetLowPowerVolume(volume);
+    if (result == SUCCESS) {
+        std::string currentTime = GetTime();
+        AUDIO_INFO_LOG("SetLowPowerVolumeInfo volume: %{public}f, sessionID: %{public}d, adjustTime: %{public}s",
+            volume, sessionID_, currentTime.c_str());
+        SaveAdjustStreamVolumeInfo(volume, sessionID_, currentTime,
+            static_cast<uint32_t>(AdjustStreamVolume::LOW_POWER_VOLUME_INFO));
+    }
+    return result;
 }
 
 float AudioRendererPrivate::GetLowPowerVolume() const
