@@ -47,6 +47,7 @@ NapiRendererWriteDataCallback::~NapiRendererWriteDataCallback()
     }
 #endif
     if (napiRenderer_ != nullptr) {
+        napiRenderer_->enqueued_ = true;
         napiRenderer_->writeCallbackCv_.notify_all();
     }
     if (regArWriteDataTsfn_) {
