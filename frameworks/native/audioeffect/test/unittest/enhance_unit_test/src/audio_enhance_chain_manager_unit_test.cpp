@@ -775,7 +775,6 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_006, T
  */
 HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_007, TestSize.Level1)
 {
-
     uint64_t sceneKeyCode = 12345;
     AudioEnhanceDeviceAttr deviceAttr;
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = std::make_shared<AudioEnhanceChain>("scene1",
@@ -1474,7 +1473,7 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, CopyFromEnhanceBuffer_001, TestSize.L
 HWTEST_F(AudioEnhanceChainManagerUnitTest, CopyFromEnhanceBuffer_002, TestSize.Level1)
 {
     manager_->enhanceBuffer_ = std::make_unique<EnhanceBuffer>();
-    manager_->enhanceBuffer_->micBufferOut.resize(100); 
+    manager_->enhanceBuffer_->micBufferOut.resize(100);
     void *data = malloc(200);
     uint32_t length = 200;
 
@@ -1732,7 +1731,8 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetInputDevice_007, TestSize.Level1)
 
 /**
  * @tc.name: SetVolumeInfo_005
- * @tc.desc: Test SetVolumeInfo when sceneTypeAndModeToEnhanceChainNameMap_ and sceneTypeToEnhanceChainMap_ are not empty.
+ * @tc.desc: Test SetVolumeInfo when sceneTypeAndModeToEnhanceChainNameMap_ and sceneTypeToEnhanceChainMap_
+ *  are not empty.
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
