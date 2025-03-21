@@ -1825,15 +1825,26 @@ int32_t AudioEndpointInner::WriteToSpecialProcBuf(const std::shared_ptr<OHAudioB
     return SUCCESS;
 }
 
-int32_t AudioEndpointInner::HandleCapturerDataParams(const BufferDesc &writeBuf, const BufferDesc &readBuf,
+int32_t AudioEndpointInner::FormatConverterFunc(const BufferDesc &readBuf, const BufferDesc &convertedBuffer)
+{
+    switch (clientConfig_.streamInfo.format) {
+        case SAMPLE_S16LE:
+            return FormatConverter::S16StereoToS16Mono(readBuf, convertedBuffer);
+        case SAMPLE_S32LE:
+            return FormatConverter::S32StereoToS32Mono(readBuf, convertedBuffer);
+        case SAMPLE_F32LE:
+            return FormatConverter::F32StereoToF32Mono(readBuf, convertedBuffer);
+        default:
+            break;
+    }
+    return EOK;
+}
+
+int32_t AudioEndpointInner::ConvertFormat(const BufferDesc &writeBuf, const BufferDesc &readBuf,
     const BufferDesc &convertedBuffer)
 {
-    if (clientConfig_.streamInfo.format == SAMPLE_S16LE && clientConfig_.streamInfo.channels == STEREO) {
-        return memcpy_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength,
-            static_cast<void *>(readBuf.buffer), readBuf.bufLength);
-    }
-    if (clientConfig_.streamInfo.format == SAMPLE_S16LE && clientConfig_.streamInfo.channels == MONO) {
-        int32_t ret = FormatConverter::S16StereoToS16Mono(readBuf, convertedBuffer);
+    if (clientConfig_.streamInfo.channels == MONO) {
+        int32_t ret = FormatConverterFunc(readBuf, convertedBuffer);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "Convert channel from stereo to mono failed");
         ret = memcpy_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength,
             static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength);
@@ -1841,6 +1852,19 @@ int32_t AudioEndpointInner::HandleCapturerDataParams(const BufferDesc &writeBuf,
         ret = memset_s(static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength, 0,
             convertedBuffer.bufLength);
         CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memset converted buffer to 0 failed");
+        return EOK;
+    }
+    return EOK;
+}
+
+int32_t AudioEndpointInner::HandleCapturerDataParams(const BufferDesc &writeBuf, const BufferDesc &readBuf,
+    const BufferDesc &convertedBuffer)
+{
+    if (clientConfig_.streamInfo.format == SAMPLE_S16LE && clientConfig_.streamInfo.channels == STEREO) {
+        return memcpy_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength,
+            static_cast<void *>(readBuf.buffer), readBuf.bufLength);
+    }
+    if (ConvertFormat(writeBuf, readBuf, convertedBuffer) == SUCCESS) {
         return EOK;
     }
     if (clientConfig_.streamInfo.format == SAMPLE_F32LE) {
