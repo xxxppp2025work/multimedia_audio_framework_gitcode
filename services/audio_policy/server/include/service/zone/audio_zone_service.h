@@ -41,9 +41,9 @@ public:
     const sptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId);
     
     int32_t BindDeviceToAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices);
-    int32_t UnBindDeviceFromAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices);
+    int32_t UnBindDeviceToAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices);
 
-    int32_t ResgiterAudioZoneClient(pid_t clientPid, sptr<IAudioZoneClient> client);
+    int32_t ResgiterAudioZoneClient(pid_t clientPid, sptr<IStandardAudioZoneClient> client);
     void UnResgiterAudioZoneClient(pid_t clientPid);
     int32_t EnableAudioZoneReport(pid_t clientPid, bool enable);
     int32_t EnableAudioZoneChangeReport(pid_t clientPid, int32_t zoneId, bool enable);
@@ -55,21 +55,21 @@ public:
     int32_t EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, bool enable);
     int32_t SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
         const int32_t volumeLebel, const int32_t volumeFlag);
-    int32_t GetSystemVolumeForZone(int32_t zoneId, AudioVolumeType volumeType);
+    int32_t GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType);
 
-    const std::list<std::pair<AudioInerrupt, AudioFocusState>> GetAudioInterruptForZone(int32_t zoneId);
-    const std::list<std::pair<AudioInerrupt, AudioFocusState>> GetAudioInterruptForZone(int32_t zoneId,
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId);
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId,
         int32_t deviceId);
-    int32_t EnableAudioZoneInterrupotReport(pid_t clientPid, int32_t zoneId,
+    int32_t EnableAudioZoneInterruptReport(pid_t clientPid, int32_t zoneId,
         int32_t deviceId, bool enable);
 
-    int32_t ActivateAudioInterrupt(int32_t zoneId, const AudioInerrupt &audioInterrupt,
+    int32_t ActivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
         bool isUpdatedAudioStrategy = false);
-    int32_t DeactiveAudioInterrupt(int32_t zoneId, const AudioInerrupt &audioInterrupt);
+    int32_t DeactiveAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
     int32_t InjectInterruptToAudioZone(int32_t zoneId,
-        const std::list<std::pair<AudioInerrupt, AudioFocusState>> &interrupts);
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     int32_t InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
-        const std::list<std::pair<AudioInerrupt, AudioFocusState>> &interrupts);
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     
     std::vector<sptr<AudioDeviceDescriptor>> FetchOutputDevices(int32_t zoneId,
         StreamUsage streamUsage, int32_t clientUid, const RouterType &bypassType);

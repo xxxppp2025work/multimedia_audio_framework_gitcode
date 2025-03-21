@@ -49,10 +49,10 @@ int32_t AudioZoneClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
             HandleAudioZoneDeviceInterrupt(data, reply);
             break;
         case static_cast<uint32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_SYSTEM_VOLUME_SET):
-            HandleAudioZoneSystemVolumeSet(data, reply);
+            HandleAudioZoneSetSystemVolume(data, reply);
             break;
         case static_cast<uint32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_SYSTEM_VOLUME_GET):
-            HandleAudioZoneSystemVolumeGet(data, reply);
+            HandleAudioZoneGetSystemVolume(data, reply);
             break;
         default:
             break;
@@ -85,11 +85,11 @@ void AudioZoneClientStub::HandleAudioZoneInterrupt(MessageParcel &data, MessageP
 {
     int32_t zoneId = data.ReadInt32();
     int32_t size = data.ReadInt32();
-    std::list<std::pair<AudioInterrupt, AudioFocusState>> interrupts;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts;
     for (int i = 0; i < size; i++) {
         AudioInterrupt temp;
         AudioInterrupt::Unmarshalling(data, temp);
-        AudioFocusState state = static_cast<AudioFocusState>(data.ReadInt32());
+        AudioFocuState state = static_cast<AudioFocuState>(data.ReadInt32());
         interrupts.emplace_back(std::make_pair(temp, state));
     }
     AudioZoneInterruptReason reason = static_cast<AudioZoneInterruptReason>(data.ReadInt32());
@@ -101,31 +101,31 @@ void AudioZoneClientStub::HandleAudioZoneDeviceInterrupt(MessageParcel &data, Me
     int32_t zoneId = data.ReadInt32();
     int32_t deviceId = data.ReadInt32();
     int32_t size = data.ReadInt32();
-    std::list<std::pair<AudioInterrupt, AudioFocusState>> interrupts;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts;
     for (int i = 0; i < size; i++) {
         AudioInterrupt temp;
         AudioInterrupt::Unmarshalling(data, temp);
-        AudioFocusState state = static_cast<AudioFocusState>(data.ReadInt32());
+        AudioFocuState state = static_cast<AudioFocuState>(data.ReadInt32());
         interrupts.emplace_back(std::make_pair(temp, state));
     }
     AudioZoneInterruptReason reason = static_cast<AudioZoneInterruptReason>(data.ReadInt32());
-    OnnterruptEvent(zoneId, deviceId, interrupts, reason);
+    OnInterruptEvent(zoneId, deviceId, interrupts, reason);
 }
 
-void AudioZoneClientStub::HandleAudioZoneSystemVolumeSet(MessageParcel &data, MessageParcel &reply)
+void AudioZoneClientStub::HandleAudioZoneSetSystemVolume(MessageParcel &data, MessageParcel &reply)
 {
     int32_t zoneId = data.ReadInt32();
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     int32_t volumeLevel = data.ReadInt32();
     int32_t volumeFlag = data.ReadInt32();
-    reply.WriteInt32(SetSystemVolumeLevel(zoneId, volumeType, volumeLevel, volumeFlag));
+    reply.WriteInt32(SetSystemVolume(zoneId, volumeType, volumeLevel, volumeFlag));
 }
 
-void AudioZoneClientStub::HandleAudioZoneSystemVolumeGet(MessageParcel &data, MessageParcel &reply)
+void AudioZoneClientStub::HandleAudioZoneGetSystemVolume(MessageParcel &data, MessageParcel &reply)
 {
     int32_t zoneId = data.ReadInt32();
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
-    reply.WriteInt32(GetSystemVolumeLevel(zoneId, volumeType));
+    reply.WriteInt32(GetSystemVolume(zoneId, volumeType));
 }
 
 AudioZoneClient::AudioZoneClient()
@@ -140,7 +140,7 @@ int32_t AudioZoneClient::AddAudioZoneCallback(const std::shared_ptr<AudioZoneCal
     if (audioZoneCallback_ == nullptr) {
         int32_t result = AudioPolicyManager::GetInstance().EnableAudioZoneReport(true);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
-            "EnableAudioZoneReport result:${public}d", result);
+            "EnableAudioZoneReport result:%{public}d", result);
     }
     audioZoneCallback_ = callback;
     return SUCCESS;
@@ -154,67 +154,67 @@ void AudioZoneClient::RemoveAudioZoneCallback()
     audioZoneCallback_ = nullptr;
 }
 
-int32_t AudioZoneClient::AddAudioChangeCallback(int32_t zoneId,
-    const std::shared_ptr<AudioChangeCallback> &callback)
+int32_t AudioZoneClient::AddAudioZoneChangeCallback(int32_t zoneId,
+    const std::shared_ptr<AudioZoneChangeCallback> &callback)
 {
-    std::lock_guard<std::mutex> lk(audioChangeCallbackMutex_);
-    if (audioChangeCallbackMaps_.find(zoneId) == audioChangeCallbackMaps_.end()) {
-        int32_t result = AudioPolicyManager::GetInstance().EnableAudioChangeReport(zoneId, true);
+    std::lock_guard<std::mutex> lk(audioZoneChangeMutex_);
+    if (audioZoneChangeCallbackMap_.find(zoneId) == audioZoneChangeCallbackMap_.end()) {
+        int32_t result = AudioPolicyManager::GetInstance().EnableAudioZoneChangeReport(zoneId, true);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
-            "EnableAudioChangeReport result:${public}d", result);
+            "EnableAudioZoneChangeReport result:%{public}d", result);
     }
-    audioChangeCallbackMaps_[zoneId] = callback;
+    audioZoneChangeCallbackMap_[zoneId] = callback;
     return SUCCESS;
 }
 
-void AudioZoneClient::RemoveAudioChangeCallback(int32_t zoneId)
+void AudioZoneClient::RemoveAudioZoneChangeCallback(int32_t zoneId)
 {
-    std::lock_guard<std::mutex> lk(audioChangeCallbackMutex_);
-    CHECK_AND_RETURN_LOG(audioChangeCallbackMaps_.find(zoneId) != audioChangeCallbackMaps_.end(),
-        "audioChangeCallbackMaps_ not find zoneId.");
-    AudioPolicyManager::GetInstance().EnableAudioChangeReport(zoneId, false);
-    audioChangeCallbackMaps_.erase(zoneId);
+    std::lock_guard<std::mutex> lk(audioZoneChangeMutex_);
+    CHECK_AND_RETURN_LOG(audioZoneChangeCallbackMap_.find(zoneId) != audioZoneChangeCallbackMap_.end(),
+        "audioZoneChangeCallbackMap_ not find zoneId.");
+    AudioPolicyManager::GetInstance().EnableAudioZoneChangeReport(zoneId, false);
+    audioZoneChangeCallbackMap_.erase(zoneId);
 }
 
 int32_t AudioZoneClient::AddAudioZoneVolumeProxy(int32_t zoneId,
     const std::shared_ptr<AudioZoneVolumeProxy> &proxy)
 {
     std::lock_guard<std::mutex> lk(audioZoneVolumeProxyMutex_);
-    if (audioZoneVolumeProxyMaps_.find(zoneId) == audioZoneVolumeProxyMaps_.end()) {
-        int32_t result = AudioPolicyManager::GetInstance().EnableAudioZoneVolumeReport(zoneId, true);
+    if (audioZoneVolumeProxyMap_.find(zoneId) == audioZoneVolumeProxyMap_.end()) {
+        int32_t result = AudioPolicyManager::GetInstance().EnableSystemVolumeProxy(zoneId, true);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
-            "EnableAudioZoneVolumeReport result:${public}d", result);
+            "EnableSystemVolumeProxy result:%{public}d", result);
     }
-    audioZoneVolumeProxyMaps_[zoneId] = proxy;
+    audioZoneVolumeProxyMap_[zoneId] = proxy;
     return SUCCESS;
 }
 
 void AudioZoneClient::RemoveAudioZoneVolumeProxy(int32_t zoneId)
 {
     std::lock_guard<std::mutex> lk(audioZoneVolumeProxyMutex_);
-    CHECK_AND_RETURN_LOG(audioZoneVolumeProxyMaps_.find(zoneId)!= audioZoneVolumeProxyMaps_.end(),
-        "audioZoneVolumeProxyMaps_ not find zoneId.");
-    AudioPolicyManager::GetInstance().EnableAudioZoneVolumeReport(zoneId, false);
-    audioZoneVolumeProxyMaps_.erase(zoneId);
+    CHECK_AND_RETURN_LOG(audioZoneVolumeProxyMap_.find(zoneId)!= audioZoneVolumeProxyMap_.end(),
+        "audioZoneVolumeProxyMap_ not find zoneId.");
+    AudioPolicyManager::GetInstance().EnableSystemVolumeProxy(zoneId, false);
+    audioZoneVolumeProxyMap_.erase(zoneId);
 }
 
 int32_t AudioZoneClient::AddAudioInterruptCallback(int32_t zoneId,
-    const std::shared_ptr<AudioInterruptCallback> &callback)
+    const std::shared_ptr<AudioZoneInterruptCallback> &callback)
 {
     return AddAudioInterruptCallback(zoneId, -1, callback);
 }
 
 int32_t AudioZoneClient::AddAudioInterruptCallback(int32_t zoneId, int32_t deviceId,
-    const std::shared_ptr<AudioInterruptCallback> &callback)
+    const std::shared_ptr<AudioZoneInterruptCallback> &callback)
 {
     int32_t key = GetInterruptKeyId(zoneId, deviceId);
-    std::lock_guard<std::mutex> lk(audioInterruptCallbackMutex_);
-    if (audioInterruptCallbackMaps_.find(key) == audioInterruptCallbackMaps_.end()) {
-        int32_t result = AudioPolicyManager::GetInstance().EnableAudioInterruptReport(zoneId, deviceId, true);
+    std::lock_guard<std::mutex> lk(audioZoneInterruptMutex_);
+    if (audioZoneInterruptCallbackMap_.find(key) == audioZoneInterruptCallbackMap_.end()) {
+        int32_t result = AudioPolicyManager::GetInstance().EnableAudioZoneInterruptReport(zoneId, deviceId, true);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
-            "EnableAudioInterruptReport result:${public}d", result);
+            "EnableAudioZoneInterruptReport result:%{public}d", result);
     }
-    audioInterruptCallbackMaps_[key] = callback;
+    audioZoneInterruptCallbackMap_[key] = callback;
     return SUCCESS;
 }
 
@@ -226,11 +226,11 @@ void AudioZoneClient::RemoveAudioInterruptCallback(int32_t zoneId)
 void AudioZoneClient::RemoveAudioInterruptCallback(int32_t zoneId, int32_t deviceId)
 {
     int32_t key = GetInterruptKeyId(zoneId, deviceId);
-    std::lock_guard<std::mutex> lk(audioInterruptCallbackMutex_);
-    CHECK_AND_RETURN_LOG(audioInterruptCallbackMaps_.find(key)!= audioInterruptCallbackMaps_.end(),
-        "audioInterruptCallbackMaps_ not find key.");
-    AudioPolicyManager::GetInstance().EnableAudioInterruptReport(zoneId, deviceId, false);
-    audioInterruptCallbackMaps_.erase(key);
+    std::lock_guard<std::mutex> lk(audioZoneInterruptMutex_);
+    CHECK_AND_RETURN_LOG(audioZoneInterruptCallbackMap_.find(key)!= audioZoneInterruptCallbackMap_.end(),
+        "audioZoneInterruptCallbackMap_ not find key.");
+    AudioPolicyManager::GetInstance().EnableAudioZoneInterruptReport(zoneId, deviceId, false);
+    audioZoneInterruptCallbackMap_.erase(key);
 }
 
 void AudioZoneClient::Restore()
@@ -253,14 +253,14 @@ void AudioZoneClient::Restore()
 
     {
         std::lock_guard<std::mutex> lk(audioZoneVolumeProxyMutex_);
-        for (const auto &it : audioZoneVolumeProxyMaps_) {
+        for (const auto &it : audioZoneVolumeProxyMap_) {
             int32_t result = AudioPolicyManager::GetInstance().EnableSystemVolumeProxy(it.first, true);
             AUDIO_INFO_LOG("EnableSystemVolumeProxy result:%{public}d", result);
         }
     }
 
     {
-        std::lock_guard<std::mutex> lk(audioInterruptCallbackMutex_);
+        std::lock_guard<std::mutex> lk(audioZoneInterruptMutex_);
         for (const auto &it : audioZoneInterruptCallbackMaps_) {
         /* 0xFFFFFFFF: mask */
             int32_t zoneId = static_cast<int32_t>(it.first & 0xFFFFFFFF);
@@ -304,20 +304,20 @@ void AudioZoneClient::OnAudioZoneChange(int32_t zoneId, const AudioZoneDescripto
 }
 
 void AudioZoneClient::OnInterruptEvent(int32_t zoneId,
-    const std::list<std::pair<AudioInterrupt, AudioFocusState>> &interrupts,
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
     AudioZoneInterruptReason reason)
 {
     OnInterruptEvent(zoneId, -1, interrupts, reason);
 }
 
 void AudioZoneClient::OnInterruptEvent(int32_t zoneId, int32_t deviceId,
-    const std::list<std::pair<AudioInterrupt, AudioFocusState>> &interrupts,
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
     AudioZoneInterruptReason reason)
 {
     int32_t key = GetInterruptKeyId(zoneId, deviceId);
-    std::lock_guard<std::mutex> lk(audioInterruptCallbackMutex_);
-    if (audioInterruptCallbackMaps_.find(key)!= audioInterruptCallbackMaps_.end()) {
-        audioInterruptCallbackMaps_[key]->OnInterruptEvent(interrupts, reason);
+    std::lock_guard<std::mutex> lk(audioZoneInterruptMutex_);
+    if (audioZoneInterruptCallbackMap_.find(key)!= audioZoneInterruptCallbackMap_.end()) {
+        audioZoneInterruptCallbackMap_[key]->OnInterruptEvent(interrupts, reason);
     }
 }
 
@@ -325,8 +325,8 @@ int32_t AudioZoneClient::SetSystemVolume(const int32_t zoneId, const AudioVolume
     const int32_t volumeLevel, const int32_t volumeFlag)
 {
     std::lock_guard<std::mutex> lk(audioZoneVolumeProxyMutex_);
-    if (audioZoneVolumeProxyMaps_.find(zoneId)!= audioZoneVolumeProxyMaps_.end()) {
-        return audioZoneVolumeProxyMaps_[zoneId]->SetSystemVolume(volumeType, volumeLevel, volumeFlag);
+    if (audioZoneVolumeProxyMap_.find(zoneId)!= audioZoneVolumeProxyMap_.end()) {
+        return audioZoneVolumeProxyMap_[zoneId]->SetSystemVolume(volumeType, volumeLevel, volumeFlag);
     }
     return ERR_OPERATION_FAILED;
 }
@@ -334,8 +334,8 @@ int32_t AudioZoneClient::SetSystemVolume(const int32_t zoneId, const AudioVolume
 const int32_t AudioZoneClient::GetSystemVolume(int32_t zoneId, AudioVolumeType volumeType)
 {
     std::lock_guard<std::mutex> lk(audioZoneVolumeProxyMutex_);
-    if (audioZoneVolumeProxyMaps_.find(zoneId)!= audioZoneVolumeProxyMaps_.end()) {
-        return audioZoneVolumeProxyMaps_[zoneId]->GetSystemVolume(volumeType);
+    if (audioZoneVolumeProxyMap_.find(zoneId)!= audioZoneVolumeProxyMap_.end()) {
+        return audioZoneVolumeProxyMap_[zoneId]->GetSystemVolume(volumeType);
     }
     return ERR_OPERATION_FAILED;
 }

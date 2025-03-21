@@ -34,7 +34,7 @@ private:
     void HandleAudioZoneRemove(MessageParcel &data, MessageParcel &reply);
     void HandleAudioZoneChange(MessageParcel &data, MessageParcel &reply);
     void HandleAudioZoneInterrupt(MessageParcel &data, MessageParcel &reply);
-    void HandleAudioZoneDeviceInterrrupt(MessageParcel &data, MessageParcel &reply);
+    void HandleAudioZoneDeviceInterrupt(MessageParcel &data, MessageParcel &reply);
     void HandleAudioZoneSetSystemVolume(MessageParcel &data, MessageParcel &reply);
     void HandleAudioZoneGetSystemVolume(MessageParcel &data, MessageParcel &reply);
 };
@@ -53,11 +53,11 @@ public:
     int32_t AddAudioZoneVolumeProxy(int32_t zoneId, const std::shared_ptr<AudioZoneVolumeProxy> &proxy);
     void RemoveAudioZoneVolumeProxy(int32_t zoneId);
 
-    int32_t AddAudioZoneInterruptCallback(int32_t zoneId, const std::shared_ptr<AudioZoneInterruptCallback> &callback);
-    int32_t AddAudioZoneInterruptCallback(int32_t zoneId, int32_t deviceId,
+    int32_t AddAudioInterruptCallback(int32_t zoneId, const std::shared_ptr<AudioZoneInterruptCallback> &callback);
+    int32_t AddAudioInterruptCallback(int32_t zoneId, int32_t deviceId,
         const std::shared_ptr<AudioZoneInterruptCallback> &callback);
-    void RemoveAudioZoneInterruptCallback(int32_t zoneId);
-    void RemoveAudioZoneInterruptCallback(int32_t zoneId, int32_t deviceId);
+    void RemoveAudioInterruptCallback(int32_t zoneId);
+    void RemoveAudioInterruptCallback(int32_t zoneId, int32_t deviceId);
 
     void Restore();
 
@@ -84,7 +84,7 @@ private:
             AudioZoneInterruptReason reason) override;
         int32_t SetSystemVolume(const int32_t zoneId, const AudioVolumeType volumeType,
             const int32_t volumeLevel, const int32_t volumeFlag) override;
-        int32_t GetSystemVolume(int32_t zoneId, AudioVolumeType volumeType, int32_t &volumeLevel) override;
+        int32_t GetSystemVolume(int32_t zoneId, AudioVolumeType volumeType) override;
 };
 } // namespace AudioStandard
 } // namespace OHOS

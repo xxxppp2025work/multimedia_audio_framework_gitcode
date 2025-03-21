@@ -26,12 +26,12 @@
 
 namespace OHOS {
 namespace AudioStandard {
-int32_t AudioPolicyManager::RegisterAudioZoneClient(const sptr<IAudioZoneClient> &client)
+int32_t AudioPolicyManager::RegisterAudioZoneClient(const sptr<IRemoteObject> &object)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
-    return gsp->RegisterAudioZoneClient(client);
+    return gsp->RegisterAudioZoneClient(object);
 }
 
 int32_t AudioPolicyManager::CreateAudioZone(const std::string &name, const AudioZoneContext &context)
@@ -75,20 +75,20 @@ int32_t AudioPolicyManager::BindDeviceToAudioZone(int32_t zoneId, std::vector<sp
     return gsp->BindDeviceToAudioZone(zoneId, devices);
 }
 
-int32_t AudioPolicyManager::UnBindDeviceFromAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices)
+int32_t AudioPolicyManager::UnBindDeviceToAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp!= nullptr, ERROR, "audio policy manager proxy is NULL.");
 
-    return gsp->UnBindDeviceFromAudioZone(zoneId, devices);
+    return gsp->UnBindDeviceToAudioZone(zoneId, devices);
 }
 
-int32_t AudioPolicyManager::EnableAudioZoneReport(pid_t clientPid, bool enable)
+int32_t AudioPolicyManager::EnableAudioZoneReport(bool enable)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp!= nullptr, ERROR, "audio policy manager proxy is NULL.");
 
-    return gsp->EnableAudioZoneReport(clientPid, enable);
+    return gsp->EnableAudioZoneReport(enable);
 }
 
 int32_t AudioPolicyManager::EnableAudioZoneChangeReport(int32_t zoneId, bool enable)
@@ -132,15 +132,15 @@ int32_t AudioPolicyManager::SetSystemVolumeLevelForZone(const int32_t zoneId, co
     return gsp->SetSystemVolumeLevelForZone(zoneId, volumeType, volumeLebel, volumeFlag);
 }
 
-const int32_t AudioPolicyManager::GetSystemVolumeForZone(int32_t zoneId, AudioVolumeType volumeType)
+int32_t AudioPolicyManager::GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp!= nullptr, ERROR, "audio policy manager proxy is NULL.");
 
-    return gsp->GetSystemVolumeForZone(zoneId, volumeType);
+    return gsp->GetSystemVolumeLevelForZone(zoneId, volumeType);
 }
 
-const std::list<std::pair<AudioInerrupt, AudioFocusState>> AudioPolicyManager::GetAudioInterruptForZone(int32_t zoneId)
+std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyManager::GetAudioInterruptForZone(int32_t zoneId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp!= nullptr, {}, "audio policy manager proxy is NULL.");
@@ -148,7 +148,7 @@ const std::list<std::pair<AudioInerrupt, AudioFocusState>> AudioPolicyManager::G
     return gsp->GetAudioInterruptForZone(zoneId);
 }
 
-const std::list<std::pair<AudioInerrupt, AudioFocusState>> AudioPolicyManager::GetAudioInterruptForZone(
+std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyManager::GetAudioInterruptForZone(
     int32_t zoneId, int32_t deviceId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -157,16 +157,16 @@ const std::list<std::pair<AudioInerrupt, AudioFocusState>> AudioPolicyManager::G
     return gsp->GetAudioInterruptForZone(zoneId, deviceId);
 }
 
-int32_t AudioPolicyManager::EnableAudioZoneInterrupotReport(int32_t zoneId, int32_t deviceId, bool enable)
+int32_t AudioPolicyManager::EnableAudioZoneInterruptReport(int32_t zoneId, int32_t deviceId, bool enable)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp!= nullptr, ERROR, "audio policy manager proxy is NULL.");
 
-    return gsp->EnableAudioZoneInterrupotReport(zoneId, deviceId, enable);
+    return gsp->EnableAudioZoneInterruptReport(zoneId, deviceId, enable);
 }
 
 int32_t AudioPolicyManager::InjectInterruptToAudioZone(int32_t zoneId,
-    const std::list<std::pair<AudioInerrupt, AudioFocusState>> &interrupts)
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp!= nullptr, ERROR, "audio policy manager proxy is NULL.");
@@ -175,7 +175,7 @@ int32_t AudioPolicyManager::InjectInterruptToAudioZone(int32_t zoneId,
 }
 
 int32_t AudioPolicyManager::InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
-    const std::list<std::pair<AudioInerrupt, AudioFocusState>> &interrupts)
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp!= nullptr, ERROR, "audio policy manager proxy is NULL.");

@@ -3385,12 +3385,12 @@ int32_t AudioPolicyServer::GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolu
     return AudioZoneService::GetInstance().GetSystemVolumeLevelForZone(zoneId, volumeType);
 }
 
-const std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyServer::GetAudioInterruptForZone(int32_t zoneId)
+std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyServer::GetAudioInterruptForZone(int32_t zoneId)
 {
     return AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId);
 }
 
-const std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyServer::GetAudioInterruptForZone(
+std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyServer::GetAudioInterruptForZone(
     int32_t zoneId, int32_t deviceId)
 {
     return AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId, deviceId);

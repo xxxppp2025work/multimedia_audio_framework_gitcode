@@ -150,7 +150,7 @@ void AudioZoneClientManager::SendZoneChangeEvent(pid_t clientPid, sptr<AudioDevi
 }
 
 void AudioZoneClientManager::SnedZoneInterruptEvent(pid_t clientPid, int32_t zoneId, int32_t deviceId,
-    std::list<std::pair<AudioInerrupt, AudioFocusState>> interrupts,
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts,
     AudioInterruptReason reason)
 {
     std::lock_guard<std::mutex> lock(clientMutex_);

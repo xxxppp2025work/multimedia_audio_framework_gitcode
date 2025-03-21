@@ -28,7 +28,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-using AudioZoneFocusList = std::list<std::pair<AudioInerrupt, AudioFocusState>>;
+using AudioZoneFocusList = std::list<std::pair<AudioInterrupt, AudioFocuState>>;
 
 class AudioZoneInterruptReporter {
 public:

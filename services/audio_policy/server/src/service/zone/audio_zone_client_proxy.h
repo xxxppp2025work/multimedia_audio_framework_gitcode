@@ -30,7 +30,7 @@ public:
     void OnAudioZoneChange(int32_t zoneId, const AudioZoneDescriptor &zoneDescriptor,
         AudioZoneChangeReason reason) override;
     void OnInterruptEvent(int32_t zoneId, int32_t deviceId,
-        std::list<std::pair<AudioInerrupt, AudioFocusState>> interrupts,
+        std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts,
         AudioInterruptReason reason) override;
     int32_t SetSystemVolumeLevel(const int32_t zoneId, const AudioVolumeType volumeType,
         const int32_t volumeLevel, const int32_t volumeFlag) override;

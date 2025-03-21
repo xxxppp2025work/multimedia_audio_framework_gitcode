@@ -341,7 +341,7 @@ public:
 
     virtual int32_t EnableAudioZoneReport (bool enable) = 0;
 
-    virtual int32_t EnableAudioZoneChangeRepot(int32_t zoneId, bool enable) = 0;
+    virtual int32_t EnableAudioZoneChangeReport(int32_t zoneId, bool enable) = 0;
 
     virtual int32_t AddUidToAudioZone(int32_t zoneId, int32_t uid) = 0;
 
@@ -354,9 +354,9 @@ public:
 
     virtual int32_t GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType) = 0;
 
-    virtual const std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId) = 0;
+    virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId) = 0;
 
-    virtual const std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
+    virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
         int32_t zoneId, int32_t deviceId) = 0;
 
     virtual int32_t EnableAudioZoneInterruptReport(int32_t zoneId, int32_t deviceId, bool enable) = 0;

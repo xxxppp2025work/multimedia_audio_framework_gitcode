@@ -73,7 +73,7 @@ void AudioZoneClientProxy::OnAudioZoneChange(int32_t zoneId, const AudioZoneDesc
 }
 
 void AudioZoneClientProxy::OnInterruptEvent(int32_t zoneId,
-    std::list<std::pair<AudioInerrupt, AudioFocusState>> interrupts,
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts,
     AudioInterruptReason reason)
 {
     MessageParcel data;
@@ -94,7 +94,7 @@ void AudioZoneClientProxy::OnInterruptEvent(int32_t zoneId,
 }
 
 void AudioZoneClientProxy::OnInterruptEvent(int32_t zoneId, int32_t deviceId,
-    std::list<std::pair<AudioInerrupt, AudioFocusState>> interrupts,
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts,
     AudioInterruptReason reason)
 {
     MessageParcel data;

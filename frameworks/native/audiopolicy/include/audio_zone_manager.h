@@ -101,10 +101,10 @@ public:
     
     virtual int32_t GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType) = 0;
 
-    virtual const std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
+    virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
         int32_t zoneId) = 0;
     
-    virtual const std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
+    virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
         int32_t zoneId, int32_t deviceId) = 0;
     
     virtual int32_t RegisterAudioZoneInterruptCallback(int32_t zoneId,

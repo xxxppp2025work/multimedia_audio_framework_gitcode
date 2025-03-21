@@ -171,8 +171,8 @@ bool AudioZoneInterruptReporter::IsFocusListEqual(const AudioZoneFocusList &a,
     const AudioZoneFocusList &b)
 {
     return std::equal(std::begin(a), std::end(a), std::begin(b), std::end(b),
-        [](const std::pair<AudioInerrupt, AudioFocusState> &p1,
-            const std::pair<AudioInerrupt, AudioFocusState> &p2) {
+        [](const std::pair<AudioInterrupt, AudioFocuState> &p1,
+            const std::pair<AudioInterrupt, AudioFocuState> &p2) {
             return p1.first.streamUsage == p2.first.streamUsage &&
                 p1.first.contentType == p2.first.contentType &&
                 p1.first.audioFocusType.streamType == p2.first.audioFocusType.streamType &&

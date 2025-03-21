@@ -63,14 +63,14 @@ public:
     int32_t UnRegisterSystemVolumeProxy(int32_t zoneId) override;
 
     int32_t SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
-        const int32_t volumeLevel, const int32_t volumeFlag override) override;
+        const int32_t volumeLevel, const int32_t volumeFlag) override;
     
     int32_t GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType) override;
 
-    const std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
         int32_t zoneId) override;
     
-    const std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
         int32_t zoneId, int32_t deviceId) override;
     
     int32_t RegisterAudioZoneInterruptCallback(int32_t zoneId,
@@ -97,7 +97,7 @@ private:
     int32_t RegisterAudioZoneClient();
 };
 
-AudioZoneManager *AudioZoneManagerInner::GetInstance()
+AudioZoneManager *AudioZoneManager::GetInstance()
 {
     static AudioZoneManagerInner audioZoneManager;
     return &audioZoneManager;
@@ -163,7 +163,7 @@ void AudioZoneManagerInner::ReleaseAudioZone(int32_t zoneId)
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_LOG(zoneId > 0, "zoneId is invalid");
-    int32_t result = AudioPolicyManager::GetInstance().ReleaseAudioZone(zoneId);
+    AudioPolicyManager::GetInstance().ReleaseAudioZone(zoneId);
 }
 
 const std::vector<sptr<AudioZoneDescriptor>> AudioZoneManagerInner::GetAllAudioZone()
@@ -186,7 +186,7 @@ int32_t AudioZoneManagerInner::RegisterAudioZoneCallback(const std::shared_ptr<A
 
     std::unique_lock<std::mutex> lock(clientMutex_);
     if (RegisterAudioZoneClient() == SUCCESS) {
-        client_->RegisterAudioZoneCallback(callback);
+        client_->AddAudioZoneCallback(callback);
         return SUCCESS;
     }
     return ERROR;
@@ -289,7 +289,7 @@ int32_t AudioZoneManagerInner::GetSystemVolumeLevelForZone(int32_t zoneId, Audio
     return AudioPolicyManager::GetInstance().GetSystemVolumeLevelForZone(zoneId, volumeType);
 }
 
-const std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioZoneManagerInner::GetAudioInterruptForZone(
+std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioZoneManagerInner::GetAudioInterruptForZone(
     int32_t zoneId)
 {
     AUDIO_INFO_LOG("in");
@@ -299,7 +299,7 @@ const std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioZoneManagerInner
     return AudioPolicyManager::GetInstance().GetAudioInterruptForZone(zoneId);
 }
 
-const std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioZoneManagerInner::GetAudioInterruptForZone(
+std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioZoneManagerInner::GetAudioInterruptForZone(
     int32_t zoneId, int32_t deviceId)
 {
     AUDIO_INFO_LOG("in");

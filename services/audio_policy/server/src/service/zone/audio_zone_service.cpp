@@ -161,7 +161,7 @@ void AudioZoneService::RemoveDeviceFromGlobal(sptr<AudioDeviceDescriptor> device
     AudioDeviceLock::GetInstance().OnDeviceStatusUpdate(*(device.GetRefPtr()), false);
 }
 
-int32_t AudioZoneService::UnBindDeviceFromAudioZone(int32_t zoneId,
+int32_t AudioZoneService::UnBindDeviceToAudioZone(int32_t zoneId,
     std::vector<sptr<AudioDeviceDescriptor>> devices)
 {
     std::vector<sptr<AudioDeviceDescriptor>> toGlobalDevices;
@@ -186,7 +186,7 @@ int32_t AudioZoneService::UnBindDeviceFromAudioZone(int32_t zoneId,
     return SUCCESS;
 }
 
-int32_t AudioZoneService::ResgiterAudioZoneClient(pid_t clientPid, sptr<IAudioZoneClient> client)
+int32_t AudioZoneService::ResgiterAudioZoneClient(pid_t clientPid, sptr<IStandardAudioZoneClient> client)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     CHECK_AND_RETURN_RET_LOG(client!= nullptr && zoneClientManager_ != nullptr, ERROR,
@@ -351,7 +351,7 @@ int32_t AudioZoneService::SetSystemVolumeLevelForZone(const int32_t zoneId, cons
     return zone->SetSystemVolumeLevelForZone(volumeType, volumeLebel, volumeFlag);
 }
 
-const int32_t AudioZoneService::GetSystemVolumeForZone(int32_t zoneId, AudioVolumeType volumeType)
+int32_t AudioZoneService::GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     auto zone = FindZone(zoneId);
@@ -359,10 +359,10 @@ const int32_t AudioZoneService::GetSystemVolumeForZone(int32_t zoneId, AudioVolu
         AUDIO_ERR_LOG("zone id %{public}d is not found", zoneId);
         return ERROR;
     }
-    return zone->GetSystemVolumeForZone(volumeType);
+    return zone->GetSystemVolumeLevelForZone(volumeType);
 }
 
-const AudioZoneFocusList AudioZoneService::GetAudioInterruptForZone(int32_t zoneId)
+AudioZoneFocusList AudioZoneService::GetAudioInterruptForZone(int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     AudioZoneFocusList interrupts;
