@@ -161,7 +161,7 @@ void AudioZoneService::RemoveDeviceFromGlobal(sptr<AudioDeviceDescriptor> device
     AudioDeviceLock::GetInstance().OnDeviceStatusUpdate(*(device.GetRefPtr()), false);
 }
 
-int32_t AudioZoneService::UnBindDeviceFromAudioZone(int32_t zoneId,
+int32_t AudioZoneService::UnBindDeviceToAudioZone(int32_t zoneId,
     std::vector<sptr<AudioDeviceDescriptor>> devices)
 {
     std::vector<sptr<AudioDeviceDescriptor>> toGlobalDevices;
@@ -186,7 +186,7 @@ int32_t AudioZoneService::UnBindDeviceFromAudioZone(int32_t zoneId,
     return SUCCESS;
 }
 
-int32_t AudioZoneService::ResgiterAudioZoneClient(pid_t clientPid, sptr<IAudioZoneClient> client)
+int32_t AudioZoneService::ResgiterAudioZoneClient(pid_t clientPid, sptr<IStandardAudioZoneClient> client)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     CHECK_AND_RETURN_RET_LOG(client!= nullptr && zoneClientManager_ != nullptr, ERROR,

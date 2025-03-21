@@ -325,7 +325,7 @@ public:
 
     int32_t EnableAudioZoneReport (bool enable) override;
 
-    int32_t EnableAudioZoneChangeRepot(int32_t zoneId, bool enable) override;
+    int32_t EnableAudioZoneChangeReport(int32_t zoneId, bool enable) override;
 
     int32_t AddUidToAudioZone(int32_t zoneId, int32_t uid) override;
 

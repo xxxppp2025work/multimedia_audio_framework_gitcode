@@ -41,9 +41,9 @@ public:
     const sptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId);
     
     int32_t BindDeviceToAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices);
-    int32_t UnBindDeviceFromAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices);
+    int32_t UnBindDeviceToAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices);
 
-    int32_t ResgiterAudioZoneClient(pid_t clientPid, sptr<IAudioZoneClient> client);
+    int32_t ResgiterAudioZoneClient(pid_t clientPid, sptr<IStandardAudioZoneClient> client);
     void UnResgiterAudioZoneClient(pid_t clientPid);
     int32_t EnableAudioZoneReport(pid_t clientPid, bool enable);
     int32_t EnableAudioZoneChangeReport(pid_t clientPid, int32_t zoneId, bool enable);

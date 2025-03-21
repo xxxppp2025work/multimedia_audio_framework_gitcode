@@ -49,10 +49,10 @@ int32_t AudioZoneClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
             HandleAudioZoneDeviceInterrupt(data, reply);
             break;
         case static_cast<uint32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_SYSTEM_VOLUME_SET):
-            HandleAudioZoneSystemVolumeSet(data, reply);
+            HandleAudioZoneSetSystemVolume(data, reply);
             break;
         case static_cast<uint32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_SYSTEM_VOLUME_GET):
-            HandleAudioZoneSystemVolumeGet(data, reply);
+            HandleAudioZoneGetSystemVolume(data, reply);
             break;
         default:
             break;
@@ -112,7 +112,7 @@ void AudioZoneClientStub::HandleAudioZoneDeviceInterrupt(MessageParcel &data, Me
     OnnterruptEvent(zoneId, deviceId, interrupts, reason);
 }
 
-void AudioZoneClientStub::HandleAudioZoneSystemVolumeSet(MessageParcel &data, MessageParcel &reply)
+void AudioZoneClientStub::HandleAudioZoneSetSystemVolume(MessageParcel &data, MessageParcel &reply)
 {
     int32_t zoneId = data.ReadInt32();
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
@@ -121,7 +121,7 @@ void AudioZoneClientStub::HandleAudioZoneSystemVolumeSet(MessageParcel &data, Me
     reply.WriteInt32(SetSystemVolumeLevel(zoneId, volumeType, volumeLevel, volumeFlag));
 }
 
-void AudioZoneClientStub::HandleAudioZoneSystemVolumeGet(MessageParcel &data, MessageParcel &reply)
+void AudioZoneClientStub::HandleAudioZoneGetSystemVolume(MessageParcel &data, MessageParcel &reply)
 {
     int32_t zoneId = data.ReadInt32();
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());

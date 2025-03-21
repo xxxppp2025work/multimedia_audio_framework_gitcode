@@ -447,7 +447,7 @@ public:
 
     int32_t EnableAudioZoneReport (bool enable);
 
-    int32_t EnableAudioZoneChangeRepot(int32_t zoneId, bool enable);
+    int32_t EnableAudioZoneChangeReport(int32_t zoneId, bool enable);
 
     int32_t AddUidToAudioZone(int32_t zoneId, int32_t uid);
 
@@ -603,7 +603,7 @@ private:
     std::vector<AudioRendererInfo> rendererInfos_;
     std::vector<AudioCapturerInfo> capturerInfos_;
 
-    static std::vector<AudioServerDiedCallBack> serverDiedCbks;
+    static std::vector<AudioServerDiedCallBack> serverDiedCbks_;
     static std::mutex serverDiedCbkMutex_;
 };
 } // namespce AudioStandard

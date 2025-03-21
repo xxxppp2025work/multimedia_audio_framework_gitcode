@@ -352,7 +352,7 @@ private:
     void HandleBindDeviceToAudioZone(MessageParcel &data, MessageParcel &reply);
     void HandleUnBindDeviceToAudioZone(MessageParcel &data, MessageParcel &reply);
     void HandleEnableAudioZoneReport (MessageParcel &data, MessageParcel &reply);
-    void HandleEnableAudioZoneChangeRepot(MessageParcel &data, MessageParcel &reply);
+    void HandleEnableAudioZoneChangeReport(MessageParcel &data, MessageParcel &reply);
     void HandleAddUidToAudioZone(MessageParcel &data, MessageParcel &reply);
     void HandleRemoveUidFromAudioZone(MessageParcel &data, MessageParcel &reply);
     void HandleEnableSystemVolumeProxy(MessageParcel &data, MessageParcel &reply);

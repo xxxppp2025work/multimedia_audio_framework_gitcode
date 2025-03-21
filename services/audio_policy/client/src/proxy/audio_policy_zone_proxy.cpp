@@ -52,12 +52,12 @@ int32_t AudioPolicyProxy::CreateAudioZone(const std::string &name, const AudioZo
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::ReleaseAudioZone(int32_t zoneId)
+void AudioPolicyProxy::ReleaseAudioZone(int32_t zoneId)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_LOG(data.WriteInterfaceToken(GetDescriptor()), "WriteInterfaceToken failed");
 
     data.WriteInt32(zoneId);
     int32_t error = Remote()->SendRequest(
@@ -273,7 +273,7 @@ const std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyProxy::Get
     int32_t size = reply.ReadInt32();
     for (int i = 0; i < size; i++) {
         AudioInterrupt temp;
-        AudioInterrupt.Unmarshalling(reply, temp);
+        AudioInterrupt::Unmarshalling(reply, temp);
         AudioFocuState state = static_cast<AudioFocuState>(reply.ReadInt32());
         interrupts.emplace_back(std::make_pair(temp, state));
     }
@@ -301,7 +301,7 @@ const std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyProxy::Get
     int32_t size = reply.ReadInt32();
     for (int i = 0; i < size; i++) {
         AudioInterrupt temp;
-        AudioInterrupt.Unmarshalling(reply, temp);
+        AudioInterrupt::Unmarshalling(reply, temp);
         AudioFocuState state = static_cast<AudioFocuState>(reply.ReadInt32());
         interrupts.emplace_back(std::make_pair(temp, state));
     }
