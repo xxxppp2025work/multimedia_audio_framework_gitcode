@@ -81,6 +81,8 @@ private:
     int32_t uFormat_;
     uint32_t uSampleRate_;
     bool firstSetVolume_;
+    bool isAc3_;
+    bool isHdiFull_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

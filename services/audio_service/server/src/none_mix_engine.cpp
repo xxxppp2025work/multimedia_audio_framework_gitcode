@@ -62,7 +62,9 @@ NoneMixEngine::NoneMixEngine()
       uChannel_(0),
       uFormat_(sizeof(int32_t)),
       uSampleRate_(0),
-      firstSetVolume_(true)
+      firstSetVolume_(true),
+      isAc3_(false),
+      isHdiFull_(false)
 {
     AUDIO_INFO_LOG("Constructor");
 }
@@ -288,7 +290,10 @@ void NoneMixEngine::DoRenderFrame(std::vector<char> &audioBufferConverted, int32
     uint64_t written = 0;
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
     CHECK_AND_RETURN(sink != nullptr);
-    sink->RenderFrame(*audioBufferConverted.data(), audioBufferConverted.size(), written);
+    int32_t ret = sink->RenderFrame(*audioBufferConverted.data(), audioBufferConverted.size(), written);
+    if (isAc3_ && !ret) {
+        isHdiFull_ = written == 0 ? true : false;
+    }
     stream_->ReturnIndex(index);
     sink->UpdateAppsUid({appUid});
 }
@@ -307,7 +312,10 @@ void NoneMixEngine::MixStreams()
     std::vector<char> audioBuffer;
     int32_t appUid = stream_->GetAudioProcessConfig().appInfo.appUid;
     int32_t index = -1;
-    int32_t result = stream_->Peek(&audioBuffer, index);
+    int32_t result = 0;
+    if (!isAc3_ || (isAc3_ && !isHdiFull_)) {
+        result = stream_->Peek(&audioBuffer, index);
+    }
 
     uint32_t sessionId = stream_->GetStreamIndex();
     writeCount_++;
