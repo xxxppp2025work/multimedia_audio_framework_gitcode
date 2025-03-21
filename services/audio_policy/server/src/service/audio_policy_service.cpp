@@ -2092,10 +2092,11 @@ int32_t AudioPolicyService::SetQueryAllowedPlaybackCallback(const sptr<IRemoteOb
     return SUCCESS;
 }
 
-bool AudioPolicyService::IsPlaybackSupported(const AudioStreamInfo &streamInfo, const AudioRendererInfo &rendererInfo)
+DirectPlaybackMode AudioPolicyService::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+    const StreamUsage &sreamUsage)
 {
     std::shared_ptr<AudioDeviceDescriptor> currentDevice = GetActiveOutputDeviceDescriptor();
-    return audioConfigManager_.IsPlaybackSupported(currentDevice, streamInfo.encoding);
+    return audioConfigManager_.GetDirectPlaybackSupport(currentDevice, streamInfo.encoding);
 }
 } // namespace AudioStandard
 } // namespace OHOS

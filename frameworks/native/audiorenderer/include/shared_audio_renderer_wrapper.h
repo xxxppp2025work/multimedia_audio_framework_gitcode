@@ -437,9 +437,10 @@ public:
         return sharedAudioRenderer_->GetAudioTimestampInfo(timestamp, base);
     }
 
-    bool IsPlaybackSupported(const AudioStreamInfo &streamInfo, const AudioRendererInfo &rendererInfo) override
+    DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+        const StreamUsage &sreamUsage) override
     {
-        return sharedAudioRenderer_->IsPlaybackSupported(streamInfo, rendererInfo);
+        return sharedAudioRenderer_->GetDirectPlaybackSupport(streamInfo, sreamUsage);
     }
 
     explicit SharedAudioRendererWrapper(std::shared_ptr<AudioRenderer> renderer) : sharedAudioRenderer_(renderer)

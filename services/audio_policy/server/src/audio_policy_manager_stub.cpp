@@ -200,7 +200,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_EXCLUDED_OUTPUT_DEVICES",
     "IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE",
     "SET_QUERY_ALLOWED_PLAYBACK_CALLBACK",
-    "IS_PLAYBACK_SUPPORTED",
+    "GET_DIRECT_PLAYBACK_SUPPORT",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1203,8 +1203,8 @@ void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     switch (code) {
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_PLAYBACK_SUPPORTED):
-            IsPlaybackSupportedInternal(data, reply);
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DIRECT_PLAYBACK_SUPPORT):
+            GetDirectPlaybackSupportInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_BUNDLE_NAME_LIST_CALLBACK):
             SetQueryBundleNameListCallbackInternal(data, reply);
@@ -2182,14 +2182,13 @@ void AudioPolicyManagerStub::SetQueryAllowedPlaybackCallbackInternal(MessageParc
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::IsPlaybackSupportedInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetDirectPlaybackSupportInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioStreamInfo streamInfo;
     streamInfo.Unmarshalling(data);
-    AudioRendererInfo rendererInfo;
-    rendererInfo.Unmarshalling(data);
-    bool result = IsPlaybackSupported(streamInfo, rendererInfo);
-    reply.WriteBool(result);
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    DirectPlaybackMode mode = GetDirectPlaybackSupport(streamInfo, streamUsage);
+    reply.WriteInt32(static_cast<int32_t>(mode));
 }
 } // namespace audio_policy
 } // namespace OHOS

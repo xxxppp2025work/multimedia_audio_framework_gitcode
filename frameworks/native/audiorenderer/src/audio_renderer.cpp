@@ -2433,12 +2433,10 @@ int32_t AudioRendererPrivate::GetAudioTimestampInfo(Timestamp &timestamp, Timest
     return currentStream->GetAudioTimestampInfo(timestamp, base);
 }
 
-bool AudioRendererPrivate::IsPlaybackSupported(const AudioStreamInfo &streamInfo,
-    const AudioRendererInfo &rendererInfo)
+DirectPlaybackMode AudioRendererPrivate::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+    const StreamUsage &sreamUsage)
 {
-    bool ret = AudioPolicyManager::GetInstance().IsPlaybackSupported(streamInfo, rendererInfo);
-    CHECK_AND_RETURN_RET_LOG(ret, false, "current stream not supported");
-    return ret;
+    return AudioPolicyManager::GetInstance().GetDirectPlaybackSupport(streamInfo, rendererInfo);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

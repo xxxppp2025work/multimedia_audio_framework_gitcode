@@ -288,11 +288,11 @@ public:
      * @brief Judges whether the playback is supported by the renderer.
      *
      * @param streamInfo
-     * @param rendererInfo
-     * @return Returns <b>true</b> if the playback is supported; returns <b>false</b> otherwise.
-     * @since 16
+     * @param sreamUsage
+     * @return Returns direct playback mode.
+     * @since 19
      */
-    bool IsPlaybackSupported(const AudioStreamInfo &streamInfo, const AudioRendererInfo &rendererInfo);
+    DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &sreamUsage);
 
 private:
     std::mutex rendererStateChangeCallbacksMutex_;

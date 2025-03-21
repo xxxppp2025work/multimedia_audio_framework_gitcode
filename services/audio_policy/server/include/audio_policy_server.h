@@ -461,7 +461,8 @@ public:
         
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) override;
 
-    bool IsPlaybackSupported(const AudioStreamInfo &streamInfo, const AudioRendererInfo &rendererInfo) override;
+    DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+        const StreamUsage &sreamUsage) override;
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 

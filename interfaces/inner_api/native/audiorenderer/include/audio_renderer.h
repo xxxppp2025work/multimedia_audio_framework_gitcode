@@ -1011,7 +1011,8 @@ public:
      * @return Returns <b>true</b> if the playback is supported; returns <b>false</b> otherwise.
      * @since 16
      */
-    virtual bool IsPlaybackSupported(const AudioStreamInfo &streamInfo, const AudioRendererInfo &rendererInfo) = 0;
+    virtual DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+        const StreamUsage &sreamUsage) = 0;
 
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,

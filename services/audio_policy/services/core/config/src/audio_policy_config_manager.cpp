@@ -130,9 +130,9 @@ void AudioPolicyConfigManager::OnUpdateAnahsSupport(std::string anahsShowType)
     AudioPolicyService::GetAudioPolicyService().OnUpdateAnahsSupport(anahsShowType);
 }
 
-void AudioPolicyConfigManager::OnUpdateAc3Support(bool isSupported)
+void AudioPolicyConfigManager::OnUpdateEac3Support(bool isSupported)
 {
-    isSupportAc3_ = isSupported;
+    isSupportEac3_ = isSupported;
 }
 
 void AudioPolicyConfigManager::OnHasEarpiece()
@@ -417,21 +417,40 @@ bool AudioPolicyConfigManager::SupportImplicitConversion(uint32_t routeFlag)
     return false;
 }
 
-bool AudioPolicyConfigManager::IsPlaybackSupported(std::shared_ptr<AudioDeviceDescriptor> desc,
-    AudioEncodingType encodingType)
+DirectPlaybackMode AudioPolicyConfigManager::GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
+    const AudioStreamInfo &streamInfo, const StreamUsage &sreamUsage)
 {
-    CHECK_AND_RETURN_RET_LOG(encodingType == ENCODING_AC3, true, "Support encoding type");
-    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
-        desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE);
-    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, false, "Find device failed");
-    for (auto &pipeIt : deviceInfo->supportPipeMap_) {
-        if (pipeIt.second->supportEncodingAc3_) {
-            AUDIO_INFO_LOG("Support encoding type ac3");
-            return true;
+    if ((stream.encoding == ENCODING_EAC3) &&
+        (desc->deviceType_ == DEVICE_TYPE_HDMI || desc->deviceType_ == DEVICE_TYPE_LINE_DIGITAL)) {
+        std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
+            desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE);
+        CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, DIRECT_PLAYBACK_NOT_SUPPORTED, "Find device failed");
+        for (auto &pipeIt : deviceInfo->supportPipeMap_) {
+            if (pipeIt.second->supportEncodingEac3_) {
+                AUDIO_INFO_LOG("Support encoding type eac3");
+                return DIRECT_PLAYBACK_BITSTREAM_SUPPORTED;
+            }
+        }
+        return DIRECT_PLAYBACK_NOT_SUPPORTED;
+    }
+
+    if (stream.encoding == ENCODING_PCM) {
+        if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {// voip的streamUsage是哪个？
+            // 获取当前设备走voip的pipe是不是direct
+            std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
+                desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE);
+            CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, DIRECT_PLAYBACK_NOT_SUPPORTED, "Find device failed");
+            for (auto &pipeIt : deviceInfo->supportPipeMap_) {
+                if ((AUDIO_OUTPUT_FLAG_VOIP & pipeIt.first) &&
+                    (pipeIt.second->name_.find("direct") != std::string::npos)) { // 要确认xml配置
+                    return DIRECT_PLAYBACK_PCM_SUPPORTED;
+                }
+            }
+            return DIRECT_PLAYBACK_NOT_SUPPORTED;
+        } else {
+
         }
     }
-    AUDIO_INFO_LOG("Not support encoding type ac3");
-    return false;
 }
 }
 }

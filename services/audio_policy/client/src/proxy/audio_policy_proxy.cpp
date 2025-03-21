@@ -2287,7 +2287,8 @@ int32_t AudioPolicyProxy::SetDeviceConnectionStatus(const std::shared_ptr<AudioD
     return reply.ReadInt32();
 }
 
-bool AudioPolicyProxy::IsPlaybackSupported(const AudioStreamInfo &streamInfo, const AudioRendererInfo &rendererInfo)
+DirectPlaybackMode AudioPolicyProxy::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+    const StreamUsage &sreamUsage)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -2298,13 +2299,12 @@ bool AudioPolicyProxy::IsPlaybackSupported(const AudioStreamInfo &streamInfo, co
 
     bool res = streamInfo.Marshalling(data);
     CHECK_AND_RETURN_RET_LOG(res, -1, "streamInfo Marshalling() failed");
-    res = rendererInfo.Marshalling(data);
-    CHECK_AND_RETURN_RET_LOG(res, -1, "rendererInfo Marshalling() failed");
+    data.WriteInt32(static_cast<int32_t>(streamUsage));
 
     int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_PLAYBACK_SUPPORTED), data, reply, option);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DIRECT_PLAYBACK_SUPPORT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %d", error);
-    return reply.ReadBool();
+    return static_cast<DirectPlaybackMode>(reply.ReadInt32());
 }
 } // namespace AudioStandard
 } // namespace OHOS
