@@ -388,6 +388,9 @@ public:
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
         const bool isConnected) override;
 
+    int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
+        uint32_t volumeType) override;
+
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;

@@ -358,5 +358,73 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_015, TestSize.Level1)
     audioVolumeManager.audioPolicyManager_.SetVolumeForSwitchDevice(DEVICE_TYPE_NONE);
     EXPECT_EQ(audioVolumeManager.isBtFirstBoot_, true);
 }
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_016
+* @tc.desc  : Test GetAllDeviceVolumeInfo interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_016, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+
+    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_EARPIECE, DeviceRole::OUTPUT_DEVICE);
+    audioVolumeManager->audioConnectedDevice_.AddConnectedDevice(remoteDeviceDescriptor);
+    auto ret = audioVolumeManager->GetAllDeviceVolumeInfo();
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_017
+* @tc.desc  : Test SaveAdjustStreamVolumeInfo interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_017, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+
+    float volume = 0.1f;
+    uint32_t sessionId = 0;
+    std::string invocationTime = GetTime();
+    uint32_t volumeType = static_cast<uint32_t>(AdjustStreamVolume::STREAM_VOLUME_INFO);
+    auto ret = audioVolumeManager->SaveAdjustStreamVolumeInfo(volume, sessionId, invocationTime, volumeType);
+    EXPECT_EQ(ret, SUCCESS);
+
+    volumeType = static_cast<uint32_t>(AdjustStreamVolume::LOW_POWER_VOLUME_INFO);
+    ret = audioVolumeManager->SaveAdjustStreamVolumeInfo(volume, sessionId, invocationTime, volumeType);
+    EXPECT_EQ(ret, SUCCESS);
+
+    volumeType = static_cast<uint32_t>(AdjustStreamVolume::DUCK_VOLUME_INFO);
+    ret = audioVolumeManager->SaveAdjustStreamVolumeInfo(volume, sessionId, invocationTime, volumeType);
+    EXPECT_EQ(ret, SUCCESS);
+
+    volumeType = 10;
+    ret = audioVolumeManager->SaveAdjustStreamVolumeInfo(volume, sessionId, invocationTime, volumeType);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_018
+* @tc.desc  : Test SaveAdjustStreamVolumeInfo interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_018, TestSize.Level1)
+{
+    int maxCount = 10;
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+
+    int32_t volumeLevel = 1;
+    std::string callerName = "test";
+    std::string invocationTime = GetTime();
+    for (int i = 0; i <= maxCount; i++) {
+        audioVolumeManager->SaveSystemVolumeLevelInfo(AudioStreamType::STREAM_MUSIC, volumeLevel,
+            callerName, invocationTime);
+        ++volumeLevel;
+    }
+    EXPECT_NE(audioVolumeManager->systemVolumeLevelInfo_->GetData().size(), 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -179,6 +179,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/audio_policy_manager_device_stub.cpp",
     "server/src/audio_policy_manager_listener_proxy.cpp",
     "server/src/audio_policy_manager_stub.cpp",
+    "server/src/audio_policy_manager_stub_ext.cpp",
     "server/src/audio_policy_server.cpp",
     "server/src/audio_policy_server_handler.cpp",
     "server/src/audio_policy_state_monitor.cpp",
