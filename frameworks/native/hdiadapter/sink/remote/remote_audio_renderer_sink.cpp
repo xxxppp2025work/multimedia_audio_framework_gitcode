@@ -169,7 +169,7 @@ private:
     AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     int32_t OpenOutput(DeviceType outputDevice);
     void ClearRender();
-    void SetAudioPortMap(AudioAdapterDescriptor *desc, vector<string> &splitStreamVector, uint32_t port);
+    int32_t SetAudioPortMap(AudioAdapterDescriptor *desc, vector<string> &splitStreamVector, uint32_t port);
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
 private:
@@ -361,7 +361,7 @@ int32_t RemoteAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
     return SUCCESS;
 }
 
-void RemoteAudioRendererSinkInner::SetAudioPortMap(AudioAdapterDescriptor *desc, vector<string> &splitStreamVector,
+int32_t RemoteAudioRendererSinkInner::SetAudioPortMap(AudioAdapterDescriptor *desc, vector<string> &splitStreamVector,
     uint32_t port)
 {
     if (desc->ports[port].portId == AudioPortPin::PIN_OUT_SPEAKER) {
@@ -375,6 +375,7 @@ void RemoteAudioRendererSinkInner::SetAudioPortMap(AudioAdapterDescriptor *desc,
             splitStreamTypeIter++;
         }
     }
+    return SUCCESS;
 }
 
 void RemoteAudioRendererSinkInner::splitStreamInit(const char *splitStreamString, vector<string> &splitStreamVector)
