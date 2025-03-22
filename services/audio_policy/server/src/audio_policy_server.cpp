@@ -1616,6 +1616,12 @@ int32_t AudioPolicyServer::SetDeviceActive(InternalDeviceType deviceType, bool a
     return eventEntry_->SetDeviceActive(deviceType, active, pid);
 }
 
+int32_t AudioPolicyServer::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const StreamUsage streamUsage, bool isRunning)
+{
+    return audioPolicyService_.SetInputDevice(deviceType, sessionID, streamUsage, isRunning);
+}
+
 bool AudioPolicyServer::IsDeviceActive(InternalDeviceType deviceType)
 {
     return audioPolicyService_.IsDeviceActive(deviceType);

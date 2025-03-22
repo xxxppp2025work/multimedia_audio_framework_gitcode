@@ -235,7 +235,7 @@ void AudioDeviceLock::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChan
     capturerChangeInfo.push_back(
         make_shared<AudioCapturerChangeInfo>(streamChangeInfo.audioCapturerChangeInfo));
     streamCollector_.GetCapturerStreamInfo(streamChangeInfo, *capturerChangeInfo[0]);
-
+    audioDeviceManager_.UpdateInputDeviceWhenStarting(streamChangeInfo.audioCapturerChangeInfo.sessionId);
     audioDeviceCommon_.FetchInputDevice(capturerChangeInfo);
 }
 
@@ -302,11 +302,12 @@ int32_t AudioDeviceLock::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &s
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
 
     const auto &rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
+    const auto &capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
     if (rendererState == RENDERER_PREPARED || rendererState == RENDERER_NEW || rendererState == RENDERER_INVALID) {
         return ret; // only update tracker in new and prepared
     }
 
-    audioDeviceCommon_.UpdateTracker(mode, streamChangeInfo, rendererState);
+    audioDeviceCommon_.UpdateTracker(mode, streamChangeInfo, rendererState, capturerState);
 
     if (audioA2dpOffloadManager_) {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream(audioActiveDevice_.GetCurrentOutputDeviceType());
@@ -325,11 +326,22 @@ void AudioDeviceLock::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
     audioDeviceCommon_.FetchDevice(true);
 }
 
+void AudioDeviceLock::UpdateInputDeviceWhenStopping(int32_t uid)
+{
+    std::vector<uint32_t> sessionIDSet = streamCollector_.GetAllCapturerSessionIDForUID(uid);
+    for (const auto &sessionID : sessionIDSet) {
+        audioDeviceManager_.UpdateInputDeviceWhenStopping(sessionID);
+        audioDeviceManager_.RemoveSelectedInputDevice(sessionID);
+    }
+    audioDeviceCommon_.FetchDevice(false);
+}
+
 void AudioDeviceLock::RegisteredTrackerClientDied(pid_t uid)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
     UpdateDefaultOutputDeviceWhenStopping(static_cast<int32_t>(uid));
+    UpdateInputDeviceWhenStopping(static_cast<int32_t>(uid));
 
     audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
     streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));

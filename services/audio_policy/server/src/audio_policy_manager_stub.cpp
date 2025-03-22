@@ -181,6 +181,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "IS_AUDIO_SESSION_ACTIVATED",
     "LOAD_SPLIT_MODULE",
     "SET_DEFAULT_OUTPUT_DEVICE",
+    "SET_INPUT_DEVICE",
     "GET_SYSTEM_ACTIVEVOLUME_TYPE",
     "GET_OUTPUT_DEVICE",
     "GET_INPUT_DEVICE",
@@ -1358,6 +1359,9 @@ void AudioPolicyManagerStub::OnMiddleEigRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_SESSION_ACTIVATED):
             IsAudioSessionActivatedInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_INPUT_DEVICE):
+            SetInputDeviceInternal(data, reply);
+            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VIRTUAL_CALL):
             SetVirtualCallInternal(data, reply);
             break;
@@ -1863,6 +1867,17 @@ void AudioPolicyManagerStub::SetHighResolutionExistInternal(MessageParcel &data,
     bool highResExist = data.ReadBool();
     SetHighResolutionExist(highResExist);
 }
+
+void AudioPolicyManagerStub::SetInputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    uint32_t sessionID = data.ReadUint32();
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    bool isRunning = data.ReadBool();
+    int32 result = SetInputDevice(deviceType, sessionID, streamUsage, isRunning);
+    reply.WriteInt32(result);
+}
+
 
 void AudioPolicyManagerStub::GetSpatializationSceneTypeInternal(MessageParcel &data, MessageParcel &reply)
 {

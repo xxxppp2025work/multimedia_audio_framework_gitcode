@@ -1467,7 +1467,7 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
 
     isSwitching_ = false;
     switchResult = true;
-
+    SetInputDevice(selectedInputDevice_);
     return switchResult;
 }
 
@@ -1480,6 +1480,13 @@ void AudioCapturerPrivate::HandleAudioInterruptWhenServerDied()
             AUDIO_WARNING_LOG("Activate audio interrupt failed when restoring from server died");
         }
     }
+}
+
+int32_t AudioCapturerPrivate::SetInputDevice(DeviceType deviceType)
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    return currentStream->SetInputDevice(deviceType);
 }
 
 void AudioCapturerPrivate::ActivateAudioConcurrency(IAudioStream::StreamClass &streamClass)

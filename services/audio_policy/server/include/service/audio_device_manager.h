@@ -28,6 +28,7 @@ namespace AudioStandard {
 using namespace std;
 
 constexpr int32_t NEED_TO_FETCH = 1;
+constexpr int32_t NEED_TO_FETCH_INPUT = 1;
 
 typedef function<bool(const std::shared_ptr<AudioDeviceDescriptor> &desc)> IsPresentFunc;
 class AudioDeviceManager {
@@ -91,6 +92,13 @@ public:
     shared_ptr<AudioDeviceDescriptor> GetSelectedMediaRenderDevice();
     shared_ptr<AudioDeviceDescriptor> GetSelectedCallRenderDevice();
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+        const StreamUsage streamUsage, bool isRunning);
+    int32_t UpdateInputDeviceWhenStarting(const uint32_t sessionID);
+    int32_t UpdateInputDeviceWhenStopping(const uint32_t sessionID);
+    int32_t RemoveSelectedInputDevice(const uint32_t sessionID);
+    shared_ptr<AudioDeviceDescriptor> GetSelectedMediaCaptureDevice();
+    shared_ptr<AudioDeviceDescriptor> GetSelectedCallCaptureDevice();
     void Dump(std::string &dumpString);
     void UpdateVirtualDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc, bool isConnected);
     void GetAllConnectedDeviceByType(std::string networkId, DeviceType deviceType,
@@ -185,6 +193,11 @@ private:
     DeviceType selectedCallDefaultOutputDevice_ = DEVICE_TYPE_DEFAULT;
     std::mutex selectDefaultOutputDeviceMutex_;
     std::mutex currentActiveDevicesMutex_;
+    unordered_map<uint32_t, std::pair<DeviceType, StreamUsage>> selectedInputDeviceInfo_;
+    vector<std::pair<uint32_t, DeviceType>> inputDevices_;
+    DeviceType selectedInputDevice_ = DEVICE_TYPE_DEFAULT;
+    std::mutex selectInputDeviceMutex_;
+    std::mutex currentActiveInputDevicesMutex_;
     std::string remoteInfoNetworkId_ = "";
     DeviceType remoteInfoDeviceType_ = DEVICE_TYPE_DEFAULT;
     std::mutex virtualDevicesMutex_;

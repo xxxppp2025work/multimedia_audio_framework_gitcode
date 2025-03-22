@@ -172,6 +172,7 @@ class OHAudioCapturer {
         void SetCapturerErrorCallbackType(ErrorCallbackType errorCallbackType);
         InterruptEventCallbackType GetCapturerInterruptEventCallbackType();
         ErrorCallbackType GetCapturerErrorCallbackType();
+        int32_t SetInputDevice(DeviceType deviceType);
 
         void SetCapturerCallback(CapturerCallback capturerCallbacks, void* userData);
         void SetReadDataCallback(CapturerCallback capturerCallbacks, void* userData);

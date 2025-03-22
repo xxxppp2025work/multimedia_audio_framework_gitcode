@@ -1685,7 +1685,7 @@ bool AudioDeviceCommon::IsStopOrReleasePlayback(AudioMode &mode, RendererState r
 }
 
 void AudioDeviceCommon::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
-    RendererState rendererState)
+    RendererState rendererState, CapturerState capturerState)
 {
     const StreamUsage streamUsage = streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage;
     if (rendererState == RENDERER_RELEASED && !streamCollector_.ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL)) {
@@ -1698,6 +1698,15 @@ void AudioDeviceCommon::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &st
         if (rendererState == RENDERER_RELEASED) {
             audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
         }
+    }
+
+    if (mode == AUDIO_MODE_RECORD && (capturerState == CAPTURER_STOPPED || capturerState == CAPTURER_PAUSED ||
+        capturerState == CAPTURER_RELEASED)) {
+        audioDeviceManager_.UpdateInputDeviceWhenStopping(streamChangeInfo.audiocapturerChangeInfo.sessionId);
+        if (capturerState == CAPTURER_RELEASED) {
+            audioDeviceManager_.RemoveSelectedInputDevice(streamChangeInfo.audiocapturerChangeInfo.sessionId);
+        }
+        FetchDevice(false);
     }
 
     if (enableDualHalToneState_ && (mode == AUDIO_MODE_PLAYBACK)

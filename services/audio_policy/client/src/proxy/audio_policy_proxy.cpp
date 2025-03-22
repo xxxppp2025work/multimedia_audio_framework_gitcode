@@ -467,6 +467,26 @@ bool AudioPolicyProxy::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
     return reply.ReadBool();
 }
 
+bool AudioPolicyProxy::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const StreamUsage streamUsage, bool isRunning)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(deviceType));
+    data.WriteUint32(sessionID);
+    data.WriteInt32(static_cast<int32_t>(streamUsage));
+    data.WriteBool(isRunning);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_INPUT_dEVICE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SetInputDevice failed, error: %{public}d", error);
+    return reply.ReadBool();
+}
+
 int32_t AudioPolicyProxy::SetVoiceRingtoneMute(bool isMute)
 {
     MessageParcel data;
@@ -489,7 +509,7 @@ int32_t AudioPolicyProxy::SetVirtualCall(const bool isVirtual)
     MessageOption option;
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(ret, 1, "WriteInterfaceToken failed");
     data.WriteBool(isVirtual);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VIRTUAL_CALL), data, reply, option);

@@ -692,6 +692,14 @@ public:
      * @return Returns <b>true</b> if the timestamp is successfully obtained; returns <b>false</b> otherwise.
      * @since 15
      */
+
+    /**
+     * @brief Temporarily changes the current audio route.
+     * @param deviceType to set the available deviceTypes.
+     * @since 15
+     */
+    virtual int32_t SetInputDevice(DeviceType deviceType) { return 0; };
+
     virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
 
     virtual uint32_t GetOverflowCount() const = 0;
