@@ -28,10 +28,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-enum class AudioZoneFocusStrategy {
-    LOCAL_FOCUS_STRATEGY = 0,
-    DISTRIBUTED_FOCUS_STRATEGY,
-};
 
 using GetZoneIdFunc = std::function<int32_t(int32_t, const std::string &, const std::string &)>;
 using AudioFocusList = std::list<std::pair<AudioInterrupt, AudioFocuState>>;
