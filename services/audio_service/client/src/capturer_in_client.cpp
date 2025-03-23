@@ -69,6 +69,7 @@ constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
 constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
+const float ERROR_VOLUME = -0.1f;
 }
 
 class CapturerInClientInner : public CapturerInClient, public IStreamListener, public IHandler,
@@ -101,7 +102,9 @@ public:
     float GetVolume() override;
     int32_t SetVolume(float volume) override;
     int32_t SetDuckVolume(float volume) override;
+    float GetDuckVolume() override;
     int32_t SetMute(bool mute) override;
+    float GetMute() override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
@@ -974,10 +977,22 @@ int32_t CapturerInClientInner::SetMute(bool mute)
     return ERROR;
 }
 
+float CapturerInClientInner::GetMute()
+{
+    AUDIO_WARNING_LOG("only for renderer");
+    return ERROR_VOLUME;
+}
+
 int32_t CapturerInClientInner::SetDuckVolume(float volume)
 {
     AUDIO_WARNING_LOG("only for renderer");
     return ERROR;
+}
+
+float CapturerInClientInner::GetDuckVolume()
+{
+    AUDIO_WARNING_LOG("only for renderer");
+    return ERROR_VOLUME;
 }
 
 int32_t CapturerInClientInner::SetSpeed(float speed)

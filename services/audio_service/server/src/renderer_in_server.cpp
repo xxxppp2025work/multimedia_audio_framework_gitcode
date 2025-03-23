@@ -1105,6 +1105,9 @@ int32_t RendererInServer::SetLowPowerVolume(float volume)
         AUDIO_ERR_LOG("invalid volume:%{public}f", volume);
         return ERR_INVALID_PARAM;
     }
+    AudioVolume::GetInstance()->SaveAdjustStreamVolumeInfo(volume, streamIndex_, GetTime(),
+        AdjustStreamVolume::LOW_POWER_VOLUME_INFO);
+
     lowPowerVolume_ = volume;
     AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(streamIndex_, volume);
     for (auto &capInfo : captureInfos_) {
@@ -1434,6 +1437,8 @@ int32_t RendererInServer::SetClientVolume()
         return ERROR;
     }
     float clientVolume = audioServerBuffer_->GetStreamVolume();
+    AudioVolume::GetInstance()->SaveAdjustStreamVolumeInfo(clientVolume, streamIndex_, GetTime(),
+        AdjustStreamVolume::STREAM_VOLUME_INFO);
     int32_t ret = stream_->SetClientVolume(clientVolume);
     SetStreamVolumeInfoForEnhanceChain();
     AudioVolume::GetInstance()->SetStreamVolume(streamIndex_, clientVolume);
@@ -1482,6 +1487,9 @@ int32_t RendererInServer::SetDuckFactor(float duckFactor)
         AUDIO_ERR_LOG("invalid duck volume:%{public}f", duckFactor);
         return ERR_INVALID_PARAM;
     }
+    AudioVolume::GetInstance()->SaveAdjustStreamVolumeInfo(duckFactor, streamIndex_, GetTime(),
+        AdjustStreamVolume::DUCK_VOLUME_INFO);
+
     AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(streamIndex_, duckFactor);
     for (auto &capInfo : captureInfos_) {
         if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
