@@ -38,7 +38,8 @@ public:
     int32_t TestPlayback(int argc, char *argv[]) const;
 private:
     AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat) const;
-    bool InitRender(const std::unique_ptr<AudioRenderer> &audioRenderer, FILE* &wavFile) const;
+    bool InitRender(const std::unique_ptr<AudioRenderer> &audioRenderer, FILE* &wavFile,
+        StreamUsage streamUsage) const;
     bool StartRender(const std::unique_ptr<AudioRenderer> &audioRenderer) const;
     void WriteBuffer(AudioRenderer* audioRenderer, FILE* wavFile,
                      const std::shared_ptr<AudioRendererCallbackTestImpl> &cb) const;

@@ -230,24 +230,6 @@ int32_t AudioRenderer::MuteAudioBuffer(uint8_t *addr, size_t offset, size_t leng
     return SUCCESS;
 }
 
-std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStreamType)
-{
-    AppInfo appInfo = {};
-    return Create(audioStreamType, appInfo);
-}
-
-std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStreamType, const AppInfo &appInfo)
-{
-    if (audioStreamType == STREAM_MEDIA) {
-        audioStreamType = STREAM_MUSIC;
-    }
-
-    auto sharedRenderer = std::make_shared<AudioRendererPrivate>(audioStreamType, appInfo, true);
-    CHECK_AND_RETURN_RET_LOG(sharedRenderer != nullptr, nullptr, "renderer is null");
-
-    return std::make_unique<SharedAudioRendererWrapper>(sharedRenderer);
-}
-
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions &rendererOptions)
 {
     AppInfo appInfo = {};

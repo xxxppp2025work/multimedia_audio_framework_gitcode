@@ -548,6 +548,24 @@ struct BufferDesc {
     size_t metaLength;
 };
 
+/**
+ * @brief Defines information about audio renderer parameters.
+ * @since 8
+ */
+
+ struct AudioRendererParams {
+    /** Sample Format */
+    AudioSampleFormat sampleFormat = SAMPLE_S16LE;
+    /** Sampling rate */
+    AudioSamplingRate sampleRate = SAMPLE_RATE_8000;
+    /** Number of channels */
+    AudioChannel channelCount = MONO;
+    /** Encoding Type */
+    AudioEncodingType encodingType = ENCODING_PCM;
+    /** Channel Layout */
+    AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
+};
+
 class AudioStreamInfo {
 public:
     AudioSamplingRate samplingRate;
@@ -560,6 +578,13 @@ public:
         : samplingRate(samplingRate_), encoding(encoding_), format(format_), channels(channels_),
         channelLayout(channelLayout_)
     {}
+
+    constexpr explicit AudioStreamInfo(const AudioRendererParams &rendererParams)
+        : samplingRate(rendererParams.sampleRate), encoding(rendererParams.encodingType),
+        format(rendererParams.sampleFormat), channels(rendererParams.channelCount),
+        channelLayout(rendererParams.channelLayout)
+    {}
+
     AudioStreamInfo() = default;
     bool Marshalling(Parcel &parcel) const
     {

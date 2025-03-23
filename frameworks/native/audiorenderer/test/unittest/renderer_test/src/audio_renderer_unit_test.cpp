@@ -105,7 +105,8 @@ void AudioRendererCallbackTest::OnInterrupt(const InterruptEvent &interruptEvent
     AudioRendererUnitTest::interruptEventTest_.hintType = interruptEvent.hintType;
 }
 
-int32_t AudioRendererUnitTest::InitializeRenderer(unique_ptr<AudioRenderer> &audioRenderer)
+void AudioRendererUnitTest::InitializeRenderer(unique_ptr<AudioRenderer> &audioRenderer,
+    StreamUsage streamUsage)
 {
     AudioRendererParams rendererParams;
     rendererParams.sampleFormat = SAMPLE_S16LE;
@@ -113,7 +114,11 @@ int32_t AudioRendererUnitTest::InitializeRenderer(unique_ptr<AudioRenderer> &aud
     rendererParams.channelCount = STEREO;
     rendererParams.encodingType = ENCODING_PCM;
 
-    return audioRenderer->SetParams(rendererParams);
+    AudioRendererOptions options {
+        AudioStreamInfo(rendererParams),
+        {CONTENT_TYPE_UNKNOWN, streamUsage}
+    }
+    audioRenderer = AudioRenderer::Create(options);
 }
 
 void AudioRendererUnitTest::InitializeRendererOptions(AudioRendererOptions &rendererOptions)
@@ -256,7 +261,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetSupportedSamplingRates_001, Test
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_001, TestSize.Level0)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     EXPECT_NE(nullptr, audioRenderer);
 }
 
@@ -541,7 +546,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_014, TestSize.Level0)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_015, TestSize.Level0)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MEDIA);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     EXPECT_NE(nullptr, audioRenderer);
     audioRenderer->Release();
 }
@@ -564,7 +569,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_CheckMaxRendererInstances_001, Test
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Mute_001, TestSize.Level0)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MEDIA);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     EXPECT_NE(nullptr, audioRenderer);
     bool result = audioRenderer->Mute();
     EXPECT_TRUE(result);
@@ -578,7 +583,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Mute_001, TestSize.Level0)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Unmute_001, TestSize.Level0)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MEDIA);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     EXPECT_NE(nullptr, audioRenderer);
     bool result = audioRenderer->Unmute();
     EXPECT_TRUE(result);
@@ -592,7 +597,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Unmute_001, TestSize.Level0)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_SetDefaultOutputDevice_001, TestSize.Level0)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MEDIA);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     EXPECT_NE(nullptr, audioRenderer);
     bool result = audioRenderer->SetDefaultOutputDevice(DEVICE_TYPE_INVALID);
     EXPECT_TRUE(result);
@@ -636,7 +641,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Playback_001, TestSize.Level0)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_001, TestSize.Level1)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams rendererParams;
@@ -661,7 +666,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_001, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_002, TestSize.Level1)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams rendererParams;
@@ -686,7 +691,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_002, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_003, TestSize.Level1)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams rendererParams;
@@ -711,7 +716,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_003, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_004, TestSize.Level1)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams rendererParams;
@@ -736,7 +741,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_004, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_005, TestSize.Level1)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams rendererParams;
@@ -760,7 +765,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_005, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_006, TestSize.Level1)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams rendererParams;
@@ -784,7 +789,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_006, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_007, TestSize.Level1)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams rendererParams;
@@ -809,7 +814,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_007, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_008, TestSize.Level1)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams rendererParams;
@@ -831,7 +836,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_008, TestSize.Level1)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_Stability_001, TestSize.Level1)
 {
     int32_t ret = -1;
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams rendererParams;
@@ -860,16 +865,18 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_Stability_001, TestSize.L
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_001, TestSize.Level1)
 {
     int32_t ret = -1;
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
-    ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams rendererParams;
     rendererParams.sampleFormat = SAMPLE_S16LE;
     rendererParams.sampleRate = SAMPLE_RATE_44100;
     rendererParams.channelCount = STEREO;
     rendererParams.encodingType = ENCODING_PCM;
-    ret = audioRenderer->SetParams(rendererParams);
-    EXPECT_EQ(SUCCESS, ret);
+    AudioRendererOptions options {
+        AudioStreamInfo(rendererParams),
+        {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC}
+    };
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(options);
+    ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams getRendererParams;
     ret = audioRenderer->GetParams(getRendererParams);
@@ -890,16 +897,18 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_001, TestSize.Level1)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_002, TestSize.Level1)
 {
     int32_t ret = -1;
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
-    ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams rendererParams;
     rendererParams.sampleFormat = SAMPLE_S16LE;
     rendererParams.sampleRate = SAMPLE_RATE_44100;
     rendererParams.channelCount = MONO;
     rendererParams.encodingType = ENCODING_PCM;
-    ret = audioRenderer->SetParams(rendererParams);
-    EXPECT_EQ(SUCCESS, ret);
+    AudioRendererOptions options {
+        AudioStreamInfo(rendererParams),
+        {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC}
+    };
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(options);
+    ASSERT_NE(nullptr, audioRenderer);
 
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
@@ -919,7 +928,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_002, TestSize.Level1)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_003, TestSize.Level1)
 {
     int32_t ret = -1;
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams rendererParams;
@@ -941,11 +950,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_003, TestSize.Level1)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_004, TestSize.Level1)
 {
     int32_t ret = -1;
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
-    ASSERT_NE(nullptr, audioRenderer);
+    unique_ptr<AudioRenderer> audioRenderer = nullptr;
 
-    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer);
-    EXPECT_EQ(SUCCESS, ret);
+    AudioRendererUnitTest::InitializeRenderer(audioRenderer, STREAM_USAGE_MUSIC);
+    ASSERT_NE(audioRenderer, nullptr);
 
     bool isReleased = audioRenderer->Release();
     EXPECT_EQ(true, isReleased);
@@ -963,11 +971,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_004, TestSize.Level1)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_005, TestSize.Level1)
 {
     int32_t ret = -1;
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
-    ASSERT_NE(nullptr, audioRenderer);
+    unique_ptr<AudioRenderer> audioRenderer = nullptr;
 
-    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer);
-    EXPECT_EQ(SUCCESS, ret);
+    AudioRendererUnitTest::InitializeRenderer(audioRenderer, STREAM_USAGE_MUSIC);
+    ASSERT_NE(audioRenderer, nullptr);
 
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
@@ -990,16 +997,18 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_005, TestSize.Level1)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_006, TestSize.Level1)
 {
     int32_t ret = -1;
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
-    ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams rendererParams;
     rendererParams.sampleFormat = SAMPLE_S24LE;
     rendererParams.sampleRate = SAMPLE_RATE_44100;
     rendererParams.channelCount = STEREO;
     rendererParams.encodingType = ENCODING_PCM;
-    ret = audioRenderer->SetParams(rendererParams);
-    EXPECT_EQ(SUCCESS, ret);
+    AudioRendererOptions options {
+        AudioStreamInfo(rendererParams),
+        {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC}
+    };
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(options);
+    ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams getRendererParams;
     ret = audioRenderer->GetParams(getRendererParams);
@@ -1020,16 +1029,18 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_006, TestSize.Level1)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_007, TestSize.Level1)
 {
     int32_t ret = -1;
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
-    ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams rendererParams;
     rendererParams.sampleFormat = SAMPLE_S32LE;
     rendererParams.sampleRate = SAMPLE_RATE_44100;
     rendererParams.channelCount = STEREO;
     rendererParams.encodingType = ENCODING_PCM;
-    ret = audioRenderer->SetParams(rendererParams);
-    EXPECT_EQ(SUCCESS, ret);
+    AudioRendererOptions options {
+        AudioStreamInfo(rendererParams),
+        {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC}
+    };
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(options);
+    ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams getRendererParams;
     ret = audioRenderer->GetParams(getRendererParams);
@@ -1050,7 +1061,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_007, TestSize.Level1)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_008, TestSize.Level1)
 {
     int32_t ret = -1;
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams getRendererParams;
@@ -1068,11 +1079,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_008, TestSize.Level1)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_SetInterruptMode_001, TestSize.Level1)
 {
     int32_t ret = -1;
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
-    ASSERT_NE(nullptr, audioRenderer);
+    unique_ptr<AudioRenderer> audioRenderer = nullptr;
 
-    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer);
-    EXPECT_EQ(SUCCESS, ret);
+    AudioRendererUnitTest::InitializeRenderer(audioRenderer, STREAM_USAGE_MUSIC);
+    ASSERT_NE(audioRenderer, nullptr);
 
     audioRenderer->SetInterruptMode(SHARE_MODE);
 
@@ -1092,11 +1102,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetInterruptMode_001, TestSize.Leve
 HWTEST(AudioRendererUnitTest, Audio_Renderer_SetInterruptMode_002, TestSize.Level1)
 {
     int32_t ret = -1;
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
-    ASSERT_NE(nullptr, audioRenderer);
+    unique_ptr<AudioRenderer> audioRenderer = nullptr;
 
-    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer);
-    EXPECT_EQ(SUCCESS, ret);
+    AudioRendererUnitTest::InitializeRenderer(audioRenderer, STREAM_USAGE_MUSIC);
+    ASSERT_NE(audioRenderer, nullptr);
 
     audioRenderer->SetInterruptMode(INDEPENDENT_MODE);
 
@@ -1149,8 +1158,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetBufQueueState_001, TestSize.Leve
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_Stability_001, TestSize.Level1)
 {
     int32_t ret = -1;
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
-    ASSERT_NE(nullptr, audioRenderer);
 
     AudioRendererParams rendererParams;
     rendererParams.sampleFormat = SAMPLE_S16LE;
@@ -1158,8 +1165,12 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_Stability_001, TestSize.L
     rendererParams.channelCount = STEREO;
     rendererParams.encodingType = ENCODING_PCM;
 
-    ret = audioRenderer->SetParams(rendererParams);
-    EXPECT_EQ(SUCCESS, ret);
+    AudioRendererOptions options {
+        AudioStreamInfo(rendererParams),
+        {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC}
+    };
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(options);
+    ASSERT_NE(nullptr, audioRenderer);
 
     for (int i = 0; i < VALUE_THOUSAND; i++) {
         AudioRendererParams getRendererParams;
@@ -1199,7 +1210,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetBufferSize_001, TestSize.Level1)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetBufferSize_002, TestSize.Level1)
 {
     int32_t ret = -1;
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     size_t bufferLen;
@@ -1372,7 +1383,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetFrameCount_001, TestSize.Level1)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetFrameCount_002, TestSize.Level1)
 {
     int32_t ret = -1;
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     uint32_t frameCount;
@@ -1745,7 +1756,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Start_001, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Start_002, TestSize.Level1)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     bool isStarted = audioRenderer->Start();
@@ -1913,7 +1924,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_002, TestSize.Level1)
     FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
     ASSERT_NE(nullptr, wavFile);
 
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     bool isStarted = audioRenderer->Start();
@@ -2291,7 +2302,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_002, TestSize.Level
         ASSERT_NE(nullptr, wavFile);
         ASSERT_NE(nullptr, metaFile);
 
-        unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+        auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
         ASSERT_NE(nullptr, audioRenderer);
 
         bool isStarted = audioRenderer->Start();
@@ -2768,7 +2779,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_001, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_002, TestSize.Level1)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     Timestamp timestamp;
@@ -2974,7 +2985,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Drain_001, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Drain_002, TestSize.Level1)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     bool isDrained = audioRenderer->Drain();
@@ -3200,7 +3211,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Flush_002, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Flush_003, TestSize.Level1)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     bool isFlushed = audioRenderer->Flush();
@@ -3355,7 +3366,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Pause_001, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Pause_002, TestSize.Level1)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     bool isPaused = audioRenderer->Pause();
@@ -3503,7 +3514,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_PauseTransitent_001, TestSize.Level
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_PauseTransitent_002, TestSize.Level1)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     bool isPaused = audioRenderer->Pause();
@@ -3745,7 +3756,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Stop_001, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Stop_002, TestSize.Level1)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     bool isStopped = audioRenderer->Stop();
@@ -3893,7 +3904,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Release_001, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Release_002, TestSize.Level1)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     bool isReleased = audioRenderer->Release();
@@ -4029,7 +4040,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStatus_002, TestSize.Level1)
 {
     RendererState state = RENDERER_INVALID;
 
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     bool isStarted = audioRenderer->Start();
@@ -4104,7 +4115,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStatus_005, TestSize.Level1)
 {
     RendererState state = RENDERER_INVALID;
 
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     bool isReleased = audioRenderer->Release();
@@ -4179,7 +4190,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_002, TestSize.Level1)
 {
     int32_t ret = -1;
 
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     bool isStarted = audioRenderer->Start();
@@ -5281,7 +5292,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererPositionCallback_001, Te
 {
     int32_t ret = -1;
 
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     shared_ptr<RendererPositionCallbackTest> positionCB = std::make_shared<RendererPositionCallbackTest>();
@@ -5298,7 +5309,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererPositionCallback_002, Te
 {
     int32_t ret = -1;
 
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     shared_ptr<RendererPositionCallbackTest> positionCB1 = std::make_shared<RendererPositionCallbackTest>();
@@ -5321,7 +5332,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererPositionCallback_003, Te
 {
     int32_t ret = -1;
 
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     ret = audioRenderer->SetRendererPositionCallback(VALUE_THOUSAND, nullptr);
@@ -5337,7 +5348,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererPositionCallback_004, Te
 {
     int32_t ret = -1;
 
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     shared_ptr<RendererPositionCallbackTest> positionCB = std::make_shared<RendererPositionCallbackTest>();
@@ -5358,7 +5369,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererPeriodPositionCallback_0
 {
     int32_t ret = -1;
 
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     shared_ptr<RendererPeriodPositionCallbackTest> positionCB = std::make_shared<RendererPeriodPositionCallbackTest>();
@@ -5375,7 +5386,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererPeriodPositionCallback_0
 {
     int32_t ret = -1;
 
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     shared_ptr<RendererPeriodPositionCallbackTest> positionCB1 = std::make_shared<RendererPeriodPositionCallbackTest>();
@@ -5398,7 +5409,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererPeriodPositionCallback_0
 {
     int32_t ret = -1;
 
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     ret = audioRenderer->SetRendererPeriodPositionCallback(VALUE_THOUSAND, nullptr);
@@ -5414,7 +5425,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererPeriodPositionCallback_0
 {
     int32_t ret = -1;
 
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     shared_ptr<RendererPeriodPositionCallbackTest> positionCB =
@@ -6710,7 +6721,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioPosition_001, TestSize.Leve
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioPosition_002, TestSize.Level1)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     Timestamp timestamp;
@@ -8324,7 +8335,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_001, TestSize
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_002, TestSize.Level1)
 {
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo(), true);
     ASSERT_NE(nullptr, audioRenderer);
 
     Timestamp timestamp;
