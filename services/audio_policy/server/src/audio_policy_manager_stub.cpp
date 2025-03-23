@@ -60,6 +60,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "IS_MICROPHONE_MUTE",
     "SET_CALLBACK",
     "UNSET_CALLBACK",
+    "SAVE_ADJUSTVOLUMEINFO",
     "SET_QUERY_CLIENT_TYPE_CALLBACK",
     "SET_CLIENT_INFO_MGR_CALLBACK",
     "SET_QUERY_BUNDLE_NAME_LIST_CALLBACK",
@@ -290,20 +291,6 @@ void AudioPolicyManagerStub::SetAppVolumeLevelInternal(MessageParcel &data, Mess
     int32_t volumeLevel = data.ReadInt32();
     int32_t volumeFlag = data.ReadInt32();
     int result = SetAppVolumeLevel(appUid, volumeLevel, volumeFlag);
-    reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::SetRingerModeLegacyInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioRingerMode rMode = static_cast<AudioRingerMode>(data.ReadInt32());
-    int32_t result = SetRingerModeLegacy(rMode);
-    reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::SetRingerModeInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioRingerMode rMode = static_cast<AudioRingerMode>(data.ReadInt32());
-    int32_t result = SetRingerMode(rMode);
     reply.WriteInt32(result);
 }
 
@@ -1745,6 +1732,9 @@ void AudioPolicyManagerStub::OnMiddlesRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_CALLBACK):
             UnsetInterruptCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SAVE_ADJUSTVOLUMEINFO):
+            SaveAdjustVolumeInfoInternal(data, reply);
             break;
         default:
             OnMiddleFirRemoteRequest(code, data, reply, option);

@@ -408,6 +408,9 @@ public:
     virtual int32_t SetVirtualCall(const bool isVirtual) = 0;
 
     virtual int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
+        uint32_t volumeType) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

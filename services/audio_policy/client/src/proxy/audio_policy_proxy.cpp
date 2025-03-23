@@ -2306,5 +2306,25 @@ int32_t AudioPolicyProxy::SetDeviceConnectionStatus(const std::shared_ptr<AudioD
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %d", error);
     return reply.ReadInt32();
 }
+
+int32_t AudioPolicyProxy::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
+    uint32_t volumeType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteFloat(volume);
+    data.WriteUint32(sessionId);
+    data.WriteString(invocationTime);
+    data.WriteUint32(volumeType);
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SAVE_ADJUSTVOLUMEINFO), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS
