@@ -101,7 +101,11 @@ public:
 
     int32_t SetDuckVolume(float vol) override;
 
+    float GetDuckVolume() override;
+
     int32_t SetMute(bool mute) override;
+
+    float GetMute() override;
 
     int32_t SetSourceDuration(int64_t duration) override;
 
@@ -469,6 +473,11 @@ int32_t AudioProcessInClientInner::SetSourceDuration(int64_t duration)
     return processProxy_->SetSourceDuration(duration);
 }
 
+float AudioProcessInClientInner::GetMute()
+{
+    return muteVolumeInFloat_;
+}
+
 int32_t AudioProcessInClientInner::SetDuckVolume(float vol)
 {
     float minVol = 0.0f;
@@ -477,6 +486,11 @@ int32_t AudioProcessInClientInner::SetDuckVolume(float vol)
         "SetDuckVolume failed to with invalid volume:%{public}f", vol);
     duckVolumeInFloat_ = vol;
     return SUCCESS;
+}
+
+float AudioProcessInClientInner::GetDuckVolume()
+{
+    return duckVolumeInFloat_;
 }
 
 uint32_t AudioProcessInClientInner::GetUnderflowCount()
