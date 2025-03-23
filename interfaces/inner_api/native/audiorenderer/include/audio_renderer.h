@@ -1005,6 +1005,14 @@ public:
      */
     virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
 
+    /**
+     * @brief Judges whether the playback is supported by the renderer.
+     *
+     * @return Returns <b>true</b> if the playback is supported; returns <b>false</b> otherwise.
+     * @since 16
+     */
+    virtual bool IsPlaybackSupported(const AudioStreamInfo &streamInfo, const AudioRendererInfo &rendererInfo) = 0;
+
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,
         const int32_t &errorCode);

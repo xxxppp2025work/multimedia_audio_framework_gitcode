@@ -464,6 +464,8 @@ public:
         
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) override;
 
+    bool IsPlaybackSupported(const AudioStreamInfo &streamInfo, const AudioRendererInfo &rendererInfo) override;
+
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 
     void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false);

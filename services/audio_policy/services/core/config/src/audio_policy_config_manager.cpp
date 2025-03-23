@@ -130,6 +130,11 @@ void AudioPolicyConfigManager::OnUpdateAnahsSupport(std::string anahsShowType)
     AudioPolicyService::GetAudioPolicyService().OnUpdateAnahsSupport(anahsShowType);
 }
 
+void AudioPolicyConfigManager::OnUpdateAc3Support(bool isSupported)
+{
+    isSupportAc3_ = isSupported;
+}
+
 void AudioPolicyConfigManager::OnHasEarpiece()
 {
     for (const auto &adapterInfo : audioPolicyConfig_.adapterInfoMap) {
@@ -409,6 +414,23 @@ bool AudioPolicyConfigManager::SupportImplicitConversion(uint32_t routeFlag)
         (routeFlag & AUDIO_INPUT_FLAG_WAKEUP)) {
         return true;
     }
+    return false;
+}
+
+bool AudioPolicyConfigManager::IsPlaybackSupported(std::shared_ptr<AudioDeviceDescriptor> desc,
+    AudioEncodingType encodingType)
+{
+    CHECK_AND_RETURN_RET_LOG(encodingType == ENCODING_AC3, true, "Support encoding type");
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
+        desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE);
+    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, false, "Find device failed");
+    for (auto &pipeIt : deviceInfo->supportPipeMap_) {
+        if (pipeIt.second->supportEncodingAc3_) {
+            AUDIO_INFO_LOG("Support encoding type ac3");
+            return true;
+        }
+    }
+    AUDIO_INFO_LOG("Not support encoding type ac3");
     return false;
 }
 }

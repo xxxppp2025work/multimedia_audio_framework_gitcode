@@ -493,6 +493,7 @@ public:
 #endif
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object);
     void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
+    bool IsPlaybackSupported(const AudioStreamInfo &streamInfo, const AudioRendererInfo &rendererInfo);
     void CheckConnectedDevice();
     void SetDeviceConnectedFlagFalseAfterDuration();
 private:

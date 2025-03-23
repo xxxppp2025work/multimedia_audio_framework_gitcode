@@ -198,6 +198,7 @@ private:
     void SetAudioClientInfoMgrCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void SetVirtualCallInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceConnectionStatusInternal(MessageParcel &data, MessageParcel &reply);
+    void IsPlaybackSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryAllowedPlaybackCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryBundleNameListCallbackInternal(MessageParcel &data, MessageParcel &reply);
 

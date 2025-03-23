@@ -408,6 +408,8 @@ public:
     virtual int32_t SetVirtualCall(const bool isVirtual) = 0;
 
     virtual int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) = 0;
+
+    virtual bool IsPlaybackSupported(const AudioStreamInfo &streamInfo, const AudioRendererInfo &rendererInfo) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

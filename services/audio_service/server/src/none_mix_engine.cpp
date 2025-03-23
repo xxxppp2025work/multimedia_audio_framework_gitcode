@@ -490,16 +490,20 @@ int32_t NoneMixEngine::InitSink(const AudioStreamInfo &clientStreamInfo)
         }
     }
     HdiAdapterManager::GetInstance().ReleaseId(renderId_);
-    return InitSink(targetChannel, targetFormat, targetSampleRate);
+    return InitSink(targetChannel, targetFormat, targetSampleRate, clientStreamInfo.encoding);
 }
 
-int32_t NoneMixEngine::InitSink(uint32_t channel, AudioSampleFormat format, uint32_t rate)
+int32_t NoneMixEngine::InitSink(uint32_t channel, AudioSampleFormat format, uint32_t rate, AudioEncodingType encoding)
 {
     std::string sinkName = DIRECT_SINK_NAME;
     if (isVoip_) {
         sinkName = VOIP_SINK_NAME;
     }
-    renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, sinkName, true);
+    if (encoding == AudioEncodingType::ENCODING_AC3) {
+        renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_OFFLOAD, sinkName, true);
+    } else {
+        renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, sinkName, true);
+    }
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (sink == nullptr) {
         AUDIO_ERR_LOG("get render fail, sinkName: %{public}s", sinkName.c_str());
