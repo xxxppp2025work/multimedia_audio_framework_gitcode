@@ -358,5 +358,21 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_015, TestSize.Level1)
     audioVolumeManager.audioPolicyManager_.SetVolumeForSwitchDevice(DEVICE_TYPE_NONE);
     EXPECT_EQ(audioVolumeManager.isBtFirstBoot_, true);
 }
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_016
+* @tc.desc  : Test GetAllDeviceVolumeInfo interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_016, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+
+    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_EARPIECE, DeviceRole::OUTPUT_DEVICE);
+    audioVolumeManager->audioConnectedDevice_.AddConnectedDevice(remoteDeviceDescriptor);
+    audioVolumeManager->GetAllDeviceVolumeInfo();
+}
 } // namespace AudioStandard
 } // namespace OHOS
