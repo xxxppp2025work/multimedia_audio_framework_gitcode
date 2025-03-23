@@ -420,7 +420,9 @@ void AudioDeviceManager::AddCaptureDevices(const shared_ptr<AudioDeviceDescripto
 
 void AudioDeviceManager::HandleScoWithDefaultCategory(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
-    if (devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && devDesc->deviceCategory_ == CATEGORY_DEFAULT &&
+    if (devDesc->connectState_ != VIRTUAL_CONNECTED &&
+        devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+        devDesc->deviceCategory_ == CATEGORY_DEFAULT &&
         devDesc->isEnable_) {
         if (devDesc->deviceRole_ == INPUT_DEVICE) {
             commCapturePrivacyDevices_.push_back(devDesc);
@@ -952,8 +954,10 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableB
 bool AudioDeviceManager::GetScoState()
 {
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    bool isScoStateConnect = Bluetooth::AudioHfpManager::IsAudioScoStateConnect();
     for (const auto &desc : connectedDevices_) {
-        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->connectState_ == CONNECTED) {
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->connectState_ == CONNECTED &&
+            isScoStateConnect) {
             return true;
         }
     }
@@ -1463,7 +1467,7 @@ void AudioDeviceManager::GetAllConnectedDeviceByType(std::string networkId, Devi
     auto isPresent =
         [&networkId, &deviceType, &macAddress, &deviceRole](const shared_ptr<AudioDeviceDescriptor> &desc) {
         return networkId == desc->networkId_ && deviceType == desc->deviceType_ &&
-            macAddress == desc->macAddress_ && deviceRole == desc->deviceRole_;
+            macAddress == desc->macAddress_ && (!IsUsb(deviceType) || deviceRole == desc->deviceRole_);
     };
     auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
     while (it != connectedDevices_.end()) {
