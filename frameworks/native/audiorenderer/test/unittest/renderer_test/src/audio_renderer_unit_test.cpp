@@ -5580,6 +5580,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_005, TestSize
     AppInfo appInfo = {};
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    unique_ptr<AudioRendererProxyObj> audioRendererProxyObj = std::make_unique<AudioRendererProxyObj>();
 
     AudioRendererOptions rendererOptions;
 
