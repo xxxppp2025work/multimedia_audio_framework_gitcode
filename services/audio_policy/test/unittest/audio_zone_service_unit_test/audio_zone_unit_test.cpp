@@ -20,7 +20,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioZoneUnitTest : public AudioZoneUnitTestBase {
+class AudioZoneUnitTest : public AudioZoneUnitTestPreset {
 };
 
 static std::shared_ptr<AudioZone> CreateZone(const std::string &name)
@@ -83,20 +83,20 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_003, TestSize.Level1)
     std::vector<sptr<AudioDeviceDescriptor>> devices;
     devices.push_back(device1);
     devices.push_back(device2);
-    EXPECT_EQ(zone->AddDeviceDescriptors(devices), 0);
-    EXPECT_EQ(zone->IsDeviceConnected(device1), true);
-    EXPECT_EQ(zone->IsDeviceConnected(device2), true);
+    EXPECT_EQ(zone->AddDeviceDescriptor(devices), 0);
+    EXPECT_EQ(zone->IsDeviceConnect(device1), true);
+    EXPECT_EQ(zone->IsDeviceConnect(device2), true);
 
     EXPECT_EQ(zone->DisableDeviceDescriptor(device2), 0);
-    EXPECT_EQ(zone->IsDeviceConnected(device2), false);
+    EXPECT_EQ(zone->IsDeviceConnect(device2), false);
     EXPECT_EQ(zone->EnableDeviceDescriptor(device2), 0);
-    EXPECT_EQ(zone->IsDeviceConnected(device2), true);
+    EXPECT_EQ(zone->IsDeviceConnect(device2), true);
     EXPECT_EQ(zone->RemoveDeviceDescriptor(device2), 0);
-    EXPECT_EQ(zone->IsDeviceConnected(device2), false);
+    EXPECT_EQ(zone->IsDeviceConnect(device2), false);
 
-    EXPECT_EQ(zone->AddDeviceDescriptors(devices), 0);
+    EXPECT_EQ(zone->AddDeviceDescriptor(devices), 0);
     auto fechOutputDevice = zone->FetchOutputDevices(STREAM_USAGE_MUSIC, 0, ROUTER_TYPE_DEFAULT);
-    auto fechInputDevice = zone->FetchInputDevices(SOURCE_TYPE_MIC, 0);
+    auto fechInputDevice = zone->FetchInputDevice(SOURCE_TYPE_MIC, 0);
     EXPECT_EQ(fechOutputDevice.size(), 1);
     EXPECT_EQ(fechOutputDevice[0]->IsSameDeviceDesc(device1), true);
     EXPECT_NE(fechInputDevice, nullptr);
@@ -169,7 +169,7 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_006, TestSize.Level1)
     EXPECT_NE(zoneId1, 0);
     EXPECT_EQ(AudioZoneService::GetInstance().EnableAudioZoneChangeReport(TEST_PID_1000, zoneId1, true), 0);
 
-    EXPECT_EQ(AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, TEST_PID_1000), 0);
+    EXPECT_EQ(AudioZoneService::GetInstance().AddUidToAudioZone(zoneId1, TEST_PID_1000), 0);
     client->Wait();
     EXPECT_NE(client->recvEvent_.type_, AUDIO_ZONE_CHANGE_EVENT);
 }

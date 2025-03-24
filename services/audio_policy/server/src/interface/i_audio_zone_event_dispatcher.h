@@ -30,7 +30,7 @@ enum AudioZoneEventType {
 };
 
 struct AudioZoneEvent {
-    AudioZoneEventType eventType;
+    AudioZoneEventType type;
     pid_t clientPid;
     int32_t zoneId;
     int32_t deviceId;

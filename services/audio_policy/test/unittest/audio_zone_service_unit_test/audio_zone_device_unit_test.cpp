@@ -19,7 +19,7 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioZoneDeviceUnitTest : public AudioZoneUnitTestBase {
+class AudioZoneDeviceUnitTest : public AudioZoneUnitTestPreset {
 };
 
 /**
@@ -38,12 +38,12 @@ HWTEST_F(AudioZoneDeviceUnitTest, AudioZoneDevice_001, TestSize.Level1)
 
     auto fechOutputDevice = AudioZoneService::GetInstance().FetchOutputDevices(zoneId1_,
         STREAM_USAGE_MUSIC, 0, ROUTER_TYPE_DEFAULT);
-    auto fechInputDevice = AudioZoneService::GetInstance().FetchInputDevices(zoneId1_,
+    auto fechInputDevice = AudioZoneService::GetInstance().FetchInputDevice(zoneId1_,
         SOURCE_TYPE_MIC, 0);
     EXPECT_EQ(fechOutputDevice.size(), 1);
-    EXPECT_EQ(fechOutputDevice[0]->IsSameDeviceDesc(device1), true);
+    EXPECT_EQ(fechOutputDevice[0]->IsSameDeviceDesc(*device1), true);
     EXPECT_NE(fechInputDevice, nullptr);
-    EXPECT_EQ(fechInputDevice->IsSameDeviceDesc(device2), true);
+    EXPECT_EQ(fechInputDevice->IsSameDeviceDesc(*device2), true);
 }
 } // namespace AudioStandard
 } // namespace OHOS

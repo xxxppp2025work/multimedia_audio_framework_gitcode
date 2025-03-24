@@ -38,7 +38,7 @@ enum class AudioZoneInterruptReason {
     REMOTE_INJECT = 2,
     RELEASE_AUDIO_ZONE,
     BIND_APP_TO_ZONE,
-    UNBING_APP_FROM_ZONE,
+    UNBIND_APP_FROM_ZONE,
 };
 
 enum class AudioZoneFocusStrategy {

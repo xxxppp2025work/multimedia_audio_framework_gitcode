@@ -19,7 +19,7 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioZoneVolumeUnitTest : public AudioZoneUnitTestBase {
+class AudioZoneVolumeUnitTest : public AudioZoneUnitTestPreset {
 };
 
 /**
@@ -29,10 +29,10 @@ class AudioZoneVolumeUnitTest : public AudioZoneUnitTestBase {
 */
 HWTEST_F(AudioZoneVolumeUnitTest, AudioZoneVolume_001, TestSize.Level1)
 {
-    EXPECT_NE(AudioZoneService::GetInstance().SetAudioZoneVolumeProxy(zoneId1_, STREAM_RING, 33, 0), 0);
-    EXPECT_EQ(AudioZoneService::GetInstance().EnableSystemVolumeProxy(TEST_PID_1000, zoneId1_, true));
+    EXPECT_NE(AudioZoneService::GetInstance().SetSystemVolumeLevelForZone(zoneId1_, STREAM_RING, 33, 0), 0);
+    EXPECT_EQ(AudioZoneService::GetInstance().EnableSystemVolumeProxy(TEST_PID_1000, zoneId1_), true);
 
-    EXPECT_EQ(AudioZoneService::GetInstance().SetAudioZoneVolumeLevelForZone(zoneId1_, STREAM_RING, 33, 0), 0);
+    EXPECT_EQ(AudioZoneService::GetInstance().SetSystemVolumeLevelForZone(zoneId1_, STREAM_RING, 33, 0), 0);
     client1000_->Wait();
     EXPECT_EQ(client1000_->volumeLevel_, 33);
     EXPECT_EQ(AudioZoneService::GetInstance().GetSystemVolumeLevelForZone(zoneId1_, STREAM_RING), 33);

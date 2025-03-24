@@ -65,7 +65,7 @@ public:
 
     int32_t ActivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
         bool isUpdatedAudioStrategy = false);
-    int32_t DeactiveAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
+    int32_t DeactivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
     int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     int32_t InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
@@ -76,7 +76,7 @@ public:
     sptr<AudioDeviceDescriptor> FetchInputDevice(int32_t zoneId,
        SourceType sourceType, int32_t clientUid);
     
-    std::string GetZoneStringDescriptor(int32_t zoneId);
+    const std::string GetZoneStringDescriptor(int32_t zoneId);
 
 private:
     AudioZoneService() = default;
