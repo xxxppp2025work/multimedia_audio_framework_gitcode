@@ -34,15 +34,15 @@ public:
 
     void ReleaseAudioZone(int32_t zoneId) override;
 
-    const std::vector<sptr<AudioZoneDescriptor>> GetAllAudioZone() override;
+    const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone() override;
 
-    const sptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId) override;
+    const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId) override;
 
     int32_t BindDeviceToAudioZone(int32_t zoneId,
-        std::vector<sptr<AudioDeviceDescriptor>> devices) override;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices) override;
 
     int32_t UnBindDeviceToAudioZone(int32_t zoneId,
-        std::vector<sptr<AudioDeviceDescriptor>> devices) override;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices) override;
 
     int32_t RegisterAudioZoneCallback(const std::shared_ptr<AudioZoneCallback> &callback) override;
 
@@ -133,7 +133,7 @@ int32_t AudioZoneManagerInner::CreateAudioZone(const std::string &name, const Au
 }
 
 int32_t AudioZoneManagerInner::BindDeviceToAudioZone(int32_t zoneId,
-    std::vector<sptr<AudioDeviceDescriptor>> devices)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
@@ -146,7 +146,7 @@ int32_t AudioZoneManagerInner::BindDeviceToAudioZone(int32_t zoneId,
 }
 
 int32_t AudioZoneManagerInner::UnBindDeviceToAudioZone(int32_t zoneId,
-    std::vector<sptr<AudioDeviceDescriptor>> devices)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
@@ -165,13 +165,13 @@ void AudioZoneManagerInner::ReleaseAudioZone(int32_t zoneId)
     AudioPolicyManager::GetInstance().ReleaseAudioZone(zoneId);
 }
 
-const std::vector<sptr<AudioZoneDescriptor>> AudioZoneManagerInner::GetAllAudioZone()
+const std::vector<std::shared_ptr<AudioZoneDescriptor>> AudioZoneManagerInner::GetAllAudioZone()
 {
     AUDIO_INFO_LOG("in");
     return AudioPolicyManager::GetInstance().GetAllAudioZone();
 }
 
-const sptr<AudioZoneDescriptor> AudioZoneManagerInner::GetAudioZone(int32_t zoneId)
+const std::shared_ptr<AudioZoneDescriptor> AudioZoneManagerInner::GetAudioZone(int32_t zoneId)
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, nullptr, "zoneId is invalid");
