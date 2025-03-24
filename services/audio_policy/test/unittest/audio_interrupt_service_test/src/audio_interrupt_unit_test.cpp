@@ -511,8 +511,8 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_024, TestSize.Level1)
     auto interruptServiceTest = GetTnterruptServiceTest();
     int32_t zoneId = 1;
 
-    auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag)->int32_t {
+    auto getZoneFunc = [](int32_t uid, int32_t deviceId,
+        const std::string &tag)->int32_t {
         return 0;
     };
 
@@ -540,8 +540,8 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_025, TestSize.Level1)
     auto interruptServiceTest = GetTnterruptServiceTest();
     int32_t zoneId = 0;
 
-    auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag)->int32_t {
+    auto getZoneFunc = [](int32_t uid, int32_t deviceId,
+        const std::string &tag)->int32_t {
         return 0;
     };
 
