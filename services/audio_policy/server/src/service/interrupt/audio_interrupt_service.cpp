@@ -828,10 +828,10 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
 }
 
 int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
-    const std::string &deviceTag, const AudioFocusList &interrupts)
+    const int32_t deviceId, const AudioFocusList &interrupts)
 {
     std::unique_lock<std::mutex> lock(mutex_);
-    int32_t ret = zoneManager_.InjectInterruptToAudioZone(zoneId, deviceTag, interrupts);
+    int32_t ret = zoneManager_.InjectInterruptToAudioZone(zoneId, deviceId, interrupts);
     if (ret != SUCCESS) {
         return ret;
     }
@@ -851,11 +851,11 @@ int32_t AudioInterruptService::GetAudioFocusInfoList(const int32_t zoneId, Audio
     return zoneManager_.GetAudioFocusInfoList(zoneId, focusInfoList);
 }
 
-int32_t AudioInterruptService::GetAudioFocusInfoList(const int32_t zoneId, const std::string &deviceTag,
+int32_t AudioInterruptService::GetAudioFocusInfoList(const int32_t zoneId, const int32_t deviceId,
     AudioFocusList &focusInfoList)
 {
     std::unique_lock<std::mutex> lock(mutex_);
-    return zoneManager_.GetAudioFocusInfoList(zoneId, deviceTag, focusInfoList);
+    return zoneManager_.GetAudioFocusInfoList(zoneId, deviceId, focusInfoList);
 }
 
 int32_t AudioInterruptService::GetStreamTypePriority(AudioStreamType streamType)
@@ -1327,8 +1327,9 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
             tempAudioSession->RemoveAudioInterrptByStreamId(incomingStreamId);
         }
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, audioInterrupt);
+        AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
         if (zoneId == ZONEID_DEFAULT) {
-            UpdateAudioSceneFromInterrupt(GetHighestPriorityAudioScene(zoneId), ACTIVATE_AUDIO_INTERRUPT);
+            UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
         }
         AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
         shouldReturnSuccess = true;

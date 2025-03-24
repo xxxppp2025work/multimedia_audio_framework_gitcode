@@ -86,9 +86,9 @@ public:
     int32_t CreateAudioInterruptZone(const int32_t zoneId, AudioZoneFocusStrategy focusStrategy =
         AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY);
     int32_t ReleaseAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
-    void MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
+    int32_t MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const AudioFocusList &interrupts);
-    int32_t InjectInterruptToAudioZone(const int32_t zoneId, int32_t deviceId,
+    int32_t InjectInterruptToAudioZone(const int32_t zoneId, const int32_t deviceId,
         const AudioFocusList &interrupts);
     int32_t GetAudioFocusInfoList(const int32_t zoneId, AudioFocusList &focusInfoList);
     int32_t GetAudioFocusInfoList(const int32_t zoneId, const int32_t deviceId,
