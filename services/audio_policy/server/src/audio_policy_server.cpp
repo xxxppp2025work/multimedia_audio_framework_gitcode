@@ -2008,7 +2008,9 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
                 audioInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
             }
         }
-        return interruptService_->ActivateAudioInterrupt(zoneID, audioInterrupt, isUpdatedAudioStrategy);
+        auto callerPid = IPCSkeleton::GetCallingPid();
+        return interruptService_->ActivateAudioInterrupt(interruptService_->FindZoneByPid(callerPid),
+            audioInterrupt, isUpdatedAudioStrategy);
     }
     return ERR_UNKNOWN;
 }
@@ -2016,7 +2018,9 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
 int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
-        return interruptService_->DeactivateAudioInterrupt(zoneID, audioInterrupt);
+        auto callerPid = IPCSkeleton::GetCallingPid();
+        return interruptService_->DeactivateAudioInterrupt(interruptService_->FindZoneByPid(callerPid),
+            audioInterrupt);
     }
     return ERR_UNKNOWN;
 }
@@ -3364,22 +3368,24 @@ void AudioPolicyServer::ReleaseAudioZone(int32_t zoneId)
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
 }
 
-const std::vector<sptr<AudioZoneDescriptor>> AudioPolicyServer::GetAllAudioZone()
+const std::vector<std::shared_ptr<AudioZoneDescriptor>> AudioPolicyServer::GetAllAudioZone()
 {
     return AudioZoneService::GetInstance().GetAllAudioZone();
 }
 
-const sptr<AudioZoneDescriptor> AudioPolicyServer::GetAudioZone(int32_t zoneId)
+const std::shared_ptr<AudioZoneDescriptor> AudioPolicyServer::GetAudioZone(int32_t zoneId)
 {
     return AudioZoneService::GetInstance().GetAudioZone(zoneId);
 }
 
-int32_t AudioPolicyServer::BindDeviceToAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices)
+int32_t AudioPolicyServer::BindDeviceToAudioZone(int32_t zoneId,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
     return AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId, devices);
 }
 
-int32_t AudioPolicyServer::UnBindDeviceToAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices)
+int32_t AudioPolicyServer::UnBindDeviceToAudioZone(int32_t zoneId,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
     return AudioZoneService::GetInstance().UnBindDeviceToAudioZone(zoneId, devices);
 }

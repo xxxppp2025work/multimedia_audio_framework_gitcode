@@ -60,7 +60,7 @@ public:
     void OnAudioZoneAdd(const AudioZoneDescriptor &zoneDescriptor) override
     {
         recvEvent_.type = AUDIO_ZONE_ADD_EVENT;
-        recvEvent_.zoneId = zoneDescriptor.zoneId;
+        recvEvent_.zoneId = zoneDescriptor.zoneId_;
         Notify();
     }
 
@@ -81,8 +81,8 @@ public:
     }
 
     void OnInterruptEvent(int32_t zoneId,
-        const std::vector<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
-        AudioInterruptReason reason) override
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
+        AudioZoneInterruptReason reason) override
     {
         recvEvent_.type = AUDIO_ZONE_INTERRUPT_EVENT;
         recvEvent_.zoneId = zoneId;
@@ -92,8 +92,8 @@ public:
     }
 
     void OnInterruptEvent(int32_t zoneId, int32_t deviceId,
-        const std::vector<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
-        AudioInterruptReason reason, AudioInterruptType type) override
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
+        AudioZoneInterruptReason reason) override
     {
         recvEvent_.type = AUDIO_ZONE_INTERRUPT_EVENT;
         recvEvent_.zoneId = zoneId;
@@ -147,8 +147,8 @@ sptr<AudioZoneUnitTestClient> RegisterTestClient(pid_t clientPid)
 {
     sptr<AudioZoneUnitTestClient> client = new AudioZoneUnitTestClient();
     EXPECT_NE(client, nullptr);
-    AudioZoneClientManager::GetInstance().RegisterClient(clientPid, client);
-    cdeokreturn client;
+    AudioZoneClientManager::GetInstance().RegisterAudioZoneClient(clientPid, client);
+    return client;
 }
 
 #define TEST_PID_1000 1000
@@ -186,13 +186,13 @@ public:
     sptr<AudioZoneUnitTestClient> client2000_;
 };
 
-sptr<AudioDeviceDescriptor> CreateDevice(DeviceType type, DeviceRole role,
+std::shared_ptr<AudioDeviceDescriptor> CreateDevice(DeviceType type, DeviceRole role,
     const std::string &macAddress, const std::string &networkId)
 {
-    sptr<AudioDeviceDescriptor> desc = new AudioDeviceDescriptor(type, role);
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(type, role);
     EXPECT_NE(desc, nullptr);
-    desc->macAddress = macAddress;
-    desc->networkId = networkId;
+    desc->macAddress_ = macAddress;
+    desc->networkId_ = networkId;
     return desc;
 }
 } // namespace AudioStandard
