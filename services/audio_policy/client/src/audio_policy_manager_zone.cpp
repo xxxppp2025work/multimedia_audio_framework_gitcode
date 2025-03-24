@@ -50,16 +50,16 @@ void AudioPolicyManager::ReleaseAudioZone(int32_t zoneId)
     gsp->ReleaseAudioZone(zoneId);
 }
 
-const std::vector<sptr<AudioZoneDescriptor>> AudioPolicyManager::GetAllAudioZone()
+const std::vector<std::shared_ptr<AudioZoneDescriptor>> AudioPolicyManager::GetAllAudioZone()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    std::vector<sptr<AudioZoneDescriptor>> zoneDescriptors;
+    std::vector<std::shared_ptr<AudioZoneDescriptor>> zoneDescriptors;
     CHECK_AND_RETURN_RET_LOG(gsp!= nullptr, zoneDescriptors, "audio policy manager proxy is NULL.");
 
     return gsp->GetAllAudioZone();
 }
 
-const sptr<AudioZoneDescriptor> AudioPolicyManager::GetAudioZone(int32_t zoneId)
+const std::shared_ptr<AudioZoneDescriptor> AudioPolicyManager::GetAudioZone(int32_t zoneId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp!= nullptr, nullptr, "audio policy manager proxy is NULL.");
@@ -67,7 +67,8 @@ const sptr<AudioZoneDescriptor> AudioPolicyManager::GetAudioZone(int32_t zoneId)
     return gsp->GetAudioZone(zoneId);
 }
 
-int32_t AudioPolicyManager::BindDeviceToAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices)
+int32_t AudioPolicyManager::BindDeviceToAudioZone(int32_t zoneId,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp!= nullptr, ERROR, "audio policy manager proxy is NULL.");
@@ -75,7 +76,8 @@ int32_t AudioPolicyManager::BindDeviceToAudioZone(int32_t zoneId, std::vector<sp
     return gsp->BindDeviceToAudioZone(zoneId, devices);
 }
 
-int32_t AudioPolicyManager::UnBindDeviceToAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices)
+int32_t AudioPolicyManager::UnBindDeviceToAudioZone(int32_t zoneId,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp!= nullptr, ERROR, "audio policy manager proxy is NULL.");
