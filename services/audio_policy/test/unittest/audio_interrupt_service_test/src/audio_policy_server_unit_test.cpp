@@ -830,6 +830,48 @@ HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelInternal_002, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
+* @tc.number: SetSystemVolumeLevelWithDeviceInternal_001
+* @tc.desc  : Test AudioPolicyServer::SetSystemVolumeLevelWithDeviceInternal
+*/
+HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelWithDeviceInternal_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("SetSystemVolumeLevelWithDeviceInternal_001 start");
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_NE(ptrAudioPolicyServer, nullptr);
+
+    int32_t volumeLevel = 5;
+    bool isUpdateUi = true;
+    auto ret = ptrAudioPolicyServer->SetSystemVolumeLevelWithDeviceInternal(STREAM_VOICE_CALL, volumeLevel, isUpdateUi,
+        DEVICE_TYPE_BLUETOOTH_SCO);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: SetSystemVolumeLevelWithDeviceInternal_002
+* @tc.desc  : Test AudioPolicyServer::SetSystemVolumeLevelWithDeviceInternal
+*/
+HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelWithDeviceInternal_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("SetSystemVolumeLevelWithDeviceInternal_002 start");
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_NE(ptrAudioPolicyServer, nullptr);
+
+    int32_t volumeLevel = 5;
+    bool isUpdateUi = true;
+    VolumeUtils::SetPCVolumeEnable(true);
+    auto ret = ptrAudioPolicyServer->SetSystemVolumeLevelWithDeviceInternal(STREAM_VOICE_CALL, volumeLevel, isUpdateUi,
+        DEVICE_TYPE_BLUETOOTH_SCO);
+    VolumeUtils::SetPCVolumeEnable(false);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_041
 * @tc.desc  : Test AudioPolicyServer::GetSystemActiveVolumeType
 */
