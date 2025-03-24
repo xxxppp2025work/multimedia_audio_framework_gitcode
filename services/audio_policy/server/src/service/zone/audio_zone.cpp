@@ -104,7 +104,7 @@ void AudioZoneBindKey::Swap(AudioZoneBindKey &&other)
     this->streamTag_ = std::move(other.streamTag_);
 }
 
-const int32_t AudioZoneBindKey::GetUid() const
+int32_t AudioZoneBindKey::GetUid() const
 {
     return uid_;
 }
@@ -125,7 +125,7 @@ bool AudioZoneBindKey::IsContain(const AudioZoneBindKey &other) const
     std::vector<AudioZoneBindKey> supportKeys = GetSupportKeys(other);
     int32_t index = -1;
     int32_t otherIndex = -1;
-    for (int32_t i = 0; i < supportKeys.size(); i++) {
+    for (size_t i = 0; i < supportKeys.size(); i++) {
         if (supportKeys[i] == *this) {
             index = i;
         }
@@ -144,7 +144,7 @@ const std::vector<AudioZoneBindKey> AudioZoneBindKey::GetSupportKeys(int32_t uid
     const std::string &streamTag)
 {
     std::vector<AudioZoneBindKey> keys;
-    kesy.push_back(AudioZoneBindKey(uid, deviceId, streamTag));
+    keys.push_back(AudioZoneBindKey(uid, deviceId, streamTag));
     auto pushBack = [&keys](const AudioZoneBindKey &temp) {
         for (auto &key : keys) {
             if (key == temp) {
@@ -175,7 +175,7 @@ AudioZone::AudioZone(std::shared_ptr<AudioZoneClientManager> manager,
 {
 }
 
-const int32_t AudioZone::GetId()
+int32_t AudioZone::GetId()
 {
     return zoneId_;
 }
@@ -194,7 +194,7 @@ const std::string AudioZone::GetStringDescriptor()
     str += name_;
     str += "\n";
     for (auto &key : keys_) {
-        str+="bing key "
+        str += "bing key ";
         str += key.GetString();
         str += "\n";
     }
@@ -209,13 +209,13 @@ const sptr<AudioZoneDescriptor> AudioZone::GetDescriptorNoLock()
     sptr<AudioZoneDescriptor> descriptor = new AudioZoneDescriptor();
     CHECK_AND_RETURN_RET_LOG(descriptor != nullptr, nullptr, "descriptor is nullptr");
 
-    descriptor->zoneId = zoneId_;
-    descriptor->name = name_;
+    descriptor->zoneId_ = zoneId_;
+    descriptor->name_ = name_;
     for (const auto &key : keys_) {
         descriptor->uids_.insert(key.GetUid());
     }
-    for (const auto &device : devices_) {
-        descriptor->devices_.emplace_back(device.first);
+    for (const auto &it : devices_) {
+        descriptor->devices_.emplace_back(it.first);
     }
     return descriptor;
 }
@@ -279,7 +279,7 @@ int32_t AudioZone::AddDeviceDescriptor(const std::vector<sptr<AudioDeviceDescrip
     for (auto &device : devices) {
         CHECK_AND_RETURN_RET_LOG(device != nullptr, ERR_INVALID_PARAM, "device is nullptr");
         auto findDevice = [device] (const std::pair<sptr<AudioDeviceDescriptor>, bool> &item) {
-            return device->IsSameDeviceDesc(item.first);
+            return device->IsSameDeviceDesc(*(item.first));
         };
         
         auto itDev = std::find_if(devices_.begin(), devices_.end(), findDevice);
@@ -301,7 +301,7 @@ int32_t AudioZone::RemoveDeviceDescriptor(const std::vector<sptr<AudioDeviceDesc
     for (auto &device : devices) {
         CHECK_AND_RETURN_RET_LOG(device!= nullptr, ERR_INVALID_PARAM, "device is nullptr");
         auto findDevice = [device] (const std::pair<sptr<AudioDeviceDescriptor>, bool> &item) {
-            return device->IsSameDeviceDesc(item.first);
+            return device->IsSameDeviceDesc(*(item.first));
         };
 
         auto itDev = std::find_if(devices_.begin(), devices_.end(), findDevice);
@@ -329,18 +329,18 @@ int32_t AudioZone::SetDeviceDescriptorState(const sptr<AudioDeviceDescriptor> de
     std::lock_guard<std::mutex> lock(zoneMutex_);
     CHECK_AND_RETURN_RET_LOG(device!= nullptr, ERROR, "device is nullptr");
     auto findDevice = [device] (const std::pair<sptr<AudioDeviceDescriptor>, bool> &item) {
-        return device->IsSameDeviceDesc(item.first);
-    }
+        return device->IsSameDeviceDesc(*(item.first));
+    };
 
     auto itDev = std::find_if(devices_.begin(), devices_.end(), findDevice);
     if (itDev == devices_.end()) {
-        AUDIO_ERROR_LOG("device %{public}d,%{public}d,%{public}s not exist for zone %{public}d",
+        AUDIO_ERR_LOG("device %{public}d,%{public}d,%{public}s not exist for zone %{public}d",
             device->deviceType_, device->deviceId_, device->deviceName_.c_str(), zoneId_);
         return ERROR;
     }
     itDev->second = enable;
     AUDIO_INFO_LOG("%{public}s device %{public}d,%{public}d,%{public}s of zone %{public}d",
-        enable ? "enable" : "disable", device->deviceType_, device->deviceId_, device->deviceName_.c_str();
+        enable ? "enable" : "disable", device->deviceType_, device->deviceId_, device->deviceName_.c_str(), zoneId_);
     return SUCCESS;
 }
 
@@ -349,7 +349,7 @@ bool AudioZone::IsDeviceConnect(sptr<AudioDeviceDescriptor> device)
     std::lock_guard<std::mutex> lock(zoneMutex_);
     CHECK_AND_RETURN_RET_LOG(device!= nullptr, false, "device is nullptr");
     auto findDevice = [device] (const std::pair<sptr<AudioDeviceDescriptor>, bool> &item) {
-        return device->IsSameDeviceDesc(item.first);
+        return device->IsSameDeviceDesc(*(item.first));
     };
     auto itDev = std::find_if(devices_.begin(), devices_.end(), findDevice);
     if (itDev == devices_.end()) {
@@ -398,10 +398,9 @@ int32_t AudioZone::EnableChangeReport(pid_t clientPid, bool enable)
 
 void AudioZone::SendZoneChangeEvent(AudioZoneChangeReason reason)
 {
-    sptr<AudioZoneDescriptor> descriptor = GetDescriptorNoLock();
-    CHECK_AND_RETURN_LOG(clientManager_!= nullptr, "clientManager is nullptr");woxian
-    for (auto &clientPid : changeReportClientList_) {
-        clientManager_->SendZoneChangeEvent(clientPid, reason, descriptor);
+    CHECK_AND_RETURN_LOG(clientManager_!= nullptr, "clientManager is nullptr");
+    for (auto &pid : changeReportClientList_) {
+        clientManager_->SendZoneChangeEvent(pid, this->GetDescriptorNoLock(), reason);
     }
 }
 
@@ -415,7 +414,7 @@ int32_t AudioZone::EnableSystemVolumeProxy(pid_t clientPid, bool enable)
     return SUCCESS;
 }
 
-const int32_t AudioZone::SetSystemVolumeLevel(AudioVolumeType volumeType,
+int32_t AudioZone::SetSystemVolumeLevel(AudioVolumeType volumeType,
     int32_t volumeLevel, int32_t volumeFlag)
 {
     std::shared_ptr<AudioZoneClientManager> mgr;

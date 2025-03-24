@@ -42,7 +42,7 @@ public:
     bool operator!=(const AudioZoneBindKey &other) const;
 
     int32_t GetUid() const;
-    std::string GetString() const;
+    const std::string GetString() const;
     bool IsContain(const AudioZoneBindKey &other) const;
     const static std::vector<AudioZoneBindKey> GetSupportKeys(int32_t uid, int32_t deviceId,
         const std::string &streamTag);
@@ -60,12 +60,12 @@ private:
 class AudioZone {
 public:
     AudioZone(std::shared_ptr<AudioZoneClientManager> manager,
-        consta std::string &name, const AudioZoneContext &context);
+        const std::string &name, const AudioZoneContext &context);
     ~AudioZone() = default;
 
     int32_t GetId();
-    sptr<AudioZoneDescriptor> GetDescriptor();
-    std::string GetStringDescriptor();
+    const sptr<AudioZoneDescriptor> GetDescriptor();
+    const std::string GetStringDescriptor();
 
     void BindByKey(const AudioZoneBindKey &key);
     void RemoveKey(const AudioZoneBindKey &key);

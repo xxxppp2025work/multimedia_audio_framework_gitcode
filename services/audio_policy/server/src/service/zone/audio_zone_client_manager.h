@@ -35,11 +35,11 @@ public:
 
     void SendZoneAddEvent(pid_t clientPid, sptr<AudioZoneDescriptor> descriptor);
     void SendZoneRemoveEvent(pid_t clientPid, int32_t zoneId);
-    void SendZoneChangeEvent(pid_t clientPid, sptr<AudioDeviceDescriptor> descriptor,
+    void SendZoneChangeEvent(pid_t clientPid, sptr<AudioZoneDescriptor> descriptor,
         AudioZoneChangeReason reason);
-    void SnedZoneInterruptEvent(pid_t clientPid, int32_t zoneId, int32_t deviceId,
+    void SendZoneInterruptEvent(pid_t clientPid, int32_t zoneId, int32_t deviceId,
         std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts,
-        AudioInterruptReason reason);
+        AudioZoneInterruptReason reason);
 
     int32_t SetSystemVolumeLevel(const pid_t clientPid, const pid_t zoneId,
         const AudioVolumeType volumeType, const int32_t volumeLevel, const int32_t volumeFlag = 0);

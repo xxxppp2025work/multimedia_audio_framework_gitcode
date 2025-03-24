@@ -24,7 +24,7 @@ class AudioZoneInterruptUnitTest : public AudioZoneUnitTestBase {
 };
 
 static void ActivateInterrupt(int32_t zoneId, StreamUsage usage. AudioStreamType type,
-    uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+    uint32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
 {
     AudioInterrupt interrupt;
     interrupt.streamUsage = usage;
@@ -37,7 +37,7 @@ static void ActivateInterrupt(int32_t zoneId, StreamUsage usage. AudioStreamType
 }
 
 static void DeActivateInterrupt(int32_t zoneId, StreamUsage usage. AudioStreamType type,
-    uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+    uint32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
 {
     AudioInterrupt interrupt;
     interrupt.streamUsage = usage;
@@ -49,48 +49,48 @@ static void DeActivateInterrupt(int32_t zoneId, StreamUsage usage. AudioStreamTy
     AudioZoneService::GetInstance().DeActivateInterrupt(zoneId, interrupt);
 }
 
-static void ActivateMusicInterrupt(int32_t zoneId, uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+static void ActivateMusicInterrupt(int32_t zoneId, uint32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
 {
     ActivateInterrupt(zoneId, STREAM_USAGE_MUSIC, STREAM_MUSIC, sessionId, pid, uid, deviceId);
 }
 
-static void DeActivateMusicInterrupt(int32_t zoneId, uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+static void DeActivateMusicInterrupt(int32_t zoneId, uint32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
 {
     DeActivateInterrupt(zoneId, STREAM_USAGE_MUSIC, STREAM_MUSIC, sessionId, pid, uid, deviceId);
 }
 
-static void ActivateVoipInterrupt(int32_t zoneId, uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+static void ActivateVoipInterrupt(int32_t zoneId, uint32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
 {
     ActivateInterrupt(zoneId, STREAM_USAGE_VOICE_COMMUNICATION, STREAM_VOICE_CALL, sessionId, pid, uid, deviceId);
 }
 
-static void DeActivateVoipInterrupt(int32_t zoneId, uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+static void DeActivateVoipInterrupt(int32_t zoneId, uint32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
 {
     DeActivateInterrupt(zoneId, STREAM_USAGE_VOICE_COMMUNICATION, STREAM_VOICE_CALL, sessionId, pid, uid, deviceId);
 }
 
-static void ActivateMovieInterrupt(int32_t zoneId, uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+static void ActivateMovieInterrupt(int32_t zoneId, uint32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
 {
     ActivateInterrupt(zoneId, STREAM_USAGE_MOVIE, STREAM_MOVIE, sessionId, pid, uid, deviceId);
 }
 
-static void DeActivateMovieInterrupt(int32_t zoneId, uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+static void DeActivateMovieInterrupt(int32_t zoneId, uint32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
 {
     DeActivateInterrupt(zoneId, STREAM_USAGE_MOVIE, STREAM_MOVIE, sessionId, pid, uid, deviceId);
 }
 
-static void ActivateGamecInterrupt(int32_t zoneId, uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+static void ActivateGamecInterrupt(int32_t zoneId, uint32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
 {
     ActivateInterrupt(zoneId, STREAM_USAGE_GAME, STREAM_GAME, sessionId, pid, uid, deviceId);
 }
 
-static void DeActivateGameInterrupt(int32_t zoneId, uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+static void DeActivateGameInterrupt(int32_t zoneId, uint32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
 {
     DeActivateInterrupt(zoneId, STREAM_USAGE_GAME, STREAM_GAME, sessionId, pid, uid, deviceId);
 }
 
 static void AddInterruptToList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
-    StreamUsage usage, AudioStreamType type, uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId,
+    StreamUsage usage, AudioStreamType type, uint32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId,
     AudioFocuState state)
 {
     AudioInterrupt interrupt;
@@ -105,14 +105,14 @@ static void AddInterruptToList(std::list<std::pair<AudioInterrupt, AudioFocuStat
 }
 
 static void AddMusicInterruptToList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
-    uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId,
+    uint32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId,
     AudioFocuState state)
 {
     AddInterruptToList(interrupts, STREAM_USAGE_MUSIC, STREAM_MUSIC, sessionId, pid, uid, deviceId, state);
 }
 
 static void AddVoipInterruptToList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
-    uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId,
+    uint32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId,
     AudioFocuState state)
 {
     AddInterruptToList(interrupts, STREAM_USAGE_VOICE_COMMUNICATION,
@@ -120,14 +120,14 @@ static void AddVoipInterruptToList(std::list<std::pair<AudioInterrupt, AudioFocu
 }
 
 static void AddMovieInterruptToList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
-    uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId,
+    uint32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId,
     AudioFocuState state)
 {
     AddInterruptToList(interrupts, STREAM_USAGE_MOVIE, STREAM_MOVIE, sessionId, pid, uid, deviceId, state);
 }
 
 static void AddGameInterruptToList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
-    uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId,
+    uint32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId,
     AudioFocuState state)
 {
     AddInterruptToList(interrupts, STREAM_USAGE_GAME, STREAM_GAME, sessionId, pid, uid, deviceId, state);

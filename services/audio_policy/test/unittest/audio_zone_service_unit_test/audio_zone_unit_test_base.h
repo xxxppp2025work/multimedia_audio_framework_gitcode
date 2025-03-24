@@ -82,7 +82,7 @@ public:
 
     void OnInterruptEvent(int32_t zoneId,
         const std::vector<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
-        AudioInterruptReason reason) override
+        AudioZoneInterruptReason reason) override
     {
         recvEvent_.type = AUDIO_ZONE_INTERRUPT_EVENT;
         recvEvent_.zoneId = zoneId;
@@ -93,7 +93,7 @@ public:
 
     void OnInterruptEvent(int32_t zoneId, int32_t deviceId,
         const std::vector<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
-        AudioInterruptReason reason, AudioInterruptType type) override
+        AudioZoneInterruptReason reason, AudioInterruptType type) override
     {
         recvEvent_.type = AUDIO_ZONE_INTERRUPT_EVENT;
         recvEvent_.zoneId = zoneId;
