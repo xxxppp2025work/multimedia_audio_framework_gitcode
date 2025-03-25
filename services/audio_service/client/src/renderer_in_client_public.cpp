@@ -1123,6 +1123,8 @@ bool RendererInClientInner::FlushAudioStream()
 
     if (state_ == STOPPED) {
         flushAfterStop_ = true;
+    } else {
+        flushAfterStop_ = false;
     }
     
     AUDIO_INFO_LOG("Flush stream SUCCESS, sessionId: %{public}d", sessionId_);
