@@ -3186,6 +3186,7 @@ ohos_unittest("audio_pipe_selector_unit_test") {
   sources = [ "./unittest/audio_pipe_selector_unit_test/src/audio_pipe_selector_unit_test.cpp" ]
 
   deps = [
+    "../../../frameworks/native/audiodefinitions:audio_definitions",
     "../../../frameworks/native/audioeffect:audio_effect",
     "../../../frameworks/native/audioschedule:audio_schedule",
     "../../../frameworks/native/audioutils:audio_utils",
@@ -3195,7 +3196,6 @@ ohos_unittest("audio_pipe_selector_unit_test") {
     "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
-    "../../../frameworks/native/audiodefinitions:audio_definitions",
   ]
 
   external_deps = [
