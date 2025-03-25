@@ -444,7 +444,8 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
     const char *sessionIDStr = SafeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
     const char *deviceClass = u->sinkAdapter->deviceClass;
     uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-    float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass);
+    float volumes[3] = {0.0f, 0.0f, 0.0f}; // volumeSystem, volumeStream, volumeApp
+    float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass, volumes);
     float volumeBeg = GetPreVolume(sessionID);
     float fadeBeg = 1.0f;
     float fadeEnd = 1.0f;

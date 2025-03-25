@@ -39,7 +39,7 @@ enum FadeStrategy {
     FADE_STRATEGY_SHORTER
 };
 
-float GetCurVolume(uint32_t sessionId, const char *streamType, const char *deviceClass);
+float GetCurVolume(uint32_t sessionId, const char *streamType, const char *deviceClass, float volumes[3]);
 
 float GetStreamVolume(uint32_t sessionId);
 

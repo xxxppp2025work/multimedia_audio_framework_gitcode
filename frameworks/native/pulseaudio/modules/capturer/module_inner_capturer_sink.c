@@ -231,7 +231,8 @@ static void SetSinkVolumeBySinkName(pa_sink *s)
         if (!IsInnerCapSinkName(s->name)) { // inner capturer only stream volume
             volumeFloat = GetStreamVolume(sessionID);
         } else {
-            volumeFloat = GetCurVolume(sessionID, streamType, s->name);
+            float volumes[3] = {0.0f, 0.0f, 0.0f}; // volumeSystem, volumeStream, volumeApp
+            volumeFloat = GetCurVolume(sessionID, streamType, s->name, volumes);
         }
         uint32_t volume = pa_sw_volume_from_linear(volumeFloat);
         pa_cvolume_set(&input->thread_info.soft_volume, input->thread_info.soft_volume.channels, volume);
