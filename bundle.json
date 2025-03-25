@@ -22,7 +22,7 @@
           "SystemCapability.Multimedia.Audio.Tone",
           "SystemCapability.Multimedia.Audio.Interrupt",
           "SystemCapability.Multimedia.Audio.PlaybackCapture",
-          "SystemCapability.Multimedia.Audio.Spatialization"
+          "SystemCapability.Multimedia.Audio.Spatialization=true"
         ],
         "features": [
           "audio_framework_feature_wired_audio",
