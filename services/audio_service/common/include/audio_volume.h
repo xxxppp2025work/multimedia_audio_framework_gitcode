@@ -25,6 +25,11 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+constexpr size_t SYSTEM_INDEX = 0;
+constexpr size_t STREAM_INDEX = 1;
+constexpr size_t APP_INDEX = 2;
+
 class StreamVolume;
 class SystemVolume;
 class AppVolume;
@@ -41,7 +46,8 @@ public:
     static AudioVolume *GetInstance();
     ~AudioVolume();
 
-    float GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass); // all volume
+    float GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass,
+        float volumes[3]); // all volume
     float GetStreamVolume(uint32_t sessionId); // only stream volume
     float GetAppVolume(int32_t appUid, AudioVolumeMode mode);
     // history volume
