@@ -253,9 +253,7 @@ public:
 
     std::vector<AdjustStreamVolumeInfo> GetStreamVolumeInfo(AdjustStreamVolume volumeType);
 
-    void SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel);
-
-    void SetRestoreVolumeFlag(const bool safeVolumeCall);
+    int32_t GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType);
 
     void UpdateSafeVolumeByS4();
     void SetVgsVolumeSupported(bool isVgsSupported);
@@ -379,7 +377,6 @@ private:
     bool isWiredBoot_ = true;
     bool isBtBoot_ = true;
     int32_t curActiveCount_ = 0;
-    bool safeVolumeCall_ = false;
     bool isSafeBoot_ = true;
     bool isVgsVolumeSupported_ = false;
     std::shared_ptr<AudioAdapterManagerHandler> handler_ = nullptr;
