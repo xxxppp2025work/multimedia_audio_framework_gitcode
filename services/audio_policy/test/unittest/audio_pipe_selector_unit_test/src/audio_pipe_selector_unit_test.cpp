@@ -509,30 +509,5 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipesAndExecute_001, TestSize.Level1)
     std::vector<std::shared_ptr<AudioPipeInfo>> result = audioPipeSelector->FetchPipesAndExecute(streamDescs);
     EXPECT_TRUE(result.empty());
 }
-
-// /**
-//  * @tc.name: FetchPipesAndExecute_003
-//  * @tc.desc: Test FetchPipesAndExecute when entering the if branch (!isFindPipeInfo) in the for loop.
-//  * @tc.type: FUNC
-//  * @tc.require: #I5Y4MZ
-//  */
-// HWTEST_F(AudioPipeSelectorUnitTest, FetchPipesAndExecute_003, TestSize.Level1)
-// {
-//     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
-//     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-//     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-//     streamDesc->sessionId_ = 100;
-//     streamDescs.push_back(streamDesc);
-
-//     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList;
-//     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-//     pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
-//     pipeInfoList.push_back(pipeInfo);
-//     AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
-
-//     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-//     std::vector<std::shared_ptr<AudioPipeInfo>> result = audioPipeSelector->FetchPipesAndExecute(streamDescs);
-//     EXPECT_FALSE(result.empty());
-// }
 } // namespace AudioStandard
 } // namespace OHOS
