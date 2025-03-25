@@ -136,10 +136,12 @@ private:
     int32_t DealWithSafeVolume(const int32_t volumeLevel, bool isA2dpDevice);
     void CreateCheckMusicActiveThread();
     bool IsBlueTooth(const DeviceType &deviceType);
+    void SetRestoreVolumeLevel(DeviceType deviceType, int32_t safeVolume);
     int32_t CheckActiveMusicTime();
     void CheckBlueToothActiveMusicTime(int32_t safeVolume);
     void CheckWiredActiveMusicTime(int32_t safeVolume);
     void RestoreSafeVolume(AudioStreamType streamType, int32_t safeVolume);
+    void CheckRestoreOtherDeviceVolume(DeviceType deviceType, int32_t safeVolume);
     void SetSafeVolumeCallback(AudioStreamType streamType);
     void SetDeviceSafeVolumeStatus();
     void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support);
@@ -150,6 +152,7 @@ private:
     bool IsWiredHeadSet(const DeviceType &deviceType);
     void CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel);
     bool DeviceIsSupportSafeVolume();
+    int32_t DealWithSafeDeviceVolume(DeviceType deviceType, int32_t safeVolume);
     int32_t DealWithEventVolume(const int32_t notificationId);
     void ChangeDeviceSafeStatus(SafeStatus safeStatus);
     bool CheckMixActiveMusicTime(int32_t safeVolume);
@@ -190,7 +193,8 @@ private:
     bool isVoiceRingtoneMute_ = false;
 
     std::mutex notifyMutex_;
-    int32_t streamMusicVol_ = 0;
+    int32_t btRestoreVol_ = 0;
+    int32_t wiredRestoreVol_ = 0;
     bool restoreNIsShowing_ = false;
     bool increaseNIsShowing_ = false;
 
