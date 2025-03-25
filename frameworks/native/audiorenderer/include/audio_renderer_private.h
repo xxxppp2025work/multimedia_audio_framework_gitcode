@@ -254,6 +254,7 @@ private:
     std::mutex rendererPolicyServiceDiedCbMutex_;
     int64_t framesAlreadyWritten_ = 0;
     int64_t sourceDuration_ = -1;
+    std::mutex speedMutex_;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

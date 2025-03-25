@@ -2290,7 +2290,7 @@ int32_t AudioRendererPrivate::SetSpeed(float speed)
     CHECK_AND_RETURN_RET_LOG((speed >= MIN_STREAM_SPEED_LEVEL) && (speed <= MAX_STREAM_SPEED_LEVEL),
         ERR_INVALID_PARAM, "invaild speed index");
 
-    std::lock_guard lock(rendererMutex_);
+    std::lock_guard<std::mutex> lock(speedMutex_);
 #ifdef SONIC_ENABLE
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     audioStream_->SetSpeed(speed);
@@ -2301,7 +2301,7 @@ int32_t AudioRendererPrivate::SetSpeed(float speed)
 
 float AudioRendererPrivate::GetSpeed()
 {
-    std::shared_lock lock(rendererMutex_);
+    std::lock_guard<std::mutex> lock(speedMutex_);
 #ifdef SONIC_ENABLE
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return audioStream_->GetSpeed();
