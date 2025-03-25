@@ -22,6 +22,10 @@
 extern "C" {
 #endif
 
+#define SYSTEM_INDEX 0
+#define STREAM_INDEX 1
+#define APP_INDEX 2
+
 enum FadePauseState {
     NO_FADE,
     DO_FADE,

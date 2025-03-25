@@ -56,7 +56,7 @@ static const std::unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING
 
 uint64_t DURATION_TIME_DEFAULT = 40;
 uint64_t DURATION_TIME_SHORT = 10;
-static const  float DEFAULT_APP_VOLUME = 1.0f;
+static const float DEFAULT_APP_VOLUME = 1.0f;
 
 AudioVolume *AudioVolume::GetInstance()
 {
@@ -85,14 +85,15 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
     int32_t volumeLevel = 0;
     int32_t appUid = -1;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
-    volumes[0] = GetSystemVolume(volumeType, deviceClass, volumeLevel);
-    volumes[1] = GetStreamVolume(sessionId, volumeType, appUid, volumeMode);
-    volumes[2] = GetAppVolume(appUid, volumeMode);
-    float volumeFloat = volumes[0] * volumes[1] * volumes[2];
+    volumes[SYSTEM_INDEX] = GetSystemVolume(volumeType, deviceClass, volumeLevel);
+    volumes[STREAM_INDEX] = GetStreamVolume(sessionId, volumeType, appUid, volumeMode);
+    volumes[APP_INDEX] = GetAppVolume(appUid, volumeMode);
+    float volumeFloat = volumes[SYSTEM_INDEX] * volumes[STREAM_INDEX] * volumes[APP_INDEX];
     if (IsChangeVolume(sessionId, volumeFloat, volumeLevel)) {
         AUDIO_INFO_LOG("volume, sessionId:%{public}u, volume:%{public}f, volumeType:%{public}d, devClass:%{public}s,"
             " system volume:%{public}f, stream volume:%{public}f app volume:%{public}f",
-            sessionId, volumeFloat, volumeType, deviceClass.c_str(), volumes[0], volumes[1], volumes[2]);
+            sessionId, volumeFloat, volumeType, deviceClass.c_str(),
+            volumes[SYSTEM_INDEX], volumes[STREAM_INDEX], volumes[APP_INDEX]);
     }
     return volumeFloat;
 }

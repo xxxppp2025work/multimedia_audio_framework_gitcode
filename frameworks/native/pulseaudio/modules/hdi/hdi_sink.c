@@ -1294,7 +1294,7 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
 
     AUTO_CTRACE("Volume, sessionId: %u, devClass: %s, volume: %.3f,"
         "volumeSystem: %.3f, volumeStream: %.3f, volumeApp: %.3f",
-        sessionID, deviceClass, volumeEnd, volumes[0], volumes[1], volumes[2]);
+        sessionID, deviceClass, volumeEnd, volumes[SYSTEM_INDEX], volumes[STREAM_INDEX], volumes[APP_INDEX]);
 
     float fadeBeg = 1.0f;
     float fadeEnd = 1.0f;

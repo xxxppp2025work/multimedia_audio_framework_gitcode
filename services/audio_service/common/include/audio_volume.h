@@ -23,6 +23,11 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+constexpr size_t SYSTEM_INDEX = 0;
+constexpr size_t STREAM_INDEX = 1;
+constexpr size_t APP_INDEX = 2;
+
 class StreamVolume;
 class SystemVolume;
 class AppVolume;
