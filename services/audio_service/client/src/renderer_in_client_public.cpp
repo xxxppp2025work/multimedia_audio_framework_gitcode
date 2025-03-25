@@ -1127,7 +1127,7 @@ bool RendererInClientInner::FlushAudioStream()
 
     if (state_ == STOPPED) {
         flushAfterStop_ = true;
-    }else {
+    } else {
         flushAfterStop_ = false;
     }
     
