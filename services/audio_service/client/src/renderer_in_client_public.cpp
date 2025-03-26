@@ -962,6 +962,8 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     AUDIO_INFO_LOG("Pause SUCCESS, sessionId %{public}d, uid %{public}d, mode %{public}s", sessionId_,
         clientUid_, renderMode_ == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" : "RENDER_MODE_CALLBACK");
     UpdateTracker("PAUSED");
+
+    FlushBeforeStart();
     return true;
 }
 
@@ -1017,6 +1019,8 @@ bool RendererInClientInner::StopAudioStream()
 
     AUDIO_INFO_LOG("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("STOPPED");
+
+    FlushBeforeStart();
     return true;
 }
 
@@ -1123,6 +1127,8 @@ bool RendererInClientInner::FlushAudioStream()
 
     if (state_ == STOPPED) {
         flushAfterStop_ = true;
+    } else {
+        flushAfterStop_ = false;
     }
     
     AUDIO_INFO_LOG("Flush stream SUCCESS, sessionId: %{public}d", sessionId_);
