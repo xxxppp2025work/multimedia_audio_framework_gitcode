@@ -802,8 +802,6 @@ bool AudioEndpointInner::StartDevice(EndpointStatus preferredState)
         return false;
     }
     isStarted_ = true;
-    zeroVolumeStopDevice_ = false;
-    isVolumeAlreadyZero_ = false;
 
     Trace trace("AudioEndpointInner::StartDupStream");
     {
