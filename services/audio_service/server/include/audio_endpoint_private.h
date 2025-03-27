@@ -121,6 +121,7 @@ public:
     AudioMode GetAudioMode() const final;
 
     void BindCore();
+    void CheckIfWakeUpTooLate(int64_t &wakeUpTime);
 private:
     AudioProcessConfig GetInnerCapConfig();
     void StartThread(const IAudioSinkAttr &attr);
@@ -203,6 +204,7 @@ private:
     void HandleMuteWriteData(BufferDesc &bufferDesc, int32_t index);
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
+    static constexpr int64_t TWO_MILLISECOND_DURATION = 2000000; // 2ms
     static constexpr int64_t THREE_MILLISECOND_DURATION = 3000000; // 3ms
     static constexpr int64_t WRITE_TO_HDI_AHEAD_TIME = -1000000; // ahead 1ms
     static constexpr int32_t UPDATE_THREAD_TIMEOUT = 1000; // 1000ms

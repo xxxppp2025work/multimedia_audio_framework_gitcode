@@ -1913,6 +1913,7 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
 
         loopTrace.End();
         threadStatus_ = SLEEPING;
+        CheckIfWakeUpTooLate(wakeUpTime);
         ClockTime::AbsoluteSleep(wakeUpTime);
         recordEndpointWorkLoopFucThreadStatus_ = true;
     }
@@ -1960,6 +1961,18 @@ void AudioEndpointInner::BindCore()
     coreBinded_ = true;
 }
 
+void AudioEndpointInner::CheckIfWakeUpTooLate(int64_t &wakeUpTime)
+{
+    int64_t curTime = ClockTime::GetCurNano();
+    int64_t wakeupCost = curTime - wakeUpTime;
+    if (wakeupCost > ONE_MILLISECOND_DURATION) {
+        if (wakeupCost > TWO_MILLISECOND_DURATION) {
+            AUDIO_WARNING_LOG("loop wake up too late, cost %{public}" PRId64"us", wakeupCost / AUDIO_MS_PER_SECOND);
+        }
+        wakeUpTime = curTime;
+    }
+}
+
 void AudioEndpointInner::EndpointWorkLoopFuc()
 {
     BindCore();
@@ -1968,7 +1981,6 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
     uint64_t curWritePos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
     AUDIO_INFO_LOG("Endpoint work loop fuc start");
-    int32_t ret = 0;
     // add watchdog
     WatchingEndpointWorkLoopFuc();
     while (isInited_.load()) {
@@ -1976,7 +1988,6 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
             endpointWorkLoopFucThreadStatus_ = true;
             continue;
         }
-        ret = 0;
         threadStatus_ = INRUNNING;
         curTime = ClockTime::GetCurNano();
         Trace loopTrace("AudioEndpoint::loop_trace");
@@ -2015,10 +2026,11 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         loopTrace.End();
         // start sleep
         threadStatus_ = SLEEPING;
+        CheckIfWakeUpTooLate(wakeUpTime);
         ClockTime::AbsoluteSleep(wakeUpTime);
         endpointWorkLoopFucThreadStatus_ = true;
     }
-    AUDIO_DEBUG_LOG("Endpoint work loop fuc end, ret %{public}d", ret);
+    AUDIO_DEBUG_LOG("Endpoint work loop fuc end");
     ReSetThreadQosLevel();
     // stop watchdog
     EndPointRemoveWatchdog("WatchingEndpointWorkLoopFuc", GetEndpointName());
