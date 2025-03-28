@@ -25,7 +25,7 @@ namespace AudioStandard {
 class MockAudioPnpDeviceChangeCallback : public AudioPnpDeviceChangeCallback {
 public:
     MOCK_METHOD1(OnPnpDeviceStatusChanged, void(const std::string& info));
-    MOCK_METHOD1(OnMicrophoneBlocked, void(const std::string& info));
+    MOCK_METHOD1(OnMicrophoneBlocked, void(const std::string& info,AudioPnpServer &audioPnpServer));
 };
 class AudioPnpServerTest : public testing::Test {
 public:
@@ -41,6 +41,7 @@ public:
 protected:
     AudioPnpServer *audioPnpServer_;
     std::shared_ptr<MockAudioPnpDeviceChangeCallback> mockCallback_;
+    MicrophoneBlocked *microphoneBlocked_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
