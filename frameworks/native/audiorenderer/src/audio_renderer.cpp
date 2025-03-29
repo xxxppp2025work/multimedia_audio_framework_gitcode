@@ -2440,5 +2440,11 @@ int32_t AudioRendererPrivate::GetAudioTimestampInfo(Timestamp &timestamp, Timest
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->GetAudioTimestampInfo(timestamp, base);
 }
+
+DirectPlaybackMode AudioRendererPrivate::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+    const StreamUsage &sreamUsage)
+{
+    return AudioPolicyManager::GetInstance().GetDirectPlaybackSupport(streamInfo, rendererInfo);
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
