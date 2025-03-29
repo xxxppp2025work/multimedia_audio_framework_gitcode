@@ -79,6 +79,7 @@ public:
         AUDIO_SCENE_CHANGE,
         SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
         DISTRIBUTED_OUTPUT_CHANGE,
+        FORMAT_UNSUPPORTED_ERROR,
     };
     /* event data */
     class EventContextObj {
@@ -107,6 +108,7 @@ public:
         AudioStreamDeviceChangeReasonExt reason_ = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
         std::pair<int32_t, AudioSessionDeactiveEvent> sessionDeactivePair;
         uint32_t routeFlag;
+        AudioErrors errorCode;
     };
 
     struct RendererDeviceChangeEvent {
@@ -208,6 +210,7 @@ public:
     bool SendAudioSceneChangeEvent(const AudioScene &audioScene);
     bool SendAudioSessionDeactiveCallback(const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair);
     bool SendNnStateChangeCallback(const int32_t &state);
+    bool SendFormatUnsupportedErrorEvent(const AudioErrors &errorCode);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -250,6 +253,7 @@ private:
     void HandleNnStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSceneChange(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAppVolumeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleFormatUnsupportedError(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);

@@ -736,6 +736,13 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
 
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(streamDesc->newDeviceDescs_.front()->deviceType_);
 
+    if (streamDesc->streamInfo_.encoding == ENCODING_EAC3 &&
+        streamDesc->newDeviceDescs_.front()->deviceType_ != DEVICE_TYPE_HDMI &&
+        streamDesc->newDeviceDescs_.front()->deviceType_ != DEVICE_TYPE_LINE_DIGITAL) {
+        audioPolicyServerHandler_->SendFormatUnsupportedErrorEvent(ERROR_UNSUPPORTED_FORMAT);
+        return;
+    }
+
     auto ret = (streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID)
         ? MoveToLocalOutputDevice(targetSinkInputs, pipeInfo, streamDesc->newDeviceDescs_.front())
         : MoveToRemoteOutputDevice(targetSinkInputs, streamDesc->newDeviceDescs_.front());
