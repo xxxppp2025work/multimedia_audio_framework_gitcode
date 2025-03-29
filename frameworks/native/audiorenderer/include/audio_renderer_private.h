@@ -143,6 +143,8 @@ public:
 
     int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
+    DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+        const StreamUsage &sreamUsage) override;
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {

@@ -3829,6 +3829,13 @@ int32_t AudioPolicyServer::SetQueryAllowedPlaybackCallback(const sptr<IRemoteObj
     return audioPolicyService_.SetQueryAllowedPlaybackCallback(object);
 }
 
+DirectPlaybackMode AudioPolicyServer::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &sreamUsage)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callerUid == UID_TV_PROCESS_SA, ERR_PERMISSION_DENIED, "uid permission denied");
+    return audioPolicyService_.GetDirectPlaybackSupport(streamInfo, sreamUsage);
+}
+
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionID);

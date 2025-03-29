@@ -284,6 +284,16 @@ public:
      */
     int32_t GetHardwareOutputSamplingRate(std::shared_ptr<AudioDeviceDescriptor> &desc);
 
+    /**
+     * @brief Judges whether the playback is supported by the renderer.
+     *
+     * @param streamInfo
+     * @param sreamUsage
+     * @return Returns direct playback mode.
+     * @since 19
+     */
+    DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &sreamUsage);
+
 private:
     std::mutex rendererStateChangeCallbacksMutex_;
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbacks_;
