@@ -204,6 +204,7 @@ public:
     AudioFocusType audioFocusType;
     uint32_t streamId = 0;
     bool pauseWhenDucked = false;
+    bool bundleNameInList = false;
     int32_t pid { -1 };
     int32_t uid { -1 };
     std::string deviceTag;
@@ -228,6 +229,7 @@ public:
         res = res && parcel.WriteBool(interrupt.audioFocusType.isPlay);
         res = res && parcel.WriteUint32(interrupt.streamId);
         res = res && parcel.WriteBool(interrupt.pauseWhenDucked);
+        res = res && parcel.WriteBool(interrupt.bundleNameInList);
         res = res && parcel.WriteInt32(interrupt.pid);
         res = res && parcel.WriteInt32(interrupt.uid);
         res = res && parcel.WriteString(interrupt.deviceTag);
@@ -252,6 +254,7 @@ public:
         interrupt.audioFocusType.isPlay = parcel.ReadBool();
         interrupt.streamId = parcel.ReadUint32();
         interrupt.pauseWhenDucked = parcel.ReadBool();
+        interrupt.bundleNameInList = parcel.ReadBool();
         interrupt.pid = parcel.ReadInt32();
         interrupt.uid = parcel.ReadInt32();
         interrupt.deviceTag = parcel.ReadString();
