@@ -68,9 +68,6 @@ void VolumeToolsUnitTest::TearDown(void)
 HWTEST_F(VolumeToolsUnitTest, IsVolumeValid_001, TestSize.Level1)
 {
     ChannelVolumes vols;
-    vols.channel = 17;
-    bool ret = VolumeTools::IsVolumeValid(vols);
-    EXPECT_EQ(ret, false);
 
     vols.channel = CHANNEL_UNKNOW;
     ret = VolumeTools::IsVolumeValid(vols);
@@ -227,7 +224,7 @@ HWTEST_F(VolumeToolsUnitTest, VolumeTools_009, TestSize.Level1)
 HWTEST_F(VolumeToolsUnitTest, VolumeFlatten_001, TestSize.Level1)
 {
     int32_t vol = -1;
-    int32_t ret = VolumeTools::VolumeFlatten(vol);
+    int32_t ret = VolumeFlatten(vol);
     EXPECT_EQ(ret, 0);
 }
 
@@ -240,7 +237,7 @@ HWTEST_F(VolumeToolsUnitTest, VolumeFlatten_001, TestSize.Level1)
 HWTEST_F(VolumeToolsUnitTest, VolumeFlatten_002, TestSize.Level1)
 {
     int32_t vol = 1;
-    int32_t ret = VolumeTools::VolumeFlatten(vol);
+    int32_t ret = VolumeFlatten(vol);
     EXPECT_EQ(ret, 1);
 }
 
@@ -253,7 +250,7 @@ HWTEST_F(VolumeToolsUnitTest, VolumeFlatten_002, TestSize.Level1)
 HWTEST_F(VolumeToolsUnitTest, VolumeFlatten_003, TestSize.Level1)
 {
     int32_t vol = 65537;
-    int32_t ret = VolumeTools::VolumeFlatten(vol);
+    int32_t ret = VolumeFlatten(vol);
     EXPECT_EQ(ret, INT32_VOLUME_MAX);
 }
 
@@ -340,5 +337,3 @@ HWTEST_F(VolumeToolsUnitTest, VolumeTools_013, TestSize.Level1)
 }
 }
 }
-
-

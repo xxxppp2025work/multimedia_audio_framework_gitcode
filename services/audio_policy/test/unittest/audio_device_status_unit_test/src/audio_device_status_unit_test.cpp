@@ -409,17 +409,19 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_014, TestSize.Level1)
 */
 HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_015, TestSize.Level1)
 {
-    std::string macAddress = "";
+    std::string addr = "";
     std::string encryptAddr;
 
-    encryptAddr = GetEncryptAddr("");
-    EXPECT_EQ(encryptAddr, "");
+    encryptAddr = GetEncryptAddr(addr);
+    EXPECT_EQ(encryptAddr,"");
 
-    macAddress = "00:11:22";
-    EXPECT_EQ(encryptAddr, "");
+    addr = "00:11:22:33:44";
+    encryptAddr = GetEncryptAddr(addr);
+    EXPECT_EQ(encryptAddr,"");
 
-    macAddress = "00:11:22:33:44:55";
-    EXPECT_EQ(encryptAddr, "22:33:44");
+    addr = "00:11:22:33:44:55";
+    encryptAddr = GetEncryptAddr(addr);
+    EXPECT_EQ(encryptAddr,"00:11:**:**:**:55");
 }
 
 /**
