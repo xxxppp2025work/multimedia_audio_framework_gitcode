@@ -415,7 +415,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_020, TestSize.Level1)
 
         audioCapturerSession.DeInit();
     }
-    EXPECT_EQ(audioA2dpOffloadManager.use_count, 1);
+    EXPECT_EQ(audioA2dpOffloadManager.use_count(), 1);
 }
 
 /**
@@ -435,7 +435,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_021, TestSize.Level1)
     audioCapturerSession->OnCapturerSessionRemoved(sessionID);
 
     auto ret = audioCapturerSession->OnCapturerSessionAdded(sessionID, sessionInfo, streamInfo);
-    EXPECT_EQ(ret, success);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -454,7 +454,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_022, TestSize.Level1)
     uint64_t sessionID = 1;
 
     auto ret = audioCapturerSession->OnCapturerSessionAdded(sessionID, sessionInfo, streamInfo);
-    EXPECT_EQ(ret, success);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -470,7 +470,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_023, TestSize.Level1)
     AudioProcessConfig config;
 
     auto ret = audioCapturerSession->SetWakeUpAudioCapturerFromAudioServer(config);
-    EXPECT_EQ(ret, success);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -484,7 +484,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_024, TestSize.Level1)
     EXPECT_NE(audioCapturerSession, nullptr);
     
     auto ret = audioCapturerSession->CloseWakeUpAudioCapturer();
-    EXPECT_EQ(ret, success);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
