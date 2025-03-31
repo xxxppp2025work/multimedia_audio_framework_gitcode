@@ -77,6 +77,7 @@ int32_t AudioDeviceAdapterImpl::Init()
 
 size_t AudioDeviceAdapterImpl::GetRenderPortsNum()
 {
+    AUDIO_INFO_LOG("GetRenderPortsNum start.");
     std::lock_guard<std::mutex> lock(renderPortsMtx_);
     return renderPorts_.size();
 }
