@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -518,7 +518,7 @@ describe("AudioStreamManagerJsTest", function () {
           && audioEffectArray[i].effectProp !== undefined).assertTrue();
         hashClassSet.add(audioEffectArray[i].effectClass);
       }
-      expect(hashClassSet.length !== audioEffectArray.length).assertTrue();
+      expect(hashClassSet.length !== 0 || audioEffectArray.length !== 0).assertTrue();
       done();
     } catch (e) {
       console.error(`${TAG} getAudioEffectProperty001 ERROR: ${e.message}`);
@@ -571,7 +571,7 @@ describe("AudioStreamManagerJsTest", function () {
           && audioEnhanceArray[i].enhanceProp !== undefined).assertTrue();
         hashClassSet.add(audioEnhanceArray[i].enhanceClass);
       }
-      expect(hashClassSet.length !== audioEnhanceArray.length).assertTrue();
+      expect(hashClassSet.length !== 0 || audioEnhanceArray.length !== 0).assertTrue();
       done();
     } catch (e) {
       console.error(`${TAG} getAudioEnhanceProperty001 ERROR: ${e.message}`);
@@ -668,7 +668,7 @@ describe("AudioStreamManagerJsTest", function () {
 
   /*
  * @tc.name:setAudioEffectProperty005
- * @tc.desc:Get setAudioEffectProperty invalid parameter - upper limit 
+ * @tc.desc:Get setAudioEffectProperty invalid parameter - upper limit
  * @tc.type: FUNC
  * @tc.require: I7V04L
  */
@@ -778,7 +778,7 @@ describe("AudioStreamManagerJsTest", function () {
 
   /*
  * @tc.name:setAudioEnhanceProperty005
- * @tc.desc:Get setAudioEnhanceProperty invalid parameter - upper limit 
+ * @tc.desc:Get setAudioEnhanceProperty invalid parameter - upper limit
  * @tc.type: FUNC
  * @tc.require: I7V04L
  */
