@@ -77,6 +77,7 @@
 #include "audio_capturer_session.h"
 #include "audio_device_status.h"
 #include "audio_global_config_manager.h"
+#include "sle_audio_device_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -501,6 +502,8 @@ public:
     void SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName, std::string invocationTime);
     void SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime, int32_t subscriptionId,
         bool registrationResult);
+
+    int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -531,8 +534,8 @@ private:
         audioRecoveryDevice_(AudioRecoveryDevice::GetInstance()),
         audioCapturerSession_(AudioCapturerSession::GetInstance()),
         audioDeviceLock_(AudioDeviceLock::GetInstance()),
-        audioDeviceStatus_(AudioDeviceStatus::GetInstance())
-        
+        audioDeviceStatus_(AudioDeviceStatus::GetInstance()),
+        sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance())
     {
         deviceStatusListener_ = std::make_unique<DeviceStatusListener>(*this);
     }
@@ -684,6 +687,7 @@ private:
     AudioCapturerSession& audioCapturerSession_;
     AudioDeviceLock& audioDeviceLock_;
     AudioDeviceStatus& audioDeviceStatus_;
+    SleAudioDeviceManager& sleAudioDeviceManager_;
 
     sptr<IStandardAudioPolicyManagerListener> policyManagerListener_;
 };

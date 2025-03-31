@@ -45,6 +45,7 @@ config("audio_policy_public_config") {
     "common/include",
     "client/include",
     "server/include",
+    "server/include/proxy",
     "server/include/service",
     "server/include/service/common",
     "server/include/service/config",
@@ -185,6 +186,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/audio_routing_manager_listener_proxy.cpp",
     "server/src/audio_spatialization_state_change_listener_proxy.cpp",
     "server/src/audio_stream_collector.cpp",
+    "server/src/proxy/sle_audio_operation_callback_proxy.cpp",
     "server/src/service/audio_affinity_manager.cpp",
     "server/src/service/audio_device_manager.cpp",
     "server/src/service/audio_global_config_manager.cpp",
@@ -249,6 +251,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/service/audio_server_proxy.cpp",
     "server/src/service/service/audio_tone_manager.cpp",
     "server/src/service/service/audio_volume_manager.cpp",
+    "server/src/service/service/sle_audio_device_manager.cpp",
     "server/src/service/session/audio_session.cpp",
     "server/src/service/session/audio_session_service.cpp",
     "server/src/service/session/audio_session_state_monitor.cpp",
@@ -547,6 +550,7 @@ audio_ohos_library("audio_policy_client") {
     "client/src/proxy/audio_policy_microphone_proxy.cpp",
     "client/src/proxy/audio_policy_proxy.cpp",
     "client/src/proxy/audio_policy_volume_proxy.cpp",
+    "client/src/stub/sle_audio_operation_callback_stub.cpp",
   ]
 
   deps = [

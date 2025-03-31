@@ -135,6 +135,14 @@ enum DeviceType {
      */
     DEVICE_TYPE_BLUETOOTH_A2DP_IN = 9,
     /**
+     * Indicates a Nearlink device for output.
+     */
+    DEVICE_TYPE_NEARLINK = 10,
+    /**
+     * Indicates a Nearlink device for input.
+     */
+    DEVICE_TYPE_NEARLINK_IN = 11,
+    /**
      * Indicates a microphone built in a device.
      */
     DEVICE_TYPE_MIC = 15,

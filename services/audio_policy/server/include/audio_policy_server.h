@@ -536,6 +536,14 @@ public:
     void CheckConnectedDevice();
     void SetDeviceConnectedFlagFalseAfterDuration();
 
+    int32_t SetStartPlayingResult(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const uint32_t streamType, const int result) override;
+    int32_t SetStopPlayingResult(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const uint32_t streamType, const int result) override;
+    int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const DeviceInfoUpdateCommand command) override;
+    int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void RegisterParamCallback();

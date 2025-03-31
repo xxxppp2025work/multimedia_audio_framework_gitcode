@@ -202,6 +202,10 @@ const char *g_audioPolicyCodeStrs[] = {
     "IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE",
     "SET_QUERY_ALLOWED_PLAYBACK_CALLBACK",
     "GET_DM_DEVICE_TYPE",
+    "SET_START_PLAYING_RESULT",
+    "SET_STOP_PLAYING_RESULT",
+    "UPDATE_DEVICE_INFO",
+    "SET_SLE_AUDIO_OPERATION_CALLBACK",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1205,12 +1209,59 @@ void AudioPolicyManagerStub::SetQueryBundleNameListCallbackInternal(MessageParce
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SetStartPlayingResultInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceDescriptor::UnmarshallingPtr(data);
+    uint32_t streamType = data.ReadUint32();
+    int32_t result = data.ReadInt32();
+    int32_t ret = SetStartPlayingResult(desc, streamType, result);
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::SetStopPlayingResultInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceDescriptor::UnmarshallingPtr(data);
+    uint32_t streamType = data.ReadUint32();
+    int32_t result = data.ReadInt32();
+    int32_t ret = SetStopPlayingResult(desc, streamType, result);
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::UpdateDeviceInfoInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
+    CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+    DeviceInfoUpdateCommand command = static_cast<DeviceInfoUpdateCommand>(data.ReadInt32());
+    int32_t result = UpdateDeviceInfo(audioDeviceDescriptor, command);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetSleAudioOperationCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_LOG(object != nullptr, "SetSleAudioOperationCallback is null");
+    int32_t result = SetSleAudioOperationCallback(object);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     switch (code) {
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_BUNDLE_NAME_LIST_CALLBACK):
             SetQueryBundleNameListCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_START_PLAYING_RESULT):
+            SetStartPlayingResultInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STOP_PLAYING_RESULT):
+            SetStopPlayingResultInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UPDATE_DEVICE_INFO):
+            UpdateDeviceInfoInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SLE_AUDIO_OPERATION_CALLBACK):
+            SetSleAudioOperationCallbackInternal(data, reply);
             break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");

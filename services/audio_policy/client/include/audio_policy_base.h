@@ -410,6 +410,14 @@ public:
     virtual int32_t SetVirtualCall(const bool isVirtual) = 0;
 
     virtual int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t SetStartPlayingResult(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const uint32_t streamType, const int result) = 0;
+    virtual int32_t SetStopPlayingResult(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const uint32_t streamType, const int result) = 0;
+    virtual int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const DeviceInfoUpdateCommand command) = 0;
+    virtual int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) = 0;;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };
