@@ -39,6 +39,7 @@
 #include "i_standard_spatialization_state_change_listener.h"
 #include "audio_combine_denoising_manager.h"
 #include "audio_stream_descriptor.h"
+#include "sle_audio_operation_callback_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -585,6 +586,14 @@ public:
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
+
+    int32_t SetStartPlayingResult(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const uint32_t streamType, const int result);
+    int32_t SetStopPlayingResult(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const uint32_t streamType, const int result);
+    int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const DeviceInfoUpdateCommand command);
+    int32_t SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

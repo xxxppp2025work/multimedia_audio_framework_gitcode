@@ -180,6 +180,46 @@ public:
      */
     virtual void OnAudioSceneChange(const AudioScene audioScene) = 0;
 };
+
+/**
+ * @brief Audio stream API.
+ * 
+ * @since 6.0
+ */
+class SleAudioOperationCallback {
+    public:
+        /**
+         * get audio device list.
+         * 
+         * @param devices list.
+         * @since 12
+         */
+        virtual void GetSleAudioDeviceList(std::vector<AudioDeviceDescriptor> &devices) = 0;
+        
+        /**
+         * get virtual audio device list.
+         * 
+         * @param virtual devices list.
+         * @since 12
+         */
+        virtual void GetSleVirtualAudioDeviceList(std::vector<AudioDeviceDescriptor> &devices) = 0;
+    
+        /**
+         * @brief remote device inband ring is open or not.
+         * 
+         * @param device. The address of the peer nearlink device.
+         * @return true:in band ring open, false:in band ring close.
+         * @since 6.0
+         */
+        virtual bool IsInBandRingOpen(const std::string &device) const = 0;
+        virtual uint32_t GetSupportStreamType(const std::string &device) const = 0;
+        virtual int32_t SetActiveSinkDevice(const std::string &device, uint32_t streamType) = 0;
+        virtual int32_t StartPlaying(const std::string &device, uint32_t streamType) = 0;
+        virtual int32_t StopPlaying(const std::string &device, uint32_t streamType) = 0;
+        virtual int32_t ConnectAllowedProfiles(const std::string &remoteAddr) const = 0;
+        virtual int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType) = 0;
+        virtual int32_t SendUserSelection(const std::string &device, uint32_t streamType) = 0;
+    };
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_POLICY_INTERFACE_H

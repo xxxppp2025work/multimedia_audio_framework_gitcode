@@ -225,6 +225,10 @@ private:
     void SetDeviceConnectionStatusInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryAllowedPlaybackCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryBundleNameListCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void SetStartPlayingResultInternal(MessageParcel &data, MessageParcel &reply);
+    void SetStopPlayingResultInternal(MessageParcel &data, MessageParcel &reply);
+    void UpdateDeviceInfoInternal(MessageParcel &data, MessageParcel &reply);
+    void SetSleAudioOperationCallbackInternal(MessageParcel &data, MessageParcel &reply);
 
     void OnMiddleEleRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleTenRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

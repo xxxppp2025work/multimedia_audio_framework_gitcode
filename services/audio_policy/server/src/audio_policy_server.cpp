@@ -4003,5 +4003,43 @@ void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t ses
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
     audioPolicyService_.TriggerFetchDevice();
 }
+
+int32_t AudioPolicyServer::SetStartPlayingResult(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+    const uint32_t streamType, const int result)
+{
+    AUDIO_INFO_LOG("SetStartPlayingResult deviceDesc: streamType: %{public}d, result: %{public}d",
+        streamType, result);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetStopPlayingResult(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+    const uint32_t streamType, const int result)
+{
+    AUDIO_INFO_LOG("SetStopPlayingResult deviceDesc: streamType: %{public}d, result: %{public}d",
+        streamType, result);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+    const DeviceInfoUpdateCommand command)
+{
+    bool ret = VerifyPermission(MANAGE_AUDIO_CONFIG);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
+        "UpdateDeviceInfo MANAGE_AUDIO_CONFIG permission check failed");
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_INVALID_PARAM,
+        "UpdateDeviceInfo deviceDesc is nullptr");
+    audioCoreService_.OnDeviceInfoUpdated(*deviceDesc, command);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetSleAudioOperationCallback(const sptr<IRemoteObject> &object)
+{
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
+        "SetSleAudioOperationCallback object is nullptr");
+    bool hasBTPermission = VerifyBluetoothPermission();
+    CHECK_AND_RETURN_RET_LOG(hasBTPermission, ERR_PERMISSION_DENIED,
+        "SetSleAudioOperationCallback permission check failed");
+    return audioPolicyService_.SetSleAudioOperationCallback(object);
+}
 } // namespace AudioStandard
 } // namespace OHOS
