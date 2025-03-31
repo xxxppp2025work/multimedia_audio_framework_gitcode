@@ -441,6 +441,8 @@ int32_t AudioProcessInClientInner::SetVolume(float vol)
     int32_t volumeInt = static_cast<int32_t>(vol * PROCESS_VOLUME_MAX);
     int32_t ret = SetVolume(volumeInt);
     if (ret == SUCCESS) {
+        processProxy_->SaveAdjustStreamVolumeInfo(vol, sessionId_, GetTime(),
+            static_cast<uint32_t>(AdjustStreamVolume::STREAM_VOLUME_INFO));
         volumeInFloat_ = vol;
     }
     return ret;
@@ -469,6 +471,8 @@ int32_t AudioProcessInClientInner::SetDuckVolume(float vol)
     float maxVol = 1.0f;
     CHECK_AND_RETURN_RET_LOG(vol >= minVol && vol <= maxVol, ERR_INVALID_PARAM,
         "SetDuckVolume failed to with invalid volume:%{public}f", vol);
+    processProxy_->SaveAdjustStreamVolumeInfo(vol, sessionId_, GetTime(),
+        static_cast<uint32_t>(AdjustStreamVolume::DUCK_VOLUME_INFO));
     duckVolumeInFloat_ = vol;
     return SUCCESS;
 }

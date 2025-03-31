@@ -284,20 +284,20 @@ void AudioVolume::SetStreamVolumeLowPowerFactor(uint32_t sessionId, float lowPow
 }
 
 void AudioVolume::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
-    AdjustStreamVolume volumeType)
+    uint32_t code)
 {
     AdjustStreamVolumeInfo adjustStreamVolumeInfo;
     adjustStreamVolumeInfo.volume = volume;
     adjustStreamVolumeInfo.sessionId = sessionId;
     adjustStreamVolumeInfo.invocationTime = invocationTime;
-    switch (volumeType) {
-        case AdjustStreamVolume::STREAM_VOLUME_INFO:
+    switch (code) {
+        case static_cast<uint32_t>(AdjustStreamVolume::STREAM_VOLUME_INFO):
             setStreamVolumeInfo_->Add(adjustStreamVolumeInfo);
             break;
-        case AdjustStreamVolume::LOW_POWER_VOLUME_INFO:
+        case static_cast<uint32_t>(AdjustStreamVolume::LOW_POWER_VOLUME_INFO):
             setLowPowerVolumeInfo_->Add(adjustStreamVolumeInfo);
             break;
-        case AdjustStreamVolume::DUCK_VOLUME_INFO:
+        case static_cast<uint32_t>(AdjustStreamVolume::DUCK_VOLUME_INFO):
             setDuckVolumeInfo_->Add(adjustStreamVolumeInfo);
             break;
         default:

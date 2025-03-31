@@ -119,6 +119,8 @@ public:
     void AddMuteWriteFrameCnt(int64_t muteFrameCnt) override;
 
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
+    int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+        uint32_t code) override;
 public:
     const AudioProcessConfig processConfig_;
 
