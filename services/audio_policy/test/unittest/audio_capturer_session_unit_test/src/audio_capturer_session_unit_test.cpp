@@ -438,5 +438,67 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_021, TestSize.Level1)
     EXPECT_EQ(ret, success);
 }
 
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_022
+ * @tc.desc  : Test AudioCapturerSession::OnCapturerSessionAdded()
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_022, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+    
+    SessionInfo sessionInfo;
+    AudioStreamInfo streamInfo;
+
+    uint64_t sessionID = 1;
+
+    auto ret = audioCapturerSession->OnCapturerSessionAdded(sessionID, sessionInfo, streamInfo);
+    EXPECT_EQ(ret, success);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_023
+ * @tc.desc  : Test AudioCapturerSession::SetWakeUpAudioCapturerFromAudioServer()
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_023, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+    
+    AudioProcessConfig config;
+
+    auto ret = audioCapturerSession->SetWakeUpAudioCapturerFromAudioServer(config);
+    EXPECT_EQ(ret, success);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_024
+ * @tc.desc  : Test AudioCapturerSession::CloseWakeUpAudioCapturer()
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_024, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+    
+    auto ret = audioCapturerSession->CloseWakeUpAudioCapturer();
+    EXPECT_EQ(ret, success);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_025
+ * @tc.desc  : Test AudioCapturerSession::HandleRemainingSource()
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_025, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+    
+    audioCapturerSession->HandleRemainingSource();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
