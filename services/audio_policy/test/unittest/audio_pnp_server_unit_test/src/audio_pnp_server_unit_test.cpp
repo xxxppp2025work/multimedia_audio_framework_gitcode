@@ -110,6 +110,41 @@ HWTEST_F(AudioPnpServerTest, OnPnpDeviceStatusChanged_ShouldNotCallCallback_When
 }
 
 /**
+ * @tc.name  : OnMicrophoneBlocked_ShouldCallCallback_WhenCallbackIsNotNull
+ * @tc.number: AudioPnpServerTest_001
+ * @tc.desc  : Test if OnMicrophoneBlocked calls the callback when it is not null.
+ */
+HWTEST_F(AudioPnpServerTest, OnMicrophoneBlocked_ShouldCallCallback_WhenCallbackIsNotNull, TestSize.Level0)
+{
+    EXPECT_NE(audioPnpServer_, nullptr);
+    EXPECT_NE(mockCallback_, nullptr);
+    EXPECT_NE(microphoneBlocked_, nullptr);
+
+    audioPnpServer_->RegisterPnpStatusListener(mockCallback_);
+
+    std::string info = "test_info";
+
+    microphoneBlocked_->OnMicrophoneBlocked(info, audioPnpServer_);
+    EXPECT_NE(audioPnpServer_->pnpCallback_, nullptr);
+}
+
+/**
+ * @tc.name  : OnMicrophoneBlocked_ShouldNotCallCallback_WhenCallbackIsNull
+ * @tc.number: AudioPnpServerTest_002
+ * @tc.desc  : Test if OnMicrophoneBlocked does not call the callback when it is null.
+ */
+HWTEST_F(AudioPnpServerTest, OnMicrophoneBlocked_ShouldNotCallCallback_WhenCallbackIsNull, TestSize.Level0)
+{
+    EXPECT_NE(audioPnpServer_, nullptr);
+    EXPECT_NE(microphoneBlocked_, nullptr);
+    audioPnpServer_->UnRegisterPnpStatusListener();
+
+    std::string info = "test_info";
+    microphoneBlocked_->OnMicrophoneBlocked(info, audioPnpServer_);
+    EXPECT_EQ(audioPnpServer_->pnpCallback_, nullptr);
+}
+
+/**
  * @tc.name  : DetectAudioDevice_AnalogHeadsetStateAdded_Success
  * @tc.number: AudioPnpServerTest_001
  * @tc.desc  : Test DetectAudioDevice when AnalogHeadsetState is added and DetectAnalogHeadsetState returns SUCCESS.
