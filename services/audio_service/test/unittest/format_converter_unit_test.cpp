@@ -13,149 +13,430 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
+ #include <gtest/gtest.h>
 
-#include "audio_errors.h"
-#include "format_converter.h"
-
-using namespace testing::ext;
-
-namespace OHOS {
-namespace AudioStandard {
-class FormatConverterUnitTest : public testing::Test {
-public:
-    static void SetUpTestCase(void);
-    static void TearDownTestCase(void);
-    void SetUp();
-    void TearDown();
-};
-
-void FormatConverterUnitTest::SetUpTestCase(void)
-{
-}
-
-void FormatConverterUnitTest::TearDownTestCase(void)
-{
-}
-
-void FormatConverterUnitTest::SetUp(void)
-{
-}
-
-void FormatConverterUnitTest::TearDown(void)
-{
-}
-
-/**
- * @tc.name  : Test FormatConverter API
- * @tc.type  : FUNC
- * @tc.number: S16StereoToF32Stereo_001
- * @tc.desc  : Test FormatConverter interface.
- */
-HWTEST_F(FormatConverterUnitTest, S16StereoToF32Stereo_001, TestSize.Level1)
-{
-    BufferDesc srcDesc;
-    BufferDesc dstDesc;
-    int32_t ret = -1;
-    uint8_t srcBuffer[4] = {0};
-    uint8_t dstBuffer[8] = {0};
-
-    srcDesc.bufLength = 4;
-    srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = 2;
-    dstDesc.buffer = dstBuffer;
-
-    ret = FormatConverter::S16StereoToF32Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-
-    dstDesc.bufLength = 8;
-
-    ret = FormatConverter::S16StereoToF32Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, 0);
-}
-
-/**
- * @tc.name  : Test FormatConverter API
- * @tc.type  : FUNC
- * @tc.number: S16StereoToF32Mono_001
- * @tc.desc  : Test FormatConverter interface.
- */
-HWTEST_F(FormatConverterUnitTest, S16StereoToF32Mono_001, TestSize.Level1)
-{
-    BufferDesc srcDesc;
-    BufferDesc dstDesc;
-    int32_t ret = -1;
-    uint8_t srcBuffer[4] = {0};
-    uint8_t dstBuffer[4] = {0};
-
-    srcDesc.bufLength = 4;
-    srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = 2;
-    dstDesc.buffer = dstBuffer;
-
-    ret = FormatConverter::S16StereoToF32Mono(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-
-    dstDesc.bufLength = 4;
-
-    ret = FormatConverter::S16StereoToF32Mono(srcDesc, dstDesc);
-    EXPECT_EQ(ret, 0);
-}
-
-/**
- * @tc.name  : Test FormatConverter API
- * @tc.type  : FUNC
- * @tc.number: F32MonoToS16Stereo_001
- * @tc.desc  : Test FormatConverter interface.
- */
-HWTEST_F(FormatConverterUnitTest, F32MonoToS16Stereo_001, TestSize.Level1)
-{
-    BufferDesc srcDesc;
-    BufferDesc dstDesc;
-    int32_t ret = -1;
-    uint8_t srcBuffer[4] = {0};
-    uint8_t dstBuffer[4] = {0};
-
-    srcDesc.bufLength = 4;
-    srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = 2;
-    dstDesc.buffer = dstBuffer;
-
-    ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-
-    dstDesc.bufLength = 4;
-
-    ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, 0);
-}
-
-/**
- * @tc.name  : Test FormatConverter API
- * @tc.type  : FUNC
- * @tc.number: F32StereoToS16Stereo_001
- * @tc.desc  : Test FormatConverter interface.
- */
-HWTEST_F(FormatConverterUnitTest, F32StereoToS16Stereo_001, TestSize.Level1)
-{
-    BufferDesc srcDesc;
-    BufferDesc dstDesc;
-    int32_t ret = -1;
-    uint8_t srcBuffer[8] = {0};
-    uint8_t dstBuffer[4] = {0};
-
-    srcDesc.bufLength = 8;
-    srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = 2;
-    dstDesc.buffer = dstBuffer;
-
-    ret = FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-
-    dstDesc.bufLength = 4;
-
-    ret = FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, 0);
-}
-}  // namespace OHOS::AudioStandard
-}  // namespace OHOS
+ #include "audio_errors.h"
+ #include "format_converter.h"
+ 
+ using namespace testing::ext;
+ 
+ namespace OHOS {
+ namespace AudioStandard {
+ class FormatConverterUnitTest : public testing::Test {
+ public:
+     static void SetUpTestCase(void);
+     static void TearDownTestCase(void);
+     void SetUp();
+     void TearDown();
+ };
+ 
+ void FormatConverterUnitTest::SetUpTestCase(void)
+ {
+ }
+ 
+ void FormatConverterUnitTest::TearDownTestCase(void)
+ {
+ }
+ 
+ void FormatConverterUnitTest::SetUp(void)
+ {
+ }
+ 
+ void FormatConverterUnitTest::TearDown(void)
+ {
+ }
+ 
+ /**
+  * @tc.name  : Test FormatConverter API
+  * @tc.type  : FUNC
+  * @tc.number: S16StereoToF32Stereo_001
+  * @tc.desc  : Test FormatConverter interface.
+  */
+ HWTEST_F(FormatConverterUnitTest, S16StereoToF32Stereo_001, TestSize.Level1)
+ {
+     BufferDesc srcDesc;
+     BufferDesc dstDesc;
+     int32_t ret = -1;
+     uint8_t srcBuffer[4] = {0};
+     uint8_t dstBuffer[8] = {0};
+ 
+     srcDesc.bufLength = 4;
+     srcDesc.buffer = srcBuffer;
+     dstDesc.bufLength = 2;
+     dstDesc.buffer = dstBuffer;
+ 
+     ret = FormatConverter::S16StereoToF32Stereo(srcDesc, dstDesc);
+     EXPECT_EQ(ret, -1);
+ 
+     dstDesc.bufLength = 8;
+ 
+     ret = FormatConverter::S16StereoToF32Stereo(srcDesc, dstDesc);
+     EXPECT_EQ(ret, 0);
+ }
+ 
+ /**
+  * @tc.name  : Test FormatConverter API
+  * @tc.type  : FUNC
+  * @tc.number: S16StereoToF32Stereo_002
+  * @tc.desc  : Test FormatConverter interface.
+  */
+ HWTEST_F(FormatConverterUnitTest, S16StereoToF32Stereo_002, TestSize.Level1)
+ {
+     BufferDesc srcDesc;
+     BufferDesc dstDesc;
+     int32_t ret = -1;
+     uint8_t dstBuffer[8] = {0};
+ 
+     srcDesc.bufLength = 4;
+     srcDesc.buffer = nullptr;
+     dstDesc.bufLength = 8;
+     dstDesc.buffer = dstBuffer;
+ 
+     ret = FormatConverter::S16StereoToF32Stereo(srcDesc, dstDesc);
+     EXPECT_EQ(ret, -1);
+ }
+ 
+ /**
+  * @tc.name  : Test FormatConverter API
+  * @tc.type  : FUNC
+  * @tc.number: S16StereoToF32Stereo_003
+  * @tc.desc  : Test FormatConverter interface.
+  */
+ HWTEST_F(FormatConverterUnitTest, S16StereoToF32Stereo_003, TestSize.Level1)
+ {
+     BufferDesc srcDesc;
+     BufferDesc dstDesc;
+     int32_t ret = -1;
+     uint8_t srcBuffer[4] = {0};
+ 
+     srcDesc.bufLength = 4;
+     srcDesc.buffer = srcBuffer;
+     dstDesc.bufLength = 8;
+     dstDesc.buffer = nullptr;
+ 
+     ret = FormatConverter::S16StereoToF32Stereo(srcDesc, dstDesc);
+     EXPECT_EQ(ret, -1);
+ }
+ 
+ /**
+  * @tc.name  : Test FormatConverter APIzz
+  * @tc.type  : FUNC
+  * @tc.number: S16StereoToF32Mono_001
+  * @tc.desc  : Test FormatConverter interface.
+  */
+ HWTEST_F(FormatConverterUnitTest, S16StereoToF32Mono_001, TestSize.Level1)
+ {
+     BufferDesc srcDesc;
+     BufferDesc dstDesc;
+     int32_t ret = -1;
+     uint8_t srcBuffer[4] = {0};
+     uint8_t dstBuffer[4] = {0};
+ 
+     srcDesc.bufLength = 4;
+     srcDesc.buffer = srcBuffer;
+     dstDesc.bufLength = 2;
+     dstDesc.buffer = dstBuffer;
+ 
+     ret = FormatConverter::S16StereoToF32Mono(srcDesc, dstDesc);
+     EXPECT_EQ(ret, -1);
+ 
+     dstDesc.bufLength = 4;
+ 
+     ret = FormatConverter::S16StereoToF32Mono(srcDesc, dstDesc);
+     EXPECT_EQ(ret, 0);
+ }
+ 
+ /**
+  * @tc.name  : Test FormatConverter APIzz
+  * @tc.type  : FUNC
+  * @tc.number: S16StereoToF32Mono_002
+  * @tc.desc  : Test FormatConverter interface.
+  */
+ HWTEST_F(FormatConverterUnitTest, S16StereoToF32Mono_002, TestSize.Level1)
+ {
+     BufferDesc srcDesc;
+     BufferDesc dstDesc;
+     int32_t ret = -1;
+     uint8_t dstBuffer[4] = {0};
+ 
+     srcDesc.bufLength = 4;
+     srcDesc.buffer = nullptr;
+     dstDesc.bufLength = 4;
+     dstDesc.buffer = dstBuffer;
+ 
+     ret = FormatConverter::S16StereoToF32Mono(srcDesc, dstDesc);
+     EXPECT_EQ(ret, -1);
+ }
+ 
+ /**
+  * @tc.name  : Test FormatConverter APIzz
+  * @tc.type  : FUNC
+  * @tc.number: S16StereoToF32Mono_003
+  * @tc.desc  : Test FormatConverter interface.
+  */
+ HWTEST_F(FormatConverterUnitTest, S16StereoToF32Mono_003, TestSize.Level1)
+ {
+     BufferDesc srcDesc;
+     BufferDesc dstDesc;
+     int32_t ret = -1;
+     uint8_t srcBuffer[4] = {0};
+ 
+     srcDesc.bufLength = 4;
+     srcDesc.buffer = srcBuffer;
+     dstDesc.bufLength = 4;
+     dstDesc.buffer = nullptr;
+ 
+     ret = FormatConverter::S16StereoToF32Mono(srcDesc, dstDesc);
+     EXPECT_EQ(ret, -1);
+ }
+ 
+ /**
+  * @tc.name  : Test FormatConverter API
+  * @tc.type  : FUNC
+  * @tc.number: F32MonoToS16Stereo_001
+  * @tc.desc  : Test FormatConverter interface.
+  */
+ HWTEST_F(FormatConverterUnitTest, F32MonoToS16Stereo_001, TestSize.Level1)
+ {
+     BufferDesc srcDesc;
+     BufferDesc dstDesc;
+     int32_t ret = -1;
+     uint8_t srcBuffer[4] = {0};
+     uint8_t dstBuffer[4] = {0};
+ 
+     srcDesc.bufLength = 4;
+     srcDesc.buffer = srcBuffer;
+     dstDesc.bufLength = 2;
+     dstDesc.buffer = dstBuffer;
+ 
+     ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
+     EXPECT_EQ(ret, -1);
+ 
+     dstDesc.bufLength = 4;
+ 
+     ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
+     EXPECT_EQ(ret, 0);
+ }
+ 
+ /**
+  * @tc.name  : Test FormatConverter API
+  * @tc.type  : FUNC
+  * @tc.number: F32MonoToS16Stereo_002
+  * @tc.desc  : Test FormatConverter interface.
+  */
+ HWTEST_F(FormatConverterUnitTest, F32MonoToS16Stereo_002, TestSize.Level1)
+ {
+     BufferDesc srcDesc;
+     BufferDesc dstDesc;
+     int32_t ret = -1;
+     uint8_t dstBuffer[4] = {0};
+ 
+     srcDesc.bufLength = 4;
+     srcDesc.buffer = nullptr;
+     dstDesc.bufLength = 4;
+     dstDesc.buffer = dstBuffer;
+ 
+     ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
+     EXPECT_EQ(ret, -1);
+ }
+ 
+ /**
+  * @tc.name  : Test FormatConverter API
+  * @tc.type  : FUNC
+  * @tc.number: F32MonoToS16Stereo_003
+  * @tc.desc  : Test FormatConverter interface.
+  */
+ HWTEST_F(FormatConverterUnitTest, F32MonoToS16Stereo_003, TestSize.Level1)
+ {
+     BufferDesc srcDesc;
+     BufferDesc dstDesc;
+     int32_t ret = -1;
+     uint8_t srcBuffer[4] = {0};
+ 
+     srcDesc.bufLength = 4;
+     srcDesc.buffer = srcBuffer;
+     dstDesc.bufLength = 4;
+     dstDesc.buffer = nullptr;
+ 
+     ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
+     EXPECT_EQ(ret, -1);
+ }
+ 
+ /**
+  * @tc.name  : Test FormatConverter API
+  * @tc.type  : FUNC
+  * @tc.number: F32MonoToS16Stereo_004
+  * @tc.desc  : Test FormatConverter interface.
+  */
+ HWTEST_F(FormatConverterUnitTest, F32MonoToS16Stereo_004, TestSize.Level1)
+ {
+     BufferDesc srcDesc;
+     BufferDesc dstDesc;
+     int32_t ret = -1;
+     uint8_t srcBuffer[4] = {0};
+     uint8_t dstBuffer[4] = {0};
+ 
+     srcDesc.bufLength = 4;
+     srcDesc.buffer = srcBuffer;
+     dstDesc.bufLength = 4;
+     dstDesc.buffer = dstBuffer;
+ 
+     ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
+     EXPECT_EQ(ret, -1);
+ }
+ 
+ /**
+  * @tc.name  : Test FormatConverter API
+  * @tc.type  : FUNC
+  * @tc.number: F32StereoToS16Stereo_001
+  * @tc.desc  : Test FormatConverter interface.
+  */
+ HWTEST_F(FormatConverterUnitTest, F32StereoToS16Stereo_001, TestSize.Level1)
+ {
+     BufferDesc srcDesc;
+     BufferDesc dstDesc;
+     int32_t ret = -1;
+     uint8_t srcBuffer[8] = {0};
+     uint8_t dstBuffer[4] = {0};
+ 
+     srcDesc.bufLength = 8;
+     srcDesc.buffer = srcBuffer;
+     dstDesc.bufLength = 2;
+     dstDesc.buffer = dstBuffer;
+ 
+     ret = FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
+     EXPECT_EQ(ret, -1);
+ 
+     dstDesc.bufLength = 4;
+ 
+     ret = FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
+     EXPECT_EQ(ret, 0);
+ }
+ 
+ /**
+  * @tc.name  : Test FormatConverter API
+  * @tc.type  : FUNC
+  * @tc.number: F32StereoToS16Stereo_002
+  * @tc.desc  : Test FormatConverter interface.
+  */
+ HWTEST_F(FormatConverterUnitTest, F32StereoToS16Stereo_002, TestSize.Level1)
+ {
+     BufferDesc srcDesc;
+     BufferDesc dstDesc;
+     int32_t ret = -1;
+     uint8_t dstBuffer[4] = {0};
+ 
+     srcDesc.bufLength = 8;
+     srcDesc.buffer = nullptr;
+     dstDesc.bufLength = 4;
+     dstDesc.buffer = dstBuffer;
+ 
+     ret = FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
+     EXPECT_EQ(ret, -1);
+ }
+ 
+ /**
+  * @tc.name  : Test FormatConverter API
+  * @tc.type  : FUNC
+  * @tc.number: F32StereoToS16Stereo_003
+  * @tc.desc  : Test FormatConverter interface.
+  */
+ HWTEST_F(FormatConverterUnitTest, F32StereoToS16Stereo_003, TestSize.Level1)
+ {
+     BufferDesc srcDesc;
+     BufferDesc dstDesc;
+     int32_t ret = -1;
+     uint8_t srcBuffer[8] = {0};
+ 
+     srcDesc.bufLength = 8;
+     srcDesc.buffer = srcBuffer;
+     dstDesc.bufLength = 4;
+     dstDesc.buffer = nullptr;
+ 
+     ret = FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
+     EXPECT_EQ(ret, -1);
+ }
+ 
+ /**
+  * @tc.name  : Test FormatConverter API
+  * @tc.type  : FUNC
+  * @tc.number: F32StereoToS16Stereo_004
+  * @tc.desc  : Test FormatConverter interface.
+  */
+ HWTEST_F(FormatConverterUnitTest, F32StereoToS16Stereo_004, TestSize.Level1)
+ {
+     BufferDesc srcDesc;
+     BufferDesc dstDesc;
+     int32_t ret = -1;
+     uint8_t srcBuffer[8] = {0};
+     uint8_t dstBuffer[4] = {0};
+ 
+     srcDesc.bufLength = 8;
+     srcDesc.buffer = srcBuffer;
+     dstDesc.bufLength = 4;
+     dstDesc.buffer = dstBuffer;
+ 
+     ret = FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
+     EXPECT_EQ(ret, -1);
+ }
+ 
+ /**
+  * @tc.name  : Test FormatConverter API
+  * @tc.type  : FUNC
+  * @tc.number: DataAccumulationFromVolume_Normal_001
+  * @tc.desc  : Test FormatConverter interface.
+  */
+ HWTEST_F(FormatConverterUnitTest, DataAccumulationFromVolume_Normal_001, TestSize.Level1)
+ {
+     // 构造两个音源数据，音量均为0.5（32768/65536）
+     std::vector<AudioStreamData> srcDataList;
+     const int16_t SAMPLE_VALUE = 1000;
+     const int32_t VOLUME_HALF = 32768; // 0.5 in Q16格式
+ 
+     // 第一个音源
+     AudioStreamData srcData1;
+     int16_t srcBuffer1[2] = {SAMPLE_VALUE, SAMPLE_VALUE * 2};
+     BufferDesc srcDesc1;
+     srcDesc1.dataLength = sizeof(srcBuffer1);
+     srcDesc1.buffer = reinterpret_cast<uint8_t*>(srcBuffer1);
+     AudioStreamInfo srcInfo1;
+     srcData1.bufferDesc = srcDesc1;
+     srcData1.streamInfo = srcInfo1;
+     srcData1.volumeStart = SAMPLE_VALUE;
+     srcData1.volumeEnd = VOLUME_HALF;
+     srcData1.isInnerCapeds[0] = true;
+     srcDataList.push_back(srcData1);
+ 
+     // 第二个音源
+     int16_t srcBuffer2[2] = {SAMPLE_VALUE, SAMPLE_VALUE * 2};
+     BufferDesc srcDesc2;
+     srcDesc2.dataLength = sizeof(srcBuffer2);
+     srcDesc2.buffer = reinterpret_cast<uint8_t*>(srcBuffer2);
+     AudioStreamData srcData2;
+     srcData2.bufferDesc = srcDesc2;
+     srcData2.streamInfo = srcInfo1;
+     srcData2.volumeStart = SAMPLE_VALUE;
+     srcData2.volumeEnd = VOLUME_HALF;
+     srcData2.isInnerCapeds[0] = true;
+     srcDataList.push_back(srcData2);
+ 
+     // 目标缓冲区（预期混合结果：1000*0.5 + 1000*0.5 = 1000）
+     int16_t dstBuffer[2] = {0};
+     BufferDesc dstDesc;
+     dstDesc.dataLength = sizeof(dstBuffer);
+     dstDesc.buffer = reinterpret_cast<uint8_t*>(dstBuffer);
+ 
+     AudioStreamData dstData;
+     dstData.bufferDesc = dstDesc;
+ 
+ 
+     // 执行混合操作
+     FormatConverter::DataAccumulationFromVolume(srcDataList, dstData);
+ 
+     // 验证结果
+     EXPECT_EQ(dstBuffer[0], SAMPLE_VALUE);        // 1000
+     EXPECT_EQ(dstBuffer[1], SAMPLE_VALUE * 2);    // 2000
+ }
+ }  // namespace OHOS::AudioStandard
+ }  // namespace OHOS
+ 
