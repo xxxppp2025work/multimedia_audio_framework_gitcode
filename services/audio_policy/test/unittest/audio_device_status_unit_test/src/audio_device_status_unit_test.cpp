@@ -401,5 +401,128 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_014, TestSize.Level1)
     audioDeviceStatus.CheckAndActiveHfpDevice(desc);
     EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
 }
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_015
+* @tc.desc  : Test WriteHeadsetSysEvents interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_015, TestSize.Level1)
+{
+    shared_ptr<AudioDeviceDescriptor> desc = nullptr;
+    bool isConnected = false;
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    audioDeviceStatus.WriteHeadsetSysEvents(desc, isConnected);
+    EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_016
+* @tc.desc  : Test WriteHeadsetSysEvents interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_016, TestSize.Level1)
+{
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    desc->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    bool isConnected = true;
+
+    audioDeviceStatus.WriteHeadsetSysEvents(desc, isConnected);
+    EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_017
+* @tc.desc  : Test WriteHeadsetSysEvents interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_017, TestSize.Level1)
+{
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    desc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    bool isConnected = false;
+
+    audioDeviceStatus.WriteHeadsetSysEvents(desc, isConnected);
+    EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_018
+* @tc.desc  : Test WriteHeadsetSysEvents interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_018, TestSize.Level1)
+{
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    desc->deviceType_ = DEVICE_TYPE_WIRED_HEADPHONES;
+    bool isConnected = true;
+
+    audioDeviceStatus.WriteHeadsetSysEvents(desc, isConnected);
+    EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_019
+* @tc.desc  : Test WriteDeviceChangeSysEvents interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_019, TestSize.Level1)
+{
+    shared_ptr<AudioDeviceDescriptor> desc = nullptr;
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    bool isConnected = true;
+    audioDeviceStatus.WriteHeadsetSysEvents(desc, isConnected);
+    EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_020
+* @tc.desc  : Test WriteDeviceChangeSysEvents interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_020, TestSize.Level1)
+{
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    desc->deviceRole_ = OUTPUT_DEVICE;
+
+    audioDeviceStatus.WriteDeviceChangeSysEvents(desc);
+    EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_021
+* @tc.desc  : Test WriteDeviceChangeSysEvents interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_021, TestSize.Level1)
+{
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    desc->deviceRole_ = INPUT_DEVICE;
+
+    audioDeviceStatus.WriteDeviceChangeSysEvents(desc);
+    EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_022
+* @tc.desc  : Test WriteDeviceChangeSysEvents interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_022, TestSize.Level1)
+{
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    desc->deviceRole_ = DEVICE_ROLE_NONE;
+
+    audioDeviceStatus.WriteDeviceChangeSysEvents(desc);
+    EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS
+

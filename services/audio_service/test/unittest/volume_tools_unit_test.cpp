@@ -60,6 +60,37 @@ void VolumeToolsUnitTest::TearDown(void)
 }
 
 /**
+ * @tc.name  : Test IsVolumeValid.
+ * @tc.type  : FUNC
+ * @tc.number: IsVolumeValid_001
+ * @tc.desc  : Test IsVolumeValid.
+ */
+HWTEST_F(VolumeToolsUnitTest, IsVolumeValid_001, TestSize.Level1)
+{
+    ChannelVolumes vols;
+    bool ret;
+
+    vols.channel = CHANNEL_UNKNOW;
+    ret = VolumeTools::IsVolumeValid(vols);
+    EXPECT_EQ(ret, false);
+
+    vols.channel = MONO;
+    vols.volStart[0] = -1;
+    ret = VolumeTools::IsVolumeValid(vols);
+    EXPECT_EQ(ret, false);
+
+    vols.volStart[0] = 2;
+    vols.volEnd[0] = -1;
+    ret = VolumeTools::IsVolumeValid(vols);
+    EXPECT_EQ(ret, false);
+
+    vols.volStart[0] = 2;
+    vols.volEnd[0] = 3;
+    ret = VolumeTools::IsVolumeValid(vols);
+    EXPECT_EQ(ret, true);
+}
+
+/**
  * @tc.name  : Test GetInt32Vol.
  * @tc.type  : FUNC
  * @tc.number: PaRenderer_001
