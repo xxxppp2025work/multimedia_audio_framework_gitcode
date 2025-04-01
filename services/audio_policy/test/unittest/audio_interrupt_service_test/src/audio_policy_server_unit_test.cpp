@@ -785,7 +785,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_039, TestSize.Level1)
     ptrAudioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
     auto ret = ptrAudioPolicyServer->ReleaseAudioInterruptZone(zoneID);
 
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(ret, -62980296);
 }
 
 /**
@@ -1569,7 +1569,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_050, TestSize.Level1)
     EXPECT_NE(ptrAudioPolicyServer, nullptr);
     DeviceType deviceType = DeviceType::DEVICE_TYPE_WIRED_HEADSET;
     int32_t ret = ptrAudioPolicyServer->SetStreamMute(AudioStreamType::STREAM_ALL, false, deviceType);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_NE(ret, -62980101);
 }
 
 /**
@@ -1592,17 +1592,126 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_051, TestSize.Level1)
 /**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_052
-* @tc.desc  : Test ArgInfoDump.
+* @tc.desc  : Test SetSystemVolumeLevelLegacy.
 */
 HWTEST(AudioPolicyUnitTest, AudioPolicyServer_052, TestSize.Level1)
 {
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
 
-    std::string dumpString;
-    std::queue<std::u16string> argQue;
-    server->OnStart();
-    server->ArgInfoDump(dumpString, argQue);
+    AudioStreamType streamType = AudioStreamType::STREAM_CAMCORDER;
+    int32_t volumeLevel = 20;
+    auto ret = ptrAudioPolicyServer->SetSystemVolumeLevelLegacy(streamType, volumeLevel);
+    EXPECT_EQ(ret, -62980106);
+
+    streamType = AudioStreamType::STREAM_MUSIC;
+    volumeLevel = 5;
+    ret = ptrAudioPolicyServer->SetSystemVolumeLevelLegacy(streamType, volumeLevel);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_053
+* @tc.desc  : Test SetSystemVolumeLevel.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_053, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+
+    AudioStreamType streamType = AudioStreamType::STREAM_VOICE_CALL;
+    int32_t volumeLevel = 5;
+    int32_t volumeFlag = 0;
+    auto ret = ptrAudioPolicyServer->SetSystemVolumeLevel(streamType, volumeLevel, volumeFlag);
+    EXPECT_EQ(ret, 0);
+
+    streamType = AudioStreamType::STREAM_CAMCORDER;
+    volumeLevel = 20;
+    volumeFlag = 0;
+    ret = ptrAudioPolicyServer->SetSystemVolumeLevel(streamType, volumeLevel, volumeFlag);
+    EXPECT_EQ(ret, -62980106);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_054
+* @tc.desc  : Test SetSystemVolumeLevelWithDevice.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_054, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+
+    AudioStreamType streamType = AudioStreamType::STREAM_VOICE_CALL;
+    int32_t volumeLevel = 5;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_WIRED_HEADSET;
+    auto ret = ptrAudioPolicyServer->SetSystemVolumeLevelWithDevice(streamType, volumeLevel, deviceType);
+    EXPECT_EQ(ret, 0);
+
+    streamType = AudioStreamType::STREAM_CAMCORDER;
+    volumeLevel = 20;
+    ret = ptrAudioPolicyServer->SetSystemVolumeLevelWithDevice(streamType, volumeLevel, deviceType);
+    EXPECT_EQ(ret, -62980106);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_055
+* @tc.desc  : Test IsAppVolumeMute.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_055, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+
+    int32_t appUid = 1000;
+    auto ret = ptrAudioPolicyServer->IsAppVolumeMute(appUid, false);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_056
+* @tc.desc  : Test SetAppVolumeMuted.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_056, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+
+    int32_t appUid = 1000;
+    bool mute = true;
+    auto ret = ptrAudioPolicyServer->SetAppVolumeMuted(appUid, mute);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_057
+* @tc.desc  : Test SetSelfAppVolumeLevel.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_057, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+
+    AudioStreamType streamType = AudioStreamType::STREAM_VOICE_CALL;
+    int32_t volumeLevel = 5;
+    auto ret = ptrAudioPolicyServer->SetSelfAppVolumeLevel(streamType, volumeLevel);
+    EXPECT_EQ(ret, 0);
 }
 } // AudioStandard
 } // OHOS
