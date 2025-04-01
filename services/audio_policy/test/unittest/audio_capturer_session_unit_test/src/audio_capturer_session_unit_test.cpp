@@ -15,7 +15,8 @@
 
 #include "audio_capturer_session_unit_test.h"
 using namespace testing::ext;
-<<<<<<< HEAD
+
+
 namespace OHOS {
 namespace AudioStandard {
  
@@ -23,7 +24,6 @@ namespace AudioStandard {
  * @tc.name  : Test AudioCapturerSession.
  * @tc.number: AudioCapturerSession_001
  * @tc.desc  : Test AudioCapturerSession::ReloadSourceForEffect()
->>>>>>> ebc315ac7... 修改了格式错误
  */
 HWTEST(AudioCapturerSessionTest, AudioCapturerSession_001, TestSize.Level1)
 {
@@ -55,9 +55,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_002, TestSize.Level1)
 
     audioCapturerSession->ReloadSourceForEffect(oldPropertyArray, newPropertyArray);
 }
-<<<<<<< HEAD
- 
->>>>>>> ebc315ac7... 修改了格式错误
+
 /**
  * @tc.name  : Test AudioCapturerSession.
  * @tc.number: AudioCapturerSession_003
@@ -76,9 +74,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_003, TestSize.Level1)
 
     audioCapturerSession->ReloadSourceForEffect(oldPropertyArray, newPropertyArray);
 }
-<<<<<<< HEAD
- 
->>>>>>> ebc315ac7... 修改了格式错误
+
 /**
  * @tc.name  : Test AudioCapturerSession.
  * @tc.number: AudioCapturerSession_004
@@ -97,9 +93,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_004, TestSize.Level1)
 
     audioCapturerSession->ReloadSourceForEffect(oldPropertyArray, newPropertyArray);
 }
-<<<<<<< HEAD
- 
->>>>>>> ebc315ac7... 修改了格式错误
+
 /**
  * @tc.name  : Test AudioCapturerSession.
  * @tc.number: AudioCapturerSession_005
@@ -354,9 +348,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_016, TestSize.Level1)
 /**
  * @tc.name  : Test AudioCapturerSession.
  * @tc.number: AudioCapturerSession_017
-<<<<<<< HEAD
  * @tc.desc  : Test AudioCapturerSession::IsVoipDeviceChanged()
->>>>>>> ebc315ac7... 修改了格式错误
  */
 HWTEST(AudioCapturerSessionTest, AudioCapturerSession_017, TestSize.Level1)
 {
@@ -367,17 +359,13 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_017, TestSize.Level1)
     AudioDeviceDescriptor outputDevice;
 
     auto ret = audioCapturerSession->IsVoipDeviceChanged(inputDevice, outputDevice);
-<<<<<<< HEAD
     EXPECT_EQ(ret, false);
->>>>>>> ebc315ac7... 修改了格式错误
 }
 
 /**
  * @tc.name  : Test AudioCapturerSession.
  * @tc.number: AudioCapturerSession_018
-<<<<<<< HEAD
  * @tc.desc  : Test AudioCapturerSession::FillWakeupStreamPropInfo()
->>>>>>> ebc315ac7... 修改了格式错误
  */
 HWTEST(AudioCapturerSessionTest, AudioCapturerSession_018, TestSize.Level1)
 {
@@ -395,9 +383,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_018, TestSize.Level1)
 /**
  * @tc.name  : Test AudioCapturerSession.
  * @tc.number: AudioCapturerSession_019
-<<<<<<< HEAD
  * @tc.desc  : Test AudioCapturerSession::FillWakeupStreamPropInfo()
->>>>>>> ebc315ac7... 修改了格式错误
  */
 HWTEST(AudioCapturerSessionTest, AudioCapturerSession_019, TestSize.Level1)
 {
@@ -412,7 +398,6 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_019, TestSize.Level1)
     auto ret = audioCapturerSession->FillWakeupStreamPropInfo(streamInfo, pipeInfo, audioModuleInfo);
     EXPECT_EQ(ret, false);
 }
-<<<<<<< HEAD
 
 /**
  * @tc.name  : Test AudioCapturerSession.
@@ -515,7 +500,5 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_025, TestSize.Level1)
     
     audioCapturerSession->HandleRemainingSource();
 }
-
->>>>>>> ebc315ac7... 修改了格式错误
 } // namespace AudioStandard
 } // namespace OHOS
