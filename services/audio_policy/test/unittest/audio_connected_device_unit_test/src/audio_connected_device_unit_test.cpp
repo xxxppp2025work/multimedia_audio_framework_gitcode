@@ -356,5 +356,81 @@ HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_016, TestSiz
     audioConnectedDevice->UpdateSpatializationSupported(encryAddress, spatializationSupported);
     EXPECT_NE(audioConnectedDevice, nullptr);
 }
+
+/**
+* @tc.name  : Test AudioConnectedDevice.
+* @tc.number: AudioConnectedDeviceUnitTest_017.
+* @tc.desc  : Test CheckDeviceConnected.
+*/
+HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_017, TestSize.Level1)
+{
+    std::string selectedDevice = "test";
+    auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP,
+        DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = selectedDevice;
+    audioConnectedDevice->connectedDevices_.push_back(desc);
+    bool result = audioConnectedDevice->CheckDeviceConnected(selectedDevice);
+    EXPECT_EQ(result, true);
+
+    result = audioConnectedDevice->CheckDeviceConnected("test1");
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test AudioConnectedDevice.
+* @tc.number: AudioConnectedDeviceUnitTest_018.
+* @tc.desc  : Test HasArm.
+*/
+HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_018, TestSize.Level1)
+{
+    auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET,
+        DeviceRole::OUTPUT_DEVICE);
+    audioConnectedDevice->connectedDevices_.push_back(desc);
+    bool result = audioConnectedDevice->HasArm(DeviceRole::OUTPUT_DEVICE);
+    EXPECT_EQ(result, true);
+
+    result = audioConnectedDevice->HasArm(DeviceRole::INPUT_DEVICE);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test AudioConnectedDevice.
+* @tc.number: AudioConnectedDeviceUnitTest_019.
+* @tc.desc  : Test HasHifi.
+*/
+HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_019, TestSize.Level1)
+{
+    auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_USB_HEADSET,
+        DeviceRole::OUTPUT_DEVICE);
+    audioConnectedDevice->connectedDevices_.push_back(desc);
+    bool result = audioConnectedDevice->HasHifi(DeviceRole::OUTPUT_DEVICE);
+    EXPECT_EQ(result, true);
+
+    result = audioConnectedDevice->HasHifi(DeviceRole::INPUT_DEVICE);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test AudioConnectedDevice.
+* @tc.number: AudioConnectedDeviceUnitTest_020.
+* @tc.desc  : Test IsArmDevice.
+*/
+HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_020, TestSize.Level1)
+{
+    std::string address = "test";
+    auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET,
+        DeviceRole::OUTPUT_DEVICE);
+    desc->macAddress_ = address;
+    audioConnectedDevice->connectedDevices_.push_back(desc);
+    bool result = audioConnectedDevice->IsArmDevice(address, DeviceRole::OUTPUT_DEVICE);
+    EXPECT_EQ(result, true);
+
+    result = audioConnectedDevice->IsArmDevice(address, DeviceRole::INPUT_DEVICE);
+    EXPECT_EQ(result, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS
