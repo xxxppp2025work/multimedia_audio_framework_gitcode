@@ -1561,8 +1561,10 @@ int64_t AudioEndpointInner::GetPredictNextReadTime(uint64_t posInFrame)
     int64_t readtime = 0;
     if (readTimeModel_.GetFrameStamp(readFrame, readtime)) {
         if (readFrame != posInFrame_) {
-            if (!readTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_)) {
+            if (readTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_) == CHECK_FAILED) {
                 updateThreadCV_.notify_all();
+            } else if (readTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_) == NEED_MODIFY) {
+                needReSyncPosition_ = true;
             }
         }
     }
@@ -1583,8 +1585,10 @@ int64_t AudioEndpointInner::GetPredictNextWriteTime(uint64_t posInFrame)
     int64_t writetime = 0;
     if (writeTimeModel_.GetFrameStamp(writeFrame, writetime)) {
         if (writeFrame != posInFrame_) {
-            if (!writeTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_)) {
+            if (writeTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_) == CHECK_FAILED) {
                 updateThreadCV_.notify_all();
+            } else if (writeTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_) == NEED_MODIFY) {
+                needReSyncPosition_ = true;
             }
         }
     }
@@ -2048,7 +2052,6 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
     uint64_t curWritePos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
     AUDIO_INFO_LOG("Endpoint work loop fuc start");
-    int32_t ret = 0;
     // add watchdog
     WatchingEndpointWorkLoopFuc();
     while (isInited_.load()) {
@@ -2056,7 +2059,6 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
             endpointWorkLoopFucThreadStatus_ = true;
             continue;
         }
-        ret = 0;
         threadStatus_ = INRUNNING;
         curTime = ClockTime::GetCurNano();
         Trace loopTrace("AudioEndpoint::loop_trace");
@@ -2098,7 +2100,7 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         ClockTime::AbsoluteSleep(wakeUpTime);
         endpointWorkLoopFucThreadStatus_ = true;
     }
-    AUDIO_DEBUG_LOG("Endpoint work loop fuc end, ret %{public}d", ret);
+    AUDIO_DEBUG_LOG("Endpoint work loop fuc end");
     ReSetThreadQosLevel();
     // stop watchdog
     EndPointRemoveWatchdog("WatchingEndpointWorkLoopFuc", GetEndpointName());
