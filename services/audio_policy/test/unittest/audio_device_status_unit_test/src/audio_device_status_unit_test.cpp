@@ -401,5 +401,52 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_014, TestSize.Level1)
     audioDeviceStatus.CheckAndActiveHfpDevice(desc);
     EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
 }
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_015
+* @tc.desc  : Test GetEncryptAddr interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_015, TestSize.Level1)
+{
+    std::string addr = "";
+    std::string encryptAddr;
+
+    encryptAddr = GetEncryptAddr(addr);
+    EXPECT_EQ(encryptAddr,"");
+
+    addr = "00:11:22:33:44";
+    encryptAddr = GetEncryptAddr(addr);
+    EXPECT_EQ(encryptAddr,"");
+
+    addr = "00:11:22:33:44:55";
+    encryptAddr = GetEncryptAddr(addr);
+    EXPECT_EQ(encryptAddr,"00:11:**:**:**:55");
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_016
+* @tc.desc  : Test GetField interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_016, TestSize.Level1)
+{
+    std::string src = "abcdef=ghijk";
+    char* field0 = "cd";
+    char sep = 'm';
+    std::string field;
+
+    field = GetField(src, field0, sep);
+    EXPECT_EQ(field, "");
+
+    char* field1 = "ef";
+    field = GetField(src, field1, sep);
+    EXPECT_EQ(field, "ghijk");
+
+    char sep1 = 'j';
+    field = GetField(src, field1, sep1);
+    EXPECT_EQ(field, "ghij");
+}
 } // namespace AudioStandard
 } // namespace OHOS
+
