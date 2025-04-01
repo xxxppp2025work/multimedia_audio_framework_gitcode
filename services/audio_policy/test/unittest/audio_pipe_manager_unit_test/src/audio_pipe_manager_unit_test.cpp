@@ -879,7 +879,6 @@ HWTEST_F(AudioPipeManagerUnitTest, UpdateCapturerPipeInfos_001, TestSize.Level1)
  */
 HWTEST_F(AudioPipeManagerUnitTest, UpdateCapturerPipeInfos_002, TestSize.Level1)
 {
-
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
     std::shared_ptr<AudioPipeInfo> inputPipe = std::make_shared<AudioPipeInfo>();
