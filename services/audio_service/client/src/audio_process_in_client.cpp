@@ -41,6 +41,7 @@
 #include "i_audio_process.h"
 #include "linear_pos_time_model.h"
 #include "audio_log_utils.h"
+#include "format_converter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -318,6 +319,10 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     if (config.rendererInfo.streamUsage != STREAM_USAGE_VOICE_COMMUNICATION &&
         config.capturerInfo.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION) {
         resetConfig.streamInfo = AudioProcessInClientInner::g_targetStreamInfo;
+        if (config.audioMode == AUDIO_MODE_RECORD) {
+            resetConfig.streamInfo.format = config.streamInfo.format;
+            resetConfig.streamInfo.channels = config.streamInfo.channels;
+        }
     } else {
         isVoipMmap = true;
     }
@@ -563,6 +568,9 @@ static size_t GetFormatSize(const AudioStreamInfo &info)
         case SAMPLE_S32LE:
             bitWidthSize = 4; // size is 4
             break;
+        case SAMPLE_F32LE:
+            bitWidthSize = 4; // size is 4
+            break;
         default:
             bitWidthSize = 2; // size is 2
             break;
@@ -712,7 +720,8 @@ bool AudioProcessInClient::CheckIfSupport(const AudioProcessConfig &config)
         return false;
     }
 
-    if (config.streamInfo.format != SAMPLE_S16LE && config.streamInfo.format != SAMPLE_S32LE) {
+    if (config.streamInfo.format != SAMPLE_S16LE && config.streamInfo.format != SAMPLE_S32LE &&
+        config.streamInfo.format != SAMPLE_F32LE) {
         return false;
     }
 
@@ -798,6 +807,12 @@ bool AudioProcessInClientInner::ChannelFormatConvert(const AudioStreamData &srcD
     }
     if (srcData.streamInfo.format == SAMPLE_S32LE && srcData.streamInfo.channels == STEREO) {
         return S32StereoS16Stereo(srcData.bufferDesc, dstData.bufferDesc);
+    }
+    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == MONO) {
+        return FormatConverter::F32MonoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc);
+    }
+    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == STEREO) {
+        return FormatConverter::F32StereoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc);
     }
 
     return false;
