@@ -363,6 +363,15 @@ public:
     virtual bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
 
     /**
+    * @brief Obtains the first pkg ts in capturer path.
+    *
+    * @param latencyInNanoSeconds the nanosecond latency in the capturing path.
+    * @return Returns true if the timestamp is successfully obtained; returns false otherwise.
+    * @since 16
+    */
+    virtual bool GetFirstPkgTimeStampInfo(long &firstTs) const = 0;
+    
+    /**
      * @brief Pause audio capturing.
      *
      * @return Returns <b>true</b> if the capturing is successfully Paused; returns <b>false</b> otherwise.
