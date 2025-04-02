@@ -17,6 +17,9 @@
 #endif
 
 #include "audio_core_service.h"
+
+#include <variant>0418
+
 #include "system_ability.h"
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
@@ -211,6 +214,7 @@ void AudioCoreService::HandleAudioCaptureState(AudioMode &mode, AudioStreamChang
     if (mode == AUDIO_MODE_RECORD &&
         (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED ||
          streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_STOPPED)) {
+        sleAudioDeviceManager_.StopPlaying(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo);
         if (Util::IsScoSupportSource(streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType)) {
             audioDeviceCommon_.BluetoothScoDisconectForRecongnition();
             Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
@@ -706,7 +710,9 @@ void AudioCoreService::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc,
     bool isActualConnection = (updatedDesc.connectState_ != VIRTUAL_CONNECTED);
     AUDIO_INFO_LOG("Device connection is actual connection: %{public}d", isActualConnection);
 
-    AudioStreamInfo streamInfo = {};
+    AudioStreamInfo streamInfo = updatedDesc.audioStreamInfo_.CheckParams() ?
+        AudioStreamInfo(*updatedDesc.audioStreamInfo_.samplingRate.rbegin(), updatedDesc.audioStreamInfo_.encoding,
+        updatedDesc.audioStreamInfo_.format, *updatedDesc.audioStreamInfo_.channels.rbegin()) : {};
 #ifdef BLUETOOTH_ENABLE
     if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && isActualConnection && isConnected) {
         int32_t ret = Bluetooth::AudioA2dpManager::GetA2dpDeviceStreamInfo(macAddress, streamInfo);
@@ -1131,6 +1137,7 @@ bool AudioCoreService::IsRingerOrAlarmerDualDevicesRange(const InternalDeviceTyp
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
+        case DEVICE_TYPE_NEARLINK:
             return true;
         default:
             return false;
@@ -1682,6 +1689,7 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         if (rendererState == RENDERER_RELEASED) {
             audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
         }
+        sleAudioDeviceManager_.StopPlaying(streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo);
         FetchOutputDeviceAndRoute();
     }
 
@@ -1882,13 +1890,18 @@ void AudioCoreService::MuteSinkPortLogic(const std::string &oldSinkName, const s
     }
 }
 
-int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
+    auto deviceDesc = streamDesc->newDeviceDescs_.front();
     CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_INVALID_PARAM, "Device desc is nullptr");
     std::string encryptMacAddr = GetEncryptAddr(deviceDesc->macAddress_);
     int32_t bluetoothFetchResult = BluetoothDeviceFetchOutputHandle(deviceDesc,
         AudioStreamDeviceChangeReason::UNKNOWN, encryptMacAddr);
     CHECK_AND_RETURN_RET(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, ERR_OPERATION_FAILED);
+
+    int32_t nearlinkFetchResult = ActivateNearlinkDevice(deviceDesc, streamDesc);
+    CHECK_AND_CRETURN_LOG(nearlinkFetchResult == SUCCESS, "nearlink fetch output device failed");
+
     if (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         audioEcManager_.ActivateArmDevice(deviceDesc->macAddress_, deviceDesc->deviceRole_);
     }
@@ -1904,5 +1917,30 @@ int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescrip
     }
     return SUCCESS;
 }
+
+int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+    const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    std::variant<StreamUsage, SourceType> audioStreamConfig;
+    if (streamDescriptor->audioMode == AUDIO_MODE_PLAYBACK) {
+        audioStreamConfig = streamDescriptor->rendererInfo_.streamUsage;
+    } else {
+        audioStreamConfig = streamDescriptor->capturerInfo_.sourceType;
+    }
+    if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK) {
+        auto runDeviceActivationFlow = [this, &deviceDesc](auto &&config) -> int32_t {
+            int32_t ret = sleAudioDeviceManager_.SetActiveDevice(deviceDesc->macAddress_, config);
+            if (ret != SUCCESS) {
+                return ret;
+            }
+            return sleAudioDeviceManager_.StartPlaying(deviceDesc->macAddress_, config);
+        };
+
+        int32_t result = std::visit(runDeviceActivationFlow, audioStreamConfig);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERROR, 
+            "Nearlink device activation failed, macAddress: %{public}s", deviceDesc->macAddress_.c_str());
+    }
+    return SUCCESS;
 }
-}
+} // namespace AudioStandard
+} // namespace OHOS

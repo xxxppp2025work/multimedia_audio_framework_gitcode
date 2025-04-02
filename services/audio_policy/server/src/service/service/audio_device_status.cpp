@@ -30,6 +30,7 @@
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
 #include "audio_core_service.h"
+#include "sle_audio_device_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1175,6 +1176,15 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceStatus::UserSelec
     return userSelectDeviceMap;
 }
 
+void AudioDeviceStatus::DeactivateNearlinkDevice(AudioDeviceDescriptor &desc)
+{
+    if (desc.deviceType_ == DEVICE_TYPE_NEARLINK || desc.deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
+        if (desc.macAddress == audioActiveDevice_.GetCurrentOutputDeviceMacAddr()) {
+            SleAudioDeviceManager::GetInstance().SetActiveDevice(desc.macAddress, STREAM_USAGE_INVALID);
+        }
+    }
+}
+
 void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason)
 {
@@ -1192,14 +1202,17 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
                 Bluetooth::AudioHfpManager::DisconnectSco();
             }
 #endif
+            // Handle Nearlink Device
+            DeactivateNearlinkDevice(desc);
         } else {
             reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
-            if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP || desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
                 AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
                     std::make_shared<AudioDeviceDescriptor>());
                 AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE,
                     std::make_shared<AudioDeviceDescriptor>());
-            } else {
+            }
+            if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
                 AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
                     std::make_shared<AudioDeviceDescriptor>(), CLEAR_PID);
                 AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE,
@@ -1228,8 +1241,7 @@ void AudioDeviceStatus::UpdateAllUserSelectDevice(
     if (userSelectDeviceMap[MEDIA_RENDER_ID]->deviceType_ == desc.deviceType_ &&
         userSelectDeviceMap[MEDIA_RENDER_ID]->macAddress_ == desc.macAddress_) {
         if (userSelectDeviceMap[MEDIA_RENDER_ID]->connectState_ != VIRTUAL_CONNECTED) {
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
-                std::make_shared<AudioDeviceDescriptor>(selectDesc));
+            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER, selectDesc);
         } else {
             audioStateManager_.UpdatePreferredMediaRenderDeviceConnectState(desc.connectState_);
         }
@@ -1237,8 +1249,7 @@ void AudioDeviceStatus::UpdateAllUserSelectDevice(
     if (userSelectDeviceMap[CALL_RENDER_ID]->deviceType_ == desc.deviceType_ &&
         userSelectDeviceMap[CALL_RENDER_ID]->macAddress_ == desc.macAddress_) {
         if (userSelectDeviceMap[CALL_RENDER_ID]->connectState_ != VIRTUAL_CONNECTED) {
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                std::make_shared<AudioDeviceDescriptor>(selectDesc), SYSTEM_PID);
+            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, selectDesc, SYSTEM_PID);
         } else {
             audioStateManager_.UpdatePreferredCallRenderDeviceConnectState(desc.connectState_);
         }
@@ -1246,8 +1257,7 @@ void AudioDeviceStatus::UpdateAllUserSelectDevice(
     if (userSelectDeviceMap[CALL_CAPTURE_ID]->deviceType_ == desc.deviceType_ &&
         userSelectDeviceMap[CALL_CAPTURE_ID]->macAddress_ == desc.macAddress_) {
         if (userSelectDeviceMap[CALL_CAPTURE_ID]->connectState_ != VIRTUAL_CONNECTED) {
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE,
-                std::make_shared<AudioDeviceDescriptor>(selectDesc));
+            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE, selectDesc);
         } else {
             audioStateManager_.UpdatePreferredCallCaptureDeviceConnectState(desc.connectState_);
         }
@@ -1255,8 +1265,7 @@ void AudioDeviceStatus::UpdateAllUserSelectDevice(
     if (userSelectDeviceMap[RECORD_CAPTURE_ID]->deviceType_ == desc.deviceType_ &&
         userSelectDeviceMap[RECORD_CAPTURE_ID]->macAddress_ == desc.macAddress_) {
         if (userSelectDeviceMap[RECORD_CAPTURE_ID]->connectState_ != VIRTUAL_CONNECTED) {
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE,
-                std::make_shared<AudioDeviceDescriptor>(selectDesc));
+            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE, selectDesc);
         } else {
             audioStateManager_.UpdatePreferredRecordCaptureDeviceConnectState(desc.connectState_);
         }

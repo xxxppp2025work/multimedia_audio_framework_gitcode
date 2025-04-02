@@ -461,6 +461,10 @@ int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRoute
             sink.ext.device.type = PIN_OUT_BLUETOOTH_A2DP;
             sink.ext.device.desc = (char *)"pin_out_bluetooth_a2dp";
             break;
+        case DEVICE_TYPE_NEARLINK:
+            sink.ext.device.type = PIN_OUT_NEARLINK;
+            sink.ext.device.desc = (char *)"pin_out_nearlink";
+            break;
         case DEVICE_TYPE_NONE:
             sink.ext.device.type = PIN_NONE;
             sink.ext.device.desc = (char *)"pin_out_none";
@@ -508,6 +512,10 @@ int32_t LocalDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteNo
                 source.ext.device.type = PIN_IN_UWB;
                 source.ext.device.desc = (char *)"pin_in_uwb";
             }
+            break;
+        case DEVICE_TYPE_NEARLINK_IN:
+            source.ext.device.type = PIN_IN_NEARLINK;
+            source.ext.device.desc = (char *)"pin_in_nearlink";
             break;
         default:
             ret = ERR_NOT_SUPPORTED;

@@ -329,7 +329,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     }
 
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
-        int32_t outputRet = ActivateOutputDevice(streamDesc->newDeviceDescs_.front());
+        int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
         std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
         if (streamDesc->newDeviceDescs_.size() == 2) { // 2 for dual use
@@ -980,7 +980,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
 
         MuteSinkForSwitchBluetoothDevice(streamDesc, reason);
         MuteSinkForSwitchDistributedDevice(streamDesc, reason);
-        int32_t outputRet = ActivateOutputDevice(streamDesc->newDeviceDescs_.front());
+        int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
         if (needUpdateActiveDevice) {
             isUpdateActiveDevice = UpdateOutputDevice(streamDesc->newDeviceDescs_.front(), GetRealUid(streamDesc),
@@ -1017,6 +1017,11 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute()
         if (HandleDeviceChangeForFetchInputDevice(streamDesc) == ERR_NEED_NOT_SWITCH_DEVICE) {
             continue;
         }
+
+        // handle nearlink
+        int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc->newDeviceDescs_.front(), streamDesc);
+        CHECK_AND_CONTINUE_LOG(nearlinkFetchResult == SUCCESS, "nearlink fetch output device failed");
+
         AUDIO_INFO_LOG("device type: %{public}d", inputDeviceDesc->deviceType_);
         SetRecordStreamFlag(streamDesc);
         if (needUpdateActiveDevice) {
