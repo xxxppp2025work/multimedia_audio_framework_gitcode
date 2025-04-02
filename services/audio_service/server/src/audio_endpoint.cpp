@@ -1749,6 +1749,18 @@ int32_t AudioEndpointInner::WriteToSpecialProcBuf(const std::shared_ptr<OHAudioB
     return SUCCESS;
 }
 
+int32_t AudioEndpointInner::ResultCheck(int32_t result, const BufferDesc &writeBuf, const BufferDesc &convertedBuffer)
+{
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_WRITE_FAILED, "Convert channel from stereo to mono failed");
+    result = memcpy_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength,
+        static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength);
+    CHECK_AND_RETURN_RET_LOG(result == EOK, ERR_WRITE_FAILED, "memcpy_s failed");
+    result = memset_s(static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength, 0,
+        convertedBuffer.bufLength);
+    CHECK_AND_RETURN_RET_LOG(result == EOK, ERR_WRITE_FAILED, "memset converted buffer to 0 failed");
+    return EOK;
+}
+
 int32_t AudioEndpointInner::HandleCapturerDataParams(const BufferDesc &writeBuf, const BufferDesc &readBuf,
     const BufferDesc &convertedBuffer)
 {
@@ -1758,14 +1770,21 @@ int32_t AudioEndpointInner::HandleCapturerDataParams(const BufferDesc &writeBuf,
     }
     if (clientConfig_.streamInfo.format == SAMPLE_S16LE && clientConfig_.streamInfo.channels == MONO) {
         int32_t ret = FormatConverter::S16StereoToS16Mono(readBuf, convertedBuffer);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "Convert channel from stereo to mono failed");
-        ret = memcpy_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength,
-            static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength);
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memcpy_s failed");
-        ret = memset_s(static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength, 0,
-            convertedBuffer.bufLength);
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memset converted buffer to 0 failed");
-        return EOK;
+        if (ResultCheck(ret, writeBuf, convertedBuffer) == SUCCESS) {
+            return EOK;
+        }
+    }
+    if (clientConfig_.streamInfo.format == SAMPLE_S32LE && clientConfig_.streamInfo.channels == MONO) {
+        int32_t ret = FormatConverter::S32StereoToS32Mono(readBuf, convertedBuffer);
+        if (ResultCheck(ret, writeBuf, convertedBuffer) == SUCCESS) {
+            return EOK;
+        }
+    }
+    if (clientConfig_.streamInfo.format == SAMPLE_F32LE && clientConfig_.streamInfo.channels == MONO) {
+        int32_t ret = FormatConverter::F32StereoToF32Mono(readBuf, convertedBuffer);
+        if (ResultCheck(ret, writeBuf, convertedBuffer) == SUCCESS) {
+            return EOK;
+        }
     }
     if (clientConfig_.streamInfo.format == SAMPLE_F32LE) {
         int32_t ret = 0;

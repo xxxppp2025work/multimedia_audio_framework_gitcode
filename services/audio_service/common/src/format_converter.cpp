@@ -93,6 +93,38 @@ int32_t FormatConverter::S16StereoToS16Mono(const BufferDesc &srcDesc, const Buf
     return 0;
 }
 
+int32_t FormatConverter::S32StereoToS32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
+{
+    size_t half = 2; // stereo(2) -> mono(1)
+    if (dstDesc.bufLength != srcDesc.bufLength / half || srcDesc.buffer == nullptr || dstDesc.buffer == nullptr) {
+        return -1;
+    }
+    int32_t *stcPtr = reinterpret_cast<int32_t *>(srcDesc.buffer);
+    int32_t *dstPtr = reinterpret_cast<int32_t *>(dstDesc.buffer);
+    size_t count = srcDesc.bufLength / half / sizeof(int32_t);
+    for (size_t idx = 0; idx < count; idx++) {
+        *(dstPtr++) = (*stcPtr + *(stcPtr + 1)) / 2; // To obtain mono channel, add left to right, then divide by 2
+        stcPtr += 2; // ptr++ on mono is equivalent to ptr+=2 on stereo
+    }
+    return 0;
+}
+
+int32_t FormatConverter::F32StereoToF32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
+{
+    size_t half = 2; // stereo(2) -> mono(1)
+    if (dstDesc.bufLength != srcDesc.bufLength / half || srcDesc.buffer == nullptr || dstDesc.buffer == nullptr) {
+        return -1;
+    }
+    float *stcPtr = reinterpret_cast<float *>(srcDesc.buffer);
+    float *dstPtr = reinterpret_cast<float *>(dstDesc.buffer);
+    size_t count = srcDesc.bufLength / half / sizeof(float);
+    for (size_t idx = 0; idx < count; idx++) {
+        *(dstPtr++) = (*stcPtr + *(stcPtr + 1)) / 2; // To obtain mono channel, add left to right, then divide by 2
+        stcPtr += 2; // ptr++ on mono is equivalent to ptr+=2 on stereo
+    }
+    return 0;
+}
+
 int32_t FormatConverter::S16StereoToF32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
 {
     size_t half = 2;
