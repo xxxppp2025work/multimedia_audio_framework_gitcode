@@ -595,6 +595,7 @@ ohos_shared_library("audio_sasdk") {
     "eventhandler:libeventhandler",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "eventhandler:libeventhandler",
   ]
 
   version_script = "../../audio_framework.versionscript"
