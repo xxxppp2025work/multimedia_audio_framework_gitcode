@@ -41,10 +41,19 @@ public:
     int32_t ConnectAllowedProfiles(const std::string &remoteAddr) const override;
     int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType) override;
     int32_t SendUserSelection(const std::string &device, uint32_t streamType) override;
+    int32_t SetActiveDevice(const std::string &device, StreamUsage streamUsage);
+    int32_t SetActiveDevice(const std::string &device, SourceType sourceType);
+    int32_t StartPlaying(const AudioDeviceDescriptor &device, StreamUsage streamUsage);
+    int32_t StopPlaying(const AudioDeviceDescriptor &device, StreamUsage streamUsage);
+    int32_t StartPlaying(const AudioDeviceDescriptor &device, SourceType sourceType);
+    int32_t StopPlaying(const AudioDeviceDescriptor &device, SourceType sourceType);
 
 private:
     SleAudioDeviceManager() = default;
     virtual ~SleAudioDeviceManager() = default;
+
+    uint32_t GetSleStreamTypeByStreamUsage(StreamUsage streamUsage) const;
+    uint32_t GetSleStreamTypeBySourceType(SourceType sourceType) const;
 
     sptr<IStandardSleAudioOperationCallback> callback_ = nullptr;
 };

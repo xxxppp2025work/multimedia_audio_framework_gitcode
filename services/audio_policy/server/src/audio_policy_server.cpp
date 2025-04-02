@@ -3816,7 +3816,7 @@ int32_t AudioPolicyServer::SetDeviceConnectionStatus(const std::shared_ptr<Audio
         callerUid == UID_PENCIL_PROCESS_SA, ERR_PERMISSION_DENIED, "uid permission denied");
     bool ret = VerifyPermission(MANAGE_AUDIO_CONFIG);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "MANAGE_AUDIO_CONFIG permission denied");
-    audioPolicyService_.OnDeviceStatusUpdated(*desc, isConnected);
+    eventEntry_.OnDeviceStatusUpdated(*desc, isConnected);
     return SUCCESS;
 }
 
@@ -3866,7 +3866,7 @@ int32_t AudioPolicyServer::UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDes
         "UpdateDeviceInfo MANAGE_AUDIO_CONFIG permission check failed");
     CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_INVALID_PARAM,
         "UpdateDeviceInfo deviceDesc is nullptr");
-    audioCoreService_.OnDeviceInfoUpdated(*deviceDesc, command);
+    eventEntry_.OnDeviceInfoUpdated(*deviceDesc, command);
     return SUCCESS;
 }
 

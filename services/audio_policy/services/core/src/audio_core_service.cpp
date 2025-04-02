@@ -976,6 +976,22 @@ int32_t AudioCoreService::SetRingerMode(AudioRingerMode ringMode)
     return result;
 }
 
+int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    auto usage = streamDesc->audioMode == AUDIO_MODE_PLAYBACK ? streamDesc->rendererInfo_.streamUsage :
+        streamDesc->capturerInfo_.sourceType;
+    if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK) {
+        int32_t ret = sleAudioDeviceManager_.SetActiveDevice(deviceDesc->macAddress_, usage);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetActiveDevice failed, macAddress: %{public}s",
+            deviceDesc->macAddress_.c_str());
+        ret = sleAudioDeviceManager_.StartPlaying(deviceDesc->macAddress_, usage);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "StartPlaying failed, macAddress: %{public}s",
+            deviceDesc->macAddress_.c_str());
+    }
+    return SUCCESS;
+}
+
 int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChangeReasonExt reason)
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
@@ -1005,6 +1021,12 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
             bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_ERROR) {
             continue;
         }
+
+        // handle nearlink
+        int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc->newDeviceDescs_.front(),
+            streamDesc);
+        CHECK_AND_CONTINUE_LOG(nearlinkFetchResult == SUCCESS, "nearlink fetch output device failed");
+
         if (streamDesc->newDeviceDescs_.front()->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
             audioEcManager_.ActivateArmDevice(
                 streamDesc->newDeviceDescs_.front()->macAddress_, streamDesc->newDeviceDescs_.front()->deviceRole_);
@@ -1045,6 +1067,12 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute()
         if (HandleDeviceChangeForFetchInputDevice(streamDesc) == ERR_NEED_NOT_SWITCH_DEVICE) {
             continue;
         }
+
+        // handle nearlink
+        int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc->newDeviceDescs_.front(),
+             streamDesc);
+        CHECK_AND_CONTINUE_LOG(nearlinkFetchResult == SUCCESS, "nearlink fetch output device failed");
+
         AUDIO_INFO_LOG("device type: %{public}d", inputDeviceDesc->deviceType_);
         SetRecordStreamFlag(streamDesc);
         if (needUpdateActiveDevice) {

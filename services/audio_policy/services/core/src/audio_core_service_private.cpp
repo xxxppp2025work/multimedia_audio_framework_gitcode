@@ -199,6 +199,7 @@ void AudioCoreService::HandleAudioCaptureState(AudioMode &mode, AudioStreamChang
     if (mode == AUDIO_MODE_RECORD &&
         (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED ||
          streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_STOPPED)) {
+        sleAudioDeviceManager_.StopPlaying(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo);
         if (Util::IsScoSupportSource(streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType)) {
             audioDeviceCommon_.BluetoothScoDisconectForRecongnition();
             Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
@@ -674,7 +675,9 @@ void AudioCoreService::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc,
     bool isActualConnection = (updatedDesc.connectState_ != VIRTUAL_CONNECTED);
     AUDIO_INFO_LOG("Device connection is actual connection: %{public}d", isActualConnection);
 
-    AudioStreamInfo streamInfo = {};
+    AudioStreamInfo streamInfo = updatedDesc.audioStreamInfo_.CheckParams() ?
+        AudioStreamInfo(*updatedDesc.audioStreamInfo_.samplingRate.rbegin(), updatedDesc.audioStreamInfo_.encoding,
+        updatedDesc.audioStreamInfo_.format, *updatedDesc.audioStreamInfo_.channels.rbegin()) : {};
 #ifdef BLUETOOTH_ENABLE
     if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && isActualConnection && isConnected) {
         int32_t ret = Bluetooth::AudioA2dpManager::GetA2dpDeviceStreamInfo(macAddress, streamInfo);
@@ -1613,6 +1616,7 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         if (rendererState == RENDERER_RELEASED) {
             audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
         }
+        sleAudioDeviceManager_.StopPlaying(streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo);
         FetchOutputDeviceAndRoute();
     }
 
