@@ -25,6 +25,7 @@
 #include "audio_errors.h"
 #include "audio_capturer_log.h"
 #include "audio_policy_manager.h"
+#include "audio_system_manager.h"
 
 #include "media_monitor_manager.h"
 
@@ -687,6 +688,36 @@ bool AudioCapturerPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, false, "audioStream_ is nullptr");
     return currentStream->GetAudioTime(timestamp, base);
+}
+
+const uint32_t BASE_TEN = 10;
+bool AudioCapturerPrivate::GetFirstPkgTimeStampInfo(long &firstTs) const
+{
+    AUDIO_INFO_LOG("StreamClient for Capturer::Get first pkg timestamp info.");
+    const std::string SUBKEY_latency = "record_algo_first_ts";
+    std::vector<std::pair<std::string, std::string>> results;
+
+    int32_t ret =
+        AudioSystemManager::GetInstance()->GetExtraParameters("audio_effect", { SUBKEY_latency }, results);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("AudioCapturerPrivate GetExtraParameters fail! %{public}d", ret);
+        return false;
+    }
+    
+    auto iter = std::find_if(results.begin(), results.end(),
+        [&](const std::pair<std::string, std::string> &result) {
+            return result.first == SUBKEY_latency;
+        });
+    
+    if (iter == results.end() || iter->second.empty()) {
+        AUDIO_WARNING_LOG("AudioCapturerPrivate GetExtraParameters fail!"
+            "cannot find result or is empty string");
+        return false;
+    }
+    
+    firstTs = std::strtol(iter->second.c_str(), nullptr, BASE_TEN);
+    AUDIO_INFO_LOG("StreamClient for Capturer::first ts is raw %{public}s and value %{public}ld", iter->second.c_str(), firstTs);
+    return true;
 }
 
 bool AudioCapturerPrivate::Pause() const
