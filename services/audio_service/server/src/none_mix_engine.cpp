@@ -21,6 +21,7 @@
 #include "audio_service_log.h"
 #include "audio_utils.h"
 #include "none_mix_engine.h"
+#include "format_converter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -368,7 +369,7 @@ AudioSamplingRate NoneMixEngine::GetDirectVoipSampleRate(AudioSamplingRate sampl
     return result;
 }
 
-HdiAdapterFormat NoneMixEngine::GetDirectDeviceFormate(AudioSampleFormat format)
+HdiAdapterFormat NoneMixEngine::GetDirectDeviceFormat(AudioSampleFormat format)
 {
     switch (format) {
         case AudioSampleFormat::SAMPLE_U8:
@@ -379,6 +380,22 @@ HdiAdapterFormat NoneMixEngine::GetDirectDeviceFormate(AudioSampleFormat format)
             return HdiAdapterFormat::SAMPLE_S32;
         case AudioSampleFormat::SAMPLE_F32LE:
             return HdiAdapterFormat::SAMPLE_F32;
+        default:
+            return HdiAdapterFormat::SAMPLE_S16;
+    }
+}
+
+// replaced by using xml configuration later
+HdiAdapterFormat NoneMixEngine::GetDirectVoipDeviceFormat(AudioSampleFormat format)
+{
+    switch (format) {
+        case AudioSampleFormat::SAMPLE_U8:
+        case AudioSampleFormat::SAMPLE_S16LE:
+        case AudioSampleFormat::SAMPLE_F32LE:
+            return HdiAdapterFormat::SAMPLE_S16;
+        case AudioSampleFormat::SAMPLE_S24LE:
+        case AudioSampleFormat::SAMPLE_S32LE:
+            return HdiAdapterFormat::SAMPLE_S32;
         default:
             return HdiAdapterFormat::SAMPLE_S16;
     }
@@ -397,14 +414,29 @@ int32_t NoneMixEngine::GetDirectFormatByteSize(HdiAdapterFormat format)
     }
 }
 
-int32_t NoneMixEngine::InitSink(const AudioStreamInfo &streamInfo)
+void NoneMixEngine::GetTargetSinkStreamInfo(const AudioStreamInfo &clientStreamInfo, uint32_t &targetSampleRate,
+    uint32_t &targetChannel, HdiAdapterFormat &targetFormat, bool &isVoip)
 {
-    uint32_t targetChannel = streamInfo.channels >= STEREO_CHANNEL_COUNT ? STEREO_CHANNEL_COUNT : 1;
-    HdiAdapterFormat format = GetDirectDeviceFormate(streamInfo.format);
-    uint32_t sampleRate =
-        isVoip_ ? GetDirectVoipSampleRate(streamInfo.samplingRate) : GetDirectSampleRate(streamInfo.samplingRate);
+    targetChannel = clientStreamInfo.channels >= STEREO_CHANNEL_COUNT ? STEREO_CHANNEL_COUNT : 1;
+
+    if (isVoip) {
+        targetSampleRate = GetDirectVoipSampleRate(clientStreamInfo.samplingRate);
+        targetFormat = GetDirectVoipDeviceFormat(clientStreamInfo.format);
+    } else {
+        targetSampleRate = GetDirectSampleRate(clientStreamInfo.samplingRate);
+        targetFormat = GetDirectDeviceFormat(clientStreamInfo.format);
+    }
+}
+
+int32_t NoneMixEngine::InitSink(const AudioStreamInfo &clientStreamInfo)
+{
+    uint32_t targetSampleRate;
+    uint32_t targetChannel;
+    HdiAdapterFormat targetFormat;
+    GetTargetSinkStreamInfo(clientStreamInfo, targetSampleRate, targetChannel, targetFormat, isVoip_);
+
     if (isInit_ && renderSink_) {
-        if (uChannel_ != targetChannel || uFormat_ != format || sampleRate != uSampleRate_) {
+        if (uChannel_ != targetChannel || uFormat_ != targetFormat || targetSampleRate != uSampleRate_) {
             if (renderSink_ && renderSink_->IsInited()) {
                 renderSink_->Stop();
                 renderSink_->DeInit();
@@ -414,7 +446,7 @@ int32_t NoneMixEngine::InitSink(const AudioStreamInfo &streamInfo)
             return SUCCESS;
         }
     }
-    return InitSink(targetChannel, format, sampleRate);
+    return InitSink(targetChannel, targetFormat, targetSampleRate);
 }
 
 int32_t NoneMixEngine::InitSink(uint32_t channel, HdiAdapterFormat format, uint32_t rate)
