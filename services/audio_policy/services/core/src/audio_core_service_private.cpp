@@ -1635,5 +1635,24 @@ void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> p
         audioEcManager_.SetOpenedNormalSource(sourceType);
     }
 }
+
+void AudioCoreService::CheckOffloadStream(AudioStreamChangeInfo &streamChangeInfo)
+{
+    std::string adapterName = GetAdapterNameBySessionId(streamChangeInfo.audioRendererChangeInfo.sessionId);
+    AUDIO_INFO_LOG("session: %{public}u, adapter name: %{public}s",
+        streamChangeInfo.audioRendererChangeInfo.sessionId, adapterName.c_str());
+    if (adapterName != OFFLOAD_PRIMARY_SPEAKER) {
+        return;
+    }
+
+    if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_PAUSED ||
+        streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_STOPPED ||
+        streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
+        audioOffloadStream_.ResetOffloadStatus(streamChangeInfo.audioRendererChangeInfo.sessionId);
+    }
+    if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RUNNING) {
+        audioOffloadStream_.SetOffloadStatus(streamChangeInfo.audioRendererChangeInfo.sessionId);
+    }
+}
 }
 }
