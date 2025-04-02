@@ -763,20 +763,20 @@ bool AudioCapturerPrivate::GetFirstPkgTimeStampInfo(long &firstTs) const
         AUDIO_WARNING_LOG("AudioCapturerPrivate GetExtraParameters fail! %{public}d", ret);
         return false;
     }
-    
     auto iter = std::find_if(results.begin(), results.end(),
         [&](const std::pair<std::string, std::string> &result) {
             return result.first == SUBKEY_latency;
         });
-    
+
     if (iter == results.end() || iter->second.empty()) {
         AUDIO_WARNING_LOG("AudioCapturerPrivate GetExtraParameters fail!"
             "cannot find result or is empty string");
         return false;
     }
-    
+
     firstTs = std::strtol(iter->second.c_str(), nullptr, BASE_TEN);
-    AUDIO_INFO_LOG("StreamClient for Capturer::first ts is raw %{public}s and value %{public}ld", iter->second.c_str(), firstTs);
+    AUDIO_INFO_LOG("StreamClient for Capturer::first ts is "
+        "raw %{public}s and value %{public}ld", iter->second.c_str(), firstTs);
     return true;
 }
 
