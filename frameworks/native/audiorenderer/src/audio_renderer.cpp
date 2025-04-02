@@ -877,6 +877,8 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 {
     Trace trace("AudioRenderer::Start");
     CheckAndRestoreAudioRenderer("Start");
+    AudioDeviceDescriptor deviceInfo;
+    GetCurrentOutputDevices(deviceInfo);
     AudioXCollie audioXCollie("AudioRendererPrivate::Start", START_TIME_OUT_SECONDS,
         [](void *) {
             AUDIO_ERR_LOG("Start timeout");
@@ -899,6 +901,12 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audio stream is null");
+
+    float duckVolume = audioStream_->GetDuckVolume();
+    float muteVolume = audioStream_->GetMute();
+    AUDIO_INFO_LOG("VolumeInfo for Renderer::Start. duckVolume: %{public}f, muteVolume: %{public}f, "\
+        "MinStreamVolume: %{public}f, MaxStreamVolume: %{public}f, DeviceType: %{public}d",
+        duckVolume, muteVolume, GetMinStreamVolume(), GetMaxStreamVolume(), deviceInfo.deviceType_);
 
     if (GetVolumeInner() == 0 && isStillMuted_) {
         AUDIO_INFO_LOG("StreamClientState for Renderer::Start. volume=%{public}f, isStillMuted_=%{public}d",
