@@ -70,6 +70,8 @@ namespace {
     constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
     constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
     static const int32_t ONE_MINUTE = 60;
+    static constexpr int64_t MAX_WAKEUP_TIME_NS = 2000000000; // 2s
+    static constexpr int64_t RELATIVE_SLEEP_TIME_NS = 5000000; // 5ms
 }
 
 AudioSampleFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
@@ -1910,6 +1912,7 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
 
         loopTrace.End();
         threadStatus_ = SLEEPING;
+        CheckWakeUpTime(wakeUpTime);
         ClockTime::AbsoluteSleep(wakeUpTime);
         recordEndpointWorkLoopFucThreadStatus_ = true;
     }
@@ -1972,6 +1975,14 @@ void AudioEndpointInner::CheckTimeAndBufferReady(uint64_t &curWritePos, int64_t 
     if (!CheckAllBufferReady(wakeUpTime, curWritePos)) { curTime = ClockTime::GetCurNano(); }
 }
 
+void AudioEndpointInner::CheckWakeUpTime(int64_t &wakeUpTime)
+{
+    int64_t curTime = ClockTime::GetCurNano();
+    if (wakeUpTime - curTime > MAX_WAKEUP_TIME_NS) {
+        wakeUpTime = curTime + RELATIVE_SLEEP_TIME_NS;
+    }
+}
+
 void AudioEndpointInner::EndpointWorkLoopFuc()
 {
     BindCore();
@@ -2020,6 +2031,7 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         loopTrace.End();
         // start sleep
         threadStatus_ = SLEEPING;
+        CheckWakeUpTime(wakeUpTime);
         ClockTime::AbsoluteSleep(wakeUpTime);
         endpointWorkLoopFucThreadStatus_ = true;
     }
