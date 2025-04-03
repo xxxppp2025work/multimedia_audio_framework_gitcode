@@ -775,8 +775,8 @@ bool AudioCapturerPrivate::GetFirstPkgTimeStampInfo(int64_t &firstTs) const
     }
 
     firstTs = std::strtol(iter->second.c_str(), nullptr, DECIMAL_BASE);
-    AUDIO_INFO_LOG("StreamClient for Capturer::first ts is raw %{public}s and value %{public}ld",
-        iter->second.c_str(), firstTs);
+    AUDIO_INFO_LOG("StreamClient for Capturer::first ts is raw %{public}s and value %{public}lld",
+        iter->second.c_str(), static_cast<long long>(firstTs));
     return true;
 }
 
