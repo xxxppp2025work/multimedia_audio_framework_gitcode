@@ -357,16 +357,32 @@ void AudioServer::OnStart()
 
     RegisterAudioCapturerSourceCallback();
     RegisterAudioRendererSinkCallback();
+    ParseAudioParameter();
+    DlopenUtils::DeInit();
+}
 
+void AudioServer::ParseAudioParameter()
+{
     std::unique_ptr<AudioParamParser> audioParamParser = make_unique<AudioParamParser>();
     if (audioParamParser == nullptr) {
         WriteServiceStartupError();
     }
     CHECK_AND_RETURN_LOG(audioParamParser != nullptr, "Failed to create audio extra parameters parser");
+    std::unique_lock<std::shared_mutex> lock(audioParameterKeyMutex_);
     if (audioParamParser->LoadConfiguration(audioParameterKeys)) {
         AUDIO_INFO_LOG("Audio extra parameters load configuration successfully.");
     }
-    DlopenUtils::DeInit();
+    isAudioParameterParsed_ = true;
+
+    for (const auto& pair : audioExtraParameterCacheVector_) {
+        AUDIO_INFO_LOG("OnStart replay key: %{public}s", pair.first.c_str());
+        for (const auto& kv : pair.second) {
+            AUDIO_INFO_LOG("OnStart replay kv: <%{public}s, %{public}s>",
+                kv.first.c_str(), kv.second.c_str());
+        }
+        SetExtraParameters(pair.first, pair.second);
+    }
+    audioExtraParameterCacheVector_.clear();
 }
 
 void AudioServer::WriteServiceStartupError()
@@ -413,6 +429,12 @@ bool AudioServer::SetPcmDumpParameter(const std::vector<std::pair<std::string, s
 int32_t AudioServer::SetExtraParameters(const std::string& key,
     const std::vector<std::pair<std::string, std::string>>& kvpairs)
 {
+    AUDIO_INFO_LOG("SetExtraParameters key: %{public}s", key.c_str());
+    for (const auto& kv : kvpairs) {
+        AUDIO_INFO_LOG("SetExtraParameters kv: <%{public}s, %{public}s>",
+            kv.first.c_str(), kv.second.c_str());
+    }
+
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "set extra parameters failed: not system app.");
     ret = VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION);
@@ -424,11 +446,25 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
         return SUCCESS;
     }
 
+    std::shared_lock<std::shared_mutex> lock(audioParameterKeyMutex_);
     if (audioParameterKeys.empty()) {
+        if (!isAudioParameterParsed_) {
+            AUDIO_INFO_LOG("SetExtraParameters cache");
+            std::pair<std::string,
+                std::vector<std::pair<std::string, std::string>>> cache(key, kvpairs);
+            audioExtraParameterCacheVector_.push_back(cache);
+        }
+
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
         return ERROR;
     }
 
+    return SetExtraParametersInner(key, kvpairs);
+}
+
+int32_t AudioServer::SetExtraParametersInner(const std::string& key,
+    const std::vector<std::pair<std::string, std::string>>& kvpairs)
+{
     auto mainKeyIt = audioParameterKeys.find(key);
     if (mainKeyIt == audioParameterKeys.end()) {
         return ERR_INVALID_PARAM;
@@ -588,6 +624,7 @@ int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
         return SUCCESS;
     }
 
+    std::shared_lock<std::shared_mutex> lock(audioParameterKeyMutex_);
     if (audioParameterKeys.empty()) {
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
         return ERROR;
