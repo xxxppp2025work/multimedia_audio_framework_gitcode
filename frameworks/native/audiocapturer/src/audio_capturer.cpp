@@ -38,6 +38,7 @@ static constexpr int32_t AUDIO_SOURCE_TYPE_INVALID_5 = 5;
 static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 300; // 300ms
 static constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
 static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
+static constexpr uint32_t DECIMAL_BASE = 10;
 
 std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
@@ -750,15 +751,14 @@ bool AudioCapturerPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
     return currentStream->GetAudioTime(timestamp, base);
 }
 
-const uint32_t BASE_TEN = 10;
-bool AudioCapturerPrivate::GetFirstPkgTimeStampInfo(long &firstTs) const
+bool AudioCapturerPrivate::GetFirstPkgTimeStampInfo(int64_t &firstTs) const
 {
     AUDIO_INFO_LOG("StreamClient for Capturer::Get first pkg timestamp info.");
-    const std::string SUBKEY_latency = "record_algo_first_ts";
+    const std::string subKeyLatency = "record_algo_first_ts";
     std::vector<std::pair<std::string, std::string>> results;
 
     int32_t ret =
-        AudioSystemManager::GetInstance()->GetExtraParameters("audio_effect", { SUBKEY_latency }, results);
+        AudioSystemManager::GetInstance()->GetExtraParameters("audio_effect", { subKeyLatency }, results);
     if (ret != 0) {
         AUDIO_WARNING_LOG("AudioCapturerPrivate GetExtraParameters fail! %{public}d", ret);
         return false;
@@ -766,7 +766,7 @@ bool AudioCapturerPrivate::GetFirstPkgTimeStampInfo(long &firstTs) const
 
     auto iter = std::find_if(results.begin(), results.end(),
         [&](const std::pair<std::string, std::string> &result) {
-            return result.first == SUBKEY_latency;
+            return result.first == subKeyLatency;
         });
     if (iter == results.end() || iter->second.empty()) {
         AUDIO_WARNING_LOG(
@@ -774,7 +774,7 @@ bool AudioCapturerPrivate::GetFirstPkgTimeStampInfo(long &firstTs) const
         return false;
     }
 
-    firstTs = std::strtol(iter->second.c_str(), nullptr, BASE_TEN);
+    firstTs = std::strtol(iter->second.c_str(), nullptr, DECIMAL_BASE);
     AUDIO_INFO_LOG("StreamClient for Capturer::first ts is raw %{public}s and value %{public}ld",
         iter->second.c_str(), firstTs);
     return true;
