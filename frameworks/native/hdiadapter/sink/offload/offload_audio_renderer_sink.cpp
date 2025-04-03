@@ -413,8 +413,8 @@ int32_t OffloadAudioRendererSinkInner::RenderEventCallback(struct IAudioCallback
     if (!impl->registered || impl->cookie == nullptr || impl->renderCallback == nullptr) {
         AUDIO_ERR_LOG("impl invalid, %{public}d, %{public}d, %{public}d",
             impl->registered, impl->cookie == nullptr, impl->renderCallback == nullptr);
+        return ERR_INVALID_PARAM;
     }
-    CHECK_AND_RETURN_RET_LOG(impl->cookie != nullptr, ERROR, "The impl->cookie is null");
     auto *sink = reinterpret_cast<OffloadAudioRendererSinkInner *>(impl->cookie);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "sink is null");
     if (!sink->started_ || sink->isFlushing_) {
