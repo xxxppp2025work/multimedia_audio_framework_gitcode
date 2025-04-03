@@ -644,15 +644,15 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_029, TestSize.Level1)
     EXPECT_NE(eventEntry, nullptr);
 
     sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
-    audioRendererFilter->uid = 1001;
+    audioRendererFilter->uid = 1001; 
     audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
-    audioRendererFilter->rendererInfo.rendererFlags = 0;
+    audioRendererFilter->rendererInfo.rendererFlags = 0; 
 
     auto deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    deviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    deviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    deviceDescriptor->macAddress_ = "00:11:22:33:44:55";
-    deviceDescriptor->isEnable_ = true;
+    deviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE; 
+    deviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP; 
+    deviceDescriptor->macAddress_ = "00:11:22:33:44:55"; 
+    deviceDescriptor->isEnable_ = true; 
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc;
     selectedDesc.push_back(deviceDescriptor);
@@ -675,17 +675,17 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_030, TestSize.Level1)
 
 
     sptr<AudioCapturerFilter> audioCapturerFilter = new AudioCapturerFilter();
-    audioCapturerFilter->uid = 1001;
+    audioCapturerFilter->uid = 1001; 
     audioCapturerFilter->capturerInfo.sourceType = SOURCE_TYPE_MIC;
-    audioCapturerFilter->capturerInfo.capturerFlags = 0;
+    audioCapturerFilter->capturerInfo.capturerFlags = 0; 
 
 
     auto inputDevice = std::make_shared<AudioDeviceDescriptor>();
-    inputDevice->deviceRole_ = DeviceRole::INPUT_DEVICE;
-    inputDevice->deviceType_ = DEVICE_TYPE_MIC;
-    inputDevice->macAddress_ = "AA:BB:CC:DD:EE:FF";
-    inputDevice->networkId_ = "local";
-    inputDevice->isEnable_ = true;
+    inputDevice->deviceRole_ = DeviceRole::INPUT_DEVICE; 
+    inputDevice->deviceType_ = DEVICE_TYPE_MIC; 
+    inputDevice->macAddress_ = "AA:BB:CC:DD:EE:FF"; 
+    inputDevice->networkId_ = "local"; 
+    inputDevice->isEnable_ = true; 
 
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc;
@@ -748,7 +748,8 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_033, TestSize.Level1)
     bool hasBTPermission = true;
     bool hasSystemPermission = true;
 
-    auto ret = eventEntry->GetCurrentRendererChangeInfos(audioRendererChangeInfos, hasBTPermission, hasSystemPermission);
+    auto ret = eventEntry->GetCurrentRendererChangeInfos(audioRendererChangeInfos,
+        hasBTPermission, hasSystemPermission);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -768,7 +769,8 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_034, TestSize.Level1)
     bool hasBTPermission = true;
     bool hasSystemPermission = true;
 
-    auto ret = eventEntry->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos, hasBTPermission, hasSystemPermission);
+    auto ret = eventEntry->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos, 
+        hasBTPermission, hasSystemPermission);
     EXPECT_EQ(ret, SUCCESS);
 }
 
