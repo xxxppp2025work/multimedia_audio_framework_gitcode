@@ -1992,7 +1992,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFirstPkgTimeStampInfo_001, TestS
 }
 
 /**
-* @tc.name  : Test GetFirstPkgTimeStampInfo API via illegal state, CAPTURER_RELEASED: GetFirstPkgTimeStampInfo after Release.
+* @tc.name  : Test GetFirstPkgTimeStampInfo API via illegal state
 * @tc.number: Audio_Capturer_GetFirstPkgTimeStampInfo_002
 * @tc.desc  : Test GetFirstPkgTimeStampInfo interface. Returns false, if the capturer state is CAPTURER_RELEASED
 */
@@ -2019,7 +2019,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFirstPkgTimeStampInfo_002, TestS
 }
 
 /**
-* @tc.name  : Test GetFirstPkgTimeStampInfo API via illegal state, CAPTURER_NEW: GetFirstPkgTimeStampInfo without initializing the capturer.
+* @tc.name  : Test GetFirstPkgTimeStampInfo API via illegal state
 * @tc.number: Audio_Capturer_GetFirstPkgTimeStampInfo_003
 * @tc.desc  : Test GetFirstPkgTimeStampInfo interface. Returns false, if the capturer state is CAPTURER_NEW.
 */
