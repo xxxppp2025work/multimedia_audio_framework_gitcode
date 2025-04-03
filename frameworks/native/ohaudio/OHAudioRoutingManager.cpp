@@ -201,7 +201,7 @@ OH_AudioCommon_Result OH_AudioRoutingManager_ReleaseDevices(
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioRoutingManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptorArray != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioDeviceDescriptorArray is nullptr");
-    if (audioDeviceDescriptorArray == nullptr) {
+    if (audioDeviceDescriptorArray == nullptr || audioDeviceDescriptorArray->size == nullptr) {
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
     for (uint32_t index = 0; index < audioDeviceDescriptorArray->size; index++) {
