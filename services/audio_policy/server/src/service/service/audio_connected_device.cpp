@@ -239,7 +239,7 @@ void AudioConnectedDevice::UpdateDmDeviceMap(DmDevice &&dmDevice, bool isConnect
 {
     AUDIO_INFO_LOG("Entry. deviceName_=%{public}s, dmDeviceType_=%{public}d",
         dmDevice.deviceName_.c_str(), dmDevice.dmDeviceType_);
-    lock_guard<mutex> lg(dmDeviceMtx_);
+    std::lock_guard<std::mutex> lg(dmDeviceMtx_);
     if (isConnect) {
         dmDeviceMap_[dmDevice.networkId_] = dmDevice;
         auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), [&dmDevice](auto &item) {
@@ -258,7 +258,7 @@ void AudioConnectedDevice::UpdateDmDeviceMap(DmDevice &&dmDevice, bool isConnect
 void AudioConnectedDevice::UpdateDeviceDesc4DmDevice(AudioDeviceDescriptor &deviceDesc)
 {
     if (deviceDesc.deviceType_ == DEVICE_TYPE_SPEAKER && deviceDesc.networkId_ != LOCAL_NETWORK_ID) {
-        lock_guard<mutex> lg(dmDeviceMtx_);
+        std::lock_guard<std::mutex> lg(dmDeviceMtx_);
         auto it = dmDeviceMap_.find(deviceDesc.networkId_);
         if (it != dmDeviceMap_.end()) {
             deviceDesc.dmDeviceType_ = it->second.dmDeviceType_;
