@@ -48,6 +48,7 @@ static const int VOLUME_LEVEL_MIN_SIZE = 5;
 static const int VOLUME_LEVEL_MID_SIZE = 12;
 static const int VOLUME_LEVEL_MAX_SIZE = 15;
 static const int32_t DISTRIBUTED_DEVICE = 1003;
+static const int DEFAULT_ADJUST_TIMES = 10;
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -220,7 +221,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
 }
 
 int32_t AudioDeviceCommon::GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType,
-    int32_t flags, std::string &networkId, AudioSamplingRate &samplingRate)
+    int32_t flags, std::string &networkId, AudioSamplingRate &samplingRate, bool isFirstCreate)
 {
     AUDIO_INFO_LOG("Not support, should use AudioPipeSelector");
     return flags;
@@ -340,7 +341,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
         if (audioStateManager_.GetPreferredCallRenderDevice() != nullptr &&
             desc->IsSameDeviceDesc(*audioStateManager_.GetPreferredCallRenderDevice())) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                std::make_shared<AudioDeviceDescriptor>(), 0);
+                std::make_shared<AudioDeviceDescriptor>(), CLEAR_PID);
         }
         if (audioStateManager_.GetPreferredCallCaptureDevice() != nullptr &&
             desc->IsSameDeviceDesc(*audioStateManager_.GetPreferredCallCaptureDevice())) {
@@ -415,7 +416,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
         ROUTER_TYPE_USER_SELECT).front()) && (usage & VOICE) == VOICE) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>(), 0);
+            std::make_shared<AudioDeviceDescriptor>(), CLEAR_PID);
     }
     AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(descForCb);
 }
@@ -655,19 +656,13 @@ void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendere
     std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioDeviceCommon::MuteSinkPortForSwitchDevice");
-    if (outputDevices.size() != 1) {
-        // mute primary when play music and ring
-        if (audioSceneManager_.IsStreamActive(STREAM_MUSIC)) {
-            audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, SET_BT_ABS_SCENE_DELAY_MS, true);
-        }
-        return;
-    }
     if (outputDevices.front()->IsSameDeviceDesc(rendererChangeInfo->outputDeviceInfo)) return;
 
     audioIOHandleMap_.SetMoveFinish(false);
 
     if (audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL &&
-        rendererChangeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        rendererChangeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+        audioSceneManager_.CheckVoiceCallActive(rendererChangeInfo->sessionId)) {
         return SetVoiceCallMuteForSwitchDevice();
     }
 
@@ -843,7 +838,7 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
     }
 
     if (audioConfigManager_.GetUpdateRouteSupport() && !reason.isSetAudioScene()) {
-        UpdateRoute(rendererChangeInfo, outputDevices);
+        UpdateRoute(oldRendererChangeInfo, outputDevices);
     }
 
     std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(*outputDevices.front(),
@@ -1175,7 +1170,8 @@ void AudioDeviceCommon::FetchInputDeviceInner(
         int32_t clientUID = capturerChangeInfo->clientUID;
         if ((sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE &&
             audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_PHONE_CALL) ||
-            (sourceType != SOURCE_TYPE_VIRTUAL_CAPTURE && capturerChangeInfo->capturerState != CAPTURER_RUNNING)) {
+            (sourceType != SOURCE_TYPE_VIRTUAL_CAPTURE && capturerChangeInfo->capturerState != CAPTURER_RUNNING &&
+                !capturerChangeInfo->prerunningState)) {
             AUDIO_WARNING_LOG("stream %{public}d not running, no need fetch device", capturerChangeInfo->sessionId);
             continue;
         }
@@ -1641,6 +1637,7 @@ bool AudioDeviceCommon::HasLowLatencyCapability(DeviceType deviceType, bool isRe
         case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
         case DeviceType::DEVICE_TYPE_DP:
+        case DeviceType::DEVICE_TYPE_ACCESSORY:
             return true;
 
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
@@ -1970,15 +1967,18 @@ int32_t AudioDeviceCommon::RingToneVoiceControl(const InternalDeviceType &device
         audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, maxRingTone, deviceType);
     
     if (curVoiceCallLevel > VOLUME_LEVEL_DEFAULT) {
-        while (curVoiceRingMixDb < minMixDbDefault) {
-            curRingToneLevel++;
-            curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
-            curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
-        }
-        while (curVoiceRingMixDb > maxMixDbDefault) {
-            curRingToneLevel--;
-            curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
-            curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+        for (int i = 0; i < DEFAULT_ADJUST_TIMES; i++) {
+            if (curVoiceRingMixDb < minMixDbDefault && curRingToneLevel <= VOLUME_LEVEL_MAX_SIZE) {
+                curRingToneLevel++;
+                curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
+                curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+            } else if (curVoiceRingMixDb > maxMixDbDefault && curRingToneLevel > 0) {
+                curRingToneLevel--;
+                curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
+                curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+            } else {
+                break;
+            }
         }
     }
     return curRingToneLevel;

@@ -532,6 +532,7 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_MIC_REF = 7,
     HDI_CAPTURE_OFFSET_WAKEUP = 8,
     HDI_CAPTURE_OFFSET_BLUETOOTH = 9,
+    HDI_CAPTURE_OFFSET_ACCESSORY = 10,
 };
 
 enum HdiRenderOffset : uint32_t {
@@ -552,6 +553,8 @@ enum HdiRenderOffset : uint32_t {
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
 
 void CloseFd(int fd);
+
+int32_t CheckSupportedParams(const AudioStreamInfo &info);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

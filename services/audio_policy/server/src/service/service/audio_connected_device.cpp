@@ -207,6 +207,7 @@ void AudioConnectedDevice::DelConnectedDevice(std::string networkId, DeviceType 
 void AudioConnectedDevice::AddConnectedDevice(std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
 {
     std::unique_lock<std::shared_mutex> lock(mutex);
+    UpdateDeviceDesc4DmDevice(*remoteDeviceDescriptor);
     connectedDevices_.insert(connectedDevices_.begin(), remoteDeviceDescriptor);
     return;
 }
@@ -263,16 +264,6 @@ void AudioConnectedDevice::UpdateDeviceDesc4DmDevice(AudioDeviceDescriptor &devi
             deviceDesc.dmDeviceType_ = it->second.dmDeviceType_;
             deviceDesc.deviceName_ = it->second.deviceName_;
             deviceDesc.displayName_ = it->second.deviceName_;
-        }
-    }
-}
-
-void AudioConnectedDevice::SetDmDeviceType(const uint16_t dmDeviceType)
-{
-    std::shared_lock<std::shared_mutex> lock(mutex);
-    for (const auto& deviceInfo : connectedDevices_) {
-        if (deviceInfo->networkId_ != LOCAL_NETWORK_ID) {
-            deviceInfo->dmDeviceType_ = dmDeviceType;
         }
     }
 }
@@ -358,8 +349,10 @@ DeviceType AudioConnectedDevice::FindConnectedHeadset()
             (devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADPHONES) ||
             (devDesc->deviceType_ == DEVICE_TYPE_USB_HEADSET) ||
             (devDesc->deviceType_ == DEVICE_TYPE_DP) ||
+            (devDesc->deviceType_ == DEVICE_TYPE_ACCESSORY) ||
             (devDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) ||
-            (devDesc->deviceType_ == DEVICE_TYPE_HDMI));
+            (devDesc->deviceType_ == DEVICE_TYPE_HDMI) ||
+            (devDesc->deviceType_ == DEVICE_TYPE_LINE_DIGITAL));
     });
 
     DeviceType retType = DEVICE_TYPE_NONE;

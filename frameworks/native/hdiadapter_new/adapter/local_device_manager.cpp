@@ -368,6 +368,7 @@ void LocalDeviceManager::InitAudioManager(void)
     hdfRemoteService_ = audioManager_->AsObject(audioManager_);
     // Don't need to free, existing with process
     hdfDeathRecipient_ = (struct HdfDeathRecipient *)calloc(1, sizeof(*hdfDeathRecipient_));
+    CHECK_AND_RETURN_LOG(hdfDeathRecipient_ != nullptr, "create hdf death recipient fail");
     hdfDeathRecipient_->OnRemoteDied = AudioHostOnRemoteDied;
     HdfRemoteServiceAddDeathRecipient(hdfRemoteService_, hdfDeathRecipient_);
 
@@ -499,6 +500,15 @@ int32_t LocalDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteNo
             source.ext.device.type = PIN_IN_BLUETOOTH_SCO_HEADSET;
             source.ext.device.desc = (char *)"pin_in_bluetooth_sco_headset";
             break;
+        case DEVICE_TYPE_ACCESSORY:
+            if (dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
+                source.ext.device.type = PIN_IN_PENCIL;
+                source.ext.device.desc = (char *)"pin_in_pencil";
+            } else if (dmDeviceType_ == DM_DEVICE_TYPE_UWB) {
+                source.ext.device.type = PIN_IN_UWB;
+                source.ext.device.desc = (char *)"pin_in_uwb";
+            }
+            break;
         default:
             ret = ERR_NOT_SUPPORTED;
             break;
@@ -516,6 +526,11 @@ void LocalDeviceManager::SaveSetParameter(const std::string &adapterName, const 
         AUDIO_INFO_LOG("save bt_wbs param when adapter is nullptr");
         reSetParams_.push_back({ adapterName, key, condition, value });
     }
+}
+
+void LocalDeviceManager::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    dmDeviceType_ = dmDeviceType;
 }
 
 } // namespace AudioStandard
