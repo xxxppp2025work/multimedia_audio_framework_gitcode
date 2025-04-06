@@ -163,6 +163,7 @@ private:
     std::mutex switchDeviceMutex_;
     int32_t muteCount_ = 0;
     std::atomic<bool> switchDeviceMute_ = false;
+    std::mutex audioRenderMutex_;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
@@ -229,11 +230,13 @@ void FastAudioRendererSinkInner::DeInit()
 
     started_ = false;
     rendererInited_ = false;
+    std::unique_lock<std::mutex> lock(audioRenderMutex_);
     if ((audioRender_ != nullptr) && (audioAdapter_ != nullptr)) {
         AUDIO_INFO_LOG("Destroy render");
         audioAdapter_->DestroyRender(audioAdapter_, renderId_);
     }
     audioRender_ = nullptr;
+    audioRenderMutex_.unlock();
 
     if ((audioManager_ != nullptr) && (audioAdapter_ != nullptr)) {
         AUDIO_INFO_LOG("Unload adapter");
@@ -771,6 +774,7 @@ int32_t FastAudioRendererSinkInner::SetVolume(float left, float right)
     int32_t ret;
     float volume;
 
+    std::lock_guard<std::mutex> lock(audioRenderMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "FastAudioRendererSink::SetVolume failed audioRender_ null");
     if (halName_ == MMAP_VOIP_HAL_NAME && switchDeviceMute_ && (abs(left) > FLOAT_EPS || abs(right) > FLOAT_EPS)) {
