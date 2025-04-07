@@ -144,6 +144,8 @@ private:
     int32_t LoadDpModule(std::string deviceInfo);
     int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
 
+    void DeactivateNearlinkDevice(AudioDeviceDescriptor &desc);
+
     void DeviceUpdateClearRecongnitionStatus(AudioDeviceDescriptor &desc);
     void HandleOfflineDistributedDevice();
     DeviceType GetDeviceTypeFromPin(AudioPin pin);

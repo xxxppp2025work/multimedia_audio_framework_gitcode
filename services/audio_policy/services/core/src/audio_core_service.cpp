@@ -977,15 +977,27 @@ int32_t AudioCoreService::SetRingerMode(AudioRingerMode ringMode)
 }
 
 int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
-    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+    SourceType sourceType)
 {
-    auto usage = streamDesc->audioMode == AUDIO_MODE_PLAYBACK ? streamDesc->rendererInfo_.streamUsage :
-        streamDesc->capturerInfo_.sourceType;
     if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK) {
-        int32_t ret = sleAudioDeviceManager_.SetActiveDevice(deviceDesc->macAddress_, usage);
+        int32_t ret = sleAudioDeviceManager_.SetActiveDevice(deviceDesc->macAddress_, sourceType);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetActiveDevice failed, macAddress: %{public}s",
             deviceDesc->macAddress_.c_str());
-        ret = sleAudioDeviceManager_.StartPlaying(deviceDesc->macAddress_, usage);
+        ret = sleAudioDeviceManager_.StartPlaying(deviceDesc->macAddress_, sourceType);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "StartPlaying failed, macAddress: %{public}s",
+            deviceDesc->macAddress_.c_str());
+    }
+    return SUCCESS;
+}
+
+int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+    StreamUsage streamUsage)
+{
+    if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK) {
+        int32_t ret = sleAudioDeviceManager_.SetActiveDevice(deviceDesc->macAddress_, streamUsage);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetActiveDevice failed, macAddress: %{public}s",
+            deviceDesc->macAddress_.c_str());
+        ret = sleAudioDeviceManager_.StartPlaying(deviceDesc->macAddress_, streamUsage);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "StartPlaying failed, macAddress: %{public}s",
             deviceDesc->macAddress_.c_str());
     }
@@ -1024,7 +1036,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
 
         // handle nearlink
         int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc->newDeviceDescs_.front(),
-            streamDesc);
+            streamDesc->rendererInfo_.streamUsage);
         CHECK_AND_CONTINUE_LOG(nearlinkFetchResult == SUCCESS, "nearlink fetch output device failed");
 
         if (streamDesc->newDeviceDescs_.front()->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
@@ -1070,7 +1082,7 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute()
 
         // handle nearlink
         int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc->newDeviceDescs_.front(),
-             streamDesc);
+            streamDesc->capturerInfo_.sourceType);
         CHECK_AND_CONTINUE_LOG(nearlinkFetchResult == SUCCESS, "nearlink fetch output device failed");
 
         AUDIO_INFO_LOG("device type: %{public}d", inputDeviceDesc->deviceType_);
