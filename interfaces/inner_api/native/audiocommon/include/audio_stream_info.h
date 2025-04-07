@@ -441,7 +441,8 @@ const std::vector<AudioSampleFormat> AUDIO_SUPPORTED_FORMATS {
     SAMPLE_U8,
     SAMPLE_S16LE,
     SAMPLE_S24LE,
-    SAMPLE_S32LE
+    SAMPLE_S32LE,
+    SAMPLE_F32LE
 };
 
 const std::vector<AudioChannel> RENDERER_SUPPORTED_CHANNELS {
@@ -560,7 +561,8 @@ const std::vector<AudioChannel> AUDIO_FAST_STREAM_SUPPORTED_CHANNELS {
 
 const std::vector<AudioSampleFormat> AUDIO_FAST_STREAM_SUPPORTED_FORMATS {
     SAMPLE_S16LE,
-    SAMPLE_S32LE
+    SAMPLE_S32LE,
+    SAMPLE_F32LE
 };
 
 const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {

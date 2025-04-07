@@ -41,18 +41,21 @@ protected:
 
 private:
     void StandbySleep();
-    int32_t InitSink(const AudioStreamInfo &streamInfo);
+    int32_t InitSink(const AudioStreamInfo &clientStreamInfo);
     int32_t InitSink(uint32_t channel, HdiAdapterFormat format, uint32_t rate);
     int32_t SwitchSink(const AudioStreamInfo &streamInfo, bool isVoip);
     void PauseAsync();
     int32_t StopAudioSink();
     void DoFadeinOut(bool isFadeOut, char* buffer, size_t bufferSize);
 
-    int32_t GetDirectFormatByteSize(HdiAdapterFormat format);
-
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate);
     AudioSamplingRate GetDirectVoipSampleRate(AudioSamplingRate sampleRate);
-    HdiAdapterFormat GetDirectDeviceFormate(AudioSampleFormat format);
+    HdiAdapterFormat GetDirectDeviceFormat(AudioSampleFormat format);
+    HdiAdapterFormat GetDirectVoipDeviceFormat(AudioSampleFormat format);
+    int32_t GetDirectFormatByteSize(HdiAdapterFormat format);
+
+    void GetTargetSinkStreamInfo(const AudioStreamInfo &clientStreamInfo, uint32_t &targetSampleRate,
+        uint32_t &targetChannel, HdiAdapterFormat &targetFormat, bool &isVoip);
 
 private:
     bool isVoip_;
