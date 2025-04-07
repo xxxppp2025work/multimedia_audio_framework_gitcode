@@ -127,6 +127,7 @@ private:
 #endif
     std::mutex sinkMutex_;
     std::mutex startMutex_;
+    std::mutex audioRenderMutex_;
 
     // low latency
     int32_t bufferFd_ = INVALID_FD;

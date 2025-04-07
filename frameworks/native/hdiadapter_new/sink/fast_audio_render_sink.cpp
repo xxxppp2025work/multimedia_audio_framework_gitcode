@@ -68,7 +68,9 @@ void FastAudioRenderSink::DeInit(void)
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN(deviceManager != nullptr);
     deviceManager->DestroyRender(attr_.adapterName, hdiRenderId_);
+    std::unique_lock<std::mutex> lock(audioRenderMutex_);
     audioRender_ = nullptr;
+    audioRenderMutex_.unlock();
     ReleaseMmapBuffer();
 }
 
@@ -257,6 +259,7 @@ std::string FastAudioRenderSink::GetAudioParameter(const AudioParamKey key, cons
 
 int32_t FastAudioRenderSink::SetVolume(float left, float right)
 {
+    std::lock_guard<std::mutex> lock(audioRenderMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
 
     leftVolume_ = left;
