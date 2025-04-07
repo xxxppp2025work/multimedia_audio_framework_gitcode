@@ -391,7 +391,6 @@ CapturerInClientInner::~CapturerInClientInner()
 {
     AUDIO_INFO_LOG("~CapturerInClientInner()");
     CapturerInClientInner::ReleaseAudioStream(true);
-    std::lock_guard<std::mutex> runnerlock(runnerMutex_);
     callbackHandler_ = nullptr;
     AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
