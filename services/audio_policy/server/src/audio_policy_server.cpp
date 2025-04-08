@@ -424,7 +424,11 @@ int32_t AudioPolicyServer::ProcessVolumeKeyMuteEvents(const int32_t keyType)
         ChangeVolumeOnVoiceAssistant(streamInFocus);
     }
     if (isScreenOffOrLock_ && !IsStreamActive(streamInFocus) && !VolumeUtils::IsPCVolumeEnable()) {
-        AUDIO_INFO_LOG("screen off or screen lock, this stream is not active, not change volume.");
+        AUDIO_INFO_LOG("screen off or screen lock for phone, this stream is not active, not change volume.");
+        return AUDIO_OK;
+    } else if (VolumeUtils::IsPCVolumeEnable() && isScreenOffOrLock_
+        && !IsStreamActive(VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus()))) {
+        AUDIO_INFO_LOG("screen off for PC, this stream is not active, not change volume.");
         return AUDIO_OK;
     }
     if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && GetStreamMuteInternal(streamInFocus)) {
@@ -717,8 +721,14 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
             return;
         }
         powerStateListener_->ControlAudioFocus(false);
-    } else if (action == "usual.event.SCREEN_LOCKED") {
-        AUDIO_INFO_LOG("receive SCREEN_OFF or SCREEN_LOCKED action, control audio volume change if stream is active");
+        if (VolumeUtils::IsPCVolumeEnable()) {
+            isScreenOffOrLock_ = false;
+        }
+    } else if (action == "usual.event.SCREEN_OFF") {
+        AUDIO_INFO_LOG("receive SCREEN_OFF action, control audio volume change if stream is active");
+        isScreenOffOrLock_ = true;
+    } else if (action == "usual.event.SCREEN_LOCKED" && !VolumeUtils::IsPCVolumeEnable()) {
+        AUDIO_INFO_LOG("receive SCREEN_LOCKED action for phone, control audio volume change if stream is active");
         isScreenOffOrLock_ = true;
     } else if (action == "usual.event.SCREEN_UNLOCKED") {
         AUDIO_INFO_LOG("receive SCREEN_UNLOCKED action, can change volume");
