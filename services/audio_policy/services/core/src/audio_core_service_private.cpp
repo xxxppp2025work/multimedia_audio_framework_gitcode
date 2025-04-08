@@ -1915,6 +1915,10 @@ int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescrip
     if (streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         BluetoothScoFetch(streamDesc);
     }
+
+    int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc->newDeviceDescs_[0], streamDesc);
+    CHECK_AND_CRETURN_LOG(nearlinkFetchResult == SUCCESS, "nearlink fetch output device failed");
+
     return SUCCESS;
 }
 
@@ -1933,12 +1937,12 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioDevi
             if (ret != SUCCESS) {
                 return ret;
             }
-            return sleAudioDeviceManager_.StartPlaying(deviceDesc->macAddress_, config);
+            return sleAudioDeviceManager_.StartPlaying(*deviceDesc, config);
         };
 
         int32_t result = std::visit(runDeviceActivationFlow, audioStreamConfig);
-        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERROR, 
-            "Nearlink device activation failed, macAddress: %{public}s", deviceDesc->macAddress_.c_str());
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERROR, "Nearlink device activation failed, macAddress: %{public}s",
+            GetEncryptAddr(AddrdeviceDesc->macAddress_).c_str());
     }
     return SUCCESS;
 }

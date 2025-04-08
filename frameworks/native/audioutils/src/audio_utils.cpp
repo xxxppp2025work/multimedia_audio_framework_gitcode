@@ -486,6 +486,18 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
     return ret;
 }
 
+bool PermissionUtil::CheckCallingUidPermission(const std::vector<uid_t> &allowedUids)
+{
+    CHECK_AND_RETURN_RET_LOG(allowedUids.size() > 0, false, "allowedUids is empty");
+    auto callingUid = IPCSkeleton::GetCallingUid();
+    for (const auto &uid : allowedUids) {
+        if (uid == callingUid) {
+            return true;
+        }
+    }
+    return false;
+}
+
 std::mutex g_switchMapMutex;
 static std::map<SwitchStreamInfo, SwitchState> g_switchStreamRecordMap = {};
 

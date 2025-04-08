@@ -23,7 +23,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
 const int32_t DEVICE_SIZE_LIMIT = 100;
+} // namespace
 SleAudioOperationCallbackProxy::SleAudioOperationCallbackProxy(const sptr<IRemoteObject> &impl) :
     IRemoteProxy<IStandardSleAudioOperationCallback>(impl)
 {
@@ -41,11 +43,10 @@ void SleAudioOperationCallbackProxy::GetSleAudioDeviceList(std::vector<AudioDevi
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
 
-    CHECK_AND_RETURN_LOG(data.WriteInterfaceToken(GetDescriptor()),
-        "GetSleAudioDeviceList: WriteInterfaceToken failed");
+    CHECK_AND_RETURN_LOG(data.WriteInterfaceToken(GetDescriptor()), "WriteInterfaceToken failed");
 
     int error = Remote()->SendRequest(GET_SLE_AUDIO_DEVICE_LIST, data, reply, option);
-    CHECK_AND_RETURN_LOG(error == ERR_NONE, "GetSleAudioDeviceList failed, error: %{public}d", error);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "Failed, error: %{public}d", error);
 
     int32_t size = reply.ReadInt32();
     CHECK_AND_RETURN_LOG(size < DEVICE_SIZE_LIMIT, "reply size reach limit");
@@ -60,18 +61,16 @@ void SleAudioOperationCallbackProxy::GetSleVirtualAudioDeviceList(std::vector<Au
     MessageParcel reply;
     MessageOption option;
 
-    CHECK_AND_RETURN_LOG(data.WriteInterfaceToken(GetDescriptor()),
-       "GetSleVirtualAudioDeviceList: WriteInterfaceToken failed");
+    CHECK_AND_RETURN_LOG(data.WriteInterfaceToken(GetDescriptor()), "WriteInterfaceToken failed");
 
     int error = Remote()->SendRequest(GET_SLE_VIRTUAL_AUDIO_DEVICE_LIST, data, reply, option);
-    CHECK_AND_RETURN_LOG(error == ERR_NONE, "GetSleVirtualAudioDeviceList failed, error: %{public}d", error);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "Failed, error: %{public}d", error);
 
     int32_t size = reply.ReadInt32();
     CHECK_AND_RETURN_LOG(size < DEVICE_SIZE_LIMIT, "reply size reach limit");
     for (int32_t i = 0; i < size; i++) {
         devices.push_back(std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(reply)));
     }
-    return SUCCESS;
 }
 
 bool SleAudioOperationCallbackProxy::IsInBandRingOpen(const std::string &device)
@@ -80,14 +79,13 @@ bool SleAudioOperationCallbackProxy::IsInBandRingOpen(const std::string &device)
     MessageParcel reply;
     MessageOption option;
 
-    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), false,
-        "IsInBandRingOpen: WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "WriteInterfaceToken failed");
 
     data.WriteString(device);
     int error = Remote()->SendRequest(IS_IN_BAND_RING_OPEN, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "IsInBandRingOpen failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "Failed, error: %{public}d", error);
 
-    return reply.ReadInt32();
+    return reply.ReadBool();
 }
 
 uint32_t SleAudioOperationCallbackProxy::GetSupportStreamType(const std::string &device)
@@ -96,12 +94,11 @@ uint32_t SleAudioOperationCallbackProxy::GetSupportStreamType(const std::string 
     MessageParcel reply;
     MessageOption option;
 
-    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR,
-        "GetSupportStreamType: WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), 0, "WriteInterfaceToken failed");
 
     data.WriteString(device);
     int error = Remote()->SendRequest(GET_SUPPORT_STREAM_TYPE, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "GetSupportStreamType failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, 0, "Failed, error: %{public}d", error);
 
     return reply.ReadUint32();
 }
@@ -112,13 +109,12 @@ int32_t SleAudioOperationCallbackProxy::SetActiveSinkDevice(const std::string &d
     MessageParcel reply;
     MessageOption option;
 
-    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR,
-        "SetActiveSinkDevice: WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "WriteInterfaceToken failed");
 
     data.WriteString(device);
     data.WriteInt32(streamType);
     int error = Remote()->SendRequest(SET_ACTIVE_SINK_DEVICE, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SetActiveSinkDevice failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }
@@ -129,13 +125,12 @@ int32_t SleAudioOperationCallbackProxy::StartPlaying(const std::string &device, 
     MessageParcel reply;
     MessageOption option;
 
-    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR,
-        "StartPlaying: WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "WriteInterfaceToken failed");
 
     data.WriteString(device);
     data.WriteInt32(streamType);
     int error = Remote()->SendRequest(START_PLAYING, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "StartPlaying failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }
@@ -146,13 +141,12 @@ int32_t SleAudioOperationCallbackProxy::StopPlaying(const std::string &device, u
     MessageParcel reply;
     MessageOption option;
 
-    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR,
-        "StopPlaying: WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "WriteInterfaceToken failed");
 
     data.WriteString(device);
     data.WriteInt32(streamType);
     int error = Remote()->SendRequest(STOP_PLAYING, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "StopPlaying failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }
@@ -163,12 +157,11 @@ int32_t SleAudioOperationCallbackProxy::ConnectAllowedProfiles(const std::string
     MessageParcel reply;
     MessageOption option;
 
-    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR,
-        "ConnectAllowedProfiles: WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "WriteInterfaceToken failed");
 
     data.WriteString(remoteAddr);
     int error = Remote()->SendRequest(CONNECT_ALLOWED_PROFILES, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "ConnectAllowedProfiles failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }
@@ -180,14 +173,13 @@ int32_t SleAudioOperationCallbackProxy::SetDeviceAbsVolume(const std::string &re
     MessageParcel reply;
     MessageOption option;
 
-    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR,
-        "SetDeviceAbsVolume: WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "WriteInterfaceToken failed");
 
     data.WriteString(remoteAddr);
     data.WriteInt32(volume);
     data.WriteInt32(streamType);
     int error = Remote()->SendRequest(SET_DEVICE_ABS_VOLUME, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SetDeviceAbsVolume failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }
@@ -198,13 +190,12 @@ int32_t SleAudioOperationCallbackProxy::SendUserSelection(const std::string &dev
     MessageParcel reply;
     MessageOption option;
 
-    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR,
-        "SendUserSelection: WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "WriteInterfaceToken failed");
 
     data.WriteString(device);
     data.WriteInt32(streamType);
     int error = Remote()->SendRequest(SEND_USER_SELECTION, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendUserSelection failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }

@@ -153,7 +153,7 @@ int32_t LocalDeviceManager::SetVoiceVolume(const std::string &adapterName, float
 }
 
 int32_t LocalDeviceManager::SetOutputRoute(const std::string &adapterName, const std::vector<DeviceType> &devices,
-    int32_t streamId)
+    int32_t streamId, AudioScene scene)
 {
     CHECK_AND_RETURN_RET_LOG(!devices.empty() && devices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "invalid audio devices");
@@ -170,7 +170,7 @@ int32_t LocalDeviceManager::SetOutputRoute(const std::string &adapterName, const
     AudioRouteNode sinks[devices.size()];
     for (size_t i = 0; i < devices.size(); ++i) {
         sinks[i] = {};
-        int32_t ret = SetOutputPortPin(devices[i], sinks[i]);
+        int32_t ret = SetOutputPortPin(devices[i], sinks[i], scene);
         CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
         AUDIO_INFO_LOG("output[%{public}zu], device: %{public}d, pin: 0x%{public}X", i, devices[i],
             sinks[i].ext.device.type);
@@ -428,7 +428,7 @@ uint32_t LocalDeviceManager::GetPortId(const std::string &adapterName, enum Audi
     return portId;
 }
 
-int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
+int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink, AudioScene scene)
 {
     int32_t ret = SUCCESS;
 
@@ -462,8 +462,7 @@ int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRoute
             sink.ext.device.desc = (char *)"pin_out_bluetooth_a2dp";
             break;
         case DEVICE_TYPE_NEARLINK:
-            sink.ext.device.type = PIN_OUT_NEARLINK;
-            sink.ext.device.desc = (char *)"pin_out_nearlink";
+            HandleNearlinkScene(sink, scene);
             break;
         case DEVICE_TYPE_NONE:
             sink.ext.device.type = PIN_NONE;
@@ -475,6 +474,18 @@ int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRoute
     }
 
     return ret;
+}
+
+int32_t LocalDeviceManager::HandleNearlinkScene(AudioRouteNode &sink, AudioScene scene)
+{
+    if (scene != AUDIO_SCENE_DEFAULT) {
+        sink.ext.device.type = PIN_OUT_NEARLINK_SCO;
+        sink.ext.device.desc = (char *)"pin_out_nearlink_sco";
+    } else {
+        sink.ext.device.type = PIN_OUT_NEARLINK;
+        sink.ext.device.desc = (char *)"pin_out_nearlink";
+    }
+    return SUCCESS;
 }
 
 int32_t LocalDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)

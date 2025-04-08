@@ -123,6 +123,7 @@ private:
     void SetDeviceAbsVolumeSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void IsAbsVolumeSceneInternal(MessageParcel &data, MessageParcel &reply);
     void SetA2dpDeviceVolumeInternal(MessageParcel &data, MessageParcel &reply);
+    void SetNearlinkDeviceVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void WriteAudioFocusInfo(MessageParcel &data,
         const std::pair<AudioInterrupt, AudioFocuState> &focusInfo);
@@ -225,8 +226,6 @@ private:
     void SetDeviceConnectionStatusInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryAllowedPlaybackCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryBundleNameListCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void SetStartPlayingResultInternal(MessageParcel &data, MessageParcel &reply);
-    void SetStopPlayingResultInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateDeviceInfoInternal(MessageParcel &data, MessageParcel &reply);
     void SetSleAudioOperationCallbackInternal(MessageParcel &data, MessageParcel &reply);
 

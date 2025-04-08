@@ -566,34 +566,17 @@ int32_t AudioPolicyManager::UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDe
     return gsp->UpdateDeviceInfo(deviceDesc, command);
 }
 
-int32_t AudioPolicyManager::SetStartPlayingResult(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
-    const uint32_t streamType, const int result)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    return gsp->SetStartPlayingResult(deviceDesc, streamType, result);
-}
-
-int32_t AudioPolicyManager::SetStopPlayingResult(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
-    const uint32_t streamType, const int result)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    return gsp->SetStopPlayingResult(deviceDesc, streamType, result);
-}
-
 int32_t AudioPolicyManager::SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback)
 {
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
     std::unique_lock<std::mutex> lock(listenerStubMutex_);
     auto audioSleCb = new (std::nothrow) SleAudioOperationCallbackStub();
-    if (audioSleCb == nullptr) {
-        AUDIO_ERR_LOG("object is nullptr");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioSleCb != nullptr, ERROR, "object null");
+
     audioSleCb->SetSleAudioOperationCallback(callback);
     sptr<IRemoteObject> object = audioSleCb->AsObject();
     if (object == nullptr) {
@@ -601,6 +584,7 @@ int32_t AudioPolicyManager::SetSleAudioOperationCallback(const std::shared_ptr<S
         delete audioSleCb;
         return ERROR;
     }
+
     return gsp->SetSleAudioOperationCallback(object);
 }
 } // namespace AudioStandard

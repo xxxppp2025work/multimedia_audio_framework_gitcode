@@ -35,6 +35,7 @@
 
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
+#include "sle_audio_device_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -212,12 +213,13 @@ void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDevice
         SleAudioDeviceManager::GetInstance().SetActiveDevice(audioDeviceDescriptor->macAddress_,
             STREAM_USAGE_INVALID);
     }
+
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
         audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         Bluetooth::SendUserSelectionEvent(audioDeviceDescriptor->deviceType_,
             audioDeviceDescriptor->macAddress_, USER_SELECT_BT);
     }
-    if (AudioDeviceDescriptor->deviceType == DEVICE_TYPE_NEARLINK) {
+    if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_NEARLINK) {
         SleAudioDeviceManager::GetInstance().SendUserSelection(*audioDeviceDescriptor,
             streamUsage);
     }
@@ -242,12 +244,13 @@ void AudioActiveDevice::NotifyUserSelectionEventForInput(std::shared_ptr<AudioDe
         SleAudioDeviceManager::GetInstance().SetActiveDevice(audioDeviceDescriptor->macAddress_,
             STREAM_USAGE_INVALID);
     }
+
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
         audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
         Bluetooth::SendUserSelectionEvent(audioDeviceDescriptor->deviceType_,
             audioDeviceDescriptor->macAddress_, USER_SELECT_BT);
     }
-    if (AudioDeviceDescriptor->deviceType == DEVICE_TYPE_NEARLINK_IN) {
+    if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
         SleAudioDeviceManager::GetInstance().SendUserSelection(*audioDeviceDescriptor,
             sourceType);
     }

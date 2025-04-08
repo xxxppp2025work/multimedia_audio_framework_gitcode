@@ -264,6 +264,9 @@ public:
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi) override;
 
+    int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
+        const int32_t volume, const bool updateUi) override;
+
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage) override;
 
     int32_t SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
@@ -443,10 +446,6 @@ public:
 
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) override;
 
-    int32_t SetStartPlayingResult(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
-        const uint32_t streamType, const int result) override;
-    int32_t SetStopPlayingResult(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
-        const uint32_t streamType, const int result) override;
     int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         const DeviceInfoUpdateCommand command) override;
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) override;

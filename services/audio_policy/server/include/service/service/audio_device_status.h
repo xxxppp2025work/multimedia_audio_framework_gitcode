@@ -146,7 +146,7 @@ private:
     int32_t RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         AudioModuleInfo &moduleInfo, std::string &currentActivePort);
 
-    void DeactivateNearlinkDevice(AudioDeviceDescriptor &desc);
+    void DeactivateNearlinkDevice(const AudioDeviceDescriptor &desc);
 
     void DeviceUpdateClearRecongnitionStatus(AudioDeviceDescriptor &desc);
     void HandleOfflineDistributedDevice();

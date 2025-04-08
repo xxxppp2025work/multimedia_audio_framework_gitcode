@@ -361,6 +361,9 @@ public:
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi);
 
+    int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
+        const int32_t volume, const bool updateUi);
+
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
 
     int32_t SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
@@ -587,10 +590,6 @@ public:
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
 
-    int32_t SetStartPlayingResult(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
-        const uint32_t streamType, const int result);
-    int32_t SetStopPlayingResult(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
-        const uint32_t streamType, const int result);
     int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         const DeviceInfoUpdateCommand command);
     int32_t SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback);

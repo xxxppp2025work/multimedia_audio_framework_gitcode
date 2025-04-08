@@ -110,8 +110,6 @@ public:
     int32_t SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback);
 
     int32_t SetDeviceConnectionStatus(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, bool isConnected);
-    int32_t SetStartPlayingResult(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, uint32_t streamType, int result);
-    int32_t SetStopPlayingResult(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, uint32_t streamType, int result);
     int32_t UpdateDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, DeviceInfoUpdateCommand command);
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;

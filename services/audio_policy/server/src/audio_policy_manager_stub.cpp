@@ -117,6 +117,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_DEVICE_ABSOLUTE_VOLUME_SUPPORTED",
     "GET_ABS_VOLUME_SCENE",
     "SET_A2DP_DEVICE_VOLUME",
+    "SET_NEARLINK_DEVICE_VOLUME",
     "GET_AVAILABLE_DESCRIPTORS",
     "SET_AVAILABLE_DEVICE_CHANGE_CALLBACK",
     "UNSET_AVAILABLE_DEVICE_CHANGE_CALLBACK",
@@ -223,8 +224,6 @@ const char *g_audioPolicyCodeStrs[] = {
     "ACTIVATE_PREEMPT_MODE",
     "DEACTIVATE_PREEMPT_MODE",
     "GET_DM_DEVICE_TYPE",
-    "SET_START_PLAYING_RESULT",
-    "SET_STOP_PLAYING_RESULT",
     "UPDATE_DEVICE_INFO",
     "SET_SLE_AUDIO_OPERATION_CALLBACK",
 };
@@ -976,15 +975,6 @@ void AudioPolicyManagerStub::IsAbsVolumeSceneInternal(MessageParcel &data, Messa
     reply.WriteBool(IsAbsVolumeScene());
 }
 
-void AudioPolicyManagerStub::SetA2dpDeviceVolumeInternal(MessageParcel &data, MessageParcel &reply)
-{
-    std::string macAddress = data.ReadString();
-    int32_t volume = data.ReadInt32();
-    bool updateUi = data.ReadBool();
-    int32_t result = SetA2dpDeviceVolume(macAddress, volume, updateUi);
-    reply.WriteInt32(result);
-}
-
 void AudioPolicyManagerStub::ConfigDistributedRoutingRoleInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::shared_ptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
@@ -1242,53 +1232,12 @@ void AudioPolicyManagerStub::SetQueryBundleNameListCallbackInternal(MessageParce
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::SetStartPlayingResultInternal(MessageParcel &data, MessageParcel &reply)
-{
-    std::shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceDescriptor::UnmarshallingPtr(data);
-    uint32_t streamType = data.ReadUint32();
-    int32_t result = data.ReadInt32();
-    int32_t ret = SetStartPlayingResult(desc, streamType, result);
-    reply.WriteInt32(ret);
-}
-
-void AudioPolicyManagerStub::SetStopPlayingResultInternal(MessageParcel &data, MessageParcel &reply)
-{
-    std::shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceDescriptor::UnmarshallingPtr(data);
-    uint32_t streamType = data.ReadUint32();
-    int32_t result = data.ReadInt32();
-    int32_t ret = SetStopPlayingResult(desc, streamType, result);
-    reply.WriteInt32(ret);
-}
-
-void AudioPolicyManagerStub::UpdateDeviceInfoInternal(MessageParcel &data, MessageParcel &reply)
-{
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
-    CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
-    DeviceInfoUpdateCommand command = static_cast<DeviceInfoUpdateCommand>(data.ReadInt32());
-    int32_t result = UpdateDeviceInfo(audioDeviceDescriptor, command);
-    reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::SetSleAudioOperationCallbackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    sptr<IRemoteObject> object = data.ReadRemoteObject();
-    CHECK_AND_RETURN_LOG(object != nullptr, "SetSleAudioOperationCallback is null");
-    int32_t result = SetSleAudioOperationCallback(object);
-    reply.WriteInt32(result);
-}
-
 void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     switch (code) {
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_BUNDLE_NAME_LIST_CALLBACK):
             SetQueryBundleNameListCallbackInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_START_PLAYING_RESULT):
-            SetStartPlayingResultInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STOP_PLAYING_RESULT):
-            SetStopPlayingResultInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::UPDATE_DEVICE_INFO):
             UpdateDeviceInfoInternal(data, reply);
@@ -1574,6 +1523,9 @@ void AudioPolicyManagerStub::OnMiddleFifRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_A2DP_DEVICE_VOLUME):
             SetA2dpDeviceVolumeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_NEARLINK_DEVICE_VOLUME):
+            SetNearlinkDeviceVolumeInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AVAILABLE_DESCRIPTORS):
             GetAvailableDevicesInternal(data, reply);
@@ -2257,14 +2209,6 @@ void AudioPolicyManagerStub::SetVirtualCallInternal(MessageParcel &data, Message
 {
     bool isVirtual = data.ReadBool();
     int32_t result = SetVirtualCall(isVirtual);
-    reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::SetDeviceConnectionStatusInternal(MessageParcel &data, MessageParcel &reply)
-{
-    std::shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceDescriptor::UnmarshallingPtr(data);
-    bool isConnected = data.ReadBool();
-    int32_t result = SetDeviceConnectionStatus(desc, isConnected);
     reply.WriteInt32(result);
 }
 

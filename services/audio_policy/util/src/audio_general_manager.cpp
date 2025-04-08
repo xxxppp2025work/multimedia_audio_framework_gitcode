@@ -430,20 +430,6 @@ int32_t AudioGeneralManager::UpdateDeviceInfo(std::shared_ptr<AudioDeviceDescrip
     return AudioPolicyManager::GetInstance().UpdateDeviceInfo(deviceDesc, command);
 }
 
-int32_t AudioGeneralManager::SetStartPlayingResult(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
-    uint32_t streamType, int result)
-{
-    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_INVALID_PARAM, "deviceDesc is nullptr");
-    return AudioPolicyManager::GetInstance().SetStartPlayingResult(deviceDesc, streamType, result);
-}
-
-int32_t AudioGeneralManager::SetStopPlayingResult(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
-    uint32_t streamType, int result)
-{
-    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_INVALID_PARAM, "deviceDesc is nullptr");
-    return AudioPolicyManager::GetInstance().SetStopPlayingResult(deviceDesc, streamType, result);
-}
-
 int32_t AudioGeneralManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {

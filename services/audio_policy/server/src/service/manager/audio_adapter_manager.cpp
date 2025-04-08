@@ -2194,6 +2194,7 @@ SafeStatus AudioAdapterManager::GetCurrentDeviceSafeStatus(DeviceType deviceType
             return safeStatus_;
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_NEARLINK:
             volumeDataMaintainer_.GetSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, safeStatusBt_);
             return safeStatusBt_;
         default:
@@ -2629,10 +2630,11 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene)
 {
     AUDIO_PRERELEASE_LOGI("SetAbsVolumeScene: %{public}d", isAbsVolumeScene);
     isAbsVolumeScene_ = isAbsVolumeScene;
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        currentActiveDevice_.deviceType_ == DEVICE_TYPE_NEARLINK) {
         SetVolumeDb(STREAM_MUSIC);
     } else {
-        AUDIO_INFO_LOG("The currentActiveDevice is not A2DP");
+        AUDIO_INFO_LOG("The currentActiveDevice is not A2DP or nearlink device");
     }
 }
 
@@ -2645,10 +2647,11 @@ void AudioAdapterManager::SetAbsVolumeMute(bool mute)
 {
     AUDIO_INFO_LOG("SetAbsVolumeMute: %{public}d", mute);
     isAbsVolumeMute_ = mute;
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        currentActiveDevice_.deviceType_ == DEVICE_TYPE_NEARLINK) {
         SetVolumeDb(STREAM_MUSIC);
     } else {
-        AUDIO_INFO_LOG("The currentActiveDevice is not A2DP");
+        AUDIO_INFO_LOG("The currentActiveDevice is not A2DP or nearlink device");
     }
 }
 

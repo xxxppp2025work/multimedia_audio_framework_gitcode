@@ -398,7 +398,7 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
     } else {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE, selectedDesc[0]);
     }
-    audioActiveDevice_.DisconnectScoWhenUserSelectInput(selectedDesc[0]);
+    audioActiveDevice_.NotifyUserSelectionEventForInput(selectedDesc[0], srcType);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
 
     audioDeviceCommon_.OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(),

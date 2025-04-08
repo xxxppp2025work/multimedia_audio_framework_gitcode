@@ -95,6 +95,7 @@ int32_t SleAudioOperationCallbackStub::SetSleAudioOperationCallback(
     std::shared_ptr<SleAudioOperationCallback> sleAudioOperationCallback = sleAudioOperationCallback_.lock();
     CHECK_AND_RETURN_RET_LOG(sleAudioOperationCallback != nullptr, ERROR_INVALID_PARAM,
         "sleAudioOperationCallback_ is nullptr");
+    return SUCCESS
 }
 
 void SleAudioOperationCallbackStub::GetSleAudioDeviceListInternal(MessageParcel &data, MessageParcel &reply)
@@ -214,7 +215,7 @@ bool SleAudioOperationCallbackStub::IsInBandRingOpen(const std::string &device)
 
 uint32_t SleAudioOperationCallbackStub::GetSupportStreamType(const std::string &device)
 {
-    uint32_t streamType;
+    uint32_t streamType = 0;
     std::unique_lock lock(sleAudioOperationCallbackMutex_);
     std::shared_ptr<SleAudioOperationCallback> sleAudioOperationCallback = sleAudioOperationCallback_.lock();
     CHECK_AND_RETURN_RET_LOG(sleAudioOperationCallback != nullptr, streamType, "sleAudioOperationCallback_ is nullptr");

@@ -87,6 +87,7 @@ constexpr uid_t UID_CAST_ENGINE_SA = 5526;
 constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
+constexpr uid_t UID_NEARLINK_SA = 7030;
 constexpr uid_t UID_CAR_DISTRIBUTED_ENGINE_SA = 65872;
 constexpr uid_t UID_TV_PROCESS_SA = 7501;
 constexpr uid_t UID_DP_PROCESS_SA = 7062;
@@ -1452,6 +1453,9 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
         }
     } else if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && desc.deviceRole_ == INPUT_DEVICE) {
         desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    }
+    if (desc.deviceType_ == DEVICE_TYPE_NEARLINK && desc.DeviceRole_ == INPUT_DEVICE) {
+        desc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
     }
 }
 
@@ -2937,6 +2941,31 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
     return ret;
 }
 
+int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress, AudioStreamType streamType,
+    const int32_t volume, const bool updateUi)
+{
+    std::vector<uid_t> allowedUids = { UID_NEARLINK_SA };
+    bool ret = PermissionUtils::CheckCallingUidPermission(allowedUids);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "Uid Check Failed");
+
+    CHECK_AND_RETURN_RET_LOG(IsVolumeLevelValid(streamType, volume), ERR_NOT_SUPPORTED,
+        "Error volume level: %{public}d", volume);
+
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    int32_t ret = audioPolicyService_.SetNearlinkDeviceVolume(macAddress, streamType, volume);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "Set volume failed, macAddress: %{public}s", macAddress.c_str());
+
+    VolumeEvent volumeEvent = VolumeEvent(streamType, volume, updateUi);
+
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
+    if (audioPolicyService_.GetActiveOutputDevice() == DEVICE_TYPE_NEARLINK) {
+        audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
+    }
+
+    return SUCCESS;
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetAvailableDevices(AudioDeviceUsage usage)
 {
     std::vector<shared_ptr<AudioDeviceDescriptor>> deviceDescs = {};
@@ -3973,11 +4002,15 @@ int32_t AudioPolicyServer::SetDeviceConnectionStatus(const std::shared_ptr<Audio
 {
     AUDIO_INFO_LOG("deviceType: %{public}d, deviceRole: %{public}d, isConnected: %{public}d",
         desc->deviceType_, desc->deviceRole_, isConnected);
-    auto callerUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callerUid == UID_TV_PROCESS_SA || callerUid == UID_DP_PROCESS_SA ||
-        callerUid == UID_PENCIL_PROCESS_SA, ERR_PERMISSION_DENIED, "uid permission denied");
+
+    std::vector<uid_t> allowedUids = {
+        UID_TV_PROCESS_SA, UID_DP_PROCESS_SA, UID_PENCIL_PROCESS_SA, UID_NEARLINK_SA,
+    };
+    CHECK_AND_RETURN_RET_LOG(CheckCallingUidPermission(allowedUids), ERR_PERMISSION_DENIED, "uid permission denied");
+
     bool ret = VerifyPermission(MANAGE_AUDIO_CONFIG);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "MANAGE_AUDIO_CONFIG permission denied");
+
     eventEntry_.OnDeviceStatusUpdated(*desc, isConnected);
     return SUCCESS;
 }
@@ -4004,41 +4037,27 @@ void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t ses
     audioPolicyService_.TriggerFetchDevice();
 }
 
-int32_t AudioPolicyServer::SetStartPlayingResult(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
-    const uint32_t streamType, const int result)
-{
-    AUDIO_INFO_LOG("SetStartPlayingResult deviceDesc: streamType: %{public}d, result: %{public}d",
-        streamType, result);
-    return SUCCESS;
-}
-
-int32_t AudioPolicyServer::SetStopPlayingResult(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
-    const uint32_t streamType, const int result)
-{
-    AUDIO_INFO_LOG("SetStopPlayingResult deviceDesc: streamType: %{public}d, result: %{public}d",
-        streamType, result);
-    return SUCCESS;
-}
-
 int32_t AudioPolicyServer::UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
     const DeviceInfoUpdateCommand command)
 {
-    bool ret = VerifyPermission(MANAGE_AUDIO_CONFIG);
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
-        "UpdateDeviceInfo MANAGE_AUDIO_CONFIG permission check failed");
+    std::vector<uid_t> allowedUids = { UID_NEARLINK_SA };
+    CHECK_AND_RETURN_RET_LOG(CheckCallingUidPermission(allowedUids), ERR_PERMISSION_DENIED,
+        "uid permission denied");
+
     CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_INVALID_PARAM,
         "UpdateDeviceInfo deviceDesc is nullptr");
+
     eventEntry_.OnDeviceInfoUpdated(*deviceDesc, command);
     return SUCCESS;
 }
 
 int32_t AudioPolicyServer::SetSleAudioOperationCallback(const sptr<IRemoteObject> &object)
 {
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
-        "SetSleAudioOperationCallback object is nullptr");
-    bool hasBTPermission = VerifyBluetoothPermission();
-    CHECK_AND_RETURN_RET_LOG(hasBTPermission, ERR_PERMISSION_DENIED,
-        "SetSleAudioOperationCallback permission check failed");
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "object is nullptr");
+
+    bool ret = PermissionUtil::VerifyIsAudio();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "Uid Check Failed");
+
     return audioPolicyService_.SetSleAudioOperationCallback(object);
 }
 } // namespace AudioStandard

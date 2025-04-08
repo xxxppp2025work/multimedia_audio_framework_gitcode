@@ -218,6 +218,7 @@ inline const std::unordered_set<DeviceType> INPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_USB_ARM_HEADSET,
     DeviceType::DEVICE_TYPE_FILE_SOURCE,
     DeviceType::DEVICE_TYPE_ACCESSORY,
+    DeviceType::DEVICE_TYPE_NEARLINK_IN,
 };
 
 inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_ROLE_NONE)
@@ -251,6 +252,7 @@ inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_HDMI,
     DeviceType::DEVICE_TYPE_LINE_DIGITAL,
     DeviceType::DEVICE_TYPE_REMOTE_DAUDIO,
+    DeviceType::DEVICE_TYPE_NEARLINK,
 };
 
 inline bool IsOutputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_ROLE_NONE)
