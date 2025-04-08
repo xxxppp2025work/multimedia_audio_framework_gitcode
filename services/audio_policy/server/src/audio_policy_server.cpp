@@ -2902,6 +2902,29 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
     return ret;
 }
 
+int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress, AudioStreamType streamType,
+    const int32_t volume, const bool updateUi)
+{
+    // to do: check caller uid
+
+    CHECK_AND_RETURN_RET_LOG(IsVolumeLevelValid(streamType, volume), ERR_NOT_SUPPORTED,
+        "SetNearlinkDeviceVolume: Error volume level: %{public}d", volume);
+
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    int32_t ret = audioPolicyService_.SetNearlinkDeviceVolume(macAddress, streamType, volume);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "SetNearlinkDeviceVolume: Set volume failed, macAddress: %{public}s", macAddress.c_str());
+
+    VolumeEvent volumeEvent = VolumeEvent(streamType, volume, updateUi);
+
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
+    if (audioPolicyService_.GetActiveOutputDevice() == DEVICE_TYPE_NEARLINK) {
+        audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
+    }
+
+    return SUCCESS;
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetAvailableDevices(AudioDeviceUsage usage)
 {
     std::vector<shared_ptr<AudioDeviceDescriptor>> deviceDescs = {};

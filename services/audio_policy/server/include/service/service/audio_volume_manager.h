@@ -99,6 +99,9 @@ public:
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, bool internalCall = false);
 
+    int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
+        const int32_t volume, bool updateUi = false);
+
     void UpdateGroupInfo(GroupType type, std::string groupName, int32_t& groupId, std::string networkId,
         bool connected, int32_t mappingId);
     void GetVolumeGroupInfo(std::vector<sptr<VolumeGroupInfo>>& volumeGroupInfos);
@@ -132,8 +135,9 @@ private:
         audioOffloadStream_(AudioOffloadStream::GetInstance()) {}
     ~AudioVolumeManager() {}
 
-    int32_t HandleAbsBluetoothVolume(const std::string &macAddress, const int32_t volumeLevel);
-    int32_t DealWithSafeVolume(const int32_t volumeLevel, bool isA2dpDevice);
+    int32_t HandleAbsBluetoothVolume(const std::string &macAddress, const int32_t volumeLevel,
+        bool isNearlinkDevice = false, AudioStreamType streamType = STREAM_DEFAULT);
+    int32_t DealWithSafeVolume(const int32_t volumeLevel, bool isBtDevice);
     void CreateCheckMusicActiveThread();
     bool IsBlueTooth(const DeviceType &deviceType);
     int32_t CheckActiveMusicTime();

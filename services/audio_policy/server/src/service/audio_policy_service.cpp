@@ -1149,6 +1149,12 @@ int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, c
     return audioVolumeManager_.SetA2dpDeviceVolume(macAddress, volumeLevel, internalCall);
 }
 
+int32_t AudioPolicyService::SetNearlinkDeviceVolume(const std::string &macAddress, AudioStreamType streamType,
+    const int32_t volume, bool updateUi)
+{
+    return audioVolumeManager_.SetNearlinkDeviceVolume(macAddress, streamType, volume, updateUi);
+}
+
 int32_t AudioPolicyService::GetAudioLatencyFromXml() const
 {
     return audioConfigManager_.GetAudioLatencyFromXml();
