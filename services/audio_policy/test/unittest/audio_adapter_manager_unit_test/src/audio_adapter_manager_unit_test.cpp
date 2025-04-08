@@ -195,7 +195,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetOffloadSessionId_001, TestSize.Level1)
 
     sessionId = MIN_STREAMID + 1;
     AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId);
-
 }
 
 /**

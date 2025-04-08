@@ -549,7 +549,8 @@ HWTEST(VolumeDataMaintainerUnitTest, SetRestoreVolumeLevel_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test VolumeDataMaintainer SetRestoreVolumeLevel when deviceType is USB_ARM_HEADSET and ret is not SUCCESS.
+ * @tc.name  : Test VolumeDataMaintainer SetRestoreVolumeLevel when deviceType is
+  USB_ARM_HEADSET and ret is not SUCCESS.
  * @tc.number: SetRestoreVolumeLevel_003
  * @tc.desc  : Test VolumeDataMaintainer API when deviceType is USB_ARM_HEADSET and PutIntValue fails.
  */
