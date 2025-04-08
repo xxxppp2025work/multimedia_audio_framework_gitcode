@@ -43,10 +43,12 @@ public:
     int32_t SendUserSelection(const std::string &device, uint32_t streamType) override;
     int32_t SetActiveDevice(const std::string &device, StreamUsage streamUsage);
     int32_t SetActiveDevice(const std::string &device, SourceType sourceType);
-    int32_t StartPlaying(const AudioDeviceDescriptor &device, StreamUsage streamUsage);
-    int32_t StopPlaying(const AudioDeviceDescriptor &device, StreamUsage streamUsage);
-    int32_t StartPlaying(const AudioDeviceDescriptor &device, SourceType sourceType);
-    int32_t StopPlaying(const AudioDeviceDescriptor &device, SourceType sourceType);
+    int32_t StartPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage);
+    int32_t StopPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage);
+    int32_t StartPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType);
+    int32_t StopPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType);
+    int32_t SendUserSelection(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage);
+    int32_t SendUserSelection(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType);
 
 private:
     SleAudioDeviceManager() = default;

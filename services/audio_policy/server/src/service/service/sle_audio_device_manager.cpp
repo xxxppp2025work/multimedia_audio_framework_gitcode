@@ -169,5 +169,17 @@ int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceD
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
     return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType));
 }
+
+int32_t SleAudioDeviceManager::SendUserSelection(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
+    return SendUserSelection(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage));
+}
+
+int32_t SleAudioDeviceManager::SendUserSelection(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType)
+{
+    CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
+    return SendUserSelection(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType));
+}
 } // namespace AudioStandard
 } // namespace OHOS

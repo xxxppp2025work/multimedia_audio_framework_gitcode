@@ -193,12 +193,11 @@ float AudioActiveDevice::GetMaxAmplitude(const int32_t deviceId, AudioInterrupt 
     return 0;
 }
 
-void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor)
+void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
+    StreamUsage streamUsage)
 {
     Trace trace("AudioActiveDevice::NotifyUserSelectionEventToBt");
-    if (audioDeviceDescriptor == nullptr) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
 #ifdef BLUETOOTH_ENABLE
     DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
     if (curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO ||
@@ -209,25 +208,48 @@ void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDevice
             Bluetooth::AudioHfpManager::DisconnectSco();
         }
     }
+    if (curOutputDeviceType == DEVICE_TYPE_NEARLINK) {
+        SleAudioDeviceManager::GetInstance().SetActiveDevice(audioDeviceDescriptor->macAddress_,
+            STREAM_USAGE_INVALID);
+    }
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
         audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         Bluetooth::SendUserSelectionEvent(audioDeviceDescriptor->deviceType_,
             audioDeviceDescriptor->macAddress_, USER_SELECT_BT);
     }
+    if (AudioDeviceDescriptor->deviceType == DEVICE_TYPE_NEARLINK) {
+        SleAudioDeviceManager::GetInstance().SendUserSelection(*audioDeviceDescriptor,
+            streamUsage);
+    }
 #endif
 }
 
-void AudioActiveDevice::DisconnectScoWhenUserSelectInput(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor)
+void AudioActiveDevice::NotifyUserSelectionEventForInput(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
+    SourceType sourceType)
 {
-    if (audioDeviceDescriptor == nullptr) {
-        AUDIO_ERR_LOG("nullptr audioDeviceDescriptor");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
 #ifdef BLUETOOTH_ENABLE
     DeviceType curInputDeviceType = GetCurrentInputDeviceType();
-    if (curInputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-        AUDIO_INFO_LOG("user select ready to disconnect");
-        Bluetooth::AudioHfpManager::DisconnectSco();
+    if (curInputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO ||
+        curInputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
+        Bluetooth::SendUserSelectionEvent(curInputDeviceType,
+            GetCurrentInputDeviceMacAddr(), USER_NOT_SELECT_BT);
+        if (curInputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+            Bluetooth::AudioHfpManager::DisconnectSco();
+        }
+    }
+    if (curInputDeviceType == DEVICE_TYPE_NEARLINK_IN) {
+        SleAudioDeviceManager::GetInstance().SetActiveDevice(audioDeviceDescriptor->macAddress_,
+            STREAM_USAGE_INVALID);
+    }
+    if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
+        audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
+        Bluetooth::SendUserSelectionEvent(audioDeviceDescriptor->deviceType_,
+            audioDeviceDescriptor->macAddress_, USER_SELECT_BT);
+    }
+    if (AudioDeviceDescriptor->deviceType == DEVICE_TYPE_NEARLINK_IN) {
+        SleAudioDeviceManager::GetInstance().SendUserSelection(*audioDeviceDescriptor,
+            sourceType);
     }
 #endif
 }
