@@ -107,7 +107,6 @@ void NapiAudioRendererCallback::RemoveCallbackReference(const std::string &callb
 
 std::shared_ptr<AutoRef> &NapiAudioRendererCallback::GetCallback(const std::string &callbackName)
 {
-    std::shared_ptr<AutoRef> cb = nullptr;
     if (callbackName == INTERRUPT_CALLBACK_NAME || callbackName == AUDIO_INTERRUPT_CALLBACK_NAME) {
         return interruptCallback_;
     }
@@ -115,7 +114,7 @@ std::shared_ptr<AutoRef> &NapiAudioRendererCallback::GetCallback(const std::stri
         return stateChangeCallback_;
     }
     AUDIO_ERR_LOG("NapiAudioRendererCallback->GetCallback Unknown callback type: %{public}s", callbackName.c_str());
-    return cb;
+    return nullptr;
 }
 
 void NapiAudioRendererCallback::CreateArInterrupt(napi_env env)
