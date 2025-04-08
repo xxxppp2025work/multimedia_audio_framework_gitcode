@@ -1477,7 +1477,6 @@ bool AudioProcessInClientInner::RecordProcessCallbackFuc(uint64_t &curReadPos, i
         AUDIO_WARNING_LOG("%{public}s wakeUpTime is too late...", __func__);
         ClockTime::RelativeSleep(spanSizeInMs_ * ONE_MILLISECOND_DURATION);
     }
-    recordProcessCallbackFucThreadStatus_ = true;
     return true;
 }
 
