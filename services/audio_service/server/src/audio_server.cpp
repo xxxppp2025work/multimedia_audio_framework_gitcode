@@ -100,8 +100,9 @@ static const int32_t FAST_DUMPINFO_LEN = 2;
 static const int32_t BUNDLENAME_LENGTH_LIMIT = 1024;
 static const size_t PARAMETER_SET_LIMIT = 1024;
 constexpr int32_t UID_CAMERA = 1047;
-constexpr int32_t MAX_RENDERER_STREAM_CNT_PER_UID = 40;
+constexpr int32_t MAX_RENDERER_STREAM_CNT_PER_UID = 128;
 const int32_t DEFAULT_MAX_RENDERER_INSTANCES = 128;
+const int32_t RENDERER_STREAM_CNT_PER_UID_LIMIT = 40;
 const int32_t MCU_UID = 7500;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
@@ -1390,8 +1391,8 @@ int32_t AudioServer::CheckMaxRendererInstances()
     if (maxRendererInstances <= 0) {
         maxRendererInstances = DEFAULT_MAX_RENDERER_INSTANCES;
     }
-
-    if (AudioService::GetInstance()->GetCurrentRendererStreamCnt() >= maxRendererInstances) {
+    int32_t currRendererStreamCnt = AudioService::GetInstance()->GetCurrentRendererStreamCnt();
+    if (currRendererStreamCnt >= RENDERER_STREAM_CNT_PER_UID_LIMIT) {
         int32_t mostAppUid = INVALID_APP_UID;
         int32_t mostAppNum = INVALID_APP_CREATED_AUDIO_STREAM_NUM;
         AudioService::GetInstance()->GetCreatedAudioStreamMostUid(mostAppUid, mostAppNum);
@@ -1401,8 +1402,11 @@ int32_t AudioServer::CheckMaxRendererInstances()
         bean->Add("CLIENT_UID", mostAppUid);
         bean->Add("TIMES", mostAppNum);
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
-        AUDIO_ERR_LOG("Current audio renderer stream num is greater than the maximum num of configured instances");
-        return ERR_EXCEED_MAX_STREAM_CNT;
+        AUDIO_WARNING_LOG("Current audio renderer stream num is greater than the renderer stream num limit per uid");
+        if (currRendererStreamCnt >= maxRendererInstances) {
+            AUDIO_ERR_LOG("Current audio renderer stream num is greater than the maximum num of configured instances");
+            return ERR_EXCEED_MAX_STREAM_CNT;
+        }
     }
     return SUCCESS;
 }
