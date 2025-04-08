@@ -452,7 +452,7 @@ OH_AudioStream_Result OH_AudioRenderer_SetDefaultOutputDevice(
  * @param type Force type of this interrupt event.
  * @param hint Hint of this interrupt event.
  * @see OH_AudioRenderer_Callbacks_Struct.OH_AudioRenderer_OnInterruptEvent.
- * @since 18
+ * @since 19
  */
 typedef void (*OH_AudioRenderer_OnInterruptCallback)(OH_AudioRenderer* renderer, void* userData,
     OH_AudioInterrupt_ForceType type, OH_AudioInterrupt_Hint hint);
@@ -466,7 +466,7 @@ typedef void (*OH_AudioRenderer_OnInterruptCallback)(OH_AudioRenderer* renderer,
  * @param userData User data which is passed by user.
  * @param error Error while using AudioRenderer.
  * @see OH_AudioRenderer_Callbacks_Struct.OH_AudioRenderer_OnError
- * @since 18
+ * @since 19
  */
 typedef void (*OH_AudioRenderer_OnErrorCallback)(OH_AudioRenderer* renderer, void* userData,
     OH_AudioStream_Result error);
