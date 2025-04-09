@@ -126,12 +126,16 @@ AudioStreamCollector::~AudioStreamCollector()
 
 int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamChangeInfo)
 {
-    AUDIO_INFO_LOG("Add playback client uid %{public}d sessionId %{public}d",
-        streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.sessionId);
-
-    rendererStatequeue_.insert({{streamChangeInfo.audioRendererChangeInfo.clientUID,
-        streamChangeInfo.audioRendererChangeInfo.sessionId},
-        streamChangeInfo.audioRendererChangeInfo.rendererState});
+    int32_t clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
+    int32_t sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
+    AUDIO_INFO_LOG("Add playback client uid %{public}d sessionId %{public}d", clientUID, sessionId);
+    auto key = make_pair(clientUID, sessionId);
+    if (rendererStatequeue_.count(key)) {
+        rendererStatequeue_[key] = streamChangeInfo.audioRendererChangeInfo.rendererState;
+        AUDIO_INFO_LOG("Playback client has added uid %{public}d sessionId %{public}d", clientUID, sessionId);
+        return SUCCESS;
+    }
+    rendererStatequeue_.insert({key, streamChangeInfo.audioRendererChangeInfo.rendererState});
 
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
     if (!rendererChangeInfo) {
@@ -226,12 +230,16 @@ int32_t AudioStreamCollector::GetRendererDeviceInfo(const int32_t sessionId, Aud
 
 int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamChangeInfo)
 {
-    AUDIO_INFO_LOG("Add recording client uid %{public}d sessionId %{public}d",
-        streamChangeInfo.audioCapturerChangeInfo.clientUID, streamChangeInfo.audioCapturerChangeInfo.sessionId);
-
-    capturerStatequeue_.insert({{streamChangeInfo.audioCapturerChangeInfo.clientUID,
-        streamChangeInfo.audioCapturerChangeInfo.sessionId},
-        streamChangeInfo.audioCapturerChangeInfo.capturerState});
+    int32_t clientUID = streamChangeInfo.audioCapturerChangeInfo.clientUID;
+    int32_t sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
+    AUDIO_INFO_LOG("Add recording client uid %{public}d sessionId %{public}d", clientUID, sessionId);
+    auto key = make_pair(clientUID, sessionId);
+    if (capturerStatequeue_.count(key)) {
+        capturerStatequeue_[key] = streamChangeInfo.audioCapturerChangeInfo.capturerState;
+        AUDIO_INFO_LOG("Recording client has added uid %{public}d sessionId %{public}d", clientUID, sessionId);
+        return SUCCESS;
+    }
+    capturerStatequeue_.insert({key, streamChangeInfo.audioCapturerChangeInfo.capturerState});
 
     shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
     if (!capturerChangeInfo) {
@@ -423,23 +431,23 @@ bool AudioStreamCollector::CheckRendererInfoChanged(AudioStreamChangeInfo &strea
 
 int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &streamChangeInfo)
 {
+    int32_t clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
+    RendererState rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
+    int32_t sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
     AUDIO_INFO_LOG("UpdateRendererStream client %{public}d state %{public}d session %{public}d",
-        streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.rendererState,
-        streamChangeInfo.audioRendererChangeInfo.sessionId);
+        clientUID, rendererState, sessionId);
     bool stateChanged = CheckRendererStateInfoChanged(streamChangeInfo);
     bool infoChanged = CheckRendererInfoChanged(streamChangeInfo);
     CHECK_AND_RETURN_RET(stateChanged || infoChanged, SUCCESS);
 
+    auto key = make_pair(clientUID, sessionId);
+
     // Update the renderer info in audioRendererChangeInfos_
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
-        AudioRendererChangeInfo audioRendererChangeInfo = **it;
-        if (audioRendererChangeInfo.clientUID == streamChangeInfo.audioRendererChangeInfo.clientUID &&
-            audioRendererChangeInfo.sessionId == streamChangeInfo.audioRendererChangeInfo.sessionId) {
-            rendererStatequeue_[make_pair(audioRendererChangeInfo.clientUID, audioRendererChangeInfo.sessionId)] =
-                streamChangeInfo.audioRendererChangeInfo.rendererState;
+        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId) {
+            rendererStatequeue_[key] = rendererState;
             streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType = (*it)->rendererInfo.pipeType;
-            AUDIO_DEBUG_LOG("update client %{public}d session %{public}d", audioRendererChangeInfo.clientUID,
-                audioRendererChangeInfo.sessionId);
+            AUDIO_DEBUG_LOG("update client %{public}d session %{public}d", clientUID, sessionId);
             shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
             CHECK_AND_RETURN_RET_LOG(rendererChangeInfo != nullptr, ERR_MEMORY_ALLOC_FAILED,
                 "Memory Allocation Failed");
@@ -456,21 +464,19 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
                 audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
             }
             AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
-            RendererState rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
-            StreamUsage streamUsage = streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage;
-            ResetRingerModeMute(rendererState, streamUsage);
-            if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
+            ResetRingerModeMute(rendererState, streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage);
+            if (rendererState == RENDERER_RELEASED) {
                 audioRendererChangeInfos_.erase(it);
-                rendererStatequeue_.erase(make_pair(audioRendererChangeInfo.clientUID,
-                    audioRendererChangeInfo.sessionId));
-                clientTracker_.erase(audioRendererChangeInfo.sessionId);
+                rendererStatequeue_.erase(key);
+                clientTracker_.erase(sessionId);
+                AUDIO_INFO_LOG("RemoveRendererStream: clientUid:%{public}d sessionId:%{public}d", clientUID, sessionId);
             }
+
             return SUCCESS;
         }
     }
 
-    AUDIO_INFO_LOG("UpdateRendererStream: Not found clientUid:%{public}d sessionId:%{public}d",
-        streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.clientUID);
+    AUDIO_INFO_LOG("UpdateRendererStream: Not found clientUid:%{public}d sessionId:%{public}d", clientUID, sessionId);
     return SUCCESS;
 }
 
@@ -523,15 +529,16 @@ int32_t AudioStreamCollector::UpdateCapturerStreamInternal(AudioStreamChangeInfo
 
 int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &streamChangeInfo)
 {
-    AUDIO_INFO_LOG("UpdateCapturerStream client %{public}d state %{public}d session %{public}d",
-        streamChangeInfo.audioCapturerChangeInfo.clientUID, streamChangeInfo.audioCapturerChangeInfo.capturerState,
-        streamChangeInfo.audioCapturerChangeInfo.sessionId);
 
-    if (capturerStatequeue_.find(make_pair(streamChangeInfo.audioCapturerChangeInfo.clientUID,
-        streamChangeInfo.audioCapturerChangeInfo.sessionId)) != capturerStatequeue_.end()) {
-        if (streamChangeInfo.audioCapturerChangeInfo.capturerState ==
-            capturerStatequeue_[make_pair(streamChangeInfo.audioCapturerChangeInfo.clientUID,
-                streamChangeInfo.audioCapturerChangeInfo.sessionId)]) {
+    int32_t clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
+    CapturerState capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
+    int32_t sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
+    AUDIO_INFO_LOG("UpdateCapturerStream client %{public}d state %{public}d session %{public}d",
+        clientUID, capturerState, sessionId);
+
+    auto key = make_pair(clientUID, sessionId);
+    if (capturerStatequeue_.find(key) != capturerStatequeue_.end()) {
+        if (capturerState == capturerStatequeue_[key]) {
             // Capturer state not changed
             return SUCCESS;
         }
@@ -539,16 +546,10 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
 
     // Update the capturer info in audioCapturerChangeInfos_
     for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
-        AudioCapturerChangeInfo audioCapturerChangeInfo = **it;
-        if (audioCapturerChangeInfo.clientUID == streamChangeInfo.audioCapturerChangeInfo.clientUID &&
-            audioCapturerChangeInfo.sessionId == streamChangeInfo.audioCapturerChangeInfo.sessionId) {
-            capturerStatequeue_[make_pair(audioCapturerChangeInfo.clientUID, audioCapturerChangeInfo.sessionId)] =
-                streamChangeInfo.audioCapturerChangeInfo.capturerState;
+        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId) {
+            capturerStatequeue_[key] = capturerState;
 
-            AUDIO_DEBUG_LOG("Session is updated for client %{public}d session %{public}d",
-                streamChangeInfo.audioCapturerChangeInfo.clientUID,
-                streamChangeInfo.audioCapturerChangeInfo.sessionId);
-
+            AUDIO_DEBUG_LOG("Session is updated for client %{public}d session %{public}d", clientUID, sessionId);
             shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
             CHECK_AND_RETURN_RET_LOG(capturerChangeInfo != nullptr,
                 ERR_MEMORY_ALLOC_FAILED, "CapturerChangeInfo Memory Allocation Failed");
@@ -562,17 +563,17 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
             if (audioPolicyServerHandler_ != nullptr) {
                 SendCapturerInfoEvent(audioCapturerChangeInfos_);
             }
-            if (streamChangeInfo.audioCapturerChangeInfo.capturerState ==  CAPTURER_RELEASED) {
+            if (capturerState ==  CAPTURER_RELEASED) {
                 audioCapturerChangeInfos_.erase(it);
-                capturerStatequeue_.erase(make_pair(audioCapturerChangeInfo.clientUID,
-                    audioCapturerChangeInfo.sessionId));
-                clientTracker_.erase(audioCapturerChangeInfo.sessionId);
+                capturerStatequeue_.erase(key);
+                clientTracker_.erase(sessionId);
+                AUDIO_INFO_LOG("RemoveCapturerStream: clientUid:%{public}d sessionId:%{public}d", clientUID, sessionId);
             }
+
             return SUCCESS;
         }
     }
-    AUDIO_DEBUG_LOG("UpdateCapturerStream: clientUI not in audioCapturerChangeInfos_::%{public}d",
-        streamChangeInfo.audioCapturerChangeInfo.clientUID);
+    AUDIO_INFO_LOG("UpdateCapturerStream: clientUI not in audioCapturerChangeInfos_::%{public}d", clientUID);
     return SUCCESS;
 }
 
