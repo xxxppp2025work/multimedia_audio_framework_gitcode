@@ -44,6 +44,8 @@ std::mutex g_cBDiedMapMutex;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
 std::weak_ptr<AudioCapturerPolicyServiceDiedCallback> AudioPolicyManager::capturerCB_;
 std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> AudioPolicyManager::audioStreamCBMap_;
+std::vector<AudioServerDiedCallBack> AudioPolicyManager::serverDiedCbks_;
+std::mutex AudioPolicyManager::serverDiedCbkMutex_;
 std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackStub>> AudioPolicyManager::clientTrackerStubMap_;
 
 static bool RegisterDeathRecipientInner(sptr<IRemoteObject> object)
@@ -115,7 +117,8 @@ static const sptr<IAudioPolicy> RecoverAndGetAudioPolicyManagerProxy()
 
 int32_t AudioPolicyManager::RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp)
 {
-    AudioXCollie audioXCollie("AudioPolicyManager::RegisterPolicyCallbackClientFunc", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("AudioPolicyManager::RegisterPolicyCallbackClientFunc", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     std::unique_lock<std::mutex> lock(registerCallbackMutex_);
     if (audioPolicyClientStubCB_ == nullptr) {
         audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
@@ -246,6 +249,22 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
             }
         }
     }
+
+    {
+        std::lock_guard<std::mutex> lockCbMap(serverDiedCbkMutex_);
+        for (auto func : serverDiedCbks_) {
+            if (func != nullptr) {
+                func();
+            }
+        }
+    }
+}
+
+void AudioPolicyManager::RegisterServerDiedCallBack(AudioServerDiedCallBack func)
+{
+    CHECK_AND_RETURN_LOG(func != nullptr, "func is null");
+    std::lock_guard<std::mutex> lockCbMap(serverDiedCbkMutex_);
+    serverDiedCbks_.emplace_back(func);
 }
 
 int32_t AudioPolicyManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
@@ -329,7 +348,8 @@ int32_t AudioPolicyManager::SetRingerMode(AudioRingerMode ringMode)
 
 AudioRingerMode AudioPolicyManager::GetRingerMode()
 {
-    AudioXCollie audioXCollie("AudioPolicyManager::GetRingerMode", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("AudioPolicyManager::GetRingerMode", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, RINGER_MODE_NORMAL, "audio policy manager proxy is NULL.");
     return gsp->GetRingerMode();
@@ -928,6 +948,20 @@ int32_t AudioPolicyManager::DeactivateAudioInterrupt(const AudioInterrupt &audio
     return gsp->DeactivateAudioInterrupt(audioInterrupt, zoneID);
 }
 
+int32_t AudioPolicyManager::ActivatePreemptMode()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->ActivatePreemptMode();
+}
+
+int32_t AudioPolicyManager::DeactivatePreemptMode()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->DeactivatePreemptMode();
+}
+
 int32_t AudioPolicyManager::SetAudioManagerInterruptCallback(const int32_t clientId,
     const std::shared_ptr<AudioInterruptCallback> &callback)
 {
@@ -1242,7 +1276,8 @@ int32_t AudioPolicyManager::GetVolumeGroupInfos(std::string networkId, std::vect
 
 int32_t AudioPolicyManager::GetNetworkIdByGroupId(int32_t groupId, std::string &networkId)
 {
-    AudioXCollie audioXCollie("AudioPolicyManager::GetNetworkIdByGroupId", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("AudioPolicyManager::GetNetworkIdByGroupId", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "GetNetworkIdByGroupId failed, g_apProxy is nullptr.");
     return gsp->GetNetworkIdByGroupId(groupId, networkId);

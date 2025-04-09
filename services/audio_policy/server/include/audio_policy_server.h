@@ -215,6 +215,10 @@ public:
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;
 
+    int32_t ActivatePreemptMode(void) override;
+    
+    int32_t DeactivatePreemptMode(void) override;
+
     int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAudioManagerInterruptCallback(const int32_t clientId) override;
@@ -402,6 +406,50 @@ public:
 
     int32_t ReleaseAudioInterruptZone(const int32_t zoneId) override;
 
+    int32_t RegisterAudioZoneClient(const sptr<IRemoteObject>& object) override;
+
+    int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context) override;
+
+    void ReleaseAudioZone(int32_t zoneId) override;
+
+    const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone() override;
+
+    const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId) override;
+
+    int32_t BindDeviceToAudioZone(int32_t zoneId,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices) override;
+
+    int32_t UnBindDeviceToAudioZone(int32_t zoneId,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices) override;
+
+    int32_t EnableAudioZoneReport (bool enable) override;
+
+    int32_t EnableAudioZoneChangeReport(int32_t zoneId, bool enable) override;
+
+    int32_t AddUidToAudioZone(int32_t zoneId, int32_t uid) override;
+
+    int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) override;
+
+    int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) override;
+
+    int32_t SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
+        const int32_t volumeLevel, const int32_t volumeFlag = 0) override;
+
+    int32_t GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType) override;
+
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId) override;
+
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
+        int32_t zoneId, int32_t deviceId) override;
+
+    int32_t EnableAudioZoneInterruptReport(int32_t zoneId, int32_t deviceId, bool enable) override;
+
+    int32_t InjectInterruptToAudioZone(int32_t zoneId,
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) override;
+    
+    int32_t InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) override;
+
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
         const int32_t pid = INVALID_PID) override;
 
@@ -558,6 +606,7 @@ private:
     static constexpr int32_t AUDIO_UID = 1041;
     static constexpr uint32_t MICPHONE_CALLER = 0;
     static constexpr int32_t ROOT_UID = 0;
+    static constexpr int32_t PREEMPT_UID = 7015;
 
     static const std::list<uid_t> RECORD_ALLOW_BACKGROUND_LIST;
     static const std::list<uid_t> RECORD_PASS_APPINFO_LIST;
@@ -575,7 +624,6 @@ private:
     int32_t VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId);
 
     // offload session
-    void OffloadStreamCheck(int64_t activateSessionId, int64_t deactivateSessionId);
     void CheckSubscribePowerStateChange();
     void CheckStreamMode(const int64_t activateSessionId);
     bool CheckAudioSessionStrategy(const AudioSessionStrategy &sessionStrategy);

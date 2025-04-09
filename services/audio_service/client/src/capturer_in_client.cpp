@@ -107,8 +107,6 @@ public:
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
-    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t[]> &outBuffer,
-        int32_t &outBufferSize) override;
 
     // callback mode api
     AudioRenderMode GetRenderMode() override;
@@ -519,7 +517,8 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d, stream type:"
         " %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_,
         info.encoding);
-    AudioXCollie guard("CapturerInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND);
+    AudioXCollie guard("CapturerInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) || !IsSamplingRateValid(info.samplingRate)) {
         AUDIO_ERR_LOG("CapturerInClient: Unsupported audio parameter");
         return ERR_NOT_SUPPORTED;
@@ -999,13 +998,6 @@ float CapturerInClientInner::GetSpeed()
 {
     AUDIO_ERR_LOG("GetSpeed is not supported");
     return 1.0;
-}
-
-int32_t CapturerInClientInner::ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t []> &outBuffer,
-    int32_t &outBufferSize)
-{
-    AUDIO_ERR_LOG("ChangeSpeed is not supported");
-    return ERROR;
 }
 
 int32_t CapturerInClientInner::SetRenderRate(AudioRendererRate renderRate)

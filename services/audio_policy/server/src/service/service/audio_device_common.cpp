@@ -28,6 +28,7 @@
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 #include "audio_recovery_device.h"
+#include "audio_zone_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -590,8 +591,12 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetDeviceDescr
     std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(rendererChangeInfo->clientUID);
     if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
         descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
+    } else if (zoneId != 0) {
+        descs = AudioZoneService::GetInstance().FetchOutputDevices(zoneId,
+            rendererChangeInfo->rendererInfo.streamUsage, rendererChangeInfo->clientUID, ROUTER_TYPE_DEFAULT);
     } else {
         descs = audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
             rendererChangeInfo->clientUID);
@@ -670,6 +675,16 @@ void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendere
         rendererChangeInfo->sessionId);
     std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(*outputDevices.front(),
         rendererChangeInfo->sessionId);
+    int32_t oldStreamClass = GetPreferredOutputStreamTypeInner(rendererChangeInfo->rendererInfo.streamUsage,
+        rendererChangeInfo->outputDeviceInfo.deviceType_, rendererChangeInfo->rendererInfo.originalFlag,
+        rendererChangeInfo->outputDeviceInfo.networkId_, rendererChangeInfo->rendererInfo.samplingRate, false);
+    int32_t newStreamClass = GetPreferredOutputStreamTypeInner(rendererChangeInfo->rendererInfo.streamUsage,
+        outputDevices.front()->deviceType_, rendererChangeInfo->rendererInfo.originalFlag,
+        outputDevices.front()->networkId_, rendererChangeInfo->rendererInfo.samplingRate, false);
+    oldSinkName = oldStreamClass == AUDIO_FLAG_VOIP_DIRECT ? PRIMARY_DIRECT_VOIP : oldSinkName;
+    oldSinkName = oldStreamClass == AUDIO_FLAG_VOIP_FAST ? PRIMARY_MMAP_VOIP : oldSinkName;
+    newSinkName = newStreamClass == AUDIO_FLAG_VOIP_DIRECT ? PRIMARY_DIRECT_VOIP : newSinkName;
+    newSinkName = newStreamClass == AUDIO_FLAG_VOIP_FAST ? PRIMARY_MMAP_VOIP : newSinkName;
     AUDIO_INFO_LOG("mute sink old:[%{public}s] new:[%{public}s]", oldSinkName.c_str(), newSinkName.c_str());
     MuteSinkPort(oldSinkName, newSinkName, reason);
 }
@@ -1170,7 +1185,8 @@ void AudioDeviceCommon::FetchInputDeviceInner(
         int32_t clientUID = capturerChangeInfo->clientUID;
         if ((sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE &&
             audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_PHONE_CALL) ||
-            (sourceType != SOURCE_TYPE_VIRTUAL_CAPTURE && capturerChangeInfo->capturerState != CAPTURER_RUNNING)) {
+            (sourceType != SOURCE_TYPE_VIRTUAL_CAPTURE && capturerChangeInfo->capturerState != CAPTURER_RUNNING &&
+                !capturerChangeInfo->prerunningState)) {
             AUDIO_WARNING_LOG("stream %{public}d not running, no need fetch device", capturerChangeInfo->sessionId);
             continue;
         }

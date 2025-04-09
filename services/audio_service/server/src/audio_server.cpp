@@ -333,10 +333,10 @@ void AudioServer::OnStart()
         AUDIO_ERR_LOG("start err");
         WriteServiceStartupError();
     }
-    int32_t fastControlFlag = 0; // default 0, set isFastControlled_ false
+    int32_t fastControlFlag = 1; // default 1, set isFastControlled_ true
     GetSysPara("persist.multimedia.audioflag.fastcontrolled", fastControlFlag);
-    if (fastControlFlag == 1) {
-        isFastControlled_ = true;
+    if (fastControlFlag == 0) {
+        isFastControlled_ = false;
     }
     int32_t audioCacheState = 0;
     GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
@@ -357,16 +357,28 @@ void AudioServer::OnStart()
 
     RegisterAudioCapturerSourceCallback();
     RegisterAudioRendererSinkCallback();
+    ParseAudioParameter();
+    DlopenUtils::DeInit();
+}
 
+void AudioServer::ParseAudioParameter()
+{
     std::unique_ptr<AudioParamParser> audioParamParser = make_unique<AudioParamParser>();
     if (audioParamParser == nullptr) {
         WriteServiceStartupError();
     }
     CHECK_AND_RETURN_LOG(audioParamParser != nullptr, "Failed to create audio extra parameters parser");
+    std::unique_lock<std::shared_mutex> lock(audioParameterKeyMutex_);
     if (audioParamParser->LoadConfiguration(audioParameterKeys)) {
         AUDIO_INFO_LOG("Audio extra parameters load configuration successfully.");
     }
-    DlopenUtils::DeInit();
+    isAudioParameterParsed_ = true;
+
+    for (const auto& pair : audioExtraParameterCacheVector_) {
+        SetExtraParameters(pair.first, pair.second);
+    }
+    audioExtraParameterCacheVector_.clear();
+    AUDIO_INFO_LOG("Audio extra parameters replay cached successfully.");
 }
 
 void AudioServer::WriteServiceStartupError()
@@ -424,7 +436,9 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
         return SUCCESS;
     }
 
+    std::shared_lock<std::shared_mutex> lock(audioParameterKeyMutex_);
     if (audioParameterKeys.empty()) {
+        CacheExtraParameters(key, kvpairs);
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
         return ERROR;
     }
@@ -465,6 +479,17 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
     return SUCCESS;
 }
 
+void AudioServer::CacheExtraParameters(const std::string& key,
+    const std::vector<std::pair<std::string, std::string>>& kvpairs)
+{
+    if (!isAudioParameterParsed_) {
+        AUDIO_INFO_LOG("Audio extra parameters will be cached");
+        std::pair<std::string,
+            std::vector<std::pair<std::string, std::string>>> cache(key, kvpairs);
+        audioExtraParameterCacheVector_.push_back(cache);
+    }
+}
+
 void AudioServer::SetA2dpAudioParameter(const std::string &renderValue)
 {
     auto parmKey = AudioParamKey::A2DP_SUSPEND_STATE;
@@ -484,7 +509,8 @@ void AudioServer::SetA2dpAudioParameter(const std::string &renderValue)
 void AudioServer::SetAudioParameter(const std::string &key, const std::string &value)
 {
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
-    AudioXCollie audioXCollie("AudioServer::SetAudioParameter", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("AudioServer::SetAudioParameter", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     AUDIO_DEBUG_LOG("server: set audio parameter");
     if (key != "AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG") {
         bool ret = VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION);
@@ -588,6 +614,7 @@ int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
         return SUCCESS;
     }
 
+    std::shared_lock<std::shared_mutex> lock(audioParameterKeyMutex_);
     if (audioParameterKeys.empty()) {
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
         return ERROR;
@@ -628,33 +655,14 @@ int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
     return SUCCESS;
 }
 
-bool AudioServer::CheckAndPrintStacktrace(const std::string &key)
-{
-    AUDIO_WARNING_LOG("Start handle forced xcollie event for key %{public}s", key.c_str());
-    if (key == "dump_pulseaudio_stacktrace") {
-        AudioXCollie audioXCollie("AudioServer::PrintStackTrace", 1);
-        sleep(2); // sleep 2 seconds to dump stacktrace
-        return true;
-    } else if (key == "recovery_audio_server") {
-        AudioXCollie audioXCollie("AudioServer::Kill", 1, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_RECOVERY);
-        sleep(2); // sleep 2 seconds to dump stacktrace
-        return true;
-    } else if (key == "dump_pa_stacktrace_and_kill") {
-        AudioXCollie audioXCollie("AudioServer::PrintStackTraceAndKill", 1, nullptr, nullptr,
-            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-        sleep(2); // sleep 2 seconds to dump stacktrace
-        return true;
-    }
-    return false;
-}
-
 const std::string AudioServer::GetAudioParameter(const std::string &key)
 {
-    if (IPCSkeleton::GetCallingUid() == MEDIA_SERVICE_UID && CheckAndPrintStacktrace(key) == true) {
+    if (IPCSkeleton::GetCallingUid() == MEDIA_SERVICE_UID) {
         return "";
     }
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
-    AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
@@ -715,7 +723,7 @@ const std::string AudioServer::GetUsbParameter(const std::string &condition)
         "convert invalid value: %{public}s", GetField(condition, "role", ' ').c_str());
     DeviceRole role = static_cast<DeviceRole>(deviceRoleNum);
 
-    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
+    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB, true);
     CHECK_AND_RETURN_RET_LOG(sink, "", "rendererSink is nullptr");
     std::string infoCond = std::string("get_usb_info#C") + GetField(address, "card", ';') + "D0";
     if (role == OUTPUT_DEVICE) {
@@ -728,7 +736,7 @@ const std::string AudioServer::GetUsbParameter(const std::string &condition)
             usbInfoStr = it->second;
         }
     } else if (role == INPUT_DEVICE) {
-        std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
+        std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB, true);
         CHECK_AND_RETURN_RET_LOG(source, "", "capturerSource is nullptr");
         source->SetAddress(address);
         auto it = usbInfoMap_.find(address);
@@ -753,7 +761,8 @@ const std::string AudioServer::GetAudioParameter(const std::string& networkId, c
         VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION), "", "refused for %{public}d", callingUid);
 
     if (networkId == LOCAL_NETWORK_ID) {
-        AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS);
+        AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS,
+            nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
         if (key == AudioParamKey::USB_DEVICE) {
             return GetUsbParameter(condition);
         }
@@ -887,7 +896,8 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
     DeviceType activeOutputDevice = activeOutputDevices.front();
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
-    AudioXCollie audioXCollie("AudioServer::SetAudioScene", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("AudioServer::SetAudioScene", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::shared_ptr<IAudioRenderSink> sink = nullptr;
     if (activeOutputDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
         sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
@@ -1132,7 +1142,7 @@ int32_t AudioServer::RegistCoreServiceProvider(const sptr<IRemoteObject> &object
 int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
 {
     AudioXCollie audioXCollie("AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName",
-        GET_BUNDLE_TIME_OUT_SECONDS);
+        GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::string bundleName {""};
     AppExecFwk::BundleInfo bundleInfo;
     WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetHapBuildApiVersion");
@@ -1300,7 +1310,7 @@ bool AudioServer::CheckConfigFormat(const AudioProcessConfig &config)
 const std::string AudioServer::GetBundleNameFromUid(int32_t uid)
 {
     AudioXCollie audioXCollie("AudioServer::GetBundleNameFromUid",
-        GET_BUNDLE_TIME_OUT_SECONDS);
+        GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::string bundleName {""};
     WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetBundleNameFromUid");
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -2027,7 +2037,7 @@ int32_t AudioServer::ResetRouteForDisconnect(DeviceType type)
 float AudioServer::GetMaxAmplitude(bool isOutputDevice, std::string deviceClass, SourceType sourceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    AUDIO_INFO_LOG("GetMaxAmplitude in audio server deviceClass %{public}s", deviceClass.c_str());
+    AUDIO_DEBUG_LOG("GetMaxAmplitude in audio server deviceClass %{public}s", deviceClass.c_str());
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), 0, "GetMaxAmplitude refused for %{public}d", callingUid);
 
     float fastMaxAmplitude = AudioService::GetInstance()->GetMaxAmplitude(isOutputDevice);

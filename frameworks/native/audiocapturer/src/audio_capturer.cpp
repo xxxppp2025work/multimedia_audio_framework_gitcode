@@ -25,6 +25,7 @@
 #include "audio_errors.h"
 #include "audio_capturer_log.h"
 #include "audio_policy_manager.h"
+#include "audio_system_manager.h"
 
 #include "media_monitor_manager.h"
 #include "audio_stream_descriptor.h"
@@ -37,6 +38,7 @@ static constexpr int32_t AUDIO_SOURCE_TYPE_INVALID_5 = 5;
 static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 300; // 300ms
 static constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
 static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
+static constexpr uint32_t DECIMAL_BASE = 10;
 
 std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
@@ -389,7 +391,7 @@ int32_t AudioCapturerPrivate::InitInputDeviceChangeCallback()
         CHECK_AND_RETURN_RET_LOG(inputDeviceChangeCallback_ != nullptr, ERROR, "Memory allocation failed");
     }
 
-    inputDeviceChangeCallback_->SetAudioCapturerObj(this);
+    inputDeviceChangeCallback_->SetAudioCapturerObj(weak_from_this());
 
     uint32_t sessionId;
     int32_t ret = GetAudioStreamId(sessionId);
@@ -419,8 +421,7 @@ int32_t AudioCapturerPrivate::SetInputDevice(DeviceType deviceType) const
 int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStreamParams)
 {
     Trace trace("AudioCapturer::InitAudioStream");
-    const AudioCapturer *capturer = this;
-    capturerProxyObj_->SaveCapturerObj(capturer);
+    capturerProxyObj_->SaveCapturerObj(weak_from_this());
 
     audioStream_->SetCapturerInfo(capturerInfo_);
 
@@ -747,6 +748,35 @@ bool AudioCapturerPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, false, "audioStream_ is nullptr");
     return currentStream->GetAudioTime(timestamp, base);
+}
+
+bool AudioCapturerPrivate::GetFirstPkgTimeStampInfo(int64_t &firstTs) const
+{
+    AUDIO_INFO_LOG("StreamClient for Capturer::Get first pkg timestamp info.");
+    const std::string subKeyLatency = "record_algo_first_ts";
+    std::vector<std::pair<std::string, std::string>> results;
+
+    int32_t ret =
+        AudioSystemManager::GetInstance()->GetExtraParameters("audio_effect", { subKeyLatency }, results);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("AudioCapturerPrivate GetExtraParameters fail! %{public}d", ret);
+        return false;
+    }
+
+    auto iter = std::find_if(results.begin(), results.end(),
+        [&](const std::pair<std::string, std::string> &result) {
+            return result.first == subKeyLatency;
+        });
+    if (iter == results.end() || iter->second.empty()) {
+        AUDIO_WARNING_LOG(
+            "AudioCapturerPrivate GetExtraParameters fail! cannot find result or is empty string");
+        return false;
+    }
+
+    firstTs = std::strtol(iter->second.c_str(), nullptr, DECIMAL_BASE);
+    AUDIO_INFO_LOG("StreamClient for Capturer::first ts is raw %{public}s and value %{public}lld",
+        iter->second.c_str(), static_cast<long long>(firstTs));
+    return true;
 }
 
 bool AudioCapturerPrivate::Pause() const
@@ -1239,7 +1269,7 @@ int32_t AudioCapturerPrivate::RegisterAudioCapturerEventListener()
         int32_t ret =
             AudioPolicyManager::GetInstance().RegisterAudioCapturerEventListener(getpid(), audioStateChangeCallback_);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "RegisterAudioCapturerEventListener failed");
-        audioStateChangeCallback_->setAudioCapturerObj(this);
+        audioStateChangeCallback_->SetAudioCapturerObj(weak_from_this());
     }
     return SUCCESS;
 }
@@ -1290,7 +1320,7 @@ int32_t AudioCapturerPrivate::RegisterCapturerPolicyServiceDiedCallback()
             return ERROR;
         }
         AudioPolicyManager::GetInstance().RegisterAudioStreamPolicyServerDiedCb(audioPolicyServiceDiedCallback_);
-        audioPolicyServiceDiedCallback_->SetAudioCapturerObj(this);
+        audioPolicyServiceDiedCallback_->SetAudioCapturerObj(weak_from_this());
         audioPolicyServiceDiedCallback_->SetAudioInterrupt(audioInterrupt_);
     }
     return SUCCESS;
@@ -1522,7 +1552,7 @@ int32_t AudioCapturerPrivate::InitAudioConcurrencyCallback()
     }
     CHECK_AND_RETURN_RET_LOG(audioStream_->GetAudioSessionID(sessionID_) == SUCCESS, ERR_INVALID_INDEX,
         "Get session id failed!");
-    audioConcurrencyCallback_->SetAudioCapturerObj(this);
+    audioConcurrencyCallback_->SetAudioCapturerObj(weak_from_this());
     return AudioPolicyManager::GetInstance().SetAudioConcurrencyCallback(sessionID_, audioConcurrencyCallback_);
 }
 
@@ -1550,9 +1580,11 @@ AudioCapturerConcurrencyCallbackImpl::~AudioCapturerConcurrencyCallbackImpl()
 
 void AudioCapturerConcurrencyCallbackImpl::OnConcedeStream()
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    CHECK_AND_RETURN_LOG(capturer_ != nullptr, "capturer is nullptr");
-    capturer_->ConcedeStream();
+    std::unique_lock lock(mutex_);
+    auto sharedCapturer = capturer_.lock();
+    lock.unlock();
+    CHECK_AND_RETURN_LOG(sharedCapturer != nullptr, "capturer is nullptr");
+    sharedCapturer->ConcedeStream();
 }
 
 AudioCapturerStateChangeCallbackImpl::AudioCapturerStateChangeCallbackImpl()
@@ -1624,7 +1656,8 @@ int32_t AudioCapturerStateChangeCallbackImpl::DeviceChangeCallbackArraySize()
     return deviceChangeCallbacklist_.size();
 }
 
-void AudioCapturerStateChangeCallbackImpl::setAudioCapturerObj(AudioCapturerPrivate *capturerObj)
+void AudioCapturerStateChangeCallbackImpl::SetAudioCapturerObj(
+    std::weak_ptr<AudioCapturerPrivate> capturerObj)
 {
     std::lock_guard<std::mutex> lock(capturerMutex_);
     capturer_ = capturerObj;
@@ -1639,9 +1672,11 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
     std::vector<std::shared_ptr<AudioCapturerInfoChangeCallback>> capturerInfoChangeCallbacklist;
 
     {
-        std::lock_guard<std::mutex> lock(capturerMutex_);
-        CHECK_AND_RETURN_LOG(capturer_ != nullptr, "Bare pointer capturer_ is nullptr");
-        int32_t ret = capturer_->GetAudioStreamId(sessionId);
+        std::unique_lock lock(capturerMutex_);
+        auto sharedCapturer = capturer_.lock();
+        lock.unlock();
+        CHECK_AND_RETURN_LOG(sharedCapturer != nullptr, "sharedCapturer is nullptr");
+        int32_t ret = sharedCapturer->GetAudioStreamId(sessionId);
         CHECK_AND_RETURN_LOG(!ret, "Get sessionId failed");
     }
 
@@ -1670,9 +1705,11 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerDeviceChange(
 {
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     {
-        std::lock_guard<std::mutex> lock(capturerMutex_);
-        CHECK_AND_RETURN_LOG(capturer_ != nullptr, "Bare pointer capturer_ is nullptr");
-        CHECK_AND_RETURN_LOG(capturer_->IsDeviceChanged(deviceInfo), "Device not change, no need callback.");
+        std::unique_lock lock(capturerMutex_);
+        auto sharedCapturer = capturer_.lock();
+        lock.unlock();
+        CHECK_AND_RETURN_LOG(sharedCapturer != nullptr, "sharedCapturer is nullptr");
+        CHECK_AND_RETURN_LOG(sharedCapturer->IsDeviceChanged(deviceInfo), "Device not change, no need callback.");
     }
 
     for (auto it = deviceChangeCallbacklist_.begin(); it != deviceChangeCallbacklist_.end(); ++it) {
@@ -1697,7 +1734,7 @@ void AudioCapturerStateChangeCallbackImpl::OnCapturerStateChange(
 void AudioCapturerStateChangeCallbackImpl::HandleCapturerDestructor()
 {
     std::lock_guard<std::mutex> lock(capturerMutex_);
-    capturer_ = nullptr;
+    capturer_.reset();
 }
 
 void InputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
@@ -1720,14 +1757,10 @@ CapturerPolicyServiceDiedCallback::CapturerPolicyServiceDiedCallback()
 CapturerPolicyServiceDiedCallback::~CapturerPolicyServiceDiedCallback()
 {
     AUDIO_DEBUG_LOG("CapturerPolicyServiceDiedCallback destroy");
-    if (restoreThread_ != nullptr && restoreThread_->joinable()) {
-        restoreThread_->join();
-        restoreThread_.reset();
-        restoreThread_ = nullptr;
-    }
 }
 
-void CapturerPolicyServiceDiedCallback::SetAudioCapturerObj(AudioCapturerPrivate *capturerObj)
+void CapturerPolicyServiceDiedCallback::SetAudioCapturerObj(
+    std::weak_ptr<AudioCapturerPrivate> capturerObj)
 {
     capturer_ = capturerObj;
 }
@@ -1740,11 +1773,23 @@ void CapturerPolicyServiceDiedCallback::SetAudioInterrupt(AudioInterrupt &audioI
 void CapturerPolicyServiceDiedCallback::OnAudioPolicyServiceDied()
 {
     AUDIO_INFO_LOG("CapturerPolicyServiceDiedCallback OnAudioPolicyServiceDied");
-    if (restoreThread_ != nullptr) {
-        restoreThread_->detach();
+    if (taskCount_.fetch_add(1) > 0) {
+        AUDIO_INFO_LOG("direct ret");
+        return;
     }
-    restoreThread_ = std::make_unique<std::thread>([this] { this->RestoreTheadLoop(); });
-    pthread_setname_np(restoreThread_->native_handle(), "OS_ACPSRestore");
+
+    auto weakRefCb = weak_from_this();
+    std::thread restoreThread ([weakRefCb] {
+        auto strongRefCb = weakRefCb.lock();
+        CHECK_AND_RETURN_LOG(strongRefCb != nullptr, "strongRef is nullptr");
+        int32_t count;
+        do {
+            count = strongRefCb->taskCount_.load();
+            strongRefCb->RestoreTheadLoop();
+        } while (strongRefCb->taskCount_.fetch_sub(count) > count);
+    });
+    pthread_setname_np(restoreThread.native_handle(), "OS_ACPSRestore");
+    restoreThread.detach();
 }
 
 void CapturerPolicyServiceDiedCallback::RestoreTheadLoop()
@@ -1755,11 +1800,13 @@ void CapturerPolicyServiceDiedCallback::RestoreTheadLoop()
     while (!restoreResult && tryCounter > 0) {
         tryCounter--;
         usleep(sleepTime);
-        if (capturer_ == nullptr || capturer_->audioStream_ == nullptr || capturer_->abortRestore_) {
+        auto sharedCapturer = capturer_.lock();
+        CHECK_AND_RETURN_LOG(sharedCapturer != nullptr, "sharedRenderer is nullptr");
+        if (sharedCapturer->audioStream_ == nullptr || sharedCapturer->abortRestore_) {
             AUDIO_INFO_LOG("abort restore");
             break;
         }
-        capturer_->RestoreAudioInLoop(restoreResult, tryCounter);
+        sharedCapturer->RestoreAudioInLoop(restoreResult, tryCounter);
     }
 }
 

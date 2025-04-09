@@ -64,14 +64,17 @@ int32_t AudioDeviceLock::SetAudioScene(AudioScene audioScene)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
+    bool isSameScene = audioSceneManager_.IsSameAudioScene();
     audioSceneManager_.SetAudioScenePre(audioScene);
 
     // fetch input&output device
     audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
     audioDeviceCommon_.FetchDevice(false);
 
-    int32_t result = audioSceneManager_.SetAudioSceneAfter(audioScene, audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "failed [%{public}d]", result);
+    if (!isSameScene) {
+        int32_t result = audioSceneManager_.SetAudioSceneAfter(audioScene, audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "failed [%{public}d]", result);
+    }
     audioDeviceCommon_.OnAudioSceneChange(audioScene);
 
     if (audioScene == AUDIO_SCENE_PHONE_CALL) {
@@ -230,6 +233,13 @@ void AudioDeviceLock::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChan
     std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
     AUDIO_INFO_LOG("fetch device for track, sessionid:%{public}d start",
         streamChangeInfo.audioCapturerChangeInfo.sessionId);
+
+    AudioMode mode = AudioMode::AUDIO_MODE_RECORD;
+    // Set prerunningState true to refetch devices when device info change before update tracker to running
+    streamChangeInfo.audioCapturerChangeInfo.prerunningState = true;
+    if (streamCollector_.UpdateTrackerInternal(mode, streamChangeInfo) != SUCCESS) {
+        return;
+    }
 
     vector<shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfo;
     capturerChangeInfo.push_back(

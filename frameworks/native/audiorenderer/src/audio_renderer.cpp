@@ -882,7 +882,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     AudioXCollie audioXCollie("AudioRendererPrivate::Start", START_TIME_OUT_SECONDS,
         [](void *) {
             AUDIO_ERR_LOG("Start timeout");
-        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
         "volume: %{public}f, interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType,
@@ -1055,7 +1055,10 @@ bool AudioRendererPrivate::Unmute(StateChangeCmdType cmdType) const
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
 {
     Trace trace("AudioRenderer::Pause");
-    AudioXCollie audioXCollie("AudioRenderer::Pause", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("AudioRenderer::Pause", TIME_OUT_SECONDS,
+        [](void *) {
+            AUDIO_ERR_LOG("Pause timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
 
     AUDIO_INFO_LOG("StreamClientState for Renderer::Pause. id: %{public}u", sessionID_);
@@ -1410,23 +1413,6 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
         // sending callback is taken care in NotifyForcePausedToResume
         NotifyForcePausedToResume(interruptEvent);
     }
-}
-
-AudioRendererConcurrencyCallbackImpl::AudioRendererConcurrencyCallbackImpl()
-{
-    AUDIO_INFO_LOG("AudioRendererConcurrencyCallbackImpl ctor");
-}
-
-AudioRendererConcurrencyCallbackImpl::~AudioRendererConcurrencyCallbackImpl()
-{
-    AUDIO_INFO_LOG("AudioRendererConcurrencyCallbackImpl dtor");
-}
-
-void AudioRendererConcurrencyCallbackImpl::OnConcedeStream()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    CHECK_AND_RETURN_LOG(renderer_ != nullptr, "renderer is nullptr");
-    renderer_->ConcedeStream();
 }
 
 AudioStreamCallbackRenderer::AudioStreamCallbackRenderer(std::weak_ptr<AudioRendererPrivate> renderer)
@@ -2258,9 +2244,11 @@ void RendererPolicyServiceDiedCallback::OnAudioPolicyServiceDied()
     std::thread restoreThread ([weakRefCb] {
         std::shared_ptr<RendererPolicyServiceDiedCallback> strongRefCb = weakRefCb.lock();
         CHECK_AND_RETURN_LOG(strongRefCb != nullptr, "strongRef is nullptr");
+        int32_t count;
         do {
+            count = strongRefCb->taskCount_.load();
             strongRefCb->RestoreTheadLoop();
-        } while (strongRefCb->taskCount_.fetch_sub(1) > 1);
+        } while (strongRefCb->taskCount_.fetch_sub(count) > count);
     });
     pthread_setname_np(restoreThread.native_handle(), "OS_ARPSRestore");
     restoreThread.detach();
