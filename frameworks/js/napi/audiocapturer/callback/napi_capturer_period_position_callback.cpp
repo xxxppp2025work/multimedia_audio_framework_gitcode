@@ -154,11 +154,7 @@ napi_env &NapiCapturerPeriodPositionCallback::GetEnv()
 
 std::shared_ptr<AutoRef> &NapiCapturerPeriodPositionCallback::GetCallback(const std::string &callbackName)
 {
-    std::shared_ptr<AutoRef> cb = nullptr;
-    if (callbackName == PERIOD_REACH_CALLBACK_NAME) {
-        return capturerPeriodPositionCallback_;
-    }
-    return cb;
+    return capturerPeriodPositionCallback_;
 }
 
 bool NapiCapturerPeriodPositionCallback::CheckIfTargetCallbackName(const std::string &callbackName)

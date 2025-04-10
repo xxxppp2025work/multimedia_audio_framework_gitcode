@@ -90,8 +90,6 @@ bool NapiAudioCapturerCallback::GetInterruptTsfnFlag()
 
 std::shared_ptr<AutoRef> &NapiAudioCapturerCallback::GetCallback(const std::string &callbackName)
 {
-    std::shared_ptr<AutoRef> cb = nullptr;
-
     if (callbackName == AUDIO_INTERRUPT_CALLBACK_NAME) {
         return interruptCallback_;
     }
@@ -99,7 +97,7 @@ std::shared_ptr<AutoRef> &NapiAudioCapturerCallback::GetCallback(const std::stri
         return stateChangeCallback_;
     }
     AUDIO_ERR_LOG("NapiAudioCapturerCallback->GetCallback Unknown callback type: %{public}s", callbackName.c_str());
-    return cb;
+    return nullptr;
 }
 
 void NapiAudioCapturerCallback::RemoveCallbackReference(const std::string &callbackName, napi_env env,
