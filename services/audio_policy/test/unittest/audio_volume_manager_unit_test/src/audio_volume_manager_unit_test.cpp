@@ -521,7 +521,8 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_024, TestSize.Level1)
     int32_t bRet;
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
-    bRet = audioVolumeManager.GetAppVolumeLevel(appUid);
+    int32_t volumeLevel = 10;
+    bRet = audioVolumeManager.GetAppVolumeLevel(appUid, volumeLevel);
     EXPECT_EQ(bRet, 0);
 }
 
