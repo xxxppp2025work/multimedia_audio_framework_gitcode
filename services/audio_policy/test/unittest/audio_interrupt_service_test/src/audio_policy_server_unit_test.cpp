@@ -785,15 +785,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_039, TestSize.Level1)
     ptrAudioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
     auto ret = ptrAudioPolicyServer->ReleaseAudioInterruptZone(zoneID);
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    EXPECT_EQ(ret, ERR_UNKNOWN);
-=======
     EXPECT_EQ(ret, -62980296);
->>>>>>> e3fcf122a... increase ut case
-=======
-    EXPECT_EQ(ret, ERR_UNKNOWN);
->>>>>>> 5e1bbf3b9... fix bug
 }
 
 /**
