@@ -750,7 +750,8 @@ void AudioPolicyServer::CheckStreamMode(const int64_t activateSessionId)
     audioPolicyService_.CheckStreamMode(activateSessionId);
 }
 
-void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnAsyncPowerStateChanged(PowerMgr::PowerState state)
+void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnAsyncPowerStateChanged(
+    PowerMgr::PowerState state, PowerMgr::StateChangeReason __attribute__((unused)) reason)
 {
     policyServer_->audioPolicyService_.HandlePowerStateChanged(state);
 }
