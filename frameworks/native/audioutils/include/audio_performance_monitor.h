@@ -67,7 +67,7 @@ public:
     static AudioPerformanceMonitor &GetInstance();
 
     // silence Monitor records if server gets valid data from client
-    void RecordSilenceState(uint32_t sessionId, bool isSilence, AudioPipeType pipeType);
+    void RecordSilenceState(uint32_t sessionId, bool isSilence, AudioPipeType pipeType, uint32_t uid);
     void ClearSilenceMonitor(uint32_t sessionId);
     void DeleteSilenceMonitor(uint32_t sessionId);
 
@@ -81,8 +81,9 @@ public:
     std::map<AdapterType, int64_t /*lastWrittenTimeStamp*/> overTimeDetectMap_{};
 
 private:
-    void JudgeNoise(uint32_t index, bool curState);
-    void ReportEvent(DetectEvent reasonCode, int32_t periodMs, AudioPipeType pipeType, AdapterType adapterType);
+    void JudgeNoise(uint32_t index, bool curState, uint32_t uid);
+    void ReportEvent(DetectEvent reasonCode, int32_t periodMs, AudioPipeType pipeType, AdapterType adapterType,
+        uint32_t uid = 0);
 
     int64_t silenceLastReportTime_ = -1;
     int64_t overTimeLastReportTime_ = -1;
