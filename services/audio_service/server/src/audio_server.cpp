@@ -1485,7 +1485,8 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     int32_t ret = CheckParam(config);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Check params failed");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (resetConfig.audioMode == AUDIO_MODE_PLAYBACK) {
+    if (resetConfig.audioMode == AUDIO_MODE_PLAYBACK &&
+        !IsVoiceModemCommunication(resetConfig.rendererInfo.streamUsage, callingUid)) {
         errorCode = CheckMaxRendererInstances();
         if (errorCode != SUCCESS) {
             return nullptr;
@@ -1518,6 +1519,11 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     }
 #endif
     return CreateAudioStream(resetConfig, callingUid);
+}
+
+static bool IsVoiceModemCommunication(StreamUsage streamUsage, int32_t callingUid)
+{
+    return streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && callingUid == UID_FOUNDATION_SA;
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER
