@@ -73,7 +73,6 @@ private:
         int32_t channelBlendMode;
         DeviceRole deviceRole;
         int32_t deviceType;
-        int32_t streamUsage;
         Timestamp timeStamp;
         AudioRendererOptions rendererOptions;
         AudioDeviceDescriptor deviceInfo = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
@@ -138,7 +137,6 @@ private:
     static napi_value GetSilentModeAndMixWithOthers(napi_env env, napi_callback_info info);
     static napi_value SetDefaultOutputDevice(napi_env env, napi_callback_info info);
     static napi_value GetCallback(size_t argc, napi_value *argv);
-    static napi_value GetDirectPlaybackSupport(napi_env env, napi_callback_info info);
 
     static napi_status WriteArrayBufferToNative(std::shared_ptr<AudioRendererAsyncContext> context);
 

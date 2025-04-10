@@ -30,6 +30,7 @@ namespace AudioStandard {
 const std::string AUDIO_STREAM_MGR_NAPI_CLASS_NAME = "AudioStreamManager";
 const std::string RENDERERCHANGE_CALLBACK_NAME = "audioRendererChange";
 const std::string CAPTURERCHANGE_CALLBACK_NAME = "audioCapturerChange";
+const std::string RENDER_ERROR_CALLBACK_NAME = "renderError";
 
 class NapiAudioStreamMgr {
 public:
@@ -77,6 +78,7 @@ private:
     static napi_value GetAudioEffectProperty(napi_env env, napi_callback_info info);
     static napi_value SetAudioEffectProperty(napi_env env, napi_callback_info info);
     static napi_value GetHardwareOutputSamplingRate(napi_env env, napi_callback_info info);
+    static napi_value GetDirectPlaybackSupport(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);
     static void RegisterCallback(napi_env env, napi_value jsThis,
@@ -85,16 +87,20 @@ private:
         const std::string &cbName, NapiAudioStreamMgr *napiStreamMgr);
     static void RegisterRendererStateChangeCallback(napi_env env, napi_value *args,
         const std::string &cbName, NapiAudioStreamMgr *napiStreamMgr);
+    static void RegisterRendererErrorCallback(napi_env env, napi_value *args,
+        const std::string &cbName, NapiAudioStreamMgr *napiStreamMgr);
     static void UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *args,
         const std::string &cbName);
     static void UnregisterRendererChangeCallback(NapiAudioStreamMgr *napiStreamMgr, size_t argc, napi_value *args);
     static void UnregisterCapturerChangeCallback(NapiAudioStreamMgr *napiStreamMgr, size_t argc, napi_value *args);
+    static void UnregisterRendererErrorCallback(NapiAudioStreamMgr *napiStreamMgr, size_t argc, napi_value *args);
 
     napi_env env_;
     AudioStreamManager *audioStreamMngr_;
     int32_t cachedClientId_ = -1;
     std::shared_ptr<AudioRendererStateChangeCallback> rendererStateChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioCapturerStateChangeCallback> capturerStateChangeCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioFormatUnsupportedErrorCallback> errorCallbackNapi_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

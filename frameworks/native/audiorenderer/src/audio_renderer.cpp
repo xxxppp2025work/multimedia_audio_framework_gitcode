@@ -595,8 +595,8 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     ret = InitOutputDeviceChangeCallback();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitOutputDeviceChangeCallback Failed");
 
-    ret = InitFormatUnsupportedErrorCallback();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitFormatUnsupportedErrorCallback Failed");
+    ret = InitAudioFormatUnsupportedErrorCallback();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioFormatUnsupportedErrorCallback Failed");
 
     return InitAudioInterruptCallback();
 }
@@ -1129,7 +1129,7 @@ bool AudioRendererPrivate::Release()
     // Unregister the callaback in policy server
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
 
-    (void)AudioPolicyManager::GetInstance().UnsetFormatUnsupportedErrorCallback();
+    (void)AudioPolicyManager::GetInstance().UnsetAudioFormatUnsupportedErrorCallback();
 
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
@@ -2434,25 +2434,19 @@ int32_t AudioRendererPrivate::GetAudioTimestampInfo(Timestamp &timestamp, Timest
     return currentStream->GetAudioTimestampInfo(timestamp, base);
 }
 
-DirectPlaybackMode AudioRendererPrivate::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
-    const StreamUsage &streamUsage)
+int32_t AudioRendererPrivate::InitAudioFormatUnsupportedErrorCallback()
 {
-    return AudioPolicyManager::GetInstance().GetDirectPlaybackSupport(streamInfo, streamUsage);
-}
-
-int32_t AudioRendererPrivate::InitFormatUnsupportedErrorCallback()
-{
-    if (!formatUnsupportedErrorCallback_) {
-        formatUnsupportedErrorCallback_ = std::make_shared<AudioFormatUnsupportedErrorCallback>();
-        CHECK_AND_RETURN_RET_LOG(formatUnsupportedErrorCallback_ != nullptr, ERROR, "Memory allocation failed");
+    if (!AudioFormatUnsupportedErrorCallback_) {
+        AudioFormatUnsupportedErrorCallback_ = std::make_shared<AudioAudioFormatUnsupportedErrorCallback>();
+        CHECK_AND_RETURN_RET_LOG(AudioFormatUnsupportedErrorCallback_ != nullptr, ERROR, "Memory allocation failed");
     }
-    int32_t ret = AudioPolicyManager::GetInstance().SetFormatUnsupportedErrorCallback(
-        formatUnsupportedErrorCallback_);
+    int32_t ret = AudioPolicyManager::GetInstance().SetAudioFormatUnsupportedErrorCallback(
+        AudioFormatUnsupportedErrorCallback_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Register failed");
     return SUCCESS;
 }
 
-void AudioFormatUnsupportedErrorCallback::OnFormatUnsupportedError(const AudioErrors &errorCode)
+void AudioAudioFormatUnsupportedErrorCallback::OnFormatUnsupportedError(const AudioErrors &errorCode)
 {
     std::shared_ptr<AudioRendererErrorCallback> cb = callback_.lock();
     CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");

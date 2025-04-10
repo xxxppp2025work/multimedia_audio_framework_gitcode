@@ -207,9 +207,25 @@ int32_t AudioStreamManager::GetHardwareOutputSamplingRate(std::shared_ptr<AudioD
 }
 
 DirectPlaybackMode AudioStreamManager::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
-    const StreamUsage &sreamUsage)
+    const StreamUsage &streamUsage)
 {
-    return AudioPolicyManager::GetInstance().GetDirectPlaybackSupport(streamInfo, sreamUsage);
+    return AudioPolicyManager::GetInstance().GetDirectPlaybackSupport(streamInfo, streamUsage);
+}
+
+int32_t AudioStreamManager::SetFormatUnsupportedErrorCallback(
+    const std::shared_ptr<AudioFormatUnsupportedErrorCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
+    int32_t ret = AudioPolicyManager::GetInstance().SetFormatUnsupportedErrorCallback(callback);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "ret: %{public}d", ret);
+    return ret;
+}
+
+int32_t AudioStreamManager::UnsetFormatUnsupportedErrorCallback()
+{
+    int32_t ret = AudioPolicyManager::GetInstance().UnsetFormatUnsupportedErrorCallback();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "ret: %{public}d", ret);
+    return ret;
 }
 
 int32_t AudioStreamManager::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
