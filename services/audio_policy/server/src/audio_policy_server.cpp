@@ -987,7 +987,7 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
 
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     int32_t volumeLevelInInt = 0;
-    if (GetStreamMuteInternal(streamInFocus)) {
+    if (adjustType == VolumeAdjustType::VOLUME_UP && GetStreamMuteInternal(streamInFocus)) {
         SetStreamMuteInternal(streamInFocus, false, false);
         if (!VolumeUtils::IsPCVolumeEnable()) {
             AUDIO_DEBUG_LOG("phone need return");
@@ -1028,7 +1028,7 @@ int32_t AudioPolicyServer::AdjustSystemVolumeByStep(AudioVolumeType volumeType, 
     }
 
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-    if (GetStreamMuteInternal(volumeType)) {
+    if (adjustType == VolumeAdjustType::VOLUME_UP && GetStreamMuteInternal(volumeType)) {
         SetStreamMuteInternal(volumeType, false, false);
         if (!VolumeUtils::IsPCVolumeEnable()) {
             AUDIO_DEBUG_LOG("phone need return");
@@ -2031,6 +2031,32 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     if (interruptService_ != nullptr) {
         int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
         return interruptService_->DeactivateAudioInterrupt(zoneId, audioInterrupt);
+    }
+    return ERR_UNKNOWN;
+}
+
+int32_t AudioPolicyServer::ActivatePreemptMode()
+{
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    if (callingUid != PREEMPT_UID) {
+        AUDIO_ERR_LOG("Error callingUid uid: %{public}d", callingUid);
+        return ERROR;
+    }
+    if (interruptService_ != nullptr) {
+        return interruptService_->ActivatePreemptMode();
+    }
+    return ERR_UNKNOWN;
+}
+
+int32_t AudioPolicyServer::DeactivatePreemptMode()
+{
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    if (callingUid != PREEMPT_UID) {
+        AUDIO_ERR_LOG("Error callingUid uid: %{public}d", callingUid);
+        return ERROR;
+    }
+    if (interruptService_ != nullptr) {
+        return interruptService_->DeactivatePreemptMode();
     }
     return ERR_UNKNOWN;
 }

@@ -962,6 +962,7 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
         "same volume group %{public}d", deviceDescriptor.deviceType_, isSameVolumeGroup);
     // Current device must be updated even if kvStore is nullptr.
     currentActiveDevice_ = deviceDescriptor;
+    AudioVolume::GetInstance()->SetCurrentActiveDevice(currentActiveDevice_.deviceType_);
 
     if (!isSameVolumeGroup && !isSwitchToRemoteDevice) {
         // If there's no os account available when trying to get one, audio_server would sleep for 1 sec
@@ -1562,7 +1563,7 @@ IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &
         attr.openMicSpeaker = static_cast<uint32_t>(std::stoul(audioModuleInfo.OpenMicSpeaker));
     }
     attr.format = ParseSourceAudioSampleFormat(audioModuleInfo.format);
-    if (!audioModuleInfo.OpenMicSpeaker.empty()) {
+    if (!audioModuleInfo.rate.empty()) {
         attr.sampleRate = static_cast<uint32_t>(std::stoul(audioModuleInfo.rate));
     }
     if (!audioModuleInfo.channels.empty()) {
