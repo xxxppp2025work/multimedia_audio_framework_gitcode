@@ -412,13 +412,15 @@ int32_t AudioAdapterManager::SetSystemVolumeLevelWithDevice(AudioStreamType stre
     int32_t maxRet = GetMaxVolumeLevel(streamType);
     CHECK_AND_RETURN_RET_LOG(volumeLevel >= mimRet && volumeLevel <= maxRet, ERR_OPERATION_FAILED,
         "volumeLevel not in scope,mimRet:%{public}d maxRet:%{public}d", mimRet, maxRet);
-    if (currentActiveDevice_.deviceType_ != deviceType) {
-        handler_->SendSaveVolume(deviceType, streamType, volumeLevel);
-    } else {
-        volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
-        handler_->SendSaveVolume(currentActiveDevice_.deviceType_, streamType, volumeLevel);
+    if (handler_ != nullptr) {
+        if (currentActiveDevice_.deviceType_ != deviceType) {
+            handler_->SendSaveVolume(deviceType, streamType, volumeLevel);
+        } else {
+            volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
+            handler_->SendSaveVolume(currentActiveDevice_.deviceType_, streamType, volumeLevel);
+        }
+        SetDeviceSafeVolume(streamType, volumeLevel);
     }
-    SetDeviceSafeVolume(streamType, volumeLevel);
     return SetVolumeDb(streamType);
 }
 
