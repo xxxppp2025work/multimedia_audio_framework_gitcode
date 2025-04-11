@@ -493,7 +493,8 @@ public:
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object);
-    DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
+    DirectPlaybackMode GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
+        const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
     void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
     void CheckConnectedDevice();
     void SetDeviceConnectedFlagFalseAfterDuration();
