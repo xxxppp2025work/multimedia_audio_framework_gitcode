@@ -850,7 +850,6 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
             selectedAudioDevice->deviceId_ = intValue;
         }        
     }
-    
     return napi_ok;
 }
 
