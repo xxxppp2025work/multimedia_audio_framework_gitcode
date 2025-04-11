@@ -67,6 +67,12 @@ static const std::vector<std::string> SYSTEM_SOUND_KEY_LIST = {
     "system_tone_for_notification"
 };
 
+static const std::unordered_map<DeviceType, DeviceVolumeType> DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP = {
+    {DEVICE_TYPE_EARPIECE, EARPIECE_VOLUME_TYPE},
+    {DEVICE_TYPE_SPEAKER, SPEAKER_VOLUME_TYPE},
+    {DEVICE_TYPE_WIRED_HEADSET, HEADSET_VOLUME_TYPE}
+};
+
 // LCOV_EXCL_START
 bool AudioAdapterManager::Init()
 {
@@ -1833,8 +1839,8 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
         for (auto &streamType: VOLUME_TYPE_LIST) {
             // if GetVolume failed, wirte default value
             if (!volumeDataMaintainer_.GetVolume(deviceType, streamType)) {
-                auto ret = volumeDataMaintainer_.SaveVolume(deviceType, streamType,
-                    volumeLevelMapTemp[VolumeUtils::GetVolumeTypeFromStreamType(streamType)]);
+                int32_t volumeLevel = GetDefaultVolumeLevel(streamType, deviceType);
+                auto ret = volumeDataMaintainer_.SaveVolume(deviceType, streamType, volumeLevel);
                 resetFirstFlag = ret ? resetFirstFlag : true;
             }
         }
@@ -1846,6 +1852,22 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
     // reLoad the current device volume
     LoadVolumeMap();
     UpdateSafeVolume();
+}
+
+// If the device specified by the VolumeType has a default volume level configured,
+// use that default volume level. Otherwise, use the default volume level for the VolumeType.
+int32_t AudioAdapterManager::GetDefaultVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType) const
+{
+    AudioVolumeType internalVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(volumeType);
+    int32_t defaultVolumeLevel = volumeLevelMapTemp[internalVolumeType];
+    int32_t defaultDeviceVolumeLevel = -1;
+    auto it = DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.find(deviceType);
+    if (it != DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.end()) {
+        defaultDeviceVolumeLevel =
+            streamVolumeInfos_[internalVolumeType]->deviceVolumeInfos[it->second]->defaultLevel;
+    }
+    int32_t volumeLevel = (defaultDeviceVolumeLevel == -1) ? defaultVolumeLevel : defaultDeviceVolumeLevel;
+    return volumeLevel;
 }
 
 void AudioAdapterManager::ResetRemoteCastDeviceVolume()
