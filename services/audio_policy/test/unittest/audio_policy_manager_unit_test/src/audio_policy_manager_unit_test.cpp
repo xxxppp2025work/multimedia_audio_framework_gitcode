@@ -634,7 +634,7 @@ HWTEST(AudioPolicyManager, CreateCapturerClient_001, TestSize.Level1)
 /**
 * @tc.name  : Test AudioPolicyManager.
 * @tc.number: GetDirectPlaybackSupport_001.
-* @tc.desc  : Test GetDirectPlaybackSupport.
+* @tc.desc  : Test GetDirectPlaybackSupport. Returns DIRECT_PLAYBACK_NOT_SUPPORTED when xml not supported.
 */
 HWTEST(AudioPolicyManager, GetDirectPlaybackSupport_001, TestSize.Level1)
 {
@@ -652,7 +652,7 @@ HWTEST(AudioPolicyManager, GetDirectPlaybackSupport_001, TestSize.Level1)
 /**
 * @tc.name  : Test AudioPolicyManager.
 * @tc.number: GetDirectPlaybackSupport_002.
-* @tc.desc  : Test GetDirectPlaybackSupport.
+* @tc.desc  : Test GetDirectPlaybackSupport. Returns DIRECT_PLAYBACK_NOT_SUPPORTED when xml not supported.
 */
 HWTEST(AudioPolicyManager, GetDirectPlaybackSupport_002, TestSize.Level1)
 {

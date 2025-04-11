@@ -36,7 +36,7 @@ public:
         return ohAudioStreamManager_;
     }
 
-    DirectPlaybackMode GetDirectPlaybackSupport(AudioEncodingType encodingType,
+    OH_AudioStream_DirectPlaybackMode GetDirectPlaybackSupport(AudioEncodingType encodingType,
         AudioSampleFormat format, int32_t channelCount, int32_t samplingRate, StreamUsage usage);
 
 private:

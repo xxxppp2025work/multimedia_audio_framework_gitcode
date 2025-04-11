@@ -44,6 +44,7 @@
 #define NATIVE_AUDIO_STREAM_MANAGER_H
 
 #include "native_audiostream_base.h"
+#include "native_audio_common.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

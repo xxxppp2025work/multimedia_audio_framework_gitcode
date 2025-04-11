@@ -1277,7 +1277,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterTracker_001, TestSize.Level1)
 /**
  * @tc.name  : Test GetDirectPlaybackSupport.
  * @tc.number: GetDirectPlaybackSupport_001
- * @tc.desc  : Test GetDirectPlaybackSupport interfaces.
+ * @tc.desc  : Test GetDirectPlaybackSupport interfaces. Returns DIRECT_PLAYBACK_NOT_SUPPORTED when xml not supported.
  */
 HWTEST_F(AudioPolicyServiceExtUnitTest, GetDirectPlaybackSupport_001, TestSize.Level1)
 {
@@ -1288,14 +1288,14 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetDirectPlaybackSupport_001, TestSize.L
     streamInfo.format = SAMPLE_S24LE;
     streamInfo.channels = STEREO;
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
-    auto result = server->audioPolicyService_.GetDirectPlaybackSupport(streamInfo, streamUsage);
-    EXPECT_EQ(result,  DIRECT_PLAYBACK_NOT_SUPPORTED);
+    auto result = server->GetDirectPlaybackSupport(streamInfo, streamUsage);
+    EXPECT_EQ(result, DIRECT_PLAYBACK_NOT_SUPPORTED);
 }
 
 /**
  * @tc.name  : Test GetDirectPlaybackSupport.
  * @tc.number: GetDirectPlaybackSupport_002
- * @tc.desc  : Test GetDirectPlaybackSupport interfaces.
+ * @tc.desc  : Test GetDirectPlaybackSupport interfaces. Returns DIRECT_PLAYBACK_NOT_SUPPORTED when xml not supported.
  */
 HWTEST_F(AudioPolicyServiceExtUnitTest, GetDirectPlaybackSupport_002, TestSize.Level1)
 {
@@ -1306,20 +1306,22 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetDirectPlaybackSupport_002, TestSize.L
     streamInfo.format = SAMPLE_U8;
     streamInfo.channels = STEREO;
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
-    auto result = server->audioPolicyService_.GetDirectPlaybackSupport(streamInfo, streamUsage);
-    EXPECT_EQ(result,  DIRECT_PLAYBACK_NOT_SUPPORTED);
+    auto result = server->GetDirectPlaybackSupport(streamInfo, streamUsage);
+    EXPECT_EQ(result, DIRECT_PLAYBACK_NOT_SUPPORTED);
 }
 
 /**
  * @tc.name  : Test GetDirectPlaybackSupport.
  * @tc.number: GetDirectPlaybackSupport_003
- * @tc.desc  : Test GetDirectPlaybackSupport interfaces.
+ * @tc.desc  : Test GetDirectPlaybackSupport interfaces. Returns DIRECT_PLAYBACK_NOT_SUPPORTED when xml not supported.
  */
 HWTEST_F(AudioPolicyServiceExtUnitTest, GetDirectPlaybackSupport_003, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
-    std::shared_ptr<AudioDeviceDescriptor> desc = server->audioPolicyService_.GetActiveOutputDeviceDescriptor();
-    EXPECT_NE(nullptr, desc);
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    desc->deviceRole_ = OUTPUT_DEVICE;
+    desc->networkId_ = LOCAL_NETWORK_ID;
     AudioStreamInfo streamInfo;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     streamInfo.encoding = ENCODING_PCM;
@@ -1327,21 +1329,23 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetDirectPlaybackSupport_003, TestSize.L
     streamInfo.channels = STEREO;
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
 
-    auto result = server->audioPolicyService_.audioConfigManager_.GetDirectPlaybackSupport(desc, streamInfo,
+    auto result = server->audioPolicyService_.GetDirectPlaybackSupport(desc, streamInfo,
         streamUsage);
-    EXPECT_EQ(result,  DIRECT_PLAYBACK_NOT_SUPPORTED);
+    EXPECT_EQ(result, DIRECT_PLAYBACK_NOT_SUPPORTED);
 }
 
 /**
  * @tc.name  : Test GetDirectPlaybackSupport.
  * @tc.number: GetDirectPlaybackSupport_004
- * @tc.desc  : Test GetDirectPlaybackSupport interfaces.
+ * @tc.desc  : Test GetDirectPlaybackSupport interfaces. Returns DIRECT_PLAYBACK_NOT_SUPPORTED when xml not supported.
  */
 HWTEST_F(AudioPolicyServiceExtUnitTest, GetDirectPlaybackSupport_004, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
-    std::shared_ptr<AudioDeviceDescriptor> desc = server->audioPolicyService_.GetActiveOutputDeviceDescriptor();
-    EXPECT_NE(nullptr, desc);
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_HDMI;
+    desc->deviceRole_ = OUTPUT_DEVICE;
+    desc->networkId_ = LOCAL_NETWORK_ID;
     AudioStreamInfo streamInfo;
     streamInfo.samplingRate = SAMPLE_RATE_24000;
     streamInfo.encoding = ENCODING_EAC3;
@@ -1349,9 +1353,9 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetDirectPlaybackSupport_004, TestSize.L
     streamInfo.channels = STEREO;
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
 
-    auto result = server->audioPolicyService_.audioConfigManager_.GetDirectPlaybackSupport(desc, streamInfo,
+    auto result = server->audioPolicyService_.GetDirectPlaybackSupport(desc, streamInfo,
         streamUsage);
-    EXPECT_EQ(result,  DIRECT_PLAYBACK_NOT_SUPPORTED);
+    EXPECT_EQ(result, DIRECT_PLAYBACK_NOT_SUPPORTED);
 }
 
 } // namespace AudioStandard

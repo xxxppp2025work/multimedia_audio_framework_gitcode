@@ -34,6 +34,9 @@ static OHOS::AudioStandard::OHAudioStreamManager *convertManager(OH_AudioStreamM
 OH_AudioCommon_Result OH_AudioManager_GetAudioStreamManager(OH_AudioStreamManager **audioStreamManager)
 {
     OHAudioStreamManager* ohAudioStreamManager = OHAudioStreamManager::GetInstance();
+    if (ohAudioStreamManager == nullptr) {
+        AUDIO_ERR_LOG("audioStreamManager is nullptr");
+    }
     *audioStreamManager = reinterpret_cast<OH_AudioStreamManager*>(ohAudioStreamManager);
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
@@ -45,15 +48,19 @@ OH_AudioCommon_Result OH_AudioStreamManager_GetDirectPlaybackSupport(OH_AudioStr
     OHAudioStreamManager* ohAudioStreamManager = convertManager(audioStreamManager);
     CHECK_AND_RETURN_RET_LOG(ohAudioStreamManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioStreamManager is nullptr");
-    CHECK_AND_RETURN_RET_LOG(encodingType >= AUDIOSTREAM_ENCODING_TYPE_RAW && format >= AUDIOSTREAM_SAMPLE_U8 &&
-        channelCount > 0 && samplingRate > 0 && usage > AUDIOSTREAM_USAGE_UNKNOWN,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, invalid param");
-    StreamUsage streamUsage = static_cast<StreamUsage>(usage);
-    AudioEncodingType encoding = static_cast<AudioEncodingType>(encodingType);
-    AudioSampleFormat sampleFormat = static_cast<AudioSampleFormat>(format);
-    DirectPlaybackMode mode = ohAudioStreamManager->GetDirectPlaybackSupport(encoding, sampleFormat, channelCount,
-        samplingRate, streamUsage);
-    *directPlaybackMode = static_cast<OH_AudioStream_DirectPlaybackMode>(mode);
+    CHECK_AND_RETURN_RET_LOG(encodingType >= AUDIOSTREAM_ENCODING_TYPE_RAW &&
+        encodingType <= AUDIOSTREAM_ENCODING_TYPE_E_AC3, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        "encodingType is invalid");
+    CHECK_AND_RETURN_RET_LOG(format >= AUDIOSTREAM_SAMPLE_U8 && format <= AUDIOSTREAM_SAMPLE_F32LE,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "format is invalid");
+    CHECK_AND_RETURN_RET_LOG(channelCount > 0, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "channelCount is invalid");
+    CHECK_AND_RETURN_RET_LOG(samplingRate > 0, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "samplingRate is invalid");
+    CHECK_AND_RETURN_RET_LOG(usage > AUDIOSTREAM_USAGE_UNKNOWN, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        "usage is invalid");
+    CHECK_AND_RETURN_RET_LOG(directPlaybackMode != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        "directPlaybackMode is nullptr");
+    *directPlaybackMode = ohAudioStreamManager->GetDirectPlaybackSupport(static_cast<AudioEncodingType>(encodingType),
+        static_cast<AudioSampleFormat>(format), channelCount, samplingRate, static_cast<StreamUsage>(usage));
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
@@ -70,15 +77,15 @@ OHAudioStreamManager::~OHAudioStreamManager()
     AUDIO_INFO_LOG("OHAudioStreamManager destroyed!");
 }
 
-DirectPlaybackMode OHAudioStreamManager::GetDirectPlaybackSupport(AudioEncodingType encodingType,
+OH_AudioStream_DirectPlaybackMode OHAudioStreamManager::GetDirectPlaybackSupport(AudioEncodingType encodingType,
     AudioSampleFormat format, int32_t channelCount, int32_t samplingRate, StreamUsage usage)
 {
-    CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr,
-        DIRECT_PLAYBACK_NOT_SUPPORTED, "failed, audioStreamManager_ is null");
+    CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr, AUDIOSTREAM_DIRECT_PLAYBACK_NOT_SUPPORTED,
+        "failed, audioStreamManager_ is null");
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(samplingRate), encodingType, format,
         static_cast<AudioChannel>(channelCount));
     DirectPlaybackMode mode = audioStreamManager_->GetDirectPlaybackSupport(streamInfo, usage);
-    return mode;
+    return static_cast<OH_AudioStream_DirectPlaybackMode>(mode);
 }
 
 } // namespace AudioStandard

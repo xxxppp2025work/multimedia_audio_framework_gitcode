@@ -482,7 +482,7 @@ DirectPlaybackMode AudioPolicyConfigManager::GetDirectPlaybackSupport(std::share
 
     if (streamInfo.encoding == ENCODING_PCM) {
         for (auto &pipeIt : deviceInfo->supportPipeMap_) {
-            if (pipeIt.first == AUDIO_OUTPUT_FLAG_DIRECT &&
+            if ((pipeIt.first & AUDIO_OUTPUT_FLAG_DIRECT) &&
                 IsStreamPropMatch(streamInfo, pipeIt.second->streamPropInfos_)) { // 待确认
                 AUDIO_INFO_LOG("Support encoding type pcm");
                 return DIRECT_PLAYBACK_PCM_SUPPORTED;

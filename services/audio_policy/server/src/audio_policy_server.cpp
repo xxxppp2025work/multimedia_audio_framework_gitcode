@@ -3993,8 +3993,10 @@ DirectPlaybackMode AudioPolicyServer::GetDirectPlaybackSupport(const AudioStream
     const StreamUsage &streamUsage)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callerUid == UID_TV_PROCESS_SA, DIRECT_PLAYBACK_NOT_SUPPORTED, "uid permission denied");
-    return audioPolicyService_.GetDirectPlaybackSupport(streamInfo, streamUsage);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioRouterCenter_.FetchOutputDevices(
+        streamUsage, callerUid);
+    CHECK_AND_RETURN_RET_LOG(!descs.empty(), DIRECT_PLAYBACK_NOT_SUPPORTED, "find output device failed");
+    return audioPolicyService_.GetDirectPlaybackSupport(descs.front(), streamInfo, streamUsage);
 }
 
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)
