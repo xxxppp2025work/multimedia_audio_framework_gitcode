@@ -814,12 +814,14 @@ void AudioDeviceManager::GetAvailableDevicesWithUsage(const AudioDeviceUsage usa
     const list<DevicePrivacyInfo> &deviceInfos, const std::shared_ptr<AudioDeviceDescriptor> &dev,
     vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
-    for (auto &deviceInfo : deviceInfos) {
-        if (dev->deviceType_ != deviceInfo.deviceType ||
-            IsExistedDevice(dev, audioDeviceDescriptors)) {
-            continue;
+    if (dev != nullptr) {
+        for (auto &deviceInfo : deviceInfos) {
+            if (dev->deviceType_ != deviceInfo.deviceType ||
+                IsExistedDevice(dev, audioDeviceDescriptors)) {
+                continue;
+            }
+            AddAvailableDevicesByUsage(usage, deviceInfo, dev, audioDeviceDescriptors);
         }
-        AddAvailableDevicesByUsage(usage, deviceInfo, dev, audioDeviceDescriptors);
     }
 }
 
@@ -970,30 +972,33 @@ bool AudioDeviceManager::GetScoState()
 void AudioDeviceManager::UpdateDevicesListInfo(const std::shared_ptr<AudioDeviceDescriptor> &d,
     const DeviceInfoUpdateCommand updateCommand)
 {
+    if (d == nullptr) {
+        break;
+    }
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(d);
-    bool ret = false;
-    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
-    switch (updateCommand) {
-        case CATEGORY_UPDATE:
-            ret = UpdateDeviceCategory(d);
-            break;
-        case CONNECTSTATE_UPDATE:
-            ret = UpdateConnectState(devDesc);
-            break;
-        case ENABLE_UPDATE:
-            ret = UpdateEnableState(devDesc);
-            break;
-        case EXCEPTION_FLAG_UPDATE:
-            ret = UpdateExceptionFlag(devDesc);
-            break;
-        default:
-            break;
-    }
-    if (!ret) {
-        int32_t audioId = d->deviceId_;
-        AUDIO_ERR_LOG("cant find type:id %{public}d:%{public}d mac:%{public}s networkid:%{public}s in connected list",
-            d->deviceType_, audioId, GetEncryptStr(d->macAddress_).c_str(), GetEncryptStr(d->networkId_).c_str());
-    }
+        bool ret = false;
+        std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+        switch (updateCommand) {
+            case CATEGORY_UPDATE:
+                ret = UpdateDeviceCategory(d);
+                break;
+            case CONNECTSTATE_UPDATE:
+                ret = UpdateConnectState(devDesc);
+                break;
+            case ENABLE_UPDATE:
+                ret = UpdateEnableState(devDesc);
+                break;
+            case EXCEPTION_FLAG_UPDATE:
+                ret = UpdateExceptionFlag(devDesc);
+                break;
+            default:
+                break;
+        }
+        if (!ret) {
+            int32_t audioId = d->deviceId_;
+            AUDIO_ERR_LOG("cant find type:id %{public}d:%{public}d mac:%{public}s networkid:%{public}s in connected list",
+                d->deviceType_, audioId, GetEncryptStr(d->macAddress_).c_str(), GetEncryptStr(d->networkId_).c_str());
+        }
 }
 
 bool AudioDeviceManager::UpdateDeviceCategory(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)

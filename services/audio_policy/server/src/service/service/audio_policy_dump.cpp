@@ -126,29 +126,31 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyDump::GetDumpDevi
 
     for (const auto &desc : deviceDescs) {
         std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
-        dumpString += "\n";
-        AppendFormat(dumpString, "  - device name:%s\n",
-            AudioInfoDumpUtils::GetDeviceTypeName(devDesc->deviceType_).c_str());
-        AppendFormat(dumpString, "  - device type:%d\n", devDesc->deviceType_);
-        AppendFormat(dumpString, "  - device id:%d\n", devDesc->deviceId_);
-        AppendFormat(dumpString, "  - device role:%d\n", devDesc->deviceRole_);
-        AppendFormat(dumpString, "  - device name:%s\n", devDesc->deviceName_.c_str());
-        AppendFormat(dumpString, "  - device mac:%s\n", GetEncryptAddr(devDesc->macAddress_).c_str());
-        AppendFormat(dumpString, "  - device network:%s\n", devDesc->networkId_.c_str());
-        if (deviceFlag == DeviceFlag::INPUT_DEVICES_FLAG || deviceFlag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
-            conneceType_  = CONNECT_TYPE_LOCAL;
-        } else if (deviceFlag == DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG ||
-                deviceFlag == DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG) {
-            conneceType_  = CONNECT_TYPE_DISTRIBUTED;
-        }
-        AppendFormat(dumpString, "  - connect type:%s\n", AudioInfoDumpUtils::GetConnectTypeName(conneceType_).c_str());
-        for (auto &samplingRate : devDesc->audioStreamInfo_.samplingRate) {
-            AppendFormat(dumpString, "  - device sampleRates:%d\n", samplingRate);
-        }
-        for (auto &channel : devDesc->audioStreamInfo_.channels) {
-            AppendFormat(dumpString, "  - device channels:%d\n", channel);
-        }
-        AppendFormat(dumpString, "  - device format:%d\n", devDesc->audioStreamInfo_.format);
+        if (devDesc != nullptr) {
+            dumpString += "\n";
+            AppendFormat(dumpString, "  - device name:%s\n",
+                AudioInfoDumpUtils::GetDeviceTypeName(devDesc->deviceType_).c_str());
+            AppendFormat(dumpString, "  - device type:%d\n", devDesc->deviceType_);
+            AppendFormat(dumpString, "  - device id:%d\n", devDesc->deviceId_);
+            AppendFormat(dumpString, "  - device role:%d\n", devDesc->deviceRole_);
+            AppendFormat(dumpString, "  - device name:%s\n", devDesc->deviceName_.c_str());
+            AppendFormat(dumpString, "  - device mac:%s\n", GetEncryptAddr(devDesc->macAddress_).c_str());
+            AppendFormat(dumpString, "  - device network:%s\n", devDesc->networkId_.c_str());
+            if (deviceFlag == DeviceFlag::INPUT_DEVICES_FLAG || deviceFlag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
+                conneceType_  = CONNECT_TYPE_LOCAL;
+            } else if (deviceFlag == DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG ||
+                    deviceFlag == DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG) {
+                conneceType_  = CONNECT_TYPE_DISTRIBUTED;
+            }
+            AppendFormat(dumpString, "  - connect type:%s\n", AudioInfoDumpUtils::GetConnectTypeName(conneceType_).c_str());
+            for (auto &samplingRate : devDesc->audioStreamInfo_.samplingRate) {
+                AppendFormat(dumpString, "  - device sampleRates:%d\n", samplingRate);
+            }
+            for (auto &channel : devDesc->audioStreamInfo_.channels) {
+                AppendFormat(dumpString, "  - device channels:%d\n", channel);
+            }
+            AppendFormat(dumpString, "  - device format:%d\n", devDesc->audioStreamInfo_.format);
+        }   
     }
     return deviceDescs;
 }
