@@ -537,16 +537,20 @@ void NapiAudioStreamMgr::RegisterCapturerStateChangeCallback(napi_env env, napi_
 void NapiAudioStreamMgr::RegisterRenderErrorCallback(napi_env env, napi_value *args,
     const std::string &cbName, NapiAudioStreamMgr *napiStreamMgr)
 {
+    CHECK_AND_RETURN_LOG(napiStreamMgr != nullptr && napiStreamMgr->audioStreamMngr_ != nullptr && args != nullptr,
+        "Invalid input parameters");
     if (!napiStreamMgr->errorCallbackNapi_) {
         napiStreamMgr->errorCallbackNapi_ = std::make_shared<NapiAudioRenderErrorCallback>(env);
-        CHECK_AND_RETURN_LOG(napiStreamMgr->errorCallbackNapi_ != nullptr,
-            "Memory Allocation Failed !!");
+        CHECK_AND_RETURN_LOG(napiStreamMgr->errorCallbackNapi_ != nullptr, "Memory Allocation Failed !!");
 
         int32_t ret =
             napiStreamMgr->audioStreamMngr_->SetAudioFormatUnsupportedErrorCallback(napiStreamMgr->errorCallbackNapi_);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS,
-            "Registering of Render Error Callback Failed");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "Registering of Render Error Callback Failed");
     }
+
+    napi_valuetype paramType = napi_undefined;
+    napi_typeof(env, args[PARAM1], &paramType);
+    CHECK_AND_RETURN_LOG(paramType == napi_function, "paramType is invalid");
 
     std::shared_ptr<NapiAudioRenderErrorCallback> cb =
         std::static_pointer_cast<NapiAudioRenderErrorCallback>(napiStreamMgr->errorCallbackNapi_);
@@ -661,8 +665,8 @@ void NapiAudioStreamMgr::UnregisterCapturerChangeCallback(NapiAudioStreamMgr *na
 void NapiAudioStreamMgr::UnregisterRenderErrorCallback(NapiAudioStreamMgr *napiStreamMgr,
     size_t argc, napi_value *args)
 {
-    CHECK_AND_RETURN_LOG(napiStreamMgr->errorCallbackNapi_ != nullptr,
-        "errorCallbackNapi is nullptr");
+    CHECK_AND_RETURN_LOG(napiStreamMgr != nullptr && napiStreamMgr->audioStreamMngr_ != nullptr && args != nullptr &&
+        napiStreamMgr->errorCallbackNapi_ != nullptr, "Invalid input parameters");
     std::shared_ptr<NapiAudioRenderErrorCallback> cb =
         std::static_pointer_cast<NapiAudioRenderErrorCallback>(napiStreamMgr->errorCallbackNapi_);
     napi_value callback = nullptr;
@@ -858,8 +862,8 @@ napi_value NapiAudioStreamMgr::GetDirectPlaybackSupport(napi_env env, napi_callb
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "mandatory parameters are left unspecified",
-            NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argv != nullptr && argc >= ARGS_TWO,
+            "mandatory parameters are left unspecified", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetStreamInfo(env, &(context->audioStreamInfo), argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get audioStreamInfo failed",
             NAPI_ERR_INPUT_INVALID);
