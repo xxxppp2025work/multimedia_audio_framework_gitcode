@@ -972,8 +972,10 @@ bool AudioDeviceManager::GetScoState()
 void AudioDeviceManager::UpdateDevicesListInfo(const std::shared_ptr<AudioDeviceDescriptor> &d,
     const DeviceInfoUpdateCommand updateCommand)
 {
-    if (d != nullptr) {
-        shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(d);
+    if (d == nullptr) {
+        break;
+    }
+    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(d);
         bool ret = false;
         std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
         switch (updateCommand) {
@@ -997,7 +999,6 @@ void AudioDeviceManager::UpdateDevicesListInfo(const std::shared_ptr<AudioDevice
             AUDIO_ERR_LOG("cant find type:id %{public}d:%{public}d mac:%{public}s networkid:%{public}s in connected list",
                 d->deviceType_, audioId, GetEncryptStr(d->macAddress_).c_str(), GetEncryptStr(d->networkId_).c_str());
         }
-    }
 }
 
 bool AudioDeviceManager::UpdateDeviceCategory(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
