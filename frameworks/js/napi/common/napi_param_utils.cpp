@@ -807,49 +807,50 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
         argTransFlag = false;
         return status;
     }
-
-    status = GetValueInt32(env, "deviceRole", intValue, in);
-    if (status == napi_ok) {
-        if (std::find(DEVICE_ROLE_SET.begin(), DEVICE_ROLE_SET.end(), intValue) == DEVICE_ROLE_SET.end()) {
-            argTransFlag = false;
-            return status;
+    if (selectedAudioDevice != nullptr) {
+        status = GetValueInt32(env, "deviceRole", intValue, in);
+        if (status == napi_ok) {
+            if (std::find(DEVICE_ROLE_SET.begin(), DEVICE_ROLE_SET.end(), intValue) == DEVICE_ROLE_SET.end()) {
+                argTransFlag = false;
+                return status;
+            }
+            selectedAudioDevice->deviceRole_ = static_cast<DeviceRole>(intValue);
         }
-        selectedAudioDevice->deviceRole_ = static_cast<DeviceRole>(intValue);
-    }
-
-    status = GetValueInt32(env, "deviceType", intValue, in);
-    if (status == napi_ok) {
-        if (std::find(DEVICE_TYPE_SET.begin(), DEVICE_TYPE_SET.end(), intValue) == DEVICE_TYPE_SET.end()) {
-            argTransFlag = false;
-            return status;
+    
+        status = GetValueInt32(env, "deviceType", intValue, in);
+        if (status == napi_ok) {
+            if (std::find(DEVICE_TYPE_SET.begin(), DEVICE_TYPE_SET.end(), intValue) == DEVICE_TYPE_SET.end()) {
+                argTransFlag = false;
+                return status;
+            }
+            selectedAudioDevice->deviceType_ = static_cast<DeviceType>(intValue);
         }
-        selectedAudioDevice->deviceType_ = static_cast<DeviceType>(intValue);
+    
+        selectedAudioDevice->networkId_ = GetPropertyString(env, in, "networkId");
+    
+        if (GetValueInt32(env, "dmDeviceType", intValue, in) == napi_ok) {
+            selectedAudioDevice->dmDeviceType_ = static_cast<uint16_t>(intValue);
+        }
+        selectedAudioDevice->displayName_ = GetPropertyString(env, in, "displayName");
+    
+        status = GetValueInt32(env, "interruptGroupId", intValue, in);
+        if (status == napi_ok) {
+            selectedAudioDevice->interruptGroupId_ = intValue;
+        }
+    
+        status = GetValueInt32(env, "volumeGroupId", intValue, in);
+        if (status == napi_ok) {
+            selectedAudioDevice->volumeGroupId_ = intValue;
+        }
+    
+        selectedAudioDevice->macAddress_ = GetPropertyString(env, in, "address");
+    
+        status = GetValueInt32(env, "id", intValue, in);
+        if (status == napi_ok) {
+            selectedAudioDevice->deviceId_ = intValue;
+        }        
     }
-
-    selectedAudioDevice->networkId_ = GetPropertyString(env, in, "networkId");
-
-    if (GetValueInt32(env, "dmDeviceType", intValue, in) == napi_ok) {
-        selectedAudioDevice->dmDeviceType_ = static_cast<uint16_t>(intValue);
-    }
-    selectedAudioDevice->displayName_ = GetPropertyString(env, in, "displayName");
-
-    status = GetValueInt32(env, "interruptGroupId", intValue, in);
-    if (status == napi_ok) {
-        selectedAudioDevice->interruptGroupId_ = intValue;
-    }
-
-    status = GetValueInt32(env, "volumeGroupId", intValue, in);
-    if (status == napi_ok) {
-        selectedAudioDevice->volumeGroupId_ = intValue;
-    }
-
-    selectedAudioDevice->macAddress_ = GetPropertyString(env, in, "address");
-
-    status = GetValueInt32(env, "id", intValue, in);
-    if (status == napi_ok) {
-        selectedAudioDevice->deviceId_ = intValue;
-    }
-
+    
     return napi_ok;
 }
 
@@ -882,14 +883,16 @@ napi_status NapiParamUtils::GetAudioCapturerFilter(const napi_env &env, sptr<Aud
     int32_t intValue = {0};
     audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
 
-    napi_status status = GetValueInt32(env, "uid", intValue, in);
-    if (status == napi_ok) {
-        audioCapturerFilter->uid = intValue;
-    }
-
-    napi_value tempValue = nullptr;
-    if (napi_get_named_property(env, in, "capturerInfo", &tempValue) == napi_ok) {
-        GetCapturerInfo(env, &(audioCapturerFilter->capturerInfo), tempValue);
+    if (audioCapturerFilter != nullptr) {
+        napi_status status = GetValueInt32(env, "uid", intValue, in);
+        if (status == napi_ok) {
+            audioCapturerFilter->uid = intValue;
+        }
+    
+        napi_value tempValue = nullptr;
+        if (napi_get_named_property(env, in, "capturerInfo", &tempValue) == napi_ok) {
+            GetCapturerInfo(env, &(audioCapturerFilter->capturerInfo), tempValue);
+        }
     }
     return napi_ok;
 }
@@ -929,18 +932,20 @@ napi_status NapiParamUtils::GetAudioRendererFilter(const napi_env &env, sptr<Aud
     argTransFlag = true;
     audioRendererFilter = new(std::nothrow) AudioRendererFilter();
 
-    napi_status status = GetValueInt32(env, "uid", intValue, in);
-    if (status == napi_ok) {
-        audioRendererFilter->uid = intValue;
-    }
-
-    if (napi_get_named_property(env, in, "rendererInfo", &tempValue) == napi_ok) {
-        GetRendererInfo(env, &(audioRendererFilter->rendererInfo), tempValue);
-    }
-
-    status = GetValueInt32(env, "rendererId", intValue, in);
-    if (status == napi_ok) {
-        audioRendererFilter->streamId = intValue;
+    if (audioRendererFilter != nullptr) {
+        napi_status status = GetValueInt32(env, "uid", intValue, in);
+        if (status == napi_ok) {
+            audioRendererFilter->uid = intValue;
+        }
+    
+        if (napi_get_named_property(env, in, "rendererInfo", &tempValue) == napi_ok) {
+            GetRendererInfo(env, &(audioRendererFilter->rendererInfo), tempValue);
+        }
+    
+        status = GetValueInt32(env, "rendererId", intValue, in);
+        if (status == napi_ok) {
+            audioRendererFilter->streamId = intValue;
+        }
     }
 
     return napi_ok;

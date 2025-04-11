@@ -922,22 +922,24 @@ void AudioDeviceStatus::AddAudioDevice(AudioModuleInfo& moduleInfo, DeviceType d
     std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(devType,
         AudioPolicyUtils::GetInstance().GetDeviceRole(moduleInfo.role), volumeGroupId, interruptGroupId,
         LOCAL_NETWORK_ID);
-    if (!moduleInfo.supportedRate_.empty() && !moduleInfo.supportedChannels_.empty()) {
-        DeviceStreamInfo streamInfo = {};
-        for (auto supportedRate : moduleInfo.supportedRate_) {
-            streamInfo.samplingRate.insert(static_cast<AudioSamplingRate>(supportedRate));
+    if (audioDescriptor != nullptr) {
+        if (!moduleInfo.supportedRate_.empty() && !moduleInfo.supportedChannels_.empty()) {
+            DeviceStreamInfo streamInfo = {};
+            for (auto supportedRate : moduleInfo.supportedRate_) {
+                streamInfo.samplingRate.insert(static_cast<AudioSamplingRate>(supportedRate));
+            }
+            for (auto supportedChannels : moduleInfo.supportedChannels_) {
+                streamInfo.channels.insert(static_cast<AudioChannel>(supportedChannels));
+            }
+            audioDescriptor->SetDeviceCapability(streamInfo, 0);
         }
-        for (auto supportedChannels : moduleInfo.supportedChannels_) {
-            streamInfo.channels.insert(static_cast<AudioChannel>(supportedChannels));
-        }
-        audioDescriptor->SetDeviceCapability(streamInfo, 0);
+    
+        audioDescriptor->deviceId_ = AudioPolicyUtils::startDeviceId++;
+        AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
+        audioDeviceManager_.AddNewDevice(audioDescriptor);
+        audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
+        audioMicrophoneDescriptor_.AddMicrophoneDescriptor(audioDescriptor);
     }
-
-    audioDescriptor->deviceId_ = AudioPolicyUtils::startDeviceId++;
-    AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
-    audioDeviceManager_.AddNewDevice(audioDescriptor);
-    audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
-    audioMicrophoneDescriptor_.AddMicrophoneDescriptor(audioDescriptor);
 }
 
 int32_t AudioDeviceStatus::OnServiceConnected(AudioServiceIndex serviceIndex)

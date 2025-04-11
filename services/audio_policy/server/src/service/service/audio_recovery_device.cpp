@@ -108,17 +108,21 @@ int32_t AudioRecoveryDevice::HandleRecoveryPreferredDevices(int32_t preferredTyp
             preferredType == Media::MediaMonitor::RING_RENDER ||
             preferredType == Media::MediaMonitor::TONE_RENDER) {
             sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
-            audioRendererFilter->uid = -1;
-            audioRendererFilter->rendererInfo.streamUsage =
-                static_cast<StreamUsage>(usageOrSourceType);
-            result = SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
+            if (audioRendererFilter != nullptr) {
+                audioRendererFilter->uid = -1;
+                audioRendererFilter->rendererInfo.streamUsage =
+                    static_cast<StreamUsage>(usageOrSourceType);
+                result = SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
+            }
         } else if (preferredType == Media::MediaMonitor::CALL_CAPTURE ||
                     preferredType == Media::MediaMonitor::RECORD_CAPTURE) {
             sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
-            audioCapturerFilter->uid = -1;
-            audioCapturerFilter->capturerInfo.sourceType =
-                static_cast<SourceType>(usageOrSourceType);
-            result = SelectInputDevice(audioCapturerFilter, deviceDescriptorVector);
+            if (audioCapturerFilter != nullptr) {
+                audioCapturerFilter->uid = -1;
+                audioCapturerFilter->capturerInfo.sourceType =
+                    static_cast<SourceType>(usageOrSourceType);
+                result = SelectInputDevice(audioCapturerFilter, deviceDescriptorVector);
+            } 
         }
     }
     return result;
