@@ -809,8 +809,7 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
     }
 
     if (selectedAudioDevice == nullptr) {
-        AUDIO_ERR_LOG ("selectedAudioDevice is nullptr.");
-        return status;
+        return napi_ok;
     }
     status = GetValueInt32(env, "deviceRole", intValue, in);
     if (status == napi_ok) {
