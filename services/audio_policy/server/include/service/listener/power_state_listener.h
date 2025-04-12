@@ -16,6 +16,7 @@
 #ifndef ST_POWER_STATE_LISTENER_H
 #define ST_POWER_STATE_LISTENER_H
 
+#include <string>
 #include <iremote_stub.h>
 #include <audio_interrupt_info.h>
 
@@ -52,8 +53,8 @@ class PowerStateListener : public PowerStateListenerStub {
 public:
     explicit PowerStateListener(const sptr<AudioPolicyServer> audioPolicyServer);
     virtual ~PowerStateListener() {}
-    void OnSyncSleep(bool OnForceSleep) override;
-    void OnSyncWakeup(bool OnForceSleep) override;
+    void OnSyncSleep(bool OnForceSleep, const std::string& suspendTag) override;
+    void OnSyncWakeup(bool OnForceSleep, const std::string& suspendTag) override;
     void ControlAudioFocus(bool applyFocus);
 
 private:

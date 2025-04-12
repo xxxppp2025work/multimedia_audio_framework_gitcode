@@ -65,7 +65,8 @@ int32_t PowerStateListenerStub::OnRemoteRequest(uint32_t code, MessageParcel &da
 int32_t PowerStateListenerStub::OnSyncSleepCallbackStub(MessageParcel &data)
 {
     bool forceSleep = data.ReadBool();
-    OnSyncSleep(forceSleep);
+    std::string reason = Str16ToStr8(data.ReadString16());
+    OnSyncSleep(forceSleep, reason);
 
     return ERR_OK;
 }
@@ -73,7 +74,8 @@ int32_t PowerStateListenerStub::OnSyncSleepCallbackStub(MessageParcel &data)
 int32_t PowerStateListenerStub::OnSyncWakeupCallbackStub(MessageParcel &data)
 {
     bool forceSleep = data.ReadBool();
-    OnSyncWakeup(forceSleep);
+    std::string reason = Str16ToStr8(data.ReadString16());
+    OnSyncWakeup(forceSleep, reason);
 
     return ERR_OK;
 }
@@ -81,19 +83,19 @@ int32_t PowerStateListenerStub::OnSyncWakeupCallbackStub(MessageParcel &data)
 PowerStateListener::PowerStateListener(const sptr<AudioPolicyServer> audioPolicyServer)
     : audioPolicyServer_(audioPolicyServer) {}
 
-void PowerStateListener::OnSyncSleep(bool OnForceSleep)
+void PowerStateListener::OnSyncSleep(bool OnForceSleep, const std::string& suspendTag)
 {
     CHECK_AND_RETURN_LOG(OnForceSleep, "OnSyncSleep not force sleep");
 
-    AUDIO_INFO_LOG("OnSyncSleep, try to control audio focus");
+    AUDIO_INFO_LOG("OnSyncSleep, try to control audio focus, suspendTag:%{public}s", suspendTag.c_str());
     ControlAudioFocus(true);
 }
 
-void PowerStateListener::OnSyncWakeup(bool OnForceSleep)
+void PowerStateListener::OnSyncWakeup(bool OnForceSleep, const std::string& suspendTag)
 {
     CHECK_AND_RETURN_LOG(OnForceSleep, "OnSyncWakeup not force sleep");
 
-    AUDIO_INFO_LOG("OnSyncWakeup, try to release audio focus");
+    AUDIO_INFO_LOG("OnSyncWakeup, try to release audio focus, suspendTag:%{public}s", suspendTag.c_str());
     ControlAudioFocus(false);
 }
 
