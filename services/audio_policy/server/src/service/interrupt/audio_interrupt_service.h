@@ -170,6 +170,7 @@ private:
     int32_t NotifyFocusAbandoned(const int32_t clientId, const AudioInterrupt &audioInterrupt);
     int32_t AbandonAudioFocusInternal(const int32_t clientId, const AudioInterrupt &audioInterrupt);
 
+    void FocusStrategyBaseMusic(const AudioInterrupt &audioInterrupt);
     // modern interrupt interfaces
     int32_t ActivateAudioInterruptInternal(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
         const bool isUpdatedAudioStrategy, bool &updateScene);
