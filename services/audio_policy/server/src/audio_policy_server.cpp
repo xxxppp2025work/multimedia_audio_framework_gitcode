@@ -94,6 +94,7 @@ constexpr uid_t UID_PENCIL_PROCESS_SA = 7555;
 constexpr uid_t UID_RESOURCE_SCHEDULE_SERVICE = 1096;
 constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
 constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
+constexpr uint32_t FIRST_BOOT_SCREEN_ON_DELAY_MS = 5000;
 const char* MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
 const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
 const char* USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
@@ -217,9 +218,7 @@ void AudioPolicyServer::OnStart()
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     SubscribeVolumeKeyEvents();
 #endif
-    if (getpid() > FIRST_SCREEN_ON_PID) {
-        audioPolicyService_.SetFirstScreenOn();
-    }
+    SetFirstScreenOn();
     // Restart to reload the volume.
     InitKVStore();
     isScreenOffOrLock_ = !PowerMgr::PowerMgrClient::GetInstance().IsScreenOn(true);
@@ -3999,6 +3998,18 @@ void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t ses
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
     audioPolicyService_.TriggerFetchDevice();
+}
+
+void AudioPolicyServer::SetFirstScreenOn()
+{
+    if (getpid() > FIRST_SCREEN_ON_PID) {
+        audioPolicyService_.SetFirstScreenOn();
+    }
+    std::thread setFirstScreenOnThread = std::thread([this] {
+        usleep(FIRST_BOOT_SCREEN_ON_DELAY_MS);
+        audioPolicyService_.SetFirstScreenOn();
+    });
+    setFirstScreenOnThread.detach();
 }
 } // namespace AudioStandard
 } // namespace OHOS
