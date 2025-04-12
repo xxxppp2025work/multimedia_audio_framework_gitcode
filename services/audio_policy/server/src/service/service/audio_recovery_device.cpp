@@ -108,6 +108,10 @@ int32_t AudioRecoveryDevice::HandleRecoveryPreferredDevices(int32_t preferredTyp
             preferredType == Media::MediaMonitor::RING_RENDER ||
             preferredType == Media::MediaMonitor::TONE_RENDER) {
             sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+            if (audioRendererFilter == nullptr) {
+                AUDIO_ERR_LOG("audioRendererFilter is nullptr.");
+                return result;
+            }
             audioRendererFilter->uid = -1;
             audioRendererFilter->rendererInfo.streamUsage =
                 static_cast<StreamUsage>(usageOrSourceType);
@@ -115,6 +119,10 @@ int32_t AudioRecoveryDevice::HandleRecoveryPreferredDevices(int32_t preferredTyp
         } else if (preferredType == Media::MediaMonitor::CALL_CAPTURE ||
                     preferredType == Media::MediaMonitor::RECORD_CAPTURE) {
             sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+            if (audioCapturerFilter == nullptr) {
+                AUDIO_ERR_LOG("audioCapturerFilter is nullptr.");
+                return result;
+            }
             audioCapturerFilter->uid = -1;
             audioCapturerFilter->capturerInfo.sourceType =
                 static_cast<SourceType>(usageOrSourceType);

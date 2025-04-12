@@ -121,7 +121,8 @@ int32_t AudioPolicyManager::RegisterPolicyCallbackClientFunc(const sptr<IAudioPo
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     std::unique_lock<std::mutex> lock(registerCallbackMutex_);
     if (audioPolicyClientStubCB_ == nullptr) {
-        audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+        AUDIO_ERR_LOG("audioPolicyClientStubCB_ is nullptr");
+        return ERROR;
     }
     sptr<IRemoteObject> object = audioPolicyClientStubCB_->AsObject();
     if (object == nullptr) {

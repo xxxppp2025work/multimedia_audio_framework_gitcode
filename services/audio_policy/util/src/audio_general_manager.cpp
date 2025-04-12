@@ -313,6 +313,10 @@ int32_t AudioGeneralManager::SelectOutputDevice(
         return ERR_INVALID_PARAM;
     }
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    if (audioRendererFilter == nullptr) {
+        AUDIO_ERR_LOG("audioRendererFilter is nullptr.");
+        return ERR_INVALID_PARAM;
+    }
     audioRendererFilter->uid = -1;
     int32_t ret = AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
     return ret;

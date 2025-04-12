@@ -808,6 +808,10 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
         return status;
     }
 
+    if (selectedAudioDevice == nullptr) {
+        AUDIO_ERR_LOG ("selectedAudioDevice is nullptr.");
+        return status;
+    }
     status = GetValueInt32(env, "deviceRole", intValue, in);
     if (status == napi_ok) {
         if (std::find(DEVICE_ROLE_SET.begin(), DEVICE_ROLE_SET.end(), intValue) == DEVICE_ROLE_SET.end()) {
@@ -883,12 +887,12 @@ napi_status NapiParamUtils::GetAudioCapturerFilter(const napi_env &env, sptr<Aud
     audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
 
     napi_status status = GetValueInt32(env, "uid", intValue, in);
-    if (status == napi_ok) {
+    if (audioCapturerFilter != nullptr && status == napi_ok) {
         audioCapturerFilter->uid = intValue;
     }
 
     napi_value tempValue = nullptr;
-    if (napi_get_named_property(env, in, "capturerInfo", &tempValue) == napi_ok) {
+    if (audioCapturerFilter != nullptr && napi_get_named_property(env, in, "capturerInfo", &tempValue) == napi_ok) {
         GetCapturerInfo(env, &(audioCapturerFilter->capturerInfo), tempValue);
     }
     return napi_ok;
@@ -929,6 +933,10 @@ napi_status NapiParamUtils::GetAudioRendererFilter(const napi_env &env, sptr<Aud
     argTransFlag = true;
     audioRendererFilter = new(std::nothrow) AudioRendererFilter();
 
+    if (audioRendererFilter == nullptr) {
+        AUDIO_ERR_LOG("audioRendererFilter is nullptr.");
+        return napi_ok;
+    }
     napi_status status = GetValueInt32(env, "uid", intValue, in);
     if (status == napi_ok) {
         audioRendererFilter->uid = intValue;
