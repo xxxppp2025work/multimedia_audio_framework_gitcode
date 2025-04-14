@@ -499,7 +499,7 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
 {
     uint32_t paIndex = 0;
     uint32_t id = OpenNewAudioPortAndRoute(pipeInfo, paIndex);
-    CHECK_AND_RETURN_LOG(id != HDI_INVALID_ID, "Invalid sink");
+    CHECK_AND_RETURN_LOG(id != HDI_INVALID_ID && paIndex != HDI_INVALID_ID, "Invalid sink");
     pipeInfo->id_ = id;
     pipeInfo->paIndex_ = paIndex;
 
@@ -587,7 +587,7 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
 {
     uint32_t paIndex = 0;
     uint32_t sourceId = OpenNewAudioPortAndRoute(pipeInfo, paIndex);
-    CHECK_AND_RETURN_LOG(sourceId != HDI_INVALID_ID, "Invalid sink");
+    CHECK_AND_RETURN_LOG(sourceId != HDI_INVALID_ID && paIndex != HDI_INVALID_ID, "Invalid source");
     pipeInfo->id_ = sourceId;
     pipeInfo->paIndex_ = paIndex;
 
