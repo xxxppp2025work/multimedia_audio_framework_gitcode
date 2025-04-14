@@ -4006,7 +4006,7 @@ void AudioPolicyServer::SetFirstScreenOn()
         audioPolicyService_.SetFirstScreenOn();
     }
     std::thread setFirstScreenOnThread = std::thread([this] {
-        usleep(FIRST_BOOT_SCREEN_ON_DELAY_MS);
+        usleep(FIRST_BOOT_SCREEN_ON_DELAY_S);
         audioPolicyService_.SetFirstScreenOn();
     });
     setFirstScreenOnThread.detach();
