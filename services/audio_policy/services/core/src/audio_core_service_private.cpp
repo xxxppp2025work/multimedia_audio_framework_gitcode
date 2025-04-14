@@ -339,8 +339,8 @@ int32_t AudioCoreService::LoadA2dpModule(DeviceType deviceType, const AudioStrea
             GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
             uint32_t paIndex = 0;
             AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
-            CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
-                "OpenAudioPort failed %{public}d", ioHandle);
+            CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE && paIndex != OPEN_PORT_FAILURE,
+                ERR_OPERATION_FAILED, "OpenAudioPort failed ioHandle[%{public}u], paId[%{public}u]", ioHandle, paIndex);
             audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
 
             std::shared_ptr<AudioPipeInfo> pipeInfo_ = std::make_shared<AudioPipeInfo>();
@@ -396,8 +396,8 @@ int32_t AudioCoreService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devic
     GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
     uint32_t paIndex = 0;
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
-    CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
-        "OpenAudioPort failed %{public}d", ioHandle);
+    CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE && paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
+        "OpenAudioPort failed ioHandle[%{public}u], paId[%{public}u]", ioHandle, paIndex);
     audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
 
     std::shared_ptr<AudioPipeInfo> pipeInfo_ = std::make_shared<AudioPipeInfo>();
@@ -1282,7 +1282,8 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
                 pipeInfo->moduleInfo_.name, true, INPUT_DEVICES_FLAG);
         }
     }
-    CHECK_AND_RETURN_RET_LOG(id != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED, "OpenAudioPort failed %{public}d", id);
+    CHECK_AND_RETURN_RET_LOG(id != OPEN_PORT_FAILURE && paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
+        "OpenAudioPort failed ioHandle[%{public}u], paId[%{public}u]", id, paIndex);
     audioIOHandleMap_.AddIOHandleInfo(pipeInfo->moduleInfo_.name, id);
     AUDIO_INFO_LOG("Get HDI id: %{public}u, paIndex %{public}u", id, paIndex);
     return id;
