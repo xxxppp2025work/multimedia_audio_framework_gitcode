@@ -2626,7 +2626,7 @@ ohos_unittest("audio_device_common_unit_test") {
 
   use_exceptions = true
 
-defines = [ "BLUETOOTH_ENABLE" ]
+  defines = [ "BLUETOOTH_ENABLE" ]
 
   cflags = [
     "-Wall",
@@ -2679,9 +2679,10 @@ defines = [ "BLUETOOTH_ENABLE" ]
     "samgr:samgr_proxy",
   ]
 
-  sources = [ "./unittest/audio_device_common_unit_test/src/audio_device_common_unit_test.cpp",
-              "./unittest/audio_device_common_unit_test/src/audio_device_common_unit_next_test.cpp"
-   ]
+  sources = [
+    "./unittest/audio_device_common_unit_test/src/audio_device_common_unit_next_test.cpp",
+    "./unittest/audio_device_common_unit_test/src/audio_device_common_unit_test.cpp",
+  ]
 
   deps = [ "../../audio_policy:audio_policy_service_static" ]
 }
