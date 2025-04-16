@@ -43,6 +43,11 @@ static sptr<IStandardAudioService> g_btProxy = nullptr;
 mutex g_btProxyMutex;
 #endif
 
+static int16_t IsDistributedOutput(const AudioDeviceDescriptor &desc)
+{
+    return (desc.deviceType_ == DEVICE_TYPE_SPEAKER && desc.networkId_ != LOCAL_NETWORK_ID) ? 1 : 0;
+}
+
 AudioCoreService::AudioCoreService()
     : audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
       audioActiveDevice_(AudioActiveDevice::GetInstance()),
@@ -798,6 +803,15 @@ void AudioCoreService::OnReceiveBluetoothEvent(const std::string macAddress, con
 int32_t AudioCoreService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
+    if (!selectedDesc.empty() && selectedDesc[0]) {
+        int16_t isDistOld = IsDistributedOutput(audioActiveDevice_.GetCurrentOutputDevice());
+        int16_t isDistNew = IsDistributedOutput(selectedDesc[0]);
+        AUDIO_INFO_LOG("Entry. Check Distributed Output Change[%{public}d-->%{public}d]", isDistOld, isDistNew);
+        int16_t flag = isDistNew - isDistOld;
+        if (audioPolicyServerHandler_ && flag != 0) {
+            audioPolicyServerHandler_->SendDistribuitedOutputChangeEvent(selectedDesc[0], flag > 0);
+        }
+    }
     return audioRecoveryDevice_.SelectOutputDevice(audioRendererFilter, selectedDesc);
 }
 
