@@ -1789,12 +1789,6 @@ int32_t AudioSystemManager::SetQueryAllowedPlaybackCallback(
     return AudioPolicyManager::GetInstance().SetQueryAllowedPlaybackCallback(callback);
 }
 
-int32_t AudioSystemManager::OnVoiceWakeupState(bool state)
-{
-    AUDIO_INFO_LOG("%{public}d", state);
-    return SUCCESS;
-}
-
 uint16_t AudioSystemManager::GetDmDeviceType() const
 {
     return AudioPolicyManager::GetInstance().GetDmDeviceType();

@@ -68,6 +68,7 @@ public:
     int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
     void SetOffloadStatus(uint32_t sessionId);
     void ResetOffloadStatus(uint32_t sessionId);
+    int32_t OnVoiceWakeupState(bool state);
 private:
     AudioOffloadStream() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
@@ -102,6 +103,7 @@ private:
     AudioIOHandleMap& audioIOHandleMap_;
     AudioRouteMap& audioRouteMap_;
     AudioActiveDevice& audioActiveDevice_;
+    std::atomic<bool> voiceWakeupState_ = false;
 };
 
 }

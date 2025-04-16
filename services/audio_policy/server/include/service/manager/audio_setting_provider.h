@@ -81,7 +81,7 @@ private:
     static bool ReleaseDataShareHelper(std::shared_ptr<DataShare::DataShareHelper> &helper);
     static Uri AssembleUri(const std::string &key, std::string tableType = "");
 
-    static AudioSettingProvider *instance_;
+    static std::atomic<AudioSettingProvider*> instance_;
     static std::mutex mutex_;
     static sptr<IRemoteObject> remoteObj_;
     static std::string SettingSystemUrlProxy_;

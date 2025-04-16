@@ -25,7 +25,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-AudioSettingProvider* AudioSettingProvider::instance_;
+std::atomic<AudioSettingProvider*> AudioSettingProvider::instance_ = nullptr;
 std::mutex AudioSettingProvider::mutex_;
 std::atomic<bool> AudioSettingProvider::isDataShareReady_ = false;
 sptr<IRemoteObject> AudioSettingProvider::remoteObj_;
