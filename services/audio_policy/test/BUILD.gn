@@ -4743,12 +4743,9 @@ ohos_unittest("client_type_manager_unit_test") {
     "-fno-access-control",
   ]
 
-
   deps = [ "../../audio_policy:audio_policy_service_static" ]
 
-  external_deps = [
-    "eventhandler:libeventhandler",
-  ]
+  external_deps = [ "eventhandler:libeventhandler" ]
 
   cflags += [ "--coverage" ]
   ldflags = [ "--coverage" ]
