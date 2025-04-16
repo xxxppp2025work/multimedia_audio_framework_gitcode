@@ -25,19 +25,10 @@
 #include "v4_0/iaudio_manager.h"
 #include "hdf_remote_service.h"
 #include "adapter/i_device_manager.h"
+#include "adapter/i_device_adapter.h"
 
 namespace OHOS {
 namespace AudioStandard {
-typedef struct LocalAdapterWrapper {
-    struct IAudioAdapter *adapter_ = nullptr;
-    struct AudioAdapterDescriptor adapterDesc_ = {};
-    std::unordered_set<uint32_t> hdiRenderIds_;
-    std::unordered_set<uint32_t> hdiCaptureIds_;
-    std::mutex renderMtx_;
-    std::mutex captureMtx_;
-    int32_t routeHandle_ = -1;
-} LocalAdapterWrapper;
-
 typedef struct LocalParameter {
     std::string adapterName_ = "";
     AudioParamKey key_ = AudioParamKey::NONE;
@@ -50,40 +41,15 @@ public:
     LocalDeviceManager() = default;
     ~LocalDeviceManager() = default;
 
-    int32_t LoadAdapter(const std::string &adapterName) override;
-    void UnloadAdapter(const std::string &adapterName, bool force = false) override;
-
-    void AllAdapterSetMicMute(bool isMute) override;
-
-    void SetAudioParameter(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
-        const std::string &value) override;
-    std::string GetAudioParameter(const std::string &adapterName, const AudioParamKey key,
-        const std::string &condition) override;
-    int32_t SetVoiceVolume(const std::string &adapterName, float volume) override;
-    int32_t SetOutputRoute(const std::string &adapterName, const std::vector<DeviceType> &devices,
-        int32_t streamId) override;
-    int32_t SetInputRoute(const std::string &adapterName, DeviceType device, int32_t streamId,
-        int32_t inputType) override;
-    void SetMicMute(const std::string &adapterName, bool isMute) override;
-
-    void *CreateRender(const std::string &adapterName, void *param, void *deviceDesc, uint32_t &hdiRenderId) override;
-    void DestroyRender(const std::string &adapterName, uint32_t hdiRenderId) override;
-    void *CreateCapture(const std::string &adapterName, void *param, void *deviceDesc, uint32_t &hdiCaptureId) override;
-    void DestroyCapture(const std::string &adapterName, uint32_t hdiCaptureId) override;
-
-    void DumpInfo(std::string &dumpString) override;
-
-    void SetDmDeviceType(uint16_t dmDeviceType) override;
+    std::shared_ptr<IDeviceAdapter> LoadAdapter(const std::string &adapterName, bool needReInitManager) override;
+    void UnloadAdapter(std::shared_ptr<IDeviceAdapter> deviceAdapter) override;
 
 private:
-    void InitAudioManager(void);
-    std::shared_ptr<LocalAdapterWrapper> GetAdapter(const std::string &adapterName, bool tryCreate = false);
-    int32_t SwitchAdapterDesc(struct AudioAdapterDescriptor *descs, const std::string &adapterName, uint32_t size);
-    uint32_t GetPortId(const std::string &adapterName, enum AudioPortDirection portFlag);
-    int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink);
-    int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source);
     void SaveSetParameter(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value);
+
+    void InitAudioManager(void);
+    int32_t SwitchAdapterDesc(struct AudioAdapterDescriptor *descs, const std::string &adapterName, uint32_t size);
 
 private:
     static constexpr uint32_t MAX_AUDIO_ADAPTER_NUM = 5;
@@ -92,8 +58,6 @@ private:
     struct IAudioManager *audioManager_ = nullptr;
     struct HdfRemoteService *hdfRemoteService_ = nullptr;
     struct HdfDeathRecipient *hdfDeathRecipient_ = nullptr;
-    std::unordered_map<std::string, std::shared_ptr<LocalAdapterWrapper> > adapters_;
-    std::mutex adapterMtx_;
     std::vector<LocalParameter> reSetParams_;
     uint16_t dmDeviceType_ = 0;
 };
