@@ -1680,6 +1680,34 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_APP, STREAM_APP}
 };
 
+std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::volumeTypeForDBMap_ = {
+    {STREAM_VOICE_CALL, STREAM_VOICE_CALL},
+    {STREAM_VOICE_COMMUNICATION, STREAM_VOICE_CALL},
+    {STREAM_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL_ASSISTANT},
+
+    {STREAM_RING, STREAM_RING},
+    {STREAM_SYSTEM, STREAM_RING},
+    {STREAM_NOTIFICATION, STREAM_RING},
+    {STREAM_SYSTEM_ENFORCED, STREAM_RING},
+    {STREAM_DTMF, STREAM_RING},
+    {STREAM_VOICE_RING, STREAM_RING},
+
+    {STREAM_MUSIC, STREAM_MUSIC},
+    {STREAM_MEDIA, STREAM_MUSIC},
+    {STREAM_MOVIE, STREAM_MUSIC},
+    {STREAM_GAME, STREAM_MUSIC},
+    {STREAM_SPEECH, STREAM_MUSIC},
+    {STREAM_NAVIGATION, STREAM_MUSIC},
+    {STREAM_VOICE_MESSAGE, STREAM_MUSIC},
+
+    {STREAM_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT},
+    {STREAM_ALARM, STREAM_ALARM},
+    {STREAM_ACCESSIBILITY, STREAM_ACCESSIBILITY},
+    {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
+    {STREAM_ALL, STREAM_ALL},
+    {STREAM_APP, STREAM_APP}
+};
+
 std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeMap_ = {
     {STREAM_VOICE_CALL, STREAM_MUSIC},
     {STREAM_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL_ASSISTANT},
@@ -1737,6 +1765,16 @@ AudioVolumeType VolumeUtils::GetVolumeTypeFromStreamType(AudioStreamType streamT
     }
     return STREAM_MUSIC;
 }
+
+AudioVolumeType VolumeUtils::GetVolumeTypeForVolumeDB(AudioStreamType streamType)
+{
+    auto it = volumeTypeForDBMap_.find(streamType);
+    if (it != volumeTypeForDBMap_.end()) {
+        return it->second;
+    }
+    return STREAM_MUSIC;
+}
+
 
 std::string GetEncryptStr(const std::string &src)
 {

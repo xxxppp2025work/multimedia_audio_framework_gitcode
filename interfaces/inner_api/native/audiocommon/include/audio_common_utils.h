@@ -24,11 +24,13 @@ namespace AudioStandard {
 class VolumeUtils {
 public:
     static AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
+    static AudioVolumeType GetVolumeTypeForVolumeDB(AudioStreamType streamType);
     static void SetPCVolumeEnable(const bool& isPCVolumeEnable);
     static bool IsPCVolumeEnable();
 private:
     static std::unordered_map<AudioStreamType, AudioVolumeType> defaultVolumeMap_;
     static std::unordered_map<AudioStreamType, AudioVolumeType> audioPCVolumeMap_;
+    static std::unordered_map<AudioStreamType, AudioVolumeType> volumeTypeForDBMap_;
     static std::unordered_map<AudioStreamType, AudioVolumeType>& GetVolumeMap();
     static bool isPCVolumeEnable_;
 };
