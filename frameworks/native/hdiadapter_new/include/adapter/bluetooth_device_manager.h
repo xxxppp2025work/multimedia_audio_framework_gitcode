@@ -21,7 +21,7 @@
 #include <unordered_map>
 #include <set>
 #include <mutex>
-#include "audio_proxy_manager.h"
+#include "bluetooth_interface/audio_proxy_manager.h"
 #include "adapter/i_device_manager.h"
 
 namespace OHOS {
