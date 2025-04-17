@@ -20,7 +20,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace Media {
 const int SUCCESS = 0;
-const int result_size = -26;
+const int RESULT_SIZE = -26;
 constexpr int32_t TONE_CATEGORY = -13;
 static const int32_t SYSPARA_SIZE = 128;
 void SystemSoundManagerUnitNextTest::SetUpTestCase(void) {}
@@ -165,7 +165,7 @@ HWTEST(SystemSoundManagerUnitNextTest, ReadDefaultToneHaptics_001, TestSize.Leve
     const char* paramName = "invalid_param";
     char paramValue[SYSPARA_SIZE] = {0};
 
-    memset(paramValue, 0, SYSPARA_SIZE);
+    std::fill_n(paramValue, SYSPARA_SIZE, 0);
     ToneHapticsType toneHapticsType = CALL_SIM_CARD_0;
     systemSoundManagerImpl_->ReadDefaultToneHaptics(paramName, toneHapticsType);
     EXPECT_TRUE(systemSoundManagerImpl_->defaultToneHapticsUriMap_.empty());
@@ -189,7 +189,7 @@ HWTEST(SystemSoundManagerUnitNextTest, RemoveSourceTypeForRingTone_001, TestSize
     RingtoneType ringtoneType = RINGTONE_TYPE_SIM_CARD_1;
     SourceType sourceType = SOURCE_TYPE_CUSTOMISED;
     int32_t result = systemSoundManagerImpl_->RemoveSourceTypeForRingTone(dataShareHelper, ringtoneType, sourceType);
-    EXPECT_EQ(result, result_size);
+    EXPECT_EQ(result, RESULT_SIZE);
 }
 
 /**
@@ -797,7 +797,6 @@ HWTEST(SystemSoundManagerUnitNextTest, AddCustomizedToneByExternalUri_001, TestS
  */
 HWTEST(SystemSoundManagerUnitNextTest, GetCustomizedTone_001, TestSize.Level0)
 {
-
     auto systemSoundManager_ = SystemSoundManagerFactory::CreateSystemSoundManager();
     std::shared_ptr<SystemSoundManagerImpl> systemSoundManagerImpl_ =
         std::static_pointer_cast<SystemSoundManagerImpl>(systemSoundManager_);
