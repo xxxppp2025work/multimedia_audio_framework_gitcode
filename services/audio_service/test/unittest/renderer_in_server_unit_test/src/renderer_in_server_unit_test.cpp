@@ -1270,6 +1270,28 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_009, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test Start API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerStart_010
+ * @tc.desc  : Test Start and OnStatusUpdate in OPERATION_PAUSED when standByEnable_ false with managerType is
+ * EAC3_PLAYBACK.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerStart_010, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_EAC3, SAMPLE_S32LE, STEREO,
+        AudioChannelLayout::CH_LAYOUT_STEREO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    rendererInServer->OnStatusUpdate(OPERATION_PAUSED);
+
+    ret = rendererInServer->Start();
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
  * @tc.name  : Test Pause API
  * @tc.type  : FUNC
  * @tc.number: RendererInServerPause_001
@@ -1384,6 +1406,27 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerPause_005, TestSize.Level1)
 
     ret = rendererInServer->Pause();
     EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+}
+
+/**
+ * @tc.name  : Test Pause API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerPause_006
+ * @tc.desc  : Test Pause when streamtype is eac3 .
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerPause_006, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_EAC3, SAMPLE_S32LE, STEREO,
+        AudioChannelLayout::CH_LAYOUT_STEREO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    rendererInServer->OnStatusUpdate(OPERATION_STARTED);
+
+    ret = rendererInServer->Pause();
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
