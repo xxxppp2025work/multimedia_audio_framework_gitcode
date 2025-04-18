@@ -1812,15 +1812,13 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
     }
     result = ringCache_->Dequeue({desc.buffer, targetSize});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
-
-    // volume process in client
-    if (volumeRamp_.IsActive()) {
-        // do not call SetVolume here.
-        clientVolume_ = volumeRamp_.GetRampVolume();
-        AUDIO_INFO_LOG("clientVolume_:%{public}f", clientVolume_);
-        Trace traceVolume("RendererInClientInner::WriteCacheData:Ramp:clientVolume_:" + std::to_string(clientVolume_));
-        SetInnerVolume(clientVolume_);
+    if (isDrain && targetSize < clientSpanSizeInByte_ && clientConfig_.streamInfo.format == SAMPLE_U8) {
+        size_t leftSize = clientSpanSizeInByte_ - targetSize;
+        int32_t ret = memset_s(desc.buffer + targetSize, leftSize, 0X7F, leftSize);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "left buffer memset output failed");
     }
+
+    ProcessVolume();
 
     DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
     DfxOperation(desc, clientConfig_.streamInfo.format, clientConfig_.streamInfo.channels);
@@ -1830,6 +1828,18 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
     ipcStream_->UpdatePosition(); // notiify server update position
     HandleRendererPositionChanges(desc.bufLength);
     return SUCCESS;
+}
+
+bool RendererInClientInner::ProcessVolume()
+{
+    // volume process in client
+    if (volumeRamp_.IsActive()) {
+        // do not call SetVolume here.
+        clientVolume_ = volumeRamp_.GetRampVolume();
+        AUDIO_INFO_LOG("clientVolume_:%{public}f", clientVolume_);
+        Trace traceVolume("RendererInClientInner::WriteCacheData:Ramp:clientVolume_:" + std::to_string(clientVolume_));
+        SetInnerVolume(clientVolume_);
+    }
 }
 
 void RendererInClientInner::DfxOperation(BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel) const

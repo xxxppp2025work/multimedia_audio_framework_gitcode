@@ -271,6 +271,9 @@ private:
     void InitDirectPipeType();
 
     bool DrainAudioStreamInner(bool stopFlag = false);
+
+    void ProcessVolume();
+
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
