@@ -2120,9 +2120,9 @@ int32_t AudioPolicyService::SetQueryAllowedPlaybackCallback(const sptr<IRemoteOb
 }
 
 DirectPlaybackMode AudioPolicyService::GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
-    const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage)
+    const AudioStreamInfo &streamInfo)
 {
-    return audioConfigManager_.GetDirectPlaybackSupport(desc, streamInfo, streamUsage);
+    return audioConfigManager_.GetDirectPlaybackSupport(desc, streamInfo);
 }
 
 void AudioPolicyService::SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel,

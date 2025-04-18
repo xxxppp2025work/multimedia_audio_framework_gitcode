@@ -3996,7 +3996,7 @@ DirectPlaybackMode AudioPolicyServer::GetDirectPlaybackSupport(const AudioStream
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioRouterCenter_.FetchOutputDevices(
         streamUsage, callerUid);
     CHECK_AND_RETURN_RET_LOG(!descs.empty(), DIRECT_PLAYBACK_NOT_SUPPORTED, "find output device failed");
-    return audioPolicyService_.GetDirectPlaybackSupport(descs.front(), streamInfo, streamUsage);
+    return audioPolicyService_.GetDirectPlaybackSupport(descs.front(), streamInfo);
 }
 
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)

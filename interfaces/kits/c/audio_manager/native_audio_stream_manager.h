@@ -58,11 +58,11 @@ extern "C" {
 typedef struct OH_AudioStreamManager OH_AudioStreamManager;
 
 /**
- * @brief Query the audio stream manager handle,
- * which should be set as the first parameter in stream management releated functions.
+ * @brief Query the audio stream manager handle, which should be set as the first parameter in stream management
+ * releated functions.
  *
- * @param audioStreamManager the {@link OH_AudioStreamManager}
- * handle returned by {@link OH_AudioManager_GetAudioStreamManager}.
+ * @param audioStreamManager the {@link OH_AudioStreamManager} handle returned by
+ * {@link OH_AudioManager_GetAudioStreamManager}.
  * @return Function result code:
  *         {@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.
  *         {@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM}:
@@ -74,12 +74,12 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioStreamManager(OH_AudioStreamManage
 /**
  * @brief Gets the mode of direct playback available for a given audio format with current active device.
  *
- * @param audioStreamManager the {@link OH_AudioStreamManager}
- * handle returned by {@link OH_AudioManager_GetAudioStreamManager}.
+ * @param audioStreamManager the {@link OH_AudioStreamManager} handle returned by
+ * {@link OH_AudioManager_GetAudioStreamManager}.
  * @param streamInfo the {@link OH_AudioStreamInfo}.
  * @param usage the {@link OH_AudioStream_Usage}.
- * @param directPlaybackMode the {@link OH_AudioStream_DirectPlaybackMode}
- * pointer to a variable which receives the result.
+ * @param directPlaybackMode the {@link OH_AudioStream_DirectPlaybackMode} pointer to a variable which receives the
+ * result.
  * @return Function result code:
  *         {@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.
  *         {@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM}:

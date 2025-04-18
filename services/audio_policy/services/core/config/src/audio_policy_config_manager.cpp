@@ -461,7 +461,7 @@ bool AudioPolicyConfigManager::SupportImplicitConversion(uint32_t routeFlag)
 }
 
 DirectPlaybackMode AudioPolicyConfigManager::GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
-    const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage)
+    const AudioStreamInfo &streamInfo)
 {
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
         desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE);
