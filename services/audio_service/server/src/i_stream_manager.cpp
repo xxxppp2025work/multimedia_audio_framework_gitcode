@@ -30,6 +30,9 @@ IStreamManager &IStreamManager::GetPlaybackManager(ManagerType managerType)
         case VOIP_PLAYBACK:
             static ProAudioStreamManager voipManager(VOIP_PLAYBACK);
             return voipManager;
+        case EAC3_PLAYBACK:
+            static ProAudioStreamManager eac3Manager(EAC3_PLAYBACK);
+            return eac3Manager;
         case PLAYBACK:
         default:
             int32_t engineFlag = GetEngineFlag();

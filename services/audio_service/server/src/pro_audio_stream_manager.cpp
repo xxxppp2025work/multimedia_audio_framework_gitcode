@@ -25,6 +25,7 @@
 #include "pro_renderer_stream_impl.h"
 #include "audio_engine_manager.h"
 #include "none_mix_engine.h"
+#include "eac3_playback_engine.h"
 #include "audio_utils.h"
 
 namespace OHOS {
@@ -32,8 +33,13 @@ namespace AudioStandard {
 using namespace std;
 
 ProAudioStreamManager::ProAudioStreamManager(ManagerType type)
-    : managerType_(type), playbackEngine_(std::make_unique<NoneMixEngine>())
+    : managerType_(type)
 {
+    if (type == EAC3_PLAYBACK) {
+        playbackEngine_ = std::make_unique<EAC3PlayBackEngine>();
+    } else {
+        playbackEngine_ = std::make_unique<NoneMixEngine>();
+    }
     AUDIO_DEBUG_LOG("ProAudioStreamManager");
 }
 
