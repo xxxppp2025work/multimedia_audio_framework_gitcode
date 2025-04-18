@@ -173,7 +173,7 @@ std::string AudioPipeManager::GetAdapterNameBySessionId(uint32_t sessionId)
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto pipeInfo : curPipeList_) {
         for (auto desc : pipeInfo->streamDescriptors_) {
-            if (desc->sessionId_ != sessionId) {
+            if (!desc || desc->sessionId_ != sessionId) {
                 continue;
             }
             AUDIO_INFO_LOG("adapter name: %{public}s", pipeInfo->moduleInfo_.name.c_str());
