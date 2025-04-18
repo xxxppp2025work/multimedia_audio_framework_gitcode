@@ -92,6 +92,7 @@
             "opensles",
             "qos_manager",
             "media_foundation",
+            "runtime_core",
             "usb_manager"
             ],
           "third_party": [
@@ -110,7 +111,8 @@
               "//foundation/multimedia/audio_framework/frameworks/cj:cj_multimedia_audio_ffi",
               "//foundation/multimedia/audio_framework/frameworks/native/ohaudio:ohaudio",
               "//foundation/multimedia/audio_framework/frameworks/native/opensles:opensles",
-              "//foundation/multimedia/audio_framework/services/audio_service:audio_sasdk"
+              "//foundation/multimedia/audio_framework/services/audio_service:audio_sasdk",
+              "//foundation/multimedia/audio_framework/frameworks/ets/ani:audio_ani_package"
             ],
             "service_group": [
               "//foundation/multimedia/audio_framework/sa_profile:audio_service_sa_profile",
