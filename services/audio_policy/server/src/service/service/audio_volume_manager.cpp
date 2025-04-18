@@ -56,18 +56,6 @@ static std::string GetEncryptAddr(const std::string &addr)
 const int32_t ONE_MINUTE = 60;
 const uint32_t ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS = 10000;
 
-static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
-    STREAM_VOICE_CALL,
-    STREAM_RING,
-    STREAM_MUSIC,
-    STREAM_VOICE_ASSISTANT,
-    STREAM_ALARM,
-    STREAM_ACCESSIBILITY,
-    STREAM_ULTRASONIC,
-    STREAM_SYSTEM,
-    STREAM_VOICE_CALL_ASSISTANT,
-    STREAM_ALL
-};
 
 static const std::vector<AudioStreamType> AUDIO_STREAMTYPE_VOLUME_LIST = {
     STREAM_MUSIC,
@@ -268,7 +256,8 @@ void AudioVolumeManager::UpdateVolumeForLowLatency()
     // update volumes for low latency streams when loading volumes from the database.
     Volume vol = {false, 1.0f, 0};
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    for (auto iter = VOLUME_TYPE_LIST.begin(); iter != VOLUME_TYPE_LIST.end(); iter++) {
+    for (auto iter = audioPolicyManager_.GetVolumeTypeList().begin();
+        iter != audioPolicyManager_.GetVolumeTypeList().end(); iter++) {
         vol.isMute = GetStreamMute(*iter);
         vol.volumeInt = static_cast<uint32_t>(GetSystemVolumeLevelNoMuteState(*iter));
         vol.volumeFloat = audioPolicyManager_.GetSystemVolumeInDb(*iter,

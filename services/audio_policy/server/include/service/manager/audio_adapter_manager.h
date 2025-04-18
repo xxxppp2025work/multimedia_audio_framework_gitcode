@@ -153,6 +153,8 @@ public:
 
     float GetMaxStreamVolume(void) const;
 
+    std::vector<AudioStreamType> GetVolumeTypeList() const;
+
     bool IsVolumeUnadjustable();
 
     float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType, int32_t volumeLevel);
@@ -369,6 +371,7 @@ private:
     }
 
     std::shared_ptr<AudioServiceAdapter> audioServiceAdapter_;
+    std::vector<AudioStreamType> defaultVolumeTypeList_;
     std::unordered_map<AudioStreamType, int> minVolumeIndexMap_;
     std::unordered_map<AudioStreamType, int> maxVolumeIndexMap_;
     std::mutex systemSoundMutex_;
