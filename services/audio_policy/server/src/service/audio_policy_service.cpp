@@ -1300,6 +1300,11 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
         deviceInfo.networkId_ = curOutputDeviceDesc.networkId_;
         deviceInfo.deviceType_ = curOutputDeviceDesc.deviceType_;
         deviceInfo.deviceRole_ = OUTPUT_DEVICE;
+        if (config.streamInfo.encoding == ENCODING_EAC3 &&
+            deviceInfo.deviceType_ != DEVICE_TYPE_HDMI && deviceInfo.deviceType_ != DEVICE_TYPE_LINE_DIGITAL) {
+            audioPolicyServerHandler_->SendFormatUnsupportedErrorEvent(ERROR_UNSUPPORTED_FORMAT);
+            return ERROR;
+        }
     } else {
         if (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
             AudioCapturerInfo capturerInfo = config.capturerInfo;
@@ -2132,6 +2137,12 @@ int32_t AudioPolicyService::SetQueryAllowedPlaybackCallback(const sptr<IRemoteOb
     lock_guard<mutex> lock(g_policyMgrListenerMutex);
     policyManagerListener_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
     return SUCCESS;
+}
+
+DirectPlaybackMode AudioPolicyService::GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
+    const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage)
+{
+    return audioConfigManager_.GetDirectPlaybackSupport(desc, streamInfo, streamUsage);
 }
 
 void AudioPolicyService::SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel,
