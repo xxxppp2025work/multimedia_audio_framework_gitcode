@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,23 +13,11 @@
  * limitations under the License.
  */
 
-#ifndef MULTICHANNEL_RENDERER_SINK_H
-#define MULTICHANNEL_RENDERER_SINK_H
+#ifndef OHOS_HPAE_LOG_H
+#define OHOS_HPAE_LOG_H
 
-#include <cstdio>
-#include <list>
+#include "audio_log.h"
 
-#include "i_audio_renderer_sink.h"
-
-namespace OHOS {
-namespace AudioStandard {
-class MultiChannelRendererSink : public IAudioRendererSink {
-public:
-    static MultiChannelRendererSink *GetInstance(const std::string &halName);
-
-    MultiChannelRendererSink() = default;
-    ~MultiChannelRendererSink() = default;
-};
-}  // namespace AudioStandard
-}  // namespace OHOS
-#endif // MULTICHANNEL_RENDERER_SINK_H
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B88
+#endif // OHOS_HPAE_LOG_H
