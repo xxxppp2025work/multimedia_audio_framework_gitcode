@@ -191,6 +191,16 @@ void AudioVolumeParser::ParseDeviceVolumeInfos(xmlNode *node, std::shared_ptr<St
             deviceVolInfo->deviceType = audioDeviceMap_[pValue];
             AUDIO_DEBUG_LOG("deviceVolInfo->deviceType %{public}d;", deviceVolInfo->deviceType);
             xmlFree(pValue);
+
+            pValue = reinterpret_cast<char*>(xmlGetProp(currNode,
+                reinterpret_cast<xmlChar*>(const_cast<char*>("defaultidx"))));
+            if (pValue != nullptr) {
+                deviceVolInfo->defaultLevel = atoi(pValue);
+                xmlFree(pValue);
+            } else {
+                AUDIO_DEBUG_LOG("The defaultidx attribute is not configured or defaultidx parameter is invalid");
+            }
+
             ParseVolumePoints(currNode->children, deviceVolInfo);
             streamVolInfo->deviceVolumeInfos[deviceVolInfo->deviceType] = deviceVolInfo;
         }
