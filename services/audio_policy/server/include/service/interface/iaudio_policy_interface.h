@@ -114,6 +114,8 @@ public:
 
     virtual float GetMaxStreamVolume() const = 0;
 
+    virtual std::vector<AudioStreamType> GetVolumeTypeList() const = 0;
+
     virtual bool IsVolumeUnadjustable() = 0;
 
     virtual void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos) = 0;
