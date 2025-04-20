@@ -1838,7 +1838,7 @@ void AudioDeviceCommon::ClientDiedDisconnectScoRecognition()
         return;
     }
     AudioDeviceDescriptor tempDesc = audioActiveDevice_.GetCurrentInputDevice();
-    if (tempDesc.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+    if (tempDesc.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO && !audioDeviceManager_.GetScoState()) {
         return;
     }
     if (Bluetooth::AudioHfpManager::GetScoCategory() == Bluetooth::ScoCategory::SCO_RECOGNITION ||
