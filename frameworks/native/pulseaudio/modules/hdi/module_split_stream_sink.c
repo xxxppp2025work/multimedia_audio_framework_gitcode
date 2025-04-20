@@ -490,8 +490,10 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
     }
 }
 
-static unsigned SplitFillMixInfo(pa_sink *s, size_t *length, pa_mix_info *info, unsigned maxInfo, char *streamType)
+static unsigned SplitFillMixInfo(pa_sink *s, size_t *length, pa_mix_info *info, unsigned maxInfo, char *streamType,
+    unsigned *numNotSilence)
 {
+    *numNotSilence = 0;
     CHECK_AND_RETURN_RET_LOG(s != NULL, 0, "s is null");
     CHECK_AND_RETURN_RET_LOG(length != NULL, 0, "length is null");
     AUTO_CTRACE("split_stream_sink::SplitFillMixInfo:len:%zu", *length);
@@ -517,6 +519,10 @@ static unsigned SplitFillMixInfo(pa_sink *s, size_t *length, pa_mix_info *info, 
                 mixlength = info->chunk.length;
 
             ProcessAudioVolume(i, mixlength, &info->chunk, s);
+
+            if (!pa_memblock_is_silence(info->chunk.memblock)) {
+                (*numNotSilence)++;
+            }
 
             info->userdata = pa_sink_input_ref(i);
             pa_assert(info->chunk.memblock);
@@ -579,7 +585,8 @@ static void SplitSinkRenderMix(pa_sink *s, size_t length, pa_mix_info *info, uns
     }
 }
 
-static unsigned SplitPaSinkRender(pa_sink *s, size_t length, pa_memchunk *result, char *streamType)
+static unsigned SplitPaSinkRender(pa_sink *s, size_t length, pa_memchunk *result, char *streamType,
+    unsigned *numNotSilence)
 {
     AUTO_CTRACE("module_split_stream_sink::SplitPaSinkRender:len:%zu", length);
     unsigned streamCount = 0;
@@ -615,8 +622,7 @@ static unsigned SplitPaSinkRender(pa_sink *s, size_t length, pa_memchunk *result
         length = pa_frame_align(blockSizeMax, &s->sample_spec);
 
     pa_assert(length > 0);
-
-    n = SplitFillMixInfo(s, &length, info, MAX_MIX_CHANNELS, streamType);
+    n = SplitFillMixInfo(s, &length, info, MAX_MIX_CHANNELS, streamType, numNotSilence);
     streamCount = n;
     SplitSinkRenderMix(s, length, info, n, result);
 
@@ -708,7 +714,8 @@ static void  SplitPaSinkRenderInto(pa_sink *s, pa_memchunk *target, char *stream
 
     pa_assert(length > 0);
 
-    n = SplitFillMixInfo(s, &length, info, MAX_MIX_CHANNELS, streamType);
+    unsigned numNotSilence = 0;
+    n = SplitFillMixInfo(s, &length, info, MAX_MIX_CHANNELS, streamType, &numNotSilence);
     SplitSinkRenderIntoMix(s, length, info, n, target);
 
     SplitSinkRenderInputsDrop(s, info, n, target);
@@ -754,7 +761,7 @@ static void SplitPaSinkRenderIntoFull(pa_sink *s, pa_memchunk *target, char *str
 
 static unsigned SplitPaSinkRenderFull(pa_sink *s, size_t length, pa_memchunk *result, char *streamType)
 {
-    unsigned nSink;
+    unsigned nSink = 0;
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
     pa_assert(PA_SINK_IS_LINKED(s->thread_info.state));
@@ -775,10 +782,7 @@ static unsigned SplitPaSinkRenderFull(pa_sink *s, size_t length, pa_memchunk *re
     pa_sink_ref(s);
 
     AUDIO_DEBUG_LOG("module_split_stream_sink, splitSinkRender in  length = %{public}zu", length);
-    nSink = SplitPaSinkRender(s, length, result, streamType);
-    if (nSink == 0) {
-        return nSink;
-    }
+    SplitPaSinkRender(s, length, result, streamType, &nSink);
 
     if (result->length < length) {
         pa_memchunk chunk;
