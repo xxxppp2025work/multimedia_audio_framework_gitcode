@@ -154,7 +154,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
             ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) && HasScoDevice()) ||
             AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
             RouterType bypassWithSco = RouterType::ROUTER_TYPE_NONE;
-            if (audioscene == AUDIO_SCENE_DEFAULT && AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+            if (audioScene == AUDIO_SCENE_DEFAULT && AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
                 AUDIO_INFO_LOG("Audio scene default and sco state is true, bypassWithSco set to user select");
                 bypassWithSco = RouterType::ROUTER_TYPE_USER_SELECT;
             }
