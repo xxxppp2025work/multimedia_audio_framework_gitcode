@@ -26,51 +26,13 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class IDeviceManagerCallback {
-public:
-    virtual void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key,
-        const std::string &condition, const std::string &value) {}
-};
-
 class IDeviceManager {
 public:
     IDeviceManager() = default;
     virtual ~IDeviceManager() = default;
 
-    virtual int32_t LoadAdapter(const std::string &adapterName) = 0;
+    virtual std::shared_ptr<IDeviceAdapter> LoadAdapter(const std::string &adapterName, bool needReInitManager) = 0;
     virtual void UnloadAdapter(const std::string &adapterName, bool force = false) = 0;
-
-    virtual void AllAdapterSetMicMute(bool isMute) = 0;
-
-    virtual void SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
-        const std::string &condition, const std::string &value) = 0;
-    virtual std::string GetAudioParameter(const std::string &adapterName, const AudioParamKey key,
-        const std::string &condition) = 0;
-    virtual int32_t SetVoiceVolume(const std::string &adapterName, float volume) = 0;
-    virtual int32_t SetOutputRoute(const std::string &adapterName, const std::vector<DeviceType> &devices,
-        int32_t streamId) = 0;
-    virtual int32_t SetInputRoute(const std::string &adapterName, DeviceType device, int32_t streamId,
-        int32_t inputType) = 0;
-    virtual void SetMicMute(const std::string &adapterName, bool isMute) = 0;
-    virtual int32_t HandleEvent(const std::string &adapterName, const AudioParamKey key, const char *condition,
-        const char *value, void *reserved) { return ERR_NOT_SUPPORTED; }
-    virtual void RegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId,
-        IDeviceManagerCallback *callback) {}
-    virtual void RegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId,
-        IDeviceManagerCallback *callback) {}
-    virtual void UnRegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId) {}
-    virtual void UnRegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId) {}
-
-    virtual void *CreateRender(const std::string &adapterName, void *param, void *deviceDesc,
-        uint32_t &hdiRenderId) = 0;
-    virtual void DestroyRender(const std::string &adapterName, uint32_t hdiRenderId) = 0;
-    virtual void *CreateCapture(const std::string &adapterName, void *param, void *deviceDesc,
-        uint32_t &hdiCaptureId) = 0;
-    virtual void DestroyCapture(const std::string &adapterName, uint32_t hdiCaptureId) = 0;
-
-    virtual void DumpInfo(std::string &dumpString) = 0;
-
-    virtual void SetDmDeviceType(uint16_t dmDeviceType) = 0;
 };
 
 } // namespace AudioStandard

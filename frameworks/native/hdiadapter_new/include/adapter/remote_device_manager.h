@@ -88,8 +88,7 @@ public:
     int32_t SetInputRoute(const std::string &adapterName, DeviceType device, int32_t streamId,
         int32_t inputType) override;
     void SetMicMute(const std::string &adapterName, bool isMute) override;
-    int32_t HandleEvent(const std::string &adapterName, const AudioParamKey key, const char *condition,
-        const char *value, void *reserved) override;
+
     void RegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId,
         IDeviceManagerCallback *callback) override;
     void RegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId,
@@ -119,6 +118,8 @@ private:
         const char *value);
     int32_t SetOutputPortPin(DeviceType outputDevice, RemoteAudioRouteNode &sink);
     int32_t SetInputPortPin(DeviceType inputDevice, RemoteAudioRouteNode &source);
+    int32_t HandleEvent(const std::string &adapterName, const AudioParamKey key, const char *condition,
+        const char *value, void *reserved);
 
 private:
     static constexpr uint32_t MAX_AUDIO_ADAPTER_NUM = 5;

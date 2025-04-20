@@ -69,10 +69,6 @@ int32_t AudioRenderSink::Init(const IAudioSinkAttr &attr)
     int32_t ret = InitRender();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
 
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
-
     sinkInited_ = true;
     return SUCCESS;
 }
