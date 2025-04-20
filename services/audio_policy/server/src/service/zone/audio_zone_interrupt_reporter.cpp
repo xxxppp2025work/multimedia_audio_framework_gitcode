@@ -38,9 +38,9 @@ int32_t AudioZoneInterruptReporter::EnableInterruptReport(pid_t clientPid, int32
 void AudioZoneInterruptReporter::DisableInterruptReport(pid_t clientPid)
 {
     std::lock_guard<std::mutex> lock(interruptEnableMutex_);
-    if (interruptEnableMaps_.find(clientPid) == interruptEnableMaps_.end()) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(interruptEnableMaps_.find(clientPid) != interruptEnableMaps_.end(),
+        "not found client %{public}d", clientPid);
+
     interruptEnableMaps_.erase(clientPid);
 }
 
@@ -61,9 +61,10 @@ int32_t AudioZoneInterruptReporter::RegisterInterruptReport(pid_t clientPid, int
     ReportItem newItem = std::make_pair(zoneId, deviceTag);
     auto findItem = std::find(interruptEnableMaps_[clientPid].begin(),
         interruptEnableMaps_[clientPid].end(), newItem);
-    if (findItem != interruptEnableMaps_[clientPid].end()) {
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET_LOG(findItem == interruptEnableMaps_[clientPid].end(), SUCCESS,
+        "register zone %{public}d, device %{public}s for client %{public}d duplicate",
+        zoneId, deviceTag.c_str(), clientPid);
+
     interruptEnableMaps_[clientPid].emplace_back(newItem);
     AUDIO_INFO_LOG("register zone %{public}d, device %{public}s for client %{public}d",
         zoneId, deviceTag.c_str(), clientPid);
@@ -75,20 +76,21 @@ void AudioZoneInterruptReporter::UnRegisterInterruptReport(pid_t clientPid, int3
 {
     AUDIO_INFO_LOG("unregister zone %{public}d, device %{public}s for client %{public}d",
         zoneId, deviceTag.c_str(), clientPid);
-    if (interruptEnableMaps_.find(clientPid) == interruptEnableMaps_.end()) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(interruptEnableMaps_.find(clientPid) != interruptEnableMaps_.end(),
+        "not found client %{public}d", clientPid);
 
     ReportItem removeItem = std::make_pair(zoneId, deviceTag);
     auto findItem = std::find(interruptEnableMaps_[clientPid].begin(),
         interruptEnableMaps_[clientPid].end(), removeItem);
-    if (findItem == interruptEnableMaps_[clientPid].end()) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(findItem != interruptEnableMaps_[clientPid].end(),
+        "not found zone %{public}d, device %{public}s for client %{public}d",
+        zoneId, deviceTag.c_str(), clientPid);
+
     interruptEnableMaps_[clientPid].erase(findItem);
-    if (interruptEnableMaps_[clientPid].empty()) {
-        interruptEnableMaps_.erase(clientPid);
-    }
+    CHECK_AND_RETURN_LOG(interruptEnableMaps_[clientPid].empty(),
+        "interruptEnableMaps_[%{public}d] is not empty");
+
+    interruptEnableMaps_.erase(clientPid);
 }
 
 AudioZoneInterruptReporter::ReporterVector AudioZoneInterruptReporter::CreateReporter(
@@ -106,9 +108,8 @@ AudioZoneInterruptReporter::ReporterVector AudioZoneInterruptReporter::CreateRep
     AudioZoneInterruptReason reason)
 {
     ReporterVector vec;
-    if (zoneClientManager == nullptr || interruptService == nullptr) {
-        return vec;
-    }
+    CHECK_AND_RETURN_RET_LOG(interruptService != nullptr, vec, "interruptService is null");
+    CHECK_AND_RETURN_RET_LOG(zoneClientManager != nullptr, vec, "zoneClientManager is null");
     
     std::lock_guard<std::mutex> lock(interruptEnableMutex_);
     for (auto &item : interruptEnableMaps_) {
@@ -117,9 +118,8 @@ AudioZoneInterruptReporter::ReporterVector AudioZoneInterruptReporter::CreateRep
                 continue;
             }
             Reporter rep = std::make_shared<AudioZoneInterruptReporter>();
-            if (rep == nullptr) {
-                return vec;
-            }
+            CHECK_AND_RETURN_RET_LOG(rep != nullptr, vec, "create reporter failed");
+
             rep->interruptService_ = interruptService;
             rep->zoneClientManager_ = zoneClientManager;
             rep->clientPid_ = item.first;
@@ -151,14 +151,11 @@ AudioZoneFocusList AudioZoneInterruptReporter::GetFocusList()
 
 void AudioZoneInterruptReporter::ReportInterrupt()
 {
-    if (zoneClientManager_ == nullptr || interruptService_ == nullptr) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(zoneClientManager_ != nullptr, "zoneClientManager_ is null");
+    CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is null");
 
     AudioZoneFocusList newFocusList = GetFocusList();
-    if (IsFocusListEqual(oldFocusList_, newFocusList)) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(!IsFocusListEqual(oldFocusList_, newFocusList), "focusList is equal");
 
     AUDIO_INFO_LOG("report audio zone %{public}d device %{public}s interrupt to"
         " client %{public}d of reason %{public}d ", zoneId_, deviceTag_.c_str(), clientPid_,

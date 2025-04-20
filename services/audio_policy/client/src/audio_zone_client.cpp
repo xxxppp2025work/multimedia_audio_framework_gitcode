@@ -268,8 +268,8 @@ void AudioZoneClient::Restore()
             int32_t zoneId = 0;
             auto [ptr, ec] = std::from_chars(zoneIdStr.data(), zoneIdStr.data() + zoneIdStr.size(), zoneId);
             (void)ptr;
-            CHECK_AND_RETURN_LOG(ec != std::errc()::invalid_argument, "%{public}s is not a number", zoneIdStr.c_str());
-            CHECK_AND_RETURN_LOG(ec != std::errc()::result_out_of_range, "%{public}s is out of range", zoneIdStr.c_str());
+            CHECK_AND_RETURN_LOG(ec != std::errc::invalid_argument, "%{public}s is not a number", zoneIdStr.c_str());
+            CHECK_AND_RETURN_LOG(ec != std::errc::result_out_of_range, "%{public}s is out of range", zoneIdStr.c_str());
             int32_t result = AudioPolicyManager::GetInstance().EnableAudioZoneInterruptReport(zoneId, deviceTag, true);
             AUDIO_INFO_LOG("EnableAudioZoneInterruptReport result:%{public}d", result);
         }
@@ -318,7 +318,7 @@ void AudioZoneClient::OnInterruptEvent(int32_t zoneId, const std::string &device
 {
     std::string key = GetInterruptKeyId(zoneId, deviceTag);
     std::lock_guard<std::mutex> lk(audioZoneInterruptMutex_);
-    CHECK_AND_RETURN_LOG(audioZoneInterruptCallbackMap_.find(zoneId) != audioZoneInterruptCallbackMap_.end(),
+    CHECK_AND_RETURN_LOG(audioZoneInterruptCallbackMap_.find(key) != audioZoneInterruptCallbackMap_.end(),
         "zoneId %{public}d not in audioZoneInterruptCallbackMap_.", zoneId);
 
     audioZoneInterruptCallbackMap_[key]->OnInterruptEvent(interrupts, reason);

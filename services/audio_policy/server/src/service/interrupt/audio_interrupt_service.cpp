@@ -761,6 +761,7 @@ void AudioInterruptService::ClearAudioFocusInfoListOnAccountsChanged(const int &
 
 int32_t AudioInterruptService::ClearAudioFocusInfoList()
 {
+    AUDIO_INFO_LOG("start clear audio focusInfo list");
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
     for (const auto&[zoneId, audioInterruptZone] : zonesMap_) {
         CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
@@ -784,6 +785,7 @@ int32_t AudioInterruptService::ClearAudioFocusInfoList()
 
 int32_t AudioInterruptService::ActivatePreemptMode()
 {
+    AUDIO_INFO_LOG("start activate preempt mode");
     std::lock_guard<std::mutex> lock(mutex_);
     isPreemptMode_ = true;
     int ret = ClearAudioFocusInfoList();
@@ -796,6 +798,7 @@ int32_t AudioInterruptService::ActivatePreemptMode()
 
 int32_t AudioInterruptService::DeactivatePreemptMode()
 {
+    AUDIO_INFO_LOG("start deactivate preempt mode");
     std::lock_guard<std::mutex> lock(mutex_);
     isPreemptMode_ = false;
     return SUCCESS;
@@ -1666,12 +1669,8 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         AUDIO_DEBUG_LOG("stream (streamId %{public}u) is not active now", audioInterrupt.streamId);
         return;
     }
-
-    if (itZone->second->focusStrategy == AudioZoneFocusStrategy::DISTRIBUTED_FOCUS_STRATEGY) {
-        AUDIO_INFO_LOG("zone: %{public}d distributed focus strategy not resume when deactivate interrupt",
-            itZone->first);
-        return;
-    }
+    CHECK_AND_RETURN_LOG(itZone->second->focusStrategy != AudioZoneFocusStrategy::DISTRIBUTED_FOCUS_STRATEGY,
+        "zone: %{public}d distributed focus strategy not resume when deactivate interrupt", itZone->first);
     // resume if other session was forced paused or ducked
     ResumeAudioFocusList(zoneId, isSessionTimeout);
 
@@ -1684,9 +1683,7 @@ void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audio
     if (policyServer_ == nullptr) {
         return;
     }
-    if (zoneId != ZONEID_DEFAULT) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(zoneId == ZONEID_DEFAULT, "zoneId is not default");
     AudioScene currentAudioScene = policyServer_->GetAudioScene();
 
     AUDIO_PRERELEASE_LOGI("currentScene: %{public}d, targetScene: %{public}d, changeType: %{public}d",
@@ -1934,9 +1931,8 @@ void AudioInterruptService::SendFocusChangeEvent(const int32_t zoneId, int32_t c
     const AudioInterrupt &audioInterrupt)
 {
     CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
-    if (zoneId != ZONEID_DEFAULT) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(zoneId == ZONEID_DEFAULT, "zoneId is not default");
+
     auto itZone = zonesMap_.find(zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
