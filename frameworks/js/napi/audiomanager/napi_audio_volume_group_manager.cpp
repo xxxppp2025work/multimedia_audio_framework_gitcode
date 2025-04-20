@@ -151,6 +151,11 @@ napi_value NapiAudioVolumeGroupManager::CreateAudioVolumeGroupManagerWrapper(nap
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
+    return CreateAudioVolumeGroupManagerWrapperAsync(env, groupId);
+}
+
+napi_value NapiAudioVolumeGroupManager::CreateAudioVolumeGroupManagerWrapperAsync(napi_env env, int32_t groupId)
+{
     napi_status status;
     napi_value result = nullptr;
     napi_value constructor;

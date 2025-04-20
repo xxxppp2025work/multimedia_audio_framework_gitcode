@@ -40,7 +40,6 @@ private:
     struct AudioVolumeManagerAsyncContext : public ContextBase {
         int32_t deviceFlag;
         bool bArgTransFlag = true;
-        int32_t groupId;
         int32_t intValue;
         int32_t ringMode;
         bool isMute;

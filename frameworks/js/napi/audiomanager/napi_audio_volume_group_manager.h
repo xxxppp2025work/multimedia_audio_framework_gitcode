@@ -29,6 +29,7 @@ class NapiAudioVolumeGroupManager {
 public:
     static napi_value Init(napi_env env, napi_value exports);
     static napi_value CreateAudioVolumeGroupManagerWrapper(napi_env env, int32_t groupId);
+    static napi_value CreateAudioVolumeGroupManagerWrapperAsync(napi_env env, int32_t groupId);
 
     static int32_t isConstructSuccess_;
 
