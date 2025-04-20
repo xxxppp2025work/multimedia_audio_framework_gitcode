@@ -3414,5 +3414,29 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_118, TestSize.Level1)
     auto ret = audioInterruptService->IsHandleIter(iterActive, oldState, iterNew);
     EXPECT_EQ(ret, false);
 }
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_119
+* @tc.desc  : Test ProcessFocusEntry
+*/
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_119, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    EXPECT_NE(audioInterruptService, nullptr);
+
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> myList;
+    myList.emplace_back(AudioInterrupt(), AudioFocuState::PAUSEDBYREMOTE);
+    auto iterActive = myList.begin();
+
+    AudioFocuState oldState = ACTIVE;
+    
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> myList2;
+    myList.emplace_back(AudioInterrupt(), AudioFocuState::PAUSEDBYREMOTE);
+    auto iterNew = myList.begin();
+
+    auto ret = audioInterruptService->IsHandleIter(iterActive, oldState, iterNew);
+    EXPECT_EQ(ret, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS
