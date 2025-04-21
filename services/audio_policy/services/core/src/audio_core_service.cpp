@@ -25,6 +25,7 @@
 #include "audio_usb_manager.h"
 #include "data_share_observer_callback.h"
 #include "audio_spatialization_service.h"
+#include "audio_zone_service.h"
 
 
 namespace OHOS {
@@ -144,7 +145,7 @@ int32_t AudioCoreService::CreateRendererClient(
     // Select device
     int32_t ret = SUCCESS;
     streamDesc->newDeviceDescs_ =
-        audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc));
+        GetDeviceDescriptorInner(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc));
     for (auto device : streamDesc->newDeviceDescs_) {
         AUDIO_INFO_LOG("Device type %{public}d", device->deviceType_);
     }
@@ -455,7 +456,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
     }
     if (networkId == LOCAL_NETWORK_ID) {
         vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
-            audioRouterCenter_.FetchOutputDevices(rendererInfo.streamUsage, -1);
+            GetDeviceDescriptorInner(rendererInfo.streamUsage, -1);
         for (size_t i = 0; i < descs.size(); i++) {
             std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*descs[i]);
             deviceList.push_back(devDesc);
@@ -959,6 +960,18 @@ int32_t AudioCoreService::SetRingerMode(AudioRingerMode ringMode)
     return result;
 }
 
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetDeviceDescriptorInner(
+    StreamUsage streamUsage, int32_t uid)
+{
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+    if (zoneId != 0) {
+        return AudioZoneService::GetInstance().FetchOutputDevices(zoneId,
+            streamUsage, uid, ROUTER_TYPE_DEFAULT);
+    } else {
+        return audioRouterCenter_.FetchOutputDevices(streamUsage, uid);
+    }
+}
+
 int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChangeReasonExt reason)
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
@@ -973,7 +986,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
     for (auto streamDesc : outputStreamDescs) {
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
         streamDesc->newDeviceDescs_ =
-            audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc));
+            GetDeviceDescriptorInner(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc));
         AUDIO_INFO_LOG("DeviceType %{public}d, state: %{public}u",
             streamDesc->newDeviceDescs_[0]->deviceType_, streamDesc->streamStatus_);
 
@@ -1048,8 +1061,8 @@ void AudioCoreService::SetAudioServerProxy()
 DirectPlaybackMode AudioCoreService::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
     const StreamUsage &streamUsage)
 {
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioRouterCenter_.FetchOutputDevices(
-        streamUsage, getuid());
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
+        GetDeviceDescriptorInner(streamUsage, getuid());
     CHECK_AND_RETURN_RET_LOG(!descs.empty(), DIRECT_PLAYBACK_NOT_SUPPORTED, "find output device failed");
     return policyConfigMananger_.GetDirectPlaybackSupport(descs.front(), streamInfo);
 }

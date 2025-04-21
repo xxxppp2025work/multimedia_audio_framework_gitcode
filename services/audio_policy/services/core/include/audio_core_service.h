@@ -222,6 +222,8 @@ private:
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
     bool GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDeviceDescriptorInner(
+        StreamUsage streamUsage, int32_t uid);
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
 
     // Called by Others - without lock
