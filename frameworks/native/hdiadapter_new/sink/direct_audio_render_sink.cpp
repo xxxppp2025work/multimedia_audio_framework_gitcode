@@ -92,8 +92,8 @@ int32_t DirectAudioRenderSink::Start(void)
         CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
         int32_t ret = audioRender_->Start(audioRender_);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail, ret: %{public}d", ret);
-        started_ = true;
     }
+    started_ = true;
     return SUCCESS;
 }
 
