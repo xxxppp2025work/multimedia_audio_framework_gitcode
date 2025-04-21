@@ -62,6 +62,7 @@ constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 
 static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
 static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
+static const char* CONFIG_VOICE_WAKEUP_KEY = "intell_voice_trigger_enabled";
 const int32_t UID_AUDIO = 1041;
 static const int64_t WATI_PLAYBACK_TIME = 200000; // 200ms
 static const uint32_t DEVICE_CONNECTED_FLAG_DURATION_MS = 3000000; // 3s
@@ -866,6 +867,25 @@ void AudioPolicyService::RegisterAccessiblilityMono()
         AUDIO_ERR_LOG("RegisterObserver mono failed");
     }
     AUDIO_INFO_LOG("Register accessibility mono successfully");
+}
+
+int32_t AudioPolicyService::RegisterVoiceWakeupSwitch()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncMono = [this](const std::string &key) {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        int value = 0;
+        ErrCode ret = settingProvider.GetIntValue(CONFIG_VOICE_WAKEUP_KEY, value);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get failed");
+        OnVoiceWakeupState(value);
+    };
+    sptr observer = settingProvider.CreateObserver(CONFIG_VOICE_WAKEUP_KEY, updateFuncMono);
+    ErrCode ret = settingProvider.RegisterObserver(observer);
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterObserver failed");
+        return ret;
+    }
+    return SUCCESS;
 }
 
 void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
@@ -2137,6 +2157,11 @@ void AudioPolicyService::SaveVolumeKeyRegistrationInfo(std::string keyType, std:
     int32_t subscriptionId, bool registrationResult)
 {
     audioVolumeManager_.SaveVolumeKeyRegistrationInfo(keyType, registrationTime, subscriptionId, registrationResult);
+}
+
+int32_t AudioPolicyService::OnVoiceWakeupState(bool state)
+{
+    return audioOffloadStream_.OnVoiceWakeupState(state);
 }
 } // namespace AudioStandard
 } // namespace OHOS
