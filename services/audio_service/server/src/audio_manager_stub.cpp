@@ -1349,7 +1349,7 @@ int AudioManagerStub::HandleIsAcousticEchoCancelerSupported(MessageParcel &data,
 {
     SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
     bool ret = IsAcousticEchoCancelerSupported(sourceType);
-    rely.WriteBool(ret);
+    reply.WriteBool(ret);
     return AUDIO_OK;
 }
 } // namespace AudioStandard

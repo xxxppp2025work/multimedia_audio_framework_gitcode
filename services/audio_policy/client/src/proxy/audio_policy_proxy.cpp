@@ -2393,7 +2393,7 @@ bool AudioPolicyProxy::IsAcousticEchoCancelerSupported(SourceType sourceType)
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %{public}d",
         error);
     
-    return rely.ReadBool();
+    return reply.ReadBool();
 }
 } // namespace AudioStandard
 } // namespace OHOS

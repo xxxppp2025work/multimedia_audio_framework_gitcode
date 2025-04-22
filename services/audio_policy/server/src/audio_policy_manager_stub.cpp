@@ -2246,7 +2246,7 @@ void AudioPolicyManagerStub::IsAcousticEchoCancelerSupportedInternal(MessageParc
 {
     SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
     bool result = IsAcousticEchoCancelerSupported(sourceType);
-    rely.WriteBool(result);
+    reply.WriteBool(result);
 }
 } // namespace audio_policy
 } // namespace OHOS

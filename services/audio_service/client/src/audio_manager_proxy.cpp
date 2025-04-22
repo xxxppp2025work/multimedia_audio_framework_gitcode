@@ -1721,7 +1721,7 @@ void AudioManagerProxy::IsAcousticEchoCancelerSupported(SourceType sourceType)
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "failed,error:%d", error);
-    return rely.ReadBool();
+    return reply.ReadBool();
 }
 } // namespace AudioStandard
 } // namespace OHOS
