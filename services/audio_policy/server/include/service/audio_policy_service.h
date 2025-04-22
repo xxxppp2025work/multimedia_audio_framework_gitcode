@@ -175,7 +175,7 @@ public:
 
     bool IsAbsVolumeSupported();
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = INVALID_PID);
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid = INVALID_UID);
 
     bool IsDeviceActive(InternalDeviceType deviceType);
 
@@ -201,7 +201,7 @@ public:
 
     bool IsMicrophoneMute();
 
-    int32_t SetAudioScene(AudioScene audioScene);
+    int32_t SetAudioScene(AudioScene audioScene, const int32_t uid = INVALID_UID, const int32_t pid = INVALID_PID);
 
     AudioScene GetAudioScene(bool hasSystemPermission = true) const;
 
@@ -261,6 +261,11 @@ public:
     void OnMonoAudioConfigChanged(bool audioMono);
 
     void OnAudioBalanceChanged(float audioBalance);
+
+    void onDoNotDisturbStatusChanged(bool isDoNotDisturb);
+
+    void onDoNotDisturbStatusWhiteListChanged(std::vector<std::map<std::string, std::string>>
+        doNotDisturbStatusWhiteList);
 
     void LoadEffectLibrary();
 
@@ -404,7 +409,7 @@ public:
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descs);
 
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t pid = INVALID_PID);
+        const int32_t uid = INVALID_UID);
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
 
@@ -553,6 +558,10 @@ private:
     void RegisterAccessiblilityBalance();
 
     void RegisterAccessiblilityMono();
+
+    void RegisterDoNotDisturbStatus();
+
+    void RegisterDoNotDisturbStatusWhiteList();
 
     void StoreDistributedRoutingRoleInfo(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
 
