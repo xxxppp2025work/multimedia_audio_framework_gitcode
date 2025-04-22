@@ -438,7 +438,7 @@ void AudioServer::NotifySettingsDataReady()
 bool AudioServer::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), false, "LoadAudioEffectLibraries refused for %{public}d",
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), false, "IsAcousticEchoCancelerSupported refused for %{public}d",
         callingUid);
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {

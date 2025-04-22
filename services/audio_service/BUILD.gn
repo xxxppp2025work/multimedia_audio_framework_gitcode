@@ -484,7 +484,7 @@ audio_ohos_library("audio_service") {
 
   deps = [
     ":audio_common",
-    ":audio_process_service",
+    ":audio_engine:audio_engine_manager",
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioinnercall:audio_inner_call",
     "../../frameworks/native/audioschedule:audio_schedule",
