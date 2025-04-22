@@ -90,7 +90,7 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
-                <focus_type value="SOURCE_TYPE_VOSOURCE_TYPE_LIVEICE_CALL" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_CALL" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_REMOTE_CAST" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_TRANSCRIPTION" is_forced="true" action_type="PLAY" action_on="incoming"/>
             </shared>
