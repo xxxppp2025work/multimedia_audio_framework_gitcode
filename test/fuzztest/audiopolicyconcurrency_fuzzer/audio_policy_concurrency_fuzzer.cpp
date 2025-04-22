@@ -160,8 +160,8 @@ void AudioPowerStateListenerFuzzTest()
     powerStub->OnSyncSleepCallbackStub(data);
     powerStub->OnSyncWakeupCallbackStub(data);
 
-    GetServerPtr()->powerStateListener_->OnSyncSleep(true);
-    GetServerPtr()->powerStateListener_->OnSyncWakeup(true);
+    GetServerPtr()->powerStateListener_->OnSyncSleep(true, "");
+    GetServerPtr()->powerStateListener_->OnSyncWakeup(true, "");
 
     sptr<SyncHibernateListenerStub> syncStub =
         static_cast<sptr<SyncHibernateListenerStub>>(new(std::nothrow) SyncHibernateListener(audioPolicyServer));
