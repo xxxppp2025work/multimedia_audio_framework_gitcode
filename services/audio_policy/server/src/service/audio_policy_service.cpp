@@ -2138,5 +2138,10 @@ void AudioPolicyService::SaveVolumeKeyRegistrationInfo(std::string keyType, std:
 {
     audioVolumeManager_.SaveVolumeKeyRegistrationInfo(keyType, registrationTime, subscriptionId, registrationResult);
 }
+
+bool AudioPolicyService::IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    return AudioServerProxy::GetInstance().IsAcousticEchoCancelerSupported(sourceType);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -433,5 +433,18 @@ void AudioServer::NotifySettingsDataReady()
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
     audioEffectChainManager->LoadEffectProperties();
 }
+
+bool AudioServer::IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
+
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager()->IsAcousticEchoCancelerSupported(sourceType);
+    } else {
+        AUDIO_WARNING_LOG("Not Supported");
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

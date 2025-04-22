@@ -1393,6 +1393,7 @@ bool NapiAudioEnum::IsValidSourceType(int32_t intValue)
         case SourceType::SOURCE_TYPE_VOICE_TRANSCRIPTION:
         case SourceType::SOURCE_TYPE_CAMCORDER:
         case SourceType::SOURCE_TYPE_UNPROCESSED:
+        case SourceType::SOURCE_TYPE_LIVE:
             return true;
         default:
             return false;

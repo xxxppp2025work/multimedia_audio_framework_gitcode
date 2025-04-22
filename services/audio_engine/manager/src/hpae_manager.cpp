@@ -1912,6 +1912,12 @@ void HpaeManager::UpdateExtraSceneType(
     SendRequest(request);
     return;
 }
+
+bool IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    AUDIO_INFO_LOG("IsAcousticEchoCancelerSupported SourceType %{public}d", sourceType);
+    return true;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

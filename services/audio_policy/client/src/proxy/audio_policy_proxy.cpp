@@ -2377,5 +2377,23 @@ DirectPlaybackMode AudioPolicyProxy::GetDirectPlaybackSupport(const AudioStreamI
         error);
     return static_cast<DirectPlaybackMode>(reply.ReadInt32());
 }
+
+bool AudioPolicyProxy:::IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, DIRECT_PLAYBACK_NOT_SUPPORTED, "WriteInterfaceToken failed");
+    
+    data.WriteInt32(static_cast<int32_t>(sourceType));
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %{public}d",
+        error);
+    
+    return rely.ReadBool();
+}
 } // namespace AudioStandard
 } // namespace OHOS
