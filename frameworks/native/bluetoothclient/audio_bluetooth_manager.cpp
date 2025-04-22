@@ -292,7 +292,7 @@ void AudioA2dpManager::OnA2dpPlayingStateChanged(const std::string &deviceAddres
 void AudioA2dpManager::CheckA2dpDeviceReconnect()
 {
     std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
-    CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance is null");
+    CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "A2DP profile instance is null");
     std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
     std::vector<BluetoothRemoteDevice> devices;
     a2dpInstance_->GetDevicesByStates(states, devices);
@@ -436,7 +436,7 @@ void AudioHfpManager::UnregisterBluetoothScoListener()
 
 void AudioHfpManager::CheckHfpDeviceReconnect()
 {
-    std::lock_guard<std::shared_mutex> hfpLock(g_hfpInstanceLock);}
+    std::shared_lock<std::shared_mutex> hfpLock(g_hfpInstanceLock);
     CHECK_AND_RETURN_LOG(hfpInstance_ != nullptr, "HFP profile instance unavailable");
     std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
     std::vector<BluetoothRemoteDevice> devices = hfpInstance_->GetDevicesByStates(states);
@@ -463,7 +463,7 @@ void AudioHfpManager::CheckHfpDeviceReconnect()
 
 int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag, BluetoothRemoteDevice &device)
 {
-    std::lock_guard<std::shared_mutex> hfpLock(g_hfpInstanceLock);
+    std::shared_lock<std::shared_mutex> hfpLock(g_hfpInstanceLock);
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
     bool ret = true;
     if (handleFlag) {
@@ -699,7 +699,7 @@ AudioStandard::AudioScene AudioHfpManager::GetPolicyAudioScene()
 
 int32_t AudioHfpManager::Connect(const std::string &macAddress)
 {
-    std::shared_lock<std::shared_mutex> hfpLock(g_hpfInstanceLock);
+    std::shared_lock<std::shared_mutex> hfpLock(g_hfpInstanceLock);
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
     BluetoothRemoteDevice virtualDevice = BluetoothRemoteDevice(macAddress);
     if (HfpBluetoothDeviceManager::IsHfpBluetoothDeviceConnecting(macAddress)) {
