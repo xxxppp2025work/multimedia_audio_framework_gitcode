@@ -2378,7 +2378,7 @@ DirectPlaybackMode AudioPolicyProxy::GetDirectPlaybackSupport(const AudioStreamI
     return static_cast<DirectPlaybackMode>(reply.ReadInt32());
 }
 
-bool AudioPolicyProxy:::IsAcousticEchoCancelerSupported(SourceType sourceType)
+bool AudioPolicyProxy::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     MessageParcel data;
     MessageParcel reply;
