@@ -1763,5 +1763,42 @@ HWTEST(AudioServiceUnitTest, SetDefaultAdapterEnable_001, TestSize.Level1)
     bool result = audioService->GetDefaultAdapterEnable();
     EXPECT_EQ(result, isEnable);
 }
+
+/**
+ * @tc.name  : Test SetSessionMuteState API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServiceSetSessionMuteState_001
+ * @tc.desc  : Test SetSessionMuteState interface.
+ */
+HWTEST(AudioServiceUnitTest, AudioServiceSetSessionMuteState_001, TestSize.Level1)
+{
+    bool muteFlag = true;
+    uint32_t sessionId = 0;
+    uint32_t sessionId2 = 1;
+    uint32_t sessionId3 = 3;
+    bool testFlag = false;
+
+    auto service = AudioService::GetInstance();
+    ASSERT_NE(service, nullptr);
+    service->SetSessionMuteState(sessionId, muteFlag);
+    service->RegisterMuteStateChangeCallback(sessionId2, [&](bool flag) {
+        testFlag = flag;
+    });
+    EXPECT_EQ(testFlag, false);
+    service->RegisterMuteStateChangeCallback(sessionId, [&](bool flag) {
+        testFlag = flag;
+    });
+    EXPECT_EQ(testFlag, muteFlag);
+
+    testFlag = false;
+    service->OnMuteStateChange(sessionId3, muteFlag);
+
+    service->RegisterMuteStateChangeCallback(sessionId3, [&](bool flag) {
+        testFlag = flag;
+    });
+    service->SetSessionMuteState(sessionId3, muteFlag);
+    service->OnMuteStateChange(sessionId3, muteFlag);
+    EXPECT_EQ(testFlag, muteFlag);
+}
 } // namespace AudioStandard
 } // namespace OHOS

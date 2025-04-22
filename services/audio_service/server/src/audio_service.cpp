@@ -329,6 +329,8 @@ void AudioService::RemoveCapturer(uint32_t sessionId)
         return;
     }
     allCapturerMap_.erase(sessionId);
+    muteStateMap_.erase(sessionId);
+    muteStateCallbacks_.erase(sessionId);
     RemoveIdFromMuteControlSet(sessionId);
 }
 
@@ -1420,6 +1422,35 @@ void AudioService::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, 
     uint32_t code)
 {
     AudioVolume::GetInstance()->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
+}
+
+void AudioService::RegisterMuteStateChangeCallback(uint32_t sessionId, const MuteStateChangeCallbck &callback)
+{
+    if (muteStateCallbacks_.count(sessionId) == 0) {
+        muteStateCallbacks_[sessionId] = callback;
+    } else {
+        if (muteStateMap_.count(sessionId) != 0) {
+            bool flag = muteStateMap_[sessionId];
+            muteStateCallbacks_[sessionId](flag);
+        } else {
+            AUDIO_WARNING_LOG("session:%{public}u mute state update failed...", sessionId);
+        }
+    }
+}
+
+void AudioService::SetSessionMuteState(const uint32_t sessionId, const bool muteFlag)
+{
+    muteStateMap_[sessionId] = muteFlag;
+}
+
+void AudioService::OnMuteStateChange(const uint32_t sessionId, const bool muteFlag)
+{
+    if (muteStateCallbacks_.count(sessionId) == 0) {
+        AUDIO_ERR_LOG("session:%{public}u OnMuteStateChange failed...", sessionId);
+        return;
+    }
+    AUDIO_INFO_LOG("OnMuteStateChange: session:%{public}u muteflag=%{public}d", sessionId, muteFlag ? 1 : 0);
+    muteStateCallbacks_[sessionId](muteFlag);
 }
 } // namespace AudioStandard
 } // namespace OHOS

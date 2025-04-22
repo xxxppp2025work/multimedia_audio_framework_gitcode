@@ -249,6 +249,11 @@ public:
         return sharedAudioCapturer_->SetAudioSourceConcurrency(targetSources);
     }
 
+    int32_t SetInterruptStrategy(InterruptStrategy strategy) override
+    {
+        return sharedAudioCapturer_->SetInterruptStrategy(strategy);
+    }
+
     int32_t SetInputDevice(DeviceType deviceType) const override
     {
         return sharedAudioCapturer_->SetInputDevice(deviceType);
