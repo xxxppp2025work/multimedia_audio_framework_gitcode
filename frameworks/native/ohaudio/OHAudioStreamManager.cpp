@@ -94,7 +94,7 @@ OH_AudioCommon_Result OH_AudioStreamManager_IsAcousticEchoCancelerSupported(OH_A
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "sourceType is invalid");
     CHECK_AND_RETURN_RET_LOG(supported != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "supported is nullptr");
     SourceType type = static_cast<SourceType>(sourceType);
-    *supported = ohAudioStreamManager->IsAcousticEchoCancelerSupported(sourceType);
+    *supported = ohAudioStreamManager->IsAcousticEchoCancelerSupported(type);
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
