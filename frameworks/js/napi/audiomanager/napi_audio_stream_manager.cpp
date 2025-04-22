@@ -821,7 +821,7 @@ napi_value NapiAudioStreamMgr::IsAcousticEchoCancelerSupported(napi_env env, nap
     
     bool isSupported = napiStreamMgr->audioStreamMngr_->IsAcousticEchoCancelerSupported(
         static_cast<SourceType>(sourceType));
-    NapiParamUtils:SetValueBoolean(env, isSupported, result);
+    NapiParamUtils::SetValueBoolean(env, isSupported, result);
     return result;
 }
 }  // namespace AudioStandard

@@ -1708,14 +1708,14 @@ void AudioManagerProxy::NotifySettingsDataReady()
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed,error:%d", error);
 }
 
-void AudioManagerProxy::IsAcousticEchoCancelerSupported(SourceType sourceType)
+bool AudioManagerProxy::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
     data.WriteInt32(static_cast<int32_t>(sourceType));
 
     int32_t error = Remote()->SendRequest(

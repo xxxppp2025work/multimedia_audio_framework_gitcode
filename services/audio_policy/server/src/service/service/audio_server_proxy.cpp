@@ -593,7 +593,7 @@ void AudioServerProxy::SetDeviceConnectedFlag(bool flag)
 bool AudioServerProxy::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     bool res = gsp->IsAcousticEchoCancelerSupported(sourceType);
     IPCSkeleton::SetCallingIdentity(identity);

@@ -2385,7 +2385,7 @@ bool AudioPolicyProxy::IsAcousticEchoCancelerSupported(SourceType sourceType)
     MessageOption option;
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, DIRECT_PLAYBACK_NOT_SUPPORTED, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
     
     data.WriteInt32(static_cast<int32_t>(sourceType));
     int error = Remote()->SendRequest(
