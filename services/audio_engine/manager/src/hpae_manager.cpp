@@ -1913,7 +1913,7 @@ void HpaeManager::UpdateExtraSceneType(
     return;
 }
 
-bool IsAcousticEchoCancelerSupported(SourceType sourceType)
+bool HpaeManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     AUDIO_INFO_LOG("IsAcousticEchoCancelerSupported SourceType %{public}d", sourceType);
     return true;
