@@ -36,7 +36,7 @@ public:
     std::shared_ptr<AudioPolicyManagerStub> stub_ = nullptr;
     MessageParcel data;
     MessageParcel reply;
-    MessageParcel option;
+    MessageOption option;
 };
 } // namespace AudioStandard
 } // namespace OHOS

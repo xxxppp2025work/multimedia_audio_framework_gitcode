@@ -36,7 +36,7 @@ public:
     sptr<AudioZoneClient> client_ = nullptr;
     MessageParcel data;
     MessageParcel reply;
-    MessageParcel option;
+    MessageOption option;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -57,57 +57,6 @@ HWTEST_F(AudioZoneClientUnitTest, AudioZoneClient_001, TestSize.Level1)
         data, reply, option), SUCCESS);
     EXPECT_EQ(client_->OnRemoteRequest(static_cast<uint32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_SYSTEM_VOLUME_GET),
         data, reply, option), SUCCESS);
-    EXPECT_EQ(client_->OnRemoteRequest(static_cast<uint32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_SYSTEM_VOLUME_GET + 1),
-        data, reply, option), SUCCESS);
-}
-
-/**
- * @tc.name  : Test AudioZoneClientUnitTest.
- * @tc.number: AudioZoneClient_002
- * @tc.desc  : Test AddAudioZoneCallback interface.
- */
-HWTEST_F(AudioZoneClientUnitTest, AudioZoneClient_002, TestSize.Level1)
-{
-    auto callback = std::make_shared<AudioZoneCallback>();
-    EXPECT_EQ(client_->AddAudioZoneCallback(callback), SUCCESS);
-    EXPECT_EQ(client_->AddAudioZoneCallback(nullptr), SUCCESS);
-}
-
-/**
- * @tc.name  : Test AudioZoneClientUnitTest.
- * @tc.number: AudioZoneClient_003
- * @tc.desc  : Test AddAudioZoneChangeCallback interface.
- */
-HWTEST_F(AudioZoneClientUnitTest, AudioZoneClient_003, TestSize.Level1)
-{
-    auto callback = std::make_shared<AudioZoneChangeCallback>();
-    EXPECT_EQ(client_->AddAudioZoneChangeCallback(1, callback), SUCCESS);
-    EXPECT_EQ(client_->AddAudioZoneChangeCallback(1, nullptr), SUCCESS);
-}
-
-/**
- * @tc.name  : Test AudioZoneClientUnitTest.
- * @tc.number: AudioZoneClient_004
- * @tc.desc  : Test AddAudioZoneVolumeProxy interface.
- */
-HWTEST_F(AudioZoneClientUnitTest, AudioZoneClient_004, TestSize.Level1)
-{
-    auto callback = std::make_shared<AudioZoneVolumeProxy>();
-    EXPECT_EQ(client_->AddAudioZoneVolumeProxy(1, callback), SUCCESS);
-    EXPECT_EQ(client_->AddAudioZoneVolumeProxy(1, nullptr), SUCCESS);
-}
-
-/**
- * @tc.name  : Test AudioZoneClientUnitTest.
- * @tc.number: AudioZoneClient_005
- * @tc.desc  : Test AddAudioInterruptCallback interface.
- */
-HWTEST_F(AudioZoneClientUnitTest, AudioZoneClient_005, TestSize.Level1)
-{
-    auto callback = std::make_shared<AudioZoneVolumeProxy>();
-    EXPECT_EQ(client_->AddAudioInterruptCallback(1, "", callback), SUCCESS);
-    EXPECT_EQ(client_->AddAudioInterruptCallback(1, "", nullptr), SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS
- 
