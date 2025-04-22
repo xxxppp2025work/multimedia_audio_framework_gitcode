@@ -1169,6 +1169,7 @@ bool NapiAudioEnum::IsLegalCapturerType(int32_t type)
         case TYPE_VOICE_TRANSCRIPTION:
         case TYPE_CAMCORDER:
         case TYPE_UNPROCESSED:
+        case TYPE_LIVE:
             result = true;
             break;
         default:

@@ -597,7 +597,7 @@ bool AudioServerProxy::IsAcousticEchoCancelerSupported(SourceType sourceType)
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     bool res = gsp->IsAcousticEchoCancelerSupported(sourceType);
     IPCSkeleton::SetCallingIdentity(identity);
-    retrun res;
+    return res;
 }
 }
 }
