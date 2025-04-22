@@ -19,7 +19,7 @@
 #include "sink/i_audio_render_sink.h"
 #include <iostream>
 #include <cstring>
-#include "audio_proxy_manager.h"
+#include "bluetooth_interface/audio_proxy_manager.h"
 #include "util/audio_running_lock.h"
 #include "util/callback_wrapper.h"
 
