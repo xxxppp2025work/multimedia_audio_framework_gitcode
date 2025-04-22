@@ -38,15 +38,15 @@ public:
 
 private:
     struct AudioVolumeManagerAsyncContext : public ContextBase {
-        int32_t deviceFlag;
+        int32_t deviceFlag = 0;
         bool bArgTransFlag = true;
-        int32_t groupId;
-        int32_t intValue;
-        int32_t ringMode;
+        int32_t groupId = 0;
+        int32_t intValue = 0;
+        int32_t ringMode = 0;
         bool isMute;
         bool isTrue;
-        int32_t volLevel;
-        int32_t appUid;
+        int32_t volLevel = 0;
+        int32_t appUid = 0;
         bool isOwned;
         std::string networkId;
         std::vector<sptr<VolumeGroupInfo>> volumeGroupInfos;

@@ -34,29 +34,29 @@ public:
 
 private:
     struct AudioVolumeGroupManagerAsyncContext : public ContextBase {
-        int32_t volType;
-        int32_t volLevel;
-        int32_t volFlag;
-        int32_t deviceType;
-        int32_t ringMode;
-        int32_t scene;
-        int32_t deviceFlag;
-        int32_t intValue;
-        int32_t groupId;
-        int32_t adjustType;
-        int32_t volumeAdjustStatus;
+        int32_t volType = 0;
+        int32_t volLevel = 0;
+        int32_t volFlag = 0;
+        int32_t deviceType = 0;
+        int32_t ringMode = 0;
+        int32_t scene = 0;
+        int32_t deviceFlag = 0;
+        int32_t intValue = 0;
+        int32_t groupId = 0;
+        int32_t adjustType = 0;
+        int32_t volumeAdjustStatus = 0;
         bool isMute;
         bool isActive;
         bool isTrue;
         double volumeInDb;
         std::string key;
         std::string valueStr;
-        int32_t networkId;
+        int32_t networkId = 0;
         double inputMaxAmplitude;
         double outputMaxAmplitude;
         bool inputBArgTransFlag;
         bool outputBArgTransFlag;
-        int32_t policyType;
+        int32_t policyType = 0;
         std::shared_ptr<AudioDeviceDescriptor> inputDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();;
         std::shared_ptr<AudioDeviceDescriptor> outputDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();;
     };

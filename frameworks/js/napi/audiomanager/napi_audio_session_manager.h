@@ -36,9 +36,9 @@ public:
 
 private:
     struct AudioSessionMgrAsyncContext : public ContextBase {
-        int32_t intValue;
-        int32_t volType;
-        int32_t contentType;
+        int32_t intValue = 0;
+        int32_t volType = 0;
+        int32_t contentType = 0;
         bool isTrue;
         bool isActive;
         NapiAudioSessionMgr *objectInfo;

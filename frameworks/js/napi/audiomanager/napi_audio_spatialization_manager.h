@@ -40,7 +40,7 @@ struct AudioSpatializationManagerAsyncContext : public ContextBase {
     std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     bool spatializationEnable;
     bool headTrackingEnable;
-    int32_t intValue;
+    int32_t intValue = 0;
     AudioSpatialDeviceState spatialDeviceState;
 };
     static bool CheckContextStatus(std::shared_ptr<AudioSpatializationManagerAsyncContext> context);
