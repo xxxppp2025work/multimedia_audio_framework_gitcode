@@ -22,6 +22,7 @@
 #include "audio_enhance_chain_manager.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "i_hpae_manager.h"
 #include "audio_utils.h"
 
 namespace OHOS {
@@ -444,7 +445,7 @@ bool AudioServer::IsAcousticEchoCancelerSupported(SourceType sourceType)
         return HPAE::IHpaeManager::GetHpaeManager()->IsAcousticEchoCancelerSupported(sourceType);
     } else {
         AUDIO_WARNING_LOG("Not Supported");
-        return false
+        return false;
     }
 }
 } // namespace AudioStandard
