@@ -44,6 +44,7 @@ using OHOS::AudioStandard::AudioChannel;
 using OHOS::AudioStandard::AudioChannelLayout;
 using OHOS::AudioStandard::StreamUsage;
 using OHOS::AudioStandard::DirectPlaybackMode;
+using OHOS::AudioStandard::SourceType;
 
 static OHOS::AudioStandard::OHAudioStreamManager *convertManager(OH_AudioStreamManager* manager)
 {
@@ -94,7 +95,7 @@ OH_AudioCommon_Result OH_AudioStreamManager_IsAcousticEchoCancelerSupported(OH_A
     CHECK_AND_RETURN_RET_LOG(supported != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "supported is nullptr");
     SourceType type = static_cast<SourceType>(sourceType);
     *supported = ohAudioStreamManager->IsAcousticEchoCancelerSupported(sourceType);
-    retrun AUDIOCOMMON_RESULT_SUCCESS;
+    return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
 namespace OHOS {
@@ -119,7 +120,7 @@ OH_AudioStream_DirectPlaybackMode OHAudioStreamManager::GetDirectPlaybackSupport
     return static_cast<OH_AudioStream_DirectPlaybackMode>(mode);
 }
 
-nool OHAudioStreamManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
+bool OHAudioStreamManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr, AUDIOSTREAM_DIRECT_PLAYBACK_NOT_SUPPORTED,
         "failed, audioStreamManager_ is null");
