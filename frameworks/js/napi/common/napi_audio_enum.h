@@ -69,6 +69,11 @@ public:
         INDEPENDENT_MODE = 1
     };
 
+    enum InterruptStrategy {
+        DEFAULT = 0,
+        MUTE = 1
+    };
+
     enum FocusType {
         FOCUS_TYPE_RECORDING
     };

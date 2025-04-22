@@ -32,16 +32,22 @@ enum ActionTarget {
 
 enum AudioFocuState {
     ACTIVE = 0,
-    DUCK = 1,
-    PAUSE = 2,
-    STOP = 3,
-    PLACEHOLDER = 4,
-    PAUSEDBYREMOTE = 5,
+    MUTED,
+    DUCK,
+    PAUSE,
+    STOP,
+    PLACEHOLDER,
+    PAUSEDBYREMOTE,
 };
 
 enum InterruptMode {
     SHARE_MODE = 0,
     INDEPENDENT_MODE = 1
+};
+
+enum InterruptStrategy {
+    DEFAULT = 0,
+    MUTE = 1,
 };
 
 /**
@@ -79,7 +85,9 @@ enum InterruptHint {
     INTERRUPT_HINT_PAUSE,
     INTERRUPT_HINT_STOP,
     INTERRUPT_HINT_DUCK,
-    INTERRUPT_HINT_UNDUCK
+    INTERRUPT_HINT_UNDUCK,
+    INTERRUPT_HINT_MUTE,
+    INTERRUPT_HINT_UNMUTE
 };
 
 enum InterruptForceType {
@@ -213,6 +221,7 @@ public:
     AudioSessionStrategy sessionStrategy = { AudioConcurrencyMode::INVALID };
     int32_t api = 0;
     int32_t state {-1};
+    InterruptStrategy strategy { InterruptStrategy::DEFAULT };
 
     AudioInterrupt() = default;
     AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,
@@ -241,6 +250,7 @@ public:
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.sessionStrategy.concurrencyMode));
         res = res && parcel.WriteInt32(interrupt.api);
         res = res && parcel.WriteInt32(interrupt.state);
+        res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.strategy));
         return res;
     }
     static void Unmarshalling(Parcel &parcel, AudioInterrupt &interrupt)
@@ -269,6 +279,7 @@ public:
         interrupt.sessionStrategy.concurrencyMode = static_cast<AudioConcurrencyMode>(parcel.ReadInt32());
         interrupt.api = parcel.ReadInt32();
         interrupt.state = parcel.ReadInt32();
+        interrupt.strategy = static_cast<InterruptStrategy>(parcel.ReadInt32());
     }
 };
 } // namespace AudioStandard

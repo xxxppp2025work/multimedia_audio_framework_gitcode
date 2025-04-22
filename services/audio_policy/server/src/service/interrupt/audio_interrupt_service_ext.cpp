@@ -139,5 +139,35 @@ uint32_t AudioInterruptService::AudioInterruptClient::GetCallingUid()
     return callingUid_;
 }
 
+bool AudioInterruptService::CanRecordingInterrupted(const AudioInterrupt &audioInterrupt)
+{
+    return audioInterrupt.strategy != InterruptStrategy::MUTE;
+}
+
+void AudioInterruptService::HandleHiberateStateChange(bool onHibernate)
+{
+    AUDIO_INFO_LOG("onHibernate_: %{public}d", onHibernate_ ? 1 : 0);
+    onHibernate_ = onHibernate;
+}
+
+void AudioInterruptService::SetSessionMuteState(uint32_t sessionId, bool muteFlag)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "error for gsp null");
+    gsp->SetSessionMuteState(sessionId, muteFlag);
+}
+
+void AudioInterruptService::OnMuteStateChange(const InterruptEventInternal &interruptEvent,
+    const uint32_t &streamId)
+{
+    CHECK_AND_RETURN_LOG(interruptEvent.hintType == INTERRUPT_HINT_MUTE ||
+        interruptEvent.hintType == INTERRUPT_HINT_UNMUTE, "OnMuteStateChange unsupported type:%{public}d",
+        interruptEvent.hintType);
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "GetAudioServerProxy failed");
+    bool muteFlag = interruptEvent.hintType == INTERRUPT_HINT_MUTE;
+    gsp->OnMuteStateChange(streamId, muteFlag);
+}
+
 }
 } // namespace OHOS
