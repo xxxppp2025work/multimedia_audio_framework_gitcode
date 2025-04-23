@@ -22,7 +22,6 @@
 #include "audio_enhance_chain_manager.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
-#include "i_hpae_manager.h"
 #include "audio_utils.h"
 
 namespace OHOS {
@@ -440,13 +439,8 @@ bool AudioServer::IsAcousticEchoCancelerSupported(SourceType sourceType)
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), false,
         "IsAcousticEchoCancelerSupported refused for %{public}d", callingUid);
-    int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1) {
-        return HPAE::IHpaeManager::GetHpaeManager()->IsAcousticEchoCancelerSupported(sourceType);
-    } else {
-        AUDIO_WARNING_LOG("Not Supported");
-        return false;
-    }
+    AUDIO_WARNING_LOG("Not Supported");
+    return false;
 }
 } // namespace AudioStandard
 } // namespace OHOS
