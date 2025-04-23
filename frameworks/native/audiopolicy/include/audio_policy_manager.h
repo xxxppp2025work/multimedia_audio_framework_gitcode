@@ -562,6 +562,10 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute);
 
+    int32_t NofitySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession);
+
+    int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze);
+
     static void RegisterServerDiedCallBack(AudioServerDiedCallBack func);
 
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);

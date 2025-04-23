@@ -2298,6 +2298,20 @@ int32_t AudioPolicyManager::SetQueryAllowedPlaybackCallback(
     return gsp->SetQueryAllowedPlaybackCallback(object);
 }
 
+int32_t AudioPolicyManager::NofitySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->NofitySessionStateChange(uid, pid, hasSession);
+}
+
+int32_t AudioPolicyManager::NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->NotifyFreezeStateChange(pidList, isFreeze);
+}
+
 int32_t AudioPolicyManager::SetAudioFormatUnsupportedErrorCallback(
     const std::shared_ptr<AudioFormatUnsupportedErrorCallback> &callback)
 {

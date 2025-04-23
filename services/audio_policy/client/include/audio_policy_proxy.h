@@ -443,6 +443,10 @@ public:
 
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) override;
 
+    int32_t NofitySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession) override;
+
+    int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze) override;
+
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
         const StreamUsage &streamUsage) override;
 private:

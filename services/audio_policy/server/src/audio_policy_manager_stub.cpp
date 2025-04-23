@@ -224,6 +224,8 @@ const char *g_audioPolicyCodeStrs[] = {
     "DEACTIVATE_PREEMPT_MODE",
     "GET_DM_DEVICE_TYPE",
     "GET_DIRECT_PLAYBACK_SUPPORT",
+    "NOFITY_SESSION_STATE_CHANGE",
+    "NOFITY_FREEZE_STATE_CHANGE",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1239,6 +1241,29 @@ void AudioPolicyManagerStub::SetQueryBundleNameListCallbackInternal(MessageParce
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::NofitySessionStateChangeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t uid = data.ReadInt32();
+    int32_t pid = data.ReadInt32();
+    bool hasSession = data.ReadBool();
+
+    int32_t result = NofitySessionStateChange(uid, pid, hasSession);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::NotifyFreezeStateChangeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::set<int32_t> pidList;
+    bool isFreeze = data.ReadBool();
+    int32_t pidListSize = data.ReadInt32();
+    for (int32_t i = 0; i < pidListSize; i ++) {
+        pidList.insert(data.ReadInt32());
+    }
+
+    int32_t result = NotifyFreezeStateChange(pidList, isFreeze);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -1248,6 +1273,12 @@ void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DIRECT_PLAYBACK_SUPPORT):
             GetDirectPlaybackSupportInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::NOFITY_SESSION_STATE_CHANGE):
+            NofitySessionStateChangeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::NOFITY_FREEZE_STATE_CHANGE):
+            NotifyFreezeStateChangeInternal(data, reply);
             break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");

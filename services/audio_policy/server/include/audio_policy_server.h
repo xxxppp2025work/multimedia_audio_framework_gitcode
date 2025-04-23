@@ -507,6 +507,10 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
 
+    int32_t NofitySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession) override;
+
+    int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze) override;
+
     int32_t SetVirtualCall(const bool isVirtual) override;
 
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
