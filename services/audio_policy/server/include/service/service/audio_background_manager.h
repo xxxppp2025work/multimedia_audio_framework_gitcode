@@ -53,7 +53,7 @@ public:
 
 private:
     AudioBackgroundManager() : streamCollector_(AudioStreamCollector::GetAudioStreamCCollector()) {}
-    ~AudioBackgroundManager()
+    ~AudioBackgroundManager() {}
    
 private:
     AudioStreamCollector& streamCollector_;
