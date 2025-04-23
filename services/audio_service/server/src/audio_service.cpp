@@ -76,6 +76,7 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
             if (!isSwitchStream) {
                 AUDIO_INFO_LOG("is not switch stream, remove from mutedSessions_");
                 RemoveIdFromMuteControlSet((*paired).first->GetSessionId());
+                PolicyHandler::GetInstance().DeleteSessionId((*paired).first->GetSessionId());
             }
             ret = UnlinkProcessToEndpoint((*paired).first, (*paired).second);
             if ((*paired).second->GetStatus() == AudioEndpoint::EndpointStatus::UNLINKED) {
@@ -275,6 +276,7 @@ void AudioService::RemoveRenderer(uint32_t sessionId)
         return;
     }
     allRendererMap_.erase(sessionId);
+    PolicyHandler::GetInstance().DeleteSessionId(sessionId);
     RemoveIdFromMuteControlSet(sessionId);
 }
 
@@ -294,6 +296,7 @@ void AudioService::RemoveCapturer(uint32_t sessionId)
         return;
     }
     allCapturerMap_.erase(sessionId);
+    PolicyHandler::GetInstance().DeleteSessionId(sessionId);
     RemoveIdFromMuteControlSet(sessionId);
 }
 

@@ -47,6 +47,8 @@ public:
 
     uint32_t GenerateSessionId(int32_t uid);
 
+    bool IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId);
+
     DeviceType GetActiveOutPutDevice();
 
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config);
@@ -70,6 +72,8 @@ public:
     int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
 private:
     PolicyHandler();
+    void AddSessionId(const uint32_t sessionId);
+    void DeleteSessionId(const uint32_t sessionId);
     sptr<IPolicyProviderIpc> iPolicyProvider_ = nullptr;
 
 private:
@@ -78,6 +82,10 @@ private:
     volatile bool *sharedAbsVolumeScene_ = nullptr;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     bool isHighResolutionExist_ = false;
+
+    // Save the relationship of uid and session id.
+    std::map<uint32_t, uid_t> sessionIdMap_;
+    std::mutex sessionIdMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

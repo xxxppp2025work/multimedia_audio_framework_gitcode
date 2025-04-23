@@ -386,6 +386,15 @@ int AudioManagerStub::HandleSetVoiceVolume(MessageParcel &data, MessageParcel &r
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleIsStreamBelongToUid(MessageParcel &data, MessageParcel &reply)
+{
+    const uint32_t uid = data.ReadUint32();
+    const uint32_t sessionId = data.ReadUint32();
+    bool result = IsStreamBelongToUid(uid, sessionId);
+    reply.WriteBool(result);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleSetAudioMonoState(MessageParcel &data, MessageParcel &reply)
 {
     bool audioMonoState = data.ReadBool();
@@ -698,6 +707,8 @@ int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, Me
             return HandleSetAudioEffectPropertyV3(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GET_STANDBY_STATUS):
             return HandleGetStandbyStatus(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::IS_STREAM_BELONG_TO_UID):
+            return HandleIsStreamBelongToUid(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);

@@ -81,7 +81,8 @@ namespace AudioStandard {
         CREATE_IPC_OFFLINE_STREAM,
         GET_OFFLINE_AUDIO_EFFECT_CHAINS,
         GET_STANDBY_STATUS,
-        AUDIO_SERVER_CODE_MAX = GET_STANDBY_STATUS,
+        IS_STREAM_BELONG_TO_UID,
+        AUDIO_SERVER_CODE_MAX = IS_STREAM_BELONG_TO_UID,
     };
 } // namespace AudioStandard
 } // namespace OHOS

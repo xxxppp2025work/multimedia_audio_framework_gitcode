@@ -722,6 +722,11 @@ int32_t AudioServer::SetVoiceVolume(float volume)
     return ERROR;
 }
 
+bool AudioServer::IsStreamBelongToUid(const uint32_t uid, const uint32_t sessionId)
+{
+    return PolicyHandler::GetInstance().IsStreamBelongToUid(uid, sessionId);
+}
+
 int32_t AudioServer::OffloadSetVolume(float volume)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
