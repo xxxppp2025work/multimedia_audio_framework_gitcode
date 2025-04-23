@@ -52,12 +52,10 @@ public:
     int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, bool isFreeze);
 
 private:
-    AudioBackgroundManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
-        streamCollector_(AudioStreamCollector::GetAudioStreamCCollector()) {}
+    AudioBackgroundManager() : streamCollector_(AudioStreamCollector::GetAudioStreamCCollector()) {}
     ~AudioBackgroundManager()
    
 private:
-    IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;
 
     sptr<IStandardAudioAnahsManagerListener> policyManagerListener_;
