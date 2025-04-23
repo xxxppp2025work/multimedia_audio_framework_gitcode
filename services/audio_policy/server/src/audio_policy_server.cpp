@@ -3942,6 +3942,25 @@ int32_t AudioPolicyServer::SetVoiceRingtoneMute(bool isMute)
     return audioPolicyService_.SetVoiceRingtoneMute(isMute);
 }
 
+int32_t AudioPolicyServer::NofitySessionStateChange(const int32_t uid, const int32_t pid, bool hasSession)
+{
+    constexpr int32_t avSessionUid = 6700; // "uid" : "av_session"
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    // This function can only be used by av_session
+    CHECK_AND_RETURN_RET_LOG(callerUid == avSessionUid, ERROR,
+        "SetQueryAllowedPlaybackCallback callerUid is error: not av_session");
+    return audioPolicyService_.NofitySessionStateChange(uid, pid, hasSession);
+}
+
+int32_t AudioPolicyServer::NotifyFreezeStateChange(const std::set<int32_t> &pidList, bool isFreeze)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    // This function can only be used by RSS
+    CHECK_AND_RETURN_RET_LOG(callerUid == UID_RESOURCE_SCHEDULE_SERVICE, ERROR,
+        "SetVoiceRingtoneMute callerUid is error: not RSS");
+    return audioPolicyService_.NotifyFreezeStateChange(pidList, isFreeze);
+}
+
 int32_t AudioPolicyServer::SetVirtualCall(const bool isVirtual)
 {
     constexpr int32_t meetServiceUid = 5523; // "uid" : "meetservice"
