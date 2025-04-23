@@ -76,6 +76,7 @@
 #include "audio_device_lock.h"
 #include "audio_capturer_session.h"
 #include "audio_device_status.h"
+#include "audio_background_manager.h"
 #include "audio_global_config_manager.h"
 
 namespace OHOS {
@@ -477,6 +478,8 @@ public:
     bool IsCurrentActiveDeviceA2dp();
 
     int32_t SetVoiceRingtoneMute(bool isMute);
+    int32_t NofitySessionStateChange(const int32_t uid, const int32_t pid, bool hasSession);
+    int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, bool isFreeze);
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
@@ -529,6 +532,7 @@ private:
         audioActiveDevice_(AudioActiveDevice::GetInstance()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
         audioSceneManager_(AudioSceneManager::GetInstance()),
+        audioBackgroundManager_(audioBackgroundManager::GetInstance()),
         audioOffloadStream_(AudioOffloadStream::GetInstance()),
         audioVolumeManager_(AudioVolumeManager::GetInstance()),
         audioEcManager_(AudioEcManager::GetInstance()),
@@ -685,6 +689,7 @@ private:
     AudioActiveDevice& audioActiveDevice_;
     AudioA2dpDevice& audioA2dpDevice_;
     AudioSceneManager& audioSceneManager_;
+    AudioBackgroundManager& audioBackgroundManager_;
     AudioOffloadStream& audioOffloadStream_;
     AudioVolumeManager& audioVolumeManager_;
     AudioEcManager& audioEcManager_;
