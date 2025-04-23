@@ -1387,6 +1387,27 @@ public:
     */
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime);
 
+    /**
+    * @brief Set App AVSession state change.
+    *
+    * @param uid Specifies uid of app.
+    * @param pid Specifies pid of app.
+    * @param hasSession Specifies whether app has AVSession.
+    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+    * in {@link audio_errors.h}.
+    */
+   int32_t NofitySessionStateChange(const int32_t uid, const int32_t pid, bool hasSession);
+
+    /**
+    * @brief Set App Freeze state change.
+    *
+    * @param pidList Specifies all pid list to change state.
+    * @param isFreeze Specifies Freeze or Unfreeze state.
+    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+    * in {@link audio_errors.h}.
+    */
+   int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, bool isFreeze);
+
 #ifdef HAS_FEATURE_INNERCAPTURER
     /**
     * @brief check capture limit
