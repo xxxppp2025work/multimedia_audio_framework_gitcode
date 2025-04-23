@@ -228,6 +228,7 @@ private:
     void SetQueryBundleNameListCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void NofitySessionStateChangeInternal(MessageParcel &data, MessageParcel &reply);
     void NotifyFreezeStateChangeInternal(MessageParcel &data, MessageParcel &reply);
+    void IsAcousticEchoCancelerSupportedInternal(MessageParcel &data, MessageParcel &reply);
 
     void OnMiddleEleRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleTenRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
