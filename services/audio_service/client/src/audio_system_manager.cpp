@@ -1797,5 +1797,17 @@ uint16_t AudioSystemManager::GetDmDeviceType() const
 {
     return AudioPolicyManager::GetInstance().GetDmDeviceType();
 }
+
+int32_t AudioSystemManager::NofitySessionStateChange(const int32_t uid, const int32_t pid, bool hasSession)
+{
+    AUDIO_INFO_LOG("Set uid:%{public}d, pid:%{public}d, Session state:%{public}d", uid, pid, hasSession);
+    return AudioPolicyManager::GetInstance().NofitySessionStateChange(uid, pid, hasSession);
+}
+
+int32_t AudioSystemManager::NotifyFreezeStateChange(const std::set<int32_t> &pidList, bool isFreeze)
+{
+    AUDIO_INFO_LOG("Set %{public}d pids Freeze State :%{public}d", pidList.size(), isFreeze);
+    return AudioPolicyManager::GetInstance().NotifyFreezeStateChange(pidList, isFreeze);
+}
 } // namespace AudioStandard
 } // namespace OHOS
