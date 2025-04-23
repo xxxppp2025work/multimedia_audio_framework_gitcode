@@ -251,6 +251,8 @@ private:
     bool GetStreamMuteInternal(AudioStreamType streamType);
     int32_t SetRingerModeInternal(AudioRingerMode ringerMode);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
+    int32_t GetDefaultVolumeLevel(std::unordered_map<AudioStreamType, int32_t> &volumeLevelMapTemp,
+        AudioVolumeType volumeType, DeviceType deviceType) const;
     void InitKVStoreInternal(void);
     void DeleteAudioPolicyKvStore();
     void TransferMuteStatus(void);
