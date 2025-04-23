@@ -599,7 +599,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetDeviceDescr
 {
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(rendererChangeInfo->clientUID);
-    if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
+    if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_ &&
+        rendererChangeInfo->rendererInfo.streamUsage == STREAM_USAGE_ENFORCED_TONE) {
         descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
     } else if (zoneId != 0) {
         descs = AudioZoneService::GetInstance().FetchOutputDevices(zoneId,
