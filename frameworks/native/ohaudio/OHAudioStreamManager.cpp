@@ -87,12 +87,12 @@ OH_AudioCommon_Result OH_AudioStreamManager_GetDirectPlaybackSupport(
 OH_AudioCommon_Result OH_AudioStreamManager_IsAcousticEchoCancelerSupported(OH_AudioStreamManager *audioStreamManager,
     OH_AudioStream_SourceType sourceType, bool *supported)
 {
+    CHECK_AND_RETURN_RET_LOG(supported != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "supported is nullptr");
     OHAudioStreamManager *ohAudioStreamManager = convertManager(audioStreamManager);
     CHECK_AND_RETURN_RET_LOG(ohAudioStreamManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioStreamManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(VALID_OH_SOURCE_TYPES.count(sourceType) != 0,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "sourceType is invalid");
-    CHECK_AND_RETURN_RET_LOG(supported != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "supported is nullptr");
     SourceType type = static_cast<SourceType>(sourceType);
     *supported = ohAudioStreamManager->IsAcousticEchoCancelerSupported(type);
     return AUDIOCOMMON_RESULT_SUCCESS;

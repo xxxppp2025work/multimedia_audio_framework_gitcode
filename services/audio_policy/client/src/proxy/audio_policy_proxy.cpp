@@ -2388,6 +2388,7 @@ bool AudioPolicyProxy::IsAcousticEchoCancelerSupported(SourceType sourceType)
     CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
     
     data.WriteInt32(static_cast<int32_t>(sourceType));
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, false, "Remote() is nullptr");
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %{public}d",
