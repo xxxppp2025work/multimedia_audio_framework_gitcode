@@ -70,6 +70,8 @@ namespace {
     constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
     constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
     static const int32_t ONE_MINUTE = 60;
+    const int32_t DUP_COMMON_LEN = 40; // 40 -> 40ms
+    const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
 }
 
 AudioSampleFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
@@ -165,7 +167,19 @@ int32_t AudioEndpointInner::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer
 MockCallbacks::MockCallbacks(uint32_t streamIndex) : streamIndex_(streamIndex)
 {
     AUDIO_INFO_LOG("DupStream %{public}u create MockCallbacks", streamIndex_);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        dumpDupOutFileName_ = std::to_string(streamIndex_) + "_endpoint_dup_out_" + ".pcm";
+        DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpDupOutFileName_, &dumpDupOut_);
+    }
 }
+
+MockCallbacks::~MockCallbacks()
+{
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        DumpFileUtil::CloseDumpFile(&dumpDupOut_);
+    }
 
 void MockCallbacks::OnStatusUpdate(IOperation operation)
 {
@@ -181,7 +195,25 @@ int32_t MockCallbacks::OnWriteData(size_t length)
 int32_t MockCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
 {
     Trace trace("DupStream::OnWriteData length " + std::to_string(requestDataLen));
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1 && dupRingBuffer_ != nullptr) {
+        OptResult result = dupRingBuffer_->GetReadableSize();
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
+            "dupBuffer get readable size failed, size is:%{public}zu", result.size);
+        CHECK_AND_RETURN_RET_LOG((result.size != 0) && (result.size >= requestDataLen), ERROR,
+            "Readable size is invaild, result.size:%{public}zu, requstDataLen:%{public}zu",
+            result.size, requestDataLen);
+        AUDIO_DEBUG_LOG("requstDataLen is:%{public}zu readSize is:%{public}zu", requestDataLen, result.size);
+        result = dupRingBuffer_->Dequeue({reinterpret_cast<uint8_t *>(inputData), requestDataLen});
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "dupBuffer dequeue failed");\
+        DumpFileUtil::WriteDumpFile(dumpDupOut_, static_cast<void *>(inputData), requestDataLen);
+    }
     return SUCCESS;
+}
+
+std::unique_ptr<AudioRingCache>& MockCallbacks::GetDupRingBuffer()
+{
+    return dupRingBuffer_;
 }
 
 bool AudioEndpointInner::ShouldInnerCap(int32_t innerCapId)
@@ -230,9 +262,14 @@ int32_t AudioEndpointInner::InitDupStream(int32_t innerCapId)
         ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
     uint32_t dupStreamIndex = captureInfo.dupStream->GetStreamIndex();
 
-    dupStreamCallback_ = std::make_shared<MockCallbacks>(dupStreamIndex);
-    captureInfo.dupStream->RegisterStatusCallback(dupStreamCallback_);
-    captureInfo.dupStream->RegisterWriteCallback(dupStreamCallback_);
+    innerCapIdToDupStreamCallbackMap_[innerCapId] = std::make_shared<MockCallbacks>(dupStreamIndex);
+    captureInfo.dupStream->RegisterStatusCallback(innerCapIdToDupStreamCallbackMap_[innerCapId]);
+    captureInfo.dupStream->RegisterWriteCallback(innerCapIdToDupStreamCallbackMap_[innerCapId]);
+
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        InitProAudioDupBuffer(processConfig, innerCapId, dupStreamIndex); // buffer init
+    }
 
     // eg: /data/local/tmp/LocalDevice6_0_c2s_dup_48000_2_1.pcm
     AudioStreamInfo tempInfo = processConfig.streamInfo;
@@ -260,7 +297,24 @@ int32_t AudioEndpointInner::InitDupStream(int32_t innerCapId)
         captureInfo.dupStream->Start();
     }
     captureInfo.isInnerCapEnabled = true;
+    float clientVolume = dstAudioBuffer_->GetStreamVolume();
+    float duckFactor = dstAudioBuffer_->GetDuckFactor();
+    AudioVolume::GetInstance()->SetStreamVolume(dupStreamIndex, clientVolume);
+    AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(dupStreamIndex, duckFactor);
+
     return SUCCESS;
+}
+
+void AudioEndpointInner::InitProAudioDupBuffer(AudioProcessConfig processConfig, int32_t innerCapId, uint32_t dupStreamIndex)
+{
+    ret = CreateDupBufferInner(innerCapId);
+    dumpDupInFileName_ = std::to_string(dupStreamIndex) + "_endpoint_dup_in_" + ".pcm";
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpDupInFileName_, &dumpDupIn_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Config dup buffer failed");
+    bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig.appInfo.appUid);
+    AudioVolume::GetInstance()->AddStreamVolume(dupStreamIndex, processConfig.streamType,
+        processConfig.rendererInfo.streamUsage, processConfig.appInfo.appUid, processConfig.appInfo.appPid,
+        isSystemApp, processConfig.rendererInfo.volumeMode);
 }
 
 int32_t AudioEndpointInner::EnableFastInnerCap(int32_t innerCapId)
@@ -319,6 +373,8 @@ int32_t AudioEndpointInner::HandleDisableFastCap(CaptureInfo &captureInfo)
     captureInfo.isInnerCapEnabled = false;
     AUDIO_INFO_LOG("Disable dup renderer %{public}d with Endpoint status: %{public}s",
         captureInfo.dupStream->GetStreamIndex(), GetStatusStr(endpointStatus_).c_str());
+    uint32_t dupStreamIndex = captureInfo.dupStream->GetStreamIndex();
+    AudioVolume::GetInstance()->RemoveStreamVolume(dupStreamIndex);
     IStreamManager::GetDupPlaybackManager().ReleaseRender(captureInfo.dupStream->GetStreamIndex());
     captureInfo.dupStream = nullptr;
     return SUCCESS;
@@ -1214,8 +1270,17 @@ void AudioEndpointInner::MixToDupStream(const std::vector<AudioStreamData> &srcD
     temp.bufLength = dupBufferSize_;
     temp.dataLength = dupBufferSize_;
 
+    int32_t engineFlag = GetEngineFlag();
+
     int32_t ret = fastCaptureInfos_[innerCapId].dupStream->EnqueueBuffer(temp);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "EnqueueBuffer failed:%{public}d", ret);
+}
+
+void AudioEndpointInner::InitDupBuffer()
+{
+    int32_t ret = EOK;
+    int32_t dupBufferSize = 0;
+    int32_t engineFlag = GetEngineFlag();
 
     ret = memset_s(reinterpret_cast<void *>(dupBuffer_.get()), dupBufferSize_, 0, dupBufferSize_);
     if (ret != EOK) {
