@@ -1910,6 +1910,5 @@ int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc, int3
     }
     return SUCCESS;
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
