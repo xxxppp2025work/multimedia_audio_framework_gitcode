@@ -308,9 +308,11 @@ int32_t AudioEndpointInner::InitDupStream(int32_t innerCapId)
 void AudioEndpointInner::InitProAudioDupBuffer(AudioProcessConfig processConfig, int32_t innerCapId, uint32_t dupStreamIndex)
 {
     ret = CreateDupBufferInner(innerCapId);
+
     dumpDupInFileName_ = std::to_string(dupStreamIndex) + "_endpoint_dup_in_" + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpDupInFileName_, &dumpDupIn_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Config dup buffer failed");
+
     bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig.appInfo.appUid);
     AudioVolume::GetInstance()->AddStreamVolume(dupStreamIndex, processConfig.streamType,
         processConfig.rendererInfo.streamUsage, processConfig.appInfo.appUid, processConfig.appInfo.appPid,
@@ -373,6 +375,7 @@ int32_t AudioEndpointInner::HandleDisableFastCap(CaptureInfo &captureInfo)
     captureInfo.isInnerCapEnabled = false;
     AUDIO_INFO_LOG("Disable dup renderer %{public}d with Endpoint status: %{public}s",
         captureInfo.dupStream->GetStreamIndex(), GetStatusStr(endpointStatus_).c_str());
+
     uint32_t dupStreamIndex = captureInfo.dupStream->GetStreamIndex();
     AudioVolume::GetInstance()->RemoveStreamVolume(dupStreamIndex);
     IStreamManager::GetDupPlaybackManager().ReleaseRender(captureInfo.dupStream->GetStreamIndex());
@@ -2234,6 +2237,7 @@ int32_t AudioEndpointInner::CreateDupBufferInner(int32_t innerCapId)
     }
 
     auto &capInfo = captureInfos_[innerCapId];
+
     capInfo.dupStream->GetSpanSizePerFrame(dupSpanSizeInFrame_);
     dupTotalSizeInFrame_ = dupSpanSizeInFrame_ * (DUP_COMMON_LEN/DUP_DEFAULT_LEN);
     capInfo.dupStream->GetByteSizePerFrame(dupByteSizePerFrame_);
@@ -2263,6 +2267,7 @@ int32_t AudioEndpointInner::CreateDupBufferInner(int32_t innerCapId)
 int32_t AudioEndpointInner::WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId)
 {
     size_t targetSize = bufferDesc.bufLength;
+    
     OptResult result = innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer()->GetWritableSize();
     // todo get writeable size failed
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
@@ -2271,6 +2276,7 @@ int32_t AudioEndpointInner::WriteDupBufferInner(const BufferDesc &bufferDesc, in
     AUDIO_DEBUG_LOG("targetSize: %{public}zu, writableSize: %{public}zu", targetSize, writableSize);
     size_t writeSize = std::min(writableSize, targetSize);
     BufferWrap bufferWrap = {bufferDesc.buffer, writeSize};
+
     if (writeSize > 0) {
         result = innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer()->Enqueue(bufferWrap);
         if (result.ret != OPERATION_SUCCESS) {
