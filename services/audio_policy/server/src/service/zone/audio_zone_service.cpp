@@ -316,8 +316,8 @@ int32_t AudioZoneService::RemoveKeyFromAudioZone(int32_t zoneId, int32_t uid,
 {
     std::shared_ptr<AudioInterruptService> tmp = nullptr;
     {
-        AUDIO_DEBUG_LOG("remove key %{public}d,%{public}d,%{public}s from zone %{public}d",
-            uid, deviceTag, streamTag.c_str(), zoneId);
+        AUDIO_DEBUG_LOG("remove key %{public}d,%{public}s,%{public}s from zone %{public}d",
+            uid, deviceTag.c_str(), streamTag.c_str(), zoneId);
         std::lock_guard<std::mutex> lock(zoneMutex_);
         auto zone = FindZone(zoneId);
         if (zone == nullptr) {
