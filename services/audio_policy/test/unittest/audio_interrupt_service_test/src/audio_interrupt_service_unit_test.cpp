@@ -23,7 +23,7 @@ void AudioInterruptServiceUnitTest::SetUpTestCase(void) {}
 void AudioInterruptServiceUnitTest::TearDownTestCase(void) {}
 void AudioInterruptServiceUnitTest::SetUp(void) {}
 void AudioInterruptServiceUnitTest::TearDown(void) {}
-class AudioInterruptCallbackTest : public AudioInterruptCallback{
+class AudioInterruptCallbackTest : public AudioInterruptCallback {
 public:
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override { return; }
 };
