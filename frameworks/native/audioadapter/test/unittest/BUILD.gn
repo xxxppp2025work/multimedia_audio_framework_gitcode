@@ -22,6 +22,7 @@ ohos_unittest("pulse_audio_service_adapter_impl_unit_test") {
     "../../../../../interfaces/inner_api/native/audiocommon/include/",
     "../../../../../frameworks/native/audioutils/include",
     "../../../../../services/audio_service/server/include",
+    "../../../../../services/audio_policy/server/include/service/common",
   ]
 
   cflags = [
