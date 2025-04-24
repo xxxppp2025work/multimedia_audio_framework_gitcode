@@ -285,7 +285,7 @@ int32_t AudioZone::AddDeviceDescriptor(const std::vector<std::shared_ptr<AudioDe
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> connectDevices;
             AudioConnectedDevice::GetInstance().GetAllConnectedDeviceByType(device->networkId_,
                 device->deviceType_, device->macAddress_, device->deviceRole_, connectDevices);
-            devices.emplace_back(std::make_pair(device, connectDevices.size() != 0));
+            devices_.emplace_back(std::make_pair(device, connectDevices.size() != 0));
             AUDIO_INFO_LOG("add device %{public}d,%{public}d,%{public}s to zone %{public}d",
                 device->deviceType_, device->deviceId_, device->deviceName_.c_str(), zoneId_);
         }
@@ -329,10 +329,11 @@ int32_t AudioZone::UpdateDeviceDescriptor(const std::shared_ptr<AudioDeviceDescr
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> connectDevices;
             AudioConnectedDevice::GetInstance().GetAllConnectedDeviceByType(device->networkId_,
                 device->deviceType_, device->macAddress_, device->deviceRole_, connectDevices);
-        devices.emplace_back(std::make_pair(device, connectDevices.size() != 0));
+        devices_.emplace_back(std::make_pair(device, connectDevices.size() != 0));
         AUDIO_INFO_LOG("add device %{public}d,%{public}d,%{public}s to zone %{public}d",
             device->deviceType_, device->deviceId_, device->deviceName_.c_str(), zoneId_);
     }
+    return SUCCESS;
 }
 
 int32_t AudioZone::EnableDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> device)
