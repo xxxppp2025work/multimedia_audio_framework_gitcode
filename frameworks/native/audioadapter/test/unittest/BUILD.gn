@@ -23,6 +23,7 @@ ohos_unittest("pulse_audio_service_adapter_impl_unit_test") {
     "../../../../../frameworks/native/audioutils/include",
     "../../../../../services/audio_service/server/include",
     "../../../../../services/audio_policy/server/include/service/common",
+    "../../../../../services/audio_engine/manager/include",
   ]
 
   cflags = [
@@ -45,6 +46,8 @@ ohos_unittest("pulse_audio_service_adapter_impl_unit_test") {
   ]
 
   sources = [
+    "../../src/audio_service_adapter.cpp",
+    "../../src/pro_audio_service_adapter_impl.cpp",
     "../../src/pulse_audio_service_adapter_impl.cpp",
     "pulse_audio_service_adapter_impl_unit_test.cpp",
   ]
@@ -52,5 +55,7 @@ ohos_unittest("pulse_audio_service_adapter_impl_unit_test") {
   deps = [
     "../../:pulse_audio_service_adapter",
     "../../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../../services/audio_engine:audio_engine_manager",
+    "../../../../../services/audio_service:audio_common",
   ]
 }
