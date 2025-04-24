@@ -23,6 +23,10 @@ void AudioInterruptServiceUnitTest::SetUpTestCase(void) {}
 void AudioInterruptServiceUnitTest::TearDownTestCase(void) {}
 void AudioInterruptServiceUnitTest::SetUp(void) {}
 void AudioInterruptServiceUnitTest::TearDown(void) {}
+class AudioInterruptCallbackTest : public AudioInterruptCallback{
+public:
+    void OnInterrupt(const InterruptEventInternal &interruptEvent) override { return; }
+};
 
 /**
 * @tc.name  : Test AudioInterruptService
@@ -475,6 +479,125 @@ HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_019, TestSize.Level1
     ASSERT_NE(audioInterruptService->policyServer_, nullptr);
     auto ret = audioInterruptService->ShouldCallbackToClient(uid, streamId, interruptEvent);
     EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_020
+* @tc.desc  : Test AudioInterruptService
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_020, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    int32_t zoneId = 0;
+    uint32_t streamId = 5;
+
+    int32_t map = audioInterruptService->ZONEID_DEFAULT;
+    std::shared_ptr<AudioInterruptZone> audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamId = 5;
+    AudioFocuState audioFocuState = ACTIVE;
+    audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, audioFocuState});
+    audioInterruptService->zonesMap_.insert({map, audioInterruptZone});
+
+    audioInterruptService->RemoveClient(zoneId, streamId);
+    EXPECT_EQ(audioInterruptService->zonesMap_.size(), 1);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_021
+* @tc.desc  : Test AudioInterruptService
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_021, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    int32_t zoneId = 0;
+    uint32_t streamId = 5;
+
+    int32_t map = audioInterruptService->ZONEID_DEFAULT;
+    std::shared_ptr<AudioInterruptZone> audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamId = 0;
+    AudioFocuState audioFocuState = ACTIVE;
+    audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, audioFocuState});
+
+    uint32_t cb = 5;
+    auto audioInterruptCallbackTest = std::make_shared<AudioInterruptCallbackTest>();
+    audioInterruptZone->interruptCbsMap.insert({cb, audioInterruptCallbackTest});
+
+    audioInterruptService->zonesMap_.insert({map, audioInterruptZone});
+    EXPECT_EQ(audioInterruptService->zonesMap_.find(zoneId)->second->interruptCbsMap.size(), 1);
+
+    audioInterruptService->RemoveClient(zoneId, streamId);
+    EXPECT_EQ(audioInterruptService->zonesMap_.size(), 1);
+    EXPECT_EQ(audioInterruptService->zonesMap_.find(zoneId)->second->interruptCbsMap.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_022
+* @tc.desc  : Test AudioInterruptService
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_022, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    int32_t zoneId = 0;
+    uint32_t streamId = 5;
+
+    int32_t map = audioInterruptService->ZONEID_DEFAULT;
+    std::shared_ptr<AudioInterruptZone> audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamId = 0;
+    AudioFocuState audioFocuState = ACTIVE;
+    audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, audioFocuState});
+
+    uint32_t cb = 0;
+    auto audioInterruptCallbackTest = std::make_shared<AudioInterruptCallbackTest>();
+    audioInterruptZone->interruptCbsMap.insert({cb, audioInterruptCallbackTest});
+
+    audioInterruptService->zonesMap_.insert({map, audioInterruptZone});
+    EXPECT_EQ(audioInterruptService->zonesMap_.find(zoneId)->second->interruptCbsMap.size(), 1);
+
+    audioInterruptService->RemoveClient(zoneId, streamId);
+    EXPECT_EQ(audioInterruptService->zonesMap_.size(), 1);
+    EXPECT_EQ(audioInterruptService->zonesMap_.find(zoneId)->second->interruptCbsMap.size(), 1);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_023
+* @tc.desc  : Test AudioInterruptService
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_023, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    int32_t zoneId = 1;
+    uint32_t streamId = 5;
+
+    int32_t map = audioInterruptService->ZONEID_DEFAULT;
+    std::shared_ptr<AudioInterruptZone> audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamId = 0;
+    AudioFocuState audioFocuState = ACTIVE;
+    audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, audioFocuState});
+
+    uint32_t cb = 0;
+    auto audioInterruptCallbackTest = std::make_shared<AudioInterruptCallbackTest>();
+    audioInterruptZone->interruptCbsMap.insert({cb, audioInterruptCallbackTest});
+
+    audioInterruptService->zonesMap_.insert({map, audioInterruptZone});
+
+    audioInterruptService->RemoveClient(zoneId, streamId);
+    EXPECT_EQ(audioInterruptService->zonesMap_.size(), 1);
 }
 } // namespace AudioStandard
 } // namespace OHOS
