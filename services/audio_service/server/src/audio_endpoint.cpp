@@ -269,7 +269,8 @@ int32_t AudioEndpointInner::InitDupStream(int32_t innerCapId)
 
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        InitProAudioDupBuffer(processConfig, innerCapId, dupStreamIndex); // buffer init
+        ret = InitProAudioDupBuffer(processConfig, innerCapId, dupStreamIndex); // buffer init
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "InitProAudioDupBuffer failed");
     }
 
     // eg: /data/local/tmp/LocalDevice6_0_c2s_dup_48000_2_1.pcm
@@ -306,9 +307,9 @@ int32_t AudioEndpointInner::InitDupStream(int32_t innerCapId)
     return SUCCESS;
 }
 
-void AudioEndpointInner::InitProAudioDupBuffer(AudioProcessConfig processConfig, int32_t innerCapId, uint32_t dupStreamIndex)
+int32_t AudioEndpointInner::InitProAudioDupBuffer(AudioProcessConfig processConfig, int32_t innerCapId, uint32_t dupStreamIndex)
 {
-    ret = CreateDupBufferInner(innerCapId);
+    int32_t ret = CreateDupBufferInner(innerCapId);
 
     dumpDupInFileName_ = std::to_string(dupStreamIndex) + "_endpoint_dup_in_" + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpDupInFileName_, &dumpDupIn_);
@@ -318,6 +319,8 @@ void AudioEndpointInner::InitProAudioDupBuffer(AudioProcessConfig processConfig,
     AudioVolume::GetInstance()->AddStreamVolume(dupStreamIndex, processConfig.streamType,
         processConfig.rendererInfo.streamUsage, processConfig.appInfo.appUid, processConfig.appInfo.appPid,
         isSystemApp, processConfig.rendererInfo.volumeMode);
+        
+    return SUCCESS;
 }
 
 int32_t AudioEndpointInner::EnableFastInnerCap(int32_t innerCapId)
@@ -2237,7 +2240,7 @@ int32_t AudioEndpointInner::CreateDupBufferInner(int32_t innerCapId)
         return SUCCESS;
     }
 
-    auto &capInfo = captureInfos_[innerCapId];
+    auto &capInfo = fastCaptureInfos_[innerCapId];
 
     capInfo.dupStream->GetSpanSizePerFrame(dupSpanSizeInFrame_);
     dupTotalSizeInFrame_ = dupSpanSizeInFrame_ * (DUP_COMMON_LEN/DUP_DEFAULT_LEN);
@@ -2257,7 +2260,7 @@ int32_t AudioEndpointInner::CreateDupBufferInner(int32_t innerCapId)
         AudioRingCache::Create(dupTotalSizeInFrame_ * dupByteSizePerFrame_);
     CHECK_AND_RETURN_RET_LOG(innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() != nullptr,
         ERR_OPERATION_FAILED, "Create dup buffer failed");
-    size emptyBufferSize = static_cast<size_t>(dupSpanSizeInFrame_) * dupByteSizePerFrame_;
+    size_t emptyBufferSize = static_cast<size_t>(dupSpanSizeInFrame_) * dupByteSizePerFrame_;
     auto buffer = std::make_unique<uint8_t []>(emptyBufferSize);
     BufferDesc emptyBufferDesc = {buffer.get(), emptyBufferSize, emptyBufferSize};
     memset_s(emptyBufferDesc.buffer, emptyBufferDesc.bufLength, 0, emptyBufferDesc.bufLength);
