@@ -126,7 +126,6 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_002, TestSize.Level1
  */
 HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_003, TestSize.Level1)
 {
-    AudioBufferHolder bufferHolder;
     uint32_t totalSizeInFrame = 10;
     uint32_t spanSizeInFrame = 10;
     uint32_t byteSizePerFrame = 10;
@@ -136,13 +135,11 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_003, TestSize.Level1
     int32_t result = capturerInServer_->InitBufferStatus();
     EXPECT_EQ(result, ERR_ILLEGAL_STATE);
 
-    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
-    capturerInServer_->audioServerBuffer_->spanConut_ = 5;
-    capturerInServer_->InitBufferStatus();
-    EXPECT_NE(capturerInServer_, nullptr);
+    auto audioServerBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    result = capturerInServer_->InitBufferStatus();
+    EXPECT_NE(result, SUCCESS);
 }
-#ifdef CAPTURER_IN_SERVER_UNIT_TEST_DIFF
+
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
@@ -151,26 +148,51 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_003, TestSize.Level1
  */
 HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_004, TestSize.Level1)
 {
+    uint32_t totalSizeInFrame = 10;
+    uint32_t spanSizeInFrame = 10;
+    uint32_t byteSizePerFrame = 10;
     AudioProcessConfig processConfig;
+    pa_threaded_mainloop *mainloop = pa_threaded_mainloop_new();
+    pa_stream *paStream = nullptr;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
+    AppInfo appInfo;
+    processConfig.appInfo = appInfo;
     std::shared_ptr<IStreamListener> iStreamListener_ = std::make_shared<ConcreteIStreamListener>();
     std::weak_ptr<IStreamListener> streamListener = iStreamListener_;
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
+        totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    capturerInServer_->stream_ = std::make_shared<PaCapturerStreamImpl>(paStream,
+        processConfig, mainloop);
     capturerInServer_->status_ = I_STATUS_RELEASED;
     capturerInServer_->OnStatusUpdate(IOperation::OPERATION_DRAINED);
     EXPECT_NE(capturerInServer_, nullptr);
 
+
     capturerInServer_->status_ = I_STATUS_IDLE;
+    std::unique_ptr<RecorderDfxWriter> recorderDfx = std::make_unique<RecorderDfxWriter>(processConfig.appInfo,
+        capturerInServer_->streamIndex_);
+    capturerInServer_->recorderDfx_ = std::move(recorderDfx);
+
+
+    auto tmp = capturerInServer_->underflowCount;
     capturerInServer_->OnStatusUpdate(IOperation::OPERATION_UNDERFLOW);
-    EXPECT_NE(capturerInServer_, nullptr);
+    EXPECT_EQ(capturerInServer_->underflowCount, tmp + 1);
 
     capturerInServer_->OnStatusUpdate(IOperation::OPERATION_STARTED);
-    EXPECT_NE(capturerInServer_, nullptr);
+    EXPECT_EQ(capturerInServer_->status_, I_STATUS_STARTED);
 
     capturerInServer_->OnStatusUpdate(IOperation::OPERATION_PAUSED);
-    EXPECT_NE(capturerInServer_, nullptr);
+    EXPECT_EQ(capturerInServer_->status_, I_STATUS_PAUSED);
 
     capturerInServer_->OnStatusUpdate(IOperation::OPERATION_STOPPED);
+    EXPECT_EQ(capturerInServer_->status_, I_STATUS_STOPPED);
+
+    capturerInServer_->OnStatusUpdate(IOperation::OPERATION_FLUSHED);
     EXPECT_NE(capturerInServer_, nullptr);
+
+    capturerInServer_->OnStatusUpdate(IOperation::OPERATION_RELEASED);
+    EXPECT_EQ(capturerInServer_->status_, I_STATUS_INVALID);
 }
 
 /**
@@ -231,42 +253,29 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_007, TestSize.Level1
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
  * @tc.number: CapturerInServerUnitTest_008.
- * @tc.desc  : Test OnStatusUpdate interface.
+ * @tc.desc  : Test IsReadDataOverFlow interface.
  */
 HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_008, TestSize.Level1)
 {
-    size_t length = 10;
-    uint64_t currentWriteFrame = 10;
     uint32_t totalSizeInFrame = 10;
     uint32_t spanSizeInFrame = 10;
     uint32_t byteSizePerFrame = 10;
-
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
-    adapterManager->InitPaContext();
+    AudioProcessConfig processConfig;
     pa_threaded_mainloop *mainloop = pa_threaded_mainloop_new();
-    AudioProcessConfig processConfig = GetInnerCapConfig();
-    uint32_t sessionId = 123456;
-    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
-
-    std::shared_ptr<IStreamListener> stateListener = std::make_shared<ConcreteIStreamListener>();
-    std::weak_ptr<IStreamListener> streamListener;
+    pa_stream *paStream = nullptr;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
+    AppInfo appInfo;
+    processConfig.appInfo = appInfo;
+    std::shared_ptr<IStreamListener> iStreamListener_ = std::make_shared<ConcreteIStreamListener>();
+    std::weak_ptr<IStreamListener> streamListener = iStreamListener_;
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
-    capturerInServer_->stream_ = std::make_shared<PaCapturerStreamImpl>(stream,
-        processConfig, mainloop);
     capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
         totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
-    capturerInServer_->audioServerBuffer_->basicBufferInfo_ = new BasicBufferInfo();
-    capturerInServer_->spanSizeInFrame_ = 1000;
-
-    capturerInServer_->IsReadDataOverFlow(length, currentWriteFrame, stateListener);
+    capturerInServer_->stream_ = std::make_shared<PaCapturerStreamImpl>(paStream,
+        processConfig, mainloop);
     EXPECT_NE(capturerInServer_, nullptr);
-
-    capturerInServer_->overFlowLogFlag_ = 1;
-    capturerInServer_->IsReadDataOverFlow(length, currentWriteFrame, stateListener);
-    EXPECT_NE(capturerInServer_, nullptr);
-    delete capturerInServer_->audioServerBuffer_->basicBufferInfo_;
 }
-#endif
+
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
@@ -852,6 +861,27 @@ HWTEST_F(CapturerInServerUnitTest, OnReadData_001, TestSize.Level1)
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
+ * @tc.number: OnReadData_002.
+ * @tc.desc  : Test OnReadData interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, OnReadData_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    std::vector<char> outputData;
+    size_t length = 4;
+    outputData.push_back('t');
+    outputData.push_back('e');
+    outputData.push_back('s');
+    outputData.push_back('t');
+    auto ret = capturerInServer_->OnReadData(outputData, length);
+    EXPECT_EQ(ret, ERR_READ_FAILED);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
  * @tc.number: HandleOperationFlushed_001.
  * @tc.desc  : Test HandleOperationFlushed interface.
  */
@@ -968,7 +998,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_032, TestSize.Level1
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
  * @tc.number: CapturerInServerUnitTest_033.
- * @tc.desc  : Test GetAudioTime interface.
+ * @tc.desc  : Test RestoreSession interface.
  */
 HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_033, TestSize.Level1)
 {
@@ -984,11 +1014,75 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_033, TestSize.Level1
     capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
         totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
     capturerInServer_->audioServerBuffer_->basicBufferInfo_ = nullptr;
-    capturerInServer_->RestoreSession(restoreInfo);
+    auto ret = capturerInServer_->RestoreSession(restoreInfo);
+    EXPECT_EQ(ret, RESTORE_ERROR);
+}
 
-    auto bufferInfo = std::make_shared<BasicBufferInfo>();
-    capturerInServer_->audioServerBuffer_->basicBufferInfo_ = bufferInfo.get();
-    capturerInServer_->RestoreSession(restoreInfo);
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_034.
+ * @tc.desc  : Test Init interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_034, TestSize.Level1)
+{
+    uint32_t totalSizeInFrame = 10;
+    uint32_t spanSizeInFrame = 10;
+    uint32_t byteSizePerFrame = 10;
+    AudioProcessConfig processConfig;
+    pa_threaded_mainloop *mainloop = pa_threaded_mainloop_new();
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager->InitPaContext();
+    uint32_t sessionId = 123456;
+    pa_stream *paStream = adapterManager->InitPaStream(processConfig, sessionId, false);
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
+    std::shared_ptr<IStreamListener> iStreamListener_ = std::make_shared<ConcreteIStreamListener>();
+    std::weak_ptr<IStreamListener> streamListener = iStreamListener_;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
+        totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    capturerInServer_->stream_ = std::make_shared<PaCapturerStreamImpl>(paStream,
+        processConfig, mainloop);
+    EXPECT_NE(capturerInServer_, nullptr);
+
+    auto ret = capturerInServer_->Init();
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_035.
+ * @tc.desc  : Test TurnOnMicIndicator interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_035, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+
+    CapturerState capturerState = CAPTURER_NEW;
+    auto ret = capturerInServer_->TurnOnMicIndicator(capturerState);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_036.
+ * @tc.desc  : Test TurnOffMicIndicator interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_036, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+
+    CapturerState capturerState = CAPTURER_NEW;
+    auto ret = capturerInServer_->TurnOffMicIndicator(capturerState);
+    EXPECT_EQ(ret, true);
 }
 } // namespace AudioStandard
 } // namespace OHOS
