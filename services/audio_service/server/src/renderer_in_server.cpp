@@ -705,7 +705,7 @@ void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
 {
     // for inner capture
     for (auto &capInfo : captureInfos_) {
-        InnerCaptureOtherStream(bufferDesc, capInfo.second);
+        InnerCaptureOtherStream(bufferDesc, capInfo.second, capInfo.first);
     }
     // for dual tone
     if (isDualToneEnabled_) {
@@ -740,13 +740,13 @@ void RendererInServer::InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, C
     }
 }
 
-void RendererInServer::InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo)
+void RendererInServer::InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo, int32_t innerCapId)
 {
     if (captureInfo.isInnerCapEnabled) {
         Trace traceDup("RendererInServer::WriteData DupSteam write");
         std::lock_guard<std::mutex> lock(dupMutex_);
         if (captureInfo.dupStream != nullptr) {
-            InnerCaptureEnqueueBuffer(bufferDesc, captureInfo);
+            InnerCaptureEnqueueBuffer(bufferDesc, captureInfo, innerCapId);
         }
     }
 }

@@ -180,6 +180,7 @@ MockCallbacks::~MockCallbacks()
     if (engineFlag == 1) {
         DumpFileUtil::CloseDumpFile(&dumpDupOut_);
     }
+}
 
 void MockCallbacks::OnStatusUpdate(IOperation operation)
 {
