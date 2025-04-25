@@ -722,6 +722,13 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_034, TestSize.Level1)
     incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
     bool result = interruptServiceTest->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
     EXPECT_EQ(result, false);
+
+    activeInterrupt.strategy = InterruptStrategy::MUTE;
+    result = interruptServiceTest->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
+    EXPECT_EQ(result, false);
+
+    result = interruptServiceTest->CanRecordingInterrupted(activeInterrupt);
+    EXPECT_EQ(result, false);
 }
 
 /**
@@ -3413,6 +3420,33 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_118, TestSize.Level1)
 
     auto ret = audioInterruptService->IsHandleIter(iterActive, oldState, iterNew);
     EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_119
+* @tc.desc  : Test AudioInterruptService
+*/
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_119, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    EXPECT_NE(audioInterruptService, nullptr);
+
+    AudioInterrupt audioInterrupt1;
+    audioInterrupt1.uid = 2;
+    audioInterrupt1.audioFocusType.streamType = STREAM_DEFAULT;
+    audioInterrupt1.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    audioInterrupt1.audioFocusType.isPlay = false;
+    audioInterrupt1.strategy == InterruptStrategy::MUTE;
+    AudioInterrupt audioInterrupt2;
+    audioInterrupt2.uid = 3;
+    audioInterrupt2.audioFocusType.streamType = STREAM_DEFAULT;
+    audioInterrupt2.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    audioInterrupt2.audioFocusType.isPlay = false;
+    AudioFocusEntry focusEntry;
+    focusEntry.hintType = INTERRUPT_HINT_NONE;
+
+    audioInterruptService->UpdateAudioFocusStrategy(audioInterrupt1, audioInterrupt2, focusEntry);
 }
 } // namespace AudioStandard
 } // namespace OHOS
