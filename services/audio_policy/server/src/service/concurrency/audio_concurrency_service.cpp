@@ -23,6 +23,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+const int64_t DELAY_CONTROL_TIME_NS = 100000000; // 100ms
+}
 void AudioConcurrencyService::Init()
 {
     AUDIO_INFO_LOG("AudioConcurrencyService Init");
@@ -147,6 +150,7 @@ int32_t AudioConcurrencyService::ActivateAudioConcurrency(AudioPipeType incoming
     const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos,
     const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
+    Trace trace("AudioConcurrencyService::ActivateAudioConcurrency:" + std::to_string(incomingPipeType));
     if (concurrencyCfgMap_.empty()) {
         return SUCCESS;
     }
@@ -188,6 +192,73 @@ int32_t AudioConcurrencyService::ActivateAudioConcurrency(AudioPipeType incoming
     }
     CHECK_AND_RETURN_RET_LOG(!concedeIncomingVoipCap, ERR_CONCEDE_INCOMING_STREAM,
         "Existing call in concede incoming call in");
+    int32_t ret = ActivateAudioConcurrencyExt(incomingPipeType);
+    Trace trace2("AudioConcurrencyService::ActivateAudioConcurrency:" + std::to_string(incomingPipeType) +
+        (ret == SUCCESS ? " success" : " fail"));
+    return ret;
+}
+
+bool AudioConcurrencyService::IsFastActivated()
+{
+    Trace trace("AudioConcurrencyService::IsFastActivated");
+    if (!fastActivated_) {
+        return false;
+    }
+    // fast is activated in history
+    if (ClockTime::GetCurNano() - lastFastActivedTime_ > DELAY_CONTROL_TIME_NS) {
+        fastActivated_ = false;
+        lastFastActivedTime_ = 0;
+        return false;
+    }
+    return true;
+}
+
+bool AudioConcurrencyService::IsOffloadActivated()
+{
+    Trace trace("AudioConcurrencyService::IsOffloadActivated");
+    if (!offloadActivated_) {
+        return false;
+    }
+    // offload is activated in history
+    if (ClockTime::GetCurNano() - lastOffloadActivedTime_ > DELAY_CONTROL_TIME_NS) {
+        offloadActivated_ = false;
+        lastOffloadActivedTime_ = 0;
+        return false;
+    }
+    return true;
+}
+
+int32_t AudioConcurrencyService::ActivateAudioConcurrencyExt(AudioPipeType incomingPipeType)
+{
+    if (incomingPipeType == PIPE_TYPE_OFFLOAD &&
+        concurrencyCfgMap_[{PIPE_TYPE_LOWLATENCY_OUT, PIPE_TYPE_OFFLOAD}] == CONCEDE_INCOMING) {
+        // need check if fast running
+        if (IsFastActivated()) {
+            offloadActivated_ = false;
+            lastOffloadActivedTime_ = ClockTime::GetCurNano();
+            AUDIO_INFO_LOG("IsFastActivated: true, concede incomingPipeType: PIPE_TYPE_OFFLOAD");
+            return ERR_CONCEDE_INCOMING_STREAM;
+        }
+        Trace trace("IsOffloadActivated: TURN ON");
+        offloadActivated_ = true;
+        lastOffloadActivedTime_ = ClockTime::GetCurNano();
+        return SUCCESS;
+    }
+
+    if (incomingPipeType == PIPE_TYPE_LOWLATENCY_OUT &&
+        concurrencyCfgMap_[{PIPE_TYPE_OFFLOAD, PIPE_TYPE_LOWLATENCY_OUT}] == CONCEDE_INCOMING) {
+        // need check if offload running
+        if (IsOffloadActivated()) {
+            fastActivated_ = false;
+            lastFastActivedTime_ = ClockTime::GetCurNano();
+            AUDIO_INFO_LOG("IsOffloadActivated: true, concede incomingPipeType: PIPE_TYPE_LOWLATENCY_OUT");
+            return ERR_CONCEDE_INCOMING_STREAM;
+        }
+        Trace trace1("IsFastActivated: TURN ON");
+        fastActivated_ = true;
+        lastFastActivedTime_ = ClockTime::GetCurNano();
+        return SUCCESS;
+    }
     return SUCCESS;
 }
 
