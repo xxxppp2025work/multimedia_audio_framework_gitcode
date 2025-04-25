@@ -301,8 +301,10 @@ int32_t AudioEndpointInner::InitDupStream(int32_t innerCapId)
     captureInfo.isInnerCapEnabled = true;
     float clientVolume = dstAudioBuffer_->GetStreamVolume();
     float duckFactor = dstAudioBuffer_->GetDuckFactor();
-    AudioVolume::GetInstance()->SetStreamVolume(dupStreamIndex, clientVolume);
-    AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(dupStreamIndex, duckFactor);
+    if (engineFlag == 1 && AudioVolume::GetInstance() != nullptr) {
+        AudioVolume::GetInstance()->SetStreamVolume(dupStreamIndex, clientVolume);
+        AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(dupStreamIndex, duckFactor);
+    }
 
     return SUCCESS;
 }
@@ -316,6 +318,11 @@ int32_t AudioEndpointInner::InitProAudioDupBuffer(AudioProcessConfig processConf
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Config dup buffer failed");
 
     bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig.appInfo.appUid);
+    if (AudioVolume::GetInstance() != nullptr) {
+        AudioVolume::GetInstance()->AddStreamVolume(dupStreamIndex, processConfig.streamType,
+        processConfig.rendererInfo.streamUsage, processConfig.appInfo.appUid, processConfig.appInfo.appPid,
+        isSystemApp, processConfig.rendererInfo.volumeMode);
+    }
     AudioVolume::GetInstance()->AddStreamVolume(dupStreamIndex, processConfig.streamType,
         processConfig.rendererInfo.streamUsage, processConfig.appInfo.appUid, processConfig.appInfo.appPid,
         isSystemApp, processConfig.rendererInfo.volumeMode);
@@ -380,8 +387,13 @@ int32_t AudioEndpointInner::HandleDisableFastCap(CaptureInfo &captureInfo)
     AUDIO_INFO_LOG("Disable dup renderer %{public}d with Endpoint status: %{public}s",
         captureInfo.dupStream->GetStreamIndex(), GetStatusStr(endpointStatus_).c_str());
 
-    uint32_t dupStreamIndex = captureInfo.dupStream->GetStreamIndex();
-    AudioVolume::GetInstance()->RemoveStreamVolume(dupStreamIndex);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        uint32_t dupStreamIndex = captureInfo.dupStream->GetStreamIndex();
+        if (AudioVolume::GetInstance() != nullptr) {
+        AudioVolume::GetInstance()->RemoveStreamVolume(dupStreamIndex);
+        }
+    }
     IStreamManager::GetDupPlaybackManager().ReleaseRender(captureInfo.dupStream->GetStreamIndex());
     captureInfo.dupStream = nullptr;
     return SUCCESS;
@@ -2234,7 +2246,7 @@ void AudioEndpointInner::ReportDataToResSched(std::unordered_map<std::string, st
 int32_t AudioEndpointInner::CreateDupBufferInner(int32_t innerCapId)
 {
     // todo dynamic
-    if (innerCapIdToDupStreamCallbackMap_[innerCapId] == nullptr &&
+    if (innerCapIdToDupStreamCallbackMap_[innerCapId] == nullptr ||
         innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() != nullptr) {
         AUDIO_INFO_LOG("dup buffer already configed!");
         return SUCCESS;
@@ -2271,7 +2283,11 @@ int32_t AudioEndpointInner::CreateDupBufferInner(int32_t innerCapId)
 int32_t AudioEndpointInner::WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId)
 {
     size_t targetSize = bufferDesc.bufLength;
-    
+
+    if (innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() == nullptr) {
+        AUDIO_INFO_LOG("dup buffer is nnullptr, failed WriteDupBuffer!");
+        return ERROR;
+    }
     OptResult result = innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer()->GetWritableSize();
     // todo get writeable size failed
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
