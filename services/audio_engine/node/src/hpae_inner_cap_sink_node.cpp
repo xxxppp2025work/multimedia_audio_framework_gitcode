@@ -29,7 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-constexpr auto DEFAULT_NANO_SECONDS = std::chrono::nanoseconds(20000000);
+constexpr auto DEFAULT_NANO_SECONDS = std::chrono::nanoseconds(20000000); // 20000000ns = 20ms
 
 HpaeInnerCapSinkNode::HpaeInnerCapSinkNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), outputStream_(this),
