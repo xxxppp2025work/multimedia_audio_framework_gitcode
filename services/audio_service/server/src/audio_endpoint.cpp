@@ -309,7 +309,8 @@ int32_t AudioEndpointInner::InitDupStream(int32_t innerCapId)
     return SUCCESS;
 }
 
-int32_t AudioEndpointInner::InitDupBufferinnerCapId(AudioProcessConfig processConfig, int32_t innerCapId, uint32_t dupStreamIndex)
+int32_t AudioEndpointInner::InitDupBufferinnerCapId(AudioProcessConfig processConfig, int32_t innerCapId,
+    uint32_t dupStreamIndex)
 {
     int32_t ret = CreateDupBufferInner(innerCapId);
 
@@ -320,8 +321,8 @@ int32_t AudioEndpointInner::InitDupBufferinnerCapId(AudioProcessConfig processCo
     bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig.appInfo.appUid);
     if (AudioVolume::GetInstance() != nullptr) {
         AudioVolume::GetInstance()->AddStreamVolume(dupStreamIndex, processConfig.streamType,
-        processConfig.rendererInfo.streamUsage, processConfig.appInfo.appUid, processConfig.appInfo.appPid,
-        isSystemApp, processConfig.rendererInfo.volumeMode);
+            processConfig.rendererInfo.streamUsage, processConfig.appInfo.appUid, processConfig.appInfo.appPid,
+            isSystemApp, processConfig.rendererInfo.volumeMode);
     }
         
     return SUCCESS;

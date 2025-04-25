@@ -717,7 +717,8 @@ void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
     }
 }
 
-void RendererInServer::InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, CaptureInfo &captureInfo, int32_t innerCapId)
+void RendererInServer::InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, CaptureInfo &captureInfo,
+    int32_t innerCapId)
 {
     int32_t engineFlag = GetEngineFlag();
     if (renderEmptyCountForInnerCap_ > 0) {
@@ -740,7 +741,8 @@ void RendererInServer::InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, C
     }
 }
 
-void RendererInServer::InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo, int32_t innerCapId)
+void RendererInServer::InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo,
+    int32_t innerCapId)
 {
     if (captureInfo.isInnerCapEnabled) {
         Trace traceDup("RendererInServer::WriteData DupSteam write");
