@@ -45,7 +45,7 @@ public:
 
     virtual int32_t GetAudioSessionID(uint32_t &sessionId) { return 0; }
 
-    virtual int32_t Start() { return 0; }
+    virtual int32_t Start(std::optional<pid_t> tid) { return 0; }
 
     virtual int32_t Pause() { return 0; }
 

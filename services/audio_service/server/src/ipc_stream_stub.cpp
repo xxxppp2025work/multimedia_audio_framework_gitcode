@@ -186,8 +186,8 @@ int32_t IpcStreamStub::HandleGetAudioSessionID(MessageParcel &data, MessageParce
 
 int32_t IpcStreamStub::HandleStart(MessageParcel &data, MessageParcel &reply)
 {
-    (void)data;
-    reply.WriteInt32(Start());
+    std::optional<pid_t> tid = AudioParcelHelper<MessageParcel, std::optional<pid_t>>::Unmarshalling(data);
+    reply.WriteInt32(Start(tid));
     return AUDIO_OK;
 }
 

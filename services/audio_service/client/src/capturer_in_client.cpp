@@ -1374,7 +1374,7 @@ bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType, AudioSt
     }
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->Start();
+    int32_t ret = ipcStream_->Start(std::nullopt);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Start call server failed: %{public}u", ret);
         return false;

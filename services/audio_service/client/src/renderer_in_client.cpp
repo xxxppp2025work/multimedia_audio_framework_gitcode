@@ -620,7 +620,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     if (clientBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY) {
         Trace trace2(traceTag_+ " call start to exit stand-by");
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");
-        int32_t ret = ipcStream_->Start();
+        int32_t ret = ipcStream_->Start(std::nullopt);
         AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
     }
 
@@ -873,9 +873,9 @@ bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
     return true;
 }
 
-void RendererInClientInner::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
+std::optional<pid_t> RendererInClientInner::GetAndLogThreadsNeedingPriorityBoostOnStart(StateChangeCmdType cmdType)
 {
-    pid_t tid;
+    std::optional<pid_t> tid = std::nullopt;
     switch (rendererInfo_.playerType) {
         case PLAYER_TYPE_ARKTS_AUDIO_RENDERER:
             // main thread
@@ -885,7 +885,7 @@ void RendererInClientInner::RegisterThreadPriorityOnStart(StateChangeCmdType cmd
             tid = gettid();
             break;
         default:
-            return;
+            return std::nullopt;
     }
 
     if (cmdType == CMD_FROM_CLIENT) {
@@ -893,15 +893,13 @@ void RendererInClientInner::RegisterThreadPriorityOnStart(StateChangeCmdType cmd
         lastCallStartByUserTid_ = tid;
     } else if (cmdType == CMD_FROM_SYSTEM) {
         std::lock_guard lock(lastCallStartByUserTidMutex_);
-        CHECK_AND_RETURN_LOG(lastCallStartByUserTid_.has_value(), "has not value");
-        tid = lastCallStartByUserTid_.value();
+        tid = lastCallStartByUserTid_;
     } else {
         AUDIO_ERR_LOG("illegal param");
-        return;
+        return std::nullopt;
     }
 
-    ipcStream_->RegisterThreadPriority(tid,
-        AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_START);
+    return tid;
 }
 
 void RendererInClientInner::ResetCallbackLoopTid()

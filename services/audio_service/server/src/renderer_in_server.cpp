@@ -858,7 +858,7 @@ int32_t RendererInServer::GetSessionId(uint32_t &sessionId)
     return SUCCESS;
 }
 
-int32_t RendererInServer::Start()
+int32_t RendererInServer::Start(std::optional<pid_t> tid)
 {
     int32_t ret = StartInner();
     RendererStage stage = ret == SUCCESS ? RENDERER_STAGE_START_OK : RENDERER_STAGE_START_FAIL;

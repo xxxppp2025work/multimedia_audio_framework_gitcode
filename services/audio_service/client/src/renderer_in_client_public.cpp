@@ -901,7 +901,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
         audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_, RUNNING, clientPid_, rendererInfo_, reason);
     }
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->Start();
+    int32_t ret = ipcStream_->Start(GetAndLogThreadsNeedingPriorityBoostOnStart(cmdType));
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Start call server failed:%{public}u", ret);
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
@@ -936,8 +936,6 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
         // start the callback-write thread
         cbThreadCv_.notify_all();
     }
-
-    RegisterThreadPriorityOnStart(cmdType);
 
     statusLock.unlock();
     // in plan: call HiSysEventWrite

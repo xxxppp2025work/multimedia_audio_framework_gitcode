@@ -102,7 +102,7 @@ int32_t IpcStreamProxy::GetAudioSessionID(uint32_t &sessionId)
     return ret;
 }
 
-int32_t IpcStreamProxy::Start()
+int32_t IpcStreamProxy::Start(std::optional<pid_t> tid)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -110,6 +110,7 @@ int32_t IpcStreamProxy::Start()
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
 
+    AudioParcelHelper<MessageParcel, std::optional<pid_t>>::Marshalling(data, tid);
     int ret = Remote()->SendRequest(IpcStreamMsg::ON_START, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "Start failed, error: %{public}d", ret);
 

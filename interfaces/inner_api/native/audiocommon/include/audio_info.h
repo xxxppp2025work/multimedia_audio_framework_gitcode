@@ -1370,8 +1370,7 @@ struct RestoreInfo {
  * Used to distinguish between different triggering entry points.
  */
 enum BoostTriggerMethod : uint32_t {
-    METHOD_START = 0,
-    METHOD_WRITE_OR_READ,
+    METHOD_WRITE_OR_READ = 0,
     METHOD_MAX
 };
 

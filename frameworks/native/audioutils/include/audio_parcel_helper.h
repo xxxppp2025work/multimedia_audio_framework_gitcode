@@ -94,7 +94,7 @@ public:
         if (!hasValue) {
             return true;
         } else {
-            return AudioParcelHelper<Parcelable, T>::Marshalling(t.value());
+            return AudioParcelHelper<Parcelable, T>::Marshalling(parcel, t.value());
         }
     }
 
@@ -103,7 +103,7 @@ public:
         if (!parcel.ReadBool()) {
             return std::nullopt;
         } else {
-            return AudioParcelHelper<Parcelable, T>::Unmarshalling();
+            return AudioParcelHelper<Parcelable, T>::Unmarshalling(parcel);
         }
     }
 };

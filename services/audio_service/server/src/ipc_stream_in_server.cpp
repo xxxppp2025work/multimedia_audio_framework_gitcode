@@ -184,12 +184,12 @@ int32_t IpcStreamInServer::GetAudioSessionID(uint32_t &sessionId)
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::Start()
+int32_t IpcStreamInServer::Start(std::optional<pid_t> tid)
 {
     AUDIO_INFO_LOG("IpcStreamInServer::Start()");
 
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
-        return rendererInServer_->Start();
+        return rendererInServer_->Start(tid);
     }
     if (mode_ == AUDIO_MODE_RECORD && capturerInServer_!= nullptr) {
         return capturerInServer_->Start();
