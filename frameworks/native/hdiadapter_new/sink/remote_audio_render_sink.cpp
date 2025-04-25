@@ -22,6 +22,7 @@
 #include <climits>
 #include <utility>
 #include <algorithm>
+#include <thread>
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
@@ -111,27 +112,37 @@ int32_t RemoteAudioRenderSink::Start(void)
             ".pcm", &(it.second.dumpFile_));
     }
 
-    if (!renderInited_.load()) {
-        for (auto &it : audioRenderWrapperMap_) {
-            int32_t ret = CreateRender(it.first);
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "create render fail");
-            renderInited_.store(true);
-        }
-    }
-
-    if (started_.load()) {
-        AUDIO_INFO_LOG("already started");
+    if (isThreadRunning.load()) {
+        AUDIO_INFO_LOG("The thread is already running");
         return SUCCESS;
     }
+    isThreadRunning.store(true);
 
-    for (auto &it : audioRenderWrapperMap_) {
-        CHECK_AND_RETURN_RET_LOG(it.second.audioRender_ != nullptr, ERR_INVALID_HANDLE,
-            "render is nullptr, type: %{public}d", it.first);
-        int32_t ret = it.second.audioRender_->Start();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail, type: %{public}d, ret: %{public}d",
-            it.first, ret);
-    }
-    started_.store(true);
+    std::thread([this]() {
+        if (!renderInited_.load()) {
+            for (auto &it : audioRenderWrapperMap_) {
+                int32_t ret = CreateRender(it.first);
+                CHECK_AND_RETURN_LOG(ret == SUCCESS, "create render fail");
+                renderInited_.store(true);
+            }
+        }
+    
+        if (started_.load()) {
+            AUDIO_INFO_LOG("already started");
+            return;
+        }
+    
+        for (auto &it : audioRenderWrapperMap_) {
+            CHECK_AND_RETURN_LOG(it.second.audioRender_ != nullptr,
+                "render is nullptr, type: %{public}d", it.first);
+            int32_t ret = it.second.audioRender_->Start();
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "start fail, type: %{public}d, ret: %{public}d",
+                it.first, ret);
+        }
+        started_.store(true);
+        isThreadRunning.store(false);
+    }).detach();
+
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_REMOTE, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
@@ -598,7 +609,7 @@ int32_t RemoteAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
     AUDIO_DEBUG_LOG("type: %{public}d", type);
     int64_t stamp = ClockTime::GetCurNano();
     sptr<IAudioRender> audioRender = audioRenderWrapperMap_[type].audioRender_;
-    CHECK_AND_RETURN_RET_LOG(audioRender != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioRender != nullptr, SUCCESS, "render is nullptr");
     if (!started_.load()) {
         AUDIO_WARNING_LOG("not start, invalid state");
     }
