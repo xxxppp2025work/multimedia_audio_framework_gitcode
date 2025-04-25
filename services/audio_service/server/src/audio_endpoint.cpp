@@ -323,9 +323,6 @@ int32_t AudioEndpointInner::InitDupBufferinnerCapId(AudioProcessConfig processCo
         processConfig.rendererInfo.streamUsage, processConfig.appInfo.appUid, processConfig.appInfo.appPid,
         isSystemApp, processConfig.rendererInfo.volumeMode);
     }
-    AudioVolume::GetInstance()->AddStreamVolume(dupStreamIndex, processConfig.streamType,
-        processConfig.rendererInfo.streamUsage, processConfig.appInfo.appUid, processConfig.appInfo.appPid,
-        isSystemApp, processConfig.rendererInfo.volumeMode);
         
     return SUCCESS;
 }
