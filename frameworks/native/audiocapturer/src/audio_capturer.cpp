@@ -1235,6 +1235,7 @@ void AudioCapturerPrivate::GetAudioInterrupt(AudioInterrupt &audioInterrupt)
 
 void AudioCapturerPrivate::SetAudioInterrupt(const AudioInterrupt &audioInterrupt)
 {
+    std::lock_guard lock(capturerMutex_);
     audioInterrupt_ = audioInterrupt;
 }
 
