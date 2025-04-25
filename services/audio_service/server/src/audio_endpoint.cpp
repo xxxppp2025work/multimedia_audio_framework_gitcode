@@ -269,7 +269,7 @@ int32_t AudioEndpointInner::InitDupStream(int32_t innerCapId)
 
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        ret = InitProAudioDupBuffer(processConfig, innerCapId, dupStreamIndex); // buffer init
+        ret = InitDupBufferinnerCapId(processConfig, innerCapId, dupStreamIndex); // buffer init
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "InitProAudioDupBuffer failed");
     }
 
@@ -309,7 +309,7 @@ int32_t AudioEndpointInner::InitDupStream(int32_t innerCapId)
     return SUCCESS;
 }
 
-int32_t AudioEndpointInner::InitProAudioDupBuffer(AudioProcessConfig processConfig, int32_t innerCapId, uint32_t dupStreamIndex)
+int32_t AudioEndpointInner::InitDupBufferinnerCapId(AudioProcessConfig processConfig, int32_t innerCapId, uint32_t dupStreamIndex)
 {
     int32_t ret = CreateDupBufferInner(innerCapId);
 
