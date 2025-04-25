@@ -16,6 +16,7 @@
 #define AUDIO_PARCEL_HELPER_H
 
 #include <cinttypes>
+#include <optional>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -80,6 +81,30 @@ public:
     static uint64_t Unmarshalling(Parcelable &parcel)
     {
         return parcel.ReadUInt64();
+    }
+};
+
+template<typename Parcelable, typename T>
+class AudioParcelHelper<Parcelable, std::optional<T>> {
+public:
+    static bool Marshalling(Parcelable &parcel, const std::optional<T> &t)
+    {
+        bool hasValue = t.has_value();
+        parcel.WriteBool(hasValue);
+        if (!hasValue) {
+            return true;
+        } else {
+            return AudioParcelHelper<Parcelable, T>::Marshalling(t.value());
+        }
+    }
+
+    static std::optional<T> Unmarshalling(Parcelable &parcel)
+    {
+        if (!parcel.ReadBool()) {
+            return std::nullopt;
+        } else {
+            return AudioParcelHelper<Parcelable, T>::Unmarshalling();
+        }
     }
 };
 } // namespace AudioStandard
