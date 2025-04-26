@@ -425,6 +425,7 @@ int32_t FastAudioStream::SetRendererWriteCallback(const std::shared_ptr<AudioRen
     spkProcClientCb_ = std::make_shared<FastAudioStreamRenderCallback>(callback, *this);
     int32_t ret = processClient_->SaveDataCallback(spkProcClientCb_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Client test save data callback fail, ret %{public}d.", ret);
+    isSetModeCallback_ = true;
     return SUCCESS;
 }
 
@@ -1097,6 +1098,9 @@ int32_t FastAudioStream::SetCallbacksWhenRestore()
 void FastAudioStream::GetRestoreInfo(RestoreInfo &restoreInfo)
 {
     processClient_->GetRestoreInfo(restoreInfo);
+    if (!isSetModeCallback_) {
+        restoreInfo.restoreReason = FORCED_NORMAL;
+    }
     return;
 }
 
@@ -1108,6 +1112,9 @@ void FastAudioStream::SetRestoreInfo(RestoreInfo &restoreInfo)
 
 RestoreStatus FastAudioStream::CheckRestoreStatus()
 {
+    if (!isSetModeCallback_) {
+        return NEED_RESTORE;
+    }
     return processClient_->CheckRestoreStatus();
 }
 

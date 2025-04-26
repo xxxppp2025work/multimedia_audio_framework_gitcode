@@ -861,7 +861,12 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
     RestoreInfo restoreInfo;
     audioStream_->GetRestoreInfo(restoreInfo);
     IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
-    SetClientInfo(restoreInfo.routeFlag, targetClass);
+    if (restoreInfo.restoreReason == FORCED_NORMAL) {
+        rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+        rendererInfo_.pipeType = PIPE_TYPE_CALL_OUT;
+    } else {
+        SetClientInfo(restoreInfo.routeFlag, targetClass);
+    }
 
     // Block interrupt calback, avoid pausing wrong stream.
     std::shared_ptr<AudioRendererInterruptCallbackImpl> interruptCbImpl = nullptr;
@@ -2050,13 +2055,6 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     // Stop old stream, get stream info and frames written for new stream, and release old stream.
     switchResult = FinishOldStream(targetClass, restoreInfo, previousState, switchInfo);
     CHECK_AND_RETURN_RET_LOG(switchResult, false, "Finish old stream failed");
-
-    // Create stream and pipe
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescBySwitchInfo(switchInfo, restoreInfo);
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
-    uint32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(
-        streamDesc, flag, switchInfo.params.originalSessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
 
     // Create and start new stream.
     switchResult = GenerateNewStream(targetClass, restoreInfo, previousState, switchInfo);
