@@ -1538,5 +1538,29 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_058, TestSize.Level1)
     bool ret = audioEndpointInner->GetDeviceHandleInfo(frames, nanoTime);
     EXPECT_EQ(ret, false);
 }
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointInner_059
+ * @tc.desc  : Test AudioEndpointInner::CheckWakeUpTime()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_059, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    int64_t MAX_WAKEUP_TIME_NS = 300000000; // 3s
+    int64_t curTime = ClockTime::GetCurNano();
+    int64_t wakeUpTime = curTIme;
+    audioEndpointInner->CheckWakeUpTime(wakeUpTime);
+
+    wakeUpTime = curTime + MAX_WAKEUP_TIME_NS;
+    audioEndpointInner->CheckWakeUpTime(wakeUpTime);
+}
 } // namespace AudioStandard
 } // namespace OHOS
