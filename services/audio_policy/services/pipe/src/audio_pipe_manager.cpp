@@ -246,7 +246,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioPipeManager::GetStreamDescByIdInner(
 int32_t AudioPipeManager::GetStreamCount(const std::string adapterName, const uint32_t routeFlag)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    int32_t count = 0;
+    size_t count = 0;
     for (auto it : curPipeList_) {
         if (it->adapterName_ == adapterName && it->routeFlag_ == routeFlag) {
             count = it->streamDescriptors_.size();
