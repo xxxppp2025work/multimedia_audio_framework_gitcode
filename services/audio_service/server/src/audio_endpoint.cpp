@@ -1320,7 +1320,7 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
         bool muteFlag = processList_[i]->GetMuteState();
         bool getVolumeRet = PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
-        int32_t doNotDisturbStatusVolume = AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(volumeType,
+        int32_t doNotDisturbStatusVolume = AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(streamType,
             clientConfig_.appInfo.appUid);
         if (deviceInfo_.networkId_ == LOCAL_NETWORK_ID &&
             !(deviceInfo_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && volumeType == STREAM_MUSIC &&
