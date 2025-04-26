@@ -663,7 +663,12 @@ int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFu
     RestoreInfo restoreInfo;
     audioStream_->GetRestoreInfo(restoreInfo);
     IAudioStream::StreamClass targetClass = IAudioStream::StreamClass::PA_STREAM;
-    SetClientInfo(restoreInfo.routeFlag, targetClass);
+    if (restoreInfo.restoreReason == FORCED_NORMAL) {
+        capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
+        capturerInfo_.pipeType = PIPE_TYPE_CALL_IN;
+    } else {
+        SetClientInfo(restoreInfo.routeFlag, targetClass);
+    }
 
     // Block interrupt calback, avoid pausing wrong stream.
     std::shared_ptr<AudioCapturerInterruptCallbackImpl> interruptCbImpl = nullptr;
