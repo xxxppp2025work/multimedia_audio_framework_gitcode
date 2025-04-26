@@ -379,6 +379,16 @@ void AudioPolicyConfigManager::HandleGetStreamPropInfoForRecord(
             info = streamProp;
         }
     }
+
+    if (isEcFeatureEnable_) {
+        std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(targetSourceType, -1);
+        if (inputDesc != nullptr && inputDesc->deviceType_ != DEVICE_TYPE_MIC &&
+            Info.channelLayout_ == PC_MIC_CHANNEL_NUM) {
+            // only built-in mic can use 4 channel, update later by using xml to describe
+            Info.channels_ = static_cast<AudioChannel>(HEADPHONE_CHANNEL_NUM);
+            Info.channelLayout_ = CH_LAYOUT_STEREO;
+        }
+    }
 }
 
 void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
