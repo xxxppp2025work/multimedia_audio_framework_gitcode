@@ -233,6 +233,7 @@ private:
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
     bool silentModeAndMixWithOthers_ = false;
     DeviceType defaultOutputDevice_ = DEVICE_TYPE_NONE;
+    bool isSetModeCallback_ = false;
 
     std::mutex streamCbMutex_;
     std::weak_ptr<AudioStreamCallback> streamCallback_;
