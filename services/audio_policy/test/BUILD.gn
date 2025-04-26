@@ -1966,6 +1966,7 @@ ohos_unittest("audio_router_center_unit_test") {
   include_dirs = [
     "./unittest/audio_router_center_unit_test/include",
     "../../audio_policy/server/include/service/routers",
+    "../../audio_policy/server/include/service/zone",
   ]
 
   use_exceptions = true
