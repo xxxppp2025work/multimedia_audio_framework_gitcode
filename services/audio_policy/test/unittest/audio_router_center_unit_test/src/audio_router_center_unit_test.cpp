@@ -17,6 +17,7 @@
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 #include "audio_zone_service.h"
+#include "audio_source_type.h"
 
 #include <thread>
 #include <memory>
@@ -79,7 +80,8 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_003, TestSize.Level1)
 {
     AudioRouterCenter audioRouterCenter;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
-    descs = audioRouterCenter.FetchOutputDevices(STREAM_USAGE_ALARM, 0, ROUTER_TYPE_NONE);
+    RouterType type = ROUTER_TYPE_DEFAULT;
+    descs = audioRouterCenter.FetchOutputDevices(STREAM_USAGE_ALARM, 0, type);
     EXPECT_EQ(descs.size(), 1);
     std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
@@ -87,7 +89,7 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_003, TestSize.Level1)
     AudioZoneContext context;
     int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("1", context);
     AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, 1);
-    descs = audioRouterCenter.FetchOutputDevices(STREAM_USAGE_ALARM, 1, ROUTER_TYPE_NONE);
+    descs = audioRouterCenter.FetchOutputDevices(STREAM_USAGE_ALARM, 1, type);
     EXPECT_EQ(descs.size(), 0);
 }
 
@@ -101,7 +103,7 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_004, TestSize.Level1)
     AudioRouterCenter audioRouterCenter;
     EXPECT_TRUE(audioRouterCenter.IsConfigRouterStrategy(SOURCE_TYPE_MIC));
     EXPECT_TRUE(audioRouterCenter.IsConfigRouterStrategy(SOURCE_TYPE_VOICE_COMMUNICATION));
-    EXPECT_TRUE(audioRouterCenter.IsConfigRouterStrategy(SOURCE_TYPE_MESSAGE));
+    EXPECT_TRUE(audioRouterCenter.IsConfigRouterStrategy(SOURCE_TYPE_VOICE_MESSAGE));
     EXPECT_FALSE(audioRouterCenter.IsConfigRouterStrategy(SOURCE_TYPE_INVALID));
 }
 
@@ -113,18 +115,19 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_004, TestSize.Level1)
 HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_005, TestSize.Level1)
 {
     AudioRouterCenter audioRouterCenter;
-    EXPECT_NE(nullptr, audioRouterCenter.FetchCapturerInputDevice(SOURCE_TYPE_MIC, 0, ROUTER_TYPE_NONE, 0));
+    RouterType type = ROUTER_TYPE_DEFAULT;
+    EXPECT_NE(nullptr, audioRouterCenter.FetchCapturerInputDevice(SOURCE_TYPE_MIC, 0, type, 0));
     AudioPolicyService::GetAudioPolicyService().SetAudioScene(AUDIO_SCENE_PHONE_CALL);
-    EXPECT_NE(nullptr, audioRouterCenter.FetchCapturerInputDevice(SOURCE_TYPE_MIC, 0, ROUTER_TYPE_NONE, 0));
+    EXPECT_NE(nullptr, audioRouterCenter.FetchCapturerInputDevice(SOURCE_TYPE_MIC, 0, type, 0));
     EXPECT_NE(nullptr,
-        audioRouterCenter.FetchCapturerInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, 0, ROUTER_TYPE_NONE, 0));
+        audioRouterCenter.FetchCapturerInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, 0, type, 0));
     AudioPolicyService::GetAudioPolicyService().SetAudioScene(AUDIO_SCENE_DEFAULT);
     EXPECT_NE(nullptr,
-        audioRouterCenter.FetchCapturerInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, 0, ROUTER_TYPE_NONE, 0));
+        audioRouterCenter.FetchCapturerInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, 0, type, 0));
     EXPECT_NE(nullptr,
-        audioRouterCenter.FetchCapturerInputDevice(SOURCE_TYPE_INVALID, 0, ROUTER_TYPE_NONE, 0));
+        audioRouterCenter.FetchCapturerInputDevice(SOURCE_TYPE_INVALID, 0, type, 0));
     EXPECT_NE(nullptr,
-        audioRouterCenter.FetchCapturerInputDevice(SOURCE_TYPE_MESSAGE, 0, ROUTER_TYPE_NONE, 0));
+        audioRouterCenter.FetchCapturerInputDevice(SOURCE_TYPE_VOICE_MESSAGE, 0, type, 0));
 }
 
 /**
@@ -137,7 +140,7 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_006, TestSize.Level1)
     AudioRouterCenter audioRouterCenter;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
     EXPECT_NE(nullptr,
-        audioRouterCenter.FetchInputDevice(SOURCE_TYPE_MESSAGE, 0, 0));
+        audioRouterCenter.FetchInputDevice(SOURCE_TYPE_VOICE_MESSAGE, 0, 0));
     std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     AudioZoneService::GetInstance().Init(handler, interruptService);
@@ -145,7 +148,7 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_006, TestSize.Level1)
     int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("1", context);
     AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, 1);
     EXPECT_NE(nullptr,
-        audioRouterCenter.FetchInputDevice(SOURCE_TYPE_MESSAGE, 1, 1));
+        audioRouterCenter.FetchInputDevice(SOURCE_TYPE_VOICE_MESSAGE, 1, 1));
 }
 } // namespace AudioStandard
 } // namespace OHOS
