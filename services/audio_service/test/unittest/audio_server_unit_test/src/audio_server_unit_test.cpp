@@ -1141,6 +1141,8 @@ HWTEST_F(AudioServerUnitTest, SetDeviceConnectedFlag_001, TestSize.Level1)
 
     audioServer->SetDeviceConnectedFlag(true);
     audioServer->SetDeviceConnectedFlag(false);
+}
+
  * @tc.name  : Test Dump API
  * @tc.type  : FUNC
  * @tc.number: Dump_001
