@@ -56,6 +56,7 @@ static std::string GetEncryptAddr(const std::string &addr)
 
 const int32_t ONE_MINUTE = 60;
 const uint32_t ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS = 10000;
+const std::string SAFE_VOLUME_SO_PATH = "/system/lib64/platformsdk/libaudio_safe_volume_notification_impl.z.so";
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
@@ -610,7 +611,7 @@ int32_t AudioVolumeManager::SetNearlinkDeviceVolume(const std::string &macAddres
 
 void AudioVolumeManager::PublishSafeVolumeNotification(int32_t notificationId)
 {
-    void *libHandle = dlopen("libaudio_safe_volume_notification_impl.z.so", RTLD_LAZY);
+    void *libHandle = dlopen(SAFE_VOLUME_SO_PATH.c_str(), RTLD_LAZY);
     if (libHandle == nullptr) {
         AUDIO_ERR_LOG("dlopen failed %{public}s", __func__);
         return;
@@ -641,7 +642,7 @@ void AudioVolumeManager::PublishSafeVolumeNotification(int32_t notificationId)
 
 void AudioVolumeManager::CancelSafeVolumeNotification(int32_t notificationId)
 {
-    void *libHandle = dlopen("libaudio_safe_volume_notification_impl.z.so", RTLD_LAZY);
+    void *libHandle = dlopen(SAFE_VOLUME_SO_PATH.c_str(), RTLD_LAZY);
     if (libHandle == nullptr) {
         AUDIO_ERR_LOG("dlopen failed %{public}s", __func__);
         return;
