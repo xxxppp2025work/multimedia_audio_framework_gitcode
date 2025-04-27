@@ -38,15 +38,15 @@ HpaeRemoteSinkOutputNode::HpaeRemoteSinkOutputNode(HpaeNodeInfo &nodeInfo)
       interleveData_(nodeInfo.frameLen * nodeInfo.channels)
 {
 #ifdef ENABLE_HOOK_PCM
-    outputMediaPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeRemoteSinkOutputNode_Out_Media_bit_" + std::to_string(GetBitWidth()) +
-                                                       "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
-                                                       std::to_string(GetSampleRate()) + ".pcm");
-    outputNavigationPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeRemoteSinkOutputNode_Out_Navigation_bit_" + std::to_string(GetBitWidth()) +
-                                                       "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
-                                                       std::to_string(GetSampleRate()) + ".pcm");
-    outputCommunicationPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeRemoteSinkOutputNode_Out_Communication_bit_" + std::to_string(GetBitWidth()) +
-                                                       "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
-                                                       std::to_string(GetSampleRate()) + ".pcm");
+    outputMediaPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeRemoteSinkOutputNode_Out_Media_bit_" +
+        std::to_string(GetBitWidth()) + "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
+        std::to_string(GetSampleRate()) + ".pcm");
+    outputNavigationPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeRemoteSinkOutputNode_Out_Navigation_bit_" +
+        std::to_string(GetBitWidth()) + "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
+        std::to_string(GetSampleRate()) + ".pcm");
+    outputCommunicationPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeRemoteSinkOutputNode_Out_Communication_bit_" +
+        std::to_string(GetBitWidth()) + "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
+        std::to_string(GetSampleRate()) + ".pcm");
     AUDIO_INFO_LOG("HpaeRemoteSinkOutputNode name is %{public}s", sinkOutAttr_.adapterName.c_str());
 #endif
 }

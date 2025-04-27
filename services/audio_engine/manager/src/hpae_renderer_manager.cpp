@@ -285,7 +285,8 @@ int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId)
     } else {
         HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
         int32_t effectMode = nodeInfo.effectInfo.effectMode;
-        HpaeProcessorType sceneType = (effectMode == EFFECT_NONE && !isSplitProcessorType(nodeInfo.sceneType)) ? HPAE_SCENE_EFFECT_NONE : nodeInfo.sceneType;
+        HpaeProcessorType sceneType = (effectMode == EFFECT_NONE && !isSplitProcessorType(nodeInfo.sceneType))
+            ? HPAE_SCENE_EFFECT_NONE : nodeInfo.sceneType;
         if (SafeGetMap(sceneClusterMap_, sceneType)) {
             DeleteProcessCluster(nodeInfo, sceneType, sessionId);
         }

@@ -215,7 +215,8 @@ void ConvertToSplitArr(const std::string &splitMode)
 
 HpaeProcessorType TransStreamUsageToSplitSceneType(StreamUsage streamUsage, const std::string &splitMode)
 {
-    AUDIO_INFO_LOG("streamUsage is: %{public}d, splitMode is: %{public}s", static_cast<int>(streamUsage), splitMode.c_str());
+    AUDIO_INFO_LOG("streamUsage is: %{public}d, splitMode is: %{public}s",
+        static_cast<int>(streamUsage), splitMode.c_str());
     ConvertToSplitArr(splitMode);
     if (g_splitNums == SPLIT_ONE_STREAM) {
         return HPAE_SCENE_SPLIT_MEDIA;

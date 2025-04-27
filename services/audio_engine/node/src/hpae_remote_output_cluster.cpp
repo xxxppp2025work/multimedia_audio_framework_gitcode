@@ -40,8 +40,8 @@ HpaeRemoteOutputCluster::HpaeRemoteOutputCluster(HpaeNodeInfo &nodeInfo)
     }
 #endif
     frameLenMs_ = nodeInfo.frameLen * MILLISECOND_PER_SECOND / nodeInfo.samplingRate;
-    AUDIO_INFO_LOG(
-        "HpaeRemoteOutputCluster frameLenMs_:%{public}u ms, timeoutThdFrames_:%{public}u", frameLenMs_, timeoutThdFrames_);
+    AUDIO_INFO_LOG("HpaeRemoteOutputCluster frameLenMs_:%{public}u ms,
+        timeoutThdFrames_:%{public}u", frameLenMs_, timeoutThdFrames_);
 }
 
 HpaeRemoteOutputCluster::~HpaeRemoteOutputCluster()
@@ -109,7 +109,8 @@ void HpaeRemoteOutputCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBu
     } else {
 #ifdef ENABLE_HIDUMP_DFX
         if (auto callBack = hpaeSinkOutputNode_->GetNodeStatusCallback().lock()) {
-            callBack->OnNotifyDfxNodeInfo(false, hpaeSinkOutputNode_->GetNodeId(), sceneConverterMap_[sceneType]->GetNodeInfo());
+            callBack->OnNotifyDfxNodeInfo(false, hpaeSinkOutputNode_->GetNodeId(),
+                sceneConverterMap_[sceneType]->GetNodeInfo());
         }
 #endif
         sceneConverterMap_.erase(sceneType);
@@ -138,7 +139,8 @@ void HpaeRemoteOutputCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePc
         hpaeSinkOutputNode_->DisConnect(sceneConverterMap_[sceneType]);
 #ifdef ENABLE_HIDUMP_DFX
         if (auto callBack = hpaeSinkOutputNode_->GetNodeStatusCallback().lock()) {
-            callBack->OnNotifyDfxNodeInfo(false, hpaeSinkOutputNode_->GetNodeId(), sceneConverterMap_[sceneType]->GetNodeInfo());
+            callBack->OnNotifyDfxNodeInfo(false, hpaeSinkOutputNode_->GetNodeId(),
+                sceneConverterMap_[sceneType]->GetNodeInfo());
         }
 #endif
         sceneConverterMap_.erase(sceneType);
@@ -234,4 +236,4 @@ bool HpaeRemoteOutputCluster::IsProcessClusterConnected(HpaeProcessorType sceneT
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
-}  // namespace OHOS
+}  // namespace OHOS
