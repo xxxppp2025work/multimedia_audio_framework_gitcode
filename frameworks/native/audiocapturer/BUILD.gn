@@ -89,6 +89,7 @@ ohos_shared_library("audio_capturer") {
     "media_foundation:media_monitor_common",
     "pulseaudio:pulse",
     "samgr:samgr_proxy",
+    "eventhandler:libeventhandler",
   ]
 
   version_script = "../../../audio_framework.versionscript"

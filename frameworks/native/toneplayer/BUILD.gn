@@ -75,6 +75,7 @@ if (!audio_framework_feature_dtmf_tone) {
       "init:libbegetutil",
       "ipc:ipc_single",
       "pulseaudio:pulse",
+      "eventhandler:libeventhandler",
     ]
 
     if (audio_telephony_core_service_enable) {

@@ -64,6 +64,7 @@ ohos_shared_library("audio_renderer") {
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "samgr:samgr_proxy",
+    "eventhandler:libeventhandler",
   ]
 
   public_configs = [ ":audio_external_library_config" ]
