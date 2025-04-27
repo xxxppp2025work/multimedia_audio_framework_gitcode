@@ -410,5 +410,17 @@ std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetPipeByModuleAndFlag(const st
     AUDIO_ERR_LOG("Can not find pipe %{public}s", moduleName.c_str());
     return nullptr;
 }
+
+bool AudioPipeManager::IsSessionExisted(uint32_t sessionId)
+{
+    for (auto &pipe : curPipeList_) {
+        for (auto &desc : pipe->streamDescriptors_) {
+            if (sessionId == desc->sessionId_) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS

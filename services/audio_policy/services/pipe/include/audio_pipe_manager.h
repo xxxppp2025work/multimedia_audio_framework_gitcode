@@ -73,7 +73,7 @@ public:
     void RemoveModemCommunicationId(uint32_t sessionId);
     std::unordered_map<uint32_t, int32_t> GetModemCommunicationMap();
     std::shared_ptr<AudioPipeInfo> GetNormalSourceInfo(bool isEcFeatureEnable);
-
+    bool IsSessionExisted(uint32_t sessionId);
 private:
     bool IsSpecialPipe(uint32_t routeFlag);
     std::shared_ptr<AudioPipeInfo> GetPipeByModuleAndFlag(const std::string moduleName, const uint32_t routeFlag);
