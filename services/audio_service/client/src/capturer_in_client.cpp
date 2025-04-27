@@ -387,6 +387,7 @@ CapturerInClientInner::~CapturerInClientInner()
 {
     AUDIO_INFO_LOG("~CapturerInClientInner()");
     CapturerInClientInner::ReleaseAudioStream(true);
+    callbackHandler_ = nullptr;
     AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
