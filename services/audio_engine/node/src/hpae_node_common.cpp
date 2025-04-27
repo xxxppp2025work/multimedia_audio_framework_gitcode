@@ -14,11 +14,19 @@
  */
 
 #include "hpae_node_common.h"
+#include <sstream>
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 static constexpr uint64_t TIME_US_PER_S = 1000000;
+static constexpr int MAX_PARTS = 10;
+std::array<std::string, MAX_PARTS> g_splitArr;
+int g_splitNums = 0;
+const uint32_t SPLIT_ONE_STREAM = 1;
+const uint32_t SPLIT_TWO_STREAM = 2;
+const uint32_t SPLIT_THREE_STREAM = 3;
+
 static std::map<AudioStreamType, HpaeProcessorType> g_streamTypeToSceneTypeMap = {
     {STREAM_MUSIC, HPAE_SCENE_MUSIC},
     {STREAM_GAME, HPAE_SCENE_GAME},
@@ -184,6 +192,54 @@ uint64_t ConvertDatalenToUs(size_t bufferSize, const HpaeNodeInfo &nodeInfo)
     double microseconds = seconds * TIME_US_PER_S;
 
     return static_cast<uint64_t>(microseconds);
+}
+
+void ConvertToSplitArr(const std::string &splitMode)
+{
+    g_splitNums = 0;
+    std::fill(g_splitArr.begin(), g_splitArr.end(), "");
+
+    if (splitMode.empty()) {
+        AUDIO_ERR_LOG("input SPLIT_MODE is empty");
+        return;
+    }
+
+    std::istringstream iss(splitMode);
+    std::string token;
+
+    while (g_splitNums < MAX_PARTS && std::getline(iss, token, ':')) {
+        g_splitArr[g_splitNums] = token;
+        ++g_splitNums;
+    }
+}
+
+HpaeProcessorType TransStreamUsageToSplitSceneType(StreamUsage streamUsage, const std::string &splitMode)
+{
+    AUDIO_INFO_LOG("streamUsage is: %{public}d, splitMode is: %{public}s", static_cast<int>(streamUsage), splitMode.c_str());
+    ConvertToSplitArr(splitMode);
+    if (g_splitNums == SPLIT_ONE_STREAM) {
+        return HPAE_SCENE_SPLIT_MEDIA;
+    }
+
+    if (g_splitNums == SPLIT_TWO_STREAM) {
+        if (streamUsage == STREAM_USAGE_NAVIGATION) {
+            return HPAE_SCENE_SPLIT_NAVIGATION;
+        }
+        return HPAE_SCENE_SPLIT_MEDIA;
+    }
+
+    if (g_splitNums == SPLIT_THREE_STREAM) {
+        if (streamUsage == STREAM_USAGE_NAVIGATION) {
+            return HPAE_SCENE_SPLIT_NAVIGATION;
+        } else if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+                   streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
+            return HPAE_SCENE_SPLIT_COMMUNICATION;
+        } else {
+            return HPAE_SCENE_SPLIT_MEDIA;
+        }
+    }
+
+    return HPAE_SCENE_DEFAULT;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

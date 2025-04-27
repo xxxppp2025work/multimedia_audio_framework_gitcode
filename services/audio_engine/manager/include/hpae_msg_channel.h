@@ -77,6 +77,11 @@ enum HpaeProcessorType {
     HPAE_SCENE_EFFECT_NONE = 8,
     HPAE_SCENE_EFFECT_OUT = 9,
 
+    // special scene for split
+    HPAE_SCENE_SPLIT_MEDIA = 10,
+    HPAE_SCENE_SPLIT_NAVIGATION = 11,
+    HPAE_SCENE_SPLIT_COMMUNICATION = 12,
+
     // up processor scene
     HPAE_SCENE_VOIP_UP = 20,
     HPAE_SCENE_RECORD = 21,
@@ -132,6 +137,19 @@ struct HpaeNodeInfo : HpaeDfxNodeInfo {
     std::weak_ptr<INodeCallback> statusCallback;
     HpaeSourceBufferType sourceBufferType = HpaeSourceBufferType::HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
     HpaeSourceInputNodeType sourceInputNodeType = HpaeSourceInputNodeType::HPAE_SOURCE_DEFAULT;
+
+    HpaeSplitStreamType GetSplitStreamType() const
+    {
+        if (sceneType == HPAE_SCENE_SPLIT_NAVIGATION) {
+            return STREAM_TYPE_NAVIGATION;
+        } else if (sceneType == HPAE_SCENE_SPLIT_COMMUNICATION) {
+            return STREAM_TYPE_COMMUNICATION;
+        } else if (sceneType == HPAE_SCENE_SPLIT_MEDIA) {
+            return STREAM_TYPE_MEDIA;
+        } else {
+            return STREAM_TYPE_DEFAULT;
+        }
+    }
 };
 
 class INodeFormatInfoCallback {

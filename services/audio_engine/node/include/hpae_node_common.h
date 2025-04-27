@@ -33,6 +33,7 @@ uint64_t ConvertDatalenToUs(size_t bufferSize, const HpaeNodeInfo &nodeInfo);
 size_t ConvertUsToFrameCount(uint64_t usTime, const HpaeNodeInfo &nodeInfo);
 std::string ConvertSessionState2Str(HpaeSessionState state);
 std::string ConvertStreamManagerState2Str(StreamManagerState state);
+HpaeProcessorType TransStreamUsageToSplitSceneType(StreamUsage streamUsage, const std::string &splitMode);
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
