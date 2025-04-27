@@ -233,6 +233,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/service/audio_a2dp_offload_flag.cpp",
     "server/src/service/service/audio_a2dp_offload_manager.cpp",
     "server/src/service/service/audio_active_device.cpp",
+    "server/src/service/service/audio_background_manager.cpp",
     "server/src/service/service/audio_capturer_session.cpp",
     "server/src/service/service/audio_config_manager.cpp",
     "server/src/service/service/audio_connected_device.cpp",

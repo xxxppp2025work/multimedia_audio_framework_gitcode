@@ -222,6 +222,8 @@ const char *g_audioPolicyCodeStrs[] = {
     "DEACTIVATE_PREEMPT_MODE",
     "GET_DM_DEVICE_TYPE",
     "GET_DIRECT_PLAYBACK_SUPPORT",
+    "NOFITY_SESSION_STATE_CHANGE",
+    "NOFITY_FREEZE_STATE_CHANGE",
     "IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED",
 };
 
@@ -1238,6 +1240,29 @@ void AudioPolicyManagerStub::SetQueryBundleNameListCallbackInternal(MessageParce
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::NofitySessionStateChangeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int uid = data.ReadInt32();
+    int pid = data.ReadInt32();
+    int hasSession = data.ReadBool();
+
+    int32_t result = NofitySessionStateChange(uid, pid, hasSession);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::NotifyFreezeStateChangeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::set<int32_t> pidList;
+    int isFreeze = data.ReadBool();
+    int pidListSize = data.ReadInt32();
+    for (int32_t i = 0; i < pidListSize; i ++) {
+        pidList.insert(data.ReadInt32());
+    }
+
+    int32_t result = NotifyFreezeStateChange(pidList, isFreeze);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -1247,6 +1272,12 @@ void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DIRECT_PLAYBACK_SUPPORT):
             GetDirectPlaybackSupportInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::NOFITY_SESSION_STATE_CHANGE):
+            NofitySessionStateChangeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::NOFITY_FREEZE_STATE_CHANGE):
+            NotifyFreezeStateChangeInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED):
             IsAcousticEchoCancelerSupportedInternal(data, reply);

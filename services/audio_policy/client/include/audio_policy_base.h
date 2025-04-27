@@ -428,6 +428,10 @@ public:
 
     virtual int32_t SetVoiceRingtoneMute(bool isMute) = 0;
 
+    virtual int32_t NofitySessionStateChange(const int32_t uid, const int32_t pid, bool hasSession) = 0;
+
+    virtual int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, bool isFreeze) = 0;
+
     virtual void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) = 0;
 
     virtual int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
