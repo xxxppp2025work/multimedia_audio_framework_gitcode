@@ -95,9 +95,9 @@ int32_t AudioGeneralManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt
 }
 
 int32_t AudioGeneralManager::SetPreferredDevice(const PreferredType preferredType,
-    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid)
 {
-    return AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc, pid);
+    return AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc, uid);
 }
 
 int32_t AudioGeneralManager::SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
@@ -165,15 +165,18 @@ int32_t AudioGeneralManager::SetQueryClientTypeCallback(const std::shared_ptr<Au
 
 const sptr<IStandardAudioService> AudioGeneralManager::GetAudioGeneralManagerProxy()
 {
-    AudioXCollie xcollieGetAudioSystemManagerProxy("GetAudioGeneralManagerProxy", XCOLLIE_TIME_OUT_SECONDS);
+    AudioXCollie xcollieGetAudioSystemManagerProxy("GetAudioGeneralManagerProxy", XCOLLIE_TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     std::lock_guard<std::mutex> lock(g_asManagerProxyMutex);
     if (g_asManagerProxy == nullptr) {
-        AudioXCollie xcollieGetSystemAbilityManager("GetSystemAbilityManager", XCOLLIE_TIME_OUT_SECONDS);
+        AudioXCollie xcollieGetSystemAbilityManager("GetSystemAbilityManager", XCOLLIE_TIME_OUT_SECONDS,
+             nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "get sa manager failed");
         xcollieGetSystemAbilityManager.CancelXCollieTimer();
 
-        AudioXCollie xcollieGetSystemAbility("GetSystemAbility", XCOLLIE_TIME_OUT_SECONDS);
+        AudioXCollie xcollieGetSystemAbility("GetSystemAbility", XCOLLIE_TIME_OUT_SECONDS,
+             nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
         sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
         CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "get audio service remote object failed");
         g_asManagerProxy = iface_cast<IStandardAudioService>(object);
@@ -310,6 +313,8 @@ int32_t AudioGeneralManager::SelectOutputDevice(
         return ERR_INVALID_PARAM;
     }
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr, ERR_MEMORY_ALLOC_FAILED,
+        "audioRendererFilter is nullptr.");
     audioRendererFilter->uid = -1;
     int32_t ret = AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
     return ret;

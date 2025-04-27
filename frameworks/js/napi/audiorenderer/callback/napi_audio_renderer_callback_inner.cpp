@@ -32,8 +32,8 @@ void NapiAudioRendererCallbackInner::SaveCallbackReferenceInner(const std::strin
     napi_status status = napi_create_reference(env, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr, "Creating reference for callback fail");
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env, callback);
     if (successed != nullptr) {
+        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env, callback);
         successed(cb);
     }
 };
@@ -45,7 +45,7 @@ bool NapiAudioRendererCallbackInner::ContainSameJsCallbackInner(const std::strin
         callbackName.c_str());
     CHECK_AND_RETURN_RET_LOG(args != nullptr, false, "args is nullptr");
     napi_env env = GetEnv();
-    std::shared_ptr<AutoRef> &callbackCur = GetCallback(callbackName);
+    std::shared_ptr<AutoRef> callbackCur = GetCallback(callbackName);
     napi_value copyValue = nullptr;
     CHECK_AND_RETURN_RET_LOG(env != nullptr, false, "env is null");
     CHECK_AND_RETURN_RET_LOG(callbackCur != nullptr, false, "callbackCur is null");
@@ -64,7 +64,7 @@ void NapiAudioRendererCallbackInner::RemoveCallbackReferenceInner(
     CHECK_AND_RETURN_LOG(CheckIfTargetCallbackName(callbackName),
         "NapiAudioRendererCallbackInner->RemoveCallbackReferenceInner Unknown callback type: %{public}s",
         callbackName.c_str());
-    std::shared_ptr<AutoRef> &callbackCur = GetCallback(callbackName);
+    std::shared_ptr<AutoRef> callbackCur = GetCallback(callbackName);
     if (callback == nullptr) {
         callbackCur = nullptr;
         if (successed != nullptr) {

@@ -115,7 +115,7 @@ HWTEST(AudioUtilsUnitTest, Trace_001, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, PermissionUtil_001, TestSize.Level1)
 {
     bool ret1 = PermissionUtil::VerifyIsSystemApp();
-    EXPECT_EQ(false, ret1);
+    EXPECT_EQ(true, ret1);
     bool ret2 = PermissionUtil::VerifySelfPermission();
     EXPECT_EQ(true, ret2);
     bool ret3 = PermissionUtil::VerifySystemPermission();
@@ -3199,7 +3199,7 @@ HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_005, TestSize.Level1)
 {
     std::string tag = "";
     uint32_t timeoutSeconds = 0;
-    AudioXCollie audioXCollie(tag, timeoutSeconds);
+    AudioXCollie audioXCollie(tag, timeoutSeconds, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     audioXCollie.isCanceled_ = false;
     audioXCollie.CancelXCollieTimer();
     EXPECT_EQ(audioXCollie.isCanceled_, true);

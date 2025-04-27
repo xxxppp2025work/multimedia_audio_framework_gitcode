@@ -44,6 +44,8 @@ std::mutex g_cBDiedMapMutex;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
 std::weak_ptr<AudioCapturerPolicyServiceDiedCallback> AudioPolicyManager::capturerCB_;
 std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> AudioPolicyManager::audioStreamCBMap_;
+std::vector<AudioServerDiedCallBack> AudioPolicyManager::serverDiedCbks_;
+std::mutex AudioPolicyManager::serverDiedCbkMutex_;
 std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackStub>> AudioPolicyManager::clientTrackerStubMap_;
 
 static bool RegisterDeathRecipientInner(sptr<IRemoteObject> object)
@@ -115,10 +117,12 @@ static const sptr<IAudioPolicy> RecoverAndGetAudioPolicyManagerProxy()
 
 int32_t AudioPolicyManager::RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp)
 {
-    AudioXCollie audioXCollie("AudioPolicyManager::RegisterPolicyCallbackClientFunc", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("AudioPolicyManager::RegisterPolicyCallbackClientFunc", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     std::unique_lock<std::mutex> lock(registerCallbackMutex_);
     if (audioPolicyClientStubCB_ == nullptr) {
         audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+        CHECK_AND_RETURN_RET_LOG(audioPolicyClientStubCB_ != nullptr, ERROR, "audioPolicyClientStubCB_ is nullptr");
     }
     sptr<IRemoteObject> object = audioPolicyClientStubCB_->AsObject();
     if (object == nullptr) {
@@ -246,6 +250,21 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
             }
         }
     }
+
+    {
+        std::lock_guard<std::mutex> lockCbMap(serverDiedCbkMutex_);
+        for (auto func : serverDiedCbks_) {
+            CHECK_AND_CONTINUE(func != nullptr);
+            func();
+        }
+    }
+}
+
+void AudioPolicyManager::RegisterServerDiedCallBack(AudioServerDiedCallBack func)
+{
+    CHECK_AND_RETURN_LOG(func != nullptr, "func is null");
+    std::lock_guard<std::mutex> lockCbMap(serverDiedCbkMutex_);
+    serverDiedCbks_.emplace_back(func);
 }
 
 int32_t AudioPolicyManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
@@ -329,7 +348,8 @@ int32_t AudioPolicyManager::SetRingerMode(AudioRingerMode ringMode)
 
 AudioRingerMode AudioPolicyManager::GetRingerMode()
 {
-    AudioXCollie audioXCollie("AudioPolicyManager::GetRingerMode", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("AudioPolicyManager::GetRingerMode", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, RINGER_MODE_NORMAL, "audio policy manager proxy is NULL.");
     return gsp->GetRingerMode();
@@ -928,6 +948,20 @@ int32_t AudioPolicyManager::DeactivateAudioInterrupt(const AudioInterrupt &audio
     return gsp->DeactivateAudioInterrupt(audioInterrupt, zoneID);
 }
 
+int32_t AudioPolicyManager::ActivatePreemptMode()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->ActivatePreemptMode();
+}
+
+int32_t AudioPolicyManager::DeactivatePreemptMode()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->DeactivatePreemptMode();
+}
+
 int32_t AudioPolicyManager::SetAudioManagerInterruptCallback(const int32_t clientId,
     const std::shared_ptr<AudioInterruptCallback> &callback)
 {
@@ -1242,7 +1276,8 @@ int32_t AudioPolicyManager::GetVolumeGroupInfos(std::string networkId, std::vect
 
 int32_t AudioPolicyManager::GetNetworkIdByGroupId(int32_t groupId, std::string &networkId)
 {
-    AudioXCollie audioXCollie("AudioPolicyManager::GetNetworkIdByGroupId", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("AudioPolicyManager::GetNetworkIdByGroupId", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "GetNetworkIdByGroupId failed, g_apProxy is nullptr.");
     return gsp->GetNetworkIdByGroupId(groupId, networkId);
@@ -2260,6 +2295,54 @@ int32_t AudioPolicyManager::SetQueryAllowedPlaybackCallback(
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "listenerStub->AsObject is nullptr.");
 
     return gsp->SetQueryAllowedPlaybackCallback(object);
+}
+
+int32_t AudioPolicyManager::SetAudioFormatUnsupportedErrorCallback(
+    const std::shared_ptr<AudioFormatUnsupportedErrorCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    if (!isAudioPolicyClientRegisted_) {
+        const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_FORMAT_UNSUPPORTED_ERROR].mutex);
+    CHECK_AND_RETURN_RET(audioPolicyClientStubCB_ != nullptr, ERR_NULL_POINTER);
+    audioPolicyClientStubCB_->AddAudioFormatUnsupportedErrorCallback(callback);
+    if (audioPolicyClientStubCB_->GetAudioFormatUnsupportedErrorCallbackSize() == 1) {
+        callbackChangeInfos_[CALLBACK_FORMAT_UNSUPPORTED_ERROR].isEnable = true;
+        SetClientCallbacksEnable(CALLBACK_FORMAT_UNSUPPORTED_ERROR, true);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnsetAudioFormatUnsupportedErrorCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_FORMAT_UNSUPPORTED_ERROR].mutex);
+    CHECK_AND_RETURN_RET(audioPolicyClientStubCB_ != nullptr, ERR_NULL_POINTER);
+    audioPolicyClientStubCB_->RemoveAudioFormatUnsupportedErrorCallback();
+    if (audioPolicyClientStubCB_->GetAudioFormatUnsupportedErrorCallbackSize() == 0) {
+        callbackChangeInfos_[CALLBACK_FORMAT_UNSUPPORTED_ERROR].isEnable = false;
+        SetClientCallbacksEnable(CALLBACK_FORMAT_UNSUPPORTED_ERROR, false);
+    }
+    return SUCCESS;
+}
+
+DirectPlaybackMode AudioPolicyManager::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+    const StreamUsage &streamUsage)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, DIRECT_PLAYBACK_NOT_SUPPORTED, "audio policy manager proxy is NULL.");
+    return gsp->GetDirectPlaybackSupport(streamInfo, streamUsage);
+}
+
+bool AudioPolicyManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+    return gsp->IsAcousticEchoCancelerSupported(sourceType);
 }
 
 AudioPolicyManager& AudioPolicyManager::GetInstance()

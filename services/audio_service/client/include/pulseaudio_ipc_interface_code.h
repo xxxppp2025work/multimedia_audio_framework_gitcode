@@ -104,7 +104,9 @@ namespace AudioStandard {
         DESTROY_HDI_PORT,
         DEVICE_CONNECTED_FLAG,
         SET_DM_DEVICE_TYPE,
-        AUDIO_SERVER_CODE_MAX = SET_DM_DEVICE_TYPE,
+        NOTIFY_SETTINGS_DATA_READY,
+        IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED,
+        AUDIO_SERVER_CODE_MAX = IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED,
     };
 } // namespace AudioStandard
 } // namespace OHOS

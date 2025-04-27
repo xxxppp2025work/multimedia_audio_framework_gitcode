@@ -59,7 +59,7 @@ public:
      * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
     virtual int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
-        DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag) = 0;
+        DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag = false) = 0;
 
     /**
      * Set Audio Parameter.
@@ -496,11 +496,15 @@ public:
 
     virtual void NotifyAccountsChanged() = 0;
 
+    virtual void NotifySettingsDataReady() = 0;
+
     virtual void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) = 0;
 
     virtual void SetDefaultAdapterEnable(bool isEnable) = 0;
 
     virtual void NotifyAudioPolicyReady() = 0;
+
+    virtual bool IsAcousticEchoCancelerSupported(SourceType sourceType) = 0;
 
 #ifdef HAS_FEATURE_INNERCAPTURER
     /**
@@ -685,6 +689,7 @@ private:
     int HandleGetStandbyStatus(MessageParcel &data, MessageParcel &reply);
     int HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyAccountsChanged(MessageParcel &data, MessageParcel &reply);
+    int HandleNotifySettingsDataReady(MessageParcel &data, MessageParcel &reply);
     int HandleGetAllSinkInputs(MessageParcel &data, MessageParcel &reply);
     int HandleSetDefaultAdapterEnable(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyAudioPolicyReady(MessageParcel &data, MessageParcel &reply);
@@ -701,6 +706,7 @@ private:
     int HandleCreateSourcePort(MessageParcel &data, MessageParcel &reply);
     int HandleDestroyHdiPort(MessageParcel &data, MessageParcel &reply);
     int HandleDeviceConnectedFlag(MessageParcel &data, MessageParcel &reply);
+    int HandleIsAcousticEchoCancelerSupported(MessageParcel &data, MessageParcel &reply);
 
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

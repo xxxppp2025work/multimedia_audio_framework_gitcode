@@ -21,6 +21,7 @@
 #include "audio_focus_parser.h"
 #include "audio_policy_manager_listener_proxy.h"
 #include "media_monitor_manager.h"
+#include "audio_log.h"
 
 #include "dfx_utils.h"
 #include "app_mgr_client.h"
@@ -473,7 +474,6 @@ void AudioInterruptService::AddDumpInfo(std::unordered_map<int32_t, std::shared_
     for (const auto&[zoneId, audioInterruptZone] : zonesMap_) {
         std::shared_ptr<AudioInterruptZone> zoneDump = make_shared<AudioInterruptZone>();
         zoneDump->zoneId = zoneId;
-        zoneDump->pids = audioInterruptZone->pids;
         for (auto interruptCbInfo : audioInterruptZone->interruptCbsMap) {
             zoneDump->interruptCbStreamIdsMap.insert(interruptCbInfo.first);
         }
@@ -657,6 +657,11 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
             AUDIO_ERR_LOG("ActivateAudioInterrupt timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(mutex_);
+    if (isPreemptMode_) {
+        InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
+        SendInterruptEventToIncomingStream(interruptEvent, audioInterrupt);
+        return ERR_FOCUS_DENIED;
+    }
     bool updateScene = false;
     int ret = ActivateAudioInterruptInternal(zoneId, audioInterrupt, isUpdatedAudioStrategy, updateScene);
     if (ret != SUCCESS || !updateScene) {
@@ -668,7 +673,6 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
     // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
     lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
     return SUCCESS;
 }
 
@@ -688,8 +692,6 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
         AUDIO_PRERELEASE_LOGI("allow parallel play");
         return SUCCESS;
     }
-    policyServer_->CheckStreamMode(incomingStreamId);
-    policyServer_->OffloadStreamCheck(incomingStreamId, OFFLOAD_NO_SESSION_ID);
 
     if (AudioInterruptIsActiveInFocusList(zoneId, incomingStreamId) && !isUpdatedAudioStrategy) {
         AUDIO_INFO_LOG("Stream is active in focus list, no need to active audio interrupt.");
@@ -753,23 +755,52 @@ void AudioInterruptService::ClearAudioFocusInfoListOnAccountsChanged(const int &
 {
     std::lock_guard<std::mutex> lock(mutex_);
     AUDIO_INFO_LOG("start DeactivateAudioInterrupt, current id:%{public}d", id);
+    ClearAudioFocusInfoList();
+}
+
+int32_t AudioInterruptService::ClearAudioFocusInfoList()
+{
+    AUDIO_INFO_LOG("start clear audio focusInfo list");
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
     for (const auto&[zoneId, audioInterruptZone] : zonesMap_) {
         CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator it =
             audioInterruptZone->audioFocusInfoList.begin();
         while (it != audioInterruptZone->audioFocusInfoList.end()) {
-            if ((*it).first.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
-                (*it).first.streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+            if (!isPreemptMode_ &&
+                ((*it).first.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+                (*it).first.streamUsage == STREAM_USAGE_VOICE_RINGTONE)) {
                 AUDIO_INFO_LOG("usage is voice modem communication or voice ring, skip");
                 ++it;
             } else {
-                CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is nullptr");
+                CHECK_AND_RETURN_RET_LOG(handler_ != nullptr, ERROR, "handler is nullptr");
                 SendInterruptEventCallback(interruptEvent, (*it).first.streamId, (*it).first);
                 it = audioInterruptZone->audioFocusInfoList.erase(it);
             }
         }
     }
+    return SUCCESS;
+}
+
+int32_t AudioInterruptService::ActivatePreemptMode()
+{
+    AUDIO_INFO_LOG("start activate preempt mode");
+    std::lock_guard<std::mutex> lock(mutex_);
+    isPreemptMode_ = true;
+    int ret = ClearAudioFocusInfoList();
+    if (ret) {
+        isPreemptMode_ = false;
+    }
+    AUDIO_INFO_LOG("isPreemptMode_ = %{public}d", isPreemptMode_);
+    return ret;
+}
+
+int32_t AudioInterruptService::DeactivatePreemptMode()
+{
+    AUDIO_INFO_LOG("start deactivate preempt mode");
+    std::lock_guard<std::mutex> lock(mutex_);
+    isPreemptMode_ = false;
+    return SUCCESS;
 }
 
 int32_t AudioInterruptService::CreateAudioInterruptZone(const int32_t zoneId,
@@ -789,7 +820,6 @@ int32_t AudioInterruptService::ReleaseAudioInterruptZone(const int32_t zoneId, G
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
     return SUCCESS;
 }
 
@@ -803,43 +833,34 @@ int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, G
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
     return SUCCESS;
 }
 
-int32_t AudioInterruptService::InjectInterruptToAudiotZone(const int32_t zoneId,
+int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
     const AudioFocusList &interrupts)
 {
     std::unique_lock<std::mutex> lock(mutex_);
-    int32_t ret = zoneManager_.InjectInterruptToAudiotZone(zoneId, interrupts);
-    if (ret != SUCCESS) {
-        return ret;
-    }
-    if (zoneId == ZONEID_DEFAULT) {
-        return SUCCESS;
-    }
+    int32_t ret = zoneManager_.InjectInterruptToAudioZone(zoneId, interrupts);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InjectInterruptToAudioZone failed");
+    CHECK_AND_RETURN_RET_LOG(zoneId != ZONEID_DEFAULT, SUCCESS, "zone id is default");
+
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
     return SUCCESS;
 }
 
-int32_t AudioInterruptService::InjectInterruptToAudiotZone(const int32_t zoneId,
+int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
     const std::string &deviceTag, const AudioFocusList &interrupts)
 {
     std::unique_lock<std::mutex> lock(mutex_);
-    int32_t ret = zoneManager_.InjectInterruptToAudiotZone(zoneId, deviceTag, interrupts);
-    if (ret != SUCCESS) {
-        return ret;
-    }
-    if (zoneId == ZONEID_DEFAULT) {
-        return SUCCESS;
-    }
+    int32_t ret = zoneManager_.InjectInterruptToAudioZone(zoneId, deviceTag, interrupts);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InjectInterruptToAudioZone failed");
+    CHECK_AND_RETURN_RET_LOG(zoneId != ZONEID_DEFAULT, SUCCESS, "zone id is default");
+
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
     return SUCCESS;
 }
 
@@ -913,7 +934,7 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
             streamInFocus = (iter->first).audioFocusType.streamType;
         }
     }
-    return streamInFocus == STREAM_DEFAULT ? STREAM_MUSIC : streamInFocus;
+    return streamInFocus == STREAM_DEFAULT ? defaultVolumeType_ : streamInFocus;
 }
 
 int32_t AudioInterruptService::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId)
@@ -1173,7 +1194,8 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
     for (auto iterActive = tmpFocusInfoList.begin(); iterActive != tmpFocusInfoList.end();) {
         AudioFocusEntry focusEntry =
             focusCfgMap_[std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType)];
-        UpdateAudioFocusStrategy((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType, focusEntry);
+        UpdateAudioFocusStrategy((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType, focusEntry,
+            incomingInterrupt.uid);
         if (focusEntry.actionOn != CURRENT || IsSameAppInShareMode(incomingInterrupt, iterActive->first) ||
             iterActive->second == PLACEHOLDER || CanMixForSession(incomingInterrupt, iterActive->first, focusEntry) ||
             // incomming peeling should not stop/pause/duck other playing instances
@@ -1225,10 +1247,6 @@ void AudioInterruptService::RemoveFocusInfo(std::list<std::pair<AudioInterrupt, 
 {
     int32_t pidToRemove = (iterActive->first).pid;
     uint32_t streamId = (iterActive->first).streamId;
-    auto pidIt = zoneInfo->pids.find(pidToRemove);
-    if (pidIt != zoneInfo->pids.end()) {
-        zoneInfo->pids.erase(pidIt);
-    }
     iterActive = tmpFocusInfoList.erase(iterActive);
     zoneInfo->audioFocusInfoList = tmpFocusInfoList;
     bool isAudioSessionDeactivated = false;
@@ -1305,9 +1323,6 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
             return AudioFocusInfoListRemovalCondition(audioInterrupt, audioFocus);
         });
 
-        if (itZone->second->pids.find(pid) != itZone->second->pids.end()) {
-            itZone->second->pids.erase(itZone->second->pids.find(pid));
-        }
         itZone->second->audioFocusInfoList = audioFocusInfoList;
         zonesMap_[zoneId] = itZone->second;
         if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(pid)) {
@@ -1322,7 +1337,6 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
         WriteStartDfxMsg(dfxBuilder, audioInterrupt);
         AUDIO_INFO_LOG("audioFocusInfoList is empty, add the session into it directly");
         if (itZone->second != nullptr) {
-            itZone->second->pids.insert(pid);
             itZone->second->audioFocusInfoList.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
             zonesMap_[zoneId] = itZone->second;
         }
@@ -1333,8 +1347,7 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
         }
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, audioInterrupt);
         AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
-        UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-        AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
+        UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
         shouldReturnSuccess = true;
         return;
     }
@@ -1382,17 +1395,28 @@ int32_t AudioInterruptService::SetQueryBundleNameListCallback(const sptr<IRemote
     return SUCCESS;
 }
 
-void AudioInterruptService::UpdateAudioFocusStrategy(AudioFocusType existAudioFocusType,
-    AudioFocusType incomingAudioFocusType, AudioFocusEntry &focusEntry)
+std::string AudioInterruptService::GetRealBundleName(uint32_t uid)
 {
-    CHECK_AND_RETURN_LOG(policyServer_ != nullptr, "policyServer nullptr");
+    CHECK_AND_RETURN_RET_LOG(policyServer_ != nullptr, "", "policyServer nullptr");
+    if (IPCSkeleton::GetCallingUid() == MEDIA_SA_UID) {
+        auto info = policyServer_->GetBundleInfoFromUid(uid);
+        return info.name;
+    }
     std::string bundleName = policyServer_->GetBundleName();
+    return bundleName;
+}
+
+void AudioInterruptService::UpdateAudioFocusStrategy(AudioFocusType existAudioFocusType,
+    AudioFocusType incomingAudioFocusType, AudioFocusEntry &focusEntry, int32_t uid)
+{
+    std::string bundleName = GetRealBundleName(static_cast<uint32_t>(uid));
+    CHECK_AND_RETURN_LOG(!bundleName.empty(), "bundleName is empty");
     AudioStreamType existStreamType = existAudioFocusType.streamType;
     AudioStreamType incomingStreamType = incomingAudioFocusType.streamType;
-    if (IsMediaStream(existStreamType) && IsMediaStream(incomingStreamType)
-        && queryBundleNameListCallback_ != nullptr
-        && queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName)
-        && focusEntry.hintType == INTERRUPT_HINT_STOP) {
+    if (IsMediaStream(existStreamType) && IsMediaStream(incomingStreamType) &&
+        queryBundleNameListCallback_ != nullptr &&
+        queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName) &&
+        focusEntry.hintType == INTERRUPT_HINT_STOP) {
         focusEntry.hintType = INTERRUPT_HINT_PAUSE;
         AUDIO_INFO_LOG("%{public}s update audio focus strategy", bundleName.c_str());
     }
@@ -1407,8 +1431,8 @@ bool AudioInterruptService::FocusEntryContinue(std::list<std::pair<AudioInterrup
             CanMixForSession(incomingInterrupt, iterActive->first, focusEntry)) {
         return true;
     }
-    if (((focusEntry.actionOn == INCOMING && focusEntry.hintType == INTERRUPT_HINT_PAUSE) || focusEntry.isReject)
-        && (IsAudioSourceConcurrency((iterActive->first).audioFocusType.sourceType, incomingSourceType,
+    if (((focusEntry.actionOn == INCOMING && focusEntry.hintType == INTERRUPT_HINT_PAUSE) || focusEntry.isReject) &&
+        (IsAudioSourceConcurrency((iterActive->first).audioFocusType.sourceType, incomingSourceType,
         (iterActive->first).currencySources.sourcesTypes, incomingConcurrentSources)
         // if the rejection is caused by the existing peeling recording, just ignore it
         || IsLowestPriorityRecording(iterActive->first))) {
@@ -1440,7 +1464,8 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
             std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType);
         CHECK_AND_RETURN_RET_LOG(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), ERR_INVALID_PARAM, "no focus cfg");
         AudioFocusEntry focusEntry = focusCfgMap_[focusPair];
-        UpdateAudioFocusStrategy((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType, focusEntry);
+        UpdateAudioFocusStrategy((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType, focusEntry,
+            incomingInterrupt.uid);
         CheckIncommingFoucsValidity(focusEntry, incomingInterrupt, incomingInterrupt.currencySources.sourcesTypes);
         if (FocusEntryContinue(iterActive, focusEntry, incomingInterrupt)) { continue; }
         if (focusEntry.isReject) {
@@ -1456,6 +1481,9 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
             break;
         }
         incomingState = GetNewIncomingState(focusEntry.hintType, incomingState);
+    }
+    if (incomingState == STOP && !incomingInterrupt.deviceTag.empty()) {
+        incomingState = ACTIVE;
     }
     HandleIncomingState(zoneId, incomingState, interruptEvent, incomingInterrupt);
     AddToAudioFocusInfoList(itZone->second, zoneId, incomingInterrupt, incomingState);
@@ -1516,9 +1544,7 @@ void AudioInterruptService::AddToAudioFocusInfoList(std::shared_ptr<AudioInterru
         return;
     }
 
-    int32_t inComingPid = incomingInterrupt.pid;
     audioInterruptZone->zoneId = zoneId;
-    audioInterruptZone->pids.insert(inComingPid);
     audioInterruptZone->audioFocusInfoList.emplace_back(std::make_pair(incomingInterrupt, incomingState));
     zonesMap_[zoneId] = audioInterruptZone;
     SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, incomingInterrupt);
@@ -1566,6 +1592,7 @@ AudioScene AudioInterruptService::GetHighestPriorityAudioScene(const int32_t zon
             audioScene = itAudioScene;
             audioScenePriority = itAudioScenePriority;
             ownerPid_ = interrupt.pid;
+            ownerUid_ = interrupt.uid;
         }
     }
     return audioScene;
@@ -1621,12 +1648,8 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
             return;
         }
         ResetNonInterruptControl(audioInterrupt.streamId);
-        int32_t deactivePid = audioInterrupt.pid;
         audioFocusInfoList.erase(iter);
         itZone->second->zoneId = zoneId;
-        if (itZone->second->pids.find(deactivePid) != itZone->second->pids.end()) {
-            itZone->second->pids.erase(itZone->second->pids.find(deactivePid));
-        }
         itZone->second->audioFocusInfoList = audioFocusInfoList;
         zonesMap_[zoneId] = itZone->second;
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::ABANDON_CALLBACK_CATEGORY, audioInterrupt);
@@ -1636,9 +1659,11 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         return;
     }
 
-    policyServer_->OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, audioInterrupt.streamId);
-    policyServer_->OffloadStopPlaying(audioInterrupt);
-
+    if (itZone->second->focusStrategy == AudioZoneFocusStrategy::DISTRIBUTED_FOCUS_STRATEGY) {
+        AUDIO_INFO_LOG("zone: %{public}d distributed focus strategy not resume when deactivate interrupt",
+            itZone->first);
+        return;
+    }
     // resume if other session was forced paused or ducked
     ResumeAudioFocusList(zoneId, isSessionTimeout);
 
@@ -1646,11 +1671,10 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
 }
 
 void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audioScene,
-    AudioInterruptChangeType changeType)
+    AudioInterruptChangeType changeType, int32_t zoneId)
 {
-    if (policyServer_ == nullptr) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(policyServer_ != nullptr, "policyServer nullptr");
+    CHECK_AND_RETURN_LOG(zoneId == ZONEID_DEFAULT, "zoneId %{public}d is not default", zoneId);
     AudioScene currentAudioScene = policyServer_->GetAudioScene();
 
     AUDIO_PRERELEASE_LOGI("currentScene: %{public}d, targetScene: %{public}d, changeType: %{public}d",
@@ -1661,6 +1685,7 @@ void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audio
             break;
         case DEACTIVATE_AUDIO_INTERRUPT:
             if (GetAudioScenePriority(audioScene) >= GetAudioScenePriority(currentAudioScene)) {
+                AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerUid(audioScene == 0 ? 0 : ownerUid_);
                 return;
             }
             break;
@@ -1668,7 +1693,7 @@ void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audio
             AUDIO_ERR_LOG("unexpected changeType: %{public}d", changeType);
             return;
     }
-    policyServer_->SetAudioSceneInternal(audioScene);
+    policyServer_->SetAudioSceneInternal(audioScene, ownerUid_, ownerPid_);
 }
 
 bool AudioInterruptService::EvaluateWhetherContinue(const AudioInterrupt &incoming, const AudioInterrupt
@@ -1713,7 +1738,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
                 break;
             }
             AudioFocusEntry focusEntry = focusCfgMap_[audioFocusTypePair];
-            UpdateAudioFocusStrategy(inprocessing.audioFocusType, incoming.audioFocusType, focusEntry);
+            UpdateAudioFocusStrategy(inprocessing.audioFocusType, incoming.audioFocusType, focusEntry, incoming.uid);
             SourceType existSourceType = inprocessing.audioFocusType.sourceType;
             std::vector<SourceType> existConcurrentSources = inprocessing.currencySources.sourcesTypes;
             bool bConcurrency = IsAudioSourceConcurrency(existSourceType, incomingSourceType,
@@ -1821,7 +1846,6 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
         audioFocusInfoList = itZone->second->audioFocusInfoList;
     }
-
     std::list<std::pair<AudioInterrupt, AudioFocuState>> newAudioFocuInfoList = SimulateFocusEntry(zoneId);
     for (auto iterActive = audioFocusInfoList.begin(), iterNew = newAudioFocuInfoList.begin();
         iterActive != audioFocusInfoList.end() && iterNew != newAudioFocuInfoList.end();) {
@@ -1864,9 +1888,7 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
         itZone->second->audioFocusInfoList = audioFocusInfoList;
     }
-
-    UpdateAudioSceneFromInterrupt(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT);
-    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(highestPriorityAudioScene == 0 ? 0 : ownerPid_);
+    UpdateAudioSceneFromInterrupt(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
 }
 
 AudioScene AudioInterruptService::RefreshAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt,
@@ -1876,6 +1898,7 @@ AudioScene AudioInterruptService::RefreshAudioSceneFromAudioInterrupt(const Audi
     if (GetAudioScenePriority(targetAudioScene) >= GetAudioScenePriority(highestPriorityAudioScene)) {
         highestPriorityAudioScene = targetAudioScene;
         ownerPid_ = audioInterrupt.pid;
+        ownerUid_ = audioInterrupt.uid;
     }
     return highestPriorityAudioScene;
 }
@@ -1890,9 +1913,6 @@ void AudioInterruptService::SendSessionTimeOutStopEvent(const int32_t zoneId, co
     auto itZone = zonesMap_.find(zoneId);
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
         itZone->second->zoneId = zoneId;
-        if (itZone->second->pids.find(audioInterrupt.pid) != itZone->second->pids.end()) {
-            itZone->second->pids.erase(itZone->second->pids.find(audioInterrupt.pid));
-        }
         itZone->second->audioFocusInfoList = audioFocusInfoList;
         zonesMap_[zoneId] = itZone->second;
     }
@@ -1903,6 +1923,8 @@ void AudioInterruptService::SendFocusChangeEvent(const int32_t zoneId, int32_t c
     const AudioInterrupt &audioInterrupt)
 {
     CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
+    CHECK_AND_RETURN_LOG(zoneId == ZONEID_DEFAULT, "zoneId %{public}d is not default", zoneId);
+
     auto itZone = zonesMap_.find(zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
@@ -2116,6 +2138,18 @@ void AudioInterruptService::WriteStopDfxMsg(const AudioInterrupt &audioInterrupt
         dfxCollector_->FlushDfxMsg(audioInterrupt.streamId, audioInterrupt.uid);
     }
 }
+
+void AudioInterruptService::SetDefaultVolumeType(const AudioStreamType volumeType)
+{
+    defaultVolumeType_ = volumeType;
+    AUDIO_INFO_LOG("defaultVolumeType: %{public}d", defaultVolumeType_);
+}
+
+AudioStreamType AudioInterruptService::GetDefaultVolumeType() const
+{
+    return defaultVolumeType_;
+}
+
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

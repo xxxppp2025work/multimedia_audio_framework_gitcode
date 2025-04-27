@@ -95,13 +95,15 @@ void AudioPipeManager::StartClient(uint32_t sessionId)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
-    streamDesc->streamStatus_ = STREAM_STATUS_STARTTING;
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
 }
 
 void AudioPipeManager::PauseClient(uint32_t sessionId)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
     streamDesc->streamStatus_ = STREAM_STATUS_PAUSED;
 }
 
@@ -109,6 +111,7 @@ void AudioPipeManager::StopClient(uint32_t sessionId)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
     streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
 }
 
@@ -224,6 +227,18 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllInpu
     return streamDescs;
 }
 
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetStreamDescsByIoHandle(AudioIOHandle id)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto it : curPipeList_) {
+        if (it != nullptr && it->id_ == id) {
+            return it->streamDescriptors_;
+        }
+    }
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs = {};
+    return streamDescs;
+}
+
 std::shared_ptr<AudioStreamDescriptor> AudioPipeManager::GetStreamDescById(uint32_t sessionId)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
@@ -268,7 +283,7 @@ uint32_t AudioPipeManager::GetPaIndexByIoHandle(AudioIOHandle id)
 
 void AudioPipeManager::UpdateRendererPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos)
 {
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::vector<std::shared_ptr<AudioPipeInfo>> tempList;
     for (auto pipeInfo : curPipeList_) {
         if (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT) {
@@ -282,7 +297,7 @@ void AudioPipeManager::UpdateRendererPipeInfos(std::vector<std::shared_ptr<Audio
 
 void AudioPipeManager::UpdateCapturerPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos)
 {
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::vector<std::shared_ptr<AudioPipeInfo>> tempList;
     for (auto pipeInfo : curPipeList_) {
         if (pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT) {

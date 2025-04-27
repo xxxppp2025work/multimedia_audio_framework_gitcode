@@ -125,6 +125,8 @@ const char *g_audioServerCodeStrs[] = {
     "DESTROY_HDI_PORT",
     "DEVICE_CONNECTED_FLAG",
     "SET_DM_DEVICE_TYPE",
+    "NOTIFY_SETTINGS_DATA_READY",
+    "IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED",
 };
 constexpr size_t CODE_NUMS = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(CODE_NUMS == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -340,7 +342,8 @@ int AudioManagerStub::HandleSetAudioScene(MessageParcel &data, MessageParcel &re
     }
     DeviceType activeInputDevice = (static_cast<DeviceType>(data.ReadInt32()));
     BluetoothOffloadState a2dpOffloadFlag =  static_cast<BluetoothOffloadState>(data.ReadInt32());
-    int32_t result = SetAudioScene(audioScene, activeOutputDevices, activeInputDevice, a2dpOffloadFlag);
+    bool scoExcludeFlag = data.ReadBool();
+    int32_t result = SetAudioScene(audioScene, activeOutputDevices, activeInputDevice, a2dpOffloadFlag, scoExcludeFlag);
     reply.WriteInt32(result);
     return AUDIO_OK;
 }
@@ -800,6 +803,8 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleNotifyAudioPolicyReady(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::DEVICE_CONNECTED_FLAG):
             return HandleDeviceConnectedFlag(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_SETTINGS_DATA_READY):
+            return HandleNotifySettingsDataReady(data, reply);
         default:
             return HandleFifthPartCode(code, data, reply, option);
     }
@@ -858,6 +863,8 @@ int AudioManagerStub::HandleSixthPartCode(uint32_t code, MessageParcel &data, Me
             return HandleCreateSourcePort(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::DESTROY_HDI_PORT):
             return HandleDestroyHdiPort(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED):
+            return HandleIsAcousticEchoCancelerSupported(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -1160,6 +1167,12 @@ int AudioManagerStub::HandleNotifyAccountsChanged(MessageParcel &data, MessagePa
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleNotifySettingsDataReady(MessageParcel &data, MessageParcel &reply)
+{
+    NotifySettingsDataReady();
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleGetAllSinkInputs(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<SinkInput> sinkInputs;
@@ -1247,11 +1260,11 @@ int AudioManagerStub::HandleCreateHdiSinkPort(MessageParcel &data, MessageParcel
     }
     std::istringstream iss(attrStr);
     iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSinkAttr));
-    attr.adapterName = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
-    attr.filePath = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
-    attr.deviceNetworkId = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.adapterName = data.ReadString();
+    attr.filePath = data.ReadString().c_str();
+    attr.deviceNetworkId = data.ReadString().c_str();
     attr.address = data.ReadString();
-    attr.aux = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.aux = data.ReadString().c_str();
 
     uint32_t id = CreateHdiSinkPort(deviceClass, idInfo, attr);
     reply.WriteUint32(id);
@@ -1271,11 +1284,11 @@ int AudioManagerStub::HandleCreateSinkPort(MessageParcel &data, MessageParcel &r
     }
     std::istringstream iss(attrStr);
     iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSinkAttr));
-    attr.adapterName = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
-    attr.filePath = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
-    attr.deviceNetworkId = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.adapterName = data.ReadString();
+    attr.filePath = data.ReadString().c_str();
+    attr.deviceNetworkId = data.ReadString().c_str();
     attr.address = data.ReadString();
-    attr.aux = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.aux = data.ReadString().c_str();
 
     uint32_t id = CreateSinkPort(idBase, idType, idInfo, attr);
     reply.WriteUint32(id);
@@ -1294,9 +1307,9 @@ int AudioManagerStub::HandleCreateHdiSourcePort(MessageParcel &data, MessageParc
     }
     std::istringstream iss(attrStr);
     iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSourceAttr));
-    attr.adapterName = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
-    attr.filePath = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
-    attr.deviceNetworkId = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.adapterName = data.ReadString();
+    attr.filePath = data.ReadString().c_str();
+    attr.deviceNetworkId = data.ReadString().c_str();
 
     uint32_t id = CreateHdiSourcePort(deviceClass, idInfo, attr);
     reply.WriteUint32(id);
@@ -1316,9 +1329,9 @@ int AudioManagerStub::HandleCreateSourcePort(MessageParcel &data, MessageParcel 
     }
     std::istringstream iss(attrStr);
     iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSourceAttr));
-    attr.adapterName = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
-    attr.filePath = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
-    attr.deviceNetworkId = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.adapterName = data.ReadString();
+    attr.filePath = data.ReadString().c_str();
+    attr.deviceNetworkId = data.ReadString().c_str();
 
     uint32_t id = CreateSourcePort(idBase, idType, idInfo, attr);
     reply.WriteUint32(id);
@@ -1332,5 +1345,12 @@ int AudioManagerStub::HandleDestroyHdiPort(MessageParcel &data, MessageParcel &r
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleIsAcousticEchoCancelerSupported(MessageParcel &data, MessageParcel &reply)
+{
+    SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
+    bool ret = IsAcousticEchoCancelerSupported(sourceType);
+    reply.WriteBool(ret);
+    return AUDIO_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -40,6 +40,8 @@ namespace {
 constexpr int32_t INVALID_PID = -1;
 constexpr int32_t CLEAR_PID = 0;
 constexpr int32_t SYSTEM_PID = 1;
+constexpr int32_t CLEAR_UID = 0;
+constexpr int32_t SYSTEM_UID = 1;
 constexpr int32_t INVALID_UID = -1;
 constexpr int32_t NETWORK_ID_SIZE = 80;
 constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
@@ -231,6 +233,7 @@ enum AudioErrors {
     ERROR_ILLEGAL_STATE = 6800103,
     ERROR_UNSUPPORTED   = 6800104,
     ERROR_TIMEOUT       = 6800105,
+    ERROR_UNSUPPORTED_FORMAT = 6800106,
     /**
      * Audio specific errors.
      */
@@ -298,6 +301,7 @@ enum CallbackChange : int32_t {
     CALLBACK_SET_AUDIO_SCENE_CHANGE,
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     CALLBACK_DISTRIBUTED_OUTPUT_CHANGE,
+    CALLBACK_FORMAT_UNSUPPORTED_ERROR,
     CALLBACK_MAX,
 };
 
@@ -337,6 +341,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_SET_AUDIO_SCENE_CHANGE,
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     CALLBACK_DISTRIBUTED_OUTPUT_CHANGE,
+    CALLBACK_FORMAT_UNSUPPORTED_ERROR,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -1133,11 +1138,10 @@ static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
 {
     static const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
         {DEVICE_TYPE_EARPIECE, DEVICE_GROUP_EARPIECE}, {DEVICE_TYPE_SPEAKER, DEVICE_GROUP_BUILT_IN},
-        {DEVICE_TYPE_DP, DEVICE_GROUP_BUILT_IN}, {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED},
-        {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED},
-        {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS},
-        {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST}, {DEVICE_TYPE_HDMI, DEVICE_GROUP_BUILT_IN},
-        {DEVICE_TYPE_ACCESSORY, DEVICE_GROUP_WIRELESS},
+        {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED},
+        {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
+        {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
+        {DEVICE_TYPE_HDMI, DEVICE_GROUP_BUILT_IN}, {DEVICE_TYPE_ACCESSORY, DEVICE_GROUP_WIRELESS},
     };
     auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
     return it == DEVICE_GROUP_FOR_VOLUME.end() ? DEVICE_GROUP_INVALID : it->second;
@@ -1359,6 +1363,17 @@ struct RestoreInfo {
     int32_t targetStreamFlag = AUDIO_FLAG_NORMAL;
     uint32_t routeFlag = 0;
 };
+
+/**
+ * Enumerates the method sources that trigger priority boosting.
+ * Used to distinguish between different triggering entry points.
+ */
+enum BoostTriggerMethod : uint32_t {
+    METHOD_START = 0,
+    METHOD_WRITE_OR_READ,
+    METHOD_MAX
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

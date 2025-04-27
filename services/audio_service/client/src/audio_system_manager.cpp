@@ -156,10 +156,12 @@ AudioStreamType AudioSystemManager::GetStreamType(ContentType contentType, Strea
 
 inline const sptr<IStandardAudioService> GetAudioSystemManagerProxy()
 {
-    AudioXCollie xcollieGetAudioSystemManagerProxy("GetAudioSystemManagerProxy", XCOLLIE_TIME_OUT_SECONDS);
+    AudioXCollie xcollieGetAudioSystemManagerProxy("GetAudioSystemManagerProxy", XCOLLIE_TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     lock_guard<mutex> lock(g_asProxyMutex);
     if (g_asProxy == nullptr) {
-        AudioXCollie xcollieGetSystemAbilityManager("GetSystemAbilityManager", XCOLLIE_TIME_OUT_SECONDS);
+        AudioXCollie xcollieGetSystemAbilityManager("GetSystemAbilityManager", XCOLLIE_TIME_OUT_SECONDS,
+             nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "get sa manager failed");
         xcollieGetSystemAbilityManager.CancelXCollieTimer();
@@ -210,7 +212,8 @@ int32_t AudioSystemManager::SetRingerMode(AudioRingerMode ringMode)
 
 std::string AudioSystemManager::GetSelfBundleName(int32_t uid)
 {
-    AudioXCollie audioXCollie("AudioSystemManager::GetSelfBundleName_FromUid", GET_BUNDLE_INFO_TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("AudioSystemManager::GetSelfBundleName_FromUid", GET_BUNDLE_INFO_TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     std::string bundleName = "";
 
     WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetSelfBundleName");
@@ -258,17 +261,16 @@ AudioScene AudioSystemManager::GetAudioScene() const
     }
 }
 
-int32_t AudioSystemManager::SetDeviceActive(DeviceType deviceType, bool flag) const
+int32_t AudioSystemManager::SetDeviceActive(DeviceType deviceType, bool flag, const int32_t clientUid) const
 {
-    int32_t pid = GetCallingPid();
-    AUDIO_INFO_LOG("device: %{public}d pid: %{public}d", deviceType, pid);
+    int32_t uid = clientUid == -1 ? getuid() : clientUid;
     if (!IsActiveDeviceType(deviceType)) {
         AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
         return ERR_NOT_SUPPORTED;
     }
 
     /* Call Audio Policy SetDeviceActive */
-    return (AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag, pid));
+    return (AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag, uid));
 }
 
 bool AudioSystemManager::IsDeviceActive(DeviceType deviceType) const
@@ -1142,6 +1144,18 @@ int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audio
     return AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
 }
 
+int32_t AudioSystemManager::ActivatePreemptMode() const
+{
+    AUDIO_DEBUG_LOG("ActivatePreemptMode");
+    return AudioPolicyManager::GetInstance().ActivatePreemptMode();
+}
+
+int32_t AudioSystemManager::DeactivatePreemptMode() const
+{
+    AUDIO_DEBUG_LOG("DeactivatePreemptMode");
+    return AudioPolicyManager::GetInstance().DeactivatePreemptMode();
+}
+
 int32_t AudioSystemManager::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
@@ -1372,7 +1386,8 @@ int32_t AudioSystemManager::UpdateStreamState(const int32_t clientUid,
 
 std::string AudioSystemManager::GetSelfBundleName()
 {
-    AudioXCollie audioXCollie("AudioSystemManager::GetSelfBundleName", GET_BUNDLE_INFO_TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("AudioSystemManager::GetSelfBundleName", GET_BUNDLE_INFO_TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
     std::string bundleName = "";
 
@@ -1555,7 +1570,7 @@ int32_t AudioSystemManager::RegisterWakeupSourceCallback()
     AUDIO_INFO_LOG("RegisterWakeupSourceCallback");
     remoteWakeUpCallback_ = std::make_shared<WakeUpCallbackImpl>(this);
 
-    auto wakeupCloseCbStub = new(std::nothrow) AudioManagerListenerStub();
+    sptr<AudioManagerListenerStub> wakeupCloseCbStub = new(std::nothrow) AudioManagerListenerStub();
     CHECK_AND_RETURN_RET_LOG(wakeupCloseCbStub != nullptr, ERROR,
         "wakeupCloseCbStub is null");
     wakeupCloseCbStub->SetWakeupSourceCallback(remoteWakeUpCallback_);
@@ -1566,7 +1581,6 @@ int32_t AudioSystemManager::RegisterWakeupSourceCallback()
     sptr<IRemoteObject> object = wakeupCloseCbStub->AsObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("SetWakeupCloseCallback listenerStub object is nullptr");
-        delete wakeupCloseCbStub;
         return ERROR;
     }
     return gasp->SetWakeupSourceCallback(object);
@@ -1730,11 +1744,12 @@ AudioDistributedRoutingRoleCallbackImpl::~AudioDistributedRoutingRoleCallbackImp
     AUDIO_INFO_LOG("AudioDistributedRoutingRoleCallbackImpl destroy");
 }
 
-int32_t AudioSystemManager::SetCallDeviceActive(DeviceType deviceType, bool flag, std::string address) const
+int32_t AudioSystemManager::SetCallDeviceActive(DeviceType deviceType, bool flag, std::string address,
+    const int32_t clientUid) const
 {
-    int32_t pid = GetCallingPid();
+    int32_t uid = clientUid == -1 ? getuid() : clientUid;
     return (AudioPolicyManager::GetInstance().SetCallDeviceActive(static_cast<InternalDeviceType>(deviceType),
-        flag, address, pid));
+        flag, address, uid));
 }
 
 uint32_t AudioSystemManager::GetEffectLatency(const std::string &sessionId)

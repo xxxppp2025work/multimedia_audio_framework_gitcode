@@ -31,6 +31,7 @@
 #include "source/i_audio_capture_source.h"
 #include "audio_volume.h"
 #include "audio_performance_monitor.h"
+#include "media_monitor_manager.h"
 #ifdef HAS_FEATURE_INNERCAPTURER
 #include "playback_capturer_manager.h"
 #endif
@@ -48,6 +49,9 @@ static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t BLOCK_HIBERNATE_CALLBACK_IN_MS = 5000; // 5s
 static const uint32_t RECHECK_SINK_STATE_IN_US = 100000; // 100ms
 static const int32_t MEDIA_SERVICE_UID = 1013;
+static const int32_t RENDERER_STREAM_CNT_PER_UID_LIMIT = 40;
+static const int32_t INVALID_APP_UID = -1;
+static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = 0;
 namespace {
 static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_PLAYBACK_CAPTURE,
@@ -222,7 +226,7 @@ void AudioService::RemoveIdFromMuteControlSet(uint32_t sessionId)
 void AudioService::CheckRenderSessionMuteState(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
 {
     std::unique_lock<std::mutex> mutedSessionsLock(mutedSessionsMutex_);
-    if (mutedSessions_.find(sessionId) != mutedSessions_.end()) {
+    if (mutedSessions_.find(sessionId) != mutedSessions_.end() || IsMuteSwitchStream(sessionId)) {
         mutedSessionsLock.unlock();
         AUDIO_INFO_LOG("Session %{public}u is in control", sessionId);
         renderer->SetNonInterruptMute(true);
@@ -232,7 +236,7 @@ void AudioService::CheckRenderSessionMuteState(uint32_t sessionId, std::shared_p
 void AudioService::CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer)
 {
     std::unique_lock<std::mutex> mutedSessionsLock(mutedSessionsMutex_);
-    if (mutedSessions_.find(sessionId) != mutedSessions_.end()) {
+    if (mutedSessions_.find(sessionId) != mutedSessions_.end() || IsMuteSwitchStream(sessionId)) {
         mutedSessionsLock.unlock();
         AUDIO_INFO_LOG("Session %{public}u is in control", sessionId);
         capturer->SetNonInterruptMute(true);
@@ -243,13 +247,22 @@ void AudioService::CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_
 void AudioService::CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProcessInServer> process)
 {
     std::unique_lock<std::mutex> mutedSessionsLock(mutedSessionsMutex_);
-    if (mutedSessions_.find(sessionId) != mutedSessions_.end()) {
+    if (mutedSessions_.find(sessionId) != mutedSessions_.end() || IsMuteSwitchStream(sessionId)) {
         mutedSessionsLock.unlock();
         AUDIO_INFO_LOG("Session %{public}u is in control", sessionId);
         process->SetNonInterruptMute(true);
     }
 }
 #endif
+
+bool AudioService::IsMuteSwitchStream(uint32_t sessionId)
+{
+    if (sessionId == muteSwitchStream_) {
+        muteSwitchStream_ = 0;
+        return true;
+    }
+    return false;
+}
 
 void AudioService::InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
 {
@@ -976,9 +989,11 @@ int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, floa
     int32_t ret = SUCCESS;
 #ifdef SUPPORT_LOW_LATENCY
     for (auto item : endpointList_) {
-        std::string endpointName = item.second->GetEndpointName();
-        if (endpointName == item.first) {
-            ret = ret != SUCCESS ? ret : item.second->SetVolume(streamType, volume);
+        if (item.second != nullptr) {
+            std::string endpointName = item.second->GetEndpointName();
+            if (endpointName == item.first) {
+                ret = ret != SUCCESS ? ret : item.second->SetVolume(streamType, volume);
+            }
         }
     }
 #endif
@@ -1131,6 +1146,16 @@ void AudioService::SetNonInterruptMuteForProcess(const uint32_t sessionId, const
     // need erase it from mutedSessions_ to avoid new stream cannot be set unmute
     if (mutedSessions_.count(sessionId) && !muteFlag) {
         mutedSessions_.erase(sessionId);
+    }
+    // when old stream already released and new stream not create yet
+    // set muteflag 1 but cannot find sessionId in allRendererMap_, allCapturerMap_ and linkedPairedList_
+    // this sessionid will not add into mutedSessions_
+    // so need save it temporarily, when new stream create, check if new stream need mute
+    // if set muteflag 0 again before new stream create, do not mute it
+    if (muteFlag) {
+        muteSwitchStream_ = sessionId;
+    } else if (muteSwitchStream_ == sessionId) {
+        muteSwitchStream_ = 0;
     }
 }
 
@@ -1311,6 +1336,19 @@ bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t app
         appUseNumMap_.emplace(appUid, initValue);
     }
 
+    if (appUseNumMap_[appUid] >= RENDERER_STREAM_CNT_PER_UID_LIMIT) {
+        int32_t mostAppUid = INVALID_APP_UID;
+        int32_t mostAppNum = INVALID_APP_CREATED_AUDIO_STREAM_NUM;
+        GetCreatedAudioStreamMostUid(mostAppUid, mostAppNum);
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_EXHAUSTED_STATS,
+            Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
+        bean->Add("CLIENT_UID", mostAppUid);
+        bean->Add("TIMES", mostAppNum);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+        AUDIO_WARNING_LOG("Current audio renderer stream num is greater than the renderer stream num limit per uid");
+    }
+
     if (appUseNumMap_[appUid] > maxStreamCntPerUid) {
         --appUseNumMap_[appUid]; // actual created stream num is stream num decrease one
         return true;
@@ -1372,6 +1410,12 @@ RestoreStatus AudioService::RestoreSession(uint32_t sessionId, RestoreInfo resto
 #endif
     AUDIO_WARNING_LOG("Session not exists, restore failed");
     return RESTORE_ERROR;
+}
+
+void AudioService::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+    uint32_t code)
+{
+    AudioVolume::GetInstance()->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
 }
 } // namespace AudioStandard
 } // namespace OHOS

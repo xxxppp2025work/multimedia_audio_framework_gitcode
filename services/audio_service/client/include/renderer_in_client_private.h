@@ -76,7 +76,9 @@ public:
     int32_t SetVolume(float volume) override;
     float GetVolume() override;
     int32_t SetDuckVolume(float volume) override;
+    float GetDuckVolume() override;
     int32_t SetMute(bool mute) override;
+    bool GetMute() override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
@@ -85,8 +87,6 @@ public:
     void OnFirstFrameWriting() override;
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
-    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t[]> &outBuffer,
-        int32_t &outBufferSize) override;
 
     // callback mode api
     int32_t SetRenderMode(AudioRenderMode renderMode) override;
@@ -205,6 +205,8 @@ public:
     RestoreStatus CheckRestoreStatus() override;
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
     void FetchDeviceForSplitStream() override;
+    void SetCallStartByUserTid(pid_t tid) override;
+
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -238,6 +240,7 @@ private:
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
     void DfxWriteInterval();
     void HandleStatusChangeOperation(Operation operation);
+    void UpdateDataLinkState(bool isConnected, bool needNotify);
 
     int32_t RegisterSpatializationStateEventListener();
 
@@ -260,6 +263,8 @@ private:
     bool DrainAudioStreamInner(bool stopFlag = false);
 
     bool ProcessVolume();
+
+    void RegisterThreadPriorityOnStart(StateChangeCmdType cmdType);
 
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
@@ -375,6 +380,8 @@ private:
     std::unique_ptr<uint8_t[]> speedBuffer_ {nullptr};
     size_t bufferSize_ = 0;
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
+    std::atomic<bool> speedEnable_ = false;
+    std::mutex speedMutex_;
 
     std::unique_ptr<AudioSpatialChannelConverter> converter_;
 
@@ -432,6 +439,9 @@ private:
 
     std::mutex switchingMutex_;
     StreamSwitchingInfo switchingInfo_ {false, INVALID};
+
+    std::mutex lastCallStartByUserTidMutex_;
+    std::optional<pid_t> lastCallStartByUserTid_ = std::nullopt;
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

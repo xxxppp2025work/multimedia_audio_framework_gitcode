@@ -25,6 +25,7 @@
 #include "audio_system_manager.h"
 #include "audio_effect.h"
 #include "microphone_descriptor.h"
+#include "audio_zone_manager.h"
 #include "audio_stream_descriptor.h"
 
 namespace OHOS {
@@ -88,7 +89,7 @@ public:
     virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(
         sptr<AudioCapturerFilter> audioCapturerFilter) = 0;
 
-    virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = INVALID_PID) = 0;
+    virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid = INVALID_UID) = 0;
 
     virtual bool IsDeviceActive(InternalDeviceType deviceType) = 0;
 
@@ -144,6 +145,10 @@ public:
 
     virtual int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
+
+    virtual int32_t ActivatePreemptMode(void) = 0;
+
+    virtual int32_t DeactivatePreemptMode(void) = 0;
 
     virtual int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
 
@@ -326,8 +331,47 @@ public:
 
     virtual int32_t ReleaseAudioInterruptZone(const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
+    virtual int32_t RegisterAudioZoneClient(const sptr<IRemoteObject>& object) = 0;
+
+    virtual int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context) = 0;
+
+    virtual void ReleaseAudioZone(int32_t zoneId) = 0;
+
+    virtual const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone() = 0;
+
+    virtual const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId) = 0;
+
+    virtual int32_t BindDeviceToAudioZone(int32_t zoneId,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices) = 0;
+
+    virtual int32_t UnBindDeviceToAudioZone(int32_t zoneId,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices) = 0;
+
+    virtual int32_t EnableAudioZoneReport (bool enable) = 0;
+
+    virtual int32_t EnableAudioZoneChangeReport(int32_t zoneId, bool enable) = 0;
+
+    virtual int32_t AddUidToAudioZone(int32_t zoneId, int32_t uid) = 0;
+
+    virtual int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) = 0;
+
+    virtual int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) = 0;
+
+    virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId) = 0;
+
+    virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
+        int32_t zoneId, const std::string &deviceTag) = 0;
+
+    virtual int32_t EnableAudioZoneInterruptReport(int32_t zoneId, const std::string &deviceTag, bool enable) = 0;
+
+    virtual int32_t InjectInterruptToAudioZone(int32_t zoneId,
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) = 0;
+    
+    virtual int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) = 0;
+
     virtual int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t pid = INVALID_PID) = 0;
+        const int32_t uid = INVALID_UID) = 0;
 
     virtual std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() = 0;
 
@@ -359,7 +403,7 @@ public:
     virtual int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason) = 0;
 
     virtual int32_t SetPreferredDevice(const PreferredType preferredType,
-        const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid = INVALID_PID) = 0;
+        const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid = INVALID_UID) = 0;
 
     virtual int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) = 0;
 
@@ -410,6 +454,11 @@ public:
     virtual int32_t SetVirtualCall(const bool isVirtual) = 0;
 
     virtual int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) = 0;
+
+    virtual DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+        const StreamUsage &streamUsage) = 0;
+    
+    virtual bool IsAcousticEchoCancelerSupported(SourceType sourceType) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

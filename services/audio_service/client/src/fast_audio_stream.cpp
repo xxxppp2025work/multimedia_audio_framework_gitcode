@@ -159,14 +159,14 @@ void FastAudioStream::InitCallbackHandler()
 void FastAudioStream::SafeSendCallbackEvent(uint32_t eventCode, int64_t data)
 {
     std::lock_guard<std::mutex> lock(runnerMutex_);
-    AUDIO_INFO_LOG("Send callback event, code: %{public}u, data: %{public}lld", eventCode, data);
+    AUDIO_INFO_LOG("Send callback event, code: %{public}u, data: %{public}" PRId64, eventCode, data);
     CHECK_AND_RETURN_LOG(callbackHandler_ != nullptr && runnerReleased_ == false, "Runner is Released");
     callbackHandler_->SendCallbackEvent(eventCode, data);
 }
 
 void FastAudioStream::OnHandle(uint32_t code, int64_t data)
 {
-    AUDIO_DEBUG_LOG("On handle event, event code: %{public}u, data: %{public}lld", code, data);
+    AUDIO_DEBUG_LOG("On handle event, event code: %{public}u, data: %{public}" PRId64, code, data);
     switch (code) {
         case STATE_CHANGE_EVENT:
             HandleStateChangeEvent(data);
@@ -333,6 +333,11 @@ int32_t FastAudioStream::SetMute(bool mute)
     return ret;
 }
 
+bool FastAudioStream::GetMute()
+{
+    return processClient_->GetMute();
+}
+
 int32_t FastAudioStream::SetSourceDuration(int64_t duration)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "SetMute failed: null process");
@@ -347,6 +352,11 @@ int32_t FastAudioStream::SetDuckVolume(float volume)
     int32_t ret = processClient_->SetDuckVolume(volume);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDuckVolume error.");
     return ret;
+}
+
+float FastAudioStream::GetDuckVolume()
+{
+    return processClient_->GetDuckVolume();
 }
 
 void FastAudioStream::SetSilentModeAndMixWithOthers(bool on)
@@ -568,11 +578,36 @@ float FastAudioStream::GetSpeed()
     return static_cast<float>(ERROR);
 }
 
-int32_t FastAudioStream::ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
-    std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
+// only call from StartAudioStream
+void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
 {
-    AUDIO_ERR_LOG("ChangeSpeed is not supported");
-    return ERR_OPERATION_FAILED;
+    pid_t tid;
+    switch (rendererInfo_.playerType) {
+        case PLAYER_TYPE_ARKTS_AUDIO_RENDERER:
+            // main thread
+            tid = getpid();
+            break;
+        case PLAYER_TYPE_OH_AUDIO_RENDERER:
+            tid = gettid();
+            break;
+        default:
+            return;
+    }
+
+    if (cmdType == CMD_FROM_CLIENT) {
+        std::lock_guard lock(lastCallStartByUserTidMutex_);
+        lastCallStartByUserTid_ = tid;
+    } else if (cmdType == CMD_FROM_SYSTEM) {
+        std::lock_guard lock(lastCallStartByUserTidMutex_);
+        CHECK_AND_RETURN_LOG(lastCallStartByUserTid_.has_value(), "has not value");
+        tid = lastCallStartByUserTid_.value();
+    } else {
+        AUDIO_ERR_LOG("illegal param");
+        return;
+    }
+
+    processClient_->RegisterThreadPriority(tid,
+        AudioSystemManager::GetInstance()->GetSelfBundleName(processconfig_.appInfo.appUid), METHOD_START);
 }
 
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
@@ -606,6 +641,8 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Running");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
+
+    RegisterThreadPriorityOnStart(cmdType);
 
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
     return true;
@@ -871,6 +908,11 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
         info.userSettedPreferredFrameSize = userSettedPreferredFrameSize_;
     }
 
+    {
+        std::lock_guard<std::mutex> lock(lastCallStartByUserTidMutex_);
+        info.lastCallStartByUserTid = lastCallStartByUserTid_;
+    }
+
     if (spkProcClientCb_) {
         info.rendererWriteCallback = spkProcClientCb_->GetRendererWriteCallback();
     }
@@ -1080,6 +1122,12 @@ void FastAudioStream::FetchDeviceForSplitStream()
     if (processClient_) {
         processClient_->SetRestoreStatus(NO_NEED_FOR_RESTORE);
     }
+}
+
+void FastAudioStream::SetCallStartByUserTid(pid_t tid)
+{
+    std::lock_guard lock(lastCallStartByUserTidMutex_);
+    lastCallStartByUserTid_ = tid;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -22,18 +22,15 @@
 #include <unordered_map>
 #include <functional>
 #include "audio_interrupt_info.h"
+#include "audio_zone_info.h"
 #include "audio_interrupt_callback.h"
 #include "audio_policy_client.h"
 #include "i_audio_interrupt_event_dispatcher.h"
 
 namespace OHOS {
 namespace AudioStandard {
-enum class AudioZoneFocusStrategy {
-    LOCAL_FOCUS_STRATEGY = 0,
-    DISTRIBUTED_FOCUS_STRATEGY,
-};
 
-using GetZoneIdFunc = std::function<int32_t(int32_t, const std::string &, const std::string &)>;
+using GetZoneIdFunc = std::function<int32_t(int32_t uid, const std::string &, const std::string &)>;
 using AudioFocusList = std::list<std::pair<AudioInterrupt, AudioFocuState>>;
 using AudioFocusIterator = std::list<AudioFocusList::iterator>;
 
@@ -61,8 +58,8 @@ protected:
         AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY, bool checkPermission = true);
     int32_t ReleaseAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
     int32_t MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
-    int32_t InjectInterruptToAudiotZone(const int32_t zoneId, const AudioFocusList &interrupts);
-    int32_t InjectInterruptToAudiotZone(const int32_t zoneId, const std::string &deviceTag,
+    int32_t InjectInterruptToAudioZone(const int32_t zoneId, const AudioFocusList &interrupts);
+    int32_t InjectInterruptToAudioZone(const int32_t zoneId, const std::string &deviceTag,
         const AudioFocusList &interrupts);
     int32_t GetAudioFocusInfoList(const int32_t zoneId, AudioFocusList &focusInfoList);
     int32_t GetAudioFocusInfoList(const int32_t zoneId, const std::string &deviceTag,

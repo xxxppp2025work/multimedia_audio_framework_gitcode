@@ -99,7 +99,7 @@ int32_t AudioManagerProxy::OffloadSetVolume(float volume)
 }
 
 int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
-    DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag)
+    DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(!activeOutputDevices.empty() &&
         activeOutputDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
@@ -119,7 +119,7 @@ int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, std::vector<Devi
     }
     data.WriteInt32(static_cast<int32_t>(activeInputDevice));
     data.WriteInt32(static_cast<int32_t>(a2dpOffloadFlag));
-
+    data.WriteBool(static_cast<int32_t>(scoExcludeFlag));
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_SCENE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SetAudioScene failed, error: %d", error);
@@ -1577,11 +1577,11 @@ uint32_t AudioManagerProxy::CreateHdiSinkPort(const std::string &deviceClass, co
     std::ostringstream oss;
     oss.write(reinterpret_cast<const char *>(&attr), sizeof(IAudioSinkAttr));
     data.WriteString(oss.str());
-    data.WriteString(attr.adapterName == nullptr ? "nullptr" : std::string(attr.adapterName));
-    data.WriteString(attr.filePath == nullptr ? "nullptr" : std::string(attr.filePath));
-    data.WriteString(attr.deviceNetworkId == nullptr ? "nullptr" : std::string(attr.deviceNetworkId));
+    data.WriteString(attr.adapterName);
+    data.WriteString(attr.filePath == nullptr ? "" : std::string(attr.filePath));
+    data.WriteString(attr.deviceNetworkId == nullptr ? "" : std::string(attr.deviceNetworkId));
     data.WriteString(attr.address);
-    data.WriteString(attr.aux == nullptr ? "nullptr" : std::string(attr.aux));
+    data.WriteString(attr.aux == nullptr ? "" : std::string(attr.aux));
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_HDI_SINK_PORT), data, reply, option);
@@ -1604,11 +1604,11 @@ uint32_t AudioManagerProxy::CreateSinkPort(HdiIdBase idBase, HdiIdType idType, c
     std::ostringstream oss;
     oss.write(reinterpret_cast<const char *>(&attr), sizeof(IAudioSinkAttr));
     data.WriteString(oss.str());
-    data.WriteString(attr.adapterName == nullptr ? "nullptr" : std::string(attr.adapterName));
-    data.WriteString(attr.filePath == nullptr ? "nullptr" : std::string(attr.filePath));
-    data.WriteString(attr.deviceNetworkId == nullptr ? "nullptr" : std::string(attr.deviceNetworkId));
+    data.WriteString(attr.adapterName);
+    data.WriteString(attr.filePath == nullptr ? "" : std::string(attr.filePath));
+    data.WriteString(attr.deviceNetworkId == nullptr ? "" : std::string(attr.deviceNetworkId));
     data.WriteString(attr.address);
-    data.WriteString(attr.aux == nullptr ? "nullptr" : std::string(attr.aux));
+    data.WriteString(attr.aux == nullptr ? "" : std::string(attr.aux));
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_SINK_PORT), data, reply, option);
@@ -1630,9 +1630,9 @@ uint32_t AudioManagerProxy::CreateHdiSourcePort(const std::string &deviceClass, 
     std::ostringstream oss;
     oss.write(reinterpret_cast<const char *>(&attr), sizeof(IAudioSinkAttr));
     data.WriteString(oss.str());
-    data.WriteString(attr.adapterName == nullptr ? "nullptr" : std::string(attr.adapterName));
-    data.WriteString(attr.filePath == nullptr ? "nullptr" : std::string(attr.filePath));
-    data.WriteString(attr.deviceNetworkId == nullptr ? "nullptr" : std::string(attr.deviceNetworkId));
+    data.WriteString(attr.adapterName);
+    data.WriteString(attr.filePath == nullptr ? "" : std::string(attr.filePath));
+    data.WriteString(attr.deviceNetworkId == nullptr ? "" : std::string(attr.deviceNetworkId));
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_HDI_SOURCE_PORT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, HDI_INVALID_ID, "CreateHdiSourcePort failed, error: %{public}d", error);
@@ -1654,11 +1654,11 @@ uint32_t AudioManagerProxy::CreateSourcePort(HdiIdBase idBase, HdiIdType idType,
     std::ostringstream oss;
     oss.write(reinterpret_cast<const char *>(&attr), sizeof(IAudioSinkAttr));
     data.WriteString(oss.str());
-    data.WriteString(attr.adapterName == nullptr ? "nullptr" : std::string(attr.adapterName));
-    data.WriteString(attr.filePath == nullptr ? "nullptr" : std::string(attr.filePath));
-    data.WriteString(attr.deviceNetworkId == nullptr ? "nullptr" : std::string(attr.deviceNetworkId));
+    data.WriteString(attr.adapterName);
+    data.WriteString(attr.filePath == nullptr ? "" : std::string(attr.filePath));
+    data.WriteString(attr.deviceNetworkId == nullptr ? "" : std::string(attr.deviceNetworkId));
     int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_HDI_SOURCE_PORT), data, reply, option);
+        static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_SOURCE_PORT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, HDI_INVALID_ID, "CreateHdiSourcePort failed, error: %{public}d", error);
     return reply.ReadUint32();
 }
@@ -1694,5 +1694,35 @@ void AudioManagerProxy::SetDeviceConnectedFlag(bool flag)
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed,error:%d", error);
 }
 
+void AudioManagerProxy::NotifySettingsDataReady()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_SETTINGS_DATA_READY), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed,error:%d", error);
+}
+
+bool AudioManagerProxy::IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(sourceType));
+
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, false, "Remote() is nullptr");
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "failed,error:%d", error);
+    return reply.ReadBool();
+}
 } // namespace AudioStandard
 } // namespace OHOS

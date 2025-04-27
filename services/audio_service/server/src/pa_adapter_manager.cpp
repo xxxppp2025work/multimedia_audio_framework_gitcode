@@ -118,7 +118,7 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
 
     std::lock_guard<std::mutex> mutex(sinkInputsMutex_);
     SinkInput sinkInput;
-    sinkInput.streamId = sessionId;
+    sinkInput.streamId = static_cast<int32_t>(sessionId);
     sinkInput.streamType = processConfig.streamType;
     sinkInput.uid = processConfig.appInfo.appUid;
     sinkInput.pid = processConfig.appInfo.appPid;
@@ -162,7 +162,7 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
 
 void PaAdapterManager::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
 {
-    std::lock_guard<std::mutex> lock(paElementsMutex_);
+    std::lock_guard<std::mutex> mutex(sinkInputsMutex_);
     sinkInputs = sinkInputs_;
     Trace trace("PaAdapterManager::GetAllSinkInputs size:" + std::to_string(sinkInputs.size()));
 }
@@ -638,13 +638,11 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
     }
 
     PaLockGuard lock(mainLoop_);
-    int32_t XcollieFlag = AUDIO_XCOLLIE_FLAG_LOG;
     if (managerType_ == PLAYBACK || managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
         int32_t rendererRet = ConnectRendererStreamToPA(paStream, sampleSpec, adapterName, innerCapId);
         CHECK_AND_RETURN_RET_LOG(rendererRet == SUCCESS, rendererRet, "ConnectRendererStreamToPA failed");
     }
     if (managerType_ == RECORDER) {
-        XcollieFlag = AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY;
         int32_t capturerRet = ConnectCapturerStreamToPA(paStream, sampleSpec, adapterName, source, deviceName);
         CHECK_AND_RETURN_RET_LOG(capturerRet == SUCCESS, capturerRet, "ConnectCapturerStreamToPA failed");
     }
@@ -663,7 +661,7 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
             [this](void *) {
                 AUDIO_ERR_LOG("ConnectStreamToPA timeout");
                 waitConnect_ = false;
-            }, nullptr, XcollieFlag);
+            }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
         pa_threaded_mainloop_wait(mainLoop_);
     }
     return SUCCESS;

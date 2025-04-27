@@ -477,8 +477,9 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
 {
     speedCached = false;
 #ifdef SONIC_ENABLE
-    if (!isEqual(speed_, 1.0f)) {
-        Trace trace(traceTag_ + " ProcessSpeed");
+    std::lock_guard lockSpeed(speedMutex_);
+    if (speedEnable_.load()) {
+        Trace trace(traceTag_ + " ProcessSpeed" + std::to_string(speed_));
         if (audioSpeed_ == nullptr) {
             AUDIO_ERR_LOG("audioSpeed_ is nullptr, use speed default 1.0");
             return true;
@@ -538,7 +539,7 @@ void RendererInClientInner::FirstFrameProcess()
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_.exchange(false)) {
         ipcStream_->RegisterThreadPriority(gettid(),
-            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid));
+            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_WRITE_OR_READ);
     }
 
     if (!hasFirstFrameWrited_.exchange(true)) { OnFirstFrameWriting(); }
@@ -873,6 +874,37 @@ bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
     waitLock.unlock();
     AUDIO_INFO_LOG("Drain stream SUCCESS, sessionId: %{public}d", sessionId_);
     return true;
+}
+
+void RendererInClientInner::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
+{
+    pid_t tid;
+    switch (rendererInfo_.playerType) {
+        case PLAYER_TYPE_ARKTS_AUDIO_RENDERER:
+            // main thread
+            tid = getpid();
+            break;
+        case PLAYER_TYPE_OH_AUDIO_RENDERER:
+            tid = gettid();
+            break;
+        default:
+            return;
+    }
+
+    if (cmdType == CMD_FROM_CLIENT) {
+        std::lock_guard lock(lastCallStartByUserTidMutex_);
+        lastCallStartByUserTid_ = tid;
+    } else if (cmdType == CMD_FROM_SYSTEM) {
+        std::lock_guard lock(lastCallStartByUserTidMutex_);
+        CHECK_AND_RETURN_LOG(lastCallStartByUserTid_.has_value(), "has not value");
+        tid = lastCallStartByUserTid_.value();
+    } else {
+        AUDIO_ERR_LOG("illegal param");
+        return;
+    }
+
+    ipcStream_->RegisterThreadPriority(tid,
+        AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_START);
 }
 
 SpatializationStateChangeCallbackImpl::SpatializationStateChangeCallbackImpl()

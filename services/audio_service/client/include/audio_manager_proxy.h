@@ -32,7 +32,7 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t OffloadSetVolume(float volume) override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
-        DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag) override;
+        DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag = false) override;
     const std::string GetAudioParameter(const std::string &key) override;
     const std::string GetAudioParameter(const std::string& networkId, const AudioParamKey key,
         const std::string& condition) override;
@@ -115,6 +115,7 @@ public:
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
     int32_t GenerateSessionId(uint32_t &sessionId) override;
     void NotifyAccountsChanged() override;
+    void NotifySettingsDataReady() override;
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
     void SetDefaultAdapterEnable(bool isEnable) override;
     void NotifyAudioPolicyReady() override;
@@ -135,6 +136,7 @@ public:
         const IAudioSourceAttr &attr) override;
     void DestroyHdiPort(uint32_t id) override;
     void SetDeviceConnectedFlag(bool flag) override;
+    bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

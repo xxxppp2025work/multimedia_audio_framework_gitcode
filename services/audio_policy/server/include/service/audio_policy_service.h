@@ -94,6 +94,7 @@ public:
     bool Init(void);
     void Deinit(void);
     void InitKVStore();
+    void NotifySettingsDataReady();
     bool ConnectServiceAdapter();
 
     void OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status);
@@ -103,8 +104,6 @@ public:
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) const;
 
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
-
-    int32_t SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
 
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
 
@@ -176,7 +175,7 @@ public:
 
     bool IsAbsVolumeSupported();
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = INVALID_PID);
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid = INVALID_UID);
 
     bool IsDeviceActive(InternalDeviceType deviceType);
 
@@ -202,7 +201,7 @@ public:
 
     bool IsMicrophoneMute();
 
-    int32_t SetAudioScene(AudioScene audioScene);
+    int32_t SetAudioScene(AudioScene audioScene, const int32_t uid = INVALID_UID, const int32_t pid = INVALID_PID);
 
     AudioScene GetAudioScene(bool hasSystemPermission = true) const;
 
@@ -262,6 +261,11 @@ public:
     void OnMonoAudioConfigChanged(bool audioMono);
 
     void OnAudioBalanceChanged(float audioBalance);
+
+    void onDoNotDisturbStatusChanged(bool isDoNotDisturb);
+
+    void onDoNotDisturbStatusWhiteListChanged(std::vector<std::map<std::string, std::string>>
+        doNotDisturbStatusWhiteList);
 
     void LoadEffectLibrary();
 
@@ -405,7 +409,7 @@ public:
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descs);
 
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t pid = INVALID_PID);
+        const int32_t uid = INVALID_UID);
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
 
@@ -501,6 +505,8 @@ public:
     void SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName, std::string invocationTime);
     void SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime, int32_t subscriptionId,
         bool registrationResult);
+    int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
+    bool IsAcousticEchoCancelerSupported(SourceType sourceType);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -554,6 +560,10 @@ private:
 
     void RegisterAccessiblilityMono();
 
+    void RegisterDoNotDisturbStatus();
+
+    void RegisterDoNotDisturbStatusWhiteList();
+
     void StoreDistributedRoutingRoleInfo(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
 
     void ResetToSpeaker(DeviceType devType);
@@ -594,6 +604,7 @@ private:
     void SetA2dpOffloadFlag(BluetoothOffloadState state);
     BluetoothOffloadState GetA2dpOffloadFlag();
     void SetDefaultAdapterEnable(bool isEnable);
+    bool IsDevicePlaybackSupport(const AudioProcessConfig &config, const AudioDeviceDescriptor &deviceInfo);
 private:
 
     static bool isBtListenerRegistered;
@@ -602,7 +613,7 @@ private:
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
     int32_t maxRendererInstances_ = 128;
-    bool isFastControlled_ = false;
+    bool isFastControlled_ = true;
     static constexpr int32_t MIN_SERVICE_COUNT = 2;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;

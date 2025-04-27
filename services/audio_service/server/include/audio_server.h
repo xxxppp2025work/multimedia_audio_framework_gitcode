@@ -29,6 +29,7 @@
 #include "audio_manager_base.h"
 #include "audio_server_death_recipient.h"
 #include "audio_server_dump.h"
+#include "i_audio_server_hpae_dump.h"
 #include "audio_system_manager.h"
 #include "audio_inner_call.h"
 #include "common/hdi_adapter_info.h"
@@ -63,7 +64,7 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t OffloadSetVolume(float volume) override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
-        DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag) override;
+        DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag = false) override;
     static void *paDaemonThread(void *arg);
     int32_t SetExtraParameters(const std::string& key,
         const std::vector<std::pair<std::string, std::string>>& kvpairs) override;
@@ -190,6 +191,8 @@ public:
     
     void NotifyAccountsChanged() override;
 
+    void NotifySettingsDataReady() override;
+
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
 
     void SetDefaultAdapterEnable(bool isEnable) override;
@@ -213,6 +216,7 @@ public:
         const IAudioSourceAttr &attr) override;
     void DestroyHdiPort(uint32_t id) override;
     void SetDeviceConnectedFlag(bool flag) override;
+    bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -256,10 +260,12 @@ private:
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
     int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
-    bool CheckAndPrintStacktrace(const std::string &key);
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter(const std::string &condition);
     void WriteServiceStartupError();
+    void ParseAudioParameter();
+    bool CacheExtraParameters(const std::string &key,
+        const std::vector<std::pair<std::string, std::string>> &kvpairs);
     bool IsNormalIpcStream(const AudioProcessConfig &config) const;
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);
@@ -280,6 +286,7 @@ private:
     int32_t SetAsrVoiceSuppressionControlMode(const AudioParamKey paramKey, AsrVoiceControlMode asrVoiceControlMode,
         bool on, int32_t modifyVolume);
     int32_t CheckAndWaitAudioPolicyReady();
+    void NotifyProcessStatus();
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;
@@ -306,7 +313,13 @@ private:
     std::mutex audioParameterMutex_;
     std::mutex audioSceneMutex_;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
-    bool isFastControlled_ = false;
+
+    std::atomic<bool> isAudioParameterParsed_ = false;
+    std::mutex audioParameterCacheMutex_;
+    std::vector<std::pair<std::string,
+        std::vector<std::pair<std::string, std::string>>>> audioExtraParameterCacheVector_;
+
+    bool isFastControlled_ = true;
     int32_t maxRendererStreamCntPerUid_ = 0;
     std::mutex streamLifeCycleMutex_ {};
     // Temporary resolution to avoid pcm driver problem
@@ -317,6 +330,7 @@ private:
     std::condition_variable isAudioPolicyReadyCv_;
 
     int32_t waitCreateStreamInServerCount_ = 0;
+    std::shared_ptr<IAudioServerHpaeDump> hpaeDumpObj_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

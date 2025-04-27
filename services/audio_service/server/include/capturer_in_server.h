@@ -32,6 +32,7 @@ public:
     virtual ~CapturerInServer();
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnReadData(size_t length) override;
+    int32_t OnReadData(std::vector<char>& outputData, size_t requestDataLen) override;
 
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer);
     int32_t GetSessionId(uint32_t &sessionId);
@@ -60,6 +61,9 @@ public:
     void SetNonInterruptMute(const bool muteFlag);
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
 
+    bool TurnOnMicIndicator(CapturerState capturerState);
+    bool TurnOffMicIndicator(CapturerState capturerState);
+
 private:
     int32_t InitCacheBuffer(size_t targetSize);
     bool IsReadDataOverFlow(size_t length, uint64_t currentWriteFrame,
@@ -73,9 +77,10 @@ private:
     std::shared_ptr<ICapturerStream> stream_ = nullptr;
     uint32_t streamIndex_ = -1;
     IOperation operation_ = OPERATION_INVALID;
-    IStatus status_ = I_STATUS_IDLE;
+    std::atomic<IStatus> status_ = I_STATUS_IDLE;
 
     bool needCheckBackground_ = false;
+    bool isMicIndicatorOn_ = false;
 
     AudioPlaybackCaptureConfig filterConfig_;
     std::weak_ptr<IStreamListener> streamListener_;

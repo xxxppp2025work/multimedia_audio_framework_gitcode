@@ -149,6 +149,7 @@ void ReleaseAudioInterruptZoneFuzzTest(const uint8_t *rawData, size_t size)
         const std::string &streamTag)->int32_t {
         return 0;
     };
+
     interruptService->ReleaseAudioInterruptZone(zoneId, getZoneFunc);
 }
 

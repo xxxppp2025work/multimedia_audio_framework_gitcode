@@ -82,7 +82,8 @@ int32_t FastAudioRenderSink::Start(void)
     AUDIO_INFO_LOG("in");
     std::lock_guard<std::mutex> lock(startMutex_);
     Trace trace("FastAudioRenderSink::Start");
-    AudioXCollie audioXCollie("FastAudioRenderSink::Start", TIMEOUT_SECONDS_10);
+    AudioXCollie audioXCollie("FastAudioRenderSink::Start", TIMEOUT_SECONDS_10,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     int64_t stamp = ClockTime::GetCurNano();
     if (started_) {
@@ -117,7 +118,8 @@ int32_t FastAudioRenderSink::Stop(void)
     AUDIO_INFO_LOG("in");
     std::lock_guard<std::mutex> lock(startMutex_);
     Trace trace("FastAudioRenderSink::Stop");
-    AudioXCollie audioXCollie("FastAudioRenderSink::Stop", TIMEOUT_SECONDS_10);
+    AudioXCollie audioXCollie("FastAudioRenderSink::Stop", TIMEOUT_SECONDS_10,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ != nullptr) {
@@ -356,7 +358,8 @@ int32_t FastAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
     return SUCCESS;
 }
 
-int32_t FastAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
+int32_t FastAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
+    bool scoExcludeFlag)
 {
     AUDIO_INFO_LOG("not support");
     return SUCCESS;
@@ -520,7 +523,9 @@ void FastAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &para
     }
     param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBit(attr_.format) * param.channelCount / PCM_8_BIT;
-    param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize); // not passed in hdi
+    if (param.frameSize != 0) {
+        param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize); // not passed in hdi
+    }
 }
 
 void FastAudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
@@ -578,6 +583,7 @@ int32_t FastAudioRenderSink::PrepareMmapBuffer(void)
     uint32_t totalBufferInMs = 40; // 40: 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency
     uint32_t reqBufferFrameSize = totalBufferInMs * (attr_.sampleRate / SECOND_TO_MILLISECOND);
     struct AudioMmapBufferDescriptor desc;
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
 
     int32_t ret = audioRender_->ReqMmapBuffer(audioRender_, reqBufferFrameSize, &desc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "request mmap buffer fail, ret: %{public}d", ret);

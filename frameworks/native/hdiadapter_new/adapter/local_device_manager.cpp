@@ -368,6 +368,7 @@ void LocalDeviceManager::InitAudioManager(void)
     hdfRemoteService_ = audioManager_->AsObject(audioManager_);
     // Don't need to free, existing with process
     hdfDeathRecipient_ = (struct HdfDeathRecipient *)calloc(1, sizeof(*hdfDeathRecipient_));
+    CHECK_AND_RETURN_LOG(hdfDeathRecipient_ != nullptr, "create hdf death recipient fail");
     hdfDeathRecipient_->OnRemoteDied = AudioHostOnRemoteDied;
     HdfRemoteServiceAddDeathRecipient(hdfRemoteService_, hdfDeathRecipient_);
 
@@ -519,12 +520,10 @@ int32_t LocalDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteNo
 void LocalDeviceManager::SaveSetParameter(const std::string &adapterName, const AudioParamKey key,
     const std::string &condition, const std::string &value)
 {
-    // save bt_wbs param
+    // save set param
     auto callerUid = IPCSkeleton::GetCallingUid();
-    if (callerUid == UID_BLUETOOTH_SA && key == AudioParamKey::BT_WBS) {
-        AUDIO_INFO_LOG("save bt_wbs param when adapter is nullptr");
-        reSetParams_.push_back({ adapterName, key, condition, value });
-    }
+    AUDIO_INFO_LOG("save param when adapter is nullptr, callerUid is %{public}u", callerUid);
+    reSetParams_.push_back({ adapterName, key, condition, value });
 }
 
 void LocalDeviceManager::SetDmDeviceType(uint16_t dmDeviceType)

@@ -1580,7 +1580,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, HandleLocalDeviceConnected_001, TestSize.Le
 
     updatedDesc.deviceType_ = DEVICE_TYPE_DP;
     ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -2509,6 +2509,8 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetSystemVolumeLevel_001, TestSize.Level1)
     int32_t volumeLevel = 1;
     for (const auto& audioStreamType : audioStreamTypes) {
         GetServerPtr()->audioPolicyService_.SetSystemVolumeLevel(audioStreamType, volumeLevel);
+        GetServerPtr()->SetSystemVolumeLevel(audioStreamType, volumeLevel, 0);
+        GetServerPtr()->SetSystemVolumeLevel(audioStreamType, volumeLevel, 1);
         GetServerPtr()->audioPolicyService_.audioVolumeManager_.SetVoiceCallVolume(volumeLevel);
     }
 }
