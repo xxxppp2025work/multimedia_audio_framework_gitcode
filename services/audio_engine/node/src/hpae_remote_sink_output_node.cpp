@@ -67,6 +67,23 @@ void HpaeRemoteSinkOutputNode::HandleRemoteTiming()
     remoteTimer_.Start();
 }
 
+void HpaeRemoteSinkOutputNode::HandlePcmDumping(HpaeSplitStreamType streamType, char* data, size_t size)
+{
+    auto handleDump = [&](auto& dumper) {
+        dumper->CheckAndReopenHandlde();
+        if (dumper) dumper->Dump(reinterpret_cast<int8_t*>(data), size);
+    };
+
+    switch (streamType) {
+        case HpaeSplitStreamType::STREAM_TYPE_MEDIA:
+            handleDump(outputMediaPcmDumper_); break;
+        case HpaeSplitStreamType::STREAM_TYPE_NAVIGATION:
+            handleDump(outputNavigationPcmDumper_); break;
+        default:
+            handleDump(outputCommunicationPcmDumper_); break;
+    }
+}
+
 void HpaeRemoteSinkOutputNode::DoProcess()
 {
     auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
@@ -95,22 +112,7 @@ void HpaeRemoteSinkOutputNode::DoProcess()
         uint64_t writeLen = 0;
         char *renderFrameData = (char *)renderFrameData_.data();
 #ifdef ENABLE_HOOK_PCM
-    if (streamType == HpaeSplitStreamType::STREAM_TYPE_MEDIA) {
-        outputMediaPcmDumper_->CheckAndReopenHandlde();
-        if (outputMediaPcmDumper_) {
-            outputMediaPcmDumper_->Dump((int8_t *)renderFrameData, renderFrameData_.size());
-        }
-    } else if (streamType == HpaeSplitStreamType::STREAM_TYPE_NAVIGATION) {
-        outputNavigationPcmDumper_->CheckAndReopenHandlde();
-        if (outputNavigationPcmDumper_) {
-            outputNavigationPcmDumper_->Dump((int8_t *)renderFrameData, renderFrameData_.size());
-        }
-    } else {
-        outputCommunicationPcmDumper_->CheckAndReopenHandlde();
-        if (outputCommunicationPcmDumper_) {
-            outputCommunicationPcmDumper_->Dump((int8_t *)renderFrameData, renderFrameData_.size());
-        }
-    }
+    HandlePcmDumping(streamType, renderFrameData, renderFrameData_.size());
 #endif
         auto ret = audioRendererSink_->SplitRenderFrame(*renderFrameData, renderFrameData_.size(),
             writeLen, std::to_string(static_cast<int>(streamType)).c_str());

@@ -56,6 +56,7 @@ public:
 
 private:
     void HandleRemoteTiming();
+    void HandlePcmDumping(HpaeSplitStreamType streamType, char* data, size_t size);
     InputPort<HpaePcmBuffer *> inputStream_;
     std::vector<char> renderFrameData_;
     std::vector<float> interleveData_;
