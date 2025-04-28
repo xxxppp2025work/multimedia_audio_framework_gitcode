@@ -1738,6 +1738,14 @@ bool AudioCoreService::NeedRehandleA2DPDevice(std::shared_ptr<AudioDeviceDescrip
     return false;
 }
 
+bool AudioCoreService::IsDeviceSwitching(const AudioStreamDeviceChangeReasonExt reason)
+{
+    if (reason.IsOverride() || reason.IsOldDeviceUnavaliable() || reason.IsNewDeviceAvailable()) {
+        return true;
+    }
+    return false;
+}
+
 void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
     RendererState rendererState)
 {
@@ -1866,10 +1874,12 @@ void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDe
 
     audioIOHandleMap_.SetMoveFinish(false);
 
-    if (audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL &&
-        streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
-        audioSceneManager_.CheckVoiceCallActive(streamDesc->sessionId_)) {
-        return SetVoiceCallMuteForSwitchDevice();
+    if (!isVoiceCallMuted_ && audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL &&
+        ((streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+        audioSceneManager_.CheckVoiceCallActive(streamDesc->sessionId_)) ||
+        (streamCollector_.IsVoiceCallActive() && IsDeviceSwitching(reason)))) {
+        SetVoiceCallMuteForSwitchDevice();
+        isVoiceCallMuted_ = true;
     }
 
     std::string oldSinkName = AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->oldDeviceDescs_.front(),
@@ -1893,7 +1903,7 @@ void AudioCoreService::SetVoiceCallMuteForSwitchDevice()
 void AudioCoreService::MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    if (reason.isOverride() || reason.isSetDefaultOutputDevice()) {
+    if (reason.IsOverride() || reason.IsSetDefaultOutputDevice()) {
         int64_t muteTime = SELECT_DEVICE_MUTE_MS;
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = SELECT_OFFLOAD_DEVICE_MUTE_MS;
