@@ -1149,7 +1149,7 @@ struct DStatusInfo {
     std::string deviceName = "";
     bool isConnected = false;
     std::string macAddress;
-    DeviceStreamInfo streamInfo = {};
+    std::list<DeviceStreamInfo> streamInfo = {};
     ConnectType connectType = CONNECT_TYPE_LOCAL;
 };
 
