@@ -335,6 +335,7 @@ int32_t CapturerInServer::OnReadData(std::vector<char>& outputData, size_t reque
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
     }
     ringCache_->Dequeue({dstBuffer.buffer, dstBuffer.bufLength});
+    VolumeTools::DfxOperation(dstBuffer, processConfig_.streamInfo, traceTag_, volumeDataCount_);
     if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpS2C_, static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
         AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
@@ -443,7 +444,7 @@ int32_t CapturerInServer::StartInner()
     std::unique_lock<std::mutex> lock(statusLock_);
 
     if (status_ != I_STATUS_IDLE && status_ != I_STATUS_PAUSED && status_ != I_STATUS_STOPPED) {
-        AUDIO_ERR_LOG("CapturerInServer::Start failed, Illegal state: %{public}u", status_);
+        AUDIO_ERR_LOG("CapturerInServer::Start failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
 
@@ -474,7 +475,7 @@ int32_t CapturerInServer::Pause()
 {
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_STARTED) {
-        AUDIO_ERR_LOG("CapturerInServer::Pause failed, Illegal state: %{public}u", status_);
+        AUDIO_ERR_LOG("CapturerInServer::Pause failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
     if (needCheckBackground_) {
@@ -497,7 +498,7 @@ int32_t CapturerInServer::Flush()
     } else if (status_ == I_STATUS_STOPPED) {
         status_ = I_STATUS_FLUSHING_WHEN_STOPPED;
     } else {
-        AUDIO_ERR_LOG("CapturerInServer::Flush failed, Illegal state: %{public}u", status_);
+        AUDIO_ERR_LOG("CapturerInServer::Flush failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
 
@@ -532,7 +533,7 @@ int32_t CapturerInServer::Stop()
 {
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED) {
-        AUDIO_ERR_LOG("CapturerInServer::Stop failed, Illegal state: %{public}u", status_);
+        AUDIO_ERR_LOG("CapturerInServer::Stop failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STOPPING;

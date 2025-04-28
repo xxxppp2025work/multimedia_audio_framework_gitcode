@@ -136,12 +136,13 @@ private:
     void StandByCheck();
     bool ShouldEnableStandBy();
     int32_t OffloadSetVolumeInner();
-    void InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo);
-    void InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, CaptureInfo &captureInfo);
+    void InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo, int32_t innerCapId);
+    void InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, CaptureInfo &captureInfo, int32_t innerCapId);
     int32_t StartInner();
     int64_t GetLastAudioDuration();
     int32_t CreateDupBufferInner(int32_t innerCapId);
-    int32_t WriteDupBufferInner(const BufferDesc &bufferDesc);
+    int32_t WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId);
+    void ReConfigAllDupStreamCallback();
 
 private:
     std::mutex statusLock_;
@@ -150,7 +151,7 @@ private:
     uint32_t streamIndex_ = -1;
     std::string traceTag_;
     mutable int64_t volumeDataCount_ = 0;
-    IStatus status_ = I_STATUS_IDLE;
+    std::atomic<IStatus> status_ = I_STATUS_IDLE;
     bool offloadEnable_ = false;
     std::atomic<bool> standByEnable_ = false;
     std::atomic<bool> muteFlag_ = false;
@@ -163,7 +164,7 @@ private:
     size_t dupByteSizePerFrame_ = 0;
     FILE *dumpDupIn_ = nullptr;
     std::string dumpDupInFileName_ = "";
-    std::shared_ptr<StreamCallbacks> dupStreamCallback_ = nullptr;
+    std::map<int32_t, std::shared_ptr<StreamCallbacks>> innerCapIdToDupStreamCallbackMap_;
     std::unordered_map<int32_t, CaptureInfo> captureInfos_;
     std::unique_ptr<AudioRingCache> dupRingBuffer_ = nullptr;
 

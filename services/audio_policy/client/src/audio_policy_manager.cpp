@@ -254,9 +254,8 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
     {
         std::lock_guard<std::mutex> lockCbMap(serverDiedCbkMutex_);
         for (auto func : serverDiedCbks_) {
-            if (func != nullptr) {
-                func();
-            }
+            CHECK_AND_CONTINUE(func != nullptr);
+            func();
         }
     }
 }
@@ -2337,6 +2336,13 @@ DirectPlaybackMode AudioPolicyManager::GetDirectPlaybackSupport(const AudioStrea
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, DIRECT_PLAYBACK_NOT_SUPPORTED, "audio policy manager proxy is NULL.");
     return gsp->GetDirectPlaybackSupport(streamInfo, streamUsage);
+}
+
+bool AudioPolicyManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+    return gsp->IsAcousticEchoCancelerSupported(sourceType);
 }
 
 AudioPolicyManager& AudioPolicyManager::GetInstance()

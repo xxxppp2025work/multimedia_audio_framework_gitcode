@@ -878,7 +878,7 @@ bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
 
 void RendererInClientInner::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
 {
-    uint32_t tid;
+    pid_t tid;
     switch (rendererInfo_.playerType) {
         case PLAYER_TYPE_ARKTS_AUDIO_RENDERER:
             // main thread
@@ -899,7 +899,7 @@ void RendererInClientInner::RegisterThreadPriorityOnStart(StateChangeCmdType cmd
         CHECK_AND_RETURN_LOG(lastCallStartByUserTid_.has_value(), "has not value");
         tid = lastCallStartByUserTid_.value();
     } else {
-        AUDIO_ERR_LOG("illeagl param");
+        AUDIO_ERR_LOG("illegal param");
         return;
     }
 

@@ -44,11 +44,13 @@ ohos_shared_library("pulse_audio_service_adapter") {
     "../hdiadapter/common/include",
     "../hdiadapter/sink/common",
     "../hdiadapter/source/common",
+    "../../../services/audio_engine/manager/include",
     "../../../services/audio_policy/server/include/service/common",
     "../../../services/audio_service/common/include",
   ]
 
   deps = [
+    "../../../services/audio_engine:audio_engine_manager",
     "../../../services/audio_service:audio_common",
     "../audioutils:audio_utils",
   ]
