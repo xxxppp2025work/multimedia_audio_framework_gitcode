@@ -176,10 +176,14 @@ float AudioVolume::GetStreamVolumeInternal(uint32_t sessionId, int32_t& volumeTy
 float AudioVolume::GetSystemVolumeInternal(int32_t volumeType, const std::string &deviceClass, int32_t& volumeLevel)
 {
     std::shared_lock<std::shared_mutex> lock(systemMutex_);
-    AudioStreamType volumeMapType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(volumeType));
     float volumeSystem = 1.0f;
-    std::string key = std::to_string(volumeMapType) + deviceClass;
-    auto itSV = systemVolume_.find(key);
+    AudioStreamType streamType = static_cast<AudioStreamType>(volumeType);
+    AudioStreamType volumeDBType = VolumeUtils::GetVolumeTypeForVolumeDB(streamType);
+    AudioStreamType volumeMapType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    std::string mapKey = std::to_string(volumeMapType) + deviceClass;
+    std::string dbkey = std::to_string(volumeDBType) + deviceClass;
+    auto itSV = (systemVolume_.find(dbkey) == systemVolume_.end())?
+        systemVolume_.find(mapKey) : systemVolume_.find(dbkey);
     if (itSV != systemVolume_.end()) {
         volumeLevel = itSV->second.volumeLevel_;
         volumeSystem = itSV->second.isMuted_ ? 0.0f : itSV->second.volume_;
@@ -460,7 +464,8 @@ void AudioVolume::SetDefaultAppVolume(int32_t level)
 
 void AudioVolume::SetSystemVolume(SystemVolume &systemVolume)
 {
-    auto volumeType = systemVolume.GetVolumeType();
+    AudioStreamType streamType = static_cast<AudioStreamType>(systemVolume.GetVolumeType());
+    auto volumeType = VolumeUtils::GetVolumeTypeForVolumeDB(streamType);
     auto deviceClass = systemVolume.GetDeviceClass();
     std::string key = std::to_string(volumeType) + deviceClass;
     bool haveSystemVolume = true;
@@ -474,10 +479,21 @@ void AudioVolume::SetSystemVolume(SystemVolume &systemVolume)
         } else {
             haveSystemVolume = false;
         }
-    }
-    if (!haveSystemVolume) {
-        std::unique_lock<std::shared_mutex> lock(systemMutex_);
-        systemVolume_.emplace(key, systemVolume);
+        if (!haveSystemVolume) {
+            systemVolume_.emplace(key, systemVolume);
+        }
+        
+        AudioStreamType volumeTypeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+        std::string mapKey = std::to_string(volumeTypeMap) + deviceClass;
+        auto itMap = systemVolume_.find(mapKey);
+        if (itMap == systemVolume_.end()) {
+            SystemVolume systemVolumeMap(volumeTypeMap, deviceClass, systemVolume.volume_,
+                systemVolume.volumeLevel_, systemVolume.isMuted_);
+            systemVolume_.emplace(mapKey, systemVolumeMap);
+        } else if (mapKey != key) {
+            itMap->second.volumeLevel_ = systemVolume.volumeLevel_;
+            itMap->second.isMuted_ = systemVolume.isMuted_;
+        }
     }
     AUDIO_INFO_LOG("system volume, volumeType:%{public}d, deviceClass:%{public}s,"
         " volume:%{public}f, volumeLevel:%{public}d, isMuted:%{public}d, systemVolumeSize:%{public}zu",
@@ -499,11 +515,10 @@ void AudioVolume::SetSystemVolume(int32_t volumeType, const std::string &deviceC
         } else {
             haveSystemVolume = false;
         }
-    }
-    if (!haveSystemVolume) {
-        std::unique_lock<std::shared_mutex> lock(systemMutex_);
-        SystemVolume systemVolume(volumeType, deviceClass, volume, volumeLevel, false);
-        systemVolume_.emplace(key, systemVolume);
+        if (!haveSystemVolume) {
+            SystemVolume systemVolume(volumeType, deviceClass, volume, volumeLevel, false);
+            systemVolume_.emplace(key, systemVolume);
+        }
     }
     AUDIO_INFO_LOG("system volume, volumeType:%{public}d, deviceClass:%{public}s,"
         " volume:%{public}f, volumeLevel:%{public}d, systemVolumeSize:%{public}zu",
@@ -512,13 +527,15 @@ void AudioVolume::SetSystemVolume(int32_t volumeType, const std::string &deviceC
 
 void AudioVolume::SetSystemVolumeMute(int32_t volumeType, const std::string &deviceClass, bool isMuted)
 {
+    std::shared_lock<std::shared_mutex> lock(systemMutex_);
     AUDIO_INFO_LOG("system volume, volumeType:%{public}d, deviceClass:%{public}s, isMuted:%{public}d",
         volumeType, deviceClass.c_str(), isMuted);
-    std::string key = std::to_string(volumeType) + deviceClass;
+    AudioStreamType streamType = static_cast<AudioStreamType>(volumeType);
+    AudioStreamType volumeDBType = VolumeUtils::GetVolumeTypeForVolumeDB(streamType);
+    std::string dbkey = std::to_string(volumeDBType) + deviceClass;
     bool haveSystemVolume = true;
     {
-        std::shared_lock<std::shared_mutex> lock(systemMutex_);
-        auto it = systemVolume_.find(key);
+        auto it = systemVolume_.find(dbkey);
         if (it != systemVolume_.end()) {
             it->second.isMuted_ = isMuted;
         } else {
@@ -526,9 +543,17 @@ void AudioVolume::SetSystemVolumeMute(int32_t volumeType, const std::string &dev
         }
     }
     if (!haveSystemVolume) {
-        std::unique_lock<std::shared_mutex> lock(systemMutex_);
-        SystemVolume systemVolume(volumeType, deviceClass, 0.0f, 0, isMuted);
-        systemVolume_.emplace(key, systemVolume);
+        SystemVolume systemVolume(volumeDBType, deviceClass, 0.0f, 0, isMuted);
+        systemVolume_.emplace(dbkey, systemVolume);
+    }
+    AudioStreamType volumeTypeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    std::string mapKey = std::to_string(volumeTypeMap) + deviceClass;
+    auto itMap = systemVolume_.find(mapKey);
+    if (itMap == systemVolume_.end()) {
+        SystemVolume systemVolumeMap(volumeTypeMap, deviceClass, 0.0f, 0, isMuted);
+        systemVolume_.emplace(mapKey, systemVolumeMap);
+    } else if (mapKey != dbkey) {
+        itMap->second.isMuted_ = isMuted;
     }
 }
 

@@ -558,7 +558,7 @@ void AudioAdapterManager::SetAppAudioVolume(int32_t appUid, float volumeDb)
     audioVolume->SetAppVolume(appVolume);
 }
 
-void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volumeDb)
+void AudioAdapterManager::SetAudioVolume(AudioStreamType volumeType, float volumeDb)
 {
     static std::unordered_map<DeviceType, std::vector<std::string>> deviceClassMap = {
         {DEVICE_TYPE_SPEAKER, {PRIMARY_CLASS, MCH_CLASS, OFFLOAD_CLASS}},
@@ -578,10 +578,10 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
     };
 
     std::lock_guard<std::mutex> lock(audioVolumeMutex_);
-    AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     bool isMuted = GetStreamMute(volumeType);
     int32_t volumeLevel = volumeDataMaintainer_.GetStreamVolume(volumeType) * (isMuted ? 0 : 1);
-    if (GetActiveDevice() == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene() && volumeType == STREAM_MUSIC) {
+    if (GetActiveDevice() == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene() &&
+        VolumeUtils::GetVolumeTypeFromStreamType(volumeType) == STREAM_MUSIC) {
         isMuted = IsAbsVolumeMute();
         volumeLevel = volumeDataMaintainer_.GetStreamVolume(volumeType) * (isMuted ? 0 : 1);
         volumeDb = isMuted ? 0.0f : 0.63957f; // 0.63957 = -4dB
@@ -602,7 +602,8 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
         SystemVolume systemVolume(volumeType, deviceClass, volumeDb, volumeLevel, isMuted);
         if (deviceClass != OFFLOAD_CLASS) {
             audioVolume->SetSystemVolume(systemVolume);
-        } else if (deviceClass == OFFLOAD_CLASS && volumeType == STREAM_MUSIC) {
+        } else if (deviceClass == OFFLOAD_CLASS &&
+                VolumeUtils::GetVolumeTypeFromStreamType(volumeType) == STREAM_MUSIC) {
             audioVolume->SetSystemVolume(systemVolume);
             SetOffloadVolume(volumeType, volumeDb);
         }
@@ -2505,7 +2506,8 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
 {
     AUDIO_DEBUG_LOG("CalculateVolumeDbNonlinear for stream: %{public}d devicetype:%{public}d volumeLevel:%{public}d",
         streamType, deviceType, volumeLevel);
-    AudioStreamType streamAlias = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    // Calculate volumeDB use volumeDB calss
+    AudioStreamType streamAlias = VolumeUtils::GetVolumeTypeForVolumeDB(streamType);
     int32_t minVolIndex = GetMinVolumeLevel(streamAlias);
     int32_t maxVolIndex = GetMaxVolumeLevel(streamAlias);
     if (minVolIndex < 0 || maxVolIndex < 0 || minVolIndex >= maxVolIndex) {
@@ -2585,7 +2587,7 @@ void AudioAdapterManager::UpdateVolumeMapIndex()
                 appConfigVolume_.defaultVolume, appConfigVolume_.maxVolume, appConfigVolume_.minVolume);
             continue;
         }
-        AudioVolumeType CurStreamType = VolumeUtils::GetVolumeTypeFromStreamType(streamVolInfo->streamType);
+        AudioVolumeType CurStreamType = streamVolInfo->streamType;
         minVolumeIndexMap_[CurStreamType] = streamVolInfo->minLevel;
         maxVolumeIndexMap_[CurStreamType] = streamVolInfo->maxLevel;
         volumeDataMaintainer_.SetStreamVolume(streamVolInfo->streamType, streamVolInfo->defaultLevel);
