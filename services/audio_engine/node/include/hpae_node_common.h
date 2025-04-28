@@ -26,11 +26,13 @@ HpaeProcessorType TransStreamTypeToSceneType(AudioStreamType streamType);
 HpaeProcessorType TransSourceTypeToSceneType(SourceType sourceType);
 bool CheckSceneTypeNeedEc(HpaeProcessorType processorType);
 bool CheckSceneTypeNeedMicRef(HpaeProcessorType processorType);
-std::string TransHpaeResampleNodeInfoToStringKey(HpaeNodeInfo& nodeInfo);
+std::string TransNodeInfoToStringKey(HpaeNodeInfo& nodeInfo);
 AudioEnhanceScene TransProcessType2EnhanceScene(const HpaeProcessorType &processorType);
 std::string TransProcessorTypeToSceneType(HpaeProcessorType processorType);
 uint64_t ConvertDatalenToUs(size_t bufferSize, const HpaeNodeInfo &nodeInfo);
 size_t ConvertUsToFrameCount(uint64_t usTime, const HpaeNodeInfo &nodeInfo);
+std::string ConvertSessionState2Str(HpaeSessionState state);
+std::string ConvertStreamManagerState2Str(StreamManagerState state);
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

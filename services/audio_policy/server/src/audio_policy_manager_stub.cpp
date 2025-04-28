@@ -156,8 +156,6 @@ const char *g_audioPolicyCodeStrs[] = {
     "ADD_UID_TO_AUDIO_ZONE",
     "REMOVE_UID_FROM_AUDIO_ZONE",
     "ENABLE_SYSTEM_VOLUME_PROXY",
-    "SET_SYSTEM_VOLUME_LEVEL_FOR_ZONE",
-    "GET_SYSTEM_VOLUME_LEVEL_FOR_ZONE",
     "GET_AUDIO_INTERRUPT_FOR_ZONE",
     "GET_AUDIO_INTERRUPT_OF_DEVICE_FOR_ZONE",
     "ENABLE_AUDIO_ZONE_INTERRUPT_REPORT",
@@ -226,6 +224,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_DIRECT_PLAYBACK_SUPPORT",
     "NOFITY_SESSION_STATE_CHANGE",
     "NOFITY_FREEZE_STATE_CHANGE",
+    "IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1280,6 +1279,9 @@ void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::NOFITY_FREEZE_STATE_CHANGE):
             NotifyFreezeStateChangeInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED):
+            IsAcousticEchoCancelerSupportedInternal(data, reply);
+            break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
             IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -2267,6 +2269,13 @@ void AudioPolicyManagerStub::GetDirectPlaybackSupportInternal(MessageParcel &dat
     StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
     DirectPlaybackMode mode = GetDirectPlaybackSupport(streamInfo, streamUsage);
     reply.WriteInt32(static_cast<int32_t>(mode));
+}
+
+void AudioPolicyManagerStub::IsAcousticEchoCancelerSupportedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
+    bool result = IsAcousticEchoCancelerSupported(sourceType);
+    reply.WriteBool(result);
 }
 } // namespace audio_policy
 } // namespace OHOS

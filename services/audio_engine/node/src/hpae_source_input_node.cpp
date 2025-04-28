@@ -154,7 +154,7 @@ int32_t HpaeSourceInputNode::WriteCapturerData(char *data, int32_t dataSize)
     auto itFrameByteSize = frameByteSizeMap_.begin();
     CHECK_AND_RETURN_RET_LOG(
         itCapturerFrameData != capturerFrameDataMap_.end() && itFrameByteSize != frameByteSizeMap_.end(),
-        ERROR, "outStreamMap_ is empty.\n");
+        ERROR, "outStreamMap_ is empty.");
     int32_t ret = memcpy_s(itCapturerFrameData->second.data(), itFrameByteSize->second, data, dataSize);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "memcpy error when WriteCapturerData");
     return 0;
@@ -183,7 +183,7 @@ OutputPort<HpaePcmBuffer *> *HpaeSourceInputNode::GetOutputPort()
     } else {
         it = outputStreamMap_.find(HPAE_SOURCE_BUFFER_TYPE_MIC);
     }
-    CHECK_AND_RETURN_RET_LOG(it != outputStreamMap_.end(), nullptr, "outStreamMap_ is empty.\n");
+    CHECK_AND_RETURN_RET_LOG(it != outputStreamMap_.end(), nullptr, "outStreamMap_ is empty.");
     return &(it->second);
 }
 
@@ -255,7 +255,7 @@ int32_t HpaeSourceInputNode::CapturerSourceInit(IAudioSourceAttr &attr)
 
     audioSourceAttr_ = attr;
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Init(attr) == SUCCESS, ERROR, "Source init fail");
-    state_ = CAPTURER_NEW;
+    state_ = STREAM_MANAGER_IDLE;
     return SUCCESS;
 }
 
@@ -285,7 +285,7 @@ int32_t HpaeSourceInputNode::CapturerSourcePause(void)
         return ERROR;
     }
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Pause() == SUCCESS, ERROR, "Source pause fail");
-    state_ = CAPTURER_PAUSED;
+    state_ = STREAM_MANAGER_SUSPENDED;
     return SUCCESS;
 }
 
@@ -303,7 +303,7 @@ int32_t HpaeSourceInputNode::CapturerSourceResume(void)
         return ERROR;
     }
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Resume() == SUCCESS, ERROR, "Source resume fail");
-    state_ = CAPTURER_RUNNING;
+    state_ = STREAM_MANAGER_RUNNING;
     return SUCCESS;
 }
 
@@ -313,7 +313,7 @@ int32_t HpaeSourceInputNode::CapturerSourceStart(void)
         return ERROR;
     }
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Start() == SUCCESS, ERROR, "Source start fail");
-    state_ = CAPTURER_RUNNING;
+    state_ = STREAM_MANAGER_RUNNING;
     return SUCCESS;
 }
 
@@ -323,11 +323,11 @@ int32_t HpaeSourceInputNode::CapturerSourceStop(void)
         return ERROR;
     }
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Stop() == SUCCESS, ERROR, "Source stop fail");
-    state_ = CAPTURER_STOPPED;
+    state_ = STREAM_MANAGER_SUSPENDED;
     return SUCCESS;
 }
 
-CapturerState HpaeSourceInputNode::GetSourceState(void)
+StreamManagerState HpaeSourceInputNode::GetSourceState(void)
 {
     return state_;
 }
@@ -340,14 +340,14 @@ size_t HpaeSourceInputNode::GetOutputPortNum()
     } else {
         it = outputStreamMap_.find(HPAE_SOURCE_BUFFER_TYPE_MIC);
     }
-    CHECK_AND_RETURN_RET_LOG(it != outputStreamMap_.end(), 0, "outStreamMap_ is empty.\n");
+    CHECK_AND_RETURN_RET_LOG(it != outputStreamMap_.end(), 0, "outStreamMap_ is empty.");
     return it->second.GetInputNum();
 }
 
 size_t HpaeSourceInputNode::GetOutputPortNum(HpaeNodeInfo &nodeInfo)
 {
     auto it = outputStreamMap_.find(nodeInfo.sourceBufferType);
-    CHECK_AND_RETURN_RET_LOG(it != outputStreamMap_.end(), 0, "can't find nodeKey in outStreamMap_.\n");
+    CHECK_AND_RETURN_RET_LOG(it != outputStreamMap_.end(), 0, "can't find nodeKey in outStreamMap_.");
     return it->second.GetInputNum();
 }
 
@@ -359,6 +359,14 @@ HpaeSourceInputNodeType HpaeSourceInputNode::GetSourceInputNodeType()
 void HpaeSourceInputNode::SetSourceInputNodeType(HpaeSourceInputNodeType type)
 {
     sourceInputNodeType_ = type;
+}
+
+HpaeNodeInfo &HpaeSourceInputNode::GetNodeInfoWithInfo(HpaeSourceBufferType &type)
+{
+    auto it = nodeInfoMap_.find(type);
+    CHECK_AND_RETURN_RET_LOG(it != nodeInfoMap_.end(), nodeInfoMap_.begin()->second,
+        "can't find nodeKey in nodeInfoMap_.");
+    return it->second;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

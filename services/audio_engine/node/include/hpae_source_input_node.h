@@ -51,12 +51,13 @@ public:
     int32_t CapturerSourceResume(void);
     int32_t CapturerSourceStart(void);
     int32_t CapturerSourceStop(void);
-    CapturerState GetSourceState(void);
+    StreamManagerState GetSourceState(void);
     int32_t WriteCapturerData(char *data, int32_t dataSize);
     size_t GetOutputPortNum();
     size_t GetOutputPortNum(HpaeNodeInfo &nodeInfo);
     HpaeSourceInputNodeType GetSourceInputNodeType();
     void SetSourceInputNodeType(HpaeSourceInputNodeType type);
+    HpaeNodeInfo& GetNodeInfoWithInfo(HpaeSourceBufferType &type);
 private:
     int32_t GetCapturerSourceAdapter(
         const std::string &deviceClass, const SourceType &sourceType, const std::string &info);
@@ -67,7 +68,7 @@ private:
     IAudioSourceAttr audioSourceAttr_;
     std::string defaultSinkName_;
     std::string defaultSourceName_;
-    CapturerState state_ = CAPTURER_NEW;
+    StreamManagerState state_ = STREAM_MANAGER_NEW;
     HpaeSourceInputNodeType sourceInputNodeType_;
 
     std::unordered_map<HpaeSourceBufferType, OutputPort<HpaePcmBuffer *>> outputStreamMap_; // output port

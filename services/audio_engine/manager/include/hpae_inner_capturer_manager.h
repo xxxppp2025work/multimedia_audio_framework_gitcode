@@ -88,6 +88,7 @@ public:
     int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeSourceOutputInfo &sourceOutputInfo) override;
     std::vector<SourceOutput> GetAllSourceOutputsInfo() override;
     std::string GetThreadName() override;
+    int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
 
 private:
     void TransStreamInfoToNodeInfoInner(const HpaeStreamInfo &streamInfo, HpaeNodeInfo &nodeInfo);
@@ -99,12 +100,13 @@ private:
     int32_t ConnectCapturerOutputSessionInner(uint32_t sessionId);
     int32_t DisConnectRendererInputSessionInner(uint32_t sessionId);
     int32_t DisConnectCapturerInputSessionInner(uint32_t sessionId);
-    void SetSessionStateInner(uint32_t sessionId, RendererState renderState);
-    void SetSessionStateInner(uint32_t sessionId, CapturerState capturerState);
+    void SetSessionStateForRenderer(uint32_t sessionId, HpaeSessionState renderState);
+    void SetSessionStateForCapturer(uint32_t sessionId, HpaeSessionState capturerState);
     void SendRequestInner(Request &&request, bool isInit = false);
     uint32_t GetSinkInputNodeIdInner();
     void AddSingleNodeToSinkInner(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSinkInner(const std::string &sinkName, const std::vector<uint32_t> &moveIds, bool isMoveAll);
+    void InitSinkInner();
     uint32_t sinkInputNodeCounter_ = 0;
     std::atomic<bool> isInit_ = false;
     std::atomic<bool> isMute_ = false;

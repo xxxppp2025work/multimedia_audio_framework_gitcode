@@ -86,6 +86,8 @@ public:
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
     void DumpSinkInfo() override;
+    int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
+
 private:
     void SendRequest(Request &&request, bool isInit = false);
     int32_t StartRenderSink();
@@ -97,17 +99,20 @@ private:
     int32_t ConnectMchInputSession(uint32_t sessionId);
     int32_t DisConnectMchInputSession(uint32_t sessionId);
     int32_t DeleteMchInputSession(uint32_t sessionId);
-    void SetSessionState(uint32_t sessionId, RendererState renderState);
+    void SetSessionState(uint32_t sessionId, HpaeSessionState renderState);
     void AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t>& moveIds, bool isMoveAll);
     void UpdateProcessClusterConnection(uint32_t sessionId, int32_t effectMode);
     void ConnectProcessCluster(uint32_t sessionId, HpaeProcessorType sceneType);
     void DisConnectProcessCluster(uint32_t sessionId, HpaeProcessorType sceneType);
     void DeleteProcessCluster(const HpaeNodeInfo &nodeInfo, HpaeProcessorType sceneType, uint32_t sessionId);
-    std::shared_ptr<HpaeProcessCluster> CreateProcessCluster(HpaeNodeInfo &nodeInfo);
+    void CreateProcessCluster(HpaeNodeInfo &nodeInfo);
     bool SetSessionFade(uint32_t sessionId, IOperation operation);
-    std::shared_ptr<HpaeProcessCluster> CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
+    void CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
+    void InitManager();
+    void MoveStreamSync(uint32_t sessionId, const std::string &sinkName);
+
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeProcessCluster>> sceneClusterMap_;

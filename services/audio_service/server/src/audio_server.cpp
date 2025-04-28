@@ -57,6 +57,8 @@
 #include "offline_stream_in_server.h"
 #include "audio_dump_pcm.h"
 #include "audio_info.h"
+#include "i_hpae_manager.h"
+#include "audio_server_hpae_dump.h"
 
 #define PA
 #ifdef PA
@@ -105,6 +107,7 @@ static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
     UID_CAMERA
 };
+const int32_t RSS_THRESHOLD = 2;
 // using pass-in appInfo for uids:
 constexpr int32_t UID_MEDIA_SA = 1013;
 enum PermissionStatus {
@@ -309,11 +312,18 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
     }
     std::string dumpString;
     int32_t engineFlag = GetEngineFlag();
+    int32_t res = 0;
     if (engineFlag == 1) {
-        AUDIO_DEBUG_LOG("HPAE dump");
+        if (hpaeDumpObj_ == nullptr) {
+            hpaeDumpObj_ = std::make_shared<AudioServerHpaeDump>();
+        }
+        res = hpaeDumpObj_->Initialize();
+        CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
+            "Audio Service Hpae Dump Not Initialed");
+        hpaeDumpObj_->AudioDataDump(dumpString, argQue);
     } else {
         AudioServerDump dumpObj;
-        int32_t res = dumpObj.Initialize();
+        res = dumpObj.Initialize();
         CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
             "Audio Service Dump Not initialised\n");
         dumpObj.AudioDataDump(dumpString, argQue);
@@ -354,7 +364,8 @@ void AudioServer::OnStart()
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        AUDIO_INFO_LOG("HPAE IHpaeManager Init\n");
+        HPAE::IHpaeManager::GetHpaeManager().Init();
+        AUDIO_INFO_LOG("IHpaeManager Init\n");
     } else {
 #ifdef PA
         int32_t ret = pthread_create(&m_paDaemonThread, nullptr, AudioServer::paDaemonThread, nullptr);
@@ -370,6 +381,7 @@ void AudioServer::OnStart()
     RegisterAudioCapturerSourceCallback();
     RegisterAudioRendererSinkCallback();
     ParseAudioParameter();
+    NotifyProcessStatus();
     DlopenUtils::DeInit();
 }
 
@@ -380,16 +392,18 @@ void AudioServer::ParseAudioParameter()
         WriteServiceStartupError();
     }
     CHECK_AND_RETURN_LOG(audioParamParser != nullptr, "Failed to create audio extra parameters parser");
-    std::unique_lock<std::shared_mutex> lock(audioParameterKeyMutex_);
     if (audioParamParser->LoadConfiguration(audioParameterKeys)) {
         AUDIO_INFO_LOG("Audio extra parameters load configuration successfully.");
     }
-    isAudioParameterParsed_ = true;
+    isAudioParameterParsed_.store(true);
 
-    for (const auto& pair : audioExtraParameterCacheVector_) {
-        SetExtraParameters(pair.first, pair.second);
+    {
+        std::unique_lock<std::mutex> lock(audioParameterCacheMutex_);
+        for (const auto &pair : audioExtraParameterCacheVector_) {
+            SetExtraParameters(pair.first, pair.second);
+        }
+        audioExtraParameterCacheVector_.clear();
     }
-    audioExtraParameterCacheVector_.clear();
     AUDIO_INFO_LOG("Audio extra parameters replay cached successfully.");
 }
 
@@ -434,8 +448,8 @@ bool AudioServer::SetPcmDumpParameter(const std::vector<std::pair<std::string, s
     return AudioCacheMgr::GetInstance().SetDumpParameter(params);
 }
 
-int32_t AudioServer::SetExtraParameters(const std::string& key,
-    const std::vector<std::pair<std::string, std::string>>& kvpairs)
+int32_t AudioServer::SetExtraParameters(const std::string &key,
+    const std::vector<std::pair<std::string, std::string>> &kvpairs)
 {
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "set extra parameters failed: not system app.");
@@ -448,9 +462,9 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
         return SUCCESS;
     }
 
-    std::shared_lock<std::shared_mutex> lock(audioParameterKeyMutex_);
+    CHECK_AND_RETURN_RET_LOG(!CacheExtraParameters(key, kvpairs), ERROR, "cached");
+
     if (audioParameterKeys.empty()) {
-        CacheExtraParameters(key, kvpairs);
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
         return ERROR;
     }
@@ -491,15 +505,22 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
     return SUCCESS;
 }
 
-void AudioServer::CacheExtraParameters(const std::string& key,
-    const std::vector<std::pair<std::string, std::string>>& kvpairs)
+bool AudioServer::CacheExtraParameters(const std::string &key,
+    const std::vector<std::pair<std::string, std::string>> &kvpairs)
 {
-    if (!isAudioParameterParsed_) {
-        AUDIO_INFO_LOG("Audio extra parameters will be cached");
-        std::pair<std::string,
-            std::vector<std::pair<std::string, std::string>>> cache(key, kvpairs);
-        audioExtraParameterCacheVector_.push_back(cache);
+    if (!isAudioParameterParsed_.load()) {
+        std::unique_lock<std::mutex> lock(audioParameterCacheMutex_);
+        if (!isAudioParameterParsed_.load()) {
+            AUDIO_INFO_LOG("Audio extra parameters will be cached");
+            std::pair<std::string,
+                std::vector<std::pair<std::string, std::string>>> cache(key, kvpairs);
+            audioExtraParameterCacheVector_.push_back(cache);
+
+            return true;
+        }
     }
+
+    return false;
 }
 
 void AudioServer::SetA2dpAudioParameter(const std::string &renderValue)
@@ -626,7 +647,8 @@ int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
         return SUCCESS;
     }
 
-    std::shared_lock<std::shared_mutex> lock(audioParameterKeyMutex_);
+    CHECK_AND_RETURN_RET_LOG(isAudioParameterParsed_.load(), ERROR, "audioParameterKeys is not ready");
+
     if (audioParameterKeys.empty()) {
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
         return ERROR;
@@ -1470,6 +1492,31 @@ int32_t AudioServer::CheckAndWaitAudioPolicyReady()
     return SUCCESS;
 }
 
+void AudioServer::NotifyProcessStatus()
+{
+    // when audio_server start, set audio_server rssThresHold
+    void *libMemMgrClientHandle = dlopen("libmemmgrclient.z.so", RTLD_NOW);
+    if (!libMemMgrClientHandle) {
+        AUDIO_INFO_LOG("dlopen libmemmgrclient library failed");
+        return;
+    }
+    void *notifyProcessStatusFunc = dlsym(libMemMgrClientHandle, "notify_process_status");
+    if (!notifyProcessStatusFunc) {
+        AUDIO_INFO_LOG("dlsm notify_process_status failed");
+#ifndef TEST_COVERAGE
+        dlclose(libMemMgrClientHandle);
+#endif
+        return;
+    }
+    auto notifyProcessStatus = reinterpret_cast<int(*)(int, int, int, int)>(notifyProcessStatusFunc);
+    AUDIO_INFO_LOG("notify to memmgr when audio_server is started");
+    int pid = getpid();
+    notifyProcessStatus(pid, 1, RSS_THRESHOLD, 0);
+#ifndef TEST_COVERAGE
+    dlclose(libMemMgrClientHandle);
+#endif
+}
+
 sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
     const AudioPlaybackCaptureConfig &filterConfig)
 {
@@ -2139,6 +2186,9 @@ void AudioServer::UpdateSessionConnectionState(const int32_t &sessionId, const i
         return;
     }
     renderer->OnDataLinkConnectionUpdate(static_cast<IOperation>(state));
+    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
+    CHECK_AND_RETURN_LOG(sink->UpdatePrimaryConnectionState(state) != SUCCESS,
+        "sink do not support UpdatePrimaryConnectionState");
 }
 
 void AudioServer::SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag)

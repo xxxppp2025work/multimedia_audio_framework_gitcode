@@ -28,7 +28,6 @@
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 #include "audio_recovery_device.h"
-#include "audio_zone_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -598,12 +597,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetDeviceDescr
     std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(rendererChangeInfo->clientUID);
     if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
         descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
-    } else if (zoneId != 0) {
-        descs = AudioZoneService::GetInstance().FetchOutputDevices(zoneId,
-            rendererChangeInfo->rendererInfo.streamUsage, rendererChangeInfo->clientUID, ROUTER_TYPE_DEFAULT);
     } else {
         descs = audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
             rendererChangeInfo->clientUID);
@@ -1719,12 +1714,13 @@ void AudioDeviceCommon::SetHasDpFlag(bool flag)
     hasDpDevice_ = flag;
 }
 
-bool AudioDeviceCommon::IsStopOrReleasePlayback(AudioMode &mode, RendererState rendererState)
+bool AudioDeviceCommon::IsRingOverPlayback(AudioMode &mode, RendererState rendererState)
 {
     if (mode != AUDIO_MODE_PLAYBACK) {
         return false;
     }
-    if (rendererState != RENDERER_STOPPED && rendererState != RENDERER_RELEASED) {
+    if (rendererState != RENDERER_STOPPED && rendererState != RENDERER_RELEASED &&
+        rendererState != RENDERER_PAUSED) {
         return false;
     }
     return true;
@@ -1758,7 +1754,7 @@ void AudioDeviceCommon::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &st
             UpdateDualToneState(false, enableDualHalToneSessionId_);
         }
     }
-    if (isRingDualToneOnPrimarySpeaker_ && IsStopOrReleasePlayback(mode, rendererState) &&
+    if (isRingDualToneOnPrimarySpeaker_ && IsRingOverPlayback(mode, rendererState) &&
         Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
         AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer stop/release.");
         isRingDualToneOnPrimarySpeaker_ = false;

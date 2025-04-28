@@ -25,6 +25,7 @@
 #include "audio_usb_manager.h"
 #include "data_share_observer_callback.h"
 #include "audio_spatialization_service.h"
+#include "audio_zone_service.h"
 
 
 namespace OHOS {
@@ -138,6 +139,7 @@ int32_t AudioCoreService::CreateRendererClient(
         sessionId = GenerateSessionId();
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
         pipeManager_->AddModemCommunicationId(sessionId, GetRealUid(streamDesc));
+        AddSessionId(sessionId);
         return SUCCESS;
     }
     streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
@@ -155,7 +157,7 @@ int32_t AudioCoreService::CreateRendererClient(
     // Fetch pipe
     ret = FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
-
+    AddSessionId(sessionId);
     return SUCCESS;
 }
 
@@ -178,7 +180,7 @@ int32_t AudioCoreService::CreateCapturerClient(
     // Fetch pipe
     ret = FetchCapturerPipeAndExecute(streamDesc, audioFlag, sessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
-
+    AddSessionId(sessionId);
     return SUCCESS;
 }
 
@@ -392,6 +394,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId)
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.ResetOffloadStatus(sessionId);
     RemoveUnusedPipe();
+    DeleteSessionId(sessionId);
 
     return SUCCESS;
 }
@@ -975,6 +978,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
         streamDesc->newDeviceDescs_ =
             audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc));
+            
         AUDIO_INFO_LOG("DeviceType %{public}d, state: %{public}u",
             streamDesc->newDeviceDescs_[0]->deviceType_, streamDesc->streamStatus_);
 

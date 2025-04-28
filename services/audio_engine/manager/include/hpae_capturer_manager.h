@@ -73,6 +73,7 @@ public:
     int32_t ReloadCaptureManager(const HpaeSourceInfo &sourceInfo) override;
     void DumpSourceInfo() override;
 private:
+    void SendRequest(Request &&request, bool isInit = false);
     int32_t CreateOutputSession(const HpaeStreamInfo &streamInfo);
     int32_t DeleteOutputSession(uint32_t sessionId);
     int32_t ConnectProcessClusterWithEc(HpaeProcessorType &sceneType);
@@ -80,7 +81,7 @@ private:
     int32_t ConnectOutputSession(uint32_t sessionId);
     int32_t DisConnectOutputSession(uint32_t sessionId);
     void DisConnectSceneClusterFromSourceInputCluster(HpaeProcessorType &sceneType);
-    void SetSessionState(uint32_t sessionId, CapturerState capturerState);
+    void SetSessionState(uint32_t sessionId, HpaeSessionState capturerState);
     int32_t PrepareCapturerEc(HpaeNodeInfo &ecNodeInfo);
     int32_t PrepareCapturerMicRef(HpaeNodeInfo &micRefNodeInfo);
     int32_t InitCapturer();
@@ -91,8 +92,10 @@ private:
     int32_t CaptureEffectRelease(const HpaeProcessorType &sceneType);
     int32_t InitCapturerManager();
     void CreateSourceAttr(IAudioSourceAttr &attr);
+    int32_t CapturerSourceStart();
+    int32_t CapturerSourceStop();
+
 private:
-    void SendRequest(Request &&request, bool isInit = false);
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::unordered_map<uint32_t, HpaeCapturerSessionInfo> sessionNodeMap_;
