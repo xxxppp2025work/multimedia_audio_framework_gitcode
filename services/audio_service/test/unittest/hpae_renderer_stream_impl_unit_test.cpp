@@ -166,6 +166,9 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_004, TestSize.Level1)
     uint64_t latency = 0;
     int32_t ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret, SUCCESS);
+    unit->deviceClass_ = "remote_offload";
+    ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -196,6 +199,9 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_006, TestSize.Level1)
     float volume = 0.0f;
     auto ret = unit->OffloadSetVolume(volume);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    unit->offloadEnable_ = true;
+    ret = unit->OffloadSetVolume(volume);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

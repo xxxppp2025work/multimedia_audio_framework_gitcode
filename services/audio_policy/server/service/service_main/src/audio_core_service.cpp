@@ -265,6 +265,14 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
     return true;
 }
 
+static bool IsRemoteOffloadActive(uint32_t remoteOffloadStreamPropSize, int32_t streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(remoteOffloadStreamPropSize != 0 && streamUsage == STREAM_USAGE_MUSIC, false,
+        "Use normal for remote device or remotecast");
+    AUDIO_INFO_LOG("remote offload active, music use offload");
+    return true;
+}
+
 void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess)
 {
     AUDIO_INFO_LOG("deviceType: %{public}d", streamDesc->newDeviceDescs_.front()->deviceType_);
@@ -279,9 +287,11 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
     }
 
     if (streamDesc->newDeviceDescs_.back()->deviceType_ == DEVICE_TYPE_REMOTE_CAST ||
-        streamDesc->newDeviceDescs_.back()->networkId_ == "REMOTE_NETWORK_ID") {
-        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-        AUDIO_INFO_LOG("Use normal for remote device or remotecast");
+        streamDesc->newDeviceDescs_.back()->networkId_ != LOCAL_NETWORK_ID) {
+        auto remoteOffloadStreamPropSize = policyConfigMananger_.GetStreamPropInfoSize("remote",
+            "offload_distributed_output");
+        streamDesc->audioFlag_ = IsRemoteOffloadActive(remoteOffloadStreamPropSize,
+            streamDesc->rendererInfo_.streamUsage) ? AUDIO_OUTPUT_FLAG_LOWPOWER : AUDIO_OUTPUT_FLAG_NORMAL;
         return;
     }
 

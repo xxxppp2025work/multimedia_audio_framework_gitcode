@@ -48,6 +48,7 @@ static constexpr uint32_t AUDIO_US_PER_MS = 1000;
 static constexpr uint32_t AUDIO_MS_PER_S = 1000;
 static constexpr int32_t DEFAULT_PAUSED_LATENCY = 40;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
+static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode)
@@ -243,7 +244,7 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
         timestamp_[base] :
         timestamp_[Timestamp::Timestampbase::MONOTONIC];
     latency = latency_;
-    if (deviceClass_ != DEVICE_CLASS_OFFLOAD) {
+    if (deviceClass_ != DEVICE_CLASS_OFFLOAD && deviceClass_ != DEVICE_CLASS_REMOTE_OFFLOAD) {
         std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
         if (audioRendererSink) {
             audioRendererSink->GetLatency(sinkLatency);
@@ -262,7 +263,7 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
 int32_t HpaeRendererStreamImpl::GetLatency(uint64_t &latency)
 {
     std::shared_lock<std::shared_mutex> lock(latencyMutex_);
-    if (deviceClass_ != DEVICE_CLASS_OFFLOAD) {
+    if (deviceClass_ != DEVICE_CLASS_OFFLOAD && deviceClass_ != DEVICE_CLASS_REMOTE_OFFLOAD) {
         uint32_t sinkLatency = 0;
         std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
         if (audioRendererSink) {
@@ -430,7 +431,7 @@ int32_t HpaeRendererStreamImpl::OffloadSetVolume(float volume)
     if (!offloadEnable_) {
         return ERR_OPERATION_FAILED;
     }
-    std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(DEVICE_CLASS_OFFLOAD, "");
+    std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(deviceClass_, "");
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
