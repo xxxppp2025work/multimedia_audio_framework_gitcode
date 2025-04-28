@@ -1349,6 +1349,7 @@ enum RestoreReason : int32_t {
     STREAM_CONCEDED,
     STREAM_SPLIT,
     SERVER_DIED,
+    FORCED_NORMAL,
 };
 
 enum CheckPosTimeRes : int32_t {
