@@ -193,17 +193,19 @@ bool AudioEndpointSeparate::Config(const AudioDeviceDescriptor &deviceInfo)
     }
 
     deviceInfo_ = deviceInfo;
-    if (!deviceInfo_.audioStreamInfo_.CheckParams()) {
+    if (!(*deviceInfo_.audioStreamInfo_.rbegin()).CheckParams()) {
         AUDIO_ERR_LOG("%{public}s samplingRate or channels size is 0", __func__);
         return false;
     }
+    std::set<AudioChannel> channels;
+    (*deviceInfo_.audioStreamInfo_.rbegin()).GetChannels(channels);
     dstStreamInfo_ = {
-        *deviceInfo.audioStreamInfo_.samplingRate.rbegin(),
-        deviceInfo.audioStreamInfo_.encoding,
-        deviceInfo.audioStreamInfo_.format,
-        *deviceInfo.audioStreamInfo_.channels.rbegin()
+        *(*deviceInfo_.audioStreamInfo_.rbegin()).samplingRate.rbegin(),
+        (*deviceInfo_.audioStreamInfo_.rbegin()).encoding,
+        (*deviceInfo_.audioStreamInfo_.rbegin()).format,
+        *channels.rbegin()
     };
-    dstStreamInfo_.channelLayout = deviceInfo.audioStreamInfo_.channelLayout;
+    dstStreamInfo_.channelLayout = *(*deviceInfo_.audioStreamInfo_.rbegin()).channelLayout.rbegin();
 
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     fastRenderId_ = manager.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, "endpoint_sep_" + std::to_string(id_), true);

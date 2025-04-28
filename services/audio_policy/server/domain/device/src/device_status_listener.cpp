@@ -31,6 +31,7 @@
 
 #include "audio_errors.h"
 #include "audio_policy_log.h"
+#include "audio_policy_config_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -42,6 +43,9 @@ const std::string DP_ADDRESS = "card=0;port=";
 const uint8_t EVENT_NUM_TYPE = 2;
 const uint8_t EVENT_PARAMS = 4;
 const uint8_t D_EVENT_PARAMS = 5;
+const std::string DEVICE_STREAM_INFO_PREFIX = "DEVICE_STREAM_INFO=";
+const uint32_t DEVICE_STREAM_INFO_SPLIT_NUM = 1;
+const uint32_t STREAM_SIZE = 100;
 
 static DeviceType GetInternalDeviceType(PnpDeviceType pnpDeviceType)
 {
@@ -80,6 +84,23 @@ static DeviceType GetInternalDeviceType(PnpDeviceType pnpDeviceType)
     return internalDeviceType;
 }
 
+static bool IsRemoteOffloadDev(const std::string &info)
+{
+    return info.find(DEVICE_STREAM_INFO_PREFIX) != std::string::npos;
+}
+
+static std::list<DeviceStreamInfo> ParseDeviceStreamInfo(const std::string &info)
+{
+    char deviceStreamInfoStr[STREAM_SIZE];
+    char supportDevices[STREAM_SIZE];
+    auto pos = info.find(DEVICE_STREAM_INFO_PREFIX);
+    CHECK_AND_RETURN_RET_LOG(pos != std::string::npos, {}, "not find");
+    int32_t ret = sscanf_s(info.c_str() + pos, "DEVICE_STREAM_INFO=%[^;]", deviceStreamInfoStr);
+    CHECK_AND_RETURN_RET_LOG(ret == DEVICE_STREAM_INFO_SPLIT_NUM, {}, "get stream info str fail");
+
+    return DeviceStreamInfo::DeserializeList(deviceStreamInfoStr);
+}
+
 static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::string & info,
     DeviceStatusListener * devListener)
 {
@@ -98,6 +119,16 @@ static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::st
 
         statusInfo.isConnected = (pnpEventType == PNP_EVENT_DEVICE_ADD) ? true : false;
         devListener->deviceObserver_.OnDeviceStatusUpdated(statusInfo);
+        if (IsRemoteOffloadDev(info)) {
+            if (statusInfo.isConnected) {
+                auto deviceStreamInfoList = ParseDeviceStreamInfo(info);
+                std::list<std::string> supportDevices = { "Distributed_Offload_Output" };
+                AudioPolicyConfigManager::GetInstance().UpdateStreamPropInfo("remote", "offload_distributed_output",
+                    deviceStreamInfoList, supportDevices);
+            } else {
+                AudioPolicyConfigManager::GetInstance().ClearStreamPropInfo("remote", "offload_distributed_output");
+            }
+        }
     } else if (serviceStatus->status == SERVIE_STATUS_STOP) {
         AUDIO_DEBUG_LOG("distributed service offline");
         DStatusInfo statusInfo;

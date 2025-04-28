@@ -541,16 +541,18 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo)
 {
     AUDIO_INFO_LOG("Config enter, deviceRole %{public}d.", deviceInfo.deviceRole_);
     deviceInfo_ = deviceInfo;
-    bool res = deviceInfo_.audioStreamInfo_.CheckParams();
+    bool res = (*deviceInfo_.audioStreamInfo_.rbegin()).CheckParams();
     CHECK_AND_RETURN_RET_LOG(res, false, "samplingRate or channels size is 0");
 
+    std::set<AudioChannel> channels;
+    (*deviceInfo_.audioStreamInfo_.rbegin()).GetChannels(channels);
     dstStreamInfo_ = {
-        *deviceInfo.audioStreamInfo_.samplingRate.rbegin(),
-        deviceInfo.audioStreamInfo_.encoding,
-        deviceInfo.audioStreamInfo_.format,
-        *deviceInfo.audioStreamInfo_.channels.rbegin()
+        *(*deviceInfo_.audioStreamInfo_.rbegin()).samplingRate.rbegin(),
+        (*deviceInfo_.audioStreamInfo_.rbegin()).encoding,
+        (*deviceInfo_.audioStreamInfo_.rbegin()).format,
+        *channels.rbegin(),
+        *(*deviceInfo_.audioStreamInfo_.rbegin()).channelLayout.rbegin()
     };
-    dstStreamInfo_.channelLayout = deviceInfo.audioStreamInfo_.channelLayout;
 
     if (deviceInfo.deviceRole_ == INPUT_DEVICE) {
         return ConfigInputPoint(deviceInfo);

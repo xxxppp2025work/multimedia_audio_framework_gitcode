@@ -327,10 +327,9 @@ void NapiParamUtils::ConvertDeviceInfoToAudioDeviceDescriptor(
     audioDeviceDescriptor->volumeGroupId_ = deviceInfo.volumeGroupId_;
     audioDeviceDescriptor->networkId_ = deviceInfo.networkId_;
     audioDeviceDescriptor->displayName_ = deviceInfo.displayName_;
-    audioDeviceDescriptor->audioStreamInfo_.samplingRate = deviceInfo.audioStreamInfo_.samplingRate;
-    audioDeviceDescriptor->audioStreamInfo_.encoding = deviceInfo.audioStreamInfo_.encoding;
-    audioDeviceDescriptor->audioStreamInfo_.format = deviceInfo.audioStreamInfo_.format;
-    audioDeviceDescriptor->audioStreamInfo_.channels = deviceInfo.audioStreamInfo_.channels;
+    for (auto &item : deviceInfo.audioStreamInfo_) {
+        audioDeviceDescriptor->audioStreamInfo_.push_back(item);
+    }
 }
 
 napi_status NapiParamUtils::GetRendererOptions(const napi_env &env, AudioRendererOptions *opts, napi_value in)
@@ -505,10 +504,10 @@ napi_status NapiParamUtils::SetDeviceDescriptor(const napi_env &env, const Audio
 
     napi_value value = nullptr;
     napi_value sampleRates;
-    size_t size = deviceInfo.audioStreamInfo_.samplingRate.size();
+    size_t size = (*deviceInfo.audioStreamInfo_.rbegin()).samplingRate.size();
     napi_create_array_with_length(env, size, &sampleRates);
     size_t count = 0;
-    for (const auto &samplingRate : deviceInfo.audioStreamInfo_.samplingRate) {
+    for (const auto &samplingRate : (*deviceInfo.audioStreamInfo_.rbegin()).samplingRate) {
         napi_create_int32(env, samplingRate, &value);
         napi_set_element(env, sampleRates, count, value);
         count++;
@@ -516,10 +515,12 @@ napi_status NapiParamUtils::SetDeviceDescriptor(const napi_env &env, const Audio
     napi_set_named_property(env, result, "sampleRates", sampleRates);
 
     napi_value channelCounts;
-    size = deviceInfo.audioStreamInfo_.channels.size();
+    std::set<AudioChannel> channelSet;
+    (*deviceInfo.audioStreamInfo_.rbegin()).GetChannels(channelSet);
+    size = channelSet.size();
     napi_create_array_with_length(env, size, &channelCounts);
     count = 0;
-    for (const auto &channels : deviceInfo.audioStreamInfo_.channels) {
+    for (const auto &channels : channelSet) {
         napi_create_int32(env, channels, &value);
         napi_set_element(env, channelCounts, count, value);
         count++;
@@ -535,7 +536,7 @@ napi_status NapiParamUtils::SetDeviceDescriptor(const napi_env &env, const Audio
     SetValueInt32Element(env, "channelIndexMasks", channelIndexMasks_, result);
 
     std::vector<int32_t> encoding;
-    encoding.push_back(deviceInfo.audioStreamInfo_.encoding);
+    encoding.push_back((*deviceInfo.audioStreamInfo_.rbegin()).encoding);
     SetValueInt32Element(env, "encodingTypes", encoding, result);
     SetValueBoolean(env, "spatializationSupported", deviceInfo.spatializationSupported_, result);
     return napi_ok;

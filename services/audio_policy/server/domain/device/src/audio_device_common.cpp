@@ -282,10 +282,9 @@ void AudioDeviceCommon::UpdateDeviceInfo(AudioDeviceDescriptor &deviceInfo,
         deviceInfo.volumeGroupId_ = GROUP_ID_NONE;
         deviceInfo.interruptGroupId_ = GROUP_ID_NONE;
     }
-    deviceInfo.audioStreamInfo_.samplingRate = desc->audioStreamInfo_.samplingRate;
-    deviceInfo.audioStreamInfo_.encoding = desc->audioStreamInfo_.encoding;
-    deviceInfo.audioStreamInfo_.format = desc->audioStreamInfo_.format;
-    deviceInfo.audioStreamInfo_.channels = desc->audioStreamInfo_.channels;
+    for (auto &item : desc->audioStreamInfo_) {
+        deviceInfo.audioStreamInfo_.push_back(item);
+    }
 }
 
 int32_t AudioDeviceCommon::DeviceParamsCheck(DeviceRole targetRole,

@@ -277,6 +277,12 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
 
     if (streamDesc->newDeviceDescs_.back()->deviceType_ == DEVICE_TYPE_REMOTE_CAST ||
         streamDesc->newDeviceDescs_.back()->networkId_ == "REMOTE_NETWORK_ID") {
+        if (policyConfigMananger_.GetStreamPropInfoSize("remote", "offload_distributed_output") != 0 &&
+            streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_MUSIC) {
+            AUDIO_INFO_LOG("remote offload active, music use offload");
+            streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+            return;
+        }
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         AUDIO_INFO_LOG("Use normal for remote device or remotecast");
         return;
