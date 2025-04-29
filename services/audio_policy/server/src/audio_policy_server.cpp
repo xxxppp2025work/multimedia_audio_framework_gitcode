@@ -3793,6 +3793,8 @@ int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeTyp
 void AudioPolicyServer::CheckHibernateState(bool hibernate)
 {
     audioPolicyService_.CheckHibernateState(hibernate);
+    CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
+    interruptService_->HandleHiberateStateChange(hibernate);
 }
 
 void AudioPolicyServer::UpdateSafeVolumeByS4()

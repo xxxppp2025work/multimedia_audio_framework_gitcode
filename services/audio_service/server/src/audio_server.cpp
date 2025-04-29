@@ -2192,6 +2192,18 @@ void AudioServer::UpdateSessionConnectionState(const int32_t &sessionId, const i
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "sink do not support UpdatePrimaryConnectionState");
 }
 
+void AudioServer::OnMuteStateChange(const uint32_t sessionId, const bool muteFlag)
+{
+    AUDIO_INFO_LOG("sessionId_: %{public}u, muteFlag: %{public}d", sessionId, muteFlag);
+    AudioService::GetInstance()->OnMuteStateChange(sessionId, muteFlag);
+}
+
+void AudioServer::SetSessionMuteState(const uint32_t sessionId, const bool muteFlag)
+{
+    AUDIO_INFO_LOG("sessionId_: %{public}u, muteFlag: %{public}d", sessionId, muteFlag);
+    AudioService::GetInstance()->SetSessionMuteState(sessionId, muteFlag);
+}
+
 void AudioServer::SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag)
 {
     AUDIO_INFO_LOG("sessionId_: %{public}u, muteFlag: %{public}d", sessionId, muteFlag);
