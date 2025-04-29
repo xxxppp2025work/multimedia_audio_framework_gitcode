@@ -456,6 +456,10 @@ bool OHAudioRenderer::Flush()
 
 bool OHAudioRenderer::Release()
 {
+    std::unique_lock<std::mutex> lock(mtx_);
+    onWriteDataCv_.wait_for(lock, std::chrono::seconds(1), [this] { return isOnWriteData_;});
+    isReleased_ = true;
+    lock.unlock();
     if (audioRenderer_ == nullptr) {
         AUDIO_ERR_LOG("renderer client is nullptr");
         return false;
@@ -759,6 +763,9 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
         ((encodingType_ == ENCODING_AUDIOVIVID) && (writeDataWithMetadataCallback_ != nullptr)),
         "pointer to the function is nullptr");
     BufferDesc bufDesc;
+    std::unique_lock<std::mutex> lock(audioRenderer->mtx_);
+    CHECK_AND_RETURN_LOG(!audioRenderer->isReleased_, "audioRenderer is released");
+    audioRenderer->isOnWriteData_ = false;
     audioRenderer->GetBufferDesc(bufDesc);
     if (encodingType_ == ENCODING_AUDIOVIVID && writeDataWithMetadataCallback_ != nullptr) {
         writeDataWithMetadataCallback_(ohAudioRenderer_, metadataUserData_, (void*)bufDesc.buffer, bufDesc.bufLength,
@@ -780,6 +787,8 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
         }
     }
     audioRenderer->Enqueue(bufDesc);
+    audioRenderer->isOnWriteData_ = true;
+    audioRenderer->onWriteDataCv_.notify_one();
 }
 
 void OHAudioRendererDeviceChangeCallback::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,

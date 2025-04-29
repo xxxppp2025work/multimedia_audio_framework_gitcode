@@ -236,6 +236,10 @@ class OHAudioRenderer {
         ErrorCallbackType GetRendererErrorCallbackType();
 
         void SetRendererCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData);
+        std::mutex mtx_;
+        bool isReleased_ = false;
+        bool isOnWriteData_ = false;
+        std::condition_variable onWriteDataCv_;
     private:
         std::shared_ptr<AudioRenderer> audioRenderer_;
         std::shared_ptr<AudioRendererCallback> audioRendererCallback_;
