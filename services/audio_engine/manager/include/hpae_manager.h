@@ -164,9 +164,9 @@ public:
         const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType) override;
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
 private:
-    void TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo);
+    int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo);
     bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo &oldInfo);
-    void TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, HpaeSourceInfo &sourceInfo);
+    int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, HpaeSourceInfo &sourceInfo);
     AudioSampleFormat TransFormatFromStringToEnum(std::string format);
     int32_t CloseOutAudioPort(std::string &sinkName);
     void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo);
