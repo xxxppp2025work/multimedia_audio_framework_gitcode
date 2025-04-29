@@ -2849,6 +2849,9 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_004, TestSi
     ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
     EXPECT_EQ(ret, NO_NEED_TO_CREATE_PROCESSCLUSTER);
     AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/*
 * @tc.name   : Test InitEffectBufferInner
 * @tc.number : InitEffectBufferInner_001
 * @tc.desc   : Test InitEffectBufferInner interface.
