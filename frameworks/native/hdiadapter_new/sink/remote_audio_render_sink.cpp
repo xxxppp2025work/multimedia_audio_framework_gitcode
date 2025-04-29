@@ -74,11 +74,13 @@ void RemoteAudioRenderSink::DeInit(void)
 {
     Trace trace("RemoteAudioRenderSink::DeInit");
     AUDIO_INFO_LOG("in");
+
+    JoinStartThread();
+
     sinkInited_.store(false);
     renderInited_.store(false);
     started_.store(false);
     paused_.store(false);
-    isThreadRunning.store(false);
 
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
@@ -98,6 +100,16 @@ bool RemoteAudioRenderSink::IsInited(void)
     return sinkInited_.load();
 }
 
+void RemoteAudioRenderSink::JoinStartThread()
+{
+    if (startThread_ != nullptr) {
+        if (startThread_->joinable()) {
+            startThread_->join();
+        }
+        startThread_ = nullptr;
+    }
+}
+
 int32_t RemoteAudioRenderSink::Start(void)
 {
     Trace trace("RemoteAudioRenderSink::Start");
@@ -113,13 +125,15 @@ int32_t RemoteAudioRenderSink::Start(void)
             ".pcm", &(it.second.dumpFile_));
     }
 
-    if (isThreadRunning.load()) {
+    if (isThreadRunning_.load()) {
         AUDIO_INFO_LOG("SubThread is already running");
         return SUCCESS;
     }
-    isThreadRunning.store(true);
 
-    std::thread([this]() {
+    JoinStartThread();
+    isThreadRunning_.store(true);
+
+    startThread_ = std::make_shared<std::thread>([this]() {
         AUDIO_INFO_LOG("SubThread Start");
         if (!renderInited_.load()) {
             for (auto &it : audioRenderWrapperMap_) {
@@ -131,7 +145,7 @@ int32_t RemoteAudioRenderSink::Start(void)
     
         if (started_.load()) {
             AUDIO_INFO_LOG("already started");
-            isThreadRunning.store(false);
+            isThreadRunning_.store(false);
             return;
         }
     
@@ -143,7 +157,7 @@ int32_t RemoteAudioRenderSink::Start(void)
                 it.first, ret);
         }
         started_.store(true);
-        isThreadRunning.store(false);
+        isThreadRunning_.store(false);
         AUDIO_INFO_LOG("SubThread End");
     }).detach();
 
@@ -155,6 +169,9 @@ int32_t RemoteAudioRenderSink::Stop(void)
 {
     Trace trace("RemoteAudioRenderSink::Stop");
     AUDIO_INFO_LOG("in");
+
+    JoinStartThread();
+
     if (!started_.load()) {
         AUDIO_INFO_LOG("already stopped");
         return SUCCESS;
@@ -168,7 +185,7 @@ int32_t RemoteAudioRenderSink::Stop(void)
             it.first, ret);
     }
     started_.store(false);
-    isThreadRunning.store(false);
+    isThreadRunning_.store(false);
     return SUCCESS;
 }
 
@@ -277,6 +294,7 @@ std::string RemoteAudioRenderSink::GetAudioParameter(const AudioParamKey key, co
 
 int32_t RemoteAudioRenderSink::SetVolume(float left, float right)
 {
+    CHECK_AND_RETURN_RET_LOG(renderInited_.load(), ERR_ILLEGAL_STATE, "not create, invalid state");
     leftVolume_ = left;
     rightVolume_ = right;
     float volume;
@@ -306,6 +324,7 @@ int32_t RemoteAudioRenderSink::GetVolume(float &left, float &right)
 
 int32_t RemoteAudioRenderSink::GetLatency(uint32_t &latency)
 {
+    CHECK_AND_RETURN_RET_LOG(renderInited_.load(), ERR_ILLEGAL_STATE, "not create, invalid state");
     uint32_t hdiLatency = 0;
     for (const auto &wrapper : audioRenderWrapperMap_) {
         CHECK_AND_RETURN_RET_LOG(wrapper.second.audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -349,6 +368,7 @@ void RemoteAudioRenderSink::SetAudioBalanceValue(float audioBalance)
 int32_t RemoteAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
     bool scoExcludeFlag)
 {
+    CHECK_AND_RETURN_RET_LOG(renderInited_.load(), ERR_ILLEGAL_STATE, "not create, invalid state");
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");
     CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
@@ -611,10 +631,11 @@ void RemoteAudioRenderSink::CheckUpdateState(char *data, uint64_t len)
 
 int32_t RemoteAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen, AudioCategory type)
 {
+    CHECK_AND_RETURN_RET_LOG(renderInited_.load(), ERR_ILLEGAL_STATE, "not create, invalid state");
     AUDIO_DEBUG_LOG("type: %{public}d", type);
     int64_t stamp = ClockTime::GetCurNano();
     sptr<IAudioRender> audioRender = audioRenderWrapperMap_[type].audioRender_;
-    CHECK_AND_RETURN_RET_LOG(audioRender != nullptr, SUCCESS, "render is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioRender != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     if (!started_.load()) {
         AUDIO_WARNING_LOG("not start, invalid state");
     }
