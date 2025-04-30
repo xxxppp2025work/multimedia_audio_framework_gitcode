@@ -18,11 +18,13 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "i_hpae_manager.h"
+#include "manager/hdi_adapter_manager.h"
+#include "util/id_handler.h"
 #include "pro_audio_service_adapter_unit_test.h"
 using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
-static std::string g_rootPath = "/data/data/.pulse_dir/";
+static std::string g_rootPath = "/data/";
 
 void ProAudioServiceAdapterUnitTest::SetUpTestCase(void)
 {}
@@ -30,16 +32,19 @@ void ProAudioServiceAdapterUnitTest::TearDownTestCase(void)
 {}
 void ProAudioServiceAdapterUnitTest::SetUp(void)
 {
+    IdHandler::GetInstance();
+    HdiAdapterManager::GetInstance();
     std::unique_ptr<ProAudioServiceCallbackTest> cb = std::make_unique<ProAudioServiceCallbackTest>();
     impl_ = AudioServiceAdapter::CreateAudioAdapter(std::move(cb));
     impl_->Connect();
     HPAE::IHpaeManager::GetHpaeManager().Init();
 }
+
 void ProAudioServiceAdapterUnitTest::TearDown(void)
 {
     impl_ = nullptr;
     if (engineFlag_ != 1) {
-        const char *key = "sys.audio.engine.proaudio.enable";
+        const char *key = "const.multimedia.audio.proaudioEnable";
         SetSysPara(key, engineFlag_);
     }
 }
@@ -49,11 +54,12 @@ ProAudioServiceAdapterUnitTest::ProAudioServiceAdapterUnitTest()
     engineFlag_ = GetEngineFlag();
     std::cout<<"engine flag:"<<engineFlag_<<std::endl;
     if (engineFlag_ != 1) {
-        const char *key = "sys.audio.engine.proaudio.enable";
+        const char *key = "const.multimedia.audio.proaudioEnable";
         const int32_t value = 1;
         SetSysPara(key, value);
     }
 }
+
 ProAudioServiceAdapterUnitTest::~ProAudioServiceAdapterUnitTest()
 {
 }

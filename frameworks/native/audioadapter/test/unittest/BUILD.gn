@@ -24,6 +24,7 @@ config("audio_engine_private_config") {
     "./include",
     "../../include",
     "../../../audioutils/include",
+    "../../../hdiadapter_new/include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../services/audio_engine/manager/include",
     "../../../../../services/audio_policy/server/include/service/common",
@@ -49,6 +50,7 @@ ohos_unittest("pro_audio_service_adapter_unit_test") {
   deps = [
     "../../:pulse_audio_service_adapter",
     "../../../audioutils:audio_utils",
+    "../../../hdiadapter_new:hdiadapter_new",
     "../../../../../services/audio_engine:audio_engine_manager",
   ]
 

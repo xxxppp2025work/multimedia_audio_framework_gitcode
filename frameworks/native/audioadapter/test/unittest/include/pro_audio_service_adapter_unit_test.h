@@ -23,7 +23,8 @@ namespace AudioStandard {
 class ProAudioServiceCallbackTest : public AudioServiceAdapterCallback {
 public:
     ProAudioServiceCallbackTest() {}
-    ~ProAudioServiceCallbackTest() {
+    ~ProAudioServiceCallbackTest()
+    {
         AUDIO_WARNING_LOG("Destructor ProAudioServiceCallbackTest");
     }
     void OnAudioStreamRemoved(const uint64_t sessionId)
