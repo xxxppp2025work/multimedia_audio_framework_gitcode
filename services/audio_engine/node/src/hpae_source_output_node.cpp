@@ -76,6 +76,9 @@ void HpaeSourceOutputNode::DoProcess()
         if (ret != 0) {
             AUDIO_WARNING_LOG("sessionId %{public}u, readCallback_ write read data error", GetSessionId());
         }
+    } else {
+        AUDIO_WARNING_LOG("sessionId %{public}u, readCallback_ is nullptr", GetSessionId());
+        return;
     }
     totalFrames_ += GetFrameLen();
     framesRead_.store(totalFrames_);
