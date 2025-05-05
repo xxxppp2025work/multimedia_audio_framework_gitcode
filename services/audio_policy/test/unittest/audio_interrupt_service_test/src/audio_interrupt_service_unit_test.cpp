@@ -819,5 +819,49 @@ HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_033, TestSize.Level1
     auto ret = audioInterruptService->GetSessionInfoInFocus(audioInterrupt, zoneId);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_34
+* @tc.desc  : Test AudioInterruptService
+*/
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_34, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    EXPECT_NE(audioInterruptService, nullptr);
+    AudioStreamType audioStreamType;
+    bool result;
+    audioStreamType = AudioStreamType::STREAM_MUSIC;
+    result = audioInterruptService->IsMediaStream(audioStreamType);
+    EXPECT_TRUE(result);
+
+    audioStreamType = AudioStreamType::STREAM_MOVIE;
+    result = audioInterruptService->IsMediaStream(audioStreamType);
+    EXPECT_TRUE(result);
+
+    audioStreamType = AudioStreamType::STREAM_SPEECH;
+    result = audioInterruptService->IsMediaStream(audioStreamType);
+    EXPECT_TRUE(result);
+
+    audioStreamType = AudioStreamType::STREAM_VOICE_MESSAGE;
+    result = audioInterruptService->IsMediaStream(audioStreamType);
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name   : Test AudioInterruptService API
+* @tc.number : AudioInterruptService_35
+* @tc.desc   : Test AudioInterruptService interface with valid parameters
+*/
+HWTEST(AudioManagerUnitTest, AudioInterruptService_35, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    EXPECT_NE(audioInterruptService, nullptr);
+    sptr<IRemoteObject> object = new RemoteObjectTestStub();
+    auto ret = audioInterruptService->SetQueryBundleNameListCallback(object);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = audioInterruptService->SetQueryBundleNameListCallback(nullptr);
+    EXPECT_NE(ERR_CALLBACK_NOT_REGISTERED, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -2444,6 +2444,22 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_109, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 }
 
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_110
+* @tc.desc  : Test SetQueryBundleNameListCallback.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_110, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    sptr<IRemoteObject> object = new RemoteObjectTestStub();
+    auto ret = server->SetQueryBundleNameListCallback(object);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
 /**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_120
