@@ -33,6 +33,9 @@ const int32_t DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES = 128;
 const int32_t DEFAULT_MAX_INPUT_NORMAL_INSTANCES = 16;
 const int32_t DEFAULT_MAX_FAST_NORMAL_INSTANCES = 6;
 
+const uint32_t PC_MIC_CHANNEL_NUM = 4;
+const uint32_t HEADPHONE_CHANNEL_NUM = 2;
+
 bool AudioPolicyConfigManager::Init(bool isRefresh)
 {
     if (xmlHasLoaded_ && !isRefresh) {
@@ -377,6 +380,15 @@ void AudioPolicyConfigManager::HandleGetStreamPropInfoForRecord(
             desc->streamInfo_.samplingRate, tempChannel);
         if (streamProp != nullptr) {
             info = streamProp;
+        }
+    }
+
+    if (AudioEcManager::GetInstance().GetEcFeatureEnable()) {
+        if (desc->newDeviceDescs_.front() != nullptr && desc->newDeviceDescs_.front() != DEVICE_TYPE_MIC &&
+            info->channelLayout_ == PC_MIC_CHANNEL_NUM) {
+            // only built-in mic can use 4 channel, update later by using xml to describe
+            info->channels_ = static_cast<AudioChannel>(HEADPHONE_CHANNEL_NUM);
+            info->channelLayout_ = CH_LAYOUT_STEREO;
         }
     }
 }
