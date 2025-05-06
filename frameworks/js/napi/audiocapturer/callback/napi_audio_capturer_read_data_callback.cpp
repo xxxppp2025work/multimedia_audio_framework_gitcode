@@ -151,13 +151,13 @@ void NapiCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr<
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCapturerReadDataCallback: event is nullptr.");
 
+    napi_acquire_threadsafe_function(acReadDataTsfn_);
+    napi_call_threadsafe_function(acReadDataTsfn_, event, napi_tsfn_blocking);
+
     if (napiCapturer_ == nullptr) {
         return;
     }
     napiCapturer_->isFrameCallbackDone_.store(false);
-
-    napi_acquire_threadsafe_function(acReadDataTsfn_);
-    napi_call_threadsafe_function(acReadDataTsfn_, event, napi_tsfn_blocking);
 
     std::unique_lock<std::mutex> readCallbackLock(napiCapturer_->readCallbackMutex_);
     bool isTimeout = !napiCapturer_->readCallbackCv_.wait_for(readCallbackLock,
