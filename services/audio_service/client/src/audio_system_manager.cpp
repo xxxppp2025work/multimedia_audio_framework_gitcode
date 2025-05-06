@@ -399,11 +399,27 @@ const std::string AudioSystemManager::GetAudioParameter(const std::string key)
     return gasp->GetAudioParameter(key);
 }
 
+const std::string AudioSystemManager::GetAudioParameter(const std::string &networkId, const AudioParamKey key,
+    const std::string &condition)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, "", "Audio service unavailable.");
+    return gasp->GetAudioParameter(networkId, key, condition);
+}
+
 void AudioSystemManager::SetAudioParameter(const std::string &key, const std::string &value)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
     gasp->SetAudioParameter(key, value);
+}
+
+void AudioSystemManager::SetAudioParameter(const std::string &networkId, const AudioParamKey key,
+    const std::string &condition, const std::string &value)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
+    gasp->SetAudioParameter(networkId, key, condition, value);
 }
 
 int32_t AudioSystemManager::GetExtraParameters(const std::string &mainKey,
@@ -1299,11 +1315,7 @@ std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t g
     }
 
     std::shared_ptr<AudioGroupManager> groupManager = std::make_shared<AudioGroupManager>(groupId);
-    if (groupManager->Init() == SUCCESS) {
-        groupManagerMap_.push_back(groupManager);
-    } else {
-        groupManager = nullptr;
-    }
+    groupManagerMap_.push_back(groupManager);
     return groupManager;
 }
 

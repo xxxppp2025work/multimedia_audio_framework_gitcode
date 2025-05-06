@@ -17,12 +17,8 @@
 #define ST_AUDIO_GROUP_MANAGER_H
 
 #include <cstdlib>
-#include <map>
 #include <mutex>
-#include <vector>
-#include <unordered_map>
 
-#include "parcel.h"
 #include "audio_info.h"
 
 namespace OHOS {
@@ -72,16 +68,13 @@ public:
     AudioGroupManager(int32_t groupId);
     virtual ~AudioGroupManager();
 
-    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t flag = 0);
     AudioStreamType GetActiveVolumeType(const int32_t clientUid);
+    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t flag = 0);
     int32_t GetVolume(AudioVolumeType volumeType);
     int32_t GetMaxVolume(AudioVolumeType volumeType);
     int32_t GetMinVolume(AudioVolumeType volumeType);
     int32_t SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType = DEVICE_TYPE_NONE);
     int32_t IsStreamMute(AudioVolumeType volumeType, bool &isMute);
-    int32_t Init();
-    bool IsAlived();
-    int32_t GetGroupId();
     int32_t SetRingerModeCallback(const int32_t clientId,
         const std::shared_ptr<AudioRingerModeCallback> &callback);
     int32_t UnsetRingerModeCallback(const int32_t clientId) const;
@@ -101,14 +94,17 @@ public:
     int32_t AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType);
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
     float GetMaxAmplitude(const int32_t deviceId);
+
 private:
+    int32_t InitNetworkIdByGroupId(int32_t groupId);
+
     int32_t groupId_;
+    bool initNetworkIdFlag_ = false;
     ConnectType connectType_ = CONNECT_TYPE_LOCAL;
-    std::string netWorkId_ = LOCAL_NETWORK_ID;
+    std::string networkId_ = LOCAL_NETWORK_ID;
     int32_t cbClientId_ = -1;
-    static constexpr int32_t MAX_VOLUME_LEVEL = 15;
-    static constexpr int32_t MIN_VOLUME_LEVEL = 0;
-    static constexpr int32_t CONST_FACTOR = 100;
+
+    std::mutex lock_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
