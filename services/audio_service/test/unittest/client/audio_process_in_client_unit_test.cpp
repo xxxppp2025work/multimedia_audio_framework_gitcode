@@ -75,7 +75,7 @@ public:
      *
      * @param length Indicates requested buffer length.
      */
-    virtual void OnHandleData(size_t length) override {}
+    virtual void OnHandleData(size_t length) {}
 };
 
 /**
@@ -2242,7 +2242,8 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_099, TestSize.Lev
 
     BufferDesc bufDesc;
     audioProcessInClientInner->clientSpanSizeInByte_ = 1024;
-    audioProcessInClientInner->callbackBuffer_ = std::make_unique<uint8_t[]>(audioProcessInClientInner->clientSpanSizeInByte_);
+    audioProcessInClientInner->callbackBuffer_ = 
+        std::make_unique<uint8_t[]>(audioProcessInClientInner->clientSpanSizeInByte_);
     audioProcessInClientInner->processConfig_.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
     auto ret = audioProcessInClientInner->GetBufferDesc(bufDesc);
     EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
