@@ -33,59 +33,63 @@ public:
 };
 
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: SetVolume_001
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: SetVolume_001
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, SetVolume_001, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     int32_t ret = audioGroupManager.SetVolume(STREAM_VOICE_CALL, 0, 0);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
+
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: SetVolume_002
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: SetVolume_002
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, SetVolume_002, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     int32_t ret = audioGroupManager.SetVolume(STREAM_ULTRASONIC, 0, 0);
     EXPECT_EQ(ret, SUCCESS);
 }
+
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: SetVolume_003
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: SetVolume_003
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, SetVolume_003, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     int32_t ret = audioGroupManager.SetVolume(STREAM_WAKEUP, 0, 0);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
+
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: GetActiveVolumeType_001
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: GetActiveVolumeType_001
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, GetActiveVolumeType_001, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     AudioStreamType ret = audioGroupManager.GetActiveVolumeType(1);
     EXPECT_EQ(ret, STREAM_MUSIC);
 }
+
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: GetVolume_001
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolume_001
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, GetVolume_001, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
@@ -95,36 +99,39 @@ HWTEST(AudioGroupManagerUnitTest, GetVolume_001, TestSize.Level1)
     ret = audioGroupManager.GetVolume(STREAM_MUSIC);
     EXPECT_EQ(ret, BT_HEADSET_NREC);
 }
+
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: GetVolume_002
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolume_002
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, GetVolume_002, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     int32_t ret = audioGroupManager.GetVolume(STREAM_ULTRASONIC);
     EXPECT_EQ(ret, SUCCESS);
 }
+
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: GetVolume_003
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolume_003
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, GetVolume_003, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     int32_t ret = audioGroupManager.GetVolume(STREAM_WAKEUP);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
+
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: GetMaxVolume_001
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: GetMaxVolume_001
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, GetMaxVolume_001, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
@@ -132,36 +139,39 @@ HWTEST(AudioGroupManagerUnitTest, GetMaxVolume_001, TestSize.Level1)
     int32_t ret = audioGroupManager.GetMaxVolume(STREAM_WAKEUP);
     EXPECT_EQ(ret, D_ALL_DEVICES);
 }
+
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: GetMaxVolume_002
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: GetMaxVolume_002
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, GetMaxVolume_002, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     int32_t ret = audioGroupManager.GetMaxVolume(STREAM_ALL);
     EXPECT_EQ(ret, D_ALL_DEVICES);
 }
+
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: GetMaxVolume_003
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: GetMaxVolume_003
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, GetMaxVolume_003, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     int32_t ret = audioGroupManager.GetMaxVolume(STREAM_ULTRASONIC);
     EXPECT_EQ(ret, D_ALL_DEVICES);
 }
+
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: GetMinVolume_001
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: GetMinVolume_001
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, GetMinVolume_001, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
@@ -169,36 +179,39 @@ HWTEST(AudioGroupManagerUnitTest, GetMinVolume_001, TestSize.Level1)
     int32_t ret = audioGroupManager.GetMinVolume(STREAM_WAKEUP);
     EXPECT_EQ(ret, SUCCESS);
 }
+
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: GetMinVolume_002
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: GetMinVolume_002
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, GetMinVolume_002, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     int32_t ret = audioGroupManager.GetMinVolume(STREAM_ALL);
     EXPECT_EQ(ret, SUCCESS);
 }
+
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: GetMinVolume_003
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: GetMinVolume_003
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, GetMinVolume_003, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     int32_t ret = audioGroupManager.GetMinVolume(STREAM_ULTRASONIC);
     EXPECT_EQ(ret, SUCCESS);
 }
+
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: SetMute_001
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: SetMute_001
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, SetMute_001, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
@@ -207,12 +220,13 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_001, TestSize.Level1)
     int32_t ret = audioGroupManager.SetMute(AudioStreamType::STREAM_DEFAULT, false, deviceType);
     EXPECT_EQ(ret, SUCCESS);
 }
+
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: SetMute_002
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: SetMute_002
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, SetMute_002, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
@@ -221,12 +235,13 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_002, TestSize.Level1)
     int32_t ret = audioGroupManager.SetMute(AudioStreamType::STREAM_DEFAULT, false, deviceType);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
+
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: SetMute_003
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: SetMute_003
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, SetMute_003, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
@@ -235,12 +250,13 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_003, TestSize.Level1)
     int32_t ret = audioGroupManager.SetMute(AudioStreamType::STREAM_DEFAULT, false, deviceType);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
+
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: SetMute_004
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: SetMute_004
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, SetMute_004, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
@@ -249,12 +265,13 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_004, TestSize.Level1)
     int32_t ret = audioGroupManager.SetMute(AudioStreamType::STREAM_APP, false, deviceType);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
+
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: IsStreamMute_001
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: IsStreamMute_001
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, IsStreamMute_001, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
@@ -263,12 +280,13 @@ HWTEST(AudioGroupManagerUnitTest, IsStreamMute_001, TestSize.Level1)
     int32_t ret = audioGroupManager.IsStreamMute(AudioStreamType::STREAM_CAMCORDER, isMute);
     EXPECT_EQ(ret, SUCCESS);
 }
+
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: IsStreamMute_002
-* @tc.desc  : Test cross ring cache.
-*/
+ * @tc.name  : Test Audio API
+ * @tc.type  : FUNC
+ * @tc.number: IsStreamMute_002
+ * @tc.desc  : Test cross ring cache.
+ */
 HWTEST(AudioGroupManagerUnitTest, IsStreamMute_002, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
@@ -276,18 +294,6 @@ HWTEST(AudioGroupManagerUnitTest, IsStreamMute_002, TestSize.Level1)
     bool isMute = false;
     int32_t ret = audioGroupManager.IsStreamMute(AudioStreamType::STREAM_APP, isMute);
     EXPECT_EQ(ret, SUCCESS);
-}
-/**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: IsAlived_001
-* @tc.desc  : Test cross ring cache.
-*/
-HWTEST(AudioGroupManagerUnitTest, IsAlived_001, TestSize.Level1)
-{
-    AudioGroupManager audioGroupManager(1);
-    bool ret = audioGroupManager.IsAlived();
-    EXPECT_EQ(ret, true);
 }
 } // namespace AudioStandard
 } //

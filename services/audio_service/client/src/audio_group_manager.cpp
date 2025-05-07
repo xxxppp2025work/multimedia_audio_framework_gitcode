@@ -305,7 +305,7 @@ int32_t AudioGroupManager::UnsetRingerModeCallback(const int32_t clientId,
     return AudioPolicyManager::GetInstance().UnsetRingerModeCallback(clientId, callback);
 }
 
-int32_t AudioGroupManager::SetRingerMode(AudioRingerMode ringMode) const
+int32_t AudioGroupManager::SetRingerMode(AudioRingerMode ringMode)
 {
     AUDIO_INFO_LOG("ringer mode: %{public}d", ringMode);
     int32_t initRes = InitNetworkIdByGroupId(groupId_);
@@ -315,14 +315,14 @@ int32_t AudioGroupManager::SetRingerMode(AudioRingerMode ringMode) const
     return AudioPolicyManager::GetInstance().SetRingerMode(ringMode);
 }
 
-AudioRingerMode AudioGroupManager::GetRingerMode() const
+AudioRingerMode AudioGroupManager::GetRingerMode()
 {
     int32_t initRes = InitNetworkIdByGroupId(groupId_);
     CHECK_AND_RETURN_RET_LOG(initRes == SUCCESS, AudioRingerMode::RINGER_MODE_NORMAL, "init basic info failed");
 
     CHECK_AND_RETURN_RET_LOG(networkId_ == LOCAL_NETWORK_ID, AudioRingerMode::RINGER_MODE_NORMAL,
         "SetRingerMode is not supported for local device.");
-    return (AudioPolicyManager::GetInstance().GetRingerMode());
+    return AudioPolicyManager::GetInstance().GetRingerMode();
 }
 
 int32_t AudioGroupManager::SetMicrophoneMute(bool isMute)

@@ -80,8 +80,8 @@ public:
     int32_t UnsetRingerModeCallback(const int32_t clientId) const;
     int32_t UnsetRingerModeCallback(const int32_t clientId,
         const std::shared_ptr<AudioRingerModeCallback> &callback) const;
-    int32_t SetRingerMode(AudioRingerMode ringMode) const;
-    AudioRingerMode GetRingerMode() const;
+    int32_t SetRingerMode(AudioRingerMode ringMode);
+    AudioRingerMode GetRingerMode();
     int32_t SetMicrophoneMute(bool isMute);
     int32_t SetMicrophoneMutePersistent(const bool isMute, const PolicyType type);
     bool GetPersistentMicMuteState();

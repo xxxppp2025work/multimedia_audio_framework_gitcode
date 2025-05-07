@@ -39,11 +39,11 @@ void AudioGroupManagerUnitTest::SetUp(void) {}
 void AudioGroupManagerUnitTest::TearDown(void) {}
 
 /**
-* @tc.name  : Test AudioVolume API
-* @tc.number: AudioVolume_001
-* @tc.desc  : Test AudioVolume manager interface multiple requests
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test AudioVolume API
+ * @tc.number: AudioVolume_001
+ * @tc.desc  : Test AudioVolume manager interface multiple requests
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, AudioVolume_001, TestSize.Level1)
 {
     int32_t volume = 0;
@@ -70,11 +70,11 @@ HWTEST(AudioGroupManagerUnitTest, AudioVolume_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioVolume API
-* @tc.number: AudioVolume_002
-* @tc.desc  : Test AudioVolume manager interface multiple requests
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test AudioVolume API
+ * @tc.number: AudioVolume_002
+ * @tc.desc  : Test AudioVolume manager interface multiple requests
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, AudioVolume_002, TestSize.Level1)
 {
     int32_t volume = 2;
@@ -102,11 +102,11 @@ HWTEST(AudioGroupManagerUnitTest, AudioVolume_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioVolume API
-* @tc.number: AudioVolume_003
-* @tc.desc  : Test AudioVolume manager interface multiple requests
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test AudioVolume API
+ * @tc.number: AudioVolume_003
+ * @tc.desc  : Test AudioVolume manager interface multiple requests
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, AudioVolume_003, TestSize.Level1)
 {
     int32_t volume = 4;
@@ -134,11 +134,11 @@ HWTEST(AudioGroupManagerUnitTest, AudioVolume_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioVolume API
-* @tc.number: AudioVolume_004
-* @tc.desc  : Test AudioVolume manager interface multiple requests
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test AudioVolume API
+ * @tc.number: AudioVolume_004
+ * @tc.desc  : Test AudioVolume manager interface multiple requests
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, AudioVolume_004, TestSize.Level1)
 {
     int32_t volume = 5;
@@ -165,11 +165,11 @@ HWTEST(AudioGroupManagerUnitTest, AudioVolume_004, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetVolume API
-* @tc.number: SetVolumeTest_001
-* @tc.desc  : Test setting volume of ringtone stream with max volume
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test SetVolume API
+ * @tc.number: SetVolumeTest_001
+ * @tc.desc  : Test setting volume of ringtone stream with max volume
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_001, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -187,11 +187,11 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_001, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test SetVolume API
-* @tc.number: SetVolumeTest_002
-* @tc.desc  : Test setting volume of ringtone stream with min volume
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test SetVolume API
+ * @tc.number: SetVolumeTest_002
+ * @tc.desc  : Test setting volume of ringtone stream with min volume
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_002, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -209,11 +209,11 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_002, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test SetVolume API
-* @tc.number: SetVolumeTest_003
-* @tc.desc  : Test setting volume of media stream with max volume
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test SetVolume API
+ * @tc.number: SetVolumeTest_003
+ * @tc.desc  : Test setting volume of media stream with max volume
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_003, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -234,11 +234,11 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_003, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test SetVolume API
-* @tc.number: SetVolumeTest_004
-* @tc.desc  : Test setting volume of alarm stream with error volume
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test SetVolume API
+ * @tc.number: SetVolumeTest_004
+ * @tc.desc  : Test setting volume of alarm stream with error volume
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_004, TestSize.Level0)
 {
     int32_t ErrorVolume = 17;
@@ -259,11 +259,11 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_004, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test SetVolume API
-* @tc.number: SetVolumeTest_005
-* @tc.desc  : Test setting volume of accessibility stream with error volume
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test SetVolume API
+ * @tc.number: SetVolumeTest_005
+ * @tc.desc  : Test setting volume of accessibility stream with error volume
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_005, TestSize.Level0)
 {
     int32_t ErrorVolume = 18;
@@ -284,11 +284,11 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_005, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test SetVolume API
-* @tc.number: SetVolumeTest_006
-* @tc.desc  : Test setting volume of ultrasonic stream with error volume
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test SetVolume API
+ * @tc.number: SetVolumeTest_006
+ * @tc.desc  : Test setting volume of ultrasonic stream with error volume
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_006, TestSize.Level0)
 {
     int32_t ErrorVolume = -5;
@@ -309,11 +309,11 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_006, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test GetMaxVolume API
-* @tc.number: GetMaxVolumeTest_001
-* @tc.desc  : Test GetMaxVolume of media stream
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test GetMaxVolume API
+ * @tc.number: GetMaxVolumeTest_001
+ * @tc.desc  : Test GetMaxVolume of media stream
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, GetMaxVolumeTest_001, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -331,11 +331,11 @@ HWTEST(AudioGroupManagerUnitTest, GetMaxVolumeTest_001, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test GetMaxVolume API
-* @tc.number: GetMinVolumeTest_001
-* @tc.desc  : Test GetMaxVolume of media stream
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test GetMaxVolume API
+ * @tc.number: GetMinVolumeTest_001
+ * @tc.desc  : Test GetMaxVolume of media stream
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, GetMinVolumeTest_001, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -353,11 +353,11 @@ HWTEST(AudioGroupManagerUnitTest, GetMinVolumeTest_001, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test SetMute API
-* @tc.number: SetMute_001
-* @tc.desc  : Test mute functionality of ringtone stream
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test SetMute API
+ * @tc.number: SetMute_001
+ * @tc.desc  : Test mute functionality of ringtone stream
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, SetMute_001, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -376,11 +376,11 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_001, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test SetMute IsStreamMute API
-* @tc.number: SetMute_002
-* @tc.desc  : Test unmute functionality of ringtone stream
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test SetMute IsStreamMute API
+ * @tc.number: SetMute_002
+ * @tc.desc  : Test unmute functionality of ringtone stream
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, SetMute_002, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -399,11 +399,11 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_002, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test SetMute IsStreamMute API
-* @tc.number: SetMute_003
-* @tc.desc  : Test mute functionality of media stream
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test SetMute IsStreamMute API
+ * @tc.number: SetMute_003
+ * @tc.desc  : Test mute functionality of media stream
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, SetMute_003, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -422,11 +422,11 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_003, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test SetMute IsStreamMute API
-* @tc.number: SetMute_004
-* @tc.desc  : Test unmute functionality of media stream
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test SetMute IsStreamMute API
+ * @tc.number: SetMute_004
+ * @tc.desc  : Test unmute functionality of media stream
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, SetMute_004, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -445,11 +445,11 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_004, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test IsVolumeUnadjustable API
-* @tc.number: Audio_Group_Manager_IsVolumeUnadjustable_001
-* @tc.desc  : Test volume is unadjustable or adjustable functionality
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test IsVolumeUnadjustable API
+ * @tc.number: Audio_Group_Manager_IsVolumeUnadjustable_001
+ * @tc.desc  : Test volume is unadjustable or adjustable functionality
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_IsVolumeUnadjustable_001, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -465,11 +465,11 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_IsVolumeUnadjustable_001, 
 }
 
 /**
-* @tc.name  : Test AdjustVolumeByStep API
-* @tc.number: Audio_Group_Manager_AdjustVolumeByStep_001
-* @tc.desc  : Test adjust volume to up by step functionality
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test AdjustVolumeByStep API
+ * @tc.number: Audio_Group_Manager_AdjustVolumeByStep_001
+ * @tc.desc  : Test adjust volume to up by step functionality
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustVolumeByStep_001, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -488,11 +488,11 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustVolumeByStep_001, Te
 }
 
 /**
-* @tc.name  : Test AdjustVolumeByStep API
-* @tc.number: Audio_Group_Manager_AdjustVolumeByStep_002
-* @tc.desc  : Test adjust volume to down by step functionality
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test AdjustVolumeByStep API
+ * @tc.number: Audio_Group_Manager_AdjustVolumeByStep_002
+ * @tc.desc  : Test adjust volume to down by step functionality
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustVolumeByStep_002, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -509,11 +509,11 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustVolumeByStep_002, Te
 }
 
 /**
-* @tc.name  : Test AdjustVolumeByStep API
-* @tc.number: Audio_Group_Manager_AdjustVolumeByStep_003
-* @tc.desc  : Test adjust volume to up by step functionality
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test AdjustVolumeByStep API
+ * @tc.number: Audio_Group_Manager_AdjustVolumeByStep_003
+ * @tc.desc  : Test adjust volume to up by step functionality
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustVolumeByStep_003, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -535,11 +535,11 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustVolumeByStep_003, Te
 }
 
 /**
-* @tc.name  : Test AdjustSystemVolumeByStep API
-* @tc.number: Audio_Group_Manager_AdjustSystemVolumeByStep_001
-* @tc.desc  : Test adjust system volume by step to up of STREAM_RECORDING stream
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test AdjustSystemVolumeByStep API
+ * @tc.number: Audio_Group_Manager_AdjustSystemVolumeByStep_001
+ * @tc.desc  : Test adjust system volume by step to up of STREAM_RECORDING stream
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_001, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -563,11 +563,11 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
 }
 
 /**
-* @tc.name  : Test AdjustSystemVolumeByStep API
-* @tc.number: Audio_Group_Manager_AdjustSystemVolumeByStep_002
-* @tc.desc  : Test adjust system volume by step to down of STREAM_RECORDING stream
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test AdjustSystemVolumeByStep API
+ * @tc.number: Audio_Group_Manager_AdjustSystemVolumeByStep_002
+ * @tc.desc  : Test adjust system volume by step to down of STREAM_RECORDING stream
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_002, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -591,11 +591,11 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
 }
 
 /**
-* @tc.name  : Test AdjustSystemVolumeByStep API
-* @tc.number: Audio_Group_Manager_AdjustSystemVolumeByStep_003
-* @tc.desc  : Test adjust system volume by step to up of STREAM_RING stream when is max volume
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test AdjustSystemVolumeByStep API
+ * @tc.number: Audio_Group_Manager_AdjustSystemVolumeByStep_003
+ * @tc.desc  : Test adjust system volume by step to up of STREAM_RING stream when is max volume
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_003, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -618,11 +618,11 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
 }
 
 /**
-* @tc.name  : Test AdjustSystemVolumeByStep API
-* @tc.number: Audio_Group_Manager_AdjustSystemVolumeByStep_003
-* @tc.desc  : Test adjust system volume by step to down of STREAM_MUSIC stream when is min volume
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test AdjustSystemVolumeByStep API
+ * @tc.number: Audio_Group_Manager_AdjustSystemVolumeByStep_003
+ * @tc.desc  : Test adjust system volume by step to down of STREAM_MUSIC stream when is min volume
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_004, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -646,11 +646,11 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
 }
 
 /**
-* @tc.name  : Test GetSystemVolumeInDb API
-* @tc.number: Audio_Group_Manager_GetSystemVolumeInDb_001
-* @tc.desc  : Test get volume db with alarm streamtype and speaker devicetype when volume is 3
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test GetSystemVolumeInDb API
+ * @tc.number: Audio_Group_Manager_GetSystemVolumeInDb_001
+ * @tc.desc  : Test get volume db with alarm streamtype and speaker devicetype when volume is 3
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_001, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -668,11 +668,11 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_001, T
 }
 
 /**
-* @tc.name  : Test GetSystemVolumeInDb API
-* @tc.number: Audio_Group_Manager_GetSystemVolumeInDb_002
-* @tc.desc  : Test get volume db when the stream type is changed to voice call
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test GetSystemVolumeInDb API
+ * @tc.number: Audio_Group_Manager_GetSystemVolumeInDb_002
+ * @tc.desc  : Test get volume db when the stream type is changed to voice call
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_002, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -690,11 +690,11 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_002, T
 }
 
 /**
-* @tc.name  : Test GetSystemVolumeInDb API
-* @tc.number: Audio_Group_Manager_GetSystemVolumeInDb_003
-* @tc.desc  : Test get volume db wthen the volume is changed to 4
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test GetSystemVolumeInDb API
+ * @tc.number: Audio_Group_Manager_GetSystemVolumeInDb_003
+ * @tc.desc  : Test get volume db wthen the volume is changed to 4
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_003, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -712,11 +712,11 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_003, T
 }
 
 /**
-* @tc.name  : Test GetSystemVolumeInDb API
-* @tc.number: Audio_Group_Manager_GetSystemVolumeInDb_004
-* @tc.desc  : Test get volume db when the device type is changed to earpiece
-* @tc.require: issueI5M1XV
-*/
+ * @tc.name  : Test GetSystemVolumeInDb API
+ * @tc.number: Audio_Group_Manager_GetSystemVolumeInDb_004
+ * @tc.desc  : Test get volume db when the device type is changed to earpiece
+ * @tc.require: issueI5M1XV
+ */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_004, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
