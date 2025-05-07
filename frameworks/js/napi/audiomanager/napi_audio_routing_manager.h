@@ -37,8 +37,8 @@ public:
 
 private:
     struct AudioRoutingManagerAsyncContext : public ContextBase {
-        int32_t deviceFlag;
-        int32_t deviceType;
+        int32_t deviceFlag = 0;
+        int32_t deviceType = 0;
         int32_t intValue;
         bool isActive;
         bool isTrue;

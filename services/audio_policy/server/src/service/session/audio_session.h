@@ -53,7 +53,7 @@ public:
 private:
     std::mutex sessionMutex_;
 
-    int32_t callerPid_;
+    int32_t callerPid_ = 0;
     AudioSessionStrategy strategy_;
     std::weak_ptr<AudioSessionStateMonitor> audioSessionStateMonitor_;
 

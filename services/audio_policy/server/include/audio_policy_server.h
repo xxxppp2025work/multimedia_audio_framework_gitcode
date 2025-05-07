@@ -718,7 +718,7 @@ private:
     std::shared_ptr<AudioCoreService> coreService_;
     std::shared_ptr<AudioCoreService::EventEntry> eventEntry_;
 
-    int32_t volumeStep_;
+    int32_t volumeStep_ = 0;
     std::atomic<bool> isFirstAudioServiceStart_ = false;
     std::atomic<bool> isInitMuteState_ = false;
     std::atomic<bool> isInitSettingsData_ = false;
