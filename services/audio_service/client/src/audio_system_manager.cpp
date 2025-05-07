@@ -1305,6 +1305,8 @@ int32_t AudioSystemManager::GetVolumeGroups(std::string networkId, std::vector<s
 std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t groupId)
 {
     std::lock_guard<std::mutex> lock(groupManagerMapMutex_);
+
+    // Audio group manager is a single instance for each groupId, would not be released, saved in map
     std::vector<std::shared_ptr<AudioGroupManager>>::iterator iter = groupManagerMap_.begin();
     while (iter != groupManagerMap_.end()) {
         if ((*iter)->GetGroupId() == groupId) {
@@ -1314,8 +1316,13 @@ std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t g
         }
     }
 
+    // Create a instance and init it at first, make sure functions will be called after initialization
     std::shared_ptr<AudioGroupManager> groupManager = std::make_shared<AudioGroupManager>(groupId);
-    groupManagerMap_.push_back(groupManager);
+    if (groupManager->InitNetworkIdByGroupId() == SUCCESS) {
+        groupManagerMap_.push_back(groupManager);
+    } else {
+        groupManager = nullptr;
+    }
     return groupManager;
 }
 

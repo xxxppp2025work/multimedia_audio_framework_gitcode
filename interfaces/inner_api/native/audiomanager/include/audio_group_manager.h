@@ -17,7 +17,6 @@
 #define ST_AUDIO_GROUP_MANAGER_H
 
 #include <cstdlib>
-#include <mutex>
 
 #include "audio_info.h"
 
@@ -68,6 +67,11 @@ public:
     AudioGroupManager(int32_t groupId);
     virtual ~AudioGroupManager();
 
+    // basic funcs
+    int32_t InitNetworkIdByGroupId(int32_t groupId);
+    int32_t GetGroupId();
+
+    // volume funcs
     AudioStreamType GetActiveVolumeType(const int32_t clientUid);
     int32_t SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t flag = 0);
     int32_t GetVolume(AudioVolumeType volumeType);
@@ -75,13 +79,22 @@ public:
     int32_t GetMinVolume(AudioVolumeType volumeType);
     int32_t SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType = DEVICE_TYPE_NONE);
     int32_t IsStreamMute(AudioVolumeType volumeType, bool &isMute);
+    bool IsVolumeUnadjustable();
+    int32_t AdjustVolumeByStep(VolumeAdjustType adjustType);
+    int32_t AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType);
+    float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
+    float GetMaxAmplitude(const int32_t deviceId);
+
+    // ringer mode funcs
+    int32_t SetRingerMode(AudioRingerMode ringMode);
+    AudioRingerMode GetRingerMode();
     int32_t SetRingerModeCallback(const int32_t clientId,
         const std::shared_ptr<AudioRingerModeCallback> &callback);
     int32_t UnsetRingerModeCallback(const int32_t clientId) const;
     int32_t UnsetRingerModeCallback(const int32_t clientId,
         const std::shared_ptr<AudioRingerModeCallback> &callback) const;
-    int32_t SetRingerMode(AudioRingerMode ringMode);
-    AudioRingerMode GetRingerMode();
+
+    // mic mute funcs
     int32_t SetMicrophoneMute(bool isMute);
     int32_t SetMicrophoneMutePersistent(const bool isMute, const PolicyType type);
     bool GetPersistentMicMuteState();
@@ -89,22 +102,13 @@ public:
     bool IsMicrophoneMute();
     int32_t SetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
     int32_t UnsetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
-    bool IsVolumeUnadjustable();
-    int32_t AdjustVolumeByStep(VolumeAdjustType adjustType);
-    int32_t AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType);
-    float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
-    float GetMaxAmplitude(const int32_t deviceId);
 
 private:
-    int32_t InitNetworkIdByGroupId(int32_t groupId);
-
     int32_t groupId_;
     bool initNetworkIdFlag_ = false;
     ConnectType connectType_ = CONNECT_TYPE_LOCAL;
     std::string networkId_ = LOCAL_NETWORK_ID;
     int32_t cbClientId_ = -1;
-
-    std::mutex lock_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

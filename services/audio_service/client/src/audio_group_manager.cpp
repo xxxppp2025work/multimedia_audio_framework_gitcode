@@ -37,9 +37,7 @@ AudioGroupManager::AudioGroupManager(int32_t groupId)
 
 AudioGroupManager::~AudioGroupManager()
 {
-    if (cbClientId_ != -1) {
-        UnsetRingerModeCallback(cbClientId_);
-    }
+    AUDIO_ERR_LOG("should not be here");
 }
 
 int32_t AudioGroupManager::GetGroupId()
@@ -49,12 +47,6 @@ int32_t AudioGroupManager::GetGroupId()
 
 int32_t AudioGroupManager::InitNetworkIdByGroupId(int32_t groupId)
 {
-    std::lock_guard<std::mutex> lock(lock_);
-    if (initNetworkIdFlag_) {
-        AUDIO_DEBUG_LOG("already inited");
-        return SUCCESS;
-    }
-
     AUDIO_INFO_LOG("init networkId");
     std::string networkId;
     int32_t ret = AudioPolicyManager::GetInstance().GetNetworkIdByGroupId(groupId, networkId);
@@ -65,7 +57,6 @@ int32_t AudioGroupManager::InitNetworkIdByGroupId(int32_t groupId)
 
     networkId_ = networkId;
     connectType_ = (networkId_ == LOCAL_NETWORK_ID) ? CONNECT_TYPE_LOCAL : CONNECT_TYPE_DISTRIBUTED;
-    initNetworkIdFlag_ = true;
 
     return SUCCESS;
 }
@@ -77,9 +68,6 @@ AudioStreamType AudioGroupManager::GetActiveVolumeType(const int32_t clientUid)
 
 int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t volumeFlag)
 {
-    int32_t initRes = InitNetworkIdByGroupId(groupId_);
-    CHECK_AND_RETURN_RET_LOG(initRes == SUCCESS, ERROR, "init basic info failed");
-
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
@@ -88,10 +76,9 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume,
         return SUCCESS;
     }
 
-    AUDIO_INFO_LOG("volumeType[%{public}d], volume[%{public}d], flag[%{public}d]",
+    AUDIO_INFO_LOG("volumeType[%{public}d] volume[%{public}d] flag[%{public}d]",
         volumeType, volume, volumeFlag);
 
-    /* Validate volume type and return INVALID_PARAMS error */
     switch (volumeType) {
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_COMMUNICATION:
@@ -118,9 +105,6 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume,
 
 int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
 {
-    int32_t initRes = InitNetworkIdByGroupId(groupId_);
-    CHECK_AND_RETURN_RET_LOG(initRes == SUCCESS, ERROR, "init basic info failed");
-
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
@@ -159,9 +143,6 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
 
 int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
 {
-    int32_t initRes = InitNetworkIdByGroupId(groupId_);
-    CHECK_AND_RETURN_RET_LOG(initRes == SUCCESS, ERROR, "init basic info failed");
-
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=3;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE=" +
             std::to_string(volumeType) + ";";
@@ -183,9 +164,6 @@ int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
 
 int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
 {
-    int32_t initRes = InitNetworkIdByGroupId(groupId_);
-    CHECK_AND_RETURN_RET_LOG(initRes == SUCCESS, ERROR, "init basic info failed");
-
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=2;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE" +
             std::to_string(volumeType) + ";";
@@ -207,9 +185,6 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
 
 int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType)
 {
-    int32_t initRes = InitNetworkIdByGroupId(groupId_);
-    CHECK_AND_RETURN_RET_LOG(initRes == SUCCESS, ERROR, "init basic info failed");
-
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string conditon = "EVENT_TYPE=4;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
@@ -218,11 +193,9 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute, const 
         return SUCCESS;
     }
 
-    if (deviceType != DEVICE_TYPE_NONE) {
-        AUDIO_INFO_LOG("deviceType [%{public}d], mute [%{public}d]", deviceType, mute);
-    }
+    AUDIO_INFO_LOG("volumeType[%{public}d] mute[%{public}d] deviceType[%{public}d]",
+        volumeType, mute, deviceType);
 
-    AUDIO_INFO_LOG("volumeType [%{public}d], mute [%{public}d]", volumeType, mute);
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
@@ -246,9 +219,6 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute, const 
 
 int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute)
 {
-    int32_t initRes = InitNetworkIdByGroupId(groupId_);
-    CHECK_AND_RETURN_RET_LOG(initRes == SUCCESS, ERROR, "init basic info failed");
-
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=4;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
@@ -277,7 +247,7 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
         }
         default:
             AUDIO_ERR_LOG("volumeType[%{public}d] is not supported", volumeType);
-            return false;
+            return ERR_NOT_SUPPORTED;
     }
 
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(volumeType);
@@ -308,8 +278,6 @@ int32_t AudioGroupManager::UnsetRingerModeCallback(const int32_t clientId,
 int32_t AudioGroupManager::SetRingerMode(AudioRingerMode ringMode)
 {
     AUDIO_INFO_LOG("ringer mode: %{public}d", ringMode);
-    int32_t initRes = InitNetworkIdByGroupId(groupId_);
-    CHECK_AND_RETURN_RET_LOG(initRes == SUCCESS, ERROR, "init basic info failed");
 
     CHECK_AND_RETURN_RET_LOG(networkId_ == LOCAL_NETWORK_ID, ERROR, "not supported for local device.");
     return AudioPolicyManager::GetInstance().SetRingerMode(ringMode);
@@ -317,9 +285,6 @@ int32_t AudioGroupManager::SetRingerMode(AudioRingerMode ringMode)
 
 AudioRingerMode AudioGroupManager::GetRingerMode()
 {
-    int32_t initRes = InitNetworkIdByGroupId(groupId_);
-    CHECK_AND_RETURN_RET_LOG(initRes == SUCCESS, AudioRingerMode::RINGER_MODE_NORMAL, "init basic info failed");
-
     CHECK_AND_RETURN_RET_LOG(networkId_ == LOCAL_NETWORK_ID, AudioRingerMode::RINGER_MODE_NORMAL,
         "SetRingerMode is not supported for local device.");
     return AudioPolicyManager::GetInstance().GetRingerMode();
@@ -327,9 +292,6 @@ AudioRingerMode AudioGroupManager::GetRingerMode()
 
 int32_t AudioGroupManager::SetMicrophoneMute(bool isMute)
 {
-    int32_t initRes = InitNetworkIdByGroupId(groupId_);
-    CHECK_AND_RETURN_RET_LOG(initRes == SUCCESS, ERROR, "init basic info failed");
-
     CHECK_AND_RETURN_RET_LOG(networkId_ == LOCAL_NETWORK_ID, ERROR,
         "SetRingerMode is not supported for local device.");
     return AudioPolicyManager::GetInstance().SetMicrophoneMuteAudioConfig(isMute);
@@ -338,8 +300,6 @@ int32_t AudioGroupManager::SetMicrophoneMute(bool isMute)
 int32_t AudioGroupManager::SetMicrophoneMutePersistent(const bool isMute, const PolicyType type)
 {
     AUDIO_INFO_LOG("Set persistent mic mute state, isMute is %{public}d", isMute);
-    int32_t initRes = InitNetworkIdByGroupId(groupId_);
-    CHECK_AND_RETURN_RET_LOG(initRes == SUCCESS, ERROR, "init basic info failed");
 
     CHECK_AND_RETURN_RET_LOG(networkId_ == LOCAL_NETWORK_ID, ERROR,
         "SetMicrophoneMutePersistent is not supported for local device.");
@@ -348,9 +308,6 @@ int32_t AudioGroupManager::SetMicrophoneMutePersistent(const bool isMute, const 
 
 bool AudioGroupManager::GetPersistentMicMuteState()
 {
-    int32_t initRes = InitNetworkIdByGroupId(groupId_);
-    CHECK_AND_RETURN_RET_LOG(initRes == SUCCESS, false, "init basic info failed");
-
     CHECK_AND_RETURN_RET_LOG(networkId_ == LOCAL_NETWORK_ID, false,
         "GetPersistentMicMuteState is not supported for local device.");
     return AudioPolicyManager::GetInstance().GetPersistentMicMuteState();
@@ -358,9 +315,6 @@ bool AudioGroupManager::GetPersistentMicMuteState()
 
 bool AudioGroupManager::IsMicrophoneMuteLegacy()
 {
-    int32_t initRes = InitNetworkIdByGroupId(groupId_);
-    CHECK_AND_RETURN_RET_LOG(initRes == SUCCESS, false, "init basic info failed");
-
     CHECK_AND_RETURN_RET_LOG(networkId_ == LOCAL_NETWORK_ID, false,
         "SetRingerMode is not supported for local device.");
     return AudioPolicyManager::GetInstance().IsMicrophoneMuteLegacy();
@@ -368,9 +322,6 @@ bool AudioGroupManager::IsMicrophoneMuteLegacy()
 
 bool AudioGroupManager::IsMicrophoneMute()
 {
-    int32_t initRes = InitNetworkIdByGroupId(groupId_);
-    CHECK_AND_RETURN_RET_LOG(initRes == SUCCESS, false, "init basic info failed");
-
     CHECK_AND_RETURN_RET_LOG(networkId_ == LOCAL_NETWORK_ID, false,
         "SetRingerMode is not supported for local device.");
     return AudioPolicyManager::GetInstance().IsMicrophoneMute();
@@ -393,9 +344,6 @@ int32_t AudioGroupManager::UnsetMicStateChangeCallback(
 
 bool AudioGroupManager::IsVolumeUnadjustable()
 {
-    int32_t initRes = InitNetworkIdByGroupId(groupId_);
-    CHECK_AND_RETURN_RET_LOG(initRes == SUCCESS, false, "init basic info failed");
-
     CHECK_AND_RETURN_RET_LOG(networkId_ == LOCAL_NETWORK_ID, false,
         "IsVolumeUnadjustable is only supported for local device.");
     return AudioPolicyManager::GetInstance().IsVolumeUnadjustable();
@@ -413,9 +361,6 @@ int32_t AudioGroupManager::AdjustSystemVolumeByStep(AudioVolumeType volumeType, 
 
 float AudioGroupManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType)
 {
-    int32_t initRes = InitNetworkIdByGroupId(groupId_);
-    CHECK_AND_RETURN_RET_LOG(initRes == SUCCESS, 1.0, "init basic info failed");
-
     CHECK_AND_RETURN_RET_LOG(networkId_ == LOCAL_NETWORK_ID, 1.0,
         "GetSystemVolumeInDb is only supported for local device.");
     return AudioPolicyManager::GetInstance().GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
