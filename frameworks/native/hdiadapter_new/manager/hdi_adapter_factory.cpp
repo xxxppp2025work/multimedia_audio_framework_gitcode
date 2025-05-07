@@ -82,7 +82,7 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t r
         case HDI_ID_TYPE_OFFLOAD:
             sink = std::make_shared<OffloadAudioRenderSink>();
             break;
-        case HDI_ID_TYPE_EAC3:
+        case HDI_ID_TYPE_DIRECT:
             sink = std::make_shared<DirectAudioRenderSink>();
             break;
 #ifdef FEATURE_DISTRIBUTE_AUDIO
@@ -110,7 +110,6 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateCaptureSource(uint
     std::shared_ptr<IAudioCaptureSource> source = nullptr;
     switch (type) {
         case HDI_ID_TYPE_PRIMARY:
-        case HDI_ID_TYPE_ACCESSORY:
             source = CreatePrimaryCaptureSource(captureId, info);
             break;
         case HDI_ID_TYPE_BLUETOOTH:

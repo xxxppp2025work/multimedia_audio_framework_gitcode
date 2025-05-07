@@ -116,7 +116,6 @@ private:
     float rightBalanceCoef_ = 1.0f;
     // for dfx log
     std::string logUtilsTag_ = "DirectSink";
-
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLock> runningLock_;
 #endif

@@ -945,7 +945,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
     if (activeInputDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
         source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
     } else if (activeInputDevice == DEVICE_TYPE_ACCESSORY) {
-        source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY);
+        source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ACCESSORY);
     } else {
         source = GetSourceByProp(HDI_ID_TYPE_PRIMARY);
     }
@@ -998,7 +998,7 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         UpdateArmInstance(sink, source);
     } else if (type == DEVICE_TYPE_ACCESSORY) {
         sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
-        source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY, true);
+        source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ACCESSORY, true);
     } else {
         UpdatePrimaryInstance(sink, source);
         if (type == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD &&
@@ -1062,7 +1062,7 @@ void AudioServer::SetDmDeviceType(uint16_t dmDeviceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
-    std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY, true);
+    std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ACCESSORY, true);
     source->SetDmDeviceType(dmDeviceType);
 }
 
