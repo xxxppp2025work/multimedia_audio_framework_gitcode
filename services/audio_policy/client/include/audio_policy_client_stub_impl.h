@@ -80,8 +80,8 @@ public:
     int32_t RemoveCapturerStateChangeCallback();
     size_t GetCapturerStateChangeCallbackSize() const;
     int32_t AddDeviceChangeWithInfoCallback(
-        const uint32_t sessionId, const std::weak_ptr<DeviceChangeWithInfoCallback> &cb);
-    int32_t RemoveDeviceChangeWithInfoCallback(const uint32_t sessionId);
+        const uint32_t streamId, const std::weak_ptr<DeviceChangeWithInfoCallback> &cb);
+    int32_t RemoveDeviceChangeWithInfoCallback(const uint32_t streamId);
     size_t GetDeviceChangeWithInfoCallbackkSize() const;
     int32_t AddMicrophoneBlockedCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &cb);
@@ -120,9 +120,9 @@ public:
     int32_t RemoveAudioFormatUnsupportedErrorCallback();
     size_t GetAudioFormatUnsupportedErrorCallbackSize() const;
 
-    void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+    void OnRecreateRendererStreamEvent(const uint32_t streamId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) override;
-    void OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+    void OnRecreateCapturerStreamEvent(const uint32_t streamId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) override;
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
@@ -141,7 +141,7 @@ public:
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
     void OnCapturerStateChange(
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
-    void OnRendererDeviceChange(const uint32_t sessionId,
+    void OnRendererDeviceChange(const uint32_t streamId,
         const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) override;
     void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) override;
     void OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) override;

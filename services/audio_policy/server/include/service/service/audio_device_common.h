@@ -81,7 +81,7 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descForCb);
     void UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& updatedDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
-    void UpdateDualToneState(const bool &enable, const int32_t &sessionId);
+    void UpdateDualToneState(const bool &enable, const int32_t &streamId);
     void FetchDevice(bool isOutputDevice = true,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     void FetchOutputDevice(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
@@ -108,7 +108,7 @@ public:
 
     int32_t MoveToLocalOutputDevice(std::vector<SinkInput> sinkInputIds,
         std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor);
-    void TriggerRecreateRendererStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag,
+    void TriggerRecreateRendererStreamCallback(int32_t callerPid, int32_t streamId, int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
         ConnectState connectState);
@@ -171,7 +171,7 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     void WriteInputRouteChangeEvent(std::shared_ptr<AudioDeviceDescriptor> &desc,
         const AudioStreamDeviceChangeReason reason);
-    std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId);
+    std::vector<SourceOutput> FilterSourceOutputs(int32_t streamId);
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
 
     int32_t MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputIds,
@@ -230,7 +230,7 @@ private:
     vector<std::shared_ptr<AudioDeviceDescriptor>> GetDeviceDescriptorInner(
         std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     bool IsRingDualToneOnPrimarySpeaker(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
-        const int32_t sessionId);
+        const int32_t streamId);
     bool IsRingOverPlayback(AudioMode &mode, RendererState rendererState);
     bool IsDualStreamWhenRingDual(AudioStreamType streamType);
 

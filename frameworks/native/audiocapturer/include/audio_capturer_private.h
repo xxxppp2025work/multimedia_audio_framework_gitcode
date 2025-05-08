@@ -52,7 +52,7 @@ public:
     bool Flush() const override;
     bool Release() override;
     int32_t GetBufferSize(size_t &bufferSize) const override;
-    int32_t GetAudioStreamId(uint32_t &sessionID) const override;
+    int32_t GetAudioStreamId(uint32_t &streamId) const override;
     int32_t SetCapturerPositionCallback(int64_t markPosition,
         const std::shared_ptr<CapturerPositionCallback> &callback) override;
     void UnsetCapturerPositionCallback() override;
@@ -149,7 +149,7 @@ private:
     void ActivateAudioConcurrency(IAudioStream::StreamClass &streamClass);
     void WriteOverflowEvent() const;
     int32_t GetCurrentInputDevicesInner(AudioDeviceDescriptor &deviceInfo) const;
-    int32_t GetAudioStreamIdInner(uint32_t &sessionID) const;
+    int32_t GetAudioStreamIdInner(uint32_t &streamId) const;
     uint32_t GetOverflowCountInner() const;
     CapturerState GetStatusInner() const;
     std::shared_ptr<IAudioStream> GetInnerStream() const;
@@ -165,7 +165,7 @@ private:
     AudioInterrupt audioInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, false}, 0};
     bool isVoiceCallCapturer_ = false;
-    uint32_t sessionID_ = INVALID_SESSION_ID;
+    uint32_t streamId_ = INVALID_SESSION_ID;
     std::shared_ptr<AudioCapturerProxyObj> capturerProxyObj_;
     static std::map<AudioStreamType, SourceType> streamToSource_;
     std::mutex lock_;
@@ -257,10 +257,10 @@ public:
 
     virtual ~InputDeviceChangeWithInfoCallbackImpl() = default;
 
-    void OnDeviceChangeWithInfo(const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo,
+    void OnDeviceChangeWithInfo(const uint32_t streamId, const AudioDeviceDescriptor &deviceInfo,
         const AudioStreamDeviceChangeReasonExt reason) override;
 
-    void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+    void OnRecreateStreamEvent(const uint32_t streamId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) override;
 
     void SetAudioCapturerObj(std::weak_ptr<AudioCapturerPrivate> capturerObj)

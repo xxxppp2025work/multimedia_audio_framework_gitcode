@@ -225,14 +225,14 @@ static void SetSinkVolumeBySinkName(pa_sink *s)
             continue;
         }
         const char *streamType = SafeProplistGets(input->proplist, "stream.type", "NULL");
-        const char *sessionIDStr = SafeProplistGets(input->proplist, "stream.sessionID", "NULL");
-        uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
+        const char *streamIdStr = SafeProplistGets(input->proplist, "stream.sessionID", "NULL");
+        uint32_t streamId = streamIdStr != NULL ? (uint32_t)atoi(streamIdStr) : 0;
         float volumeFloat = 1.0f;
         if (IsInnerCapSinkName(s->name)) { // inner capturer only stream volume
-            volumeFloat = GetStreamVolume(sessionID);
+            volumeFloat = GetStreamVolume(streamId);
         } else {
             struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-            volumeFloat = GetCurVolume(sessionID, streamType, s->name, &volumes);
+            volumeFloat = GetCurVolume(streamId, streamType, s->name, &volumes);
         }
         uint32_t volume = pa_sw_volume_from_linear(volumeFloat);
         pa_cvolume_set(&input->thread_info.soft_volume, input->thread_info.soft_volume.channels, volume);

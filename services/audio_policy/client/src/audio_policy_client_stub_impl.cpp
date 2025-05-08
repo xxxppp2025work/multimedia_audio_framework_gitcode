@@ -677,17 +677,17 @@ size_t AudioPolicyClientStubImpl::GetRendererStateChangeCallbackSize() const
 }
 
 int32_t AudioPolicyClientStubImpl::AddDeviceChangeWithInfoCallback(
-    const uint32_t sessionId, const std::weak_ptr<DeviceChangeWithInfoCallback> &cb)
+    const uint32_t streamId, const std::weak_ptr<DeviceChangeWithInfoCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(deviceChangeWithInfoCallbackMutex_);
-    deviceChangeWithInfoCallbackMap_[sessionId] = cb;
+    deviceChangeWithInfoCallbackMap_[streamId] = cb;
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::RemoveDeviceChangeWithInfoCallback(const uint32_t sessionId)
+int32_t AudioPolicyClientStubImpl::RemoveDeviceChangeWithInfoCallback(const uint32_t streamId)
 {
     std::lock_guard<std::mutex> lockCbMap(deviceChangeWithInfoCallbackMutex_);
-    deviceChangeWithInfoCallbackMap_.erase(sessionId);
+    deviceChangeWithInfoCallbackMap_.erase(streamId);
     return SUCCESS;
 }
 
@@ -697,26 +697,26 @@ size_t AudioPolicyClientStubImpl::GetDeviceChangeWithInfoCallbackkSize() const
     return deviceChangeWithInfoCallbackMap_.size();
 }
 
-void AudioPolicyClientStubImpl::OnRendererDeviceChange(const uint32_t sessionId,
+void AudioPolicyClientStubImpl::OnRendererDeviceChange(const uint32_t streamId,
     const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioPolicyClientStubImpl::OnRendererDeviceChange");
     std::shared_ptr<DeviceChangeWithInfoCallback> callback = nullptr;
     {
         std::lock_guard<std::mutex> lockCbMap(deviceChangeWithInfoCallbackMutex_);
-        if (deviceChangeWithInfoCallbackMap_.count(sessionId) == 0) {
+        if (deviceChangeWithInfoCallbackMap_.count(streamId) == 0) {
             return;
         }
-        callback = deviceChangeWithInfoCallbackMap_.at(sessionId).lock();
+        callback = deviceChangeWithInfoCallbackMap_.at(streamId).lock();
         if (callback == nullptr) {
-            deviceChangeWithInfoCallbackMap_.erase(sessionId);
+            deviceChangeWithInfoCallbackMap_.erase(streamId);
             return;
         }
     }
     if (callback != nullptr) {
-        Trace traceCallback("callback->OnDeviceChangeWithInfo sessionid:" + std::to_string(sessionId)
+        Trace traceCallback("callback->OnDeviceChangeWithInfo streamId:" + std::to_string(streamId)
             + " reason:" + std::to_string(static_cast<int>(reason)));
-        callback->OnDeviceChangeWithInfo(sessionId, deviceInfo, reason);
+        callback->OnDeviceChangeWithInfo(streamId, deviceInfo, reason);
     }
 }
 
@@ -743,39 +743,39 @@ void AudioPolicyClientStubImpl::OnRendererStateChange(
     }
 }
 
-void AudioPolicyClientStubImpl::OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+void AudioPolicyClientStubImpl::OnRecreateRendererStreamEvent(const uint32_t streamId, const int32_t streamFlag,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("Enter");
     std::shared_ptr<DeviceChangeWithInfoCallback> callback = nullptr;
     {
         std::lock_guard<std::mutex> lockCbMap(deviceChangeWithInfoCallbackMutex_);
-        if (deviceChangeWithInfoCallbackMap_.count(sessionId) == 0) {
-            AUDIO_ERR_LOG("No session id %{public}d", sessionId);
+        if (deviceChangeWithInfoCallbackMap_.count(streamId) == 0) {
+            AUDIO_ERR_LOG("No session id %{public}d", streamId);
             return;
         }
-        callback = deviceChangeWithInfoCallbackMap_.at(sessionId).lock();
+        callback = deviceChangeWithInfoCallbackMap_.at(streamId).lock();
     }
     if (callback != nullptr) {
-        callback->OnRecreateStreamEvent(sessionId, streamFlag, reason);
+        callback->OnRecreateStreamEvent(streamId, streamFlag, reason);
     }
 }
 
-void AudioPolicyClientStubImpl::OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+void AudioPolicyClientStubImpl::OnRecreateCapturerStreamEvent(const uint32_t streamId, const int32_t streamFlag,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("Enter");
     std::shared_ptr<DeviceChangeWithInfoCallback> callback = nullptr;
     {
         std::lock_guard<std::mutex> lockCbMap(deviceChangeWithInfoCallbackMutex_);
-        if (deviceChangeWithInfoCallbackMap_.count(sessionId) == 0) {
-            AUDIO_ERR_LOG("No session id %{public}d", sessionId);
+        if (deviceChangeWithInfoCallbackMap_.count(streamId) == 0) {
+            AUDIO_ERR_LOG("No session id %{public}d", streamId);
             return;
         }
-        callback = deviceChangeWithInfoCallbackMap_.at(sessionId).lock();
+        callback = deviceChangeWithInfoCallbackMap_.at(streamId).lock();
     }
     if (callback != nullptr) {
-        callback->OnRecreateStreamEvent(sessionId, streamFlag, reason);
+        callback->OnRecreateStreamEvent(streamId, streamFlag, reason);
     }
 }
 

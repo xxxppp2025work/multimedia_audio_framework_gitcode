@@ -64,17 +64,17 @@ public:
         audioDeviceCommon_(AudioDeviceCommon::GetInstance())
     {}
     void Init() {Bluetooth::AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(shared_from_this());};
-    void ConnectA2dpOffload(const std::string &deviceAddress, const std::vector<int32_t> &sessionIds);
+    void ConnectA2dpOffload(const std::string &deviceAddress, const std::vector<int32_t> &streamIds);
     void OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState) override;
 
     void WaitForConnectionCompleted();
-    bool IsA2dpOffloadConnecting(int32_t sessionId);
+    bool IsA2dpOffloadConnecting(int32_t streamId);
     bool IsA2dpOffloadConnected();
 
     void SetA2dpOffloadFlag(BluetoothOffloadState state);
     BluetoothOffloadState GetA2dpOffloadFlag();
-    int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionIds);
-    int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionIds);
+    int32_t OffloadStartPlaying(const std::vector<int32_t> &streamIds);
+    int32_t OffloadStopPlaying(const std::vector<int32_t> &streamIds);
 
     void UpdateA2dpOffloadFlagForAllStream(std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnableMap,
         DeviceType deviceType = DEVICE_TYPE_NONE);

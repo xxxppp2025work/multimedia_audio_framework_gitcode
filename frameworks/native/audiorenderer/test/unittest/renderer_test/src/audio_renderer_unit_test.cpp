@@ -1296,8 +1296,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioStreamId_001, TestSize.Leve
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
 
-    uint32_t sessionID;
-    ret = audioRenderer->GetAudioStreamId(sessionID);
+    uint32_t streamId;
+    ret = audioRenderer->GetAudioStreamId(streamId);
     EXPECT_EQ(SUCCESS, ret);
 
     audioRenderer->Release();

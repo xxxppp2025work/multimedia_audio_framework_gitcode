@@ -27,11 +27,11 @@ public:
     virtual ~AudioStreamTracker();
     void RegisterTracker(const AudioRegisterTrackerInfo &registerTrackerInfo,
         const std::shared_ptr<AudioClientTracker> &clientTrackerObj);
-    void UpdateTracker(const int32_t sessionId, const State state, const int32_t clientPid,
+    void UpdateTracker(const int32_t streamId, const State state, const int32_t clientPid,
         const AudioRendererInfo &rendererInfo, const AudioCapturerInfo &capturerInfo);
-    void FetchOutputDeviceForTrack(const int32_t sessionId, const State state, const int32_t clientPid,
+    void FetchOutputDeviceForTrack(const int32_t streamId, const State state, const int32_t clientPid,
         const AudioRendererInfo &rendererInfo, const AudioStreamDeviceChangeReasonExt reason);
-    void FetchInputDeviceForTrack(const int32_t sessionId, const State state, const int32_t clientPid,
+    void FetchInputDeviceForTrack(const int32_t streamId, const State state, const int32_t clientPid,
         const AudioCapturerInfo &capturerInfo);
 
 private:

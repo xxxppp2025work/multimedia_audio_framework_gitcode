@@ -400,11 +400,11 @@ static pa_hook_result_t SourceOutputPutCb(const pa_core *c, pa_source_output *so
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
     CHECK_AND_RETURN_RET_LOG(so != NULL, PA_HOOK_OK, "so is NULL");
 
-    const char *sessionID = pa_proplist_gets(so->proplist, "stream.sessionID");
-    if (sessionID == NULL) {
-        sessionID = "";
+    const char *streamId = pa_proplist_gets(so->proplist, "stream.sessionID");
+    if (streamId == NULL) {
+        streamId = "";
     }
-    AUDIO_INFO_LOG("Trigger SourceOutputPutCb sessionID:%{public}s", sessionID);
+    AUDIO_INFO_LOG("Trigger SourceOutputPutCb streamId:%{public}s", streamId);
 
     if (CheckIfAvailSource(so, u) == PA_HOOK_CANCEL) {
         return PA_HOOK_OK;
@@ -418,11 +418,11 @@ static pa_hook_result_t SourceOutputUnlinkCb(const pa_core *c, pa_source_output 
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
     CHECK_AND_RETURN_RET_LOG(so != NULL, PA_HOOK_OK, "so is NULL");
 
-    const char *sessionID = pa_proplist_gets(so->proplist, "stream.sessionID");
-    if (sessionID == NULL) {
-        sessionID = "";
+    const char *streamId = pa_proplist_gets(so->proplist, "stream.sessionID");
+    if (streamId == NULL) {
+        streamId = "";
     }
-    AUDIO_INFO_LOG("Trigger SourceOutputUnlinkCb sessionID:%{public}s", sessionID);
+    AUDIO_INFO_LOG("Trigger SourceOutputUnlinkCb streamId:%{public}s", streamId);
 
     if (CheckIfAvailSource(so, u) == PA_HOOK_CANCEL) {
         return PA_HOOK_OK;
@@ -436,11 +436,11 @@ static pa_hook_result_t SourceOutputMoveStartCb(const pa_core *c, pa_source_outp
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
     CHECK_AND_RETURN_RET_LOG(so != NULL, PA_HOOK_OK, "so is NULL");
 
-    const char *sessionID = pa_proplist_gets(so->proplist, "stream.sessionID");
-    if (sessionID == NULL) {
-        sessionID = "";
+    const char *streamId = pa_proplist_gets(so->proplist, "stream.sessionID");
+    if (streamId == NULL) {
+        streamId = "";
     }
-    AUDIO_INFO_LOG("Trigger SourceOutputMoveStartCb sessionID:%{public}s", sessionID);
+    AUDIO_INFO_LOG("Trigger SourceOutputMoveStartCb streamId:%{public}s", streamId);
 
     if (CheckIfAvailSource(so, u) == PA_HOOK_CANCEL) {
         return PA_HOOK_OK;
@@ -454,11 +454,11 @@ static pa_hook_result_t SourceOutputMoveFinishCb(const pa_core *c, pa_source_out
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
     CHECK_AND_RETURN_RET_LOG(so != NULL, PA_HOOK_OK, "so is NULL");
 
-    const char *sessionID = pa_proplist_gets(so->proplist, "stream.sessionID");
-    if (sessionID == NULL) {
-        sessionID = "";
+    const char *streamId = pa_proplist_gets(so->proplist, "stream.sessionID");
+    if (streamId == NULL) {
+        streamId = "";
     }
-    AUDIO_INFO_LOG("Trigger SourceOutputMoveFinishCb sessionID:%{public}s", sessionID);
+    AUDIO_INFO_LOG("Trigger SourceOutputMoveFinishCb streamId:%{public}s", streamId);
 
     if (CheckIfAvailSource(so, u) == PA_HOOK_CANCEL) {
         return PA_HOOK_OK;

@@ -357,7 +357,7 @@ int32_t AudioPolicyManager::UnsetPreferredInputDeviceChangeCallback(
 
 
 int32_t AudioPolicyManager::RegisterDeviceChangeWithInfoCallback(
-    const uint32_t sessionID, const std::weak_ptr<DeviceChangeWithInfoCallback> &callback)
+    const uint32_t streamId, const std::weak_ptr<DeviceChangeWithInfoCallback> &callback)
 {
     AUDIO_DEBUG_LOG("In");
 
@@ -377,7 +377,7 @@ int32_t AudioPolicyManager::RegisterDeviceChangeWithInfoCallback(
 
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_DEVICE_CHANGE_WITH_INFO].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->AddDeviceChangeWithInfoCallback(sessionID, callback);
+        audioPolicyClientStubCB_->AddDeviceChangeWithInfoCallback(streamId, callback);
         size_t callbackSize = audioPolicyClientStubCB_->GetDeviceChangeWithInfoCallbackkSize();
         if (callbackSize == 1) {
             callbackChangeInfos_[CALLBACK_DEVICE_CHANGE_WITH_INFO].isEnable = true;
@@ -387,12 +387,12 @@ int32_t AudioPolicyManager::RegisterDeviceChangeWithInfoCallback(
     return SUCCESS;
 }
 
-int32_t AudioPolicyManager::UnregisterDeviceChangeWithInfoCallback(const uint32_t sessionID)
+int32_t AudioPolicyManager::UnregisterDeviceChangeWithInfoCallback(const uint32_t streamId)
 {
     AUDIO_DEBUG_LOG("In");
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_DEVICE_CHANGE_WITH_INFO].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->RemoveDeviceChangeWithInfoCallback(sessionID);
+        audioPolicyClientStubCB_->RemoveDeviceChangeWithInfoCallback(streamId);
         if (audioPolicyClientStubCB_->GetDeviceChangeWithInfoCallbackkSize() == 0) {
             callbackChangeInfos_[CALLBACK_DEVICE_CHANGE_WITH_INFO].isEnable = false;
             SetClientCallbacksEnable(CALLBACK_DEVICE_CHANGE_WITH_INFO, false);
@@ -529,11 +529,11 @@ int32_t AudioPolicyManager::UnsetAudioDeviceAnahsCallback()
     return gsp->UnsetAudioDeviceAnahsCallback();
 }
 
-int32_t AudioPolicyManager::MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType)
+int32_t AudioPolicyManager::MoveToNewPipe(const uint32_t streamId, const AudioPipeType pipeType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    return gsp->MoveToNewPipe(sessionId, pipeType);
+    return gsp->MoveToNewPipe(streamId, pipeType);
 }
 
 void AudioPolicyManager::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)

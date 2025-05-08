@@ -467,7 +467,7 @@ bool AudioPolicyProxy::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
     return reply.ReadBool();
 }
 
-int32_t AudioPolicyProxy::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+int32_t AudioPolicyProxy::SetInputDevice(const DeviceType deviceType, const uint32_t streamId,
     const SourceType sourceType, bool isRunning)
 {
     MessageParcel data;
@@ -477,7 +477,7 @@ int32_t AudioPolicyProxy::SetInputDevice(const DeviceType deviceType, const uint
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(static_cast<int32_t>(deviceType));
-    data.WriteUint32(sessionID);
+    data.WriteUint32(streamId);
     data.WriteInt32(static_cast<int32_t>(sourceType));
     data.WriteBool(isRunning);
 
@@ -1057,7 +1057,7 @@ int32_t AudioPolicyProxy::GetPreferredInputStreamType(AudioCapturerInfo &capture
 }
 
 int32_t AudioPolicyProxy::CreateRendererClient(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &streamId)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1074,13 +1074,13 @@ int32_t AudioPolicyProxy::CreateRendererClient(
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_FLAG_INVALID, "Failed to send request, error: %{public}d", error);
 
     flag = static_cast<AudioFlag>(reply.ReadUint32());
-    sessionId = reply.ReadUint32();
+    streamId = reply.ReadUint32();
 
     return reply.ReadInt32();
 }
 
 int32_t AudioPolicyProxy::CreateCapturerClient(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &streamId)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1097,7 +1097,7 @@ int32_t AudioPolicyProxy::CreateCapturerClient(
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_FLAG_INVALID, "Failed to send request, error: %{public}d", error);
 
     flag = static_cast<AudioFlag>(reply.ReadUint32());
-    sessionId = reply.ReadUint32();
+    streamId = reply.ReadUint32();
 
     return reply.ReadInt32();
 }
@@ -2069,7 +2069,7 @@ int32_t AudioPolicyProxy::UnsetAudioDeviceAnahsCallback()
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType)
+int32_t AudioPolicyProxy::MoveToNewPipe(const uint32_t streamId, const AudioPipeType pipeType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -2077,7 +2077,7 @@ int32_t AudioPolicyProxy::MoveToNewPipe(const uint32_t sessionId, const AudioPip
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
-    data.WriteUint32(sessionId);
+    data.WriteUint32(streamId);
     data.WriteInt32(pipeType);
 
     int32_t error = Remote()->SendRequest(

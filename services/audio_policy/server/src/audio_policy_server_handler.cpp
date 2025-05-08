@@ -404,11 +404,11 @@ bool AudioPolicyServerHandler::SendCapturerInfoEvent(
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendRendererDeviceChangeEvent(const int32_t clientPid, const uint32_t sessionId,
+bool AudioPolicyServerHandler::SendRendererDeviceChangeEvent(const int32_t clientPid, const uint32_t streamId,
     const AudioDeviceDescriptor &outputDeviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     std::shared_ptr<RendererDeviceChangeEvent> eventContextObj = std::make_shared<RendererDeviceChangeEvent>(
-        clientPid, sessionId, outputDeviceInfo, reason);
+        clientPid, streamId, outputDeviceInfo, reason);
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
 
     lock_guard<mutex> runnerlock(runnerMutex_);
@@ -429,9 +429,9 @@ bool AudioPolicyServerHandler::SendDistribuitedOutputChangeEvent(const AudioDevi
 }
 
 bool AudioPolicyServerHandler::SendCapturerCreateEvent(AudioCapturerInfo capturerInfo,
-    AudioStreamInfo streamInfo, uint64_t sessionId, bool isSync, int32_t &error)
+    AudioStreamInfo streamInfo, uint64_t streamId, bool isSync, int32_t &error)
 {
-    auto eventContextObj = std::make_shared<CapturerCreateEvent>(capturerInfo, streamInfo, sessionId, SUCCESS);
+    auto eventContextObj = std::make_shared<CapturerCreateEvent>(capturerInfo, streamInfo, streamId, SUCCESS);
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
 
     bool ret;
@@ -448,9 +448,9 @@ bool AudioPolicyServerHandler::SendCapturerCreateEvent(AudioCapturerInfo capture
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendCapturerRemovedEvent(uint64_t sessionId, bool isSync)
+bool AudioPolicyServerHandler::SendCapturerRemovedEvent(uint64_t streamId, bool isSync)
 {
-    auto eventContextObj = std::make_shared<uint64_t>(sessionId);
+    auto eventContextObj = std::make_shared<uint64_t>(streamId);
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
 
     bool ret;
@@ -478,12 +478,12 @@ bool AudioPolicyServerHandler::SendWakeupCloseEvent(bool isSync)
 }
 
 bool AudioPolicyServerHandler::SendRecreateRendererStreamEvent(
-    int32_t clientId, uint32_t sessionID, uint32_t routeFlag, const AudioStreamDeviceChangeReasonExt reason)
+    int32_t clientId, uint32_t streamId, uint32_t routeFlag, const AudioStreamDeviceChangeReasonExt reason)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     eventContextObj->clientId = clientId;
-    eventContextObj->sessionId = sessionID;
+    eventContextObj->sessionId = streamId;
     eventContextObj->reason_ = reason;
     eventContextObj->routeFlag = routeFlag;
     return SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::RECREATE_RENDERER_STREAM_EVENT,
@@ -491,12 +491,12 @@ bool AudioPolicyServerHandler::SendRecreateRendererStreamEvent(
 }
 
 bool AudioPolicyServerHandler::SendRecreateCapturerStreamEvent(
-    int32_t clientId, uint32_t sessionID, uint32_t routeFlag, const AudioStreamDeviceChangeReasonExt reason)
+    int32_t clientId, uint32_t streamId, uint32_t routeFlag, const AudioStreamDeviceChangeReasonExt reason)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     eventContextObj->clientId = clientId;
-    eventContextObj->sessionId = sessionID;
+    eventContextObj->sessionId = streamId;
     eventContextObj->reason_ = reason;
     eventContextObj->routeFlag = routeFlag;
     return SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::RECREATE_CAPTURER_STREAM_EVENT,
@@ -613,12 +613,12 @@ bool AudioPolicyServerHandler::SendPipeStreamCleanEvent(AudioPipeType pipeType)
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendConcurrencyEventWithSessionIDCallback(const uint32_t sessionID)
+bool AudioPolicyServerHandler::SendConcurrencyEventWithSessionIDCallback(const uint32_t streamId)
 {
-    AUDIO_INFO_LOG("session %{public}u send concurrency event", sessionID);
+    AUDIO_INFO_LOG("session %{public}u send concurrency event", streamId);
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
-    eventContextObj->sessionId = sessionID;
+    eventContextObj->sessionId = streamId;
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::CONCURRENCY_EVENT_WITH_SESSIONID,
         eventContextObj));
@@ -1028,7 +1028,7 @@ void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk:
 {
     std::shared_ptr<RendererDeviceChangeEvent> eventContextObj = event->GetSharedObject<RendererDeviceChangeEvent>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    const auto &[pid, sessionId, outputDeviceInfo, reason] = *eventContextObj;
+    const auto &[pid, streamId, outputDeviceInfo, reason] = *eventContextObj;
     Trace trace("AudioPolicyServerHandler::HandleRendererDeviceChangeEvent pid:" + std::to_string(pid));
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     if (audioPolicyClientProxyAPSCbsMap_.count(pid) == 0) {
@@ -1039,11 +1039,11 @@ void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk:
         AUDIO_ERR_LOG("capturerStateChangeCb : nullptr for client : %{public}" PRId32 "", pid);
         return;
     }
-    Trace traceCallback("capturerStateChangeCb->OnRendererDeviceChange sessionId:" + std::to_string(sessionId));
+    Trace traceCallback("capturerStateChangeCb->OnRendererDeviceChange streamId:" + std::to_string(streamId));
     if (clientCallbacksMap_.count(pid) > 0 &&
         clientCallbacksMap_[pid].count(CALLBACK_DEVICE_CHANGE_WITH_INFO) > 0 &&
         clientCallbacksMap_[pid][CALLBACK_DEVICE_CHANGE_WITH_INFO]) {
-        capturerStateChangeCb->OnRendererDeviceChange(sessionId, outputDeviceInfo, reason);
+        capturerStateChangeCb->OnRendererDeviceChange(streamId, outputDeviceInfo, reason);
     }
 }
 
@@ -1067,11 +1067,11 @@ void AudioPolicyServerHandler::HandleCapturerCreateEvent(const AppExecFwk::Inner
     std::shared_ptr<CapturerCreateEvent> eventContextObj = event->GetSharedObject<CapturerCreateEvent>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
 
-    uint64_t sessionId = eventContextObj->sessionId_;
+    uint64_t streamId = eventContextObj->sessionId_;
     SessionInfo sessionInfo{eventContextObj->capturerInfo_.sourceType, eventContextObj->streamInfo_.samplingRate,
         eventContextObj->streamInfo_.channels};
 
-    eventContextObj->error_ = AudioCoreService::GetCoreService()->GetEventEntry()->OnCapturerSessionAdded(sessionId,
+    eventContextObj->error_ = AudioCoreService::GetCoreService()->GetEventEntry()->OnCapturerSessionAdded(streamId,
         sessionInfo, eventContextObj->streamInfo_);
 }
 
@@ -1080,9 +1080,9 @@ void AudioPolicyServerHandler::HandleCapturerRemovedEvent(const AppExecFwk::Inne
     std::shared_ptr<uint64_t> eventContextObj = event->GetSharedObject<uint64_t>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
 
-    uint64_t sessionId = *eventContextObj;
+    uint64_t streamId = *eventContextObj;
 
-    AudioCoreService::GetCoreService()->GetEventEntry()->OnCapturerSessionRemoved(sessionId);
+    AudioCoreService::GetCoreService()->GetEventEntry()->OnCapturerSessionRemoved(streamId);
 }
 
 void AudioPolicyServerHandler::HandleWakeupCloseEvent(const AppExecFwk::InnerEvent::Pointer &event)

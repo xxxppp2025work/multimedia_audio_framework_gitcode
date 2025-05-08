@@ -191,7 +191,7 @@ static void CreateLimiter(struct Userdata *u);
 static void FreeLimiter(struct Userdata *u);
 static enum AudioSampleFormatIntf ConvertPaToHdiAdapterFormat(pa_sample_format_t format);
 static void UpdateStreamVolumeMap(struct Userdata *u);
-static struct VolumeValues *GetVolumeFromStreamVolumeMap(struct Userdata *u, uint32_t sessionID);
+static struct VolumeValues *GetVolumeFromStreamVolumeMap(struct Userdata *u, uint32_t streamId);
 static void RemoveVolumeFromStreamVolumeMap(struct Userdata *u, pa_sink_input *i);
 static bool IsZeroVolume(float volume);
 
@@ -430,17 +430,17 @@ static void OffloadSetHdiVolume(pa_sink_input *i)
 
     struct Userdata *u = i->sink->userdata;
     const char *streamType = safeProplistGets(i->proplist, "stream.type", "NULL");
-    const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
+    const char *streamIdStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
     const char *deviceClass = u->offload.sinkAdapter->deviceClass;
-    uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
+    uint32_t streamId = streamIdStr != NULL ? (uint32_t)atoi(streamIdStr) : 0;
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass, &volumes);
+    float volumeEnd = GetCurVolume(streamId, streamType, deviceClass, &volumes);
     float volumeBeg = volumes.volumeHistory;
     if (volumeBeg != volumeEnd) {
-        AUDIO_INFO_LOG("sessionID:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",
-            sessionID, volumeBeg, volumeEnd);
-        SetPreVolume(sessionID, volumeEnd);
-        MonitorVolume(sessionID, true);
+        AUDIO_INFO_LOG("streamId:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",
+            streamId, volumeBeg, volumeEnd);
+        SetPreVolume(streamId, volumeEnd);
+        MonitorVolume(streamId, true);
     }
     u->offload.sinkAdapter->SinkAdapterSetVolume(u->offload.sinkAdapter, volumeEnd, volumeEnd);
 }
@@ -1265,13 +1265,13 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
     CHECK_AND_RETURN_LOG(si != NULL, "si is null");
     struct Userdata *u = si->userdata;
     CHECK_AND_RETURN_LOG(u != NULL, "u is NULL");
-    const char *sessionIDStr = safeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
-    uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-    struct VolumeValues *volumes = GetVolumeFromStreamVolumeMap(u, sessionID);
+    const char *streamIdStr = safeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
+    uint32_t streamId = streamIdStr != NULL ? (uint32_t)atoi(streamIdStr) : 0;
+    struct VolumeValues *volumes = GetVolumeFromStreamVolumeMap(u, streamId);
     float volumeEnd = volumes != NULL ? volumes->volume : 1.0f;
     float volumeBeg = volumes != NULL ? volumes->volumeHistory : 1.0f;
 
-    AUTO_CTRACE("Volume, sessionId: %u, volume: %.3f - %.3f", sessionID, volumeBeg, volumeEnd);
+    AUTO_CTRACE("Volume, streamId: %u, volume: %.3f - %.3f", streamId, volumeBeg, volumeEnd);
 
     if (pa_memblock_is_silence(pchunk->memblock)) {
         AUTO_CTRACE("hdi_sink::ProcessAudioVolume: is_silence");
@@ -1294,10 +1294,10 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
         pa_memblock_release(pchunk->memblock);
     }
     if (volumeBeg != volumeEnd) {
-        AUDIO_INFO_LOG("sessionID:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",
-            sessionID, volumeBeg, volumeEnd);
-        SetPreVolume(sessionID, volumeEnd);
-        MonitorVolume(sessionID, true);
+        AUDIO_INFO_LOG("streamId:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",
+            streamId, volumeBeg, volumeEnd);
+        SetPreVolume(streamId, volumeEnd);
+        MonitorVolume(streamId, true);
     }
 }
 
@@ -1323,16 +1323,16 @@ static void HandleFading(pa_sink *si, size_t length, pa_sink_input *sinkIn, pa_m
 
 static void SinkRenderPrimaryStateCheck(pa_mix_info *infoIn, pa_sink_input *sinkIn)
 {
-    const char *sessionIDStr = safeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
-    uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
+    const char *streamIdStr = safeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
+    uint32_t streamId = streamIdStr != NULL ? (uint32_t)atoi(streamIdStr) : 0;
     uint32_t uid = getSinkInputUid(sinkIn);
     if (pa_memblock_is_silence(infoIn->chunk.memblock) && sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING) {
         AUTO_CTRACE("hdi_sink::PrimaryCluster::is_silence");
-        RecordPaSilenceState(sessionID, true, PA_PIPE_TYPE_NORMAL, uid);
+        RecordPaSilenceState(streamId, true, PA_PIPE_TYPE_NORMAL, uid);
         pa_sink_input_handle_ohos_underrun(sinkIn);
     } else {
         AUTO_CTRACE("hdi_sink::PrimaryCluster::is_not_silence");
-        RecordPaSilenceState(sessionID, false, PA_PIPE_TYPE_NORMAL, uid);
+        RecordPaSilenceState(streamId, false, PA_PIPE_TYPE_NORMAL, uid);
     }
 }
 
@@ -1465,17 +1465,17 @@ static void CheckMultiChannelFadeinIsDone(pa_sink *si, pa_sink_input *sinkIn)
 
 static void SinkRenderMultiChannelStateCheck(pa_sink *si, pa_mix_info *infoIn, pa_sink_input *sinkIn)
 {
-    const char *sessionIDStr = safeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
-    uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
+    const char *streamIdStr = safeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
+    uint32_t streamId = streamIdStr != NULL ? (uint32_t)atoi(streamIdStr) : 0;
     const char *sinkSpatializationEnabled = pa_proplist_gets(sinkIn->proplist, "spatialization.enabled");
     uint32_t uid = getSinkInputUid(sinkIn);
     if (pa_memblock_is_silence(infoIn->chunk.memblock) && sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING) {
         AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_silence");
-        RecordPaSilenceState(sessionID, true, PA_PIPE_TYPE_MULTICHANNEL, uid);
+        RecordPaSilenceState(streamId, true, PA_PIPE_TYPE_MULTICHANNEL, uid);
         pa_sink_input_handle_ohos_underrun(sinkIn);
     } else if (pa_safe_streq(sinkSpatializationEnabled, "true")) {
         AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_not_silence");
-        RecordPaSilenceState(sessionID, false, PA_PIPE_TYPE_MULTICHANNEL, uid);
+        RecordPaSilenceState(streamId, false, PA_PIPE_TYPE_MULTICHANNEL, uid);
         pa_atomic_store(&sinkIn->isFirstReaded, 1);
     }
     PrepareMultiChannelFading(sinkIn, infoIn, si);
@@ -1774,9 +1774,9 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
         }
         const char *sinkSceneTypeTmp = pa_proplist_gets(input->proplist, "scene.type");
         const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
-        const char *sessionIDStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
-        uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-        struct VolumeValues *volumes = GetVolumeFromStreamVolumeMap(u, sessionID);
+        const char *streamIdStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
+        uint32_t streamId = streamIdStr != NULL ? (uint32_t)atoi(streamIdStr) : 0;
+        struct VolumeValues *volumes = GetVolumeFromStreamVolumeMap(u, streamId);
         bool isZeroVolume = IsZeroVolume(volumes != NULL ? volumes->volume : 1.0f);
         if (EffectChainManagerSceneCheck(sinkSceneTypeTmp, SCENE_TYPE_SET[i]) && !isZeroVolume) {
             g_effectAllStreamVolumeZeroMap[i] = false;
@@ -1869,9 +1869,9 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
         if (input->thread_info.state != PA_SINK_INPUT_RUNNING) {
             continue;
         }
-        const char *sessionIDStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
-        uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-        struct VolumeValues *volumes = GetVolumeFromStreamVolumeMap(u, sessionID);
+        const char *streamIdStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
+        uint32_t streamId = streamIdStr != NULL ? (uint32_t)atoi(streamIdStr) : 0;
+        struct VolumeValues *volumes = GetVolumeFromStreamVolumeMap(u, streamId);
         bool isZeroVolume = IsZeroVolume(volumes != NULL ? volumes->volume : 1.0f);
         if (!strcmp(u->sink->name, "Speaker") && !isZeroVolume) {
             u->primary.speakerPaAllStreamVolumeZero = false;
@@ -2235,12 +2235,12 @@ static void UpdateStreamVolumeMap(struct Userdata *u)
             continue;
         }
         const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
-        const char *sessionIDStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
+        const char *streamIdStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
         const char *deviceClass = u->primary.sinkAdapter->deviceClass;
-        uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
+        uint32_t streamId = streamIdStr != NULL ? (uint32_t)atoi(streamIdStr) : 0;
         struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-        float volume = GetCurVolume(sessionID, streamType, deviceClass, &volumes);
-        struct VolumeValues *vol = (struct VolumeValues *)pa_hashmap_get(u->streamVolumeMap, &sessionID);
+        float volume = GetCurVolume(streamId, streamType, deviceClass, &volumes);
+        struct VolumeValues *vol = (struct VolumeValues *)pa_hashmap_get(u->streamVolumeMap, &streamId);
         if (vol) {
             vol->volume = volume;
             vol->volumeHistory = volumes.volumeHistory;
@@ -2249,7 +2249,7 @@ static void UpdateStreamVolumeMap(struct Userdata *u)
             vol->volumeSystem = volumes.volumeSystem;
         } else {
             uint32_t *key = pa_xnew0(uint32_t, 1);
-            *key = sessionID;
+            *key = streamId;
             vol = pa_xnew0(struct VolumeValues, 1);
             vol->volume = volume;
             vol->volumeHistory = volumes.volumeHistory;
@@ -2265,13 +2265,13 @@ static void UpdateStreamVolumeMap(struct Userdata *u)
     }
 }
 
-static struct VolumeValues *GetVolumeFromStreamVolumeMap(struct Userdata *u, uint32_t sessionID)
+static struct VolumeValues *GetVolumeFromStreamVolumeMap(struct Userdata *u, uint32_t streamId)
 {
     if (u == NULL || u->streamVolumeMap == NULL) {
         AUDIO_ERR_LOG("streamVolumeMap null");
         return NULL;
     }
-    struct VolumeValues *vol = (struct VolumeValues *)pa_hashmap_get(u->streamVolumeMap, &sessionID);
+    struct VolumeValues *vol = (struct VolumeValues *)pa_hashmap_get(u->streamVolumeMap, &streamId);
     if (vol) {
         return vol;
     } else {
@@ -2284,11 +2284,11 @@ static void RemoveVolumeFromStreamVolumeMap(struct Userdata *u, pa_sink_input *i
 {
     CHECK_AND_RETURN_LOG(i != NULL, "sink_input is null");
     CHECK_AND_RETURN_LOG(u != NULL && u->streamVolumeMap != NULL, "streamVolumeMap is null");
-    const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
-    uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-    int32_t ret = pa_hashmap_remove_and_free(u->streamVolumeMap, &sessionID);
-    AUDIO_DEBUG_LOG("RemoveVolumeFromStreamVolumeMap stream volume, sessionId:%{public}u, ret:%{public}d",
-        sessionID, ret);
+    const char *streamIdStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
+    uint32_t streamId = streamIdStr != NULL ? (uint32_t)atoi(streamIdStr) : 0;
+    int32_t ret = pa_hashmap_remove_and_free(u->streamVolumeMap, &streamId);
+    AUDIO_DEBUG_LOG("RemoveVolumeFromStreamVolumeMap stream volume, streamId:%{public}u, ret:%{public}d",
+        streamId, ret);
 }
 
 static bool IsZeroVolume(float volume)
@@ -2401,16 +2401,16 @@ static void SetSinkVolumeByDeviceClass(pa_sink *s, const char *deviceClass)
             continue;
         }
         const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
-        const char *sessionIDStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
-        uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
+        const char *streamIdStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
+        uint32_t streamId = streamIdStr != NULL ? (uint32_t)atoi(streamIdStr) : 0;
         struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-        float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass, &volumes);
+        float volumeEnd = GetCurVolume(streamId, streamType, deviceClass, &volumes);
         float volumeBeg = volumes.volumeHistory;
         if (volumeBeg != volumeEnd) {
-            AUDIO_INFO_LOG("sessionID:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",
-                sessionID, volumeBeg, volumeEnd);
-            SetPreVolume(sessionID, volumeEnd);
-            MonitorVolume(sessionID, true);
+            AUDIO_INFO_LOG("streamId:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",
+                streamId, volumeBeg, volumeEnd);
+            SetPreVolume(streamId, volumeEnd);
+            MonitorVolume(streamId, true);
         }
         uint32_t volume = pa_sw_volume_from_linear(volumeEnd);
         pa_cvolume_set(&input->thread_info.soft_volume, input->thread_info.soft_volume.channels, volume);
@@ -2553,9 +2553,9 @@ static unsigned GetInputsInfo(enum HdiInputType type, bool isRun, pa_sink *s, pa
         if (flag) {
             info->userdata = pa_sink_input_ref(i);
         } else {
-            const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
+            const char *streamIdStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
             AUDIO_PRERELEASE_LOGE("sink: %{public}s, sink_input: %{public}s, the type is not %{public}d",
-                s->name, sessionIDStr, type);
+                s->name, streamIdStr, type);
             continue;
         }
 
@@ -2978,8 +2978,8 @@ static void GetSinkInputName(pa_sink_input *i, char *str, int len)
     const char *streamUid = safeProplistGets(i->proplist, "stream.client.uid", "NULL");
     const char *streamPid = safeProplistGets(i->proplist, "stream.client.pid", "NULL");
     const char *streamType = safeProplistGets(i->proplist, "stream.type", "NULL");
-    const char *sessionID = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
-    int ret = sprintf_s(str, len, "%s_%s_%s_%s_of%d", streamType, streamUid, streamPid, sessionID, InputIsOffload(i));
+    const char *streamId = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
+    int ret = sprintf_s(str, len, "%s_%s_%s_%s_of%d", streamType, streamUid, streamPid, streamId, InputIsOffload(i));
     if (ret < 0) {
         AUDIO_ERR_LOG("sprintf_s fail! ret %d", ret);
     }
@@ -3065,15 +3065,15 @@ static void CheckInputChangeToOffload(struct Userdata *u, pa_sink_input *i)
 static void StartOffloadHdi(struct Userdata *u, pa_sink_input *i)
 {
     CheckInputChangeToOffload(u, i);
-    int32_t sessionID = getSinkInputSessionID(i);
+    int32_t streamId = getSinkInputSessionID(i);
     if (u->offload.isHDISinkStarted) {
-        AUDIO_INFO_LOG("StartOffloadHdi, sessionID : %{public}d -> %{public}d", u->offload.sessionID, sessionID);
-        if (sessionID != u->offload.sessionID) {
+        AUDIO_INFO_LOG("StartOffloadHdi, streamId : %{public}d -> %{public}d", u->offload.sessionID, streamId);
+        if (streamId != u->offload.sessionID) {
             if (u->offload.sessionID != -1) {
                 u->offload.sinkAdapter->SinkAdapterReset(u->offload.sinkAdapter);
                 OffloadReset(u);
             }
-            u->offload.sessionID = sessionID;
+            u->offload.sessionID = streamId;
         }
     } else {
         AUDIO_INFO_LOG("StartOffloadHdi, Restart offload with rate:%{public}d, channels:%{public}d",
@@ -3085,7 +3085,7 @@ static void StartOffloadHdi(struct Userdata *u, pa_sink_input *i)
             u->offload.isHDISinkStarted = true;
             AUDIO_INFO_LOG("StartOffloadHdi, Successfully restarted offload HDI renderer");
             OffloadLock(u);
-            u->offload.sessionID = sessionID;
+            u->offload.sessionID = streamId;
             OffloadSetHdiVolume(i);
         }
     }
@@ -3118,9 +3118,9 @@ static void ResetVolumeBySinkInputState(pa_sink_input *i, pa_sink_input_state_t 
     CHECK_AND_RETURN_LOG(i != NULL, "i is null");
     const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
     if (corking) {
-        const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
-        uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-        SetPreVolume(sessionID, 0.0f);
+        const char *streamIdStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
+        uint32_t streamId = streamIdStr != NULL ? (uint32_t)atoi(streamIdStr) : 0;
+        SetPreVolume(streamId, 0.0f);
     }
 }
 
@@ -3293,14 +3293,14 @@ static void RendererSinkSetPriPaPower(pa_sink_input *i, pa_sink_input_state_t st
             return;
         }
         const char *streamType = safeProplistGets(i->proplist, "stream.type", "NULL");
-        const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
+        const char *streamIdStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
         const char *deviceClass = u->primary.sinkAdapter->deviceClass;
-        uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
+        uint32_t streamId = streamIdStr != NULL ? (uint32_t)atoi(streamIdStr) : 0;
         struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-        float volume = GetCurVolume(sessionID, streamType, deviceClass, &volumes);
+        float volume = GetCurVolume(streamId, streamType, deviceClass, &volumes);
         bool isZeroVolume = IsZeroVolume(volume);
         AUDIO_INFO_LOG(
-            "session %{public}u, stream %{public}s, zerovol %{public}d", sessionID, streamType, isZeroVolume);
+            "session %{public}u, stream %{public}s, zerovol %{public}d", streamId, streamType, isZeroVolume);
         if (!isZeroVolume) {
             u->primary.sinkAdapter->SinkAdapterSetPriPaPower(u->primary.sinkAdapter);
         }

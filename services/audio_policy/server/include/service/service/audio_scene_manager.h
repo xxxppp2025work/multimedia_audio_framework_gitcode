@@ -49,7 +49,7 @@ public:
     AudioScene GetLastAudioScene() const;
     bool IsSameAudioScene();
     bool IsStreamActive(AudioStreamType streamType) const;
-    bool CheckVoiceCallActive(int32_t sessionId) const;
+    bool CheckVoiceCallActive(int32_t streamId) const;
 
     bool IsVoiceCallRelatedScene();
 private:

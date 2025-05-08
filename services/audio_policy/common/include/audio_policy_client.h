@@ -78,12 +78,12 @@ public:
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
     virtual void OnCapturerStateChange(
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
-    virtual void OnRendererDeviceChange(const uint32_t sessionId,
+    virtual void OnRendererDeviceChange(const uint32_t streamId,
         const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) = 0;
     virtual void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) = 0;
-    virtual void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+    virtual void OnRecreateRendererStreamEvent(const uint32_t streamId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) = 0;
-    virtual void OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+    virtual void OnRecreateCapturerStreamEvent(const uint32_t streamId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) = 0;
     virtual void OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) = 0;
     virtual void OnSpatializationEnabledChange(const bool &enabled) = 0;

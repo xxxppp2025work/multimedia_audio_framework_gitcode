@@ -83,9 +83,9 @@ public:
     int32_t GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos,
         bool hasBTPermission, bool hasSystemPermission);
     std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
-    std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId);
+    std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t streamId);
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
-    void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
+    void UpdateSessionConnectionState(const int32_t &streamId, const int32_t &state);
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
@@ -97,8 +97,8 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(
         AudioDeviceUsage audioDevUsage);
     void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
-    int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
-    void OnCapturerSessionRemoved(uint64_t sessionID);
+    int32_t OnCapturerSessionAdded(uint64_t streamId, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
+    void OnCapturerSessionRemoved(uint64_t streamId);
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
     void UpdateSpatializationSupported(const std::string macAddress, const bool support);
@@ -140,7 +140,7 @@ private:
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()) {}
     ~AudioDeviceLock() {}
     void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
-    void SendA2dpConnectedWhileRunning(const RendererState &rendererState, const uint32_t &sessionId);
+    void SendA2dpConnectedWhileRunning(const RendererState &rendererState, const uint32_t &streamId);
     void UpdateTrackerDeviceChange(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     void HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
 private:

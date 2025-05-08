@@ -205,10 +205,10 @@ public:
 
     bool IsAudioSessionActivated() override;
 
-    int32_t SetAudioInterruptCallback(const uint32_t sessionID,
+    int32_t SetAudioInterruptCallback(const uint32_t streamId,
         const sptr<IRemoteObject> &object, uint32_t clientUid, const int32_t zoneId = 0) override;
 
-    int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneId = 0) override;
+    int32_t UnsetAudioInterruptCallback(const uint32_t streamId, const int32_t zoneId = 0) override;
 
     int32_t ActivateAudioInterrupt(AudioInterrupt &audioInterrupt, const int32_t zoneId = 0,
         const bool isUpdatedAudioStrategy = false) override;
@@ -239,13 +239,13 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;
 
-    void OnAudioStreamRemoved(const uint64_t sessionID) override;
+    void OnAudioStreamRemoved(const uint64_t streamId) override;
 
-    void ProcessSessionRemoved(const uint64_t sessionID, const int32_t zoneId = 0);
+    void ProcessSessionRemoved(const uint64_t streamId, const int32_t zoneId = 0);
 
     void ProcessSessionAdded(SessionEvent sessionEvent);
 
-    void ProcessorCloseWakeupSource(const uint64_t sessionID);
+    void ProcessorCloseWakeupSource(const uint64_t streamId);
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
@@ -256,10 +256,10 @@ public:
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo) override;
 
     int32_t CreateRendererClient(
-        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId) override;
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &streamId) override;
 
     int32_t CreateCapturerClient(
-        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId) override;
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &streamId) override;
 
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object) override;
@@ -336,7 +336,7 @@ public:
 
     int32_t GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc) override;
 
-    std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) override;
+    std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t streamId) override;
 
     std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones() override;
 
@@ -385,7 +385,7 @@ public:
 
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState) override;
 
-    int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
+    int32_t RegisterSpatializationStateEventListener(const uint32_t streamId, const StreamUsage streamUsage,
         const sptr<IRemoteObject> &object) override;
 
     int32_t ConfigDistributedRoutingRole(
@@ -395,7 +395,7 @@ public:
 
     int32_t UnsetDistributedRoutingRoleCallback() override;
 
-    int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID) override;
+    int32_t UnregisterSpatializationStateEventListener(const uint32_t streamId) override;
 
     int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t zoneId = 0) override;
 
@@ -484,17 +484,17 @@ public:
 
     int32_t UnsetAudioDeviceAnahsCallback() override;
 
-    int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) override;
+    int32_t MoveToNewPipe(const uint32_t streamId, const AudioPipeType pipeType) override;
 
-    int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) override;
+    int32_t SetAudioConcurrencyCallback(const uint32_t streamId, const sptr<IRemoteObject> &object) override;
 
-    int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID) override;
+    int32_t UnsetAudioConcurrencyCallback(const uint32_t streamId) override;
 
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType) override;
 
     int32_t InjectInterruption(const std::string networkId, InterruptEvent &event) override;
 
-    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t streamId,
         const SourceType sourceType, bool isRunning) override;
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
@@ -513,7 +513,7 @@ public:
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
         const StreamUsage &streamUsage) override;
 
-    void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
+    void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
 
     void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false);
     void SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false);
@@ -625,7 +625,7 @@ private:
 
     // offload session
     void CheckSubscribePowerStateChange();
-    void CheckStreamMode(const int64_t activateSessionId);
+    void CheckStreamMode(const int64_t activateStreamId);
     bool CheckAudioSessionStrategy(const AudioSessionStrategy &sessionStrategy);
 
     // for audio volume and mute status
@@ -706,8 +706,8 @@ private:
     void OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string& deviceId);
 
     // for updating default device selection state when game audio stream is muted
-    void UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID);
-    void UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
+    void UpdateDefaultOutputDeviceWhenStarting(const uint32_t streamId);
+    void UpdateDefaultOutputDeviceWhenStopping(const uint32_t streamId);
     void ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus);
 
     AudioPolicyService& audioPolicyService_;
@@ -739,9 +739,9 @@ private:
     std::mutex subscribeVolumeKey_;
 
     SessionProcessor sessionProcessor_{
-        [this] (const uint64_t sessionID, const int32_t zoneID) { this->ProcessSessionRemoved(sessionID, zoneID); },
+        [this] (const uint64_t streamId, const int32_t zoneID) { this->ProcessSessionRemoved(streamId, zoneID); },
         [this] (SessionEvent sessionEvent) { this->ProcessSessionAdded(sessionEvent); },
-        [this] (const uint64_t sessionID) {this->ProcessorCloseWakeupSource(sessionID); }};
+        [this] (const uint64_t streamId) {this->ProcessorCloseWakeupSource(streamId); }};
 
     AudioSpatializationService& audioSpatializationService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;

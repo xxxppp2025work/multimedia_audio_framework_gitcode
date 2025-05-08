@@ -167,7 +167,7 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter);
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config);
 
-    int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo, uint32_t sessionId);
+    int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo, uint32_t streamId);
 
     int32_t CloseWakeUpAudioCapturer();
 
@@ -370,7 +370,7 @@ public:
 
     int32_t GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc);
 
-    vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId);
+    vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t streamId);
 
     vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
 
@@ -380,17 +380,17 @@ public:
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, bool internalCall = false);
 
-    int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
+    int32_t OnCapturerSessionAdded(uint64_t streamId, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
 
-    void OnCapturerSessionRemoved(uint64_t sessionID);
+    void OnCapturerSessionRemoved(uint64_t streamId);
 
     std::vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
 
-    void OffloadStreamSetCheck(uint32_t sessionId);
+    void OffloadStreamSetCheck(uint32_t streamId);
 
-    void OffloadStreamReleaseCheck(uint32_t sessionId);
+    void OffloadStreamReleaseCheck(uint32_t streamId);
 
-    int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionIds);
+    int32_t OffloadStopPlaying(const std::vector<int32_t> &streamIds);
 
     int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
 
@@ -438,12 +438,12 @@ public:
     int32_t GetCurActivateCount();
     void CheckStreamMode(const int64_t activateSessionId);
 
-    int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
+    int32_t MoveToNewPipe(const uint32_t streamId, const AudioPipeType pipeType);
     int32_t DynamicUnloadModule(const AudioPipeType pipeType);
 
-    int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object);
+    int32_t SetAudioConcurrencyCallback(const uint32_t streamId, const sptr<IRemoteObject> &object);
 
-    int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
+    int32_t UnsetAudioConcurrencyCallback(const uint32_t streamId);
 
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
 
@@ -478,10 +478,10 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute);
 
-    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t streamId,
         const StreamUsage streamUsage, bool isRunning);
 
-    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t streamId,
         const SourceType sourceType, bool isRunning);
 
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object);
@@ -489,14 +489,14 @@ public:
     int32_t UnsetAudioDeviceAnahsCallback();
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void SubscribeSafeVolumeEvent();
-    int32_t NotifyCapturerRemoved(uint64_t sessionId);
+    int32_t NotifyCapturerRemoved(uint64_t streamId);
     void UpdateSpatializationSupported(const std::string macAddress, const bool support);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId);
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object);
-    void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
+    void RestoreSession(const uint32_t &streamId, RestoreInfo restoreInfo);
     void CheckConnectedDevice();
     void SetDeviceConnectedFlagFalseAfterDuration();
 
@@ -595,11 +595,11 @@ private:
     bool GetAudioEffectOffloadFlag();
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
-    int32_t GetUid(int32_t sessionId);
+    int32_t GetUid(int32_t streamId);
 
     void UnregisterBluetoothListener();
 
-    int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionIds);
+    int32_t OffloadStartPlaying(const std::vector<int32_t> &streamIds);
 
     void SetA2dpOffloadFlag(BluetoothOffloadState state);
     BluetoothOffloadState GetA2dpOffloadFlag();

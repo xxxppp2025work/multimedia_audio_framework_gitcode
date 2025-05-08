@@ -45,12 +45,12 @@ public:
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
     void OnCapturerStateChange(
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
-    void OnRendererDeviceChange(const uint32_t sessionId,
+    void OnRendererDeviceChange(const uint32_t streamId,
         const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) override;
     void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) override;
-    void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+    void OnRecreateRendererStreamEvent(const uint32_t streamId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt) override;
-    void OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+    void OnRecreateCapturerStreamEvent(const uint32_t streamId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt) override;
     void OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) override;
     void OnSpatializationEnabledChange(const bool &enabled) override;

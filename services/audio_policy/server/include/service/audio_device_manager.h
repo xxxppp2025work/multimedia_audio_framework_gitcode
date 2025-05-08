@@ -83,18 +83,18 @@ public:
     bool IsConnectedDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
     bool IsVirtualConnectedDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedDesc);
     int32_t UpdateDeviceDescDeviceId(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
-    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t streamId,
         const StreamUsage streamUsage, bool isRunning);
-    int32_t UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID);
-    int32_t UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
-    int32_t RemoveSelectedDefaultOutputDevice(const uint32_t sessionID);
+    int32_t UpdateDefaultOutputDeviceWhenStarting(const uint32_t streamId);
+    int32_t UpdateDefaultOutputDeviceWhenStopping(const uint32_t streamId);
+    int32_t RemoveSelectedDefaultOutputDevice(const uint32_t streamId);
     shared_ptr<AudioDeviceDescriptor> GetSelectedMediaRenderDevice();
     shared_ptr<AudioDeviceDescriptor> GetSelectedCallRenderDevice();
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
-    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t streamId,
         const SourceType sourceType, bool isRunning);
-    int32_t RemoveSelectedInputDevice(const uint32_t sessionID);
-    shared_ptr<AudioDeviceDescriptor> GetSelectedCaptureDevice(const uint32_t sessionID);
+    int32_t RemoveSelectedInputDevice(const uint32_t streamId);
+    shared_ptr<AudioDeviceDescriptor> GetSelectedCaptureDevice(const uint32_t streamId);
     void Dump(std::string &dumpString);
     void UpdateVirtualDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc, bool isConnected);
     void GetAllConnectedDeviceByType(std::string networkId, DeviceType deviceType,

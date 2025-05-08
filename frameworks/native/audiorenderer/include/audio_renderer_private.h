@@ -61,7 +61,7 @@ public:
     bool Flush() const override;
     bool Release() override;
     int32_t GetBufferSize(size_t &bufferSize) const override;
-    int32_t GetAudioStreamId(uint32_t &sessionID) const override;
+    int32_t GetAudioStreamId(uint32_t &streamId) const override;
     int32_t SetAudioRendererDesc(AudioRendererDesc audioRendererDesc) override;
     int32_t SetStreamType(AudioStreamType audioStreamType) override;
     int32_t SetVolume(float volume) const override;
@@ -213,7 +213,7 @@ private:
     void UpdateFramesWritten();
     RendererState GetStatusInner();
     void SetAudioPrivacyTypeInner(AudioPrivacyType privacyType);
-    int32_t GetAudioStreamIdInner(uint32_t &sessionID) const;
+    int32_t GetAudioStreamIdInner(uint32_t &streamId) const;
     float GetVolumeInner() const;
     uint32_t GetUnderflowCountInner() const;
     int32_t UnsetOffloadModeInner() const;
@@ -225,7 +225,7 @@ private:
     AppInfo appInfo_ = {};
     AudioInterrupt audioInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, 0};
-    uint32_t sessionID_ = INVALID_SESSION_ID;
+    uint32_t streamId_ = INVALID_SESSION_ID;
     std::shared_ptr<AudioRendererProxyObj> rendererProxyObj_;
     FILE *dumpFile_ = nullptr;
     std::shared_ptr<AudioRendererErrorCallback> audioRendererErrorCallback_ = nullptr;
@@ -251,7 +251,7 @@ private:
     std::shared_ptr<AudioRendererPolicyServiceDiedCallback> policyServiceDiedCallback_ = nullptr;
     std::mutex policyServiceDiedCallbackMutex_;
 
-    std::vector<uint32_t> usedSessionId_ = {};
+    std::vector<uint32_t> usedStreamId_ = {};
     std::mutex silentModeAndMixWithOthersMutex_;
     std::mutex setStreamCallbackMutex_;
     std::mutex setParamsMutex_;
@@ -283,7 +283,7 @@ private:
     AudioInterrupt audioInterrupt_ {};
     bool isForcePaused_ = false;
     bool isForceDucked_ = false;
-    uint32_t sessionID_ = INVALID_SESSION_ID;
+    uint32_t streamId_ = INVALID_SESSION_ID;
     std::mutex mutex_;
     bool switching_ = false;
     std::condition_variable switchStreamCv_;
@@ -306,10 +306,10 @@ public:
     OutputDeviceChangeWithInfoCallbackImpl() = default;
     virtual ~OutputDeviceChangeWithInfoCallbackImpl() = default;
 
-    void OnDeviceChangeWithInfo(const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo,
+    void OnDeviceChangeWithInfo(const uint32_t streamId, const AudioDeviceDescriptor &deviceInfo,
         const AudioStreamDeviceChangeReasonExt reason) override;
 
-    void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+    void OnRecreateStreamEvent(const uint32_t streamId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) override;
 
     void SaveCallback(const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback)

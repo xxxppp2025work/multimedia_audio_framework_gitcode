@@ -145,8 +145,8 @@ public:
     static bool VerifyPermission(const std::string &permissionName, uint32_t tokenId);
     static bool NeedVerifyBackgroundCapture(int32_t callingUid, SourceType sourceType);
     static bool VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId);
-    static bool NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId);
-    static bool NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionId);
+    static bool NotifyPrivacyStart(uint32_t targetTokenId, uint32_t streamId);
+    static bool NotifyPrivacyStop(uint32_t targetTokenId, uint32_t streamId);
     static int32_t StartUsingPermission(uint32_t targetTokenId, const char* permission);
     static int32_t StopUsingPermission(uint32_t targetTokenId, const char* permission);
 };
@@ -162,7 +162,7 @@ private:
     static bool HandleStartedSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState);
     static bool HandleSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState);
     static void TimeoutThreadHandleTimeoutRecord(SwitchStreamInfo info, SwitchState targetState);
-    static bool RemoveAllRecordBySessionId(uint32_t sessionId);
+    static bool RemoveAllRecordBySessionId(uint32_t streamId);
 };
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
@@ -385,7 +385,7 @@ public:
     // static methods, invoked without instantiation in sinks and sources
     static bool CheckIfEnabled();
     AudioLatencyMeasurement(const int32_t &sampleRate, const int32_t &channelCount,
-        const int32_t &sampleFormat, const std::string &appName, const uint32_t &sessionId);
+        const int32_t &sampleFormat, const std::string &appName, const uint32_t &streamId);
     ~AudioLatencyMeasurement();
 
     // non-static methods, invoked after instantiation in AudioRenderer and AudioCapturer

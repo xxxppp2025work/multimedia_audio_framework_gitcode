@@ -314,10 +314,10 @@ void AudioPolicyManagerStub::GetInputDeviceInternal(MessageParcel &data, Message
 void AudioPolicyManagerStub::SetInputDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
     DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
-    uint32_t sessionID = data.ReadUint32();
+    uint32_t streamId = data.ReadUint32();
     SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
     bool isRunning = data.ReadBool();
-    int32_t result = SetInputDevice(deviceType, sessionID, sourceType, isRunning);
+    int32_t result = SetInputDevice(deviceType, streamId, sourceType, isRunning);
     reply.WriteInt32(result);
 }
 } // namespace AudioStandard

@@ -153,18 +153,18 @@ bool PlaybackCapturerManager::RegisterCapturerFilterListener(ICapturerFilterList
     return true;
 }
 
-int32_t PlaybackCapturerManager::SetPlaybackCapturerFilterInfo(uint32_t sessionId,
+int32_t PlaybackCapturerManager::SetPlaybackCapturerFilterInfo(uint32_t streamId,
     const AudioPlaybackCaptureConfig &config, int32_t innerCapId)
 {
     CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, ERR_ILLEGAL_STATE, "listener is null!");
 
-    return listener_->OnCapturerFilterChange(sessionId, config, innerCapId);
+    return listener_->OnCapturerFilterChange(streamId, config, innerCapId);
 }
 
-int32_t PlaybackCapturerManager::RemovePlaybackCapturerFilterInfo(uint32_t sessionId, int32_t innerCapId)
+int32_t PlaybackCapturerManager::RemovePlaybackCapturerFilterInfo(uint32_t streamId, int32_t innerCapId)
 {
     CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, ERR_ILLEGAL_STATE, "listener is null!");
-    return listener_->OnCapturerFilterRemove(sessionId, innerCapId);
+    return listener_->OnCapturerFilterRemove(streamId, innerCapId);
 }
 
 int32_t PlaybackCapturerManager::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId)

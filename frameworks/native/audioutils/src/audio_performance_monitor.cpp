@@ -34,41 +34,41 @@ AudioPerformanceMonitor &AudioPerformanceMonitor::GetInstance()
     return mgr;
 }
 
-void AudioPerformanceMonitor::RecordSilenceState(uint32_t sessionId, bool isSilence, AudioPipeType pipeType,
+void AudioPerformanceMonitor::RecordSilenceState(uint32_t streamId, bool isSilence, AudioPipeType pipeType,
     uint32_t uid)
 {
     std::lock_guard<std::mutex> lock(silenceMapMutex_);
-    if (silenceDetectMap_.find(sessionId) == silenceDetectMap_.end()) {
+    if (silenceDetectMap_.find(streamId) == silenceDetectMap_.end()) {
         CHECK_AND_RETURN_LOG(silenceDetectMap_.size() < MAX_MAP_SIZE, "silenceDetectMap_ overSize!");
-        AUDIO_INFO_LOG("start record silence state of sessionId : %{public}d", sessionId);
-        silenceDetectMap_[sessionId].silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
-        silenceDetectMap_[sessionId].historyStateDeque.clear();
-        silenceDetectMap_[sessionId].pipeType = pipeType;
+        AUDIO_INFO_LOG("start record silence state of streamId : %{public}d", streamId);
+        silenceDetectMap_[streamId].silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
+        silenceDetectMap_[streamId].historyStateDeque.clear();
+        silenceDetectMap_[streamId].pipeType = pipeType;
     }
-    silenceDetectMap_[sessionId].historyStateDeque.push_back(isSilence);
-    if (silenceDetectMap_[sessionId].historyStateDeque.size() > MAX_RECORD_QUEUE_SIZE) {
-        silenceDetectMap_[sessionId].historyStateDeque.pop_front();
+    silenceDetectMap_[streamId].historyStateDeque.push_back(isSilence);
+    if (silenceDetectMap_[streamId].historyStateDeque.size() > MAX_RECORD_QUEUE_SIZE) {
+        silenceDetectMap_[streamId].historyStateDeque.pop_front();
     }
-    JudgeNoise(sessionId, isSilence, uid);
+    JudgeNoise(streamId, isSilence, uid);
 }
 
-void AudioPerformanceMonitor::ClearSilenceMonitor(uint32_t sessionId)
+void AudioPerformanceMonitor::ClearSilenceMonitor(uint32_t streamId)
 {
     std::lock_guard<std::mutex> lock(silenceMapMutex_);
-    if (silenceDetectMap_.find(sessionId) == silenceDetectMap_.end()) {
+    if (silenceDetectMap_.find(streamId) == silenceDetectMap_.end()) {
         return;
     }
-    silenceDetectMap_[sessionId].silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
-    silenceDetectMap_[sessionId].historyStateDeque.clear();
+    silenceDetectMap_[streamId].silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
+    silenceDetectMap_[streamId].historyStateDeque.clear();
 }
 
-void AudioPerformanceMonitor::DeleteSilenceMonitor(uint32_t sessionId)
+void AudioPerformanceMonitor::DeleteSilenceMonitor(uint32_t streamId)
 {
     std::lock_guard<std::mutex> lock(silenceMapMutex_);
-    CHECK_AND_RETURN_LOG(silenceDetectMap_.find(sessionId) != silenceDetectMap_.end(),
-        "invalid sessionId: %{public}d", sessionId);
-    AUDIO_INFO_LOG("delete sessionId %{public}d silence Monitor!", sessionId);
-    silenceDetectMap_.erase(sessionId);
+    CHECK_AND_RETURN_LOG(silenceDetectMap_.find(streamId) != silenceDetectMap_.end(),
+        "invalid streamId: %{public}d", streamId);
+    AUDIO_INFO_LOG("delete streamId %{public}d silence Monitor!", streamId);
+    silenceDetectMap_.erase(streamId);
 }
 
 void AudioPerformanceMonitor::RecordTimeStamp(AdapterType adapterType, int64_t curTimeStamp)
@@ -137,29 +137,29 @@ void AudioPerformanceMonitor::DumpMonitorInfo(std::string &dumpString)
 }
 
 // we use silenceStateCount to record the silence frames bewteen two not silence frame
-// need to check if sessionId exists before use
-void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence, uint32_t uid)
+// need to check if streamId exists before use
+void AudioPerformanceMonitor::JudgeNoise(uint32_t streamId, bool isSilence, uint32_t uid)
 {
     if (isSilence) {
-        silenceDetectMap_[sessionId].silenceStateCount++;
+        silenceDetectMap_[streamId].silenceStateCount++;
     } else {
         // we init the count value as the maxValue+1 to make it as normal state
-        if (MIN_SILENCE_FRAME_COUNT <= silenceDetectMap_[sessionId].silenceStateCount &&
-            silenceDetectMap_[sessionId].silenceStateCount <= MAX_SILENCE_FRAME_COUNT) {
+        if (MIN_SILENCE_FRAME_COUNT <= silenceDetectMap_[streamId].silenceStateCount &&
+            silenceDetectMap_[streamId].silenceStateCount <= MAX_SILENCE_FRAME_COUNT) {
             std::string printStr{};
             // for example: not Silent-> not Silent -> silent -> not Silent -> silent, will print "--_-_"
-            while (silenceDetectMap_[sessionId].historyStateDeque.size() != 0) {
-                printStr += silenceDetectMap_[sessionId].historyStateDeque.front() ? "_" : "-";
-                silenceDetectMap_[sessionId].historyStateDeque.pop_front();
+            while (silenceDetectMap_[streamId].historyStateDeque.size() != 0) {
+                printStr += silenceDetectMap_[streamId].historyStateDeque.front() ? "_" : "-";
+                silenceDetectMap_[streamId].historyStateDeque.pop_front();
             }
             AUDIO_WARNING_LOG("record %{public}d state, pipeType %{public}d for last %{public}zu times: %{public}s",
-                sessionId, silenceDetectMap_[sessionId].pipeType, MAX_RECORD_QUEUE_SIZE, printStr.c_str());
-            ReportEvent(SILENCE_EVENT, INT32_MAX, silenceDetectMap_[sessionId].pipeType, ADAPTER_TYPE_UNKNOWN, uid);
-            silenceDetectMap_[sessionId].silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
-            silenceDetectMap_[sessionId].historyStateDeque.clear();
+                streamId, silenceDetectMap_[streamId].pipeType, MAX_RECORD_QUEUE_SIZE, printStr.c_str());
+            ReportEvent(SILENCE_EVENT, INT32_MAX, silenceDetectMap_[streamId].pipeType, ADAPTER_TYPE_UNKNOWN, uid);
+            silenceDetectMap_[streamId].silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
+            silenceDetectMap_[streamId].historyStateDeque.clear();
             return;
         }
-        silenceDetectMap_[sessionId].silenceStateCount = 0;
+        silenceDetectMap_[streamId].silenceStateCount = 0;
     }
 }
 
@@ -206,14 +206,14 @@ extern "C" {
 
 using namespace OHOS::AudioStandard;
 
-void RecordPaSilenceState(uint32_t sessionId, bool isSilence, enum PA_PIPE_TYPE paPipeType, uint32_t uid)
+void RecordPaSilenceState(uint32_t streamId, bool isSilence, enum PA_PIPE_TYPE paPipeType, uint32_t uid)
 {
     switch (paPipeType) {
         case PA_PIPE_TYPE_NORMAL:
-            AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence, PIPE_TYPE_NORMAL_OUT, uid);
+            AudioPerformanceMonitor::GetInstance().RecordSilenceState(streamId, isSilence, PIPE_TYPE_NORMAL_OUT, uid);
             break;
         case PA_PIPE_TYPE_MULTICHANNEL:
-            AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence, PIPE_TYPE_MULTICHANNEL,
+            AudioPerformanceMonitor::GetInstance().RecordSilenceState(streamId, isSilence, PIPE_TYPE_MULTICHANNEL,
                 uid);
             break;
         default:

@@ -41,7 +41,7 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(StreamUsage streamUsage,
         int32_t clientUID, const RouterType &bypassType = RouterType::ROUTER_TYPE_NONE);
     std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(SourceType sourceType, int32_t clientUID,
-        const uint32_t sessionID = 0);
+        const uint32_t streamId = 0);
     int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object);
     int32_t UnsetAudioDeviceRefinerCallback();
     bool isCallRenderRouter(StreamUsage streamUsage);
@@ -114,18 +114,18 @@ private:
     void DealRingRenderRouters(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         StreamUsage streamUsage, int32_t clientUID, RouterType &routerType);
     shared_ptr<AudioDeviceDescriptor> FetchCallCaptureDevice(SourceType sourceType, int32_t clientUID,
-        RouterType &routerType, const uint32_t sessionID = 0);
+        RouterType &routerType, const uint32_t streamId = 0);
     shared_ptr<AudioDeviceDescriptor> FetchRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
-        RouterType &routerType, const uint32_t sessionID = 0);
+        RouterType &routerType, const uint32_t streamId = 0);
     shared_ptr<AudioDeviceDescriptor> FetchVoiceMessageCaptureDevice(SourceType sourceType, int32_t clientUID,
-        RouterType &routerType, const uint32_t sessionID = 0);
+        RouterType &routerType, const uint32_t streamId = 0);
     bool NeedSkipSelectAudioOutputDeviceRefined(StreamUsage streamUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     RouterType GetBypassWithSco(AudioScene audioScene);
     bool IsMediaFollowCallStrategy(AudioScene audioScene);
     bool IsConfigRouterStrategy(SourceType sourceType);
     shared_ptr<AudioDeviceDescriptor> FetchCapturerInputDevice(SourceType sourceType,
-        int32_t clientUID, RouterType &routerType, const uint32_t sessionID);
+        int32_t clientUID, RouterType &routerType, const uint32_t streamId);
 
     std::vector<std::unique_ptr<RouterBase>> mediaRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> callRenderRouters_;

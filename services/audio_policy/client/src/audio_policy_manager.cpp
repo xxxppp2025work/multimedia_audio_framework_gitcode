@@ -874,7 +874,7 @@ int32_t AudioPolicyManager::UnsetMicStateChangeCallback(
     return SUCCESS;
 }
 
-int32_t AudioPolicyManager::SetAudioInterruptCallback(const uint32_t sessionID,
+int32_t AudioPolicyManager::SetAudioInterruptCallback(const uint32_t streamId,
     const std::shared_ptr<AudioInterruptCallback> &callback, uint32_t clientUid, const int32_t zoneID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -888,14 +888,14 @@ int32_t AudioPolicyManager::SetAudioInterruptCallback(const uint32_t sessionID,
     sptr<IRemoteObject> object = listener->AsObject();
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "listenerStub->AsObject is nullptr..");
 
-    return gsp->SetAudioInterruptCallback(sessionID, object, clientUid, zoneID);
+    return gsp->SetAudioInterruptCallback(streamId, object, clientUid, zoneID);
 }
 
-int32_t AudioPolicyManager::UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID)
+int32_t AudioPolicyManager::UnsetAudioInterruptCallback(const uint32_t streamId, const int32_t zoneID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->UnsetAudioInterruptCallback(sessionID, zoneID);
+    return gsp->UnsetAudioInterruptCallback(streamId, zoneID);
 }
 
 int32_t AudioPolicyManager::SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback)
@@ -1187,9 +1187,9 @@ int32_t AudioPolicyManager::RegisterTracker(AudioMode &mode, AudioStreamChangeIn
 
     int32_t ret = gsp->RegisterTracker(mode, streamChangeInfo, object);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "RegisterTracker failed");
-    int32_t sessionId = mode == AUDIO_MODE_PLAYBACK ? streamChangeInfo.audioRendererChangeInfo.sessionId :
+    int32_t streamId = mode == AUDIO_MODE_PLAYBACK ? streamChangeInfo.audioRendererChangeInfo.sessionId :
         streamChangeInfo.audioCapturerChangeInfo.sessionId;
-    clientTrackerStubMap_[sessionId] = callback;
+    clientTrackerStubMap_[streamId] = callback;
     return ret;
 }
 
@@ -1225,19 +1225,19 @@ int32_t AudioPolicyManager::GetPreferredInputStreamType(AudioCapturerInfo &captu
 }
 
 int32_t AudioPolicyManager::CreateRendererClient(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &streamId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");
-    return gsp->CreateRendererClient(streamDesc, flag, sessionId);
+    return gsp->CreateRendererClient(streamDesc, flag, streamId);
 }
 
 int32_t AudioPolicyManager::CreateCapturerClient(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &streamId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");
-    return gsp->CreateCapturerClient(streamDesc, flag, sessionId);
+    return gsp->CreateCapturerClient(streamDesc, flag, streamId);
 }
 
 int32_t AudioPolicyManager::GetCurrentRendererChangeInfos(
@@ -1422,7 +1422,7 @@ int32_t AudioPolicyManager::GetHardwareOutputSamplingRate(const std::shared_ptr<
     return gsp->GetHardwareOutputSamplingRate(desc);
 }
 
-vector<sptr<MicrophoneDescriptor>> AudioPolicyManager::GetAudioCapturerMicrophoneDescriptors(int32_t sessionID)
+vector<sptr<MicrophoneDescriptor>> AudioPolicyManager::GetAudioCapturerMicrophoneDescriptors(int32_t streamId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
@@ -1430,7 +1430,7 @@ vector<sptr<MicrophoneDescriptor>> AudioPolicyManager::GetAudioCapturerMicrophon
         std::vector<sptr<MicrophoneDescriptor>> descs;
         return descs;
     }
-    return gsp->GetAudioCapturerMicrophoneDescriptors(sessionID);
+    return gsp->GetAudioCapturerMicrophoneDescriptors(streamId);
 }
 
 vector<sptr<MicrophoneDescriptor>> AudioPolicyManager::GetAvailableMicrophones()
@@ -1778,7 +1778,7 @@ int32_t AudioPolicyManager::UpdateSpatialDeviceState(const AudioSpatialDeviceSta
     return gsp->UpdateSpatialDeviceState(audioSpatialDeviceState);
 }
 
-int32_t AudioPolicyManager::RegisterSpatializationStateEventListener(const uint32_t sessionID,
+int32_t AudioPolicyManager::RegisterSpatializationStateEventListener(const uint32_t streamId,
     const StreamUsage streamUsage, const std::shared_ptr<AudioSpatializationStateChangeCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -1795,15 +1795,15 @@ int32_t AudioPolicyManager::RegisterSpatializationStateEventListener(const uint3
     sptr<IRemoteObject> object = spatializationStateChangeListenerStub->AsObject();
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "IPC object creation failed");
 
-    return gsp->RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
+    return gsp->RegisterSpatializationStateEventListener(streamId, streamUsage, object);
 }
 
-int32_t AudioPolicyManager::UnregisterSpatializationStateEventListener(const uint32_t sessionID)
+int32_t AudioPolicyManager::UnregisterSpatializationStateEventListener(const uint32_t streamId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
-    return gsp->UnregisterSpatializationStateEventListener(sessionID);
+    return gsp->UnregisterSpatializationStateEventListener(streamId);
 }
 
 int32_t AudioPolicyManager::CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneID)
@@ -1898,12 +1898,12 @@ bool AudioPolicyManager::IsAudioSessionActivated()
     return gsp->IsAudioSessionActivated();
 }
 
-int32_t AudioPolicyManager::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+int32_t AudioPolicyManager::SetInputDevice(const DeviceType deviceType, const uint32_t streamId,
     const SourceType sourceType, bool isRunning)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->SetInputDevice(deviceType, sessionID, sourceType, isRunning);
+    return gsp->SetInputDevice(deviceType, streamId, sourceType, isRunning);
 }
 
 int32_t AudioPolicyManager::SetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback)
@@ -2110,7 +2110,7 @@ int32_t AudioPolicyManager::SetAudioClientInfoMgrCallback(
     return gsp->SetAudioClientInfoMgrCallback(object);
 }
 
-int32_t AudioPolicyManager::SetAudioConcurrencyCallback(const uint32_t sessionID,
+int32_t AudioPolicyManager::SetAudioConcurrencyCallback(const uint32_t streamId,
     const std::shared_ptr<AudioConcurrencyCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -2124,14 +2124,14 @@ int32_t AudioPolicyManager::SetAudioConcurrencyCallback(const uint32_t sessionID
     sptr<IRemoteObject> object = listener->AsObject();
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "listenerStub->AsObject is nullptr.");
 
-    return gsp->SetAudioConcurrencyCallback(sessionID, object);
+    return gsp->SetAudioConcurrencyCallback(streamId, object);
 }
 
-int32_t AudioPolicyManager::UnsetAudioConcurrencyCallback(const uint32_t sessionID)
+int32_t AudioPolicyManager::UnsetAudioConcurrencyCallback(const uint32_t streamId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->UnsetAudioConcurrencyCallback(sessionID);
+    return gsp->UnsetAudioConcurrencyCallback(streamId);
 }
 
 int32_t AudioPolicyManager::ActivateAudioConcurrency(const AudioPipeType &pipeType)
@@ -2164,21 +2164,21 @@ void AudioPolicyManager::CheckAndRemoveClientTrackerStub(const AudioMode &mode,
         streamChangeInfo.audioCapturerChangeInfo.capturerState != CAPTURER_RELEASED) {
         return;
     }
-    int32_t sessionId = mode == AUDIO_MODE_PLAYBACK ? streamChangeInfo.audioRendererChangeInfo.sessionId :
+    int32_t streamId = mode == AUDIO_MODE_PLAYBACK ? streamChangeInfo.audioRendererChangeInfo.sessionId :
         streamChangeInfo.audioCapturerChangeInfo.sessionId;
-    RemoveClientTrackerStub(sessionId);
+    RemoveClientTrackerStub(streamId);
 }
 
-void AudioPolicyManager::RemoveClientTrackerStub(int32_t sessionId)
+void AudioPolicyManager::RemoveClientTrackerStub(int32_t streamId)
 {
     std::unique_lock<std::mutex> lock(clientTrackerStubMutex_);
-    if (clientTrackerStubMap_.find(sessionId) != clientTrackerStubMap_.end() &&
-        clientTrackerStubMap_[sessionId] != nullptr) {
-        clientTrackerStubMap_[sessionId]->UnsetClientTrackerCallback();
-        clientTrackerStubMap_.erase(sessionId);
-        AUDIO_INFO_LOG("Client tracker for session %{public}d removed", sessionId);
+    if (clientTrackerStubMap_.find(streamId) != clientTrackerStubMap_.end() &&
+        clientTrackerStubMap_[streamId] != nullptr) {
+        clientTrackerStubMap_[streamId]->UnsetClientTrackerCallback();
+        clientTrackerStubMap_.erase(streamId);
+        AUDIO_INFO_LOG("Client tracker for session %{public}d removed", streamId);
     } else {
-        AUDIO_WARNING_LOG("Client tracker for session %{public}d not exist", sessionId);
+        AUDIO_WARNING_LOG("Client tracker for session %{public}d not exist", streamId);
     }
 }
 

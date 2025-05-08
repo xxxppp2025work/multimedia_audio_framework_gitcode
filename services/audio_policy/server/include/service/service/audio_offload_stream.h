@@ -49,16 +49,16 @@ public:
         static AudioOffloadStream instance;
         return instance;
     }
-    void OffloadStreamSetCheck(uint32_t sessionId);
-    void OffloadStreamReleaseCheck(uint32_t sessionId);
+    void OffloadStreamSetCheck(uint32_t streamId);
+    void OffloadStreamReleaseCheck(uint32_t streamId);
     void HandlePowerStateChanged(PowerMgr::PowerState state);
-    void ResetOffloadMode(int32_t sessionId);
-    int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
-    void RemoteOffloadStreamRelease(uint32_t sessionId);
+    void ResetOffloadMode(int32_t streamId);
+    int32_t MoveToNewPipe(const uint32_t streamId, const AudioPipeType pipeType);
+    void RemoteOffloadStreamRelease(uint32_t streamId);
     void CheckStreamMode(const int64_t activateSessionId);
     bool CheckStreamMultichannelMode(const int64_t activateSessionId);
-    int32_t MoveToOutputDevice(uint32_t sessionId, std::string portName);
-    std::vector<SinkInput> FilterSinkInputs(int32_t sessionId, std::vector<SinkInput> sinkInputs);
+    int32_t MoveToOutputDevice(uint32_t streamId, std::string portName);
+    std::vector<SinkInput> FilterSinkInputs(int32_t streamId, std::vector<SinkInput> sinkInputs);
     void SetOffloadAvailableFromXML(AudioModuleInfo &moduleInfo);
     int32_t DynamicUnloadOffloadModule();
     int32_t UnloadMchModule();
@@ -66,8 +66,8 @@ public:
     bool GetOffloadAvailableFromXml() const;
     void ResetOffloadModeOnSpatializationChanged(std::vector<int32_t> &allSessions);
     int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
-    void SetOffloadStatus(uint32_t sessionId);
-    void ResetOffloadStatus(uint32_t sessionId);
+    void SetOffloadStatus(uint32_t streamId);
+    void ResetOffloadStatus(uint32_t streamId);
 private:
     AudioOffloadStream() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
@@ -79,8 +79,8 @@ private:
     bool CheckStreamOffloadMode(int64_t activateSessionId, AudioStreamType streamType);
     bool CheckSpatializationAndEffectState();
     void SetOffloadMode();
-    int32_t MoveToNewPipeInner(const uint32_t sessionId, const AudioPipeType pipeType);
-    int32_t SwitchToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
+    int32_t MoveToNewPipeInner(const uint32_t streamId, const AudioPipeType pipeType);
+    int32_t SwitchToNewPipe(const uint32_t streamId, const AudioPipeType pipeType);
     int32_t LoadOffloadModule();
     int32_t UnloadOffloadModule();
     AudioModuleInfo ConstructMchAudioModuleInfo(DeviceType deviceType);
