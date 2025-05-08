@@ -80,12 +80,25 @@ std::shared_ptr<AudioPolicyServerHandler> GetServerHandlerTest()
     return DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
 }
 
+bool g_hasServerInit = false;
 sptr<AudioPolicyServer> GetPolicyServerTest()
 {
     static int32_t systemAbilityId = 3009;
     static bool runOnCreate = false;
     static sptr<AudioPolicyServer> server =
         sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
+    if (!g_hasServerInit) {
+        server->OnStart();
+        server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+        server->OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
+#endif
+        server->OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
+        server->OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
+        server->OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
+        server->audioPolicyService_.SetDefaultDeviceLoadFlag(true);
+        g_hasServerInit = true;
+    }
     return server;
 }
 
@@ -1769,6 +1782,23 @@ HWTEST(AudioInterruptUnitTest, SendFocusChangeEvent_002, TestSize.Level1)
     auto it = interruptServiceTest->zonesMap_.find(1);
     EXPECT_EQ(nullptr, it->second);
     EXPECT_NE(interruptServiceTest->zonesMap_.find(1), interruptServiceTest->zonesMap_.end());
+}
+
+/**
+* @tc.name  : Test SendActiveVolumeTypeChangeEvent
+* @tc.number: SendActiveVolumeTypeChangeEvent_001
+* @tc.desc  : Test SendActiveVolumeTypeChangeEvent
+*/
+HWTEST(AudioInterruptUnitTest, SendActiveVolumeTypeChangeEvent_001, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->SetCallbackHandler(GetServerHandlerTest());
+    EXPECT_NE(interruptServiceTest->handler_, nullptr);
+
+    interruptServiceTest->zonesMap_.clear();
+    int32_t zoneId = 0;
+    interruptServiceTest->SendActiveVolumeTypeChangeEvent(zoneId);
+    EXPECT_EQ(STREAM_MUSIC, interruptServiceTest->activeStreamType_);
 }
 
 /**

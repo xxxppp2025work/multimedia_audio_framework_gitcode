@@ -285,6 +285,7 @@ enum CallbackChange : int32_t {
     CALLBACK_SET_RINGER_MODE,
     CALLBACK_APP_VOLUME_CHANGE,
     CALLBACK_SELF_APP_VOLUME_CHANGE,
+    CALLBACK_ACTIVE_VOLUME_TYPE_CHANGE,
     CALLBACK_SET_MIC_STATE_CHANGE,
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE,
     CALLBACK_HEAD_TRACKING_ENABLED_CHANGE,
@@ -322,6 +323,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_SET_VOLUME_KEY_EVENT,
     CALLBACK_SET_DEVICE_CHANGE,
     CALLBACK_SET_VOLUME_KEY_EVENT,
+    CALLBACK_ACTIVE_VOLUME_TYPE_CHANGE,
     CALLBACK_SET_DEVICE_CHANGE,
     CALLBACK_SET_RINGER_MODE,
     CALLBACK_SET_MIC_STATE_CHANGE,
@@ -345,7 +347,7 @@ struct VolumeEvent {
     bool updateUi;
     int32_t volumeGroupId;
     std::string networkId;
-    AudioVolumeMode volumeMode;
+    AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteInt32(static_cast<int32_t>(volumeType))
@@ -967,6 +969,8 @@ enum AudioPin {
     AUDIO_PIN_IN_BLUETOOTH_SCO_HEADSET = 1 << 27 | 1 << 4, // Bluetooth SCO headset input pin
     AUDIO_PIN_IN_DAUDIO_DEFAULT = 1 << 27 | 1 << 5, // Daudio default input pin
     AUDIO_PIN_IN_USB_HEADSET = 1 << 27 | 1 << 6,  // Arm usb input pin
+    AUDIO_PIN_IN_PENCIL = 1 << 27 | 1 << 7,  // Pencil input pin
+    AUDIO_PIN_IN_UWB = 1 << 27 | 1 << 8,  // Remote control input pin
 };
 
 enum AudioParamKey {
@@ -979,6 +983,8 @@ enum AudioParamKey {
     BT_WBS = 8,
     A2DP_OFFLOAD_STATE = 9, // for a2dp offload
     GET_DP_DEVICE_INFO = 10, // for dp sink
+    GET_PENCIL_INFO = 11, // for pencil source
+    GET_UWB_INFO = 12, // for remote control source
     USB_DEVICE = 101, // Check USB device type ARM or HIFI
     PERF_INFO = 201,
     MMI = 301,
@@ -1116,6 +1122,7 @@ static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
         {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED},
         {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS},
         {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST}, {DEVICE_TYPE_HDMI, DEVICE_GROUP_BUILT_IN},
+        {DEVICE_TYPE_ACCESSORY, DEVICE_GROUP_WIRELESS},
     };
     auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
     return it == DEVICE_GROUP_FOR_VOLUME.end() ? DEVICE_GROUP_INVALID : it->second;
