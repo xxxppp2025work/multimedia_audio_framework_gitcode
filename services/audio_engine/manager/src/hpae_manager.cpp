@@ -23,6 +23,8 @@
 #include "audio_schedule.h"
 #include "audio_engine_log.h"
 #include "audio_utils.h"
+#include "audio_setting_provider.h"
+#include "system_ability_definition.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
