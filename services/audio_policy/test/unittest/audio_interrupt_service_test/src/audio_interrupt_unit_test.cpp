@@ -1786,6 +1786,22 @@ HWTEST(AudioInterruptUnitTest, SendFocusChangeEvent_002, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test SendActiveVolumeTypeChangeEvent
+* @tc.number: SendActiveVolumeTypeChangeEvent_001
+* @tc.desc  : Test SendActiveVolumeTypeChangeEvent
+*/
+HWTEST(AudioInterruptUnitTest, SendActiveVolumeTypeChangeEvent_001, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->SetCallbackHandler(GetServerHandlerTest());
+    EXPECT_NE(interruptServiceTest->handler_, nullptr);
+
+    interruptServiceTest->zonesMap_.clear();
+    int32_t zoneId = 0;
+    interruptServiceTest->SendActiveVolumeTypeChangeEvent(zoneId);
+}
+
+/**
 * @tc.name  : Test AudioInterruptService.
 * @tc.number: AudioInterruptServiceCreateAudioInterruptZone_001
 * @tc.desc  : Test RCreateAudioInterruptZone.
