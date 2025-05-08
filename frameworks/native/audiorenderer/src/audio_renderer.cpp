@@ -893,6 +893,11 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
     if (interruptCbImpl) {
         interruptCbImpl->FinishSwitch();
     }
+
+    // Unblock interrupt callback.
+    if (interruptCbImpl) {
+        interruptCbImpl->FinishSwitch();
+    }
     return SUCCESS;
 }
 
