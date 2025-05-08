@@ -60,6 +60,94 @@ ohos_unittest("audio_renderer_unit_test") {
       "../../../../../../test/resource/audio_renderer/ohos_test.xml"
 }
 
+ohos_unittest("audio_renderer_1_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+  include_dirs = [
+    "./include",
+    "../../../src",
+    "../../../../audiodefinitions/include",
+    "../../../../audiorenderer/include",
+    "../../../../audiostream/include",
+    "../../../../common/include",
+    "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../interfaces/inner_api/native/audiocapturer/include",
+    "../../../../../../services/audio_policy/client/include",
+    "../../../../../../../../media_foundation/services/media_monitor/client/include",
+    "../../../../../audio_utils/include",
+  ]
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  sources = [ "src/audio_renderer_1_unit_test.cpp" ]
+
+  deps = [
+    "../../../../../../services/audio_policy:audio_policy_client",
+    "../../../../../../services/audio_service:audio_client",
+    "../../../../audiodefinitions:audio_definitions",
+    "../../../../audiorenderer:audio_renderer",
+    "../../../../audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "pulseaudio:pulse",
+  ]
+
+  resource_config_file =
+      "../../../../../../test/resource/audio_renderer/ohos_test.xml"
+}
+
+ohos_unittest("audio_renderer_2_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+  include_dirs = [
+    "./include",
+    "../../../src",
+    "../../../../audiodefinitions/include",
+    "../../../../audiorenderer/include",
+    "../../../../audiostream/include",
+    "../../../../common/include",
+    "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../interfaces/inner_api/native/audiocapturer/include",
+    "../../../../../../services/audio_policy/client/include",
+    "../../../../../../../../media_foundation/services/media_monitor/client/include",
+    "../../../../../audio_utils/include",
+  ]
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  sources = [ "src/audio_renderer_2_unit_test.cpp" ]
+
+  deps = [
+    "../../../../../../services/audio_policy:audio_policy_client",
+    "../../../../../../services/audio_service:audio_client",
+    "../../../../audiodefinitions:audio_definitions",
+    "../../../../audiorenderer:audio_renderer",
+    "../../../../audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "pulseaudio:pulse",
+  ]
+
+  resource_config_file =
+      "../../../../../../test/resource/audio_renderer/ohos_test.xml"
+}
+
 ohos_unittest("audio_fast_renderer_unit_test") {
   testonly = true
   module_out_path = module_output_path
