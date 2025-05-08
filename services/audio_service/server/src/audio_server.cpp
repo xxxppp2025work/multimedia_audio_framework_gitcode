@@ -524,7 +524,6 @@ bool AudioServer::ProcessKeyValuePairs(const std::string &key,
             }
         } else {
             return false;
-            break;
         }
     }
     return true;
