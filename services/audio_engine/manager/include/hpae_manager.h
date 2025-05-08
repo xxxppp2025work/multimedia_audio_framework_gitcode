@@ -211,6 +211,7 @@ private:
         const std::pair<uint32_t, std::string> &id, const std::string &name);
     void DestroyCapture(uint32_t sessionId);
     void LoadEffectLive();
+
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
     std::unique_ptr<HpaePolicyManager> hpaePolicyManager_ = nullptr;

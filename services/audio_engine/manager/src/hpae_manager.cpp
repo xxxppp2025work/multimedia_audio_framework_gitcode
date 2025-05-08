@@ -2040,7 +2040,6 @@ void HpaeManager::UpdateExtraSceneType(
     return;
 }
 
-
 void HpaeManager::NotifySettingsDataReady()
 {
     CHECK_AND_RETURN_LOG(hpaePolicyManager_ != nullptr, "hpaePolicyManager_ is nullptr");
