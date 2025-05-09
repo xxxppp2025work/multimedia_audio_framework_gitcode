@@ -144,6 +144,7 @@ public:
     int32_t Write(uint8_t *buffer, size_t buffer_size) override;
     int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
     int32_t SetSpeed(float speed) override;
+    int32_t SetPitch(float pitch) override;
     float GetSpeed() override;
 
     // Recording related APIs
@@ -200,10 +201,12 @@ public:
     RestoreStatus CheckRestoreStatus() override;
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
     void FetchDeviceForSplitStream() override;
+    void SetCallStartByUserTid(pid_t tid) override;
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
     int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);
     int32_t SetCallbacksWhenRestore();
+    void RegisterThreadPriorityOnStart(StateChangeCmdType cmdType);
 
     AudioStreamType eStreamType_;
     AudioMode eMode_;
@@ -244,6 +247,10 @@ private:
 
     std::mutex switchingMutex_;
     StreamSwitchingInfo switchingInfo_ {false, INVALID};
+
+    std::mutex lastCallStartByUserTidMutex_;
+    std::optional<pid_t> lastCallStartByUserTid_ = std::nullopt;
+
     enum {
         STATE_CHANGE_EVENT = 0
     };

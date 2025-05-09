@@ -159,8 +159,8 @@ bool AudioVolumeManager::SetSharedVolume(AudioVolumeType streamType, DeviceType 
     volumeVector_[index].isMute = vol.isMute;
     volumeVector_[index].volumeFloat = vol.volumeFloat;
     volumeVector_[index].volumeInt = vol.volumeInt;
-    AUDIO_INFO_LOG("Success Set Shared Volume with StreamType:%{public}d, DeviceType:%{public}d", streamType,
-        deviceType);
+    AUDIO_INFO_LOG("Success Set Shared Volume with StreamType:%{public}d, DeviceType:%{public}d, volume:%{public}d",
+        streamType, deviceType, vol.volumeInt);
 
     AudioServerProxy::GetInstance().NotifyStreamVolumeChangedProxy(streamType, vol.volumeFloat);
     return true;
@@ -384,8 +384,10 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int
     }
     int32_t sVolumeLevel = SelectDealSafeVolume(streamType, volumeLevel);
     CheckToCloseNotification(streamType, volumeLevel);
-    CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERR_SET_VOL_FAILED_BY_SAFE_VOL,
-        "safevolume did not deal");
+    if (volumeLevel != sVolumeLevel) {
+        volumeLevel = sVolumeLevel;
+        AUDIO_INFO_LOG("safevolume did not deal");
+    }
     result = audioPolicyManager_.SetSystemVolumeLevel(VolumeUtils::GetVolumeTypeFromStreamType(streamType),
         volumeLevel);
     if (result == SUCCESS && (streamType == STREAM_VOICE_CALL || streamType == STREAM_VOICE_COMMUNICATION)) {
@@ -403,18 +405,29 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int
 int32_t AudioVolumeManager::SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel,
     DeviceType deviceType)
 {
+    int32_t sVolumeLevel = volumeLevel;
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceType == DEVICE_TYPE_BLUETOOTH_SCO ||
+        deviceType == DEVICE_TYPE_USB_HEADSET || deviceType == DEVICE_TYPE_USB_ARM_HEADSET ||
+        deviceType == DEVICE_TYPE_WIRED_HEADSET || deviceType == DEVICE_TYPE_WIRED_HEADPHONES) {
+        sVolumeLevel = SelectDealSafeVolume(streamType, volumeLevel, deviceType);
+    }
     int32_t result = audioPolicyManager_.SaveSpecifiedDeviceVolume(
-        VolumeUtils::GetVolumeTypeFromStreamType(streamType), volumeLevel, deviceType);
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType), sVolumeLevel, deviceType);
     return result;
 }
 
-int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel)
+int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel,
+    DeviceType deviceType)
 {
     int32_t sVolumeLevel = volumeLevel;
-    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) != STREAM_MUSIC) {
+        // Safe Volume only applying to  STREAM_MUSIC
+        return sVolumeLevel;
+    }
+    DeviceType curOutputDeviceType = (deviceType == DEVICE_TYPE_NONE) ?
+        audioActiveDevice_.GetCurrentOutputDeviceType() : deviceType;
     DeviceCategory curOutputDeviceCategory = audioActiveDevice_.GetCurrentOutputDeviceCategory();
-    if (sVolumeLevel > audioPolicyManager_.GetSafeVolumeLevel() &&
-        VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC) {
+    if (sVolumeLevel > audioPolicyManager_.GetSafeVolumeLevel()) {
         switch (curOutputDeviceType) {
             case DEVICE_TYPE_BLUETOOTH_A2DP:
             case DEVICE_TYPE_BLUETOOTH_SCO:

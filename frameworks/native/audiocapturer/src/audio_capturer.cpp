@@ -357,7 +357,8 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::ConvertToStreamDesc
     streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->capturerInfo_ = capturerInfo_;
     streamDesc->appInfo_ = appInfo_;
-    streamDesc->callerUid_ = getuid();
+    streamDesc->callerUid_ = static_cast<int32_t>(getuid());
+    streamDesc->callerPid_ = static_cast<int32_t>(getpid());
     return streamDesc;
 }
 
@@ -664,6 +665,9 @@ int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFu
     audioStream_->GetRestoreInfo(restoreInfo);
     IAudioStream::StreamClass targetClass = IAudioStream::StreamClass::PA_STREAM;
     SetClientInfo(restoreInfo.routeFlag, targetClass);
+    if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
+        restoreInfo.targetStreamFlag = AUDIO_FLAG_FORCED_NORMAL;
+    }
 
     // Block interrupt calback, avoid pausing wrong stream.
     std::shared_ptr<AudioCapturerInterruptCallbackImpl> interruptCbImpl = nullptr;
@@ -703,7 +707,9 @@ bool AudioCapturerPrivate::Start()
 
     CHECK_AND_RETURN_RET(audioInterrupt_.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
         audioInterrupt_.streamId != INVALID_SESSION_ID, false);
+    std::unique_lock<std::mutex> audioInterruptLock(audioInterruptMutex_);
     AudioInterrupt audioInterrupt = audioInterrupt_;
+    audioInterruptLock.unlock();
     int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
 
@@ -833,6 +839,7 @@ bool AudioCapturerPrivate::Release()
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(isValid_, false, "Release when capturer invalid");
 
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audioStream_ is nullptr");
     audioInterrupt_.state = State::RELEASED;
     (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
 
@@ -1235,6 +1242,7 @@ void AudioCapturerPrivate::GetAudioInterrupt(AudioInterrupt &audioInterrupt)
 
 void AudioCapturerPrivate::SetAudioInterrupt(const AudioInterrupt &audioInterrupt)
 {
+    std::lock_guard<std::mutex> lock(audioInterruptMutex_);
     audioInterrupt_ = audioInterrupt;
 }
 
@@ -1422,6 +1430,7 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     CapturerState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
     bool switchResult = false;
+    std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetRecordStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appPid);
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "GetRecordStream failed.");
@@ -1438,16 +1447,20 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         CHECK_AND_RETURN_RET_LOG(initResult == SUCCESS, false, "Init ipc strean failed");
     }
 
-    if (previousState == CAPTURER_RUNNING) {
-        // restart audio stream
-        switchResult = newAudioStream->StartAudioStream();
-        CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
-    }
+    oldAudioStream = audioStream_;
+    // Operation of replace audioStream_ must be performed before StartAudioStream.
+    // Otherwise GetBufferDesc will return the buffer pointer of oldStream (causing Use-After-Free).
     audioStream_ = newAudioStream;
     if (audioInterruptCallback_ != nullptr) {
         std::shared_ptr<AudioCapturerInterruptCallbackImpl> interruptCbImpl =
             std::static_pointer_cast<AudioCapturerInterruptCallbackImpl>(audioInterruptCallback_);
         interruptCbImpl->UpdateAudioStream(audioStream_);
+    }
+
+    if (previousState == CAPTURER_RUNNING) {
+        // restart audio stream
+        switchResult = newAudioStream->StartAudioStream();
+        CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
     }
     return true;
 }
@@ -1499,6 +1512,13 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     // Stop old stream, get stream info and frames written for new stream, and release old stream.
     switchResult = FinishOldStream(targetClass, restoreInfo, previousState, switchInfo);
     CHECK_AND_RETURN_RET_LOG(switchResult, false, "Finish old stream failed");
+
+    // Create stream and pipe
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescBySwitchInfo(switchInfo, restoreInfo);
+    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
+    int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
+        streamDesc, flag, switchInfo.params.originalSessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateCapturerClient failed");
 
     // Create and start new stream.
     switchResult = GenerateNewStream(targetClass, restoreInfo, previousState, switchInfo);
@@ -1866,6 +1886,30 @@ std::shared_ptr<IAudioStream> AudioCapturerPrivate::GetInnerStream() const
 {
     std::shared_lock<std::shared_mutex> lock(capturerMutex_);
     return audioStream_;
+}
+
+std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::GetStreamDescBySwitchInfo(
+    const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = static_cast<AudioSampleFormat>(switchInfo.params.format);
+    streamDesc->streamInfo_.samplingRate = static_cast<AudioSamplingRate>(switchInfo.params.samplingRate);
+    streamDesc->streamInfo_.channels = static_cast<AudioChannel>(switchInfo.params.channels);
+    streamDesc->streamInfo_.encoding = static_cast<AudioEncodingType>(switchInfo.params.encoding);
+    streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(switchInfo.params.channelLayout);
+
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->capturerInfo_= switchInfo.capturerInfo;
+    streamDesc->appInfo_ = AppInfo{switchInfo.appUid, 0, switchInfo.clientPid, 0};
+    streamDesc->callerUid_ = switchInfo.clientUid;
+    streamDesc->callerPid_ = switchInfo.clientPid;
+    streamDesc->sessionId_ = switchInfo.sessionId;
+    streamDesc->routeFlag_ = restoreInfo.routeFlag;
+    if (restoreInfo.targetStreamFlag == AUDIO_FLAG_FORCED_NORMAL) {
+        streamDesc->capturerInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
+    }
+    return streamDesc;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

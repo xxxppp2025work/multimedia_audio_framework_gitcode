@@ -86,6 +86,7 @@ public:
         const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback) override;
     void OnFirstFrameWriting() override;
     int32_t SetSpeed(float speed) override;
+    int32_t SetPitch(float pitch) override;
     float GetSpeed() override;
 
     // callback mode api
@@ -205,6 +206,8 @@ public:
     RestoreStatus CheckRestoreStatus() override;
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
     void FetchDeviceForSplitStream() override;
+    void SetCallStartByUserTid(pid_t tid) override;
+
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -261,6 +264,8 @@ private:
     bool DrainAudioStreamInner(bool stopFlag = false);
 
     bool ProcessVolume();
+
+    void RegisterThreadPriorityOnStart(StateChangeCmdType cmdType);
 
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
@@ -435,6 +440,9 @@ private:
 
     std::mutex switchingMutex_;
     StreamSwitchingInfo switchingInfo_ {false, INVALID};
+
+    std::mutex lastCallStartByUserTidMutex_;
+    std::optional<pid_t> lastCallStartByUserTid_ = std::nullopt;
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

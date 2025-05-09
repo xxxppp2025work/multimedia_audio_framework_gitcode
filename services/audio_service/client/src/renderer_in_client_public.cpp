@@ -76,7 +76,7 @@ const uint64_t MAX_CBBUF_IN_USEC = 100000;
 const uint64_t MIN_CBBUF_IN_USEC = 20000;
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
-static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 300; // ms
+static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000; // ms
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -162,8 +162,6 @@ void RendererInClientInner::UpdateDataLinkState(bool isConnected, bool needNotif
 
 void RendererInClientInner::HandleStatusChangeOperation(Operation operation)
 {
-    std::unique_lock<std::mutex> lock(streamCbMutex_);
-    std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
     switch (operation) {
         case START_STREAM :
             state_ = RUNNING;
@@ -176,9 +174,6 @@ void RendererInClientInner::HandleStatusChangeOperation(Operation operation)
             break;
         default :
             break;
-    }
-    if (streamCb != nullptr) {
-        streamCb->OnStateChange(state_, CMD_FROM_SYSTEM);
     }
 }
 
@@ -597,6 +592,19 @@ int32_t RendererInClientInner::SetSpeed(float speed)
     return SUCCESS;
 }
 
+int32_t RendererInClientInner::SetPitch(float pitch)
+{
+    if (audioSpeed_ == nullptr) {
+        audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
+            curStreamParams_.channels);
+        GetBufferSize(bufferSize_);
+        speedBuffer_ = std::make_unique<uint8_t[]>(MAX_BUFFER_SIZE);
+    }
+    audioSpeed_->SetPitch(pitch);
+    AUDIO_DEBUG_LOG("SetPitch %{public}f", pitch);
+    return SUCCESS;
+}
+
 float RendererInClientInner::GetSpeed()
 {
     std::lock_guard lock(speedMutex_);
@@ -927,6 +935,9 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
         // start the callback-write thread
         cbThreadCv_.notify_all();
     }
+
+    RegisterThreadPriorityOnStart(cmdType);
+
     statusLock.unlock();
     // in plan: call HiSysEventWrite
     int64_t param = -1;
@@ -1365,6 +1376,11 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
         std::lock_guard<std::mutex> lock(setPreferredFrameSizeMutex_);
         info.userSettedPreferredFrameSize = userSettedPreferredFrameSize_;
     }
+
+    {
+        std::lock_guard<std::mutex> lock(lastCallStartByUserTidMutex_);
+        info.lastCallStartByUserTid = lastCallStartByUserTid_;
+    }
 }
 
 void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
@@ -1649,14 +1665,14 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
 
     switch (oldState) {
         case RUNNING:
-            result = StartAudioStream();
+            result = StartAudioStream(CMD_FROM_SYSTEM);
             break;
         case PAUSED:
-            result = StartAudioStream() && PauseAudioStream();
+            result = StartAudioStream(CMD_FROM_SYSTEM) && PauseAudioStream();
             break;
         case STOPPED:
         case STOPPING:
-            result = StartAudioStream() && StopAudioStream();
+            result = StartAudioStream(CMD_FROM_SYSTEM) && StopAudioStream();
             break;
         default:
             state_ = oldState;
@@ -1784,6 +1800,12 @@ void RendererInClientInner::FetchDeviceForSplitStream()
         AUDIO_WARNING_LOG("Tracker is nullptr, fail to split stream %{public}u", sessionId_);
     }
     SetRestoreStatus(NO_NEED_FOR_RESTORE);
+}
+
+void RendererInClientInner::SetCallStartByUserTid(pid_t tid)
+{
+    std::lock_guard lock(lastCallStartByUserTidMutex_);
+    lastCallStartByUserTid_ = tid;
 }
 } // namespace AudioStandard
 } // namespace OHOS

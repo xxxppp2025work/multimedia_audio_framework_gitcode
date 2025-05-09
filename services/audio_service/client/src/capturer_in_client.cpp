@@ -106,6 +106,7 @@ public:
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
     int32_t SetSpeed(float speed) override;
+    int32_t SetPitch(float pitch) override;
     float GetSpeed() override;
 
     // callback mode api
@@ -222,6 +223,7 @@ public:
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
     void FetchDeviceForSplitStream() override;
 
+    void SetCallStartByUserTid(pid_t tid) override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -417,26 +419,6 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     std::unique_lock<std::mutex> lock(callServerMutex_);
     notifiedOperation_ = operation;
     notifiedResult_ = result;
-
-    if (notifiedResult_ == SUCCESS) {
-        std::unique_lock<std::mutex> lock(streamCbMutex_);
-        std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
-        switch (operation) {
-            case START_STREAM :
-                state_ = RUNNING;
-                break;
-            case PAUSE_STREAM :
-                state_ = PAUSED;
-                break;
-            case STOP_STREAM :
-                state_ = STOPPED;
-            default :
-                break;
-        }
-        if (streamCb != nullptr) {
-            streamCb->OnStateChange(state_, CMD_FROM_SYSTEM);
-        }
-    }
 
     callServerCV_.notify_all();
     return SUCCESS;
@@ -991,6 +973,12 @@ float CapturerInClientInner::GetDuckVolume()
 int32_t CapturerInClientInner::SetSpeed(float speed)
 {
     AUDIO_ERR_LOG("SetSpeed is not supported");
+    return ERROR;
+}
+
+int32_t CapturerInClientInner::SetPitch(float pitch)
+{
+    AUDIO_ERR_LOG("SetPitch is not supported");
     return ERROR;
 }
 
@@ -1719,7 +1707,7 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     if (needSetThreadPriority_) {
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is null");
         ipcStream_->RegisterThreadPriority(gettid(),
-            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid));
+            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_WRITE_OR_READ);
         needSetThreadPriority_ = false;
     }
 
@@ -2068,6 +2056,11 @@ void CapturerInClientInner::FetchDeviceForSplitStream()
         AUDIO_WARNING_LOG("Tracker is nullptr, fail to split stream %{public}u", sessionId_);
     }
     SetRestoreStatus(NO_NEED_FOR_RESTORE);
+}
+
+void CapturerInClientInner::SetCallStartByUserTid(pid_t tid)
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
 }
 } // namespace AudioStandard
 } // namespace OHOS
