@@ -673,7 +673,7 @@ HWTEST(AudioManagerUnitTest, GetStandbyStatus_002, TestSize.Level1)
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_NOTIFICATION_RINGTONE;
     rendererOptions.rendererInfo.rendererFlags = 0;
     unique_ptr<AudioRenderer> renderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, renderer);
+    EXPECT_NE(renderer, nullptr);
 
     renderer->Start();
     std::unique_ptr<uint8_t[]> tempBuffer = std::make_unique<uint8_t[]>(WRTTE_BUFFER_SIZE);
@@ -2136,12 +2136,7 @@ HWTEST(AudioManagerUnitTest, GetLowPowerVolume_001, TestSize.Level1)
     ASSERT_NE(0, streamId);
 
     float vol = AudioSystemManager::GetInstance()->GetLowPowerVolume(streamId);
-    if (vol < VOLUME_MIN || vol > VOLUME_MAX) {
-        ret = ERROR;
-    } else {
-        ret = SUCCESS;
-    }
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_FALSE((vol < VOLUME_MIN || vol > VOLUME_MAX));
     audioRenderer->Release();
 }
 
@@ -2178,12 +2173,7 @@ HWTEST(AudioManagerUnitTest, GetLowPowerVolume_002, TestSize.Level1)
     ASSERT_NE(0, streamId);
 
     float vol = AudioSystemManager::GetInstance()->GetLowPowerVolume(streamId);
-    if (vol < VOLUME_MIN || vol > VOLUME_MAX) {
-        ret = ERROR;
-    } else {
-        ret = SUCCESS;
-    }
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_FALSE((vol < VOLUME_MIN || vol > VOLUME_MAX));
     audioCapturer->Release();
 }
 
@@ -2222,12 +2212,7 @@ HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_001, TestSize.Level1)
     ASSERT_NE(0, streamId);
 
     float vol = AudioSystemManager::GetInstance()->GetSingleStreamVolume(streamId);
-    if (vol < VOLUME_MIN || vol > VOLUME_MAX) {
-        ret = ERROR;
-    } else {
-        ret = SUCCESS;
-    }
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_FALSE((vol < VOLUME_MIN || vol > VOLUME_MAX));
     audioRenderer->Release();
 }
 
@@ -2264,12 +2249,7 @@ HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_002, TestSize.Level1)
     ASSERT_NE(0, streamId);
 
     float vol = AudioSystemManager::GetInstance()->GetSingleStreamVolume(streamId);
-    if (vol < VOLUME_MIN || vol > VOLUME_MAX) {
-        ret = ERROR;
-    } else {
-        ret = SUCCESS;
-    }
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_FALSE((vol < VOLUME_MIN || vol > VOLUME_MAX));
     audioCapturer->Release();
 }
 
