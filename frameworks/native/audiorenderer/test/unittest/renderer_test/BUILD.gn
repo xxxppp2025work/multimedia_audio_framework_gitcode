@@ -73,7 +73,6 @@ ohos_unittest("audio_renderer_1_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../../../../services/audio_policy/client/include",
-    "../../../../../../../../media_foundation/services/media_monitor/client/include",
     "../../../../../audio_utils/include",
   ]
   cflags = [
@@ -117,7 +116,6 @@ ohos_unittest("audio_renderer_2_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../../../../services/audio_policy/client/include",
-    "../../../../../../../../media_foundation/services/media_monitor/client/include",
     "../../../../../audio_utils/include",
   ]
   cflags = [
