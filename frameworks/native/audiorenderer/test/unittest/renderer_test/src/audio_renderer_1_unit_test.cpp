@@ -38,11 +38,9 @@ namespace {
     const string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
     const string AUDIORENDER_TEST_PCMFILE_PATH = "/data/avs3_16.wav";
     const string AUDIORENDER_TEST_METAFILE_PATH = "/data/avs3_bitstream.bin";
-    const int32_t VALUE_NEGATIVE = -1;
     const int32_t VALUE_ZERO = 0;
     const int32_t VALUE_HUNDRED = 100;
     const int32_t VALUE_THOUSAND = 1000;
-    const int32_t VALUE_ERROR = -62980098;
     const int32_t RENDERER_FLAG = 0;
     // Writing only 500 buffers of data for test
     const int32_t WRITE_BUFFERS_COUNT = 500;
@@ -50,12 +48,7 @@ namespace {
     constexpr int32_t PAUSE_BUFFER_POSITION = 400000;
     constexpr int32_t PAUSE_RENDER_TIME_SECONDS = 1;
 
-    constexpr uint64_t BUFFER_DURATION_FIVE = 5;
-    constexpr uint64_t BUFFER_DURATION_TEN = 10;
-    constexpr uint64_t BUFFER_DURATION_FIFTEEN = 15;
-    constexpr uint64_t BUFFER_DURATION_TWENTY = 20;
     constexpr uint32_t PLAYBACK_DURATION = 2;
-    constexpr size_t MAX_RENDERER_INSTANCES = 16;
 
     constexpr size_t AVS3METADATA_SIZE = 19824;
     constexpr size_t AUDIOVIVID_FRAME_COUNT = 1024;
@@ -65,15 +58,6 @@ namespace {
     static size_t g_reqBufLen = 0;
 } // namespace
 
-class CapturerPositionCallbackTest : public CapturerPositionCallback {
-public:
-    void OnMarkReached(const int64_t &framePosition) override {}
-};
-
-class CapturerPeriodPositionCallbackTest : public CapturerPeriodPositionCallback {
-public:
-    void OnPeriodReached(const int64_t &frameNumber) override {}
-};
 
 InterruptEvent AudioRendererUnitTest::interruptEventTest_ = {};
 void AudioRendererUnitTest::SetUpTestCase(void) {}
@@ -3855,3 +3839,645 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Stop_006, TestSize.Level1)
     EXPECT_EQ(true, isStopped);
     audioRenderer->Release();
 }
+
+/**
+ * @tc.name  : Test Release API.
+ * @tc.number: Audio_Renderer_Release_001
+ * @tc.desc  : Test Release interface. Returns true, if the release is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Release_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    ret = audioRenderer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint8_t *buffer = (uint8_t *) malloc(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+
+    size_t bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
+    int32_t bytesWritten = audioRenderer->Write(buffer, bytesToWrite);
+    EXPECT_GE(bytesWritten, VALUE_ZERO);
+
+    audioRenderer->Drain();
+    audioRenderer->Stop();
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+
+    free(buffer);
+    fclose(wavFile);
+}
+
+/**
+ * @tc.name  : Test Release API via illegal state, RENDERER_NEW: Call Release without initializing the renderer.
+ * @tc.number: Audio_Renderer_Release_002
+ * @tc.desc  : Test Release interface, Returns true, if the state is RENDERER_NEW.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Release_002, TestSize.Level1)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test Release API via illegal state, RENDERER_RELEASED: call Release repeatedly.
+ * @tc.number: Audio_Renderer_Release_003
+ * @tc.desc  : Test Release interface. Returns true, if the state is already RENDERER_RELEASED.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Release_003, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+
+    isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test Release API via legal state, RENDERER_RUNNING: call Release after Start
+ * @tc.number: Audio_Renderer_Release_004
+ * @tc.desc  : Test Release interface. Returns true, if the release is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Release_004, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test Release API via legal state, RENDERER_STOPPED: call release after Start and Stop
+ * @tc.number: Audio_Renderer_Release_005
+ * @tc.desc  : Test Release interface. Returns true, if the release is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Release_005, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test Release API via legal state, RENDERER_PAUSED: call release after Start and Pause
+ * @tc.number: Audio_Renderer_Release_006
+ * @tc.desc  : Test Release interface. Returns true, if the release is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Release_006, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isPaused = audioRenderer->Pause();
+    EXPECT_EQ(true, isPaused);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test GetStatus API.
+ * @tc.number: Audio_Renderer_GetStatus_001
+ * @tc.desc  : Test GetStatus interface. Returns correct state on success.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStatus_001, TestSize.Level1)
+{
+    RendererState state = RENDERER_INVALID;
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    state = audioRenderer->GetStatus();
+    EXPECT_EQ(RENDERER_PREPARED, state);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+    state = audioRenderer->GetStatus();
+    EXPECT_EQ(RENDERER_RUNNING, state);
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
+    state = audioRenderer->GetStatus();
+    EXPECT_EQ(RENDERER_STOPPED, state);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+    state = audioRenderer->GetStatus();
+    EXPECT_EQ(RENDERER_RELEASED, state);
+}
+
+/**
+ * @tc.name  : Test GetStatus API, call Start without Initializing the renderer
+ * @tc.number: Audio_Renderer_GetStatus_002
+ * @tc.desc  : Test GetStatus interface. Not changes to RENDERER_RUNNING, if the current state is RENDERER_NEW.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStatus_002, TestSize.Level1)
+{
+    RendererState state = RENDERER_INVALID;
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+    state = audioRenderer->GetStatus();
+    EXPECT_EQ(RENDERER_RUNNING, state);
+}
+
+/**
+ * @tc.name  : Test GetStatus API, call Stop without Start
+ * @tc.number: Audio_Renderer_GetStatus_003
+ * @tc.desc  : Test GetStatus interface. Not changes to RENDERER_STOPPED, if the current state is RENDERER_PREPARED.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStatus_003, TestSize.Level1)
+{
+    RendererState state = RENDERER_INVALID;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(false, isStopped);
+    state = audioRenderer->GetStatus();
+    EXPECT_NE(RENDERER_STOPPED, state);
+    EXPECT_EQ(RENDERER_PREPARED, state);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetStatus API, call Start, Stop and then Start again
+ * @tc.number: Audio_Renderer_GetStatus_004
+ * @tc.desc  : Test GetStatus interface.  Returns correct state on success.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStatus_004, TestSize.Level1)
+{
+    RendererState state = RENDERER_INVALID;
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+    state = audioRenderer->GetStatus();
+    EXPECT_EQ(RENDERER_RUNNING, state);
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
+    state = audioRenderer->GetStatus();
+    EXPECT_EQ(RENDERER_STOPPED, state);
+
+    isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+    state = audioRenderer->GetStatus();
+    EXPECT_EQ(RENDERER_RUNNING, state);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetStatus API, call Release without initializing
+ * @tc.number: Audio_Renderer_GetStatus_005
+ * @tc.desc  : Test GetStatus interface. Not changes to RENDERER_RELEASED, if the current state is RENDERER_NEW.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStatus_005, TestSize.Level1)
+{
+    RendererState state = RENDERER_INVALID;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+    state = audioRenderer->GetStatus();
+    EXPECT_EQ(RENDERER_RELEASED, state);
+}
+
+/**
+ * @tc.name  : Test GetLatency API.
+ * @tc.number: Audio_Renderer_GetLatency_001
+ * @tc.desc  : Test GetLatency interface. Returns 0 {SUCCESS}, if the getting is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    ret = audioRenderer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint8_t *buffer = (uint8_t *) malloc(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+
+    size_t bytesToWrite = 0;
+    int32_t bytesWritten = 0;
+    size_t minBytes = 4;
+    int32_t numBuffersToRender = WRITE_BUFFERS_COUNT;
+
+    while (numBuffersToRender) {
+        bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
+        bytesWritten = 0;
+        uint64_t latency;
+        ret = audioRenderer->GetLatency(latency);
+        EXPECT_EQ(SUCCESS, ret);
+        while ((static_cast<size_t>(bytesWritten) < bytesToWrite) &&
+            ((static_cast<size_t>(bytesToWrite) - bytesWritten) > minBytes)) {
+            bytesWritten += audioRenderer->Write(buffer + static_cast<size_t>(bytesWritten),
+                                                 bytesToWrite - static_cast<size_t>(bytesWritten));
+            EXPECT_GE(bytesWritten, VALUE_ZERO);
+            if (bytesWritten < 0) {
+                break;
+            }
+        }
+        numBuffersToRender--;
+    }
+
+    audioRenderer->Drain();
+    audioRenderer->Release();
+
+    free(buffer);
+    fclose(wavFile);
+}
+
+/**
+ * @tc.name  : Test GetLatency API via illegal state, RENDERER_NEW: without initializing the renderer
+ * @tc.number: Audio_Renderer_GetLatency_002
+ * @tc.desc  : Test GetLatency interface. Returns error code, if the renderer state is RENDERER_NEW.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    uint64_t latency;
+    ret = audioRenderer->GetLatency(latency);
+    EXPECT_EQ(VALUE_ZERO, ret);
+}
+
+/**
+ * @tc.name  : Test GetLatency API via legal state, RENDERER_PREPARED
+ * @tc.number: Audio_Renderer_GetLatency_003
+ * @tc.desc  : Test GetLatency interface. Returns 0 {SUCCESS}, if the getting is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_003, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    uint64_t latency;
+    ret = audioRenderer->GetLatency(latency);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetLatency API via legal state, RENDERER_STOPPED: After Stop
+ * @tc.number: Audio_Renderer_GetLatency_004
+ * @tc.desc  : Test GetLatency interface. Returns 0 {SUCCESS}, if the getting is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_004, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    uint64_t latency;
+    ret = audioRenderer->GetLatency(latency);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetLatency API via illegal state, RENDERER_RELEASED: After Release
+ * @tc.number: Audio_Renderer_GetLatency_005
+ * @tc.desc  : Test GetLatency interface. Returns error code, if the renderer state is RENDERER_RELEASED.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_005, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+
+    uint64_t latency;
+    ret = audioRenderer->GetLatency(latency);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+}
+
+/**
+ * @tc.name  : Test SetRendererCallback with null pointer.
+ * @tc.number: Audio_Renderer_SetRendererCallback_001
+ * @tc.desc  : Test SetRendererCallback interface. Returns error code, if null pointer is set.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRendererCallback(nullptr);
+    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
+ * @tc.name  : Test SetRendererCallback with valid callback pointer.
+ * @tc.number: Audio_Renderer_SetRendererCallback_002
+ * @tc.desc  : Test SetRendererCallback interface. Returns success, if valid callback is set.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    ret = audioRenderer->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetRendererCallback via illegal state, RENDERER_RELEASED: After RELEASED
+ * @tc.number: Audio_Renderer_SetRendererCallback_003
+ * @tc.desc  : Test SetRendererCallback interface. Returns error, if callback is set in released state.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_003, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+
+    RendererState state = audioRenderer->GetStatus();
+    EXPECT_EQ(RENDERER_RELEASED, state);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    ret = audioRenderer->SetRendererCallback(audioRendererCB);
+    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+}
+
+/**
+ * @tc.name  : Test SetRendererCallback via legal state, RENDERER_PREPARED: After PREPARED
+ * @tc.number: Audio_Renderer_SetRendererCallback_004
+ * @tc.desc  : Test SetRendererCallback interface. Returns success, if callback is set in proper state.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_004, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    RendererState state = audioRenderer->GetStatus();
+    EXPECT_EQ(RENDERER_PREPARED, state);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    ret = audioRenderer->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetRenderMode via legal input, RENDER_MODE_CALLBACK
+ * @tc.number: Audio_Renderer_SetRenderMode_001
+ * @tc.desc  : Test SetRenderMode interface. Returns SUCCESS, if the render mode is successfully set.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRenderMode_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test SetRenderMode via legal input, RENDER_MODE_NORMAL
+ * @tc.number: Audio_Renderer_SetRenderMode_002
+ * @tc.desc  : Test SetRenderMode interface. Returns SUCCESS, if the render mode is successfully set.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRenderMode_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_NORMAL);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetRenderMode with, RENDER_MODE_CALLBACK
+ * @tc.number: Audio_Renderer_GetRenderMode_001
+ * @tc.desc  : Test GetRenderMode interface. Returns the current render mode.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRenderMode_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioRenderMode renderMode = audioRenderer->GetRenderMode();
+    EXPECT_EQ(RENDER_MODE_CALLBACK, renderMode);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetRenderMode with, RENDER_MODE_NORMAL
+ * @tc.number: Audio_Renderer_GetRenderMode_002
+ * @tc.desc  : Test GetRenderMode interface. Returns the current render mode.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRenderMode_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_NORMAL);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioRenderMode renderMode = audioRenderer->GetRenderMode();
+    EXPECT_EQ(RENDER_MODE_NORMAL, renderMode);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetRenderMode with, default renderMode
+ * @tc.number: Audio_Renderer_GetRenderMode_003
+ * @tc.desc  : Test GetRenderMode interface. Returns the default render mode RENDER_MODE_NORMAL.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRenderMode_003, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    AudioRenderMode renderMode = audioRenderer->GetRenderMode();
+    EXPECT_EQ(RENDER_MODE_NORMAL, renderMode);
+
+    audioRenderer->Release();
+}
+} // namespace AudioStandard
+} // namespace OHOS
