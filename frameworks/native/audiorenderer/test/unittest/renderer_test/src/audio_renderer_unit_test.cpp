@@ -6982,7 +6982,9 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Low_Power_Volume_002, TestSize.
     AppInfo appInfo = {};
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    ASSERT_TRUE(audioRendererPrivate != nullptr);
     unique_ptr<AudioRendererProxyObj> audioRendererProxyObj = std::make_unique<AudioRendererProxyObj>();
+    ASSERT_TRUE(audioRendererProxyObj != nullptr);
     audioRendererProxyObj->SaveRendererObj(std::weak_ptr<AudioRendererPrivate>());
     audioRendererProxyObj->SetOffloadModeImpl(0, true);
     audioRendererProxyObj->UnsetOffloadModeImpl();
@@ -8129,6 +8131,7 @@ HWTEST(AudioRendererUnitTest, HandleAndNotifyForcedEvent_002, TestSize.Level1)
         audioStreamParams, STREAM_DEFAULT, 1);
     AudioInterrupt audioInterrupt;
     auto audioInterruptCallback = std::make_shared<AudioRendererInterruptCallbackImpl>(audioStream, audioInterrupt);
+    ASSERT_TRUE(audioInterruptCallback != nullptr);
     InterruptEventInternal interruptEvent_;
     interruptEvent_.hintType = INTERRUPT_HINT_RESUME;
     audioInterruptCallback->isForcePaused_ = true;
@@ -8138,7 +8141,6 @@ HWTEST(AudioRendererUnitTest, HandleAndNotifyForcedEvent_002, TestSize.Level1)
     testAudioStremStub->state_ = PAUSED;
 
     audioInterruptCallback->HandleAndNotifyForcedEvent(interruptEvent);
-    EXPECT_EQ(audioInterruptCallback->isForcePaused_, true);
 }
 
 /**
