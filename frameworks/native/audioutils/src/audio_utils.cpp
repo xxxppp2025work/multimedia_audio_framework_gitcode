@@ -482,6 +482,18 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
     return ret;
 }
 
+bool PermissionUtil::CheckCallingUidPermission(const std::vector<uid_t> &allowedUids)
+{
+    CHECK_AND_RETURN_RET_LOG(allowedUids.size() > 0, false, "allowedUids is empty");
+    auto callingUid = IPCSkeleton::GetCallingUid();
+    for (const auto &uid : allowedUids) {
+        if (uid == callingUid) {
+            return true;
+        }
+    }
+    return false;
+}
+
 std::mutex g_switchMapMutex;
 static std::map<SwitchStreamInfo, SwitchState> g_switchStreamRecordMap = {};
 
@@ -1556,6 +1568,9 @@ const std::string AudioInfoDumpUtils::GetDeviceTypeName(DeviceType deviceType)
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
             device = "BLUETOOTH_A2DP";
+            break;
+        case DEVICE_TYPE_NEARLINK:
+            device = "NEARLINK";
             break;
         case DEVICE_TYPE_MIC:
             device = "MIC";

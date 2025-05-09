@@ -78,6 +78,7 @@
 #include "audio_device_status.h"
 #include "audio_background_manager.h"
 #include "audio_global_config_manager.h"
+#include "sle_audio_device_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -514,6 +515,8 @@ public:
         bool registrationResult);
     int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
+
+    int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -545,8 +548,8 @@ private:
         audioRecoveryDevice_(AudioRecoveryDevice::GetInstance()),
         audioCapturerSession_(AudioCapturerSession::GetInstance()),
         audioDeviceLock_(AudioDeviceLock::GetInstance()),
-        audioDeviceStatus_(AudioDeviceStatus::GetInstance())
-        
+        audioDeviceStatus_(AudioDeviceStatus::GetInstance()),
+        sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance())
     {
         deviceStatusListener_ = std::make_unique<DeviceStatusListener>(*this);
     }
@@ -704,6 +707,7 @@ private:
     AudioCapturerSession& audioCapturerSession_;
     AudioDeviceLock& audioDeviceLock_;
     AudioDeviceStatus& audioDeviceStatus_;
+    SleAudioDeviceManager& sleAudioDeviceManager_;
 
 };
 
