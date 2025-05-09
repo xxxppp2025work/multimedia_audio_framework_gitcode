@@ -106,7 +106,8 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipesAndExec
         return selectedPipeInfoList;
     }
     for (auto &curPipeInfo : pipeInfoList) {
-        if (curPipeInfo->pipeRole_ == static_cast<AudioPipeRole>(streamDescs[0]->audioMode_)) {
+        if (streamDescs[0] != nullptr &&
+            curPipeInfo->pipeRole_ == static_cast<AudioPipeRole>(streamDescs[0]->audioMode_)) {
             selectedPipeInfoList.push_back(curPipeInfo);
         }
     }

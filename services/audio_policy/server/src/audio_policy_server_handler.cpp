@@ -927,6 +927,16 @@ void AudioPolicyServerHandler::HandleInterruptEventWithClientId(const AppExecFwk
     policyListenerCb->OnInterrupt(eventContextObj->interruptEvent);
 }
 
+void AudioPolicyServerHandler::AddInfoLogForPreferredOutputDevice(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs, int32_t clientPid)
+{
+    if (deviceDescs[0] == nullptr) {
+        return;
+    }
+    AUDIO_INFO_LOG("Send PreferredOutputDevice deviceType[%{public}d] change to clientPid[%{public}d]",
+        deviceDescs[0]->deviceType_, clientPid);
+}
+
 void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
 {
     std::lock_guard<std::mutex> lock(handleMapMutex_);
@@ -942,9 +952,8 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
             if (clientCallbacksMap_.count(clientPid) > 0 &&
                 clientCallbacksMap_[clientPid].count(CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE) > 0 &&
                 clientCallbacksMap_[clientPid][CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE]) {
-                AUDIO_INFO_LOG("Send PreferredOutputDevice deviceType[%{public}d] change to clientPid[%{public}d]",
-                    deviceDescs[0]->deviceType_, clientPid);
                 it->second->OnPreferredOutputDeviceUpdated(rendererInfo, deviceDescs);
+                AddInfoLogForPreferredOutputDevice(deviceDescs, clientPid);
             }
         }
     }

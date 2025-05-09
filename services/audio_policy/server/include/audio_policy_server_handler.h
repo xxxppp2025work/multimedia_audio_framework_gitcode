@@ -264,6 +264,8 @@ private:
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
+    void AddInfoLogForPreferredOutputDevice(
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs, int32_t clientPid);
 
     std::vector<AudioRendererInfo> GetCallbackRendererInfoList(int32_t clientPid);
     std::vector<AudioCapturerInfo> GetCallbackCapturerInfoList(int32_t clientPid);
