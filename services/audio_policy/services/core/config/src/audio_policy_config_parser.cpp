@@ -661,6 +661,7 @@ void AudioPolicyConfigParser::GetCommontAudioModuleInfo(std::shared_ptr<AdapterP
         audioModuleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[
             pipeInfo->streamPropInfos_.front()->format_];
         audioModuleInfo.channels = std::to_string(pipeInfo->streamPropInfos_.front()->channels_);
+        audioModuleInfo.channelLayout = std::to_string(pipeInfo->streamPropInfos_.front()->channelLayout_);
         audioModuleInfo.bufferSize = std::to_string(pipeInfo->streamPropInfos_.front()->bufferSize_);
     }
 

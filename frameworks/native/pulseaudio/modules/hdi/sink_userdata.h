@@ -58,6 +58,7 @@ struct Userdata {
     pa_sink *sink;
     pa_sample_spec ss;
     pa_channel_map map;
+    uint64_t channelLayout;
     bool test_mode_on;
     uint32_t writeCount;
     uint32_t renderCount;

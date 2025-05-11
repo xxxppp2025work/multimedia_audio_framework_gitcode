@@ -1416,6 +1416,11 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
         args.append(audioModuleInfo.channels);
     }
 
+    if (!audioModuleInfo.channelLayout.empty()) {
+        args.append(" channel_layout=");
+        args.append(audioModuleInfo.channelLayout);
+    }
+
     if (!audioModuleInfo.bufferSize.empty()) {
         args.append(" buffer_size=");
         args.append(audioModuleInfo.bufferSize);

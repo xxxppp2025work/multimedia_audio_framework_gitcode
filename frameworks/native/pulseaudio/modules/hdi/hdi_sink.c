@@ -4239,6 +4239,7 @@ static int32_t PrepareDevice(struct Userdata *u, const char *filePath)
     sample_attrs.openMicSpeaker = u->open_mic_speaker;
     sample_attrs.sampleRate = (uint32_t) u->ss.rate;
     sample_attrs.channel = u->ss.channels;
+    sample_attrs.channelLayout = u->channelLayout;
     sample_attrs.volume = MAX_SINK_VOLUME_LEVEL;
     sample_attrs.filePath = filePath;
     sample_attrs.deviceNetworkId = u->deviceNetworkId;
@@ -4282,6 +4283,7 @@ static int32_t PrepareDeviceOffload(struct Userdata *u)
     sample_attrs.openMicSpeaker = u->open_mic_speaker;
     sample_attrs.sampleRate = u->ss.rate;
     sample_attrs.channel = u->ss.channels;
+    sample_attrs.channelLayout = u->channelLayout;
     sample_attrs.volume = MAX_SINK_VOLUME_LEVEL;
     sample_attrs.filePath = filePath;
     sample_attrs.deviceNetworkId = deviceNetworkId;
@@ -4359,9 +4361,14 @@ static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
         goto fail;
     }
 
-    AUDIO_INFO_LOG("Initializing HDI rendering device with rate: %{public}d, channels: %{public}d",
-        u->ss.rate, u->ss.channels);
+    if (pa_modargs_get_value_u64(ma, "channel_layout", &u->channelLayout) < 0) {
+        AUDIO_ERR_LOG("Failed to parse channel_layout argument.");
+    }
+
+    AUDIO_INFO_LOG("Initializing HDI rendering device with rate: %{public}d, channels: %{public}d, "
+        "channelLayout: %{public}lu", u->ss.rate, u->ss.channels, u->channelLayout);
     if (PrepareDevice(u, pa_modargs_get_value(ma, "file_path", "")) < 0) { goto fail; }
+    ConvertChLayoutToPaChMap(u->channelLayout, &u->map);
 
     u->primary.prewrite = 0;
     if (u->offload_enable && !strcmp(u->primary.sinkAdapter->deviceClass, DEVICE_CLASS_PRIMARY)) {

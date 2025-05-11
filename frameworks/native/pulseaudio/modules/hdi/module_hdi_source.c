@@ -48,6 +48,7 @@ PA_MODULE_USAGE(
         "rate=<sample rate> "
         "channels=<number of channels> "
         "channel_map=<channel map>"
+        "channel_layout=<channel layout>"
         "buffer_size=<custom buffer size>"
         "file_path=<file path for data reading>"
         "adapter_name=<primary>"
@@ -65,6 +66,7 @@ static const char * const VALID_MODARGS[] = {
     "rate",
     "channels",
     "channel_map",
+    "channel_layout",
     "buffer_size",
     "file_path",
     "adapter_name",
