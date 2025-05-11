@@ -800,8 +800,8 @@ int32_t AudioDeviceStatus::ActivateNewDevice(std::string networkId, DeviceType d
             moduleName.c_str(), moduleInfo.adapterName.c_str());
         uint32_t paIndex = 0;
         AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
-        CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_INVALID_HANDLE,
-            "OpenAudioPort failed: %{public}d", ioHandle);
+        CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE && paIndex != OPEN_PORT_FAILURE, ERR_INVALID_HANDLE,
+            "OpenAudioPort failed ioHandle[%{public}u], paId[%{public}u]", ioHandle, paIndex);
 
         std::shared_ptr<AudioPipeInfo> pipeInfo_ = std::make_shared<AudioPipeInfo>();
         pipeInfo_->id_ = ioHandle;
@@ -1328,7 +1328,7 @@ int32_t AudioDeviceStatus::RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioS
     AUDIO_INFO_LOG("Reload a2dp module [%{public}s]", moduleInfo.name.c_str());
     uint32_t paIndex;
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
-    if (ioHandle == OPEN_PORT_FAILURE) {
+    if (ioHandle == OPEN_PORT_FAILURE || paIndex == OPEN_PORT_FAILURE) {
         audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
         AUDIO_ERR_LOG("OpenAudioPort failed %{public}d", ioHandle);
         return ERROR;
