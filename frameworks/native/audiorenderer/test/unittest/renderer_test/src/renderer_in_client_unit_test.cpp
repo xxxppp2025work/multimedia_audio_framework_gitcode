@@ -43,7 +43,7 @@ public:
 
     virtual int32_t UpdatePosition() { return 0; }
 
-    virtual int32_t GetAudioSessionID(uint32_t &sessionId) { return 0; }
+    virtual int32_t GetAudioSessionID(uint32_t &streamId) { return 0; }
 
     virtual int32_t Start() { return 0; }
 

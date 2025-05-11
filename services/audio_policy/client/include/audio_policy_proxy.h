@@ -144,13 +144,13 @@ public:
 
     bool IsAudioSessionActivated() override;
 
-    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t streamId,
         const SourceType sourceType, bool isRunning) override;
 
-    int32_t SetAudioInterruptCallback(const uint32_t sessionID,
+    int32_t SetAudioInterruptCallback(const uint32_t streamId,
         const sptr<IRemoteObject> &object, uint32_t clientUid, const int32_t zoneID = 0) override;
 
-    int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID = 0) override;
+    int32_t UnsetAudioInterruptCallback(const uint32_t streamId, const int32_t zoneID = 0) override;
 
     int32_t ActivateAudioInterrupt(AudioInterrupt &audioInterrupt, const int32_t zoneID = 0,
         const bool isUpdatedAudioStrategy = false) override;
@@ -188,10 +188,10 @@ public:
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo) override;
 
     int32_t CreateRendererClient(
-        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId) override;
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &streamId) override;
 
     int32_t CreateCapturerClient(
-        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId) override;
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &streamId) override;
 
     int32_t RegisterTracker(AudioMode &mode,
         AudioStreamChangeInfo &streamChangeInfo, const sptr<IRemoteObject> &object) override;
@@ -254,7 +254,7 @@ public:
 
     int32_t GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc) override;
 
-    std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) override;
+    std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t streamId) override;
 
     std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones() override;
 
@@ -303,10 +303,10 @@ public:
 
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState) override;
 
-    int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
+    int32_t RegisterSpatializationStateEventListener(const uint32_t streamId, const StreamUsage streamUsage,
         const sptr<IRemoteObject> &object) override;
 
-    int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID) override;
+    int32_t UnregisterSpatializationStateEventListener(const uint32_t streamId) override;
 
     int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t zoneID = 0) override;
 
@@ -397,11 +397,11 @@ public:
 
     int32_t UnsetAudioDeviceAnahsCallback() override;
 
-    int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) override;
+    int32_t MoveToNewPipe(const uint32_t streamId, const AudioPipeType pipeType) override;
 
-    int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) override;
+    int32_t SetAudioConcurrencyCallback(const uint32_t streamId, const sptr<IRemoteObject> &object) override;
 
-    int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID) override;
+    int32_t UnsetAudioConcurrencyCallback(const uint32_t streamId) override;
 
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType) override;
 

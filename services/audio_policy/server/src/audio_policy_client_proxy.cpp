@@ -325,7 +325,7 @@ void AudioPolicyClientProxy::OnCapturerStateChange(
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::OnRendererDeviceChange(const uint32_t sessionId,
+void AudioPolicyClientProxy::OnRendererDeviceChange(const uint32_t streamId,
     const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     MessageParcel data;
@@ -338,7 +338,7 @@ void AudioPolicyClientProxy::OnRendererDeviceChange(const uint32_t sessionId,
 
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_RENDERER_DEVICE_CHANGE));
 
-    data.WriteUint32(sessionId);
+    data.WriteUint32(streamId);
     deviceInfo.Marshalling(data, apiVersion_);
     data.WriteInt32(static_cast<int32_t>(reason));
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
@@ -369,7 +369,7 @@ void AudioPolicyClientProxy::OnDistribuitedOutputChange(const AudioDeviceDescrip
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+void AudioPolicyClientProxy::OnRecreateRendererStreamEvent(const uint32_t streamId, const int32_t streamFlag,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     MessageParcel data;
@@ -382,7 +382,7 @@ void AudioPolicyClientProxy::OnRecreateRendererStreamEvent(const uint32_t sessio
 
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_RECREATE_RENDERER_STREAM_EVENT));
 
-    data.WriteUint32(sessionId);
+    data.WriteUint32(streamId);
     data.WriteInt32(streamFlag);
     data.WriteInt32(static_cast<int32_t>(reason));
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
@@ -392,7 +392,7 @@ void AudioPolicyClientProxy::OnRecreateRendererStreamEvent(const uint32_t sessio
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+void AudioPolicyClientProxy::OnRecreateCapturerStreamEvent(const uint32_t streamId, const int32_t streamFlag,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     MessageParcel data;
@@ -405,7 +405,7 @@ void AudioPolicyClientProxy::OnRecreateCapturerStreamEvent(const uint32_t sessio
 
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_RECREATE_CAPTURER_STREAM_EVENT));
 
-    data.WriteUint32(sessionId);
+    data.WriteUint32(streamId);
     data.WriteInt32(streamFlag);
     data.WriteInt32(static_cast<int32_t>(reason));
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);

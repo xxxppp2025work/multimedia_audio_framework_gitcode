@@ -129,9 +129,9 @@ public:
         return sharedAudioRenderer_->GetBufferSize(bufferSize);
     }
 
-    int32_t GetAudioStreamId(uint32_t &sessionID) const override
+    int32_t GetAudioStreamId(uint32_t &streamId) const override
     {
-        return sharedAudioRenderer_->GetAudioStreamId(sessionID);
+        return sharedAudioRenderer_->GetAudioStreamId(streamId);
     }
 
     int32_t GetFrameCount(uint32_t &frameCount) const override

@@ -28,10 +28,10 @@ class DeviceChangeWithInfoCallback {
 public:
     virtual ~DeviceChangeWithInfoCallback() = default;
 
-    virtual void OnDeviceChangeWithInfo(const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo,
+    virtual void OnDeviceChangeWithInfo(const uint32_t streamId, const AudioDeviceDescriptor &deviceInfo,
         const AudioStreamDeviceChangeReasonExt reason) = 0;
 
-    virtual void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+    virtual void OnRecreateStreamEvent(const uint32_t streamId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) = 0;
 };
 

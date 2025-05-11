@@ -237,7 +237,7 @@ public:
 
     void SetAudioServerProxy(sptr<IStandardAudioService> gsp);
 
-    void SetOffloadSessionId(uint32_t sessionId);
+    void SetOffloadSessionId(uint32_t streamId);
 
     void ResetOffloadSessionId();
 
@@ -435,14 +435,14 @@ public:
         AUDIO_WARNING_LOG("Destructor PolicyCallbackImpl");
     }
 
-    void OnAudioStreamRemoved(const uint64_t sessionID)
+    void OnAudioStreamRemoved(const uint64_t streamId)
     {
-        AUDIO_DEBUG_LOG("PolicyCallbackImpl OnAudioStreamRemoved: Session ID %{public}" PRIu64"", sessionID);
+        AUDIO_DEBUG_LOG("PolicyCallbackImpl OnAudioStreamRemoved: Session ID %{public}" PRIu64"", streamId);
         if (audioAdapterManager_->sessionCallback_ == nullptr) {
             AUDIO_DEBUG_LOG("PolicyCallbackImpl audioAdapterManager_->sessionCallback_ == nullptr"
                 "not firing OnAudioStreamRemoved");
         } else {
-            audioAdapterManager_->sessionCallback_->OnAudioStreamRemoved(sessionID);
+            audioAdapterManager_->sessionCallback_->OnAudioStreamRemoved(streamId);
         }
     }
 

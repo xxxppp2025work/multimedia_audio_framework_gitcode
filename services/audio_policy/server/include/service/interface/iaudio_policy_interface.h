@@ -182,7 +182,7 @@ public:
 
     virtual void SetAudioServerProxy(sptr<IStandardAudioService> gsp) = 0;
 
-    virtual void SetOffloadSessionId(uint32_t sessionId) = 0;
+    virtual void SetOffloadSessionId(uint32_t streamId) = 0;
 
     virtual void ResetOffloadSessionId() = 0;
 

@@ -55,8 +55,8 @@ public:
 
     void SetA2dpOffloadFlag(BluetoothOffloadState state);
     BluetoothOffloadState GetA2dpOffloadFlag();
-    int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionIds);
-    int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionIds);
+    int32_t OffloadStartPlaying(const std::vector<int32_t> &streamIds);
+    int32_t OffloadStopPlaying(const std::vector<int32_t> &streamIds);
     A2dpOffloadConnectionState GetCurrentOffloadConnectedState();
     void SetCurrentOffloadConnectedState(A2dpOffloadConnectionState currentOffloadConnectionState);
     bool IsA2dpOffloadConnected();

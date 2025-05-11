@@ -68,9 +68,9 @@ public:
     static AudioPerformanceMonitor &GetInstance();
 
     // silence Monitor records if server gets valid data from client
-    void RecordSilenceState(uint32_t sessionId, bool isSilence, AudioPipeType pipeType, uint32_t uid);
-    void ClearSilenceMonitor(uint32_t sessionId);
-    void DeleteSilenceMonitor(uint32_t sessionId);
+    void RecordSilenceState(uint32_t streamId, bool isSilence, AudioPipeType pipeType, uint32_t uid);
+    void ClearSilenceMonitor(uint32_t streamId);
+    void DeleteSilenceMonitor(uint32_t streamId);
 
     // overTime Monitor records the interval between two writes to HAL
     void RecordTimeStamp(AdapterType adapterType, int64_t curTimeStamp);
@@ -78,7 +78,7 @@ public:
 
     void DumpMonitorInfo(std::string &dumpString);
 
-    std::map<uint32_t /*sessionId*/, FrameRecordInfo> silenceDetectMap_{};
+    std::map<uint32_t /*streamId*/, FrameRecordInfo> silenceDetectMap_{};
     std::map<AdapterType, int64_t /*lastWrittenTimeStamp*/> overTimeDetectMap_{};
 
 private:

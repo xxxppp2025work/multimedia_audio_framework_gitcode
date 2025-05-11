@@ -565,20 +565,20 @@ void AudioPolicyManagerStub::GetAudioFocusInfoListInternal(MessageParcel &data, 
 
 void AudioPolicyManagerStub::SetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
-    uint32_t sessionID = data.ReadUint32();
+    uint32_t streamId = data.ReadUint32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     uint32_t zoneID = data.ReadUint32();
     uint32_t clientUid = data.ReadUint32();
     CHECK_AND_RETURN_LOG(object != nullptr, "AudioPolicyManagerStub: AudioInterruptCallback obj is null");
-    int32_t result = SetAudioInterruptCallback(sessionID, object, clientUid, zoneID);
+    int32_t result = SetAudioInterruptCallback(streamId, object, clientUid, zoneID);
     reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::UnsetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t sessionID = data.ReadInt32();
+    int32_t streamId = data.ReadInt32();
     int32_t zoneID = data.ReadInt32();
-    int32_t result = UnsetAudioInterruptCallback(sessionID, zoneID);
+    int32_t result = UnsetAudioInterruptCallback(streamId, zoneID);
     reply.WriteInt32(result);
 }
 
@@ -664,9 +664,9 @@ void AudioPolicyManagerStub::GetStreamInFocusByUidInternal(MessageParcel &data, 
 
 void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel &data, MessageParcel &reply)
 {
-    uint32_t invalidSessionID = static_cast<uint32_t>(-1);
+    uint32_t invalidStreamId = static_cast<uint32_t>(-1);
     AudioInterrupt audioInterrupt {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
-        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, invalidSessionID};
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, invalidStreamId};
     int32_t zoneID = data.ReadInt32();
     int32_t ret = GetSessionInfoInFocus(audioInterrupt, zoneID);
     AudioInterrupt::Marshalling(reply, audioInterrupt);
@@ -694,10 +694,10 @@ void AudioPolicyManagerStub::CreateRendererClientInternal(MessageParcel &data, M
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->Unmarshalling(data);
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
-    uint32_t sessionId = 0;
-    int32_t ret = CreateRendererClient(streamDesc, flag, sessionId);
+    uint32_t streamId = 0;
+    int32_t ret = CreateRendererClient(streamDesc, flag, streamId);
     reply.WriteUint32(flag);
-    reply.WriteUint32(sessionId);
+    reply.WriteUint32(streamId);
     reply.WriteInt32(ret);
 }
 
@@ -706,10 +706,10 @@ void AudioPolicyManagerStub::CreateCapturerClientInternal(MessageParcel &data, M
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->Unmarshalling(data);
     uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
-    uint32_t sessionId = 0;
-    int32_t ret = CreateCapturerClient(streamDesc, flag, sessionId);
+    uint32_t streamId = 0;
+    int32_t ret = CreateCapturerClient(streamDesc, flag, streamId);
     reply.WriteUint32(flag);
-    reply.WriteUint32(sessionId);
+    reply.WriteUint32(streamId);
     reply.WriteInt32(ret);
 }
 
@@ -940,8 +940,8 @@ void AudioPolicyManagerStub::GetHardwareOutputSamplingRateInternal(MessageParcel
 
 void AudioPolicyManagerStub::GetAudioCapturerMicrophoneDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t sessionId = data.ReadInt32();
-    std::vector<sptr<MicrophoneDescriptor>> descs = GetAudioCapturerMicrophoneDescriptors(sessionId);
+    int32_t streamId = data.ReadInt32();
+    std::vector<sptr<MicrophoneDescriptor>> descs = GetAudioCapturerMicrophoneDescriptors(streamId);
     int32_t size = static_cast<int32_t>(descs.size());
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
@@ -1117,19 +1117,19 @@ void AudioPolicyManagerStub::UpdateSpatialDeviceStateInternal(MessageParcel &dat
 void AudioPolicyManagerStub::RegisterSpatializationStateEventListenerInternal(MessageParcel &data,
     MessageParcel &reply)
 {
-    uint32_t sessionID = static_cast<uint32_t>(data.ReadInt32());
+    uint32_t streamId = static_cast<uint32_t>(data.ReadInt32());
     StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
     sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
     CHECK_AND_RETURN_LOG(remoteObject != nullptr, "AudioSpatializationStateChangeCallback obj is null");
-    int32_t ret = RegisterSpatializationStateEventListener(sessionID, streamUsage, remoteObject);
+    int32_t ret = RegisterSpatializationStateEventListener(streamId, streamUsage, remoteObject);
     reply.WriteInt32(ret);
 }
 
 void AudioPolicyManagerStub::UnregisterSpatializationStateEventListenerInternal(MessageParcel &data,
     MessageParcel &reply)
 {
-    uint32_t sessionID = static_cast<uint32_t>(data.ReadInt32());
-    int32_t ret = UnregisterSpatializationStateEventListener(sessionID);
+    uint32_t streamId = static_cast<uint32_t>(data.ReadInt32());
+    int32_t ret = UnregisterSpatializationStateEventListener(streamId);
     reply.WriteInt32(ret);
 }
 
@@ -2001,9 +2001,9 @@ void AudioPolicyManagerStub::UnsetAudioDeviceAnahsCallbackInternal(MessageParcel
 
 void AudioPolicyManagerStub::MoveToNewTypeInternal(MessageParcel &data, MessageParcel &reply)
 {
-    uint32_t sessionId = data.ReadUint32();
+    uint32_t streamId = data.ReadUint32();
     AudioPipeType pipeType = static_cast<AudioPipeType>(data.ReadInt32());
-    int32_t result = MoveToNewPipe(sessionId, pipeType);
+    int32_t result = MoveToNewPipe(streamId, pipeType);
     reply.WriteInt32(result);
 }
 
@@ -2015,17 +2015,17 @@ void AudioPolicyManagerStub::DisableSafeMediaVolumeInternal(MessageParcel &data,
 
 void AudioPolicyManagerStub::SetConcurrencyCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
-    uint32_t sessionID = data.ReadUint32();
+    uint32_t streamId = data.ReadUint32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     CHECK_AND_RETURN_LOG(object != nullptr, "AudioPolicyManagerStub: AudioInterruptCallback obj is null");
-    int32_t result = SetAudioConcurrencyCallback(sessionID, object);
+    int32_t result = SetAudioConcurrencyCallback(streamId, object);
     reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::UnsetConcurrencyCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
-    uint32_t sessionID = data.ReadUint32();
-    int32_t result = UnsetAudioConcurrencyCallback(sessionID);
+    uint32_t streamId = data.ReadUint32();
+    int32_t result = UnsetAudioConcurrencyCallback(streamId);
     reply.WriteInt32(result);
 }
 

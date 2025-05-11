@@ -1105,8 +1105,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioStreamId_001, TestSize.Leve
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
 
-    uint32_t sessionID;
-    ret = audioCapturer->GetAudioStreamId(sessionID);
+    uint32_t streamId;
+    ret = audioCapturer->GetAudioStreamId(streamId);
     EXPECT_EQ(SUCCESS, ret);
 
     audioCapturer->Release();
@@ -2157,8 +2157,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_001, TestSize.
     EXPECT_NE(nullptr, audioCapturer);
 
     EXPECT_NE(CAPTURER_INVALID, audioCapturer->GetStatus());
-    uint32_t originalSessionId = INVALID_SESSION_ID;
-    audioCapturer->GetAudioStreamId(originalSessionId);
+    uint32_t originalStreamId = INVALID_SESSION_ID;
+    audioCapturer->GetAudioStreamId(originalStreamId);
 
     RestoreInfo restoreInfo;
     bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::PA_STREAM, restoreInfo);
@@ -2189,8 +2189,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_002, TestSize.
     EXPECT_EQ(true, startResult);
     EXPECT_EQ(CAPTURER_RUNNING, pCapturer->GetStatus());
 
-    uint32_t originalSessionId = INVALID_SESSION_ID;
-    pCapturer->GetAudioStreamId(originalSessionId);
+    uint32_t originalStreamId = INVALID_SESSION_ID;
+    pCapturer->GetAudioStreamId(originalStreamId);
 
     RestoreInfo restoreInfo;
     bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::PA_STREAM, restoreInfo);
@@ -2214,8 +2214,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_003, TestSize.
         std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
     EXPECT_NE(nullptr, audioCapturer);
 
-    uint32_t originalSessionId = INVALID_SESSION_ID;
-    audioCapturer->GetAudioStreamId(originalSessionId);
+    uint32_t originalStreamId = INVALID_SESSION_ID;
+    audioCapturer->GetAudioStreamId(originalStreamId);
 
     RestoreInfo restoreInfo;
     bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::VOIP_STREAM, restoreInfo);

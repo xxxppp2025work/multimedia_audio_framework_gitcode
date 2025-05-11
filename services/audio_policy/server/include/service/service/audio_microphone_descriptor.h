@@ -52,17 +52,17 @@ public:
 
     void RemoveMicrophoneDescriptor(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
-    void AddAudioCapturerMicrophoneDescriptor(int32_t sessionId, DeviceType devType);
+    void AddAudioCapturerMicrophoneDescriptor(int32_t streamId, DeviceType devType);
 
     void UpdateAudioCapturerMicrophoneDescriptor(DeviceType devType);
 
     void RemoveAudioCapturerMicrophoneDescriptor(int32_t uid);
 
-    std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId);
+    std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t streamId);
 
     std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
 
-    void RemoveAudioCapturerMicrophoneDescriptorBySessionID(int32_t sessionID);
+    void RemoveAudioCapturerMicrophoneDescriptorBySessionID(int32_t streamId);
 private:
     AudioMicrophoneDescriptor() {}
     ~AudioMicrophoneDescriptor() {}

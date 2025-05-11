@@ -329,31 +329,31 @@ void AudioPolicyClientStub::HandleCapturerStateChange(MessageParcel &data, Messa
 
 void AudioPolicyClientStub::HandleRendererDeviceChange(MessageParcel &data, MessageParcel &reply)
 {
-    const uint32_t sessionId = data.ReadUint32();
+    const uint32_t streamId = data.ReadUint32();
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.Unmarshalling(data);
     const AudioStreamDeviceChangeReasonExt reason
         = static_cast<AudioStreamDeviceChangeReasonExt::ExtEnum> (data.ReadInt32());
 
-    OnRendererDeviceChange(sessionId, deviceInfo, reason);
+    OnRendererDeviceChange(streamId, deviceInfo, reason);
 }
 
 void AudioPolicyClientStub::HandleRecreateRendererStreamEvent(MessageParcel &data, MessageParcel &reply)
 {
-    const uint32_t sessionId = data.ReadUint32();
+    const uint32_t streamId = data.ReadUint32();
     const uint32_t streamFlag = data.ReadUint32();
     const AudioStreamDeviceChangeReasonExt reason
         = static_cast<AudioStreamDeviceChangeReasonExt::ExtEnum> (data.ReadInt32());
-    OnRecreateRendererStreamEvent(sessionId, streamFlag, reason);
+    OnRecreateRendererStreamEvent(streamId, streamFlag, reason);
 }
 
 void AudioPolicyClientStub::HandleRecreateCapturerStreamEvent(MessageParcel &data, MessageParcel &reply)
 {
-    const uint32_t sessionId = data.ReadUint32();
+    const uint32_t streamId = data.ReadUint32();
     const uint32_t streamFlag = data.ReadUint32();
     const AudioStreamDeviceChangeReasonExt reason
         = static_cast<AudioStreamDeviceChangeReasonExt::ExtEnum> (data.ReadInt32());
-    OnRecreateCapturerStreamEvent(sessionId, streamFlag, reason);
+    OnRecreateCapturerStreamEvent(streamId, streamFlag, reason);
 }
 
 void AudioPolicyClientStub::HandleHeadTrackingDeviceChange(MessageParcel &data, MessageParcel &reply)

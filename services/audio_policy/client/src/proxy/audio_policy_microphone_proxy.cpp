@@ -105,7 +105,7 @@ bool AudioPolicyProxy::IsMicrophoneMute()
 }
 
 std::vector<sptr<MicrophoneDescriptor>> AudioPolicyProxy::GetAudioCapturerMicrophoneDescriptors(
-    int32_t sessionId)
+    int32_t streamId)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -115,7 +115,7 @@ std::vector<sptr<MicrophoneDescriptor>> AudioPolicyProxy::GetAudioCapturerMicrop
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, micDescs, "WriteInterfaceToken failed");
 
-    data.WriteInt32(sessionId);
+    data.WriteInt32(streamId);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_CAPTURER_MICROPHONE_DESCRIPTORS),
         data, reply, option);

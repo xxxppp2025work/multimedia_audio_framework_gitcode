@@ -776,10 +776,10 @@ AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerSt
     AudioPolicyServer* policyServer) : PowerMgr::PowerStateCallbackStub(), policyServer_(policyServer)
 {}
 
-void AudioPolicyServer::CheckStreamMode(const int64_t activateSessionId)
+void AudioPolicyServer::CheckStreamMode(const int64_t activateStreamId)
 {
-    Trace trace("AudioPolicyServer::CheckStreamMode: activateSessionId: " + std::to_string(activateSessionId));
-    audioPolicyService_.CheckStreamMode(activateSessionId);
+    Trace trace("AudioPolicyServer::CheckStreamMode: activateStreamId: " + std::to_string(activateStreamId));
+    audioPolicyService_.CheckStreamMode(activateStreamId);
 }
 
 void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnAsyncPowerStateChanged(PowerMgr::PowerState state)
@@ -1673,14 +1673,14 @@ int32_t AudioPolicyServer::SetDeviceActive(InternalDeviceType deviceType, bool a
     return eventEntry_->SetDeviceActive(deviceType, active, uid);
 }
 
-int32_t AudioPolicyServer::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+int32_t AudioPolicyServer::SetInputDevice(const DeviceType deviceType, const uint32_t streamId,
     const SourceType sourceType, bool isRunning)
 {
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("SetInputDevice: No system permission");
         return ERR_PERMISSION_DENIED;
     }
-    return audioPolicyService_.SetInputDevice(deviceType, sessionID, sourceType, isRunning);
+    return audioPolicyService_.SetInputDevice(deviceType, streamId, sourceType, isRunning);
 }
 
 bool AudioPolicyServer::IsDeviceActive(InternalDeviceType deviceType)
@@ -1946,7 +1946,7 @@ AudioScene AudioPolicyServer::GetAudioScene()
     return audioPolicyService_.GetAudioScene(hasSystemPermission);
 }
 
-int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object,
+int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t streamId, const sptr<IRemoteObject> &object,
     uint32_t clientUid, const int32_t zoneID)
 {
     if (interruptService_ == nullptr) {
@@ -1965,19 +1965,19 @@ int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, c
             AUDIO_ERR_LOG("The callingUid is not equal to clientUid and is not MEDIA_SERVICE_UID!");
             return ERR_UNKNOWN;
         }
-        if (!coreService_->IsStreamBelongToUid(callingUid, sessionID)) {
-            AUDIO_ERR_LOG("The sessionId %{public}u does not belong to uid %{public}u!", sessionID, callingUid);
+        if (!coreService_->IsStreamBelongToUid(callingUid, streamId)) {
+            AUDIO_ERR_LOG("The streamId %{public}u does not belong to uid %{public}u!", streamId, callingUid);
             return ERR_UNKNOWN;
         }
     }
 
-    return interruptService_->SetAudioInterruptCallback(zoneID, sessionID, object, clientUid);
+    return interruptService_->SetAudioInterruptCallback(zoneID, streamId, object, clientUid);
 }
 
-int32_t AudioPolicyServer::UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID)
+int32_t AudioPolicyServer::UnsetAudioInterruptCallback(const uint32_t streamId, const int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
-        return interruptService_->UnsetAudioInterruptCallback(zoneID, sessionID);
+        return interruptService_->UnsetAudioInterruptCallback(zoneID, streamId);
     }
     return ERR_UNKNOWN;
 }
@@ -2046,10 +2046,10 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const Audio
     return ERR_UNKNOWN;
 }
 
-void AudioPolicyServer::ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent)
+void AudioPolicyServer::ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent)
 {
     if (interruptService_ != nullptr) {
-        interruptService_->ProcessRemoteInterrupt(sessionIds, interruptEvent);
+        interruptService_->ProcessRemoteInterrupt(streamIds, interruptEvent);
     }
 }
 
@@ -2109,15 +2109,15 @@ int32_t AudioPolicyServer::DeactivatePreemptMode()
     return ERR_UNKNOWN;
 }
 
-void AudioPolicyServer::OnAudioStreamRemoved(const uint64_t sessionID)
+void AudioPolicyServer::OnAudioStreamRemoved(const uint64_t streamId)
 {
     CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
-    audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionID, false);
+    audioPolicyServerHandler_->SendCapturerRemovedEvent(streamId, false);
 }
 
-void AudioPolicyServer::ProcessSessionRemoved(const uint64_t sessionID, const int32_t zoneID)
+void AudioPolicyServer::ProcessSessionRemoved(const uint64_t streamId, const int32_t zoneID)
 {
-    AUDIO_DEBUG_LOG("Removed SessionId: %{public}" PRIu64, sessionID);
+    AUDIO_DEBUG_LOG("Removed StreamId: %{public}" PRIu64, streamId);
 }
 
 void AudioPolicyServer::ProcessSessionAdded(SessionEvent sessionEvent)
@@ -2125,7 +2125,7 @@ void AudioPolicyServer::ProcessSessionAdded(SessionEvent sessionEvent)
     AUDIO_DEBUG_LOG("Added Session");
 }
 
-void AudioPolicyServer::ProcessorCloseWakeupSource(const uint64_t sessionID)
+void AudioPolicyServer::ProcessorCloseWakeupSource(const uint64_t streamId)
 {
     audioPolicyService_.CloseWakeUpAudioCapturer();
 }
@@ -2387,15 +2387,15 @@ int32_t AudioPolicyServer::GetPreferredInputStreamType(AudioCapturerInfo &captur
 }
 
 int32_t AudioPolicyServer::CreateRendererClient(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &streamId)
 {
-    return eventEntry_->CreateRendererClient(streamDesc, flag, sessionId);
+    return eventEntry_->CreateRendererClient(streamDesc, flag, streamId);
 }
 
 int32_t AudioPolicyServer::CreateCapturerClient(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &streamId)
 {
-    return eventEntry_->CreateCapturerClient(streamDesc, flag, sessionId);
+    return eventEntry_->CreateCapturerClient(streamDesc, flag, streamId);
 }
 
 int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
@@ -2731,15 +2731,15 @@ void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::st
         GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage::STREAM_USAGE_GAME);
     std::set<int32_t> sessionIdAudioBook = AudioStreamCollector::GetAudioStreamCollector().
         GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage::STREAM_USAGE_AUDIOBOOK);
-    std::set<int32_t> sessionIds = {};
-    sessionIds.insert(sessionIdMedia.begin(), sessionIdMedia.end());
-    sessionIds.insert(sessionIdMovie.begin(), sessionIdMovie.end());
-    sessionIds.insert(sessionIdGame.begin(), sessionIdGame.end());
-    sessionIds.insert(sessionIdAudioBook.begin(), sessionIdAudioBook.end());
+    std::set<int32_t> streamIds = {};
+    streamIds.insert(sessionIdMedia.begin(), sessionIdMedia.end());
+    streamIds.insert(sessionIdMovie.begin(), sessionIdMovie.end());
+    streamIds.insert(sessionIdGame.begin(), sessionIdGame.end());
+    streamIds.insert(sessionIdAudioBook.begin(), sessionIdAudioBook.end());
 
     InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
     if (server_ != nullptr) {
-        server_->ProcessRemoteInterrupt(sessionIds, interruptEvent);
+        server_->ProcessRemoteInterrupt(streamIds, interruptEvent);
     }
 }
 
@@ -2927,10 +2927,10 @@ int32_t AudioPolicyServer::GetHardwareOutputSamplingRate(const std::shared_ptr<A
     return audioPolicyService_.GetHardwareOutputSamplingRate(desc);
 }
 
-vector<sptr<MicrophoneDescriptor>> AudioPolicyServer::GetAudioCapturerMicrophoneDescriptors(int32_t sessionId)
+vector<sptr<MicrophoneDescriptor>> AudioPolicyServer::GetAudioCapturerMicrophoneDescriptors(int32_t streamId)
 {
     std::vector<sptr<MicrophoneDescriptor>> micDescs =
-        coreService_->GetAudioCapturerMicrophoneDescriptors(sessionId);
+        coreService_->GetAudioCapturerMicrophoneDescriptors(streamId);
     return micDescs;
 }
 
@@ -3358,15 +3358,15 @@ int32_t AudioPolicyServer::UpdateSpatialDeviceState(const AudioSpatialDeviceStat
     return audioSpatializationService_.UpdateSpatialDeviceState(audioSpatialDeviceState);
 }
 
-int32_t AudioPolicyServer::RegisterSpatializationStateEventListener(const uint32_t sessionID,
+int32_t AudioPolicyServer::RegisterSpatializationStateEventListener(const uint32_t streamId,
     const StreamUsage streamUsage, const sptr<IRemoteObject> &object)
 {
-    return audioSpatializationService_.RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
+    return audioSpatializationService_.RegisterSpatializationStateEventListener(streamId, streamUsage, object);
 }
 
-int32_t AudioPolicyServer::UnregisterSpatializationStateEventListener(const uint32_t sessionID)
+int32_t AudioPolicyServer::UnregisterSpatializationStateEventListener(const uint32_t streamId)
 {
-    return audioSpatializationService_.UnregisterSpatializationStateEventListener(sessionID);
+    return audioSpatializationService_.UnregisterSpatializationStateEventListener(streamId);
 }
 
 int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t zoneID)
@@ -3769,19 +3769,19 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id)
     RegisterDefaultVolumeTypeListener();
 }
 
-int32_t AudioPolicyServer::MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType)
+int32_t AudioPolicyServer::MoveToNewPipe(const uint32_t streamId, const AudioPipeType pipeType)
 {
-    return audioPolicyService_.MoveToNewPipe(sessionId, pipeType);
+    return audioPolicyService_.MoveToNewPipe(streamId, pipeType);
 }
 
-int32_t AudioPolicyServer::SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::SetAudioConcurrencyCallback(const uint32_t streamId, const sptr<IRemoteObject> &object)
 {
-    return audioPolicyService_.SetAudioConcurrencyCallback(sessionID, object);
+    return audioPolicyService_.SetAudioConcurrencyCallback(streamId, object);
 }
 
-int32_t AudioPolicyServer::UnsetAudioConcurrencyCallback(const uint32_t sessionID)
+int32_t AudioPolicyServer::UnsetAudioConcurrencyCallback(const uint32_t streamId)
 {
-    return audioPolicyService_.UnsetAudioConcurrencyCallback(sessionID);
+    return audioPolicyService_.UnsetAudioConcurrencyCallback(streamId);
 }
 
 int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeType)
@@ -3894,11 +3894,11 @@ int32_t AudioPolicyServer::InjectInterruption(const std::string networkId, Inter
         return ERROR;
     }
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
-    std::set<int32_t> sessionIds =
+    std::set<int32_t> streamIds =
         AudioStreamCollector::GetAudioStreamCollector().GetSessionIdsOnRemoteDeviceByDeviceType(
             DEVICE_TYPE_REMOTE_CAST);
     InterruptEventInternal interruptEvent { event.eventType, event.forceType, event.hintType, 0.2f};
-    ProcessRemoteInterrupt(sessionIds, interruptEvent);
+    ProcessRemoteInterrupt(streamIds, interruptEvent);
     return SUCCESS;
 }
 
@@ -4032,15 +4032,15 @@ DirectPlaybackMode AudioPolicyServer::GetDirectPlaybackSupport(const AudioStream
     return coreService_->GetDirectPlaybackSupport(streamInfo, streamUsage);
 }
 
-void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)
+void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t streamId)
 {
-    audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionID);
+    audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(streamId);
     audioPolicyService_.TriggerFetchDevice();
 }
 
-void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID)
+void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t streamId)
 {
-    audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
+    audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(streamId);
     audioPolicyService_.TriggerFetchDevice();
 }
 bool AudioPolicyServer::IsAcousticEchoCancelerSupported(SourceType sourceType)

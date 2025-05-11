@@ -25,7 +25,7 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-int32_t AudioPolicyProxy::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object,
+int32_t AudioPolicyProxy::SetAudioInterruptCallback(const uint32_t streamId, const sptr<IRemoteObject> &object,
     uint32_t clientUid, const int32_t zoneID)
 {
     MessageParcel data;
@@ -36,7 +36,7 @@ int32_t AudioPolicyProxy::SetAudioInterruptCallback(const uint32_t sessionID, co
         "SetAudioInterruptCallback object is null");
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-    data.WriteUint32(sessionID);
+    data.WriteUint32(streamId);
     (void)data.WriteRemoteObject(object);
     data.WriteInt32(zoneID);
     data.WriteUint32(clientUid);
@@ -48,7 +48,7 @@ int32_t AudioPolicyProxy::SetAudioInterruptCallback(const uint32_t sessionID, co
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnsetAudioInterruptCallback(const uint32_t sessionID,
+int32_t AudioPolicyProxy::UnsetAudioInterruptCallback(const uint32_t streamId,
     const int32_t zoneID)
 {
     MessageParcel data;
@@ -57,7 +57,7 @@ int32_t AudioPolicyProxy::UnsetAudioInterruptCallback(const uint32_t sessionID,
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-    data.WriteUint32(sessionID);
+    data.WriteUint32(streamId);
     data.WriteInt32(zoneID);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_CALLBACK), data, reply, option);
@@ -208,7 +208,7 @@ int32_t AudioPolicyProxy::UnsetAvailableDeviceChangeCallback(const int32_t clien
 }
 
 
-int32_t AudioPolicyProxy::SetAudioConcurrencyCallback(const uint32_t sessionID,
+int32_t AudioPolicyProxy::SetAudioConcurrencyCallback(const uint32_t streamId,
     const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
@@ -220,7 +220,7 @@ int32_t AudioPolicyProxy::SetAudioConcurrencyCallback(const uint32_t sessionID,
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
-    data.WriteUint32(sessionID);
+    data.WriteUint32(streamId);
     (void)data.WriteRemoteObject(object);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_CONCURRENCY_CALLBACK), data, reply, option);
@@ -229,7 +229,7 @@ int32_t AudioPolicyProxy::SetAudioConcurrencyCallback(const uint32_t sessionID,
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnsetAudioConcurrencyCallback(const uint32_t sessionID)
+int32_t AudioPolicyProxy::UnsetAudioConcurrencyCallback(const uint32_t streamId)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -237,7 +237,7 @@ int32_t AudioPolicyProxy::UnsetAudioConcurrencyCallback(const uint32_t sessionID
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-    data.WriteUint32(sessionID);
+    data.WriteUint32(streamId);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_AUDIO_CONCURRENCY_CALLBACK), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
@@ -382,7 +382,7 @@ int32_t AudioPolicyProxy::UnsetAudioDeviceRefinerCallback()
 }
 
 
-int32_t AudioPolicyProxy::RegisterSpatializationStateEventListener(const uint32_t sessionID,
+int32_t AudioPolicyProxy::RegisterSpatializationStateEventListener(const uint32_t streamId,
     const StreamUsage streamUsage, const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
@@ -393,7 +393,7 @@ int32_t AudioPolicyProxy::RegisterSpatializationStateEventListener(const uint32_
     CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT, "SpatializationStateEventListener object is null");
 
-    data.WriteInt32(static_cast<int32_t>(sessionID));
+    data.WriteInt32(static_cast<int32_t>(streamId));
     data.WriteInt32(static_cast<int32_t>(streamUsage));
     data.WriteRemoteObject(object);
     int32_t error = Remote() ->SendRequest(
@@ -403,7 +403,7 @@ int32_t AudioPolicyProxy::RegisterSpatializationStateEventListener(const uint32_
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnregisterSpatializationStateEventListener(const uint32_t sessionID)
+int32_t AudioPolicyProxy::UnregisterSpatializationStateEventListener(const uint32_t streamId)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -412,7 +412,7 @@ int32_t AudioPolicyProxy::UnregisterSpatializationStateEventListener(const uint3
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
 
-    data.WriteInt32(static_cast<int32_t>(sessionID));
+    data.WriteInt32(static_cast<int32_t>(streamId));
     int32_t error = Remote() ->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_SPATIALIZATION_STATE_EVENT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SendRequest failed , error: %{public}d", error);

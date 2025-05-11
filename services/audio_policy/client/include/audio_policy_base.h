@@ -133,10 +133,10 @@ public:
 
     virtual bool IsAudioSessionActivated() = 0;
 
-    virtual int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object,
+    virtual int32_t SetAudioInterruptCallback(const uint32_t streamId, const sptr<IRemoteObject> &object,
         uint32_t clientUid, const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
-    virtual int32_t UnsetAudioInterruptCallback(const uint32_t sessionID,
+    virtual int32_t UnsetAudioInterruptCallback(const uint32_t streamId,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
     virtual int32_t ActivateAudioInterrupt(AudioInterrupt &audioInterrupt,
@@ -179,10 +179,10 @@ public:
     virtual int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo) = 0;
 
     virtual int32_t CreateRendererClient(
-        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId) = 0;
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &streamId) = 0;
 
     virtual int32_t CreateCapturerClient(
-        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId) = 0;
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &streamId) = 0;
 
     virtual int32_t RegisterTracker(AudioMode &mode,
         AudioStreamChangeInfo &streamChangeInfo, const sptr<IRemoteObject> &object) = 0;
@@ -256,7 +256,7 @@ public:
 
     virtual int32_t GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc) = 0;
 
-    virtual std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) = 0;
+    virtual std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t streamId) = 0;
 
     virtual std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones() = 0;
 
@@ -312,10 +312,10 @@ public:
 
     virtual int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState) = 0;
 
-    virtual int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
+    virtual int32_t RegisterSpatializationStateEventListener(const uint32_t streamId, const StreamUsage streamUsage,
         const sptr<IRemoteObject> &object) = 0;
 
-    virtual int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID) = 0;
+    virtual int32_t UnregisterSpatializationStateEventListener(const uint32_t streamId) = 0;
 
     virtual int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
@@ -409,13 +409,13 @@ public:
 
     virtual int32_t UnsetAudioDeviceAnahsCallback() = 0;
 
-    virtual int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t SetAudioConcurrencyCallback(const uint32_t streamId, const sptr<IRemoteObject> &object) = 0;
 
-    virtual int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID) = 0;
+    virtual int32_t UnsetAudioConcurrencyCallback(const uint32_t streamId) = 0;
 
     virtual int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType) = 0;
 
-    virtual int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) = 0;
+    virtual int32_t MoveToNewPipe(const uint32_t streamId, const AudioPipeType pipeType) = 0;
 
     virtual int32_t InjectInterruption(const std::string networkId, InterruptEvent &event) = 0;
 

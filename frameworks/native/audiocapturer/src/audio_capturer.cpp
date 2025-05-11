@@ -73,12 +73,12 @@ AudioCapturerPrivate::~AudioCapturerPrivate()
     if (inputDeviceChangeCallback != nullptr) {
         inputDeviceChangeCallback->UnsetAudioCapturerObj();
     }
-    AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionID_);
+    AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(streamId_);
     CapturerState state = GetStatus();
     if (state != CAPTURER_RELEASED && state != CAPTURER_NEW) {
         Release();
     }
-    AudioPolicyManager::GetInstance().RemoveClientTrackerStub(sessionID_);
+    AudioPolicyManager::GetInstance().RemoveClientTrackerStub(streamId_);
     if (audioStateChangeCallback_ != nullptr) {
         audioStateChangeCallback_->HandleCapturerDestructor();
     }
@@ -314,12 +314,12 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 
     RegisterCapturerPolicyServiceDiedCallback();
 
-    if (audioStream_->GetAudioSessionID(sessionID_) != 0) {
+    if (audioStream_->GetAudioSessionID(streamId_) != 0) {
         AUDIO_ERR_LOG("GetAudioSessionID failed!");
         return ERR_INVALID_INDEX;
     }
     // eg: 100009_44100_2_1_cap_client_out.pcm
-    std::string dumpFileName = std::to_string(sessionID_) + "_" + std::to_string(params.samplingRate) + "_" +
+    std::string dumpFileName = std::to_string(streamId_) + "_" + std::to_string(params.samplingRate) + "_" +
         std::to_string(params.audioChannel) + "_" + std::to_string(params.audioSampleFormat) + "_cap_client_out.pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
@@ -394,11 +394,11 @@ int32_t AudioCapturerPrivate::InitInputDeviceChangeCallback()
 
     inputDeviceChangeCallback_->SetAudioCapturerObj(weak_from_this());
 
-    uint32_t sessionId;
-    int32_t ret = GetAudioStreamId(sessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Get sessionId failed");
+    uint32_t streamId;
+    int32_t ret = GetAudioStreamId(streamId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Get streamId failed");
 
-    ret = AudioPolicyManager::GetInstance().RegisterDeviceChangeWithInfoCallback(sessionId,
+    ret = AudioPolicyManager::GetInstance().RegisterDeviceChangeWithInfoCallback(streamId,
         inputDeviceChangeCallback_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Register failed");
 
@@ -411,9 +411,9 @@ int32_t AudioCapturerPrivate::SetInputDevice(DeviceType deviceType) const
     if (audioStream_ == NULL) {
         return SUCCESS;
     }
-    uint32_t currentSessionID = 0;
-    audioStream_->GetAudioSessionID(currentSessionID);
-    int32_t ret = AudioPolicyManager::GetInstance().SetInputDevice(deviceType, currentSessionID,
+    uint32_t currentStreamId = 0;
+    audioStream_->GetAudioSessionID(currentStreamId);
+    int32_t ret = AudioPolicyManager::GetInstance().SetInputDevice(deviceType, currentStreamId,
         capturerInfo_.sourceType, GetStatus() == CAPTURER_RUNNING);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "select input device failed");
     return SUCCESS;
@@ -489,11 +489,11 @@ int32_t AudioCapturerPrivate::InitAudioInterruptCallback()
         (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(audioInterrupt_.streamId);
     }
 
-    if (audioStream_->GetAudioSessionID(sessionID_) != 0) {
+    if (audioStream_->GetAudioSessionID(streamId_) != 0) {
         AUDIO_ERR_LOG("GetAudioSessionID failed for INDEPENDENT_MODE");
         return ERR_INVALID_INDEX;
     }
-    audioInterrupt_.streamId = sessionID_;
+    audioInterrupt_.streamId = streamId_;
     audioInterrupt_.pid = appInfo_.appPid;
     audioInterrupt_.uid = appInfo_.appUid;
     audioInterrupt_.audioFocusType.sourceType = capturerInfo_.sourceType;
@@ -507,7 +507,7 @@ int32_t AudioCapturerPrivate::InitAudioInterruptCallback()
         CHECK_AND_RETURN_RET_LOG(audioInterruptCallback_ != nullptr, ERROR,
             "Failed to allocate memory for audioInterruptCallback_");
     }
-    return AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID_, audioInterruptCallback_,
+    return AudioPolicyManager::GetInstance().SetAudioInterruptCallback(streamId_, audioInterruptCallback_,
         appInfo_.appUid);
 }
 
@@ -677,7 +677,7 @@ int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFu
     }
 
     // Switch to target audio stream. Deactivate audio interrupt if switch failed.
-    AUDIO_INFO_LOG("Before %{public}s, restore audio capturer %{public}u", callingFunc.c_str(), sessionID_);
+    AUDIO_INFO_LOG("Before %{public}s, restore audio capturer %{public}u", callingFunc.c_str(), streamId_);
     if (!SwitchToTargetStream(targetClass, restoreInfo)) {
         AudioInterrupt audioInterrupt = audioInterrupt_;
         int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
@@ -697,7 +697,7 @@ bool AudioCapturerPrivate::Start()
     std::lock_guard lock(capturerMutex_);
     Trace trace("AudioCapturer::Start");
     AUDIO_INFO_LOG("StreamClientState for Capturer::Start. id %{public}u, sourceType: %{public}d",
-        sessionID_, audioInterrupt_.audioFocusType.sourceType);
+        streamId_, audioInterrupt_.audioFocusType.sourceType);
 
     CapturerState state = GetStatusInner();
     CHECK_AND_RETURN_RET_LOG((state == CAPTURER_PREPARED) || (state == CAPTURER_STOPPED) || (state == CAPTURER_PAUSED),
@@ -789,7 +789,7 @@ bool AudioCapturerPrivate::Pause() const
 {
     std::lock_guard lock(capturerMutex_);
     Trace trace("AudioCapturer::Pause");
-    AUDIO_INFO_LOG("StreamClientState for Capturer::Pause. id %{public}u", sessionID_);
+    AUDIO_INFO_LOG("StreamClientState for Capturer::Pause. id %{public}u", streamId_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
     // When user is intentionally pausing , Deactivate to remove from audio focus info list
@@ -807,7 +807,7 @@ bool AudioCapturerPrivate::Stop() const
 {
     std::lock_guard lock(capturerMutex_);
     Trace trace("AudioCapturer::Stop");
-    AUDIO_INFO_LOG("StreamClientState for Capturer::Stop. id %{public}u", sessionID_);
+    AUDIO_INFO_LOG("StreamClientState for Capturer::Stop. id %{public}u", streamId_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
     WriteOverflowEvent();
@@ -826,13 +826,13 @@ bool AudioCapturerPrivate::Flush() const
     Trace trace("AudioCapturer::Flush");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
-    AUDIO_INFO_LOG("StreamClientState for Capturer::Flush. id %{public}u", sessionID_);
+    AUDIO_INFO_LOG("StreamClientState for Capturer::Flush. id %{public}u", streamId_);
     return currentStream->FlushAudioStream();
 }
 
 bool AudioCapturerPrivate::Release()
 {
-    AUDIO_INFO_LOG("StreamClientState for Capturer::Release. id %{public}u", sessionID_);
+    AUDIO_INFO_LOG("StreamClientState for Capturer::Release. id %{public}u", streamId_);
     std::lock_guard<std::shared_mutex> releaseLock(capturerMutex_);
 
     abortRestore_ = true;
@@ -844,12 +844,12 @@ bool AudioCapturerPrivate::Release()
     (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
 
     // Unregister the callaback in policy server
-    (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
+    (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(streamId_);
 
     std::shared_ptr<AudioCapturerConcurrencyCallbackImpl> cb = audioConcurrencyCallback_;
     if (cb != nullptr) {
         cb->UnsetAudioCapturerObj();
-        AudioPolicyManager::GetInstance().UnsetAudioConcurrencyCallback(sessionID_);
+        AudioPolicyManager::GetInstance().UnsetAudioConcurrencyCallback(streamId_);
     }
 
     RemoveCapturerPolicyServiceDiedCallback();
@@ -865,11 +865,11 @@ int32_t AudioCapturerPrivate::GetBufferSize(size_t &bufferSize) const
     return currentStream->GetBufferSize(bufferSize);
 }
 
-int32_t AudioCapturerPrivate::GetAudioStreamId(uint32_t &sessionID) const
+int32_t AudioCapturerPrivate::GetAudioStreamId(uint32_t &streamId) const
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERR_INVALID_HANDLE, "GetAudioStreamId faied.");
-    return currentStream->GetAudioSessionID(sessionID);
+    return currentStream->GetAudioSessionID(streamId);
 }
 
 int32_t AudioCapturerPrivate::SetBufferDuration(uint64_t bufferDuration) const
@@ -1153,15 +1153,15 @@ int64_t AudioCapturerPrivate::GetFramesRead() const
 int32_t AudioCapturerPrivate::GetCurrentInputDevices(AudioDeviceDescriptor &deviceInfo) const
 {
     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
-    uint32_t sessionId = static_cast<uint32_t>(-1);
-    int32_t ret = GetAudioStreamId(sessionId);
-    CHECK_AND_RETURN_RET_LOG(!ret, ret, "Get sessionId failed");
+    uint32_t streamId = static_cast<uint32_t>(-1);
+    int32_t ret = GetAudioStreamId(streamId);
+    CHECK_AND_RETURN_RET_LOG(!ret, ret, "Get streamId failed");
 
     ret = AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     CHECK_AND_RETURN_RET_LOG(!ret, ret, "Get current capturer devices failed");
 
     for (auto it = audioCapturerChangeInfos.begin(); it != audioCapturerChangeInfos.end(); it++) {
-        if ((*it)->sessionId == static_cast<int32_t>(sessionId)) {
+        if ((*it)->sessionId == static_cast<int32_t>(streamId)) {
             deviceInfo = (*it)->inputDeviceInfo;
         }
     }
@@ -1171,15 +1171,15 @@ int32_t AudioCapturerPrivate::GetCurrentInputDevices(AudioDeviceDescriptor &devi
 int32_t AudioCapturerPrivate::GetCurrentCapturerChangeInfo(AudioCapturerChangeInfo &changeInfo) const
 {
     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
-    uint32_t sessionId = static_cast<uint32_t>(-1);
-    int32_t ret = GetAudioStreamId(sessionId);
-    CHECK_AND_RETURN_RET_LOG(!ret, ret, "Get sessionId failed");
+    uint32_t streamId = static_cast<uint32_t>(-1);
+    int32_t ret = GetAudioStreamId(streamId);
+    CHECK_AND_RETURN_RET_LOG(!ret, ret, "Get streamId failed");
 
     ret = AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     CHECK_AND_RETURN_RET_LOG(!ret, ret, "Get current capturer devices failed");
 
     for (auto it = audioCapturerChangeInfos.begin(); it != audioCapturerChangeInfos.end(); it++) {
-        if ((*it)->sessionId == static_cast<int32_t>(sessionId)) {
+        if ((*it)->sessionId == static_cast<int32_t>(streamId)) {
             changeInfo = *(*it);
         }
     }
@@ -1188,9 +1188,9 @@ int32_t AudioCapturerPrivate::GetCurrentCapturerChangeInfo(AudioCapturerChangeIn
 
 std::vector<sptr<MicrophoneDescriptor>> AudioCapturerPrivate::GetCurrentMicrophones() const
 {
-    uint32_t sessionId = static_cast<uint32_t>(-1);
-    GetAudioStreamId(sessionId);
-    return AudioPolicyManager::GetInstance().GetAudioCapturerMicrophoneDescriptors(static_cast<int32_t>(sessionId));
+    uint32_t streamId = static_cast<uint32_t>(-1);
+    GetAudioStreamId(streamId);
+    return AudioPolicyManager::GetInstance().GetAudioCapturerMicrophoneDescriptors(static_cast<int32_t>(streamId));
 }
 
 int32_t AudioCapturerPrivate::SetAudioCapturerDeviceChangeCallback(
@@ -1400,7 +1400,7 @@ void AudioCapturerPrivate::InitSwitchInfo(IAudioStream::StreamClass targetClass,
         switchInfo.capturerInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
     }
     switchInfo.captureMode = audioCaptureMode_;
-    switchInfo.params.originalSessionId = sessionID_;
+    switchInfo.params.originalSessionId = streamId_;
     return;
 }
 
@@ -1476,7 +1476,7 @@ bool AudioCapturerPrivate::ContinueAfterConcede(IAudioStream::StreamClass &targe
     }
     AudioPipeType pipeType = PIPE_TYPE_NORMAL_IN;
     audioStream_->GetAudioPipeType(pipeType);
-    AUDIO_INFO_LOG("session %{public}u concede from pipeType %{public}d", sessionID_, capturerInfo_.pipeType);
+    AUDIO_INFO_LOG("session %{public}u concede from pipeType %{public}d", streamId_, capturerInfo_.pipeType);
     if (pipeType == PIPE_TYPE_LOWLATENCY_IN || pipeType == PIPE_TYPE_CALL_IN) {
         return true;
     }
@@ -1497,7 +1497,7 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
 
     Trace trace("SwitchToTargetStream");
     AUDIO_INFO_LOG("Restore AudioCapturer %{public}u, target class %{public}d, reason: %{public}d, "
-        "device change reason %{public}d, target flag %{public}d", sessionID_, targetClass,
+        "device change reason %{public}d, target flag %{public}d", streamId_, targetClass,
         restoreInfo.restoreReason, restoreInfo.deviceChangeReason, restoreInfo.targetStreamFlag);
 
     // Check if continue to switch after some concede operation.
@@ -1570,17 +1570,17 @@ int32_t AudioCapturerPrivate::InitAudioConcurrencyCallback()
         audioConcurrencyCallback_ = std::make_shared<AudioCapturerConcurrencyCallbackImpl>();
         CHECK_AND_RETURN_RET_LOG(audioConcurrencyCallback_ != nullptr, ERROR, "Memory Allocation Failed !!");
     }
-    CHECK_AND_RETURN_RET_LOG(audioStream_->GetAudioSessionID(sessionID_) == SUCCESS, ERR_INVALID_INDEX,
+    CHECK_AND_RETURN_RET_LOG(audioStream_->GetAudioSessionID(streamId_) == SUCCESS, ERR_INVALID_INDEX,
         "Get session id failed!");
     audioConcurrencyCallback_->SetAudioCapturerObj(weak_from_this());
-    return AudioPolicyManager::GetInstance().SetAudioConcurrencyCallback(sessionID_, audioConcurrencyCallback_);
+    return AudioPolicyManager::GetInstance().SetAudioConcurrencyCallback(streamId_, audioConcurrencyCallback_);
 }
 
 void AudioCapturerPrivate::ConcedeStream()
 {
-    AUDIO_INFO_LOG("session %{public}u concede from pipeType %{public}d", sessionID_, capturerInfo_.pipeType);
+    AUDIO_INFO_LOG("session %{public}u concede from pipeType %{public}d", streamId_, capturerInfo_.pipeType);
     CHECK_AND_RETURN_LOG(audioStream_->GetStreamClass() != IAudioStream::PA_STREAM,
-        "Session %{public}u is pa stream, no need for concede", sessionID_);
+        "Session %{public}u is pa stream, no need for concede", streamId_);
     AudioPipeType pipeType = PIPE_TYPE_NORMAL_IN;
     audioStream_->GetAudioPipeType(pipeType);
     if (pipeType == PIPE_TYPE_LOWLATENCY_IN || pipeType == PIPE_TYPE_CALL_IN) {
@@ -1686,7 +1686,7 @@ void AudioCapturerStateChangeCallbackImpl::SetAudioCapturerObj(
 void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
     const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
-    uint32_t sessionId = static_cast<uint32_t>(-1);
+    uint32_t streamId = INVALID_SESSION_ID;
     bool found = false;
     AudioCapturerChangeInfo capturerChangeInfo;
     std::vector<std::shared_ptr<AudioCapturerInfoChangeCallback>> capturerInfoChangeCallbacklist;
@@ -1696,12 +1696,12 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
         auto sharedCapturer = capturer_.lock();
         lock.unlock();
         CHECK_AND_RETURN_LOG(sharedCapturer != nullptr, "sharedCapturer is nullptr");
-        int32_t ret = sharedCapturer->GetAudioStreamId(sessionId);
-        CHECK_AND_RETURN_LOG(!ret, "Get sessionId failed");
+        int32_t ret = sharedCapturer->GetAudioStreamId(streamId);
+        CHECK_AND_RETURN_LOG(!ret, "Get streamId failed");
     }
 
     for (auto it = audioCapturerChangeInfos.begin(); it != audioCapturerChangeInfos.end(); it++) {
-        if ((*it)->sessionId == static_cast<int32_t>(sessionId)) {
+        if ((*it)->sessionId == static_cast<int32_t>(streamId)) {
             capturerChangeInfo = *(*it);
             found = true;
         }
@@ -1758,12 +1758,12 @@ void AudioCapturerStateChangeCallbackImpl::HandleCapturerDestructor()
 }
 
 void InputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
-    const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const uint32_t streamId, const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("For capturer, OnDeviceChangeWithInfo callback is not support");
 }
 
-void InputDeviceChangeWithInfoCallbackImpl::OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+void InputDeviceChangeWithInfoCallbackImpl::OnRecreateStreamEvent(const uint32_t streamId, const int32_t streamFlag,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("Enter");
@@ -1834,7 +1834,7 @@ void AudioCapturerPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryC
 {
     std::lock_guard lock(capturerMutex_);
     CHECK_AND_RETURN_LOG(audioStream_, "audioStream_ is nullptr, no need for restore");
-    AUDIO_INFO_LOG("Restore AudioCapturer %{public}u when server died", sessionID_);
+    AUDIO_INFO_LOG("Restore AudioCapturer %{public}u when server died", streamId_);
     RestoreInfo restoreInfo;
     restoreInfo.restoreReason = SERVER_DIED;
     audioStream_->SetRestoreInfo(restoreInfo);
@@ -1848,15 +1848,15 @@ void AudioCapturerPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryC
 int32_t AudioCapturerPrivate::GetCurrentInputDevicesInner(AudioDeviceDescriptor &deviceInfo) const
 {
     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
-    uint32_t sessionId = static_cast<uint32_t>(-1);
-    int32_t ret = GetAudioStreamIdInner(sessionId);
-    CHECK_AND_RETURN_RET_LOG(!ret, ret, "Get sessionId failed");
+    uint32_t streamId = static_cast<uint32_t>(-1);
+    int32_t ret = GetAudioStreamIdInner(streamId);
+    CHECK_AND_RETURN_RET_LOG(!ret, ret, "Get streamId failed");
 
     ret = AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     CHECK_AND_RETURN_RET_LOG(!ret, ret, "Get current capturer devices failed");
 
     for (auto it = audioCapturerChangeInfos.begin(); it != audioCapturerChangeInfos.end(); it++) {
-        if ((*it)->sessionId == static_cast<int32_t>(sessionId)) {
+        if ((*it)->sessionId == static_cast<int32_t>(streamId)) {
             deviceInfo = (*it)->inputDeviceInfo;
         }
     }
@@ -1864,10 +1864,10 @@ int32_t AudioCapturerPrivate::GetCurrentInputDevicesInner(AudioDeviceDescriptor 
 }
 
 // Inner function. Must be called with AudioCapturerPrivate::capturerMutex_ held
-int32_t AudioCapturerPrivate::GetAudioStreamIdInner(uint32_t &sessionID) const
+int32_t AudioCapturerPrivate::GetAudioStreamIdInner(uint32_t &streamId) const
 {
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_HANDLE, "GetAudioStreamId faied.");
-    return audioStream_->GetAudioSessionID(sessionID);
+    return audioStream_->GetAudioSessionID(streamId);
 }
 
 // Inner function. Must be called with AudioCapturerPrivate::capturerMutex_ held

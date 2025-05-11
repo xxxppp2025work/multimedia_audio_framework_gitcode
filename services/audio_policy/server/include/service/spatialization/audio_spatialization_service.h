@@ -72,9 +72,9 @@ public:
     bool IsHeadTrackingSupported();
     bool IsHeadTrackingSupportedForDevice(const std::string address);
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState);
-    int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
+    int32_t RegisterSpatializationStateEventListener(const uint32_t streamId, const StreamUsage streamUsage,
         const sptr<IRemoteObject> &object);
-    int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID);
+    int32_t UnregisterSpatializationStateEventListener(const uint32_t streamId);
     void UpdateCurrentDevice(const std::string macAddress);
     AudioSpatializationSceneType GetSpatializationSceneType();
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);

@@ -52,18 +52,18 @@ public:
     bool GetEffectOffloadEnabledProxy();
     int32_t UpdateActiveDevicesRouteProxy(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         BluetoothOffloadState state, const std::string &deviceName = "");
-    int32_t UpdateDualToneStateProxy(const bool &enable, const int32_t &sessionId);
-    void UpdateSessionConnectionStateProxy(const int32_t &sessionID, const int32_t &state);
+    int32_t UpdateDualToneStateProxy(const bool &enable, const int32_t &streamId);
+    void UpdateSessionConnectionStateProxy(const int32_t &streamId, const int32_t &state);
     int32_t CheckRemoteDeviceStateProxy(std::string networkId, DeviceRole deviceRole, bool isStartDevice);
     void SetAudioParameterProxy(const std::string &key, const std::string &value);
     void ResetAudioEndpointProxy();
     bool NotifyStreamVolumeChangedProxy(AudioStreamType streamType, float volume);
     void OffloadSetVolumeProxy(float volume);
     void SetVoiceVolumeProxy(float volume);
-    void UnsetOffloadModeProxy(uint32_t sessionId);
-    void SetOffloadModeProxy(uint32_t sessionId, int32_t state, bool isAppBack);
+    void UnsetOffloadModeProxy(uint32_t streamId);
+    void SetOffloadModeProxy(uint32_t streamId, int32_t state, bool isAppBack);
     void CheckHibernateStateProxy(bool hibernate);
-    void RestoreSessionProxy(const uint32_t &sessionID, RestoreInfo RestoreInfo);
+    void RestoreSessionProxy(const uint32_t &streamId, RestoreInfo RestoreInfo);
     int32_t GetAudioEnhancePropertyProxy(AudioEnhancePropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE);
     int32_t SetAudioEnhancePropertyProxy(const AudioEnhancePropertyArray &propertyArray,

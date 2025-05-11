@@ -23,7 +23,7 @@ public:
     AudioStreamRemovedCallback() = default;
     virtual ~AudioStreamRemovedCallback() = default;
 
-    virtual void OnAudioStreamRemoved(const uint64_t sessionID) = 0;
+    virtual void OnAudioStreamRemoved(const uint64_t streamId) = 0;
 };
 } // namespce AudioStandard
 } // namespace OHOS
