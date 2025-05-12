@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_MANAGER_UNIT_TEST_H
-#define AUDIO_MANAGER_UNIT_TEST_H
+#ifndef AUDIO_GROUP_MANAGER_UNIT_TEST_H
+#define AUDIO_GROUP_MANAGER_UNIT_TEST_H
 
 #include "gtest/gtest.h"
 #include "audio_system_manager.h"
@@ -33,13 +33,6 @@ public:
     void TearDown(void);
 };
 
-class AudioManagerCallbackImpl : public AudioManagerCallback {
-public:
-    AudioManagerCallbackImpl() {}
-    ~AudioManagerCallbackImpl() {}
-    void OnInterrupt(const InterruptAction &interruptAction) override {}
-};
-
 class AudioRingerModeCallbackTest : public AudioRingerModeCallback {
 public:
     AudioRingerModeCallbackTest() {}
@@ -49,4 +42,4 @@ public:
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // AUDIO_MANAGER_UNIT_TEST_H
+#endif // AUDIO_GROUP_MANAGER_UNIT_TEST_H
