@@ -17,15 +17,16 @@
 #define AUDIO_RENDERER_UNIT_TEST_H
 
 #include <functional>
+#include <string>
 #include "gtest/gtest.h"
 #include "audio_renderer.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-const string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
-const string AUDIORENDER_TEST_PCMFILE_PATH = "/data/avs3_16.wav";
-const string AUDIORENDER_TEST_METAFILE_PATH = "/data/avs3_bitstream.bin";
+const std::string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
+const std::string AUDIORENDER_TEST_PCMFILE_PATH = "/data/avs3_16.wav";
+const std::string AUDIORENDER_TEST_METAFILE_PATH = "/data/avs3_bitstream.bin";
 const int32_t VALUE_NEGATIVE = -1;
 const int32_t VALUE_ZERO = 0;
 const int32_t VALUE_HUNDRED = 100;
