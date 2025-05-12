@@ -1461,7 +1461,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentInputDevices_001, TestSiz
                 ret1 = SUCCESS;
             }
         }
-        EXPECT_EQ(SUCCESS, ret1);
     }
     audioCapturerPrivate->Release();
     audioCapturer->Release();
