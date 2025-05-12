@@ -20,7 +20,6 @@
 
 #include "audio_errors.h"
 #include "audio_info.h"
-#include "audio_renderer.h"
 #include "audio_renderer_proxy_obj.h"
 #include "audio_policy_manager.h"
 #include "audio_renderer_private.h"
@@ -341,7 +340,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_Stability_001, TestSize.L
     ret = audioRenderer->SetParams(rendererParams);
     EXPECT_EQ(SUCCESS, ret);
 
-    for (int i = 0; i < VALUE_THOUSAND; i++) {
+    for (int i = 0; i < RenderUT::VALUE_THOUSAND; i++) {
         AudioRendererParams getRendererParams;
         ret = audioRenderer->GetParams(getRendererParams);
         EXPECT_EQ(SUCCESS, ret);
@@ -384,7 +383,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetBufferSize_002, TestSize.Level1)
 
     size_t bufferLen;
     ret = audioRenderer->GetBufferSize(bufferLen);
-    EXPECT_EQ(VALUE_ZERO, ret);
+    EXPECT_EQ(RenderUT::VALUE_ZERO, ret);
 }
 
 /**
@@ -516,7 +515,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetFrameCount_002, TestSize.Level1)
 
     uint32_t frameCount;
     ret = audioRenderer->GetFrameCount(frameCount);
-    EXPECT_EQ(VALUE_ZERO, ret);
+    EXPECT_EQ(RenderUT::VALUE_ZERO, ret);
 }
 
 /**
@@ -639,7 +638,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetFrameCount_007, TestSize.Level1)
     uint32_t frameCount;
     ret = audioRenderer->GetFrameCount(frameCount);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(AUDIOVIVID_FRAME_COUNT, frameCount);
+    EXPECT_EQ(RenderUT::AUDIOVIVID_FRAME_COUNT, frameCount);
 
     audioRenderer->Release();
 }
@@ -723,7 +722,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetVolume_003, TestSize.Level1)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_001, TestSize.Level1)
 {
     int32_t ret = -1;
-    FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
+    FILE *wavFile = fopen(RenderUT::AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
     ASSERT_NE(nullptr, wavFile);
 
     AudioRendererOptions rendererOptions;
@@ -744,13 +743,13 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_001, TestSize.Level1)
 
     size_t bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
     int32_t bytesWritten = audioRenderer->Write(buffer, bytesToWrite);
-    EXPECT_GE(bytesWritten, VALUE_ZERO);
+    EXPECT_GE(bytesWritten, RenderUT::VALUE_ZERO);
 
     Timestamp timestamp;
     bool getAudioTime = audioRenderer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(true, getAudioTime);
-    EXPECT_GE(timestamp.time.tv_sec, (const long)VALUE_ZERO);
-    EXPECT_GE(timestamp.time.tv_nsec, (const long)VALUE_ZERO);
+    EXPECT_GE(timestamp.time.tv_sec, (const long)RenderUT::VALUE_ZERO);
+    EXPECT_GE(timestamp.time.tv_nsec, (const long)RenderUT::VALUE_ZERO);
 
     audioRenderer->Drain();
     audioRenderer->Stop();
@@ -919,7 +918,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_007, TestSize.Level2)
     audioRenderer->GetAudioTime(timestamp2, Timestamp::Timestampbase::MONOTONIC);
 
     int64_t duration = (timestamp2.time.tv_sec - timestamp1.time.tv_sec) * 1000000 + (timestamp2.time.tv_nsec -
-        timestamp1.time.tv_nsec) / VALUE_THOUSAND; // ns -> us
+        timestamp1.time.tv_nsec) / RenderUT::VALUE_THOUSAND; // ns -> us
     EXPECT_GE(duration, sleepTime);
 
     audioRenderer->Release();
@@ -1084,7 +1083,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStatus_005, TestSize.Level1)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_001, TestSize.Level1)
 {
     int32_t ret = -1;
-    FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
+    FILE *wavFile = fopen(RenderUT::AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
     ASSERT_NE(nullptr, wavFile);
 
     AudioRendererOptions rendererOptions;
@@ -1106,7 +1105,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_001, TestSize.Level1)
     size_t bytesToWrite = 0;
     int32_t bytesWritten = 0;
     size_t minBytes = 4;
-    int32_t numBuffersToRender = WRITE_BUFFERS_COUNT;
+    int32_t numBuffersToRender = RenderUT::WRITE_BUFFERS_COUNT;
 
     while (numBuffersToRender) {
         bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
@@ -1118,7 +1117,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_001, TestSize.Level1)
             ((static_cast<size_t>(bytesToWrite) - bytesWritten) > minBytes)) {
             bytesWritten += audioRenderer->Write(buffer + static_cast<size_t>(bytesWritten),
                                                  bytesToWrite - static_cast<size_t>(bytesWritten));
-            EXPECT_GE(bytesWritten, VALUE_ZERO);
+            EXPECT_GE(bytesWritten, RenderUT::VALUE_ZERO);
             if (bytesWritten < 0) {
                 break;
             }
@@ -1153,7 +1152,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_002, TestSize.Level1)
 
     uint64_t latency;
     ret = audioRenderer->GetLatency(latency);
-    EXPECT_EQ(VALUE_ZERO, ret);
+    EXPECT_EQ(RenderUT::VALUE_ZERO, ret);
 }
 
 /**
@@ -1318,7 +1317,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetBufferDesc_001, TestSize.Level1)
 
     BufferDesc bufDesc {};
     bufDesc.buffer = nullptr;
-    bufDesc.dataLength = g_reqBufLen;
+    bufDesc.dataLength = RenderUT::g_reqBufLen;
     ret = audioRenderer->GetBufferDesc(bufDesc);
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_NE(nullptr, bufDesc.buffer);
@@ -1347,7 +1346,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetBufferDesc_002, TestSize.Level1)
 
     BufferDesc bufDesc {};
     bufDesc.buffer = nullptr;
-    bufDesc.dataLength = g_reqBufLen;
+    bufDesc.dataLength = RenderUT::g_reqBufLen;
     ret = audioRenderer->GetBufferDesc(bufDesc);
     EXPECT_EQ(ERR_INCORRECT_MODE, ret);
     EXPECT_EQ(nullptr, bufDesc.buffer);
@@ -1369,7 +1368,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererInfo_001, TestSize.Level
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -1379,7 +1378,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererInfo_001, TestSize.Level
 
     EXPECT_EQ(ContentType::CONTENT_TYPE_MUSIC, rendererInfo.contentType);
     EXPECT_EQ(StreamUsage::STREAM_USAGE_MEDIA, rendererInfo.streamUsage);
-    EXPECT_EQ(RENDERER_FLAG, rendererInfo.rendererFlags);
+    EXPECT_EQ(RenderUT::RENDERER_FLAG, rendererInfo.rendererFlags);
     audioRenderer->Release();
 }
 
@@ -1397,7 +1396,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererInfo_002, TestSize.Level
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -1410,7 +1409,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererInfo_002, TestSize.Level
 
     EXPECT_EQ(ContentType::CONTENT_TYPE_MUSIC, rendererInfo.contentType);
     EXPECT_EQ(StreamUsage::STREAM_USAGE_MEDIA, rendererInfo.streamUsage);
-    EXPECT_EQ(RENDERER_FLAG, rendererInfo.rendererFlags);
+    EXPECT_EQ(RenderUT::RENDERER_FLAG, rendererInfo.rendererFlags);
 
     audioRenderer->Stop();
     audioRenderer->Release();
@@ -1430,7 +1429,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererInfo_003, TestSize.Level
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -1443,7 +1442,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererInfo_003, TestSize.Level
 
     EXPECT_EQ(ContentType::CONTENT_TYPE_MUSIC, rendererInfo.contentType);
     EXPECT_EQ(StreamUsage::STREAM_USAGE_MEDIA, rendererInfo.streamUsage);
-    EXPECT_EQ(RENDERER_FLAG, rendererInfo.rendererFlags);
+    EXPECT_EQ(RenderUT::RENDERER_FLAG, rendererInfo.rendererFlags);
 }
 
 /**
@@ -1460,7 +1459,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererInfo_004, TestSize.Level
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -1476,7 +1475,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererInfo_004, TestSize.Level
 
     EXPECT_EQ(ContentType::CONTENT_TYPE_MUSIC, rendererInfo.contentType);
     EXPECT_EQ(StreamUsage::STREAM_USAGE_MEDIA, rendererInfo.streamUsage);
-    EXPECT_EQ(RENDERER_FLAG, rendererInfo.rendererFlags);
+    EXPECT_EQ(RenderUT::RENDERER_FLAG, rendererInfo.rendererFlags);
 
     audioRenderer->Release();
 }
@@ -1495,19 +1494,19 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererInfo_Stability_001, Test
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
 
-    for (int i = 0; i < VALUE_THOUSAND; i++) {
+    for (int i = 0; i < RenderUT::VALUE_THOUSAND; i++) {
 
         AudioRendererInfo rendererInfo;
         audioRenderer->GetRendererInfo(rendererInfo);
 
         EXPECT_EQ(ContentType::CONTENT_TYPE_MUSIC, rendererInfo.contentType);
         EXPECT_EQ(StreamUsage::STREAM_USAGE_MEDIA, rendererInfo.streamUsage);
-        EXPECT_EQ(RENDERER_FLAG, rendererInfo.rendererFlags);
+        EXPECT_EQ(RenderUT::RENDERER_FLAG, rendererInfo.rendererFlags);
     }
     audioRenderer->Release();
 }
@@ -1526,7 +1525,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStreamInfo_001, TestSize.Level1)
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -1557,7 +1556,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStreamInfo_002, TestSize.Level1)
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -1594,7 +1593,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStreamInfo_003, TestSize.Level1)
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -1624,7 +1623,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStreamInfo_004, TestSize.Level1)
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -1663,7 +1662,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStreamInfo_005, TestSize.Level1)
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -1782,7 +1781,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetMinStreamVolume_Stability_001, T
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
 
-    for (int i = 0; i < VALUE_THOUSAND; i++) {
+    for (int i = 0; i < RenderUT::VALUE_THOUSAND; i++) {
         float volume = audioRenderer->GetMinStreamVolume();
         EXPECT_EQ(0.0, volume);
     }
@@ -1824,7 +1823,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetMaxStreamVolume_Stability_001, T
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
 
-    for (int i = 0; i < VALUE_THOUSAND; i++) {
+    for (int i = 0; i < RenderUT::VALUE_THOUSAND; i++) {
         float volume = audioRenderer->GetMaxStreamVolume();
         EXPECT_EQ(1.0, volume);
     }
@@ -1926,7 +1925,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetUnderflowCount_004, TestSize.Lev
                 }
                 BufferDesc bufDesc {};
                 bufDesc.buffer = nullptr;
-                bufDesc.dataLength = g_reqBufLen;
+                bufDesc.dataLength = RenderUT::g_reqBufLen;
                 auto ret = audioRenderer->GetBufferDesc(bufDesc);
                 EXPECT_EQ(SUCCESS, ret);
                 EXPECT_NE(nullptr, bufDesc.buffer);
@@ -1966,7 +1965,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStreamInfo_Stability_001, TestSi
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    rendererOptions.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
@@ -1975,7 +1974,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStreamInfo_Stability_001, TestSi
     EXPECT_EQ(true, isStarted);
 
 
-    for (int i = 0; i < VALUE_THOUSAND; i++) {
+    for (int i = 0; i < RenderUT::VALUE_THOUSAND; i++) {
         AudioStreamInfo streamInfo;
         ret = audioRenderer->GetStreamInfo(streamInfo);
         EXPECT_EQ(SUCCESS, ret);
@@ -1999,7 +1998,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetUnderflowCount_Stability_001, Te
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
 
-    for (int i = 0; i < VALUE_THOUSAND; i++) {
+    for (int i = 0; i < RenderUT::VALUE_THOUSAND; i++) {
         ret = audioRenderer->GetUnderflowCount();
         EXPECT_GE(ret, SUCCESS);
     }
@@ -2114,7 +2113,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererSamplingRate_Stability_0
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
 
-    for (int i = 0; i < VALUE_THOUSAND; i++) {
+    for (int i = 0; i < RenderUT::VALUE_THOUSAND; i++) {
         uint32_t samplingRate = 48000;
         ret = audioRenderer->SetRendererSamplingRate(samplingRate);
         EXPECT_EQ(ERROR, ret);
@@ -2182,7 +2181,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetCurrentOutputDevices_Stability_0
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
 
-    for (int i = 0; i < VALUE_THOUSAND; i++) {
+    for (int i = 0; i < RenderUT::VALUE_THOUSAND; i++) {
         AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
         audioRenderer->GetCurrentOutputDevices(deviceInfo);
 
@@ -2206,7 +2205,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetCurrentOutputDevices_Stability_0
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
 
-    for (int i = 0; i < VALUE_THOUSAND; i++) {
+    for (int i = 0; i < RenderUT::VALUE_THOUSAND; i++) {
         AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
         audioRenderer->GetCurrentOutputDevices(deviceInfo);
 
@@ -2272,7 +2271,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetSpeed_001, TestSize.Level1)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioPosition_001, TestSize.Level1)
 {
     int32_t ret = -1;
-    FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
+    FILE *wavFile = fopen(RenderUT::AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
     ASSERT_NE(nullptr, wavFile);
 
     AudioRendererOptions rendererOptions;
@@ -2293,13 +2292,13 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioPosition_001, TestSize.Leve
 
     size_t bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
     int32_t bytesWritten = audioRenderer->Write(buffer, bytesToWrite);
-    EXPECT_GE(bytesWritten, VALUE_ZERO);
+    EXPECT_GE(bytesWritten, RenderUT::VALUE_ZERO);
 
     Timestamp timestamp;
     bool getAudioPositionRet = audioRenderer->GetAudioPosition(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(true, getAudioPositionRet);
-    EXPECT_GE(timestamp.time.tv_sec, (const long)VALUE_ZERO);
-    EXPECT_GE(timestamp.time.tv_nsec, (const long)VALUE_ZERO);
+    EXPECT_GE(timestamp.time.tv_sec, (const long)RenderUT::VALUE_ZERO);
+    EXPECT_GE(timestamp.time.tv_nsec, (const long)RenderUT::VALUE_ZERO);
 
     audioRenderer->Drain();
     audioRenderer->Stop();
@@ -2472,7 +2471,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioPosition_007, TestSize.Leve
     audioRenderer->GetAudioPosition(timestamp2, Timestamp::Timestampbase::MONOTONIC);
 
     int64_t duration = (timestamp2.time.tv_sec - timestamp1.time.tv_sec) * 1000000 + (timestamp2.time.tv_nsec -
-        timestamp1.time.tv_nsec) / VALUE_THOUSAND; // ns -> us
+        timestamp1.time.tv_nsec) / RenderUT::VALUE_THOUSAND; // ns -> us
     EXPECT_GE(duration, sleepTime);
 
     audioRenderer->Release();
@@ -2599,7 +2598,7 @@ HWTEST(AudioRendererUnitTest, GetSourceDuration_001, TestSize.Level1)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_001, TestSize.Level1)
 {
     int32_t ret = -1;
-    FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
+    FILE *wavFile = fopen(RenderUT::AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
     ASSERT_NE(nullptr, wavFile);
 
     AudioRendererOptions rendererOptions;
@@ -2622,14 +2621,14 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_001, TestSize
 
     size_t bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
     int32_t bytesWritten = audioRenderer->Write(buffer, bytesToWrite);
-    EXPECT_GE(bytesWritten, VALUE_ZERO);
+    EXPECT_GE(bytesWritten, RenderUT::VALUE_ZERO);
 
     Timestamp timestamp;
     int32_t getAudioTimestampInfoRet =
         audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(SUCCESS, getAudioTimestampInfoRet);
-    EXPECT_GE(timestamp.time.tv_sec, (const long)VALUE_ZERO);
-    EXPECT_GE(timestamp.time.tv_nsec, (const long)VALUE_ZERO);
+    EXPECT_GE(timestamp.time.tv_sec, (const long)RenderUT::VALUE_ZERO);
+    EXPECT_GE(timestamp.time.tv_nsec, (const long)RenderUT::VALUE_ZERO);
 
     audioRenderer->Drain();
     audioRenderer->Stop();
@@ -2799,7 +2798,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_007, TestSize
     audioRenderer->GetAudioTimestampInfo(timestamp2, Timestamp::Timestampbase::MONOTONIC);
 
     int64_t duration = (timestamp2.time.tv_sec - timestamp1.time.tv_sec) * 1000000 + (timestamp2.time.tv_nsec -
-        timestamp1.time.tv_nsec) / VALUE_THOUSAND; // ns -> us
+        timestamp1.time.tv_nsec) / RenderUT::VALUE_THOUSAND; // ns -> us
     EXPECT_GE(duration, sleepTime);
 
     audioRenderer->Release();
