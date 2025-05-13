@@ -337,6 +337,9 @@ private:
     void AddSessionId(const uint32_t sessionId);
     void DeleteSessionId(const uint32_t sessionId);
 
+    void AddSessionId(const uint32_t sessionId);
+    void DeleteSessionId(const uint32_t sessionId);
+
     bool IsPaRoute(uint32_t routeFlag);
     int32_t HandleScoOutputDeviceFetched(
         shared_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason);

@@ -1976,10 +1976,25 @@ int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, c
 
 int32_t AudioPolicyServer::UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID)
 {
-    if (interruptService_ != nullptr) {
-        return interruptService_->UnsetAudioInterruptCallback(zoneID, sessionID);
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("The interruptService_ is nullptr!");
+        return ERR_UNKNOWN;
     }
-    return ERR_UNKNOWN;
+    if (coreService_ == nullptr) {
+        AUDIO_ERR_LOG("The coreService_ is nullptr!");
+        return ERR_UNKNOWN;
+    }
+
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    if (callingUid != MEDIA_SERVICE_UID && callingUid != MCU_UID) {
+        // if the callingUid is not media or mcu, it is necessary to verify whether the parameters are valid.
+        if (!coreService_->IsStreamBelongToUid(callingUid, sessionID)) {
+            AUDIO_ERR_LOG("The sessionId %{public}u does not belong to uid %{public}u!", sessionID, callingUid);
+            return ERR_UNKNOWN;
+        }
+    }
+
+    return interruptService_->UnsetAudioInterruptCallback(zoneID, sessionID);
 }
 
 int32_t AudioPolicyServer::SetAudioManagerInterruptCallback(const int32_t /* clientId */,
