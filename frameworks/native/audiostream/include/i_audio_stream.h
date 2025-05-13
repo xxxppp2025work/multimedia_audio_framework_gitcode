@@ -288,7 +288,13 @@ public:
 
     virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
 
+    virtual bool GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
+    {
+        return false;
+    }
+
     virtual void SetSwitchingStatus(bool isSwitching) = 0;
+
     virtual int32_t SetSourceDuration(int64_t duration) { return 0; }
 
     virtual void GetRestoreInfo(RestoreInfo &restoreInfo) = 0;
