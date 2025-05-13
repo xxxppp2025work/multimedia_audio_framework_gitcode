@@ -30,19 +30,26 @@
 #include "audio_enhance_chain_manager.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "capturer_clock_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
+static constexpr uint32_t USING_FIRST_TS_FOR_TS_COUNTTING_MAX = 20;
+static constexpr uint32_t REGULAR_DETLA_RATIO = 2;
+static constexpr uint32_t DECIMAL_BASE = 10;
+
 AudioCaptureSource::AudioCaptureSource(const uint32_t captureId, const std::string &halName)
     : captureId_(captureId), halName_(halName)
 {
+    audioSrcClock_ = std::make_shared<AudioCapturerSourceClock>();
+    CapturerClockManager::GetInstance().RegisterAudioSourceClock(captureId, audioSrcClock_);
 }
 
 AudioCaptureSource::~AudioCaptureSource()
 {
-    AUDIO_WARNING_LOG("in");
     isCaptureThreadRunning_ = false;
     AUDIO_INFO_LOG("[%{public}s] volumeDataCount: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
+    CapturerClockManager::GetInstance().DeleteAudioSourceClock(captureId_);
 }
 
 int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
@@ -71,6 +78,11 @@ int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
         IsNonblockingSource(attr.adapterName)) {
         ringBufferHandler_ = std::make_shared<RingBufferHandler>();
         ringBufferHandler_->Init(attr.sampleRate, attr.channel, GetByteSizeByFormat(attr.format));
+    }
+
+    if (audioSrcClock_ != nullptr) {
+        audioSrcClock_->Init(attr.sampleRate, attr.format, attr.channel);
+        audioSrcClock_->SetName(adapterNameCase_);
     }
     return SUCCESS;
 }
@@ -109,17 +121,8 @@ bool AudioCaptureSource::IsInited(void)
     return sourceInited_;
 }
 
-int32_t AudioCaptureSource::Start(void)
+void AudioCaptureSource::InitRunningLock(void)
 {
-    std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
-    Trace trace("AudioCaptureSource::Start");
-
-    if (IsNonblockingSource(adapterNameCase_)) {
-        return NonblockingStart();
-    }
-
-    InitLatencyMeasurement();
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ == nullptr) {
         WatchTimeout guard("create AudioRunningLock start");
@@ -142,6 +145,24 @@ int32_t AudioCaptureSource::Start(void)
         AUDIO_ERR_LOG("running lock is null, playback can not work well");
     }
 #endif
+}
+
+int32_t AudioCaptureSource::Start(void)
+{
+    std::lock_guard<std::mutex> lock(statusMutex_);
+    AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
+    Trace trace("AudioCaptureSource::Start");
+    if (audioSrcClock_ != nullptr) {
+        audioSrcClock_->Reset();
+    }
+
+    if (IsNonblockingSource(adapterNameCase_)) {
+        return NonblockingStart();
+    }
+
+    InitLatencyMeasurement();
+    InitRunningLock();
+
     // eg: primary_source_0_20240527202236189_44100_2_1.pcm
     dumpFileName_ = halName_ + "_source_" + std::to_string(attr_.sourceType) + "_" + GetTime() + "_" +
         std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
@@ -249,6 +270,7 @@ int32_t AudioCaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uin
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     Trace trace("AudioCaptureSource::CaptureFrame");
+    AudioCapturerSourceTsRecorder recorder(replyBytes, audioSrcClock_);
 
     // only mic ref
     if (attr_.sourceType == SOURCE_TYPE_MIC_REF) {
@@ -1116,6 +1138,87 @@ void AudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is nullptr");
     deviceManager->SetDmDeviceType(dmDeviceType);
+}
+
+static uint64_t GetFirstTimeStampFromAlgo(const std::string &adapterNameCase)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, 0, "GetDeviceManager fail!");
+
+    AudioParamKey key = NONE;
+    std::string value = deviceManager->GetAudioParameter(adapterNameCase, key, "record_algo_first_ts");
+    CHECK_AND_RETURN_RET_LOG(value != "", 0, "record_algo_first_ts fail!");
+
+    uint64_t firstTimeStamp = std::strtoull(value.c_str(), nullptr, DECIMAL_BASE);
+    AUDIO_INFO_LOG("record_algo_first_ts:%{public}" PRIu64, firstTimeStamp);
+    return firstTimeStamp;
+}
+
+/*
+ * The timestamp for the first 20 frames can be obtained by accumulating the firstTimeStamp of the HDI layer.
+ * After that,
+ * the systemClock is used to obtain the timestamp when "the packet interval is normal" or "after first 20 frames".
+ */
+void AudioCapturerSourceClock::CheckAndResetTimestamp(uint64_t &timestamp, uint32_t positionInc)
+{
+    if (isGetTimeStampFromSystemClock_) {
+        return;
+    }
+
+    frameCnt_++;
+
+    if (frameCnt_ == 1) {
+        firstTimeStamp_ = GetFirstTimeStampFromAlgo(adapterNameCase_);
+        AUDIO_INFO_LOG("GetFirstTimeStampFromAlgo:%{public}" PRIu64, firstTimeStamp_);
+    }
+
+    if (frameCnt_ > USING_FIRST_TS_FOR_TS_COUNTTING_MAX || firstTimeStamp_ == 0) {
+        AUDIO_ERR_LOG("frameCnt_ > MAX or ts is 0! Get timestamp from system Clock");
+        isGetTimeStampFromSystemClock_ = true;
+        return;
+    }
+
+    uint64_t tsDetla = timestamp - lastTs_;
+    AUDIO_INFO_LOG("tsDetla:%{public}" PRIu64, tsDetla);
+    lastTs_ = timestamp;
+    uint64_t regularTsDetla = positionInc * AUDIO_NS_PER_SECOND / sampleRate_;
+    AUDIO_INFO_LOG("regularTsDetla:%{public}" PRIu64, regularTsDetla);
+    if (tsDetla > (regularTsDetla / REGULAR_DETLA_RATIO) && tsDetla < (regularTsDetla * REGULAR_DETLA_RATIO)) {
+        AUDIO_INFO_LOG("tsDetla good! Get timestamp from system Clock");
+        isGetTimeStampFromSystemClock_ = true;
+        return;
+    }
+
+    if (frameCnt_ != 1) {
+        firstTimeStamp_ += regularTsDetla;
+    }
+    timestamp = firstTimeStamp_;
+
+    AUDIO_INFO_LOG("frameCnt_:%{public}u timestamp:%{public}" PRIu64, frameCnt_, timestamp);
+}
+
+uint64_t AudioCapturerSourceClock::GetTimestamp(uint32_t positionInc)
+{
+    int64_t timestamp = ClockTime::GetCurNano();
+    CHECK_AND_RETURN_RET_LOG(timestamp > 0, 0, "GetCurNano fail!");
+    uint64_t unsignedTimestamp = static_cast<uint64_t>(timestamp);
+
+    CheckAndResetTimestamp(unsignedTimestamp, positionInc);
+    return unsignedTimestamp;
+}
+
+void AudioCapturerSourceClock::Reset()
+{
+    frameCnt_ = 0;
+    firstTimeStamp_ = 0;
+    lastTs_ = 0;
+    isGetTimeStampFromSystemClock_ = false;
+}
+
+void AudioCapturerSourceClock::SetName(const std::string &adapterNameCase)
+{
+    adapterNameCase_ = adapterNameCase;
 }
 
 } // namespace AudioStandard
