@@ -19,6 +19,7 @@
 #include <sstream>
 #include <dirent.h>
 #include <fstream>
+#include <thread>
 #include "common_event_manager.h"
 #include "common_event_support.h"
 #include "usb_srv_client.h"
@@ -151,6 +152,13 @@ static shared_ptr<AudioUsbManager::EventSubscriber> SubscribeCommonEvent()
     return subscriber;
 }
 
+static inline bool HasDeviceAttach(list<pair<UsbAudioDevice, bool>> &messages)
+{
+    return find_if(messages.cbegin(), messages.cend(), [](auto &item) {
+        return item.second;
+    }) != messages.cend();
+}
+
 static bool NotSameSoundCard(const UsbAudioDevice &dev1, const UsbAudioDevice &dev2)
 {
     return dev1.cardNum_ != dev2.cardNum_ || dev1.isCapturer_ != dev2.isCapturer_ || dev1.isPlayer_ != dev2.isPlayer_;
@@ -182,7 +190,31 @@ void AudioUsbManager::Init()
 #endif
         RefreshUsbAudioDevices();
         initialized_ = true;
+        StartNotifyThread();
     }
+}
+
+void AudioUsbManager::StartNotifyThread()
+{
+    thread th([this] {
+        while (initialized_) {
+            auto origin = WaitMessageQueue();
+            if (origin.empty()) { continue; }
+            NotifyDevicesLoop(origin);
+        }
+    });
+    pthread_setname_np(th.native_handle(), "OS_AUD_NOTI_USB");
+    th.detach();
+}
+
+list<pair<UsbAudioDevice, bool>> AudioUsbManager::WaitMessageQueue()
+{
+    unique_lock<mutex> uLock(mqMutex_);
+    ntCondition_.wait(uLock, [this] { return !messageQueue_.empty(); });
+    list<pair<UsbAudioDevice, bool>> c;
+    messageQueue_.swap(c);
+    uLock.unlock();
+    return c;
 }
 
 void AudioUsbManager::Deinit()
@@ -305,17 +337,71 @@ void AudioUsbManager::EventSubscriber::OnReceiveEvent(const EventFwk::CommonEven
         {usbDevice.GetBusNum(), usbDevice.GetDevAddr()},
         usbDevice.GetProductName()
     };
-    AudioUsbManager::GetInstance().HandleAudioDeviceEvent(make_pair(device, isAttach));
+    AudioUsbManager::GetInstance().PushMessageQueue(device, isAttach);
 }
 
-void AudioUsbManager::HandleAudioDeviceEvent(pair<UsbAudioDevice, bool> &&p)
+void AudioUsbManager::PushMessageQueue(const UsbAudioDevice &device, const bool isAttach)
 {
-    AUDIO_INFO_LOG("Entry. deviceName=%{public}s, busNum=%{public}d, devAddr=%{public}d, isAttach=%{public}d",
-        p.first.name_.c_str(), p.first.usbAddr_.busNum_, p.first.usbAddr_.devAddr_, p.second);
-    lock_guard<mutex> lock(mutex_);
+    AUDIO_INFO_LOG("Entry. deviceName=%{public}s, isAttach=%{public}d", device.name_.c_str(), isAttach);
+    unique_lock<mutex> uLock(mqMutex_);
+    messageQueue_.push_back(make_pair(device, isAttach));
+    ntCondition_.notify_one();
+    uLock.unlock();
+}
+
+void AudioUsbManager::NotifyDevicesLoop(list<pair<UsbAudioDevice, bool>> &origin)
+{
+    list<pair<UsbAudioDevice, bool>> merged;
+    set<UsbAddr> toDelete;
+    for (auto &qItem : origin) {
+        auto it = find_if(merged.begin(), merged.end(), [&qItem](auto &item) {
+            return qItem.first.usbAddr_ == item.first.usbAddr_;
+        });
+        if (it != merged.end()) {
+            FillToDelete(qItem, it->second, toDelete);
+            merged.erase(it);
+        }
+        merged.push_back(qItem);
+    }
+    if (!merged.empty()) {
+        lock_guard<mutex> lock(mutex_);
+        for (auto item : toDelete) {
+            PreDeleteDevice(item);
+        }
+        if (HasDeviceAttach(merged)) {
+            soundCardMap_ = GetUsbSoundCardMap();
+        }
+        for (auto &item : merged) {
+            HandleAudioDeviceEvent(item);
+        }
+    }
+}
+
+void AudioUsbManager::FillToDelete(pair<UsbAudioDevice, bool> &curr, bool IsPrevAttach, set<UsbAddr> &toDelete)
+{
+    if (curr.second) {
+        if (!IsPrevAttach) {
+            toDelete.insert(curr.first.usbAddr_);
+        }
+    } else {
+        toDelete.erase(curr.first.usbAddr_);
+    }
+}
+
+void AudioUsbManager::PreDeleteDevice(const UsbAddr addr)
+{
+    auto it = find_if(audioDevices_.cbegin(), audioDevices_.cend(), [addr](auto &item) {
+        return addr == item.usbAddr_;
+    });
+    if (it != audioDevices_.cend()) {
+        NotifyDevice(*it, false);
+    }
+}
+
+void AudioUsbManager::HandleAudioDeviceEvent(pair<UsbAudioDevice, bool> &p)
+{
     auto it = find(audioDevices_.begin(), audioDevices_.end(), p.first);
     if (p.second) {
-        soundCardMap_ = GetUsbSoundCardMap();
         CHECK_AND_RETURN_LOG(FillUsbAudioDevice(p.first), "Error: FillUsbAudioDevice Failed");
         UpdateDevice(p.first, it);
         NotifyDevice(p.first, true);
