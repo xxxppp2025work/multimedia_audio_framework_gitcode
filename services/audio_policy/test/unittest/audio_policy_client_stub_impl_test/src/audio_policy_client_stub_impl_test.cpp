@@ -636,5 +636,22 @@ HWTEST(AudioPolicyClientStubImplTest, AudioDeviceDescriptor_001, TestSize.Level1
     deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
     EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(), DEVICE_TYPE_SPEAKER);
 }
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_061
+* @tc.desc  : Test OnSpatializationEnabledChangeForCurrentDevice.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_061, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteSpatialEnabledChangeForCurrentDeviceCb>();
+    int32_t result = audioPolicyClient->AddSpatializationEnabledChangeForCurrentDeviceCallback(cb);
+    EXPECT_EQ(result, SUCCESS);
+
+    bool enabled = true;
+    audioPolicyClient->OnSpatializationEnabledChangeForCurrentDevice(enabled);
+    EXPECT_NE(audioPolicyClient, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS
