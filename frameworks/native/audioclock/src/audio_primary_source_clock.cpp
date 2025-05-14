@@ -53,10 +53,9 @@ void AudioCapturerSourceClock::CheckAndResetTimestamp(uint64_t &timestamp, uint3
     }
 
     uint64_t tsDetla = timestamp - lastTs_;
-    AUDIO_INFO_LOG("tsDetla:%{public}" PRIu64, tsDetla);
     lastTs_ = timestamp;
     uint64_t regularTsDetla = positionInc * AUDIO_NS_PER_SECOND / sampleRate_;
-    AUDIO_INFO_LOG("regularTsDetla:%{public}" PRIu64, regularTsDetla);
+    AUDIO_INFO_LOG("tsDetla:%{public}" PRIu64 " regularTsDetla:%{public}" PRIu64, tsDetla, regularTsDetla);
     if (tsDetla > (regularTsDetla / REGULAR_DETLA_RATIO) && tsDetla < (regularTsDetla * REGULAR_DETLA_RATIO)) {
         AUDIO_INFO_LOG("tsDetla good! Get timestamp from system Clock");
         isGetTimeStampFromSystemClock_ = true;
