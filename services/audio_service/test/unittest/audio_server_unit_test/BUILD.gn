@@ -32,11 +32,15 @@ ohos_unittest("audio_server_unit_test") {
     "../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../frameworks/native/audioinnercall/include",
     "../../../../../services/audio_service/server/include",
+    "../../../../../services/audio_service/server/src",
     "../../../../../services/audio_policy/client/include",
   ]
 
   configs = [ "../../../../../services/audio_service:audio_service_config" ]
-  cflags_cc = [ "-std=c++20" ]
+  cflags_cc = [
+    "-std=c++20",
+    "-Wno-header-hygiene",
+  ]
 
   deps = [
     "../../../../../services/audio_service:audio_service_static",
@@ -55,5 +59,18 @@ ohos_unittest("audio_server_unit_test") {
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "bluetooth:btframework",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "googletest:gmock",
+    "init:libbegetutil",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
   ]
 }

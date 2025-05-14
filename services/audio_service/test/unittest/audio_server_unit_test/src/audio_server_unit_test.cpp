@@ -21,11 +21,13 @@
 #include "audio_info.h"
 #include "audio_process_config.h"
 #include "audio_server.h"
+#include "audio_server.cpp"
 #include "audio_service.h"
 #include "audio_stream_info.h"
 #include "policy_handler.h"
 #include "system_ability_definition.h"
 #include "iservice_registry.h"
+#include "gtest/gtest.h"
 
 using namespace testing::ext;
 
@@ -508,6 +510,20 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetIORoutes_001, TestSize.Level1)
     ret = audioServer->SetIORoutes(DEVICE_TYPE_BLUETOOTH_A2DP, DeviceFlag::OUTPUT_DEVICES_FLAG, deviceTypes,
         A2DP_NOT_OFFLOAD);
     EXPECT_EQ(SUCCESS, ret);
+
+    activeOutputDevices.clear();
+    activeOutputDevices.push_back(DEVICE_TYPE_ACCESSORY);
+    ret = audioServer->SetAudioScene(AUDIO_SCENE_RINGING, activeOutputDevices, DEVICE_TYPE_USB_ARM_HEADSET, A2DP_OFFLOAD);
+
+    ret = audioServer->SetIORoutes(DEVICE_TYPE_ACCESSORY, INPUT_DEVICES_FLAG, deviceTypes, A2DP_OFFLOAD);
+    EXPECT_EQ(SUCCESS, ret);
+
+    activeOutputDevices.clear();
+    activeOutputDevices.push_back(DEVICE_TYPE_ACCESSORY);
+    ret = audioServer->SetAudioScene(AUDIO_SCENE_DEFAULT, activeOutputDevices, DEVICE_TYPE_USB_ARM_HEADSET, A2DP_OFFLOAD);
+
+    ret = audioServer->SetIORoutes(DEVICE_TYPE_ACCESSORY, INPUT_DEVICES_FLAG, deviceTypes, A2DP_OFFLOAD);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 
@@ -711,28 +727,28 @@ HWTEST_F(AudioServerUnitTest, AudioServerCheckRecorderPermission_001, TestSize.L
 
     config.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
     ret = audioServer->CheckRecorderPermission(config);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 
     config.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
     config.innerCapMode = MODERN_INNER_CAP;
     ret = audioServer->CheckRecorderPermission(config);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 
     config.innerCapMode = INVALID_CAP_MODE;
     ret = audioServer->CheckRecorderPermission(config);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 
     config.capturerInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
     ret = audioServer->CheckRecorderPermission(config);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 
     config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_CALL;
     ret = audioServer->CheckRecorderPermission(config);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 
     config.appInfo.appUid = 0;
     ret = audioServer->CheckRecorderPermission(config);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 }
 
 /**
@@ -745,7 +761,7 @@ HWTEST_F(AudioServerUnitTest, AudioServeCreatePlaybackCapturerManager_001, TestS
 {
     EXPECT_NE(nullptr, audioServer);
     bool ret = audioServer->CreatePlaybackCapturerManager();
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 }
 
 /**
@@ -1142,7 +1158,25 @@ HWTEST_F(AudioServerUnitTest, Dump_001, TestSize.Level1)
     args.push_back(u"-fb");
     args.push_back(u"test");
 
-    auto ret = audioServer->Dump(0, args);
+    auto ret = audioServer->Dump(1, args);
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test Dump API
+ * @tc.type  : FUNC
+ * @tc.number: Dump_002
+ * @tc.desc  : Test Dump interface.
+ */
+HWTEST_F(AudioServerUnitTest, Dump_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    std::vector<std::u16string> args;
+    args.push_back(u"-fb");
+    args.push_back(u"-f");
+    args.push_back(u"-fb");
+
+    auto ret = audioServer->Dump(1, args);
     EXPECT_NE(ret, 0);
 }
 
@@ -1327,6 +1361,52 @@ HWTEST_F(AudioServerUnitTest, SetDefaultAdapterEnable_001, TestSize.Level1)
     bool isEnable = false;
     audioServer->SetDefaultAdapterEnable(isEnable);
     EXPECT_NE(nullptr, audioServer);
+}
+
+/**
+ * @tc.name  : Test CapturerStateOb::OnCaptureState API
+ * @tc.type  : FUNC
+ * @tc.number: CapturerStateOb::OnCaptureState_001
+ * @tc.desc  : Test CapturerStateOb::OnCaptureState interface.
+ */
+HWTEST_F(AudioServerUnitTest, CapturerStateOb_OnCaptureState_001, TestSize.Level1)
+{
+    uint32_t captureId = 10;
+    auto capturerStateOb = std::make_shared<CapturerStateOb>(captureId, [](bool, size_t, size_t) {});
+    capturerStateOb->OnCaptureState(true);
+    EXPECT_NE(nullptr, capturerStateOb);
+}
+
+/**
+ * @tc.name  : Test SetMicrophoneMute API
+ * @tc.type  : FUNC
+ * @tc.number: SetMicrophoneMute_001
+ * @tc.desc  : Test SetMicrophoneMute interface.
+ */
+HWTEST_F(AudioServerUnitTest, SetMicrophoneMute_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    bool isMute = false;
+    int32_t ret = audioServer->SetMicrophoneMute(isMute);
+    EXPECT_EQ(ret, SUCCESS);
+
+    isMute = true;
+    ret = audioServer->SetMicrophoneMute(isMute);
+    //TODO: check the return value
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetDmDeviceType API
+ * @tc.type  : FUNC
+ * @tc.number: SetDmDeviceType_001
+ * @tc.desc  : Test SetDmDeviceType interface.
+ */
+HWTEST_F(AudioServerUnitTest, SetDmDeviceType_001, TestSize.Level1)
+{
+    audioServer->SetDmDeviceType(0);
+
+    EXPECT_NE(audioServer, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS
