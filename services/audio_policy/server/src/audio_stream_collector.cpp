@@ -1102,6 +1102,19 @@ bool AudioStreamCollector::CheckVoiceCallActive(int32_t sessionId)
     return true;
 }
 
+bool AudioStreamCollector::IsVoiceCallActive()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (auto &changeInfo: audioRendererChangeInfos_) {
+        if (changeInfo != nullptr &&
+            (changeInfo->rendererInfo).streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+            changeInfo->rendererState == RENDERER_PREPARED) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int32_t AudioStreamCollector::GetRunningStream(AudioStreamType certainType, int32_t certainChannelCount)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
@@ -1150,6 +1163,7 @@ AudioStreamType AudioStreamCollector::GetStreamTypeFromSourceType(SourceType sou
     switch (sourceType) {
         case SOURCE_TYPE_MIC:
         case SOURCE_TYPE_UNPROCESSED:
+        case SOURCE_TYPE_LIVE:
             return STREAM_MUSIC;
         case SOURCE_TYPE_VOICE_COMMUNICATION:
         case SOURCE_TYPE_VOICE_CALL:
@@ -1592,6 +1606,20 @@ bool AudioStreamCollector::IsMediaPlaying()
                 return true;
             default:
                 break;
+        }
+    }
+    return false;
+}
+
+bool AudioStreamCollector::IsVoipStreamActive()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (auto &changeInfo: audioRendererChangeInfos_) {
+        if (changeInfo != nullptr &&
+            ((changeInfo->rendererInfo).streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+            (changeInfo->rendererInfo).streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) &&
+            changeInfo->rendererState == RENDERER_RUNNING) {
+            return true;
         }
     }
     return false;

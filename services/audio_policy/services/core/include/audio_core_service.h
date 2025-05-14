@@ -332,6 +332,7 @@ private:
     bool IsStreamSupportDirect(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsNewDevicePlaybackSupported(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool IsDeviceSwitching(const AudioStreamDeviceChangeReasonExt reason);
 
     void AddSessionId(const uint32_t sessionId);
     void DeleteSessionId(const uint32_t sessionId);
@@ -414,6 +415,9 @@ private:
     std::shared_ptr<DeviceStatusListener> deviceStatusListener_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
 
+    std::vector<std::pair<AudioStreamType, StreamUsage>> streamsWhenRingDualOnPrimarySpeaker_;
+    bool isRingDualToneOnPrimarySpeaker_ = false;
+
     // Save the relationship of uid and session id.
     std::map<uint32_t, uid_t> sessionIdMap_;
     std::mutex sessionIdMutex_;
@@ -429,6 +433,7 @@ private:
     bool enableDualHalToneState_ = false;
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     bool isFastControlled_ = true;
+    bool isVoiceCallMuted_ = false;
     std::mutex serviceFlagMutex_;
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,
