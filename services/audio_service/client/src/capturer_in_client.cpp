@@ -908,14 +908,11 @@ bool CapturerInClientInner::GetTimeStampInfo(Timestamp &timestamp, Timestamp::Ti
     uint64_t writeTimeStamp = 0;
     clientBuffer_->GetTimeStampInfo(writePos, writeTimeStamp);
     CHECK_AND_RETURN_RET_LOG(writeTimeStamp != 0, false, "writeTimeStamp is zero");
-    AUDIO_DEBUG_LOG("pos:%{public}" PRIu64, writePos);
-    AUDIO_DEBUG_LOG("ts:%{public}" PRIu64, writeTimeStamp);
+    AUDIO_DEBUG_LOG("pos:%{public}" PRIu64 " ts:%{public}" PRIu64, writePos, writeTimeStamp);
 
     timestamp.framePosition = writePos;
     timestamp.time.tv_sec = static_cast<time_t>(writeTimeStamp / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(writeTimeStamp % AUDIO_NS_PER_SECOND);
-    AUDIO_DEBUG_LOG("timestamp sec:%{public}" PRIu64, timestamp.time.tv_sec);
-    AUDIO_DEBUG_LOG("timestamp nsec:%{public}" PRIu64, timestamp.time.tv_nsec);
 
     return true;
 }
