@@ -283,7 +283,6 @@ void CapturerInServer::UpdateBufferTimeStamp(const BufferDesc &dstBuffer)
         processConfig_.streamInfo.channels;
 
     curProcessPos_ += dstBuffer.bufLength / sizePerPos;
-    AUDIO_DEBUG_LOG("pos:%{public}" PRIu64, curProcessPos_);
 
     if (!capturerClock_->GetTimeStampByPosition(curProcessPos_, timestamp)) {
         AUDIO_ERR_LOG("GetTimeStampByPosition fail!");
