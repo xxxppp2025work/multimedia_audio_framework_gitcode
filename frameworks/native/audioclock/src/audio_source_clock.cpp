@@ -60,7 +60,7 @@ static int32_t GetByteSizeByFormat(AudioSampleFormat format)
 
 void AudioSourceClock::Init(uint32_t sampleRate, AudioSampleFormat format, uint32_t channel)
 {
-    AUDIO_DEBUG_LOG("sampleRate:%{public}u format:%{public}d channel:%{public}u",
+    AUDIO_INFO_LOG("sampleRate:%{public}u format:%{public}d channel:%{public}u",
         sampleRate, static_cast<int32_t>(format), channel);
     std::lock_guard<std::mutex> lock(clockMtx_);
     sampleRate_ = sampleRate;
@@ -109,7 +109,6 @@ void AudioSourceClock::UpdateSessionId(const std::vector<int32_t> &sessionIdList
 
 AudioCapturerSourceTsRecorder::~AudioCapturerSourceTsRecorder()
 {
-    AUDIO_DEBUG_LOG("RenewTimestamp: %{public}" PRId64, replyBytes_);
     CHECK_AND_RETURN(clock_ != nullptr, "clock_ is nullptr! fail to renew timestamp!");
     clock_->Renew(replyBytes_);
 }
