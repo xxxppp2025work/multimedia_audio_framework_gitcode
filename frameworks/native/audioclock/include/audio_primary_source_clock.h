@@ -28,7 +28,7 @@ public:
     void CheckAndResetTimestamp(uint64_t &timestamp, uint32_t positionInc);
 
     uint32_t GetFrameCnt() const;
-    void Reset();    
+    void Reset();
     void SetFirstTimestampFromHdi(uint64_t hdiTimestamp);
 private:
     uint32_t frameCnt_ = 0;
