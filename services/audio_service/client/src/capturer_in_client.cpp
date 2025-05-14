@@ -1687,8 +1687,6 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
         if (availableSizeInFrame > 0) { // If OHAudioBuffer has data
             BufferDesc currentOHBuffer_ = {};
             clientBuffer_->GetTimeStampInfo(currentOHBuffer_.position, currentOHBuffer_.timeStampInNs);
-            AUDIO_DEBUG_LOG("GetTimeStampInfo pos:%{public}" PRIu64, currentOHBuffer_.position);
-            AUDIO_DEBUG_LOG("GetTimeStampInfo ts:%{public}" PRIu64, currentOHBuffer_.timeStampInNs);
             clientBuffer_->GetReadbuffer(clientBuffer_->GetCurReadFrame(), currentOHBuffer_);
             BufferWrap bufferWrap = {currentOHBuffer_.buffer, clientSpanSizeInByte_};
             ringCache_->Enqueue(bufferWrap);
