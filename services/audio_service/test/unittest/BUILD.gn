@@ -941,6 +941,7 @@ ohos_unittest("policy_provider_stub_unit_test") {
     "../../../../services/audio_service/client/include",
     "../../../../services/audio_service/common/include/dfx",
     "../../../../frameworks/native/playbackcapturer/include",
+    "../../../../frameworks/native/audioclock/include",
   ]
 
   sources = [ "policy_provider_stub_unit_test.cpp" ]
