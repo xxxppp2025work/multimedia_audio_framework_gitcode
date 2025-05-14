@@ -908,13 +908,14 @@ bool CapturerInClientInner::GetTimeStampInfo(Timestamp &timestamp, Timestamp::Ti
     uint64_t writeTimeStamp = 0;
     clientBuffer_->GetTimeStampInfo(writePos, writeTimeStamp);
     CHECK_AND_RETURN_RET_LOG(writeTimeStamp != 0, false, "writeTimeStamp is zero");
-    AUDIO_DEBUG_LOG("pos:%{public}" PRIu64 " ts:%{public}" PRIu64, writePos, writeTimeStamp);
+    AUDIO_DEBUG_LOG("pos:%{public}" PRIu64, writePos);
+    AUDIO_DEBUG_LOG("ts:%{public}" PRIu64, writeTimeStamp);
 
     timestamp.framePosition = writePos;
     timestamp.time.tv_sec = static_cast<time_t>(writeTimeStamp / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(writeTimeStamp % AUDIO_NS_PER_SECOND);
-    AUDIO_DEBUG_LOG("timestamp sec:%{public}" PRIu64 " nsec:%{public}" PRIu64,
-        timestamp.time.tv_sec, timestamp.time.tv_nsec);
+    AUDIO_DEBUG_LOG("timestamp sec:%{public}" PRIu64, timestamp.time.tv_sec);
+    AUDIO_DEBUG_LOG("timestamp nsec:%{public}" PRIu64, timestamp.time.tv_nsec);
 
     return true;
 }
@@ -1689,8 +1690,8 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
         if (availableSizeInFrame > 0) { // If OHAudioBuffer has data
             BufferDesc currentOHBuffer_ = {};
             clientBuffer_->GetTimeStampInfo(currentOHBuffer_.position, currentOHBuffer_.timeStampInNs);
-            AUDIO_DEBUG_LOG("GetTimeStampInfo pos:%{public}" PRIu64 " ts:%{public}" PRIu64,
-                currentOHBuffer_.position, currentOHBuffer_.timeStampInNs);
+            AUDIO_DEBUG_LOG("GetTimeStampInfo pos:%{public}" PRIu64, currentOHBuffer_.position);
+            AUDIO_DEBUG_LOG("GetTimeStampInfo ts:%{public}" PRIu64, currentOHBuffer_.timeStampInNs);
             clientBuffer_->GetReadbuffer(clientBuffer_->GetCurReadFrame(), currentOHBuffer_);
             BufferWrap bufferWrap = {currentOHBuffer_.buffer, clientSpanSizeInByte_};
             ringCache_->Enqueue(bufferWrap);
