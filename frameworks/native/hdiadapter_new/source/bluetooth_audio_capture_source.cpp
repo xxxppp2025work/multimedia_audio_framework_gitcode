@@ -35,7 +35,6 @@ using namespace OHOS::HDI::Audio_Bluetooth;
 
 namespace OHOS {
 namespace AudioStandard {
-
 BluetoothAudioCaptureSource::BluetoothAudioCaptureSource(const uint32_t captureId)
     : captureId_(captureId)
 {
