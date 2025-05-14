@@ -107,6 +107,19 @@ public:
     virtual void OnReadData(size_t length) = 0;
 };
 
+class AudioCapturerReadWithTimeStampCallback {
+public:
+    virtual ~AudioCapturerReadWithTimeStampCallback() = default;
+
+    /**
+     * Called when buffer to be enqueued.
+     *
+     * @param length Indicates requested buffer length.
+     * @since 9
+     */
+    virtual void OnReadData(size_t length) = 0;
+};
+
 class AudioCapturerDeviceChangeCallback {
 public:
     virtual ~AudioCapturerDeviceChangeCallback() = default;
@@ -350,6 +363,17 @@ public:
      * @since 9
      */
     virtual CapturerState GetStatus() const = 0;
+
+    /**
+     * @brief Obtains the Timestamp from lower layer.
+     *
+     * @param timestamp Indicates a {@link Timestamp} instance reference provided by the caller.
+     * @param base Indicates the time base, which can be {@link Timestamp.Timestampbase#BOOTTIME} or
+     * {@link Timestamp.Timestampbase#MONOTONIC}.
+     * @return Returns <b>true</b> if the timestamp is successfully obtained; returns <b>false</b> otherwise.
+     * @since 16
+     */
+    virtual bool GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
 
     /**
      * @brief Obtains the Timestamp.
