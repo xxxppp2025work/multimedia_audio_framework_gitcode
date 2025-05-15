@@ -284,9 +284,6 @@ int32_t AudioCaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uin
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     Trace trace("AudioCaptureSource::CaptureFrame");
-    if (audioSrcClock_ != nullptr && audioSrcClock_->GetFrameCnt() == 0) {
-        audioSrcClock_->SetFirstTimestampFromHdi(GetFirstTimeStampFromAlgo(adapterNameCase_));
-    }
     AudioCapturerSourceTsRecorder recorder(replyBytes, audioSrcClock_);
 
     // only mic ref
@@ -308,6 +305,9 @@ int32_t AudioCaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uin
     uint32_t frameLen = static_cast<uint32_t>(requestBytes);
     int32_t ret = audioCapture_->CaptureFrame(audioCapture_, reinterpret_cast<int8_t *>(frame), &frameLen, &replyBytes);
     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_READ_FAILED, "fail, ret: %{public}x", ret);
+    if (audioSrcClock_ != nullptr && audioSrcClock_->GetFrameCnt() == 0) {
+        audioSrcClock_->SetFirstTimestampFromHdi(GetFirstTimeStampFromAlgo(adapterNameCase_));
+    }
     CheckLatencySignal(reinterpret_cast<uint8_t *>(frame), replyBytes);
 
     DumpData(frame, replyBytes);
