@@ -1744,6 +1744,11 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
             bool bConcurrency = IsAudioSourceConcurrency(existSourceType, incomingSourceType,
                 existConcurrentSources, incomingConcurrentSources);
             if (EvaluateWhetherContinue(incoming, inprocessing, focusEntry, bConcurrency)) { continue; }
+            if (focusEntry.hintType == INTERRUPT_HINT_STOP &&
+                GetClientTypeBySessionId((iter->first).sessionId) == CLIENT_TYPE_GAME) {
+                iter->second = PAUSE;
+                focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+            }
             auto pos = HINT_STATE_MAP.find(focusEntry.hintType);
             if (pos == HINT_STATE_MAP.end()) { continue; }
             if (focusEntry.actionOn == CURRENT) {
