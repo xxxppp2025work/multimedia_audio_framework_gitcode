@@ -482,6 +482,11 @@ public:
         return reason_ == ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT;
     }
 
+    bool IsNewDeviceAvailable() const
+    {
+        return reason_ == ExtEnum::NEW_DEVICE_AVAILABLE;
+    }
+
     bool isOverride() const
     {
         return reason_ == ExtEnum::OVERRODE;

@@ -162,6 +162,7 @@ private:
     bool IsSameDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceDesc);
     void RemoveOfflineDevice(const AudioDeviceDescriptor& updatedDesc);
     bool IsDeviceConnected(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptors) const;
+    bool IsDeviceSwitching(const AudioStreamDeviceChangeReasonExt reason);
     int32_t HandleDeviceChangeForFetchInputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
     void JudgeIfLoadMchModule();
@@ -260,6 +261,7 @@ private:
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     bool isFirstScreenOn_ = false;
     bool isRingDualToneOnPrimarySpeaker_ = false;
+    bool isVoiceCallMuted_ = false;
     std::vector<std::pair<AudioStreamType, StreamUsage>> streamsWhenRingDualOnPrimarySpeaker_;
 
     IAudioPolicyInterface& audioPolicyManager_;
