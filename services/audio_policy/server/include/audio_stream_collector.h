@@ -126,6 +126,7 @@ private:
     bool CheckRendererStateInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
     bool CheckRendererInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
     bool IsTransparentCapture(const uint32_t clientUid);
+    bool IsVoiceCallActive();
     void ResetRingerModeMute(RendererState rendererState, StreamUsage streamUsage);
     AudioAbilityManager *audioAbilityMgr_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
