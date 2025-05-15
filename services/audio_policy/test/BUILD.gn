@@ -3049,6 +3049,8 @@ ohos_unittest("audio_device_common_unit_test") {
 
   use_exceptions = true
 
+  defines = [ "BLUETOOTH_ENABLE" ]
+
   cflags = [
     "-Wall",
     "-Werror",
