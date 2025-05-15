@@ -33,6 +33,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
+static const int64_t RING_DUAL_END_DELAY_US = 100000; // 100ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
 static const int64_t NEW_DEVICE_AVALIABLE_MUTE_MS = 400000; // 400ms
 static const int64_t NEW_DEVICE_AVALIABLE_OFFLOAD_MUTE_MS = 1000000; // 1s
@@ -43,7 +44,6 @@ static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS = 150000; // 150ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_SLEEP_US = 50000; // 50ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS = 300000; // 300ms
 static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS = 1500000;  // 1.5s
-static const int64_t RING_DUAL_END_DELAY_US = 100000; // 100ms
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static const int VOLUME_LEVEL_DEFAULT = 5;
 static const int VOLUME_LEVEL_MIN_SIZE = 5;
