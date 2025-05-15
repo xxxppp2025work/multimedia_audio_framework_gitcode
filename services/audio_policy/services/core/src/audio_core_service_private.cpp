@@ -50,6 +50,7 @@ static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS = 150000; // 150ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS = 300000; // 300ms
 static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS = 1500000;  // 1.5s
 static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_SLEEP_US = 350000; // 350ms
+static const int64_t RING_DUAL_END_DELAY_US = 100000; // 100ms
 static const int32_t DISTRIBUTED_DEVICE = 1003;
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static const std::unordered_set<SourceType> specialSourceTypeSet_ = {
@@ -239,6 +240,10 @@ void AudioCoreService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
             streamCollector_.GetStreamType(sessionID) == STREAM_ALARM)) {
             AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer died");
             isRingDualToneOnPrimarySpeaker_ = false;
+            // Add delay between end of double ringtone and device switch.
+            // After the ringtone ends, there may still be residual audio data in the pipeline.
+            // Switching the device immediately can cause pop noise due the undrained buffers.
+            usleep(RING_DUAL_END_DELAY_US);
             for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
                 audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
             }
@@ -1957,6 +1962,9 @@ void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDe
         return;
     }
 
+    SetHeadsetUnpluggedToSpkOrEpFlag(streamDesc->oldDeviceDescs_.front()->deviceType_,
+        streamDesc->newDeviceDescs_.front()->deviceType_);
+
     audioIOHandleMap_.SetMoveFinish(false);
 
     if (!isVoiceCallMuted_ && audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL) {
@@ -1996,7 +2004,7 @@ void AudioCoreService::MuteSinkPort(const std::string &oldSinkName, const std::s
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = SELECT_OFFLOAD_DEVICE_MUTE_MS;
         }
-        MutePrimaryOrOffloadSink(newSinkName, muteTime);
+        MuteOtherSink(newSinkName, muteTime);
         audioIOHandleMap_.MuteSinkPort(newSinkName, SELECT_DEVICE_MUTE_MS, true);
         audioIOHandleMap_.MuteSinkPort(oldSinkName, muteTime, true);
     } else if (reason == AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE) {
@@ -2004,20 +2012,25 @@ void AudioCoreService::MuteSinkPort(const std::string &oldSinkName, const std::s
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = NEW_DEVICE_AVALIABLE_OFFLOAD_MUTE_MS;
         }
-        MutePrimaryOrOffloadSink(oldSinkName, muteTime);
+        MuteOtherSink(oldSinkName, muteTime);
         audioIOHandleMap_.MuteSinkPort(newSinkName, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
         audioIOHandleMap_.MuteSinkPort(oldSinkName, muteTime, true);
     }
     MuteSinkPortLogic(oldSinkName, newSinkName, reason);
 }
 
-void AudioCoreService::MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime)
+void AudioCoreService::MuteOtherSink(const std::string &sinkName, int64_t muteTime)
 {
     // fix pop when switching devices during multiple concurrent streams
-    if (sinkName == OFFLOAD_PRIMARY_SPEAKER) {
-        audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, muteTime, true);
+    if (sinkName == OFFLOAD_PRIMARY_SPEAKER ||
+        ((sinkName == PRIMARY_DIRECT_VOIP || sinkName == PRIMARY_MMAP_VOIP) &&
+        streamCollector_.IsMediaPlaying())) {
+        audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, muteTime, true, false);
+    } else if (sinkName == PRIMARY_SPEAKER && streamCollector_.IsVoipStreamActive()) {
+        audioIOHandleMap_.MuteSinkPort(PRIMARY_DIRECT_VOIP, muteTime, true, false);
+        audioIOHandleMap_.MuteSinkPort(PRIMARY_MMAP_VOIP, muteTime, true, false);
     } else if (sinkName == PRIMARY_SPEAKER) {
-        audioIOHandleMap_.MuteSinkPort(OFFLOAD_PRIMARY_SPEAKER, muteTime, true);
+        audioIOHandleMap_.MuteSinkPort(OFFLOAD_PRIMARY_SPEAKER, muteTime, true, false);
     }
 }
 
@@ -2032,9 +2045,13 @@ void AudioCoreService::MuteSinkPortLogic(const std::string &oldSinkName, const s
     } else if (reason.IsOldDeviceUnavaliable() && ((scene == AUDIO_SCENE_DEFAULT) ||
         ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
         ringermode != RINGER_MODE_NORMAL) || (scene == AUDIO_SCENE_PHONE_CHAT))) {
-        MutePrimaryOrOffloadSink(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS);
+        MuteOtherSink(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS);
         audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
         usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
+        if (isHeadsetUnpluggedToSpkOrEpFlag_) {
+            usleep(OLD_DEVICE_UNAVALIABLE_EXT_SLEEP_US); // sleep fix data cache pop.
+            isHeadsetUnpluggedToSpkOrEpFlag_ = false;
+        }
     } else if (reason.IsOldDeviceUnavaliableExt() && ((scene == AUDIO_SCENE_DEFAULT) ||
         ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
         ringermode != RINGER_MODE_NORMAL) || (scene == AUDIO_SCENE_PHONE_CHAT))) {
@@ -2120,6 +2137,14 @@ void AudioCoreService::HandleDualStartClient(std::vector<std::pair<DeviceType, D
             make_pair(streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG));
         activeDevices.push_back(
             make_pair(streamDesc->newDeviceDescs_[1]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG));
+    }
+}
+
+void AudioCoreService::SetHeadsetUnpluggedToSpkOrEpFlag(DeviceType oldDeviceType, DeviceType newDeviceType)
+{
+    if ((oldDeviceType == DEVICE_TYPE_USB_HEADSET || oldDeviceType == DEVICE_TYPE_USB_ARM_HEADSET) &&
+        (newDeviceType == DEVICE_TYPE_SPEAKER || newDeviceType == DEVICE_TYPE_EARPIECE)) {
+        isHeadsetUnpluggedToSpkOrEpFlag_ = true;
     }
 }
 }

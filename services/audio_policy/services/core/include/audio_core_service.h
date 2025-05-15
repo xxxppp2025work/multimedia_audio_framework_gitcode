@@ -372,7 +372,7 @@ private:
     void SetVoiceCallMuteForSwitchDevice();
     void MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason);
-    void MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime);
+    void MuteOtherSink(const std::string &sinkName, int64_t muteTime);
     void MuteSinkPortLogic(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason);
     int32_t ActivateOutputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
@@ -383,6 +383,7 @@ private:
     bool HandleInputStreamInRunning(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void HandleDualStartClient(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void SetHeadsetUnpluggedToSpkOrEpFlag(DeviceType oldDeviceType, DeviceType newDeviceType);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
@@ -435,6 +436,7 @@ private:
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     bool isFastControlled_ = true;
     bool isVoiceCallMuted_ = false;
+    bool isHeadsetUnpluggedToSpkOrEpFlag_ = false;
     std::mutex serviceFlagMutex_;
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,
