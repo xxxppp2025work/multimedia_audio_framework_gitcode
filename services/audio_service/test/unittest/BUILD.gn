@@ -97,7 +97,6 @@ ohos_unittest("audio_balance_unit_test") {
     "../../../../frameworks/native/audioclock/include",
   ]
   sources = [
-    "audio_group_manager_unit_test.cpp",
     "audio_service_common_unit_test.cpp",
   ]
 

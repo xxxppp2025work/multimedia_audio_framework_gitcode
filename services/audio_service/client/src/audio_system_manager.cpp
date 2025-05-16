@@ -399,11 +399,27 @@ const std::string AudioSystemManager::GetAudioParameter(const std::string key)
     return gasp->GetAudioParameter(key);
 }
 
+const std::string AudioSystemManager::GetAudioParameter(const std::string &networkId, const AudioParamKey key,
+    const std::string &condition)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, "", "Audio service unavailable.");
+    return gasp->GetAudioParameter(networkId, key, condition);
+}
+
 void AudioSystemManager::SetAudioParameter(const std::string &key, const std::string &value)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
     gasp->SetAudioParameter(key, value);
+}
+
+void AudioSystemManager::SetAudioParameter(const std::string &networkId, const AudioParamKey key,
+    const std::string &condition, const std::string &value)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
+    gasp->SetAudioParameter(networkId, key, condition, value);
 }
 
 int32_t AudioSystemManager::GetExtraParameters(const std::string &mainKey,
@@ -1289,6 +1305,8 @@ int32_t AudioSystemManager::GetVolumeGroups(std::string networkId, std::vector<s
 std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t groupId)
 {
     std::lock_guard<std::mutex> lock(groupManagerMapMutex_);
+
+    // Audio group manager is a single instance for each groupId, would not be released, saved in map
     std::vector<std::shared_ptr<AudioGroupManager>>::iterator iter = groupManagerMap_.begin();
     while (iter != groupManagerMap_.end()) {
         if ((*iter)->GetGroupId() == groupId) {
@@ -1298,8 +1316,9 @@ std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t g
         }
     }
 
+    // Create a instance and init it at first, make sure functions will be called after initialization
     std::shared_ptr<AudioGroupManager> groupManager = std::make_shared<AudioGroupManager>(groupId);
-    if (groupManager->Init() == SUCCESS) {
+    if (groupManager->InitNetworkIdByGroupId() == SUCCESS) {
         groupManagerMap_.push_back(groupManager);
     } else {
         groupManager = nullptr;

@@ -701,6 +701,16 @@ public:
     const std::string GetAudioParameter(const std::string key);
 
     /**
+     * @brief Get audio parameter with networkid.
+     *
+     * @param key Key of audio parameters to be obtained.
+     * @return Returns the value of the obtained audio parameter
+     * @since 19
+     */
+    const std::string GetAudioParameter(const std::string &networkId, const AudioParamKey key,
+        const std::string &condition);
+
+    /**
      * @brief set audio parameter.
      *
      * @param key The key of the set audio parameter.
@@ -708,6 +718,16 @@ public:
      * @since 9
      */
     void SetAudioParameter(const std::string &key, const std::string &value);
+
+    /**
+     * @brief set audio parameter with networkid.
+     *
+     * @param key The key of the set audio parameter.
+     * @param value The value of the set audio parameter.
+     * @since 19
+     */
+    void SetAudioParameter(const std::string &networkId, const AudioParamKey key,
+        const std::string &condition, const std::string &value);
 
     /**
      * @brief set audio parameter.
