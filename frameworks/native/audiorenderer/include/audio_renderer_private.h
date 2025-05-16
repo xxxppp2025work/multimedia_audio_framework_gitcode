@@ -120,6 +120,8 @@ public:
     int32_t RegisterRendererPolicyServiceDiedCallback();
     int32_t RemoveRendererPolicyServiceDiedCallback();
 
+    void SetFastStatusChangeCallback(const std::shared_ptr<AudioRendererFastStatusChangeCallback> &callback) override;
+
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
     void SetAudioInterrupt(const AudioInterrupt &audioInterrupt);
 
@@ -143,6 +145,7 @@ public:
     void SetSourceDuration(int64_t duration) override;
 
     int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
+    bool GetFastStatus() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
@@ -231,6 +234,8 @@ private:
     std::shared_ptr<AudioRendererErrorCallback> audioRendererErrorCallback_ = nullptr;
     std::mutex audioRendererErrCallbackMutex_;
     std::shared_ptr<OutputDeviceChangeWithInfoCallbackImpl> outputDeviceChangeCallback_ = nullptr;
+    std::shared_ptr<AudioRendererFastStatusChangeCallback> fastStatusChangeCallback_ = nullptr;
+    std::mutex fastStatusChangeCallbackMutex_;
     mutable std::shared_ptr<RendererPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
     std::shared_ptr<FormatUnsupportedErrorCallbackImpl> formatUnsupportedErrorCallback_ = nullptr;
     std::atomic<bool> isFastRenderer_ = false;

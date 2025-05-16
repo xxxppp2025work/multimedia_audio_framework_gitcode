@@ -885,6 +885,7 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
         interruptCbImpl->StartSwitch();
     }
 
+    bool bFlag = GetFastStatus();
     // Switch to target audio stream. Deactivate audio interrupt if switch failed.
     AUDIO_INFO_LOG("Before %{public}s, restore audiorenderer %{public}u", callingFunc.c_str(), sessionID_);
     if (!SwitchToTargetStream(targetClass, restoreInfo)) {
@@ -900,6 +901,16 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
             }
             AUDIO_ERR_LOG("DeactivateAudioInterrupt Failed");
             return ERR_OPERATION_FAILED;
+        }
+    } else {
+        if (fastStatusChangeCallback_) {
+            bool bRet = GetFastStatus();
+            AudioStreamFastStatus fastStatus = (bRet)
+                ? AudioStreamFastStatus::FASTSTATUS_FAST : AudioStreamFastStatus::FASTSTATUS_NORMAL;
+
+            if (bFlag != bRet) {
+                fastStatusChangeCallback_->OnFastStatusChange(fastStatus);
+            }
         }
     }
 
@@ -1802,6 +1813,14 @@ int32_t AudioRendererPrivate::UnregisterOutputDeviceChangeWithInfoCallback(
     return SUCCESS;
 }
 
+void AudioRendererPrivate::SetFastStatusChangeCallback(
+        const std::shared_ptr<AudioRendererFastStatusChangeCallback> &callback)
+{
+    std::shared_lock sharedLock(rendererMutex_);
+    std::lock_guard lock(fastStatusChangeCallbackMutex_);
+    fastStatusChangeCallback_ = callback;
+}
+
 bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
 {
     CHECK_AND_RETURN_RET_LOG(audioStream, false, "stream is nullptr");
@@ -2554,6 +2573,13 @@ int32_t AudioRendererPrivate::SetDefaultOutputDevice(DeviceType deviceType)
     CHECK_AND_RETURN_RET_LOG(isSupportedStreamUsage, ERR_NOT_SUPPORTED, "stream usage not supported");
     AUDIO_INFO_LOG("set to %{public}d", deviceType);
     return currentStream->SetDefaultOutputDevice(deviceType);
+}
+
+bool AudioRendererPrivate::GetFastStatus()
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, false, "audioStream_ is nullptr");
+    return currentStream->GetFastStatus();
 }
 
 // diffrence from GetAudioPosition only when set speed

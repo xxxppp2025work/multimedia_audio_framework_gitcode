@@ -423,6 +423,13 @@ int32_t AudioCapturerPrivate::SetInputDevice(DeviceType deviceType) const
     return SUCCESS;
 }
 
+bool AudioCapturerPrivate::GetFastStatus()
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, false, "currentStream is nullptr");
+    return currentStream->GetFastStatus();
+}
+
 int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStreamParams)
 {
     Trace trace("AudioCapturer::InitAudioStream");
@@ -571,6 +578,14 @@ int32_t AudioCapturerPrivate::RegisterAudioPolicyServerDiedCb(const int32_t clie
     return AudioPolicyManager::GetInstance().RegisterAudioPolicyServerDiedCb(clientPid, callback);
 }
 
+void AudioCapturerPrivate::SetFastStatusChangeCallback(
+    const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback)
+{
+    std::shared_lock sharedLock(capturerMutex_);
+    std::lock_guard lock(fastStatusChangeCallbackMutex_);
+    fastStatusChangeCallback_ = callback;
+}
+
 int32_t AudioCapturerPrivate::GetParams(AudioCapturerParams &params) const
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
@@ -685,12 +700,23 @@ int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFu
         interruptCbImpl->StartSwitch();
     }
 
+    bool bFlag = GetFastStatus();
     // Switch to target audio stream. Deactivate audio interrupt if switch failed.
     AUDIO_INFO_LOG("Before %{public}s, restore audio capturer %{public}u", callingFunc.c_str(), sessionID_);
     if (!SwitchToTargetStream(targetClass, restoreInfo)) {
         AudioInterrupt audioInterrupt = audioInterrupt_;
         int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "DeactivateAudioInterrupt Failed");
+    } else {
+        if (fastStatusChangeCallback_) {
+            bool bRet = GetFastStatus();
+            AudioStreamFastStatus fastStatus = (bRet)
+                ? AudioStreamFastStatus::FASTSTATUS_FAST : AudioStreamFastStatus::FASTSTATUS_NORMAL;
+
+            if (bFlag != bRet) {
+                fastStatusChangeCallback_->OnFastStatusChange(fastStatus);
+            }
+        }
     }
 
     // Unblock interrupt callback.

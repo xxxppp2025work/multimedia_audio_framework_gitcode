@@ -457,6 +457,11 @@ enum class AudioStreamDeviceChangeReason {
     OVERRODE = 3
 };
 
+enum class AudioStreamFastStatus {
+    FASTSTATUS_NORMAL = 0,
+    FASTSTATUS_FAST = 1
+};
+
 class AudioStreamDeviceChangeReasonExt {
 public:
     enum class ExtEnum {
