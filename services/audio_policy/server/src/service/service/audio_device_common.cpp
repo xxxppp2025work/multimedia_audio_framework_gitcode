@@ -628,6 +628,7 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
     bool isUpdateActiveDevice = false;
     int32_t runningStreamCount = 0;
     bool hasDirectChangeDevice = false;
+    isVoiceCallMuted_ = false;
     std::vector<SinkInput> sinkInputs;
     audioPolicyManager_.GetAllSinkInputs(sinkInputs);
     for (auto &rendererChangeInfo : rendererChangeInfos) {
@@ -641,9 +642,7 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
         SetDeviceConnectedFlagWhenFetchOutputDevice();
         vector<std::shared_ptr<AudioDeviceDescriptor>> descs = GetDeviceDescriptorInner(rendererChangeInfo);
         if (HandleDeviceChangeForFetchOutputDevice(descs.front(), rendererChangeInfo) == ERR_NEED_NOT_SWITCH_DEVICE &&
-            !Util::IsRingerOrAlarmerStreamUsage(rendererChangeInfo->rendererInfo.streamUsage)) {
-            continue;
-        }
+            !Util::IsRingerOrAlarmerStreamUsage(rendererChangeInfo->rendererInfo.streamUsage)) { continue; }
         MuteSinkForSwitchBluetoothDevice(rendererChangeInfo, descs, reason);
         MuteSinkForSwitchDistributedDevice(rendererChangeInfo, descs, reason);
         std::string encryptMacAddr = GetEncryptAddr(descs.front()->macAddress_);
@@ -745,9 +744,14 @@ void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendere
 
     audioIOHandleMap_.SetMoveFinish(false);
 
-    if (audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL &&
-        rendererChangeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
-        return SetVoiceCallMuteForSwitchDevice();
+    if (!isVoiceCallMuted_ && audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL) {
+        if (rendererChangeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+            isVoiceCallMuted_ = true;
+            return SetVoiceCallMuteForSwitchDevice();
+        } else if (streamCollector_.IsVoiceCallActive() && IsDeviceSwitching(reason)) {
+            isVoiceCallMuted_ = true;
+            SetVoiceCallMuteForSwitchDevice();
+        }
     }
 
     std::string oldSinkName = AudioPolicyUtils::GetInstance().GetSinkName(rendererChangeInfo->outputDeviceInfo,
@@ -968,6 +972,11 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
         rendererChangeInfo->outputDeviceInfo);
     ResetOffloadAndMchMode(rendererChangeInfo, outputDevices);
     audioIOHandleMap_.NotifyUnmutePort();
+}
+
+bool AudioDeviceCommon::IsDeviceSwitching(const AudioStreamDeviceChangeReasonExt reason)
+{
+    return reason.isOverride() || reason.IsOldDeviceUnavaliable() || reason.IsNewDeviceAvailable();
 }
 
 void AudioDeviceCommon::MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime)
