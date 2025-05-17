@@ -74,7 +74,6 @@ private:
     void ParseCommonConfigs(std::shared_ptr<AudioXmlNode> curNode);
     void HandleUpdateRouteSupportParsed(std::string &value);
     void HandleUpdateAnahsSupportParsed(std::string &value);
-    void HandleDefaultAdapterSupportParsed(std::string &value);
     void HandleEncodingEac3SupportParsed(std::shared_ptr<AdapterPipeInfo> pipeInfo, const std::string &value);
     
     void ConvertAdapterInfoToGroupInfo(std::unordered_map<std::string, std::string> &volumeGroupMap,
@@ -93,7 +92,6 @@ private:
     std::unordered_map<std::string, std::string> interruptGroupMap_;
     PolicyGlobalConfigs globalConfigs_;
     bool shouldOpenMicSpeaker_ = false;
-    bool shouldSetDefaultAdapter_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

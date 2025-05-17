@@ -106,7 +106,6 @@ const char *g_audioServerCodeStrs[] = {
     "SET_SINGLE_STREAM_MUTE",
     "RESTORE_SESSION",
     "GET_ALL_SINK_INPUTS",
-    "SET_DEFAULT_ADAPTER_ENABLE",
     "CREATE_IPC_OFFLINE_STREAM",
     "GET_OFFLINE_AUDIO_EFFECT_CHAINS",
     "GET_STANDBY_STATUS",
@@ -1000,8 +999,6 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
                 return HandleNotifyDeviceInfo(data, reply);
             case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ALL_SINK_INPUTS):
                 return HandleGetAllSinkInputs(data, reply);
-            case static_cast<uint32_t>(AudioServerInterfaceCode::SET_DEFAULT_ADAPTER_ENABLE):
-                return HandleSetDefaultAdapterEnable(data, reply);
             case static_cast<uint32_t>(AudioServerInterfaceCode::SET_DM_DEVICE_TYPE):
                 return HandleSetDmDeviceType(data, reply);
             default:
@@ -1188,13 +1185,6 @@ int AudioManagerStub::HandleGetAllSinkInputs(MessageParcel &data, MessageParcel 
     for (auto &sinkInput : sinkInputs) {
         sinkInput.Marshalling(reply);
     }
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleSetDefaultAdapterEnable(MessageParcel &data, MessageParcel &reply)
-{
-    bool isEnable = data.ReadBool();
-    SetDefaultAdapterEnable(isEnable);
     return AUDIO_OK;
 }
 

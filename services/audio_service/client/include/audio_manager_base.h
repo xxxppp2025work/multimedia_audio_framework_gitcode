@@ -500,8 +500,6 @@ public:
 
     virtual void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) = 0;
 
-    virtual void SetDefaultAdapterEnable(bool isEnable) = 0;
-
     virtual void NotifyAudioPolicyReady() = 0;
 
     virtual bool IsAcousticEchoCancelerSupported(SourceType sourceType) = 0;
@@ -695,7 +693,6 @@ private:
     int HandleNotifyAccountsChanged(MessageParcel &data, MessageParcel &reply);
     int HandleNotifySettingsDataReady(MessageParcel &data, MessageParcel &reply);
     int HandleGetAllSinkInputs(MessageParcel &data, MessageParcel &reply);
-    int HandleSetDefaultAdapterEnable(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyAudioPolicyReady(MessageParcel &data, MessageParcel &reply);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int HandleSetInnerCapLimit(MessageParcel &data, MessageParcel &reply);

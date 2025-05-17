@@ -27,7 +27,6 @@
 #include "audio_performance_monitor.h"
 #include "audio_volume.h"
 #include "format_converter.h"
-#include "audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -508,8 +507,7 @@ int32_t NoneMixEngine::InitSink(uint32_t channel, AudioSampleFormat format, uint
         return ERR_INVALID_HANDLE;
     }
     IAudioSinkAttr attr = {};
-    bool isDefaultAdapterEnable = AudioService::GetInstance()->GetDefaultAdapterEnable();
-    attr.adapterName = isDefaultAdapterEnable ? "dp" : SINK_ADAPTER_NAME;
+    attr.adapterName = SINK_ADAPTER_NAME;
     attr.sampleRate = rate;
     attr.channel = channel;
     attr.format = format;
