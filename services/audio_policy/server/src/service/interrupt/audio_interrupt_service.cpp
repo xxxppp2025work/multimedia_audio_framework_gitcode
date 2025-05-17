@@ -658,6 +658,7 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
             AUDIO_ERR_LOG("ActivateAudioInterrupt timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(mutex_);
+    FocusStrategyBaseMusic(audioInterrupt);
     if (isPreemptMode_) {
         InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
         SendInterruptEventToIncomingStream(interruptEvent, audioInterrupt);
@@ -675,6 +676,18 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
     lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
+}
+
+void AudioInterruptService::FocusStrategyBaseMusic(const AudioInterrupt &audioInterrupt)
+{
+    AudioFocusType audioFocusType;
+    audioFocusType.streamType = AudioStreamType::STREAM_MUSIC;
+    std::pair<AudioFocusType, AudioFocusType> focusPair =
+            std::make_pair(audioFocusType, audioInterrupt.audioFocusType);
+    CHECK_AND_RETURN_LOG(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), "no focus cfg");
+    AudioFocusEntry focusEntry = focusCfgMap_[focusPair];
+    AUDIO_INFO_LOG("FocusStrategyBaseMusic forceType: %{public}d, hintType: %{public}d, actionOn: %{public}d",
+        focusEntry.forceType, focusEntry.hintType, focusEntry.actionOn);
 }
 
 int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zoneId,
