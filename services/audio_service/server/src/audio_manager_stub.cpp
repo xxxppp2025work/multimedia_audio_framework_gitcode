@@ -125,6 +125,9 @@ const char *g_audioServerCodeStrs[] = {
     "DESTROY_HDI_PORT",
     "DEVICE_CONNECTED_FLAG",
     "SET_DM_DEVICE_TYPE",
+    "REGISTER_DATATRANSFER_STATE_PARAM",
+    "UNREGISTER_DATATRANSFER_STATE_PARAM",
+    "REGISTER_DATATRANSFER_CALLBACK",
     "NOTIFY_SETTINGS_DATA_READY",
     "IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED",
     "SET_SESSION_MUTE_STATE",
@@ -1341,6 +1344,37 @@ int AudioManagerStub::HandleCreateSourcePort(MessageParcel &data, MessageParcel 
 
     uint32_t id = CreateSourcePort(idBase, idType, idInfo, attr);
     reply.WriteUint32(id);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleRegisterDataTransferCallback(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t pid = data.ReadInt32();
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr,  AUDIO_ERR, "Remote object as object fail.");
+
+    bool ret = RegisterDataTransferCallback(pid, object);
+    reply.WriteBool(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleRegisterDataTransferMonitorParam(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t pid = data.ReadInt32();
+    int32_t callbackId = data.ReadInt32();
+    DataTransferMonitorParam param;
+    param.Unmarshalling(data);
+    bool ret = RegisterDataTransferMonitorParam(pid, callbackId, param);
+    reply.WriteBool(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleUnregisterDataTransferMonitorParam(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t pid = data.ReadInt32();
+    int32_t callbackId = data.ReadInt32();
+    bool ret = UnregisterDataTransferMonitorParam(pid, callbackId);
+    reply.WriteBool(ret);
     return AUDIO_OK;
 }
 

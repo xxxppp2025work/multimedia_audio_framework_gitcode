@@ -53,6 +53,13 @@ int AudioManagerListenerStub::OnRemoteRequest(
             OnCapturerState(isActive);
             return AUDIO_OK;
         }
+        case ON_DATATRANSFER_STATE_CHANGE: {
+            int32_t callbackId = data.ReadInt32();
+            AudioRendererDataTransferStateChangeInfo info;
+            info.Unmarshalling(data);
+            OnDataTransferStateChange(callbackId, info);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -99,6 +106,50 @@ void AudioManagerListenerStub::OnWakeupClose()
     } else {
         AUDIO_WARNING_LOG("AudioManagerListenerStub: OnWakeupClose error");
     }
+}
+
+void AudioManagerListenerStub::OnDataTransferStateChange(const int32_t &callbackId,
+    const AudioRendererDataTransferStateChangeInfo &info)
+{
+    std::shared_ptr<AudioRendererDataTransferStateChangeCallback> callback = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(stateChangeMutex_);
+        if (stateChangeCallbackMap_.count(callbackId) > 0) {
+            callback =  stateChangeCallbackMap_[callbackId];
+        }
+    }
+
+    if (callback == nullptr) {
+        return;
+    }
+
+    callback->OnDataTransferStateChange(info);
+}
+
+int32_t AudioManagerListenerStub::AddDataTransferStateChangeCallback(
+    std::shared_ptr<AudioRendererDataTransferStateChangeCallback> cb)
+{
+    std::lock_guard<std::mutex> lock(stateChangeMutex_);
+    ++callbackId_;
+    stateChangeCallbackMap_[callbackId_] = cb;
+    return callbackId_;
+}
+
+std::vector<int32_t> AudioManagerListenerStub::RemoveDataTransferStateChangeCallback(
+    std::shared_ptr<AudioRendererDataTransferStateChangeCallback> cb)
+{
+    std::lock_guard<std::mutex> lock(stateChangeMutex_);
+    std::vector<int32_t> callbackIds;
+    for (auto it = stateChangeCallbackMap_.begin(); it != stateChangeCallbackMap_.end();) {
+        if (it->second == cb) {
+            callbackIds.push_back(it->first);
+            it = stateChangeCallbackMap_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    return callbackIds;
 }
 
 } // namespace AudioStandard
