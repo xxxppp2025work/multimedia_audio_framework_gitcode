@@ -145,6 +145,19 @@ public:
         const AudioStreamDeviceChangeReason reason) = 0;
 };
 
+class AudioRendererFastStatusChangeCallback {
+public:
+    virtual ~AudioRendererFastStatusChangeCallback() = default;
+
+    /**
+     * Called when the audio stream of an autio renderer changed.
+     *
+     *@param Audio device descriptors after change.
+     * since 20
+     */
+    virtual void OnFastStatusChange(AudioStreamFastStatus status) = 0;
+};
+
 class AudioRendererErrorCallback {
 public:
     virtual ~AudioRendererErrorCallback() = default;
@@ -601,6 +614,14 @@ public:
         const std::shared_ptr<RendererPeriodPositionCallback> &callback) = 0;
 
     /**
+     * @brief Set the audio renderer fast status change callback listener
+     *
+     * @since 20
+     */
+    virtual void SetFastStatusChangeCallback(
+        const std::shared_ptr<AudioRendererFastStatusChangeCallback> &callback) = 0;
+
+    /**
      * @brief Unregisters the renderer period position callback listener
      *
      * @since 8
@@ -984,6 +1005,8 @@ public:
      * @since 12
      */
     virtual int32_t SetDefaultOutputDevice(DeviceType deviceType) { return 0; };
+
+    virtual bool GetFastStatus() = 0;
 
     /**
      * @brief Mute audio rendering.

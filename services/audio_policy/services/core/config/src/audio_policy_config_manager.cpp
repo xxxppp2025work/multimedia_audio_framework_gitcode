@@ -325,6 +325,49 @@ bool AudioPolicyConfigManager::GetHasEarpiece()
     return hasEarpiece_;
 }
 
+bool AudioPolicyConfigManager::IsFastStreamSupported(AudioStreamInfo *streamInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+{
+    bool ret = false;
+    AudioFlag audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = nullptr;
+
+    for (auto audioDeviceDescriptor : desc) {
+        deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(audioDeviceDescriptor->deviceType_,
+            audioDeviceDescriptor->deviceRole_, audioDeviceDescriptor->networkId_, audioFlag);
+        if (deviceInfo == nullptr) {
+            continue;
+        }
+        ret = GetFastStreamSupport(streamInfo, deviceInfo);
+        if (ret) {
+            break;
+        }
+    }
+
+    return ret;
+}
+
+bool AudioPolicyConfigManager::GetFastStreamSupport(AudioStreamInfo *streamInfo,
+    std::shared_ptr<AdapterDeviceInfo>& deviceInfo)
+{
+    std::shared_ptr<PipeStreamPropInfo> info = nullptr;
+
+    for (auto &pipeIt : deviceInfo->supportPipeMap_) {
+        if (pipeIt.second->name_.find("fast") == std::string::npos) {
+            continue;
+        }
+
+        for (auto it = pipeIt.second->streamPropInfos_.begin(); it != pipeIt.second->streamPropInfos_.end(); ++it) {
+            if ((*it)->format_ == streamInfo->format && (*it)->sampleRate_ == streamInfo->samplingRate &&
+                (*it)->channelLayout_ == streamInfo->channelLayout) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 uint32_t AudioPolicyConfigManager::GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> &desc)
 {
     // device -> adapter -> flag -> stream
