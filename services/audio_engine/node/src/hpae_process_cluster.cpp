@@ -39,11 +39,9 @@ HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sink
     mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfoTemp);
     if (nodeInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE || nodeInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
         if (mixerNode_->SetupAudioLimiter() != SUCCESS) {
-            AUDIO_DEBUG_LOG("hpaeProcessCluster mixerNode setupAudioLimiter failed, sessionId: %{public}u",
-                nodeInfo.sessionId);
+            AUDIO_DEBUG_LOG("mixerNode setupAudioLimiter failed, sessionId: %{public}u", nodeInfo.sessionId);
         } else {
-            AUDIO_INFO_LOG("hpaeProcessCluster mixerNode setupAudioLimiter success, sessionId: %{public}u",
-                nodeInfo.sessionId);
+            AUDIO_INFO_LOG("mixerNode setupAudioLimiter success, sessionId: %{public}u", nodeInfo.sessionId);
         }
     }
     if (TransProcessorTypeToSceneType(nodeInfo.sceneType) != "SCENE_EXTRA" && nodeInfo.deviceClass != "remote") {
