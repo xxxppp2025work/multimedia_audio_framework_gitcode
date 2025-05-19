@@ -43,6 +43,9 @@ public:
     }
 
     void OnWriteData(size_t length) override;
+    bool IsEncodingAndCallbackValid(AudioEncodingType encodingType, OH_AudioRenderer_Callbacks callbacks,
+        OH_AudioRenderer_OnWriteDataCallback onWriteDataCallback,
+        OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback);
 
 private:
     OH_AudioRenderer_Callbacks callbacks_ = {};

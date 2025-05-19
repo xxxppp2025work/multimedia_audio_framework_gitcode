@@ -748,19 +748,31 @@ uint32_t OHAudioRenderer::GetUnderflowCount()
     return audioRenderer_->GetUnderflowCount();
 }
 
+bool OHAudioRendererModeCallback::IsEncodingAndCallbackValid(AudioEncodingType encodingType,
+    OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer_OnWriteDataCallback onWriteDataCallback,
+    OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback)
+{
+    bool isValid = false;
+    if (((encodingType == ENCODING_PCM) && (callbacks.OH_AudioRenderer_OnWriteData != nullptr)) ||
+        ((encodingType == ENCODING_PCM) && (onWriteDataCallback != nullptr)) ||
+        ((encodingType == ENCODING_AUDIOVIVID) && (writeDataWithMetadataCallback != nullptr)) ||
+        ((encodingType == ENCODING_EAC3) && (callbacks.OH_AudioRenderer_OnWriteData != nullptr)) ||
+        ((encodingType == ENCODING_EAC3) && (onWriteDataCallback != nullptr))) {
+        isValid = true;
+    } else {
+        isValid = false;
+    }
+    return isValid;
+}
+
 void OHAudioRendererModeCallback::OnWriteData(size_t length)
 {
     OHAudioRenderer *audioRenderer = (OHAudioRenderer*)ohAudioRenderer_;
     OHOS::AudioStandard::ObjectRefMap objectGuard(audioRenderer);
     audioRenderer = objectGuard.GetPtr();
     CHECK_AND_RETURN_LOG(audioRenderer != nullptr, "renderer client is nullptr");
-    CHECK_AND_RETURN_LOG(((encodingType_ == ENCODING_PCM) && (callbacks_.OH_AudioRenderer_OnWriteData != nullptr)) ||
-        ((encodingType_ == ENCODING_PCM) && (onWriteDataCallback_ != nullptr)) ||
-        ((encodingType_ == ENCODING_AUDIOVIVID) && (writeDataWithMetadataCallback_ != nullptr)),
-        "pointer to the function is nullptr");
-    CHECK_AND_RETURN_LOG(((encodingType_ == ENCODING_EAC3) && (callbacks_.OH_AudioRenderer_OnWriteData != nullptr)) ||
-        ((encodingType_ == ENCODING_EAC3) && (onWriteDataCallback_ != nullptr)),
-        "eac3 encoding type, pointer to the function is nullptr");
+    CHECK_AND_RETURN_LOG(IsEncodingAndCallbackValid(encodingType_, callbacks_, onWriteDataCallback_,
+        writeDataWithMetadataCallback_), "pointer to the function is nullptr");
     BufferDesc bufDesc;
     audioRenderer->GetBufferDesc(bufDesc);
     if (encodingType_ == ENCODING_AUDIOVIVID && writeDataWithMetadataCallback_ != nullptr) {
