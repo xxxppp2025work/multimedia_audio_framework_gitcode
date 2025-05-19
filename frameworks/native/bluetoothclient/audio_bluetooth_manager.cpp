@@ -559,10 +559,16 @@ int32_t AudioHfpManager::Connect(const std::string &macAddress)
     return SUCCESS;
 }
 
-int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene, bool isRecordScene = false)
+int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene, bool isRecordScene)
 {
     scene_.store(scene);
     isRecordScene_.store(isRecordScene);
+    return TryUpdateScoCategory();
+}
+
+int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene)
+{
+    scene_.store(scene);
     return TryUpdateScoCategory();
 }
 

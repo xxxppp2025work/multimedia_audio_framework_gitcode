@@ -1813,13 +1813,9 @@ std::vector<SourceOutput> AudioDeviceCommon::GetSourceOutputs()
 void AudioDeviceCommon::ClientDiedDisconnectScoNormal(pid_t uid)
 {
     Bluetooth::AudioHfpManager::DeleteVirtualCall(uid);
-    DeviceType deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    bool hasRunningRendererStream = streamCollector_.HasRunningRendererStream();
-    if (hasRunningRendererStream && deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-        return;
-    }
-    AUDIO_WARNING_LOG("Client died disconnect sco for normal");
-    Bluetooth::AudioHfpManager::DisconnectSco();
+    bool isRecord = streamCollector_.HasRunningNormalCapturerStream();
+    AudioScene scene = audioSceneManager_.GetAudioScene(true),
+    Bluetooth::AudioHfpManager::UpdateAudioScene(scene, isRecord);
 }
 
 void AudioDeviceCommon::ClientDiedDisconnectScoRecognition()
