@@ -180,8 +180,10 @@ int32_t AudioCoreService::CreateCapturerClient(
         audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType, GetRealUid(streamDesc),
             sessionId);
     streamDesc->newDeviceDescs_.clear();
-    streamDesc->newDeviceDescs_.push_back(inputDeviceDesc);
-    AUDIO_INFO_LOG("New stream device type %{public}d", inputDeviceDesc->deviceType_);
+    if (inputDeviceDesc != nullptr) {
+        streamDesc->newDeviceDescs_.push_back(inputDeviceDesc);
+        AUDIO_INFO_LOG("New stream device type %{public}d", inputDeviceDesc->deviceType_);
+    }
 
     SetRecordStreamFlag(streamDesc);
     AUDIO_INFO_LOG("Will use audio flag: %{public}u", streamDesc->audioFlag_);
@@ -500,7 +502,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
 
     if (networkId == LOCAL_NETWORK_ID) {
         std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1);
-        if (desc->deviceType_ == DEVICE_TYPE_NONE && (captureInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE ||
+        if (desc != nullptr && desc->deviceType_ == DEVICE_TYPE_NONE &&
+            (captureInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE ||
             captureInfo.sourceType == SOURCE_TYPE_REMOTE_CAST)) {
             desc->deviceType_ = DEVICE_TYPE_INVALID;
             desc->deviceRole_ = INPUT_DEVICE;
@@ -1025,17 +1028,20 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute()
         std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc =
             audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType, GetRealUid(streamDesc),
                 streamDesc->sessionId_);
-        streamDesc->newDeviceDescs_.push_back(inputDeviceDesc);
-        SetRecordStreamFlag(streamDesc);
+        if (inputDeviceDesc != nullptr) {
+            streamDesc->newDeviceDescs_.push_back(inputDeviceDesc);
+            SetRecordStreamFlag(streamDesc);
 
-        AUDIO_INFO_LOG("device type: %{public}d", inputDeviceDesc->deviceType_);
-        if (!HandleInputStreamInRunning(streamDesc)) {
-            continue;
+            AUDIO_INFO_LOG("device type: %{public}d", inputDeviceDesc->deviceType_);
+            if (!HandleInputStreamInRunning(streamDesc)) {
+                continue;
+            }
+            if (needUpdateActiveDevice) {
+                isUpdateActiveDevice = UpdateInputDevice(inputDeviceDesc, GetRealUid(streamDesc));
+                needUpdateActiveDevice = false;
+            }
         }
-        if (needUpdateActiveDevice) {
-            isUpdateActiveDevice = UpdateInputDevice(inputDeviceDesc, GetRealUid(streamDesc));
-            needUpdateActiveDevice = false;
-        }
+        
     }
 
     int32_t ret = FetchCapturerPipesAndExecute(inputStreamDescs);
