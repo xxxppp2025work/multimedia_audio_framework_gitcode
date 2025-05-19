@@ -233,6 +233,8 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_VOLUME_LEVEL_BY_USAGE",
     "GET_STREAM_MUTE_BY_USAGE",
     "SET_CALLBACK_STREAM_USAGE_INFO",
+    "UPDATE_DEVICE_INFO",
+    "SET_SLE_AUDIO_OPERATION_CALLBACK",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1310,6 +1312,7 @@ void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED):
             IsAcousticEchoCancelerSupportedInternal(data, reply);
             break;
+<<<<<<< HEAD
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_VOLUME_LEVEL_BY_USAGE):
             GetMaxVolumeLevelByUsageInternal(data, reply);
             break;
@@ -1324,6 +1327,13 @@ void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACK_STREAM_USAGE_INFO):
             SetCallbackStreamUsageInfoInternal(data, reply);
+=======
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UPDATE_DEVICE_INFO):
+            UpdateDeviceInfoInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SLE_AUDIO_OPERATION_CALLBACK):
+            SetSleAudioOperationCallbackInternal(data, reply);
+>>>>>>> 617707fba... feat: support nearlink device and pipe
             break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");

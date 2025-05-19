@@ -42,6 +42,7 @@
 #include "audio_pipe_selector.h"
 #include "audio_policy_config_manager.h"
 #include "audio_core_service_utils.h"
+#include "sle_audio_device_manager.h"
 namespace OHOS {
 namespace AudioStandard {
 class AudioA2dpOffloadManager;
@@ -259,6 +260,7 @@ private:
     int32_t ActivateA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    int32_t ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     int32_t LoadA2dpModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
         std::string networkId, std::string sinkName, SourceType sourceType);
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, DeviceType deviceType,
@@ -384,6 +386,9 @@ private:
     void HandleDualStartClient(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void HandlePlaybackStreamInA2dp(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
+
+    bool IsDeviceUnusedByInputStream(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType);
+    bool IsDeviceUnusedByOutputStream(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
@@ -410,6 +415,7 @@ private:
     AudioEcManager& audioEcManager_;
     AudioPolicyConfigManager& policyConfigMananger_;
     AudioAffinityManager &audioAffinityManager_;
+    SleAudioDeviceManager &sleAudioDeviceManager_;
     std::shared_ptr<AudioPipeSelector> audioPipeSelector_;
 
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
