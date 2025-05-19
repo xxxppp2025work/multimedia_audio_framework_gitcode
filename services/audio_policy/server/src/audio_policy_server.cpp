@@ -3462,6 +3462,16 @@ int32_t AudioPolicyServer::RemoveUidFromAudioZone(int32_t zoneId, int32_t uid)
     return AudioZoneService::GetInstance().RemoveUidFromAudioZone(zoneId, uid);
 }
 
+int32_t AudioPolicyServer::AddFocusTypeToAudioZone(int32_t zoneId, AudioFocusType type)
+{
+    return AudioZoneService::GetInstance().AddFocusTypeToAudioZone(zoneId, type);
+}
+
+int32_t AudioPolicyServer::RemoveFocusTypeFromAudioZone(int32_t zoneId, AudioFocusType type)
+{
+    return AudioZoneService::GetInstance().RemoveFocusTypeFromAudioZone(zoneId, type);
+}
+
 int32_t AudioPolicyServer::EnableSystemVolumeProxy(int32_t zoneId, bool enable)
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
