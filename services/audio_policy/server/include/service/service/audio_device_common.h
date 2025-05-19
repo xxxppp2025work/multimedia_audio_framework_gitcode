@@ -113,7 +113,6 @@ public:
     int32_t ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
         ConnectState connectState);
     std::vector<SourceOutput> GetSourceOutputs();
-    void BluetoothScoDisconectForRecongnition();
     void SetFirstScreenOn();
     void ClientDiedDisconnectScoNormal(pid_t uid);
     void ClientDiedDisconnectScoRecognition();
