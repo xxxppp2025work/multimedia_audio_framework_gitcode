@@ -33,6 +33,7 @@ public:
     int32_t HandleScoConnect(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
     int32_t HandleScoDisconnect(const BluetoothRemoteDevice &device);
     AudioScoState GetAudioScoState();
+    bool IsInScoCategory(ScoCategory scoCategory);
 
 private:
     struct ScoCacheRequest {

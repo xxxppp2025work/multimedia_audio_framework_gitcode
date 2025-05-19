@@ -146,11 +146,7 @@ int32_t AudioCoreService::HandleScoInputDeviceFetched(std::shared_ptr<AudioStrea
         return ERROR;
     }
     AUDIO_INFO_LOG("desc->connectState_ %{public}d", desc->connectState_);
-    if (desc->connectState_ == DEACTIVE_CONNECTED || !audioSceneManager_.IsSameAudioScene()) {
-        AUDIO_INFO_LOG("In2");
-        Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioSceneManager_.GetAudioScene(true));
-        return SUCCESS;
-    }
+    Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true));
 #endif
     return SUCCESS;
 }
@@ -163,8 +159,7 @@ int32_t AudioCoreService::ScoInputDeviceFetchedForRecongnition(bool handleFlag, 
     if (handleFlag && connectState != DEACTIVE_CONNECTED) {
         return SUCCESS;
     }
-    Bluetooth::BluetoothRemoteDevice device = Bluetooth::BluetoothRemoteDevice(address);
-    return Bluetooth::AudioHfpManager::HandleScoWithRecongnition(handleFlag, device);
+    return Bluetooth::AudioHfpManager::HandleScoWithRecongnition(handleFlag);
 }
 
 void AudioCoreService::BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> streamDesc)
@@ -222,7 +217,6 @@ void AudioCoreService::HandleAudioCaptureState(AudioMode &mode, AudioStreamChang
          streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_STOPPED)) {
         if (Util::IsScoSupportSource(streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType)) {
             audioDeviceCommon_.BluetoothScoDisconectForRecongnition();
-            Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
         }
         audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptorBySessionID(
             streamChangeInfo.audioCapturerChangeInfo.sessionId);
@@ -1447,10 +1441,7 @@ int32_t AudioCoreService::HandleScoOutputDeviceFetched(
         FetchOutputDeviceAndRoute(reason);
         return ERROR;
     }
-    if (desc->connectState_ == DEACTIVE_CONNECTED || !audioSceneManager_.IsSameAudioScene()) {
-        Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioSceneManager_.GetAudioScene(true));
-        return SUCCESS;
-    }
+    Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true));
 #endif
     AUDIO_INFO_LOG("out");
     return SUCCESS;
@@ -1472,11 +1463,7 @@ int32_t AudioCoreService::HandleScoOutputDeviceFetched(
         FetchOutputDeviceAndRoute(reason);
         return ERROR;
     }
-    if ((desc->connectState_ == DEACTIVE_CONNECTED || !audioSceneManager_.IsSameAudioScene()) &&
-        streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
-        Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioSceneManager_.GetAudioScene(true));
-        return SUCCESS;
-    }
+    Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true));
 #endif
     AUDIO_INFO_LOG("out");
     return SUCCESS;
@@ -1662,9 +1649,7 @@ int32_t AudioCoreService::HandleFetchInputWhenNoRunningStream()
     AUDIO_PRERELEASE_LOGI("when no stream in");
     std::shared_ptr<AudioDeviceDescriptor> desc;
     AudioDeviceDescriptor tempDesc = audioActiveDevice_.GetCurrentInputDevice();
-    if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-        (Bluetooth::AudioHfpManager::GetScoCategory() == Bluetooth::ScoCategory::SCO_RECOGNITION ||
-        Bluetooth::AudioHfpManager::GetRecognitionStatus() == Bluetooth::RecognitionStatus::RECOGNITION_CONNECTING)) {
+    if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && Bluetooth::AudioHfpManager::IsRecognitionStatus()) {
         desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_RECOGNITION, -1);
     } else {
         desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1);

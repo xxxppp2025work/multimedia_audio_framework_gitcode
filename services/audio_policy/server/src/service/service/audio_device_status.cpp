@@ -1280,7 +1280,6 @@ void AudioDeviceStatus::DeviceUpdateClearRecongnitionStatus(AudioDeviceDescripto
     if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE ||
         desc.connectState_ == DEACTIVE_CONNECTED || desc.connectState_ == SUSPEND_CONNECTED || !desc.isEnable_)) {
         audioDeviceCommon_.BluetoothScoDisconectForRecongnition();
-        Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
     }
 }
 

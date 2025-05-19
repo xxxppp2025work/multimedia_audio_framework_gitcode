@@ -291,7 +291,6 @@ void AudioDeviceLock::HandleAudioCaptureState(AudioMode &mode, AudioStreamChange
          streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_STOPPED)) {
         if (Util::IsScoSupportSource(streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType)) {
             audioDeviceCommon_.BluetoothScoDisconectForRecongnition();
-            Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
         } else if (audioDeviceManager_.GetScoState() &&
             audioSceneManager_.GetAudioScene() == AUDIO_SCENE_DEFAULT) {
             AUDIO_INFO_LOG("close capture app, disconnect sco");
@@ -353,7 +352,7 @@ void AudioDeviceLock::RegisteredTrackerClientDied(pid_t uid)
     audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
     streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));
 
-    audioDeviceCommon_.ClientDiedDisconnectScoNormal();
+    audioDeviceCommon_.ClientDiedDisconnectScoNormal(uid);
     audioDeviceCommon_.ClientDiedDisconnectScoRecognition();
 
     if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_OFFLOAD)) {

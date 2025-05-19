@@ -110,8 +110,6 @@ void AudioHfpManagerFuzzTest(const uint8_t *rawData, size_t size)
     std::string macAddress(reinterpret_cast<const char*>(rawData), size);
 
     Bluetooth::AudioHfpManager::SetActiveHfpDevice(macAddress);
-    Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(scene);
-    Bluetooth::AudioHfpManager::GetScoCategoryFromScene(scene);
     Bluetooth::AudioHfpManager::UpdateAudioScene(scene);
 }
 

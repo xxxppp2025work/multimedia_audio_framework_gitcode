@@ -58,12 +58,6 @@ enum ScoCategory : int32_t {
     SCO_RECOGNITION = 2,
 };
 
-enum RecognitionStatus : int32_t {
-    RECOGNITION_CONNECTING = 0,
-    RECOGNITION_CONNECTED = 1,
-    RECOGNITION_DISCONNECTING = 2,
-    RECOGNITION_DISCONNECTED = 3,
-};
 enum AudioScoState : int32_t {
     INIT = 0,
     DISCONNECTED,

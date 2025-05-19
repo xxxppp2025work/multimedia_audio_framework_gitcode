@@ -770,7 +770,7 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid)
     streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));
     FetchOutputDeviceAndRoute();
 
-    audioDeviceCommon_.ClientDiedDisconnectScoNormal();
+    audioDeviceCommon_.ClientDiedDisconnectScoNormal(uid);
     audioDeviceCommon_.ClientDiedDisconnectScoRecognition();
 
     if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_OFFLOAD)) {

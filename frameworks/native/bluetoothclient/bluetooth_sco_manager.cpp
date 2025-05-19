@@ -317,8 +317,16 @@ int32_t BluetoothScoManager::DisconnectSco(ScoCategory scoCategory, const Blueto
 
 AudioScoState BluetoothScoManager::GetAudioScoState()
 {
-    std::lock_guard<std::mutex> stateLock(g_scoStateLock);
+    std::lock_guard<std::mutex> stateLock(scoLock_);
     return currentScoState_;
+}
+
+bool BluetoothScoManager::IsInScoCategory(ScoCategory scoCategory)
+{
+    std::lock_guard<std::mutex> stateLock(scoLock_);
+    return (currentScoCategory_ == scoCategory) &&
+        (currentScoState_ == AudioScoState::CONNECTING ||
+        currentScoState_ == AudioScoState::CONNECTED);
 }
 }
 }
