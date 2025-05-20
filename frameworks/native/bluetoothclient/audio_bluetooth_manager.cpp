@@ -499,8 +499,8 @@ std::string AudioHfpManager::GetActiveHfpDevice()
 
 int32_t AudioHfpManager::DisconnectSco()
 {
-    BluetoothScoManager::GetInstance().HandleScoDisconnect(activeHfpDevice_);
-    return SUCCESS;
+    std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
+    return BluetoothScoManager::GetInstance().HandleScoDisconnect(activeHfpDevice_);
 }
 
 void AudioHfpManager::DisconnectBluetoothHfpSink()
