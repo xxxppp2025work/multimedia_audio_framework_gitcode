@@ -1198,9 +1198,6 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
                 desc.macAddress_ == audioActiveDevice_.GetCurrentOutputDeviceMacAddr()) {
                 Bluetooth::AudioA2dpManager::SetActiveA2dpDevice("");
-            } else if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-                desc.macAddress_ == audioActiveDevice_.GetCurrentOutputDeviceMacAddr()) {
-                Bluetooth::AudioHfpManager::DisconnectSco();
             }
 #endif
         } else {
@@ -1222,10 +1219,6 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             }
         }
     } else if (updateCommand == ENABLE_UPDATE) {
-        if (!desc.isEnable_ && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-            desc.IsSameDeviceDesc(audioActiveDevice_.GetCurrentOutputDevice())) {
-            Bluetooth::AudioHfpManager::DisconnectSco();
-        }
         UpdateAllUserSelectDevice(userSelectDeviceMap, desc, std::make_shared<AudioDeviceDescriptor>(desc));
         reason = desc.isEnable_ ? AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE :
             AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;

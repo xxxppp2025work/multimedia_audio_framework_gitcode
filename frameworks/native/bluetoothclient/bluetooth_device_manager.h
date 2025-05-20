@@ -112,6 +112,8 @@ struct BluetoothStopVirtualCallHandle {
 
 class HfpBluetoothDeviceManager {
 public:
+    using std::function<void(const BluetoothRemoteDevice &)> = DisconnectScoForDevice;
+
     HfpBluetoothDeviceManager() = default;
     virtual ~HfpBluetoothDeviceManager() = default;
     static void SetHfpStack(const BluetoothRemoteDevice &device, int action);
@@ -145,10 +147,16 @@ public:
     static std::vector<BluetoothRemoteDevice> GetAllHfpBluetoothDevice();
     static void ClearAllHfpBluetoothDevice();
     static std::vector<BluetoothRemoteDevice> GetHfpVirtualDeviceList();
+    static void RegisterDisconnectScoFunc(DisconnectScoForDevice func);
 
 private:
     static void HandleUpdateDeviceCategory(const BluetoothRemoteDevice &device);
     static AudioStandard::AudioDeviceDescriptor HandleConnectDeviceInner(const BluetoothRemoteDevice &device);
+    static void TryDisconnectScoAsync(const BluetoothRemoteDevice &device);
+    static void TryDisconnectScoSync(const BluetoothRemoteDevice &device);
+    static void OnDeviceCategoryUpdated(const BluetoothRemoteDevice &device, AudioDeviceDescriptor &desc);
+    static void OnDeviceEnableUpdated(const BluetoothRemoteDevice &device, AudioDeviceDescriptor &desc);
+
     static std::map<std::string, BluetoothRemoteDevice> hfpBluetoothDeviceMap_;
     static std::map<std::string, BluetoothDeviceAction> wearDetectionStateMap_;
     static std::vector<BluetoothRemoteDevice> privacyDevices_;
@@ -158,6 +166,7 @@ private:
     static std::vector<BluetoothRemoteDevice> virtualDevices_;
     static std::mutex stopVirtualCallHandleLock_;
     static BluetoothStopVirtualCallHandle stopVirtualCallHandle_;
+    static DisconnectScoForDevice disconnectScoFun_;
 };
 } // namespace Bluetooth
 } // namespace OHOS

@@ -150,6 +150,7 @@ private:
     static ScoCategory JudgeScoCategory();
     static int32_t TryUpdateScoCategory();
     static int32_t TryUpdateScoCategoryNoLock();
+    static void DisconnectScoForDevice(const BluetoothRemoteDevice &device);
 
 private:
     static HandsFreeAudioGateway *hfpInstance_;

@@ -418,6 +418,7 @@ void AudioA2dpListener::OnCaptureConnectionStateChanged(const BluetoothRemoteDev
 
 void AudioHfpManager::RegisterBluetoothScoListener()
 {
+    HfpBluetoothDeviceManager::RegisterDisconnectScoFunc(&DisconnectScoForDevice);
     AUDIO_INFO_LOG("AudioHfpManager::RegisterBluetoothScoListener");
     std::lock_guard<std::shared_mutex> hfpLock(g_hfpInstanceLock);
     hfpInstance_ = HandsFreeAudioGateway::GetProfile();
@@ -663,6 +664,19 @@ int32_t AudioHfpManager::TryUpdateScoCategory()
 {
     std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
     return TryUpdateScoCategoryNoLock();
+}
+
+void AudioHfpManager::DisconnectScoForDevice(const BluetoothRemoteDevice &device)
+{
+    std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
+    
+    if (device.GetDeviceAddr() != activeHfpDevice_.GetDeviceAddr()) {
+        AUDIO_WARNING_LOG("disconnect sco for device %{public}s but active device %{public}s",
+            GetEncryptAddr(device.GetDeviceAddr()).c_str(),
+            GetEncryptAddr(activeHfpDevice_.GetDeviceAddr()).c_str());
+        return;
+    }
+    BluetoothScoManager::GetInstance().HandleScoDisconnect(activeHfpDevice_);
 }
 
 void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state, int reason)
