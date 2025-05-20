@@ -44,8 +44,8 @@ std::shared_ptr<AudioHfpListener> AudioHfpManager::hfpListener_ = std::make_shar
 std::atomic<AudioScene> AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
 OHOS::Bluetooth::ScoCategory AudioHfpManager::scoCategory = OHOS::Bluetooth::ScoCategory::SCO_DEFAULT;
 BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
-bool AudioHfpManager::isRecognitionScene_ = false;
-bool AudioHfpManager::isRecordScene_ = false;
+std::atomic<bool> AudioHfpManager::isRecognitionScene_ = false;
+std::atomic<bool> AudioHfpManager::isRecordScene_ = false;
 std::map<pid_t, bool> AudioHfpManager::virtualCalls_;
 std::mutex AudioHfpManager::virtualCallMutex_;
 std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> AudioA2dpManager::a2dpPlayingStateChangedListeners_;
@@ -618,7 +618,7 @@ bool AudioHfpManager::IsVirtualCall()
 
 bool AudioHfpManager::IsAudioScoStateConnect()
 {
-    AudioScoState scoState = BluetoothScoManager::GetAudioScoState();
+    AudioScoState scoState = BluetoothScoManager::GetInstance().GetAudioScoState();
     return (scoState == AudioScoState::CONNECTED || scoState == AudioScoState::CONNECTING);
 }
 
@@ -632,18 +632,19 @@ ScoCategory AudioHfpManager::JudgeScoCategory()
         }
     }
 
+    auto scene = scene_.load();
     if ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) && !isInbardingEnabled) {
         AUDIO_WARNING_LOG("The inbarding switch is off, ignore the ring scene.");
-        return isRecognitionScene ? ScoCategory::SCO_RECOGNITION : ScoCategory::SCO_DEFAULT;
+        return isRecognitionScene_.load() ? ScoCategory::SCO_RECOGNITION : ScoCategory::SCO_DEFAULT;
     }
 
-    if (scene_ == AUDIO_SCENE_VOICE_RINGING || scene_ == AUDIO_SCENE_VOICE_RINGING) {
+    if (scene == AUDIO_SCENE_VOICE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) {
         return ScoCategory::SCO_CALLULAR;
-    } else if (scene_ == AUDIO_SCENE_RINGING || scene_ == AUDIO_SCENE_PHONE_CHAT) {
+    } else if (scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_PHONE_CHAT) {
         return !IsVirtualCall() ? ScoCategory::SCO_CALLULAR : ScoCategory::SCO_VIRTUAL;
     }
      
-    return isRecognitionScene ? ScoCategory::SCO_RECOGNITION : ScoCategory::SCO_DEFAULT;
+    return isRecognitionScene_.load() ? ScoCategory::SCO_RECOGNITION : ScoCategory::SCO_DEFAULT;
 }
 
 int32_t AudioHfpManager::TryUpdateScoCategoryNoLock()
@@ -653,7 +654,7 @@ int32_t AudioHfpManager::TryUpdateScoCategoryNoLock()
     }
 
     auto category = JudgeScoCategory();
-    if (category == ScoCategory::SCO_DEFAULT && !isRecordScene_) {
+    if (category == ScoCategory::SCO_DEFAULT && !isRecordScene_.load()) {
         return BluetoothScoManager::GetInstance().HandleScoDisconnect(activeHfpDevice_);
     }
 
@@ -687,7 +688,7 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
     HfpScoConnectState scoState = static_cast<HfpScoConnectState>(state);
     if (scoState == HfpScoConnectState::SCO_CONNECTED || scoState == HfpScoConnectState::SCO_DISCONNECTED) {
         bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
-        BluetoothScoManager::UpdateScoState(scoState, &device);
+        BluetoothScoManager::GetInstance().UpdateScoState(scoState, &device);
         if (device.GetDeviceAddr() == AudioHfpManager::GetCurrentActiveHfpDevice() &&
             scoState == HfpScoConnectState::SCO_DISCONNECTED) {
             BluetoothRemoteDevice defaultDevice;

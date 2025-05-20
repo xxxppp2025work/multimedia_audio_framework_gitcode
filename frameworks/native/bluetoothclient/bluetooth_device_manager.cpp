@@ -289,7 +289,10 @@ void MediaBluetoothDeviceManager::HandleWearDevice(const BluetoothRemoteDevice &
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceCategory_ = BT_HEADPHONE;
-    OnDeviceCategoryUpdated(device, desc);
+    std::lock_guard<std::mutex> observerLock(g_observerLock);
+    if (g_deviceObserver != nullptr) {
+        g_deviceObserver->OnDeviceInfoUpdated(desc, DeviceInfoUpdateCommand::CATEGORY_UPDATE);
+    }
 }
 
 void MediaBluetoothDeviceManager::HandleUnwearDevice(const BluetoothRemoteDevice &device)
@@ -307,7 +310,10 @@ void MediaBluetoothDeviceManager::HandleUnwearDevice(const BluetoothRemoteDevice
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceCategory_ = BT_UNWEAR_HEADPHONE;
-    OnDeviceCategoryUpdated(device, desc);
+    std::lock_guard<std::mutex> observerLock(g_observerLock);
+    if (g_deviceObserver != nullptr) {
+        g_deviceObserver->OnDeviceInfoUpdated(desc, DeviceInfoUpdateCommand::CATEGORY_UPDATE);
+    }
 }
 
 void MediaBluetoothDeviceManager::HandleEnableDevice(const BluetoothRemoteDevice &device)
@@ -320,7 +326,10 @@ void MediaBluetoothDeviceManager::HandleEnableDevice(const BluetoothRemoteDevice
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     desc.macAddress_ = device.GetDeviceAddr();
     desc.isEnable_ = true;
-    OnDeviceEnableUpdated(device, desc);
+    std::lock_guard<std::mutex> observerLock(g_observerLock);
+    if (g_deviceObserver != nullptr) {
+        g_deviceObserver->OnDeviceInfoUpdated(desc, DeviceInfoUpdateCommand::ENABLE_UPDATE);
+    }
 }
 
 void MediaBluetoothDeviceManager::HandleDisableDevice(const BluetoothRemoteDevice &device)
@@ -333,7 +342,10 @@ void MediaBluetoothDeviceManager::HandleDisableDevice(const BluetoothRemoteDevic
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     desc.macAddress_ = device.GetDeviceAddr();
     desc.isEnable_ = false;
-    OnDeviceEnableUpdated(device, desc);
+    std::lock_guard<std::mutex> observerLock(g_observerLock);
+    if (g_deviceObserver != nullptr) {
+        g_deviceObserver->OnDeviceInfoUpdated(desc, DeviceInfoUpdateCommand::ENABLE_UPDATE);
+    }
 }
 
 void MediaBluetoothDeviceManager::HandleWearEnable(const BluetoothRemoteDevice &device)
@@ -344,22 +356,23 @@ void MediaBluetoothDeviceManager::HandleWearEnable(const BluetoothRemoteDevice &
     }
     RemoveDeviceInConfigVector(device, negativeDevices_);
     RemoveDeviceInConfigVector(device, privacyDevices_);
+    std::lock_guard<std::mutex> wearStateMapLock(g_a2dpWearStateMapLock);
     AudioDeviceDescriptor desc;
-    {
-        std::lock_guard<std::mutex> wearStateMapLock(g_a2dpWearStateMapLock);
-        desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-        desc.macAddress_ = device.GetDeviceAddr();
-        auto wearStateIter = wearDetectionStateMap_.find(device.GetDeviceAddr());
-        if (wearStateIter != wearDetectionStateMap_.end() &&
-            wearStateIter->second == BluetoothDeviceAction::WEAR_ACTION) {
-            AddDeviceInConfigVector(device, privacyDevices_);
-            desc.deviceCategory_ = BT_HEADPHONE;
-        } else {
-            AddDeviceInConfigVector(device, negativeDevices_);
-            desc.deviceCategory_ = BT_UNWEAR_HEADPHONE;
-        }
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc.macAddress_ = device.GetDeviceAddr();
+    auto wearStateIter = wearDetectionStateMap_.find(device.GetDeviceAddr());
+    if (wearStateIter != wearDetectionStateMap_.end() &&
+        wearStateIter->second == BluetoothDeviceAction::WEAR_ACTION) {
+        AddDeviceInConfigVector(device, privacyDevices_);
+        desc.deviceCategory_ = BT_HEADPHONE;
+    } else {
+        AddDeviceInConfigVector(device, negativeDevices_);
+        desc.deviceCategory_ = BT_UNWEAR_HEADPHONE;
     }
-    OnDeviceCategoryUpdated(device, desc);
+    std::lock_guard<std::mutex> observerLock(g_observerLock);
+    if (g_deviceObserver != nullptr) {
+        g_deviceObserver->OnDeviceInfoUpdated(desc, DeviceInfoUpdateCommand::CATEGORY_UPDATE);
+    }
 }
 
 void MediaBluetoothDeviceManager::HandleWearDisable(const BluetoothRemoteDevice &device)
@@ -469,7 +482,10 @@ void MediaBluetoothDeviceManager::HandleUpdateDeviceCategory(const BluetoothRemo
     if (wearState == 1 && desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) { // 1 wear state
         desc.deviceCategory_ = BT_HEADPHONE; 
     }
-    OnDeviceCategoryUpdated(device, desc);
+    std::lock_guard<std::mutex> observerLock(g_observerLock);
+    if (g_deviceObserver != nullptr) {
+        g_deviceObserver->OnDeviceInfoUpdated(desc, DeviceInfoUpdateCommand::CATEGORY_UPDATE);
+    }
 }
 
 void MediaBluetoothDeviceManager::NotifyToUpdateVirtualDevice(const BluetoothRemoteDevice &device,
@@ -1156,14 +1172,14 @@ std::vector<BluetoothRemoteDevice> HfpBluetoothDeviceManager::GetHfpVirtualDevic
     return virtualDevices_;
 }
 
-void HfpBluetoothDeviceManager::RegisterDisconnectScoFunc(TryDisconnectScoFunc func)
+void HfpBluetoothDeviceManager::RegisterDisconnectScoFunc(DisconnectScoForDevice func)
 {
     disconnectScoFun_ = func;
 }
 
 void HfpBluetoothDeviceManager::TryDisconnectScoAsync(const BluetoothRemoteDevice &device)
 {
-    std::thread disconnectScoThread = std::thread([this] {
+    std::thread disconnectScoThread = std::thread([this, device]() {
         if (disconnectScoFun_ != nullptr) {
             AUDIO_INFO_LOG("bluetooth service trigger disconnect sco async");
             disconnectScoFun_(device);

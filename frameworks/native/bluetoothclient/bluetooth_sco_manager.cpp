@@ -26,8 +26,6 @@ namespace OHOS {
 namespace Bluetooth {
 using namespace AudioStandard;
 
-HandsFreeAudioGateway *BluetoothScoManager::
-
 BluetoothScoManager &BluetoothScoManager::GetInstance()
 {
     static BluetoothScoManager scoManager;

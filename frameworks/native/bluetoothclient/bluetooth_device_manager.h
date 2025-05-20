@@ -17,6 +17,7 @@
 #define BLUETOOTH_DEVICE_MANAGER_H
 
 #include <mutex>
+#include <functional>
 #include "bluetooth_hfp_ag.h"
 #include "bluetooth_device_utils.h"
 #include "audio_errors.h"
@@ -112,7 +113,7 @@ struct BluetoothStopVirtualCallHandle {
 
 class HfpBluetoothDeviceManager {
 public:
-    using std::function<void(const BluetoothRemoteDevice &)> = DisconnectScoForDevice;
+    using DisconnectScoForDevice = std::function<void(const BluetoothRemoteDevice &)>;
 
     HfpBluetoothDeviceManager() = default;
     virtual ~HfpBluetoothDeviceManager() = default;
@@ -154,8 +155,10 @@ private:
     static AudioStandard::AudioDeviceDescriptor HandleConnectDeviceInner(const BluetoothRemoteDevice &device);
     static void TryDisconnectScoAsync(const BluetoothRemoteDevice &device);
     static void TryDisconnectScoSync(const BluetoothRemoteDevice &device);
-    static void OnDeviceCategoryUpdated(const BluetoothRemoteDevice &device, AudioDeviceDescriptor &desc);
-    static void OnDeviceEnableUpdated(const BluetoothRemoteDevice &device, AudioDeviceDescriptor &desc);
+    static void OnDeviceCategoryUpdated(const BluetoothRemoteDevice &device,
+        AudioStandard::AudioDeviceDescriptor &desc);
+    static void OnDeviceEnableUpdated(const BluetoothRemoteDevice &device,
+        AudioStandard::AudioDeviceDescriptor &desc);
 
     static std::map<std::string, BluetoothRemoteDevice> hfpBluetoothDeviceMap_;
     static std::map<std::string, BluetoothDeviceAction> wearDetectionStateMap_;
