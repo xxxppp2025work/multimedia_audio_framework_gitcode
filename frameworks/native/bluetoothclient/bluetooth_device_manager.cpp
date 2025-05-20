@@ -388,7 +388,10 @@ void MediaBluetoothDeviceManager::HandleWearDisable(const BluetoothRemoteDevice 
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceCategory_ = BT_HEADPHONE;
-    OnDeviceCategoryUpdated(device, desc);
+    std::lock_guard<std::mutex> observerLock(g_observerLock);
+    if (g_deviceObserver != nullptr) {
+        g_deviceObserver->OnDeviceInfoUpdated(desc, DeviceInfoUpdateCommand::CATEGORY_UPDATE);
+    }
 }
 
 void MediaBluetoothDeviceManager::HandleUserSelection(const BluetoothRemoteDevice &device)
