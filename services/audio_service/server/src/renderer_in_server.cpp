@@ -73,6 +73,8 @@ RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_p
         isNeedFade_ = true;
         oldAppliedVolume_ = MIN_FLOAT_VOLUME;
     }
+    audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
+    AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
 }
 
 RendererInServer::~RendererInServer()
@@ -411,6 +413,7 @@ void RendererInServer::StandByCheck()
         return;
     }
     standByCounter_++;
+    audioStreamChecker_->RecordNodataFrame();
     if (!ShouldEnableStandBy()) {
         return;
     }
@@ -523,6 +526,9 @@ void RendererInServer::WriteMuteDataSysEvent(BufferDesc &bufferDesc)
     int64_t muteFrameCnt = 0;
     VolumeTools::CalcMuteFrame(bufferDesc, processConfig_.streamInfo, traceTag_, volumeDataCount_, muteFrameCnt);
     lastWriteMuteFrame_ += muteFrameCnt;
+    if (volumeDataCount_ < 0) {
+        audioStreamChecker_->RecordMuteFrame();
+    }
     if (silentModeAndMixWithOthers_) {
         return;
     }
@@ -642,6 +648,7 @@ int32_t RendererInServer::WriteData()
                 DoFadingOut(bufferDesc);
             }
         }
+        audioStreamChecker_->RecordNormalFrame();
         stream_->EnqueueBuffer(bufferDesc);
         if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
             DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
@@ -870,6 +877,7 @@ int32_t RendererInServer::Start()
 int32_t RendererInServer::StartInner()
 {
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START);
     int32_t ret = 0;
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
@@ -942,6 +950,7 @@ int32_t RendererInServer::Pause()
 {
     AUDIO_INFO_LOG("Pause.");
     std::unique_lock<std::mutex> lock(statusLock_);
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE);
     if (status_ != I_STATUS_STARTED) {
         AUDIO_ERR_LOG("RendererInServer::Pause failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
@@ -1089,6 +1098,7 @@ int32_t RendererInServer::Stop()
     AUDIO_INFO_LOG("Stop.");
     {
         std::unique_lock<std::mutex> lock(statusLock_);
+        audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP);
         if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED && status_ != I_STATUS_DRAINING &&
             status_ != I_STATUS_STARTING) {
             AUDIO_ERR_LOG("RendererInServer::Stop failed, Illegal state: %{public}u", status_.load());
