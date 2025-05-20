@@ -1814,7 +1814,7 @@ void AudioDeviceCommon::ClientDiedDisconnectScoNormal(pid_t uid)
 {
     Bluetooth::AudioHfpManager::DeleteVirtualCall(uid);
     bool isRecord = streamCollector_.HasRunningNormalCapturerStream();
-    AudioScene scene = audioSceneManager_.GetAudioScene(true),
+    AudioScene scene = audioSceneManager_.GetAudioScene(true);
     Bluetooth::AudioHfpManager::UpdateAudioScene(scene, isRecord);
 }
 

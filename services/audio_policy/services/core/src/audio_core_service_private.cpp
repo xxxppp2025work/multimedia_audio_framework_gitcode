@@ -153,7 +153,7 @@ void AudioCoreService::BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> 
         audioDeviceManager_.UpdateDevicesListInfo(
             std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
         FetchInputDeviceAndRoute();
-        return ERROR;
+        return;
     }
 
     if (Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType)) {
