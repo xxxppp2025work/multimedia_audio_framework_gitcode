@@ -21,7 +21,7 @@
 #include <cstring>
 #include <mutex>
 #include <thread>
-#include "v4_0/iaudio_manager.h"
+#include "v5_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include "util/audio_running_lock.h"
 #include "util/ring_buffer_handler.h"
@@ -72,7 +72,7 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
     void SetAddress(const std::string &address) override;
-
+    int32_t SetAccessoryDeviceState(bool state);
     void DumpInfo(std::string &dumpString) override;
 
     void SetDmDeviceType(uint16_t dmDeviceType) override;
@@ -134,7 +134,7 @@ private:
     SourceCallbackWrapper callback_ = {};
     bool sourceInited_ = false;
     bool captureInited_ = false;
-    bool started_ = false;
+    std::atomic<bool> started_ = false;
     bool paused_ = false;
     float leftVolume_ = MAX_VOLUME_LEVEL;
     float rightVolume_ = MAX_VOLUME_LEVEL;

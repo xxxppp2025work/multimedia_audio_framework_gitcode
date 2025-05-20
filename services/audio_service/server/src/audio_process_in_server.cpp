@@ -68,6 +68,12 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
     recorderDfx_ = std::make_unique<RecorderDfxWriter>(processConfig_.appInfo, sessionId_);
     audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
     AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
+        AudioService::GetInstance()->RegisterMuteStateChangeCallback(sessionId_, [this](bool flag) {
+            AUDIO_INFO_LOG("recv mute state change flag %{public}d", flag ? 1 : 0);
+            muteFlag_ = flag;
+        });
+    }
 }
 
 AudioProcessInServer::~AudioProcessInServer()
