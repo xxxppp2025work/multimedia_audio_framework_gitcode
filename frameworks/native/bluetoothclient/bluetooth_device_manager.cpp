@@ -73,7 +73,7 @@ std::vector<BluetoothRemoteDevice> HfpBluetoothDeviceManager::negativeDevices_;
 std::vector<BluetoothRemoteDevice> HfpBluetoothDeviceManager::connectingDevices_;
 std::vector<BluetoothRemoteDevice> HfpBluetoothDeviceManager::virtualDevices_;
 std::mutex HfpBluetoothDeviceManager::stopVirtualCallHandleLock_;
-DisconnectScoForDevice HfpBluetoothDeviceManager::disconnectScoFun_ = nullptr;
+HfpBluetoothDeviceManager::DisconnectScoForDevice HfpBluetoothDeviceManager::disconnectScoFun_ = nullptr;
 BluetoothStopVirtualCallHandle HfpBluetoothDeviceManager::stopVirtualCallHandle_ = { BluetoothRemoteDevice(), false};
 
 // LCOV_EXCL_START
@@ -1182,10 +1182,10 @@ void HfpBluetoothDeviceManager::RegisterDisconnectScoFunc(DisconnectScoForDevice
 
 void HfpBluetoothDeviceManager::TryDisconnectScoAsync(const BluetoothRemoteDevice &device)
 {
-    std::thread disconnectScoThread = std::thread([this, device]() {
-        if (disconnectScoFun_ != nullptr) {
+    std::thread disconnectScoThread = std::thread([device]() {
+        if (HfpBluetoothDeviceManager::disconnectScoFun_ != nullptr) {
             AUDIO_INFO_LOG("bluetooth service trigger disconnect sco async");
-            disconnectScoFun_(device);
+            HfpBluetoothDeviceManager::disconnectScoFun_(device);
         }
     });
     disconnectScoThread.detach();

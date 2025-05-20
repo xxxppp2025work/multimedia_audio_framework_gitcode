@@ -688,7 +688,7 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
     HfpScoConnectState scoState = static_cast<HfpScoConnectState>(state);
     if (scoState == HfpScoConnectState::SCO_CONNECTED || scoState == HfpScoConnectState::SCO_DISCONNECTED) {
         bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
-        BluetoothScoManager::GetInstance().UpdateScoState(scoState, &device);
+        BluetoothScoManager::GetInstance().UpdateScoState(scoState, device);
         if (device.GetDeviceAddr() == AudioHfpManager::GetCurrentActiveHfpDevice() &&
             scoState == HfpScoConnectState::SCO_DISCONNECTED) {
             BluetoothRemoteDevice defaultDevice;

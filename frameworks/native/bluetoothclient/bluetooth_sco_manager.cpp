@@ -126,10 +126,10 @@ void BluetoothScoManager::ProcCacheRequest()
     if (req == nullptr) {
         return;
     }
-    if (req.connectReq) {
-        HandleScoConnect(req.category, req.device);
+    if (req->connectReq) {
+        HandleScoConnect(req->category, req->device);
     } else {
-        HandleScoDisconnect(req.device);
+        HandleScoDisconnect(req->device);
     }
 }
 
@@ -162,7 +162,7 @@ int32_t BluetoothScoManager::ProcConnectReqWhenDisconnected(ScoCategory scoCateg
 {
     int32_t ret = ConnectSco(scoCategory, device);
     CHECK_AND_RETURN_RET(ret == 0, ERROR);
-    currentScoState_ = AudioScoState::DISCONNECTING:
+    currentScoState_ = AudioScoState::DISCONNECTING;
     currentScoCategory_ = scoCategory;
     activeHfpDevice_ = device;
     return SUCCESS;
@@ -177,7 +177,7 @@ int32_t BluetoothScoManager::ProcConnectReqWhenConnected(ScoCategory scoCategory
     }
     int32_t ret = DisconnectSco(currentScoCategory_, activeHfpDevice_);
     CHECK_AND_RETURN_RET(ret == 0, ERROR);
-    currentScoState_ = AudioScoState::DISCONNECTING:
+    currentScoState_ = AudioScoState::DISCONNECTING;
     return SaveRequestToCache(true, scoCategory, device);
 }
 
@@ -249,7 +249,7 @@ int32_t BluetoothScoManager::ProcDisconnectReqWhenConnected(const BluetoothRemot
     cacheReq_ = nullptr;
     int32_t ret = DisconnectSco(currentScoCategory_, activeHfpDevice_);
     CHECK_AND_RETURN_RET(ret == 0, ERROR);
-    currentScoState_ = AudioScoState::DISCONNECTING:
+    currentScoState_ = AudioScoState::DISCONNECTING;
     return SUCCESS;
 }
 
