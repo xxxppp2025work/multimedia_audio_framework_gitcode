@@ -158,6 +158,10 @@ int32_t CapturerInServer::Init()
         + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpS2C_);
     recorderDfx_ = std::make_unique<RecorderDfxWriter>(processConfig_.appInfo, streamIndex_);
+    AudioService::GetInstance()->RegisterMuteStateChangeCallback(streamIndex_, [this](bool flag) {
+        AUDIO_INFO_LOG("recv mute state change flag %{public}d", flag ? 1 : 0);
+        muteFlag_ = flag;
+    });
 
     return SUCCESS;
 }
@@ -363,7 +367,7 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_READ_FAILED, "IStreamListener is nullptr");
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(requestDataLen, currentWriteFrame, stateListener)) {
-        return ERR_READ_FAILED;
+        return ERR_WRITE_FAILED;
     }
     Trace trace("CapturerInServer::ReadData:" + std::to_string(currentWriteFrame));
     OptResult result = ringCache_->GetWritableSize();
@@ -380,9 +384,8 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
 
     BufferDesc dstBuffer = {nullptr, 0, 0};
     uint64_t curWritePos = audioServerBuffer_->GetCurWriteFrame();
-    if (audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer) < 0) {
-        return ERR_READ_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer) >= 0, ERR_READ_FAILED,
+        "GetWriteBuffer failed");
     if ((processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE && processConfig_.innerCapMode ==
         LEGACY_MUTE_CAP) || muteFlag_) {
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
@@ -401,6 +404,8 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     uint64_t nextWriteFrame = currentWriteFrame + spanSizeInFrame_;
     audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
     audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
+
+    UpdateBufferTimeStamp(dstBuffer);
 
     stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
     return SUCCESS;

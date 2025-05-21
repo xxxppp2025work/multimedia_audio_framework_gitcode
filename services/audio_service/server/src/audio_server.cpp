@@ -233,6 +233,10 @@ static void UpdatePrimaryInstance(std::shared_ptr<IAudioRenderSink> &sink,
 #ifdef SUPPORT_LOW_LATENCY
         AUDIO_INFO_LOG("Use fast capturer source instance");
         source = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
+        if (source && !source->IsInited()) {
+            AUDIO_INFO_LOG("Use fast capturer voip source instance");
+            source = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP, true);
+        }
 #endif
     }
 }
@@ -416,6 +420,9 @@ void AudioServer::ParseAudioParameter()
 
 void AudioServer::WriteServiceStartupError()
 {
+    Trace trace("SYSEVENT FAULT EVENT AUDIO_SERVICE_STARTUP_ERROR, SERVICE_ID: "
+            + std::to_string(Media::MediaMonitor::AUDIO_SERVER_ID) + ", ERROR_CODE: "
+            + std::to_string(Media::MediaMonitor::AUDIO_SERVER));
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_SERVICE_STARTUP_ERROR,
         Media::MediaMonitor::FAULT_EVENT);
@@ -505,7 +512,7 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
-   return true;
+    return SUCCESS;
 }
 
 bool AudioServer::ProcessKeyValuePairs(const std::string &key,
@@ -2254,6 +2261,22 @@ void AudioServer::UpdateSessionConnectionState(const int32_t &sessionId, const i
     CHECK_AND_RETURN_LOG(sink, "sink is nullptr");
     int32_t ret = sink->UpdatePrimaryConnectionState(state);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "sink do not support UpdatePrimaryConnectionState");
+}
+
+void AudioServer::SetLatestMuteState(const uint32_t sessionId, const bool muteFlag)
+{
+    AUDIO_INFO_LOG("sessionId_: %{public}u, muteFlag: %{public}d", sessionId, muteFlag);
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "Refused for %{public}d", callingUid);
+    AudioService::GetInstance()->SetLatestMuteState(sessionId, muteFlag);
+}
+
+void AudioServer::SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag)
+{
+    AUDIO_INFO_LOG("sessionId_: %{public}u, muteFlag: %{public}d", sessionId, muteFlag);
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "Refused for %{public}d", callingUid);
+    AudioService::GetInstance()->SetSessionMuteState(sessionId, insert, muteFlag);
 }
 
 void AudioServer::SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag)

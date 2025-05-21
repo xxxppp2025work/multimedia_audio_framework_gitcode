@@ -49,6 +49,7 @@ BluetoothAudioCaptureSource::~BluetoothAudioCaptureSource()
         DeInit();
     }
     AUDIO_INFO_LOG("[%{public}s] volumeDataCount: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
+    CapturerClockManager::GetInstance().DeleteAudioSourceClock(captureId_);
 }
 
 int32_t BluetoothAudioCaptureSource::Init(const IAudioSourceAttr &attr)
@@ -430,9 +431,12 @@ void BluetoothAudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &d
 
 void BluetoothAudioCaptureSource::SetAudioRouteInfoForEnhanceChain(void)
 {
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
-    audioEnhanceChainManager->SetInputDevice(captureId_, currentActiveDevice_, "");
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag != 1) {
+        AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+        CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
+        audioEnhanceChainManager->SetInputDevice(captureId_, currentActiveDevice_, "");
+    }
 }
 
 int32_t BluetoothAudioCaptureSource::CreateCapture(void)
