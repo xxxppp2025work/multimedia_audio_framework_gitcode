@@ -1165,7 +1165,7 @@ int32_t AudioDeviceCommon::HandleDeviceChangeForFetchInputDevice(std::shared_ptr
     std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo)
 {
     if (desc != nullptr && (desc->deviceType_ == DEVICE_TYPE_NONE ||
-        (IsSameDevice(desc, capturerChangeInfo->inputDeviceInfo) && desc->connectState_ != DEACTIVE_CONNECTED)) {
+        (IsSameDevice(desc, capturerChangeInfo->inputDeviceInfo) && desc->connectState_ != DEACTIVE_CONNECTED))) {
         AUDIO_WARNING_LOG("stream %{public}d device not change, no need move device", capturerChangeInfo->sessionId);
         std::shared_ptr<AudioDeviceDescriptor> preferredDesc =
             audioAffinityManager_.GetCapturerDevice(capturerChangeInfo->clientUID);
