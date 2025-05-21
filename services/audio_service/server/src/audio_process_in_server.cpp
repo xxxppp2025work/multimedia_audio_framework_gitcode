@@ -66,6 +66,8 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     playerDfx_ = std::make_unique<PlayerDfxWriter>(processConfig_.appInfo, sessionId_);
     recorderDfx_ = std::make_unique<RecorderDfxWriter>(processConfig_.appInfo, sessionId_);
+    audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
+    AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
     if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
         AudioService::GetInstance()->RegisterMuteStateChangeCallback(sessionId_, [this](bool flag) {
             AUDIO_INFO_LOG("recv mute state change flag %{public}d", flag ? 1 : 0);
@@ -89,6 +91,7 @@ AudioProcessInServer::~AudioProcessInServer()
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_INVALID);
     }
+    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 }
 
 int32_t AudioProcessInServer::GetSessionId(uint32_t &sessionId)
@@ -223,6 +226,7 @@ bool AudioProcessInServer::TurnOffMicIndicator(CapturerState capturerState)
 int32_t AudioProcessInServer::Start()
 {
     int32_t ret = StartInner();
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START);
     if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         RendererStage stage = ret == SUCCESS ? RENDERER_STAGE_START_OK : RENDERER_STAGE_START_FAIL;
         playerDfx_->WriteDfxStartMsg(sessionId_, stage, sourceDuration_, processConfig_);
@@ -299,7 +303,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this);
     }
-
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE);
     if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         playerDfx_->WriteDfxActionMsg(sessionId_, RENDERER_STAGE_PAUSE_OK);
     } else if (recorderDfx_ && processConfig_.audioMode == AUDIO_MODE_RECORD) {
@@ -363,6 +367,7 @@ int32_t AudioProcessInServer::Stop()
     if (processBuffer_ != nullptr) {
         lastWriteFrame_ = static_cast<int64_t>(processBuffer_->GetCurReadFrame()) - lastWriteFrame_;
     }
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP);
     if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         playerDfx_->WriteDfxStopMsg(sessionId_, RENDERER_STAGE_STOP_OK,
             {lastWriteFrame_, lastWriteMuteFrame_, GetLastAudioDuration(), underrunCount_}, processConfig_);
@@ -728,6 +733,28 @@ int32_t AudioProcessInServer::SetUnderrunCount(uint32_t underrunCnt)
 void AudioProcessInServer::AddMuteWriteFrameCnt(int64_t muteFrameCnt)
 {
     lastWriteMuteFrame_ += muteFrameCnt;
+}
+
+void AudioProcessInServer::AddMuteFrameSize(int64_t muteFrameCnt)
+{
+    if (muteFrameCnt < 0) {
+        audioStreamChecker_->RecordMuteFrame();
+    }
+}
+
+void AudioProcessInServer::AddNoDataFrameSize()
+{
+    audioStreamChecker_->RecordNodataFrame();
+}
+
+void AudioProcessInServer::AddNormalFrameSize()
+{
+    audioStreamChecker_->RecordNormalFrame();
+}
+
+StreamStatus AudioProcessInServer::GetStreamStatus()
+{
+    return streamStatus_->load();
 }
 
 int64_t AudioProcessInServer::GetLastAudioDuration()
