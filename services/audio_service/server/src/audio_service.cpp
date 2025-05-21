@@ -346,9 +346,7 @@ void AudioService::AddFilteredRender(int32_t innerCapId, std::shared_ptr<Rendere
 void AudioService::CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
 {
     CHECK_AND_RETURN_LOG(renderer != nullptr, "renderer is null.");
-
     std::unique_lock<std::mutex> lock(rendererMapMutex_);
-
     // inner-cap not working
     if (workingConfigs_.size() == 0) {
         return;
@@ -365,6 +363,7 @@ void AudioService::CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<
 
 InnerCapFilterPolicy AudioService::GetInnerCapFilterPolicy(int32_t innerCapId)
 {
+    std::lock_guard<std::recursive_mutex> lock(workingConfigsMutex_);
     if (!workingConfigs_.count(innerCapId)) {
         AUDIO_ERR_LOG("error, invalid innerCapId");
         return POLICY_INVALID;
@@ -392,6 +391,7 @@ bool isFilterMatched(const std::vector<T> &params, T param, FilterMode mode)
 bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId)
 {
     bool canBeCaptured = rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    std::lock_guard<std::recursive_mutex> lock(workingConfigsMutex_);
     if (!canBeCaptured || innerCapId == 0 || !workingConfigs_.count(innerCapId)) {
         AUDIO_WARNING_LOG("%{public}d privacy is not public!", rendererConfig.appInfo.appPid);
         return false;
@@ -407,6 +407,7 @@ bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, st
         return false;
     }
     bool ret = false;
+    std::lock_guard<std::recursive_mutex> lock(workingConfigsMutex_);
     for (auto& filter : workingConfigs_) {
         if (CheckShouldCap(rendererConfig, filter.first)) {
             ret = true;
@@ -420,6 +421,7 @@ bool AudioService::CheckShouldCap(const AudioProcessConfig &rendererConfig, int3
 {
     InnerCapFilterPolicy filterPolicy = GetInnerCapFilterPolicy(innerCapId);
     bool res = false;
+    std::lock_guard<std::recursive_mutex> lock(workingConfigsMutex_);
     switch (filterPolicy) {
         case POLICY_INVALID:
             return false;
@@ -502,6 +504,7 @@ void AudioService::FilterAllFastProcess()
 
 int32_t AudioService::CheckDisableFastInner(std::shared_ptr<AudioEndpoint> endpoint)
 {
+    std::lock_guard<std::recursive_mutex> lock(workingConfigsMutex_);
     for (auto workingConfig : workingConfigs_) {
         if (!endpoint->ShouldInnerCap(workingConfig.first)) {
             endpoint->DisableFastInnerCap(workingConfig.first);
@@ -618,7 +621,7 @@ int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlay
     // step 1: if sessionId is not added before, add the sessionId and enbale the filter in allRendererMap_
     // step 2: if sessionId is already in using, this means the config is changed. Check the filtered renderer before,
     // call disable inner-cap for those not meet with the new config, than filter all allRendererMap_.
-
+    std::lock_guard<std::recursive_mutex> lock(workingConfigsMutex_);
     if (workingConfigs_.count(innerCapId)) {
         workingConfigs_[innerCapId] = newConfig;
         return OnUpdateInnerCapList(innerCapId);
@@ -636,11 +639,14 @@ int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlay
 int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId, int32_t innerCapId)
 {
 #ifdef HAS_FEATURE_INNERCAPTURER
-    if (!workingConfigs_.count(innerCapId)) {
-        AUDIO_WARNING_LOG("%{public}u is working, remove %{public}u will not work!", innerCapId, sessionId);
-        return SUCCESS;
+    {
+        std::lock_guard<std::recursive_mutex> lock(workingConfigsMutex_);
+        if (!workingConfigs_.count(innerCapId)) {
+            AUDIO_WARNING_LOG("%{public}u is working, remove %{public}u will not work!", innerCapId, sessionId);
+            return SUCCESS;
+        }
+        workingConfigs_.erase(innerCapId);
     }
-    workingConfigs_.erase(innerCapId);
 
 #ifdef SUPPORT_LOW_LATENCY
     std::unique_lock<std::mutex> lockEndpoint(processListMutex_);
@@ -1032,10 +1038,13 @@ int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, floa
 void AudioService::Dump(std::string &dumpString)
 {
     AUDIO_INFO_LOG("AudioService dump begin");
-    for (auto &workingConfig_ : workingConfigs_) {
-        AppendFormat(dumpString, "InnerCapid: %s  - InnerCap filter: %s\n",
+    {
+        std::lock_guard<std::recursive_mutex> lock(workingConfigsMutex_);
+        for (auto &workingConfig_ : workingConfigs_) {
+            AppendFormat(dumpString, "InnerCapid: %s  - InnerCap filter: %s\n",
             std::to_string(workingConfig_.first).c_str(),
             ProcessConfig::DumpInnerCapConfig(workingConfig_.second).c_str());
+        }
     }
 #ifdef SUPPORT_LOW_LATENCY
     // dump process
