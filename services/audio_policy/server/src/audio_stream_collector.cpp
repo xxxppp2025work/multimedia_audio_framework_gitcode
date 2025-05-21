@@ -1571,28 +1571,34 @@ bool AudioStreamCollector::HasRunningRendererStream()
 
 bool AudioStreamCollector::HasRunningRecognitionCapturerStream()
 {
-    return HasRunningCapturerStream(SOURCE_TYPE_VOICE_RECOGNITION);
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    // judge stream state is running
+    bool hasRunningRecognitionCapturerStream = std::any_of(audioCapturerChangeInfos_.begin(),
+        audioCapturerChangeInfos_.end(),
+        [](const auto &changeInfo) {
+            return ((changeInfo->capturerState == CAPTURER_RUNNING) &&
+                (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
+                changeInfo->capturerInfo.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION));
+        });
+
+    AUDIO_INFO_LOG("Has Running Recognition stream : %{public}d", hasRunningRecognitionCapturerStream);
+    return hasRunningRecognitionCapturerStream;
 }
 
 bool AudioStreamCollector::HasRunningNormalCapturerStream()
-{
-    return HasRunningCapturerStream(SOURCE_TYPE_MIC);
-}
-
-bool AudioStreamCollector::HasRunningCapturerStream(SourceType type)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     // judge stream state is running
     bool hasStream = std::any_of(audioCapturerChangeInfos_.begin(), audioCapturerChangeInfos_.end(),
         [type](const auto &changeInfo) {
             return ((changeInfo->capturerState == CAPTURER_RUNNING) &&
-                (changeInfo->capturerInfo.sourceType == type));
+                (changeInfo->capturerInfo.sourceType != SOURCE_TYPE_VOICE_RECOGNITION) &&
+                (changeInfo->capturerInfo.sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION));
         });
 
     AUDIO_INFO_LOG("Has Running %{public}d stream : %{public}d", type, hasStream);
     return hasStream;
 }
-
 
 // Check if media is currently playing
 bool AudioStreamCollector::IsMediaPlaying()

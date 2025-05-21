@@ -159,8 +159,7 @@ void AudioCoreService::BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> 
     if (Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType)) {
         ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_);
     } else {
-        bool isRecord = streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_MIC;
-        ret = Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true), isRecord);
+        ret = Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true), true);
     }
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("sco [%{public}s] is not connected yet",
@@ -199,8 +198,8 @@ void AudioCoreService::HandleAudioCaptureState(AudioMode &mode, AudioStreamChang
             Bluetooth::AudioHfpManager::HandleScoWithRecongnition(false);
         } else {
             AUDIO_INFO_LOG("close capture app, try to disconnect sco");
-            bool isRecord = streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType == SOURCE_TYPE_MIC;
-            Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true), !isRecord);
+            bool isRecord = streamCollector_.HasRunningNormalCapturerStream();
+            Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true), isRecord);
         }
         audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptorBySessionID(
             streamChangeInfo.audioCapturerChangeInfo.sessionId);

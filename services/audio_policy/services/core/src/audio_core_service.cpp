@@ -738,9 +738,8 @@ int32_t AudioCoreService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo
 
 int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
-    HandleAudioCaptureState(mode, streamChangeInfo);
-
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
+    HandleAudioCaptureState(mode, streamChangeInfo);
 
     const auto &rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
     if (rendererState == RENDERER_PREPARED || rendererState == RENDERER_NEW || rendererState == RENDERER_INVALID) {
