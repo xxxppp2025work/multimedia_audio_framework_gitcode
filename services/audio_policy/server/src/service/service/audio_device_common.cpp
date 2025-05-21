@@ -1538,8 +1538,12 @@ void AudioDeviceCommon::NotifyDistributedOutputChange(const AudioDeviceDescripto
     bool isDistNew = IsDistributedOutput(deviceDesc);
     AUDIO_INFO_LOG("Check Distributed Output Change[%{public}d-->%{public}d]", isDistOld, isDistNew);
     if (isDistOld != isDistNew) {
-        auto ret = audioRouterCenter_.NotifyDistributedOutputChange(isDistNew);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "NotifyDistributedOutputChange Failed. ret=%{public}d", ret);
+        thread th([this, isDistNew] {
+            auto ret = audioRouterCenter_.NotifyDistributedOutputChange(isDistNew);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "NotifyDistributedOutputChange Failed. ret=%{public}d", ret);
+        });
+        pthread_setname_np(th.native_handle(), "OS_RUNASYNC");
+        th.detach();
     }
 }
 
