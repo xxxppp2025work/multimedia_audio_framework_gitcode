@@ -42,7 +42,9 @@
     *HasA2dpDeviceConnected*;
     *GetA2dpInDeviceStreamInfo*;
     *DisconnectBluetoothA2dpSource*;
+    "UpdateAudioScene";
     *SetVirtualCall*;
+    "DeleteVirtualCall";
     *IsVirtualCall*;
   local:
     *;
