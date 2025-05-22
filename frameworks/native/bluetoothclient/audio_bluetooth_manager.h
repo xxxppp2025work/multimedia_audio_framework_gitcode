@@ -142,6 +142,7 @@ public:
     static int32_t HandleScoWithRecongnition(bool handleFlag);
     static bool IsRecognitionStatus();
     static int32_t SetVirtualCall(pid_t uid, const bool isVirtual);
+    static int32_t RefreshVirtualCall(pid_t uid, const bool isVirtual);
     static void DeleteVirtualCall(pid_t uid);
     static bool IsVirtualCall();
     static bool IsAudioScoStateConnect();

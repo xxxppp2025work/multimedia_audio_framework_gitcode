@@ -141,6 +141,9 @@ int32_t AudioCoreService::CreateRendererClient(
         pipeManager_->AddModemCommunicationId(sessionId, GetRealUid(streamDesc));
         AddSessionId(sessionId);
         return SUCCESS;
+    } else if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_RANGING ||
+        streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
+        Bluetooth::AudioHfpManager::RefreshVirtualCall(streamDesc->callerUid_, true);
     }
     streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
     // Select device
@@ -744,6 +747,14 @@ int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
     const auto &rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
     if (rendererState == RENDERER_PREPARED || rendererState == RENDERER_NEW || rendererState == RENDERER_INVALID) {
         return ret; // only update tracker in new and prepared
+    }
+
+    const auto &rendererChangeInfo = streamChangeInfo.audioRendererChangeInfo;
+    if (rendererState == RENDERER_STOPPED ||rendererState == RENDERER_RELEASED ||
+        rendererState == RENDERER_PAUSED) && (mode == AUDIO_MODE_PLAYBACK) &&
+        (rendererChangeInfo.streamUsage == STREAM_USAGE_RANGING ||
+        rendererChangeInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
+        Bluetooth::AudioHfpManager::RefreshVirtualCall(rendererChangeInfo.clientUID, false);
     }
 
     UpdateTracker(mode, streamChangeInfo, rendererState);

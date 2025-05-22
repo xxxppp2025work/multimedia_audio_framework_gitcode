@@ -590,7 +590,23 @@ int32_t AudioHfpManager::SetVirtualCall(pid_t uid, const bool isVirtual)
         std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
         virtualCalls_[uid] = isVirtual;
     }
+
+    AUDIO_INFO_LOG("set virtual call by uid %{public}d", uid);
     return TryUpdateScoCategory();
+}
+
+int32_t AudioHfpManager::RefreshVirtualCall(pid_t uid, const bool isVirtual)
+{
+    {
+        std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
+        if (virtualCalls_.find(uid) == virtualCalls_.end()) {
+            return;
+        }
+        virtualCalls_[uid] = isVirtual;
+    }
+
+    AUDIO_INFO_LOG("%{public}s virtual call by uid %{public}d", isVirtual ? "enable" : "disable", uid);
+    TryUpdateScoCategory();
 }
 
 void AudioHfpManager::DeleteVirtualCall(pid_t uid)
@@ -602,6 +618,8 @@ void AudioHfpManager::DeleteVirtualCall(pid_t uid)
         }
         virtualCalls_.erase(uid);
     }
+
+    AUDIO_INFO_LOG("delete virtual call of uid %{public}d", uid);
     TryUpdateScoCategory();
 }
 
@@ -638,7 +656,7 @@ ScoCategory AudioHfpManager::JudgeScoCategory()
         return isRecognitionScene_.load() ? ScoCategory::SCO_RECOGNITION : ScoCategory::SCO_DEFAULT;
     }
 
-    if (scene == AUDIO_SCENE_VOICE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) {
+    if (scene == AUDIO_SCENE_VOICE_RINGING || scene == AUDIO_SCENE_PHONE_CALL) {
         return ScoCategory::SCO_CALLULAR;
     } else if (scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_PHONE_CHAT) {
         return !IsVirtualCall() ? ScoCategory::SCO_CALLULAR : ScoCategory::SCO_VIRTUAL;
