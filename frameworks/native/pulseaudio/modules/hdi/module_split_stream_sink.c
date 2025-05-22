@@ -132,7 +132,6 @@ struct userdata {
     uint32_t fixed_latency;
     pa_usec_t lastProcessDataTime;
     uint32_t renderInIdleState;
-    uint32_t defaultAdapterEnable;
 };
 
 static const char * const VALID_MODARGS[] = {
@@ -154,7 +153,6 @@ static const char * const VALID_MODARGS[] = {
     "network_id",
     "device_type",
     "offload_enable",
-    "default_adapter_enable",
     "split_mode",
     NULL
 };

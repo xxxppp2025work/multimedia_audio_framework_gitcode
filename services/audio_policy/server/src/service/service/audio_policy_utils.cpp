@@ -30,7 +30,6 @@
 #include "audio_policy_manager_factory.h"
 #include "device_init_callback.h"
 #include "audio_recovery_device.h"
-#include "audio_config_manager.h"
 
 #include "audio_server_proxy.h"
 
@@ -260,7 +259,7 @@ std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeTy
             break;
         case DeviceType::DEVICE_TYPE_HDMI:
         case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
-            portName = AudioPolicyConfigManager::GetInstance().GetDefaultAdapterEnable() ? DP_SINK : PRIMARY_SPEAKER;
+            portName = PRIMARY_SPEAKER;
             break;
         default:
             portName = GetNewSinkPortName(deviceType);

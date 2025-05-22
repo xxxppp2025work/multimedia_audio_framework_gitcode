@@ -117,7 +117,6 @@ public:
     void NotifyAccountsChanged() override;
     void NotifySettingsDataReady() override;
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
-    void SetDefaultAdapterEnable(bool isEnable) override;
     void NotifyAudioPolicyReady() override;
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag) override;
     void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag) override;

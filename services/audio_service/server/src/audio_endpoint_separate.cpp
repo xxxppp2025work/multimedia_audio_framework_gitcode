@@ -36,7 +36,6 @@
 #include "sink/i_audio_render_sink.h"
 #include "linear_pos_time_model.h"
 #include "policy_handler.h"
-#include "audio_service.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace {
@@ -176,8 +175,7 @@ void AudioEndpointSeparate::Dump(std::string &dumpString)
 
 void AudioEndpointSeparate::InitSinkAttr(IAudioSinkAttr &attr, const AudioDeviceDescriptor &deviceInfo)
 {
-    bool isDefaultAdapterEnable = AudioService::GetInstance()->GetDefaultAdapterEnable();
-    attr.adapterName = isDefaultAdapterEnable ? "dp" : "primary";
+    attr.adapterName = "primary";
     attr.sampleRate = dstStreamInfo_.samplingRate; // 48000hz
     attr.channel = dstStreamInfo_.channels; // STEREO = 2
     attr.format = ConvertToHdiAdapterFormat(dstStreamInfo_.format); // SAMPLE_S16LE = 1
