@@ -306,7 +306,10 @@ void *AudioServer::paDaemonThread(void *arg)
 
 AudioServer::AudioServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
-    audioEffectServer_(std::make_unique<AudioEffectServer>()) {}
+    audioEffectServer_(std::make_unique<AudioEffectServer>())
+{
+    AudioStreamMonitor::GetInstance().SetAudioServerPtr(this);
+}
 
 void AudioServer::OnDump() {}
 
@@ -382,7 +385,11 @@ int32_t AudioServer::RegisterDataTransferMonitorParam(const int32_t &callbackId,
 {
     bool result = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
-    // todo: wait for add code
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    AudioStreamMonitor::GetInstance().RegisterAudioRendererDataTransferStateListener(
+        param, pid, callbackId);
+    AUDIO_INFO_LOG("RegisterDataTransferMonitorParam end, pid = %{public}d, callbackId = %{public}d",
+        pid, callbackId);
     return SUCCESS;
 }
 
@@ -390,7 +397,11 @@ int32_t AudioServer::UnregisterDataTransferMonitorParam(const int32_t &callbackI
 {
     bool result = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
-    // todo: wait for add code
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    AudioStreamMonitor::GetInstance().UnRegisterAudioRendererDataTransferStateListener(
+        pid, callbackId);
+    AUDIO_INFO_LOG("UnRegisterDataTransferMonitorParam end, pid = %{public}d, callbackId = %{public}d",
+        pid, callbackId);
     return SUCCESS;
 }
 
