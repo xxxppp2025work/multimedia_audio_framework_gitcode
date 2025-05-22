@@ -212,28 +212,30 @@ void AudioEcManager::UpdateEnhanceEffectState(SourceType source)
 {
     AudioEnhancePropertyArray enhancePropertyArray = {};
     std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1);
-    int32_t ret = AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(enhancePropertyArray,
-        inputDesc->deviceType_);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("get enhance property fail, ret: %{public}d", ret);
-        return;
-    }
-    std::string recordProp = "";
-    std::string voipUpProp = "";
-    for (const AudioEnhanceProperty &prop : enhancePropertyArray.property) {
-        if (prop.enhanceClass == "record") {
-            recordProp = prop.enhanceProp;
+    if (inputDesc != nullptr) {
+        int32_t ret = AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(enhancePropertyArray,
+            inputDesc->deviceType_);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("get enhance property fail, ret: %{public}d", ret);
+            return;
         }
-        if (prop.enhanceClass == "voip_up") {
-            voipUpProp = prop.enhanceProp;
+        std::string recordProp = "";
+        std::string voipUpProp = "";
+        for (const AudioEnhanceProperty &prop : enhancePropertyArray.property) {
+            if (prop.enhanceClass == "record") {
+                recordProp = prop.enhanceProp;
+            }
+            if (prop.enhanceClass == "voip_up") {
+                voipUpProp = prop.enhanceProp;
+            }
         }
-    }
-    isMicRefRecordOn_ = (recordProp == "NRON");
-    isMicRefVoipUpOn_ = (voipUpProp == "PNR");
+        isMicRefRecordOn_ = (recordProp == "NRON");
+        isMicRefVoipUpOn_ = (voipUpProp == "PNR");
 
-    AUDIO_INFO_LOG("ecEnableState: %{public}d, micRefEnableState: %{public}d, "
-        "isMicRefRecordOn_: %{public}d, isMicRefVoipUp: %{public}d",
-        isEcFeatureEnable_, isMicRefFeatureEnable_, isMicRefRecordOn_, isMicRefVoipUpOn_);
+        AUDIO_INFO_LOG("ecEnableState: %{public}d, micRefEnableState: %{public}d, "
+            "isMicRefRecordOn_: %{public}d, isMicRefVoipUp: %{public}d",
+            isEcFeatureEnable_, isMicRefFeatureEnable_, isMicRefRecordOn_, isMicRefVoipUpOn_);
+    }
 }
 
 void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStreamPropInfo &targetInfo,
@@ -249,23 +251,25 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStr
         moduleInfo.sourceType = std::to_string(sourceType);
     } else {
         shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
-        if (inputDesc != nullptr && inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-            moduleInfo = usbSourceModuleInfo_;
-            moduleInfo.sourceType = std::to_string(sourceType);
-        } else {
-            moduleInfo = primaryMicModuleInfo_;
-            // current layout represents the number of channel. This will need to be modify in the future.
-            moduleInfo.channels = std::to_string(targetInfo.channels_);
-            moduleInfo.rate = std::to_string(targetInfo.sampleRate_);
-            moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
-            moduleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
-            moduleInfo.sourceType = std::to_string(sourceType);
-            moduleInfo.deviceType = std::to_string(static_cast<int32_t>(inputDesc->deviceType_));
-            // update primary info for ec config to get later
-            primaryMicModuleInfo_.channels = std::to_string(targetInfo.channels_);
-            primaryMicModuleInfo_.rate = std::to_string(targetInfo.sampleRate_);
-            primaryMicModuleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
-        }
+        if (inputDesc != nullptr) {
+            if (inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+                moduleInfo = usbSourceModuleInfo_;
+                moduleInfo.sourceType = std::to_string(sourceType);
+            } else {
+                moduleInfo = primaryMicModuleInfo_;
+                // current layout represents the number of channel. This will need to be modify in the future.
+                moduleInfo.channels = std::to_string(targetInfo.channels_);
+                moduleInfo.rate = std::to_string(targetInfo.sampleRate_);
+                moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
+                moduleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
+                moduleInfo.sourceType = std::to_string(sourceType);
+                moduleInfo.deviceType = std::to_string(static_cast<int32_t>(inputDesc->deviceType_));
+                // update primary info for ec config to get later
+                primaryMicModuleInfo_.channels = std::to_string(targetInfo.channels_);
+                primaryMicModuleInfo_.rate = std::to_string(targetInfo.sampleRate_);
+                primaryMicModuleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
+            }
+        }    
     }
 }
 
@@ -474,14 +478,16 @@ std::string AudioEcManager::ShouldOpenMicRef(SourceType source)
     }
 
     std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1);
-    auto iter = std::find(MIC_REF_DEVICES.begin(), MIC_REF_DEVICES.end(), inputDesc->deviceType_);
-    if ((source == SOURCE_TYPE_VOICE_COMMUNICATION && isMicRefVoipUpOn_ && iter != MIC_REF_DEVICES.end()) ||
-        (source == SOURCE_TYPE_MIC && isMicRefRecordOn_ && iter != MIC_REF_DEVICES.end())) {
-        shouldOpen = "1";
-    }
+    if (inputDesc != nullptr) {
+        auto iter = std::find(MIC_REF_DEVICES.begin(), MIC_REF_DEVICES.end(), inputDesc->deviceType_);
+        if ((source == SOURCE_TYPE_VOICE_COMMUNICATION && isMicRefVoipUpOn_ && iter != MIC_REF_DEVICES.end()) ||
+            (source == SOURCE_TYPE_MIC && isMicRefRecordOn_ && iter != MIC_REF_DEVICES.end())) {
+            shouldOpen = "1";
+        }
 
-    AUDIO_INFO_LOG("source: %{public}d, voipUpMicOn: %{public}d, recordMicOn: %{public}d, device: %{public}d",
-        source, isMicRefVoipUpOn_, isMicRefRecordOn_, inputDesc->deviceType_);
+        AUDIO_INFO_LOG("source: %{public}d, voipUpMicOn: %{public}d, recordMicOn: %{public}d, device: %{public}d",
+            source, isMicRefVoipUpOn_, isMicRefRecordOn_, inputDesc->deviceType_);
+    }
     return shouldOpen;
 }
 

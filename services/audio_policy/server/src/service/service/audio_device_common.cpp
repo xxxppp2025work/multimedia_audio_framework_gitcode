@@ -1164,8 +1164,8 @@ bool AudioDeviceCommon::SelectRingerOrAlarmDevices(const vector<std::shared_ptr<
 int32_t AudioDeviceCommon::HandleDeviceChangeForFetchInputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
     std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo)
 {
-    if (desc->deviceType_ == DEVICE_TYPE_NONE ||
-        (IsSameDevice(desc, capturerChangeInfo->inputDeviceInfo) && desc->connectState_ != DEACTIVE_CONNECTED)) {
+    if (desc != nullptr && (desc->deviceType_ == DEVICE_TYPE_NONE ||
+        (IsSameDevice(desc, capturerChangeInfo->inputDeviceInfo) && desc->connectState_ != DEACTIVE_CONNECTED))) {
         AUDIO_WARNING_LOG("stream %{public}d device not change, no need move device", capturerChangeInfo->sessionId);
         std::shared_ptr<AudioDeviceDescriptor> preferredDesc =
             audioAffinityManager_.GetCapturerDevice(capturerChangeInfo->clientUID);
@@ -1346,7 +1346,7 @@ void AudioDeviceCommon::FetchInputDeviceWhenNoRunningStream()
         desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1);
     }
 
-    if (desc->deviceType_ == DEVICE_TYPE_NONE || IsSameDevice(desc, tempDesc)) {
+    if (desc != nullptr && (desc->deviceType_ == DEVICE_TYPE_NONE || IsSameDevice(desc, tempDesc))) {
         AUDIO_DEBUG_LOG("input device is not change");
         return;
     }
