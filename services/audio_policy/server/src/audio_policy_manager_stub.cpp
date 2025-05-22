@@ -523,7 +523,8 @@ void AudioPolicyManagerStub::AdjustSystemVolumeByStepInternal(MessageParcel &dat
 {
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     VolumeAdjustType adjustType = static_cast<VolumeAdjustType>(data.ReadInt32());
-    int32_t result = AdjustSystemVolumeByStep(volumeType, adjustType);
+    int32_t volumeFlag = data.ReadInt32();
+    int32_t result = AdjustSystemVolumeByStep(volumeType, adjustType, volumeFlag);
     reply.WriteInt32(result);
 }
 

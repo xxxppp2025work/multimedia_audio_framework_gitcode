@@ -108,6 +108,7 @@ napi_status NapiAudioVolumeGroupManager::InitNapiAudioVolumeGroupManager(napi_en
         DECLARE_NAPI_FUNCTION("isVolumeUnadjustable", IsVolumeUnadjustable),
         DECLARE_NAPI_FUNCTION("adjustVolumeByStep", AdjustVolumeByStep),
         DECLARE_NAPI_FUNCTION("adjustSystemVolumeByStep", AdjustSystemVolumeByStep),
+        DECLARE_NAPI_FUNCTION("adjustSystemVolumeByStepWithFlag", AdjustSystemVolumeByStepWithFlag),
         DECLARE_NAPI_FUNCTION("getSystemVolumeInDb", GetSystemVolumeInDb),
         DECLARE_NAPI_FUNCTION("getSystemVolumeInDbSync", GetSystemVolumeInDbSync),
         DECLARE_NAPI_FUNCTION("on", On),
@@ -1074,6 +1075,61 @@ napi_value NapiAudioVolumeGroupManager::AdjustSystemVolumeByStep(napi_env env, n
         NapiParamUtils::SetValueInt32(env, context->volumeAdjustStatus, output);
     };
     return NapiAsyncWork::Enqueue(env, context, "AdjustSystemVolumeByStep", executor, complete);
+}
+
+napi_value NapiAudioVolumeGroupManager::AdjustSystemVolumeByStepWithFlag(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioVolumeGroupManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("AdjustSystemVolumeByStepWithFlag failed : no memory");
+        NapiAudioError::ThrowError(env, "AdjustSystemVolumeByStepWithFlag failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "mandatory parameters are left unspecified",
+            NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetValueInt32(env, context->volType, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "incorrect parameter types: The type of volumeType must be number", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, NapiAudioEnum::IsLegalInputArgumentVolType(context->volType) &&
+            context->volType != NapiAudioEnum::ALL,
+            "The param of volumeType must be enum AudioVolumeType", NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueInt32(env, context->adjustType, argv[PARAM1]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "incorrect parameter types: The type of adjustType must be number", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, NapiAudioEnum::IsLegalInputArgumentVolumeAdjustType(context->adjustType),
+            "The param of adjustType must be enum VolumeAdjustType", NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueInt32(env, context->volFlag, argv[PARAM2]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volflag failed", NAPI_ERR_INVALID_PARAM);
+    };
+    context->GetCbInfo(env, info, inputParser);
+    if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
+        NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioVolumeGroupManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
+            "audio volume group manager state is error.");
+        context->volumeAdjustStatus = napiAudioVolumeGroupManager->audioGroupMngr_->AdjustSystemVolumeByStep(
+            NapiAudioEnum::GetNativeAudioVolumeType(context->volType),
+            static_cast<VolumeAdjustType>(context->adjustType),
+            context->volFlag);
+        if (context->volumeAdjustStatus != SUCCESS) {
+            if (context->volumeAdjustStatus == ERR_PERMISSION_DENIED) {
+                context->SignError(NAPI_ERR_NO_PERMISSION);
+            } else {
+                context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
+            }
+        }
+    };
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueInt32(env, context->volumeAdjustStatus, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "AdjustSystemVolumeByStepWithFlag", executor, complete);
 }
 
 napi_value NapiAudioVolumeGroupManager::GetSystemVolumeInDb(napi_env env, napi_callback_info info)

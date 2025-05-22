@@ -1066,7 +1066,8 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
     return ret;
 }
 
-int32_t AudioPolicyServer::AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType)
+int32_t AudioPolicyServer::AdjustSystemVolumeByStep(
+    AudioVolumeType volumeType, VolumeAdjustType adjustType, int32_t volumeFlag)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     AUDIO_INFO_LOG("Uid %{public}d send AdjustSystemVolumeByStep VolumeType: %{public}d volume key: %{public}s.",
@@ -1103,7 +1104,8 @@ int32_t AudioPolicyServer::AdjustSystemVolumeByStep(AudioVolumeType volumeType, 
         volumeLevelInInt;
     volumeLevelInInt = volumeLevelInInt < GetMinVolumeLevel(volumeType) ? GetMinVolumeLevel(volumeType) :
         volumeLevelInInt;
-    int32_t ret = SetSystemVolumeLevelInternal(volumeType, volumeLevelInInt, false);
+    int32_t ret = SetSystemVolumeLevelInternal(
+        volumeType, volumeLevelInInt, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI);
     return ret;
 }
 

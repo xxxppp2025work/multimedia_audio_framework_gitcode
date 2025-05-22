@@ -1451,11 +1451,11 @@ int32_t AudioPolicyManager::AdjustVolumeByStep(VolumeAdjustType adjustType)
     return gsp->AdjustVolumeByStep(adjustType);
 }
 
-int32_t AudioPolicyManager::AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType)
+int32_t AudioPolicyManager::AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType, int32_t volumeFlag)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    return gsp->AdjustSystemVolumeByStep(volumeType, adjustType);
+    return gsp->AdjustSystemVolumeByStep(volumeType, adjustType, volumeFlag);
 }
 
 float AudioPolicyManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType)
