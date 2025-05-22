@@ -172,20 +172,34 @@ void AudioCoreService::CheckModemScene(const AudioStreamDeviceChangeReasonExt re
     if (!pipeManager_->IsModemCommunicationIdExist()) {
         return;
     }
+    if (audioSceneManager_.GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
+        pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STARTED);
+    } else {
+        pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STOPPED);
+    }
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, -1);
     CHECK_AND_RETURN_LOG(descs.size() != 0, "Fetch output device for voice modem communication failed");
+    pipeManager_->UpdateModemStreamDevice(descs);
     AUDIO_INFO_LOG("Update route %{public}d", descs.front()->deviceType_);
+    if (!pipeManager_->IsModemStreamDeviceChanged(descs.front())) {
+        AUDIO_INFO_LOG("Modem stream device not change");
+        return;
+    }
     if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        int32_t ret = HandleScoOutputDeviceFetched(descs.front(), reason);
-        AUDIO_INFO_LOG("HandleScoOutputDeviceFetched %{public}d", ret);
+        auto modemMap = pipeManager_->GetModemCommunicationMap().begin();
+        if (modemMap != pipeManager_->GetModemCommunicationMap().end()) {
+            int32_t ret = HandleScoOutputDeviceFetched(pipeManager_->GetModemCommunicationMap().begin()->second, reason);
+            AUDIO_INFO_LOG("HandleScoOutputDeviceFetched %{public}d", ret);
+        }
     }
     audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
 
     AudioDeviceDescriptor desc = AudioDeviceDescriptor(descs.front());
-    std::unordered_map<uint32_t, int32_t> modemSessionMap = pipeManager_->GetModemCommunicationMap();
+    std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> modemSessionMap =
+        pipeManager_->GetModemCommunicationMap();
     for (auto it = modemSessionMap.begin(); it != modemSessionMap.end(); ++it) {
-        streamCollector_.UpdateRendererDeviceInfo(it->second, it->first, desc);
+        streamCollector_.UpdateRendererDeviceInfo(GetRealUid(it->second), it->first, desc);
     }
 }
 
@@ -483,12 +497,6 @@ int32_t AudioCoreService::FetchDeviceAndRoute(const AudioStreamDeviceChangeReaso
 int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     uint32_t &sessionId, uint32_t &audioFlag, const AudioStreamDeviceChangeReasonExt reason)
 {
-    if (sessionId == 0) {
-        streamDesc->sessionId_ = GenerateSessionId();
-        sessionId = streamDesc->sessionId_;
-        AUDIO_INFO_LOG("New sessionId: %{public}u", sessionId);
-    }
-
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipeAndExecute(streamDesc);
 
     uint32_t sinkId = HDI_INVALID_ID;
@@ -1562,13 +1570,17 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
         AUDIO_INFO_LOG("normal stream beacuse renderInfo not support offload.");
         return false;
     }
-    if (streamDesc->streamInfo_.channels < MONO || streamDesc->streamInfo_.channels > STEREO) {
+    if (streamDesc->streamInfo_.channels > STEREO &&
+        (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MOVIE ||
+         streamDesc->rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD)) {
         AUDIO_INFO_LOG("normal stream beacuse channels.");
         return false;
     }
 
     if (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MUSIC &&
-        streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_AUDIOBOOK) {
+        streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_AUDIOBOOK &&
+        (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MOVIE ||
+         streamDesc->rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD)) {
         AUDIO_INFO_LOG("normal stream beacuse streamUsage.");
         return false;
     }
@@ -1586,12 +1598,15 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
         return true;
     }
 
+    // LowPower: Speaker, USB headset, a2dp offload
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_SPEAKER &&
-        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_USB_HEADSET) {
-            AUDIO_INFO_LOG("normal stream, deviceType: %{public}d", streamDesc->newDeviceDescs_[0]->deviceType_);
-            return false;
-        }
-    return false;
+        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_USB_HEADSET &&
+        (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP ||
+        streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ != A2DP_OFFLOAD)) {
+        AUDIO_INFO_LOG("normal stream, deviceType: %{public}d", streamDesc->newDeviceDescs_[0]->deviceType_);
+        return false;
+    }
+    return true;
 }
 
 int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
@@ -2090,6 +2105,48 @@ void AudioCoreService::HandleDualStartClient(std::vector<std::pair<DeviceType, D
         activeDevices.push_back(
             make_pair(streamDesc->newDeviceDescs_[1]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG));
     }
+}
+
+void AudioCoreService::HandlePlaybackStreamInA2dp(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    bool isCreateProcess)
+{
+#ifdef BLUETOOTH_ENABLE
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
+        streamDesc->newDeviceDescs_[0] != nullptr, "Invalid stream desc");
+    vector<Bluetooth::A2dpStreamInfo> allSessionInfos;
+    Bluetooth::A2dpStreamInfo a2dpStreamInfo;
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    AUDIO_INFO_LOG("Current renderer number: %{public}zu, isCreateProcess: %{public}d",
+        audioRendererChangeInfos.size(), isCreateProcess);
+    for (auto &changeInfo : audioRendererChangeInfos) {
+        a2dpStreamInfo.sessionId = changeInfo->sessionId;
+        a2dpStreamInfo.streamType = streamCollector_.GetStreamType(changeInfo->sessionId);
+        StreamUsage tempStreamUsage = changeInfo->rendererInfo.streamUsage;
+        AudioSpatializationState spatialState =
+            AudioSpatializationService::GetAudioSpatializationService().GetSpatializationState(tempStreamUsage);
+        a2dpStreamInfo.isSpatialAudio = spatialState.spatializationEnabled;
+        allSessionInfos.push_back(a2dpStreamInfo);
+    }
+    if (isCreateProcess) {
+        a2dpStreamInfo.sessionId = streamDesc->sessionId_;
+        StreamUsage tempStreamUsage = streamDesc->rendererInfo_.streamUsage;
+        a2dpStreamInfo.streamType =
+            streamCollector_.GetStreamType(streamDesc->rendererInfo_.contentType, tempStreamUsage);
+        AudioSpatializationState spatialState =
+            AudioSpatializationService::GetAudioSpatializationService().GetSpatializationState(tempStreamUsage);
+        a2dpStreamInfo.isSpatialAudio = spatialState.spatializationEnabled;
+        allSessionInfos.push_back(a2dpStreamInfo);
+    }
+    auto receiveOffloadFlag =
+        static_cast<BluetoothOffloadState>(Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(allSessionInfos));
+    AUDIO_INFO_LOG("A2dp offload flag: %{public}d", receiveOffloadFlag);
+    if (receiveOffloadFlag != A2DP_OFFLOAD) {
+        streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ = receiveOffloadFlag;
+        return;
+    }
+    streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ = A2DP_OFFLOAD;
+#endif
 }
 }
 }

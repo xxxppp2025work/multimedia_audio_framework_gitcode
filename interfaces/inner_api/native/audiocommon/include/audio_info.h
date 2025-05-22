@@ -51,12 +51,14 @@ constexpr int32_t AUDIO_FLAG_MMAP = 1;
 constexpr int32_t AUDIO_FLAG_VOIP_FAST = 2;
 constexpr int32_t AUDIO_FLAG_DIRECT = 3;
 constexpr int32_t AUDIO_FLAG_VOIP_DIRECT = 4;
+constexpr int32_t AUDIO_FLAG_PCM_OFFLOAD = 5;
 constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
 constexpr int32_t AUDIO_USAGE_VOIP = 1;
 constexpr uint32_t STREAM_FLAG_FAST = 1;
 constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
 constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
+constexpr float NORMAL_STREAM_SPEED_LEVEL = 1.0f;
 constexpr int32_t EMPTY_UID = 0;
 constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
 constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
@@ -291,6 +293,7 @@ enum CallbackChange : int32_t {
     CALLBACK_SET_RINGER_MODE,
     CALLBACK_APP_VOLUME_CHANGE,
     CALLBACK_SELF_APP_VOLUME_CHANGE,
+    CALLBACK_ACTIVE_VOLUME_TYPE_CHANGE,
     CALLBACK_SET_MIC_STATE_CHANGE,
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE,
     CALLBACK_HEAD_TRACKING_ENABLED_CHANGE,
@@ -302,6 +305,7 @@ enum CallbackChange : int32_t {
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     CALLBACK_DISTRIBUTED_OUTPUT_CHANGE,
     CALLBACK_FORMAT_UNSUPPORTED_ERROR,
+    CALLBACK_STREAM_VOLUME_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -329,6 +333,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_SET_VOLUME_KEY_EVENT,
     CALLBACK_SET_DEVICE_CHANGE,
     CALLBACK_SET_VOLUME_KEY_EVENT,
+    CALLBACK_ACTIVE_VOLUME_TYPE_CHANGE,
     CALLBACK_SET_DEVICE_CHANGE,
     CALLBACK_SET_RINGER_MODE,
     CALLBACK_SET_MIC_STATE_CHANGE,
@@ -342,6 +347,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     CALLBACK_DISTRIBUTED_OUTPUT_CHANGE,
     CALLBACK_FORMAT_UNSUPPORTED_ERROR,
+    CALLBACK_STREAM_VOLUME_CHANGE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -366,6 +372,33 @@ struct VolumeEvent {
     void Unmarshalling(Parcel &parcel)
     {
         volumeType = static_cast<AudioVolumeType>(parcel.ReadInt32());
+        volume = parcel.ReadInt32();
+        updateUi = parcel.ReadInt32();
+        volumeGroupId = parcel.ReadInt32();
+        networkId = parcel.ReadString();
+        volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
+    }
+};
+
+struct StreamVolumeEvent {
+    StreamUsage streamUsage = STREAM_USAGE_INVALID;
+    int32_t volume = -1;
+    bool updateUi = false;
+    int32_t volumeGroupId = -1;
+    std::string networkId = "";
+    AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(streamUsage))
+            && parcel.WriteInt32(volume)
+            && parcel.WriteBool(updateUi)
+            && parcel.WriteInt32(volumeGroupId)
+            && parcel.WriteString(networkId)
+            && parcel.WriteInt32(static_cast<int32_t>(volumeMode));
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
         volume = parcel.ReadInt32();
         updateUi = parcel.ReadInt32();
         volumeGroupId = parcel.ReadInt32();
@@ -899,6 +932,13 @@ struct Volume {
     uint32_t volumeInt = 0;
 };
 
+enum AppIsBackState {
+    STATE_UNKNOWN = -1,
+    STATE_FOREGROUND,
+    STATE_BACKGROUND,
+    STATE_END,
+};
+
 enum StreamSetState {
     STREAM_PAUSE,
     STREAM_RESUME,
@@ -1316,12 +1356,18 @@ enum SuscribeResultCode {
     ERR_MODE_SUBSCRIBE,
 };
 
+enum AudioProcessStage {
+    AUDIO_PROC_STAGE_STOP,
+    AUDIO_PROC_STAGE_STOP_BY_RELEASE,
+};
+
 enum RendererStage {
     RENDERER_STAGE_UNKNOWN = 0,
     RENDERER_STAGE_START_OK = 0x10,
     RENDERER_STAGE_START_FAIL = 0x11,
     RENDERER_STAGE_PAUSE_OK = 0x20,
     RENDERER_STAGE_STOP_OK = 0x30,
+    RENDERER_STAGE_STOP_BY_RELEASE = 0x31,
     RENDERER_STAGE_STANDBY_BEGIN = 0x40,
     RENDERER_STAGE_STANDBY_END = 0x41,
     RENDERER_STAGE_SET_VOLUME_ZERO = 0x50,
@@ -1333,6 +1379,7 @@ enum CapturerStage {
     CAPTURER_STAGE_START_FAIL = 0x11,
     CAPTURER_STAGE_PAUSE_OK = 0x20,
     CAPTURER_STAGE_STOP_OK = 0x30,
+    CAPTURER_STAGE_STOP_BY_RELEASE = 0x31,
 };
 
 

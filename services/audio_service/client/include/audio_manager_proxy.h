@@ -119,6 +119,8 @@ public:
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
     void SetDefaultAdapterEnable(bool isEnable) override;
     void NotifyAudioPolicyReady() override;
+    void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag) override;
+    void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag) override;
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t SetInnerCapLimit(uint32_t innerCapLimit) override;
     int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId) override;
@@ -134,6 +136,10 @@ public:
         const IAudioSourceAttr &attr) override;
     uint32_t CreateSourcePort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo,
         const IAudioSourceAttr &attr) override;
+    int32_t RegisterDataTransferCallback(const sptr<IRemoteObject> &object) override;
+    int32_t RegisterDataTransferMonitorParam(const int32_t &callbackId,
+        const DataTransferMonitorParam &param) override;
+    int32_t UnregisterDataTransferMonitorParam(const int32_t &callbackId) override;
     void DestroyHdiPort(uint32_t id) override;
     void SetDeviceConnectedFlag(bool flag) override;
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
