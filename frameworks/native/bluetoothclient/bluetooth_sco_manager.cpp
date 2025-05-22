@@ -127,7 +127,7 @@ void BluetoothScoManager::ProcCacheRequest()
         return;
     }
 
-    AUDIO_INFO_LOG("proc cache %{public}d request category %{public}d and current sco state %{public}d",
+    AUDIO_INFO_LOG("proc cache %{public}s request category %{public}d and current sco state %{public}d",
         req->connectReq ? "connect" : "disconnect", req->category, currentScoState_);
     if (req->connectReq) {
         HandleScoConnect(req->category, req->device);
@@ -176,12 +176,12 @@ int32_t BluetoothScoManager::ProcConnectReqWhenConnected(ScoCategory scoCategory
     bool isSameDevice = IsSameHfpDevice(activeHfpDevice_, device);
     if (IsNeedSwitchScoCategory(scoCategory) && isSameDevice) {
         AUDIO_INFO_LOG("bypass connect category %{public}d current category %{public}d for %{public}s device",
-            scoCategory, currentScoCategory_, isSameDevice);
+            scoCategory, currentScoCategory_, isSameDevice ? "same" : "not same");
         return SUCCESS;
     }
 
     AUDIO_INFO_LOG("connect category %{public}d current category %{public}d for %{public}s device",
-        scoCategory, currentScoCategory_, isSameDevice);
+        scoCategory, currentScoCategory_, isSameDevice ? "same" : "not same");
     int32_t ret = DisconnectSco(currentScoCategory_, activeHfpDevice_);
     CHECK_AND_RETURN_RET(ret == 0, ERROR);
     currentScoState_ = AudioScoState::DISCONNECTING;
@@ -193,7 +193,7 @@ int32_t BluetoothScoManager::ProcConnectReqWhenConnecting(ScoCategory scoCategor
     bool isSameDevice = IsSameHfpDevice(activeHfpDevice_, device);
     if (IsNeedSwitchScoCategory(scoCategory) && isSameDevice) {
         AUDIO_INFO_LOG("connect category %{public}d current category %{public}d for %{public}s device",
-            scoCategory, currentScoCategory_, isSameDevice);
+            scoCategory, currentScoCategory_, isSameDevice ? "same" : "not same");
         return SUCCESS;
     }
     return SaveRequestToCache(true, scoCategory, device);

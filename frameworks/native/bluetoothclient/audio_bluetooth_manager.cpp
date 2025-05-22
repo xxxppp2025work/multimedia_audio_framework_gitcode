@@ -585,7 +585,7 @@ int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene)
 int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag)
 {
     if (isRecognitionScene_.load() != handleFlag) {
-        AUDIO_INFO_LOG("%{public}s recognition scene", isRecordScene ? "is" : "not");
+        AUDIO_INFO_LOG("%{public}s recognition scene", handleFlag ? "is" : "not");
     }
     isRecognitionScene_.store(handleFlag);
     return TryUpdateScoCategory();
@@ -612,13 +612,13 @@ int32_t AudioHfpManager::RefreshVirtualCall(pid_t uid, const bool isVirtual)
     {
         std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
         if (virtualCalls_.find(uid) == virtualCalls_.end()) {
-            return;
+            return SUCCESS;
         }
         virtualCalls_[uid] = isVirtual;
     }
 
     AUDIO_INFO_LOG("%{public}s virtual call by uid %{public}d", isVirtual ? "enable" : "disable", uid);
-    TryUpdateScoCategory();
+    return TryUpdateScoCategory();
 }
 
 void AudioHfpManager::DeleteVirtualCall(pid_t uid)
