@@ -3413,7 +3413,7 @@ int32_t AudioPolicyServer::RegisterAudioZoneClient(const sptr<IRemoteObject> &ob
 {
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
         "RegisterAudioZoneClient listener object is nullptr");
-    
+
     sptr<IStandardAudioZoneClient> client = iface_cast<IStandardAudioZoneClient>(object);
     CHECK_AND_RETURN_RET_LOG(client != nullptr, ERR_INVALID_PARAM,
         "RegisterAudioZoneClient listener obj cast failed");
@@ -3664,8 +3664,8 @@ int32_t AudioPolicyServer::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt r
     if (callerUid != UID_AUDIO) {
         return ERROR;
     }
-    CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERR_NULL_POINTER, "eventEntry_ is nullptr");
-    return eventEntry_->TriggerFetchDevice(reason);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService_ is nullptr");
+    return coreService_->TriggerFetchDevice(reason);
 }
 
 int32_t AudioPolicyServer::SetPreferredDevice(const PreferredType preferredType,
