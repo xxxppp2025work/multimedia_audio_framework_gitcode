@@ -150,7 +150,7 @@ int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneI
     bool isMigrate = false;
     bool updateScene = false;
     for (auto itFocus = focusInfoList.begin(); itFocus != focusInfoList.end();) {
-        int32_t toZoneId = func(itFocus->first.uid, itFocus->first.deviceTag, "", it->first.audioFocusType);
+        int32_t toZoneId = func(itFocus->first.uid, itFocus->first.deviceTag, "", itFocus->first.audioFocusType);
         if (toZoneId == zoneId) {
             ++itFocus;
             continue;

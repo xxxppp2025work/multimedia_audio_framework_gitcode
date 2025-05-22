@@ -172,7 +172,7 @@ const std::vector<AudioZoneBindKey> AudioZoneBindKey::GetSupportKeys(const Audio
     std::string deviceTag = key.deviceTag_;
     std::string streamTag = key.streamTag_;
     AudioFocusType type = key.type_;
-    return GetSupportKeys(uid, deviceTag, streamTag);
+    return GetSupportKeys(uid, deviceTag, streamTag, type);
 }
 
 AudioZone::AudioZone(std::shared_ptr<AudioZoneClientManager> manager,
@@ -438,6 +438,11 @@ int32_t AudioZone::EnableSystemVolumeProxy(pid_t clientPid, bool enable)
     AUDIO_INFO_LOG("volume proxy is %{public}s by %{public}d",
         enable ? "enable" : "disable", clientPid);
     return SUCCESS;
+}
+
+bool AudioZone::GetVolumeProxyEnable()
+{
+    return isVolumeProxyEnabled_;
 }
 
 int32_t AudioZone::SetSystemVolumeLevel(AudioVolumeType volumeType,

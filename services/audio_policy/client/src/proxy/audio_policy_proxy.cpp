@@ -209,7 +209,7 @@ int32_t AudioPolicyProxy::SetStreamMuteLegacy(AudioVolumeType volumeType, bool m
 }
 
 int32_t AudioPolicyProxy::SetStreamMute(AudioVolumeType volumeType, bool mute,
-    const DeviceType &deviceType)
+    const DeviceType &deviceType, int32_t uid)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -220,13 +220,14 @@ int32_t AudioPolicyProxy::SetStreamMute(AudioVolumeType volumeType, bool mute,
     data.WriteInt32(static_cast<int32_t>(volumeType));
     data.WriteBool(mute);
     data.WriteInt32(static_cast<int32_t>(deviceType));
+    data.WriteInt32(uid);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STREAM_MUTE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set mute failed, error: %d", error);
     return reply.ReadInt32();
 }
 
-bool AudioPolicyProxy::GetStreamMute(AudioVolumeType volumeType)
+bool AudioPolicyProxy::GetStreamMute(AudioVolumeType volumeType, int32_t uid)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -235,6 +236,7 @@ bool AudioPolicyProxy::GetStreamMute(AudioVolumeType volumeType)
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
     data.WriteInt32(static_cast<int32_t>(volumeType));
+    data.WriteInt32(uid);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_MUTE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "get mute failed, error: %d", error);

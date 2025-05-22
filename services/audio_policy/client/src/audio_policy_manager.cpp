@@ -304,6 +304,13 @@ int32_t AudioPolicyManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_
     return gsp->SetAppVolumeMuted(appUid, muted, volumeFlag);
 }
 
+int32_t AudioPolicyManager::SetAdjustVolumeForZone(int32_t zoneId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->SetAdjustVolumeForZone(zoneId);
+}
+
 int32_t AudioPolicyManager::IsAppVolumeMute(int32_t appUid, bool muted, bool &isMute)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -311,22 +318,8 @@ int32_t AudioPolicyManager::IsAppVolumeMute(int32_t appUid, bool muted, bool &is
     return gsp->IsAppVolumeMute(appUid, muted, isMute);
 }
 
-int32_t AudioPolicyManager::AddFocusTypeToAudioZone(int32_t zoneId, AudioFocusType type)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->AddFocusTypeToAudioZone(zoneId, type);
-}
-
-int32_t AudioPolicyManager::RemoveFocusTypeFromAudioZone(int32_t zoneId, AudioFocusType type)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->RemoveFocusTypeFromAudioZone(zoneId, type);
-}
-
 int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy,
-    int32_t volumeFlag)
+    int32_t volumeFlag, int32_t uid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
@@ -334,7 +327,7 @@ int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioVolumeType volumeType, int
     if (isLegacy) {
         return gsp->SetSystemVolumeLevelLegacy(volumeType, volumeLevel);
     }
-    return gsp->SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag);
+    return gsp->SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag, uid);
 }
 
 int32_t AudioPolicyManager::SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
@@ -454,11 +447,11 @@ int32_t AudioPolicyManager::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLev
     return gsp->GetAppVolumeLevel(appUid, volumeLevel);
 }
 
-int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType)
+int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->GetSystemVolumeLevel(volumeType);
+    return gsp->GetSystemVolumeLevel(volumeType, uid);
 }
 
 int32_t AudioPolicyManager::SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy,

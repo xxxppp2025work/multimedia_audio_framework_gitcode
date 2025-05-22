@@ -59,13 +59,27 @@ public:
 
     virtual int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) = 0;
 
+    virtual int32_t SetZoneVolumeLevel(int32_t zoneId, AudioVolumeType volumeType, int32_t volumeLevel) = 0;
+
+    virtual int32_t GetZoneVolumeLevel(int32_t zoneId, AudioVolumeType volumeType) = 0;
+
+    virtual int32_t SetZoneMute(int32_t zoneId, AudioStreamType streamType, bool mute,
+        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE) = 0;
+
+    virtual bool GetZoneMute(int32_t zoneId, AudioStreamType streamType) = 0;
+
+    virtual int32_t SetAdjustVolumeForZone(int32_t zoneId) = 0;
+
+    virtual int32_t GetVolumeAdjustZoneId() = 0;
+
     virtual int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType) = 0;
 
     virtual float GetSystemVolumeDb(AudioStreamType streamType) = 0;
 
     virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute,
         StreamUsage streamUsage = STREAM_USAGE_UNKNOWN, const DeviceType &deviceType = DEVICE_TYPE_NONE) = 0;
-
+    
     virtual int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) = 0;
 
     virtual bool GetStreamMute(AudioStreamType streamType) = 0;

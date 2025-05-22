@@ -1413,6 +1413,11 @@ std::string AudioSystemManager::GetSelfBundleName()
     return bundleName;
 }
 
+int32_t AudioSystemManager::SetAdjustVolumeForZone(int32_t zoneId)
+{
+    return AudioPolicyManager::GetInstance().SetAdjustVolumeForZone(zoneId);   
+}
+
 int32_t AudioSystemManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support)
 {
     AUDIO_INFO_LOG("AudioSystemManager::SetDeviceAbsVolumeSupported");

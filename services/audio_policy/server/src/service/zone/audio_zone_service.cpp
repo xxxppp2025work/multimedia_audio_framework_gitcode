@@ -231,16 +231,15 @@ int32_t AudioZoneService::AddFocusTypeToAudioZone(int32_t zoneId, AudioFocusType
     return AddKeyToAudioZone(zoneId, -1, "", "", type);
 }
 
-int32_t AudioZoneService::AddUidToAudioZone(int32_t zoneId, int32_t uid)
+int32_t AudioZoneService::RemoveFocusTypeFromAudioZone(int32_t zoneId, AudioFocusType type)
 {
-    return AddKeyToAudioZone(zoneId, -1, "", "", type);
+    return RemoveKeyFromAudioZone(zoneId, -1, "", "", type);
 }
-
 
 int32_t AudioZoneService::AddUidToAudioZone(int32_t zoneId, int32_t uid)
 {
     AudioFocusType type;
-    return AddKeyToAudioZone(zoneId, uid, "", "", type);
+    return AddKeyToAudioZone(zoneId, -1, "", "", type);
 }
 
 int32_t AudioZoneService::AddKeyToAudioZone(int32_t zoneId, int32_t uid,
@@ -344,6 +343,38 @@ int32_t AudioZoneService::EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneI
     auto zone = FindZone(zoneId);
     CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
     return zone->EnableSystemVolumeProxy(clientPid, enable);
+}
+
+bool AudioZoneService::GetSystemVolumeProxyEnable(int32_t zoneId)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    CHECK_AND_RETURN_RET_LOG(zoneClientManager_ != nullptr, ERROR, "zoneClientManager is nullptr");
+
+    auto zone = FindZone(zoneId);
+    CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
+    return zone->GetVolumeProxyEnable();
+}
+
+int32_t AudioZoneService::SetSystemVolumeLevel(int32_t zoneId, AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    CHECK_AND_RETURN_RET_LOG(zoneClientManager_ != nullptr, ERROR, "zoneClientManager is nullptr");
+
+    auto zone = FindZone(zoneId);
+    CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
+    CHECK_AND_RETURN_RET_LOG(GetSystemVolumeProxyEnable(zoneId) != false, ERROR, "zone id %{public}d is not found", zoneId);
+    return zone->SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag);
+}
+
+int32_t AudioZoneService::GetSystemVolumeLevel(int32_t zoneId, AudioVolumeType volumeType)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    CHECK_AND_RETURN_RET_LOG(zoneClientManager_ != nullptr, ERROR, "zoneClientManager is nullptr");
+
+    auto zone = FindZone(zoneId);
+    CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
+    CHECK_AND_RETURN_RET_LOG(GetSystemVolumeProxyEnable(zoneId) != false, ERROR, "zone id %{public}d is not found", zoneId);
+    return zone->GetSystemVolumeLevel(volumeType);
 }
 
 AudioZoneFocusList AudioZoneService::GetAudioInterruptForZone(int32_t zoneId)

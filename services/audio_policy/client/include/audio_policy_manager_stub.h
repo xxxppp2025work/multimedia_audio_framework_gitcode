@@ -36,6 +36,7 @@ private:
     void SetSystemVolumeLevelWithDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void SetAppVolumeMutedInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAdjustVolumeForZoneInternal(MessageParcel &data, MessageParcel &reply);
     void SetSelfAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemActiveVolumeTypeInternal(MessageParcel& data, MessageParcel& reply);
     void GetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);

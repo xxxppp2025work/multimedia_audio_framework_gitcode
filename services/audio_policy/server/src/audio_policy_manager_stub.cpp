@@ -35,6 +35,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_SYSTEM_VOLUMELEVEL",
     "SET_APP_VOLUMELEVEL",
     "SET_APP_VOLUME_MUTED",
+    "SET_ADJUST_VOLUME_FOR_ZONE",
     "IS_APP_MUTE",
     "SET_SELF_APP_VOLUMELEVEL",
     "SET_SYSTEM_VOLUMELEVEL_WITH_DEVICE",
@@ -269,7 +270,8 @@ void AudioPolicyManagerStub::SetSystemVolumeLevelInternal(MessageParcel &data, M
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     int32_t volumeLevel = data.ReadInt32();
     int32_t volumeFlag = data.ReadInt32();
-    int result = SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag);
+    int32_t uid = data.ReadInt32();
+    int result = SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag, uid);
     reply.WriteInt32(result);
 }
 
@@ -297,6 +299,13 @@ void AudioPolicyManagerStub::SetAppVolumeMutedInternal(MessageParcel &data, Mess
     bool muted = data.ReadBool();
     int32_t volumeFlag = data.ReadInt32();
     int result = SetAppVolumeMuted(appUid, muted, volumeFlag);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetAdjustVolumeForZoneInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t zoneId = data.ReadInt32();
+    int result = SetAdjustVolumeForZone(zoneId);
     reply.WriteInt32(result);
 }
 
@@ -411,7 +420,8 @@ void AudioPolicyManagerStub::GetSystemActiveVolumeTypeInternal(MessageParcel& da
 void AudioPolicyManagerStub::GetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
-    int32_t volumeLevel = GetSystemVolumeLevel(streamType);
+    int32_t uid = data.ReadInt32();
+    int32_t volumeLevel = GetSystemVolumeLevel(streamType, uid);
     reply.WriteInt32(volumeLevel);
 }
 
@@ -471,14 +481,16 @@ void AudioPolicyManagerStub::SetStreamMuteInternal(MessageParcel &data, MessageP
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     bool mute = data.ReadBool();
     DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
-    int result = SetStreamMute(volumeType, mute, deviceType);
+    int32_t uid = data.ReadInt32();
+    int result = SetStreamMute(volumeType, mute, deviceType, uid);
     reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::GetStreamMuteInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
-    bool mute = GetStreamMute(volumeType);
+    int32_t uid = data.ReadInt32();
+    bool mute = GetStreamMute(volumeType, uid);
     reply.WriteBool(mute);
 }
 
@@ -1884,6 +1896,8 @@ int AudioPolicyManagerStub::OnRemoteRequest(
                 break;
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_APP_VOLUME_MUTED):
                 SetAppVolumeMutedInternal(data, reply);
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_ADJUST_VOLUME_FOR_ZONE):
+                SetAdjustVolumeForZoneInternal(data, reply);
                 break;
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_APP_MUTE):
                 GetAppVolumeIsMuteInternal(data, reply);

@@ -262,7 +262,7 @@ int32_t AudioZoneManagerInner::AddFocusTypeToAudioZone(int32_t zoneId, AudioFocu
     return result;
 }
 
-int32_t AudioZoneManagerInner::RemoveFocusTypeFromAudioZone(int32_t zoneId, int32_t uid)
+int32_t AudioZoneManagerInner::RemoveFocusTypeFromAudioZone(int32_t zoneId, AudioFocusType type)
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");

@@ -50,11 +50,7 @@ public:
         VT_STREAM_ASSISTANT = 11,
     };
 
-    static VolumeDataMaintainer& GetVolumeDataMaintainer()
-    {
-        static VolumeDataMaintainer volumeDataMainTainer;
-        return volumeDataMainTainer;
-    }
+    VolumeDataMaintainer();
     ~VolumeDataMaintainer();
 
     void SetDataShareReady(std::atomic<bool> isDataShareReady);
@@ -101,7 +97,6 @@ public:
     void LoadRemoteVolumeLevelMap(void);
 
 private:
-    VolumeDataMaintainer();
     static std::string GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType);
     static std::string GetMuteKeyForDataShare(DeviceType deviceType, AudioStreamType streamType);
     static std::string GetDeviceTypeName(DeviceType deviceType);
