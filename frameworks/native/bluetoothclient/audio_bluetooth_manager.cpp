@@ -562,6 +562,12 @@ int32_t AudioHfpManager::Connect(const std::string &macAddress)
 
 int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene, bool isRecordScene)
 {
+    if (scene_.load() != scene) {
+        AUDIO_INFO_LOG("update audio scene from %{public}d to %{public}d", scene_.load(), scene);
+    }
+    if (isRecordScene_.load() != isRecordScene) {
+        AUDIO_INFO_LOG("%{public}s record scene", isRecordScene ? "is" : "not");
+    }
     scene_.store(scene);
     isRecordScene_.store(isRecordScene);
     return TryUpdateScoCategory();
@@ -569,12 +575,18 @@ int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene, bool isRecordScene)
 
 int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene)
 {
+    if (scene_.load() != scene) {
+        AUDIO_INFO_LOG("update audio scene from %{public}d to %{public}d", scene_.load(), scene);
+    }
     scene_.store(scene);
     return TryUpdateScoCategory();
 }
 
 int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag)
 {
+    if (isRecognitionScene_.load() != handleFlag) {
+        AUDIO_INFO_LOG("%{public}s recognition scene", isRecordScene ? "is" : "not");
+    }
     isRecognitionScene_.store(handleFlag);
     return TryUpdateScoCategory();
 }
