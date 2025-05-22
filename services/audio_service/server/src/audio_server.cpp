@@ -306,7 +306,10 @@ void *AudioServer::paDaemonThread(void *arg)
 
 AudioServer::AudioServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
-    audioEffectServer_(std::make_unique<AudioEffectServer>()) {}
+    audioEffectServer_(std::make_unique<AudioEffectServer>())
+{
+    AudioStreamMonitor::GetInstance().SetAudioServerPtr(this);
+}
 
 void AudioServer::OnDump() {}
 
