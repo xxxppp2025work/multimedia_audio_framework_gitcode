@@ -24,6 +24,8 @@
 #include <cstring>
 #include <unordered_map>
 #include <set>
+#include <pthread.h>
+#include <sched.h>
 
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
@@ -44,6 +46,7 @@ const uint32_t AUDIO_QOS_LEVEL = 7;
 const int32_t DEFAULT_QOS_LEVEL = -1;
 const uint32_t REPORTDATA_TIMEOUT = 8;
 const int32_t HIGH_LEVEL_THREAD_PRIORITY = 4;
+const int32_t MAX_RETRY_TIMES = 1000;
 static std::mutex g_rssMutex;
 static std::set<uint32_t> g_tidToReport = {};
 constexpr uint32_t g_type = OHOS::ResourceSchedule::ResType::RES_TYPE_THREAD_QOS_CHANGE;
@@ -142,7 +145,17 @@ void OnAddResSchedService(uint32_t audioServerPid)
 
 bool SetEndpointThreadPriority()
 {
+    ScheduleReportData(getpid(), gettid(), "audio_server");
     struct sched_param param = {0};
+    int32_t policy = 0;
+    int32_t cnt = 0;
+    while ((pthread_getschedparam(pthread_self(), &policy, &param) == 0) && (cnt < MAX_RETRY_TIMES)) {
+        cnt++;
+        if (policy == SCHED_RR || policy == SCHED_FIFO) {
+            break;
+        }
+    }
+    AUDIO_INFO_LOG("RETYR_TIMES = %{public}d", cnt);
     // priority 50 + 4 = 54
     param.sched_priority = HIGH_LEVEL_THREAD_PRIORITY;
     auto res = sched_setscheduler(0, SCHED_FIFO | SCHED_RESET_ON_FORK, &param);
