@@ -34,7 +34,7 @@ public:
     int32_t HandleScoDisconnect(const BluetoothRemoteDevice &device);
     AudioScoState GetAudioScoState();
     bool IsInScoCategory(ScoCategory scoCategory);
-    
+
 private:
     struct ScoCacheRequest {
         bool connectReq = false;
@@ -66,7 +66,9 @@ private:
     int32_t SaveRequestToCache(bool isConnect, ScoCategory scoCategory, const BluetoothRemoteDevice &device);
     bool IsSameHfpDevice(const BluetoothRemoteDevice &device1, const BluetoothRemoteDevice &device2);
     int32_t ConnectSco(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
+    int32_t TryRestoreHfpDevice(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
     int32_t DisconnectSco(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
+    int32_t DisconnectScoReliable(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
     void ForceUpdateScoState();
     void ProcCacheRequest();
 };
