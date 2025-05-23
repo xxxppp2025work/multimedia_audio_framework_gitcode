@@ -900,6 +900,13 @@ private:
 
     bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote);
 
+    bool IsRingDualToneOnPrimarySpeaker(const vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+        const int32_t sessionId);
+    bool IsStopOrReleasePlayback(AudioMode &mode, RendererState rendererState);
+    bool IsDualStreamWhenRingDual(AudioStreamType streamType);
+    void UpdateRingDualWhenRingStopOrRelease();
+    int32_t SetAudioSceneAfter(AudioScene audioScene);
+
     int32_t HandleAbsBluetoothVolume(const std::string &macAddress, const int32_t volumeLevel);
 
     void WriteServiceStartupError(string reason);
@@ -1103,6 +1110,8 @@ private:
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     bool isFastControlled_ = false;
     bool isVoiceRingtoneMute_ = false;
+    bool isRingDualToneOnPrimarySpeaker_ = false;
+    std::vector<std::pair<AudioStreamType, StreamUsage>> streamsWhenRingDualOnPrimarySpeaker_;
 
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
 
