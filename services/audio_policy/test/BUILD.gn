@@ -1871,7 +1871,7 @@ ohos_unittest("stream_filter_router_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./unittest/stream_filter_router_unit_test/include",
-    "../../audio_policy/server/include/service/routers",
+    "../../audio_policy/server/domain/router",
   ]
 
   use_exceptions = true
@@ -1974,7 +1974,7 @@ ohos_unittest("audio_router_center_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./unittest/audio_router_center_unit_test/include",
-    "../../audio_policy/server/include/service/routers",
+    "../../audio_policy/server/domain/router",
   ]
 
   use_exceptions = true
@@ -2067,7 +2067,7 @@ ohos_unittest("privacy_priority_router_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./unittest/privacy_priority_router_unit_test/include",
-    "../../audio_policy/server/include/service/routers",
+    "../../audio_policy/server/domain/router",
   ]
 
   use_exceptions = true
