@@ -1737,13 +1737,12 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         AUDIO_DEBUG_LOG("stream (streamId %{public}u) is not active now", audioInterrupt.streamId);
         return;
     }
-
+    audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(audioInterrupt.streamId);
     if (itZone->second->focusStrategy == AudioZoneFocusStrategy::DISTRIBUTED_FOCUS_STRATEGY) {
         AUDIO_INFO_LOG("zone: %{public}d distributed focus strategy not resume when deactivate interrupt",
             itZone->first);
         return;
     }
-    audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(audioInterrupt.streamId);
     // resume if other session was forced paused or ducked
     ResumeAudioFocusList(zoneId, isSessionTimeout);
 
