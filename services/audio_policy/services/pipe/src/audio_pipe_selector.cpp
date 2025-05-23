@@ -201,7 +201,6 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
         bool isUpdate = false;
         for (auto &streamDescInPipe : pipeInfo->streamDescriptors_) {
             isUpdate = ProcessConcurrency(streamDescInPipe, streamDesc);
-            AUDIO_INFO_LOG("isUpdate: %{public}d, action: %{public}d", isUpdate, streamDescInPipe->streamAction_);
         }
         pipeInfo->pipeAction_ = isUpdate ? PIPE_ACTION_UPDATE : pipeInfo->pipeAction_;
     }
@@ -210,7 +209,6 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
 
 AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
 {
-    AUDIO_INFO_LOG("Route flag: %{public}u", flag);
     if (audioMode == AUDIO_MODE_PLAYBACK) {
         if (flag & AUDIO_OUTPUT_FLAG_FAST) {
             if (flag & AUDIO_OUTPUT_FLAG_VOIP) {
@@ -253,7 +251,6 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
     ConcurrencyAction action = ruleMap[std::make_pair(GetPipeType(stream->routeFlag_, stream->audioMode_),
         GetPipeType(cmpStream->routeFlag_, cmpStream->audioMode_))];
     uint32_t newFlag;
-    AUDIO_INFO_LOG("Action: %{public}u", action);
     switch (action) {
         case PLAY_BOTH:
             stream->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
