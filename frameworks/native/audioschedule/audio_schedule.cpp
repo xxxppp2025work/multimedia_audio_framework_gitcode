@@ -46,7 +46,8 @@ const uint32_t AUDIO_QOS_LEVEL = 7;
 const int32_t DEFAULT_QOS_LEVEL = -1;
 const uint32_t REPORTDATA_TIMEOUT = 8;
 const int32_t HIGH_LEVEL_THREAD_PRIORITY = 4;
-const int32_t MAX_RETRY_TIMES = 1000;
+const int32_t MAX_RETRY_TIMES = 2000;
+const int64_t THREE_MILLISECOND_DURATION = 3000000;
 static std::mutex g_rssMutex;
 static std::set<uint32_t> g_tidToReport = {};
 constexpr uint32_t g_type = OHOS::ResourceSchedule::ResType::RES_TYPE_THREAD_QOS_CHANGE;
@@ -145,7 +146,9 @@ void OnAddResSchedService(uint32_t audioServerPid)
 
 bool SetEndpointThreadPriority()
 {
+    Trace trace("SetEndpointThreadPriority");
     ScheduleReportData(getpid(), gettid(), "audio_server");
+    int64_t startTime = ClockTime::GetCurNano();
     struct sched_param param = {0};
     int32_t policy = 0;
     int32_t cnt = 0;
@@ -155,7 +158,13 @@ bool SetEndpointThreadPriority()
             break;
         }
     }
-    AUDIO_INFO_LOG("RETYR_TIMES = %{public}d", cnt);
+    int64_t endTime = ClockTime::GetCurNano();
+    if (endTime - startTime > THREE_MILLISECOND_DURATION) {
+        AUDIO_WARNING_LOG("wait for rss setqos end cost %{public}" PRId64" ms!", (endTime - startTime) / AUDIO_US_PER_SECOND);
+    } else {
+        AUDIO_DEBUG_LOG("wait for rss setqos end cost %{public}" PRId64" ms!", (endTime - startTime) / AUDIO_US_PER_SECOND);
+    }
+    AUDIO_INFO_LOG("RETRY_TIMES = %{public}d", cnt);
     // priority 50 + 4 = 54
     param.sched_priority = HIGH_LEVEL_THREAD_PRIORITY;
     auto res = sched_setscheduler(0, SCHED_FIFO | SCHED_RESET_ON_FORK, &param);
