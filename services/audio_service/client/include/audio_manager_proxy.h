@@ -31,6 +31,7 @@ public:
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;
     int32_t OffloadSetVolume(float volume) override;
+    bool IsStreamBelongToUid(const uint32_t uid, const uint32_t sessionId) override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
         DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag) override;
     const std::string GetAudioParameter(const std::string &key) override;

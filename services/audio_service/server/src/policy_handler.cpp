@@ -29,6 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const uint32_t FIRST_SESSIONID = 100000;
+const uid_t MCU_UID = 7500;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 }
 
@@ -145,12 +146,51 @@ std::atomic<uint32_t> g_sessionId = {FIRST_SESSIONID}; // begin at 100000
 uint32_t PolicyHandler::GenerateSessionId(int32_t uid)
 {
     uint32_t sessionId = g_sessionId++;
-    AUDIO_INFO_LOG("uid:%{public}d sessionId:%{public}d", uid, sessionId);
+    AddSessionId(static_cast<uid_t>(uid), sessionId);
     if (g_sessionId > MAX_VALID_SESSIONID) {
         AUDIO_WARNING_LOG("sessionId is too large, reset it!");
         g_sessionId = FIRST_SESSIONID;
     }
     return sessionId;
+}
+
+void PolicyHandler::AddSessionId(const uid_t uid, const uint32_t sessionId)
+{
+    AUDIO_INFO_LOG("AddSessionId: %{public}u, callingUid: %{public}u", sessionId, callingUid);
+    if (callingUid == MCU_UID) {
+        // There is no audio stream for the session id of MCU. So no need to save it.
+        return;
+    }
+    std::lock_guard<std::mutex> lock(sessionIdMutex_);
+    sessionIdMap_[sessionId] = callingUid;
+}
+
+void PolicyHandler::DeleteSessionId(const uint32_t sessionId)
+{
+    AUDIO_INFO_LOG("DeleteSessionId: %{public}u", sessionId);
+    std::lock_guard<std::mutex> lock(sessionIdMutex_);
+    if (sessionIdMap_.count(sessionId) == 0) {
+        AUDIO_INFO_LOG("The sessionId has been deleted from sessionIdMap_!");
+    } else {
+        sessionIdMap_.erase(sessionId);
+    }
+}
+
+bool PolicyHandler::IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(sessionIdMutex_);
+    if (sessionIdMap_.count(sessionId) == 0) {
+        AUDIO_INFO_LOG("The sessionId %{public}u is invalid!", sessionId);
+        return false;
+    }
+
+    if (sessionIdMap_[sessionId] != uid) {
+        AUDIO_INFO_LOG("The sessionId %{public}u does not belong to uid %{public}u!", sessionId, uid);
+        return false;
+    }
+
+    AUDIO_INFO_LOG("The sessionId %{public}u belongs to uid %{public}u!", sessionId, uid);
+    return true;
 }
 
 DeviceType PolicyHandler::GetActiveOutPutDevice()

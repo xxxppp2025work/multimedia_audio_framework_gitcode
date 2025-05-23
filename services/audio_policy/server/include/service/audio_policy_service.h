@@ -703,6 +703,8 @@ private:
 
     void SetVoiceCallVolume(int32_t volume);
 
+    bool IsStreamBelongToUid(const uint32_t uid, const uint32_t sessionId);
+
     std::string GetVolumeGroupType(DeviceType deviceType);
 
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo);

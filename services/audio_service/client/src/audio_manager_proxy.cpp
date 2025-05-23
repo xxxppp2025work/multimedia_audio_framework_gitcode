@@ -76,6 +76,26 @@ int32_t AudioManagerProxy::SetVoiceVolume(float volume)
     return result;
 }
 
+bool AudioManagerProxy::IsStreamBelongToUid(const uint32_t uid, const uint32_t sessionId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    data.WriteUint32(uid);
+    data.WriteUint32(sessionId);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::IS_STREAM_BELONG_TO_UID), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false,
+        "IsStreamBelongToUid failed, error: %{public}d", error);
+
+    bool result = reply.ReadBool();
+    return result;
+}
+
 int32_t AudioManagerProxy::OffloadSetVolume(float volume)
 {
     MessageParcel data;

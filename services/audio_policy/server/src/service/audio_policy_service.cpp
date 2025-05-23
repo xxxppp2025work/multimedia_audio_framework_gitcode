@@ -656,6 +656,13 @@ void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
     AUDIO_INFO_LOG("SetVoiceVolume: %{public}f", volumeDb);
 }
 
+bool AudioPolicyService::IsStreamBelongToUid(const uint32_t uid, const uint32_t sessionId)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, false, "IsStreamBelongToUid: gsp null");
+    return gsp->IsStreamBelongToUid(uid, sessionId);
+}
+
 void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType, const std::string &newSinkName)
 {
     Trace trace("AudioPolicyService::SetVolumeForSwitchDevice:" + std::to_string(deviceType));

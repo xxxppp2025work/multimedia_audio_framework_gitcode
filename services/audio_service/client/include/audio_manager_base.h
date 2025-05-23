@@ -49,6 +49,8 @@ public:
     virtual int32_t SuspendRenderSink(const std::string &sinkName) = 0;
     virtual int32_t RestoreRenderSink(const std::string &sinkName) = 0;
 
+    virtual bool IsStreamBelongToUid(const uint32_t uid, const uint32_t sessionId) = 0;
+
     /**
      * Sets Audio modes.
      *
@@ -522,6 +524,7 @@ private:
     int HandleCreateIpcOfflineStream(MessageParcel &data, MessageParcel &reply);
     int HandleGetOfflineAudioEffectChains(MessageParcel &data, MessageParcel &reply);
     int HandleGetStandbyStatus(MessageParcel &data, MessageParcel &reply);
+    int HandleIsStreamBelongToUid(MessageParcel &data, MessageParcel &reply);
 
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
