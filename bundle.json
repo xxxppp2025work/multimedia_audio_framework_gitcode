@@ -72,6 +72,7 @@
             "bounds_checking_function",
             "pulseaudio",
             "opensles",
+            "qos_manager",
             "media_foundation",
             "ringtone_library"
             ],
