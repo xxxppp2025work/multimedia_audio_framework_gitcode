@@ -45,6 +45,7 @@
 #include "securec.h"
 
 #include "audio_hdi_log.h"
+#include "audio_qosmanager.h"
 #include "audio_schedule.h"
 #include "audio_utils_c.h"
 #include "audio_hdiadapter_info.h"
@@ -3196,7 +3197,7 @@ static void ThreadFuncRendererTimerProcessData(struct Userdata *u)
 static void ThreadFuncRendererTimerBus(void *userdata)
 {
     // set audio thread priority
-    ScheduleThreadInServer(getpid(), gettid());
+    SetThreadQosLevel();
 
     struct Userdata *u = userdata;
 
@@ -3253,7 +3254,7 @@ static void ThreadFuncRendererTimerBus(void *userdata)
 
         ThreadFuncRendererTimerProcessData(u);
     }
-    UnscheduleThreadInServer(getpid(), gettid());
+    ReSetThreadQosLevel();
 }
 
 static void ThreadFuncWriteHDIMultiChannel(void *userdata)
