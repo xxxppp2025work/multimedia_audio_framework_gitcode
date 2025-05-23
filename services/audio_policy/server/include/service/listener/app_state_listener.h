@@ -26,7 +26,7 @@ namespace AudioStandard {
 class AppStateListener : public AppExecFwk::AppStateCallbackHost {
 public:
     AppStateListener();
-    void OnAppStateChanged(const AppExecFwk::AppProcessData& appProcessData) override;
+    ErrCode OnAppStateChanged(const AppExecFwk::AppProcessData& appProcessData) override;
 private:
     void HandleAppStateChange(int32_t pid, int32_t uid, int32_t state);
     void HandleBackgroundAppStateChange(int32_t pid, int32_t uid, int32_t state);
