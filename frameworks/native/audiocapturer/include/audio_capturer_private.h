@@ -156,6 +156,7 @@ private:
     std::shared_ptr<AudioCapturerConcurrencyCallbackImpl> audioConcurrencyCallback_ = nullptr;
     DeviceInfo currentDeviceInfo_ = {};
     bool latencyMeasEnabled_ = false;
+    int32_t firstConcurrencyResult_ = 0; // 0 is SUCCESS in error code
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     mutable std::mutex signalDetectAgentMutex_;
     FILE *dumpFile_ = nullptr;
