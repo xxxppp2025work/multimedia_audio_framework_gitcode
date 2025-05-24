@@ -55,9 +55,3 @@ ohos_unittest("bluetooth_sco_manager_unit_test") {
     "samgr:samgr_proxy",
   ]
 }
-
-group("bluetooth_client_test_packages") {
-  deps = [
-    ":bluetooth_sco_manager_unit_test",
-  ]
-}

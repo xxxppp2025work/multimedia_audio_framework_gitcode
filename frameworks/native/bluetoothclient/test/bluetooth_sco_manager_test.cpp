@@ -25,14 +25,15 @@
 
 namespace OHOS {
 namespace Bluetooth {
+using namespace AudioStandard;
 
 using namespace testing::ext;
 using namespace testing;
 
 class BluetoothScoManagerTest : public testing::Test {
 public:
-    void SetUp() {}
-    void TearDown() {}
+    void SetUp(void) override {}
+    void TearDown(void) override {}
 };
 
 /**
@@ -43,11 +44,18 @@ public:
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_001, TestSize.Level1)
 {
     EXPECT_CALL(BluetoothHfpInterface::GetInstance(), ConnectSco())
-        .Times(2)
+        .Times(1)
         .WillOnce(Return(SUCCESS));
     
-    BluetoothRemoteDevice device;
-    BluetoothScoManager::GetInstance().HandleScoConnect(ScoCategory::SCO_VIRTUAL, device);
+    BluetoothRemoteDevice device("11::22::33::44::55::66");
+    int ret = BluetoothScoManager::GetInstance().HandleScoConnect(ScoCategory::SCO_VIRTUAL, device);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(BluetoothScoManager::GetInstance().currentScoState_, AudioScoState::CONNECTING);
+    EXPECT_EQ(BluetoothScoManager::GetInstance().currentScoCategory_, ScoCategory::SCO_VIRTUAL);
+
+    BluetoothScoManager::GetInstance().UpdateScoState(HfpScoConnectState::SCO_CONNECTED, device);
+    EXPECT_EQ(BluetoothScoManager::GetInstance().currentScoState_, AudioScoState::CONNECTED);
+    EXPECT_EQ(BluetoothScoManager::GetInstance().currentScoCategory_, ScoCategory::SCO_VIRTUAL);
 }
 } // namespace Bluetooth
 } // namespace OHOS
