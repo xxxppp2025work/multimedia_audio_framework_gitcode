@@ -45,7 +45,6 @@ private:
     BluetoothScoManager();
     ~BluetoothScoManager() = default;
 
-    HandsFreeAudioGateway *hfpInstance_ = nullptr;
     BluetoothRemoteDevice activeHfpDevice_;
     AudioScoState currentScoState_ = AudioScoState::INIT;
     ScoCategory  currentScoCategory_ = ScoCategory::SCO_DEFAULT;
