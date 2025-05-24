@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "OHAudioWorkgroup.h"
 #include "OHAudioResourceManager.h"
 
 using OHOS::AudioStandard::OHAudioResourceManager;
