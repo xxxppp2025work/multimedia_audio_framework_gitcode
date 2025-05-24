@@ -101,9 +101,9 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
             return &silenceData_;
         }
         converterOutput_.SetBufferValid(false);
-        return converterOutput_;
+        return &converterOutput_;
     }
-   
+
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumper_ != nullptr) {
         inputPcmDumper_->Dump((int8_t *)(srcData),
