@@ -120,7 +120,6 @@ void BluetoothScoManager::ProcCacheRequest()
 {
     std::shared_ptr<ScoCacheRequest> req = nullptr;
     {
-        std::lock_guard<std::mutex> stateLock(scoLock_);
         req = cacheReq_;
         cacheReq_ = nullptr;
     }
@@ -131,15 +130,20 @@ void BluetoothScoManager::ProcCacheRequest()
     AUDIO_INFO_LOG("proc cache %{public}s request category %{public}d and current sco state %{public}d",
         req->connectReq ? "connect" : "disconnect", req->category, currentScoState_);
     if (req->connectReq) {
-        HandleScoConnect(req->category, req->device);
+        HandleScoConnectNoLock(req->category, req->device);
     } else {
-        HandleScoDisconnect(req->device);
+        HandleScoDisconnectNoLock(req->device);
     }
 }
 
 int32_t BluetoothScoManager::HandleScoConnect(ScoCategory scoCategory, const BluetoothRemoteDevice &device)
 {
     std::lock_guard<std::mutex> stateLock(scoLock_);
+    return HandleScoConnectNoLock(scoCategory, device);
+}
+
+int32_t BluetoothScoManager::HandleScoConnectNoLock(ScoCategory scoCategory, const BluetoothRemoteDevice &device)
+{
     int32_t ret = SUCCESS;
     switch (currentScoState_) {
         case AudioScoState::DISCONNECTED:
@@ -243,6 +247,11 @@ bool BluetoothScoManager::IsNeedSwitchScoCategory(ScoCategory scoCategory)
 int32_t BluetoothScoManager::HandleScoDisconnect(const BluetoothRemoteDevice &device)
 {
     std::lock_guard<std::mutex> stateLock(scoLock_);
+    return HandleScoDisconnectNoLock(device);
+}
+
+int32_t BluetoothScoManager::HandleScoDisconnectNoLock(const BluetoothRemoteDevice &device);
+{
     int32_t ret = SUCCESS;
     switch (currentScoState_) {
         case AudioScoState::DISCONNECTED:

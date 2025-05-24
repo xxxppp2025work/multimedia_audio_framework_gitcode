@@ -34,7 +34,7 @@ public:
 
 protected:
     BluetoothHfpInterface() {}
-    virtual ~BluetoothHfpInterface() {};
+    virtual ~BluetoothHfpInterface() {}
 };
 }
 }

@@ -28,18 +28,21 @@ public:
     ~BluetoothHfpMockInterface() = default;
 
     MOCK_METHOD2(GetDeviceState, int32_t(const BluetoothRemoteDevice &, int32_t &));
-    MOCK_METHOD2(GetScoState, int32_t(const BluetoothRemoteDevice &));
-    MOCK_METHOD2(ConnectSco, int32_t(uint8_t));
-    MOCK_METHOD2(DisconnectSco, int32_t(uint8_t));
-    MOCK_METHOD2(OpenVoiceRecognition, int32_t(const BluetoothRemoteDevice &));
-    MOCK_METHOD2(CloseVoiceRecognition, int32_t(const BluetoothRemoteDevice &));
-    MOCK_METHOD2(SetActiveDevice, int32_t(const BluetoothRemoteDevice &));
+    MOCK_METHOD1(GetScoState, int32_t(const BluetoothRemoteDevice &));
+    MOCK_METHOD1(ConnectSco, int32_t(uint8_t));
+    MOCK_METHOD1(DisconnectSco, int32_t(uint8_t));
+    MOCK_METHOD1(OpenVoiceRecognition, int32_t(const BluetoothRemoteDevice &));
+    MOCK_METHOD1(CloseVoiceRecognition, int32_t(const BluetoothRemoteDevice &));
+    MOCK_METHOD1(SetActiveDevice, int32_t(const BluetoothRemoteDevice &));
+
+    static BluetoothHfpMockInterface mockInterface_;
 };
+
+BluetoothHfpMockInterface BluetoothHfpMockInterface::mockInterface_;
 
 BluetoothHfpInterface &BluetoothHfpInterface::GetInstance()
 {
-    static BluetoothHfpMockInterface interface;
-    return interface;
+    return BluetoothHfpMockInterface::mockInterface_;
 }
 }
 }

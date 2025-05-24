@@ -55,6 +55,8 @@ private:
     void UpdateScoStateWhenConnected(HfpScoConnectState scoState, const BluetoothRemoteDevice &device);
     void UpdateScoStateWhenConnecting(HfpScoConnectState scoState, const BluetoothRemoteDevice &device);
     void UpdateScoStateWhenDisconnecting(HfpScoConnectState scoState, const BluetoothRemoteDevice &device);
+    int32_t HandleScoConnectNoLock(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
+    int32_t HandleScoDisconnectNoLock(const BluetoothRemoteDevice &device);
     int32_t ProcConnectReqWhenDisconnected(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
     int32_t ProcConnectReqWhenConnected(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
     int32_t ProcConnectReqWhenConnecting(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
