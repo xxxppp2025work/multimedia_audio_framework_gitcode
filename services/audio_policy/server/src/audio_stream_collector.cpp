@@ -1717,7 +1717,7 @@ bool AudioStreamCollector::HasRunningNormalCapturerStream()
                 (changeInfo->capturerInfo.sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION));
         });
 
-    AUDIO_INFO_LOG("Has Running %{public}d stream : %{public}d", type, hasStream);
+        AUDIO_INFO_LOG("Has Running Normal Capturer stream : %{public}d", hasStream);
     return hasStream;
 }
 
