@@ -28,6 +28,7 @@
 #include "audio_client_tracker_callback_stub.h"
 #include "audio_policy_client_stub_impl.h"
 #include "audio_adapter_manager.h"
+#include "sle_audio_device_manager.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -479,6 +480,65 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetRingerModeCallback_002, Test
 }
 
 /**
+ * @tc.name  : Test Audio_Policy_Manager_SetActiveVolumeTypeCallback_001
+ * @tc.number: Audio_Policy_Manager_SetActiveVolumeTypeCallback_001
+ * @tc.desc  : Test SetActiveVolumeTypeCallback interface.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetActiveVolumeTypeCallback_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> callback = nullptr;
+    int32_t ret = AudioPolicyManager::GetInstance().SetActiveVolumeTypeCallback(callback);
+
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_Manager_SetActiveVolumeTypeCallback_002
+ * @tc.number: Audio_Policy_Manager_SetActiveVolumeTypeCallback_002
+ * @tc.desc  : Test SetActiveVolumeTypeCallback interface.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetActiveVolumeTypeCallback_002, TestSize.Level3)
+{
+    std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> callback =
+        std::make_shared<AudioManagerActiveVolumeTypeChangeCallbackTest>();
+    EXPECT_NE(callback, nullptr);
+
+    int32_t ret = AudioPolicyManager::GetInstance().SetActiveVolumeTypeCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnsetActiveVolumeTypeCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_Manager_SetActiveVolumeTypeCallback_003
+ * @tc.number: Audio_Policy_Manager_SetActiveVolumeTypeCallback_003
+ * @tc.desc  : Test SetActiveVolumeTypeCallback interface.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetActiveVolumeTypeCallback_003, TestSize.Level3)
+{
+    std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> callback1 =
+        std::make_shared<AudioManagerActiveVolumeTypeChangeCallbackTest>();
+    EXPECT_NE(callback1, nullptr);
+
+    std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> callback2 =
+        std::make_shared<AudioManagerActiveVolumeTypeChangeCallbackTest>();
+    EXPECT_NE(callback2, nullptr);
+
+    int32_t ret = AudioPolicyManager::GetInstance().SetActiveVolumeTypeCallback(callback1);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().SetActiveVolumeTypeCallback(callback2);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnsetActiveVolumeTypeCallback(callback1);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnsetActiveVolumeTypeCallback(callback2);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
  * @tc.name  : Test Audio_Policy_Manager_SetDeviceChangeCallback_002 via illegal state
  * @tc.number: Audio_Policy_Manager_SetDeviceChangeCallback_002
  * @tc.desc  : Test SetDeviceChangeCallback interface. Returns invalid.
@@ -490,18 +550,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetDeviceChangeCallback_002, Te
     std::shared_ptr<AudioManagerDeviceChangeCallback> callback = nullptr;
     int32_t ret = AudioPolicyManager::GetInstance().SetDeviceChangeCallback(clientId, flag, callback);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
-}
-
-/**
- * @tc.name  : Test Audio_Policy_Manager_SetDistribuitedOutputChangeCallback_001 via illegal state
- * @tc.number: Audio_Policy_Manager_SetDistribuitedOutputChangeCallback_001
- * @tc.desc  : Test SetDistribuitedOutputChangeCallback interface. Returns invalid.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetDistribuitedOutputChangeCallback_001, TestSize.Level1)
-{
-    auto cb = make_shared<AudioDistribuitedOutputChangeCallbackTest>();
-    int32_t ret = AudioPolicyManager::GetInstance().SetDistribuitedOutputChangeCallback(cb);
-    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -1762,6 +1810,33 @@ HWTEST(AudioPolicyUnitTest, Audio_Render_Error_001, TestSize.Level1)
     MessageOption option;
     int ret = renderErrorStub->OnRemoteRequest(code, data, reply, option);
     EXPECT_LE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test UpdateDeviceInfo
+ * @tc.number: Audio_Policy_Manager_UpdateDeviceInfo_001
+ * @tc.desc  : Test UpdateDeviceInfo interface.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_UpdateDeviceInfo_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor =
+        std::make_shared<AudioDeviceDescriptor>();
+    auto ret = AudioPolicyManager::GetInstance().UpdateDeviceInfo(deviceDescriptor,
+        DeviceInfoUpdateCommand::ENABLE_UPDATE);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetSleAudioOperationCallback
+ * @tc.number: Audio_Policy_Manager_SetSleAudioOperationCallback_001
+ * @tc.desc  : Test SetSleAudioOperationCallback interface.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetSleAudioOperationCallback_001, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioOperationCallback> callback =
+        std::make_shared<SleAudioDeviceManager>();
+    int32_t ret = AudioPolicyManager::GetInstance().SetSleAudioOperationCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

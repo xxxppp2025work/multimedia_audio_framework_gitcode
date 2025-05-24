@@ -1881,5 +1881,83 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_120, TestSize.Level1
     bool ret = audioCoreService->IsNewDevicePlaybackSupported(streamDesc);
     EXPECT_EQ(ret, true);
 }
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_121
+ * @tc.desc  : Test AudioCoreService::ActivateNearlinkDevice()
+ */
+HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_121, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
+
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    auto ret = audioCoreService ->ActivateNearlinkDevice(streamDesc);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_122
+ * @tc.desc  : Test AudioCoreService::ActivateNearlinkDevice()
+ */
+HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_122, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
+
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    auto ret = audioCoreService ->ActivateNearlinkDevice(streamDesc);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_124
+ * @tc.desc  : Test AudioCoreService::ActivateNearlinkDevice()
+ */
+HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_124, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_NEARLINK_IN;
+    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
+
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    auto ret = audioCoreService ->ActivateNearlinkDevice(streamDesc);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_125
+ * @tc.desc  : Test AudioCoreService::ActivateNearlinkDevice()
+ */
+HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_125, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_HDMI;
+    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
+
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    auto ret = audioCoreService ->ActivateNearlinkDevice(streamDesc);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

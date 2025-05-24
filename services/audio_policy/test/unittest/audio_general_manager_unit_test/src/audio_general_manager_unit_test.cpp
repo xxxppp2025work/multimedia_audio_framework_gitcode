@@ -333,5 +333,62 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_017, TestSize.Level1)
     audioFocusInfoChangeCallbackImpl->SaveCallback(callback2);
     EXPECT_EQ(audioFocusInfoChangeCallbackImpl->callbackList_.size(), NUM_2);
 }
+
+/**
+* @tc.name  : Test AudioGeneralManager.
+* @tc.number: AudioGeneralManager_018
+* @tc.desc  : Test AudioGeneralManager::SelectOutputDevice()
+*/
+HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_018, TestSize.Level1)
+{
+    auto audioGeneralManagerPtr = AudioGeneralManager::GetInstance();
+    EXPECT_NE(audioGeneralManagerPtr, nullptr);
+
+    sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
+    auto deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    deviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    deviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = {deviceDescriptor};
+    auto ret = audioGeneralManagerPtr->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioGeneralManager.
+* @tc.number: AudioGeneralManager_019
+* @tc.desc  : Test AudioGeneralManager::SelectOutputDevice()
+*/
+HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_019, TestSize.Level1)
+{
+    auto audioGeneralManagerPtr = AudioGeneralManager::GetInstance();
+    EXPECT_NE(audioGeneralManagerPtr, nullptr);
+
+    sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
+    auto deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    deviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    deviceDescriptor->networkId_ = "test";
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = {deviceDescriptor};
+    auto ret = audioGeneralManagerPtr->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test AudioGeneralManager.
+* @tc.number: AudioGeneralManager_020
+* @tc.desc  : Test AudioGeneralManager::SelectOutputDevice()
+*/
+HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_020, TestSize.Level1)
+{
+    auto audioGeneralManagerPtr = AudioGeneralManager::GetInstance();
+    EXPECT_NE(audioGeneralManagerPtr, nullptr);
+
+    sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
+    auto deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    deviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    deviceDescriptor->networkId_ = "REMOTE_NETWORK_ID";
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = {deviceDescriptor};
+    auto ret = audioGeneralManagerPtr->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
