@@ -177,7 +177,16 @@ public:
     {
         return writePos_.load();
     }
+    
+    void SetValidFrameLen(size_t frameLen)
+    {
+        validFrameLen_ = frameLen;
+    }
 
+    size_t GetValidFrameLen()
+    {
+        return validFrameLen_;
+    }
     bool UpdateReadPos(size_t readPos);
     bool UpdateWritePos(size_t writePos);
     void SetBufferValid(bool valid);
@@ -252,6 +261,7 @@ private:
     size_t frameByteSize_;
     size_t frameSample_;
     size_t dataByteSize_;
+    size_t validFrameLen_;
     std::atomic<size_t> readPos_;
     std::atomic<size_t> writePos_;
     std::atomic<size_t> curFrames_;

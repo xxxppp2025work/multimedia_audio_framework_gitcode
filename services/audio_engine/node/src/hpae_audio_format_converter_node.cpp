@@ -87,11 +87,23 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
     if (inputs.size() != 1) {
         AUDIO_WARNING_LOG("error inputs size is not eqaul to 1, SessionId:%{public}d", GetSessionId());
     }
+    converterOutput_.SetBufferValid(true);
+    int32_t ret = EOK;
+    float *srcData = (*(inputs[0])).GetPcmDataBuffer();
+    float *dstData = converterOutput_.GetPcmDataBuffer();
+    float *tmpData = tmpOutBuf_.GetPcmDataBuffer();
     // pass valid tag to next node
     if (!inputs[0]->IsValid()) {
-        return &silenceData_;
+        ret = InvalidBufferProcess(srcData, dstData, tmpData, inputs[0]);
+        if (ret != EOK) {
+            AUDIO_ERR_LOG("NodeId %{public}d, sessionId %{public}d, Format Converter fail to process!",
+                GetNodeId(), GetSessionId());
+            return &silenceData_;
+        }
+        converterOutput_.SetBufferValid(false);
+        return converterOutput_;
     }
-    float *srcData = (*(inputs[0])).GetPcmDataBuffer();
+   
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumper_ != nullptr) {
         inputPcmDumper_->Dump((int8_t *)(srcData),
@@ -103,13 +115,10 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
 
     CheckAndUpdateInfo(inputs[0]);
 
-    float *dstData = converterOutput_.GetPcmDataBuffer();
-    float *tmpData = tmpOutBuf_.GetPcmDataBuffer();
-
     if (resampler_ == nullptr) {
         return &silenceData_;
     }
-    int32_t ret = ConverterProcess(srcData, dstData, tmpData, inputs[0]);
+    ret = ConverterProcess(srcData, dstData, tmpData, inputs[0]);
     if (ret != EOK) {
         AUDIO_ERR_LOG("NodeId %{public}d, sessionId %{public}d, Format Converter fail to process!",
             GetNodeId(), GetSessionId());
@@ -123,6 +132,43 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
     }
 #endif
     return &converterOutput_;
+}
+
+int32_t HpaeAudioFormatConverterNode::InvalidBufferProcess(float *srcData, float *dstData, float *tmpData,
+    HpaePcmBuffer *input)
+{
+#ifdef ENABLE_HOOK_PCM
+    if (inputPcmDumper_ != nullptr) {
+        inputPcmDumper_->Dump((int8_t *)(srcData),
+            input->GetValidFrameLen() * input->GetChannelCount() * sizeof(float));
+    }
+#endif
+
+    AudioChannelInfo inChannelInfo = channelConverter_.GetInChannelInfo();
+    AudioChannelInfo outChannelInfo = channelConverter_.GetOutChannelInfo();
+    uint32_t inRate = resampler_->GetInRate();
+    uint32_t outRate = resampler_->GetOutRate();
+
+    uint32_t inputFrameLen = input->GetValidFrameLen();
+    uint32_t outputFrameLen = inputFrameLen * outRate / inRate;
+    uint32_t inputFrameBytes = inputFrameLen * inChannelInfo.numChannels * sizeof(float);
+    uint32_t outputFrameBytes = outputFrameLen * outChannelInfo.numChannels * sizeof(float);
+    converterOutput_.SetValidFrameLen(outputFrameLen);
+    int32_t ret = EOK;
+    if ((inChannelInfo.numChannels == outChannelInfo.numChannels) && (inRate == outRate)) {
+        ret = memcpy_s(dstData, outputFrameBytes, srcData, inputFrameBytes);
+    } else if (inChannelInfo.numChannels == outChannelInfo.numChannels) {
+        ret = resampler_->Process(srcData, &inputFrameLen, dstData, &outputFrameLen);
+    } else if (inRate == outRate) {
+        ret = channelConverter_.Process(inputFrameLen, srcData, (*input).Size(), dstData, converterOutput_.Size());
+    } else if (inChannelInfo.numChannels > outChannelInfo.numChannels) { // convert, then resample
+        ret = channelConverter_.Process(inputFrameLen, srcData, (*input).Size(), tmpData, tmpOutBuf_.Size());
+        ret += resampler_->Process(tmpData, &inputFrameLen, dstData, &outputFrameLen);
+    } else { // output channels larger than input channels, resample, then convert
+        ret = resampler_->Process(srcData, &inputFrameLen, tmpData, &outputFrameLen);
+        ret += channelConverter_.Process(outputFrameLen, tmpData, tmpOutBuf_.Size(), dstData, converterOutput_.Size());
+    }
+    return ret;
 }
 
 int32_t HpaeAudioFormatConverterNode::ConverterProcess(float *srcData, float *dstData, float *tmpData,

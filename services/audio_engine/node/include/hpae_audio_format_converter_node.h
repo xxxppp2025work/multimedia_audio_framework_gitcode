@@ -39,6 +39,7 @@ private:
     int32_t ConverterProcess(float *srcData, float *dstData, float *tmpData, HpaePcmBuffer *input);
     void CheckAndUpdateInfo(HpaePcmBuffer *input);
     void UpdateTmpOutPcmBufferInfo(const PcmBufferInfo &outPcmBufferInfo);
+    int32_t InvalidBufferProcess(float *srcData, float *dstData, float *tmpData, HpaePcmBuffer *input);
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer converterOutput_;
     HpaeNodeInfo preNodeInfo_;

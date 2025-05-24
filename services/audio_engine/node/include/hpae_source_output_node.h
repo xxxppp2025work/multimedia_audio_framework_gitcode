@@ -42,6 +42,7 @@ public:
 private:
     uint64_t GetTimestamp();
 private:
+    void InvalidBufferProcess(HpaePcmBuffer *outputData);
     InputPort<HpaePcmBuffer *> inputStream_;
     std::weak_ptr<ICapturerStreamCallback> readCallback_;
     AudioCallBackCapturerStreamInfo streamInfo_;
