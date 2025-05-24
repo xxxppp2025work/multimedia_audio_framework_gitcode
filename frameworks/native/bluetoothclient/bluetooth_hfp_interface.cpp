@@ -19,9 +19,11 @@
 
 namespace OHOS {
 namespace Bluetooth {
+using namespace AudioStandard;
+
 static HandsFreeAudioGateway *g_hfpInstance = nullptr;
 
-class BluetoothHfpWrapInterface {
+class BluetoothHfpWrapInterface : public BluetoothHfpInterface {
 public:
     BluetoothHfpWrapInterface();
     ~BluetoothHfpWrapInterface() = default;
@@ -35,7 +37,7 @@ public:
     int32_t SetActiveDevice(const BluetoothRemoteDevice &device) override;
 };
 
-BluetoothHfpInterface::BluetoothHfpInterface &GetInstance()
+BluetoothHfpInterface &BluetoothHfpInterface::GetInstance()
 {
     static BluetoothHfpWrapInterface interface;
     return interface;
@@ -46,44 +48,44 @@ BluetoothHfpWrapInterface::BluetoothHfpWrapInterface()
     g_hfpInstance = HandsFreeAudioGateway::GetProfile();
 }
 
-virtual int32_t BluetoothHfpWrapInterface::GetDeviceState(const BluetoothRemoteDevice &device,
+int32_t BluetoothHfpWrapInterface::GetDeviceState(const BluetoothRemoteDevice &device,
     int32_t &state)
 {
     CHECK_AND_RETURN_RET_LOG(g_hfpInstance != nullptr, ERROR, "HFP AG profile unavailable");
     return g_hfpInstance->GetDeviceState(device, state);
 }
 
-virtual int32_t BluetoothHfpWrapInterface::GetScoState(const BluetoothRemoteDevice &device)
+int32_t BluetoothHfpWrapInterface::GetScoState(const BluetoothRemoteDevice &device)
 {
     CHECK_AND_RETURN_RET_LOG(g_hfpInstance != nullptr, ERROR, "HFP AG profile unavailable");
     return g_hfpInstance->GetScoState(device);
 }
 
-virtual int32_t BluetoothHfpWrapInterface::ConnectSco(uint8_t callType)
+int32_t BluetoothHfpWrapInterface::ConnectSco(uint8_t callType)
 {
     CHECK_AND_RETURN_RET_LOG(g_hfpInstance != nullptr, ERROR, "HFP AG profile unavailable");
     return g_hfpInstance->ConnectSco(callType);
 }
 
-virtual int32_t BluetoothHfpWrapInterface::DisconnectSco(uint8_t callType)
+int32_t BluetoothHfpWrapInterface::DisconnectSco(uint8_t callType)
 {
     CHECK_AND_RETURN_RET_LOG(g_hfpInstance != nullptr, ERROR, "HFP AG profile unavailable");
     return g_hfpInstance->DisconnectSco(callType);
 }
 
-virtual int32_t BluetoothHfpWrapInterface::OpenVoiceRecognition(const BluetoothRemoteDevice &device)
+int32_t BluetoothHfpWrapInterface::OpenVoiceRecognition(const BluetoothRemoteDevice &device)
 {
     CHECK_AND_RETURN_RET_LOG(g_hfpInstance != nullptr, ERROR, "HFP AG profile unavailable");
     return g_hfpInstance->OpenVoiceRecognition(device) ? SUCCESS : ERROR;
 }
 
-virtual int32_t BluetoothHfpWrapInterface::CloseVoiceRecognition(const BluetoothRemoteDevice &device)
+int32_t BluetoothHfpWrapInterface::CloseVoiceRecognition(const BluetoothRemoteDevice &device)
 {
     CHECK_AND_RETURN_RET_LOG(g_hfpInstance != nullptr, ERROR, "HFP AG profile unavailable");
     return g_hfpInstance->CloseVoiceRecognition(device) ? SUCCESS : ERROR;
 }
 
-virtual int32_t BluetoothHfpWrapInterface::SetActiveDevice(const BluetoothRemoteDevice &device)
+int32_t BluetoothHfpWrapInterface::SetActiveDevice(const BluetoothRemoteDevice &device)
 {
     CHECK_AND_RETURN_RET_LOG(g_hfpInstance != nullptr, ERROR, "HFP AG profile unavailable");
     return g_hfpInstance->SetActiveDevice(device) ? SUCCESS : ERROR;

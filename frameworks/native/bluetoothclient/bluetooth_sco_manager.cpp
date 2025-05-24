@@ -164,7 +164,7 @@ int32_t BluetoothScoManager::HandleScoConnect(ScoCategory scoCategory, const Blu
 int32_t BluetoothScoManager::ProcConnectReqWhenDisconnected(ScoCategory scoCategory, const BluetoothRemoteDevice &device)
 {
     int32_t ret = ConnectSco(scoCategory, device);
-    if (ret == BT_ERR_SCO_BEEN_CONNECTED) {
+    if (ret == BT_ERR_SCO_HAS_BEEN_CONNECTED) {
         AUDIO_WARNING_LOG("category %{public}d has been connected", scoCategory);
         currentScoState_ = AudioScoState::CONNECTED;
     } else if (ret != 0) {
@@ -341,7 +341,7 @@ int32_t BluetoothScoManager::DisconnectSco(ScoCategory scoCategory, const Blueto
     return ret;
 }
 
-int32_t BluetoothScoManager::DisconnectScoReliable(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
+int32_t BluetoothScoManager::DisconnectScoReliable(ScoCategory scoCategory, const BluetoothRemoteDevice &device)
 {
     int ret = DisconnectSco(scoCategory, device);
     if (ret == BT_ERR_VIRTUAL_CALL_NOT_STARTED) {

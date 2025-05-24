@@ -22,8 +22,8 @@ config("bluetooth_client_private_config") {
 
   include_dirs = [
     "../",
-    "../../../audioutils/include",
-    "../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../audioutils/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
   ]
 }
 
@@ -42,7 +42,7 @@ ohos_unittest("bluetooth_sco_manager_unit_test") {
   configs = [ ":bluetooth_client_private_config" ]
 
   deps = [
-    "../../../audioutils:audio_utils",
+    "../../audioutils:audio_utils",
   ]
 
   external_deps = [

@@ -478,7 +478,7 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
         GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(activeHfpDevice_.GetDeviceAddr()).c_str());
     if (macAddress != activeHfpDevice_.GetDeviceAddr()) {
         AUDIO_WARNING_LOG("Active hfp device is changed, need to DisconnectSco for current activeHfpDevice.");
-        int32_t ret = DisconnectSco();
+        int32_t ret = BluetoothScoManager::GetInstance().HandleScoDisconnect(activeHfpDevice_);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "DisconnectSco failed, result: %{public}d", ret);
     }
     std::shared_lock<std::shared_mutex> hfpLock(g_hfpInstanceLock);
@@ -520,14 +520,16 @@ void AudioHfpManager::DisconnectBluetoothHfpSink()
     HfpBluetoothDeviceManager::ClearAllHfpBluetoothDevice();
 }
 
-void AudioHfpManager::UpdateCurrentActiveHfpDevice(const BluetoothRemoteDevice &device)
+void AudioHfpManager::ClearCurrentActiveHfpDevice(const BluetoothRemoteDevice &device)
 {
     std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
     if (device.GetDeviceAddr() != activeHfpDevice_.GetDeviceAddr()) {
-        BluetoothScoManager::GetInstance().HandleScoDisconnect(activeHfpDevice_);
+        return;
     }
-    activeHfpDevice_ = device;
-    TryUpdateScoCategory();
+    AUDIO_INFO_LOG("clear current active hfp device:%{public}s",
+        GetEncryptAddr(device.GetDeviceAddr()).c_str());
+    BluetoothScoManager::GetInstance().HandleScoDisconnect(activeHfpDevice_);
+    activeHfpDevice_ = BluetoothRemoteDevice;
 }
 
 std::string AudioHfpManager::GetCurrentActiveHfpDevice()
@@ -677,8 +679,9 @@ ScoCategory AudioHfpManager::JudgeScoCategory()
     return isRecognitionScene_.load() ? ScoCategory::SCO_RECOGNITION : ScoCategory::SCO_DEFAULT;
 }
 
-int32_t AudioHfpManager::TryUpdateScoCategoryNoLock()
+int32_t AudioHfpManager::TryUpdateScoCategory()
 {
+    std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
     if (!activeHfpDevice_.IsValidBluetoothRemoteDevice()) {
         return BluetoothScoManager::GetInstance().HandleScoDisconnect(activeHfpDevice_);
     }
@@ -689,12 +692,6 @@ int32_t AudioHfpManager::TryUpdateScoCategoryNoLock()
     }
 
     return BluetoothScoManager::GetInstance().HandleScoConnect(category, activeHfpDevice_);
-}
-
-int32_t AudioHfpManager::TryUpdateScoCategory()
-{
-    std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
-    return TryUpdateScoCategoryNoLock();
 }
 
 void AudioHfpManager::DisconnectScoForDevice(const BluetoothRemoteDevice &device)
@@ -719,12 +716,8 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
     if (scoState == HfpScoConnectState::SCO_CONNECTED || scoState == HfpScoConnectState::SCO_DISCONNECTED) {
         bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
         BluetoothScoManager::GetInstance().UpdateScoState(scoState, device);
-        if (device.GetDeviceAddr() == AudioHfpManager::GetCurrentActiveHfpDevice() &&
-            scoState == HfpScoConnectState::SCO_DISCONNECTED) {
-            BluetoothRemoteDevice defaultDevice;
-            AudioHfpManager::UpdateCurrentActiveHfpDevice(defaultDevice);
-        } else if (scoState == HfpScoConnectState::SCO_CONNECTED && reason == HFP_AG_SCO_REMOTE_USER_SET_UP) {
-            AudioHfpManager::UpdateCurrentActiveHfpDevice(device);
+        if (scoState == HfpScoConnectState::SCO_DISCONNECTED) {
+            AudioHfpManager::ClearCurrentActiveHfpDevice(device);
         }
         HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected, reason);
     }
@@ -740,10 +733,7 @@ void AudioHfpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &dev
         HfpBluetoothDeviceManager::SetHfpStack(device, BluetoothDeviceAction::CONNECT_ACTION);
     }
     if (state == static_cast<int>(BTConnectState::DISCONNECTED)) {
-        if (device.GetDeviceAddr() == AudioHfpManager::GetCurrentActiveHfpDevice()) {
-            BluetoothRemoteDevice defaultDevice;
-            AudioHfpManager::UpdateCurrentActiveHfpDevice(defaultDevice);
-        }
+        AudioHfpManager::ClearCurrentActiveHfpDevice(device);
         HfpBluetoothDeviceManager::SetHfpStack(device, BluetoothDeviceAction::DISCONNECT_ACTION);
     }
 }

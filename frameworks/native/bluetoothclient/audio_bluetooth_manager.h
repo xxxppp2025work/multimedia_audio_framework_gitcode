@@ -132,7 +132,7 @@ public:
     static std::string GetActiveHfpDevice();
     static int32_t DisconnectSco();
     static void DisconnectBluetoothHfpSink();
-    static void UpdateCurrentActiveHfpDevice(const BluetoothRemoteDevice &device);
+    static void ClearCurrentActiveHfpDevice(const BluetoothRemoteDevice &device);
     static std::string GetCurrentActiveHfpDevice();
     static void CheckHfpDeviceReconnect();
     static int32_t Connect(const std::string &macAddress);
@@ -150,7 +150,6 @@ public:
 private:
     static ScoCategory JudgeScoCategory();
     static int32_t TryUpdateScoCategory();
-    static int32_t TryUpdateScoCategoryNoLock();
     static void DisconnectScoForDevice(const BluetoothRemoteDevice &device);
 
 private:
