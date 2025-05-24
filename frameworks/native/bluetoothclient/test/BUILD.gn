@@ -23,7 +23,7 @@ config("bluetooth_client_private_config") {
   include_dirs = [
     "../",
     "../../audioutils/include",
-    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 }
 
@@ -54,5 +54,6 @@ ohos_unittest("bluetooth_sco_manager_unit_test") {
     "ipc:ipc_single",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "bluetooth:btframework",
   ]
 }
