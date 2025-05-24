@@ -45,7 +45,9 @@ BluetoothHfpInterface &BluetoothHfpInterface::GetInstance()
 
 BluetoothHfpWrapInterface::BluetoothHfpWrapInterface()
 {
-    g_hfpInstance = HandsFreeAudioGateway::GetProfile();
+    if (g_hfpInstance == nullptr) {
+        g_hfpInstance = HandsFreeAudioGateway::GetProfile();
+    }
 }
 
 int32_t BluetoothHfpWrapInterface::GetDeviceState(const BluetoothRemoteDevice &device,

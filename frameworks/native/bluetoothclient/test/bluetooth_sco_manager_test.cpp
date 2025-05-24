@@ -16,10 +16,6 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include "audio_errors.h"
-
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
-#include "audio_errors.h"
 #include "bluetooth_sco_manager.h"
 #include "bluetooth_hfp_mock_interface.h"
 

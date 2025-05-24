@@ -57,7 +57,7 @@ void BluetoothScoManager::UpdateScoState(HfpScoConnectState scoState, const Blue
                 UpdateScoStateWhenConnecting(scoState, device);
                 break;
             case AudioScoState::DISCONNECTING:
-                UpdateScoStateWhenDiconnecting(scoState, device);
+                UpdateScoStateWhenDisconnecting(scoState, device);
                 break;
             default:
                 break;
@@ -99,7 +99,7 @@ void BluetoothScoManager::UpdateScoStateWhenConnecting(HfpScoConnectState scoSta
     ProcCacheRequest();
 }
 
-void BluetoothScoManager::UpdateScoStateWhenDiconnecting(HfpScoConnectState scoState, const BluetoothRemoteDevice &device)
+void BluetoothScoManager::UpdateScoStateWhenDisconnecting(HfpScoConnectState scoState, const BluetoothRemoteDevice &device)
 {
     if (scoState == HfpScoConnectState::SCO_DISCONNECTED) {
         if (IsSameHfpDevice(activeHfpDevice_, device)) {
@@ -289,7 +289,7 @@ int32_t BluetoothScoManager::ProcDisconnectReqWhenConnecting(const BluetoothRemo
 int32_t BluetoothScoManager::SaveRequestToCache(bool isConnect, ScoCategory scoCategory,
     const BluetoothRemoteDevice &device)
 {
-    if (cacheReq_ != nullptr) {
+    if (cacheReq_ == nullptr) {
         cacheReq_ = std::make_shared<ScoCacheRequest>();
     }
     CHECK_AND_RETURN_RET_LOG(cacheReq_ != nullptr, ERROR, "request cache is nullptr");
@@ -312,7 +312,7 @@ int32_t BluetoothScoManager::ConnectSco(ScoCategory scoCategory, const Bluetooth
         ret = BluetoothHfpInterface::GetInstance().OpenVoiceRecognition(device);
     } else {
         if (scoCategory == ScoCategory::SCO_DEFAULT) {
-            scoCategory = SCO_VIRTUAL;
+            scoCategory = ScoCategory::SCO_VIRTUAL;
         }
         ret = BluetoothHfpInterface::GetInstance().ConnectSco(static_cast<uint8_t> (scoCategory));
     }
