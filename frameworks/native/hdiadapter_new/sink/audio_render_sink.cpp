@@ -256,8 +256,10 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
         AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(&data), len);
     }
     Trace trace("AudioRenderSink::RenderFrame");
+    std::unique_lock<std::mutex> lock(sinkMutex_);
     int32_t ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t *>(&data), static_cast<uint32_t>(len),
         &writeLen);
+    lock.unlock();
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, ClockTime::GetCurNano());
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "fail, ret: %{public}x", ret);
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
