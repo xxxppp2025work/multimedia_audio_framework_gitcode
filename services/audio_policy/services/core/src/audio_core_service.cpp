@@ -776,8 +776,8 @@ int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
     const auto &rendererChangeInfo = streamChangeInfo.audioRendererChangeInfo;
     if ((rendererState == RENDERER_STOPPED ||rendererState == RENDERER_RELEASED ||
         rendererState == RENDERER_PAUSED) && (mode == AUDIO_MODE_PLAYBACK) &&
-        (rendererChangeInfo.streamUsage == STREAM_USAGE_RANGING ||
-        rendererChangeInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION)) {
+        (rendererChangeInfo.rendererInfo.streamUsage == STREAM_USAGE_RANGING ||
+        rendererChangeInfo.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION)) {
         Bluetooth::AudioHfpManager::RefreshVirtualCall(rendererChangeInfo.clientUID, false);
     }
 

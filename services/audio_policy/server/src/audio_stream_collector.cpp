@@ -1711,7 +1711,7 @@ bool AudioStreamCollector::HasRunningNormalCapturerStream()
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     // judge stream state is running
     bool hasStream = std::any_of(audioCapturerChangeInfos_.begin(), audioCapturerChangeInfos_.end(),
-        [type](const auto &changeInfo) {
+        [](const auto &changeInfo) {
             return ((changeInfo->capturerState == CAPTURER_RUNNING) &&
                 (changeInfo->capturerInfo.sourceType != SOURCE_TYPE_VOICE_RECOGNITION) &&
                 (changeInfo->capturerInfo.sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION));
