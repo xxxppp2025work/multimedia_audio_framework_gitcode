@@ -37,6 +37,7 @@ ohos_unittest("bluetooth_sco_manager_unit_test") {
   ]
   sources = [
     "bluetooth_sco_manager_test.cpp",
+    "../bluetooth_sco_manager.cpp",
   ]
 
   configs = [ ":bluetooth_client_private_config" ]
