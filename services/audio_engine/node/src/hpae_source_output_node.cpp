@@ -87,6 +87,9 @@ void HpaeSourceOutputNode::DoProcess()
 
 void HpaeSourceOutputNode::InvalidBufferProcess(HpaePcmBuffer *outputData)
 {
+    if (outputData->GetValidDataSize() == 0) {
+        return;
+    }
     ConvertFromFloat(GetBitWidth(), outputData->GetValidDataSize() / GetSizeFromFormat(GetBitWidth()),
         outputData->GetPcmDataBuffer(), sourceOutputData_.data());
 #ifdef ENABLE_HOOK_PCM
@@ -111,7 +114,7 @@ void HpaeSourceOutputNode::InvalidBufferProcess(HpaePcmBuffer *outputData)
         return;
     }
     CHECK_AND_RETURN_LOG(ret == 0, "sessionId %{public}u, readCallback_ write read data error", GetSessionId());
-    totalFrames_ += outputData->GetValidDataSize()  / GetSizeFromFormat(GetBitWidth()) / GetChannelCount();
+    totalFrames_ += outputData->GetValidDataSize() / GetSizeFromFormat(GetBitWidth()) / GetChannelCount();
     framesRead_.store(totalFrames_);
     return;
 }

@@ -177,8 +177,8 @@ public:
     {
         return writePos_.load();
     }
-    
-    void SetValidDataSize(size_t  dataByteSize)
+
+    void SetValidDataSize(size_t dataByteSize)
     {
         validDataByteSize_ = dataByteSize;
     }

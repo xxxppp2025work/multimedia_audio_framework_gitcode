@@ -130,7 +130,7 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
 HpaePcmBuffer *HpaeAudioFormatConverterNode::InvalidBufferProcess(float *srcData, float *dstData, float *tmpData,
     HpaePcmBuffer *input)
 {
-    if (input->GetValidDataSize()) {
+    if (input->GetValidDataSize() == 0) {
         return &silenceData_;
     }
 #ifdef ENABLE_HOOK_PCM
