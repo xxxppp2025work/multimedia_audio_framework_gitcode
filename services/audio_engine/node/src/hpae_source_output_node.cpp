@@ -87,12 +87,11 @@ void HpaeSourceOutputNode::DoProcess()
 
 void HpaeSourceOutputNode::InvalidBufferProcess(HpaePcmBuffer *outputData)
 {
-    ConvertFromFloat(
-        GetBitWidth(), GetChannelCount() * outputData->GetValidFrameLen(), outputData->GetPcmDataBuffer(), sourceOutputData_.data());
+    ConvertFromFloat(GetBitWidth(), outputData->GetValidDataSize() / GetSizeFromFormat(GetBitWidth()),
+        outputData->GetPcmDataBuffer(), sourceOutputData_.data());
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_) {
-        outputPcmDumper_->Dump(
-            (int8_t *)sourceOutputData_.data(), GetChannelCount() * outputData->GetValidFrameLen() * GetSizeFromFormat(GetBitWidth()));
+        outputPcmDumper_->Dump((int8_t *)sourceOutputData_.data(), outputData->GetValidDataSize());
     }
 #endif
     auto nodeCallback = GetNodeStatusCallback().lock();
@@ -103,7 +102,7 @@ void HpaeSourceOutputNode::InvalidBufferProcess(HpaePcmBuffer *outputData)
         .framesRead = framesRead_.load(),
         .timestamp = GetTimestamp(),
         .outputData = (int8_t *)sourceOutputData_.data(),
-        .requestDataLen = GetChannelCount() * outputData->GetValidFrameLen() * GetSizeFromFormat(GetBitWidth()),
+        .requestDataLen = outputData->GetValidDataSize(),
     };
     CHECK_AND_RETURN_LOG(readCallback_.lock(), "sessionId %{public}u, readCallback_ is nullptr", GetSessionId());
     int32_t ret = readCallback_.lock()->OnStreamData(streamInfo_);
@@ -112,7 +111,7 @@ void HpaeSourceOutputNode::InvalidBufferProcess(HpaePcmBuffer *outputData)
         return;
     }
     CHECK_AND_RETURN_LOG(ret == 0, "sessionId %{public}u, readCallback_ write read data error", GetSessionId());
-    totalFrames_ += outputData->GetValidFrameLen();
+    totalFrames_ += outputData->GetValidDataSize()  / GetSizeFromFormat(GetBitWidth()) / GetChannelCount();
     framesRead_.store(totalFrames_);
     return;
 }
