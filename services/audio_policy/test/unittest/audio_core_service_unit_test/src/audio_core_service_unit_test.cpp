@@ -866,7 +866,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateInputDeviceWhenStopping_001, TestSize.L
     EXPECT_NE(nullptr, server);
     int32_t uid = getuid();
     server->coreService_->UpdateInputDeviceWhenStopping(uid);
-    EXPECT_EQ(SUCESS, uid);
+    EXPECT_EQ(SUCCESS, uid);
 }
 
 /**
