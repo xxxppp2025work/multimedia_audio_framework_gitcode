@@ -18,6 +18,7 @@
 #include <mutex>
 #include <map>
 #include <vector>
+#include <condition_variable>
 #include "common_event_subscriber.h"
 #include "idevice_status_observer.h"
 
@@ -81,16 +82,25 @@ private:
     AudioUsbManager(IDeviceStatusObserver &observer) : observer_(observer) {}
     void RefreshUsbAudioDevices();
     void NotifyDevice(const UsbAudioDevice &device, const bool isConnected);
-    void HandleAudioDeviceEvent(pair<UsbAudioDevice, bool> &&p);
     bool FillUsbAudioDevice(UsbAudioDevice &device);
+    void StartNotifyThread();
+    list<pair<UsbAudioDevice, bool>> WaitMessageQueue();
+    void NotifyDevicesLoop(list<pair<UsbAudioDevice, bool>> &origin);
+    void FillToDelete(pair<UsbAudioDevice, bool> &curr, bool IsPrevAttach, set<UsbAddr> &toDelete);
+    void HandleAudioDeviceEvent(pair<UsbAudioDevice, bool> &p);
+    void PreDeleteDevice(const UsbAddr addr);
+    void PushMessageQueue(const UsbAudioDevice &device, const bool isAttach);
     void UpdateDevice(const UsbAudioDevice &dev, std::__wrap_iter<UsbAudioDevice *> &it);
 
     vector<UsbAudioDevice> audioDevices_;
     map<UsbAddr, SoundCard> soundCardMap_;
     shared_ptr<EventSubscriber> eventSubscriber_{nullptr};
     bool initialized_{false};
+    condition_variable ntCondition_;
+    list<pair<UsbAudioDevice, bool>> messageQueue_;
 
     mutex mutex_;
+    mutex mqMutex_;
     IDeviceStatusObserver &observer_;
 };
 
