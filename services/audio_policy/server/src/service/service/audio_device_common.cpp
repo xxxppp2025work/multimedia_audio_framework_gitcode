@@ -1727,12 +1727,8 @@ void AudioDeviceCommon::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &st
         audioOffloadStream_.UnloadMchModule();
     }
 
-    if (mode == AUDIO_MODE_PLAYBACK && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_PAUSED ||
-        rendererState == RENDERER_RELEASED)) {
-        audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(streamChangeInfo.audioRendererChangeInfo.sessionId);
-        if (rendererState == RENDERER_RELEASED) {
-            audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
-        }
+    if (mode == AUDIO_MODE_PLAYBACK && rendererState == RENDERER_RELEASED) {
+        audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
     }
     const auto &capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
     if (mode == AUDIO_MODE_RECORD && capturerState == CAPTURER_RELEASED) {
