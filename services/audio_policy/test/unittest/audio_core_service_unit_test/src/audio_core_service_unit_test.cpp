@@ -856,6 +856,20 @@ HWTEST_F(AudioCoreServiceUnitTest, GetExcludedDevicesTest_002, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: UpdateInputDeviceWhenStopping_001.
+ * @tc.desc  : Test UpdateInputDeviceWhenStopping.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, UpdateInputDeviceWhenStopping_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+    int32_t uid = getuid();
+    server->coreService_->UpdateInputDeviceWhenStopping(uid);
+    EXPECT_EQ(SUCESS, uid);
+}
+
+/**
 * @tc.name  : Test AudioCoreService.
 * @tc.number: GetPreferredOutputStreamType_001
 * @tc.desc  : Test interface GetPreferredOutputStreamType - will return SUCCESS.
