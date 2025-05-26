@@ -22,6 +22,7 @@
 #include "audio_utils.h"
 #include "hpae_node_common.h"
 #include "hpae_inner_capturer_manager.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -173,7 +174,12 @@ int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
             SetSessionStateForRenderer(streamInfo.sessionId, HPAE_SESSION_PREPARED);
             sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_PREPARED);
         } else if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
-            AUDIO_INFO_LOG("CreateCapCapturerStream sessionID: %{public}d", streamInfo.sessionId);
+            bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(streamInfo.uid);
+            AudioVolume::GetInstance()->AddStreamVolume(streamInfo.sessionId, streamInfo.streamType,
+                streamInfo.effectInfo.streamUsage, streamInfo.uid, streamInfo.pid, isSystemApp, 0);
+            AudioVolume::GetInstance()->SetStreamVolume(streamInfo.sessionId, 1.0f);
+            AUDIO_INFO_LOG("CreateCapCapturerStream sessionID: %{public}d, SetStreamVolume: 1.0f",
+                streamInfo.sessionId);
             CreateCapturerInputSessionInner(streamInfo);
             SetSessionStateForCapturer(streamInfo.sessionId, HPAE_SESSION_PREPARED);
         }
@@ -197,6 +203,7 @@ int32_t HpaeInnerCapturerManager::DestroyStream(uint32_t sessionId)
             DeleteRendererInputSessionInner(sessionId);
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
             AUDIO_INFO_LOG("DestroyCapCapturerStream sessionID: %{public}d", sessionId);
+            AudioVolume::GetInstance()->RemoveStreamVolume(sessionId);
             DeleteCapturerInputSessionInner(sessionId);
         }
     };
@@ -639,11 +646,13 @@ int32_t HpaeInnerCapturerManager::CreateCapturerInputSessionInner(const HpaeStre
     nodeInfo.sessionId = streamInfo.sessionId;
     nodeInfo.samplingRate = (AudioSamplingRate)streamInfo.samplingRate;
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
-    AUDIO_INFO_LOG("nodeInfo.channels %{public}d, nodeInfo.format %{public}hhu, nodeInfo.frameLen %{public}d",
-        nodeInfo.channels, nodeInfo.format, nodeInfo.frameLen);
+    AUDIO_INFO_LOG("sessionId: %{public}u, channels: %{public}d, format: %{public}hhu, frameLen: %{public}d",
+        nodeInfo.sessionId, nodeInfo.channels, nodeInfo.format, nodeInfo.frameLen);
     sourceOutputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
     HpaeNodeInfo outputNodeInfo = hpaeInnerCapSinkNode_->GetNodeInfo();
+    outputNodeInfo.sessionId = streamInfo.sessionId;
     // todo change nodeInfo
+    capturerGainNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeGainNode>(outputNodeInfo);
     capturerAudioFormatConverterNodeMap_[streamInfo.sessionId] =
         std::make_shared<HpaeAudioFormatConverterNode>(outputNodeInfo, nodeInfo);
     capturerSessionNodeMap_[streamInfo.sessionId].sceneType = nodeInfo.sceneType;
@@ -672,10 +681,12 @@ int32_t HpaeInnerCapturerManager::DeleteCapturerInputSessionInner(uint32_t sessi
         "sessionId %{public}u can not find in sourceOutputNodeMap_.", sessionId);
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(capturerAudioFormatConverterNodeMap_, sessionId), SUCCESS,
         "sessionId %{public}u can not find in capturerAudioFormatConverterNodeMap_.", sessionId);
+    CHECK_AND_RETURN_RET_LOG(SafeGetMap(capturerGainNodeMap_, sessionId), SUCCESS,
+        "sessionId %{public}u can not find in capturerGainNodeMap_.", sessionId);
     // no need process cluster
     sourceOutputNodeMap_[sessionId]->DisConnect(capturerAudioFormatConverterNodeMap_[sessionId]);
-    capturerAudioFormatConverterNodeMap_[sessionId]->DisConnect(hpaeInnerCapSinkNode_);
-    // if need disconnect all?
+    capturerAudioFormatConverterNodeMap_[sessionId]->DisConnect(capturerGainNodeMap_[sessionId]);
+    capturerGainNodeMap_[sessionId]->DisConnect(hpaeInnerCapSinkNode_);
     return SUCCESS;
 }
 
@@ -701,9 +712,11 @@ int32_t HpaeInnerCapturerManager::ConnectCapturerOutputSessionInner(uint32_t ses
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(capturerAudioFormatConverterNodeMap_, sessionId),
         ERR_INVALID_PARAM,
         "sessionId %{public}u can not find in capturerAudioFormatConverterNodeMap_.", sessionId);
-    // todo connect gain node
+    CHECK_AND_RETURN_RET_LOG(SafeGetMap(capturerGainNodeMap_, sessionId), ERR_INVALID_PARAM,
+        "sessionId %{public}u can not find in capturerGainNodeMap_.", sessionId);
     sourceOutputNodeMap_[sessionId]->Connect(capturerAudioFormatConverterNodeMap_[sessionId]);
-    capturerAudioFormatConverterNodeMap_[sessionId]->Connect(hpaeInnerCapSinkNode_);
+    capturerAudioFormatConverterNodeMap_[sessionId]->Connect(capturerGainNodeMap_[sessionId]);
+    capturerGainNodeMap_[sessionId]->Connect(hpaeInnerCapSinkNode_);
     return SUCCESS;
 }
 
