@@ -250,7 +250,7 @@ int32_t BluetoothScoManager::HandleScoDisconnect(const BluetoothRemoteDevice &de
     return HandleScoDisconnectNoLock(device);
 }
 
-int32_t BluetoothScoManager::HandleScoDisconnectNoLock(const BluetoothRemoteDevice &device);
+int32_t BluetoothScoManager::HandleScoDisconnectNoLock(const BluetoothRemoteDevice &device)
 {
     int32_t ret = SUCCESS;
     switch (currentScoState_) {
