@@ -1201,6 +1201,7 @@ void AudioDeviceCommon::FetchInputDeviceInner(
         runningStreamCount++;
         std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(sourceType, clientUID,
             capturerChangeInfo->sessionId);
+        CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
         AudioDeviceDescriptor inputDeviceInfo = capturerChangeInfo->inputDeviceInfo;
         if (HandleDeviceChangeForFetchInputDevice(desc, capturerChangeInfo) == ERR_NEED_NOT_SWITCH_DEVICE) {
             continue;
@@ -1345,7 +1346,7 @@ void AudioDeviceCommon::FetchInputDeviceWhenNoRunningStream()
     } else {
         desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1);
     }
-
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
     if (desc->deviceType_ == DEVICE_TYPE_NONE || IsSameDevice(desc, tempDesc)) {
         AUDIO_DEBUG_LOG("input device is not change");
         return;
