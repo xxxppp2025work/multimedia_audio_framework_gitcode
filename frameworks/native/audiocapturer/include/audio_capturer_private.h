@@ -202,6 +202,8 @@ private:
     std::shared_ptr<AudioCapturerFastStatusChangeCallback> fastStatusChangeCallback_ = nullptr;
     std::mutex fastStatusChangeCallbackMutex_;
     std::atomic<uint32_t> switchStreamInNewThreadTaskCount_ = 0;
+
+    AudioLoopThread taskLoop_ = AudioLoopThread("OS_Recreate");
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {
