@@ -42,6 +42,7 @@
 #include "audio_pipe_selector.h"
 #include "audio_policy_config_manager.h"
 #include "audio_core_service_utils.h"
+#include "sle_audio_device_manager.h"
 namespace OHOS {
 namespace AudioStandard {
 class AudioA2dpOffloadManager;
@@ -144,6 +145,7 @@ private:
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);
     std::shared_ptr<EventEntry> GetEventEntry();
     bool IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId);
+    void DumpPipeManager(std::string &dumpString);
 
     // Called by EventEntry - with lock
     // Stream operations
@@ -191,6 +193,7 @@ private:
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
+    void NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc);
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
     void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
@@ -238,6 +241,8 @@ private:
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t FetchInputDeviceAndRoute();
     void SetAudioServerProxy();
+    bool GetDisableFastStreamParam();
+    bool IsFastAllowed(std::string &bundleName);
 
 private:
     static std::string GetEncryptAddr(const std::string &addr);
@@ -259,6 +264,7 @@ private:
     int32_t ActivateA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    int32_t ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     int32_t LoadA2dpModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
         std::string networkId, std::string sinkName, SourceType sourceType);
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, DeviceType deviceType,
@@ -317,8 +323,8 @@ private:
     void SendA2dpConnectedWhileRunning(const RendererState &rendererState, const uint32_t &sessionId);
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
     void UpdateTrackerDeviceChange(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
-    void SetPlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
-    AudioFlag CheckIsSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
+    AudioFlag SetFlagForSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     void SetRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId);
     std::vector<SourceOutput> GetSourceOutputs();
@@ -383,6 +389,7 @@ private:
     bool HandleInputStreamInRunning(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void HandleDualStartClient(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void HandlePlaybackStreamInA2dp(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
@@ -409,6 +416,7 @@ private:
     AudioEcManager& audioEcManager_;
     AudioPolicyConfigManager& policyConfigMananger_;
     AudioAffinityManager &audioAffinityManager_;
+    SleAudioDeviceManager &sleAudioDeviceManager_;
     std::shared_ptr<AudioPipeSelector> audioPipeSelector_;
 
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;

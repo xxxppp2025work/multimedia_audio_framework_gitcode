@@ -399,6 +399,48 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerInterruptCallback(OH_Audi
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerErrorCallback(OH_AudioStreamBuilder* builder,
     OH_AudioCapturer_OnErrorCallback callback, void* userData);
+
+/**
+ * @brief Set audio capturer configuration, if app want its recorder only to be muted instead of interrupted.
+ *
+ * @param builder reference provided by OH_AudioStreamBuilder_Create()
+ * @param muteWhenInterrupted use {@code true} if application want to be muted instead of interrupted.
+ * @return function result code:
+ *     {@link AUDIOSTREAM_SUCCESS} if the execution is successful.
+ *     {@link AUDIOSTREAM_ERROR_INVALID_PARAM} the param of builder is nullptr.
+ * @since 20
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerWillMuteWhenInterrupted(OH_AudioStreamBuilder* builder,
+    bool muteWhenInterrupted);
+
+/**
+ * @brief Set the callback of fast status change event for audio renderer.
+ *
+ * @param builder Builder provided by OH_AudioStreamBuilder_Create()
+ * @param callback Callback function that will recevie the fast status change event.
+ * @param userData Pointer to an application data structure that will be passed to the callback functions.
+ * @return
+ *     {@link AUDIOSTREAM_SUCCESS} if the execution is successful.
+ *     {@link AUDIOSTREAM_ERROR_INVALID_PARAM} the param of builder or callback is nullptr.
+ * @since 20
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererFastStatusChangeCallback(OH_AudioStreamBuilder* builder,
+    OH_AudioRenderer_OnFastStatusChange callback, void* userData);
+
+/**
+ * @brief Set the callback of fast status change event for audio capturer.
+ *
+ * @param builder Builder provided by OH_AudioStreamBuilder_Create()
+ * @param callback Callback function that will recevie the fast status change event.
+ * @param userData Pointer to an application data structure that will be passed to the callback functions.
+ * @return
+ *     {@link AUDIOSTREAM_SUCCESS} if the execution is successful.
+ *     {@link AUDIOSTREAM_ERROR_INVALID_PARAM} the param of builder or callback is nullptr.
+ * @since 20
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerFastStatusChangeCallback(OH_AudioStreamBuilder* builder,
+    OH_AudioCapturer_OnFastStatusChange callback, void* userData);
+
 #ifdef __cplusplus
 }
 #endif

@@ -56,6 +56,9 @@
     *LoadModernInnerCapSink*;
     *UnloadModernInnerCapSink*;
     *ConfigCoreServiceProvider*;
+    *UpdateSessionOperation*;
+    *SetSessionMuteState*;
+    *SetLatestMuteState*;
   local:
     *;
 };

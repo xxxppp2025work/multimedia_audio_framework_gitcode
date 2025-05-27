@@ -1206,6 +1206,7 @@ void AudioDeviceCommon::FetchInputDeviceInner(
             continue;
         }
         HandleBluetoothInputDeviceFetched(desc, capturerChangeInfos, sourceType);
+        CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
         if (desc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
             audioEcManager_.ActivateArmDevice(desc->macAddress_, desc->deviceRole_);
         }
@@ -1290,12 +1291,8 @@ bool AudioDeviceCommon::NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
         isUpdateActiveDevice, capturerChangeInfo->capturerInfo.capturerFlags,
         capturerChangeInfo->capturerInfo.originalFlag);
     CHECK_AND_RETURN_RET_LOG(isUpdateActiveDevice, false, "isUpdateActiveDevice is false");
-    if (!((capturerChangeInfo->inputDeviceInfo.networkId_ == LOCAL_NETWORK_ID) ^
-        (audioActiveDevice_.GetCurrentInputDevice().networkId_ == LOCAL_NETWORK_ID))) {
-        CHECK_AND_RETURN_RET_LOG(capturerChangeInfo->capturerInfo.originalFlag == AUDIO_FLAG_MMAP, false,
-            "original flag is false");
-    }
-
+    CHECK_AND_RETURN_RET_LOG(capturerChangeInfo->capturerInfo.originalFlag == AUDIO_FLAG_MMAP, false,
+        "original flag is false");
     // Switch between old and new stream as they have different hals
     std::string oldDevicePortName = AudioPolicyUtils::GetInstance().GetSourcePortName(
         capturerChangeInfo->inputDeviceInfo.deviceType_);
@@ -1349,7 +1346,7 @@ void AudioDeviceCommon::FetchInputDeviceWhenNoRunningStream()
     } else {
         desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1);
     }
-
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
     if (desc->deviceType_ == DEVICE_TYPE_NONE || IsSameDevice(desc, tempDesc)) {
         AUDIO_DEBUG_LOG("input device is not change");
         return;

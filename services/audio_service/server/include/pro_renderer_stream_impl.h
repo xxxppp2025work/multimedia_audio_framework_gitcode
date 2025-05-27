@@ -63,6 +63,7 @@ public:
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex, uint64_t &cacheTimeDsp,
                                              uint64_t &cacheTimePa) override;
     int32_t OffloadSetVolume(float volume) override;
+    int32_t SetOffloadDataCallbackState(int32_t state) override;
     size_t GetWritableSize() override;
     // offload end
 
@@ -78,7 +79,8 @@ public:
 private:
     bool GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &nanoSec);
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate) const noexcept;
-    AudioSampleFormat GetDirectFormat(AudioSampleFormat format) const noexcept;
+    AudioSampleFormat GetDirectFormat(const AudioStreamInfo &streamInfo) const noexcept;
+    uint32_t GetDirectChannel(const AudioStreamInfo &streamInfo) const noexcept;
     void ConvertSrcToFloat(const BufferDesc &bufferDesc);
     void ConvertFloatToDes(int32_t writeIndex);
     void GetStreamVolume();

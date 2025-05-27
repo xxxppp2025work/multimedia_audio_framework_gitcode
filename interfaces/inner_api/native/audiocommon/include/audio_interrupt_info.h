@@ -30,13 +30,17 @@ enum ActionTarget {
     BOTH
 };
 
+/**
+ * larger enumeration values has higher priority
+ */
 enum AudioFocuState {
     ACTIVE = 0,
-    DUCK = 1,
-    PAUSE = 2,
-    STOP = 3,
-    PLACEHOLDER = 4,
-    PAUSEDBYREMOTE = 5,
+    MUTED,
+    DUCK,
+    PAUSE,
+    STOP,
+    PLACEHOLDER,
+    PAUSEDBYREMOTE,
 };
 
 enum InterruptMode {
@@ -79,7 +83,9 @@ enum InterruptHint {
     INTERRUPT_HINT_PAUSE,
     INTERRUPT_HINT_STOP,
     INTERRUPT_HINT_DUCK,
-    INTERRUPT_HINT_UNDUCK
+    INTERRUPT_HINT_UNDUCK,
+    INTERRUPT_HINT_MUTE,
+    INTERRUPT_HINT_UNMUTE
 };
 
 enum InterruptForceType {
@@ -205,9 +211,29 @@ enum InterruptSummary {
     INTERRUPT_SUMMARY_INTERRUPT_BACKGROUND,
 };
 
-enum InterruptStrategyType {
-    INTERRUPT_TYPE_DEFAULT = 0,
-    INTERRUPT_TYPE_AUDIO_SESSION,
+enum InterruptRole {
+    INTERRUPT_ROLE_DEFAULT = 0,
+    INTERRUPT_ROLE_AUDIO_SESSION,
+};
+
+enum InterruptStrategy {
+    DEFAULT = 0,
+    MUTE = 1,
+};
+
+enum InterruptEventCallbackType {
+    /**
+     * Use OH_AudioRenderer_Callbacks.OH_AudioRenderer_OnInterruptEvent
+     */
+    INTERRUPT_EVENT_CALLBACK_COMBINED = 0,
+    /**
+     * Use OH_AudioRenderer_OnInterruptEventCallback
+     */
+    INTERRUPT_EVENT_CALLBACK_SEPERATED = 1,
+    /**
+     * Not use any OH_AudioRenderer InterruptEvent
+     */
+    INTERRUPT_EVENT_CALLBACK_DEFAULT = 2
 };
 
 class AudioInterrupt {
@@ -227,6 +253,8 @@ public:
     AudioSessionStrategy sessionStrategy = { AudioConcurrencyMode::INVALID };
     int32_t api = 0;
     int32_t state {-1};
+    InterruptStrategy strategy { InterruptStrategy::DEFAULT };
+    InterruptEventCallbackType callbackType {INTERRUPT_EVENT_CALLBACK_DEFAULT};
 
     AudioInterrupt() = default;
     AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,
@@ -255,6 +283,8 @@ public:
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.sessionStrategy.concurrencyMode));
         res = res && parcel.WriteInt32(interrupt.api);
         res = res && parcel.WriteInt32(interrupt.state);
+        res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.strategy));
+        res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.callbackType));
         return res;
     }
     static void Unmarshalling(Parcel &parcel, AudioInterrupt &interrupt)
@@ -283,6 +313,8 @@ public:
         interrupt.sessionStrategy.concurrencyMode = static_cast<AudioConcurrencyMode>(parcel.ReadInt32());
         interrupt.api = parcel.ReadInt32();
         interrupt.state = parcel.ReadInt32();
+        interrupt.strategy = static_cast<InterruptStrategy>(parcel.ReadInt32());
+        interrupt.callbackType = static_cast<InterruptEventCallbackType>(parcel.ReadInt32());
     }
 };
 } // namespace AudioStandard

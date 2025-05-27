@@ -51,6 +51,8 @@ enum ReuseEndpointType : uint32_t {
 };
 } // anonymous namespace
 
+using MuteStateChangeCallbck = std::function<void(bool)>;
+
 #ifdef SUPPORT_LOW_LATENCY
 class AudioService : public ProcessReleaseCallback, public ICapturerFilterListener
 #else
@@ -76,7 +78,7 @@ public:
     int32_t OnProcessRelease(IAudioProcessStream *process, bool isSwitchStream = false) override;
     void ReleaseProcess(const std::string endpointName, const int32_t delayTime);
 
-    void CheckBeforeVoipEndpointCreate(bool isVoip, bool isRecord);
+    void CheckBeforeRecordEndpointCreate(bool isRecord);
     AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
         const AudioProcessConfig &clientConfig, bool isVoipStream);
@@ -116,6 +118,9 @@ public:
     bool GetDefaultAdapterEnable();
     RestoreStatus RestoreSession(uint32_t sessionId, RestoreInfo restoreInfo);
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime, uint32_t code);
+    void RegisterMuteStateChangeCallback(uint32_t sessionId, const MuteStateChangeCallbck &callback);
+    void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag);
+    void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
@@ -137,7 +142,7 @@ private:
         std::shared_ptr<AudioEndpoint> audioEndpoint);
 
     void CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProcessInServer> process);
-    int32_t GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream);
+    int32_t GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream, bool isRecord);
 #endif
     InnerCapFilterPolicy GetInnerCapFilterPolicy(int32_t innerCapId);
     bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId);
@@ -178,6 +183,7 @@ private:
     std::mutex rendererMapMutex_;
     std::mutex capturerMapMutex_;
     std::mutex muteSwitchStreamSetMutex_;
+    std::mutex workingConfigsMutex_;
     std::unordered_map<int32_t, std::vector<std::weak_ptr<RendererInServer>>> filteredRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<RendererInServer>> allRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<CapturerInServer>> allCapturerMap_ = {};
@@ -194,6 +200,9 @@ private:
     std::set<uint32_t> allRunningSinks_;
     bool onHibernate_ = false;
     std::set<uint32_t> muteSwitchStreams_ = {};
+    std::map<uint32_t, MuteStateChangeCallbck> muteStateCallbacks_{};
+    std::mutex muteStateMapMutex_;
+    std::map<uint32_t, bool> muteStateMap_{};
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -106,15 +106,6 @@ public:
 
     int32_t GetVolumeAdjustZoneId();
 
-    int32_t SetZoneVolumeLevel(int32_t zoneId, AudioVolumeType volumeType, int32_t volumeLevel, bool isUpdateUi);
-
-    int32_t GetZoneVolumeLevel(int32_t zoneId, AudioVolumeType volumeType);
-
-    int32_t SetZoneMute(int32_t zoneId, AudioStreamType streamType, bool mute, bool isUpdateUi,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
-
-    bool GetZoneMute(int32_t zoneId, AudioStreamType streamType);
-
     int32_t SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag = 0) override;
 
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid) override;
@@ -140,6 +131,9 @@ public:
     bool GetStreamMute(AudioStreamType streamType, int32_t uid = 0) override;
 
     bool IsStreamActive(AudioStreamType streamType) override;
+
+    bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
 
     bool IsVolumeUnadjustable() override;
 
@@ -521,6 +515,12 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
 
+    int32_t NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession) override;
+
+    int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze) override;
+
+    int32_t ResetAllProxy() override;
+
     int32_t SetVirtualCall(const bool isVirtual) override;
 
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
@@ -528,8 +528,20 @@ public:
 
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) override;
 
+    int32_t SetBackgroundMuteCallback(const sptr<IRemoteObject> &object) override;
+
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
         const StreamUsage &streamUsage) override;
+
+    int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage) override;
+
+    int32_t GetMinVolumeLevelByUsage(StreamUsage streamUsage) override;
+
+    int32_t GetVolumeLevelByUsage(StreamUsage streamUsage) override;
+
+    bool GetStreamMuteByUsage(StreamUsage streamUsage) override;
+
+    int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages) override;
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 
@@ -599,6 +611,10 @@ public:
     void CheckConnectedDevice();
     void SetDeviceConnectedFlagFalseAfterDuration();
 
+    int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const DeviceInfoUpdateCommand command) override;
+    int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void RegisterParamCallback();
@@ -615,7 +631,6 @@ private:
     static constexpr int32_t VOLUME_KEY_DURATION = 0;
     static constexpr int32_t VOLUME_MUTE_KEY_DURATION = 0;
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
-    static constexpr int32_t MCU_UID = 7500;
     static constexpr int32_t EDM_SERVICE_UID = 3057;
     static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
@@ -646,30 +661,27 @@ private:
 
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedVolume = false);
-    int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
+    int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi, int32_t zoneId = 0);
     int32_t SetAppVolumeLevelInternal(int32_t appUid, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetAppVolumeMutedInternal(int32_t appUid, bool muted, bool isUpdateUi);
     int32_t SetSystemVolumeLevelWithDeviceInternal(AudioStreamType streamType, int32_t volumeLevel,
         bool isUpdateUi, DeviceType deviceType);
-    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi, bool mute);
-    int32_t SetSingleStreamVolume(int32_t zoneId, AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi, bool mute);
+    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi, bool mute, int32_t zoneId = 0);
     int32_t SetAppSingleStreamVolume(int32_t streamType, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi,
         DeviceType deviceType);
     AudioStreamType GetSystemActiveVolumeTypeInternal(const int32_t clientUid);
-    int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType);
+    int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t GetAppVolumeLevelInternal(int32_t appUid, int32_t &volumeLevel);
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
     float GetSystemVolumeDb(AudioStreamType streamType);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
+        const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t zoneId = 0);
     void UpdateSystemMuteStateAccordingMusicState(AudioStreamType streamType, bool mute, bool isUpdateUi);
     void ProcUpdateRingerModeForMute(bool updateRingerMode, bool mute);
     int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
-    int32_t SetSingleStreamMute(int32_t zoneId, AudioStreamType streamType, bool mute, bool isUpdateUi,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
-    bool GetStreamMuteInternal(AudioStreamType streamType);
+        const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t zoneId = 0);
+    bool GetStreamMuteInternal(AudioStreamType streamType, int32_t zoneId = 0);
     bool IsVolumeTypeValid(AudioStreamType streamType);
     bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
     bool CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel);
@@ -712,6 +724,7 @@ private:
     void OnDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor, const CastType type);
     void SubscribeSafeVolumeEvent();
     void SubscribeCommonEventExecute();
+    void SubscribeBackgroundTask();
     void SendMonitrtEvent(const int32_t keyType, int32_t resultOfVolumeKey);
     void RegisterDefaultVolumeTypeListener();
 

@@ -48,6 +48,7 @@ public:
     AudioStreamAction streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDeviceDescs_ = {};
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs_ = {};
+    std::string bundleName_ = "";
 
     AudioStreamDescriptor();
     virtual ~AudioStreamDescriptor();
@@ -57,7 +58,19 @@ public:
     bool WriteDeviceDescVectorToParcel(
         Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs) const;
     void UnmarshallingDeviceDescVector(Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+    void SetBunduleName(std::string &bundleName);
+
     void Dump(std::string &dumpString);
+
+private:
+    bool IsRenderer()
+    {
+        return audioMode_ == AUDIO_MODE_PLAYBACK;
+    }
+    void DumpCommonAttrs(std::string &dumpString);
+    void DumpRendererStreamAttrs(std::string &dumpString);
+    void DumpCapturerStreamAttrs(std::string &dumpString);
+    void DumpDeviceAttrs(std::string &dumpString);
 };
 } // namespace AudioStandard
 } // namespace OHOS

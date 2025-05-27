@@ -33,17 +33,23 @@
 #include "audio_manager_listener_stub.h"
 #include "audio_policy_interface.h"
 #include "audio_focus_info_change_callback_impl.h"
+#include "audio_qosmanager.h"
+#include "rtg_interface.h"
+using namespace OHOS::RME;
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 constexpr unsigned int GET_BUNDLE_INFO_TIME_OUT_SECONDS = 10;
 constexpr unsigned int XCOLLIE_TIME_OUT_SECONDS = 10;
+constexpr unsigned int MS_PER_SECOND = 1000;
 constexpr size_t VALID_REMOTE_NETWORK_ID_LENGTH = 64;
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::streamTypeMap_
     = AudioSystemManager::CreateStreamMap();
 mutex g_asProxyMutex;
+mutex g_audioListenerMutex;
 sptr<IStandardAudioService> g_asProxy = nullptr;
+sptr<AudioManagerListenerStub> g_audioListener = nullptr;
 
 AudioSystemManager::AudioSystemManager()
 {
@@ -60,6 +66,7 @@ AudioSystemManager::~AudioSystemManager()
     if (volumeChangeClientPid_ != -1) {
         AUDIO_DEBUG_LOG("UnregisterVolumeKeyEventCallback");
         (void)UnregisterVolumeKeyEventCallback(volumeChangeClientPid_);
+        (void)UnregisterStreamVolumeChangeCallback(volumeChangeClientPid_);
     }
 }
 
@@ -193,8 +200,70 @@ inline const sptr<IStandardAudioService> GetAudioSystemManagerProxy()
 void AudioSystemManager::AudioServerDied(pid_t pid, pid_t uid)
 {
     AUDIO_INFO_LOG("audio server died, will restore proxy in next call");
-    lock_guard<mutex> lock(g_asProxyMutex);
-    g_asProxy = nullptr;
+    {
+        lock_guard<mutex> lock(g_asProxyMutex);
+        g_asProxy = nullptr;
+    }
+    {
+        lock_guard<mutex> lock(g_audioListenerMutex);
+        g_audioListener = nullptr;
+    }
+}
+
+int32_t AudioSystemManager::RegisterRendererDataTransferCallback(const DataTransferMonitorParam &param,
+    const std::shared_ptr<AudioRendererDataTransferStateChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR_INVALID_PARAM, "callback is null");
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERROR, "Audio service unavailable.");
+
+    int32_t ret = SUCCESS;
+    
+    lock_guard<mutex> lock(g_audioListenerMutex);
+    if (g_audioListener == nullptr) {
+        g_audioListener = new(std::nothrow) AudioManagerListenerStub();
+        if (g_audioListener == nullptr) {
+            AUDIO_ERR_LOG("g_audioListener is null");
+            return ERROR;
+        }
+
+        sptr<IRemoteObject> object = g_audioListener->AsObject();
+        if (object == nullptr) {
+            AUDIO_ERR_LOG("as object result is null");
+            g_audioListener = nullptr;
+            return ERROR;
+        }
+
+        ret = gasp->RegisterDataTransferCallback(object);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "ret: %{public}d", ret);
+    }
+    
+    auto callbackId = g_audioListener->AddDataTransferStateChangeCallback(param, callback);
+    CHECK_AND_RETURN_RET_LOG(callbackId != -1, ERROR_SYSTEM, "out of max register count");
+    ret = gasp->RegisterDataTransferMonitorParam(callbackId, param);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "ret: %{public}d", ret);
+    return ret;
+}
+
+
+int32_t AudioSystemManager::UnregisterRendererDataTransferCallback(
+    const std::shared_ptr<AudioRendererDataTransferStateChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR_INVALID_PARAM, "callback is null");
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERROR, "Audio service unavailable.");
+    
+    lock_guard<mutex> lock(g_audioListenerMutex);
+    CHECK_AND_RETURN_RET_LOG(g_audioListener != nullptr, ERROR_INVALID_PARAM, "audio listener is null");
+    auto callbackIds = g_audioListener->RemoveDataTransferStateChangeCallback(callback);
+
+    for (auto callbackId : callbackIds) {
+        gasp->UnregisterDataTransferMonitorParam(callbackId);
+    }
+    
+    return SUCCESS;
 }
 
 int32_t AudioSystemManager::SetRingerMode(AudioRingerMode ringMode)
@@ -508,6 +577,20 @@ int32_t AudioSystemManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &is
     ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "IsAppVolumeMute: No system permission");
     return AudioPolicyManager::GetInstance().IsAppVolumeMute(appUid, owned, isMute);
+}
+
+int32_t AudioSystemManager::UnsetActiveVolumeTypeCallback(
+    const std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> &callback)
+{
+    return AudioPolicyManager::GetInstance().UnsetActiveVolumeTypeCallback(callback);
+}
+
+int32_t AudioSystemManager::SetActiveVolumeTypeCallback(
+    const std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "SetActiveVolumeTypeCallback: callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetActiveVolumeTypeCallback(callback);
 }
 
 int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel) const
@@ -1088,7 +1171,6 @@ int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clien
     int32_t ret = AudioPolicyManager::GetInstance().UnsetVolumeKeyEventCallback(callback);
     if (!ret) {
         AUDIO_DEBUG_LOG("UnsetVolumeKeyEventCallback success");
-        volumeChangeClientPid_ = -1;
     }
     return ret;
 }
@@ -1792,6 +1874,14 @@ int32_t AudioSystemManager::SetQueryAllowedPlaybackCallback(
     return AudioPolicyManager::GetInstance().SetQueryAllowedPlaybackCallback(callback);
 }
 
+int32_t AudioSystemManager::SetBackgroundMuteCallback(
+    const std::shared_ptr<AudioBackgroundMuteCallback> &callback)
+{
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetBackgroundMuteCallback(callback);
+}
+
 int32_t AudioSystemManager::OnVoiceWakeupState(bool state)
 {
     AUDIO_INFO_LOG("%{public}d", state);
@@ -1801,6 +1891,141 @@ int32_t AudioSystemManager::OnVoiceWakeupState(bool state)
 uint16_t AudioSystemManager::GetDmDeviceType() const
 {
     return AudioPolicyManager::GetInstance().GetDmDeviceType();
+}
+
+int32_t AudioSystemManager::NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession)
+{
+    AUDIO_INFO_LOG("Set uid:%{public}d, pid:%{public}d, Session state:%{public}d", uid, pid, hasSession);
+    return AudioPolicyManager::GetInstance().NotifySessionStateChange(uid, pid, hasSession);
+}
+
+int32_t AudioSystemManager::NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze)
+{
+    AUDIO_INFO_LOG("In");
+    return AudioPolicyManager::GetInstance().NotifyFreezeStateChange(pidList, isFreeze);
+}
+
+int32_t AudioSystemManager::ResetAllProxy()
+{
+    AUDIO_INFO_LOG("RSS IN");
+    return AudioPolicyManager::GetInstance().ResetAllProxy();
+}
+
+int32_t AudioSystemManager::GetMaxVolumeByUsage(StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
+        ERR_INVALID_PARAM, "Invalid streamUsage");
+
+    if (streamUsage == STREAM_USAGE_ULTRASONIC) {
+        bool ret = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "STREAM_USAGE_ULTRASONIC No system permission");
+    }
+    return AudioPolicyManager::GetInstance().GetMaxVolumeLevelByUsage(streamUsage);
+}
+
+int32_t AudioSystemManager::GetMinVolumeByUsage(StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
+        ERR_INVALID_PARAM, "Invalid streamUsage");
+
+    if (streamUsage == STREAM_USAGE_ULTRASONIC) {
+        bool ret = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "STREAM_USAGE_ULTRASONIC No system permission");
+    }
+    return AudioPolicyManager::GetInstance().GetMinVolumeLevelByUsage(streamUsage);
+}
+
+int32_t AudioSystemManager::GetVolumeByUsage(StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
+        ERR_INVALID_PARAM, "Invalid streamUsage");
+
+    if (streamUsage == STREAM_USAGE_ULTRASONIC) {
+        bool ret = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "STREAM_USAGE_ULTRASONIC No system permission");
+    }
+    return AudioPolicyManager::GetInstance().GetVolumeLevelByUsage(streamUsage);
+}
+
+int32_t AudioSystemManager::IsStreamMuteByUsage(StreamUsage streamUsage, bool &isMute)
+{
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
+        ERR_INVALID_PARAM, "Invalid streamUsage");
+
+    if (streamUsage == STREAM_USAGE_ULTRASONIC) {
+        bool ret = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "STREAM_USAGE_ULTRASONIC No system permission");
+    }
+    isMute = AudioPolicyManager::GetInstance().GetStreamMuteByUsage(streamUsage);
+    return SUCCESS;
+}
+
+
+int32_t AudioSystemManager::RegisterStreamVolumeChangeCallback(const int32_t clientPid,
+    const std::set<StreamUsage> &streamUsages, const std::shared_ptr<StreamVolumeChangeCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("register StreamVolumeChangeCallback clientPid:%{public}d", clientPid);
+
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    volumeChangeClientPid_ = clientPid;
+
+    return AudioPolicyManager::GetInstance().SetStreamVolumeChangeCallback(clientPid, streamUsages, callback);
+}
+
+int32_t AudioSystemManager::UnregisterStreamVolumeChangeCallback(const int32_t clientPid,
+    const std::shared_ptr<StreamVolumeChangeCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("unregister StreamVolumeChangeCallback clientPid:%{public}d", clientPid);
+    return AudioPolicyManager::GetInstance().UnsetStreamVolumeChangeCallback(callback);
+}
+
+int32_t AudioSystemManager::CreateAudioWorkgroup()
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
+    return gasp->CreateAudioWorkgroup(getpid());
+}
+
+int32_t AudioSystemManager::ReleaseAudioWorkgroup(int32_t workgroupId)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
+    return gasp->ReleaseAudioWorkgroup(getpid(), workgroupId);
+}
+
+int32_t AudioSystemManager::AddThreadToGroup(int32_t workgroupId, int32_t tokenId)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
+    return gasp->AddThreadToGroup(getpid(), workgroupId, tokenId);
+}
+
+int32_t AudioSystemManager::RemoveThreadFromGroup(int32_t workgroupId, int32_t tokenId)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
+    return gasp->RemoveThreadFromGroup(getpid(), workgroupId, tokenId);
+}
+
+int32_t AudioSystemManager::StartGroup(int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime)
+{
+    CHECK_AND_RETURN_RET_LOG(deadlineTime > startTime, ERR_INVALID_PARAM, "Invalid Audio Deadline params");
+    SetFrameRateAndPrioType(workgroupId, MS_PER_SECOND/(deadlineTime - startTime), 0);
+    SetThreadQosLevel();
+    if (BeginFrameFreq(0) != 0) {
+        AUDIO_ERR_LOG("[WorkgroupInClient] Audio Deadline BeginFrame failed");
+        return AUDIO_ERR;
+    }
+    return AUDIO_OK;
+}
+
+int32_t AudioSystemManager::StopGroup(int32_t workgroupId)
+{
+    if (EndFrameFreq(0) != 0) {
+        AUDIO_ERR_LOG("[WorkgroupInClient] Audio Deadline EndFrame failed");
+        return AUDIO_ERR;
+    }
+    return AUDIO_OK;
 }
 } // namespace AudioStandard
 } // namespace OHOS

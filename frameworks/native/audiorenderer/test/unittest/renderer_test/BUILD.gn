@@ -44,6 +44,7 @@ ohos_unittest("audio_renderer_unit_test") {
   deps = [
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_common",
     "../../../../audiodefinitions:audio_definitions",
     "../../../../audiorenderer:audio_renderer",
     "../../../../audioutils:audio_utils",
@@ -55,6 +56,7 @@ ohos_unittest("audio_renderer_unit_test") {
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "pulseaudio:pulse",
+    "samgr:samgr_proxy",
   ]
 
   resource_config_file =
