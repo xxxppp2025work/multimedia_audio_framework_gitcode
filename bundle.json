@@ -58,6 +58,7 @@
             "config_policy",
             "core_service",
             "data_share",
+            "datamgr_service",
             "device_manager",
             "distributed_notification_service",
             "drivers_interface_audio",

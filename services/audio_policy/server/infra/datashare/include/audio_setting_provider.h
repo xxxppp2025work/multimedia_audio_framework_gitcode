@@ -33,7 +33,7 @@ namespace AudioStandard {
 constexpr int32_t MAX_STRING_LENGTH = 10;
 constexpr int32_t MIN_USER_ACCOUNT = 100;
 
-class AudioSettingObserver : public AAFwk::DataAbilityObserverStub {
+class AudioSettingObserver : public DataShare::DataAbilityObserverStub {
 public:
     AudioSettingObserver() = default;
     ~AudioSettingObserver() = default;

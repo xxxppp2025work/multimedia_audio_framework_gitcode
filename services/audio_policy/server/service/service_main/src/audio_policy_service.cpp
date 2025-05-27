@@ -839,7 +839,7 @@ void AudioPolicyService::RegisterNameMonitorHelper()
     CHECK_AND_RETURN_LOG(dataShareHelper != nullptr, "dataShareHelper is NULL");
 
     auto uri = std::make_shared<Uri>(std::string(SETTINGS_DATA_BASE_URI) + "&key=" + PREDICATES_STRING);
-    sptr<AAFwk::DataAbilityObserverStub> settingDataObserver = std::make_unique<DataShareObserverCallBack>().release();
+    sptr<DataShare::DataAbilityObserverStub> settingDataObserver = std::make_unique<DataShareObserverCallBack>().release();
     dataShareHelper->RegisterObserver(*uri, settingDataObserver);
 
     dataShareHelper->Release();

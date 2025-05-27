@@ -22,7 +22,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class DataShareObserverCallBack : public AAFwk::DataAbilityObserverStub {
+class DataShareObserverCallBack : public DataShare::DataAbilityObserverStub {
 public:
     explicit DataShareObserverCallBack();
     ~DataShareObserverCallBack() override {};
