@@ -52,6 +52,7 @@ void HpaeSourceOutputNode::DoProcess()
     HpaePcmBuffer *outputData = outputVec.front();
     if (!outputData->IsValid()) {
         AUDIO_WARNING_LOG("sessionId %{public}u DoProcess(), drop invalid data", GetSessionId());
+        InvalidBufferProcess(outputData);
         return;
     }
     ConvertFromFloat(
@@ -80,6 +81,40 @@ void HpaeSourceOutputNode::DoProcess()
     }
     CHECK_AND_RETURN_LOG(ret == 0, "sessionId %{public}u, readCallback_ write read data error", GetSessionId());
     totalFrames_ += GetFrameLen();
+    framesRead_.store(totalFrames_);
+    return;
+}
+
+void HpaeSourceOutputNode::InvalidBufferProcess(HpaePcmBuffer *outputData)
+{
+    if (outputData->GetValidDataSize() == 0) {
+        return;
+    }
+    ConvertFromFloat(GetBitWidth(), outputData->GetValidDataSize() / GetSizeFromFormat(GetBitWidth()),
+        outputData->GetPcmDataBuffer(), sourceOutputData_.data());
+#ifdef ENABLE_HOOK_PCM
+    if (outputPcmDumper_) {
+        outputPcmDumper_->Dump((int8_t *)sourceOutputData_.data(), outputData->GetValidDataSize());
+    }
+#endif
+    auto nodeCallback = GetNodeStatusCallback().lock();
+    if (nodeCallback) {
+        nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);
+    }
+    streamInfo_ = {
+        .framesRead = framesRead_.load(),
+        .timestamp = GetTimestamp(),
+        .outputData = (int8_t *)sourceOutputData_.data(),
+        .requestDataLen = outputData->GetValidDataSize(),
+    };
+    CHECK_AND_RETURN_LOG(readCallback_.lock(), "sessionId %{public}u, readCallback_ is nullptr", GetSessionId());
+    int32_t ret = readCallback_.lock()->OnStreamData(streamInfo_);
+    if (ret == ERR_WRITE_FAILED) {
+        AUDIO_DEBUG_LOG("sessionId %{public}u, readCallback_ write read data overflow", GetSessionId());
+        return;
+    }
+    CHECK_AND_RETURN_LOG(ret == 0, "sessionId %{public}u, readCallback_ write read data error", GetSessionId());
+    totalFrames_ += outputData->GetValidDataSize() / GetSizeFromFormat(GetBitWidth()) / GetChannelCount();
     framesRead_.store(totalFrames_);
     return;
 }

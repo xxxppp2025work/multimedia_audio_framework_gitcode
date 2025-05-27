@@ -120,10 +120,19 @@ void HpaeSourceInputNode::DoProcessInner(const HpaeSourceBufferType &bufferType,
     }
 #endif
     // todo: do not convert to float in SourceInputNode
-    ConvertToFloat(nodeInfoMap_.at(bufferType).format,
-        nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen,
-        capturerFrameDataMap_.at(bufferType).data(),
-        inputAudioBufferMap_.at(bufferType).GetPcmDataBuffer());
+    if (inputAudioBufferMap_.at(bufferType).IsValid()) {
+        ConvertToFloat(nodeInfoMap_.at(bufferType).format,
+            nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen,
+            capturerFrameDataMap_.at(bufferType).data(),
+            inputAudioBufferMap_.at(bufferType).GetPcmDataBuffer());
+    } else {
+        inputAudioBufferMap_.at(bufferType).SetValidDataSize(replyBytes);
+        ConvertToFloat(nodeInfoMap_.at(bufferType).format,
+            inputAudioBufferMap_.at(bufferType).GetValidDataSize() /
+            GetSizeFromFormat(nodeInfoMap_.at(bufferType).format),
+            capturerFrameDataMap_.at(bufferType).data(),
+            inputAudioBufferMap_.at(bufferType).GetPcmDataBuffer());
+    }
     outputStreamMap_.at(bufferType).WriteDataToOutput(&inputAudioBufferMap_.at(bufferType));
 }
 
