@@ -33,6 +33,7 @@
 #include "audio_zone_info.h"
 #include "audio_interrupt_zone.h"
 #include "audio_info.h"
+#include "audio_device_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -310,6 +311,7 @@ private:
     AudioStreamType defaultVolumeType_ = STREAM_MUSIC;
 
     std::mutex audioServerProxyMutex_;
+    AudioDeviceManager &audioDeviceManager_ = AudioDeviceManager::GetAudioDeviceManager();
 };
 } // namespace AudioStandard
 } // namespace OHOS

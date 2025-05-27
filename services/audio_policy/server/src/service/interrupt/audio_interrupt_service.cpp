@@ -1746,6 +1746,8 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
             itZone->first);
         return;
     }
+    audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(audioInterrupt.streamId);
+    FetchOutputDeviceAndRoute();
     // resume if other session was forced paused or ducked
     ResumeAudioFocusList(zoneId, isSessionTimeout);
 
