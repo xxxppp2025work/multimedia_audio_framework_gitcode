@@ -54,7 +54,6 @@ public:
     void NotifyAppStateChange(const int32_t uid, const int32_t pid, AppIsBackState state);
     void NotifyBackgroundTaskStateChange(const int32_t uid, const int32_t pid, bool hasBackgroundTask);
     int32_t NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession);
-    void HandleSessionStateChange(const int32_t uid, const int32_t pid);
     int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze);
     int32_t ResetAllProxy();
     void HandleFreezeStateChange(const int32_t pid, bool isFreeze);

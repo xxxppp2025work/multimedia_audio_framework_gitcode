@@ -76,17 +76,17 @@ bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t
         "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
         appState.hasBackTask, appState.isFreeze);
     if (appState.isBack) {
+        bool mute = appState.hasBackTask ? false : (appState.isbinder ? true : false);
         if (!appState.hasSession) {
+            // for media
             HandleSessionStateChange(uid, pid);
-        } else if (appState.hasBackTask) {
-            streamCollector_.HandleStartStreamMuteState(uid, false);
-        } else if (appState.isbinder) {
-            streamCollector_.HandleStartStreamMuteState(uid, true);
+            // for others
+            streamCollector_.HandleStartStreamMuteState(uid, mute, true);
         } else {
-            streamCollector_.HandleStartStreamMuteState(uid, false);
+            streamCollector_.HandleStartStreamMuteState(uid, mute, false);
         }
     } else {
-        streamCollector_.HandleStartStreamMuteState(uid, false);
+        streamCollector_.HandleStartStreamMuteState(uid, false, false);
     }
     return true;
 }
@@ -102,21 +102,23 @@ void AudioBackgroundManager::NotifyAppStateChange(const int32_t uid, const int32
         appState.isBack = isBack;
         InsertIntoAppStatesMap(pid, appState);
     } else {
-        std::lock_guard<std::mutex> lock(appStatesMapMutex_);
-        AppState &appState = appStatesMap_[pid];
-        CHECK_AND_RETURN(appState.isBack != isBack);
-        appState.isBack = isBack;
-        appState.isFreeze = isBack ? appState.isFreeze : false;
-        appState.isbinder = isBack ? appState.isbinder : false;
-        AUDIO_INFO_LOG("appStatesMap_ change pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
-            "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
-            appState.hasBackTask, appState.isFreeze);
-        if (!isBack) {
-            return streamCollector_.HandleForegroundUnmute(uid);
-        }
-        bool needMute = !appState.hasSession && appState.isBack && !CheckoutSystemAppUtil::CheckoutSystemApp(uid);
         bool notifyMute = false;
-        streamCollector_.HandleAppStateChange(uid, needMute, notifyMute);
+        {
+            std::lock_guard<std::mutex> lock(appStatesMapMutex_);
+            AppState &appState = appStatesMap_[pid];
+            CHECK_AND_RETURN(appState.isBack != isBack);
+            appState.isBack = isBack;
+            appState.isFreeze = isBack ? appState.isFreeze : false;
+            appState.isbinder = isBack ? appState.isbinder : false;
+            AUDIO_INFO_LOG("appStatesMap_ change pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
+                "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
+                appState.hasBackTask, appState.isFreeze);
+            if (!isBack) {
+                return streamCollector_.HandleForegroundUnmute(uid);
+            }
+            bool needMute = !appState.hasSession && appState.isBack && !CheckoutSystemAppUtil::CheckoutSystemApp(uid);
+            streamCollector_.HandleAppStateChange(uid, needMute, notifyMute);
+        }
         if (notifyMute && !VolumeUtils::IsPCVolumeEnable()) {
             lock_guard<mutex> lock(g_backgroundMuteListenerMutex);
             CHECK_AND_RETURN_LOG(backgroundMuteListener_ != nullptr, "backgroundMuteListener_ is nulptr");
@@ -153,31 +155,26 @@ int32_t AudioBackgroundManager::NotifySessionStateChange(const int32_t uid, cons
         appState.hasSession = hasSession;
         InsertIntoAppStatesMap(pid, appState);
     } else {
-        std::lock_guard<std::mutex> lock(appStatesMapMutex_);
-        AppState &appState = appStatesMap_[pid];
-        CHECK_AND_RETURN_RET(appState.hasSession != hasSession, SUCCESS);
-        appState.hasSession = hasSession;
-        AUDIO_INFO_LOG("appStatesMap_ change pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
-            "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
-            appState.hasBackTask, appState.isFreeze);
-        HandleSessionStateChange(uid, pid);
+        bool notifyMute = false;
+        {
+            std::lock_guard<std::mutex> lock(appStatesMapMutex_);
+            AppState &appState = appStatesMap_[pid];
+            CHECK_AND_RETURN_RET(appState.hasSession != hasSession, SUCCESS);
+            appState.hasSession = hasSession;
+            AUDIO_INFO_LOG("appStatesMap_ change pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
+                "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
+                appState.hasBackTask, appState.isFreeze);
+            bool needMute = !appState.hasSession && appState.isBack && !CheckoutSystemAppUtil::CheckoutSystemApp(uid);
+            streamCollector_.HandleAppStateChange(uid, needMute, notifyMute);
+        }
+        if (notifyMute && !VolumeUtils::IsPCVolumeEnable()) {
+            lock_guard<mutex> lock(g_backgroundMuteListenerMutex);
+            CHECK_AND_RETURN_LOG(backgroundMuteListener_ != nullptr, "backgroundMuteListener_ is nulptr");
+            AUDIO_INFO_LOG("OnBackground with uid: %{public}d", uid);
+            backgroundMuteListener_->OnBackgroundMute(uid);
+        }
     }
     return SUCCESS;
-}
-
-void AudioBackgroundManager::HandleSessionStateChange(const int32_t uid, const int32_t pid)
-{
-    bool isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
-    AppState &appState = appStatesMap_[pid];
-    bool needMute = !appState.hasSession && appState.isBack && !isSystem;
-    bool notifyMute = false;
-    streamCollector_.HandleAppStateChange(uid, needMute, notifyMute);
-    if (notifyMute && !VolumeUtils::IsPCVolumeEnable()) {
-        lock_guard<mutex> lock(g_backgroundMuteListenerMutex);
-        CHECK_AND_RETURN_LOG(backgroundMuteListener_ != nullptr, "backgroundMuteListener_ is nulptr");
-        AUDIO_INFO_LOG("OnBackground with uid: %{public}d", uid);
-        backgroundMuteListener_->OnBackgroundMute(uid);
-    }
 }
 
 int32_t AudioBackgroundManager::NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze)
