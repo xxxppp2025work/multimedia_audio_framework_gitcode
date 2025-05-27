@@ -70,6 +70,11 @@ void FastAudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
     rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
 }
 
+void FastAudioStream::GetRendererInfo(AudioRendererInfo &rendererInfo)
+{
+    rendererInfo = rendererInfo_;
+}
+
 void FastAudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
@@ -231,7 +236,7 @@ int32_t FastAudioStream::ParamsToStateCmdType(int64_t params, State &state, Stat
 
 int32_t FastAudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
 {
-    AUDIO_INFO_LOG("GetAudioStreamInfo enter.");
+    AUDIO_INFO_LOG("enter.");
     audioStreamInfo = streamInfo_;
     return SUCCESS;
 }
@@ -386,7 +391,7 @@ AudioRendererRate FastAudioStream::GetRenderRate()
 
 int32_t FastAudioStream::SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback)
 {
-    AUDIO_INFO_LOG("SetStreamCallback enter.");
+    AUDIO_INFO_LOG("enter.");
 
     if (callback == nullptr) {
         AUDIO_ERR_LOG("SetStreamCallback failed. callback == nullptr");
@@ -413,7 +418,7 @@ int32_t FastAudioStream::SetRenderMode(AudioRenderMode renderMode)
 
 AudioRenderMode FastAudioStream::GetRenderMode()
 {
-    AUDIO_INFO_LOG("GetRenderMode enter.");
+    AUDIO_INFO_LOG("enter.");
     return renderMode_;
 }
 
@@ -462,7 +467,7 @@ int32_t FastAudioStream::SetCapturerReadCallback(const std::shared_ptr<AudioCapt
 
 int32_t FastAudioStream::GetBufferDesc(BufferDesc &bufDesc)
 {
-    AUDIO_DEBUG_LOG("GetBufferDesc enter.");
+    AUDIO_DEBUG_LOG("enter.");
     CHECK_AND_RETURN_RET_LOG(processClient_, ERR_INVALID_OPERATION, "spkClient is null.");
     int32_t ret = processClient_->GetBufferDesc(bufDesc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && bufDesc.buffer != nullptr && bufDesc.bufLength != 0,
@@ -472,7 +477,7 @@ int32_t FastAudioStream::GetBufferDesc(BufferDesc &bufDesc)
 
 int32_t FastAudioStream::GetBufQueueState(BufferQueueState &bufState)
 {
-    AUDIO_INFO_LOG("GetBufQueueState enter.");
+    AUDIO_INFO_LOG("enter.");
     // note: add support
     return SUCCESS;
 }
@@ -510,31 +515,31 @@ int32_t FastAudioStream::Clear()
 
 int32_t FastAudioStream::SetLowPowerVolume(float volume)
 {
-    AUDIO_INFO_LOG("SetLowPowerVolume enter.");
+    AUDIO_INFO_LOG("enter.");
     return SUCCESS;
 }
 
 float FastAudioStream::GetLowPowerVolume()
 {
-    AUDIO_INFO_LOG("GetLowPowerVolume enter.");
+    AUDIO_INFO_LOG("enter.");
     return 1.0f;
 }
 
 int32_t FastAudioStream::SetOffloadMode(int32_t state, bool isAppBack)
 {
-    AUDIO_WARNING_LOG("SetOffloadMode enter.");
+    AUDIO_WARNING_LOG("enter.");
     return ERR_NOT_SUPPORTED;
 }
 
 int32_t FastAudioStream::UnsetOffloadMode()
 {
-    AUDIO_WARNING_LOG("UnsetOffloadMode enter.");
+    AUDIO_WARNING_LOG("enter.");
     return ERR_NOT_SUPPORTED;
 }
 
 float FastAudioStream::GetSingleStreamVolume()
 {
-    AUDIO_INFO_LOG("GetSingleStreamVolume enter.");
+    AUDIO_INFO_LOG("enter.");
     return 1.0f;
 }
 
@@ -1067,6 +1072,11 @@ int32_t FastAudioStream::SetDefaultOutputDevice(const DeviceType defaultOutputDe
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDefaultOutputDevice error.");
     defaultOutputDevice_ = defaultOutputDevice;
     return SUCCESS;
+}
+
+bool FastAudioStream::GetFastStatus()
+{
+    return true;
 }
 
 DeviceType FastAudioStream::GetDefaultOutputDevice()

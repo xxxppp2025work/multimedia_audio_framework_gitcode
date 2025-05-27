@@ -325,13 +325,75 @@ bool AudioPolicyConfigManager::GetHasEarpiece()
     return hasEarpiece_;
 }
 
+bool AudioPolicyConfigManager::IsFastStreamSupported(AudioStreamInfo &streamInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+{
+    bool isSupported = false;
+    AudioFlag audioFlag;
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = nullptr;
+
+    for (auto &audioDeviceDescriptor : desc) {
+        CHECK_AND_CONTINUE_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
+        if (audioDeviceDescriptor->deviceRole_ == INPUT_DEVICE) {
+            audioFlag = AUDIO_INPUT_FLAG_FAST;
+        } else if (audioDeviceDescriptor->deviceRole_ == OUTPUT_DEVICE) {
+            audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+        } else {
+            continue;
+        }
+
+        deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(audioDeviceDescriptor->deviceType_,
+            audioDeviceDescriptor->deviceRole_, audioDeviceDescriptor->networkId_, audioFlag);
+        if (deviceInfo == nullptr) {
+            continue;
+        }
+        isSupported = GetFastStreamSupport(streamInfo, deviceInfo);
+        if (isSupported) {
+            break;
+        }
+    }
+
+    return isSupported;
+}
+
+bool AudioPolicyConfigManager::GetFastStreamSupport(AudioStreamInfo &streamInfo,
+    std::shared_ptr<AdapterDeviceInfo> &deviceInfo)
+{
+    if (deviceInfo->role_ != INPUT_DEVICE && deviceInfo->role_ != OUTPUT_DEVICE) {
+        return false;
+    }
+
+    for (auto &pipeIt : deviceInfo->supportPipeMap_) {
+        if ((pipeIt.second->supportFlags_ != AUDIO_INPUT_FLAG_FAST) &&
+            (pipeIt.second->supportFlags_ != AUDIO_OUTPUT_FLAG_FAST)) {
+            continue;
+        }
+
+        // consider the logic of path support under format conversion
+        AudioSampleFormat tempFormat = streamInfo.format;
+        AudioChannelLayout tempLayout = streamInfo.channelLayout;
+
+        tempFormat = ((tempFormat == SAMPLE_S32LE) || (tempFormat == SAMPLE_F32LE)) ? SAMPLE_S16LE : tempFormat;
+        tempLayout = (tempLayout == CH_LAYOUT_MONO) ? CH_LAYOUT_STEREO : tempLayout;
+
+        for (auto it = pipeIt.second->streamPropInfos_.begin(); it != pipeIt.second->streamPropInfos_.end(); ++it) {
+            if ((*it)->format_ == tempFormat && (*it)->sampleRate_ == streamInfo.samplingRate &&
+                (*it)->channelLayout_ == tempLayout) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 uint32_t AudioPolicyConfigManager::GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> &desc)
 {
     // device -> adapter -> flag -> stream
     uint32_t flag = AUDIO_FLAG_NONE; // input or output? default?
     auto newDeviceDesc = desc->newDeviceDescs_.front();
-    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
-        newDeviceDesc->deviceType_, newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_);
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
+        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);
     CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, flag, "Find device failed; use none flag");
 
     for (auto &pipeIt : deviceInfo->supportPipeMap_) {
@@ -409,8 +471,8 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     std::shared_ptr<PipeStreamPropInfo> &info)
 {
     auto newDeviceDesc = desc->newDeviceDescs_.front();
-    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
-        newDeviceDesc->deviceType_, newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_);
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
+        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);
     CHECK_AND_RETURN_LOG(deviceInfo != nullptr, "Find device failed, none streamProp");
 
     auto pipeIt = deviceInfo->supportPipeMap_.find(desc->routeFlag_);

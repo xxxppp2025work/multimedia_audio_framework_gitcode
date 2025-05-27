@@ -328,7 +328,7 @@ bool VolumeDataMaintainer::SaveMuteStatusInternal(DeviceType deviceType, AudioSt
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("Failed to write mutestatus: %{public}d to setting db! Err: %{public}d", muteStatus, ret);
     } else {
-        AUDIO_DEBUG_LOG("muteKey:%{public}s, muteStatus:%{public}d", muteKey.c_str(), muteStatus);
+        AUDIO_INFO_LOG("muteKey:%{public}s, muteStatus:%{public}d", muteKey.c_str(), muteStatus);
     }
 
     return true;
@@ -746,6 +746,10 @@ std::string VolumeDataMaintainer::GetVolumeKeyForDataShare(DeviceType deviceType
     if (VolumeUtils::IsPCVolumeEnable() && streamType == AudioStreamType::STREAM_MUSIC &&
         deviceType == DeviceType::DEVICE_TYPE_BLUETOOTH_SCO) {
         type = AUDIO_STREAMTYPE_VOLUME_MAP[STREAM_VOICE_CALL];
+    }
+    if (streamType == AudioStreamType::STREAM_VOICE_ASSISTANT &&
+        deviceType == DeviceType::DEVICE_TYPE_BLUETOOTH_SCO) {
+        deviceTypeName += "_sco";
     }
     return type + deviceTypeName;
 }

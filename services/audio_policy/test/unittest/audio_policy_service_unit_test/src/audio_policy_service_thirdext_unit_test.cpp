@@ -1147,36 +1147,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ActivateConcurrencyFromServer_001, Te
     EXPECT_EQ(SUCCESS, result);
 }
 
-/**
-* @tc.name  : Test IsAllowedPlayback.
-* @tc.number: IsAllowedPlayback_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, IsAllowedPlayback_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsAllowedPlayback_001 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-    const int32_t uid = 0;
-    const int32_t pid = 0;
-    EXPECT_FALSE(server->audioPolicyService_.IsAllowedPlayback(uid, pid));
-}
-
-/**
-* @tc.name  : Test IsAllowedPlayback.
-* @tc.number: IsAllowedPlayback_002
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, IsAllowedPlayback_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsAllowedPlayback_002 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-    const int32_t uid = 1003;
-    const int32_t pid = 0;
-    EXPECT_TRUE(server->audioPolicyService_.IsAllowedPlayback(uid, pid));
-}
-
 #ifdef HAS_FEATURE_INNERCAPTURER
 /**
 * @tc.name  : Test LoadModernInnerCapSink.
@@ -1694,6 +1664,61 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_003, TestSiz
         EXPECT_NE(deviceSetIt, configData.deviceInfoMap.end());
         EXPECT_EQ(deviceSetIt->second.size(), pair.second);
     }
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_004
+* @tc.desc  : Test AudioPolicyConfigManager.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_004, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    size_t adapterMapSize = configData.adapterInfoMap.size();
+    std::unordered_map<AudioAdapterType, std::pair<size_t, size_t>> adapterSizeMap {};
+
+    for (auto &item : configData.adapterInfoMap) {
+        std::pair<size_t, size_t> sizePair = std::make_pair(item.second->deviceInfos.size(),
+            item.second->pipeInfos.size());
+        adapterSizeMap.insert({item.first, sizePair});
+    }
+
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(audioConfigManager_.Init(true), true);
+    configData.Reorganize();
+
+    AudioStreamInfo streamInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
+
+    bool ret = audioConfigManager_.IsFastStreamSupported(streamInfo, desc);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_005
+* @tc.desc  : Test AudioPolicyConfigManager.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_005, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    size_t adapterMapSize = configData.adapterInfoMap.size();
+    std::unordered_map<AudioAdapterType, std::pair<size_t, size_t>> adapterSizeMap {};
+
+    for (auto &item : configData.adapterInfoMap) {
+        std::pair<size_t, size_t> sizePair = std::make_pair(item.second->deviceInfos.size(),
+            item.second->pipeInfos.size());
+        adapterSizeMap.insert({item.first, sizePair});
+    }
+
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(audioConfigManager_.Init(true), true);
+    configData.Reorganize();
+
+    AudioStreamInfo streamInfo;
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo;
+    bool ret = audioConfigManager_.GetFastStreamSupport(streamInfo, deviceInfo);
+    EXPECT_EQ(ret, false);
 }
 
 /**

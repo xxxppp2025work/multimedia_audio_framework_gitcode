@@ -263,6 +263,23 @@ HWTEST(FastSystemStreamUnitTest, GetAudioPipeType_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test GetFastStatus API
+ * @tc.type  : FUNC
+ * @tc.number: GetFastStatus_001
+ * @tc.desc  : Test GetFastStatus and SetAudioStreamType interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetFastStatus_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    bool ret = fastAudioStream->GetFastStatus();
+    EXPECT_EQ(ret, true);
+}
+
+/**
  * @tc.name  : Test SetMute API
  * @tc.type  : FUNC
  * @tc.number: SetMute_001
@@ -510,9 +527,8 @@ HWTEST(FastSystemStreamUnitTest, SetAudioStreamInfo_002, TestSize.Level1)
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
     int32_t res = fastAudioStream->SetAudioStreamInfo(info, proxyObj);
     EXPECT_NE(res, SUCCESS);
-    bool result = false;
-    fastAudioStream->RestoreAudioStream(true);
-    EXPECT_EQ(result, false);
+    auto ret = fastAudioStream->RestoreAudioStream(true);
+    EXPECT_FALSE(ret);
 }
 
 /**
@@ -1541,9 +1557,6 @@ HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_002, TestSize.Level1)
 
     std::shared_ptr<AudioClientTracker> proxyObj = std::make_shared<AudioClientTrackerTest>();
     fastAudioStream->proxyObj_ = proxyObj;
-    if (fastAudioStream->proxyObj_ == nullptr) {
-        std::cout<<"cxk_001"<<std::endl;
-    }
     fastAudioStream->state_ = RUNNING;
     fastAudioStream->RestoreAudioStream();
 }

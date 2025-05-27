@@ -20,7 +20,7 @@
 #include <iostream>
 #include <cstring>
 #include <mutex>
-#include "v4_0/iaudio_manager.h"
+#include "v5_0/iaudio_manager.h"
 #include "util/audio_running_lock.h"
 #include "util/callback_wrapper.h"
 
@@ -78,7 +78,7 @@ public:
 
 private:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
-        uint32_t &byteSizePerFrame) override;
+        uint32_t &byteSizePerFrame, uint32_t &syncInfoSize) override;
     int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
 
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
@@ -134,6 +134,7 @@ private:
     uint32_t frameSizeInByte_ = 1;
     uint32_t bufferTotalFrameSize_ = 0;
     uint32_t eachReadFrameSize_ = 0;
+    uint32_t syncInfoSize_ = 0;
     size_t bufferSize_ = 0;
 #ifdef DEBUG_DIRECT_USE_HDI
     int32_t privBufferFd_ = INVALID_FD;

@@ -46,6 +46,7 @@ constexpr int32_t ERROR_62980101 = -62980101;
 static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
+static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 
 class AudioServiceUnitTest : public testing::Test {
@@ -855,7 +856,7 @@ HWTEST(AudioServiceUnitTest, SetNonInterruptMute_005, TestSize.Level1)
     audioService->SetNonInterruptMute(1, true);
     EXPECT_EQ(1, audioService->mutedSessions_.count(1));
     audioService->SetNonInterruptMute(1, false);
-    EXPECT_EQ(1, audioService->mutedSessions_.count(1));
+    EXPECT_EQ(0, audioService->mutedSessions_.count(1));
 }
 
 /**
@@ -1118,7 +1119,7 @@ HWTEST(AudioServiceUnitTest, CheckRenderSessionMuteState_005, TestSize.Level1)
     std::shared_ptr<RendererInServer> renderer = rendererInServer;
     audioService->muteSwitchStreams_.insert(sessionId);
     audioService->CheckRenderSessionMuteState(sessionId, renderer);
-    EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 1);
+    EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 0);
     audioService->RemoveIdFromMuteControlSet(sessionId);
 }
 
@@ -1143,7 +1144,7 @@ HWTEST(AudioServiceUnitTest, CheckCapturerSessionMuteState_001, TestSize.Level1)
     std::shared_ptr<CapturerInServer> capturer = capturerInServer;
     audioService->muteSwitchStreams_.insert(sessionId);
     audioService->CheckCaptureSessionMuteState(sessionId, capturer);
-    EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 1);
+    EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 0);
     audioService->RemoveIdFromMuteControlSet(sessionId);
 }
 
@@ -1164,7 +1165,7 @@ HWTEST(AudioServiceUnitTest, CheckFastSessionMuteState_001, TestSize.Level1)
 
     audioService->muteSwitchStreams_.insert(sessionId);
     audioService->CheckFastSessionMuteState(sessionId, audioprocess);
-    EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 1);
+    EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 0);
     audioService->RemoveIdFromMuteControlSet(sessionId);
 }
 
@@ -1417,8 +1418,10 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_001, TestSize.Level1)
     EXPECT_NE(nullptr, endpoint);
 
     bool isSwitchStream = false;
-    int ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream);
+    int ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false);
     EXPECT_EQ(ret, VOIP_ENDPOINT_RELEASE_DELAY_TIME);
+    ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream, true);
+    EXPECT_EQ(ret, VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME);
 }
 
 /**
@@ -1438,7 +1441,9 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_002, TestSize.Level1)
     EXPECT_NE(nullptr, endpoint);
 
     bool isSwitchStream = false;
-    int ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream);
+    int ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false);
+    EXPECT_EQ(ret, NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
+    ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream, true);
     EXPECT_EQ(ret, NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
 }
 
@@ -1461,10 +1466,14 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_003, TestSize.Level1)
     endpoint->deviceInfo_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
 
     bool isSwitchStream = false;
-    int ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream);
+    int ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false);
+    EXPECT_EQ(ret, A2DP_ENDPOINT_RELEASE_DELAY_TIME);
+    ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream, true);
     EXPECT_EQ(ret, A2DP_ENDPOINT_RELEASE_DELAY_TIME);
     isSwitchStream = true;
-    ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream);
+    ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false);
+    EXPECT_EQ(ret, A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME);
+    ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream, true);
     EXPECT_EQ(ret, A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME);
 }
 
@@ -1762,6 +1771,62 @@ HWTEST(AudioServiceUnitTest, SetDefaultAdapterEnable_001, TestSize.Level1)
     audioService->SetDefaultAdapterEnable(isEnable);
     bool result = audioService->GetDefaultAdapterEnable();
     EXPECT_EQ(result, isEnable);
+}
+
+/*
+ * @tc.name  : Test SetSessionMuteState API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServiceSetSessionMuteState_001
+ * @tc.desc  : Test RegisterMuteStateChangeCallback whether callback can invoke.
+ */
+HWTEST(AudioServiceUnitTest, AudioServiceSetSessionMuteState_001, TestSize.Level1)
+{
+    bool muteFlag = true;
+    uint32_t sessionId = 0;
+    uint32_t sessionId2 = 1;
+    uint32_t sessionId3 = 3;
+    bool testFlag = false;
+
+    auto service = AudioService::GetInstance();
+    ASSERT_NE(service, nullptr);
+    service->SetSessionMuteState(sessionId, true, muteFlag);
+    service->RegisterMuteStateChangeCallback(sessionId2, [&](bool flag) {
+        testFlag = flag;
+    });
+    EXPECT_EQ(testFlag, false);
+    service->RegisterMuteStateChangeCallback(sessionId, [&](bool flag) {
+        testFlag = flag;
+    });
+    EXPECT_EQ(testFlag, false);
+
+    testFlag = false;
+    service->SetLatestMuteState(sessionId3, muteFlag);
+    EXPECT_FALSE(testFlag);
+
+    service->RegisterMuteStateChangeCallback(sessionId3, [&](bool flag) {
+        testFlag = flag;
+    });
+    service->SetSessionMuteState(sessionId3, true, muteFlag);
+    service->SetLatestMuteState(sessionId3, muteFlag);
+    EXPECT_EQ(testFlag, muteFlag);
+}
+
+/**
+ * @tc.name  : Test SetSessionMuteState API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServiceSetSessionMuteState_002
+ * @tc.desc  : Test SetSessionMuteState interface .
+ */
+HWTEST(AudioServiceUnitTest, AudioServiceSetSessionMuteState_002, TestSize.Level1)
+{
+    bool muteFlag = true;
+    uint32_t sessionId = 0;
+    auto service = AudioService::GetInstance();
+    ASSERT_NE(service, nullptr);
+    service->SetSessionMuteState(sessionId, true, muteFlag);
+    EXPECT_TRUE(service->muteStateMap_.count(sessionId) != 0);
+    service->SetSessionMuteState(sessionId, false, muteFlag);
+    EXPECT_TRUE(service->muteStateMap_.count(sessionId) == 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -227,7 +227,6 @@ int32_t AudioRenderSink::Reset(void)
 
 int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
-    WaitForDataLinkConnected();
     int64_t stamp = ClockTime::GetCurNano();
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     if (!started_) {
@@ -837,14 +836,17 @@ void AudioRenderSink::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, Audi
 
 void AudioRenderSink::SetAudioRouteInfoForEnhanceChain(void)
 {
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
-    if (halName_ == HDI_ID_INFO_USB) {
-        audioEnhanceChainManager->SetOutputDevice(renderId_, DEVICE_TYPE_USB_ARM_HEADSET);
-    } else if (halName_ == HDI_ID_INFO_DP) {
-        audioEnhanceChainManager->SetOutputDevice(renderId_, DEVICE_TYPE_DP);
-    } else {
-        audioEnhanceChainManager->SetOutputDevice(renderId_, currentActiveDevice_);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag != 1) {
+        AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+        CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
+        if (halName_ == HDI_ID_INFO_USB) {
+            audioEnhanceChainManager->SetOutputDevice(renderId_, DEVICE_TYPE_USB_ARM_HEADSET);
+        } else if (halName_ == HDI_ID_INFO_DP) {
+            audioEnhanceChainManager->SetOutputDevice(renderId_, DEVICE_TYPE_DP);
+        } else {
+            audioEnhanceChainManager->SetOutputDevice(renderId_, currentActiveDevice_);
+        }
     }
 }
 
@@ -878,7 +880,7 @@ int32_t AudioRenderSink::DoSetOutputRoute(std::vector<DeviceType> &outputDevices
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
     int32_t ret = deviceManager->SetOutputRoute(adapterNameCase_, outputDevices,
-        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY));
+        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY), currentAudioScene_);
     return ret;
 }
 

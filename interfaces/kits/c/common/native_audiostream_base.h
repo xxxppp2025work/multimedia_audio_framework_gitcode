@@ -498,7 +498,19 @@ typedef enum {
      *
      * @since 10
      */
-    AUDIOSTREAM_INTERRUPT_HINT_UNDUCK = 5
+    AUDIOSTREAM_INTERRUPT_HINT_UNDUCK = 5,
+    /**
+     * Mute the stream.
+     *
+     * @since 20
+     */
+    AUDIOSTREAM_INTERRUPT_HINT_MUTE = 6,
+    /**
+     * Unmute the stream.
+     *
+     * @since 20
+     */
+    AUDIOSTREAM_INTERRUPT_HINT_UNMUTE = 7
 } OH_AudioInterrupt_Hint;
 
 /**
@@ -608,6 +620,22 @@ typedef enum {
      */
     EFFECT_DEFAULT = 1,
 } OH_AudioStream_AudioEffectMode;
+
+/**
+ * @brief Defines the fast status.
+ *
+ * @since 20
+ */
+typedef enum {
+    /**
+     * normal status
+     */
+    AUDIOSTREAM_FASTSTATUS_NORMAL = 0,
+    /**
+     * fast status
+     */
+    AUDIOSTREAM_FASTSTATUS_FAST = 1
+} OH_AudioStream_FastStatus;
 
 /**
  * @brief Declaring the audio stream builder.

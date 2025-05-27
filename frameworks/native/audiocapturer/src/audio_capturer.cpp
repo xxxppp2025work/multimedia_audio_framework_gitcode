@@ -132,7 +132,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
 std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturerOptions &capturerOptions,
     const AppInfo &appInfo)
 {
-    Trace trace("AudioCapturer::Create");
+    Trace trace("KeyAction AudioCapturer::Create");
     auto sourceType = capturerOptions.capturerInfo.sourceType;
     if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_MAX || sourceType == AUDIO_SOURCE_TYPE_INVALID_5) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
@@ -423,6 +423,13 @@ int32_t AudioCapturerPrivate::SetInputDevice(DeviceType deviceType) const
     return SUCCESS;
 }
 
+bool AudioCapturerPrivate::GetFastStatus()
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, false, "currentStream is nullptr");
+    return currentStream->GetFastStatus();
+}
+
 int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStreamParams)
 {
     Trace trace("AudioCapturer::InitAudioStream");
@@ -571,6 +578,13 @@ int32_t AudioCapturerPrivate::RegisterAudioPolicyServerDiedCb(const int32_t clie
     return AudioPolicyManager::GetInstance().RegisterAudioPolicyServerDiedCb(clientPid, callback);
 }
 
+void AudioCapturerPrivate::SetFastStatusChangeCallback(
+    const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback)
+{
+    std::lock_guard lock(fastStatusChangeCallbackMutex_);
+    fastStatusChangeCallback_ = callback;
+}
+
 int32_t AudioCapturerPrivate::GetParams(AudioCapturerParams &params) const
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
@@ -685,12 +699,15 @@ int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFu
         interruptCbImpl->StartSwitch();
     }
 
+    bool bFlag = GetFastStatus();
     // Switch to target audio stream. Deactivate audio interrupt if switch failed.
     AUDIO_INFO_LOG("Before %{public}s, restore audio capturer %{public}u", callingFunc.c_str(), sessionID_);
     if (!SwitchToTargetStream(targetClass, restoreInfo)) {
         AudioInterrupt audioInterrupt = audioInterrupt_;
         int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "DeactivateAudioInterrupt Failed");
+    } else {
+        FastStatusChangeCallback(bFlag);
     }
 
     // Unblock interrupt callback.
@@ -700,14 +717,32 @@ int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFu
     return SUCCESS;
 }
 
+int32_t AudioCapturerPrivate::AsyncCheckAndRestoreAudioCapturer(std::string callingFunc)
+{
+    if (switchStreamInNewThreadTaskCount_.fetch_add(1) > 0) {
+        return SUCCESS;
+    }
+    auto weakCapturer = weak_from_this();
+    taskLoop_.PostTask([weakCapturer, callingFunc] () {
+        auto sharedCapturer = weakCapturer.lock();
+        CHECK_AND_RETURN_LOG(sharedCapturer, "capturer is null");
+        uint32_t taskCount;
+        do {
+            taskCount = sharedCapturer->switchStreamInNewThreadTaskCount_.load();
+            sharedCapturer->CheckAndRestoreAudioCapturer(callingFunc + "withNewThread");
+        } while (sharedCapturer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
+    });
+    return SUCCESS;
+}
+
 bool AudioCapturerPrivate::Start()
 {
-    CheckAndRestoreAudioCapturer("Start");
+    AsyncCheckAndRestoreAudioCapturer("Start");
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
     }
-    Trace trace("AudioCapturer::Start");
+    Trace trace("KeyAction AudioCapturer::Start " + std::to_string(sessionID_));
     AUDIO_INFO_LOG("StreamClientState for Capturer::Start. id %{public}u, sourceType: %{public}d",
         sessionID_, audioInterrupt_.audioFocusType.sourceType);
 
@@ -744,7 +779,7 @@ int32_t AudioCapturerPrivate::Read(uint8_t &buffer, size_t userSize, bool isBloc
 {
     Trace trace("AudioCapturer::Read");
     CheckSignalData(&buffer, userSize);
-    CheckAndRestoreAudioCapturer("Read");
+    AsyncCheckAndRestoreAudioCapturer("Read");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int size = currentStream->Read(buffer, userSize, isBlockingRead);
@@ -803,7 +838,7 @@ bool AudioCapturerPrivate::Pause() const
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
     }
-    Trace trace("AudioCapturer::Pause");
+    Trace trace("KeyAction AudioCapturer::Pause " + std::to_string(sessionID_));
     AUDIO_INFO_LOG("StreamClientState for Capturer::Pause. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
@@ -824,7 +859,7 @@ bool AudioCapturerPrivate::Stop() const
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
     }
-    Trace trace("AudioCapturer::Stop");
+    Trace trace("KeyAction AudioCapturer::Stop " + std::to_string(sessionID_));
     AUDIO_INFO_LOG("StreamClientState for Capturer::Stop. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
@@ -841,7 +876,7 @@ bool AudioCapturerPrivate::Stop() const
 
 bool AudioCapturerPrivate::Flush() const
 {
-    Trace trace("AudioCapturer::Flush");
+    Trace trace("KeyAction AudioCapturer::Flush " + std::to_string(sessionID_));
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     AUDIO_INFO_LOG("StreamClientState for Capturer::Flush. id %{public}u", sessionID_);
@@ -850,6 +885,7 @@ bool AudioCapturerPrivate::Flush() const
 
 bool AudioCapturerPrivate::Release()
 {
+    Trace trace("KeyAction AudioCapturer::Release" + std::to_string(sessionID_));
     AUDIO_INFO_LOG("StreamClientState for Capturer::Release. id %{public}u", sessionID_);
     std::unique_lock<std::shared_mutex> releaseLock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
@@ -899,6 +935,13 @@ int32_t AudioCapturerPrivate::SetBufferDuration(uint64_t bufferDuration) const
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->SetBufferSizeInMsec(bufferDuration);
+}
+
+bool AudioCapturerPrivate::GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, false, "audioStream_ is nullptr");
+    return currentStream->GetTimeStampInfo(timestamp, base);
 }
 
 // diffrence from GetAudioPosition only when set speed
@@ -1102,6 +1145,16 @@ int32_t AudioCapturerPrivate::SetAudioSourceConcurrency(const std::vector<Source
     return SUCCESS;
 }
 
+int32_t AudioCapturerPrivate::SetInterruptStrategy(InterruptStrategy strategy)
+{
+    CapturerState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state == CAPTURER_PREPARED, ERR_ILLEGAL_STATE,
+        "incorrect state:%{public}d", state);
+    audioInterrupt_.strategy = strategy;
+    AUDIO_INFO_LOG("set InterruptStrategy to %{public}d", static_cast<int32_t>(strategy));
+    return SUCCESS;
+}
+
 int32_t AudioCapturerPrivate::SetCaptureMode(AudioCaptureMode captureMode)
 {
     AUDIO_INFO_LOG("Capture mode: %{public}d", captureMode);
@@ -1129,8 +1182,8 @@ int32_t AudioCapturerPrivate::SetCapturerReadCallback(const std::shared_ptr<Audi
 
 int32_t AudioCapturerPrivate::GetBufferDesc(BufferDesc &bufDesc)
 {
-    CheckAndRestoreAudioCapturer("GetBufferDesc");
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    AsyncCheckAndRestoreAudioCapturer("GetBufferDesc");
+    std::shared_ptr<IAudioStream> currentStream = audioStream_;
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int32_t ret = currentStream->GetBufferDesc(bufDesc);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
@@ -1139,8 +1192,8 @@ int32_t AudioCapturerPrivate::GetBufferDesc(BufferDesc &bufDesc)
 
 int32_t AudioCapturerPrivate::Enqueue(const BufferDesc &bufDesc)
 {
-    CheckAndRestoreAudioCapturer("Enqueue");
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    AsyncCheckAndRestoreAudioCapturer("Enqueue");
+    std::shared_ptr<IAudioStream> currentStream = audioStream_;
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     CheckSignalData(bufDesc.buffer, bufDesc.bufLength);
     return currentStream->Enqueue(bufDesc);
@@ -1519,7 +1572,10 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
 {
     bool switchResult = false;
 
-    Trace trace("SwitchToTargetStream");
+    Trace trace("KeyAction AudioCapturer::SwitchToTargetStream " + std::to_string(sessionID_)
+        + ", target class " + std::to_string(targetClass) + ", reason " + std::to_string(restoreInfo.restoreReason)
+        + ", device change reason " + std::to_string(restoreInfo.deviceChangeReason)
+        + ", target flag " + std::to_string(restoreInfo.targetStreamFlag));
     AUDIO_INFO_LOG("Restore AudioCapturer %{public}u, target class %{public}d, reason: %{public}d, "
         "device change reason %{public}d, target flag %{public}d", sessionID_, targetClass,
         restoreInfo.restoreReason, restoreInfo.deviceChangeReason, restoreInfo.targetStreamFlag);
@@ -1600,6 +1656,20 @@ int32_t AudioCapturerPrivate::InitAudioConcurrencyCallback()
     return AudioPolicyManager::GetInstance().SetAudioConcurrencyCallback(sessionID_, audioConcurrencyCallback_);
 }
 
+void AudioCapturerPrivate::FastStatusChangeCallback(bool flag)
+{
+    bool bRet = GetFastStatus();
+
+    if (bRet != flag) {
+        AudioStreamFastStatus fastStatus = (bRet)
+            ? AudioStreamFastStatus::FASTSTATUS_FAST : AudioStreamFastStatus::FASTSTATUS_NORMAL;
+
+        if (fastStatusChangeCallback_ != nullptr) {
+            fastStatusChangeCallback_->OnFastStatusChange(fastStatus);
+        }
+    }
+}
+
 void AudioCapturerPrivate::ConcedeStream()
 {
     AUDIO_INFO_LOG("session %{public}u concede from pipeType %{public}d", sessionID_, capturerInfo_.pipeType);
@@ -1675,6 +1745,7 @@ int32_t AudioCapturerStateChangeCallbackImpl::GetCapturerInfoChangeCallbackArray
 void AudioCapturerStateChangeCallbackImpl::SaveDeviceChangeCallback(
     const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback)
 {
+    std::lock_guard<std::mutex> lock(deviceChangeCallbackMutex_);
     auto iter = find(deviceChangeCallbacklist_.begin(), deviceChangeCallbacklist_.end(), callback);
     if (iter == deviceChangeCallbacklist_.end()) {
         deviceChangeCallbacklist_.emplace_back(callback);
@@ -1684,6 +1755,7 @@ void AudioCapturerStateChangeCallbackImpl::SaveDeviceChangeCallback(
 void AudioCapturerStateChangeCallbackImpl::RemoveDeviceChangeCallback(
     const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback)
 {
+    std::lock_guard<std::mutex> lock(deviceChangeCallbackMutex_);
     if (callback == nullptr) {
         deviceChangeCallbacklist_.clear();
         return;
@@ -1697,6 +1769,7 @@ void AudioCapturerStateChangeCallbackImpl::RemoveDeviceChangeCallback(
 
 int32_t AudioCapturerStateChangeCallbackImpl::DeviceChangeCallbackArraySize()
 {
+    std::lock_guard<std::mutex> lock(deviceChangeCallbackMutex_);
     return deviceChangeCallbacklist_.size();
 }
 
@@ -1747,6 +1820,7 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
 void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerDeviceChange(
     const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
+    std::vector<std::shared_ptr<AudioCapturerDeviceChangeCallback>> deviceChangeCallbacklist;
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     {
         std::unique_lock lock(capturerMutex_);
@@ -1756,7 +1830,11 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerDeviceChange(
         CHECK_AND_RETURN_LOG(sharedCapturer->IsDeviceChanged(deviceInfo), "Device not change, no need callback.");
     }
 
-    for (auto it = deviceChangeCallbacklist_.begin(); it != deviceChangeCallbacklist_.end(); ++it) {
+    {
+        std::lock_guard<std::mutex> lock(deviceChangeCallbackMutex_);
+        deviceChangeCallbacklist = deviceChangeCallbacklist_;
+    }
+    for (auto it = deviceChangeCallbacklist.begin(); it != deviceChangeCallbacklist.end(); ++it) {
         if (*it != nullptr) {
             (*it)->OnStateChange(deviceInfo);
         }
@@ -1940,6 +2018,11 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::GetStreamDescBySwit
         streamDesc->capturerInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
     }
     return streamDesc;
+}
+
+void AudioCapturerPrivate::SetInterruptEventCallbackType(InterruptEventCallbackType callbackType)
+{
+    audioInterrupt_.callbackType = callbackType;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

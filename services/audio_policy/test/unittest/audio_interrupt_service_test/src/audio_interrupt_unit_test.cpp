@@ -473,18 +473,19 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_022, TestSize.Level1)
     auto interruptServiceTest = GetTnterruptServiceTest();
 
     interruptServiceTest->Init(GetPolicyServerTest());
+    AudioInterrupt interrupt;
     EXPECT_NO_THROW(
-        interruptServiceTest->ResetNonInterruptControl(sessionId);
+        interruptServiceTest->ResetNonInterruptControl(interrupt);
     );
 
-    sessionId = CLIENT_TYPE_GAME;
+    interrupt.callbackType = INTERRUPT_EVENT_CALLBACK_DEFAULT;
     EXPECT_NO_THROW(
-        interruptServiceTest->ResetNonInterruptControl(sessionId);
+        interruptServiceTest->ResetNonInterruptControl(interrupt);
     );
 
-    sessionId = 2;
+    interrupt.streamId = 2;
     EXPECT_NO_THROW(
-        interruptServiceTest->ResetNonInterruptControl(sessionId);
+        interruptServiceTest->ResetNonInterruptControl(interrupt);
     );
 }
 
@@ -1783,6 +1784,23 @@ HWTEST(AudioInterruptUnitTest, SendFocusChangeEvent_002, TestSize.Level1)
     auto it = interruptServiceTest->zonesMap_.find(1);
     EXPECT_EQ(nullptr, it->second);
     EXPECT_NE(interruptServiceTest->zonesMap_.find(1), interruptServiceTest->zonesMap_.end());
+}
+
+/**
+* @tc.name  : Test SendActiveVolumeTypeChangeEvent
+* @tc.number: SendActiveVolumeTypeChangeEvent_001
+* @tc.desc  : Test SendActiveVolumeTypeChangeEvent
+*/
+HWTEST(AudioInterruptUnitTest, SendActiveVolumeTypeChangeEvent_001, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->SetCallbackHandler(GetServerHandlerTest());
+    EXPECT_NE(interruptServiceTest->handler_, nullptr);
+
+    interruptServiceTest->zonesMap_.clear();
+    int32_t zoneId = 0;
+    interruptServiceTest->SendActiveVolumeTypeChangeEvent(zoneId);
+    EXPECT_EQ(STREAM_MUSIC, interruptServiceTest->activeStreamType_);
 }
 
 /**
@@ -3420,10 +3438,10 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_118, TestSize.Level1)
  * @tc.number: AudioInterruptService_119
  * @tc.desc  : Test AudioInterruptService
  */
-HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_119, TestSize.Level1)
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_119, TestSize.Level1)
 {
     auto interruptServiceTest = GetTnterruptServiceTest();
-    ASSERT_NE(audioInterruptService, nullptr);
+    ASSERT_NE(interruptServiceTest, nullptr);
 
     interruptServiceTest->zonesMap_.clear();
     interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();

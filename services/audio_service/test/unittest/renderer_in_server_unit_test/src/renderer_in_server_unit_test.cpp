@@ -668,7 +668,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_002, Te
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
 
-    bufferDesc.buffer[0] = 0;
+    uint8_t bufferTest = 0;
+    bufferDesc.buffer = &bufferTest;
     rendererInServer->startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     rendererInServer->WriteMuteDataSysEvent(bufferDesc);
     EXPECT_EQ(false, rendererInServer->isInSilentState_);
@@ -2707,11 +2708,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetSilentModeAndMixWithOthers
 HWTEST_F(RendererInServerUnitTest, RendererInServerOnDataLinkConnectionUpdate_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, rendererInServer);
-
     IOperation operation = OPERATION_DATA_LINK_CONNECTING;
     rendererInServer->OnDataLinkConnectionUpdate(operation);
-
-    EXPECT_EQ(OPERATION_DATA_LINK_CONNECTING, operation);
 }
 
 /**
@@ -2723,11 +2721,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnDataLinkConnectionUpdate_00
 HWTEST_F(RendererInServerUnitTest, RendererInServerOnDataLinkConnectionUpdate_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, rendererInServer);
-
     IOperation operation = OPERATION_DATA_LINK_CONNECTED;
     rendererInServer->OnDataLinkConnectionUpdate(operation);
-
-    EXPECT_EQ(OPERATION_DATA_LINK_CONNECTED, operation);
 }
 
 /**
@@ -2739,11 +2734,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnDataLinkConnectionUpdate_00
 HWTEST_F(RendererInServerUnitTest, RendererInServerOnDataLinkConnectionUpdate_003, TestSize.Level1)
 {
     EXPECT_NE(nullptr, rendererInServer);
-
     IOperation operation = OPERATION_UNSET_OFFLOAD_ENABLE;
     rendererInServer->OnDataLinkConnectionUpdate(operation);
-
-    EXPECT_EQ(OPERATION_UNSET_OFFLOAD_ENABLE, operation);
 }
 
 /**

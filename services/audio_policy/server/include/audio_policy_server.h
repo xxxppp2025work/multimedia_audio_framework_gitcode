@@ -141,6 +141,9 @@ public:
 
     bool IsStreamActive(AudioStreamType streamType) override;
 
+    bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
+
     bool IsVolumeUnadjustable() override;
 
     int32_t AdjustVolumeByStep(VolumeAdjustType adjustType) override;
@@ -521,6 +524,12 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
 
+    int32_t NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession) override;
+
+    int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze) override;
+
+    int32_t ResetAllProxy() override;
+
     int32_t SetVirtualCall(const bool isVirtual) override;
 
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
@@ -528,8 +537,20 @@ public:
 
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) override;
 
+    int32_t SetBackgroundMuteCallback(const sptr<IRemoteObject> &object) override;
+
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
         const StreamUsage &streamUsage) override;
+
+    int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage) override;
+
+    int32_t GetMinVolumeLevelByUsage(StreamUsage streamUsage) override;
+
+    int32_t GetVolumeLevelByUsage(StreamUsage streamUsage) override;
+
+    bool GetStreamMuteByUsage(StreamUsage streamUsage) override;
+
+    int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages) override;
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 
@@ -599,6 +620,10 @@ public:
     void CheckConnectedDevice();
     void SetDeviceConnectedFlagFalseAfterDuration();
 
+    int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const DeviceInfoUpdateCommand command) override;
+    int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void RegisterParamCallback();
@@ -615,7 +640,6 @@ private:
     static constexpr int32_t VOLUME_KEY_DURATION = 0;
     static constexpr int32_t VOLUME_MUTE_KEY_DURATION = 0;
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
-    static constexpr int32_t MCU_UID = 7500;
     static constexpr int32_t EDM_SERVICE_UID = 3057;
     static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
@@ -712,6 +736,7 @@ private:
     void OnDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor, const CastType type);
     void SubscribeSafeVolumeEvent();
     void SubscribeCommonEventExecute();
+    void SubscribeBackgroundTask();
     void SendMonitrtEvent(const int32_t keyType, int32_t resultOfVolumeKey);
     void RegisterDefaultVolumeTypeListener();
 

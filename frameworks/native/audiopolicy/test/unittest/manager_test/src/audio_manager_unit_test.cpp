@@ -623,7 +623,7 @@ HWTEST(AudioManagerUnitTest, GetStandbyStatus_003, TestSize.Level1)
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_NOTIFICATION_RINGTONE;
     rendererOptions.rendererInfo.rendererFlags = 0;
     unique_ptr<AudioRenderer> renderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, renderer);
+    EXPECT_NE(renderer, nullptr);
 
     renderer->Start();
     std::unique_ptr<uint8_t[]> tempBuffer = std::make_unique<uint8_t[]>(WRTTE_BUFFER_SIZE);
@@ -1678,12 +1678,7 @@ HWTEST(AudioManagerUnitTest, GetLowPowerVolume_001, TestSize.Level1)
     ASSERT_NE(0, streamId);
 
     float vol = AudioSystemManager::GetInstance()->GetLowPowerVolume(streamId);
-    if (vol < VOLUME_MIN || vol > VOLUME_MAX) {
-        ret = ERROR;
-    } else {
-        ret = SUCCESS;
-    }
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_FALSE((vol < VOLUME_MIN || vol > VOLUME_MAX));
     audioRenderer->Release();
 }
 
@@ -1720,12 +1715,7 @@ HWTEST(AudioManagerUnitTest, GetLowPowerVolume_002, TestSize.Level1)
     ASSERT_NE(0, streamId);
 
     float vol = AudioSystemManager::GetInstance()->GetLowPowerVolume(streamId);
-    if (vol < VOLUME_MIN || vol > VOLUME_MAX) {
-        ret = ERROR;
-    } else {
-        ret = SUCCESS;
-    }
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_FALSE((vol < VOLUME_MIN || vol > VOLUME_MAX));
     audioCapturer->Release();
 }
 
@@ -1764,12 +1754,7 @@ HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_001, TestSize.Level1)
     ASSERT_NE(0, streamId);
 
     float vol = AudioSystemManager::GetInstance()->GetSingleStreamVolume(streamId);
-    if (vol < VOLUME_MIN || vol > VOLUME_MAX) {
-        ret = ERROR;
-    } else {
-        ret = SUCCESS;
-    }
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_FALSE((vol < VOLUME_MIN || vol > VOLUME_MAX));
     audioRenderer->Release();
 }
 
@@ -1806,12 +1791,7 @@ HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_002, TestSize.Level1)
     ASSERT_NE(0, streamId);
 
     float vol = AudioSystemManager::GetInstance()->GetSingleStreamVolume(streamId);
-    if (vol < VOLUME_MIN || vol > VOLUME_MAX) {
-        ret = ERROR;
-    } else {
-        ret = SUCCESS;
-    }
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_FALSE((vol < VOLUME_MIN || vol > VOLUME_MAX));
     audioCapturer->Release();
 }
 
@@ -2248,5 +2228,54 @@ HWTEST(AudioManagerUnitTest, LoadSplitModule_004, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 }
 
+/**
+ * @tc.name   : Test NotifySessionStateChange API
+ * @tc.number : NotifySessionStateChange_001
+ * @tc.desc   : Test NotifySessionStateChange interface.
+ */
+HWTEST(AudioManagerUnitTest, NotifySessionStateChange_001, TestSize.Level1)
+{
+    int32_t ret;
+    int32_t uid = 1;
+    int32_t pid = 1;
+    ret = AudioSystemManager::GetInstance()->NotifySessionStateChange(uid, pid, true);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioSystemManager::GetInstance()->NotifySessionStateChange(uid, pid, false);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name   : Test NotifyFreezeStateChange API
+ * @tc.number : NotifyFreezeStateChange_001
+ * @tc.desc   : Test NotifyFreezeStateChange interface.
+ */
+HWTEST(AudioManagerUnitTest, NotifyFreezeStateChange_001, TestSize.Level1)
+{
+    int32_t ret;
+    int32_t pid = 1;
+    std::set<int32_t> pidList;
+    pidList.insert(pid);
+    ret = AudioSystemManager::GetInstance()->NotifyFreezeStateChange(pidList, true);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioSystemManager::GetInstance()->NotifyFreezeStateChange(pidList, false);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name   : Test ResetAllProxy API
+ * @tc.number : ResetAllProxy_001
+ * @tc.desc   : Test ResetAllProxy interface.
+ */
+HWTEST(AudioManagerUnitTest, ResetAllProxy_001, TestSize.Level1)
+{
+    int32_t ret;
+    ret = AudioSystemManager::GetInstance()->ResetAllProxy();
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioSystemManager::GetInstance()->ResetAllProxy();
+    EXPECT_EQ(SUCCESS, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -937,24 +937,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_044, TestSize.Level1)
     EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 }
 
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_045
-* @tc.desc  : Test AudioPolicyServer::IsAllowedPlayback
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_045, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
-
-    int32_t uid = 0;
-    int32_t pid = 0;
-    bool ret = ptrAudioPolicyServer->IsAllowedPlayback(uid, pid);
-    EXPECT_EQ(ret, false);
-}
 
 /**
 * @tc.name  : Test TranslateErrorCodeer.
@@ -3323,6 +3305,19 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_169, TestSize.Level1)
 
     int32_t result = server->DeactivatePreemptMode();
     EXPECT_EQ(result, ERROR);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_170
+* @tc.desc  : Test SubscribeBackgroundTask.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_170, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    server->SubscribeBackgroundTask();
 }
 } // AudioStandard
 } // OHOS
