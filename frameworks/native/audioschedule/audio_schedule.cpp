@@ -39,6 +39,7 @@
 extern "C" {
 #endif
 
+
 using namespace OHOS::AudioStandard;
 
 #ifdef RESSCHE_ENABLE
