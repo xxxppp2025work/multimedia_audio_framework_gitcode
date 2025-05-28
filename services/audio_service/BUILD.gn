@@ -318,6 +318,7 @@ config("audio_service_config") {
     "../audio_engine/manager/include",
     "../audio_policy/server/include/service/common",
     "../audio_policy/common/definitions/include",
+    "../audio_policy/common/include",
     "../audio_policy/server/include/service/common",
     "../audio_policy/server/include/service/effect",
     "../audio_policy/services/pipe/include",
