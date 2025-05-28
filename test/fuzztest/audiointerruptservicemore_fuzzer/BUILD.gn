@@ -26,7 +26,7 @@ ohos_fuzztest("AudioInterruptServiceMoreFuzzTest") {
     "../../../services/audio_policy/client/include",
     "../../../services/audio_policy/server/include",
     "../../../services/audio_policy/server/include/service",
-    "../../../services/audio_policy/server/include/service/manager",
+    "../../../services/audio_policy/server/domain/interrupt/include",
     "../../../../../communication/bluetooth/interfaces/inner_api/include",
   ]
 
