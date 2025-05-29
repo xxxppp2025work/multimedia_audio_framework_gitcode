@@ -201,7 +201,7 @@ void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDevice
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
 #ifdef BLUETOOTH_ENABLE
     NotifyUserDisSelectionEventToBt(
-        std::make_shared(GetCurrentOutputDevice()));
+        std::make_shared<AudioDeviceDescriptor>(GetCurrentOutputDevice()));
     DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
     if (curOutputDeviceType == DEVICE_TYPE_NEARLINK) {
         SleAudioDeviceManager::GetInstance().SetActiveDevice(audioDeviceDescriptor->macAddress_,
