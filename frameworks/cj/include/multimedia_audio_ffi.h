@@ -161,6 +161,14 @@ enum AudioRendererCallbackType : int32_t {
     AR_WRITE_DATA
 };
 
+struct CAudioSessionDeactiveEvent {
+    int32_t deactiveReason;
+};
+
+struct CAudioSessionStrategy {
+    int32_t concurrencyMode;
+};
+
 // Audio Capturer
 // MMA is the addreviation of MultimediaAudio
 FFI_EXPORT int64_t FfiMMACreateAudioCapturer(CAudioCapturerOptions options, int32_t *errorCode);
@@ -186,6 +194,7 @@ FFI_EXPORT int64_t FfiMMAAudioManagerGetRoutingManager(int64_t id, int32_t *erro
 FFI_EXPORT int64_t FfiMMAAudioManagerGetStreamManager(int64_t id, int32_t *errorCode);
 FFI_EXPORT int32_t FfiMMAAudioManagerGetAudioScene(int64_t id, int32_t *errorCode);
 FFI_EXPORT int64_t FfiMMAAudioManagerGetVolumeManager(int64_t id, int32_t *errorCode);
+FFI_EXPORT int64_t FfiMMAAudioManagerGetSessionManager(int64_t id, int32_t *errorCode);
 
 // Audio Stream Manager
 // ASM is the addreviation of Audio Stream Manager
@@ -200,6 +209,8 @@ FFI_EXPORT void FfiMMAASMOn(int64_t id, int32_t callbackType, void (*callback)()
 FFI_EXPORT void FfiMMAARMSetCommunicationDevice(int64_t id, int32_t deviceType, bool active, int32_t *errorCode);
 FFI_EXPORT bool FfiMMAARMIsCommunicationDeviceActive(int64_t id, int32_t deviceType, int32_t *errorCode);
 FFI_EXPORT CArrDeviceDescriptor FfiMMAARMGetDevices(int64_t id, int32_t deviceFlag, int32_t *errorCode);
+FFI_EXPORT CArrDeviceDescriptor FfiMMAARMGetAvailableDevices(int64_t id, uint32_t deviceUsage, int32_t *errorCode);
+FFI_EXPORT void FfiMMAARMFreeCArrDeviceDescriptor(CArrDeviceDescriptor deviceDescriptors);
 FFI_EXPORT CArrDeviceDescriptor FfiMMAARMGetPreferredInputDeviceForCapturerInfo(int64_t id,
     CAudioCapturerInfo capturerInfo, int32_t *errorCode);
 FFI_EXPORT CArrDeviceDescriptor FfiMMAARMGetPreferredOutputDeviceForRendererInfo(int64_t id,
@@ -213,6 +224,12 @@ FFI_EXPORT void FfiMMAARMOnWithCapturerInfo(int64_t id, int32_t callbackType, vo
 FFI_EXPORT void FfiMMAARMOnWithRendererInfo(int64_t id, int32_t callbackType, void (*callback)(),
     CAudioRendererInfo rendererInfo, int32_t *errorCode);
 
+// Audio Session Manager
+// ASeM is the addreviation of Audio Session Manager
+FFI_EXPORT void FfiMMAASeMActivateAudioSession(int64_t id, CAudioSessionStrategy strategy, int32_t *errorCode);
+FFI_EXPORT void FfiMMAASeMDeactivateAudioSession(int64_t id, int32_t *errorCode);
+FFI_EXPORT bool FfiMMAASeMIsAudioSessionActivated(int64_t id, int32_t *errorCode);
+FFI_EXPORT void FfiMMAASeMOn(int64_t id, const char *type, int64_t callback, int32_t *errorCode);
 // Audio Volumne Manager
 // AVM is the addreviation of Audio Volume Manager
 FFI_EXPORT int64_t FfiMMAAVMGetVolumeGroupManager(int64_t id, int32_t groupId, int32_t *errorCode);
@@ -252,6 +269,7 @@ FFI_EXPORT void FfiMMAARSetVolume(int64_t id, double volume, int32_t *errorCode)
 FFI_EXPORT void FfiMMAARSetSilentModeAndMixWithOthers(int64_t id, bool on, int32_t *errorCode);
 FFI_EXPORT void FfiMMAARSetInterruptMode(int64_t id, int32_t mode, int32_t *errorCode);
 FFI_EXPORT void FfiMMAARSetChannelBlendMode(int64_t id, int32_t mode, int32_t *errorCode);
+FFI_EXPORT void FfiMAARSetDefaultOutputDevice(int64_t id, int32_t deviceType, int32_t *errorCode);
 FFI_EXPORT void FfiMMAAROnWithFrame(int64_t id, int32_t callbackType, void (*callback)(), int64_t frame,
     int32_t *errorCode);
 FFI_EXPORT void FfiMMAAROn(int64_t id, int32_t callbackType, void (*callback)(), int32_t *errorCode);

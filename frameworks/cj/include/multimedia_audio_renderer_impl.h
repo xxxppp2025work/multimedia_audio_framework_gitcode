@@ -67,6 +67,8 @@ public:
 
     void SetChannelBlendMode(int32_t mode, int32_t *errorCode);
 
+    void SetDefaultOutputDevice(int32_t type, int32_t *errorCode);
+
     void RegisterCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode);
 
     void RegisterCallbackWithFrame(int32_t callbackType, void (*callback)(), int64_t frame, int32_t *errorCode);

@@ -19,6 +19,7 @@
 #include "multimedia_audio_common.h"
 #include "multimedia_audio_error.h"
 #include "multimedia_audio_routing_manager_impl.h"
+#include "multimedia_audio_session_manager_impl.h"
 #include "multimedia_audio_stream_manager_impl.h"
 #include "multimedia_audio_volume_manager_impl.h"
 
@@ -71,6 +72,17 @@ int64_t MMAAudioManagerImpl::GetVolumeManager(int32_t *errorCode)
         return CJ_ERR_INVALID_RETURN_VALUE;
     }
     *errorCode = SUCCESS_CODE;
+    return mgr->GetID();
+}
+
+int64_t MMAAudioManagerImpl::GetSessionManager(int32_t *errorCode)
+{
+    auto mgr = FFIData::Create<MMAAudioSessionManagerImpl>();
+    if (mgr == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        AUDIO_ERR_LOG("GetSessionManager failed.");
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
     return mgr->GetID();
 }
 }

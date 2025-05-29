@@ -277,6 +277,18 @@ void MMAAudioRendererImpl::SetChannelBlendMode(int32_t mode, int32_t *errorCode)
     }
 }
 
+void MMAAudioRendererImpl::SetDefaultOutputDevice(int32_t type, int32_t *errorCode)
+{
+    if (audioRenderer_ == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    int32_t ret = audioRenderer_->SetDefaultOutputDevice(static_cast<DeviceType>(type));
+    if (ret != SUCCESS_CODE) {
+        *errorCode = CJ_ERR_ILLEGAL_STATE;
+    }
+}
+
 void MMAAudioRendererImpl::RegisterOutputDeviceCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode)
 {
     if (callbackType == AudioRendererCallbackType::AR_OUTPUT_DEVICE_CHANGE) {
