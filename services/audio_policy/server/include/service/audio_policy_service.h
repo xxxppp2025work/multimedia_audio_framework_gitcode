@@ -109,7 +109,21 @@ public:
 
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
 
+    int32_t SetZoneVolumeLevel(int32_t zoneId, AudioVolumeType volumeType, int32_t volumeLevel);
+    
+    int32_t GetZoneVolumeLevel(int32_t zoneId, AudioVolumeType volumeType);
+    
+    int32_t SetZoneMute(int32_t zoneId, AudioStreamType streamType, bool mute,
+        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE);
+
+    bool GetZoneMute(int32_t zoneId, AudioStreamType streamType);
+
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
+
+    int32_t SetAdjustVolumeForZone(int32_t zoneId);
+
+    int32_t GetVolumeAdjustZoneId();
 
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
 

@@ -52,6 +52,20 @@ AudioZoneBindKey::AudioZoneBindKey(int32_t uid, const std::string &deviceTag, co
 {
 }
 
+AudioZoneBindKey::AudioZoneBindKey(int32_t uid, const std::string &deviceTag, const std::string &streamTag,
+    const AudioFocusType &type)
+    : uid_(uid),
+      deviceTag_(deviceTag),
+      streamTag_(streamTag),
+      type_(type)
+{
+}
+
+AudioZoneBindKey::AudioZoneBindKey(const AudioFocusType &type)
+    :type_(type)
+{
+}
+
 AudioZoneBindKey::AudioZoneBindKey(const AudioZoneBindKey &other)
 {
     Assign(other);
@@ -135,7 +149,7 @@ bool AudioZoneBindKey::IsContain(const AudioZoneBindKey &other) const
 }
 
 const std::vector<AudioZoneBindKey> AudioZoneBindKey::GetSupportKeys(int32_t uid, const std::string &deviceTag,
-    const std::string &streamTag)
+    const std::string &streamTag, const AudioFocusType &type)
 {
     std::vector<AudioZoneBindKey> keys;
     keys.push_back(AudioZoneBindKey(uid, deviceTag, streamTag));
@@ -148,6 +162,7 @@ const std::vector<AudioZoneBindKey> AudioZoneBindKey::GetSupportKeys(int32_t uid
     pushBack(AudioZoneBindKey(uid, "", streamTag));
     pushBack(AudioZoneBindKey(uid));
     pushBack(AudioZoneBindKey(uid, deviceTag));
+    pushBack(AudioZoneBindKey(type));
     return keys;
 }
 
@@ -156,7 +171,8 @@ const std::vector<AudioZoneBindKey> AudioZoneBindKey::GetSupportKeys(const Audio
     int32_t uid = key.uid_;
     std::string deviceTag = key.deviceTag_;
     std::string streamTag = key.streamTag_;
-    return GetSupportKeys(uid, deviceTag, streamTag);
+    AudioFocusType type = key.type_;
+    return GetSupportKeys(uid, deviceTag, streamTag, type);
 }
 
 AudioZone::AudioZone(std::shared_ptr<AudioZoneClientManager> manager,
@@ -422,6 +438,11 @@ int32_t AudioZone::EnableSystemVolumeProxy(pid_t clientPid, bool enable)
     AUDIO_INFO_LOG("volume proxy is %{public}s by %{public}d",
         enable ? "enable" : "disable", clientPid);
     return SUCCESS;
+}
+
+bool AudioZone::GetVolumeProxyEnable()
+{
+    return isVolumeProxyEnabled_;
 }
 
 int32_t AudioZone::SetSystemVolumeLevel(AudioVolumeType volumeType,

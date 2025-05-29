@@ -275,6 +275,27 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
     return audioVolumeManager_.SetSystemVolumeLevel(streamType, volumeLevel);
 }
 
+int32_t AudioPolicyService::SetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType, int32_t volumeLevel)
+{
+    return audioVolumeManager_.SetZoneVolumeLevel(zoneId, streamType, volumeLevel);
+}
+
+int32_t AudioPolicyService::GetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType)
+{
+    return audioVolumeManager_.GetZoneVolumeLevel(zoneId, streamType);
+}
+
+int32_t AudioPolicyService::SetZoneMute(int32_t zoneId, AudioStreamType streamType, bool mute,
+    StreamUsage streamUsage, const DeviceType &deviceType)
+{
+    return audioVolumeManager_.SetZoneMute(zoneId, streamType, mute, streamUsage, deviceType);
+}
+
+bool AudioPolicyService::GetZoneMute(int32_t zoneId, AudioStreamType streamType)
+{
+    return audioVolumeManager_.GetZoneMute(zoneId, streamType);
+}
+
 int32_t AudioPolicyService::SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel,
     DeviceType deviceType)
 {
@@ -291,6 +312,16 @@ int32_t AudioPolicyService::SetAppVolumeLevel(int32_t appUid, int32_t volumeLeve
 int32_t AudioPolicyService::SetAppVolumeMuted(int32_t appUid, bool muted)
 {
     return audioVolumeManager_.SetAppVolumeMuted(appUid, muted);
+}
+
+int32_t AudioPolicyService::SetAdjustVolumeForZone(int32_t zoneId)
+{
+    return audioVolumeManager_.SetAdjustVolumeForZone(zoneId);
+}
+
+int32_t AudioPolicyService::GetVolumeAdjustZoneId()
+{
+    return audioVolumeManager_.GetVolumeAdjustZoneId();  
 }
 
 int32_t AudioPolicyService::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
@@ -377,6 +408,11 @@ int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute,
     return audioVolumeManager_.SetStreamMute(streamType, mute, streamUsage, deviceType);
 }
 
+int32_t AudioPolicyService::SetZoneMute(int32_t zoneId, AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
+    const DeviceType &deviceType)
+{
+    return audioVolumeManager_.SetZoneMute(zoneId, streamType, mute, streamUsage, deviceType);
+}
 int32_t AudioPolicyService::SetSourceOutputStreamMute(int32_t uid, bool setMute) const
 {
     int32_t status = audioPolicyManager_.SetSourceOutputStreamMute(uid, setMute);

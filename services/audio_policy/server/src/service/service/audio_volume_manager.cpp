@@ -341,6 +341,18 @@ int32_t AudioVolumeManager::SetAppVolumeMuted(int32_t appUid, bool muted)
     return result;
 }
 
+int32_t AudioVolumeManager::SetAdjustVolumeForZone(int32_t zoneId)
+{
+    AUDIO_INFO_LOG("enter AudioVolumeManager::SetAdjustVolumeForZone");
+    int32_t result = audioPolicyManager_.SetAdjustVolumeForZone(zoneId);
+    return result;
+}
+
+int32_t AudioVolumeManager::GetVolumeAdjustZoneId()
+{
+    return audioPolicyManager_.GetVolumeAdjustZoneId();
+}
+
 int32_t AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
     AUDIO_INFO_LOG("enter AudioVolumeManager::IsAppVolumeMute");
@@ -401,6 +413,27 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int
     vol.volumeFloat = audioPolicyManager_.GetSystemVolumeInDb(streamType, volumeLevel, curOutputDeviceType);
     SetSharedVolume(streamType, curOutputDeviceType, vol);
     return result;
+}
+
+int32_t AudioVolumeManager::SetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType, int32_t volumeLevel)
+{
+    return audioPolicyManager_.SetZoneVolumeLevel(zoneId, streamType, volumeLevel);
+}
+
+int32_t AudioVolumeManager::GetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType)
+{
+    return audioPolicyManager_.GetZoneVolumeLevel(zoneId, streamType);
+}
+
+int32_t AudioVolumeManager::SetZoneMute(int32_t zoneId, AudioStreamType streamType, bool mute,
+    StreamUsage streamUsage, const DeviceType &deviceType)
+{
+    return audioPolicyManager_.SetZoneMute(zoneId, streamType, mute, streamUsage, deviceType);
+}
+
+bool AudioVolumeManager::GetZoneMute(int32_t zoneId, AudioStreamType volumeType)
+{
+    return audioPolicyManager_.GetZoneMute(zoneId, streamType);
 }
 
 int32_t AudioVolumeManager::SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel,
