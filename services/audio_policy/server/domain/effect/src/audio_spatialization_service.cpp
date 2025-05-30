@@ -21,7 +21,7 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 
-#include "audio_spatialization_state_change_listener_proxy.h"
+#include "standard_spatialization_state_change_listener_proxy.h"
 
 #include "audio_policy_service.h"
 #include "audio_setting_provider.h"

@@ -387,9 +387,26 @@ struct AudioEffectLibEntry {
     std::vector<std::string> effectName;
 };
 
-struct AudioSpatializationState {
+struct AudioSpatializationState : public Parcelable {
     bool spatializationEnabled = false;
     bool headTrackingEnabled = false;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteBool(static_cast<int32_t>(spatializationEnabled))
+            && parcel.WriteBool(static_cast<int32_t>(headTrackingEnabled));
+    }
+
+    static AudioSpatializationState *Unmarshalling(Parcel &parcel)
+    {
+        AudioSpatializationState *info = new AudioSpatializationState();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->spatializationEnabled = parcel.ReadBool();
+        info->headTrackingEnabled = parcel.ReadBool();
+        return info;
+    }
 };
 
 struct ConverterConfig {

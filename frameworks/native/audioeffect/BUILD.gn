@@ -63,7 +63,10 @@ audio_ohos_library("audio_effect") {
   }
   install_enable = true
 
-  configs = [ ":audio_effect_config" ]
+  configs = [
+    ":audio_effect_config",
+    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config"
+  ]
 
   sources = [
     "src/audio_effect_chain.cpp",

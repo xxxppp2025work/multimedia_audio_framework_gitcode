@@ -1866,8 +1866,8 @@ int32_t AudioPolicyManager::RegisterSpatializationStateEventListener(const uint3
 
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "Spatialization state callback is nullptr");
 
-    sptr<AudioSpatializationStateChangeListenerStub> spatializationStateChangeListenerStub =
-        new(std::nothrow) AudioSpatializationStateChangeListenerStub();
+    sptr<AudioSpatializationStateChangeListener> spatializationStateChangeListenerStub =
+        new(std::nothrow) AudioSpatializationStateChangeListener();
     CHECK_AND_RETURN_RET_LOG(spatializationStateChangeListenerStub != nullptr, ERROR, "object null");
 
     spatializationStateChangeListenerStub->SetCallback(callback);

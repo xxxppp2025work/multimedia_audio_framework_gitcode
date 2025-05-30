@@ -124,6 +124,10 @@ ohos_shared_library("audio_common") {
     defines += [ "TEST_COVERAGE" ]
   }
 
+  configs = [
+    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config"
+  ]
+
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"
@@ -400,7 +404,10 @@ audio_ohos_library("audio_process_service") {
     ]
   }
 
-  configs = [ ":audio_service_config" ]
+  configs = [
+    ":audio_service_config",
+    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
+  ]
   
   include_dirs = [
     "../../services/audio_engine/plugin/channel_converter/include",
@@ -504,7 +511,10 @@ audio_ohos_library("audio_service") {
 
   configs = [ ":audio_service_config" ]
   # /home/lzz/Work/ohos/foundation/multimedia/audio_framework/services/audio_service/idl/BUILD.gn
-  configs += [ "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config" ]
+  configs += [
+    "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config",
+    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
+  ]
 
   deps = [
     ":audio_common",
