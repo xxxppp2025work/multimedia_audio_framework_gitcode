@@ -1882,5 +1882,20 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_120, TestSize.Level1
     bool ret = audioCoreService->IsNewDevicePlaybackSupported(streamDesc);
     EXPECT_EQ(ret, true);
 }
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_121.
+ * @tc.desc  : Test AudioCoreService::UpdateInputDeviceWhenStopping.
+ */
+HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_121, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    int32_t uid = getuid();
+    audioCoreService->UpdateInputDeviceWhenStopping(uid);
+    EXPECT_EQ(SUCCESS, uid);
+}
 } // namespace AudioStandard
 } // namespace OHOS
