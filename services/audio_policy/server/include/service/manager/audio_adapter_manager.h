@@ -197,7 +197,7 @@ public:
 
     void ResetRemoteCastDeviceVolume();
 
-    void SetMaxVolumeForDeviceChange();
+    void HandleDpConnection();
 
     int32_t GetStreamVolume(AudioStreamType streamType);
 
@@ -230,7 +230,8 @@ public:
 
     int32_t GetPersistMicMuteState(bool &isMute) const;
 
-    void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
+    void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel,
+        std::string networkId);
 
     void HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
         const DeviceType &deviceType = DEVICE_TYPE_NONE);
@@ -272,6 +273,7 @@ public:
         doNotDisturbStatusWhiteList);
 
     int32_t SetDoNotDisturbStatus(bool isDoNotDisturb);
+    void HandleDistributedVolume(AudioStreamType streamType);
 private:
     friend class PolicyCallbackImpl;
 
@@ -354,8 +356,6 @@ private:
     AudioIOHandle OpenNotPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
     void GetSinkIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     void GetSourceIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
-    bool CheckAndUpdateRemoteDeviceVolume(AudioDeviceDescriptor deviceDescriptor);
-    bool IsCurDeviceNeedSaveVolumeToDatabase();
     int32_t IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
 
     template<typename T>
