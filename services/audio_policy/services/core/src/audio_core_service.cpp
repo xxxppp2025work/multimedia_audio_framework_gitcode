@@ -1041,15 +1041,15 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
             isUpdateActiveDevice = UpdateOutputDevice(streamDesc->newDeviceDescs_.front(), GetRealUid(streamDesc),
                 reason);
             needUpdateActiveDevice = !isUpdateActiveDevice;
+            if (isUpdateActiveDevice) {
+                OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
+            }
         }
         AUDIO_INFO_LOG("Target audioFlag %{public}u for stream %{public}u",
             streamDesc->audioFlag_, streamDesc->sessionId_);
     }
 
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
-    if (isUpdateActiveDevice) {
-        OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
-    }
     return ret;
 }
 
