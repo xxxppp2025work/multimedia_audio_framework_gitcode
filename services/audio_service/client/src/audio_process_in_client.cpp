@@ -342,15 +342,22 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, nullptr, "Create failed, can not get service.");
     AudioProcessConfig resetConfig = config;
     bool isVoipMmap = false;
-    if (config.rendererInfo.streamUsage != STREAM_USAGE_VOICE_COMMUNICATION &&
-        config.capturerInfo.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION) {
+
+    if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+        config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        if (config.rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
+            AUDIO_INFO_LOG("Voip change to fast mmap");
+        } else {
+            isVoipMmap = true;
+        }
+    }
+
+    if (!isVoipMmap) {
         resetConfig.streamInfo = AudioProcessInClientInner::g_targetStreamInfo;
         if (config.audioMode == AUDIO_MODE_RECORD) {
             resetConfig.streamInfo.format = config.streamInfo.format;
             resetConfig.streamInfo.channels = config.streamInfo.channels;
-        }
-    } else {
-        isVoipMmap = true;
+        } 
     }
 
     int32_t errorCode = 0;
