@@ -59,6 +59,7 @@ public:
                 AudioStateManager::GetAudioStateManager().IsExcludedDevice(audioDevUsage, desc)) {
                 continue;
             }
+            CHECK_AND_CONTINUE(!ExistSameRemoteCarWithA2DP(desc));
             filteredDescs.push_back(desc);
         }
         if (filteredDescs.size() > 0) {
@@ -104,6 +105,17 @@ public:
             type == DEVICE_TYPE_BLUETOOTH_A2DP ||
             type == DEVICE_TYPE_USB_ARM_HEADSET ||
             type == DEVICE_TYPE_NEARLINK;
+    }
+
+    bool ExistSameRemoteCarWithA2DP(std::shared_ptr<AudioDeviceDescriptor> desc)
+    {
+        if (desc->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
+            return false;
+        }
+        if (desc->deviceCategory_ != BT_CAR) {
+            return false;
+        }
+        return AudioDeviceManager::GetAudioDeviceManager().ExistSameRemoteDeviceByMacAddress(desc);
     }
 };
 } // namespace AudioStandard
