@@ -147,6 +147,37 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_006, TestSize.Level1)
     EXPECT_NE(nullptr,
         audioRouterCenter.FetchInputDevice(SOURCE_TYPE_MESSAGE, 1, 1));
 }
+
+/**
+ * @tc.name  : Test IsMediaFollowCallStrategy.
+ * @tc.number: AudioRouterCenter_007
+ * @tc.desc  : Test IsMediaFollowCallStrategy interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_007, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+
+    EXPECT_TRUE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_PHONE_CALL));
+    EXPECT_TRUE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_PHONE_CHAT));
+    EXPECT_FALSE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_RINGING));
+    EXPECT_FALSE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_VOICE_RINGING));
+    EXPECT_FALSE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_DEFAULT));
+}
+
+/**
+ * @tc.name  : Test IsConfigRouterStrategy.
+ * @tc.number: AudioRouterCenter_008
+ * @tc.desc  : Test IsConfigRouterStrategy interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_008, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+
+    EXPECT_TRUE(audioRouterCenter.IsConfigRouterStrategy(AUDIO_SCENE_PHONE_CALL));
+    EXPECT_TRUE(audioRouterCenter.IsConfigRouterStrategy(AUDIO_SCENE_PHONE_CHAT));
+    EXPECT_FALSE(audioRouterCenter.IsConfigRouterStrategy(AUDIO_SCENE_RINGING));
+    EXPECT_FALSE(audioRouterCenter.IsConfigRouterStrategy(AUDIO_SCENE_VOICE_RINGING));
+}
 } // namespace AudioStandard
 } // namespace OHOS
  

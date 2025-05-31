@@ -147,12 +147,21 @@ RouterType AudioRouterCenter::GetBypassWithSco(AudioScene audioScene)
 
 bool AudioRouterCenter::IsMediaFollowCallStrategy(AudioScene audioScene)
 {
-    if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
-        ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) && HasScoDevice()) ||
-        AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+    if (audioScene == AUDIO_SCENE_PHONE_CALL) {
+        return true;
+    }
+    if (audioScene == AUDIO_SCENE_PHONE_CHAT) {
+        return true;
+    }
+    if ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) &&
+        HasScoDevice()) {
+        return true;
+    }
+    if (AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
         return true;
     }
     return false;
+
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevices(StreamUsage streamUsage,
