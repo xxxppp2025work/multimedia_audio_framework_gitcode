@@ -257,6 +257,8 @@ private:
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
+    void AddInfoLogForPreferredOutputDevice(
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs, int32_t clientPid);
 
     void HandleVolumeChangeCallback(int32_t clientId, sptr<IAudioPolicyClient> audioPolicyClient,
         const VolumeEvent &volumeEvent);
