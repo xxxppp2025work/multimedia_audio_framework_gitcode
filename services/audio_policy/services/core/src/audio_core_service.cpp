@@ -1042,7 +1042,10 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
                 reason);
             needUpdateActiveDevice = !isUpdateActiveDevice;
             if (isUpdateActiveDevice) {
-                OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
+                AUDIO_INFO_LOG("active device updated, update volume");
+                AudioDeviceDescriptor audioDeviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
+                OnPreferredOutputDeviceUpdated(audioDeviceDescriptor);
+                audioVolumeManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor, "");
             }
         }
         AUDIO_INFO_LOG("Target audioFlag %{public}u for stream %{public}u",
