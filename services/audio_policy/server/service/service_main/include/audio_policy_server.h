@@ -434,6 +434,10 @@ public:
 
     int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) override;
 
+    int32_t AddFocusTypeToAudioZone(int32_t zoneId, AudioFocusType type) override;
+
+    int32_t RemoveFocusTypeFromAudioZone(int32_t zoneId, AudioFocusType type) override;
+
     int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) override;
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId) override;

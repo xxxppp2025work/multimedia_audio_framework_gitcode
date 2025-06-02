@@ -358,6 +358,10 @@ public:
 
     virtual int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) = 0;
 
+    virtual int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) = 0;
+
+    virtual int32_t AddFocusTypeToAudioZone(int32_t zoneId, AudioFocusType type) = 0;
+
     virtual int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) = 0;
 
     virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId) = 0;

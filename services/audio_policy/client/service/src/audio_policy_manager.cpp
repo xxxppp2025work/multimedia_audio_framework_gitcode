@@ -311,6 +311,20 @@ int32_t AudioPolicyManager::IsAppVolumeMute(int32_t appUid, bool muted, bool &is
     return gsp->IsAppVolumeMute(appUid, muted, isMute);
 }
 
+int32_t AudioPolicyManager::AddFocusTypeToAudioZone(int32_t zoneId, AudioFocusType type)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->AddFocusTypeToAudioZone(zoneId, type);
+}
+
+int32_t AudioPolicyManager::RemoveFocusTypeFromAudioZone(int32_t zoneId, AudioFocusType type)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->RemoveFocusTypeFromAudioZone(zoneId, type);
+}
+
 int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy,
     int32_t volumeFlag)
 {
