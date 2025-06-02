@@ -1038,6 +1038,20 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceTypeName_012, TestSize.Le
 }
 
 /**
+* @tc.name  : Test AudioInfoDumpUtils::GetDeviceTypeName  API
+* @tc.type  : FUNC
+* @tc.number: AudioInfoDumpUtils_GetDeviceTypeName_013
+* @tc.desc  : Test AudioInfoDumpUtils GetDeviceTypeName API,Return NEARLINK
+*             when deviceType is DEVICE_TYPE_NEARLINK
+*/
+HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceTypeName_013, TestSize.Level0)
+{
+    DeviceType deviceType = DEVICE_TYPE_NEARLINK;
+    const std::string deviceTypeName = AudioInfoDumpUtils::GetDeviceTypeName(deviceType);
+    EXPECT_EQ(deviceTypeName, "NEARLINK");
+}
+
+/**
 * @tc.name  : Test AudioInfoDumpUtils::GetConnectTypeName  API
 * @tc.type  : FUNC
 * @tc.number: AudioInfoDumpUtils_GetConnectTypeName_001
@@ -3241,6 +3255,24 @@ HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_006, TestSize.Level1)
     uint64_t fullTokenId = 1;
     ret = PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId);
     EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test AudioUtils API
+* @tc.type  : FUNC
+* @tc.number: AudioUtilsUnitTest_007
+* @tc.desc  : Test AudioUtils API
+*/
+HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_007, TestSize.Level1)
+{
+    std::vector<uid_t> uids;
+    uids.push_back(1000);
+    auto ret = PermissionUtil::CheckCallingUidPermission(uids);
+    EXPECT_EQ(ret, false);
+    uids.clear();
+    uids.push_back(getuid());
+    ret = PermissionUtil::CheckCallingUidPermission(uids);
+    EXPECT_EQ(ret, true);
 }
 } // namespace AudioStandard
 } // namespace OHOS
