@@ -181,8 +181,14 @@ bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
         capturerState,
     };
     if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId),
-            false, "VerifyBackgroundCapture failed!");
+        if (!PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId)) {
+            CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
+                AudioService::GetInstance()->InForegroundList(processConfig_.appInfo.appUid), false, "Verify failed");
+            AudioService::GetInstance()->UpdateForegroundState(tokenId, true);
+            CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId), false,
+                "Retry failed");
+            AudioService::GetInstance()->UpdateForegroundState(tokenId, false);
+        }
     }
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
 
