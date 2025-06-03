@@ -1227,6 +1227,30 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioNnDetectDevice_SendNnStateChangeCallbac
 }
 
 /**
+ * @tc.name  : AudioSendSleChrDspData_InvalidParam_Test
+ * @tc.number: Audio_AudioSocketThread_AudioSendSleChrDspData_001
+ * @tc.desc  : Test AudioSendSleChrDspData function with invalid parameters.
+ */
+ HWTEST_F(AudioSocketThreadUnitTest, AudioSendSleChrDspData_InvalidParam_Test, TestSize.Level2)
+ {
+     struct AudioPnpUevent audioPnpUevent;
+     audioPnpUevent.name = "nearlink_dsp_data";
+     EXPECT_EQ(audioSocketThread_.AudioSendSleChrDspData(&audioPnpUevent), HDF_ERR_INVALID_PARAM);
+ }
+ 
+ /**
+  * @tc.name  : AudioSendSleChrDspData_ValidParam_Test
+  * @tc.number: Audio_AudioSocketThread_AudioSendSleChrDspData_002
+  * @tc.desc  : Test AudioSendSleChrDspData function with valid parameters.
+  */
+ HWTEST_F(AudioSocketThreadUnitTest, AudioSendSleChrDspData_ValidParam_Test, TestSize.Level2)
+ {
+     struct AudioPnpUevent audioPnpUevent;
+     audioPnpUevent.name = "sle_dsp_data600";
+     EXPECT_EQ(audioSocketThread_.AudioSendSleChrDspData(&audioPnpUevent), SUCCESS);
+ }
+
+/**
  * @tc.name  : AudioPnpUeventParse_Test_01
  * @tc.number: Audio_AudioPnpUeventParse_001
  * @tc.desc  : Test AudioPnpUeventParse function when msg starts with "libudev"

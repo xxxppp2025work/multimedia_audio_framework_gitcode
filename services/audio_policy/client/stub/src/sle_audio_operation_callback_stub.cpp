@@ -34,6 +34,21 @@ SleAudioOperationCallbackStub::~SleAudioOperationCallbackStub()
 {
 }
 
+int SleAudioOperationCallbackStub::OnSecRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case SEND_SLE_CHR_DSP_DATA: {
+            OnSleDspChrDataSendInternal(data, reply);
+            return AUDIO_OK;
+        }
+        default: {
+            AUDIO_ERR_LOG("default case, need check AudioListenerStub");
+            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+        }
+    }
+}
+
 int SleAudioOperationCallbackStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -81,8 +96,7 @@ int SleAudioOperationCallbackStub::OnRemoteRequest(
             return AUDIO_OK;
         }
         default: {
-            AUDIO_ERR_LOG("default case, need check AudioListenerStub");
-            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            return OnRemoteRequest(code, data, reply, option);
         }
     }
 }
@@ -178,6 +192,13 @@ void SleAudioOperationCallbackStub::SendUserSelectionInternal(MessageParcel &dat
     uint32_t streamType = data.ReadUint32();
     int32_t result = SendUserSelection(device, streamType);
     reply.WriteInt32(result);
+}
+
+void SleAudioOperationCallbackStub::OnSleDspChrDataSendInternal(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t len = data.ReadUint32();
+    std::string sleChrDspData = data.ReadString();
+    OnSleDspChrDataSend(sleChrDspData, len);
 }
 
 void SleAudioOperationCallbackStub::GetSleAudioDeviceList(std::vector<AudioDeviceDescriptor> &devices)
@@ -280,6 +301,15 @@ int32_t SleAudioOperationCallbackStub::SendUserSelection(const std::string &devi
     lock.unlock();
 
     return sleAudioOperationCallback->SendUserSelection(device, streamType);
+}
+
+void SleAudioOperationCallbackStub::OnSleDspChrDataSend(const std::string &sleChrDspData, uint32_t len)
+{
+    std::unique_lock lock(sleAudioOperationCallbackMutex_);
+    std::shared_ptr<SleAudioOperationCallback> sleAudioOperationCallback = sleAudioOperationCallback_.lock();
+    CHECK_AND_RETURN_LOG(sleAudioOperationCallback != nullptr, "sleAudioOperationCallback_ is nullptr");
+    lock.unlock();
+    sleAudioOperationCallback->OnSleDspChrDataSend(sleChrDspData, len);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -39,6 +39,7 @@ public:
     int32_t ConnectAllowedProfiles(const std::string &remoteAddr) override;
     int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType) override;
     int32_t SendUserSelection(const std::string &device, uint32_t streamType) override;
+    void OnSleDspChrDataSend(const std::string &sleChrDspData, uint32_t len) override;
 
 private:
     void GetSleAudioDeviceListInternal(MessageParcel &data, MessageParcel &reply);
@@ -51,6 +52,7 @@ private:
     void ConnectAllowedProfilesInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceAbsVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void SendUserSelectionInternal(MessageParcel &data, MessageParcel &reply);
+    void OnSleDspChrDataSendInternal(MessageParcel &data, MessageParcel &reply);
 
     std::mutex sleAudioOperationCallbackMutex_;
     std::weak_ptr<SleAudioOperationCallback> sleAudioOperationCallback_;
