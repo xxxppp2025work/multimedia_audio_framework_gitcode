@@ -31,6 +31,7 @@ static constexpr uint64_t AUDIO_NS_PER_S = 1000000000;
 HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
       sourceOutputData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
+      cacheData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
       interleveData_(nodeInfo.frameLen * nodeInfo.channels),
       framesRead_(0), totalFrames_(0)
 {
@@ -41,9 +42,8 @@ HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
 #endif
 }
 
-void HpaeSourceOutputNode::DoProcess()
+void HpaeSourceOutputNode::PushCacheData()
 {
-    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSourceOutputNode::DoProcess " + GetTraceInfo());
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
     if (outputVec.empty()) {
         AUDIO_WARNING_LOG("sessionId %{public}u DoProcess(), data read is empty", GetSessionId());
@@ -54,8 +54,23 @@ void HpaeSourceOutputNode::DoProcess()
         AUDIO_WARNING_LOG("sessionId %{public}u DoProcess(), drop invalid data", GetSessionId());
         return;
     }
+    if (outputData->Size() > cacheData_.size()) {
+        cacheData_.resize(outputData->Size());
+    }
     ConvertFromFloat(
-        GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), sourceOutputData_.data());
+        GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), cacheData_.data());
+}
+
+void HpaeSourceOutputNode::DoProcess()
+{
+    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSourceOutputNode::DoProcess " + GetTraceInfo());
+    PushCacheData();
+    if (cacheData_.empty() || cacheData_.size() < sourceOutputData_.size()) {
+        return;
+    }
+    sourceOutputData_.insert(
+        sourceOutputData_.end(), cacheData_.begin(), cacheData_.begin() + sourceOutputData_.size());
+    cacheData_.erase(cacheData_.begin(), cacheData_.begin() + sourceOutputData_.size());
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_) {
         outputPcmDumper_->Dump(
