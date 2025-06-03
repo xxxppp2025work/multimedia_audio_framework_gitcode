@@ -69,7 +69,7 @@ void HpaeSourceOutputNode::DoProcess()
         return;
     }
     sourceOutputData_.insert(
-        sourceOutputData_.end(), cacheData_.begin(), cacheData_.begin() + sourceOutputData.size());
+        sourceOutputData_.end(), cacheData_.begin(), cacheData_.begin() + sourceOutputData_.size());
     cacheData_.erase(cacheData_.begin(), cacheData_.begin() + sourceOutputData_.size());
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_) {
