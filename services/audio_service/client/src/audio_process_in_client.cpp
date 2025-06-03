@@ -357,7 +357,7 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
         if (config.audioMode == AUDIO_MODE_RECORD) {
             resetConfig.streamInfo.format = config.streamInfo.format;
             resetConfig.streamInfo.channels = config.streamInfo.channels;
-        } 
+        }
     }
 
     int32_t errorCode = 0;
