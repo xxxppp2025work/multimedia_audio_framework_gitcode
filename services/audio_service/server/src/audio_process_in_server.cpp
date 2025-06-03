@@ -244,7 +244,6 @@ bool AudioProcessInServer::TurnOffMicIndicator(CapturerState capturerState)
 int32_t AudioProcessInServer::Start()
 {
     int32_t ret = StartInner();
-    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START);
     if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         RendererStage stage = ret == SUCCESS ? RENDERER_STAGE_START_OK : RENDERER_STAGE_START_FAIL;
         playerDfx_->WriteDfxStartMsg(sessionId_, stage, sourceDuration_, processConfig_);
@@ -291,6 +290,9 @@ int32_t AudioProcessInServer::StartInner()
         WriterRenderStreamStandbySysEvent(sessionId_, 0);
         streamStatus_->store(STREAM_STARTING);
         enterStandbyTime_ = 0;
+        audioStreamChecker_->MonitorOnAllCallback(DATA_TRANS_RESUME);
+    } else {
+        audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START);
     }
 
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
