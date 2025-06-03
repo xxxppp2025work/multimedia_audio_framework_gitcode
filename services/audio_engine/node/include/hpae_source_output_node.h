@@ -43,11 +43,13 @@ public:
     int32_t GetAppUid();
 private:
     uint64_t GetTimestamp();
+    void PushCacheData();
 private:
     InputPort<HpaePcmBuffer *> inputStream_;
     std::weak_ptr<ICapturerStreamCallback> readCallback_;
     AudioCallBackCapturerStreamInfo streamInfo_;
     std::vector<char> sourceOutputData_;
+    std::vector<char> cacheData_;
     std::vector<float> interleveData_;
     std::atomic<uint64_t> framesRead_;
     uint64_t totalFrames_;
