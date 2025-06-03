@@ -200,9 +200,13 @@ int32_t AudioVolumeManager::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLev
     return audioPolicyManager_.GetAppVolumeLevel(appUid, volumeLevel);
 }
 
-int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType)
+int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType, int32_t zoneId)
 {
     Trace trace("AudioVolumeManager::GetSystemVolumeLevel");
+    if (zoneId != 0) {
+        return audioPolicyManager_.GetZoneVolumeLevel(zoneId, streamType);
+    }
+    
     if (streamType == STREAM_RING && !IsRingerModeMute()) {
         AUDIO_PRERELEASE_LOGW("return 0 when dual tone ring");
         return DUAL_TONE_RING_VOLUME;
@@ -219,7 +223,7 @@ int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType)
             }
         }
     }
-    return audioPolicyManager_.GetSystemVolumeLevel(streamType);
+    return audioPolicyManager_.GetSystemVolumeLevel(streamType);  
 }
 
 int32_t AudioVolumeManager::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
@@ -341,6 +345,18 @@ int32_t AudioVolumeManager::SetAppVolumeMuted(int32_t appUid, bool muted)
     return result;
 }
 
+int32_t AudioVolumeManager::SetAdjustVolumeForZone(int32_t zoneId)
+{
+    AUDIO_INFO_LOG("enter AudioVolumeManager::SetAdjustVolumeForZone");
+    int32_t result = audioPolicyManager_.SetAdjustVolumeForZone(zoneId);
+    return result;
+}
+
+int32_t AudioVolumeManager::GetVolumeAdjustZoneId()
+{
+    return audioPolicyManager_.GetVolumeAdjustZoneId();
+}
+
 int32_t AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
     AUDIO_INFO_LOG("enter AudioVolumeManager::IsAppVolumeMute");
@@ -348,8 +364,13 @@ int32_t AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &is
     return result;
 }
 
-int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
+int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
+    int32_t zoneId)
 {
+    if (zoneId != 0) {
+        return audioPolicyManager_.SetZoneVolumeLevel(zoneId, VolumeUtils::GetVolumeTypeFromStreamType(streamType),
+            volumeLevel);
+    }
     int32_t result;
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     curOutputDeviceType_ = curOutputDeviceType;
@@ -939,8 +960,11 @@ int32_t AudioVolumeManager::SetDeviceAbsVolumeSupported(const std::string &macAd
 }
 
 int32_t AudioVolumeManager::SetStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
-    const DeviceType &deviceType)
+    const DeviceType &deviceType, int32_t zoneId)
 {
+    if (zoneId != 0) {
+        return audioPolicyManager_.SetZoneMute(zoneId, streamType, mute, streamUsage, curOutputDeviceType);
+    }
     int32_t result = SUCCESS;
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     if (deviceType != DEVICE_TYPE_NONE) {
@@ -968,7 +992,6 @@ int32_t AudioVolumeManager::SetStreamMute(AudioStreamType streamType, bool mute,
         }
     }
     result = audioPolicyManager_.SetStreamMute(streamType, mute, streamUsage, curOutputDeviceType);
-
     Volume vol = {false, 1.0f, 0};
     vol.isMute = mute;
     vol.volumeInt = static_cast<uint32_t>(GetSystemVolumeLevelNoMuteState(streamType));
@@ -979,8 +1002,11 @@ int32_t AudioVolumeManager::SetStreamMute(AudioStreamType streamType, bool mute,
     return result;
 }
 
-bool AudioVolumeManager::GetStreamMute(AudioStreamType streamType) const
+bool AudioVolumeManager::GetStreamMute(AudioStreamType streamType, int32_t zoneId) const
 {
+    if (zoneId != 0) {
+        return audioPolicyManager_.GetZoneMute(zoneId, streamType);
+    }
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC &&
         curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -993,6 +1019,7 @@ bool AudioVolumeManager::GetStreamMute(AudioStreamType streamType) const
             return info.mute;
         }
     }
+
     return audioPolicyManager_.GetStreamMute(streamType);
 }
 

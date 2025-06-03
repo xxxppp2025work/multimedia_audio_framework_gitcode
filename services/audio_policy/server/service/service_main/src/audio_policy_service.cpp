@@ -270,9 +270,19 @@ void AudioPolicyService::OnReceiveEvent(const EventFwk::CommonEventData &eventDa
     audioVolumeManager_.OnReceiveEvent(eventData);
 }
 
-int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
+int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId)
 {
-    return audioVolumeManager_.SetSystemVolumeLevel(streamType, volumeLevel);
+    return audioVolumeManager_.SetSystemVolumeLevel(streamType, volumeLevel, zoneId);
+}
+
+int32_t AudioPolicyService::SetAdjustVolumeForZone(int32_t zoneId)
+{
+    return audioVolumeManager_.SetAdjustVolumeForZone(zoneId);
+}
+
+int32_t AudioPolicyService::GetVolumeAdjustZoneId()
+{
+    return audioVolumeManager_.GetVolumeAdjustZoneId();  
 }
 
 int32_t AudioPolicyService::SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel,
@@ -318,9 +328,9 @@ int32_t AudioPolicyService::ResetAllProxy()
     return audioBackgroundManager_.ResetAllProxy();
 }
 
-int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType)
+int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType, int32_t zoneId)
 {
-    return audioVolumeManager_.GetSystemVolumeLevel(streamType);
+    return audioVolumeManager_.GetSystemVolumeLevel(streamType, zoneId);
 }
 
 int32_t AudioPolicyService::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel)
@@ -372,9 +382,9 @@ float AudioPolicyService::GetSingleStreamVolume(int32_t streamId) const
 }
 
 int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
-    const DeviceType &deviceType)
+    const DeviceType &deviceType, int32_t zoneId)
 {
-    return audioVolumeManager_.SetStreamMute(streamType, mute, streamUsage, deviceType);
+    return audioVolumeManager_.SetStreamMute(streamType, mute, streamUsage, deviceType, zoneId);
 }
 
 int32_t AudioPolicyService::SetSourceOutputStreamMute(int32_t uid, bool setMute) const
@@ -386,9 +396,9 @@ int32_t AudioPolicyService::SetSourceOutputStreamMute(int32_t uid, bool setMute)
     return status;
 }
 
-bool AudioPolicyService::GetStreamMute(AudioStreamType streamType)
+bool AudioPolicyService::GetStreamMute(AudioStreamType streamType, int32_t zoneId)
 {
-    return audioVolumeManager_.GetStreamMute(streamType);
+    return audioVolumeManager_.GetStreamMute(streamType, zoneId);
 }
 
 std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)

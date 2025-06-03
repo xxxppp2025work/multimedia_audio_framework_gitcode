@@ -202,6 +202,38 @@ int32_t AudioPolicyProxy::RemoveUidFromAudioZone(int32_t zoneId, int32_t uid)
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::AddFocusTypeToAudioZone(int32_t zoneId, AudioFocusType type)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    data.WriteInt32(zoneId);
+    type.Marshalling(data);
+    int32_t error = Remote()->SendRequest(static_cast<uint32_t>(
+        AudioPolicyInterfaceCode::ADD_FOCUS_TYPE_TO_AUDIO_ZONE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "sendrequest, error: %d", error);
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::RemoveFocusTypeFromAudioZone(int32_t zoneId, AudioFocusType type)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    data.WriteInt32(zoneId);
+    type.Marshalling(data);
+    int32_t error = Remote()->SendRequest(static_cast<uint32_t>(
+        AudioPolicyInterfaceCode::REMOVE_FOCUS_TYPE_FROM_AUDIO_ZONE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "sendrequest, error: %d", error);
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::EnableSystemVolumeProxy(int32_t zoneId, bool enable)
 {
     MessageParcel data;
