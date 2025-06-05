@@ -34,6 +34,8 @@ public:
     int32_t SetCommunicationDevice(int32_t deviceType, bool active);
 
     CArrDeviceDescriptor GetDevices(int32_t flags, int32_t *errorCode);
+    
+    CArrDeviceDescriptor GetAvailableDevices(uint32_t deviceUsage, int32_t *errorCode);
 
     CArrDeviceDescriptor GetPreferredInputDeviceForCapturerInfo(CAudioCapturerInfo cInfo, int32_t *errorCode);
 

@@ -276,7 +276,8 @@ void Convert2CArrDeviceDescriptor(CArrDeviceDescriptor &devices,
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescriptors, int32_t *errorCode)
 {
     if (deviceDescriptors.empty()) {
-        *errorCode = CJ_ERR_SYSTEM;
+        devices.head = nullptr;
+        devices.size = 0;
         return;
     } else {
         auto deviceSize = deviceDescriptors.size();

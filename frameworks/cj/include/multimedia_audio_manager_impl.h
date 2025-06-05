@@ -40,6 +40,8 @@ public:
 
     int64_t GetVolumeManager(int32_t *errorCode);
 
+    int64_t GetSessionManager(int32_t *errorCode);
+
 private:
     AudioSystemManager *audioMgr_{};
 };

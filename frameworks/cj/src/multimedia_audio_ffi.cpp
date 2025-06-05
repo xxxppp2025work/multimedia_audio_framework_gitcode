@@ -14,6 +14,7 @@
  */
 
 #include "multimedia_audio_ffi.h"
+#include "multimedia_audio_common.h"
 #include "audio_capturer_log.h"
 #include "multimedia_audio_capturer_callback.h"
 #include "multimedia_audio_capturer_impl.h"
@@ -23,6 +24,7 @@
 #include "multimedia_audio_renderer_impl.h"
 #include "multimedia_audio_routing_manager_callback.h"
 #include "multimedia_audio_routing_manager_impl.h"
+#include "multimedia_audio_session_manager_impl.h"
 #include "multimedia_audio_stream_manager_callback.h"
 #include "multimedia_audio_stream_manager_impl.h"
 #include "multimedia_audio_volume_group_manager_impl.h"
@@ -255,6 +257,17 @@ int64_t FfiMMAAudioManagerGetStreamManager(int64_t id, int32_t *errorCode)
     return mgr->GetStreamManger(errorCode);
 }
 
+int64_t FfiMMAAudioManagerGetSessionManager(int64_t id, int32_t *errorCode)
+{
+    auto mgr = FFIData::GetData<MMAAudioManagerImpl>(id);
+    if (!mgr) {
+        AUDIO_ERR_LOG("Get SessionManager failed, invalid id of AudioManager");
+        *errorCode = CJ_ERR_SYSTEM;
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    return mgr->GetSessionManager(errorCode);
+}
+
 int32_t FfiMMAAudioManagerGetAudioScene(int64_t id, int32_t *errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioManagerImpl>(id);
@@ -368,6 +381,22 @@ CArrDeviceDescriptor FfiMMAARMGetDevices(int64_t id, int32_t deviceFlag, int32_t
     return mgr->GetDevices(deviceFlag, errorCode);
 }
 
+CArrDeviceDescriptor FfiMMAARMGetAvailableDevices(int64_t id, uint32_t deviceUsage, int32_t *errorCode)
+{
+    auto mgr = FFIData::GetData<MMAAudioRoutingManagerImpl>(id);
+    if (!mgr) {
+        AUDIO_ERR_LOG("GetDevices failed, invalid id of AudioRoutingManager");
+        *errorCode = CJ_ERR_SYSTEM;
+        return CArrDeviceDescriptor();
+    }
+    return mgr->GetAvailableDevices(deviceUsage, errorCode);
+}
+
+void FfiMMAARMFreeCArrDeviceDescriptor(CArrDeviceDescriptor deviceDescriptors)
+{
+    FreeCArrDeviceDescriptor(deviceDescriptors);
+}
+
 CArrDeviceDescriptor FfiMMAARMGetPreferredInputDeviceForCapturerInfo(int64_t id, CAudioCapturerInfo capturerInfo,
     int32_t *errorCode)
 {
@@ -436,6 +465,51 @@ void FfiMMAARMOnWithRendererInfo(int64_t id, int32_t callbackType, void (*callba
         return;
     }
     mgr->RegisterPreferredOutputDeviceChangeCallback(callbackType, callback, rendererInfo, errorCode);
+}
+
+/* Audio Session Manager */
+void FfiMMAASeMActivateAudioSession(int64_t id, CAudioSessionStrategy strategy, int32_t *errorCode)
+{
+    auto mgr = FFIData::GetData<MMAAudioSessionManagerImpl>(id);
+    if (!mgr) {
+        AUDIO_ERR_LOG("register failed, invalid id of AudioSessionManager");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    mgr->ActivateAudioSession(strategy, errorCode);
+}
+
+void FfiMMAASeMDeactivateAudioSession(int64_t id, int32_t *errorCode)
+{
+    auto mgr = FFIData::GetData<MMAAudioSessionManagerImpl>(id);
+    if (!mgr) {
+        AUDIO_ERR_LOG("register failed, invalid id of AudioSessionManager");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    mgr->DeactivateAudioSession(errorCode);
+}
+
+bool FfiMMAASeMIsAudioSessionActivated(int64_t id, int32_t *errorCode)
+{
+    auto mgr = FFIData::GetData<MMAAudioSessionManagerImpl>(id);
+    if (!mgr) {
+        AUDIO_ERR_LOG("register failed, invalid id of AudioSessionManager");
+        *errorCode = CJ_ERR_SYSTEM;
+        return false;
+    }
+    return mgr->IsAudioSessionActivated();
+}
+
+void FfiMMAASeMOn(int64_t id, const char *type, int64_t callback, int32_t *errorCode)
+{
+    auto mgr = FFIData::GetData<MMAAudioSessionManagerImpl>(id);
+    if (!mgr) {
+        AUDIO_ERR_LOG("register failed, invalid id of AudioSessionManager");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    mgr->On(type, callback, errorCode);
 }
 
 /* Audio Volume Manager */
@@ -928,11 +1002,22 @@ void FfiMMAARSetChannelBlendMode(int64_t id, int32_t mode, int32_t *errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
-        AUDIO_ERR_LOG("SetInterruptMode failed, invalid id of AudioRenderer");
+        AUDIO_ERR_LOG("SetChannelBlendMode failed, invalid id of AudioRenderer");
         *errorCode = CJ_ERR_SYSTEM;
         return;
     }
     renderer->SetChannelBlendMode(mode, errorCode);
+}
+
+void FfiMMAARSetDefaultOutputDevice(int64_t id, int32_t deviceType, int32_t *errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("SetDefaultOutputDevice failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    renderer->SetDefaultOutputDevice(deviceType, errorCode);
 }
 
 void FfiMMAAROnWithFrame(int64_t id, int32_t callbackType, void (*callback)(), int64_t frame, int32_t *errorCode)
