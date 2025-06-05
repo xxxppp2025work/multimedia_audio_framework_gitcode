@@ -261,8 +261,8 @@ void SleAudioDeviceManager::UpdateStreamTypeMap(const std::string &deviceAddr, u
     if (isAdd) {
         sessionSet.insert(sessionId);
     } else {
-        sessionSet.erase(sessionId);
-        if (sessionSet.empty()) {
+        bool isErased = sessionSet.erase(sessionId) > 0;
+        if (isErased && sessionSet.empty()) {
             StopPlaying(deviceAddr, streamType);
         }
     }
