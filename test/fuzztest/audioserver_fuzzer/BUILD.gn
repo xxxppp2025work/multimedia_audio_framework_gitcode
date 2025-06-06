@@ -51,6 +51,7 @@ ohos_fuzztest("AudioServerFuzzTest") {
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "qos_manager:concurrent_task_client",
+    "media_foundation:media_monitor_common",
   ]
 
   defines = []
