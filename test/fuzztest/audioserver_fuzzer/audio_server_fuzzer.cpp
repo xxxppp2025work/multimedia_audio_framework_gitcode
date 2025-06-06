@@ -19,11 +19,8 @@
 
 #include "audio_manager_base.h"
 #include "audio_policy_manager_listener_stub.h"
-#define private public
-#define protected public
 #include "audio_server.h"
 #include "message_parcel.h"
-#include "media_monitor_info.h"
 using namespace std;
 
 namespace OHOS {
@@ -38,6 +35,8 @@ const int32_t SHIFT_LEFT_8 = 8;
 const int32_t SHIFT_LEFT_16 = 16;
 const int32_t SHIFT_LEFT_24 = 24;
 const uint32_t LIMIT_MIN = 0;
+const int32_t AUDIO_DISTRIBUTED_SERVICE_ID = 3001;
+const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
 const uint32_t LIMIT_MAX = static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX);
 typedef void (*TestPtr)(const uint8_t *, size_t);
 
@@ -90,6 +89,12 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
         sptr<AudioPolicyManagerListenerStub> focusListenerStub = new(std::nothrow) AudioPolicyManagerListenerStub();
         sptr<IRemoteObject> object = focusListenerStub->AsObject();
         AudioServerPtr->SetParameterCallback(object);
+        return;
+    }
+    if (code == static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE)) {
+        AsrAecMode asrAecMode = (static_cast<AsrAecMode>(0));
+        AudioServerPtr->SetAsrAecMode(asrAecMode);
+        AudioServerPtr->OnRemoteRequest(code, data, reply, option);
         return;
     }
     AudioServerPtr->OnRemoteRequest(code, data, reply, option);
@@ -682,7 +687,7 @@ void AudioServerDumpTest(const uint8_t *rawData, size_t size)
         u"test3",
     };
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    std::vector<std::u16string> args(gTestDumpArges.begin(), gTestDumpArges.begin() + 
+    std::vector<std::u16string> args(gTestDumpArges.begin(), gTestDumpArges.begin() +
         (static_cast<uint32_t>(size) % gTestDumpArges.size()));
     int32_t fd = static_cast<int32_t>(size);
 
@@ -707,8 +712,7 @@ void AudioServerOnAddSystemAbilityTest(const uint8_t *rawData, size_t size)
     vector<int32_t> gTestSystemAbilityId = {
         0,
         AUDIO_POLICY_SERVICE_ID,
-        RES_SCHED_SYS_ABILITY_ID,
-        3,
+        AUDIO_DISTRIBUTED_SERVICE_ID,
     };
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
 

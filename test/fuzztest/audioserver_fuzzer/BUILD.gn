@@ -30,6 +30,7 @@ ohos_fuzztest("AudioServerFuzzTest") {
     "-O0",
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
+    "-fno-access-control",
   ]
 
   sources = [ "audio_server_fuzzer.cpp" ]
@@ -51,7 +52,6 @@ ohos_fuzztest("AudioServerFuzzTest") {
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "qos_manager:concurrent_task_client",
-    "media_foundation:media_monitor_common",
   ]
 
   defines = []
