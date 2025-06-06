@@ -221,7 +221,6 @@ void HpaeRenderEffectNode::ModifyAudioEffectChainInfo(HpaeNodeInfo &nodeInfo,
                 AUDIO_WARNING_LOG("scene mode %{public}d not supported", nodeInfo.effectInfo.effectMode);
                 info.sceneMode = "EFFECT_NONE";
             }
-            info.sceneMode = std::to_string(nodeInfo.effectInfo.effectMode);
             info.sceneType = sceneType;
             info.channels = static_cast<uint32_t>(nodeInfo.channels);
             info.channelLayout = nodeInfo.channelLayout;
