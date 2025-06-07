@@ -285,7 +285,7 @@ void AudioDeviceCommon::UpdateDeviceInfo(AudioDeviceDescriptor &deviceInfo,
     deviceInfo.audioStreamInfo_.samplingRate = desc->audioStreamInfo_.samplingRate;
     deviceInfo.audioStreamInfo_.encoding = desc->audioStreamInfo_.encoding;
     deviceInfo.audioStreamInfo_.format = desc->audioStreamInfo_.format;
-    deviceInfo.audioStreamInfo_.channels = desc->audioStreamInfo_.channels;
+    deviceInfo.audioStreamInfo_.channelLayout = desc->audioStreamInfo_.channelLayout;
 }
 
 int32_t AudioDeviceCommon::DeviceParamsCheck(DeviceRole targetRole,

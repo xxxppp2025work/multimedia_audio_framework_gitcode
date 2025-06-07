@@ -309,7 +309,7 @@ HWTEST(AudioServiceUnitTest, AudioDeviceDescriptor_001, TestSize.Level1)
     audioDeviceDescriptor->SetDeviceCapability(audioStreamInfo, channelMask);
 
     DeviceStreamInfo streamInfo = audioDeviceDescriptor->audioStreamInfo_;
-    EXPECT_EQ(streamInfo.channels, audioStreamInfo.channels);
+    EXPECT_EQ(streamInfo.channelLayout, audioStreamInfo.channelLayout);
     EXPECT_EQ(streamInfo.encoding, audioStreamInfo.encoding);
     EXPECT_EQ(streamInfo.format, audioStreamInfo.format);
     EXPECT_EQ(streamInfo.samplingRate, audioStreamInfo.samplingRate);

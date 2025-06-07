@@ -411,49 +411,102 @@ template<typename T> std::set<T> UnmarshallingSetInt32(Parcel &parcel,
     return res;
 }
 
+static AudioChannel ConvertLayoutToAudioChannel(AudioChannelLayout layout)
+{
+    AudioChannel channel = AudioChannel::CHANNEL_UNKNOW;
+    switch (layout) {
+        case AudioChannelLayout::CH_LAYOUT_MONO:
+            channel = AudioChannel::MONO;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_STEREO:
+            channel = AudioChannel::STEREO;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_2POINT1:
+        case AudioChannelLayout::CH_LAYOUT_3POINT0:
+            channel = AudioChannel::CHANNEL_3;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_3POINT1:
+        case AudioChannelLayout::CH_LAYOUT_4POINT0:
+        case AudioChannelLayout::CH_LAYOUT_QUAD:
+            channel = AudioChannel::CHANNEL_4;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_5POINT0:
+        case AudioChannelLayout::CH_LAYOUT_2POINT1POINT2:
+            channel = AudioChannel::CHANNEL_5;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_5POINT1:
+        case AudioChannelLayout::CH_LAYOUT_HEXAGONAL:
+        case AudioChannelLayout::CH_LAYOUT_3POINT1POINT2:
+            channel = AudioChannel::CHANNEL_6;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_7POINT0:
+            channel = AudioChannel::CHANNEL_7;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_7POINT1:
+            channel = AudioChannel::CHANNEL_8;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_7POINT1POINT2:
+            channel = AudioChannel::CHANNEL_10;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_7POINT1POINT4:
+            channel = AudioChannel::CHANNEL_12;
+            break;
+        default:
+            channel = AudioChannel::CHANNEL_UNKNOW;
+            break;
+    }
+    return channel;
+}
+
 struct DeviceStreamInfo {
     AudioEncodingType encoding = AudioEncodingType::ENCODING_PCM;
     AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
-    AudioChannelLayout channelLayout  = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
+    std::set<AudioChannelLayout> channelLayout;
     std::set<AudioSamplingRate> samplingRate;
-    std::set<AudioChannel> channels;
 
     DeviceStreamInfo(AudioSamplingRate samplingRate_, AudioEncodingType encoding_, AudioSampleFormat format_,
-        AudioChannel channels_) : encoding(encoding_), format(format_),
-        samplingRate({samplingRate_}), channels({channels_})
+        AudioChannelLayout channelLayout_) : encoding(encoding_), format(format_), channelLayout({channelLayout_}),
+        samplingRate({samplingRate_})
     {}
     DeviceStreamInfo(AudioStreamInfo audioStreamInfo) : DeviceStreamInfo(audioStreamInfo.samplingRate,
-        audioStreamInfo.encoding, audioStreamInfo.format, audioStreamInfo.channels)
+        audioStreamInfo.encoding, audioStreamInfo.format, audioStreamInfo.channelLayout)
     {}
     DeviceStreamInfo() = default;
+
+    void GetChannels(std::set<AudioChannel> &channels) const
+    {
+        for (const auto &layout : channelLayout) {
+            channels.insert(ConvertLayoutToAudioChannel(layout));
+        }
+    }
 
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteInt32(static_cast<int32_t>(encoding))
             && parcel.WriteInt32(static_cast<int32_t>(format))
-            && MarshallingSetInt32(samplingRate, parcel)
-            && MarshallingSetInt32(channels, parcel);
+            && MarshallingSetInt32(channelLayout, parcel)
+            && MarshallingSetInt32(samplingRate, parcel);
     }
     void Unmarshalling(Parcel &parcel)
     {
         encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
+        channelLayout = UnmarshallingSetInt32<AudioChannelLayout>(parcel, AUDIO_DEVICE_INFO_SIZE_LIMIT);
         samplingRate = UnmarshallingSetInt32<AudioSamplingRate>(parcel, AUDIO_DEVICE_INFO_SIZE_LIMIT);
-        channels = UnmarshallingSetInt32<AudioChannel>(parcel, AUDIO_DEVICE_INFO_SIZE_LIMIT);
     }
 
     bool operator==(const DeviceStreamInfo& info) const
     {
-        return encoding == info.encoding && format == info.format && channels == info.channels &&
-            channelLayout == info.channelLayout && samplingRate == info.samplingRate;
+        return encoding == info.encoding && format == info.format && channelLayout == info.channelLayout &&
+            samplingRate == info.samplingRate;
     }
 
     bool CheckParams()
     {
-        if (samplingRate.size() == 0) {
+        if (channelLayout.size() == 0) {
             return false;
         }
-        if (channels.size() == 0) {
+        if (samplingRate.size() == 0) {
             return false;
         }
         return true;
