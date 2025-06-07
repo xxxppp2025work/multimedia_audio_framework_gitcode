@@ -314,7 +314,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererWriteDataCallback(OH_Audi
  * @return Result code.
  *     {@link AUDIOSTREAM_SUCCESS} Success.
  *     {@link AUDIOSTREAM_ERROR_INVALID_PARAM} Parameter is invalid, e.g. builder is nullptr, e.t.c.
- * @since 18
+ * @since 19
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInterruptCallback(OH_AudioStreamBuilder* builder,
     OH_AudioRenderer_OnInterruptCallback callback, void* userData);
@@ -331,7 +331,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInterruptCallback(OH_Audi
  * @return Result code.
  *     {@link AUDIOSTREAM_SUCCESS} Success.
  *     {@link AUDIOSTREAM_ERROR_INVALID_PARAM} Parameter is invalid, e.g. builder is nullptr, e.t.c.
- * @since 18
+ * @since 19
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererErrorCallback(OH_AudioStreamBuilder* builder,
     OH_AudioRenderer_OnErrorCallback callback, void* userData);
@@ -348,7 +348,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererErrorCallback(OH_AudioStr
  * @return Result code.
  *     {@link AUDIOSTREAM_SUCCESS} Success.
  *     {@link AUDIOSTREAM_ERROR_INVALID_PARAM} Parameter is invalid, e.g. builder is nullptr, e.t.c.
- * @since 18
+ * @since 19
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerReadDataCallback(OH_AudioStreamBuilder* builder,
     OH_AudioCapturer_OnReadDataCallback callback, void* userData);
@@ -365,7 +365,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerReadDataCallback(OH_Audio
  * @return Result code.
  *     {@link AUDIOSTREAM_SUCCESS} Success.
  *     {@link AUDIOSTREAM_ERROR_INVALID_PARAM} Parameter is invalid, e.g. builder is nullptr, e.t.c.
- * @since 18
+ * @since 19
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerDeviceChangeCallback(OH_AudioStreamBuilder* builder,
     OH_AudioCapturer_OnDeviceChangeCallback callback, void* userData);
@@ -380,7 +380,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerDeviceChangeCallback(OH_A
  * @param callback Callback to Function that will int to capturer client.
  * @param userData User data which is passed by user.
  * @return result code.
- * @since 18
+ * @since 19
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerInterruptCallback(OH_AudioStreamBuilder* builder,
     OH_AudioCapturer_OnInterruptCallback callback, void* userData);
@@ -395,7 +395,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerInterruptCallback(OH_Audi
  * @param callback Callback to Function that will int to capturer client.
  * @param userData User data which is passed by user.
  * @return result code.
- * @since 18
+ * @since 19
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerErrorCallback(OH_AudioStreamBuilder* builder,
     OH_AudioCapturer_OnErrorCallback callback, void* userData);
