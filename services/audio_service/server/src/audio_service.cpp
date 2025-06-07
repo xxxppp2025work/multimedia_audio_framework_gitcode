@@ -757,6 +757,10 @@ bool AudioService::IsEndpointTypeVoip(const AudioProcessConfig &config, AudioDev
 {
     if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
         config.rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
+        if (config.rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
+            return false;
+        }
+
         return config.rendererInfo.originalFlag == AUDIO_FLAG_VOIP_FAST || deviceInfo.networkId_ != LOCAL_NETWORK_ID;
     }
 
