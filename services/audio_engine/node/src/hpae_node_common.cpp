@@ -238,6 +238,10 @@ AudioSampleFormat TransFormatFromStringToEnum(std::string format)
 
 void AdjustMchSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo)
 {
+    if (sinkInfo.deviceName == "DP_MCH_speaker") {
+        sinkInfo.channelLayout = static_cast<uint64_t>(std::atol(audioModuleInfo.channelLayout.c_str()));
+        return;
+    }
     if (sinkInfo.deviceName != "MCH_Speaker") {
         return;
     }
