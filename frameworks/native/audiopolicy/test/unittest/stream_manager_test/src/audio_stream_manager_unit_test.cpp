@@ -588,8 +588,9 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
             <= SAMPLE_RATE_96000)));
         EXPECT_EQ(audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo_.encoding,
             AudioEncodingType::ENCODING_PCM);
-        EXPECT_EQ(true, (*audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo_.channels.rbegin() >= MONO)
-            && ((*audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo_.channels.begin() <= CHANNEL_8)));
+        std::set<AudioChannel> channels;
+        audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo_.GetChannels(channels);
+        EXPECT_EQ(true, (*channels.rbegin() >= MONO) && (*channels.begin() <= CHANNEL_8));
         audioRendererChangeInfos.clear();
     }
 
@@ -1295,8 +1296,9 @@ HWTEST_F(AudioStreamManagerUnitTest, AudioStreamChangeListnerGetCurrentCapturerC
         || ((*audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo_.samplingRate.begin()
         <= SAMPLE_RATE_96000)));
     EXPECT_EQ(audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo_.encoding, AudioEncodingType::ENCODING_PCM);
-    EXPECT_EQ(true, (*audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo_.channels.rbegin() >= MONO)
-        && ((*audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo_.channels.begin() <= CHANNEL_8)));
+    std::set<AudioChannel> channels;
+    audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo_.GetChannels(channels);
+    EXPECT_EQ(true, (*channels.rbegin() >= MONO) && (*channels.begin() <= CHANNEL_8));
 
     bool isStopped = audioCapturer->Stop();
     EXPECT_EQ(true, isStopped);

@@ -128,7 +128,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     macAddress_ = deviceDescriptor.macAddress_;
     deviceType_ = deviceDescriptor.deviceType_;
     deviceRole_ = deviceDescriptor.deviceRole_;
-    audioStreamInfo_.channels = deviceDescriptor.audioStreamInfo_.channels;
+    audioStreamInfo_.channelLayout = deviceDescriptor.audioStreamInfo_.channelLayout;
     audioStreamInfo_.encoding = deviceDescriptor.audioStreamInfo_.encoding;
     audioStreamInfo_.format = deviceDescriptor.audioStreamInfo_.format;
     audioStreamInfo_.samplingRate = deviceDescriptor.audioStreamInfo_.samplingRate;
@@ -163,7 +163,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     macAddress_ = deviceDescriptor->macAddress_;
     deviceType_ = deviceDescriptor->deviceType_;
     deviceRole_ = deviceDescriptor->deviceRole_;
-    audioStreamInfo_.channels = deviceDescriptor->audioStreamInfo_.channels;
+    audioStreamInfo_.channelLayout = deviceDescriptor->audioStreamInfo_.channelLayout;
     audioStreamInfo_.encoding = deviceDescriptor->audioStreamInfo_.encoding;
     audioStreamInfo_.format = deviceDescriptor->audioStreamInfo_.format;
     audioStreamInfo_.samplingRate = deviceDescriptor->audioStreamInfo_.samplingRate;
@@ -302,8 +302,8 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
             streamInfo.samplingRate.insert(SAMPLE_RATE_44100);
         }
         // If does not set channelCounts use STEREO instead.
-        if (streamInfo.channels.empty()) {
-            streamInfo.channels.insert(STEREO);
+        if (streamInfo.channelLayout.empty()) {
+            streamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
         }
     }
 
@@ -396,7 +396,7 @@ void AudioDeviceDescriptor::SetDeviceInfo(std::string deviceName, std::string ma
 void AudioDeviceDescriptor::SetDeviceCapability(const DeviceStreamInfo &audioStreamInfo, int32_t channelMask,
     int32_t channelIndexMasks)
 {
-    audioStreamInfo_.channels = audioStreamInfo.channels;
+    audioStreamInfo_.channelLayout = audioStreamInfo.channelLayout;
     audioStreamInfo_.encoding = audioStreamInfo.encoding;
     audioStreamInfo_.format = audioStreamInfo.format;
     audioStreamInfo_.samplingRate = audioStreamInfo.samplingRate;

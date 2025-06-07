@@ -47,20 +47,21 @@ const uint32_t USER_SELECT_BT = 2;
 
 bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo)
 {
+    A2dpDeviceConfigInfo info;
+    std::set<AudioChannel> channels;
+    info.streamInfo.GetChannels(channels);
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        A2dpDeviceConfigInfo info;
         if (audioA2dpDevice_.GetA2dpDeviceInfo(activeBTDevice_, info)) {
             streamInfo.samplingRate = *info.streamInfo.samplingRate.rbegin();
             streamInfo.format = info.streamInfo.format;
-            streamInfo.channels = *info.streamInfo.channels.rbegin();
+            streamInfo.channels = *channels.rbegin();
             return true;
         }
     } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
-        A2dpDeviceConfigInfo info;
         if (audioA2dpDevice_.GetA2dpInDeviceInfo(activeBTInDevice_, info)) {
             streamInfo.samplingRate = *info.streamInfo.samplingRate.rbegin();
             streamInfo.format = info.streamInfo.format;
-            streamInfo.channels = *info.streamInfo.channels.rbegin();
+            streamInfo.channels = *channels.rbegin();
             return true;
         }
     }

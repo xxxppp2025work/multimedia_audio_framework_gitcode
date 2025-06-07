@@ -976,14 +976,15 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
             config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
             if (config.streamInfo.samplingRate <= SAMPLE_RATE_16000) {
                 AUDIO_INFO_LOG("VoIP 16K");
-                deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+                deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO};
             } else {
                 AUDIO_INFO_LOG("VoIP 48K");
-                deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+                deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO};
             }
         } else {
             AUDIO_INFO_LOG("Fast stream");
-            AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+            AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO,
+                CH_LAYOUT_STEREO};
             deviceInfo.audioStreamInfo_ = targetStreamInfo;
             deviceInfo.deviceName_ = "mmap_device";
         }
@@ -1002,7 +1003,8 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
         deviceInfo.deviceRole_ = OUTPUT_DEVICE;
         deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
     }
-    AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO}; // note: read from xml
+    // note: read from xml
+    AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO};
     deviceInfo.audioStreamInfo_ = targetStreamInfo;
     deviceInfo.deviceName_ = "mmap_device";
     return deviceInfo;
