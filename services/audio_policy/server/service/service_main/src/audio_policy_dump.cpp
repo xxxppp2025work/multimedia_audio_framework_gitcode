@@ -150,8 +150,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyDump::GetDumpDevi
         for (auto &samplingRate : devDesc->audioStreamInfo_.samplingRate) {
             AppendFormat(dumpString, "  - device sampleRates:%d\n", samplingRate);
         }
-        for (auto &channel : devDesc->audioStreamInfo_.channels) {
-            AppendFormat(dumpString, "  - device channels:%d\n", channel);
+        for (auto &layout : devDesc->audioStreamInfo_.channelLayout) {
+            AppendFormat(dumpString, "  - device channelLayouts:%d\n", layout);
         }
         AppendFormat(dumpString, "  - device format:%d\n", devDesc->audioStreamInfo_.format);
     }

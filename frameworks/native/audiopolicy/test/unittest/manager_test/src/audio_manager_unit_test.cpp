@@ -88,7 +88,9 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_002, TestSize.Level1)
     EXPECT_GE(inputDevice->deviceId_, MIN_DEVICE_ID);
     EXPECT_THAT(inputDevice->audioStreamInfo_.samplingRate, Each(AllOf(Le(SAMPLE_RATE_96000), Ge(SAMPLE_RATE_8000))));
     EXPECT_EQ(inputDevice->audioStreamInfo_.encoding, AudioEncodingType::ENCODING_PCM);
-    EXPECT_THAT(inputDevice->audioStreamInfo_.channels, Each(AllOf(Le(CHANNEL_8), Ge(MONO))));
+    std::set<AudioChannel> channels;
+    inputDevice->audioStreamInfo_.GetChannels(channels);
+    EXPECT_THAT(channels, Each(AllOf(Le(CHANNEL_8), Ge(MONO))));
 }
 
 /**
@@ -121,7 +123,9 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_003, TestSize.Level1)
         EXPECT_THAT(outputDevice->audioStreamInfo_.samplingRate, Each(AllOf(Le(SAMPLE_RATE_96000),
             Ge(SAMPLE_RATE_8000))));
         EXPECT_EQ(outputDevice->audioStreamInfo_.encoding, AudioEncodingType::ENCODING_PCM);
-        EXPECT_THAT(outputDevice->audioStreamInfo_.channels, Each(AllOf(Le(CHANNEL_8), Ge(MONO))));
+        std::set<AudioChannel> channels;
+        outputDevice->audioStreamInfo_.GetChannels(channels);
+        EXPECT_THAT(channels, Each(AllOf(Le(CHANNEL_8), Ge(MONO))));
     }
 }
 
@@ -2016,7 +2020,9 @@ HWTEST(AudioManagerUnitTest, SetDeviceAbsVolumeSupported_001, TestSize.Level1)
         EXPECT_THAT(outputDevice->audioStreamInfo_.samplingRate, Each(AllOf(Le(SAMPLE_RATE_96000),
             Ge(SAMPLE_RATE_8000))));
         EXPECT_EQ(outputDevice->audioStreamInfo_.encoding, AudioEncodingType::ENCODING_PCM);
-        EXPECT_THAT(outputDevice->audioStreamInfo_.channels, Each(AllOf(Le(CHANNEL_8), Ge(MONO))));
+        std::set<AudioChannel> channels;
+        outputDevice->audioStreamInfo_.GetChannels(channels);
+        EXPECT_THAT(channels, Each(AllOf(Le(CHANNEL_8), Ge(MONO))));
         EXPECT_EQ(true, (outputDevice->audioStreamInfo_.format >= SAMPLE_U8)
             && ((outputDevice->audioStreamInfo_.format <= SAMPLE_F32LE)));
         if ((outputDevice->macAddress_).c_str()!= nullptr) {
