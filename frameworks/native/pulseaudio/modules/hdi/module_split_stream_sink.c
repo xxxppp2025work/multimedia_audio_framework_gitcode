@@ -95,6 +95,7 @@ PA_MODULE_USAGE(
         "rate=<sample rate> "
         "channels=<number of channels> "
         "channel_map=<channel map>"
+        "channel_layout=<channel layout>"
         "buffer_size=<custom buffer size>"
         "formats=<semi-colon separated sink formats>");
 
@@ -125,6 +126,7 @@ struct userdata {
     uint32_t open_mic_speaker;
     pa_sample_spec ss;
     pa_channel_map map;
+    uint64_t channelLayout;
     int32_t deviceType;
     size_t bytesDropped;
     uint32_t writeCount;
@@ -148,6 +150,7 @@ static const char * const VALID_MODARGS[] = {
     "rate",
     "channels",
     "channel_map",
+    "channel_layout",
     "buffer_size",
     "file_path",
     "adapter_name",
