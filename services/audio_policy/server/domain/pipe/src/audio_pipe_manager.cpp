@@ -175,6 +175,7 @@ std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetPipeinfoByNameAndFlag(
 
 std::string AudioPipeManager::GetAdapterNameBySessionId(uint32_t sessionId)
 {
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     AUDIO_INFO_LOG("Cur Pipe list size %{public}zu, sessionId %{public}u", curPipeList_.size(), sessionId);
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto &pipeInfo : curPipeList_) {
@@ -196,6 +197,7 @@ std::string AudioPipeManager::GetAdapterNameBySessionId(uint32_t sessionId)
 
 std::shared_ptr<AudioDeviceDescriptor> AudioPipeManager::GetProcessDeviceInfoBySessionId(uint32_t sessionId)
 {
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     AUDIO_INFO_LOG("Cur pipe list size %{public}zu, sessionId %{public}u", curPipeList_.size(), sessionId);
     for (auto &pipeInfo : curPipeList_) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
