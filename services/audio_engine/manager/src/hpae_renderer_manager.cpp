@@ -46,7 +46,7 @@ HpaeRendererManager::~HpaeRendererManager()
 
 bool HpaeRendererManager::IsMchDevice()
 {
-    return sinkInfo_.deviceName == "MCH_Speaker";
+    return sinkInfo_.deviceName == "MCH_Speaker" || sinkInfo_.deviceName == "DP_MCH_speaker";
 }
 
 int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo)

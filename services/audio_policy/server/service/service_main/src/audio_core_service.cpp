@@ -222,10 +222,18 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
 {
     Trace trace("IsStreamSupportMultiChannel");
 
+    bool supportMultSupMode = policyConfigMananger_.GetSupportMultSupMode();
+    AUDIO_INFO_LOG("policyConfigMananger_.GetSupportMultSupMode() = %{public}d", supportMultSupMode);
+    if (supportMultSupMode) {
+        return true;
+    }
+
     // MultiChannel: Speaker, A2dp offload
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_SPEAKER &&
-        (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP ||
-        streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ != A2DP_OFFLOAD)) {
+        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
+        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_DP &&
+        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_HDMI &&
+        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_LINE_DIGITAL) {
         AUDIO_INFO_LOG("normal stream, deviceType: %{public}d", streamDesc->newDeviceDescs_[0]->deviceType_);
         return false;
     }

@@ -179,6 +179,11 @@ std::unordered_map<std::string, uint32_t> AudioDefinitionPolicyUtils::usageStrTo
     {"AUDIO_USAGE_VOIP", AUDIO_USAGE_VOIP},
 };
 
+std::unordered_map<std::string, bool> AudioDefinitionPolicyUtils::supModeStrToBool = {
+    {"false", false},
+    {"true", true},
+}
+
 uint32_t AudioDefinitionPolicyUtils::PcmFormatToBytes(AudioSampleFormat format)
 {
     // AudioSampleFormat / PCM_8_BIT
@@ -229,7 +234,8 @@ AudioChannel AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(AudioChanne
         case AudioChannelLayout::CH_LAYOUT_7POINT0:
             channel = AudioChannel::CHANNEL_7;
             break;
-        case AudioChannelLayout::CH_LAYOUT_7POINT1:
+        case AudioChannelLayout::CH_LAYOUT_5POINT1POINT2:
+        case AudioChannelLayout::CH_LAYOUT_7PINT1:
             channel = AudioChannel::CHANNEL_8;
             break;
         case AudioChannelLayout::CH_LAYOUT_7POINT1POINT2:
