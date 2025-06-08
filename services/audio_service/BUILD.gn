@@ -28,6 +28,20 @@ group("audio_service_packages") {
   ]
 }
 
+config("audio_common_config") {
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+  cflags += [ "-Os" ]
+  if (target_cpu == "arm") {
+    cflags += [ "-DBINDER_IPC_32BIT" ]
+  }
+
+  cflags_cc = cflags
+  cflags_cc += [ "-std=c++20" ]
+}
+
 ohos_shared_library("audio_common") {
   branch_protector_ret = "pac_ret"
   sanitize = {
@@ -78,17 +92,11 @@ ohos_shared_library("audio_common") {
     "common/src/limiter/audio_limiter_manager.cpp",
     "common/src/linear_pos_time_model.cpp",
     "common/src/oh_audio_buffer.cpp",
+    "common/src/oh_audio_buffer_base.cpp",
     "common/src/volume_tools.cpp",
   ]
 
-  cflags = [
-    "-Wall",
-    "-Werror",
-  ]
-  cflags += [ "-Os" ]
-  if (target_cpu == "arm") {
-    cflags += [ "-DBINDER_IPC_32BIT" ]
-  }
+  configs = [ ":audio_common_config" ]
 
   deps = [
     "../../frameworks/native/audioschedule:audio_schedule",
@@ -115,9 +123,6 @@ ohos_shared_library("audio_common") {
     include_dirs += [ "//third_party/pulseaudio/speex/include" ]
     external_deps += [ "pulseaudio:speexresampler" ]
   }
-
-  cflags_cc = cflags
-  cflags_cc += [ "-std=c++20" ]
 
   defines = []
   if (use_libfuzzer || use_clang_coverage) {
