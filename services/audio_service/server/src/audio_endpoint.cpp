@@ -1794,7 +1794,7 @@ int32_t AudioEndpointInner::WriteToSpecialProcBuf(const std::shared_ptr<OHAudioB
     uint64_t curWritePos = procBuf->GetCurWriteFrame();
     Trace trace("AudioEndpoint::WriteProcessData-<" + std::to_string(curWritePos));
 
-    int32_t writeAbleSize = procBuf->GetAvailableDataFrames();
+    int32_t writeAbleSize = procBuf->GetWritableDataFrames();
     if (writeAbleSize <= 0 || static_cast<uint32_t>(writeAbleSize) <= dstSpanSizeInframe_) {
         AUDIO_WARNING_LOG("client read too slow: curWritePos:%{public}" PRIu64" writeAbleSize:%{public}d",
             curWritePos, writeAbleSize);
