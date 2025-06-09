@@ -200,19 +200,29 @@ void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDevice
         return;
     }
 #ifdef BLUETOOTH_ENABLE
-    DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
-    if (curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO ||
-        curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        Bluetooth::SendUserSelectionEvent(curOutputDeviceType,
-            GetCurrentOutputDeviceMacAddr(), USER_NOT_SELECT_BT);
-        if (curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-            Bluetooth::AudioHfpManager::DisconnectSco();
-        }
-    }
+    NotifyUserDisSelectionEventToBt(
+        std::make_shared<AudioDeviceDescriptor>(GetCurrentOutputDeviceType());
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
         audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         Bluetooth::SendUserSelectionEvent(audioDeviceDescriptor->deviceType_,
             audioDeviceDescriptor->macAddress_, USER_SELECT_BT);
+    }
+#endif
+}
+
+void AudioActiveDevice::NotifyUserDisSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor)
+{
+    AUDIO_INFO_LOG("UserDisSelection start");
+    CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
+    CHECK_AND_RETURN_LOG(audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO,
+        "device type is not a2dp or sco");
+#ifdef BLUETOOTH_ENABLE
+    Bluetooth::SendUserSelectionEvent(
+        audioDeviceDescriptor->deviceType_, audioDeviceDescriptor->macAddress_, USER_NOT_SELECT_BT);
+    if (curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO &&
+        audioDeviceDescriptor.IsSameDeviceDesc(GetCurrentOutputDevice())) {
+        Bluetooth::AudioHfpManager::DisconnectSco();
     }
 #endif
 }

@@ -506,7 +506,6 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
             std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID,
             "UpdateConnectedDevicesWhenConnectingForOutputDevice");
     }
-    AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(descForCb);
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForInputDevice(
