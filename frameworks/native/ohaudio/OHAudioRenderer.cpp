@@ -479,7 +479,6 @@ bool OHAudioRenderer::Release()
     if (!audioRenderer_->Release()) {
         return false;
     }
-    audioRenderer_ = nullptr;
     audioRendererCallback_ = nullptr;
     return true;
 }
