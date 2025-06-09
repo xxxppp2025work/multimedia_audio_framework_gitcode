@@ -16,36 +16,11 @@
 #ifndef POLICY_PROVIDER_STUB_H
 #define POLICY_PROVIDER_STUB_H
 
-#include "i_policy_provider_ipc.h"
+#include "policy_provider_ipc_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class PolicyProviderStub : public IRemoteStub<IPolicyProviderIpc> {
-public:
-    virtual ~PolicyProviderStub() = default;
-    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
-private:
-    static bool CheckInterfaceToken(MessageParcel &data);
-
-    int32_t HandleGetProcessDeviceInfo(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleInitSharedVolume(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleSetWakeupCapturer(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleSetCapturer(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleWakeupCapturerRemoved(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleIsAbsVolumeSupported(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleOffloadGetRenderPosition(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleGetAndSaveClientType(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleGetMaxRendererInstances(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleConcurrencyFromServer(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleNotifyCapturerRemoved(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleSetDefaultOutputDevice(MessageParcel &data, MessageParcel &reply);
-#ifdef HAS_FEATURE_INNERCAPTURER
-    int32_t HandleLoadModernInnerCapSink(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleUnloadModernInnerCapSink(MessageParcel &data, MessageParcel &reply);
-#endif
-};
-
-class PolicyProviderWrapper : public PolicyProviderStub {
+class PolicyProviderWrapper : public PolicyProviderIpcStub {
 public:
     ~PolicyProviderWrapper();
     PolicyProviderWrapper(IPolicyProvider *policyWorker);
@@ -61,10 +36,10 @@ public:
     int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp) override;
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName) override;
     int32_t GetMaxRendererInstances() override;
-    int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe) override;
+    int32_t ActivateConcurrencyFromServer(int32_t incomingPipe) override;
     int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning) override;
+    int32_t SetDefaultOutputDevice(const int32_t defaultOutputDevice, const uint32_t sessionID,
+        const int32_t streamUsage, bool isRunning) override;
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId) override;
     int32_t UnloadModernInnerCapSink(int32_t innerCapId) override;

@@ -16,9 +16,10 @@
 #include <gtest/gtest.h>
 #include "audio_errors.h"
 #include "policy_handler.h"
-#include "policy_provider_proxy.h"
+#include "policy_provider_ipc_proxy.h"
 
 using namespace testing::ext;
+using PolicyProviderProxy = PolicyProviderIpcProxy;
 
 namespace OHOS {
 namespace AudioStandard {

@@ -388,7 +388,6 @@ audio_ohos_library("audio_process_service") {
     "server/src/pa_capturer_stream_impl.cpp",
     "server/src/pa_renderer_stream_impl.cpp",
     "server/src/policy_handler.cpp",
-    "server/src/policy_provider_proxy.cpp",
     "server/src/pro_audio_stream_manager.cpp",
     "server/src/pro_renderer_stream_impl.cpp",
     "server/src/renderer_in_server.cpp",

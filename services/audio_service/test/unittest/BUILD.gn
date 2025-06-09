@@ -723,7 +723,6 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "../../../../services/audio_service/server/src/pa_capturer_stream_impl.cpp",
     "../../../../services/audio_service/server/src/pa_renderer_stream_impl.cpp",
     "../../../../services/audio_service/server/src/policy_handler.cpp",
-    "../../../../services/audio_service/server/src/policy_provider_proxy.cpp",
     "../../../../services/audio_service/server/src/pro_audio_stream_manager.cpp",
     "../../../../services/audio_service/server/src/pro_renderer_stream_impl.cpp",
     "../../../../services/audio_service/server/src/renderer_in_server.cpp",
@@ -733,7 +732,6 @@ ohos_unittest("audio_process_in_client_unit_test") {
   configs = [
     ":module_private_config",
     "../../../../services/audio_service:audio_service_config",
-    "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config"
   ]
 
   cflags = [ "-fno-access-control" ]
@@ -876,7 +874,6 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../services/audio_service/server/src/pa_capturer_stream_impl.cpp",
     "../../../../services/audio_service/server/src/pa_renderer_stream_impl.cpp",
     "../../../../services/audio_service/server/src/policy_handler.cpp",
-    "../../../../services/audio_service/server/src/policy_provider_proxy.cpp",
     "../../../../services/audio_service/server/src/pro_audio_stream_manager.cpp",
     "../../../../services/audio_service/server/src/pro_renderer_stream_impl.cpp",
     "../../../../services/audio_service/server/src/renderer_in_server.cpp",
@@ -886,7 +883,6 @@ ohos_unittest("capturer_in_server_unit_test") {
   configs = [
     ":module_private_config",
     "../../../../services/audio_service:audio_service_config",
-    "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config"
   ]
   cflags = [ "-fno-access-control" ]
 
