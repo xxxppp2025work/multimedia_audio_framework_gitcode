@@ -36,7 +36,7 @@ StreamListenerHolder::~StreamListenerHolder()
     AUDIO_INFO_LOG("~StreamListenerHolder()");
 }
 
-int32_t StreamListenerHolder::RegisterStreamListener(sptr<IpcStreamListener> listener)
+int32_t StreamListenerHolder::RegisterStreamListener(sptr<IIpcStreamListener> listener)
 {
     std::lock_guard<std::mutex> lock(listenerMutex_);
     // should only be set once
@@ -51,7 +51,18 @@ int32_t StreamListenerHolder::OnOperationHandled(Operation operation, int64_t re
 {
     std::lock_guard<std::mutex> lock(listenerMutex_);
     CHECK_AND_RETURN_RET_LOG(streamListener_ != nullptr, ERR_OPERATION_FAILED, "stream listrener not set");
-    return streamListener_->OnOperationHandled(operation, result);
+    if (IsWakeUpLaterNeeded(operation)) {
+        return streamListener_->OnOperationHandledLazy(operation, result);
+    } else {
+        return streamListener_->OnOperationHandled(operation, result);
+    }
+}
+
+bool StreamListenerHolder::IsWakeUpLaterNeeded(Operation operation)
+{
+    return (operation == Operation::SET_OFFLOAD_ENABLE) ||
+        (operation == Operation::DATA_LINK_CONNECTING) ||
+        (operation == Operation::DATA_LINK_CONNECTED);
 }
 
 sptr<IpcStreamInServer> IpcStreamInServer::Create(const AudioProcessConfig &config, int32_t &ret)
@@ -137,7 +148,7 @@ int32_t IpcStreamInServer::ConfigCapturer()
 int32_t IpcStreamInServer::RegisterStreamListener(sptr<IRemoteObject> object)
 {
     CHECK_AND_RETURN_RET_LOG(streamListenerHolder_ != nullptr, ERR_OPERATION_FAILED, "RegisterStreamListener failed");
-    sptr<IpcStreamListener> listener = iface_cast<IpcStreamListener>(object);
+    sptr<IIpcStreamListener> listener = iface_cast<IIpcStreamListener>(object);
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "RegisterStreamListener obj cast failed");
     streamListenerHolder_->RegisterStreamListener(listener);
 

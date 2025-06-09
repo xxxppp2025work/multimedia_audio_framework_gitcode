@@ -716,7 +716,6 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "../../../../services/audio_service/server/src/i_stream_manager.cpp",
     "../../../../services/audio_service/server/src/ipc_offline_stream_stub.cpp",
     "../../../../services/audio_service/server/src/ipc_stream_in_server.cpp",
-    "../../../../services/audio_service/server/src/ipc_stream_listener_proxy.cpp",
     "../../../../services/audio_service/server/src/ipc_stream_stub.cpp",
     "../../../../services/audio_service/server/src/none_mix_engine.cpp",
     "../../../../services/audio_service/server/src/offline_stream_in_server.cpp",
@@ -734,6 +733,7 @@ ohos_unittest("audio_process_in_client_unit_test") {
   configs = [
     ":module_private_config",
     "../../../../services/audio_service:audio_service_config",
+    "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config"
   ]
 
   cflags = [ "-fno-access-control" ]
@@ -753,6 +753,7 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "../../../../services/audio_service:audio_process_service",
     "../../../../services/audio_service:audio_service",
     "../../../audio_policy:audio_foundation",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_proxy",
   ]
 
   external_deps = [
@@ -868,7 +869,6 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../services/audio_service/server/src/i_stream_manager.cpp",
     "../../../../services/audio_service/server/src/ipc_offline_stream_stub.cpp",
     "../../../../services/audio_service/server/src/ipc_stream_in_server.cpp",
-    "../../../../services/audio_service/server/src/ipc_stream_listener_proxy.cpp",
     "../../../../services/audio_service/server/src/ipc_stream_stub.cpp",
     "../../../../services/audio_service/server/src/none_mix_engine.cpp",
     "../../../../services/audio_service/server/src/offline_stream_in_server.cpp",
@@ -886,6 +886,7 @@ ohos_unittest("capturer_in_server_unit_test") {
   configs = [
     ":module_private_config",
     "../../../../services/audio_service:audio_service_config",
+    "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config"
   ]
   cflags = [ "-fno-access-control" ]
 
@@ -906,6 +907,7 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../services/audio_service:audio_process_service",
     "../../../../services/audio_service:audio_service",
     "../../../audio_policy:audio_foundation",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_proxy",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",

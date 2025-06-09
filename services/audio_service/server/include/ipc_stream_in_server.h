@@ -18,6 +18,7 @@
 
 #include <memory>
 
+#include "iipc_stream_listener.h"
 #include "ipc_stream_stub.h"
 #include "audio_process_config.h"
 #include "renderer_in_server.h"
@@ -32,13 +33,14 @@ class StreamListenerHolder : public IStreamListener {
 public:
     StreamListenerHolder();
     ~StreamListenerHolder();
-    int32_t RegisterStreamListener(sptr<IpcStreamListener> listener);
+    int32_t RegisterStreamListener(sptr<IIpcStreamListener> listener);
 
     // override IStreamListener
     int32_t OnOperationHandled(Operation operation, int64_t result) override;
 private:
+    bool IsWakeUpLaterNeeded(Operation operation);
     std::mutex listenerMutex_;
-    sptr<IpcStreamListener> streamListener_ = nullptr;
+    sptr<IIpcStreamListener> streamListener_ = nullptr;
 };
 
 class IpcStreamInServer : public IpcStreamStub {

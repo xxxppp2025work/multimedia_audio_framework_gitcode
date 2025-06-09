@@ -108,10 +108,10 @@ RendererInClientInner::~RendererInClientInner()
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
-    Trace trace(traceTag_ + " OnOperationHandled:" + std::to_string(operation));
-    AUDIO_INFO_LOG("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_, operation,
-        result);
-    if (operation == SET_OFFLOAD_ENABLE) {
+    Trace trace(traceTag_ + " OnOperationHandled:" + std::to_string(static_cast<int>(operation)));
+    AUDIO_INFO_LOG("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_,
+        static_cast<int>(operation), result);
+    if (operation == Operation::SET_OFFLOAD_ENABLE) {
         AUDIO_INFO_LOG("SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
         if (!offloadEnable_ && static_cast<bool>(result)) {
             offloadStartReadPos_ = 0;
@@ -119,15 +119,15 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         offloadEnable_ = static_cast<bool>(result);
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
         return SUCCESS;
-    } else if (operation == DATA_LINK_CONNECTING) {
+    } else if (operation == Operation::DATA_LINK_CONNECTING) {
         UpdateDataLinkState(false, false);
         return SUCCESS;
-    } else if (operation == DATA_LINK_CONNECTED) {
+    } else if (operation == Operation::DATA_LINK_CONNECTED) {
         UpdateDataLinkState(true, true);
         return SUCCESS;
     }
 
-    if (operation == RESTORE_SESSION) {
+    if (operation == Operation::RESTORE_SESSION) {
         // fix it when restoreAudioStream work right
         if (audioStreamTracker_ && audioStreamTracker_.get()) {
             audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_,
@@ -162,13 +162,13 @@ void RendererInClientInner::UpdateDataLinkState(bool isConnected, bool needNotif
 void RendererInClientInner::HandleStatusChangeOperation(Operation operation)
 {
     switch (operation) {
-        case START_STREAM :
+        case Operation::START_STREAM :
             state_ = RUNNING;
             break;
-        case PAUSE_STREAM :
+        case Operation::PAUSE_STREAM :
             state_ = PAUSED;
             break;
-        case STOP_STREAM :
+        case Operation::STOP_STREAM :
             state_ = STOPPED;
             break;
         default :
@@ -1152,16 +1152,16 @@ bool RendererInClientInner::FlushAudioStream()
     }
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return notifiedOperation_ == FLUSH_STREAM; // will be false when got notified.
+        return notifiedOperation_ == Operation::FLUSH_STREAM; // will be false when got notified.
     });
 
-    if (notifiedOperation_ != FLUSH_STREAM || notifiedResult_ != SUCCESS) {
+    if (notifiedOperation_ != Operation::FLUSH_STREAM || notifiedResult_ != SUCCESS) {
         AUDIO_ERR_LOG("Flush failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
-        notifiedOperation_ = MAX_OPERATION_CODE;
+        notifiedOperation_ = Operation::MAX_OPERATION_CODE;
         return false;
     }
-    notifiedOperation_ = MAX_OPERATION_CODE;
+    notifiedOperation_ = Operation::MAX_OPERATION_CODE;
     waitLock.unlock();
     ResetFramePosition();
 

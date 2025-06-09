@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,19 +13,10 @@
  * limitations under the License.
  */
 
-#ifndef I_STREAM_LISTENER_H
-#define I_STREAM_LISTENER_H
+package OHOS.AudioStandard;
 
-#include "audio_service_types.h"
-
-namespace OHOS {
-namespace AudioStandard {
-class IStreamListener {
-public:
-    virtual ~IStreamListener() = default;
-
-    virtual int32_t OnOperationHandled(Operation operation, int64_t result) = 0;
-};
-} // namespace AudioStandard
-} // namespace OHOS
-#endif // I_STREAM_LISTENER_H
+import AudioServiceTypes;
+interface IIpcStreamListener {
+    [oneway] void OnOperationHandled([in] Operation operation, [in] long operationResult);
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC] void OnOperationHandledLazy([in] Operation operation, [in] long operationResult);
+}

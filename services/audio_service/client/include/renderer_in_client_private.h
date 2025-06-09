@@ -29,6 +29,7 @@
 #include "audio_utils.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
+#include "ipc_stream.h"
 #include "volume_ramp.h"
 #include "volume_tools.h"
 #include "callback_handler.h"
@@ -345,7 +346,7 @@ private:
     std::mutex dataConnectionMutex_;
     std::condition_variable dataConnectionCV_;
 
-    Operation notifiedOperation_ = MAX_OPERATION_CODE;
+    Operation notifiedOperation_ = Operation::MAX_OPERATION_CODE;
     int64_t notifiedResult_ = 0;
 
     float lowPowerVolume_ = 1.0;

@@ -146,18 +146,6 @@ public:
 
     DECLARE_INTERFACE_DESCRIPTOR(u"IpcStream");
 };
-
-class IpcStreamListener : public IRemoteBroker, public IStreamListener {
-public:
-    virtual ~IpcStreamListener() = default;
-
-    // IPC code.
-    enum IpcStreamListenerMsg : uint32_t {
-        ON_OPERATION_HANDLED = 0,
-        IPC_STREAM_LISTENER_MAX_MSG
-    };
-    DECLARE_INTERFACE_DESCRIPTOR(u"IpcStreamListener");
-};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // IPC_STREAM_H

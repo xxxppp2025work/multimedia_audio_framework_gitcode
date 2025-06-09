@@ -41,5 +41,11 @@ int32_t IpcStreamListenerImpl::OnOperationHandled(Operation operation, int64_t r
     }
     return listener->OnOperationHandled(operation, result);
 }
+
+int32_t IpcStreamListenerImpl::OnOperationHandledLazy(Operation operation, int64_t result)
+{
+    return OnOperationHandled(operation, result);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
