@@ -33,7 +33,7 @@
 #include "system_ability_definition.h"
 #include "securec.h"
 
-#include "ipc_stream.h"
+#include "iipc_stream.h"
 #include "audio_capturer_log.h"
 #include "audio_errors.h"
 #include "volume_tools.h"
@@ -49,6 +49,7 @@
 #include "ipc_stream_listener_stub.h"
 #include "callback_handler.h"
 #include "audio_safe_block_queue.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -294,7 +295,7 @@ private:
     size_t cbBufferSize_ = 0;
     AudioSafeBlockQueue<BufferDesc> cbBufferQueue_; // only one cbBuffer_
 
-    AudioPlaybackCaptureConfig filterConfig_ = {{{}, FilterMode::INCLUDE, {}, FilterMode::INCLUDE}, false};
+    AudioPlaybackCaptureConfig filterConfig_ = {};
     bool isInnerCapturer_ = false;
     bool isWakeupCapturer_ = false;
 
@@ -318,7 +319,7 @@ private:
     std::mutex callServerMutex_;
     std::condition_variable callServerCV_;
 
-    Operation notifiedOperation_ = MAX_OPERATION_CODE;
+    Operation notifiedOperation_ = Operation::MAX_OPERATION_CODE;
     int64_t notifiedResult_ = 0;
 
     // read data
@@ -329,7 +330,7 @@ private:
     // ipc stream related
     AudioProcessConfig clientConfig_;
     sptr<IpcStreamListenerImpl> listener_ = nullptr;
-    sptr<IpcStream> ipcStream_ = nullptr;
+    sptr<IIpcStream> ipcStream_ = nullptr;
     std::shared_ptr<OHAudioBuffer> clientBuffer_ = nullptr;
 
     // buffer handle
@@ -406,21 +407,21 @@ CapturerInClientInner::~CapturerInClientInner()
 int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
     // read/write operation may print many log, use debug.
-    if (operation == UPDATE_STREAM) {
+    if (operation == Operation::UPDATE_STREAM) {
         AUDIO_DEBUG_LOG("OnOperationHandled() UPDATE_STREAM result:%{public}" PRId64".", result);
         // notify write if blocked
         readDataCV_.notify_all();
         return SUCCESS;
     }
 
-    if (operation == BUFFER_OVERFLOW) {
+    if (operation == Operation::BUFFER_OVERFLOW) {
         AUDIO_WARNING_LOG("recv overflow %{public}d", overflowCount_);
         // in plan next: do more to reduce overflow
         readDataCV_.notify_all();
         return SUCCESS;
     }
 
-    if (operation == RESTORE_SESSION) {
+    if (operation == Operation::RESTORE_SESSION) {
         if (audioStreamTracker_ && audioStreamTracker_.get()) {
             audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, state_, clientPid_, capturerInfo_);
         }
@@ -827,15 +828,17 @@ int32_t CapturerInClientInner::InitIpcStream(const AudioPlaybackCaptureConfig &f
     sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
     int32_t errorCode = 0;
-    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config, errorCode, filterConfig);
+    sptr<IRemoteObject> ipcProxy = nullptr;
+    gasp->CreateAudioProcess(config, errorCode, filterConfig, ipcProxy);
     for (int32_t retrycount = 0; (errorCode == ERR_RETRY_IN_CLIENT) && (retrycount < MAX_RETRY_COUNT); retrycount++) {
         AUDIO_WARNING_LOG("retry in client");
         std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
-        ipcProxy = gasp->CreateAudioProcess(config, errorCode);
+        AudioPlaybackCaptureConfig filterConfig = {};
+        gasp->CreateAudioProcess(config, errorCode, filterConfig, ipcProxy);
     }
     CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, errorCode, "failed with create audio stream fail.");
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
-    ipcStream_ = iface_cast<IpcStream>(ipcProxy);
+    ipcStream_ = iface_cast<IIpcStream>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "failed when iface_cast.");
 
     // in plan: old listener_ is destoried here, will server receive dieth notify?
@@ -1422,10 +1425,10 @@ bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType, AudioSt
 
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return notifiedOperation_ == START_STREAM; // will be false when got notified.
+        return notifiedOperation_ == Operation::START_STREAM; // will be false when got notified.
     });
 
-    if (notifiedOperation_ != START_STREAM || notifiedResult_ != SUCCESS) {
+    if (notifiedOperation_ != Operation::START_STREAM || notifiedResult_ != SUCCESS) {
         AUDIO_ERR_LOG("Start failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
         return false;
@@ -1468,10 +1471,10 @@ bool CapturerInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     }
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return notifiedOperation_ == PAUSE_STREAM; // will be false when got notified.
+        return notifiedOperation_ == Operation::PAUSE_STREAM; // will be false when got notified.
     });
 
-    if (notifiedOperation_ != PAUSE_STREAM || notifiedResult_ != SUCCESS) {
+    if (notifiedOperation_ != Operation::PAUSE_STREAM || notifiedResult_ != SUCCESS) {
         AUDIO_ERR_LOG("Pause failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
         return false;
@@ -1521,10 +1524,10 @@ bool CapturerInClientInner::StopAudioStream()
 
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return notifiedOperation_ == STOP_STREAM; // will be false when got notified.
+        return notifiedOperation_ == Operation::STOP_STREAM; // will be false when got notified.
     });
 
-    if (notifiedOperation_ != STOP_STREAM || notifiedResult_ != SUCCESS) {
+    if (notifiedOperation_ != Operation::STOP_STREAM || notifiedResult_ != SUCCESS) {
         AUDIO_ERR_LOG("Stop failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
         state_ = INVALID;
@@ -1617,16 +1620,16 @@ bool CapturerInClientInner::FlushAudioStream()
     }
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return notifiedOperation_ == FLUSH_STREAM; // will be false when got notified.
+        return notifiedOperation_ == Operation::FLUSH_STREAM; // will be false when got notified.
     });
 
-    if (notifiedOperation_ != FLUSH_STREAM || notifiedResult_ != SUCCESS) {
+    if (notifiedOperation_ != Operation::FLUSH_STREAM || notifiedResult_ != SUCCESS) {
         AUDIO_ERR_LOG("Flush failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
-        notifiedOperation_ = MAX_OPERATION_CODE;
+        notifiedOperation_ = Operation::MAX_OPERATION_CODE;
         return false;
     }
-    notifiedOperation_ = MAX_OPERATION_CODE;
+    notifiedOperation_ = Operation::MAX_OPERATION_CODE;
     waitLock.unlock();
     AUDIO_INFO_LOG("Flush stream SUCCESS, sessionId: %{public}d", sessionId_);
     return true;

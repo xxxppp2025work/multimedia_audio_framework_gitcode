@@ -20,7 +20,7 @@
 #include "policy_handler.h"
 
 #include "securec.h"
-
+#include "iprocess_cb.h"
 #include "audio_errors.h"
 #include "audio_capturer_log.h"
 #include "audio_service.h"
@@ -59,7 +59,12 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
         sessionId_ = processConfig.originalSessionId;
     }
 
-    const auto [samplingRate, encoding, format, channels, channelLayout] = processConfig.streamInfo;
+    // const auto [samplingRate, encoding, format, channels, channelLayout] = processConfig.streamInfo;
+    AudioSamplingRate samplingRate = processConfig_.streamInfo.samplingRate;
+    // AudioEncodingType encoding = processConfig_.streamInfo.encoding;
+    AudioSampleFormat format = processConfig_.streamInfo.format;
+    AudioChannel channels = processConfig_.streamInfo.channels;
+    // AudioChannelLayout channelLayout = processConfig_.streamInfo.channelLayout;
     // eg: 100005_dump_process_server_audio_48000_2_1.pcm
     dumpFileName_ = std::to_string(sessionId_) + '_' + "_dump_process_server_audio_" +
         std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +
@@ -158,7 +163,7 @@ int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buff
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::RequestHandleInfo(bool isAsync)
+int32_t AudioProcessInServer::RequestHandleInfo()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_ILLEGAL_STATE, "buffer not inited!");
@@ -168,6 +173,12 @@ int32_t AudioProcessInServer::RequestHandleInfo(bool isAsync)
     }
     return SUCCESS;
 }
+
+int32_t AudioProcessInServer::RequestHandleInfoAsync()
+{
+    return RequestHandleInfo();
+}
+
 
 bool AudioProcessInServer::CheckBGCapturer()
 {
@@ -281,7 +292,8 @@ int32_t AudioProcessInServer::StartInner()
             "Turn on micIndicator failed or check backgroud capture failed for stream:%{public}d!", sessionId_);
     }
 
-    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
+    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_,
+        SessionOperation::SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, true);
     for (size_t i = 0; i < listenerList_.size(); i++) {
@@ -334,7 +346,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
         recorderDfx_->WriteDfxStopMsg(sessionId_, CAPTURER_STAGE_PAUSE_OK,
             GetLastAudioDuration(), processConfig_);
     }
-    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_PAUSE);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SessionOperation::SESSION_OPERATION_PAUSE);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
 
     AUDIO_PRERELEASE_LOGI("Pause in server success!");
@@ -362,13 +374,13 @@ int32_t AudioProcessInServer::Resume()
     }
     AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(sessionId_);
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
-    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SessionOperation::SESSION_OPERATION_START);
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     AUDIO_PRERELEASE_LOGI("Resume in server success!");
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::Stop(AudioProcessStage stage)
+int32_t AudioProcessInServer::Stop(int32_t stage)
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
@@ -404,7 +416,7 @@ int32_t AudioProcessInServer::Stop(AudioProcessStage stage)
         recorderDfx_->WriteDfxStopMsg(sessionId_, capturerStage,
             GetLastAudioDuration(), processConfig_);
     }
-    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_STOP);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SessionOperation::SESSION_OPERATION_STOP);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
 
     AUDIO_INFO_LOG("Stop in server success!");
@@ -426,7 +438,8 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_RELEASED);
     }
-    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE);
+    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_,
+        SessionOperation::SESSION_OPERATION_RELEASE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
     ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
@@ -454,7 +467,7 @@ void ProcessDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
     AUDIO_INFO_LOG("OnRemoteDied ret: %{public}d %{public}" PRId64 "", ret, createTime_);
 }
 
-int32_t AudioProcessInServer::RegisterProcessCb(sptr<IRemoteObject> object)
+int32_t AudioProcessInServer::RegisterProcessCb(const sptr<IRemoteObject>& object)
 {
     sptr<IProcessCb> processCb = iface_cast<IProcessCb>(object);
     CHECK_AND_RETURN_RET_LOG(processCb != nullptr, ERR_INVALID_PARAM, "RegisterProcessCb obj cast failed");
@@ -673,12 +686,11 @@ int32_t AudioProcessInServer::RemoveProcessStatusListener(std::shared_ptr<IProce
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::RegisterThreadPriority(pid_t tid, const std::string &bundleName,
-    BoostTriggerMethod method)
+int32_t AudioProcessInServer::RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method)
 {
     pid_t pid = IPCSkeleton::GetCallingPid();
     CHECK_AND_RETURN_RET_LOG(method < METHOD_MAX, ERR_INVALID_PARAM, "err param %{public}u", method);
-    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, tid, bundleName);
+    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, static_cast<pid_t>(tid), bundleName);
     std::lock_guard lock(scheduleGuardsMutex_);
     scheduleGuards_[method].swap(sharedGuard);
     return SUCCESS;
@@ -721,10 +733,10 @@ void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
     }
 }
 
-int32_t AudioProcessInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+int32_t AudioProcessInServer::SetDefaultOutputDevice(int32_t defaultOutputDevice)
 {
-    return CoreServiceHandler::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, sessionId_,
-        processConfig_.rendererInfo.streamUsage, streamStatus_->load() == STREAM_RUNNING);
+    return CoreServiceHandler::GetInstance().SetDefaultOutputDevice(static_cast<DeviceType>(defaultOutputDevice),
+        sessionId_, processConfig_.rendererInfo.streamUsage, streamStatus_->load() == STREAM_RUNNING);
 }
 
 int32_t AudioProcessInServer::SetSilentModeAndMixWithOthers(bool on)
@@ -807,8 +819,8 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
     return restoreStatus;
 }
 
-int32_t AudioProcessInServer::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
-    uint32_t code)
+int32_t AudioProcessInServer::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId,
+    const std::string& adjustTime, uint32_t code)
 {
     AudioService::GetInstance()->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
     return SUCCESS;

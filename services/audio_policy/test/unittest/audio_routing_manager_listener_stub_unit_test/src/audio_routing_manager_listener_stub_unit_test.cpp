@@ -14,7 +14,7 @@
  */
 
 #include "audio_routing_manager_listener_stub_unit_test.h"
-#include "i_standard_audio_routing_manager_listener.h"
+#include "istandard_audio_routing_manager_listener.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 
@@ -26,7 +26,6 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
-
 void AudioRoutingManagerListenerStubUnitTest::SetUpTestCase(void) {}
 void AudioRoutingManagerListenerStubUnitTest::TearDownTestCase(void) {}
 void AudioRoutingManagerListenerStubUnitTest::SetUp(void) {}
@@ -34,19 +33,19 @@ void AudioRoutingManagerListenerStubUnitTest::TearDown(void) {}
 
 
 /**
- * @tc.name  : Test AudioRoutingManagerListenerStub.
+ * @tc.name  : Test AudioRoutingManagerListener.
  * @tc.number: AudioRoutingManagerListenerStub_001
  * @tc.desc  : Test OnRemoteRequest.
  */
 HWTEST(AudioRoutingManagerListenerStubUnitTest, AudioRoutingManagerListenerStub_001, TestSize.Level1)
 {
-    auto audioRoutingManagerListenerStub_ = std::make_shared<AudioRoutingManagerListenerStub>();
+    auto audioRoutingManagerListenerStub_ = std::make_shared<AudioRoutingManagerListener>();
     uint32_t code =
         IStandardAudioRoutingManagerListener::AudioRingerModeUpdateListenerMsg::ON_DISTRIBUTED_ROUTING_ROLE_CHANGE;
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    data.WriteInterfaceToken(AudioRoutingManagerListenerStub::GetDescriptor());
+    data.WriteInterfaceToken(AudioRoutingManagerListener::GetDescriptor());
     int32_t result = audioRoutingManagerListenerStub_->OnRemoteRequest(code, data, reply, option);
     EXPECT_NE(result, 1);
 
@@ -57,66 +56,66 @@ HWTEST(AudioRoutingManagerListenerStubUnitTest, AudioRoutingManagerListenerStub_
 }
 
 /**
- * @tc.name  : Test AudioRoutingManagerListenerStub.
+ * @tc.name  : Test AudioRoutingManagerListener.
  * @tc.number: AudioRoutingManagerListenerStub_002
  * @tc.desc  : Test OnRemoteRequest.
  */
 HWTEST(AudioRoutingManagerListenerStubUnitTest, AudioRoutingManagerListenerStub_002, TestSize.Level1)
 {
-    auto audioRoutingManagerListenerStub_ = std::make_shared<AudioRoutingManagerListenerStub>();
+    auto audioRoutingManagerListenerStub_ = std::make_shared<AudioRoutingManagerListener>();
     uint32_t code =
         IStandardAudioRoutingManagerListener::AudioRingerModeUpdateListenerMsg::ON_AUDIO_OUTPUT_DEVICE_REFINERD;
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    data.WriteInterfaceToken(AudioRoutingManagerListenerStub::GetDescriptor());
+    data.WriteInterfaceToken(AudioRoutingManagerListener::GetDescriptor());
     int32_t result = audioRoutingManagerListenerStub_->OnRemoteRequest(code, data, reply, option);
     EXPECT_NE(result, 1);
 }
 
 /**
- * @tc.name  : Test AudioRoutingManagerListenerStub.
+ * @tc.name  : Test AudioRoutingManagerListener.
  * @tc.number: AudioRoutingManagerListenerStub_003
  * @tc.desc  : Test OnRemoteRequest.
  */
 HWTEST(AudioRoutingManagerListenerStubUnitTest, AudioRoutingManagerListenerStub_003, TestSize.Level1)
 {
-    auto audioRoutingManagerListenerStub_ = std::make_shared<AudioRoutingManagerListenerStub>();
+    auto audioRoutingManagerListenerStub_ = std::make_shared<AudioRoutingManagerListener>();
     uint32_t code =
         IStandardAudioRoutingManagerListener::AudioRingerModeUpdateListenerMsg::ON_AUDIO_INPUT_DEVICE_REFINERD;
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    data.WriteInterfaceToken(AudioRoutingManagerListenerStub::GetDescriptor());
+    data.WriteInterfaceToken(AudioRoutingManagerListener::GetDescriptor());
     int32_t result = audioRoutingManagerListenerStub_->OnRemoteRequest(code, data, reply, option);
     EXPECT_NE(result, 1);
 }
 
 /**
- * @tc.name  : Test AudioRoutingManagerListenerStub.
+ * @tc.name  : Test AudioRoutingManagerListener.
  * @tc.number: AudioRoutingManagerListenerStub_005
  * @tc.desc  : Test OnRemoteRequest.
  */
 HWTEST(AudioRoutingManagerListenerStubUnitTest, AudioRoutingManagerListenerStub_005, TestSize.Level1)
 {
-    auto audioRoutingManagerListenerStub_ = std::make_shared<AudioRoutingManagerListenerStub>();
+    auto audioRoutingManagerListenerStub_ = std::make_shared<AudioRoutingManagerListener>();
     uint32_t code = IStandardAudioRoutingManagerListener::AudioRingerModeUpdateListenerMsg::ON_ERROR;
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    data.WriteInterfaceToken(AudioRoutingManagerListenerStub::GetDescriptor());
+    data.WriteInterfaceToken(AudioRoutingManagerListener::GetDescriptor());
     int32_t result = audioRoutingManagerListenerStub_->OnRemoteRequest(code, data, reply, option);
     EXPECT_NE(result, 1);
 }
 
 /**
- * @tc.name  : Test AudioRoutingManagerListenerStub.
+ * @tc.name  : Test AudioRoutingManagerListener.
  * @tc.number: AudioRoutingManagerListenerStub_006
  * @tc.desc  : Test OnAudioInputDeviceRefinedInternal.
  */
 HWTEST(AudioRoutingManagerListenerStubUnitTest, AudioRoutingManagerListenerStub_006, TestSize.Level1)
 {
-    auto audioRoutingManagerListenerStub_ = std::make_shared<AudioRoutingManagerListenerStub>();
+    auto audioRoutingManagerListenerStub_ = std::make_shared<AudioRoutingManagerListener>();
     MessageParcel data;
     data.WriteInt32(1);
     MessageParcel reply;
@@ -125,13 +124,13 @@ HWTEST(AudioRoutingManagerListenerStubUnitTest, AudioRoutingManagerListenerStub_
 }
 
 /**
- * @tc.name  : Test AudioRoutingManagerListenerStub.
+ * @tc.name  : Test AudioRoutingManagerListener.
  * @tc.number: AudioRoutingManagerListenerStub_007
  * @tc.desc  : Test OnAudioOutputDeviceRefinedInternal.
  */
 HWTEST(AudioRoutingManagerListenerStubUnitTest, AudioRoutingManagerListenerStub_007, TestSize.Level1)
 {
-    auto audioRoutingManagerListenerStub_ = std::make_shared<AudioRoutingManagerListenerStub>();
+    auto audioRoutingManagerListenerStub_ = std::make_shared<AudioRoutingManagerListener>();
     MessageParcel data;
     data.WriteInt32(1);
     MessageParcel reply;

@@ -17,7 +17,7 @@
 #define AUDIO_CLIENT_TRACKER_CALLBACK_STUB_UNIT_TEST
 
 #include "gtest/gtest.h"
-#include "audio_client_tracker_callback_stub.h"
+#include "standard_client_tracker_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {

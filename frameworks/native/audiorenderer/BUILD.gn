@@ -37,7 +37,10 @@ ohos_shared_library("audio_renderer") {
   branch_protector_ret = "pac_ret"
   install_enable = true
 
-  configs = [ ":audio_renderer_config" ]
+  configs = [
+    ":audio_renderer_config",
+    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config"
+    ]
 
   sources = [
     "../../../services/audio_policy/server/domain/device/src/audio_device_descriptor.cpp",

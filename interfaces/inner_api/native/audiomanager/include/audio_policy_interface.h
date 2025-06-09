@@ -32,10 +32,39 @@ namespace AudioStandard {
  *
  * @since 7
  */
-struct DeviceChangeAction {
+struct DeviceChangeAction : public Parcelable { // TODO  fixme; done;
     DeviceChangeType type;
     DeviceFlag flag;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteInt32(static_cast<int32_t>(type));
+        parcel.WriteInt32(static_cast<int32_t>(flag));
+        int32_t size = static_cast<int32_t>(deviceDescriptors.size());
+        parcel.WriteInt32(size);
+        for (auto &des : deviceDescriptors) {
+            des->Marshalling(parcel);
+        }
+        return true;
+    }
+
+    static DeviceChangeAction *Unmarshalling(Parcel &parcel)
+    {
+        DeviceChangeType type = static_cast<DeviceChangeType>(parcel.ReadUint32());
+        DeviceFlag flag = static_cast<DeviceFlag>(parcel.ReadUint32());
+        int32_t size = parcel.ReadInt32();
+        DeviceChangeAction *info = new DeviceChangeAction();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->type = type;
+        info->flag = flag;
+        for (int32_t i = 0; i < size; i++) {
+            info->deviceDescriptors.emplace_back(AudioDeviceDescriptor::UnmarshallingPtr(parcel));
+        }
+        return info;
+    }
 };
 
 class AudioFocusInfoChangeCallback {

@@ -461,7 +461,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.ResetOffloadStatus(sessionId);
     RemoveUnusedPipe();
-    if (opMsg == SESSION_OP_MSG_REMOVE_PIPE) {
+    if (opMsg == SessionOperationMsg::SESSION_OP_MSG_REMOVE_PIPE) {
         RemoveUnusedRecordPipe();
     }
     DeleteSessionId(sessionId);

@@ -18,7 +18,7 @@
 #include <cstdint>
 
 #include "audio_manager_base.h"
-#include "audio_policy_manager_listener_stub.h"
+#include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_server.h"
 #include "message_parcel.h"
 using namespace std;
@@ -86,7 +86,8 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
         std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
 
     if (code == static_cast<uint32_t>(AudioServerInterfaceCode::SET_PARAMETER_CALLBACK)) {
-        sptr<AudioPolicyManagerListenerStub> focusListenerStub = new(std::nothrow) AudioPolicyManagerListenerStub();
+        sptr<AudioPolicyManagerListenerStubImpl> focusListenerStub =
+            new(std::nothrow) AudioPolicyManagerListenerStubImpl();
         sptr<IRemoteObject> object = focusListenerStub->AsObject();
         AudioServerPtr->SetParameterCallback(object);
         return;

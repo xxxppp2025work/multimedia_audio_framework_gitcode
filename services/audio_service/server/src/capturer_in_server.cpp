@@ -181,27 +181,27 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
         case OPERATION_UNDERFLOW:
             underflowCount += 1;
             AUDIO_INFO_LOG("Underflow!! underflow count %{public}d", underflowCount);
-            stateListener->OnOperationHandled(BUFFER_OVERFLOW, underflowCount);
+            stateListener->OnOperationHandled(Operation::BUFFER_OVERFLOW, underflowCount);
             break;
         case OPERATION_STARTED:
             status_ = I_STATUS_STARTED;
             lastStartTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
-            stateListener->OnOperationHandled(START_STREAM, 0);
+            stateListener->OnOperationHandled(Operation::START_STREAM, 0);
             break;
         case OPERATION_PAUSED:
             status_ = I_STATUS_PAUSED;
-            stateListener->OnOperationHandled(PAUSE_STREAM, 0);
+            stateListener->OnOperationHandled(Operation::PAUSE_STREAM, 0);
             HandleOperationStopped(CAPTURER_STAGE_PAUSE_OK);
             break;
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;
-            stateListener->OnOperationHandled(STOP_STREAM, 0);
+            stateListener->OnOperationHandled(Operation::STOP_STREAM, 0);
             HandleOperationStopped(CAPTURER_STAGE_STOP_OK);
             break;
         case OPERATION_FLUSHED:
             HandleOperationFlushed();
-            stateListener->OnOperationHandled(FLUSH_STREAM, 0);
+            stateListener->OnOperationHandled(Operation::FLUSH_STREAM, 0);
             break;
         default:
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
@@ -251,7 +251,7 @@ bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFr
             BufferDesc dstBuffer = stream_->DequeueBuffer(length);
             stream_->EnqueueBuffer(dstBuffer);
         }
-        stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
+        stateListener->OnOperationHandled(Operation::UPDATE_STREAM, currentWriteFrame);
         return true;
     }
     return false;
@@ -356,7 +356,7 @@ void CapturerInServer::ReadData(size_t length)
     UpdateBufferTimeStamp(dstBuffer.bufLength);
 
     stream_->EnqueueBuffer(srcBuffer);
-    stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
+    stateListener->OnOperationHandled(Operation::UPDATE_STREAM, currentWriteFrame);
 }
 
 int32_t CapturerInServer::OnReadData(size_t length)
@@ -416,7 +416,7 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
 
     UpdateBufferTimeStamp(dstBuffer.bufLength);
 
-    stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
+    stateListener->OnOperationHandled(Operation::UPDATE_STREAM, currentWriteFrame);
     return SUCCESS;
 }
 
@@ -550,7 +550,8 @@ int32_t CapturerInServer::StartInner()
     }
 
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
+        CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_,
+            SessionOperation::SESSION_OPERATION_START);
     }
 
     status_ = I_STATUS_STARTING;
@@ -579,7 +580,7 @@ int32_t CapturerInServer::Pause()
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
-    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SessionOperation::SESSION_OPERATION_PAUSE);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     if (capturerClock_ != nullptr) {
         capturerClock_->Stop();
@@ -646,7 +647,7 @@ int32_t CapturerInServer::Stop()
 
     int ret = stream_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
-    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SessionOperation::SESSION_OPERATION_STOP);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     return SUCCESS;
 }
@@ -664,7 +665,8 @@ int32_t CapturerInServer::Release()
 
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         int32_t result =
-            CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
+            CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_,
+                SessionOperation::SESSION_OPERATION_RELEASE);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Policy remove client failed, reason: %{public}d", result);
     }
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);

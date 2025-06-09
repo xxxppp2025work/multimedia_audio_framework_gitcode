@@ -17,7 +17,7 @@
 #define I_CORE_SERVICE_PROVIDER_H
 
 #include <cstdint>
-#include "audio_service_enum.h"
+#include "audio_service_types.h"
 #include "audio_device_info.h"
 #include "audio_device_descriptor.h"
 

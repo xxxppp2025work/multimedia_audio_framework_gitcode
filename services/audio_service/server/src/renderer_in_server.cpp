@@ -38,7 +38,7 @@
 #include "audio_performance_monitor.h"
 #include "audio_volume_c.h"
 #include "core_service_handler.h"
-#include "audio_service_enum.h"
+#include "audio_service_types.h"
 #include "i_hpae_manager.h"
 #include "stream_dfx_manager.h"
 
@@ -252,7 +252,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
     switch (operation) {
         case OPERATION_STARTED:
             HandleOperationStarted();
-            stateListener->OnOperationHandled(START_STREAM, 0);
+            stateListener->OnOperationHandled(Operation::START_STREAM, 0);
             break;
         case OPERATION_PAUSED:
             if (standByEnable_) {
@@ -262,17 +262,17 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
                 return;
             }
             status_ = I_STATUS_PAUSED;
-            stateListener->OnOperationHandled(PAUSE_STREAM, 0);
+            stateListener->OnOperationHandled(Operation::PAUSE_STREAM, 0);
             playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_PAUSE_OK);
             break;
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;
-            stateListener->OnOperationHandled(STOP_STREAM, 0);
+            stateListener->OnOperationHandled(Operation::STOP_STREAM, 0);
             HandleOperationStopped(RENDERER_STAGE_STOP_OK);
             break;
         case OPERATION_FLUSHED:
             HandleOperationFlushed();
-            stateListener->OnOperationHandled(FLUSH_STREAM, 0);
+            stateListener->OnOperationHandled(Operation::FLUSH_STREAM, 0);
             break;
         case OPERATION_DRAINED:
             // Client's StopAudioStream will call Drain first and then Stop. If server's drain times out,
@@ -295,7 +295,7 @@ void RendererInServer::OnStatusUpdateExt(IOperation operation, std::shared_ptr<I
 {
     if (status_ == I_STATUS_DRAINING) {
         status_ = I_STATUS_STARTED;
-        stateListener->OnOperationHandled(DRAIN_STREAM, 0);
+        stateListener->OnOperationHandled(Operation::DRAIN_STREAM, 0);
     }
     afterDrain = true;
 }
@@ -329,7 +329,7 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
     int32_t engineFlag = GetEngineFlag();
     switch (operation) {
         case OPERATION_RELEASED:
-            stateListener->OnOperationHandled(RELEASE_STREAM, 0);
+            stateListener->OnOperationHandled(Operation::RELEASE_STREAM, 0);
             status_ = I_STATUS_RELEASED;
             break;
         case OPERATION_UNDERRUN:
@@ -357,7 +357,7 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             if (engineFlag == 1) {
                 ReConfigDupStreamCallback();
             }
-            stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
+            stateListener->OnOperationHandled(Operation::SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
             break;
         default:
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
@@ -900,7 +900,8 @@ int32_t RendererInServer::StartInnerDuringStandby()
     standByCounter_ = 0;
     startedTime_ = ClockTime::GetCurNano();
     audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
-    ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
+    ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_,
+        SessionOperation::SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
     ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
@@ -928,7 +929,8 @@ int32_t RendererInServer::StartInner()
     AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
     fadeoutFlag_ = NO_FADING;
     fadeLock.unlock();
-    ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
+    ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_,
+        SessionOperation::SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
     ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
@@ -1020,7 +1022,7 @@ int32_t RendererInServer::Pause()
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
-    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SessionOperation::SESSION_OPERATION_PAUSE);
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE, isStandbyTmp);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     return SUCCESS;
@@ -1187,7 +1189,7 @@ int32_t RendererInServer::StopInner()
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
-    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SessionOperation::SESSION_OPERATION_STOP);
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP, false);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     return SUCCESS;
@@ -1212,7 +1214,8 @@ int32_t RendererInServer::Release()
         AudioService::GetInstance()->CleanAppUseNumMap(processConfig_.appInfo.appUid);
     }
 
-    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
+    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_,
+        SessionOperation::SESSION_OPERATION_RELEASE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
@@ -1778,11 +1781,11 @@ void RendererInServer::OnDataLinkConnectionUpdate(IOperation operation)
     switch (operation) {
         case OPERATION_DATA_LINK_CONNECTING:
             AUDIO_DEBUG_LOG("OPERATION_DATA_LINK_CONNECTING received");
-            stateListener->OnOperationHandled(DATA_LINK_CONNECTING, 0);
+            stateListener->OnOperationHandled(Operation::DATA_LINK_CONNECTING, 0);
             break;
         case OPERATION_DATA_LINK_CONNECTED:
             AUDIO_DEBUG_LOG("OPERATION_DATA_LINK_CONNECTED received");
-            stateListener->OnOperationHandled(DATA_LINK_CONNECTED, 0);
+            stateListener->OnOperationHandled(Operation::DATA_LINK_CONNECTED, 0);
             break;
         default:
             return;

@@ -61,6 +61,7 @@ if (!audio_framework_feature_offline_effect) {
     ]
 
     public_configs = [ ":offline_audio_effect_config" ]
+    configs = [ "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config" ]
 
     version_script = "../../../audio_framework.versionscript"
     innerapi_tags = [ "platformsdk" ]
@@ -85,6 +86,10 @@ if (!audio_framework_feature_offline_effect) {
       "include",
       "../../../interfaces/inner_api/native/audiocommon/include",
       "../../../services/audio_service/common/include",
+    ]
+
+    configs = [
+      "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
     ]
 
     sources = [ "src/offline_audio_effect_server_chain.cpp" ]

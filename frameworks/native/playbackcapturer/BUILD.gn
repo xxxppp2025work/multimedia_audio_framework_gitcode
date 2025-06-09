@@ -42,7 +42,10 @@ ohos_shared_library("playback_capturer") {
   }
   install_enable = true
 
-  configs = [ ":playback_capturer_config" ]
+  configs = [
+    ":playback_capturer_config",
+    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
+  ]
 
   defines = []
   if (audio_framework_feature_inner_capturer) {

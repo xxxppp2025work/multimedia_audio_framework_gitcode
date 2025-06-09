@@ -124,6 +124,10 @@ ohos_shared_library("audio_common") {
     defines += [ "TEST_COVERAGE" ]
   }
 
+  configs = [
+    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config"
+  ]
+
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"
@@ -193,10 +197,8 @@ ohos_shared_library("audio_client") {
     "client/src/audio_combine_denoising_manager.cpp",
     "client/src/audio_effect_manager.cpp",
     "client/src/audio_group_manager.cpp",
-    "client/src/audio_manager_listener_stub.cpp",
-    "client/src/audio_manager_proxy.cpp",
+    "client/src/audio_manager_listener_stub_impl.cpp",
     "client/src/audio_process_in_client.cpp",
-    "client/src/audio_process_proxy.cpp",
     "client/src/audio_routing_manager.cpp",
     "client/src/audio_session_manager.cpp",
     "client/src/audio_spatial_channel_converter.cpp",
@@ -206,10 +208,7 @@ ohos_shared_library("audio_client") {
     "client/src/audio_system_manager.cpp",
     "client/src/capturer_in_client.cpp",
     "client/src/i_audio_stream.cpp",
-    "client/src/ipc_offline_stream_proxy.cpp",
     "client/src/ipc_stream_listener_impl.cpp",
-    "client/src/ipc_stream_listener_stub.cpp",
-    "client/src/ipc_stream_proxy.cpp",
     "client/src/microphone_descriptor.cpp",
     "client/src/offline_stream_in_client.cpp",
     "client/src/policy_provider_stub.cpp",
@@ -222,6 +221,10 @@ ohos_shared_library("audio_client") {
   }
 
   public_configs = [ ":audio_client_public_config" ]
+  # TODO refactor
+  configs = [
+    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config"
+  ]
 
   deps = [
     ":audio_common",
@@ -230,6 +233,8 @@ ohos_shared_library("audio_client") {
     "../audio_policy:audio_policy_client",
     "../audio_policy:audio_policy_common",
     "../../frameworks/native/audioqosmanager:audio_qosmanager",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_proxy",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
   ]
 
   include_dirs = [ "server/include" ]
@@ -370,27 +375,21 @@ audio_ohos_library("audio_process_service") {
   sources = [
     "server/src/audio_engine_manager.cpp",
     "server/src/audio_playback_engine.cpp",
-    "server/src/audio_process_stub.cpp",
     "server/src/audio_service.cpp",
     "server/src/capturer_in_server.cpp",
     "server/src/core_service_handler.cpp",
-    "server/src/core_service_provider_proxy.cpp",
     "server/src/direct_playback_engine.cpp",
     "server/src/hpae_adapter_manager.cpp",
     "server/src/hpae_capturer_stream_impl.cpp",
     "server/src/hpae_renderer_stream_impl.cpp",
     "server/src/i_stream_manager.cpp",
-    "server/src/ipc_offline_stream_stub.cpp",
     "server/src/ipc_stream_in_server.cpp",
-    "server/src/ipc_stream_listener_proxy.cpp",
-    "server/src/ipc_stream_stub.cpp",
     "server/src/none_mix_engine.cpp",
     "server/src/offline_stream_in_server.cpp",
     "server/src/pa_adapter_manager.cpp",
     "server/src/pa_capturer_stream_impl.cpp",
     "server/src/pa_renderer_stream_impl.cpp",
     "server/src/policy_handler.cpp",
-    "server/src/policy_provider_proxy.cpp",
     "server/src/pro_audio_stream_manager.cpp",
     "server/src/pro_renderer_stream_impl.cpp",
     "server/src/renderer_in_server.cpp",
@@ -405,7 +404,10 @@ audio_ohos_library("audio_process_service") {
     ]
   }
 
-  configs = [ ":audio_service_config" ]
+  configs = [
+    ":audio_service_config",
+    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
+  ]
   
   include_dirs = [
     "../../services/audio_engine/plugin/channel_converter/include",
@@ -422,6 +424,8 @@ audio_ohos_library("audio_process_service") {
     "../audio_engine:audio_engine_plugins",
     "../audio_policy:audio_foundation",
     "../../frameworks/native/audioclock:audio_clock",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_proxy",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
   ]
 
   external_deps = [
@@ -493,8 +497,7 @@ audio_ohos_library("audio_service") {
 
   sources = [
     "server/src/audio_effect_server.cpp",
-    "server/src/audio_manager_listener_proxy.cpp",
-    "server/src/audio_manager_stub.cpp",
+    "server/src/audio_manager_listener.cpp",
     "server/src/audio_server.cpp",
     "server/src/audio_server_asr.cpp",
     "server/src/audio_server_dump.cpp",
@@ -503,9 +506,13 @@ audio_ohos_library("audio_service") {
     "server/src/config/audio_param_parser.cpp",
     "server/src/audio_workgroup.cpp",
     "server/src/audio_resource_service.cpp",
+    "../audio_policy/server/domain/device/src/audio_device_descriptor.cpp", # TODO fix dependency
   ]
 
   configs = [ ":audio_service_config" ]
+  configs += [
+    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
+  ]
 
   deps = [
     ":audio_common",
@@ -517,6 +524,8 @@ audio_ohos_library("audio_service") {
     "../../frameworks/native/audioutils:audio_xml_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../audio_engine:audio_engine_manager",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_proxy",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
   ]
 
   external_deps = [
@@ -615,9 +624,14 @@ ohos_shared_library("audio_sasdk") {
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiosasdk/include",
     "../../frameworks/native/audiodefinitions/include",
+    "${audio_framework_root}/services/audio_policy/client/service/include/",
   ]
 
   public_configs = [ ":audio_sasdk_public_config" ]
+
+  configs = [
+    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config"
+  ]
 
   deps = [
     ":audio_common",
@@ -666,6 +680,7 @@ ohos_executable("audio_process_client_test") {
     ":audio_client",
     "../audio_policy:audio_foundation",
     "./../../frameworks/native/audioutils:audio_utils",
+    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
   ]
 
   external_deps = [
