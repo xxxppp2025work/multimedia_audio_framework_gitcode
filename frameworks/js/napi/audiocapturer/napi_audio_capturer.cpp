@@ -32,7 +32,7 @@
 #include "napi_audio_capturer_read_data_callback.h"
 #include "napi_audio_capturer_device_change_callback.h"
 #include "napi_audio_capturer_info_change_callback.h"
-
+//
 namespace OHOS {
 namespace AudioStandard {
 static __thread napi_ref g_capturerConstructor = nullptr;
