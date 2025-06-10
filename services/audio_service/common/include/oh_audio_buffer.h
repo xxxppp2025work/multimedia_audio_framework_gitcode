@@ -18,11 +18,14 @@
 
 #include <atomic>
 #include <string>
+#include <type_traits>
+#include <optional>
 
 #include "message_parcel.h"
 
 #include "audio_info.h"
 #include "audio_shared_memory.h"
+#include "futex_tool.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -63,7 +66,6 @@ enum StreamStatus : uint32_t {
  */
 struct BasicBufferInfo {
     uint32_t totalSizeInFrame;
-    uint32_t spanSizeInFrame;
     uint32_t byteSizePerFrame;
 
     std::atomic<uint32_t> futexObj;
@@ -91,6 +93,8 @@ struct BasicBufferInfo {
 
     RestoreInfo restoreInfo;
 };
+static_assert(std::is_standard_layout<BasicBufferInfo>::value == true, "is not standard layout!");
+static_assert(std::is_trivially_copyable<BasicBufferInfo>::value == true, "is not trivially copyable!");
 
 enum SpanStatus : uint32_t {
     SPAN_IDEL = 0,
@@ -120,15 +124,18 @@ struct SpanInfo {
 
 class OHAudioBuffer {
 public:
+
+    using OnIndexChange = std::function<bool(void)>;
+
     static const int INVALID_BUFFER_FD = -1;
-    OHAudioBuffer(AudioBufferHolder bufferHolder, uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
+    OHAudioBuffer(AudioBufferHolder bufferHolder, uint32_t totalSizeInFrame, std::optional<uint32_t> spanSizeInFrame,
         uint32_t byteSizePerFrame);
     ~OHAudioBuffer();
 
     // create OHAudioBuffer locally or remotely
-    static std::shared_ptr<OHAudioBuffer> CreateFromLocal(uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
+    static std::shared_ptr<OHAudioBuffer> CreateFromLocal(uint32_t totalSizeInFrame, std::optional<uint32_t> spanSizeInFrame,
         uint32_t byteSizePerFrame);
-    static std::shared_ptr<OHAudioBuffer> CreateFromRemote(uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
+    static std::shared_ptr<OHAudioBuffer> CreateFromRemote(uint32_t totalSizeInFrame, std::optional<uint32_t> spanSizeInFrame,
         uint32_t byteSizePerFrame, AudioBufferHolder holder, int dataFd, int infoFd = INVALID_BUFFER_FD);
 
     // for ipc.
@@ -137,7 +144,7 @@ public:
 
     AudioBufferHolder GetBufferHolder();
 
-    int32_t GetSizeParameter(uint32_t &totalSizeInFrame, uint32_t &spanSizeInFrame, uint32_t &byteSizePerFrame);
+    int32_t GetSizeParameter(uint32_t &totalSizeInFrame, std::optional<uint32_t> &spanSizeInFrame, uint32_t &byteSizePerFrame);
 
     std::atomic<StreamStatus> *GetStreamStatus();
 
@@ -158,7 +165,7 @@ public:
     float GetMuteFactor();
     bool SetMuteFactor(float muteFactor);
 
-    int32_t GetAvailableDataFrames();
+    int32_t GetWritableDataFrames();
 
     int32_t ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFrame);
 
@@ -174,8 +181,6 @@ public:
     int32_t GetWriteBuffer(uint64_t writePosInFrame, BufferDesc &bufferDesc);
 
     int32_t GetReadbuffer(uint64_t readPosInFrame, BufferDesc &bufferDesc);
-
-    int32_t GetBufferByFrame(uint64_t posInFrame, BufferDesc &bufferDesc);
 
     SpanInfo *GetSpanInfo(uint64_t posInFrame);
     SpanInfo *GetSpanInfoByIndex(uint32_t spanIndex);
@@ -205,24 +210,44 @@ public:
     void SetStopFlag(bool isNeedStop);
     bool GetStopFlag() const;
 
+    FutexCode WaitFor(int64_t timeoutInNs, const OnIndexChange &pred);
+
 private:
     int32_t Init(int dataFd, int infoFd);
     int32_t SizeCheck();
     void InitBasicBufferInfo();
 
+
+    void WakeFutexIfNeed();
+
+    bool CheckDeltaToBaseValidity(uint64_t deltaToBase);
+
+    int32_t GetBufferByFrame(uint64_t posInFrame, BufferDesc &bufferDesc);
+
     uint32_t sessionId_ = 0;
     AudioBufferHolder bufferHolder_;
-    uint32_t totalSizeInFrame_;
-    uint32_t spanSizeInFrame_;
+    const uint32_t totalSizeInFrame_;
     uint32_t byteSizePerFrame_;
 
     // available only in single process
     int64_t lastWrittenTime_ = 0;
 
     // calculated in advance
-    size_t totalSizeInByte_ = 0;
-    size_t spanSizeInByte_ = 0;
-    uint32_t spanConut_ = 0;
+    const size_t totalSizeInByte_ = 0;
+
+    struct SpanBasicInfo {
+        SpanBasicInfo(uint32_t spanSizeInFrame, uint32_t totalSizeInFrame, uint32_t byteSizePerFrame) :
+            spanSizeInFrame_(spanSizeInFrame), spanSizeInByte_(spanSizeInFrame * byteSizePerFrame),
+            spanConut_(spanSizeInFrame == 0 ? 0 : totalSizeInFrame / spanSizeInFrame)
+        {}
+
+        int32_t SizeCheck(uint32_t totalSizeInFrame) const;
+        static std::optional<uint32_t> GetSpanSizeInFrame(const std::optional<SpanBasicInfo> &info);
+        const uint32_t spanSizeInFrame_;
+        const size_t spanSizeInByte_;
+        const uint32_t spanConut_;
+    };
+    const std::optional<SpanBasicInfo> spanBasicInfo_;
 
     // for render or capturer
     AudioMode audioMode_;
