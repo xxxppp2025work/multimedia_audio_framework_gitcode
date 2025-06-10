@@ -2662,7 +2662,6 @@ ohos_unittest("audio_policy_async_action_handler_test") {
 
   sources = [
     "../../../services/audio_policy/server/infra/async_action_handler/src/audio_policy_async_action_handler.cpp",
-    "../../../services/audio_service/server/src/audio_manager_listener_proxy.cpp",
     "./unittest/audio_policy_async_action_handler_test/audio_policy_async_action_handler_test.cpp",
   ]
 
@@ -2676,6 +2675,10 @@ ohos_unittest("audio_policy_async_action_handler_test") {
     "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
+  ]
+
+  configs = [
+    "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config"
   ]
 
   external_deps = [

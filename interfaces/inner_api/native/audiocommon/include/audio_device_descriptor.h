@@ -75,7 +75,7 @@ public:
     bool MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
         int32_t apiVersion) const;
 
-    void Unmarshalling(Parcel &parcel);
+    static AudioDeviceDescriptor *Unmarshalling(Parcel &parcel);
 
     static std::shared_ptr<AudioDeviceDescriptor> UnmarshallingPtr(Parcel &parcel);
 

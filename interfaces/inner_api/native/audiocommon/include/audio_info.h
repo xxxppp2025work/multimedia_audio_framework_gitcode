@@ -482,7 +482,7 @@ struct AudioRendererInfo {
     int32_t effectMode = 1;
 
     bool Marshalling(Parcel &parcel) const
-    {
+    { 
         return parcel.WriteInt32(static_cast<int32_t>(contentType))
             && parcel.WriteInt32(static_cast<int32_t>(streamUsage))
             && parcel.WriteInt32(rendererFlags)
@@ -523,7 +523,7 @@ struct AudioRendererInfo {
     }
 };
 
-class AudioCapturerInfo {
+class AudioCapturerInfo : public Parcelable {
 public:
     SourceType sourceType = SOURCE_TYPE_INVALID;
     int32_t capturerFlags = 0;
@@ -543,7 +543,7 @@ public:
     }
     AudioCapturerInfo() = default;
     ~AudioCapturerInfo()= default;
-    bool Marshalling(Parcel &parcel) const
+    bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(static_cast<int32_t>(sourceType)) &&
             parcel.WriteInt32(capturerFlags) &&
@@ -555,17 +555,22 @@ public:
             parcel.WriteString(sceneType) &&
             parcel.WriteInt32(static_cast<int32_t>(recorderType));
     }
-    void Unmarshalling(Parcel &parcel)
+    static AudioCapturerInfo *Unmarshalling(Parcel &parcel)
     {
-        sourceType = static_cast<SourceType>(parcel.ReadInt32());
-        capturerFlags = parcel.ReadInt32();
-        originalFlag = parcel.ReadInt32();
-        pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
-        samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
-        encodingType = parcel.ReadUint8();
-        channelLayout = parcel.ReadUint64();
-        sceneType = parcel.ReadString();
-        recorderType = static_cast<RecorderType>(parcel.ReadInt32());
+        AudioCapturerInfo *audioCapturerInfo = new AudioCapturerInfo();
+        if (audioCapturerInfo == nullptr) {
+            return nullptr;
+        }
+        audioCapturerInfo->sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        audioCapturerInfo->capturerFlags = parcel.ReadInt32();
+        audioCapturerInfo->originalFlag = parcel.ReadInt32();
+        audioCapturerInfo->pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
+        audioCapturerInfo->samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+        audioCapturerInfo->encodingType = parcel.ReadUint8();
+        audioCapturerInfo->channelLayout = parcel.ReadUint64();
+        audioCapturerInfo->sceneType = parcel.ReadString();
+        audioCapturerInfo->recorderType = static_cast<RecorderType>(parcel.ReadInt32());
+        return audioCapturerInfo;
     }
 };
 
@@ -957,119 +962,125 @@ struct AudioProcessConfig : public Parcelable {
     bool Marshalling(Parcel &parcel) const override
     {
         // AppInfo
-        parcel.WriteInt32(config.appInfo.appUid);
-        parcel.WriteUint32(config.appInfo.appTokenId);
-        parcel.WriteInt32(config.appInfo.appPid);
-        parcel.WriteUint64(config.appInfo.appFullTokenId);
+        parcel.WriteInt32(appInfo.appUid);
+        parcel.WriteUint32(appInfo.appTokenId);
+        parcel.WriteInt32(appInfo.appPid);
+        parcel.WriteUint64(appInfo.appFullTokenId);
 
         // AudioStreamInfo
-        parcel.WriteInt32(config.streamInfo.samplingRate);
-        parcel.WriteInt32(config.streamInfo.encoding);
-        parcel.WriteInt32(config.streamInfo.format);
-        parcel.WriteInt32(config.streamInfo.channels);
-        parcel.WriteUint64(config.streamInfo.channelLayout);
+        parcel.WriteInt32(streamInfo.samplingRate);
+        parcel.WriteInt32(streamInfo.encoding);
+        parcel.WriteInt32(streamInfo.format);
+        parcel.WriteInt32(streamInfo.channels);
+        parcel.WriteUint64(streamInfo.channelLayout);
 
         // AudioMode
-        parcel.WriteInt32(config.audioMode);
+        parcel.WriteInt32(audioMode);
 
         // AudioRendererInfo
-        parcel.WriteInt32(config.rendererInfo.contentType);
-        parcel.WriteInt32(config.rendererInfo.streamUsage);
-        parcel.WriteInt32(config.rendererInfo.rendererFlags);
-        parcel.WriteInt32(config.rendererInfo.volumeMode);
-        parcel.WriteInt32(config.rendererInfo.originalFlag);
-        parcel.WriteString(config.rendererInfo.sceneType);
-        parcel.WriteBool(config.rendererInfo.spatializationEnabled);
-        parcel.WriteBool(config.rendererInfo.headTrackingEnabled);
-        parcel.WriteBool(config.rendererInfo.isSatellite);
-        parcel.WriteInt32(config.rendererInfo.pipeType);
-        parcel.WriteInt32(config.rendererInfo.playerType);
-        parcel.WriteUint64(config.rendererInfo.expectedPlaybackDurationBytes);
-        parcel.WriteInt32(config.rendererInfo.effectMode);
+        parcel.WriteInt32(rendererInfo.contentType);
+        parcel.WriteInt32(rendererInfo.streamUsage);
+        parcel.WriteInt32(rendererInfo.rendererFlags);
+        parcel.WriteInt32(rendererInfo.volumeMode);
+        parcel.WriteInt32(rendererInfo.originalFlag);
+        parcel.WriteString(rendererInfo.sceneType);
+        parcel.WriteBool(rendererInfo.spatializationEnabled);
+        parcel.WriteBool(rendererInfo.headTrackingEnabled);
+        parcel.WriteBool(rendererInfo.isSatellite);
+        parcel.WriteInt32(rendererInfo.pipeType);
+        parcel.WriteInt32(rendererInfo.playerType);
+        parcel.WriteUint64(rendererInfo.expectedPlaybackDurationBytes);
+        parcel.WriteInt32(rendererInfo.effectMode);
 
         //AudioPrivacyType
-        parcel.WriteInt32(config.privacyType);
+        parcel.WriteInt32(privacyType);
 
         // AudioCapturerInfo
-        parcel.WriteInt32(config.capturerInfo.sourceType);
-        parcel.WriteInt32(config.capturerInfo.capturerFlags);
-        parcel.WriteInt32(config.capturerInfo.originalFlag);
-        parcel.WriteInt32(config.capturerInfo.pipeType);
-        parcel.WriteInt32(config.capturerInfo.recorderType);
+        parcel.WriteInt32(capturerInfo.sourceType);
+        parcel.WriteInt32(capturerInfo.capturerFlags);
+        parcel.WriteInt32(capturerInfo.originalFlag);
+        parcel.WriteInt32(capturerInfo.pipeType);
+        parcel.WriteInt32(capturerInfo.recorderType);
 
         // streamType
-        parcel.WriteInt32(config.streamType);
+        parcel.WriteInt32(streamType);
 
         // deviceType
-        parcel.WriteInt32(config.deviceType);
+        parcel.WriteInt32(deviceType);
 
         // Recorder only
-        parcel.WriteBool(config.isInnerCapturer);
-        parcel.WriteBool(config.isWakeupCapturer);
+        parcel.WriteBool(isInnerCapturer);
+        parcel.WriteBool(isWakeupCapturer);
 
         // Original session id for re-create stream
-        parcel.WriteUint32(config.originalSessionId);
-        parcel.WriteInt32(config.innerCapId);
+        parcel.WriteUint32(originalSessionId);
+        parcel.WriteInt32(innerCapId);
 
         return true;
     }
 
-    void Unmarshalling(Parcel &parcel)
+    static AudioProcessConfig *Unmarshalling(Parcel &parcel)
     {
+        AudioProcessConfig *config = new AudioProcessConfig();
+        if (config == nullptr) {
+            return nullptr;
+        }
         // AppInfo
-        config.appInfo.appUid = parcel.ReadInt32();
-        config.appInfo.appTokenId = parcel.ReadUint32();
-        config.appInfo.appPid = parcel.ReadInt32();
-        config.appInfo.appFullTokenId = parcel.ReadUint64();
+        config->appInfo.appUid = parcel.ReadInt32();
+        config->appInfo.appTokenId = parcel.ReadUint32();
+        config->appInfo.appPid = parcel.ReadInt32();
+        config->appInfo.appFullTokenId = parcel.ReadUint64();
 
         // AudioStreamInfo
-        config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
-        config.streamInfo.encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
-        config.streamInfo.format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
-        config.streamInfo.channels = static_cast<AudioChannel>(parcel.ReadInt32());
-        config.streamInfo.channelLayout = static_cast<AudioChannelLayout>(parcel.ReadUint64());
+        config->streamInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+        config->streamInfo.encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
+        config->streamInfo.format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
+        config->streamInfo.channels = static_cast<AudioChannel>(parcel.ReadInt32());
+        config->streamInfo.channelLayout = static_cast<AudioChannelLayout>(parcel.ReadUint64());
 
         // AudioMode
-        config.audioMode = static_cast<AudioMode>(parcel.ReadInt32());
+        config->audioMode = static_cast<AudioMode>(parcel.ReadInt32());
 
         // AudioRendererInfo
-        config.rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
-        config.rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
-        config.rendererInfo.rendererFlags = parcel.ReadInt32();
-        config.rendererInfo.volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
-        config.rendererInfo.originalFlag = parcel.ReadInt32();
-        config.rendererInfo.sceneType = parcel.ReadString();
-        config.rendererInfo.spatializationEnabled = parcel.ReadBool();
-        config.rendererInfo.headTrackingEnabled = parcel.ReadBool();
-        config.rendererInfo.isSatellite = parcel.ReadBool();
-        config.rendererInfo.pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
-        config.rendererInfo.playerType = static_cast<PlayerType>(parcel.ReadInt32());
-        config.rendererInfo.expectedPlaybackDurationBytes = parcel.ReadUint64();
-        config.rendererInfo.effectMode = parcel.ReadInt32();
+        config->rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
+        config->rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        config->rendererInfo.rendererFlags = parcel.ReadInt32();
+        config->rendererInfo.volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
+        config->rendererInfo.originalFlag = parcel.ReadInt32();
+        config->rendererInfo.sceneType = parcel.ReadString();
+        config->rendererInfo.spatializationEnabled = parcel.ReadBool();
+        config->rendererInfo.headTrackingEnabled = parcel.ReadBool();
+        config->rendererInfo.isSatellite = parcel.ReadBool();
+        config->rendererInfo.pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
+        config->rendererInfo.playerType = static_cast<PlayerType>(parcel.ReadInt32());
+        config->rendererInfo.expectedPlaybackDurationBytes = parcel.ReadUint64();
+        config->rendererInfo.effectMode = parcel.ReadInt32();
 
         //AudioPrivacyType
-        config.privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
+        config->privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
 
         // AudioCapturerInfo
-        config.capturerInfo.sourceType = static_cast<SourceType>(parcel.ReadInt32());
-        config.capturerInfo.capturerFlags = parcel.ReadInt32();
-        config.capturerInfo.originalFlag = parcel.ReadInt32();
-        config.capturerInfo.pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
-        config.capturerInfo.recorderType = static_cast<RecorderType>(parcel.ReadInt32());
+        config->capturerInfo.sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        config->capturerInfo.capturerFlags = parcel.ReadInt32();
+        config->capturerInfo.originalFlag = parcel.ReadInt32();
+        config->capturerInfo.pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
+        config->capturerInfo.recorderType = static_cast<RecorderType>(parcel.ReadInt32());
 
         // streamType
-        config.streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
+        config->streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
 
         // deviceType
-        config.deviceType = static_cast<DeviceType>(parcel.ReadInt32());
+        config->deviceType = static_cast<DeviceType>(parcel.ReadInt32());
 
         // Recorder only
-        config.isInnerCapturer = parcel.ReadBool();
-        config.isWakeupCapturer = parcel.ReadBool();
+        config->isInnerCapturer = parcel.ReadBool();
+        config->isWakeupCapturer = parcel.ReadBool();
 
         // Original session id for re-create stream
-        config.originalSessionId = parcel.ReadUint32();
-        config.innerCapId = parcel.ReadInt32();
+        config->originalSessionId = parcel.ReadUint32();
+        config->innerCapId = parcel.ReadInt32();
+
+        return config;
     }
 };
 

@@ -14,7 +14,11 @@
  */
 
 package OHOS.AudioStandard;
-sequenceable audio_effect..OHOS.AudioStandard.AudioSpatializationState;
-interface IStandardSpatializationStateChangeListener {
-  void OnSpatializationStateChange([in] AudioSpatializationState spatializationState);
+
+sequenceable audio_stutter..OHOS.AudioStandard.AudioRendererDataTransferStateChangeInfo;
+interface IStandardAudioServerManagerListener {
+    [oneway] void OnAudioParameterChange([in] String networkId, [in] int key, [in] String condition, [in] String value);
+    void OnCapturerState([in] boolean isActive);
+    void OnWakeupClose();
+    [oneway] void OnDataTransferStateChange([in] int callbackId, [in] AudioRendererDataTransferStateChangeInfo info);
 }

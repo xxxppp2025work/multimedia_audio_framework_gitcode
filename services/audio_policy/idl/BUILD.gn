@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/config/components/idl_tool/idl.gni")
+import("//foundation/multimedia/audio_framework/config.gni")
 
 idl_gen_interface("audio_policy_idl_interface") {
   sources = [
@@ -26,8 +27,8 @@ idl_gen_interface("audio_policy_idl_interface") {
 
   hitrace = "HITRACE_TAG_ABILITY_MANAGER"
 
-  log_domainid = "0xD002B21"
-  log_tag = "audio_policy"
+  # log_domainid = "0xD002B21"
+  # log_tag = "audio_policy"
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
@@ -37,11 +38,12 @@ config("audio_policy_sa_idl_config") {
   include_dirs = [
     # "src",
     "${target_gen_dir}",
+    "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include/",
   ]
   print("jilei4 after The value of output_values is: ", include_dirs)
 }
 
-ohos_source_set("idl_sa_proxy") {
+ohos_source_set("policy_idl_sa_proxy") {
   output_values = get_target_outputs(":audio_policy_idl_interface")
   sources = filter_include(output_values,
                            [
@@ -87,7 +89,7 @@ ohos_source_set("idl_sa_proxy") {
   subsystem_name = "multimedia"
 }
 
-ohos_source_set("idl_sa_stub") {
+ohos_source_set("policy_idl_sa_stub") {
   output_values = get_target_outputs(":audio_policy_idl_interface")
   print("jilei1 The value of output_values is: ", output_values)
   sources = filter_include(output_values,

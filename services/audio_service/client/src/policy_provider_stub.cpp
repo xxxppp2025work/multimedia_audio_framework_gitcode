@@ -51,8 +51,8 @@ int32_t PolicyProviderWrapper::SetWakeUpAudioCapturerFromAudioServer(const Audio
     return policyWorker_->SetWakeUpAudioCapturerFromAudioServer(config);
 }
 
-int32_t PolicyProviderWrapper::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
-    uint32_t sessionId)
+int32_t PolicyProviderWrapper::NotifyCapturerAdded(const AudioCapturerInfo &capturerInfo,
+    const AudioStreamInfo &streamInfo, uint32_t sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->NotifyCapturerAdded(capturerInfo, streamInfo, sessionId);
@@ -64,10 +64,11 @@ int32_t PolicyProviderWrapper::NotifyWakeUpCapturerRemoved()
     return policyWorker_->NotifyWakeUpCapturerRemoved();
 }
 
-bool PolicyProviderWrapper::IsAbsVolumeSupported()
+int32_t PolicyProviderWrapper::IsAbsVolumeSupported(bool &isSupported)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
-    return policyWorker_->IsAbsVolumeSupported();
+    isSupported = policyWorker_->IsAbsVolumeSupported();
+    return SUCCESS;
 }
 
 int32_t PolicyProviderWrapper::OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
@@ -83,10 +84,11 @@ int32_t PolicyProviderWrapper::GetAndSaveClientType(uint32_t uid, const std::str
     return policyWorker_->GetAndSaveClientType(uid, bundleName);
 }
 
-int32_t PolicyProviderWrapper::GetMaxRendererInstances()
+int32_t PolicyProviderWrapper::GetMaxRendererInstances(int32_t &maxInstances)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
-    return policyWorker_->GetMaxRendererInstances();
+    maxInstances = policyWorker_->GetMaxRendererInstances();
+    return SUCCESS;
 }
 
 int32_t PolicyProviderWrapper::ActivateConcurrencyFromServer(int32_t incomingPipe)

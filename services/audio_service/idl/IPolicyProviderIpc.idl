@@ -19,19 +19,18 @@ sequenceable audio_info..OHOS.AudioStandard.AudioProcessConfig;
 sequenceable audio_device_descriptor..OHOS.AudioStandard.AudioDeviceDescriptor;
 sequenceable audio_shared_memory..OHOS.AudioStandard.AudioSharedMemory;
 sequenceable audio_stream_info..OHOS.AudioStandard.AudioStreamInfo;
+sequenceable audio_device_descriptor..OHOS.AudioStandard.AudioCapturerInfo;
 
-
-sequenceable OHOS.AudioStandard.AudioCapturerInfo;
 interface IPolicyProviderIpc {
     void GetProcessDeviceInfo([in] AudioProcessConfig config, [in] boolean lockFlag, [out] AudioDeviceDescriptor deviceInfo);
     void InitSharedVolume([out] sharedptr<AudioSharedMemory> buffer);
     void SetWakeUpAudioCapturerFromAudioServer([in] AudioProcessConfig config);
     void NotifyCapturerAdded([in] AudioCapturerInfo capturerInfo, [in] AudioStreamInfo streamInfo, [in] unsigned int sessionId);
     void NotifyWakeUpCapturerRemoved();
-    void IsAbsVolumeSupported();
+    void IsAbsVolumeSupported([out] boolean isSupported);
     void OffloadGetRenderPosition([out] unsigned int delayValue, [out] unsigned long sendDataSize, [out] unsigned int timeStamp);
     void GetAndSaveClientType([in] unsigned int uid, [in] String bundleName);
-    void GetMaxRendererInstances();
+    void GetMaxRendererInstances([out] int maxInstances);
     void ActivateConcurrencyFromServer([in] int incomingPipe); // AudioPipeType
     void NotifyCapturerRemoved([in] unsigned long sessionId);
     void SetDefaultOutputDevice([in] int defaultOutputDevice, [in] unsigned int sessionID, [in] int streamUsage, [in] boolean isRunning); // DeviceType StreamUsage

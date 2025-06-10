@@ -22,7 +22,6 @@ interface ICoreServiceProviderIpc {
     void UpdateSessionOperation([in] unsigned int sessionId, [in] SessionOperation operation);
     void SetDefaultOutputDevice([in] int defaultOutputDevice, [in] unsigned int sessionID, [in] int streamUsage, [in] boolean isRunning);  // DeviceType  StreamUsage
     void GetAdapterNameBySessionId([in] unsigned int sessionID, [out] String name);
-    void GetProcessDeviceInfoBySessionId([in] int sessionID, [in] AudioDeviceDescriptor deviceInfo);
-    void GenerateSessionId();
-
+    void GetProcessDeviceInfoBySessionId([in] unsigned int sessionID, [out] AudioDeviceDescriptor deviceInfo);
+    void GenerateSessionId([out] unsigned int sessionId);
 }

@@ -30,7 +30,7 @@
 #include "audio_server_death_recipient.h"
 #include "audio_policy_manager.h"
 #include "audio_utils.h"
-#include "audio_manager_listener_stub.h"
+#include "audio_manager_listener_stub_impl.h"
 #include "audio_policy_interface.h"
 #include "audio_focus_info_change_callback_impl.h"
 #include "audio_qosmanager.h"
@@ -49,7 +49,7 @@ const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::s
 mutex g_asProxyMutex;
 mutex g_audioListenerMutex;
 sptr<IStandardAudioService> g_asProxy = nullptr;
-sptr<AudioManagerListenerStub> g_audioListener = nullptr;
+sptr<AudioManagerListenerStubImpl> g_audioListener = nullptr;
 
 const std::vector<AudioStreamType> workgroupValidStreamType = {
     AudioStreamType::STREAM_MUSIC,
@@ -227,7 +227,7 @@ int32_t AudioSystemManager::RegisterRendererDataTransferCallback(const DataTrans
     
     lock_guard<mutex> lock(g_audioListenerMutex);
     if (g_audioListener == nullptr) {
-        g_audioListener = new(std::nothrow) AudioManagerListenerStub();
+        g_audioListener = new(std::nothrow) AudioManagerListenerStubImpl();
         if (g_audioListener == nullptr) {
             AUDIO_ERR_LOG("g_audioListener is null");
             return ERROR;
@@ -1673,7 +1673,7 @@ int32_t AudioSystemManager::RegisterWakeupSourceCallback()
     AUDIO_INFO_LOG("RegisterWakeupSourceCallback");
     remoteWakeUpCallback_ = std::make_shared<WakeUpCallbackImpl>(this);
 
-    sptr<AudioManagerListenerStub> wakeupCloseCbStub = new(std::nothrow) AudioManagerListenerStub();
+    sptr<AudioManagerListenerStubImpl> wakeupCloseCbStub = new(std::nothrow) AudioManagerListenerStubImpl();
     CHECK_AND_RETURN_RET_LOG(wakeupCloseCbStub != nullptr, ERROR,
         "wakeupCloseCbStub is null");
     wakeupCloseCbStub->SetWakeupSourceCallback(remoteWakeUpCallback_);

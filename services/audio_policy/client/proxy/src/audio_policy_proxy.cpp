@@ -1739,7 +1739,7 @@ AudioSpatializationState AudioPolicyProxy::GetSpatializationState(const StreamUs
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    AudioSpatializationState spatializationState = {false, false};
+    AudioSpatializationState spatializationState = {};
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, spatializationState, "WriteInterfaceToken failed");

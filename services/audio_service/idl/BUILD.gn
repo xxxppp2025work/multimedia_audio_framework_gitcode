@@ -17,7 +17,9 @@ import("//foundation/multimedia/audio_framework/config.gni")
 idl_gen_interface("audio_service_idl_interface") {
   sources = [
     "IIpcStreamListener.idl",
-    # "IIpcOfflineStream.idl",
+    "IStandardAudioServerManagerListener.idl",
+    "IPolicyProviderIpc.idl",
+    "ICoreServiceProviderIpc.idl",
   ]
   if (audio_framework_feature_offline_effect) {
     sources += [ "IIpcOfflineStream.idl" ]
@@ -32,7 +34,7 @@ idl_gen_interface("audio_service_idl_interface") {
 
   hitrace = "HITRACE_TAG_ABILITY_MANAGER"
 
-  log_tag = "audio_service"
+  # log_tag = "audio_service"
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"

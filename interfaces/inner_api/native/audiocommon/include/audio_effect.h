@@ -391,6 +391,13 @@ struct AudioSpatializationState : public Parcelable {
     bool spatializationEnabled = false;
     bool headTrackingEnabled = false;
 
+    AudioSpatializationState() = default;
+    AudioSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
+    {
+        this->spatializationEnabled = spatializationEnabled;
+        this->headTrackingEnabled = headTrackingEnabled;
+    }
+
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteBool(static_cast<int32_t>(spatializationEnabled))

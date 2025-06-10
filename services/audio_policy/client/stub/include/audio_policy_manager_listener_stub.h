@@ -39,7 +39,7 @@ public:
     bool OnQueryAllowedPlayback(int32_t uid, int32_t pid) override;
     void OnBackgroundMute(const int32_t uid) override;
     bool OnQueryBundleNameIsInList(const std::string &bundleName) override;
-    // AudioManagerListenerStub
+    // AudioManagerListenerStubImpl
     void SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback);
     void SetAvailableDeviceChangeCallback(const std::weak_ptr<AudioManagerAvailableDeviceChangeCallback> &cb);
     void SetQueryClientTypeCallback(const std::weak_ptr<AudioQueryClientTypeCallback> &cb);

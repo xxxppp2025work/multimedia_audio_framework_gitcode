@@ -30,13 +30,13 @@ static constexpr int32_t RETRY_TIMES = 25;
 static const char *SessionOperationToString(SessionOperation operation)
 {
     switch (operation) {
-        case SESSION_OPERATION_START:
+        case SessionOperation::SESSION_OPERATION_START:
             return "OPERATION_START";
-        case SESSION_OPERATION_PAUSE:
+        case SessionOperation::SESSION_OPERATION_PAUSE:
             return "OPERATION_PAUSE";
-        case SESSION_OPERATION_STOP:
+        case SessionOperation::SESSION_OPERATION_STOP:
             return "OPERATION_STOP";
-        case SESSION_OPERATION_RELEASE:
+        case SessionOperation::SESSION_OPERATION_RELEASE:
             return "OPERATION_RELEASE";
         default:
             return "OPERATION_UNKNOWN";
@@ -85,13 +85,13 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
     AUDIO_INFO_LOG("withlock sessionId %{public}u, operation %{public}s",
         sessionId, SessionOperationToString(operation));
     switch (operation) {
-        case SESSION_OPERATION_START:
+        case SessionOperation::SESSION_OPERATION_START:
             return coreService_->StartClient(sessionId);
-        case SESSION_OPERATION_PAUSE:
+        case SessionOperation::SESSION_OPERATION_PAUSE:
             return coreService_->PauseClient(sessionId);
-        case SESSION_OPERATION_STOP:
+        case SessionOperation::SESSION_OPERATION_STOP:
             return coreService_->StopClient(sessionId);
-        case SESSION_OPERATION_RELEASE:
+        case SessionOperation::SESSION_OPERATION_RELEASE:
             return coreService_->ReleaseClient(sessionId);
         default:
             return SUCCESS;

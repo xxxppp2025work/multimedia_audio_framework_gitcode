@@ -44,11 +44,9 @@
 #include "audio_errors.h"
 #include "audio_common_log.h"
 #include "audio_asr.h"
-#include "audio_manager_listener_proxy.h"
 #include "audio_service.h"
 #include "audio_schedule.h"
 #include "audio_utils.h"
-#include "i_standard_audio_server_manager_listener.h"
 #ifdef HAS_FEATURE_INNERCAPTURER
 #include "playback_capturer_manager.h"
 #endif
@@ -59,6 +57,7 @@
 #include "audio_info.h"
 #include "i_hpae_manager.h"
 #include "audio_server_hpae_dump.h"
+#include "audio_manager_listener.h"
 
 #define PA
 #ifdef PA
@@ -256,7 +255,7 @@ PipeInfoGuard::PipeInfoGuard(uint32_t sessionId)
 PipeInfoGuard::~PipeInfoGuard()
 {
     if (releaseFlag_) {
-        CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE);
+        CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SessionOperation::SESSION_OPERATION_RELEASE);
     }
 }
 

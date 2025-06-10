@@ -1058,7 +1058,10 @@ ohos_unittest("audio_manager_listener_proxy_unit_test") {
   testonly = true
   module_out_path = module_output_path
 
-  configs = [ ":module_private_config" ]
+  configs = [
+    ":module_private_config",
+    "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config",
+  ]
 
   include_dirs = [
     "../../../../services/audio_service/common/include",
@@ -1071,7 +1074,6 @@ ohos_unittest("audio_manager_listener_proxy_unit_test") {
   ]
 
   sources = [
-    "../../../../services/audio_service/server/src/audio_manager_listener_proxy.cpp",
     "./client/capturer_in_client_unit_test.cpp",
   ]
 

@@ -27,6 +27,7 @@
 #include "audio_utils.h"
 #include "audio_policy_proxy.h"
 #include "audio_server_death_recipient.h"
+#include "audio_spatialization_state_change_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1817,7 +1818,7 @@ AudioSpatializationState AudioPolicyManager::GetSpatializationState(const Stream
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetSpatializationState: audio policy manager proxy is NULL.");
-        AudioSpatializationState spatializationState = {false, false};
+        AudioSpatializationState spatializationState = {};
         return spatializationState;
     }
     return gsp->GetSpatializationState(streamUsage);

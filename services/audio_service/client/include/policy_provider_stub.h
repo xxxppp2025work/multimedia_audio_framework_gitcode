@@ -16,7 +16,11 @@
 #ifndef POLICY_PROVIDER_STUB_H
 #define POLICY_PROVIDER_STUB_H
 
+#include "i_policy_provider.h"
 #include "policy_provider_ipc_stub.h"
+//#include "ipc_types.h"
+//#include "iremote_stub.h"
+#include "audio_process_config.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -29,13 +33,13 @@ public:
         AudioDeviceDescriptor &deviceInfo) override;
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) override;
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) override;
-    int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
+    int32_t NotifyCapturerAdded(const AudioCapturerInfo &capturerInfo, const AudioStreamInfo &streamInfo,
         uint32_t sessionId) override;
     int32_t NotifyWakeUpCapturerRemoved() override;
-    bool IsAbsVolumeSupported() override;
+    int32_t IsAbsVolumeSupported(bool &isSupported) override;
     int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp) override;
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName) override;
-    int32_t GetMaxRendererInstances() override;
+    int32_t GetMaxRendererInstances(int32_t &maxInstances) override;
     int32_t ActivateConcurrencyFromServer(int32_t incomingPipe) override;
     int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
     int32_t SetDefaultOutputDevice(const int32_t defaultOutputDevice, const uint32_t sessionID,

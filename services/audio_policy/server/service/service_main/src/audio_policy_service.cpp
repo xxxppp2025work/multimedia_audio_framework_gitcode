@@ -21,7 +21,7 @@
 #include <dlfcn.h>
 #include "iservice_registry.h"
 
-#include "audio_manager_listener_stub.h"
+#include "audio_manager_listener_stub_impl.h"
 #include "parameter.h"
 #include "parameters.h"
 #include "data_share_observer_callback.h"
@@ -1440,7 +1440,7 @@ bool AudioPolicyService::GetSharedVolume(AudioVolumeType streamType, DeviceType 
 void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback)
 {
     AUDIO_INFO_LOG("Start");
-    sptr<AudioManagerListenerStub> parameterChangeCbStub = new(std::nothrow) AudioManagerListenerStub();
+    sptr<AudioManagerListenerStubImpl> parameterChangeCbStub = new(std::nothrow) AudioManagerListenerStubImpl();
     CHECK_AND_RETURN_LOG(parameterChangeCbStub != nullptr,
         "parameterChangeCbStub null");
     parameterChangeCbStub->SetParameterCallback(callback);

@@ -287,7 +287,7 @@ int32_t AudioProcessInServer::StartInner()
             "Turn on micIndicator failed or check backgroud capture failed for stream:%{public}d!", sessionId_);
     }
 
-    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
+    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SessionOperation::SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, true);
     for (size_t i = 0; i < listenerList_.size(); i++) {
@@ -337,7 +337,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
         recorderDfx_->WriteDfxStopMsg(sessionId_, CAPTURER_STAGE_PAUSE_OK,
             GetLastAudioDuration(), processConfig_);
     }
-    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_PAUSE);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SessionOperation::SESSION_OPERATION_PAUSE);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
 
     AUDIO_PRERELEASE_LOGI("Pause in server success!");
@@ -365,7 +365,7 @@ int32_t AudioProcessInServer::Resume()
     }
     AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(sessionId_);
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
-    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SessionOperation::SESSION_OPERATION_START);
     AUDIO_PRERELEASE_LOGI("Resume in server success!");
     return SUCCESS;
 }
@@ -406,7 +406,7 @@ int32_t AudioProcessInServer::Stop(AudioProcessStage stage)
         recorderDfx_->WriteDfxStopMsg(sessionId_, capturerStage,
             GetLastAudioDuration(), processConfig_);
     }
-    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_STOP);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SessionOperation::SESSION_OPERATION_STOP);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
 
     AUDIO_INFO_LOG("Stop in server success!");
@@ -428,7 +428,7 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_RELEASED);
     }
-    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE);
+    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SessionOperation::SESSION_OPERATION_RELEASE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
     ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);

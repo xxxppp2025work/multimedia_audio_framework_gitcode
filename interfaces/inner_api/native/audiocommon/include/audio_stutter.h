@@ -35,7 +35,7 @@ enum BadDataTransferType {
     MAX_DATATRANS_TYPE
 };
 
-struct AudioRendererDataTransferStateChangeInfo {
+struct AudioRendererDataTransferStateChangeInfo : public Parcelable {
     int32_t clientPid;                              // client pid
     int32_t clientUID;                              // client uid
     int32_t sessionId;                              // session id
@@ -45,7 +45,7 @@ struct AudioRendererDataTransferStateChangeInfo {
 
     AudioRendererDataTransferStateChangeInfo() = default;
     ~AudioRendererDataTransferStateChangeInfo() = default;
-    bool Marshalling(Parcel &parcel) const
+    bool Marshalling(Parcel &parcel) const override
     {
         bool ret =  parcel.WriteInt32(clientPid) && parcel.WriteInt32(clientUID) &&
             parcel.WriteInt32(sessionId) && parcel.WriteInt32(static_cast<int32_t>(streamUsage)) &&
@@ -57,17 +57,23 @@ struct AudioRendererDataTransferStateChangeInfo {
         
         return ret;
     }
-    void Unmarshalling(Parcel &parcel)
+    static AudioRendererDataTransferStateChangeInfo *Unmarshalling(Parcel &parcel)
     {
-        clientPid = parcel.ReadInt32();
-        clientUID = parcel.ReadInt32();
-        sessionId = parcel.ReadInt32();
-        streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
-        stateChangeType = static_cast<DataTransferStateChangeType>(parcel.ReadInt32());
+        AudioRendererDataTransferStateChangeInfo *info = new AudioRendererDataTransferStateChangeInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->clientPid = parcel.ReadInt32();
+        info->clientUID = parcel.ReadInt32();
+        info->sessionId = parcel.ReadInt32();
+        info->streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        info->stateChangeType = static_cast<DataTransferStateChangeType>(parcel.ReadInt32());
 
         for (uint32_t i = 0; i < MAX_DATATRANS_TYPE; i++) {
-            badDataRatio[i] = parcel.ReadInt32();
+            info->badDataRatio[i] = parcel.ReadInt32();
         }
+        return info;
     }
 };
 

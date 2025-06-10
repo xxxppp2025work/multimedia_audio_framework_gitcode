@@ -16,11 +16,12 @@
 #ifndef CORE_SERVICE_PROVIDER_STUB_H
 #define CORE_SERVICE_PROVIDER_STUB_H
 
-#include "icore_service_provider_ipc.h"
+#include "core_service_provider_ipc_stub.h"
+#include "i_core_service_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class CoreServiceProviderWrapper : public CoreServiceProviderStub {
+class CoreServiceProviderWrapper : public CoreServiceProviderIpcStub {
 public:
     ~CoreServiceProviderWrapper();
     CoreServiceProviderWrapper(ICoreServiceProvider *coreServiceWorker);
@@ -28,8 +29,8 @@ public:
     int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation) override;
     int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice, uint32_t sessionID, int32_t streamUsage, bool isRunning) override;
     int32_t GetAdapterNameBySessionId(uint32_t sessionId, std::string& name) override;
-    int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, const AudioDeviceDescriptor& deviceInfo) override;
-    int32_t GenerateSessionId() override;
+    int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor& deviceInfo) override;
+    int32_t GenerateSessionId(uint32_t &sessionId) override;
 
 private:
     ICoreServiceProvider *coreServiceWorker_;

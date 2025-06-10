@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,34 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_MANAGER_LISTENER_PROXY_H
-#define AUDIO_MANAGER_LISTENER_PROXY_H
+#ifndef AUDIO_MANAGER_LISTENER_H
+#define AUDIO_MANAGER_LISTENER_H
 
-#include "iremote_proxy.h"
 #include "audio_manager_base.h"
 #include "audio_system_manager.h"
-#include "i_standard_audio_server_manager_listener.h"
+#include "istandard_audio_server_manager_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioManagerListenerProxy : public IRemoteProxy<IStandardAudioServerManagerListener> {
-public:
-    explicit AudioManagerListenerProxy(const sptr<IRemoteObject>& impl);
-    virtual ~AudioManagerListenerProxy();
-    DISALLOW_COPY_AND_MOVE(AudioManagerListenerProxy);
-    void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
-        const std::string& condition, const std::string& value) override;
-    void OnCapturerState(bool isActive) override;
-    void OnWakeupClose() override;
-    void OnDataTransferStateChange(const int32_t &callbackId,
-        const AudioRendererDataTransferStateChangeInfo &info) override;
-
-private:
-    static inline BrokerDelegator<AudioManagerListenerProxy> delegator_;
-    void WriteParameterEventParams(MessageParcel& data, const std::string networkId, const AudioParamKey key,
-        const std::string& condition, const std::string& value);
-};
-
 class AudioManagerListenerCallback : public AudioParameterCallback, public WakeUpSourceCallback,
     public DataTransferStateChangeCallbackInner {
 public:
@@ -60,4 +41,4 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_MANAGER_LISTENER_PROXY_H
+#endif // AUDIO_MANAGER_LISTENER_H

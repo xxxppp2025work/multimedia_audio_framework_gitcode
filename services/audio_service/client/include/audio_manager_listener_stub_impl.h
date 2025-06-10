@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,33 +13,26 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_MANAGER_LISTENER_STUB_H
-#define AUDIO_MANAGER_LISTENER_STUB_H
+#ifndef AUDIO_MANAGER_LISTENER_STUB_IMPL_H
+#define AUDIO_MANAGER_LISTENER_STUB_IMPL_H
 
 #include <thread>
 
 #include "audio_policy_interface.h"
 #include "audio_system_manager.h"
-#include "i_standard_audio_server_manager_listener.h"
+#include "standard_audio_server_manager_listener_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioManagerListenerStub : public IRemoteStub<IStandardAudioServerManagerListener> {
+class AudioManagerListenerStubImpl : public StandardAudioServerManagerListenerStub {
 public:
-    AudioManagerListenerStub();
-    virtual ~AudioManagerListenerStub();
-
-    // IStandardAudioManagerListener override
-    int OnRemoteRequest(uint32_t code, MessageParcel& data,
-    MessageParcel& reply, MessageOption& option) override;
-    void OnAudioParameterChange(const std::string networkId, const AudioParamKey key, const std::string& condition,
+    int32_t OnAudioParameterChange(const std::string &networkId, int32_t key, const std::string& condition,
         const std::string& value) override;
-    void OnCapturerState(bool isActive) override;
-    void OnWakeupClose() override;
-    void OnDataTransferStateChange(const int32_t &callbackId,
+    int32_t OnCapturerState(bool isActive) override;
+    int32_t OnWakeupClose() override;
+    int32_t OnDataTransferStateChange(int32_t callbackId,
         const AudioRendererDataTransferStateChangeInfo &info) override;
 
-    // AudioManagerListenerStub
     void SetParameterCallback(const std::weak_ptr<AudioParameterCallback>& callback);
     void SetWakeupSourceCallback(const std::weak_ptr<WakeUpSourceCallback>& callback);
     int32_t AddDataTransferStateChangeCallback(const DataTransferMonitorParam &param,
@@ -57,4 +50,4 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_MANAGER_LISTENER_STUB_H
+#endif // AUDIO_MANAGER_LISTENER_STUB_IMPL_H

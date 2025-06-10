@@ -196,7 +196,7 @@ ohos_shared_library("audio_client") {
     "client/src/audio_combine_denoising_manager.cpp",
     "client/src/audio_effect_manager.cpp",
     "client/src/audio_group_manager.cpp",
-    "client/src/audio_manager_listener_stub.cpp",
+    "client/src/audio_manager_listener_stub_impl.cpp",
     "client/src/audio_manager_proxy.cpp",
     "client/src/audio_process_in_client.cpp",
     "client/src/audio_process_proxy.cpp",
@@ -497,7 +497,7 @@ audio_ohos_library("audio_service") {
 
   sources = [
     "server/src/audio_effect_server.cpp",
-    "server/src/audio_manager_listener_proxy.cpp",
+    "server/src/audio_manager_listener.cpp",
     "server/src/audio_manager_stub.cpp",
     "server/src/audio_server.cpp",
     "server/src/audio_server_asr.cpp",
@@ -507,12 +507,11 @@ audio_ohos_library("audio_service") {
     "server/src/config/audio_param_parser.cpp",
     "server/src/audio_workgroup.cpp",
     "server/src/audio_resource_service.cpp",
+    "../audio_policy/server/domain/device/src/audio_device_descriptor.cpp", # TODO move me
   ]
 
   configs = [ ":audio_service_config" ]
-  # /home/lzz/Work/ohos/foundation/multimedia/audio_framework/services/audio_service/idl/BUILD.gn
   configs += [
-    "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config",
     "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
   ]
 
@@ -526,6 +525,7 @@ audio_ohos_library("audio_service") {
     "../../frameworks/native/audioutils:audio_xml_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../audio_engine:audio_engine_manager",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_proxy",
   ]
 
   external_deps = [

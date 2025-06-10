@@ -679,7 +679,7 @@ sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConf
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, nullptr, "WriteInterfaceToken failed");
-    ProcessConfig::WriteConfigToParcel(config, data);
+    config.Marshalling(data);
     ProcessConfig::WriteInnerCapConfigToParcel(filterConfig, data);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOPROCESS), data, reply, option);

@@ -32,6 +32,10 @@ public:
 
     static std::string DumpInnerCapConfig(const AudioPlaybackCaptureConfig &config);
 
+    static int32_t WriteConfigToParcel(const AudioProcessConfig &config, MessageParcel &parcel); //TODO remove
+
+    static int32_t ReadConfigFromParcel(AudioProcessConfig &config, MessageParcel &parcel);  //TODO remove
+
     static std::string DumpProcessConfig(const AudioProcessConfig &config);
 };
 } // namespace AudioStandard

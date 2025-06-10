@@ -549,7 +549,7 @@ int32_t CapturerInServer::StartInner()
     }
 
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
+        CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SessionOperation::SESSION_OPERATION_START);
     }
 
     status_ = I_STATUS_STARTING;
@@ -578,7 +578,7 @@ int32_t CapturerInServer::Pause()
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
-    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SessionOperation::SESSION_OPERATION_PAUSE);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     if (capturerClock_ != nullptr) {
         capturerClock_->Stop();
@@ -645,7 +645,7 @@ int32_t CapturerInServer::Stop()
 
     int ret = stream_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
-    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SessionOperation::SESSION_OPERATION_STOP);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     return SUCCESS;
 }
@@ -663,7 +663,7 @@ int32_t CapturerInServer::Release()
 
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         int32_t result =
-            CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
+            CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SessionOperation::SESSION_OPERATION_RELEASE);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Policy remove client failed, reason: %{public}d", result);
     }
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);

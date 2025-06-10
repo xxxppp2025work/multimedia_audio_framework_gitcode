@@ -1352,8 +1352,10 @@ void AudioEffectChainManager::UpdateEffectBtOffloadSupported(const bool &isSuppo
     }
     // Release ARM, try offload to DSP
     AUDIO_INFO_LOG("btOffloadSupported_ on, try offload effect on device %{public}d", deviceType_);
-    AudioSpatializationState oldState = {spatializationEnabled_, headTrackingEnabled_};
-    AudioSpatializationState offState = {false, false};
+    AudioSpatializationState oldState = {};
+    oldState.spatializationEnabled = spatializationEnabled_;
+    oldState.headTrackingEnabled = headTrackingEnabled_;
+    AudioSpatializationState offState = {};
     UpdateSpatializationStateInner(offState);
     btOffloadSupported_ = isSupported;
     UpdateSpatializationStateInner(oldState);
