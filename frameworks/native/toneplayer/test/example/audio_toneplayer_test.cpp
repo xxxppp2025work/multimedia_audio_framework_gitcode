@@ -42,7 +42,6 @@ int main(int argc, char *argv[])
     int32_t toneType = atoi(argv[1]);
     int32_t sleepTime = atoi(argv[2]);
     AudioRendererInfo rendererInfo = {};
-    // rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
     rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_RINGTONE;
     rendererInfo.rendererFlags = 0;
     shared_ptr<TonePlayer> lToneGen = TonePlayer::Create(rendererInfo);
