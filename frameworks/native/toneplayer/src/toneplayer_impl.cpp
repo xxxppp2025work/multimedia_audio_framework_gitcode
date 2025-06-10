@@ -293,7 +293,7 @@ bool TonePlayerImpl::CheckToneContinuity()
 
 bool TonePlayerImpl::ContinueToneplay(uint32_t reqSample, int8_t *audioBuffer)
 {
-    Trace trace("CheckToneContinuity:toneState:" + std::to_string(toneState_) + "currSegment:" +
+    Trace trace("ContinueToneplay:toneState:" + std::to_string(toneState_) + "currSegment:" +
         std::to_string(currSegment_));
     if (toneState_ != TONE_RUNNING) {
         return false;

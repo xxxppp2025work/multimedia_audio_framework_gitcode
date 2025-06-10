@@ -31,6 +31,7 @@ using namespace std;
 using namespace OHOS;
 using namespace OHOS::AudioStandard;
 
+// 参数1：运行程序名；参数2：音调类型；参数3：播放时长
 constexpr int32_t REQ_ARG = 3;
 int main(int argc, char *argv[])
 {
@@ -42,7 +43,6 @@ int main(int argc, char *argv[])
     int32_t toneType = atoi(argv[1]);
     int32_t sleepTime = atoi(argv[2]);
     AudioRendererInfo rendererInfo = {};
-    // rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
     rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_RINGTONE;
     rendererInfo.rendererFlags = 0;
     shared_ptr<TonePlayer> lToneGen = TonePlayer::Create(rendererInfo);
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
     lToneGen->LoadTone((ToneType)toneType);
     AUDIO_INFO_LOG("start Tone.");
     lToneGen->StartTone();
-    usleep(sleepTime); // 30ms sleep time 10 000 000
+    usleep(sleepTime);
     AUDIO_INFO_LOG("stop Tone.");
     lToneGen->StopTone();
     AUDIO_INFO_LOG("release Tone.");
