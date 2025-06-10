@@ -40,7 +40,7 @@ public:
 
     int32_t ProcessOfflineEffectChain(uint32_t inSize, uint32_t outSize) override;
 
-    void ReleaseOfflineEffectChain() override;
+    int32_t ReleaseOfflineEffectChain() override;
 #endif
 
     OfflineStreamInServer() = default;

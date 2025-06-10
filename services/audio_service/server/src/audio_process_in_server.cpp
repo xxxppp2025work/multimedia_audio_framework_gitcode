@@ -59,7 +59,12 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
         sessionId_ = processConfig.originalSessionId;
     }
 
-    const auto [samplingRate, encoding, format, channels, channelLayout] = processConfig.streamInfo;
+    // const auto [samplingRate, encoding, format, channels, channelLayout] = processConfig.streamInfo;
+    AudioSamplingRate samplingRate = processConfig_.streamInfo.samplingRate;
+    // AudioEncodingType encoding = processConfig_.streamInfo.encoding;
+    AudioSampleFormat format = processConfig_.streamInfo.format;
+    AudioChannel channels = processConfig_.streamInfo.channels;
+    // AudioChannelLayout channelLayout = processConfig_.streamInfo.channelLayout;
     // eg: 100005_dump_process_server_audio_48000_2_1.pcm
     dumpFileName_ = std::to_string(sessionId_) + '_' + "_dump_process_server_audio_" +
         std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +

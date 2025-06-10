@@ -20,7 +20,7 @@
 
 #include <mutex>
 
-#include "ipc_offline_stream.h"
+// #include "iipc_offline_stream.h"
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
@@ -60,7 +60,7 @@ shared_ptr<OfflineStreamInClient> OfflineStreamInClient::Create()
     sptr<IRemoteObject> ipcProxy = gasp->CreateIpcOfflineStream(errCode);
     CHECK_AND_RETURN_RET_LOG(errCode == 0, nullptr, "create audio stream fail, errcode is %{public}d.", errCode);
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, nullptr, "Create failed with null ipcProxy.");
-    sptr<IpcOfflineStream> iOfflineStreamProxy = iface_cast<IpcOfflineStream>(ipcProxy);
+    sptr<IIpcOfflineStream> iOfflineStreamProxy = iface_cast<IIpcOfflineStream>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(iOfflineStreamProxy != nullptr, nullptr, "Create failed when iface_cast.");
     shared_ptr<OfflineStreamInClient> stream = make_shared<OfflineStreamInClient>(iOfflineStreamProxy);
     return stream;
@@ -73,10 +73,10 @@ int32_t OfflineStreamInClient::GetOfflineAudioEffectChains(std::vector<std::stri
     return gasp->GetOfflineAudioEffectChains(effectChains);
 }
 
-OfflineStreamInClient::OfflineStreamInClient(const sptr<IpcOfflineStream> &ipcProxy) : streamProxy_(ipcProxy) {}
+OfflineStreamInClient::OfflineStreamInClient(const sptr<IIpcOfflineStream> &ipcProxy) : streamProxy_(ipcProxy) {}
 
 #ifdef FEATURE_OFFLINE_EFFECT
-int32_t OfflineStreamInClient::CreateOfflineEffectChain(const std::string &effectName)
+int32_t OfflineStreamInClient::CreateOfflineEffectChain(const std::string &effectName) //TEST
 {
     CHECK_AND_RETURN_RET_LOG(streamProxy_ != nullptr, ERR_OPERATION_FAILED, "Create failed with null ipcProxy.");
     return streamProxy_->CreateOfflineEffectChain(effectName);

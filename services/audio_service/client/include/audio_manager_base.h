@@ -475,9 +475,9 @@ public:
     virtual void CheckHibernateState(bool onHibernate) = 0;
 
     /**
-     * Create IpcOfflineStream for audio edition.
+     * Create IIpcOfflineStream for audio edition.
      *
-     * @return Returns IpcOfflineStream client.
+     * @return Returns IIpcOfflineStream client.
      */
     virtual sptr<IRemoteObject> CreateIpcOfflineStream(int32_t &errorCode) = 0;
 

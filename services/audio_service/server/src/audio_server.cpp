@@ -2485,7 +2485,7 @@ sptr<IRemoteObject> AudioServer::CreateIpcOfflineStream(int32_t &errorCode)
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), nullptr, "refused for %{public}d", callingUid);
     sptr<OfflineStreamInServer> stream = OfflineStreamInServer::GetOfflineStream(errorCode);
-    CHECK_AND_RETURN_RET_LOG(stream, nullptr, "Create IpcOfflineStream failed.");
+    CHECK_AND_RETURN_RET_LOG(stream, nullptr, "Create IIpcOfflineStream failed.");
     sptr<IRemoteObject> remoteObject = stream->AsObject();
     return remoteObject;
 }

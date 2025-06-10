@@ -15,20 +15,12 @@
 
 package OHOS.AudioStandard;
 
-enum Operation {
-    START_STREAM = 0,
-    PAUSE_STREAM,
-    STOP_STREAM,
-    RELEASE_STREAM,
-    FLUSH_STREAM,
-    DRAIN_STREAM,
-    UPDATE_STREAM, // when server notify client index update
-    BUFFER_UNDERRUN,
-    BUFFER_OVERFLOW,
-    SET_OFFLOAD_ENABLE,
-    UNDERFLOW_COUNT_ADD, // notify client underflow count increment
-    DATA_LINK_CONNECTING,  // a2dp offload connecting
-    DATA_LINK_CONNECTED,
-    RESTORE_SESSION,
-    MAX_OPERATION_CODE // in plan add underrun overflow
-};
+sequenceable audio_stream_info..OHOS.AudioStandard.AudioStreamInfo;
+sequenceable audio_shared_memory..OHOS.AudioStandard.AudioSharedMemory;
+interface IIpcOfflineStream {
+    void CreateOfflineEffectChain([in] String chainName);
+    void ConfigureOfflineEffectChain([in] AudioStreamInfo inInfo, [in] AudioStreamInfo outInfo);
+    void PrepareOfflineEffectChain([out] sharedptr<AudioSharedMemory> inBuffer, [out] sharedptr<AudioSharedMemory> outBuffer);
+    void ProcessOfflineEffectChain([in] unsigned int inSize, [in] unsigned int outSize);
+    void ReleaseOfflineEffectChain();
+}

@@ -51,6 +51,8 @@ public:
 
     int32_t Init();
 
+    bool Marshalling(Parcel &parcel) const override;
+
 private:
     void Close();
 
@@ -58,6 +60,14 @@ private:
     int fd_;
     size_t size_;
     std::string name_;
+};
+
+class ScopedFd {
+public:
+    explicit ScopedFd(int32_t fd) : fd_(fd) {}
+    ~ScopedFd() { CloseFd(fd_); }
+private:
+    int32_t fd_ = -1;
 };
 
 AudioSharedMemoryImpl::AudioSharedMemoryImpl(size_t size, const std::string &name)
@@ -108,6 +118,17 @@ int32_t AudioSharedMemoryImpl::Init()
     AUDIO_DEBUG_LOG("Init %{public}s <%{public}s> done.", (isFromRemote ? "remote" : "local"),
         name_.c_str());
     return SUCCESS;
+}
+
+bool AudioSharedMemoryImpl::Marshalling(Parcel &parcel) const
+{
+    // Parcel -> MessageParcel
+    MessageParcel *msgParcel = static_cast<MessageParcel *>(&parcel);
+    CHECK_AND_RETURN_RET_LOG(msgParcel != nullptr, false, "Unmarshalling failed: invalid parcel.");
+    CHECK_AND_RETURN_RET_LOG((size_ > 0 && size_ < MAX_MMAP_BUFFER_SIZE), false, "invalid size: %{public}zu", size_);
+    return msgParcel->WriteFileDescriptor(fd_) &&
+        msgParcel->WriteUint64(static_cast<uint64_t>(size_)) &&
+        msgParcel->WriteString(name_);
 }
 
 void AudioSharedMemoryImpl::Close()
@@ -203,6 +224,37 @@ std::shared_ptr<AudioSharedMemory> AudioSharedMemory::ReadFromParcel(MessageParc
         memory = nullptr;
     }
     CloseFd(fd);
+    return memory;
+}
+
+AudioSharedMemory *AudioSharedMemory::Unmarshalling(Parcel &parcel)
+{
+    // Parcel -> MessageParcel
+    MessageParcel *msgParcel = static_cast<MessageParcel *>(&parcel);
+    CHECK_AND_RETURN_RET_LOG(msgParcel != nullptr, nullptr, "Unmarshalling failed: invalid parcel.");
+
+    int fd = msgParcel->ReadFileDescriptor();
+    int minfd = 2; // ignore stdout, stdin and stderr.
+    CHECK_AND_RETURN_RET_LOG(fd > minfd, nullptr, "CreateFromRemote failed: invalid fd: %{public}d", fd);
+    ScopedFd scopedFd(fd);
+
+    uint64_t sizeTmp = msgParcel->ReadUint64();
+    CHECK_AND_RETURN_RET_LOG((sizeTmp > 0 && sizeTmp < MAX_MMAP_BUFFER_SIZE), nullptr, "failed with invalid size");
+    size_t size = static_cast<size_t>(sizeTmp);
+
+    std::string name = msgParcel->ReadString();
+
+    AudioSharedMemoryImpl *memory = new AudioSharedMemoryImpl(fd, size, name);
+    if (memory == nullptr) {
+        AUDIO_ERR_LOG("not enough memory");
+        return nullptr;
+    }
+
+    if (memory->Init() != SUCCESS || memory->GetBase() == nullptr) {
+        AUDIO_ERR_LOG("Init failed or GetBase failed");
+        delete memory;
+        memory = nullptr;
+    }
     return memory;
 }
 

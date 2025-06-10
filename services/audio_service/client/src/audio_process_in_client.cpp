@@ -144,7 +144,7 @@ public:
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
-    static constexpr AudioStreamInfo g_targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    static AudioStreamInfo g_targetStreamInfo;
 
 private:
     // move it to a common folder
@@ -258,6 +258,8 @@ private:
 
     sptr<ProcessCbImpl> processCbImpl_ = nullptr;
 };
+
+AudioStreamInfo AudioProcessInClientInner::g_targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
 
 // ProcessCbImpl --> sptr | AudioProcessInClientInner --> shared_ptr
 class ProcessCbImpl : public ProcessCbStub {
@@ -1066,7 +1068,12 @@ int32_t AudioProcessInClientInner::Start()
     Trace traceStart("AudioProcessInClient::Start");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
-    const auto [samplingRate, encoding, format, channels, channelLayout] = processConfig_.streamInfo;
+    // const auto [samplingRate, encoding, format, channels, channelLayout] = processConfig_.streamInfo;
+    AudioSamplingRate samplingRate = processConfig_.streamInfo.samplingRate;
+    // AudioEncodingType encoding = processConfig_.streamInfo.encoding;
+    AudioSampleFormat format = processConfig_.streamInfo.format;
+    AudioChannel channels = processConfig_.streamInfo.channels;
+    // AudioChannelLayout channelLayout = processConfig_.streamInfo.channelLayout;
     // eg: 100005_dump_process_client_audio_48000_2_1.pcm
     std::string dumpFileName = std::to_string(sessionId_) + "_dump_process_client_audio_" +
         std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +

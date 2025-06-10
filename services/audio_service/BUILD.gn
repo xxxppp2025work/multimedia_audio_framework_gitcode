@@ -205,7 +205,6 @@ ohos_shared_library("audio_client") {
     "client/src/audio_system_manager.cpp",
     "client/src/capturer_in_client.cpp",
     "client/src/i_audio_stream.cpp",
-    "client/src/ipc_offline_stream_proxy.cpp",
     "client/src/ipc_stream_listener_impl.cpp",
     "client/src/ipc_stream_proxy.cpp",
     "client/src/microphone_descriptor.cpp",
@@ -228,6 +227,7 @@ ohos_shared_library("audio_client") {
     "../audio_policy:audio_policy_client",
     "../audio_policy:audio_policy_common",
     "../../frameworks/native/audioqosmanager:audio_qosmanager",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_proxy",
     "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
   ]
 
@@ -379,7 +379,6 @@ audio_ohos_library("audio_process_service") {
     "server/src/hpae_capturer_stream_impl.cpp",
     "server/src/hpae_renderer_stream_impl.cpp",
     "server/src/i_stream_manager.cpp",
-    "server/src/ipc_offline_stream_stub.cpp",
     "server/src/ipc_stream_in_server.cpp",
     "server/src/ipc_stream_stub.cpp",
     "server/src/none_mix_engine.cpp",
@@ -420,6 +419,7 @@ audio_ohos_library("audio_process_service") {
     "../audio_policy:audio_foundation",
     "../../frameworks/native/audioclock:audio_clock",
     "${audio_framework_root}/services/audio_service/idl:idl_sa_proxy",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
   ]
 
   external_deps = [

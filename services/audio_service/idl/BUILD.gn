@@ -12,11 +12,16 @@
 # limitations under the License.
 
 import("//build/config/components/idl_tool/idl.gni")
+import("//foundation/multimedia/audio_framework/config.gni")
 
 idl_gen_interface("audio_service_idl_interface") {
   sources = [
-    "IIpcStreamListener.idl"
+    "IIpcStreamListener.idl",
+    # "IIpcOfflineStream.idl",
   ]
+  if (audio_framework_feature_offline_effect) {
+    sources += [ "IIpcOfflineStream.idl" ]
+  }
   sources_callback = [
   ]
   sources_common = [
@@ -37,6 +42,8 @@ idl_gen_interface("audio_service_idl_interface") {
 config("audio_service_sa_idl_config") {
   include_dirs = [
     "${target_gen_dir}",
+    "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include/",
+    "${audio_framework_root}/services/audio_service/common/include/",
   ]
 }
 
