@@ -15,27 +15,14 @@
 
 package OHOS.AudioStandard;
 
-enum Operation {
-    START_STREAM = 0,
-    PAUSE_STREAM,
-    STOP_STREAM,
-    RELEASE_STREAM,
-    FLUSH_STREAM,
-    DRAIN_STREAM,
-    UPDATE_STREAM, // when server notify client index update
-    BUFFER_UNDERRUN,
-    BUFFER_OVERFLOW,
-    SET_OFFLOAD_ENABLE,
-    UNDERFLOW_COUNT_ADD, // notify client underflow count increment
-    DATA_LINK_CONNECTING,  // a2dp offload connecting
-    DATA_LINK_CONNECTED,
-    RESTORE_SESSION,
-    MAX_OPERATION_CODE // in plan add underrun overflow
-};
+import AudioServiceTypes;
 
-enum SessionOperation {
-    SESSION_OPERATION_START = 0,
-    SESSION_OPERATION_PAUSE,
-    SESSION_OPERATION_STOP,
-    SESSION_OPERATION_RELEASE,
-};
+sequenceable audio_device_descriptor..OHOS.AudioStandard.AudioDeviceDescriptor;
+interface ICoreServiceProviderIpc {
+    void UpdateSessionOperation([in] unsigned int sessionId, [in] SessionOperation operation);
+    void SetDefaultOutputDevice([in] int defaultOutputDevice, [in] unsigned int sessionID, [in] int streamUsage, [in] boolean isRunning);  // DeviceType  StreamUsage
+    void GetAdapterNameBySessionId([in] unsigned int sessionID, [out] String name);
+    void GetProcessDeviceInfoBySessionId([in] int sessionID, [in] AudioDeviceDescriptor deviceInfo);
+    void GenerateSessionId();
+
+}

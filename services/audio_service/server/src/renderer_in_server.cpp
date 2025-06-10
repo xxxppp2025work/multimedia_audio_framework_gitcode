@@ -38,7 +38,7 @@
 #include "audio_performance_monitor.h"
 #include "audio_volume_c.h"
 #include "core_service_handler.h"
-#include "audio_service_enum.h"
+#include "audio_service_types.h"
 #include "i_hpae_manager.h"
 #include "stream_dfx_manager.h"
 

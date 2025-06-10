@@ -32,7 +32,6 @@ idl_gen_interface("audio_service_idl_interface") {
 
   hitrace = "HITRACE_TAG_ABILITY_MANAGER"
 
-  log_domainid = "0xD002B21"
   log_tag = "audio_service"
 
   subsystem_name = "multimedia"

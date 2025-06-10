@@ -37,7 +37,7 @@
 #include "device_status_listener.h"
 #include "core_service_provider_stub.h"
 #include "audio_pipe_info.h"
-#include "audio_service_enum.h"
+#include "audio_service_types.h"
 #include "audio_pipe_manager.h"
 #include "audio_pipe_selector.h"
 #include "audio_policy_config_manager.h"

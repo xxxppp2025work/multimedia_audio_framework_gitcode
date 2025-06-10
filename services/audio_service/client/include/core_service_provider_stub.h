@@ -16,34 +16,20 @@
 #ifndef CORE_SERVICE_PROVIDER_STUB_H
 #define CORE_SERVICE_PROVIDER_STUB_H
 
-#include "i_core_service_provider_ipc.h"
+#include "icore_service_provider_ipc.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class CoreServiceProviderStub : public IRemoteStub<ICoreServiceProviderIpc> {
-public:
-    virtual ~CoreServiceProviderStub() = default;
-    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
-private:
-    static bool CheckInterfaceToken(MessageParcel &data);
-    int32_t HandleUpdateSessionOperation(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleSetDefaultOutputDevice(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleGetAdapterNameBySessionId(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleGetProcessDeviceInfoBySessionId(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply);
-};
-
 class CoreServiceProviderWrapper : public CoreServiceProviderStub {
 public:
     ~CoreServiceProviderWrapper();
     CoreServiceProviderWrapper(ICoreServiceProvider *coreServiceWorker);
 
     int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation) override;
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice,
-        const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning) override;
-    std::string GetAdapterNameBySessionId(uint32_t sessionId) override;
-    int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo) override;
-    uint32_t GenerateSessionId() override;
+    int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice, uint32_t sessionID, int32_t streamUsage, bool isRunning) override;
+    int32_t GetAdapterNameBySessionId(uint32_t sessionId, std::string& name) override;
+    int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, const AudioDeviceDescriptor& deviceInfo) override;
+    int32_t GenerateSessionId() override;
 
 private:
     ICoreServiceProvider *coreServiceWorker_;

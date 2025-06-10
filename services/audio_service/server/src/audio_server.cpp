@@ -36,7 +36,7 @@
 #include "parameters.h"
 
 #include "core_service_handler.h"
-#include "i_core_service_provider_ipc.h"
+#include "icore_service_provider_ipc.h"
 #include "manager/hdi_adapter_manager.h"
 #include "sink/i_audio_render_sink.h"
 #include "source/i_audio_capture_source.h"

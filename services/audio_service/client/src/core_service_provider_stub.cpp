@@ -117,21 +117,23 @@ int32_t CoreServiceProviderWrapper::UpdateSessionOperation(uint32_t sessionId, S
     return coreServiceWorker_->UpdateSessionOperation(sessionId, operation);
 }
 
-int32_t CoreServiceProviderWrapper::SetDefaultOutputDevice(const DeviceType defaultOutputDevice,
-    const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning)
+int32_t CoreServiceProviderWrapper::SetDefaultOutputDevice(int32_t defaultOutputDevice,
+    uint32_t sessionID, int32_t streamUsage, bool isRunning)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    return coreServiceWorker_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);
+    return coreServiceWorker_->SetDefaultOutputDevice(static_cast<DeviceType>(defaultOutputDevice), sessionID,
+        static_cast<StreamUsage>(streamUsage), isRunning);
 }
 
-std::string CoreServiceProviderWrapper::GetAdapterNameBySessionId(uint32_t sessionID)
+int32_t CoreServiceProviderWrapper::GetAdapterNameBySessionId(uint32_t sessionID, std::string& name)
 {
-    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, "", "coreServiceWorker_ is null");
-    return coreServiceWorker_->GetAdapterNameBySessionId(sessionID);
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    name = coreServiceWorker_->GetAdapterNameBySessionId(sessionID);
+    return SUCCESS;
 }
 
 int32_t CoreServiceProviderWrapper::GetProcessDeviceInfoBySessionId(
-    uint32_t sessionId, AudioDeviceDescriptor &deviceInfo)
+    uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
     return coreServiceWorker_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo);
