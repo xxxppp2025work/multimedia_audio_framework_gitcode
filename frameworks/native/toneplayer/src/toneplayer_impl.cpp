@@ -154,7 +154,7 @@ void TonePlayerImpl::OnWriteData(size_t length)
     if (needFadeOut_) {
         needFadeOut_ = false;
         AudioRenderer::FadeOutAudioBuffer(bufDesc, rendererOptions_.streamInfo.format,
-            rendererOptions_.streamInfo.channels)
+            rendererOptions_.streamInfo.channels);
     }
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.dataLength);
     if (audioRenderer_ != nullptr) {
