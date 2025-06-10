@@ -31,7 +31,7 @@ using namespace std;
 using namespace OHOS;
 using namespace OHOS::AudioStandard;
 
-constexpr int32_t REQ_ARG = 2;
+constexpr int32_t REQ_ARG = 3;
 int main(int argc, char *argv[])
 {
     if (argc != REQ_ARG) {
@@ -40,16 +40,17 @@ int main(int argc, char *argv[])
     }
 
     int32_t toneType = atoi(argv[1]);
+    int32_t sleepTime = atoi(argv[2]);
     AudioRendererInfo rendererInfo = {};
-    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
-    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    // rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_RINGTONE;
     rendererInfo.rendererFlags = 0;
     shared_ptr<TonePlayer> lToneGen = TonePlayer::Create(rendererInfo);
     AUDIO_INFO_LOG("Load Tone for %{public}d ", toneType);
     lToneGen->LoadTone((ToneType)toneType);
     AUDIO_INFO_LOG("start Tone.");
     lToneGen->StartTone();
-    usleep(30000); // 30ms sleep time
+    usleep(sleepTime); // 30ms sleep time 10 000 000
     AUDIO_INFO_LOG("stop Tone.");
     lToneGen->StopTone();
     AUDIO_INFO_LOG("release Tone.");
