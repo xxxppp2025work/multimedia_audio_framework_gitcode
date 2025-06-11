@@ -55,6 +55,7 @@ ohos_fuzztest("AudioPowerStateListenerFuzzTest") {
 
   external_deps = [
     "ability_base:want",
+    "ability_runtime:app_manager",
     "ability_runtime:extension_manager",
     "ability_runtime:wantagent_innerkits",
     "access_token:libaccesstoken_sdk",
