@@ -30,7 +30,6 @@ group("audio_policy_packages") {
     ":audio_strategy_router",
     ":audio_usage_strategy",
     ":audio_volume_config",
-    "server/domain/volume:audio_safe_volume_notification_impl",
   ]
 
   if (audio_framework_feature_dtmf_tone) {
