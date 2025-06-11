@@ -369,6 +369,8 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
         info.moduleInfo_.offloadEnable = "1";
         info.moduleInfo_.fixedLatency = "1";
         info.moduleInfo_.fileName = "offload_dump_file";
+    } else if (pipeInfoPtr->name_ == "offload_distributed_output") {
+        info.moduleInfo_.className = "remote_offload";
     }
 
     info.moduleInfo_.deviceType = std::to_string(streamDesc->newDeviceDescs_[0]->deviceType_);
@@ -383,9 +385,24 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.name_ = pipeInfoPtr->name_;
 }
 
+static bool IsRemoteOffloadNeedRecreate(std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe)
+{
+    CHECK_AND_RETURN_RET(newPipe != nullptr && oldPipe != nullptr, false);
+    CHECK_AND_RETURN_RET(newPipe->adapterName_ == "remote" && oldPipe->adapterName_ == "remote", false);
+    CHECK_AND_RETURN_RET(newPipe->routeFlag_ == AUDIO_OUTPUT_FLAG_LOWPOWER &&
+        newPipe->routeFlag_ == AUDIO_OUTPUT_FLAG_LOWPOWER, false);
+    return (newPipe->moduleInfo_.format != oldPipe->moduleInfo_.format) ||
+        (newPipe->moduleInfo_.rate != oldPipe->moduleInfo_.rate) ||
+        (newPipe->moduleInfo_.channels != oldPipe->moduleInfo_.channels) ||
+        (newPipe->moduleInfo_.bufferSize != oldPipe->moduleInfo_.bufferSize);
+}
+
 AudioStreamAction AudioPipeSelector::JudgeStreamAction(
     std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe)
 {
+    if (IsRemoteOffloadNeedRecreate(newPipe, oldPipe)) {
+        return AUDIO_STREAM_ACTION_RECREATE;
+    }
     if (newPipe->adapterName_ == oldPipe->adapterName_ && newPipe->routeFlag_ == oldPipe->routeFlag_) {
         return AUDIO_STREAM_ACTION_DEFAULT;
     }

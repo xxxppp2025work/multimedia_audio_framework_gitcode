@@ -290,7 +290,7 @@ void AudioDeviceStatus::UpdateLocalGroupInfo(bool isConnected, const std::string
     const std::string& deviceName, const DeviceStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc)
 {
     deviceDesc.SetDeviceInfo(deviceName, macAddress);
-    deviceDesc.SetDeviceCapability(streamInfo, 0);
+    deviceDesc.SetDeviceCapability({ streamInfo }, 0);
     audioVolumeManager_.UpdateGroupInfo(VOLUME_TYPE, GROUP_NAME_DEFAULT, deviceDesc.volumeGroupId_, LOCAL_NETWORK_ID,
         isConnected, NO_REMOTE_ID);
     audioVolumeManager_.UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_,
@@ -391,10 +391,10 @@ int32_t AudioDeviceStatus::HandleAccessoryDevice(DeviceType deviceType, const st
 int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &updatedDesc)
 {
     if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        A2dpDeviceConfigInfo configInfo = {updatedDesc.audioStreamInfo_, false};
+        A2dpDeviceConfigInfo configInfo = {*updatedDesc.audioStreamInfo_.rbegin(), false};
         audioA2dpDevice_.AddA2dpDevice(updatedDesc.macAddress_, configInfo);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
-        A2dpDeviceConfigInfo configInfo = {updatedDesc.audioStreamInfo_, false};
+        A2dpDeviceConfigInfo configInfo = {*updatedDesc.audioStreamInfo_.rbegin(), false};
         audioA2dpDevice_.AddA2dpInDevice(updatedDesc.macAddress_, configInfo);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {               // DP device only for output.
         CHECK_AND_RETURN_RET_LOG(!audioDeviceCommon_.GetHasDpFlag(), ERROR,
@@ -853,7 +853,7 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
     const std::string networkId = statusInfo.networkId;
     AudioDeviceDescriptor deviceDesc(devType, AudioPolicyUtils::GetInstance().GetDeviceRole(devType));
     deviceDesc.SetDeviceInfo(statusInfo.deviceName, statusInfo.macAddress);
-    deviceDesc.SetDeviceCapability(statusInfo.streamInfo, 0);
+    deviceDesc.SetDeviceCapability({ statusInfo.streamInfo }, 0);
     deviceDesc.networkId_ = networkId;
     audioVolumeManager_.UpdateGroupInfo(VOLUME_TYPE, GROUP_NAME_DEFAULT, deviceDesc.volumeGroupId_, networkId,
         statusInfo.isConnected, statusInfo.mappingVolumeId);
@@ -946,15 +946,15 @@ void AudioDeviceStatus::AddAudioDevice(AudioModuleInfo& moduleInfo, DeviceType d
         AudioPolicyUtils::GetInstance().GetDeviceRole(moduleInfo.role), volumeGroupId, interruptGroupId,
         LOCAL_NETWORK_ID);
     CHECK_AND_RETURN_LOG(audioDescriptor != nullptr, "audioDescriptor is nullptr.");
-    if (!moduleInfo.supportedRate_.empty() && !moduleInfo.supportedChannels_.empty()) {
+    if (!moduleInfo.supportedRate_.empty() && !moduleInfo.supportedChannelLayout_.empty()) {
         DeviceStreamInfo streamInfo = {};
         for (auto supportedRate : moduleInfo.supportedRate_) {
             streamInfo.samplingRate.insert(static_cast<AudioSamplingRate>(supportedRate));
         }
-        for (auto supportedChannels : moduleInfo.supportedChannels_) {
-            streamInfo.channels.insert(static_cast<AudioChannel>(supportedChannels));
+        for (auto supportedChannelLayout : moduleInfo.supportedChannelLayout_) {
+            streamInfo.channelLayout.insert(static_cast<AudioChannelLayout>(supportedChannelLayout));
         }
-        audioDescriptor->SetDeviceCapability(streamInfo, 0);
+        audioDescriptor->SetDeviceCapability({ streamInfo }, 0);
     }
 
     audioDescriptor->deviceId_ = AudioPolicyUtils::startDeviceId++;

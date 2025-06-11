@@ -147,13 +147,15 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyDump::GetDumpDevi
             conneceType_  = CONNECT_TYPE_DISTRIBUTED;
         }
         AppendFormat(dumpString, "  - connect type:%s\n", AudioInfoDumpUtils::GetConnectTypeName(conneceType_).c_str());
-        for (auto &samplingRate : devDesc->audioStreamInfo_.samplingRate) {
-            AppendFormat(dumpString, "  - device sampleRates:%d\n", samplingRate);
+        for (auto &streamInfo : devDesc->audioStreamInfo_) {
+            for (auto &samplingRate : streamInfo.samplingRate) {
+                AppendFormat(dumpString, "  - device sampleRates:%d\n", samplingRate);
+            }
+            for (auto &layout : streamInfo.channelLayout) {
+                AppendFormat(dumpString, "  - device channelLayouts:%d\n", layout);
+            }
+            AppendFormat(dumpString, "  - device format:%d\n", streamInfo.format);
         }
-        for (auto &channel : devDesc->audioStreamInfo_.channels) {
-            AppendFormat(dumpString, "  - device channels:%d\n", channel);
-        }
-        AppendFormat(dumpString, "  - device format:%d\n", devDesc->audioStreamInfo_.format);
     }
     return deviceDescs;
 }
@@ -602,8 +604,8 @@ void AudioPolicyDump::XmlParsedDataMapDump(std::string &dumpString)
                 AppendFormat(dumpString, "     - rate:%u\n", rate);
             }
 
-            for (auto supportedChannel : deviceClassInfoIter.supportedChannels_) {
-                AppendFormat(dumpString, "     - supportedChannel:%u\n", supportedChannel);
+            for (auto supportedChannelLayout : deviceClassInfoIter.supportedChannelLayout_) {
+                AppendFormat(dumpString, "     - supportedChannelLayout:%u\n", supportedChannelLayout);
             }
 
             AppendFormat(dumpString, " -DeviceClassInfo : format:%s, channels:%s, bufferSize:%s, fixedLatency:%s, "

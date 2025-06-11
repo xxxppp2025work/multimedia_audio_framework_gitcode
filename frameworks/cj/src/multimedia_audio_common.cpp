@@ -157,7 +157,10 @@ void Convert2CArrDeviceDescriptorByDeviceInfo(
 
 void InitializeDeviceChannels(CDeviceDescriptor* device, const AudioDeviceDescriptor& deviceInfo, int32_t* errorCode)
 {
-    size_t channelSize = deviceInfo.audioStreamInfo_.channels.size();
+    std::set<AudioChannel> deviceInfoChannels;
+    (*deviceInfo.audioStreamInfo_.rbegin()).GetChannels(deviceInfoChannels);
+    size_t channelSize = deviceInfoChannels.size();
+
     if (channelSize == 0 || channelSize > MAX_MEM_MALLOC_SIZE) {
         *errorCode = CJ_ERR_SYSTEM;
         return;
@@ -181,7 +184,7 @@ void InitializeDeviceChannels(CDeviceDescriptor* device, const AudioDeviceDescri
     int32_t iter = 0;
     device->channelCounts.size = static_cast<int64_t>(channelSize);
     device->channelCounts.head = channels;
-    for (auto channel : deviceInfo.audioStreamInfo_.channels) {
+    for (auto channel : deviceInfoChannels) {
         channels[iter] = static_cast<int32_t>(channel);
         iter++;
     }
@@ -189,7 +192,7 @@ void InitializeDeviceChannels(CDeviceDescriptor* device, const AudioDeviceDescri
 
 void InitializeDeviceRates(CDeviceDescriptor* device, const AudioDeviceDescriptor& deviceInfo, int32_t* errorCode)
 {
-    size_t rateSize = deviceInfo.audioStreamInfo_.samplingRate.size();
+    size_t rateSize = (*deviceInfo.audioStreamInfo_.rbegin()).samplingRate.size();
     if (rateSize == 0 || rateSize > MAX_MEM_MALLOC_SIZE) {
         *errorCode = CJ_ERR_SYSTEM;
         return;
@@ -213,7 +216,7 @@ void InitializeDeviceRates(CDeviceDescriptor* device, const AudioDeviceDescripto
     int32_t iter = 0;
     device->sampleRates.size = static_cast<int64_t>(rateSize);
     device->sampleRates.head = rates;
-    for (auto rate : deviceInfo.audioStreamInfo_.samplingRate) {
+    for (auto rate : (*deviceInfo.audioStreamInfo_.rbegin()).samplingRate) {
         rates[iter] = static_cast<int32_t>(rate);
         iter++;
     }
@@ -268,7 +271,7 @@ void Convert2CDeviceDescriptor(CDeviceDescriptor* device, const AudioDeviceDescr
     device->encodingTypes.hasValue = true;
     device->encodingTypes.arr.size = static_cast<int64_t>(deviceSize);
     device->encodingTypes.arr.head = encodings;
-    encodings[iter] = static_cast<int32_t>(deviceInfo.audioStreamInfo_.encoding);
+    encodings[iter] = static_cast<int32_t>((*deviceInfo.audioStreamInfo_.rbegin()).encoding);
 }
 
 void Convert2CArrDeviceDescriptor(CArrDeviceDescriptor& devices,
@@ -322,10 +325,9 @@ void ConvertAudioDeviceDescriptor2DeviceInfo(
     deviceInfo.volumeGroupId_ = audioDeviceDescriptor->volumeGroupId_;
     deviceInfo.networkId_ = audioDeviceDescriptor->networkId_;
     deviceInfo.displayName_ = audioDeviceDescriptor->displayName_;
-    deviceInfo.audioStreamInfo_.samplingRate = audioDeviceDescriptor->audioStreamInfo_.samplingRate;
-    deviceInfo.audioStreamInfo_.encoding = audioDeviceDescriptor->audioStreamInfo_.encoding;
-    deviceInfo.audioStreamInfo_.format = audioDeviceDescriptor->audioStreamInfo_.format;
-    deviceInfo.audioStreamInfo_.channels = audioDeviceDescriptor->audioStreamInfo_.channels;
+    for (auto &item : audioDeviceDescriptor->audioStreamInfo_) {
+        deviceInfo.audioStreamInfo_.push_back(item);
+    }
 }
 
 void FreeCDeviceDescriptor(CDeviceDescriptor& device)

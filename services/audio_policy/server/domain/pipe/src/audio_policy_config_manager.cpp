@@ -154,6 +154,45 @@ void AudioPolicyConfigManager::OnHasEarpiece()
     audioDeviceManager_.UpdateEarpieceStatus(hasEarpiece_);
 }
 
+static void ConvertDeviceStreamInfoToStreamPropInfo(const DeviceStreamInfo &deviceStreamInfo,
+    std::list<std::shared_ptr<PipeStreamPropInfo>> &streamPropInfos)
+{
+    // TODO: rate and channel how to match
+    for (const auto &rate : deviceStreamInfo.samplingRate) {
+        for (const auto &layout : deviceStreamInfo.channelLayout) {
+            std::shared_ptr<PipeStreamPropInfo> streamProp = std::make_shared<PipeStreamPropInfo>();
+            streamProp->format_ = deviceStreamInfo.format;
+            streamProp->sampleRate_ = static_cast<uint32_t>(rate);
+            streamProp->channelLayout_ = layout;
+            streamProp->channels_ = AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(layout);
+            streamPropInfos.push_back(streamProp);
+        }
+    }
+}
+
+void AudioPolicyConfigManager::UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
+    const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices)
+{
+    CHECK_AND_RETURN_LOG(deviceStreamInfo.size() > 0, "deviceStreamInfo is empty");
+    std::list<std::shared_ptr<PipeStreamPropInfo>> streamProps;
+    for (auto &deviceStream : deviceStreamInfo) {
+        std::list<std::shared_ptr<PipeStreamPropInfo>> tmpStreamProps;
+        ConvertDeviceStreamInfoToStreamPropInfo(deviceStream, tmpStreamProps);
+        streamProps.splice(streamProps.end(), tmpStreamProps);
+    }
+    for (auto &streamProp : streamProps) {
+        for (auto &deviceName : supportDevices) {
+            streamProp->supportDevices_.push_back(deviceName);
+        }
+    }
+    audioPolicyConfig_.UpdateDynamicStreamProps(adapterName, pipeName, streamProps);
+}
+
+void AudioPolicyConfigManager::ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName)
+{
+    audioPolicyConfig_.ClearDynamicStreamProps(adapterName, pipeName);
+}
+
 void AudioPolicyConfigManager::SetNormalVoipFlag(const bool &normalVoipFlag)
 {
     normalVoipFlag_ = normalVoipFlag;
@@ -391,6 +430,11 @@ bool AudioPolicyConfigManager::GetFastStreamSupport(AudioStreamInfo &streamInfo,
     return false;
 }
 
+uint32_t AudioPolicyConfigManager::GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName)
+{
+    return audioPolicyConfig_.GetDynamicStreamPropsSize(adapterName, pipeName);
+}
+
 uint32_t AudioPolicyConfigManager::GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> &desc)
 {
     // device -> adapter -> flag -> stream
@@ -528,6 +572,16 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
 std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoFromPipe(
     std::shared_ptr<AdapterPipeInfo> &info, AudioSampleFormat format, uint32_t sampleRate, AudioChannel channels)
 {
+    if (info && !info->dynamicStreamPropInfos_.empty()) {
+        AUDIO_INFO_LOG("use dynamic streamProp");
+        for (auto &streamProp : info->dynamicStreamPropInfos_) {
+            if (streamProp->format_ == format &&
+                streamProp->sampleRate_ == sampleRate &&
+                streamProp->channels_ == channels) {
+                return streamProp;
+            }
+        }
+    }
     for (auto &streamProp : info->streamPropInfos_) {
         if (streamProp->format_ == format &&
             streamProp->sampleRate_ == sampleRate &&

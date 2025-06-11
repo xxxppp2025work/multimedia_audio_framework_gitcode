@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <map>
+#include <list>
 #include "parcel.h"
 #include "audio_device_info.h"
 
@@ -85,7 +86,7 @@ public:
 
     void SetDeviceInfo(std::string deviceName, std::string macAddress);
 
-    void SetDeviceCapability(const DeviceStreamInfo &audioStreamInfo, int32_t channelMask,
+    void SetDeviceCapability(const std::list<DeviceStreamInfo> &audioStreamInfo, int32_t channelMask,
         int32_t channelIndexMasks = 0);
 
     bool IsSameDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
@@ -143,7 +144,7 @@ public:
     std::string networkId_;
     uint16_t dmDeviceType_{0};
     std::string displayName_;
-    DeviceStreamInfo audioStreamInfo_ = {};
+    std::list<DeviceStreamInfo> audioStreamInfo_;
     DeviceCategory deviceCategory_ = CATEGORY_DEFAULT;
     ConnectState connectState_ = CONNECTED;
     // AudioDeviceDescriptor
