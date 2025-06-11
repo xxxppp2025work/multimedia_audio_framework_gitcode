@@ -48,7 +48,7 @@ const uint32_t AUDIO_QOS_LEVEL = 7;
 const int32_t DEFAULT_QOS_LEVEL = -1;
 const uint32_t REPORTDATA_TIMEOUT = 8;
 const int32_t HIGH_LEVEL_THREAD_PRIORITY = 4;
-const int32_t ADUIO_DEFAULT_PRIORITY = 1;
+const int32_t AUDIO_DEFAULT_PRIORITY = 1;
 const int32_t MAX_RETRY_TIMES = 5;
 const int32_t WAIT_TIME_FOR_UNSCHEDULE_MS = 5;
 static std::mutex g_rssMutex;
@@ -150,11 +150,11 @@ void OnAddResSchedService(uint32_t audioServerPid)
 bool SetEndpointThreadPriority()
 {
     Trace trace("SetEndpointThreadPriority");
-    int32_t perfdomain = GetIntParameter("const.multimedia.audio_setPriority", ADUIO_DEFAULT_PRIORITY);
+    int32_t perfdomain = GetIntParameter("const.multimedia.audio_setPriority", AUDIO_DEFAULT_PRIORITY);
     AUDIO_INFO_LOG("perfdomain = %{public}d", perfdomain);
     struct sched_param param = {0};
     // add to perfdomain
-    if (perfdomain > ADUIO_DEFAULT_PRIORITY) {
+    if (perfdomain > AUDIO_DEFAULT_PRIORITY) {
         ScheduleReportData(getpid(), gettid(), "audio_server");
         int32_t policy = 0;
         int32_t cnt = 0;
