@@ -117,6 +117,20 @@ int32_t AudioPolicyManager::RemoveUidFromAudioZone(int32_t zoneId, int32_t uid)
     return gsp->RemoveUidFromAudioZone(zoneId, uid);
 }
 
+int32_t AudioPolicyManager::AddFocusTypeToAudioZone(int32_t zoneId, AudioFocusType type)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->AddFocusTypeToAudioZone(zoneId, type);
+}
+
+int32_t AudioPolicyManager::RemoveFocusTypeFromAudioZone(int32_t zoneId, AudioFocusType type)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->RemoveFocusTypeFromAudioZone(zoneId, type);
+}
+
 int32_t AudioPolicyManager::EnableSystemVolumeProxy(int32_t zoneId, bool enable)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

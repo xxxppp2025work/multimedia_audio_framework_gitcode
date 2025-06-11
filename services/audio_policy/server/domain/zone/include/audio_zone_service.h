@@ -52,10 +52,14 @@ public:
     int32_t EnableAudioZoneChangeReport(pid_t clientPid, int32_t zoneId, bool enable);
 
     int32_t AddUidToAudioZone(int32_t zoneId, int32_t uid);
-    int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid);
+    int32_t AddFocusTypeToAudioZone(int32_t zoneId, AudioFocusType type);
+    int32_t RemoveFocusTypeFromAudioZone(int32_t zoneId, AudioFocusType type);
     int32_t FindAudioZoneByUid(int32_t uid);
 
     int32_t EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, bool enable);
+    bool GetSystemVolumeProxyEnable(int32_t zoneId);
+    int32_t SetSystemVolumeLevel(int32_t zoneId, AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag);
+    int32_t GetSystemVolumeLevel(int32_t zoneId, AudioVolumeType volumeType);
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId,
@@ -77,6 +81,7 @@ public:
        SourceType sourceType, int32_t clientUid);
     
     const std::string GetZoneStringDescriptor(int32_t zoneId);
+    bool IsAppCast();
 
 private:
     AudioZoneService() = default;
@@ -87,13 +92,15 @@ private:
     std::unordered_map<int32_t, std::shared_ptr<AudioZone>> zoneMaps_;
     std::set<pid_t> zoneReportClientList_;
     std::mutex zoneMutex_;
+    bool isAppCast = false;
 
     std::shared_ptr<AudioZone> FindZone(int32_t zoneId);
     int32_t AddKeyToAudioZone(int32_t zoneId, int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag);
+        const std::string &streamTag, const AudioFocusType &type);
     int32_t RemoveKeyFromAudioZone(int32_t zoneId, int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag);
-    int32_t FindAudioZoneByKey(int32_t uid, const std::string &deviceTag, const std::string &streamTag);
+        const std::string &streamTag, const AudioFocusType &type);
+    int32_t FindAudioZoneByKey(int32_t uid, const std::string &deviceTag, const std::string &streamTag,
+        const AudioFocusType &type);
     bool CheckIsZoneValid(int32_t zoneId);
     void RemoveDeviceFromGlobal(std::shared_ptr<AudioDeviceDescriptor> device);
 };

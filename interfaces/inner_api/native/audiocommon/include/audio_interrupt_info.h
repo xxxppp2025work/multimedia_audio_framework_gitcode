@@ -177,6 +177,20 @@ struct AudioFocusType {
     {
         return streamType > value.streamType || (streamType == value.streamType && sourceType > value.sourceType);
     }
+
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(streamType))
+            && parcel.WriteInt32(static_cast<int32_t>(sourceType))
+            && parcel.WriteBool(isPlay);
+    }
+
+    void Unmarshalling(Parcel &parcel)
+    {
+        streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
+        sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        isPlay = parcel.ReadBool();
+    }
 };
 
 enum InterruptStage {

@@ -226,6 +226,27 @@ describe("AudioGroupManagerJsUnitTest", function () {
     })
 
     /*
+     * @tc.name:SUB_AUDIO_GROUP_MANAGER_GET_SYSTEM_VOLUME_FROM_UID_001
+     * @tc.desc:verify alarm Volume set successfully
+     * @tc.type: FUNC
+     * @tc.require: issueNumber
+     */
+    it("SUB_AUDIO_GROUP_MANAGER_GET_SYSTEM_VOLUME_FROM_UID_001", 0, async function (done) {
+        let volume = 4;
+        let uid = 0;
+        audioVolumeGroupManager.setSystemVolumeFromUid(ALARM, volume, uid, (err) => {
+            if (err) {
+                console.error(`Failed to set ALARM volume. ${err}`);
+                expect(false).assertTrue();
+                done();
+                return;
+            }
+            console.info('invoked to indicate a successful volume ALARM setting.');
+            expect(true).assertTrue();
+        })
+    })
+
+    /*
      * @tc.name:SUB_AUDIO_GROUP_MANAGER_GET_VOLUME_SYNC_001
      * @tc.desc:verify getVolumeSync get volume successfully - VOICE_CALL
      * @tc.type: FUNC
@@ -505,6 +526,38 @@ describe("AudioGroupManagerJsUnitTest", function () {
             expect(err.code).assertEqual(ERROR_INVALID_PARAM);
             done();
         }
+    })
+
+        /*
+     * @tc.name:SUB_AUDIO_GROUP_MANAGER_SET_VOLUME_SYNC_FROM_UID_001
+     * @tc.desc:verify getSystemVolumeFromUid get volume successfully - VOICE_CALL
+     * @tc.type: FUNC
+     * @tc.require: I7V04L
+     */
+    it("SUB_AUDIO_GROUP_MANAGER_SET_VOLUME_SYNC_FROM_UID_001", 0, async function (done) {
+        let volume = 6;
+        let uid = 101;
+        audioVolumeGroupManager.setSystemVolumeFromUid(audio.AudioVolumeType.VOICE_CALL, volume, uid, (err) => {
+            if (err) {
+                console.error(`Failed to set VOICE_CALL volume. ${err}`);
+                expect(false).assertTrue();
+                done();
+                return;
+            }
+            console.info('invoked to indicate a successful VOICE_CALL volume setting.');
+            expect(true).assertTrue();
+
+            try {
+                let value = audioVolumeGroupManager.getSystemVolumeFromUid(audio.AudioVolumeType.VOICE_CALL, uid);
+                console.info(`get VOICE_CALL volume is obtained ${value}.`);
+                expect(value).assertEqual(volume);
+                done();
+            } catch (err) {
+                console.error(`Failed to obtain VOICE_CALL volume. ${err}`);
+                expect(false).assertTrue();
+                done();
+            }
+        })
     })
 
     /*

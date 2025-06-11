@@ -105,15 +105,19 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) const;
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId = 0);
 
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
 
+    int32_t SetAdjustVolumeForZone(int32_t zoneId);
+
+    int32_t GetVolumeAdjustZoneId();
+
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
 
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType);
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType, int32_t zoneId = 0);
 
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
 
@@ -131,11 +135,12 @@ public:
 
     int32_t SetStreamMute(AudioStreamType streamType, bool mute,
         const StreamUsage &streamUsage = STREAM_USAGE_UNKNOWN,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
+        const DeviceType &deviceType = DEVICE_TYPE_NONE,
+        int32_t zoneId = 0);
 
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) const;
 
-    bool GetStreamMute(AudioStreamType streamType);
+    bool GetStreamMute(AudioStreamType streamType, int32_t zoneId = 0);
 
     bool IsStreamActive(AudioStreamType streamType) const;
 
