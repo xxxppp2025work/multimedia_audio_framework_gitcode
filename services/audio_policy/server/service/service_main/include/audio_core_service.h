@@ -313,7 +313,8 @@ private:
     bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote);
     void TriggerRecreateRendererStreamCallback(int32_t callerPid, int32_t sessionId, uint32_t routeFlag,
         const AudioStreamDeviceChangeReasonExt::ExtEnum reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    void TriggerRecreateCapturerStreamCallback(int32_t callerPid, int32_t sessionId, uint32_t routeFlag);
+    void TriggerRecreateCapturerStreamCallback(shared_ptr<AudioStreamDescriptor> &streamDesc);
+    CapturerState HandleStreamStatusToCapturerState(AudioStreamStatus status);
     uint32_t OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
     static int32_t GetRealUid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     static void UpdateRendererInfoWhenNoPermission(const shared_ptr<AudioRendererChangeInfo> &audioRendererChangeInfos,
@@ -365,6 +366,8 @@ private:
     bool NeedRehandleA2DPDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
     void UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo, RendererState rendererState);
     void HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &pipeInfo);
+    void DelayReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex);
+    int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex);
     void CheckOffloadStream(AudioStreamChangeInfo &streamChangeInfo);
     void ReConfigOffloadStatus(uint32_t sessionId, std::shared_ptr<AudioPipeInfo> &pipeInfo, std::string &oldSinkName);
     void PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
@@ -381,7 +384,8 @@ private:
     void MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime);
     void MuteSinkPortLogic(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason);
-    int32_t ActivateOutputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    int32_t ActivateOutputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     int32_t ActivateInputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void OnAudioSceneChange(const AudioScene& audioScene);
     bool HandleOutputStreamInRunning(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -390,6 +394,9 @@ private:
     void HandleDualStartClient(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void HandlePlaybackStreamInA2dp(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
+    bool IsNoRunningStream(std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs);
+    void UpdateActiveDeviceAndVolumeBeforeMoveSession(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDesc,
+        const AudioStreamDeviceChangeReasonExt reason);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
@@ -444,6 +451,13 @@ private:
     bool isFastControlled_ = true;
     bool isVoiceCallMuted_ = false;
     std::mutex serviceFlagMutex_;
+
+    // offload delay release
+    std::atomic<bool> isOffloadOpened_ = false;
+    std::condition_variable offloadCloseCondition_;
+    std::mutex offloadCloseMutex_;
+    std::mutex offloadReOpenMutex_;
+
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,
         .type = CAST_TYPE_NULL

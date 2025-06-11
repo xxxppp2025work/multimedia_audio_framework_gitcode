@@ -722,8 +722,16 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
         audioVolume->SetSystemVolume(systemVolume);
         return;
     }
-    auto it = deviceClassMap.find(GetActiveDevice());
-    if (it == deviceClassMap.end()) {
+    if (GetActiveDevice() == DEVICE_TYPE_NEARLINK) {
+        if (volumeType == STREAM_MUSIC) {
+            isMuted = IsAbsVolumeMute();
+            volumeDb = isMuted ? 0.0f : 0.63957f; //  0.63957 = -4dB
+        } else if (volumeType == STREAM_VOICE_CALL) {
+            volumeDb = 1.0f;
+        }
+    }
+    auto it = DEVICE_CLASS_MAP.find(GetActiveDevice());
+    if (it == DEVICE_CLASS_MAP.end()) {
         AUDIO_ERR_LOG("unkown device type %{public}d", GetActiveDevice());
         return;
     }
@@ -1485,7 +1493,7 @@ int32_t AudioAdapterManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &
     return audioServiceAdapter_->GetAudioEnhanceProperty(propertyArray, deviceType);
 }
 
-void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
+void AudioAdapterManager::UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
 {
     if (!audioModuleInfo.name.empty()) {
         args.append(" sink_name=");
@@ -1526,6 +1534,10 @@ void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
     if (!audioModuleInfo.extra.empty()) {
         args.append(" split_mode=");
         args.append(audioModuleInfo.extra);
+    }
+    if (audioModuleInfo.needEmptyChunk) {
+        args.append(" need_empty_chunk=");
+        args.append(std::to_string(*audioModuleInfo.needEmptyChunk));
     }
 }
 
@@ -2043,8 +2055,6 @@ void AudioAdapterManager::UpdateUsbSafeVolume()
 
 void AudioAdapterManager::UpdateSafeVolume()
 {
-    auto currentActiveOutputDeviceDescriptor =
-        AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
     switch (currentActiveDevice_.deviceType_) {
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_WIRED_HEADPHONES:
@@ -2054,18 +2064,15 @@ void AudioAdapterManager::UpdateSafeVolume()
             break;
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_NEARLINK:
             if (volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC) <= safeVolume_) {
                 AUDIO_INFO_LOG("1st connect bt device volume is safe");
                 isBtBoot_ = false;
                 return;
             }
-            if (currentActiveOutputDeviceDescriptor != nullptr) {
-                AUDIO_INFO_LOG("bluetooth Category:%{public}d", currentActiveOutputDeviceDescriptor->deviceCategory_);
-                if (currentActiveOutputDeviceDescriptor->deviceCategory_ == BT_CAR ||
-                    currentActiveOutputDeviceDescriptor->deviceCategory_ == BT_SOUNDBOX) {
-                    AUDIO_ERR_LOG("current device: %{public}d is not support", currentActiveDevice_.deviceType_);
-                    return;
-                }
+            if (currentActiveDevice_.deviceCategory_ == BT_CAR || currentActiveDevice_.deviceCategory_ == BT_SOUNDBOX) {
+                AUDIO_ERR_LOG("current device: %{public}d is not support", currentActiveDevice_.deviceCategory_);
+                return;
             }
             if (isBtBoot_ || safeStatusBt_) {
                 AUDIO_INFO_LOG("1st connect bt device:%{public}d after boot, update current volume to safevolume",
@@ -2488,6 +2495,7 @@ SafeStatus AudioAdapterManager::GetCurrentDeviceSafeStatus(DeviceType deviceType
             return safeStatus_;
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_NEARLINK:
             volumeDataMaintainer_.GetSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, safeStatusBt_);
             return safeStatusBt_;
         default:
@@ -2914,6 +2922,11 @@ AudioDeviceDescriptor AudioAdapterManager::GetActiveDeviceDescriptor()
     return currentActiveDevice_;
 }
 
+DeviceCategory AudioAdapterManager::GetCurrentOutputDeviceCategory()
+{
+    return currentActiveDevice_.deviceCategory_;
+}
+
 DeviceType AudioAdapterManager::GetActiveDevice()
 {
     return currentActiveDevice_.deviceType_;
@@ -2926,7 +2939,7 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene)
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         SetVolumeDb(STREAM_MUSIC);
     } else {
-        AUDIO_INFO_LOG("The currentActiveDevice is not A2DP");
+        AUDIO_INFO_LOG("The currentActiveDevice is not A2DP or nearlink device");
     }
 }
 
@@ -2939,10 +2952,11 @@ void AudioAdapterManager::SetAbsVolumeMute(bool mute)
 {
     AUDIO_INFO_LOG("SetAbsVolumeMute: %{public}d", mute);
     isAbsVolumeMute_ = mute;
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        currentActiveDevice_.deviceType_ == DEVICE_TYPE_NEARLINK) {
         SetVolumeDb(STREAM_MUSIC);
     } else {
-        AUDIO_INFO_LOG("The currentActiveDevice is not A2DP");
+        AUDIO_INFO_LOG("The currentActiveDevice is not A2DP or nearlink device");
     }
 }
 
