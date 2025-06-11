@@ -619,7 +619,7 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo &info, SwitchSt
         }
         return true;
     }
-        
+
     switch (targetState) {
         case SWITCH_STATE_WAITING:
             CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
@@ -1861,6 +1861,41 @@ std::unordered_map<StreamUsage, AudioStreamType> VolumeUtils::streamUsageMap_ = 
     {STREAM_USAGE_ULTRASONIC, STREAM_ULTRASONIC}
 };
 
+std::unordered_set<AudioVolumeType> VolumeUtils::audioVolumeTypeSet_ = {
+    STREAM_DEFAULT,
+    STREAM_VOICE_CALL,
+    STREAM_MUSIC,
+    STREAM_RING,
+    STREAM_MEDIA,
+    STREAM_VOICE_ASSISTANT,
+    STREAM_SYSTEM,
+    STREAM_ALARM,
+    STREAM_NOTIFICATION,
+    STREAM_BLUETOOTH_SCO,
+    STREAM_ENFORCED_AUDIBLE,
+    STREAM_DTMF,
+    STREAM_TTS ,
+    STREAM_ACCESSIBILITY,
+    STREAM_RECORDING,
+    STREAM_MOVIE,
+    STREAM_GAME,
+    STREAM_SPEECH,
+    STREAM_SYSTEM_ENFORCED,
+    STREAM_ULTRASONIC,
+    STREAM_WAKEUP,
+    STREAM_VOICE_MESSAGE,
+    STREAM_NAVIGATION,
+    STREAM_INTERNAL_FORCE_STOP,
+    STREAM_SOURCE_VOICE_CALL,
+    STREAM_VOICE_COMMUNICATION,
+    STREAM_VOICE_RING,
+    STREAM_VOICE_CALL_ASSISTANT,
+    STREAM_CAMCORDER,
+    STREAM_APP,
+    STREAM_TYPE_MAX,
+    STREAM_ALL
+};
+
 std::unordered_map<AudioStreamType, AudioVolumeType>& VolumeUtils::GetVolumeMap()
 {
     if (isPCVolumeEnable_) {
@@ -1908,6 +1943,17 @@ std::set<StreamUsage> VolumeUtils::GetOverlapStreamUsageSet(const std::set<Strea
         std::inserter(overlapSet, overlapSet.begin()));
     return overlapSet;
 }
+
+std::unordered_set<AudioVolumeType>& VolumeUtils::GetSupportedAudioVolumeTypes()
+{
+    return audioVolumeTypeSet_;
+}
+
+std::set<StreamUsage>& VolumeUtils::GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType)
+{
+    return GetStreamUsageSetForVolumeType(audioVolumeType);
+}
+
 
 std::set<StreamUsage>& VolumeUtils::GetStreamUsageSetForVolumeType(AudioVolumeType volumeType)
 {
