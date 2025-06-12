@@ -86,7 +86,7 @@ public:
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime, uint32_t code);
     void SetCurrentActiveDevice(DeviceType currentActiveDevice);
     void SetDoNotDisturbStatusVolume(uint32_t sessionId, float volume);
-    uint32_t GetDoNotDisturbStatusVolume(int32_t volumeType, int32_t appUid, uint32_t sessionId);
+    float GetDoNotDisturbStatusVolume(int32_t volumeType, int32_t appUid, bool isSystemApp);
     void SetDoNotDisturbStatusWhiteListVolume(std::vector<std::map<std::string, std::string>>
         doNotDisturbStatusWhiteList);
     void SetDoNotDisturbStatus(bool isDoNotDisturb);
@@ -137,7 +137,8 @@ public:
     bool isMuted_ = false;
 
     float appVolume_ = 1.0f;
-    float totalVolume_ = 1.0f; // volume_ * duckFactor_ * lowPowerFactor_ * appVolume_
+    float doNotDisturbStatusVolume_ = 1.0f;
+    float totalVolume_ = 1.0f; // volume_ * duckFactor_ * lowPowerFactor_ * appVolume_ * doNotDisturbStatusVolume_
 
     float historyVolume_ = 0.0f; // used all volume
     float monitorVolume_ = 0.0f; // monitor all volume change

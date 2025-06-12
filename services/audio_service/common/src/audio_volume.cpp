@@ -56,7 +56,7 @@ static const std::unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING
 uint64_t DURATION_TIME_DEFAULT = 40;
 uint64_t DURATION_TIME_SHORT = 10;
 static const float DEFAULT_APP_VOLUME = 1.0f;
-uint32_t VOIP_CALL_VOICE_SERVICE = 5523;
+int32_t VOIP_CALL_VOICE_SERVICE = 5523;
 uint32_t DISTURB_STATE_VOLUME_MUTE = 0;
 uint32_t DISTURB_STATE_VOLUME_UNMUTE = 1;
 
@@ -88,14 +88,14 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
     std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(streamType));
     int32_t volumeLevel = 0;
-    int32_t appUid = -1;
     volumes->volumeStream = 1.0f;
+    float doNotDisturbStatusVolume = 1.0f;
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         volumes->volumeStream = it->second.totalVolume_;
         volumes->volumeHistory = it->second.historyVolume_;
         volumes->volumeApp = it->second.appVolume_;
-        appUid = it->second.GetAppUid();
+        doNotDisturbStatusVolume = it->second.doNotDisturbStatusVolume_;
         if (volumeType == STREAM_VOICE_ASSISTANT && !it->second.IsSystemApp()) {
             volumeType = STREAM_MUSIC;
         }
@@ -116,8 +116,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
         AUDIO_ERR_LOG("system volume not exist, volumeType:%{public}d, deviceClass%{public}s",
             volumeType, deviceClass.c_str());
     }
-    int32_t doNotDisturbStatusVolume = static_cast<int32_t>(GetDoNotDisturbStatusVolume(streamType, appUid, sessionId));
-    volumes->volume = volumes->volumeSystem * volumes->volumeStream * doNotDisturbStatusVolume;
+    volumes->volume = volumes->volumeSystem * volumes->volumeStream;
     if (it != streamVolume_.end() && !IsSameVolume(it->second.monitorVolume_, volumes->volume)) {
         it->second.monitorVolume_ = volumes->volume;
         it->second.monitorVolumeLevel_ = volumeLevel;
@@ -129,7 +128,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
     return volumes->volume;
 }
 
-uint32_t AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, int32_t appUid, uint32_t sessionId)
+float AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, int32_t appUid, bool isSystemApp)
 {
     if (!isDoNotDisturbStatus_) {
         return DISTURB_STATE_VOLUME_UNMUTE;
@@ -137,9 +136,7 @@ uint32_t AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, int32_t ap
     if (volumeType == STREAM_SYSTEM || volumeType == STREAM_DTMF) {
         return DISTURB_STATE_VOLUME_MUTE;
     }
-    auto it = streamVolume_.find(sessionId);
-    CHECK_AND_RETURN_RET_LOG(it != streamVolume_.end(), DISTURB_STATE_VOLUME_UNMUTE, "sessionId is null");
-    if (it->second.IsSystemApp() || appUid == VOIP_CALL_VOICE_SERVICE) {
+    if (isSystemApp || appUid == VOIP_CALL_VOICE_SERVICE) {
         return DISTURB_STATE_VOLUME_UNMUTE;
     }
     AudioStreamType volumeMapType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(volumeType));
@@ -165,6 +162,13 @@ void AudioVolume::SetDoNotDisturbStatusWhiteListVolume(std::vector<std::map<std:
         for (const auto& [key, val] : obj) {
             doNotDisturbStatusWhiteListVolume_[atoi(key.c_str())] = 1;
         }
+    }
+    for (auto &streamVolume : streamVolume_) {
+        auto &stream = streamVolume.second;
+        stream.doNotDisturbStatusVolume_ = 
+            GetDoNotDisturbStatusVolume(stream.GetStreamType(), stream.GetAppUid(), streamVolume.IsSystemApp());
+        stream.totalVolume_ = stream.isMuted_ ? 0.0f : stream.volume_ * stream.duckFactor_ *
+            stream.lowPowerFactor_ * stream.appVolume_ * stream.doNotDisturbStatusVolume_;
     }
 }
 
@@ -246,9 +250,12 @@ void AudioVolume::SetStreamVolume(uint32_t sessionId, float volume)
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         it->second.volume_ = volume;
+        it->second.doNotDisturbStatusVolume_ = GetDoNotDisturbStatusVolume(it->second.GetStreamType(),
+            it->second.GetAppUid(), it->second.IsSystemApp());
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
         it->second.totalVolume_ = it->second.isMuted_ ? 0.0f :
-            it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_;
+            it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_ *
+            it->second.doNotDisturbStatusVolume_;
     } else {
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
     }
@@ -261,9 +268,12 @@ void AudioVolume::SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         it->second.duckFactor_ = duckFactor;
+        it->second.doNotDisturbStatusVolume_ = GetDoNotDisturbStatusVolume(it->second.GetStreamType(),
+            it->second.GetAppUid(), it->second.IsSystemApp());
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
         it->second.totalVolume_ = it->second.isMuted_ ? 0.0f :
-            it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_;
+            it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_ *
+            it->second.doNotDisturbStatusVolume_;
     } else {
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
     }
@@ -276,9 +286,12 @@ void AudioVolume::SetStreamVolumeLowPowerFactor(uint32_t sessionId, float lowPow
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         it->second.lowPowerFactor_ = lowPowerFactor;
+        it->second.doNotDisturbStatusVolume_ = GetDoNotDisturbStatusVolume(it->second.GetStreamType(),
+            it->second.GetAppUid(), it->second.IsSystemApp());
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
         it->second.totalVolume_ = it->second.isMuted_ ? 0.0f :
-            it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_;
+            it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_ *
+            it->second.doNotDisturbStatusVolume_;
     } else {
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
     }
@@ -327,9 +340,12 @@ void AudioVolume::SetStreamVolumeMute(uint32_t sessionId, bool isMuted)
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         it->second.isMuted_ = isMuted;
+        it->second.doNotDisturbStatusVolume_ = GetDoNotDisturbStatusVolume(it->second.GetStreamType(),
+            it->second.GetAppUid(), it->second.IsSystemApp());
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
         it->second.totalVolume_ = it->second.isMuted_ ? 0.0f :
-            it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_;
+            it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_ *
+            it->second.doNotDisturbStatusVolume_;
     }
 }
 
@@ -380,7 +396,8 @@ void AudioVolume::SetAppVolumeMute(int32_t appUid, bool isMuted)
         if (stream.GetAppUid() == appUid) {
             stream.appVolume_ = totalAppVolume;
             stream.totalVolume_ = stream.isMuted_ ? 0.0f :
-                stream.volume_ * stream.duckFactor_ * stream.lowPowerFactor_ * stream.appVolume_;
+                stream.volume_ * stream.duckFactor_ * stream.lowPowerFactor_ * stream.appVolume_ *
+                stream.doNotDisturbStatusVolume_;
         }
     }
 }
@@ -412,7 +429,8 @@ void AudioVolume::SetAppVolume(AppVolume &appVolume)
         if (stream.GetAppUid() == appUid) {
             stream.appVolume_ = appVolume.totalVolume_;
             stream.totalVolume_ = stream.isMuted_ ? 0.0f :
-                stream.volume_ * stream.duckFactor_ * stream.lowPowerFactor_ * stream.appVolume_;
+                stream.volume_ * stream.duckFactor_ * stream.lowPowerFactor_ * stream.appVolume_ *
+                stream.doNotDisturbStatusVolume_;
         }
     }
 }
