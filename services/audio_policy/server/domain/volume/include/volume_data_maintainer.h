@@ -50,11 +50,7 @@ public:
         VT_STREAM_ASSISTANT = 11,
     };
 
-    static VolumeDataMaintainer& GetVolumeDataMaintainer()
-    {
-        static VolumeDataMaintainer volumeDataMainTainer;
-        return volumeDataMainTainer;
-    }
+    VolumeDataMaintainer();
     ~VolumeDataMaintainer();
 
     void SetDataShareReady(std::atomic<bool> isDataShareReady);
@@ -95,14 +91,15 @@ public:
     bool GetRestoreVolumeLevel(DeviceType deviceType, int32_t &volume);
     void RegisterCloned();
     bool SaveMicMuteState(bool isMute);
-    bool GetMicMuteState(bool &isMute);
+    bool GetMicMuteState(bool &isMute) const;
     bool CheckOsAccountReady();
 
     void StoreRemoteVolumeLevelMap(void);
     void LoadRemoteVolumeLevelMap(void);
+    std::unordered_map<AudioStreamType, bool> muteStatusMap_; // save System volume Mutestatus map
+    std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_; // save system volume map
 
 private:
-    VolumeDataMaintainer();
     static std::string GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType,
         std::string networkId = "LocalDevice");
     static std::string GetMuteKeyForDataShare(DeviceType deviceType, AudioStreamType streamType);
@@ -118,8 +115,8 @@ private:
 
     ffrt::mutex volumeMutex_;
     ffrt::mutex volumeForDbMutex_;
-    std::unordered_map<AudioStreamType, bool> muteStatusMap_; // save System volume Mutestatus map
-    std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_; // save system volume map
+    // std::unordered_map<AudioStreamType, bool> muteStatusMap_; // save System volume Mutestatus map
+    // std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_; // save system volume map
     std::unordered_map<AudioStreamType, int32_t> remoteVolumeLevelMap_; // save system remote volume map
     std::unordered_map<int32_t, int32_t> appVolumeLevelMap_; // save App volume map
     std::unordered_map<int32_t, std::unordered_map<int32_t, bool>> appMuteStatusMap_; // save App volume Mutestatus map
