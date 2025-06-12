@@ -93,6 +93,10 @@ public:
 
     virtual int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) = 0;
 
+    virtual int32_t AddFocusTypeToAudioZone(int32_t zoneId, AudioFocusType type) = 0;
+
+    virtual int32_t RemoveFocusTypeFromAudioZone(int32_t zoneId, AudioFocusType type) = 0;
+
     virtual int32_t RegisterSystemVolumeProxy(int32_t zoneId,
         const std::shared_ptr<AudioZoneVolumeProxy> &proxy) = 0;
 

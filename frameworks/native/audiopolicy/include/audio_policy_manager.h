@@ -62,7 +62,7 @@ public:
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
 
     int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
-        int32_t volumeFlag = 0);
+        int32_t volumeFlag = 0, int32_t uid = 0);
 
     int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
         int32_t volumeFlag = 0);
@@ -70,13 +70,15 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0);
 
+    int32_t SetAdjustVolumeForZone(int32_t zoneId);
+
     int32_t IsAppVolumeMute(int32_t appUid, bool muted, bool &isMute);
 
     int32_t SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag = 0);
 
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid);
 
-    int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0);
 
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
     
@@ -471,6 +473,10 @@ public:
     int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid);
 
     int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable);
+
+    int32_t AddFocusTypeToAudioZone(int32_t zoneId, AudioFocusType type);
+
+    int32_t RemoveFocusTypeFromAudioZone(int32_t zoneId, AudioFocusType type);
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId);
 
