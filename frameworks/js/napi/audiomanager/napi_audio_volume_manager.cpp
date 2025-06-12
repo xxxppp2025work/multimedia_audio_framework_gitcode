@@ -721,7 +721,7 @@ napi_value NapiAudioVolumeManager::GetMinVolumeByStream(napi_env env, napi_callb
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    int32_t minVolume = napiAudioVolumeManager->audioSystemMngr_->GetMinVolumeByUsage(streaNapiAudioEnum::GetNativeStreamUsage(streamUsage)mUsage);
+    int32_t minVolume = napiAudioVolumeManager->audioSystemMngr_->GetMinVolumeByUsage(NapiAudioEnum::GetNativeStreamUsage(streamUsage));
     NapiParamUtils::SetValueInt32(env, minVolume, result);
     return result;
 }

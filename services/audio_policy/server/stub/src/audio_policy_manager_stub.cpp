@@ -2469,7 +2469,7 @@ void AudioPolicyManagerStub::GetStreamUsagesByVolumeTypeInternal(MessageParcel &
     reply.WriteInt32(size);
     for (size_t idx = 0; idx < size; idx++)
     {
-        reply.WriteInt32(streamUsages[dx]);
+        reply.WriteInt32(streamUsages[idx]);
     }
 
 }

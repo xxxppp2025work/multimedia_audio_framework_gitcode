@@ -661,7 +661,7 @@ void AudioPolicyClientProxy::OnStreamVolumeChange(StreamVolumeEvent streamVolume
     }
     reply.ReadInt32();
 }
-void AudioPolicyClientProxy::OnSystemolumeChange(VolumeEvent volumeEvent)
+void AudioPolicyClientProxy::OnSystemVolumeChange(VolumeEvent volumeEvent)
 {
     MessageParcel data;
     MessageParcel reply;
