@@ -1721,6 +1721,11 @@ bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
     return audioSceneManager_.IsStreamActive(streamType);
 }
 
+bool AudioPolicyServer::IsStreamActiveByStreamUsage(StreamUsage streamUsage)
+{
+    return audioPolicyService_.IsStreamActive(VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage));
+}
+
 bool AudioPolicyServer::IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage)
 {
     AudioRendererInfo rendererInfo = {};
@@ -3526,7 +3531,7 @@ int32_t AudioPolicyServer::RegisterAudioZoneClient(const sptr<IRemoteObject> &ob
 {
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
         "RegisterAudioZoneClient listener object is nullptr");
-    
+
     sptr<IStandardAudioZoneClient> client = iface_cast<IStandardAudioZoneClient>(object);
     CHECK_AND_RETURN_RET_LOG(client != nullptr, ERR_INVALID_PARAM,
         "RegisterAudioZoneClient listener obj cast failed");
@@ -4193,6 +4198,38 @@ bool AudioPolicyServer::GetStreamMuteByUsage(StreamUsage streamUsage)
     CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
         false, "GetStreamMuteByUsage: Invalid streamUsage");
     return GetStreamMute(VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage));
+}
+
+float AudioPolicyServer::GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType)
+{
+    return GetSystemVolumeInDb(VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage), volumeLevel, deviceType);
+}
+
+std::vector<AudioVolumeType> AudioPolicyServer::GetSupportedAudioVolumeTypes()
+{
+    std::vector<AudioVolumeType> result = {};
+    std::unordered_set<AudioVolumeType> volumeTypeSet = VolumeUtils::GetSupportedAudioVolumeTypes();
+    for (std::unordered_set<AudioVolumeType>::iterator it = volumeTypeSet.begin(); it != volumeTypeSet.end(); ++it)
+    {
+        result.push_back(*it);
+    }
+    return result;
+}
+
+AudioVolumeType AudioPolicyServer::GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage)
+{
+    return VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage);
+}
+
+std::vector<StreamUsage> AudioPolicyServer::GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType)
+{
+    std::vector<StreamUsage> result = {};
+    std::set<StreamUsage> streamUsageSet = VolumeUtils::GetStreamUsagesByVolumeType(audioVolumeType);
+    for (std::set<StreamUsage>::iterator it = streamUsageSet.begin(); it != streamUsageSet.end(); ++it)
+    {
+        result.push_back(*it);
+    }
+    return result;
 }
 
 int32_t AudioPolicyServer::SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages)
