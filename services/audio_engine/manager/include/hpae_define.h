@@ -27,16 +27,18 @@ struct HpaeSessionInfo {
     HpaeStreamInfo streamInfo;
     HpaeSessionState state = HPAE_SESSION_NEW;
     std::weak_ptr<IStatusCallback> statusCallback;
+    int32_t offloadType = OFFLOAD_DEFAULT;
+    bool offloadEnable = false;
 };
 
 
 constexpr int32_t SCENE_TYPE_NUM = 9;
 
 struct HpaeRenderSessionInfo {
-    uint32_t sinkInputNodeId;
     HpaeProcessorType sceneType = HPAE_SCENE_DEFAULT;
     HpaeSessionState state = HPAE_SESSION_NEW;
     bool isMoveAble = true;
+    bool bypass = false;
 };
 
 struct HpaeSinkInputInfo {

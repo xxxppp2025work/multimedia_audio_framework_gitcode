@@ -1227,6 +1227,12 @@ int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, c
     return audioVolumeManager_.SetA2dpDeviceVolume(macAddress, volumeLevel, internalCall);
 }
 
+int32_t AudioPolicyService::SetNearlinkDeviceVolume(const std::string &macAddress, AudioStreamType streamType,
+    const int32_t volume, bool internalCall)
+{
+    return audioVolumeManager_.SetNearlinkDeviceVolume(macAddress, streamType, volume, internalCall);
+}
+
 int32_t AudioPolicyService::GetAudioLatencyFromXml() const
 {
     return audioConfigManager_.GetAudioLatencyFromXml();
@@ -1373,7 +1379,7 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
         deviceInfo.networkId_ = curOutputDeviceDesc.networkId_;
         deviceInfo.deviceType_ = curOutputDeviceDesc.deviceType_;
         deviceInfo.deviceRole_ = OUTPUT_DEVICE;
-        CHECK_AND_RETURN_RET_LOG(IsDevicePlaybackSupport(config, deviceInfo), ERROR, "device not support playback");
+        CHECK_AND_RETURN_RET_LOG(IsDevicePlaybackSupported(config, deviceInfo), ERROR, "device not support playback");
     } else {
         if (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
             AudioCapturerInfo capturerInfo = config.capturerInfo;
@@ -2049,6 +2055,7 @@ int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const
         OUTPUT_DEVICE, DEVICE_TYPE_SPEAKER);
     moudleInfo.lib = "libmodule-split-stream-sink.z.so";
     moudleInfo.extra = splitArgs;
+    moudleInfo.needEmptyChunk = false;
 
     int32_t openRet = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleName, moudleInfo);
     if (openRet != 0) {
@@ -2130,6 +2137,7 @@ int32_t AudioPolicyService::SetSleAudioOperationCallback(const sptr<IRemoteObjec
         "sleAudioOperationCallback_ is nullptr");
 
     sleAudioDeviceManager_.SetSleAudioOperationCallback(sleAudioOperationCallback);
+
     return SUCCESS;
 }
 
@@ -2220,7 +2228,7 @@ int32_t AudioPolicyService::SetBackgroundMuteCallback(const sptr<IRemoteObject> 
     return audioBackgroundManager_.SetBackgroundMuteCallback(object);
 }
 
-bool AudioPolicyService::IsDevicePlaybackSupport(const AudioProcessConfig &config,
+bool AudioPolicyService::IsDevicePlaybackSupported(const AudioProcessConfig &config,
     const AudioDeviceDescriptor &deviceInfo)
 {
     if (audioPolicyServerHandler_ && config.streamInfo.encoding == ENCODING_EAC3 &&
@@ -2262,6 +2270,11 @@ int32_t AudioPolicyService::SetCallbackStreamUsageInfo(const std::set<StreamUsag
         AUDIO_ERR_LOG("audioPolicyServerHandler_ is nullptr");
         return AUDIO_ERR;
     }
+}
+
+int32_t AudioPolicyService::ForceStopAudioStream(StopAudioType audioType)
+{
+    return AudioServerProxy::GetInstance().ForceStopAudioStreamProxy(audioType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

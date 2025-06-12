@@ -53,9 +53,7 @@ namespace {
 }
 HpaeOffloadSinkOutputNode::HpaeOffloadSinkOutputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
-      renderFrameData_(nodeInfo.frameLen * nodeInfo.channels *
-        GetSizeFromFormat(nodeInfo.format) * CACHE_FRAME_COUNT),
-      interleveData_(nodeInfo.frameLen * nodeInfo.channels)
+      renderFrameData_(0)
 {
 #ifdef ENABLE_HOOK_PCM
     outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
@@ -88,10 +86,10 @@ void HpaeOffloadSinkOutputNode::DoProcess()
         return;
     }
     // if there are no enough frames in cache, read more data from pre-output
-    size_t frameSize = GetSizeFromFormat(GetBitWidth()) * GetFrameLen() * GetChannelCount();
+    size_t frameSize = static_cast<size_t>(GetSizeFromFormat(GetBitWidth())) * GetFrameLen() * GetChannelCount();
     while (renderFrameData_.size() < CACHE_FRAME_COUNT * frameSize) {
         std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
-        if (outputVec.front()->IsValid()) {
+        if (outputVec.size() && outputVec.front()->IsValid()) {
             renderFrameData_.resize(renderFrameData_.size() + frameSize);
             ConvertFromFloat(GetBitWidth(), GetChannelCount() * GetFrameLen(),
                 outputVec.front()->GetPcmDataBuffer(), renderFrameData_.data() + renderFrameData_.size() - frameSize);
@@ -176,7 +174,6 @@ void HpaeOffloadSinkOutputNode::OffloadReset()
     isHdiFull_.store(false);
     renderFrameData_.clear();
     setPolicyStateTask_.flag = false; // unset the task when reset
-    RunningLock(true);
 }
 
 int32_t HpaeOffloadSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
@@ -326,6 +323,7 @@ const char *HpaeOffloadSinkOutputNode::GetRenderFrameData(void)
 
 void HpaeOffloadSinkOutputNode::StopStream()
 {
+    CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
     // flush hdi when disconnect
     RunningLock(true);
     auto ret = RenderSinkFlush();
