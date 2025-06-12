@@ -201,6 +201,8 @@ public:
 
     void HandleDpConnection();
 
+    void RefreshVolumeWhenDpReConnect();
+
     int32_t GetStreamVolume(AudioStreamType streamType);
 
     void NotifyAccountsChanged(const int &id);
