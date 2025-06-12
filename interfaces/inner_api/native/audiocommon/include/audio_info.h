@@ -1160,9 +1160,25 @@ struct SwitchStreamInfo {
     }
 };
 
-struct StreamSetStateEventInternal {
+struct StreamSetStateEventInternal : public Parcelable {
     StreamSetState streamSetState;
     StreamUsage streamUsage;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(streamSetState)) &&
+            parcel.WriteInt32(static_cast<int32_t>(streamUsage));
+    }
+    static StreamSetStateEventInternal *Unmarshalling(Parcel &parcel)
+    {
+        StreamSetStateEventInternal *event = new StreamSetStateEventInternal();
+        if (event == nullptr) {
+            return nullptr;
+        }
+        event->streamSetState = static_cast<StreamSetState>(parcel.ReadInt32());
+        event->streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        return event;
+    }
 };
 
 enum AudioPin {

@@ -47,7 +47,7 @@ std::weak_ptr<AudioCapturerPolicyServiceDiedCallback> AudioPolicyManager::captur
 std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> AudioPolicyManager::audioStreamCBMap_;
 std::vector<AudioServerDiedCallBack> AudioPolicyManager::serverDiedCbks_;
 std::mutex AudioPolicyManager::serverDiedCbkMutex_;
-std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackStub>> AudioPolicyManager::clientTrackerStubMap_;
+std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackService>> AudioPolicyManager::clientTrackerStubMap_;
 
 static bool RegisterDeathRecipientInner(sptr<IRemoteObject> object)
 {
@@ -1250,7 +1250,7 @@ int32_t AudioPolicyManager::RegisterTracker(AudioMode &mode, AudioStreamChangeIn
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
     std::lock_guard<std::mutex> lock(clientTrackerStubMutex_);
-    sptr<AudioClientTrackerCallbackStub> callback = new(std::nothrow) AudioClientTrackerCallbackStub();
+    sptr<AudioClientTrackerCallbackService> callback = new(std::nothrow) AudioClientTrackerCallbackService();
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR, "clientTrackerCbStub: memory allocation failed");
 
     callback->SetClientTrackerCallback(clientTrackerObj);

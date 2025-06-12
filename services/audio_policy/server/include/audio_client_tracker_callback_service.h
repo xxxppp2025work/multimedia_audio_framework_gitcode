@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef ST_AUDIO_CLIENT_TRACKER_CALLBACK_PROXY_H
-#define ST_AUDIO_CLIENT_TRACKER_CALLBACK_PROXY_H
+#ifndef AUDIO_CLIENT_TRACKER_CALLBCK_SERVICE_H
+#define AUDIO_CLIENT_TRACKER_CALLBCK_SERVICE_H
 
-#include "iremote_proxy.h"
+#include "standard_client_tracker_stub.h"
 #include "audio_stream_manager.h"
-#include "i_standard_client_tracker.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
 class ClientTrackerCallbackListener : public AudioClientTracker {
 public:
     explicit ClientTrackerCallbackListener(const sptr<IStandardClientTracker> &listener);
@@ -43,25 +43,28 @@ private:
     sptr<IStandardClientTracker> listener_ = nullptr;
 };
 
-class AudioClientTrackerCallbackProxy : public IRemoteProxy<IStandardClientTracker> {
+class AudioClientTrackerCallbackService : public StandardClientTrackerStub {
 public:
-    explicit AudioClientTrackerCallbackProxy(const sptr<IRemoteObject> &impl);
-    virtual ~AudioClientTrackerCallbackProxy() = default;
+    AudioClientTrackerCallbackService();
+    virtual ~AudioClientTrackerCallbackService();
 
-    virtual void MuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
-    virtual void UnmuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
-    virtual void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
-    virtual void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
+    void SetClientTrackerCallback(const std::weak_ptr<AudioClientTracker> &callback);
+    void UnsetClientTrackerCallback();
 
-    virtual void SetLowPowerVolumeImpl(float volume) override;
-    virtual void GetLowPowerVolumeImpl(float &volume) override;
-    virtual void SetOffloadModeImpl(int32_t state, bool isAppBack) override;
-    virtual void UnsetOffloadModeImpl() override;
-    virtual void GetSingleStreamVolumeImpl(float &volume) override;
+    int32_t MuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
+    int32_t UnmuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
+    int32_t PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
+    int32_t ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
 
+    int32_t SetLowPowerVolumeImpl(float volume) override;
+    int32_t GetLowPowerVolumeImpl(float &volume) override;
+    int32_t SetOffloadModeImpl(int32_t state, bool isAppBack) override;
+    int32_t UnsetOffloadModeImpl() override;
+    int32_t GetSingleStreamVolumeImpl(float &volume) override;
 private:
-    static inline BrokerDelegator<AudioClientTrackerCallbackProxy> delegator_;
+    std::mutex clientTrackerMutex_;
+    std::weak_ptr<AudioClientTracker> callback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // ST_AUDIO_CLIENT_TRACKER_CALLBACK_PROXY_H
+#endif // AUDIO_CLIENT_TRACKER_CALLBCK_SERVICE_H

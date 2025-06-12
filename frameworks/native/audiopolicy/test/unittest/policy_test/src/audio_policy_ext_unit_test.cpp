@@ -25,7 +25,7 @@
 #include "audio_system_manager.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
-#include "audio_client_tracker_callback_stub.h"
+#include "standard_client_tracker_stub.h"
 #include "audio_policy_client_stub_impl.h"
 #include "audio_adapter_manager.h"
 #include "audio_policy_manager.h"

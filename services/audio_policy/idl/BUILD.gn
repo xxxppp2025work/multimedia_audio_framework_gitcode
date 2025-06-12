@@ -17,7 +17,8 @@ import("//foundation/multimedia/audio_framework/config.gni")
 idl_gen_interface("audio_policy_idl_interface") {
   sources = [
     "IStandardSpatializationStateChangeListener.idl",
-    "IStandardConcurrencyStateListener.idl"
+    "IStandardConcurrencyStateListener.idl",
+    "IStandardClientTracker.idl",
   ]
   # sources_callback = [
   #   "IStandardSpatializationStateChangeListener.idl",
