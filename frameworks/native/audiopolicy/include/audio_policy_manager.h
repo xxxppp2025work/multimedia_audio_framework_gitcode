@@ -621,7 +621,7 @@ public:
     bool GetStreamMuteByUsage(StreamUsage streamUsage);
     float GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType);
     std::vector<AudioVolumeType> GetSupportedAudioVolumeTypes();
-    AudioVolumeType GetAudioVolumTypeByStreamUsage(StreamUsage streamUsage);
+    AudioVolumeType GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage);
     std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType);
     int32_t SetStreamVolumeChangeCallback(const int32_t clientPid, const std::set<StreamUsage> &streamUsages,
         const std::shared_ptr<StreamVolumeChangeCallback> &callback);

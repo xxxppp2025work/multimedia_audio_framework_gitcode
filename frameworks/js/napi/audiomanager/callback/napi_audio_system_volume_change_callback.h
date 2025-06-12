@@ -45,7 +45,7 @@ private:
         VolumeEvent volumeEvent;
     };
 
-    void OnJsCallbackSystemVolumeChange(std::unique_ptr<NapiAudioSystemVolumeChangeCallback> &jsCb);
+    void OnJsCallbackSystemVolumeChange(std::unique_ptr<AudioSystemVolumeChangeJsCallback> &jsCb);
     static void Cleanup(void *data);
     static void SafeJsCallbackSystemVolumeChangeWork(napi_env env, napi_value js_cb, void *context, void *data);
     static void SystemVolumeChangeTsfnFinalize(napi_env env, void *data, void *hint);

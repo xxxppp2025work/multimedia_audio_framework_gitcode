@@ -2622,7 +2622,7 @@ std::vector<AudioVolumeType> AudioPolicyProxy::GetSupportedAudioVolumeTypes()
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SUPPORTED_AUDIO_VOLUME_TYPES), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, supportedVolumeTypes, "SendRequest failed, error: %{public}d", error);
-    volumeTypeNum = replay.ReadInt32();
+    volumeTypeNum = reply.ReadInt32();
     for (size_t idx = 0; idx < volumeTypeNum; idx++)
     {
         supportedVolumeTypes.push_back(static_cast<AudioVolumeType>(reply.ReadInt32()));
@@ -2631,24 +2631,24 @@ std::vector<AudioVolumeType> AudioPolicyProxy::GetSupportedAudioVolumeTypes()
     return supportedVolumeTypes;
 }
 
-AudioVolumeType AudioPolicyProxy::GetAudioVolumTypeByStreamUsage(StreamUsage streamUsage)
+AudioVolumeType AudioPolicyProxy::GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
     AudioVolumeType audioVolumeType = AudioStreamType::STREAM_DEFAULT;
-    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, audioVolumeType, "WriteInterfaceToken failed");
 
     data.WriteInt32(static_cast<int32_t>(streamUsage));
 
     CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, audioVolumeType, "Remote() is nullptr");
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_VOLUME_TYPE_BY_STREAM_USAGE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, audioVolumeType, "SendRequest failed, error: %{public}d", error);
 
-    audioVolumeType = reply.ReadInt32();
+    audioVolumeType = static_cast<AudioVolumeType>(reply.ReadInt32());
     return audioVolumeType;
 }
 
@@ -2673,7 +2673,7 @@ std::vector<StreamUsage> AudioPolicyProxy::GetStreamUsagesByVolumeType(AudioVolu
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_USAGES_BY_VOLUME_TYPE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, streamUsages, "SendRequest failed, error: %{public}d", error);
-    streamUsageNum = replay.ReadInt32();
+    streamUsageNum = reply.ReadInt32();
     for (size_t idx = 0; idx < streamUsageNum; idx++)
     {
         streamUsages.push_back(static_cast<StreamUsage>(reply.ReadInt32()));

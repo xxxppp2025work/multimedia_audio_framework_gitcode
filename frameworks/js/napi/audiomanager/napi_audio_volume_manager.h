@@ -69,19 +69,19 @@ private:
     static napi_value GetVolumeGroupManagerSync(napi_env env, napi_callback_info info);
     static napi_value SetAppVolumeMutedForUid(napi_env env, napi_callback_info info);
     static napi_value IsAppVolumeMutedForUid(napi_env env, napi_callback_info info);
-    static napi_value GetSystemVolume(napi_env, napi_callback_info info);
-    static napi_value GetMinSystemVolume(napi_env, napi_callback_info info);
-    static napi_value GetMaxSystemVolume(napi_env, napi_callback_info info);
-    static napi_value IsSystemMuted(napi_env, napi_callback_info info);
-    static napi_value GetVolumeInUnitOfDb(napi_env, napi_callback_info info);
-    static napi_value GetVolumeByStream(napi_env, napi_callback_info info);
-    static napi_value GetMinVolumeByStream(napi_env, napi_callback_info info);
-    static napi_value GetMaxVolumeByStream(napi_env, napi_callback_info info);
-    static napi_value IsSystemMutedForStream(napi_env, napi_callback_info info);
-    static napi_value GetVolumeInUnitOfDbByStream(napi_env, napi_callback_info info);
-    static napi_value GetSupportedAudioVolumeTypes(napi_env, napi_callback_info info);
-    static napi_value GetAudioVolumeTypeByStreamUsage(napi_env, napi_callback_info info);
-    static napi_value GetStreamUsagesByVolumeType(napi_env, napi_callback_info info);
+    static napi_value GetSystemVolume(napi_env env, napi_callback_info info);
+    static napi_value GetMinSystemVolume(napi_env env, napi_callback_info info);
+    static napi_value GetMaxSystemVolume(napi_env env, napi_callback_info info);
+    static napi_value IsSystemMuted(napi_env env, napi_callback_info info);
+    static napi_value GetVolumeInUnitOfDb(napi_env env, napi_callback_info info);
+    static napi_value GetVolumeByStream(napi_env env, napi_callback_info info);
+    static napi_value GetMinVolumeByStream(napi_env env, napi_callback_info info);
+    static napi_value GetMaxVolumeByStream(napi_env env, napi_callback_info info);
+    static napi_value IsSystemMutedForStream(napi_env env, napi_callback_info info);
+    static napi_value GetVolumeInUnitOfDbByStream(napi_env env, napi_callback_info info);
+    static napi_value GetSupportedAudioVolumeTypes(napi_env env, napi_callback_info info);
+    static napi_value GetAudioVolumeTypeByStreamUsage(napi_env env, napi_callback_info info);
+    static napi_value GetStreamUsagesByVolumeType(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value RegisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *args,
         const std::string &cbName);
@@ -118,7 +118,6 @@ private:
     static napi_value Construct(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
     AudioSystemManager *audioSystemMngr_;
-    AudioGroupManager *audioGroupManager_;
 
     int32_t cachedClientId_ = -1;
     std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallbackNapi_ = nullptr;

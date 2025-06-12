@@ -2560,11 +2560,11 @@ std::vector<AudioVolumeType> AudioPolicyManager::GetSupportedAudioVolumeTypes()
     return gsp->GetSupportedAudioVolumeTypes();
 }
 
-AudioVolumeType AudioPolicyManager::GetAudioVolumTypeByStreamUsage(StreamUsage streamUsage)
+AudioVolumeType AudioPolicyManager::GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AudioVolumeType::STREAM_DEFAULT, "audio policy manager proxy is NULL.");
-    return gsp->GetAudioVolumTypeByStreamUsage(streamUsage);
+    return gsp->GetAudioVolumeTypeByStreamUsage(streamUsage);
 }
 
 std::vector<StreamUsage> AudioPolicyManager::GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType)

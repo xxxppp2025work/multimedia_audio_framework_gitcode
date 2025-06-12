@@ -492,7 +492,7 @@ public:
 
     virtual std::vector<AudioVolumeType> GetSupportedAudioVolumeTypes() = 0;
 
-    virtual AudioVolumeType GetAudioVolumTypeByStreamUsage(StreamUsage streamUsage) = 0;
+    virtual AudioVolumeType GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage) = 0;
 
     virtual std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType) = 0;
 

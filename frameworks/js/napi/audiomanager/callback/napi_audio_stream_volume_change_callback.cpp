@@ -117,7 +117,7 @@ void NapiAudioStreamVolumeChangeCallback::SafeJsCallbackStreamVolumeChangeWork(n
         CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
             request.c_str());
         napi_value args[ARGS_ONE] = { nullptr };
-        NapiParamUtils::SetValueVolumeEvent(env, event->volumeEvent, args[PARAM0]);
+        NapiParamUtils::SetValueStreamVolumeEvent(env, event->volumeEvent, args[PARAM0]);
         CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
             "%{public}s fail to create volumeChange callback", request.c_str());
 

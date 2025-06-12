@@ -82,7 +82,6 @@ class AudioGroupManager {
 public:
     AudioGroupManager(int32_t groupId);
     virtual ~AudioGroupManager();
-    static AudioSystemManager *GetInstance();
 
     int32_t SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t flag = 0);
     AudioStreamType GetActiveVolumeType(const int32_t clientUid);

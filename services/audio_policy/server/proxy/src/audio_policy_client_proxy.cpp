@@ -675,7 +675,7 @@ void AudioPolicyClientProxy::OnSystemolumeChange(VolumeEvent volumeEvent)
     CHECK_AND_RETURN_LOG(Remote() != nullptr, "Remote() is nullptr");
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {
-        AUDIO_ERR_LOG("Error while sending volume key event %{public}d", error);
+        AUDIO_ERR_LOG("Error while sending system volume event %{public}d", error);
     }
     reply.ReadInt32();
 }

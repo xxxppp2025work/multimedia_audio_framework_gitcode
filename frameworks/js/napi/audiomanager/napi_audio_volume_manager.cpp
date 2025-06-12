@@ -31,7 +31,7 @@ namespace AudioStandard {
 static __thread napi_ref g_volumeManagerConstructor = nullptr;
 
 NapiAudioVolumeManager::NapiAudioVolumeManager()
-    : audioSystemMngr_(nullptr), audioGroupManager_(nullptr), env_(nullptr) {}
+    : audioSystemMngr_(nullptr), env_(nullptr) {}
 
 NapiAudioVolumeManager::~NapiAudioVolumeManager() = default;
 
@@ -50,7 +50,7 @@ bool NapiAudioVolumeManager::CheckAudioVolumeManagerStatus(NapiAudioVolumeManage
     std::shared_ptr<AudioVolumeManagerAsyncContext> context)
 {
     CHECK_AND_RETURN_RET_LOG(napi != nullptr, false, "napi object is nullptr.");
-    if (napi->audioSystemMngr_ == nullptr || napi->audioGroupManager_ == nullptr) {
+    if (napi->audioSystemMngr_ == nullptr) {
         context->SignError(NAPI_ERR_SYSTEM);
         AUDIO_ERR_LOG("context object state is error.");
         return false;
@@ -70,8 +70,7 @@ NapiAudioVolumeManager* NapiAudioVolumeManager::GetParamWithSync(const napi_env 
 
     status = napi_unwrap(env, jsThis, (void **)&napiAudioVolumeManager);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_unwrap failed");
-    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeManager != nullptr && napiAudioVolumeManager->audioSystemMngr_ !=
-        nullptr && napiAudioVolumeManager->audioGroupManager_ != nullptr,
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeManager != nullptr && napiAudioVolumeManager->audioSystemMngr_ != nullptr,
         napiAudioVolumeManager, "GetParamWithSync fail to napi_unwrap");
     return napiAudioVolumeManager;
 }
@@ -104,7 +103,6 @@ napi_value NapiAudioVolumeManager::Construct(napi_env env, napi_callback_info in
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeManager != nullptr, result, "No memory");
 
     napiAudioVolumeManager->audioSystemMngr_ = AudioSystemManager::GetInstance();
-    napiAudioVolumeManager->audioGroupManager_ = AudioGroupManager::GetInstance();
     napiAudioVolumeManager->env_ = env;
     napiAudioVolumeManager->cachedClientId_ = getpid();
     ObjectRefMap<NapiAudioVolumeManager>::Insert(napiAudioVolumeManager.get());
@@ -511,7 +509,7 @@ napi_value NapiAudioVolumeManager::GetVolumeGroupInfosSync(napi_env env, napi_ca
     return result;
 }
 
-napi_value NapiAudioVolumeManager::GetSystemVolume(napi_env, napi_callback_info info)
+napi_value NapiAudioVolumeManager::GetSystemVolume(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
@@ -536,12 +534,12 @@ napi_value NapiAudioVolumeManager::GetSystemVolume(napi_env, napi_callback_info 
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    int32_t systemVolume = napiAudioVolumeManager->audioSystemMngr_->GetVolume(volType);
+    int32_t systemVolume = napiAudioVolumeManager->audioSystemMngr_->GetVolume(NapiAudioEnum::GetNativeAudioVolumeType(volType));
     NapiParamUtils::SetValueInt32(env, systemVolume, result);
     return result;
 }
 
-napi_value NapiAudioVolumeManager::GetMinSystemVolume(napi_env, napi_callback_info info)
+napi_value NapiAudioVolumeManager::GetMinSystemVolume(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
@@ -566,12 +564,12 @@ napi_value NapiAudioVolumeManager::GetMinSystemVolume(napi_env, napi_callback_in
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    int32_t minSystemVolume = napiAudioVolumeManager->audioSystemMngr_->GetMinVolume(volType);
+    int32_t minSystemVolume = napiAudioVolumeManager->audioSystemMngr_->GetMinVolume(NapiAudioEnum::GetNativeAudioVolumeType(volType));
     NapiParamUtils::SetValueInt32(env, minSystemVolume, result);
     return result;
 }
 
-napi_value NapiAudioVolumeManager::GetMaxSystemVolume(napi_env, napi_callback_info info)
+napi_value NapiAudioVolumeManager::GetMaxSystemVolume(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
@@ -596,12 +594,12 @@ napi_value NapiAudioVolumeManager::GetMaxSystemVolume(napi_env, napi_callback_in
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    int32_t maxSystemVolume = napiAudioVolumeManager->audioSystemMngr_->GetMaxVolume(volType);
+    int32_t maxSystemVolume = napiAudioVolumeManager->audioSystemMngr_->GetMaxVolume(NapiAudioEnum::GetNativeAudioVolumeType(volType));
     NapiParamUtils::SetValueInt32(env, maxSystemVolume, result);
     return result;
 }
 
-napi_value NapiAudioVolumeManager::IsSystemMuted(napi_env, napi_callback_info info)
+napi_value NapiAudioVolumeManager::IsSystemMuted(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
@@ -626,12 +624,12 @@ napi_value NapiAudioVolumeManager::IsSystemMuted(napi_env, napi_callback_info in
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    bool isMuted = napiAudioVolumeManager->audioSystemMngr_->IsStreamMute(volType);
+    bool isMuted = napiAudioVolumeManager->audioSystemMngr_->IsStreamMute(NapiAudioEnum::GetNativeAudioVolumeType(volType));
     NapiParamUtils::SetValueBoolean(env, isMuted, result);
     return result;
 }
 
-napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDb(napi_env, napi_callback_info info)
+napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDb(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_THREE;
@@ -659,16 +657,16 @@ napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDb(napi_env, napi_callback_i
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentDeviceType(deviceType), NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of deviceType must be enum DeviceType"),
         "get deviceType failed");
-    if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioGroupManager_ == nullptr) {
-        AUDIO_ERR_LOG("napiAudioVolumeManager or audioGroupManager_  is nullptr!");
+    if (napiAudioVolumeManager == nullptr) {
+        AUDIO_ERR_LOG("napiAudioVolumeManager  is nullptr!");
         return nullptr;
     }
-    float volumeInDb = napiAudioVolumeManager->audioGroupManager_->GetSystemVolumeInDb(volType, volLevel, deviceType);
+    float volumeInDb = napiAudioVolumeManager->audioSystemMngr_->GetVolumeInUnitOfDb(NapiAudioEnum::GetNativeAudioVolumeType(volType), volLevel, static_cast<DeviceType>(deviceType));
     NapiParamUtils::SetValueDouble(env, volumeInDb, result);
     return result;
 }
 
-napi_value NapiAudioVolumeManager::GetVolumeByStream(napi_env, napi_callback_info info)
+napi_value NapiAudioVolumeManager::GetVolumeByStream(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
@@ -693,12 +691,12 @@ napi_value NapiAudioVolumeManager::GetVolumeByStream(napi_env, napi_callback_inf
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    int32_t volume = napiAudioVolumeManager->audioSystemMngr_->GetVolumeByUsage(streamUsage);
+    int32_t volume = napiAudioVolumeManager->audioSystemMngr_->GetVolumeByUsage(NapiAudioEnum::GetNativeStreamUsage(streamUsage));
     NapiParamUtils::SetValueInt32(env, volume, result);
     return result;
 }
 
-napi_value NapiAudioVolumeManager::GetMinVolumeByStream(napi_env, napi_callback_info info)
+napi_value NapiAudioVolumeManager::GetMinVolumeByStream(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
@@ -723,12 +721,12 @@ napi_value NapiAudioVolumeManager::GetMinVolumeByStream(napi_env, napi_callback_
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    int32_t minVolume = napiAudioVolumeManager->audioSystemMngr_->GetMinVolumeByUsage(streamUsage);
+    int32_t minVolume = napiAudioVolumeManager->audioSystemMngr_->GetMinVolumeByUsage(streaNapiAudioEnum::GetNativeStreamUsage(streamUsage)mUsage);
     NapiParamUtils::SetValueInt32(env, minVolume, result);
     return result;
 }
 
-napi_value NapiAudioVolumeManager::GetMaxVolumeByStream(napi_env, napi_callback_info info)
+napi_value NapiAudioVolumeManager::GetMaxVolumeByStream(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
@@ -753,12 +751,12 @@ napi_value NapiAudioVolumeManager::GetMaxVolumeByStream(napi_env, napi_callback_
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    int32_t maxVolume = napiAudioVolumeManager->audioSystemMngr_->GetMaxVolumeByUsage(streamUsage);
+    int32_t maxVolume = napiAudioVolumeManager->audioSystemMngr_->GetMaxVolumeByUsage(NapiAudioEnum::GetNativeStreamUsage(streamUsage));
     NapiParamUtils::SetValueInt32(env, maxVolume, result);
     return result;
 }
 
-napi_value NapiAudioVolumeManager::IsSystemMutedForStream(napi_env, napi_callback_info info)
+napi_value NapiAudioVolumeManager::IsSystemMutedForStream(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
@@ -784,7 +782,7 @@ napi_value NapiAudioVolumeManager::IsSystemMutedForStream(napi_env, napi_callbac
         return nullptr;
     }
     bool isMuted;
-    int32_t status= napiAudioVolumeManager->audioSystemMngr_->IsStreamMuteByUsage(streamUsage, isMuted);
+    int32_t status= napiAudioVolumeManager->audioSystemMngr_->IsStreamMuteByUsage(NapiAudioEnum::GetNativeStreamUsage(streamUsage), isMuted);
     CHECK_AND_RETURN_RET_LOG(status == SUCCESS,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "System error"),
         "IsSystemMutedForStream IsStreamMuteByUsage failed");
@@ -793,7 +791,7 @@ napi_value NapiAudioVolumeManager::IsSystemMutedForStream(napi_env, napi_callbac
     return result;
 }
 
-napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDbByStream(napi_env, napi_callback_info info)
+napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDbByStream(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_THREE;
@@ -825,12 +823,12 @@ napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDbByStream(napi_env, napi_ca
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr_  is nullptr!");
         return nullptr;
     }
-    float volumeInDb = napiAudioVolumeManager->audioSystemMngr_->GetVolumeInDbByStream(streamUsage, volLevel, deviceType);
+    float volumeInDb = napiAudioVolumeManager->audioSystemMngr_->GetVolumeInDbByStream(NapiAudioEnum::GetNativeStreamUsage(streamUsage), volLevel, static_cast<DeviceType>(deviceType));
     NapiParamUtils::SetValueDouble(env, volumeInDb, result);
     return result;
 }
 
-napi_value NapiAudioVolumeManager::GetSupportedAudioVolumeTypes(napi_env, napi_callback_info info)
+napi_value NapiAudioVolumeManager::GetSupportedAudioVolumeTypes(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_ZERO;
@@ -848,7 +846,7 @@ napi_value NapiAudioVolumeManager::GetSupportedAudioVolumeTypes(napi_env, napi_c
     return result;
 }
 
-napi_value NapiAudioVolumeManager::GetAudioVolumeTypeByStreamUsage(napi_env, napi_callback_info info)
+napi_value NapiAudioVolumeManager::GetAudioVolumeTypeByStreamUsage(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
@@ -873,12 +871,12 @@ napi_value NapiAudioVolumeManager::GetAudioVolumeTypeByStreamUsage(napi_env, nap
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    AudioVolumeType volType = napiAudioVolumeManager->audioSystemMngr_->IsStreamMuteByUsage(streamUsage, isMuted);
+    AudioVolumeType volType = napiAudioVolumeManager->audioSystemMngr_->GetAudioVolumeTypeByStreamUsage(NapiAudioEnum::GetNativeStreamUsage(streamUsage));
     NapiParamUtils::SetValueInt32(env, NapiAudioEnum::GetJsAudioVolumeType(volType), result);
     return result;
 }
 
-napi_value NapiAudioVolumeManager::GetStreamUsagesByVolumeType(napi_env, napi_callback_info info)
+napi_value NapiAudioVolumeManager::GetStreamUsagesByVolumeType(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
@@ -903,7 +901,7 @@ napi_value NapiAudioVolumeManager::GetStreamUsagesByVolumeType(napi_env, napi_ca
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    std::vector<StreamUsage> streamUsages = napiAudioVolumeManager->audioSystemMngr_->GetStreamUsagesByVolumeType(volType);
+    std::vector<StreamUsage> streamUsages = napiAudioVolumeManager->audioSystemMngr_->GetStreamUsagesByVolumeType(NapiAudioEnum::GetNativeAudioVolumeType(volType));
     NapiParamUtils::SetValueStreamUsageArray(env, streamUsages, result);
     return result;
 }
@@ -1141,10 +1139,16 @@ napi_value NapiAudioVolumeManager::RegisterSelfAppVolumeChangeCallback(napi_env 
 napi_value NapiAudioVolumeManager::RegisterStreamVolumeChangeCallback(napi_env env, napi_value *args,
     const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager)
 {
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+    int32_t streamUsage = 0;
+    NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM1]);
     if (napiAudioVolumeManager->streamVolumeChangeCallbackNapi_ == nullptr) {
         napiAudioVolumeManager->streamVolumeChangeCallbackNapi_ = std::make_shared<NapiAudioStreamVolumeChangeCallback>(env);
         int32_t ret = napiAudioVolumeManager->audioSystemMngr_->RegisterStreamVolumeChangeCallback(
-            napiAudioVolumeManager->cachedClientId_, napiAudioVolumeManager->streamVolumeChangeCallbackNapi_);
+            napiAudioVolumeManager->cachedClientId_,
+            { NapiAudioEnum::GetNativeStreamUsage(streamUsage) },
+            napiAudioVolumeManager->streamVolumeChangeCallbackNapi_);
         napiAudioVolumeManager->streamVolumeChangeCallbackNapiList_.push_back(
             std::static_pointer_cast<NapiAudioStreamVolumeChangeCallback>(napiAudioVolumeManager->streamVolumeChangeCallbackNapi_));
         if (ret) {
@@ -1153,15 +1157,18 @@ napi_value NapiAudioVolumeManager::RegisterStreamVolumeChangeCallback(napi_env e
     }
     std::shared_ptr<NapiAudioStreamVolumeChangeCallback> cb =
         std::static_pointer_cast<NapiAudioStreamVolumeChangeCallback>(napiAudioVolumeManager->streamVolumeChangeCallbackNapi_);
-    cb->SaveCallbackReference(cbName, args[PARAM1]);
+    cb->SaveCallbackReference(cbName, args[PARAM2]);
     if (!cb->GetVolumeTsfnFlag()) {
-        cb->CreateVolumeTsfn(env);
+        cb->CreateStreamVolumeChangeTsfn(env);
     }
+    return result;
 }
 
 napi_value NapiAudioVolumeManager::RegisterSystemVolumeChangeCallback(napi_env env, napi_value *args,
     const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager)
 {
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
     if (napiAudioVolumeManager->systemVolumeChangeCallbackNapi_ == nullptr) {
         napiAudioVolumeManager->systemVolumeChangeCallbackNapi_ = std::make_shared<NapiAudioSystemVolumeChangeCallback>(env);
         int32_t ret = napiAudioVolumeManager->audioSystemMngr_->RegisterSystemVolumeChangeCallback(
@@ -1176,8 +1183,9 @@ napi_value NapiAudioVolumeManager::RegisterSystemVolumeChangeCallback(napi_env e
         std::static_pointer_cast<NapiAudioSystemVolumeChangeCallback>(napiAudioVolumeManager->systemVolumeChangeCallbackNapi_);
     cb->SaveCallbackReference(cbName, args[PARAM1]);
     if (!cb->GetVolumeTsfnFlag()) {
-        cb->CreateVolumeTsfn(env);
+        cb->CreateSystemVolumeChangeTsfn(env);
     }
+    return result;
 }
 
 napi_value NapiAudioVolumeManager::On(napi_env env, napi_callback_info info)
@@ -1392,17 +1400,23 @@ void NapiAudioVolumeManager::UnregisterStreamVolumeChangeCallback(napi_env env, 
         std::shared_ptr<NapiAudioStreamVolumeChangeCallback> cb = GetStreamVolumeChangeNapiCallback(callback, napiAudioVolumeManager);
         int32_t ret = napiAudioVolumeManager->audioSystemMngr_->UnregisterStreamVolumeChangeCallback(
             napiAudioVolumeManager->cachedClientId_, cb);
+        if (ret != SUCCESS)
+        {
+            AUDIO_ERR_LOG("UnregisterStreamVolumeChangeCallback failed");
+        }
         napiAudioVolumeManager->streamVolumeChangeCallbackNapiList_.remove(cb);
         napiAudioVolumeManager->streamVolumeChangeCallbackNapi_.reset();
         napiAudioVolumeManager->streamVolumeChangeCallbackNapi_ = nullptr;
-        return undefinedResult;
     } else {
         int32_t ret = napiAudioVolumeManager->audioSystemMngr_->UnregisterStreamVolumeChangeCallback(
-            napiAudioVolumeManager->cachedClientId_);
+            napiAudioVolumeManager->cachedClientId_, nullptr);
+        if (ret != SUCCESS)
+        {
+            AUDIO_ERR_LOG("UnregisterStreamVolumeChangeCallback failed");
+        }
         napiAudioVolumeManager->streamVolumeChangeCallbackNapiList_.clear();
         napiAudioVolumeManager->streamVolumeChangeCallbackNapi_.reset();
         napiAudioVolumeManager->streamVolumeChangeCallbackNapi_ = nullptr;
-        return undefinedResult;
     }
 }
 
@@ -1423,17 +1437,23 @@ void NapiAudioVolumeManager::UnregisterSystemVolumeChangeCallback(napi_env env, 
         std::shared_ptr<NapiAudioSystemVolumeChangeCallback> cb = GetSystemVolumeChangeNapiCallback(callback, napiAudioVolumeManager);
         int32_t ret = napiAudioVolumeManager->audioSystemMngr_->UnregisterSystemVolumeChangeCallback(
             napiAudioVolumeManager->cachedClientId_, cb);
+        if (ret != SUCCESS)
+        {
+            AUDIO_ERR_LOG("UnregisterSystemVolumeChangeCallback failed");
+        }
         napiAudioVolumeManager->systemVolumeChangeCallbackNapiList_.remove(cb);
         napiAudioVolumeManager->systemVolumeChangeCallbackNapi_.reset();
         napiAudioVolumeManager->systemVolumeChangeCallbackNapi_ = nullptr;
-        return undefinedResult;
     } else {
         int32_t ret = napiAudioVolumeManager->audioSystemMngr_->UnregisterSystemVolumeChangeCallback(
-            napiAudioVolumeManager->cachedClientId_);
+            napiAudioVolumeManager->cachedClientId_, nullptr);
+        if (ret != SUCCESS)
+        {
+            AUDIO_ERR_LOG("UnregisterSystemVolumeChangeCallback failed");
+        }
         napiAudioVolumeManager->systemVolumeChangeCallbackNapiList_.clear();
         napiAudioVolumeManager->systemVolumeChangeCallbackNapi_.reset();
         napiAudioVolumeManager->systemVolumeChangeCallbackNapi_ = nullptr;
-        return undefinedResult;
     }
 }
 
