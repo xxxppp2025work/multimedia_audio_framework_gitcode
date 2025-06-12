@@ -141,7 +141,7 @@ public:
     static bool IsLegalInputArgumentStreamUsage(int32_t streamUsage);
     static bool IsLegalOutputDeviceType(int32_t deviceType);
     static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType);
-    static StreamUsage GetNativeStreamUsage(int32_t streamUsage)
+    static StreamUsage GetNativeStreamUsage(int32_t streamUsage);
     static AudioRingerMode GetNativeAudioRingerMode(int32_t ringMode);
     static AudioRingMode GetJsAudioRingMode(int32_t ringerMode);
     static AudioStandard::FocusType GetNativeFocusType(int32_t focusType);

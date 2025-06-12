@@ -800,6 +800,12 @@ bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
     return AudioPolicyManager::GetInstance().GetStreamMute(volumeType);
 }
 
+float AudioSystemManager::GetVolumeInUnitOfDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType device)
+{
+    AUDIO_INFO_LOG("enter AudioSystemManager::GetVolumeInUnitOfDb");
+    return AudioPolicyManager::GetInstance().GetSystemVolumeInDb(volumeType, volumeLevel, device);
+}
+
 int32_t AudioSystemManager::SetDeviceChangeCallback(const DeviceFlag flag,
     const std::shared_ptr<AudioManagerDeviceChangeCallback>& callback)
 {
@@ -1194,7 +1200,7 @@ int32_t AudioSystemManager::RegisterSystemVolumeChangeCallback(const int32_t cli
 }
 
 int32_t AudioSystemManager::UnregisterSystemVolumeChangeCallback(const int32_t clientPid,
-        const std::shared_ptr<SystemVolumeChangeCallback> &callback = nullptr)
+        const std::shared_ptr<SystemVolumeChangeCallback> &callback)
 {
     AUDIO_DEBUG_LOG("UnregisterSystemVolumeChangeCallback");
     int32_t ret = AudioPolicyManager::GetInstance().UnsetSystemVolumeChangeCallback(callback);
@@ -2012,16 +2018,16 @@ std::vector<AudioVolumeType> AudioSystemManager::GetSupportedAudioVolumeTypes()
     return AudioPolicyManager::GetInstance().GetSupportedAudioVolumeTypes();
 }
 
-AudioVolumeType AudioSystemManager::GetAudioVolumtypeByStreamUsage(StreamUsage streamUsage)
+AudioVolumeType AudioSystemManager::GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage)
 {
-    AUDIO_INFO_LOG("enter AudioSystemManager::GetAudioVolumtypeByStreamUsage");
-    return AudioPolicyManager::GetInstance().GetAudioVolumtypeByStreamUsage(streamUsage);
+    AUDIO_INFO_LOG("enter AudioSystemManager::GetAudioVolumeTypeByStreamUsage");
+    return AudioPolicyManager::GetInstance().GetAudioVolumeTypeByStreamUsage(streamUsage);
 }
 
 std::vector<StreamUsage> AudioSystemManager::GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType)
 {
     AUDIO_INFO_LOG("enter AudioSystemManager::GetStreamUsagesByVolumeType");
-    return AudioPolicyManager::GetInstance().GetAudioVolumtypeByStreamUsage(audioVolumeType);
+    return AudioPolicyManager::GetInstance().GetStreamUsagesByVolumeType(audioVolumeType);
 }
 
 

@@ -241,7 +241,7 @@ private:
     void GetStreamMuteByUsageInternal(MessageParcel &data, MessageParcel &reply);
     void GetVolumeInDbByStreamInternal(MessageParcel &data, MessageParcel &reply);
     void GetSupportedAudioVolumeTypesInternal(MessageParcel &data, MessageParcel &reply);
-    void GetAudioVolumtypeByStreamUsageInternal(MessageParcel &data, MessageParcel &reply);
+    void GetAudioVolumeTypeByStreamUsageInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamUsagesByVolumeTypeInternal(MessageParcel &data, MessageParcel &reply);
     void SetCallbackStreamUsageInfoInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateDeviceInfoInternal(MessageParcel &data, MessageParcel &reply);

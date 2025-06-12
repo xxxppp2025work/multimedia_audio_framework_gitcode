@@ -39,11 +39,6 @@ AudioGroupManager::~AudioGroupManager()
         UnsetRingerModeCallback(cbClientId_);
     }
 }
-AudioGroupManager *AudioGroupManager::GetInstance()
-{
-    static AudioGroupManager audioGroupManager;
-    return &audioGroupManager;
-}
 
 int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t volumeFlag)
 {

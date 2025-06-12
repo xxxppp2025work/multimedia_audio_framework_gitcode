@@ -1344,9 +1344,6 @@ int32_t NapiAudioEnum::GetJsStreamUsage(StreamUsage streamUsage)
         case StreamUsage::STREAM_USAGE_MEDIA:
             result = NapiAudioEnum::USAGE_MEDIA;
             break;
-        case StreamUsage::STREAM_USAGE_MUSIC:
-            result = NapiAudioEnum::USAGE_MEDIA;
-            break;
         case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
             result = NapiAudioEnum::USAGE_VOICE_COMMUNICATION;
             break;
@@ -1359,7 +1356,6 @@ int32_t NapiAudioEnum::GetJsStreamUsage(StreamUsage streamUsage)
         case StreamUsage::STREAM_USAGE_VOICE_MESSAGE:
             result = NapiAudioEnum::USAGE_VOICE_MESSAGE;
             break;
-        case StreamUsage::STREAM_USAGE_NOTIFICATION_RINGTONE:
         case StreamUsage::STREAM_USAGE_RINGTONE:
             result = NapiAudioEnum::USAGE_RINGTONE;
             break;

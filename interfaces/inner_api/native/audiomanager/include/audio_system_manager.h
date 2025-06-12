@@ -569,6 +569,17 @@ public:
     bool IsStreamMute(AudioVolumeType volumeType) const;
 
     /**
+     * @brief get volume db value that system calculate by volume type, volume level and device type.
+     *
+     * @param volumeType audio volume type.
+     * @param volumeLevel volume level.
+     * @param device device type.
+     * @return Returns volume db value that system calculate by volume type, volume level and device type.
+     * @since 20
+     */
+    float GetVolumeInUnitOfDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType device);
+
+    /**
      * @brief Set global microphone mute state.
      *
      * @param mute Specifies whether the Microphone is muted.
@@ -1587,7 +1598,7 @@ public:
      * @return Returns current volume in unit of db by streamUsage
      * @since 20
      */
-    float GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType) override;
+    float GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType);
 
     /**
      * @brief Get supported audio volume types.
@@ -1595,7 +1606,7 @@ public:
      * @return Returns current supported audio volume types
      * @since 20
      */
-    std::vector<AudioVolumeType>GetSupportedAudioVolumeTypes() override;
+    std::vector<AudioVolumeType>GetSupportedAudioVolumeTypes();
 
     /**
      * @brief Get the audioVolumeType that streamUsage belongs.
@@ -1604,7 +1615,7 @@ public:
      * @return Returns the audioVolumeType that streamUsage belongs
      * @since 20
      */
-    AudioVolumeType GetAudioVolumtypeByStreamUsage(StreamUsage streamUsage) override;
+    AudioVolumeType GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage);
 
     /**
      * @brief Get the streamUsages contained in audioVolumeType
@@ -1613,7 +1624,7 @@ public:
      * @return Returns the streamUsages contained in audioVolumeType
      * @since 20
      */
-    std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType) override;
+    std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType);
 
 
     /**

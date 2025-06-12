@@ -45,9 +45,9 @@ private:
         StreamVolumeEvent volumeEvent;
     };
 
-    void OnJsCallbackStreamVolumeChange(std::unique_ptr<NapiAudioStreamVolumeChangeCallback> &jsCb);
+    void OnJsCallbackStreamVolumeChange(std::unique_ptr<AudioStreamVolumeChangeJsCallback> &jsCb);
     static void Cleanup(void *data);
-    static void SafeJsCallbackSystemVolumeChangeWork(napi_env env, napi_value js_cb, void *context, void *data);
+    static void SafeJsCallbackStreamVolumeChangeWork(napi_env env, napi_value js_cb, void *context, void *data);
     static void StreamVolumeChangeTsfnFinalize(napi_env env, void *data, void *hint);
 
     std::shared_ptr<AutoRef> audioStreamVolumeChangeCallback_ = nullptr;

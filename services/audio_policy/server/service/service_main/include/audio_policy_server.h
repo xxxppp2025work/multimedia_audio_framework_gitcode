@@ -539,11 +539,11 @@ public:
 
     float GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType) override;
 
-    std::vector<int32_t> GetSupportedAudioVolumeTypes() override;
+    std::vector<AudioVolumeType> GetSupportedAudioVolumeTypes() override;
 
-    int32_t GetAudioVolumtypeByStreamUsage(StreamUsage streamUsage) override;
+    AudioVolumeType GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage) override;
 
-    std::vector<int32_t> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType) override;
+    std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType) override;
 
     int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages) override;
 

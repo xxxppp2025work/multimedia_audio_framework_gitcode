@@ -475,7 +475,7 @@ public:
 
     std::vector<AudioVolumeType> GetSupportedAudioVolumeTypes() override;
 
-    AudioVolumeType GetAudioVolumTypeByStreamUsage(StreamUsage streamUsage) override;
+    AudioVolumeType GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage) override;
 
     std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType) override;
 
