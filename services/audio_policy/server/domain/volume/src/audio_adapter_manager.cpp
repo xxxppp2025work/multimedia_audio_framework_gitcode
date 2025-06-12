@@ -966,7 +966,7 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
     currentActiveDevice_ = deviceDescriptor;
     AudioVolume::GetInstance()->SetCurrentActiveDevice(currentActiveDevice_.deviceType_);
 
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP) {
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP && !isSameVolumeGroup) {
         RefreshVolumeWhenDpReConnect();
     }
 
@@ -2040,11 +2040,6 @@ void AudioAdapterManager::HandleDistributedVolume(AudioStreamType streamType)
         volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, MAX_VOLUME_LEVEL);
         SetSystemVolumeLevel(STREAM_MUSIC, MAX_VOLUME_LEVEL);
     }
-}
-
-void AudioAdapterManager::HandleDpConnection()
-{
-    AUDIO_INFO_LOG("dp device connect, set max volume of stream music");
 }
 
 void AudioAdapterManager::RefreshVolumeWhenDpReConnect()
