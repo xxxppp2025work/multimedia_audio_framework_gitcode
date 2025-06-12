@@ -62,8 +62,8 @@ napi_threadsafe_function NapiAudioStreamVolumeChangeCallback::GetTsfn()
 void NapiAudioStreamVolumeChangeCallback::OnStreamVolumeChange(StreamVolumeEvent volumeEvent)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_PRERELEASE_LOGI("OnStreamVolumeChange is called volumeType=%{public}d, volumeLevel=%{public}d,"
-        "isUpdateUi=%{public}d", volumeEvent.volumeType, volumeEvent.volume, volumeEvent.updateUi);
+    AUDIO_PRERELEASE_LOGI("OnStreamVolumeChange is called streamUsage=%{public}d, volumeLevel=%{public}d,"
+        "isUpdateUi=%{public}d", volumeEvent.streamUsage, volumeEvent.volume, volumeEvent.updateUi);
     CHECK_AND_RETURN_LOG(audioStreamVolumeChangeCallback_ != nullptr,
         "NapiAudioStreamVolumeChangeCallback:No JS callback registered return");
     std::unique_ptr<AudioStreamVolumeChangeJsCallback> cb = std::make_unique<AudioStreamVolumeChangeJsCallback>();
