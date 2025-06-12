@@ -2198,7 +2198,7 @@ int32_t AudioPolicyManager::SetAudioConcurrencyCallback(const uint32_t sessionID
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
-    sptr<AudioConcurrencyStateListenerStub> listener = new(std::nothrow) AudioConcurrencyStateListenerStub();
+    sptr<AudioConcurrencyStateListenerService> listener = new(std::nothrow) AudioConcurrencyStateListenerService();
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERROR, "object null");
     listener->SetConcurrencyCallback(callback);
 

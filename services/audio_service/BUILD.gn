@@ -223,6 +223,10 @@ ohos_shared_library("audio_client") {
   }
 
   public_configs = [ ":audio_client_public_config" ]
+  # TODO refactor
+  configs = [
+    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config"
+  ]
 
   deps = [
     ":audio_common",
@@ -627,6 +631,10 @@ ohos_shared_library("audio_sasdk") {
   ]
 
   public_configs = [ ":audio_sasdk_public_config" ]
+
+  configs = [
+    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config"
+  ]
 
   deps = [
     ":audio_common",

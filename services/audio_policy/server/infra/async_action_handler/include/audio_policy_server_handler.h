@@ -23,7 +23,7 @@
 #include "audio_policy_log.h"
 #include "audio_system_manager.h"
 #include "audio_policy_client.h"
-#include "i_standard_concurrency_state_listener.h"
+#include "istandard_concurrency_state_listener.h"
 #include "i_standard_audio_policy_manager_listener.h"
 #include "i_standard_audio_routing_manager_listener.h"
 #include "i_audio_interrupt_event_dispatcher.h"

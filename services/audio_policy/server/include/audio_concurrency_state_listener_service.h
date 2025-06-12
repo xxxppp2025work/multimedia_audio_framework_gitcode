@@ -13,25 +13,14 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_CONCURRENCY_STATE_LISTENER_PROXY_H
-#define AUDIO_CONCURRENCY_STATE_LISTENER_PROXY_H
+#ifndef AUDIO_CONCURRENCY_STATE_LISTENER_SERVICE_H
+#define AUDIO_CONCURRENCY_STATE_LISTENER_SERVICE_H
 
 #include "audio_concurrency_callback.h"
-#include "audio_system_manager.h"
-#include "i_standard_concurrency_state_listener.h"
+#include "standard_concurrency_state_listener_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioConcurrencyStateListenerProxy : public IRemoteProxy<IStandardConcurrencyStateListener> {
-public:
-    explicit AudioConcurrencyStateListenerProxy(const sptr<IRemoteObject> &impl);
-    virtual ~AudioConcurrencyStateListenerProxy();
-    DISALLOW_COPY_AND_MOVE(AudioConcurrencyStateListenerProxy);
-    void OnConcedeStream() override;
-
-private:
-    static inline BrokerDelegator<AudioConcurrencyStateListenerProxy> delegator_;
-};
 
 class AudioConcurrencyListenerCallback : public AudioConcurrencyCallback {
 public:
@@ -42,6 +31,17 @@ public:
 private:
     sptr<IStandardConcurrencyStateListener> listener_ = nullptr;
 };
+
+class AudioConcurrencyStateListenerService : public StandardConcurrencyStateListenerStub {
+public:
+    AudioConcurrencyStateListenerService();
+    virtual ~AudioConcurrencyStateListenerService();
+
+    int32_t OnConcedeStream() override;
+    void SetConcurrencyCallback(const std::weak_ptr<AudioConcurrencyCallback> &callback);
+private:
+    std::weak_ptr<AudioConcurrencyCallback> callback_;
+};
 } // namespace AudioStandard
 } // namespace OHOS
-#endif
+#endif // AUDIO_CONCURRENCY_STATE_LISTENER_SERVICE_H

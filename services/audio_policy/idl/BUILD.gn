@@ -17,6 +17,7 @@ import("//foundation/multimedia/audio_framework/config.gni")
 idl_gen_interface("audio_policy_idl_interface") {
   sources = [
     "IStandardSpatializationStateChangeListener.idl",
+    "IStandardConcurrencyStateListener.idl"
   ]
   # sources_callback = [
   #   "IStandardSpatializationStateChangeListener.idl",
@@ -47,7 +48,7 @@ ohos_source_set("policy_idl_sa_proxy") {
   output_values = get_target_outputs(":audio_policy_idl_interface")
   sources = filter_include(output_values,
                            [
-                             "*_listener_proxy.cpp",
+                             "*_proxy.cpp",
                              "*_types.cpp",
                            ])
 
@@ -94,7 +95,7 @@ ohos_source_set("policy_idl_sa_stub") {
   print("jilei1 The value of output_values is: ", output_values)
   sources = filter_include(output_values,
                            [
-                             "*_listener_stub.cpp",
+                             "*_stub.cpp",
                              "*_types.cpp",
                            ])
   print("jilei1 The value of output_values is: ", sources)
