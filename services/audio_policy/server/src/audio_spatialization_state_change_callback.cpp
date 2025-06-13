@@ -14,42 +14,31 @@
  */
 
 
-#include "audio_spatialization_state_change_listener.h"
+#include "audio_spatialization_state_change_callback.h"
 #include "audio_policy_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-AudioSpatializationStateChangeListener::AudioSpatializationStateChangeListener()
+AudioSpatializationStateChangeListenerCallback::AudioSpatializationStateChangeListenerCallback(
+    const sptr<IStandardSpatializationStateChangeListener> &listener)
+    : listener_(listener)
 {
     AUDIO_DEBUG_LOG("Instance create");
 }
 
-AudioSpatializationStateChangeListener::~AudioSpatializationStateChangeListener()
+AudioSpatializationStateChangeListenerCallback::~AudioSpatializationStateChangeListenerCallback()
 {
     AUDIO_DEBUG_LOG("Instance destroy");
 }
 
-int32_t AudioSpatializationStateChangeListener::OnSpatializationStateChange(
+void AudioSpatializationStateChangeListenerCallback::OnSpatializationStateChange(
     const AudioSpatializationState &spatializationState)
 {
-    AUDIO_DEBUG_LOG("OnSpatializationStateChange");
-
-    std::shared_ptr<AudioSpatializationStateChangeCallback> cb = callback_.lock();
-    if (cb == nullptr) {
-        AUDIO_ERR_LOG("callback_ is nullptr");
-        return AUDIO_ERR;
+    AUDIO_DEBUG_LOG("entered");
+    if (listener_ != nullptr) {
+        listener_->OnSpatializationStateChange(spatializationState);
     }
-
-    cb->OnSpatializationStateChange(spatializationState);
-    return AUDIO_OK;
-}
-
-void AudioSpatializationStateChangeListener::SetCallback(
-    const std::weak_ptr<AudioSpatializationStateChangeCallback> &callback)
-{
-    AUDIO_DEBUG_LOG("SetCallback");
-    callback_ = callback;
 }
 
 } // AudioStandard

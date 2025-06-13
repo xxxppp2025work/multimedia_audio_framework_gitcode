@@ -22,25 +22,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-
-AudioConcurrencyListenerCallback::AudioConcurrencyListenerCallback(
-    const sptr<IStandardConcurrencyStateListener> &listener) : listener_(listener)
-{
-    AUDIO_DEBUG_LOG("instance create");
-}
-
-AudioConcurrencyListenerCallback::~AudioConcurrencyListenerCallback()
-{
-    AUDIO_DEBUG_LOG("instance destroy");
-}
-
-void AudioConcurrencyListenerCallback::OnConcedeStream()
-{
-    if (listener_ != nullptr) {
-        listener_->OnConcedeStream();
-    }
-}
-
 AudioConcurrencyStateListenerService::AudioConcurrencyStateListenerService()
 {
     AUDIO_DEBUG_LOG("construct");

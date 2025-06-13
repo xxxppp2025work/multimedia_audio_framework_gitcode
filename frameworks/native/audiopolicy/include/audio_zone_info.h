@@ -93,7 +93,7 @@ public:
         return true;
     }
 
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingInner(Parcel &parcel)
     {
         zoneId_ = parcel.ReadInt32();
         name_ = parcel.ReadString();
@@ -122,7 +122,18 @@ public:
             return nullptr;
         }
 
-        desc->Unmarshalling(parcel);
+        desc->UnmarshallingInner(parcel);
+        return desc;
+    }
+
+    static AudioZoneDescriptor *Unmarshalling(Parcel &parcel)
+    {
+        AudioZoneDescriptor *desc = new AudioZoneDescriptor();
+        if (desc == nullptr) {
+            return nullptr;
+        }
+
+        desc->UnmarshallingInner(parcel);
         return desc;
     }
 };

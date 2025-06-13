@@ -16,7 +16,7 @@
 #ifndef ST_AUDIO_ZONE_CLIENT_MANAGER_H
 #define ST_AUDIO_ZONE_CLIENT_MANAGER_H
 
-#include "i_standard_audio_zone_client.h"
+#include "istandard_audio_zone_client.h"
 #include "i_audio_zone_event_dispatcher.h"
 #include "audio_policy_server_handler.h"
 
@@ -47,6 +47,9 @@ public:
     int32_t GetSystemVolumeLevel(const pid_t clientPid, const int32_t zoneId, AudioVolumeType volumeType);
 
 private:
+    std::vector<std::map<AudioInterrupt, int32_t>> ToIpcInterrupts(
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &from);
+
     std::unordered_map<pid_t, sptr<IStandardAudioZoneClient>> clients_;
     std::mutex clientMutex_;
     std::shared_ptr<AudioPolicyServerHandler> handler_;

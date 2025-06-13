@@ -22,27 +22,6 @@
 namespace OHOS {
 namespace AudioStandard {
 
-class ClientTrackerCallbackListener : public AudioClientTracker {
-public:
-    explicit ClientTrackerCallbackListener(const sptr<IStandardClientTracker> &listener);
-    virtual ~ClientTrackerCallbackListener();
-    DISALLOW_COPY_AND_MOVE(ClientTrackerCallbackListener);
-
-    virtual void MuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
-    virtual void UnmuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
-    virtual void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
-    virtual void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
-
-    virtual void SetLowPowerVolumeImpl(float volume) override;
-    virtual void GetLowPowerVolumeImpl(float &volume) override;
-    virtual void SetOffloadModeImpl(int32_t state, bool isAppBack) override;
-    virtual void UnsetOffloadModeImpl() override;
-    virtual void GetSingleStreamVolumeImpl(float &volume) override;
-
-private:
-    sptr<IStandardClientTracker> listener_ = nullptr;
-};
-
 class AudioClientTrackerCallbackService : public StandardClientTrackerStub {
 public:
     AudioClientTrackerCallbackService();

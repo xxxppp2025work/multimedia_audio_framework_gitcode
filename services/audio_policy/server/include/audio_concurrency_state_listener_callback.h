@@ -13,25 +13,25 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_CONCURRENCY_STATE_LISTENER_SERVICE_H
-#define AUDIO_CONCURRENCY_STATE_LISTENER_SERVICE_H
+#ifndef AUDIO_CONCURRENCY_STATE_LISTENER_CALLBACK_H
+#define AUDIO_CONCURRENCY_STATE_LISTENER_CALLBACK_H
 
-#include "standard_concurrency_state_listener_stub.h"
 #include "audio_concurrency_callback.h"
+#include "istandard_concurrency_state_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioConcurrencyStateListenerService : public StandardConcurrencyStateListenerStub {
+class AudioConcurrencyListenerCallback : public AudioConcurrencyCallback {
 public:
-    AudioConcurrencyStateListenerService();
-    virtual ~AudioConcurrencyStateListenerService();
-
-    int32_t OnConcedeStream() override;
-    void SetConcurrencyCallback(const std::weak_ptr<AudioConcurrencyCallback> &callback);
+    AudioConcurrencyListenerCallback(const sptr<IStandardConcurrencyStateListener> &listener);
+    virtual ~AudioConcurrencyListenerCallback();
+    DISALLOW_COPY_AND_MOVE(AudioConcurrencyListenerCallback);
+    void OnConcedeStream() override;
 private:
-    std::weak_ptr<AudioConcurrencyCallback> callback_;
+    sptr<IStandardConcurrencyStateListener> listener_ = nullptr;
 };
+
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_CONCURRENCY_STATE_LISTENER_SERVICE_H
+#endif // AUDIO_CONCURRENCY_STATE_LISTENER_CALLBACK_H

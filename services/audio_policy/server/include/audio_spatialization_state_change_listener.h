@@ -17,19 +17,10 @@
 
 #include "standard_spatialization_state_change_listener_stub.h"
 #include "audio_spatialization_manager.h"
+#include "audio_effect.h"
 
 namespace OHOS {
 namespace AudioStandard {
-
-class AudioSpatializationStateChangeListenerCallback : public AudioSpatializationStateChangeCallback {
-public:
-    AudioSpatializationStateChangeListenerCallback(const sptr<IStandardSpatializationStateChangeListener> &listener);
-    virtual ~AudioSpatializationStateChangeListenerCallback();
-    DISALLOW_COPY_AND_MOVE(AudioSpatializationStateChangeListenerCallback);
-    void OnSpatializationStateChange(const AudioSpatializationState &spatializationState) override;
-private:
-    sptr<IStandardSpatializationStateChangeListener> listener_ = nullptr;
-};
 
 class AudioSpatializationStateChangeListener : public StandardSpatializationStateChangeListenerStub {
 public:
@@ -41,7 +32,7 @@ public:
 private:
     std::weak_ptr<AudioSpatializationStateChangeCallback> callback_;
 };
-} // DrmStandard
+} // AudioStandard
 } // OHOS
 
 #endif // AUDIO_STANDARD_SPATIALIZATION_STATE_CHANGE_LISTENER_H

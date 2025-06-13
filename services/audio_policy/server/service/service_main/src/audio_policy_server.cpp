@@ -35,7 +35,7 @@
 #include "audio_usb_manager.h"
 #endif
 #include "audio_zone_service.h"
-#include "i_standard_audio_zone_client.h"
+#include "istandard_audio_zone_client.h"
 #include "audio_bundle_manager.h"
 
 using OHOS::Security::AccessToken::PrivacyKit;
@@ -3484,8 +3484,8 @@ int32_t AudioPolicyServer::RegisterAudioZoneClient(const sptr<IRemoteObject> &ob
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     AUDIO_DEBUG_LOG("register clientPid: %{public}d", clientPid);
 
-    client->hasBTPermission_ = VerifyBluetoothPermission();
-    client->hasSystemPermission_ = PermissionUtil::VerifySystemPermission();
+    VerifyBluetoothPermission();
+    PermissionUtil::VerifySystemPermission();
     AudioZoneService::GetInstance().RegisterAudioZoneClient(clientPid, client);
 
     RegisterClientDeathRecipient(object, LISTENER_CLIENT);

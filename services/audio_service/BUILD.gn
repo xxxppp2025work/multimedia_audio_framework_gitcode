@@ -628,6 +628,7 @@ ohos_shared_library("audio_sasdk") {
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiosasdk/include",
     "../../frameworks/native/audiodefinitions/include",
+    "${audio_framework_root}/services/audio_policy/client/service/include/",
   ]
 
   public_configs = [ ":audio_sasdk_public_config" ]
