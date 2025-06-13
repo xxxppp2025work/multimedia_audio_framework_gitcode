@@ -400,7 +400,7 @@ int32_t AudioEcManager::GetPipeInfoByDeviceTypeForEc(const std::string &role, co
     std::shared_ptr<PolicyAdapterInfo> info;
     bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AudioAdapterType>(
         AudioPolicyUtils::portStrToEnum[portName]), info);
-    if (!ret) {
+    if (!ret || info == nullptr) {
         AUDIO_ERR_LOG("no adapter found for deviceType: %{public}d, portName: %{public}s",
             deviceType, portName.c_str());
         return ERROR;

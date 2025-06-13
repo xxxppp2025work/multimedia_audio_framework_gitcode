@@ -103,7 +103,7 @@ public:
 private:
     std::shared_ptr<PipeStreamPropInfo> GetStreamPropForFastRecordStream(std::shared_ptr<AudioStreamDescriptor> &desc,
         std::shared_ptr<AdapterPipeInfo> &pipeInfo, const AudioChannel &tempChannel);
-    std::shared_ptr<AdapterPipeInfo> GetNormalRecordPipe(std::shared_ptr<AudioDeviceDescriptor> deviceDesc);
+    std::shared_ptr<PipeStreamPropInfo> GetNormalRecordPipe(std::shared_ptr<AudioStreamDescriptor> desc);
     std::shared_ptr<PipeStreamPropInfo> GetStreamPropInfoForRecord(std::shared_ptr<AudioStreamDescriptor> &desc,
         std::shared_ptr<AdapterPipeInfo> &pipeInfo, const AudioChannel &tempChannel);
 
