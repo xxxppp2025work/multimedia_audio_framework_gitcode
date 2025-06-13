@@ -1708,6 +1708,105 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_005, TestSiz
 }
 
 /**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_006
+* @tc.desc  : Test AudioPolicyConfigManager - GetRouteFlag when device not found.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_006, TestSize.Level1)
+{
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    desc->audioFlag_ = AUDIO_FLAG_NONE;
+    uint32_t result = audioConfigManager_.GetRouteFlag(desc);
+    EXPECT_EQ(result, AUDIO_FLAG_NONE);
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_007
+* @tc.desc  : Test AudioPolicyConfigManager - GetRouteFlag when desc is null.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_007, TestSize.Level1)
+{
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    uint32_t result = audioConfigManager_.GetRouteFlag(desc);
+    EXPECT_EQ(result, AUDIO_FLAG_NONE);
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_008
+* @tc.desc  : Test AudioPolicyConfigManager - GetNormalRecordPipe when stream desc is null.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_008, TestSize.Level1)
+{
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    std::shared_ptr<AudioStreamDescriptor> desc = nullptr;
+    auto result = audioConfigManager_.GetNormalRecordPipe(desc);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_009
+* @tc.desc  : Test AudioPolicyConfigManager - GetNormalRecordPipe when device desc is null.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_009, TestSize.Level1)
+{
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->newDeviceDescs_ = {};
+    auto result = audioConfigManager_.GetNormalRecordPipe(desc);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_010
+* @tc.desc  : Test AudioPolicyConfigManager - GetNormalRecordPipe when device desc is null.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_010, TestSize.Level1)
+{
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->newDeviceDescs_ = {nullptr};
+    auto result = audioConfigManager_.GetNormalRecordPipe(desc);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_011
+* @tc.desc  : Test AudioPolicyConfigManager - GetStreamPropInfoForRecord when stream desc is null.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_011, TestSize.Level1)
+{
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    std::shared_ptr<AudioStreamDescriptor> desc = nullptr;
+    std::shared_ptr<AdapterPipeInfo> adapterPipeInfo = nullptr;
+    auto result = audioConfigManager_.GetStreamPropInfoForRecord(desc, adapterPipeInfo, STEREO);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_012
+* @tc.desc  : Test AudioPolicyConfigManager - GetStreamPropInfoForRecord when route flag is input fast.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_012, TestSize.Level1)
+{
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AdapterPipeInfo> adapterPipeInfo = std::make_shared<AdapterPipeInfo>();
+    desc->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
+    auto result = audioConfigManager_.GetStreamPropInfoForRecord(desc, adapterPipeInfo, STEREO);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
 * @tc.name  : Test DFX_MSG_MANAGER
 * @tc.number: DfxMsgManagerActionTest_001
 * @tc.desc  : Test DFX_MSG_MANAGER interfaces.
