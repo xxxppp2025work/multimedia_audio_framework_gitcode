@@ -271,7 +271,7 @@ private:
 
     bool ProcessVolume();
 
-    void RegisterThreadPriorityOnStart(StateChangeCmdType cmdType);
+    std::optional<pid_t> GetAndLogThreadsNeedingPriorityBoostOnStart(StateChangeCmdType cmdType);
 
     void ResetCallbackLoopTid();
 private:

@@ -35,7 +35,7 @@ public:
 
     int32_t GetAudioSessionID(uint32_t &sessionId) override;
 
-    int32_t Start() override;
+    int32_t Start(std::optional<pid_t> tid) override;
 
     int32_t Pause() override;
 
