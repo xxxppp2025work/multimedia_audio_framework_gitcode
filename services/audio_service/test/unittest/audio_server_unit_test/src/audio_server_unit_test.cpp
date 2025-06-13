@@ -1157,6 +1157,19 @@ HWTEST_F(AudioServerUnitTest, CheckParam_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test SetDeviceConnectedFlag API
+ * @tc.type  : FUNC
+ * @tc.number: SetDeviceConnectedFlag_001
+ * @tc.desc  : Test SetDeviceConnectedFlag interface.
+ */
+HWTEST_F(AudioServerUnitTest, SetDeviceConnectedFlag_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    audioServer->SetDeviceConnectedFlag(true);
+    audioServer->SetDeviceConnectedFlag(false);
+}
+
  * @tc.name  : Test Dump API
  * @tc.type  : FUNC
  * @tc.number: Dump_001

@@ -281,6 +281,20 @@ HWTEST_F(AudioRenderSinkUnitTest, PrimarySinkUnitTest_005, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test PrimarySink API
+ * @tc.number : PrimarySinkUnitTest_006
+ * @tc.desc   : Test primary sink set deviceConnectedFlag
+ */
+HWTEST_F(AudioRenderSinkUnitTest, PrimarySinkUnitTest_006, TestSize.Level1)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+    int32_t ret = primarySink_->SetDeviceConnectedFlag(true);
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySink();
+}
+
+/**
  * @tc.name   : Test UsbSink API
  * @tc.number : UsbSinkUnitTest_001
  * @tc.desc   : Test usb sink create
