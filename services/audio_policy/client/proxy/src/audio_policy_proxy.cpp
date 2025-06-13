@@ -2613,8 +2613,7 @@ std::vector<AudioVolumeType> AudioPolicyProxy::GetSupportedAudioVolumeTypes()
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     std::vector<AudioVolumeType> supportedVolumeTypes = {};
     size_t volumeTypeNum  = 0;
-    if (ret == false)
-    {
+    if (ret == false) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return supportedVolumeTypes;
     }
@@ -2623,8 +2622,7 @@ std::vector<AudioVolumeType> AudioPolicyProxy::GetSupportedAudioVolumeTypes()
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SUPPORTED_AUDIO_VOLUME_TYPES), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, supportedVolumeTypes, "SendRequest failed, error: %{public}d", error);
     volumeTypeNum = reply.ReadInt32();
-    for (size_t idx = 0; idx < volumeTypeNum; idx++)
-    {
+    for (size_t idx = 0; idx < volumeTypeNum; idx++) {
         supportedVolumeTypes.push_back(static_cast<AudioVolumeType>(reply.ReadInt32()));
     }
 
@@ -2661,8 +2659,7 @@ std::vector<StreamUsage> AudioPolicyProxy::GetStreamUsagesByVolumeType(AudioVolu
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     vector<StreamUsage> streamUsages = {};
     size_t streamUsageNum  = 0;
-    if (ret == false)
-    {
+    if (ret == false) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return streamUsages;
     }
@@ -2674,8 +2671,7 @@ std::vector<StreamUsage> AudioPolicyProxy::GetStreamUsagesByVolumeType(AudioVolu
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_USAGES_BY_VOLUME_TYPE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, streamUsages, "SendRequest failed, error: %{public}d", error);
     streamUsageNum = reply.ReadInt32();
-    for (size_t idx = 0; idx < streamUsageNum; idx++)
-    {
+    for (size_t idx = 0; idx < streamUsageNum; idx++) {
         streamUsages.push_back(static_cast<StreamUsage>(reply.ReadInt32()));
     }
 

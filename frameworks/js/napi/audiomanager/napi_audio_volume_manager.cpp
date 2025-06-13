@@ -526,15 +526,17 @@ napi_value NapiAudioVolumeManager::GetSystemVolume(napi_env env, napi_callback_i
 
     int32_t volType;
     NapiParamUtils::GetValueInt32(env, volType, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType), NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of volType must be enum AudioVolumeType"),
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of volType must be enum AudioVolumeType"),
         "get volType failed");
 
     if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioSystemMngr_ == nullptr) {
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    int32_t systemVolume = napiAudioVolumeManager->audioSystemMngr_->GetVolume(NapiAudioEnum::GetNativeAudioVolumeType(volType));
+    int32_t systemVolume = napiAudioVolumeManager->audioSystemMngr_->GetVolume(
+        NapiAudioEnum::GetNativeAudioVolumeType(volType));
     NapiParamUtils::SetValueInt32(env, systemVolume, result);
     return result;
 }
@@ -556,15 +558,17 @@ napi_value NapiAudioVolumeManager::GetMinSystemVolume(napi_env env, napi_callbac
 
     int32_t volType;
     NapiParamUtils::GetValueInt32(env, volType, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType), NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of volType must be enum AudioVolumeType"),
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of volType must be enum AudioVolumeType"),
         "get volType failed");
 
     if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioSystemMngr_ == nullptr) {
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    int32_t minSystemVolume = napiAudioVolumeManager->audioSystemMngr_->GetMinVolume(NapiAudioEnum::GetNativeAudioVolumeType(volType));
+    int32_t minSystemVolume = napiAudioVolumeManager->audioSystemMngr_->GetMinVolume(
+        NapiAudioEnum::GetNativeAudioVolumeType(volType));
     NapiParamUtils::SetValueInt32(env, minSystemVolume, result);
     return result;
 }
@@ -586,15 +590,17 @@ napi_value NapiAudioVolumeManager::GetMaxSystemVolume(napi_env env, napi_callbac
 
     int32_t volType;
     NapiParamUtils::GetValueInt32(env, volType, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType), NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of volType must be enum AudioVolumeType"),
-        "get volType failed");
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of volType must be enum AudioVolumeType"),
+            "get volType failed");
 
     if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioSystemMngr_ == nullptr) {
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    int32_t maxSystemVolume = napiAudioVolumeManager->audioSystemMngr_->GetMaxVolume(NapiAudioEnum::GetNativeAudioVolumeType(volType));
+    int32_t maxSystemVolume = napiAudioVolumeManager->audioSystemMngr_->GetMaxVolume(
+        NapiAudioEnum::GetNativeAudioVolumeType(volType));
     NapiParamUtils::SetValueInt32(env, maxSystemVolume, result);
     return result;
 }
@@ -616,15 +622,17 @@ napi_value NapiAudioVolumeManager::IsSystemMuted(napi_env env, napi_callback_inf
 
     int32_t volType;
     NapiParamUtils::GetValueInt32(env, volType, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType), NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of volType must be enum AudioVolumeType"),
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of volType must be enum AudioVolumeType"),
         "get volType failed");
 
     if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioSystemMngr_ == nullptr) {
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    bool isMuted = napiAudioVolumeManager->audioSystemMngr_->IsStreamMute(NapiAudioEnum::GetNativeAudioVolumeType(volType));
+    bool isMuted = napiAudioVolumeManager->audioSystemMngr_->IsStreamMute(
+        NapiAudioEnum::GetNativeAudioVolumeType(volType));
     NapiParamUtils::SetValueBoolean(env, isMuted, result);
     return result;
 }
@@ -637,8 +645,7 @@ napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDb(napi_env env, napi_callba
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_THREE, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
-    for (size_t i = 0; i < argc; i++)
-    {
+    for (size_t i = 0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, args[i], &valueType);
         CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
@@ -651,17 +658,21 @@ napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDb(napi_env env, napi_callba
     NapiParamUtils::GetValueInt32(env, volType, args[PARAM0]);
     NapiParamUtils::GetValueInt32(env, volLevel, args[PARAM1]);
     NapiParamUtils::GetValueInt32(env, deviceType, args[PARAM2]);
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType), NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of volType must be enum AudioVolumeType"),
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of volType must be enum AudioVolumeType"),
         "get volType failed");
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentDeviceType(deviceType), NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of deviceType must be enum DeviceType"),
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentDeviceType(deviceType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of deviceType must be enum DeviceType"),
         "get deviceType failed");
     if (napiAudioVolumeManager == nullptr) {
         AUDIO_ERR_LOG("napiAudioVolumeManager  is nullptr!");
         return nullptr;
     }
-    float volumeInDb = napiAudioVolumeManager->audioSystemMngr_->GetVolumeInUnitOfDb(NapiAudioEnum::GetNativeAudioVolumeType(volType), volLevel, static_cast<DeviceType>(deviceType));
+    float volumeInDb = napiAudioVolumeManager->audioSystemMngr_->GetVolumeInUnitOfDb(
+        NapiAudioEnum::GetNativeAudioVolumeType(volType),
+        volLevel, static_cast<DeviceType>(deviceType));
     NapiParamUtils::SetValueDouble(env, volumeInDb, result);
     return result;
 }
@@ -683,15 +694,17 @@ napi_value NapiAudioVolumeManager::GetVolumeByStream(napi_env env, napi_callback
 
     int32_t streamUsage;
     NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage), NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of streamUsage must be enum StreamUsage"),
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of streamUsage must be enum StreamUsage"),
         "get volType failed");
 
     if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioSystemMngr_ == nullptr) {
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    int32_t volume = napiAudioVolumeManager->audioSystemMngr_->GetVolumeByUsage(NapiAudioEnum::GetNativeStreamUsage(streamUsage));
+    int32_t volume = napiAudioVolumeManager->audioSystemMngr_->GetVolumeByUsage(
+        NapiAudioEnum::GetNativeStreamUsage(streamUsage));
     NapiParamUtils::SetValueInt32(env, volume, result);
     return result;
 }
@@ -713,15 +726,17 @@ napi_value NapiAudioVolumeManager::GetMinVolumeByStream(napi_env env, napi_callb
 
     int32_t streamUsage;
     NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage), NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of streamUsage must be enum StreamUsage"),
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of streamUsage must be enum StreamUsage"),
         "get volType failed");
 
     if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioSystemMngr_ == nullptr) {
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    int32_t minVolume = napiAudioVolumeManager->audioSystemMngr_->GetMinVolumeByUsage(NapiAudioEnum::GetNativeStreamUsage(streamUsage));
+    int32_t minVolume = napiAudioVolumeManager->audioSystemMngr_->GetMinVolumeByUsage(
+        NapiAudioEnum::GetNativeStreamUsage(streamUsage));
     NapiParamUtils::SetValueInt32(env, minVolume, result);
     return result;
 }
@@ -743,15 +758,17 @@ napi_value NapiAudioVolumeManager::GetMaxVolumeByStream(napi_env env, napi_callb
 
     int32_t streamUsage;
     NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage), NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of streamUsage must be enum StreamUsage"),
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of streamUsage must be enum StreamUsage"),
         "get volType failed");
 
     if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioSystemMngr_ == nullptr) {
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    int32_t maxVolume = napiAudioVolumeManager->audioSystemMngr_->GetMaxVolumeByUsage(NapiAudioEnum::GetNativeStreamUsage(streamUsage));
+    int32_t maxVolume = napiAudioVolumeManager->audioSystemMngr_->GetMaxVolumeByUsage(
+        NapiAudioEnum::GetNativeStreamUsage(streamUsage));
     NapiParamUtils::SetValueInt32(env, maxVolume, result);
     return result;
 }
@@ -773,8 +790,9 @@ napi_value NapiAudioVolumeManager::IsSystemMutedForStream(napi_env env, napi_cal
 
     int32_t streamUsage;
     NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage), NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of streamUsage must be enum StreamUsage"),
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of streamUsage must be enum StreamUsage"),
         "get volType failed");
 
     if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioSystemMngr_ == nullptr) {
@@ -782,7 +800,8 @@ napi_value NapiAudioVolumeManager::IsSystemMutedForStream(napi_env env, napi_cal
         return nullptr;
     }
     bool isMuted;
-    int32_t status= napiAudioVolumeManager->audioSystemMngr_->IsStreamMuteByUsage(NapiAudioEnum::GetNativeStreamUsage(streamUsage), isMuted);
+    int32_t status= napiAudioVolumeManager->audioSystemMngr_->IsStreamMuteByUsage(
+        NapiAudioEnum::GetNativeStreamUsage(streamUsage), isMuted);
     CHECK_AND_RETURN_RET_LOG(status == SUCCESS,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "System error"),
         "IsSystemMutedForStream IsStreamMuteByUsage failed");
@@ -799,8 +818,7 @@ napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDbByStream(napi_env env, nap
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_THREE, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
-    for (size_t i = 0; i < argc; i++)
-    {
+    for (size_t i = 0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, args[i], &valueType);
         CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
@@ -813,17 +831,21 @@ napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDbByStream(napi_env env, nap
     NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM0]);
     NapiParamUtils::GetValueInt32(env, volLevel, args[PARAM1]);
     NapiParamUtils::GetValueInt32(env, deviceType, args[PARAM2]);
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage), NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of streamUsage must be enum StreamUsage"),
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of streamUsage must be enum StreamUsage"),
         "get streamUsage failed");
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentDeviceType(deviceType), NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of deviceType must be enum DeviceType"),
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentDeviceType(deviceType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of deviceType must be enum DeviceType"),
         "get deviceType failed");
     if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioSystemMngr_ == nullptr) {
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr_  is nullptr!");
         return nullptr;
     }
-    float volumeInDb = napiAudioVolumeManager->audioSystemMngr_->GetVolumeInDbByStream(NapiAudioEnum::GetNativeStreamUsage(streamUsage), volLevel, static_cast<DeviceType>(deviceType));
+    float volumeInDb = napiAudioVolumeManager->audioSystemMngr_->GetVolumeInDbByStream(
+        NapiAudioEnum::GetNativeStreamUsage(streamUsage),
+        volLevel, static_cast<DeviceType>(deviceType));
     NapiParamUtils::SetValueDouble(env, volumeInDb, result);
     return result;
 }
@@ -863,15 +885,17 @@ napi_value NapiAudioVolumeManager::GetAudioVolumeTypeByStreamUsage(napi_env env,
 
     int32_t streamUsage;
     NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage), NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of streamUsage must be enum StreamUsage"),
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of streamUsage must be enum StreamUsage"),
         "get volType failed");
 
     if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioSystemMngr_ == nullptr) {
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    AudioVolumeType volType = napiAudioVolumeManager->audioSystemMngr_->GetAudioVolumeTypeByStreamUsage(NapiAudioEnum::GetNativeStreamUsage(streamUsage));
+    AudioVolumeType volType = napiAudioVolumeManager->audioSystemMngr_->GetAudioVolumeTypeByStreamUsage(
+        NapiAudioEnum::GetNativeStreamUsage(streamUsage));
     NapiParamUtils::SetValueInt32(env, NapiAudioEnum::GetJsAudioVolumeType(volType), result);
     return result;
 }
@@ -893,15 +917,17 @@ napi_value NapiAudioVolumeManager::GetStreamUsagesByVolumeType(napi_env env, nap
 
     int32_t volType;
     NapiParamUtils::GetValueInt32(env, volType, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType), NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of volType must be enum AudioVolumeType"),
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of volType must be enum AudioVolumeType"),
         "get volType failed");
 
     if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioSystemMngr_ == nullptr) {
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
         return nullptr;
     }
-    std::vector<StreamUsage> streamUsages = napiAudioVolumeManager->audioSystemMngr_->GetStreamUsagesByVolumeType(NapiAudioEnum::GetNativeAudioVolumeType(volType));
+    std::vector<StreamUsage> streamUsages = napiAudioVolumeManager->audioSystemMngr_->GetStreamUsagesByVolumeType(
+        NapiAudioEnum::GetNativeAudioVolumeType(volType));
     NapiParamUtils::SetValueStreamUsageArray(env, streamUsages, result);
     return result;
 }
@@ -1144,19 +1170,22 @@ napi_value NapiAudioVolumeManager::RegisterStreamVolumeChangeCallback(napi_env e
     int32_t streamUsage = 0;
     NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM1]);
     if (napiAudioVolumeManager->streamVolumeChangeCallbackNapi_ == nullptr) {
-        napiAudioVolumeManager->streamVolumeChangeCallbackNapi_ = std::make_shared<NapiAudioStreamVolumeChangeCallback>(env);
+        napiAudioVolumeManager->streamVolumeChangeCallbackNapi_ =
+            std::make_shared<NapiAudioStreamVolumeChangeCallback>(env);
         int32_t ret = napiAudioVolumeManager->audioSystemMngr_->RegisterStreamVolumeChangeCallback(
             napiAudioVolumeManager->cachedClientId_,
             { NapiAudioEnum::GetNativeStreamUsage(streamUsage) },
             napiAudioVolumeManager->streamVolumeChangeCallbackNapi_);
         napiAudioVolumeManager->streamVolumeChangeCallbackNapiList_.push_back(
-            std::static_pointer_cast<NapiAudioStreamVolumeChangeCallback>(napiAudioVolumeManager->streamVolumeChangeCallbackNapi_));
+            std::static_pointer_cast<NapiAudioStreamVolumeChangeCallback>(
+                napiAudioVolumeManager->streamVolumeChangeCallbackNapi_));
         if (ret) {
             AUDIO_ERR_LOG("RegisterStreamVolumeChangeCallback Failed");
         }
     }
     std::shared_ptr<NapiAudioStreamVolumeChangeCallback> cb =
-        std::static_pointer_cast<NapiAudioStreamVolumeChangeCallback>(napiAudioVolumeManager->streamVolumeChangeCallbackNapi_);
+        std::static_pointer_cast<NapiAudioStreamVolumeChangeCallback>(
+            napiAudioVolumeManager->streamVolumeChangeCallbackNapi_);
     cb->SaveCallbackReference(cbName, args[PARAM2]);
     if (!cb->GetVolumeTsfnFlag()) {
         cb->CreateStreamVolumeChangeTsfn(env);
@@ -1174,13 +1203,15 @@ napi_value NapiAudioVolumeManager::RegisterSystemVolumeChangeCallback(napi_env e
         int32_t ret = napiAudioVolumeManager->audioSystemMngr_->RegisterSystemVolumeChangeCallback(
             napiAudioVolumeManager->cachedClientId_, napiAudioVolumeManager->systemVolumeChangeCallbackNapi_);
         napiAudioVolumeManager->systemVolumeChangeCallbackNapiList_.push_back(
-            std::static_pointer_cast<NapiAudioSystemVolumeChangeCallback>(napiAudioVolumeManager->systemVolumeChangeCallbackNapi_));
+            std::static_pointer_cast<NapiAudioSystemVolumeChangeCallback>(
+                napiAudioVolumeManager->systemVolumeChangeCallbackNapi_));
         if (ret) {
             AUDIO_ERR_LOG("RegisterSystemVolumeChangeCallback Failed");
         }
     }
     std::shared_ptr<NapiAudioSystemVolumeChangeCallback> cb =
-        std::static_pointer_cast<NapiAudioSystemVolumeChangeCallback>(napiAudioVolumeManager->systemVolumeChangeCallbackNapi_);
+        std::static_pointer_cast<NapiAudioSystemVolumeChangeCallback>(
+            napiAudioVolumeManager->systemVolumeChangeCallbackNapi_);
     cb->SaveCallbackReference(cbName, args[PARAM1]);
     if (!cb->GetVolumeTsfnFlag()) {
         cb->CreateSystemVolumeChangeTsfn(env);
@@ -1391,7 +1422,8 @@ void NapiAudioVolumeManager::UnregisterStreamVolumeChangeCallback(napi_env env, 
         callback = args[PARAM1];
     }
     if (callback != nullptr) {
-        std::shared_ptr<NapiAudioStreamVolumeChangeCallback> cb = GetStreamVolumeChangeNapiCallback(callback, napiAudioVolumeManager);
+        std::shared_ptr<NapiAudioStreamVolumeChangeCallback> cb = GetStreamVolumeChangeNapiCallback(
+            callback, napiAudioVolumeManager);
         if (cb == nullptr) {
             AUDIO_ERR_LOG("NapiAudioSystemVolumeChangeCallback is nullptr");
             return;
@@ -1426,7 +1458,8 @@ void NapiAudioVolumeManager::UnregisterSystemVolumeChangeCallback(napi_env env, 
         callback = args[PARAM1];
     }
     if (callback != nullptr) {
-        std::shared_ptr<NapiAudioSystemVolumeChangeCallback> cb = GetSystemVolumeChangeNapiCallback(callback, napiAudioVolumeManager);
+        std::shared_ptr<NapiAudioSystemVolumeChangeCallback> cb = GetSystemVolumeChangeNapiCallback(
+            callback, napiAudioVolumeManager);
         if (cb == nullptr) {
             AUDIO_ERR_LOG("NapiAudioSystemVolumeChangeCallback is nullptr");
             return;
@@ -1465,8 +1498,8 @@ std::shared_ptr<NapiAudioVolumeKeyEvent> NapiAudioVolumeManager::GetVolumeEventN
     return cb;
 }
 
-std::shared_ptr<NapiAudioStreamVolumeChangeCallback> NapiAudioVolumeManager::GetStreamVolumeChangeNapiCallback(napi_value argv,
-    NapiAudioVolumeManager *napiVolumeManager)
+std::shared_ptr<NapiAudioStreamVolumeChangeCallback> NapiAudioVolumeManager::GetStreamVolumeChangeNapiCallback(
+    napi_value argv, NapiAudioVolumeManager *napiVolumeManager)
 {
     std::shared_ptr<NapiAudioStreamVolumeChangeCallback> cb = nullptr;
     for (auto &iter : napiVolumeManager->streamVolumeChangeCallbackNapiList_) {
@@ -1477,8 +1510,8 @@ std::shared_ptr<NapiAudioStreamVolumeChangeCallback> NapiAudioVolumeManager::Get
     return cb;
 }
 
-std::shared_ptr<NapiAudioSystemVolumeChangeCallback> NapiAudioVolumeManager::GetSystemVolumeChangeNapiCallback(napi_value argv,
-    NapiAudioVolumeManager *napiVolumeManager)
+std::shared_ptr<NapiAudioSystemVolumeChangeCallback> NapiAudioVolumeManager::GetSystemVolumeChangeNapiCallback(
+    napi_value argv, NapiAudioVolumeManager *napiVolumeManager)
 {
     std::shared_ptr<NapiAudioSystemVolumeChangeCallback> cb = nullptr;
     for (auto &iter : napiVolumeManager->systemVolumeChangeCallbackNapiList_) {

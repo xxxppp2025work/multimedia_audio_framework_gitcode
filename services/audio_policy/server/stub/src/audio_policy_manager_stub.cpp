@@ -2448,8 +2448,7 @@ void AudioPolicyManagerStub::GetSupportedAudioVolumeTypesInternal(MessageParcel 
     std::vector<AudioVolumeType> volumeTypes = GetSupportedAudioVolumeTypes();
     size_t size = volumeTypes.size();
     reply.WriteInt32(size);
-    for (size_t idx = 0; idx < size; idx++)
-    {
+    for (size_t idx = 0; idx < size; idx++) {
         reply.WriteInt32(volumeTypes[idx]);
     }
 }
@@ -2467,11 +2466,9 @@ void AudioPolicyManagerStub::GetStreamUsagesByVolumeTypeInternal(MessageParcel &
     std::vector<StreamUsage> streamUsages = GetStreamUsagesByVolumeType(audioVolumeType);
     size_t size = streamUsages.size();
     reply.WriteInt32(size);
-    for (size_t idx = 0; idx < size; idx++)
-    {
+    for (size_t idx = 0; idx < size; idx++) {
         reply.WriteInt32(streamUsages[idx]);
     }
-
 }
 
 void AudioPolicyManagerStub::SetCallbackStreamUsageInfoInternal(MessageParcel &data, MessageParcel &reply)

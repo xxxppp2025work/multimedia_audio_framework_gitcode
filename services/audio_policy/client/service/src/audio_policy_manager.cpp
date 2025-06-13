@@ -1149,7 +1149,7 @@ int32_t AudioPolicyManager::UnsetVolumeKeyEventCallback(
 }
 
 int32_t AudioPolicyManager::SetSystemVolumeChangeCallback(const int32_t clientPid,
-        const std::shared_ptr<SystemVolumeChangeCallback> &callback)
+    const std::shared_ptr<SystemVolumeChangeCallback> &callback)
 {
     AUDIO_INFO_LOG("SetSystemVolumeChangeCallback: client: %{public}d", clientPid);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "systemVolumeChange callback is nullptr");
@@ -2551,8 +2551,7 @@ float AudioPolicyManager::GetVolumeInDbByStream(StreamUsage streamUsage, int32_t
 std::vector<AudioVolumeType> AudioPolicyManager::GetSupportedAudioVolumeTypes()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp == nullptr)
-    {
+    if (gsp == nullptr) {
         AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
         std::vector<AudioVolumeType> nullList = {};
         return nullList;
@@ -2570,8 +2569,7 @@ AudioVolumeType AudioPolicyManager::GetAudioVolumeTypeByStreamUsage(StreamUsage 
 std::vector<StreamUsage> AudioPolicyManager::GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp == nullptr)
-    {
+    if (gsp == nullptr) {
         AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
         std::vector<StreamUsage> nullList = {};
         return nullList;

@@ -94,7 +94,8 @@ void NapiAudioStreamVolumeChangeCallback::SaveCallbackReference(const std::strin
     }
 }
 
-void NapiAudioStreamVolumeChangeCallback::SafeJsCallbackStreamVolumeChangeWork(napi_env env, napi_value js_cb, void *context, void *data)
+void NapiAudioStreamVolumeChangeCallback::SafeJsCallbackStreamVolumeChangeWork(
+    napi_env env, napi_value js_cb, void *context, void *data)
 {
     AudioStreamVolumeChangeJsCallback *event = reinterpret_cast<AudioStreamVolumeChangeJsCallback *>(data);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
@@ -152,7 +153,8 @@ void NapiAudioStreamVolumeChangeCallback::Cleanup(void *data)
     napi_release_threadsafe_function(tsfn, napi_tsfn_abort);
 }
 
-void NapiAudioStreamVolumeChangeCallback::OnJsCallbackStreamVolumeChange(std::unique_ptr<AudioStreamVolumeChangeJsCallback> &jsCb)
+void NapiAudioStreamVolumeChangeCallback::OnJsCallbackStreamVolumeChange(
+    std::unique_ptr<AudioStreamVolumeChangeJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackStreamVolumeChange: jsCb.get() is null");

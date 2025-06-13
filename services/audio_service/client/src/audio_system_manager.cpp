@@ -1188,7 +1188,7 @@ int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clien
 }
 
 int32_t AudioSystemManager::RegisterSystemVolumeChangeCallback(const int32_t clientPid,
-        const std::shared_ptr<SystemVolumeChangeCallback> &callback)
+    const std::shared_ptr<SystemVolumeChangeCallback> &callback)
 {
     AUDIO_DEBUG_LOG("AudioSystemManager RegisterSystemVolumeChangeCallback");
 
@@ -1200,7 +1200,7 @@ int32_t AudioSystemManager::RegisterSystemVolumeChangeCallback(const int32_t cli
 }
 
 int32_t AudioSystemManager::UnregisterSystemVolumeChangeCallback(const int32_t clientPid,
-        const std::shared_ptr<SystemVolumeChangeCallback> &callback)
+    const std::shared_ptr<SystemVolumeChangeCallback> &callback)
 {
     AUDIO_DEBUG_LOG("UnregisterSystemVolumeChangeCallback");
     int32_t ret = AudioPolicyManager::GetInstance().UnsetSystemVolumeChangeCallback(callback);

@@ -72,7 +72,8 @@ int32_t AudioPolicyClientStubImpl::AddSystemVolumeChangeCallback(const std::shar
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::RemoveSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &cb)
+int32_t AudioPolicyClientStubImpl::RemoveSystemVolumeChangeCallback(
+    const std::shared_ptr<SystemVolumeChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(systemVolumeChangeMutex_);
     if (cb == nullptr) {

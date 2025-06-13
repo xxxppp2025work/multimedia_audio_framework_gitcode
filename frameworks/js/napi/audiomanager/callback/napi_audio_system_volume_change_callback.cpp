@@ -96,7 +96,8 @@ void NapiAudioSystemVolumeChangeCallback::SaveCallbackReference(const std::strin
     }
 }
 
-void NapiAudioSystemVolumeChangeCallback::SafeJsCallbackSystemVolumeChangeWork(napi_env env, napi_value js_cb, void *context, void *data)
+void NapiAudioSystemVolumeChangeCallback::SafeJsCallbackSystemVolumeChangeWork(
+    napi_env env, napi_value js_cb, void *context, void *data)
 {
     AudioSystemVolumeChangeJsCallback *event = reinterpret_cast<AudioSystemVolumeChangeJsCallback *>(data);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
@@ -154,7 +155,8 @@ void NapiAudioSystemVolumeChangeCallback::Cleanup(void *data)
     napi_release_threadsafe_function(tsfn, napi_tsfn_abort);
 }
 
-void NapiAudioSystemVolumeChangeCallback::OnJsCallbackSystemVolumeChange(std::unique_ptr<AudioSystemVolumeChangeJsCallback> &jsCb)
+void NapiAudioSystemVolumeChangeCallback::OnJsCallbackSystemVolumeChange(
+    std::unique_ptr<AudioSystemVolumeChangeJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackSystemVolumeChange: jsCb.get() is null");
