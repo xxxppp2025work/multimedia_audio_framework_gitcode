@@ -20,10 +20,10 @@
 #include <sstream>
 #include "audio_system_manager.h"
 #include "audio_service_log.h"
-#include "i_audio_process.h"
 #include "audio_effect_server.h"
 #include "audio_asr.h"
 #include "audio_utils.h"
+#include "audio_process_config.h"
 
 using namespace std;
 

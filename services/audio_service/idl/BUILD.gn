@@ -21,6 +21,8 @@ idl_gen_interface("audio_service_idl_interface") {
     "IPolicyProviderIpc.idl",
     "ICoreServiceProviderIpc.idl",
     "IIpcStream.idl",
+    "IAudioProcess.idl",
+    "IProcessCb.idl",
   ]
   if (audio_framework_feature_offline_effect) {
     sources += [ "IIpcOfflineStream.idl" ]
