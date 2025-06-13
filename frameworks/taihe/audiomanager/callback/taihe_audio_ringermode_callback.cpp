@@ -131,11 +131,7 @@ bool TaiheAudioRingerModeCallback::IsSameCallback(std::shared_ptr<uintptr_t> &ca
     if (ringerModeCallback_ == nullptr) {
         return false;
     }
-
-    if (callback == ringerModeCallback_->cb_) {
-        return true;
-    }
-    return false;
+    return TaiheParamUtils::IsSameRef(callback, ringerModeCallback_->cb_);
 }
 
 void TaiheAudioRingerModeCallback::RemoveCallbackReference(std::shared_ptr<uintptr_t> callback)

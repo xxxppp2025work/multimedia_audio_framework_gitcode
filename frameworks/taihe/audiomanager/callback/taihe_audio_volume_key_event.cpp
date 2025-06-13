@@ -27,7 +27,7 @@ namespace ANI::Audio {
 std::mutex TaiheAudioVolumeKeyEvent::sWorkerMutex_;
 
 TaiheAudioVolumeKeyEvent::TaiheAudioVolumeKeyEvent(ani_env *env)
-    :env_(env)
+    : env_(env)
 {
     AUDIO_INFO_LOG("TaiheAudioVolumeKeyEvent::Constructor");
 }
@@ -113,9 +113,6 @@ void TaiheAudioVolumeKeyEvent::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolu
 
 bool TaiheAudioVolumeKeyEvent::ContainSameJsCallback(std::shared_ptr<uintptr_t> callback)
 {
-    if (callback == callback_) {
-        return true;
-    }
-    return false;
+    return TaiheParamUtils::IsSameRef(callback, callback_);
 }
 } // namespace ANI::Audio

@@ -191,9 +191,9 @@ void TaiheAudioSpatializationEnabledChangeCallback::SafeJsCallbackSpatialization
     AUDIO_INFO_LOG("SafeJsCallbackSpatializationEnabledWork: safe js callback working.");
 
     do {
-        std::shared_ptr<taihe::callback<void(AudioSpatialEnabledStateForDevice)>> cacheCallback =
-            std::reinterpret_pointer_cast<taihe::callback<void(AudioSpatialEnabledStateForDevice)>>(
-            event->callback->cb_);
+        std::shared_ptr<taihe::callback<void(AudioSpatialEnabledStateForDevice const&)>> cacheCallback =
+            std::reinterpret_pointer_cast<taihe::callback<void(AudioSpatialEnabledStateForDevice const&)>>(
+                event->callback->cb_);
         CHECK_AND_BREAK_LOG(cacheCallback != nullptr, "get reference value fail");
 
         if (!onSpatializationEnabledChangeFlag_) {
@@ -511,9 +511,9 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::SafeJsCallbackHeadTrackingEnab
     AUDIO_INFO_LOG("SafeJsCallbackHeadTrackingEnabledWork: safe js callback working.");
 
     do {
-        std::shared_ptr<taihe::callback<void(AudioSpatialEnabledStateForDevice)>> cacheCallback =
-            std::reinterpret_pointer_cast<taihe::callback<void(AudioSpatialEnabledStateForDevice)>>(
-            event->callback->cb_);
+        std::shared_ptr<taihe::callback<void(AudioSpatialEnabledStateForDevice const&)>> cacheCallback =
+            std::reinterpret_pointer_cast<taihe::callback<void(AudioSpatialEnabledStateForDevice const&)>>(
+                event->callback->cb_);
         AUDIO_INFO_LOG("SafeJsCallbackHeadTrackingEnabledWork: safe js callback working.");
 
         if (!onHeadTrackingEnabledChangeFlag_) {

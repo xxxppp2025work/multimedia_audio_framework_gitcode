@@ -56,6 +56,9 @@ void TaiheAudioRountingAvailableDeviceChangeCallback::SaveRoutingAvailbleDeviceC
     availableDeviceChangeCbList_.push_back({cb, usage});
     AUDIO_INFO_LOG("SaveRoutingAvailbleDeviceChange callback ref success, usage [%{public}d], list size [%{public}zu]",
         usage, availableDeviceChangeCbList_.size());
+    std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
+    mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
 }
 
 void TaiheAudioRountingAvailableDeviceChangeCallback::RemoveRoutingAvailbleDeviceChangeCbRef(

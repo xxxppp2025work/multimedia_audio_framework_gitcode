@@ -70,15 +70,6 @@ static const std::map<OHOS::AudioStandard::CapturerState, AudioState> CAPTURER_S
     {OHOS::AudioStandard::CapturerState::CAPTURER_PAUSED, AudioState::key_t::STATE_PAUSED},
 };
 
-static const std::map<OHOS::AudioStandard::ContentType, ContentType> CONTENT_TYPE_TAIHE_MAP = {
-    {OHOS::AudioStandard::ContentType::CONTENT_TYPE_UNKNOWN, ContentType::key_t::CONTENT_TYPE_UNKNOWN},
-    {OHOS::AudioStandard::ContentType::CONTENT_TYPE_SPEECH, ContentType::key_t::CONTENT_TYPE_SPEECH},
-    {OHOS::AudioStandard::ContentType::CONTENT_TYPE_MUSIC, ContentType::key_t::CONTENT_TYPE_MUSIC},
-    {OHOS::AudioStandard::ContentType::CONTENT_TYPE_MOVIE, ContentType::key_t::CONTENT_TYPE_MOVIE},
-    {OHOS::AudioStandard::ContentType::CONTENT_TYPE_SONIFICATION, ContentType::key_t::CONTENT_TYPE_SONIFICATION},
-    {OHOS::AudioStandard::ContentType::CONTENT_TYPE_RINGTONE, ContentType::key_t::CONTENT_TYPE_RINGTONE},
-};
-
 static const std::map<OHOS::AudioStandard::StreamUsage, StreamUsage> STREAM_USAGE_TAIHE_MAP = {
     {OHOS::AudioStandard::StreamUsage::STREAM_USAGE_UNKNOWN, StreamUsage::key_t::STREAM_USAGE_UNKNOWN},
     {OHOS::AudioStandard::StreamUsage::STREAM_USAGE_MUSIC, StreamUsage::key_t::STREAM_USAGE_MUSIC},
@@ -108,7 +99,6 @@ static const std::map<OHOS::AudioStandard::SourceType, SourceType> SOURCE_TYPE_T
     {OHOS::AudioStandard::SourceType::SOURCE_TYPE_INVALID, SourceType::key_t::SOURCE_TYPE_INVALID},
     {OHOS::AudioStandard::SourceType::SOURCE_TYPE_MIC, SourceType::key_t::SOURCE_TYPE_MIC},
     {OHOS::AudioStandard::SourceType::SOURCE_TYPE_VOICE_RECOGNITION, SourceType::key_t::SOURCE_TYPE_VOICE_RECOGNITION},
-    {OHOS::AudioStandard::SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE, SourceType::key_t::SOURCE_TYPE_PLAYBACK_CAPTURE},
     {OHOS::AudioStandard::SourceType::SOURCE_TYPE_WAKEUP, SourceType::key_t::SOURCE_TYPE_WAKEUP},
     {OHOS::AudioStandard::SourceType::SOURCE_TYPE_VOICE_CALL, SourceType::key_t::SOURCE_TYPE_VOICE_CALL},
     {OHOS::AudioStandard::SourceType::SOURCE_TYPE_VOICE_COMMUNICATION,
@@ -168,6 +158,58 @@ static const std::map<OHOS::AudioStandard::AudioSessionDeactiveReason, AudioSess
     {OHOS::AudioStandard::AudioSessionDeactiveReason::TIMEOUT,
         AudioSessionDeactivatedReason::key_t::DEACTIVATED_TIMEOUT},
 };
+
+static const std::map<OHOS::AudioStandard::ConnectType, ConnectType> CONNECT_TYPE_TAIHE_MAP = {
+    {OHOS::AudioStandard::ConnectType::CONNECT_TYPE_LOCAL, ConnectType::key_t::CONNECT_TYPE_LOCAL},
+    {OHOS::AudioStandard::ConnectType::CONNECT_TYPE_DISTRIBUTED, ConnectType::key_t::CONNECT_TYPE_DISTRIBUTED},
+};
+
+bool TaiheAudioEnum::IsLegalInputArgumentInterruptMode(int32_t interruptMode)
+{
+    bool result = false;
+    switch (interruptMode) {
+        case InterruptMode::SHARE_MODE:
+        case InterruptMode::INDEPENDENT_MODE:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool TaiheAudioEnum::IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode)
+{
+    bool result = false;
+    switch (audioEffectMode) {
+        case OHOS::AudioStandard::AudioEffectMode::EFFECT_NONE:
+        case OHOS::AudioStandard::AudioEffectMode::EFFECT_DEFAULT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool TaiheAudioEnum::IsLegalInputArgumentChannelBlendMode(int32_t blendMode)
+{
+    bool result = false;
+    switch (blendMode) {
+        case OHOS::AudioStandard::ChannelBlendMode::MODE_DEFAULT:
+        case OHOS::AudioStandard::ChannelBlendMode::MODE_BLEND_LR:
+        case OHOS::AudioStandard::ChannelBlendMode::MODE_ALL_LEFT:
+        case OHOS::AudioStandard::ChannelBlendMode::MODE_ALL_RIGHT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
 
 bool TaiheAudioEnum::IsLegalCapturerType(int32_t type)
 {
@@ -296,6 +338,24 @@ OHOS::AudioStandard::AudioRingerMode TaiheAudioEnum::GetNativeAudioRingerMode(in
     return result;
 }
 
+OHOS::AudioStandard::InterruptMode TaiheAudioEnum::GetNativeInterruptMode(int32_t interruptMode)
+{
+    OHOS::AudioStandard::InterruptMode result;
+    switch (interruptMode) {
+        case TaiheAudioEnum::InterruptMode::SHARE_MODE:
+            result = OHOS::AudioStandard::InterruptMode::SHARE_MODE;
+            break;
+        case TaiheAudioEnum::InterruptMode::INDEPENDENT_MODE:
+            result = OHOS::AudioStandard::InterruptMode::INDEPENDENT_MODE;
+            break;
+        default:
+            result = OHOS::AudioStandard::InterruptMode::SHARE_MODE;
+            AUDIO_ERR_LOG("Unknown interruptMode type, Set it to default SHARE_MODE!");
+            break;
+    }
+    return result;
+}
+
 AudioVolumeType TaiheAudioEnum::GetJsAudioVolumeType(OHOS::AudioStandard::AudioStreamType volumeType)
 {
     AudioVolumeType result = static_cast<AudioVolumeType::key_t>(TaiheAudioEnum::MEDIA);
@@ -360,6 +420,20 @@ AudioVolumeType TaiheAudioEnum::GetJsAudioVolumeTypeMore(OHOS::AudioStandard::Au
     return result;
 }
 
+bool TaiheAudioEnum::IsLegalInputArgumentCommunicationDeviceType(int32_t communicationDeviceType)
+{
+    bool result = false;
+    switch (communicationDeviceType) {
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_SPEAKER:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
 bool TaiheAudioEnum::IsLegalInputArgumentDeviceFlag(int32_t deviceFlag)
 {
     bool result = false;
@@ -372,6 +446,61 @@ bool TaiheAudioEnum::IsLegalInputArgumentDeviceFlag(int32_t deviceFlag)
         case OHOS::AudioStandard::DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG:
         case OHOS::AudioStandard::DeviceFlag::ALL_DISTRIBUTED_DEVICES_FLAG:
         case OHOS::AudioStandard::DeviceFlag::ALL_L_D_DEVICES_FLAG:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool TaiheAudioEnum::IsLegalInputArgumentDefaultOutputDeviceType(int32_t deviceType)
+{
+    bool result = false;
+    switch (deviceType) {
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_EARPIECE:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_SPEAKER:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_DEFAULT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool TaiheAudioEnum::IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceFlag)
+{
+    bool result = false;
+    switch (activeDeviceFlag) {
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_SPEAKER:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool TaiheAudioEnum::IsLegalInputArgumentDeviceType(int32_t deviceType)
+{
+    bool result = false;
+    switch (deviceType) {
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_EARPIECE:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_SPEAKER:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_MIC:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_USB_DEVICE:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_FILE_SINK:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_FILE_SOURCE:
             result = true;
             break;
         default:
@@ -502,6 +631,33 @@ bool TaiheAudioEnum::IsLegalDeviceUsage(int32_t usage)
     return result;
 }
 
+bool TaiheAudioEnum::IsLegalInputArgumentSpatializationSceneType(int32_t spatializationSceneType)
+{
+    bool result = false;
+    switch (spatializationSceneType) {
+        case OHOS::AudioStandard::AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_DEFAULT:
+        case OHOS::AudioStandard::AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_MUSIC:
+        case OHOS::AudioStandard::AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_MOVIE:
+        case OHOS::AudioStandard::AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_AUDIOBOOK:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+ConnectType TaiheAudioEnum::ToTaiheConnectType(OHOS::AudioStandard::ConnectType type)
+{
+    auto iter = CONNECT_TYPE_TAIHE_MAP.find(type);
+    if (iter == CONNECT_TYPE_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheDeviceRole invalid type: %{public}d", static_cast<int32_t>(type));
+        return ConnectType::key_t::CONNECT_TYPE_LOCAL;
+    }
+    return iter->second;
+}
+
 DeviceRole TaiheAudioEnum::ToTaiheDeviceRole(OHOS::AudioStandard::DeviceRole type)
 {
     auto iter = DEVICE_ROLE_TAIHE_MAP.find(type);
@@ -548,16 +704,6 @@ AudioState TaiheAudioEnum::ToTaiheAudioState(OHOS::AudioStandard::CapturerState 
     if (iter == CAPTURER_STATE_TAIHE_MAP.end()) {
         AUDIO_WARNING_LOG("ToTaiheAudioState(Capturer) invalid state: %{public}d", static_cast<int32_t>(state));
         return AudioState::key_t::STATE_INVALID;
-    }
-    return iter->second;
-}
-
-ContentType TaiheAudioEnum::ToTaiheContentType(OHOS::AudioStandard::ContentType type)
-{
-    auto iter = CONTENT_TYPE_TAIHE_MAP.find(type);
-    if (iter == CONTENT_TYPE_TAIHE_MAP.end()) {
-        AUDIO_WARNING_LOG("ToTaiheContentType invalid type: %{public}d", static_cast<int32_t>(type));
-        return ContentType::key_t::CONTENT_TYPE_UNKNOWN;
     }
     return iter->second;
 }

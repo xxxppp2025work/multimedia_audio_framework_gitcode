@@ -58,7 +58,7 @@ void TaiheAudioSessionCallback::SaveCallbackReference(std::shared_ptr<uintptr_t>
     CHECK_AND_RETURN_LOG(callback != nullptr,
         "TaiheAudioSessionCallback: creating reference for callback fail");
     ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
+    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env, callback);
     audioSessionJsCallback_ = cb;
 }

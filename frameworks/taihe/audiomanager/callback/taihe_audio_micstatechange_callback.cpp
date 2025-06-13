@@ -99,7 +99,6 @@ void TaiheAudioManagerMicStateChangeCallback::SaveCallbackReference(
     CHECK_AND_RETURN_LOG(callbackName == MIC_STATE_CHANGE_CALLBACK_NAME,
         "TaiheAudioManagerMicStateChangeCallback: Unknown callback type: %{public}s", callbackName.c_str());
     micStateChangeCallback_ = cb;
-
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
     CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
     mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
@@ -111,11 +110,7 @@ bool TaiheAudioManagerMicStateChangeCallback::IsSameCallback(std::shared_ptr<uin
     if (micStateChangeCallback_ == nullptr) {
         return false;
     }
-
-    if (callback == micStateChangeCallback_->cb_) {
-        return true;
-    }
-    return false;
+    return TaiheParamUtils::IsSameRef(callback, micStateChangeCallback_->cb_);
 }
 
 void TaiheAudioManagerMicStateChangeCallback::RemoveCallbackReference(std::shared_ptr<uintptr_t> callback)
