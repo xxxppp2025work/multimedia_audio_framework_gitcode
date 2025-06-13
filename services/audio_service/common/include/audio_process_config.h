@@ -26,11 +26,11 @@ namespace OHOS {
 namespace AudioStandard {
 class ProcessConfig {
 public:
-    static int32_t WriteInnerCapConfigToParcel(const AudioPlaybackCaptureConfig &config, MessageParcel &parcel);
+    static int32_t WriteInnerCapConfigToParcel(const AudioPlaybackCaptureConfig &config, MessageParcel &parcel); //TODO remove
 
-    static int32_t ReadInnerCapConfigFromParcel(AudioPlaybackCaptureConfig &config, MessageParcel &parcel);
+    static int32_t ReadInnerCapConfigFromParcel(AudioPlaybackCaptureConfig &config, MessageParcel &parcel); //TODO remove
 
-    static std::string DumpInnerCapConfig(const AudioPlaybackCaptureConfig &config);
+    static std::string DumpInnerCapConfig(const AudioPlaybackCaptureConfig &config); //TODO remove
 
     static int32_t WriteConfigToParcel(const AudioProcessConfig &config, MessageParcel &parcel); //TODO remove
 

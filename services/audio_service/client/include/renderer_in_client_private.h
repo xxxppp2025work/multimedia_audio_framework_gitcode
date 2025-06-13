@@ -29,7 +29,7 @@
 #include "audio_utils.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
-#include "ipc_stream.h"
+#include "iipc_stream.h"
 #include "volume_ramp.h"
 #include "volume_tools.h"
 #include "callback_handler.h"
@@ -361,7 +361,7 @@ private:
     // ipc stream related
     AudioProcessConfig clientConfig_;
     sptr<IpcStreamListenerImpl> listener_ = nullptr;
-    sptr<IpcStream> ipcStream_ = nullptr;
+    sptr<IIpcStream> ipcStream_ = nullptr;
     std::shared_ptr<OHAudioBuffer> clientBuffer_ = nullptr;
 
     // buffer handle

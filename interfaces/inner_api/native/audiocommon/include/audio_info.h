@@ -712,13 +712,90 @@ struct CaptureFilterOptions {
     }
 };
 
-struct AudioPlaybackCaptureConfig {
+inline constexpr uint32_t MAX_VALID_USAGE_SIZE = 30; // 128 for pids
+inline constexpr uint32_t MAX_VALID_PIDS_SIZE = 128; // 128 for pids
+
+struct AudioPlaybackCaptureConfig : public Parcelable {
     CaptureFilterOptions filterOptions;
     bool silentCapture {false}; // To be deprecated since 12
 
     bool operator ==(AudioPlaybackCaptureConfig& filter)
     {
         return (filter.filterOptions == filterOptions && filter.silentCapture == silentCapture);
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        // filterOptions.usages
+        size_t usageSize = filterOptions.usages.size();
+        if (usageSize >= MAX_VALID_USAGE_SIZE) return false;
+        parcel.WriteUint32(usageSize);
+        for (size_t i = 0; i < usageSize; i++) {
+            parcel.WriteInt32(static_cast<int32_t>(filterOptions.usages[i]));
+        }
+
+        // filterOptions.usageFilterMode
+        parcel.WriteUint32(filterOptions.usageFilterMode);
+
+        // filterOptions.pids
+        size_t pidSize = filterOptions.pids.size();
+        if (pidSize >= MAX_VALID_PIDS_SIZE) return false;
+        parcel.WriteUint32(pidSize);
+        for (size_t i = 0; i < pidSize; i++) {
+            parcel.WriteUint32(filterOptions.pids[i]);
+        }
+
+        // filterOptions.pidFilterMode
+        parcel.WriteUint32(filterOptions.pidFilterMode);
+
+        // silentCapture
+        parcel.WriteBool(silentCapture);
+        return true;
+    }
+
+    static AudioPlaybackCaptureConfig *Unmarshalling(Parcel &parcel)
+    {
+        std::unique_ptr<AudioPlaybackCaptureConfig> config = std::make_unique<AudioPlaybackCaptureConfig>();
+        if (config == nullptr) return nullptr;
+        // filterOptions.usages
+        uint32_t usageSize = parcel.ReadUint32();
+        if (usageSize > MAX_VALID_USAGE_SIZE) return nullptr;
+        std::vector<StreamUsage> usages = {};
+        for (uint32_t i = 0; i < usageSize; i++) {
+            int32_t tmpUsage = parcel.ReadInt32();
+            if (std::find(AUDIO_SUPPORTED_STREAM_USAGES.begin(), AUDIO_SUPPORTED_STREAM_USAGES.end(), tmpUsage) ==
+                AUDIO_SUPPORTED_STREAM_USAGES.end()) {
+                return nullptr;
+            }
+            usages.push_back(static_cast<StreamUsage>(tmpUsage));
+        }
+        config->filterOptions.usages = usages;
+
+        // filterOptions.usageFilterMode
+        uint32_t tempMode = parcel.ReadUint32();
+        if (tempMode >= FilterMode::MAX_FILTER_MODE) return nullptr;
+        config->filterOptions.usageFilterMode = static_cast<FilterMode>(tempMode);
+
+        // filterOptions.pids
+        uint32_t pidSize = parcel.ReadUint32();
+        if (pidSize > MAX_VALID_PIDS_SIZE) return nullptr;
+        std::vector<int32_t> pids = {};
+        for (uint32_t i = 0; i < pidSize; i++) {
+            int32_t tmpPid = parcel.ReadInt32();
+            if (tmpPid <= 0) return nullptr;
+            pids.push_back(tmpPid);
+        }
+        config->filterOptions.pids = pids;
+
+        // filterOptions.pidFilterMode
+        tempMode = parcel.ReadUint32();
+        if (tempMode >= FilterMode::MAX_FILTER_MODE) return nullptr;
+        config->filterOptions.pidFilterMode = static_cast<FilterMode>(tempMode);
+
+        // silentCapture
+        config->silentCapture = parcel.ReadBool();
+
+        return config.release();
     }
 };
 

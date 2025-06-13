@@ -145,7 +145,7 @@ int32_t IpcStreamInServer::ConfigCapturer()
     return SUCCESS;
 }
 
-int32_t IpcStreamInServer::RegisterStreamListener(sptr<IRemoteObject> object)
+int32_t IpcStreamInServer::RegisterStreamListener(const sptr<IRemoteObject>& object)
 {
     CHECK_AND_RETURN_RET_LOG(streamListenerHolder_ != nullptr, ERR_OPERATION_FAILED, "RegisterStreamListener failed");
     sptr<IIpcStreamListener> listener = iface_cast<IIpcStreamListener>(object);
@@ -484,24 +484,23 @@ int32_t IpcStreamInServer::SetDuckFactor(float duckFactor)
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::RegisterThreadPriority(pid_t tid, const std::string &bundleName,
-    BoostTriggerMethod method)
+int32_t IpcStreamInServer::RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method)
 {
     pid_t pid = IPCSkeleton::GetCallingPid();
     CHECK_AND_RETURN_RET_LOG(method < METHOD_MAX, ERR_INVALID_PARAM, "err param %{public}u", method);
-    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, tid, bundleName);
+    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, static_cast<pid_t>(tid), bundleName);
     std::lock_guard lock(scheduleGuardsMutex_);
     scheduleGuards_[method].swap(sharedGuard);
     return SUCCESS;
 }
 
-int32_t IpcStreamInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+int32_t IpcStreamInServer::SetDefaultOutputDevice(int32_t defaultOutputDevice)
 {
     if ((mode_ != AUDIO_MODE_PLAYBACK) || (rendererInServer_ == nullptr)) {
         AUDIO_ERR_LOG("mode is not playback or renderer is null");
         return ERR_OPERATION_FAILED;
     }
-    return rendererInServer_->SetDefaultOutputDevice(defaultOutputDevice);
+    return rendererInServer_->SetDefaultOutputDevice(static_cast<DeviceType>(defaultOutputDevice));
 }
 
 int32_t IpcStreamInServer::SetSourceDuration(int64_t duration)

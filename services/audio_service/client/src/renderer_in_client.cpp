@@ -278,7 +278,7 @@ int32_t RendererInClientInner::InitIpcStream()
         ipcProxy = gasp->CreateAudioProcess(config, errorCode);
     }
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
-    ipcStream_ = iface_cast<IpcStream>(ipcProxy);
+    ipcStream_ = iface_cast<IIpcStream>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "failed when iface_cast.");
 
     // in plan next: old listener_ is destoried here, will server receive dieth notify?
