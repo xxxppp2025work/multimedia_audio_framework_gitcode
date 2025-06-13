@@ -137,8 +137,6 @@ public:
 
     virtual void ResetRemoteCastDeviceVolume() = 0;
 
-    virtual void HandleDpConnection() = 0;
-
     virtual int32_t DoRestoreData() = 0;
 
     virtual SafeStatus GetCurrentDeviceSafeStatus(DeviceType deviceType) = 0;

@@ -199,7 +199,7 @@ public:
 
     void ResetRemoteCastDeviceVolume();
 
-    void HandleDpConnection();
+    void RefreshVolumeWhenDpReConnect();
 
     int32_t GetStreamVolume(AudioStreamType streamType);
 

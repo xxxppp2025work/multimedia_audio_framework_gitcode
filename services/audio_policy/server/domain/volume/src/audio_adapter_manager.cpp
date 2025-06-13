@@ -966,6 +966,10 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
     currentActiveDevice_ = deviceDescriptor;
     AudioVolume::GetInstance()->SetCurrentActiveDevice(currentActiveDevice_.deviceType_);
 
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP && !isSameVolumeGroup) {
+        RefreshVolumeWhenDpReConnect();
+    }
+
     if (!isSameVolumeGroup) {
         // If there's no os account available when trying to get one, audio_server would sleep for 1 sec
         // and retry for 5 times, which could cause a sysfreeze. Check if any os account is ready. If not,
@@ -2038,13 +2042,13 @@ void AudioAdapterManager::HandleDistributedVolume(AudioStreamType streamType)
     }
 }
 
-void AudioAdapterManager::HandleDpConnection()
+void AudioAdapterManager::RefreshVolumeWhenDpReConnect()
 {
-    AUDIO_INFO_LOG("dp device connect, set max volume of stream music");
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP) {
-        volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, MAX_VOLUME_LEVEL);
-        SetSystemVolumeLevel(STREAM_MUSIC, MAX_VOLUME_LEVEL);
-    }
+    // dp reconnect need to set max volume
+    AUDIO_INFO_LOG("DP reconnect, set max volume");
+    SetSystemVolumeLevel(STREAM_MUSIC, GetMaxVolumeLevel(STREAM_MUSIC));
+    SetSystemVolumeLevel(STREAM_VOICE_CALL, GetMaxVolumeLevel(STREAM_VOICE_CALL));
+    SetSystemVolumeLevel(STREAM_VOICE_ASSISTANT, GetMaxVolumeLevel(STREAM_VOICE_ASSISTANT));
 }
 
 bool AudioAdapterManager::LoadVolumeMap(void)
