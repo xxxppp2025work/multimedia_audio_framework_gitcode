@@ -602,6 +602,7 @@ bool AudioPolicyServer::IsVolumeTypeValid(AudioStreamType streamType)
         case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_ULTRASONIC:
+        case STREAM_NAVIGATION:
         case STREAM_ALL:
         case STREAM_VOICE_RING:
         case STREAM_CAMCORDER:

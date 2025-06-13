@@ -1390,19 +1390,17 @@ void NapiAudioVolumeManager::UnregisterStreamVolumeChangeCallback(napi_env env, 
     if (argc == ARGS_TWO) {
         callback = args[PARAM1];
     }
-    if (napiAudioVolumeManager == nullptr ||
-        napiAudioVolumeManager->streamVolumeChangeCallbackNapi_ == nullptr) {
-        AUDIO_ERR_LOG("napiAudioVolumeManager or streamVolumeChangeCallbackNapi_ is nullptr");
-        NapiAudioError::ThrowError(env, "UnregisterStreamVolumeChangeCallback failed", NAPI_ERR_SYSTEM);
-        return;
-    }
     if (callback != nullptr) {
         std::shared_ptr<NapiAudioStreamVolumeChangeCallback> cb = GetStreamVolumeChangeNapiCallback(callback, napiAudioVolumeManager);
+        if (cb == nullptr) {
+            AUDIO_ERR_LOG("NapiAudioSystemVolumeChangeCallback is nullptr");
+            return;
+        }
         int32_t ret = napiAudioVolumeManager->audioSystemMngr_->UnregisterStreamVolumeChangeCallback(
             napiAudioVolumeManager->cachedClientId_, cb);
-        if (ret != SUCCESS)
-        {
+        if (ret != SUCCESS) {
             AUDIO_ERR_LOG("UnregisterStreamVolumeChangeCallback failed");
+            return;
         }
         napiAudioVolumeManager->streamVolumeChangeCallbackNapiList_.remove(cb);
         napiAudioVolumeManager->streamVolumeChangeCallbackNapi_.reset();
@@ -1410,9 +1408,9 @@ void NapiAudioVolumeManager::UnregisterStreamVolumeChangeCallback(napi_env env, 
     } else {
         int32_t ret = napiAudioVolumeManager->audioSystemMngr_->UnregisterStreamVolumeChangeCallback(
             napiAudioVolumeManager->cachedClientId_, nullptr);
-        if (ret != SUCCESS)
-        {
+        if (ret != SUCCESS) {
             AUDIO_ERR_LOG("UnregisterStreamVolumeChangeCallback failed");
+            return;
         }
         napiAudioVolumeManager->streamVolumeChangeCallbackNapiList_.clear();
         napiAudioVolumeManager->streamVolumeChangeCallbackNapi_.reset();
@@ -1427,19 +1425,17 @@ void NapiAudioVolumeManager::UnregisterSystemVolumeChangeCallback(napi_env env, 
     if (argc == ARGS_TWO) {
         callback = args[PARAM1];
     }
-    if (napiAudioVolumeManager == nullptr ||
-        napiAudioVolumeManager->systemVolumeChangeCallbackNapi_ == nullptr) {
-        AUDIO_ERR_LOG("napiAudioVolumeManager or systemVolumeChangeCallbackNapi_ is nullptr");
-        NapiAudioError::ThrowError(env, "UnregisterSystemVolumeChangeCallback failed", NAPI_ERR_SYSTEM);
-        return;
-    }
     if (callback != nullptr) {
         std::shared_ptr<NapiAudioSystemVolumeChangeCallback> cb = GetSystemVolumeChangeNapiCallback(callback, napiAudioVolumeManager);
+        if (cb == nullptr) {
+            AUDIO_ERR_LOG("NapiAudioSystemVolumeChangeCallback is nullptr");
+            return;
+        }
         int32_t ret = napiAudioVolumeManager->audioSystemMngr_->UnregisterSystemVolumeChangeCallback(
             napiAudioVolumeManager->cachedClientId_, cb);
-        if (ret != SUCCESS)
-        {
+        if (ret != SUCCESS) {
             AUDIO_ERR_LOG("UnregisterSystemVolumeChangeCallback failed");
+            return;
         }
         napiAudioVolumeManager->systemVolumeChangeCallbackNapiList_.remove(cb);
         napiAudioVolumeManager->systemVolumeChangeCallbackNapi_.reset();
@@ -1447,9 +1443,9 @@ void NapiAudioVolumeManager::UnregisterSystemVolumeChangeCallback(napi_env env, 
     } else {
         int32_t ret = napiAudioVolumeManager->audioSystemMngr_->UnregisterSystemVolumeChangeCallback(
             napiAudioVolumeManager->cachedClientId_, nullptr);
-        if (ret != SUCCESS)
-        {
+        if (ret != SUCCESS) {
             AUDIO_ERR_LOG("UnregisterSystemVolumeChangeCallback failed");
+            return;
         }
         napiAudioVolumeManager->systemVolumeChangeCallbackNapiList_.clear();
         napiAudioVolumeManager->systemVolumeChangeCallbackNapi_.reset();
