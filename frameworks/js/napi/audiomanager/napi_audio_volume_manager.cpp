@@ -1327,7 +1327,7 @@ napi_value NapiAudioVolumeManager::UnregisterCallback(napi_env env, napi_value j
     } else if (!cbName.compare(ACTIVE_VOLUME_TYPE_CHANGE_CALLBACK_NAME)) {
         UnregisterActiveVolumeTypeChangeCallback(env, args[PARAM1], args, argc, napiVolumeManager);
     } else {
-        UnregisterCallbackFir(env, args, argc, cbName, napiVolumeManager)
+        UnregisterCallbackFir(env, args, argc, cbName, napiVolumeManager);
     }
     return undefinedResult;
 }
