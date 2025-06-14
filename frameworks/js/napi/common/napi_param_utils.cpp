@@ -796,7 +796,7 @@ napi_status NapiParamUtils::SetValueVolumeEvent(const napi_env& env, const Volum
 }
 
 napi_status NapiParamUtils::SetValueStreamVolumeEvent(const napi_env& env,
-    const StreamVolumeEvent &volumeEvent,napi_value &result)
+    const StreamVolumeEvent &volumeEvent, napi_value &result)
 {
     napi_status status = napi_ok;
     napi_create_object(env, &result);

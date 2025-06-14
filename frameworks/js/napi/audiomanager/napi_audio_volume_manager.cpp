@@ -593,7 +593,7 @@ napi_value NapiAudioVolumeManager::GetMaxSystemVolume(napi_env env, napi_callbac
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of volType must be enum AudioVolumeType"),
-            "get volType failed");
+        "get volType failed");
 
     if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioSystemMngr_ == nullptr) {
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
@@ -800,7 +800,7 @@ napi_value NapiAudioVolumeManager::IsSystemMutedForStream(napi_env env, napi_cal
         return nullptr;
     }
     bool isMuted;
-    int32_t status= napiAudioVolumeManager->audioSystemMngr_->IsStreamMuteByUsage(
+    int32_t status = napiAudioVolumeManager->audioSystemMngr_->IsStreamMuteByUsage(
         NapiAudioEnum::GetNativeStreamUsage(streamUsage), isMuted);
     CHECK_AND_RETURN_RET_LOG(status == SUCCESS,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "System error"),
@@ -1199,7 +1199,8 @@ napi_value NapiAudioVolumeManager::RegisterSystemVolumeChangeCallback(napi_env e
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
     if (napiAudioVolumeManager->systemVolumeChangeCallbackNapi_ == nullptr) {
-        napiAudioVolumeManager->systemVolumeChangeCallbackNapi_ = std::make_shared<NapiAudioSystemVolumeChangeCallback>(env);
+        napiAudioVolumeManager->systemVolumeChangeCallbackNapi_ = std::make_shared<
+            NapiAudioSystemVolumeChangeCallback>(env);
         int32_t ret = napiAudioVolumeManager->audioSystemMngr_->RegisterSystemVolumeChangeCallback(
             napiAudioVolumeManager->cachedClientId_, napiAudioVolumeManager->systemVolumeChangeCallbackNapi_);
         napiAudioVolumeManager->systemVolumeChangeCallbackNapiList_.push_back(

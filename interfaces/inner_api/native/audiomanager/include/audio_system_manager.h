@@ -1626,7 +1626,6 @@ public:
      */
     std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType);
 
-
     /**
      * @brief registers the StreamVolumeChange callback listener
      *
