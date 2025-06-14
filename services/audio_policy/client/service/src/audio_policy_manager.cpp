@@ -1567,7 +1567,7 @@ int32_t AudioPolicyManager::SetDistributedRoutingRoleCallback(
     }
 
     std::unique_lock<std::mutex> lock(listenerStubMutex_);
-    auto activeDistributedRoutingRoleCb = new(std::nothrow) AudioRoutingManagerListenerStub();
+    auto activeDistributedRoutingRoleCb = new(std::nothrow) AudioRoutingManagerListener();
     if (activeDistributedRoutingRoleCb == nullptr) {
         AUDIO_ERR_LOG("SetDistributedRoutingRoleCallback: object is nullptr");
         return ERROR;
@@ -2150,7 +2150,7 @@ int32_t AudioPolicyManager::SetAudioDeviceRefinerCallback(const std::shared_ptr<
     };
 
     std::unique_lock<std::mutex> lock(listenerStubMutex_);
-    auto activeDistributedRoutingRoleCb = new (std::nothrow) AudioRoutingManagerListenerStub();
+    auto activeDistributedRoutingRoleCb = new (std::nothrow) AudioRoutingManagerListener();
     if (activeDistributedRoutingRoleCb == nullptr) {
         AUDIO_ERR_LOG("object is nullptr");
         return ERROR;

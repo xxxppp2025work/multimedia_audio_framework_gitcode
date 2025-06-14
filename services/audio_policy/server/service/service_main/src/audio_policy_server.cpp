@@ -3143,11 +3143,10 @@ int32_t AudioPolicyServer::SetDistributedRoutingRoleCallback(const sptr<IRemoteO
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
         "SetDistributedRoutingRoleCallback set listener object is nullptr");
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    bool hasBTPermission = VerifyBluetoothPermission();
+    VerifyBluetoothPermission();
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     sptr<IStandardAudioRoutingManagerListener> listener = iface_cast<IStandardAudioRoutingManagerListener>(object);
     if (listener != nullptr && audioPolicyServerHandler_ != nullptr) {
-        listener->hasBTPermission_ = hasBTPermission;
         audioPolicyServerHandler_->AddDistributedRoutingRoleChangeCbsMap(clientPid, listener);
     }
     return SUCCESS;

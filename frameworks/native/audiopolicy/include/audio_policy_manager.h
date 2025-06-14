@@ -28,7 +28,7 @@
 #include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_policy_client_stub_impl.h"
 #include "audio_routing_manager.h"
-#include "audio_routing_manager_listener_stub.h"
+#include "audio_routing_manager_listener.h"
 #include "audio_anahs_manager_listener_stub.h"
 #include "audio_policy_interface.h"
 #include "audio_system_manager.h"

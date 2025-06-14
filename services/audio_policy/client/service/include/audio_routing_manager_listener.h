@@ -13,40 +13,34 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_ROUTING_MANAGER_LISTENER_STUB_H
-#define AUDIO_ROUTING_MANAGER_LISTENER_STUB_H
+#ifndef AUDIO_ROUTING_MANAGER_LISTENER_H
+#define AUDIO_ROUTING_MANAGER_LISTENER_H
 
 #include "audio_routing_manager.h"
-#include "i_standard_audio_routing_manager_listener.h"
+#include "standard_audio_routing_manager_listener_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioRoutingManagerListenerStub : public IRemoteStub<IStandardAudioRoutingManagerListener> {
+class AudioRoutingManagerListener : public StandardAudioRoutingManagerListenerStub {
 public:
-    AudioRoutingManagerListenerStub();
-    virtual ~AudioRoutingManagerListenerStub();
+    AudioRoutingManagerListener();
+    virtual ~AudioRoutingManagerListener();
 
-    int OnRemoteRequest(uint32_t code, MessageParcel &data,
-         MessageParcel &reply, MessageOption &option) override;
-    void OnDistributedRoutingRoleChange(
-        const std::shared_ptr<AudioDeviceDescriptor> descriptor, const CastType type) override;
+    int32_t OnDistributedRoutingRoleChange(
+        const std::shared_ptr<AudioDeviceDescriptor> &descriptor, int32_t type) override;
     void SetDistributedRoutingRoleCallback(const std::weak_ptr<AudioDistributedRoutingRoleCallback> &callback);
     void SetAudioDeviceRefinerCallback(const std::weak_ptr<AudioDeviceRefiner> &callback);
     int32_t OnAudioOutputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
-        RouterType routerType, StreamUsage streamUsage, int32_t clientUid, AudioPipeType audioPipeType) override;
+        int32_t routerType, int32_t streamUsage, int32_t clientUid, int32_t audioPipeType) override;
     int32_t OnAudioInputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
-        RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType) override;
+        int32_t routerType, int32_t sourceType, int32_t clientUid, int32_t audioPipeType) override;
     int32_t GetSplitInfoRefined(std::string &splitInfo) override;
     int32_t OnDistributedOutputChange(bool isRemote) override;
 private:
-    void OnAudioOutputDeviceRefinedInternal(MessageParcel &data, MessageParcel &reply);
-    void OnAudioInputDeviceRefinedInternal(MessageParcel &data, MessageParcel &reply);
-    void GetSplitInfoRefinedInternal(MessageParcel &data, MessageParcel &reply);
-    void OnDistributedOutputChangeInternal(MessageParcel &data, MessageParcel &reply);
     std::mutex deviceRefinerCallbackMutex_;
     std::weak_ptr<AudioDistributedRoutingRoleCallback> audioDistributedRoutingRoleCallback_;
     std::weak_ptr<AudioDeviceRefiner> audioDeviceRefinerCallback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_RINGERMODE_UPDATE_LISTENER_STUB_H
+#endif // AUDIO_ROUTING_MANAGER_LISTENER_H

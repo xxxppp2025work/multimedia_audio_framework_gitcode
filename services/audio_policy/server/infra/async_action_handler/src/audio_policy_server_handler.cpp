@@ -19,6 +19,7 @@
 #include "audio_policy_server_handler.h"
 #include "audio_policy_service.h"
 #include "audio_core_service.h"
+#include "istandard_audio_routing_manager_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -21,6 +21,7 @@ idl_gen_interface("audio_policy_idl_interface") {
     "IStandardClientTracker.idl",
     "IStandardAudioZoneClient.idl",
     "IStandardAudioPolicyManagerListener.idl",
+    "IStandardAudioRoutingManagerListener.idl",
   ]
   # sources_callback = [
   #   "IStandardSpatializationStateChangeListener.idl",
