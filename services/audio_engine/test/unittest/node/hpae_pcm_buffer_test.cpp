@@ -19,7 +19,9 @@
 #include "test_case_common.h"
 #include <vector>
 
-namespace {
+namespace OHOS {
+namespace AudioStandard {
+namespace HPAE {
 constexpr uint32_t DEFAULT_CHANNEL_COUNT = 2;
 constexpr uint32_t DEFAULT_FRAME_LEN = 480;
 constexpr uint32_t DEFAULT_SAMPLE_RATE = 48000;
@@ -27,10 +29,6 @@ constexpr uint32_t DEFAULT_FRAME_NUM = 2;
 constexpr uint32_t DEFAULT_FRAME_SIZE = DEFAULT_CHANNEL_COUNT * DEFAULT_FRAME_LEN;
 constexpr uint32_t NUM_TWO = 2;
 constexpr uint32_t NUM_THREE = 3;
-
-using namespace OHOS;
-using namespace AudioStandard;
-using namespace HPAE;
 
 class HpaePcmBufferTest : public testing::Test {
 public:
@@ -334,4 +332,44 @@ TEST_F(HpaePcmBufferTest, positionWrapping)
     EXPECT_EQ(buffer.GetWritePos(), 1);
     EXPECT_EQ(buffer.GetReadPos(), 0); // (1 + 1) % 2 = 0
 }
+
+static void FillBuffer(uint8_t* buffer, size_t size, uint8_t value) {
+  if (buffer) {
+    memset(buffer, value, size);
+  }
 }
+
+// 自赋值测试
+TEST(HpaePcmBufferTest, SelfAssignment) {
+    HpaePcmBuffer buffer;
+    // 初始化buffer状态（例如设置pcmBufferInfo_和数据）
+    buffer.pcmBufferInfo_.bufferByteSize_ = 100;
+    uint8_t testData[100];
+    FillBuffer(testData, sizeof(testData), 0xAB);
+    buffer.SetPcmDataBuffer(testData); // 假设有设置内部缓冲区的接口
+
+    buffer = buffer; // 自赋值
+    // 验证状态未改变
+    EXPECT_EQ(buffer.GetPcmDataBuffer(), testData);
+}
+
+// 正常赋值测试
+TEST(HpaePcmBufferTest, ValidAssignment) {
+    HpaePcmBuffer src, dest;
+    // 初始化源数据
+    src.pcmBufferInfo_.bufferByteSize_ = 100;
+    uint8_t srcData[100];
+    FillBuffer(srcData, sizeof(srcData), 0xCD);
+    src.SetPcmDataBuffer(srcData);
+
+    // 执行赋值
+    dest = src;
+
+    // 验证pcmBufferInfo_复制成功
+    EXPECT_EQ(dest.pcmBufferInfo_.bufferByteSize_, src.pcmBufferInfo_.bufferByteSize_);
+    // 验证内存内容一致
+    EXPECT_EQ(memcmp(dest.GetPcmDataBuffer(), src.GetPcmDataBuffer(), dest.pcmBufferInfo_.bufferByteSize_), 0);
+}
+} // namespace HPAE
+} // namespace AudioStandard
+} // namespace OHOS
