@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,27 +13,25 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_ANAHS_MANAGER_LISTENER_STUB_H
-#define AUDIO_ANAHS_MANAGER_LISTENER_STUB_H
+#ifndef AUDIO_ANAHS_MANAGER_LISTENER_H
+#define AUDIO_ANAHS_MANAGER_LISTENER_H
 
 #include "audio_anahs_manager.h"
-#include "i_standard_audio_anahs_manager_listener.h"
+#include "standard_audio_anahs_manager_listener_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioAnahsManagerListenerStub : public IRemoteStub<IStandardAudioAnahsManagerListener> {
+class AudioAnahsManagerListener : public StandardAudioAnahsManagerListenerStub {
 public:
-    AudioAnahsManagerListenerStub();
-    virtual ~AudioAnahsManagerListenerStub();
+    AudioAnahsManagerListener();
+    virtual ~AudioAnahsManagerListener();
 
-    int OnRemoteRequest(uint32_t code, MessageParcel &data,
-                                MessageParcel &reply, MessageOption &option) override;
     void SetAudioDeviceAnahsCallback(const std::weak_ptr<AudioDeviceAnahs> &callback);
-    int32_t OnExtPnpDeviceStatusChanged(std::string anahsStatus, std::string anahsShowType) override;
+    int32_t OnExtPnpDeviceStatusChanged(const std::string &anahsStatus, const std::string &anahsShowType) override;
 private:
     void OnExtPnpDeviceStatusChangedInternal(MessageParcel &data, MessageParcel &reply);
     std::weak_ptr<AudioDeviceAnahs> audioDeviceAnahsCallback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_RINGERMODE_UPDATE_LISTENER_STUB_H
+#endif // AUDIO_ANAHS_MANAGER_LISTENER_H

@@ -486,7 +486,7 @@ int32_t AudioPolicyManager::SetAudioDeviceAnahsCallback(const std::shared_ptr<Au
     };
 
     std::unique_lock<std::mutex> lock(listenerStubMutex_);
-    auto activeDistributedAnahsRoleCb = new (std::nothrow) AudioAnahsManagerListenerStub();
+    auto activeDistributedAnahsRoleCb = new (std::nothrow) AudioAnahsManagerListener();
     if (activeDistributedAnahsRoleCb == nullptr) {
         AUDIO_ERR_LOG("object is nullptr");
         return ERROR;
