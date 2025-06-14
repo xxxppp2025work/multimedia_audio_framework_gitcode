@@ -425,13 +425,6 @@ void HpaeManagerImpl::InitAudioEnhanceChainManager(const std::vector<EffectChain
     manager_->InitAudioEnhanceChainManager(enhanceChains, managerParam, enhanceLibraryList);
 }
 
-int32_t HpaeManagerImpl::SetInputDevice(
-    const uint32_t &captureId, const DeviceType &inputDevice, const std::string &deviceName)
-{
-    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
-    return manager_->SetInputDevice(captureId, inputDevice, deviceName);
-}
-
 int32_t HpaeManagerImpl::SetOutputDevice(const uint32_t &renderId, const DeviceType &outputDevice)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
@@ -520,6 +513,12 @@ bool HpaeManagerImpl::GetEffectLiveParameter(const std::vector<std::string> &sub
 {
     CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
     return manager_->GetEffectLiveParameter(subKeys, result);
+}
+
+int32_t HpaeManagerImpl::UpdateCollaborativeState(bool isCollaborationEnabled)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
+    return manager_->UpdateCollaborativeState(isCollaborationEnabled);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

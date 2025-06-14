@@ -2492,6 +2492,46 @@ bool AudioPolicyProxy::IsAcousticEchoCancelerSupported(SourceType sourceType)
     return reply.ReadBool();
 }
 
+bool AudioPolicyProxy::SetKaraokeParameters(const std::string &parameters)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    
+    data.WriteString(parameters);
+
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, false, "Remote() is nullptr");
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_KARAOKE_PARAMETERS), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %{public}d",
+        error);
+    
+    return reply.ReadBool();
+}
+
+bool AudioPolicyProxy::IsAudioLoopbackSupported(AudioLoopbackMode mode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    
+    data.WriteInt32(static_cast<int32_t>(mode));
+
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, false, "Remote() is nullptr");
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_LOOPBACK_SUPPORTED), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %{public}d",
+        error);
+    
+    return reply.ReadBool();
+}
+
 int32_t AudioPolicyProxy::GetMaxVolumeLevelByUsage(StreamUsage streamUsage)
 {
     MessageParcel data;
@@ -2590,6 +2630,45 @@ int32_t AudioPolicyProxy::SetCallbackStreamUsageInfo(const std::set<StreamUsage>
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
 
     return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::ForceStopAudioStream(StopAudioType audioType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
+
+    data.WriteInt32(static_cast<int32_t>(audioType));
+
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, ERROR, "Remote() is nullptr");
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::FORCE_STOP_AUDIO_STREAM), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+bool AudioPolicyProxy::IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+
+    ret = capturerInfo.Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "Marshalling failed");
+
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, false, "Remote() is nullptr");
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_CAPTURER_FOCUS_AVAILABLE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %{public}d", error);
+
+    return reply.ReadBool();
 }
 } // namespace AudioStandard
 } // namespace OHOS

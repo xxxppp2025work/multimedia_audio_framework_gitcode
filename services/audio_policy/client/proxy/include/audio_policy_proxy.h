@@ -457,6 +457,14 @@ public:
 
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
 
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode) override;
+
+    int32_t ForceStopAudioStream(StopAudioType audioType) override;
+
+    bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo) override;
+
+    bool SetKaraokeParameters(const std::string &parameters) override;
+
     int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage) override;
 
     int32_t GetMinVolumeLevelByUsage(StreamUsage streamUsage) override;

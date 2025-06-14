@@ -24,6 +24,7 @@
 #include "hpae_node_common.h"
 #include "audio_utils.h"
 #include "audio_effect_map.h"
+#include "hpae_policy_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -186,6 +187,7 @@ int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId)
 void HpaeCapturerManager::SetSessionState(uint32_t sessionId, HpaeSessionState capturerState)
 {
     sessionNodeMap_[sessionId].state = capturerState;
+    sourceOutputNodeMap_[sessionId]->SetState(capturerState);
 }
 
 int32_t HpaeCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
@@ -428,7 +430,9 @@ void HpaeCapturerManager::Process()
     if (IsRunning()) {
         UpdateAppsUidAndSessionId();
         for (const auto &sourceOutputNodePair : sourceOutputNodeMap_) {
-            sourceOutputNodePair.second->DoProcess();
+            if (sourceOutputNodePair.second->GetState() == HPAE_SESSION_RUNNING) {
+                sourceOutputNodePair.second->DoProcess();
+            }
         }
     }
 }
@@ -438,10 +442,9 @@ void HpaeCapturerManager::UpdateAppsUidAndSessionId()
     appsUid_.clear();
     sessionsId_.clear();
     for (const auto &sourceOutputNodePair : sourceOutputNodeMap_) {
-        if (sessionNodeMap_.find(sourceOutputNodePair.first) != sessionNodeMap_.end() &&
-            sessionNodeMap_[sourceOutputNodePair.first].state == HPAE_SESSION_RUNNING) {
+        if (sourceOutputNodePair.second->GetState() == HPAE_SESSION_RUNNING) {
             appsUid_.emplace_back(sourceOutputNodePair.second->GetAppUid());
-            sessionsId_.emplace_back(sourceOutputNodePair.first);
+            sessionsId_.emplace_back(static_cast<int32_t>(sourceOutputNodePair.first));
         }
     }
     if (SafeGetMap(sourceInputClusterMap_, mainMicType_) && sourceInputClusterMap_[mainMicType_]) {
@@ -589,6 +592,7 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
             return;
         }
         AUDIO_INFO_LOG("re-Init HpaeCapturerManager success");
+        HpaePolicyManager::GetInstance().SetInputDevice(captureId_, static_cast<DeviceType>(sourceInfo_.deviceType));
         // connect
         for (const auto &moveInfo : moveInfos) {
             AddSingleNodeToSource(moveInfo, true);
@@ -651,7 +655,8 @@ int32_t HpaeCapturerManager::Init()
             AUDIO_INFO_LOG("Init HpaeCapturerManager success");
             TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
             CheckIfAnyStreamRunning();
-            TriggerCallback(GET_CAPTURE_ID, captureId_, sourceInfo_.deviceType);
+            HpaePolicyManager::GetInstance().SetInputDevice(captureId_,
+                static_cast<DeviceType>(sourceInfo_.deviceType));
         }
     };
     SendRequest(request, true);

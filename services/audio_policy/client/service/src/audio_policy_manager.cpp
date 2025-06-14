@@ -2461,8 +2461,22 @@ DirectPlaybackMode AudioPolicyManager::GetDirectPlaybackSupport(const AudioStrea
 bool AudioPolicyManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
     return gsp->IsAcousticEchoCancelerSupported(sourceType);
+}
+
+bool AudioPolicyManager::SetKaraokeParameters(const std::string &parameters)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    return gsp->SetKaraokeParameters(parameters);
+}
+
+bool AudioPolicyManager::IsAudioLoopbackSupported(AudioLoopbackMode mode)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    return gsp->IsAudioLoopbackSupported(mode);
 }
 
 int32_t AudioPolicyManager::GetMaxVolumeLevelByUsage(StreamUsage streamUsage)
@@ -2541,6 +2555,20 @@ int32_t AudioPolicyManager::SetCallbackStreamUsageInfo(const std::set<StreamUsag
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->SetCallbackStreamUsageInfo(streamUsages);
+}
+
+int32_t AudioPolicyManager::ForceStopAudioStream(StopAudioType audioType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->ForceStopAudioStream(audioType);
+}
+
+bool AudioPolicyManager::IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    return gsp->IsCapturerFocusAvailable(capturerInfo);
 }
 
 AudioPolicyManager& AudioPolicyManager::GetInstance()

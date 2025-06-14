@@ -104,8 +104,6 @@ public:
     void InitAudioEnhanceChainManager(const std::vector<EffectChain> &enhanceChains,
         const EffectChainManagerParam &managerParam,
         const std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList) override;
-    int32_t SetInputDevice(
-        const uint32_t &captureId, const DeviceType &inputDevice, const std::string &deviceName = "") override;
     int32_t SetOutputDevice(const uint32_t &renderId, const DeviceType &outputDevice) override;
     int32_t SetVolumeInfo(const AudioVolumeType &volumeType, const float &systemVol) override;
     int32_t SetMicrophoneMuteInfo(const bool &isMute) override;
@@ -126,6 +124,7 @@ public:
     bool SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params) override;
     bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
+    int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
 private:
     std::shared_ptr<HpaeManager> manager_;
 };

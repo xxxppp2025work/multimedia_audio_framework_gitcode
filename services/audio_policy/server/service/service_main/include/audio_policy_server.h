@@ -50,6 +50,7 @@
 #include "audio_policy_dump.h"
 #include "app_state_listener.h"
 #include "audio_core_service.h"
+#include "audio_converter_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -299,6 +300,8 @@ public:
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) override;
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode) override;
+    bool SetKaraokeParameters(const std::string &parameters) override;
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
@@ -537,6 +540,10 @@ public:
 
     int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages) override;
 
+    int32_t ForceStopAudioStream(StopAudioType audioType) override;
+
+    bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo) override;
+
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 
     void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false);
@@ -736,6 +743,24 @@ private:
     void UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
     void ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus);
 
+    AudioEffectService& audioEffectService_;
+    AudioAffinityManager &audioAffinityManager_;
+    AudioCapturerSession& audioCapturerSession_;
+    AudioStateManager &audioStateManager_;
+    AudioToneManager& audioToneManager_;
+    AudioMicrophoneDescriptor& audioMicrophoneDescriptor_;
+    AudioDeviceStatus& audioDeviceStatus_;
+    AudioPolicyConfigManager& audioConfigManager_;
+    AudioSceneManager& audioSceneManager_;
+    AudioConnectedDevice& audioConnectedDevice_;
+    AudioDeviceLock& audioDeviceLock_;
+    AudioStreamCollector& streamCollector_;
+    AudioOffloadStream& audioOffloadStream_;
+    AudioBackgroundManager& audioBackgroundManager_;
+    AudioVolumeManager& audioVolumeManager_;
+    AudioDeviceCommon& audioDeviceCommon_;
+    IAudioPolicyInterface& audioPolicyManager_;
+    AudioPolicyConfigManager &audioPolicyConfigManager_;
     AudioPolicyService& audioPolicyService_;
     AudioPolicyUtils &audioPolicyUtils_;
     AudioDeviceManager &audioDeviceManager_;

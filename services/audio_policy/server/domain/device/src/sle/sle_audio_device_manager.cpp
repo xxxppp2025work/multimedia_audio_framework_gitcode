@@ -25,26 +25,28 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const std::map<uint32_t, std::set<StreamUsage>> STREAM_USAGE_TO_SLE_STREAM_TYPE = {
-    {0x00000000, {}}, // NONE
-    {0x00000002, {STREAM_USAGE_UNKNOWN, STREAM_USAGE_MEDIA, STREAM_USAGE_MUSIC, STREAM_USAGE_ALARM,
+    {SLE_AUDIO_STREAM_NONE, {}},
+    {SLE_AUDIO_STREAM_MUSIC, {STREAM_USAGE_UNKNOWN, STREAM_USAGE_MEDIA, STREAM_USAGE_MUSIC, STREAM_USAGE_ALARM,
         STREAM_USAGE_AUDIOBOOK, STREAM_USAGE_ULTRASONIC, STREAM_USAGE_VOICE_MESSAGE,
-        STREAM_USAGE_ACCESSIBILITY, STREAM_USAGE_ENFORCED_TONE, STREAM_USAGE_DTMF,
-        STREAM_USAGE_NOTIFICATION, STREAM_USAGE_SYSTEM, STREAM_USAGE_MOVIE, STREAM_USAGE_NAVIGATION}}, // MUSIC
-    {0x00000004, {STREAM_USAGE_VOICE_MODEM_COMMUNICATION}}, // VOICE_CALL
-    {0x00000008, {STREAM_USAGE_VOICE_ASSISTANT}}, // VOICE_ASSISTANT
-    {0x00000010, {STREAM_USAGE_NOTIFICATION_RINGTONE, STREAM_USAGE_RINGTONE, STREAM_USAGE_RANGING,
-        STREAM_USAGE_VOICE_RINGTONE}}, // RING
-    {0x00000012, {STREAM_USAGE_VOICE_COMMUNICATION, STREAM_USAGE_VIDEO_COMMUNICATION,
-        STREAM_USAGE_VOICE_CALL_ASSISTANT}}, // VOIP
-    {0x00000014, {STREAM_USAGE_GAME}}, // GAME
+        STREAM_USAGE_ACCESSIBILITY, STREAM_USAGE_ENFORCED_TONE, STREAM_USAGE_DTMF}},
+    {SLE_AUDIO_STREAM_VOICE_CALL, {STREAM_USAGE_VOICE_MODEM_COMMUNICATION}},
+    {SLE_AUDIO_STREAM_VOICE_ASSISTANT, {STREAM_USAGE_VOICE_ASSISTANT}},
+    {SLE_AUDIO_STREAM_RING, {STREAM_USAGE_NOTIFICATION_RINGTONE, STREAM_USAGE_RINGTONE, STREAM_USAGE_RANGING,
+        STREAM_USAGE_VOICE_RINGTONE}},
+    {SLE_AUDIO_STREAM_VOIP, {STREAM_USAGE_VOICE_COMMUNICATION, STREAM_USAGE_VIDEO_COMMUNICATION,
+        STREAM_USAGE_VOICE_CALL_ASSISTANT}},
+    {SLE_AUDIO_STREAM_GAME, {STREAM_USAGE_GAME}},
+    {SLE_AUDIO_STREAM_ALERT, {STREAM_USAGE_NOTIFICATION, STREAM_USAGE_SYSTEM}},
+    {SLE_AUDIO_STREAM_VIDEO, {STREAM_USAGE_MOVIE}},
+    {SLE_AUDIO_STREAM_GUID, {STREAM_USAGE_NAVIGATION}}
 };
 
 const std::map<uint32_t, std::set<SourceType>> SOURCE_TYPE_TO_SLE_STREAM_TYPE = {
-    {0x00000000, {}}, // NONE
-    {0x00000004, {SOURCE_TYPE_VIRTUAL_CAPTURE, SOURCE_TYPE_VOICE_CALL}}, // VOICE_CALL
-    {0x00000012, {SOURCE_TYPE_VOICE_COMMUNICATION}}, // VOIP
-    {0x00000014, {SOURCE_TYPE_MIC, SOURCE_TYPE_VOICE_RECOGNITION, SOURCE_TYPE_ULTRASONIC, SOURCE_TYPE_VOICE_MESSAGE,
-        SOURCE_TYPE_VOICE_TRANSCRIPTION, SOURCE_TYPE_CAMCORDER, SOURCE_TYPE_UNPROCESSED}} // RECORD
+    {SLE_AUDIO_STREAM_NONE, {}},
+    {SLE_AUDIO_STREAM_VOICE_CALL, {SOURCE_TYPE_VIRTUAL_CAPTURE, SOURCE_TYPE_VOICE_CALL}},
+    {SLE_AUDIO_STREAM_VOIP, {SOURCE_TYPE_VOICE_COMMUNICATION}},
+    {SLE_AUDIO_STREAM_RECORD, {SOURCE_TYPE_MIC, SOURCE_TYPE_VOICE_RECOGNITION, SOURCE_TYPE_ULTRASONIC,
+        SOURCE_TYPE_VOICE_MESSAGE, SOURCE_TYPE_VOICE_TRANSCRIPTION, SOURCE_TYPE_CAMCORDER, SOURCE_TYPE_UNPROCESSED}}
 };
 } // namespace
 int32_t SleAudioDeviceManager::SetSleAudioOperationCallback(const sptr<IStandardSleAudioOperationCallback> &callback)
@@ -197,16 +199,16 @@ int32_t SleAudioDeviceManager::StopPlaying(const AudioDeviceDescriptor &deviceDe
 
 int32_t SleAudioDeviceManager::SetDeviceAbsVolume(const std::string &device, AudioStreamType streamType, int32_t volume)
 {
-    CHECK_AND_RETURN_RET_LOG(volume > 0, ERR_INVALID_PARAM, "volume is invalid");
+    CHECK_AND_RETURN_RET_LOG(volume >= 0, ERR_INVALID_PARAM, "volume is invalid");
 
     auto it = deviceVolumeConfigInfo_.find(device);
     CHECK_AND_RETURN_RET_LOG(it != deviceVolumeConfigInfo_.end(), ERR_INVALID_PARAM, "device not found");
 
     int32_t ret = SUCCESS;
     if (streamType == STREAM_MUSIC) {
-        ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), 0x00000002);
+        ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), 0x00000002); // MEDIA
     } else {
-        ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), 0x00000004);
+        ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), 0x00000004); // VOICE_CALL
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "set device to nearlink failed");
 
@@ -285,7 +287,8 @@ void SleAudioDeviceManager::UpdateStreamTypeMap(const std::string &deviceAddr, u
     }
 }
 
-void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    bool isRemoved)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
 
@@ -305,6 +308,9 @@ void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<Audio
                 AUDIO_INFO_LOG("session %{public}d is not running", sessionId);
                 UpdateStreamTypeMap(newDeviceAddr, streamType, sessionId, false);
             }
+            if (isRemoved) {
+                UpdateStreamTypeMap(oldDeviceAddr, streamType, sessionId, false);
+            }
         }
         if (IsNearlinkMoveToOtherDevice(streamDesc)) {
             oldDeviceAddr = streamDesc->oldDeviceDescs_[0]->macAddress_;
@@ -321,6 +327,9 @@ void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<Audio
             } else {
                 AUDIO_INFO_LOG("session %{public}d is not running", sessionId);
                 UpdateStreamTypeMap(newDeviceAddr, streamType, sessionId, false);
+            }
+            if (isRemoved) {
+                UpdateStreamTypeMap(oldDeviceAddr, streamType, sessionId, false);
             }
         }
         if (IsNearlinkMoveToOtherDevice(streamDesc)) {
