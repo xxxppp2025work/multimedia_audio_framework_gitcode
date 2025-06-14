@@ -4151,12 +4151,7 @@ float AudioPolicyServer::GetVolumeInDbByStream(StreamUsage streamUsage, int32_t 
 
 std::vector<AudioVolumeType> AudioPolicyServer::GetSupportedAudioVolumeTypes()
 {
-    std::vector<AudioVolumeType> result = {};
-    std::unordered_set<AudioVolumeType> volumeTypeSet = VolumeUtils::GetSupportedAudioVolumeTypes();
-    for (std::unordered_set<AudioVolumeType>::iterator it = volumeTypeSet.begin(); it != volumeTypeSet.end(); ++it) {
-        result.push_back(*it);
-    }
-    return result;
+    return VolumeUtils::GetSupportedAudioVolumeTypes();
 }
 
 AudioVolumeType AudioPolicyServer::GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage)
@@ -4166,12 +4161,7 @@ AudioVolumeType AudioPolicyServer::GetAudioVolumeTypeByStreamUsage(StreamUsage s
 
 std::vector<StreamUsage> AudioPolicyServer::GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType)
 {
-    std::vector<StreamUsage> result = {};
-    std::set<StreamUsage> streamUsageSet = VolumeUtils::GetStreamUsagesByVolumeType(audioVolumeType);
-    for (std::set<StreamUsage>::iterator it = streamUsageSet.begin(); it != streamUsageSet.end(); ++it) {
-        result.push_back(*it);
-    }
-    return result;
+    return VolumeUtils::GetStreamUsagesByVolumeType(audioVolumeType);
 }
 
 int32_t AudioPolicyServer::SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages)

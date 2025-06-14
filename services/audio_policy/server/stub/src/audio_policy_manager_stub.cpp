@@ -1327,6 +1327,21 @@ void AudioPolicyManagerStub::OnMiddleTweRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_CAPTURER_FOCUS_AVAILABLE):
             IsCapturerFocusAvailableInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_STREAM_ACTIVE_BY_STREAM_USAGE):
+            IsStreamActiveByStreamUsageInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_VOLUME_IN_DB_BY_STREAM):
+            GetVolumeInDbByStreamInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SUPPORTED_AUDIO_VOLUME_TYPES):
+            GetSupportedAudioVolumeTypesInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_VOLUME_TYPE_BY_STREAM_USAGE):
+            GetAudioVolumeTypeByStreamUsageInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_USAGES_BY_VOLUME_TYPE):
+            GetStreamUsagesByVolumeTypeInternal(data, reply);
+            break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
             IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -1370,18 +1385,6 @@ void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_MUTE_BY_USAGE):
             GetStreamMuteByUsageInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_VOLUME_IN_DB_BY_STREAM):
-            GetVolumeInDbByStreamInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SUPPORTED_AUDIO_VOLUME_TYPES):
-            GetSupportedAudioVolumeTypesInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_VOLUME_TYPE_BY_STREAM_USAGE):
-            GetAudioVolumeTypeByStreamUsageInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_USAGES_BY_VOLUME_TYPE):
-            GetStreamUsagesByVolumeTypeInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACK_STREAM_USAGE_INFO):
             SetCallbackStreamUsageInfoInternal(data, reply);
@@ -1974,9 +1977,6 @@ void AudioPolicyManagerStub::OnMidRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_STREAM_ACTIVE):
             IsStreamActiveInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_STREAM_ACTIVE_BY_STREAM_USAGE):
-            IsStreamActiveByStreamUsageInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_FAST_PLAYBACK_SUPPORTED):
             IsFastPlaybackSupportedInternal(data, reply);

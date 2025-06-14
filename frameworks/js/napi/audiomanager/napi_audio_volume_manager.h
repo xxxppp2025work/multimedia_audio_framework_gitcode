@@ -96,6 +96,8 @@ private:
     static napi_value Off(napi_env env, napi_callback_info info);
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc,
         napi_value *args, const std::string &cbName);
+    static void UnregisterCallbackFir(napi_env env, napi_value *args,
+        size_t argc, const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager);
     static std::shared_ptr<NapiAudioVolumeKeyEvent> GetVolumeEventNapiCallback(napi_value argv,
         NapiAudioVolumeManager *napiVolumeManager);
     static std::shared_ptr<NapiAudioStreamVolumeChangeCallback> GetStreamVolumeChangeNapiCallback(napi_value argv,

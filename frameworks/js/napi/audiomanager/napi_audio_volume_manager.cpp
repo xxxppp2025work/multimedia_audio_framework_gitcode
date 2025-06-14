@@ -1326,7 +1326,16 @@ napi_value NapiAudioVolumeManager::UnregisterCallback(napi_env env, napi_value j
         UnregisterAppVolumeChangeForUidCallback(env, args[PARAM1], args, argc, napiVolumeManager);
     } else if (!cbName.compare(ACTIVE_VOLUME_TYPE_CHANGE_CALLBACK_NAME)) {
         UnregisterActiveVolumeTypeChangeCallback(env, args[PARAM1], args, argc, napiVolumeManager);
-    } else if (!cbName.compare(AUDIO_STREAM_VOLUME_CHANGE_CALLBACK_NAME)) {
+    } else {
+        UnregisterCallbackFir(env, args, argc, cbName, napiVolumeManager)
+    }
+    return undefinedResult;
+}
+
+void NapiAudioVolumeManager::UnregisterCallbackFir(napi_env env, napi_value *args,
+    size_t argc, const std::string &cbName, NapiAudioVolumeManager *napiVolumeManager)
+{
+    if (!cbName.compare(AUDIO_STREAM_VOLUME_CHANGE_CALLBACK_NAME)) {
         UnregisterStreamVolumeChangeCallback(env, args, argc, napiVolumeManager);
     } else if (!cbName.compare(AUDIO_SYSTEM_VOLUME_CHANGE_CALLBACK_NAME)) {
         UnregisterSystemVolumeChangeCallback(env, args, argc, napiVolumeManager);
@@ -1335,7 +1344,6 @@ napi_value NapiAudioVolumeManager::UnregisterCallback(napi_env env, napi_value j
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of type is not supported");
     }
-    return undefinedResult;
 }
 
 void NapiAudioVolumeManager::UnregisterActiveVolumeTypeChangeCallback(napi_env env, napi_value callback,

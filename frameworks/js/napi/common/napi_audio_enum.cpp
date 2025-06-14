@@ -1383,6 +1383,17 @@ int32_t NapiAudioEnum::GetJsStreamUsage(StreamUsage streamUsage)
         case StreamUsage::STREAM_USAGE_DTMF:
             result = NapiAudioEnum::USAGE_DTMF;
             break;
+        default:
+            result = GetJsStreamUsageFir(streamUsage);
+            break;
+    }
+    return result;
+}
+
+int32_t NapiAudioEnum::GetJsStreamUsageFir(StreamUsage streamUsage)
+{
+    int32_t result = NapiAudioEnum::USAGE_UNKNOW;
+    switch (streamUsage) {
         case StreamUsage::STREAM_USAGE_ENFORCED_TONE:
             result = NapiAudioEnum::USAGE_ENFORCED_TONE;
             break;
@@ -1657,6 +1668,19 @@ StreamUsage NapiAudioEnum::GetNativeStreamUsage(int32_t streamUsage)
         case NapiAudioEnum::USAGE_MOVIE:
             result = STREAM_USAGE_MOVIE;
             break;
+        default:
+            result = GetNativeStreamUsageFir(streamUsage);
+            break;
+    }
+
+    return result;
+}
+
+StreamUsage NapiAudioEnum::GetNativeStreamUsageFir(int32_t streamUsage)
+{
+    StreamUsage result = STREAM_USAGE_UNKNOWN;
+
+    switch (streamUsage) {
         case NapiAudioEnum::USAGE_GAME:
             result = STREAM_USAGE_GAME;
             break;

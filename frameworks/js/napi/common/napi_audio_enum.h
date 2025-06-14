@@ -134,6 +134,7 @@ public:
     static bool IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceFlag);
     static int32_t GetJsAudioVolumeType(AudioStreamType volumeType);
     static int32_t GetJsStreamUsage(StreamUsage streamUsage);
+    static int32_t GetJsStreamUsageFir(StreamUsage streamUsage);
     static int32_t GetJsAudioVolumeMode(AudioVolumeMode volumeMode);
     static bool IsLegalInputArgumentCommunicationDeviceType(int32_t communicationDeviceType);
     static bool IsValidSourceType(int32_t intValue);
@@ -142,6 +143,7 @@ public:
     static bool IsLegalOutputDeviceType(int32_t deviceType);
     static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType);
     static StreamUsage GetNativeStreamUsage(int32_t streamUsage);
+    static StreamUsage GetNativeStreamUsageFir(int32_t streamUsage);
     static AudioRingerMode GetNativeAudioRingerMode(int32_t ringMode);
     static AudioRingMode GetJsAudioRingMode(int32_t ringerMode);
     static AudioStandard::FocusType GetNativeFocusType(int32_t focusType);
