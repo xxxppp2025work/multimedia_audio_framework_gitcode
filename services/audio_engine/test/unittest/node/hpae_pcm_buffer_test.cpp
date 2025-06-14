@@ -50,6 +50,14 @@ public:
     {
         return std::vector<float>(DEFAULT_FRAME_SIZE, value);
     }
+
+    void FillBuffer(HpaePcmBuffer& buffer, float value) {
+        float* data = buffer.GetPcmDataBuffer();
+        size_t size = buffer.Size() / sizeof(float);
+        for (size_t i = 0; i < size; i++) {
+            data[i] = value;
+        }
+    }
     
     std::vector<std::vector<float>> CreateTestMatrix(float value = 1.0f, size_t frames = 1)
     {
@@ -340,35 +348,53 @@ static void FillBuffer(uint8_t* buffer, size_t size, uint8_t value) {
 }
 
 // 自赋值测试
-TEST(HpaePcmBufferTest, SelfAssignment) {
-    HpaePcmBuffer buffer;
-    // 初始化buffer状态（例如设置pcmBufferInfo_和数据）
-    buffer.pcmBufferInfo_.bufferByteSize_ = 100;
-    uint8_t testData[100];
-    FillBuffer(testData, sizeof(testData), 0xAB);
-    buffer.SetPcmDataBuffer(testData); // 假设有设置内部缓冲区的接口
-
-    buffer = buffer; // 自赋值
-    // 验证状态未改变
-    EXPECT_EQ(buffer.GetPcmDataBuffer(), testData);
+TEST_F(HpaePcmBufferTest, SelfAssignmentShouldDoNothing) {
+    PcmBufferInfo info = CreateBufferInfo(1, true);
+    HpaePcmBuffer buffer(info);
+    
+    // 填充测试数据并记录状态
+    FillBuffer(buffer, 1.0f);
+    float* originalData = buffer.GetPcmDataBuffer();
+    auto originalInfo = buffer.GetPcmBufferInfo();
+    size_t originalSize = buffer.Size();
+    
+    // 执行自赋值
+    buffer = buffer;
+    
+    // 验证对象状态未改变
+    EXPECT_EQ(buffer.GetPcmDataBuffer(), originalData);
+    EXPECT_EQ(buffer.Size(), originalSize);
+    EXPECT_EQ(buffer.GetPcmBufferInfo().ch, originalInfo.ch);
+    EXPECT_EQ(buffer.GetPcmBufferInfo().frameLen, originalInfo.frameLen);
 }
 
-// 正常赋值测试
-TEST(HpaePcmBufferTest, ValidAssignment) {
-    HpaePcmBuffer src, dest;
-    // 初始化源数据
-    src.pcmBufferInfo_.bufferByteSize_ = 100;
-    uint8_t srcData[100];
-    FillBuffer(srcData, sizeof(srcData), 0xCD);
-    src.SetPcmDataBuffer(srcData);
+// 测试2：正常赋值 - memcpy_s成功
+TEST_F(HpaePcmBufferTest, NormalAssignmentCopiesDataSuccessfully) {
+    PcmBufferInfo info = CreateBufferInfo(1, true);
+    HpaePcmBuffer source(info);
+    FillBuffer(source, 1.5f);
 
-    // 执行赋值
-    dest = src;
-
-    // 验证pcmBufferInfo_复制成功
-    EXPECT_EQ(dest.pcmBufferInfo_.bufferByteSize_, src.pcmBufferInfo_.bufferByteSize_);
-    // 验证内存内容一致
-    EXPECT_EQ(memcmp(dest.GetPcmDataBuffer(), src.GetPcmDataBuffer(), dest.pcmBufferInfo_.bufferByteSize_), 0);
+    HpaePcmBuffer destination(info);
+    FillBuffer(destination, 2.0f);
+    
+    // 执行赋值操作
+    destination = source;
+    
+    // 验证配置信息被复制
+    EXPECT_EQ(destination.GetPcmBufferInfo().ch, source.GetPcmBufferInfo().ch);
+    EXPECT_EQ(destination.GetPcmBufferInfo().frameLen, source.GetPcmBufferInfo().frameLen);
+    EXPECT_EQ(destination.GetPcmBufferInfo().rate, source.GetPcmBufferInfo().rate);
+    EXPECT_EQ(destination.GetPcmBufferInfo().frames, source.GetPcmBufferInfo().frames);
+    
+    // 验证数据被复制
+    const float* srcData = source.GetPcmDataBuffer();
+    const float* destData = destination.GetPcmDataBuffer();
+    size_t byteSize = source.Size();
+    EXPECT_EQ(byteSize, destination.Size());
+    
+    for (size_t i = 0; i < byteSize / sizeof(float); i++) {
+        EXPECT_FLOAT_EQ(destData[i], srcData[i]);
+    }
 }
 } // namespace HPAE
 } // namespace AudioStandard
