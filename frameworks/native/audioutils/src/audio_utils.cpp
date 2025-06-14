@@ -619,7 +619,7 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo &info, SwitchSt
         }
         return true;
     }
-        
+
     switch (targetState) {
         case SWITCH_STATE_WAITING:
             CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
@@ -1861,6 +1861,20 @@ std::unordered_map<StreamUsage, AudioStreamType> VolumeUtils::streamUsageMap_ = 
     {STREAM_USAGE_ULTRASONIC, STREAM_ULTRASONIC}
 };
 
+std::unordered_set<AudioVolumeType> VolumeUtils::audioVolumeTypeSet_ = {
+    STREAM_RING,
+    STREAM_MUSIC,
+    STREAM_VOICE_CALL,
+    STREAM_VOICE_ASSISTANT,
+    STREAM_ALARM,
+    STREAM_SYSTEM,
+    STREAM_ACCESSIBILITY,
+    STREAM_ULTRASONIC,
+    STREAM_NOTIFICATION,
+    STREAM_NAVIGATION,
+    STREAM_ALL,
+};
+
 std::unordered_map<AudioStreamType, AudioVolumeType>& VolumeUtils::GetVolumeMap()
 {
     if (isPCVolumeEnable_) {
@@ -1908,6 +1922,17 @@ std::set<StreamUsage> VolumeUtils::GetOverlapStreamUsageSet(const std::set<Strea
         std::inserter(overlapSet, overlapSet.begin()));
     return overlapSet;
 }
+
+std::unordered_set<AudioVolumeType>& VolumeUtils::GetSupportedAudioVolumeTypes()
+{
+    return audioVolumeTypeSet_;
+}
+
+std::set<StreamUsage>& VolumeUtils::GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType)
+{
+    return GetStreamUsageSetForVolumeType(audioVolumeType);
+}
+
 
 std::set<StreamUsage>& VolumeUtils::GetStreamUsageSetForVolumeType(AudioVolumeType volumeType)
 {
