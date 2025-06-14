@@ -30,8 +30,8 @@ public:
     static AudioVolumeType GetVolumeTypeFromStreamUsage(StreamUsage streamUsage);
     static std::set<StreamUsage> GetOverlapStreamUsageSet(const std::set<StreamUsage>& streamUsages,
         AudioVolumeType volumeType);
-    static std::vector<AudioVolumeType>& GetSupportedAudioVolumeTypes();
-    static std::vector<StreamUsage>& GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType);
+    static std::vector<AudioVolumeType> GetSupportedAudioVolumeTypes();
+    static std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType);
 
 private:
     static std::set<StreamUsage>& GetStreamUsageSetForVolumeType(AudioVolumeType volumeType);

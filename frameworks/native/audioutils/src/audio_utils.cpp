@@ -1923,7 +1923,7 @@ std::set<StreamUsage> VolumeUtils::GetOverlapStreamUsageSet(const std::set<Strea
     return overlapSet;
 }
 
-std::vector<AudioVolumeType>& VolumeUtils::GetSupportedAudioVolumeTypes()
+std::vector<AudioVolumeType> VolumeUtils::GetSupportedAudioVolumeTypes()
 {
     std::vector<AudioVolumeType> result = {};
     std::unordered_set<AudioVolumeType> volumeTypeSet = audioVolumeTypeSet_;
@@ -1933,7 +1933,7 @@ std::vector<AudioVolumeType>& VolumeUtils::GetSupportedAudioVolumeTypes()
     return result;
 }
 
-std::vector<StreamUsage>& VolumeUtils::GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType)
+std::vector<StreamUsage> VolumeUtils::GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType)
 {
     std::vector<StreamUsage> result = {};
     std::set<StreamUsage> streamUsageSet = GetStreamUsageSetForVolumeType(audioVolumeType);
