@@ -2601,7 +2601,7 @@ float AudioPolicyProxy::GetVolumeInDbByStream(StreamUsage streamUsage, int32_t v
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_VOLUME_IN_DB_BY_STREAM), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %{public}d", error);
 
-    return reply.ReadBool();
+    return reply.ReadFloat();
 }
 
 std::vector<AudioVolumeType> AudioPolicyProxy::GetSupportedAudioVolumeTypes()

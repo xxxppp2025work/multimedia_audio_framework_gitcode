@@ -1699,7 +1699,7 @@ bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
 
 bool AudioPolicyServer::IsStreamActiveByStreamUsage(StreamUsage streamUsage)
 {
-    return audioPolicyService_.IsStreamActive(VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage));
+    return IsStreamActive(VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage));
 }
 
 bool AudioPolicyServer::IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage)
