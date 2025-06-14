@@ -274,6 +274,8 @@ private:
     void RegisterThreadPriorityOnStart(StateChangeCmdType cmdType);
 
     void ResetCallbackLoopTid();
+
+    void FlushSpeedBuffer();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;

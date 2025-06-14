@@ -1134,6 +1134,8 @@ bool RendererInClientInner::FlushAudioStream()
         }
     }
 
+    FlushSpeedBuffer();
+
     CHECK_AND_RETURN_RET_LOG(FlushRingCache() == SUCCESS, false, "Flush cache failed");
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");

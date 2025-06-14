@@ -25,6 +25,8 @@ namespace OHOS {
 namespace AudioStandard {
 
 static constexpr float SLOW_PLAY_1_8_SPEED = 0.125f;
+static constexpr size_t READ_SHORT_SIZE = 2;
+static constexpr size_t READ_FLOAT_SIZE = 4;
 
 AudioSpeed::AudioSpeed(size_t rate, size_t format, size_t channels):rate_(rate), format_(format), channels_(channels)
 {
@@ -239,6 +241,37 @@ int32_t AudioSpeed::ChangeSpeedForFloat(float *buffer, int32_t bufferSize,
     int32_t outSamples = sonicReadFloatFromStream(sonicStream_, outBuffer, MAX_SPEED_BUFFER_SIZE);
     outBufferSize = outSamples * static_cast<int32_t>(formatSize_ * channels_);
     return bufferSize;
+}
+
+int32_t AudioSpeed::Flush()
+{
+    Trace trace("AudioSpeed::Flush");
+    sonicFlushStream(sonicStream_);
+    std::unique_ptr<uint8_t[]> tmpBuffer = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
+
+    // sonic return int so use int not int32_t
+    int samplesWritten = 0;
+    do {
+        switch (format_) {
+            case SAMPLE_U8:
+                samplesWritten = sonicReadUnsignedCharFromStream(sonicStream_,
+                    reinterpret_cast<unsigned char*>(tmpBuffer.get(), MAX_SPEED_BUFFER_SIZE / channels_));
+                break;
+            case SAMPLE_S24LE:
+            case SAMPLE_S32LE:
+            case SAMPLE_F32LE:
+                samplesWritten = sonicReadFloatFromStream(sonicStream_,
+                    reinterpret_cast<unsigned short*>(tmpBuffer.get(), MAX_SPEED_BUFFER_SIZE / channels_ / READ_FLOAT_SIZE));
+                break;
+            case SAMPLE_S16LE:
+            case default:
+                samplesWritten = sonicReadShortFromStream(sonicStream_,
+                    reinterpret_cast<unsigned float*>(tmpBuffer.get(), MAX_SPEED_BUFFER_SIZE / channels_ / READ_SHORT_SIZE));
+                break;
+        }
+    } while (samplesWritten > 0);
+
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS
