@@ -25,7 +25,7 @@
 #include "audio_concurrency_state_listener_callback.h"
 #include "audio_interrupt_callback.h"
 #include "audio_policy_base.h"
-#include "audio_policy_manager_listener_stub.h"
+#include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_policy_client_stub_impl.h"
 #include "audio_routing_manager.h"
 #include "audio_routing_manager_listener_stub.h"

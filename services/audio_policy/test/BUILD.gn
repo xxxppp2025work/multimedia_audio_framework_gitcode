@@ -2985,6 +2985,7 @@ ohos_unittest("audio_policy_manager_unit_test") {
   deps = [
     "../../../frameworks/native/audioutils:audio_utils",
     "../../audio_policy:audio_policy_client_static",
+    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
   ]
 }
 

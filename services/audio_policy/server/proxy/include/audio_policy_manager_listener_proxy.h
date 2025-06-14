@@ -18,28 +18,10 @@
 
 #include "audio_interrupt_callback.h"
 #include "audio_system_manager.h"
-#include "i_standard_audio_policy_manager_listener.h"
+#include "istandard_audio_policy_manager_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioPolicyManagerListenerProxy : public IRemoteProxy<IStandardAudioPolicyManagerListener> {
-public:
-    explicit AudioPolicyManagerListenerProxy(const sptr<IRemoteObject> &impl);
-    virtual ~AudioPolicyManagerListenerProxy();
-    DISALLOW_COPY_AND_MOVE(AudioPolicyManagerListenerProxy);
-    void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
-    void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction) override;
-    bool OnQueryClientType(const std::string &bundleName, uint32_t uid) override;
-    bool OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid) override;
-    bool OnQueryAllowedPlayback(int32_t uid, int32_t pid) override;
-    void OnBackgroundMute(const int32_t uid) override;
-    bool OnQueryBundleNameIsInList(const std::string &bundleName) override;
-
-private:
-    static inline BrokerDelegator<AudioPolicyManagerListenerProxy> delegator_;
-    void WriteInterruptEventParams(MessageParcel &data, const InterruptEventInternal &interruptEvent);
-};
-
 class AudioPolicyManagerListenerCallback : public AudioInterruptCallback {
 public:
     AudioPolicyManagerListenerCallback(const sptr<IStandardAudioPolicyManagerListener> &listener);

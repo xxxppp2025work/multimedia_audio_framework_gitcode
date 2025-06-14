@@ -955,7 +955,7 @@ int32_t AudioPolicyManager::SetAudioInterruptCallback(const uint32_t sessionID,
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
-    sptr<AudioPolicyManagerListenerStub> listener = new(std::nothrow) AudioPolicyManagerListenerStub();
+    sptr<AudioPolicyManagerListenerStubImpl> listener = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERROR, "object null");
     listener->SetInterruptCallback(callback);
 
@@ -979,7 +979,7 @@ int32_t AudioPolicyManager::SetQueryClientTypeCallback(const std::shared_ptr<Aud
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
-    sptr<AudioPolicyManagerListenerStub> listener = new(std::nothrow) AudioPolicyManagerListenerStub();
+    sptr<AudioPolicyManagerListenerStubImpl> listener = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERROR, "object null");
     listener->SetQueryClientTypeCallback(callback);
 
@@ -997,7 +997,7 @@ int32_t AudioPolicyManager::SetQueryBundleNameListCallback(
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
-    sptr<AudioPolicyManagerListenerStub> listener = new(std::nothrow) AudioPolicyManagerListenerStub();
+    sptr<AudioPolicyManagerListenerStubImpl> listener = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERROR, "object null");
     listener->SetQueryBundleNameListCallback(callback);
 
@@ -1044,7 +1044,7 @@ int32_t AudioPolicyManager::SetAudioManagerInterruptCallback(const int32_t clien
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     std::unique_lock<std::mutex> lock(listenerStubMutex_);
-    sptr<AudioPolicyManagerListenerStub> interruptListenerStub = new(std::nothrow) AudioPolicyManagerListenerStub();
+    sptr<AudioPolicyManagerListenerStubImpl> interruptListenerStub = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
     CHECK_AND_RETURN_RET_LOG(interruptListenerStub != nullptr, ERROR, "object null");
     interruptListenerStub->SetInterruptCallback(callback);
 
@@ -2182,7 +2182,7 @@ int32_t AudioPolicyManager::SetAudioClientInfoMgrCallback(
         return ERR_INVALID_PARAM;
     };
 
-    sptr<AudioPolicyManagerListenerStub> listener = new (std::nothrow) AudioPolicyManagerListenerStub();
+    sptr<AudioPolicyManagerListenerStubImpl> listener = new (std::nothrow) AudioPolicyManagerListenerStubImpl();
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERROR, "object null");
     listener->SetAudioClientInfoMgrCallback(callback);
 
@@ -2370,7 +2370,7 @@ int32_t AudioPolicyManager::SetQueryAllowedPlaybackCallback(
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
-    sptr<AudioPolicyManagerListenerStub> listener = new(std::nothrow) AudioPolicyManagerListenerStub();
+    sptr<AudioPolicyManagerListenerStubImpl> listener = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERROR, "object null");
     listener->SetQueryAllowedPlaybackCallback(callback);
 
@@ -2388,7 +2388,7 @@ int32_t AudioPolicyManager::SetBackgroundMuteCallback(
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
-    sptr<AudioPolicyManagerListenerStub> listener = new(std::nothrow) AudioPolicyManagerListenerStub();
+    sptr<AudioPolicyManagerListenerStubImpl> listener = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERROR, "object null");
     listener->SetBackgroundMuteCallback(callback);
 

@@ -121,12 +121,46 @@ struct InterruptEvent {
 };
 
 // Used internally only by AudioFramework
-struct InterruptEventInternal {
+struct InterruptEventInternal : public Parcelable {
     InterruptType eventType;
     InterruptForceType forceType;
     InterruptHint hintType;
     float duckVolume;
     bool callbackToApp = true;
+
+    InterruptEventInternal() = default;
+
+    InterruptEventInternal(InterruptType eventtype, InterruptForceType forcetype,
+        InterruptHint hinttype, float duckvolume)
+    {
+        eventType = eventtype;
+        forceType = forcetype;
+        hintType = hinttype;
+        duckVolume = duckvolume;
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(eventType))
+            && parcel.WriteInt32(static_cast<int32_t>(forceType))
+            && parcel.WriteInt32(static_cast<int32_t>(hintType))
+            && parcel.WriteFloat(duckVolume)
+            && parcel.WriteBool(callbackToApp);
+    }
+
+    static InterruptEventInternal *Unmarshalling(Parcel &parcel)
+    {
+        InterruptEventInternal *interupt = new InterruptEventInternal();
+        if (interupt == nullptr) {
+            return nullptr;
+        }
+        interupt->eventType = static_cast<InterruptType>(parcel.ReadInt32());
+        interupt->forceType = static_cast<InterruptForceType>(parcel.ReadInt32());
+        interupt->hintType = static_cast<InterruptHint>(parcel.ReadInt32());
+        interupt->duckVolume = parcel.ReadFloat();
+        interupt->callbackToApp = parcel.ReadBool();
+        return interupt;
+    }
 };
 
 enum AudioInterruptChangeType {

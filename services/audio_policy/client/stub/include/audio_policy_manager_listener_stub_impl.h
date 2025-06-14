@@ -13,32 +13,32 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_POLICY_MANAGER_LISTENER_STUB_H
-#define AUDIO_POLICY_MANAGER_LISTENER_STUB_H
+#ifndef AUDIO_POLICY_MANAGER_LISTENER_STUB_IMPL_H
+#define AUDIO_POLICY_MANAGER_LISTENER_STUB_IMPL_H
 
 #include <thread>
 
 #include "audio_system_manager.h"
 #include "audio_interrupt_callback.h"
-#include "i_standard_audio_policy_manager_listener.h"
+#include "standard_audio_policy_manager_listener_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioPolicyManagerListenerStub : public IRemoteStub<IStandardAudioPolicyManagerListener> {
+class AudioPolicyManagerListenerStubImpl : public StandardAudioPolicyManagerListenerStub {
 public:
-    AudioPolicyManagerListenerStub();
-    virtual ~AudioPolicyManagerListenerStub();
+    AudioPolicyManagerListenerStubImpl();
+    virtual ~AudioPolicyManagerListenerStubImpl();
 
     // IStandardAudioManagerListener override
-    int OnRemoteRequest(uint32_t code, MessageParcel &data,
-        MessageParcel &reply, MessageOption &option) override;
-    void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
-    void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction) override;
-    bool OnQueryClientType(const std::string &bundleName, uint32_t uid) override;
-    bool OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid) override;
-    bool OnQueryAllowedPlayback(int32_t uid, int32_t pid) override;
-    void OnBackgroundMute(const int32_t uid) override;
-    bool OnQueryBundleNameIsInList(const std::string &bundleName) override;
+    // int OnRemoteRequest(uint32_t code, MessageParcel &data,
+    //     MessageParcel &reply, MessageOption &option) override;
+    int32_t OnInterrupt(const InterruptEventInternal &interruptEvent) override;
+    int32_t OnAvailableDeviceChange(uint32_t usage, const DeviceChangeAction &deviceChangeAction) override;
+    int32_t OnQueryClientType(const std::string &bundleName, uint32_t uid, bool& ret) override;
+    int32_t OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid, bool& ret) override;
+    int32_t OnQueryAllowedPlayback(int32_t uid, int32_t pid, bool& ret) override;
+    int32_t OnBackgroundMute(const int32_t uid) override;
+    int32_t OnQueryBundleNameIsInList(const std::string &bundleName, bool& ret) override;
     // AudioManagerListenerStubImpl
     void SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback);
     void SetAvailableDeviceChangeCallback(const std::weak_ptr<AudioManagerAvailableDeviceChangeCallback> &cb);
@@ -59,7 +59,11 @@ private:
     std::weak_ptr<AudioBackgroundMuteCallback> audioBackgroundMuteCallback_;
     std::weak_ptr<AudioClientInfoMgrCallback> audioClientInfoMgrCallback_;
     std::weak_ptr<AudioQueryBundleNameListCallback> audioQueryBundleNameListCallback_;
+
+public:
+    bool hasBTPermission_ = true;
+    bool hasSystemPermission_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_POLICY_MANAGER_LISTENER_STUB_H
+#endif // AUDIO_POLICY_MANAGER_LISTENER_STUB_IMPL_H

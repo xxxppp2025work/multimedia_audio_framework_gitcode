@@ -690,12 +690,13 @@ void AudioPolicyServerHandler::HandleAvailableDeviceChange(const AppExecFwk::Inn
         DeviceChangeAction deviceChangeAction = eventContextObj->deviceChangeAction;
         deviceChangeAction.deviceDescriptors = AudioPolicyService::GetAudioPolicyService().
             DeviceFilterByUsageInner(it->first.second, deviceChangeAction.deviceDescriptors);
-        if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {
-            if (!(it->second->hasBTPermission_)) {
+        auto ptr = static_cast<AudioPolicyManagerListenerStubImpl*>((it->second).GetRefPtr());
+        if (ptr && deviceChangeAction.deviceDescriptors.size() > 0) {
+            if (!(ptr->hasBTPermission_)) {
                 AudioPolicyService::GetAudioPolicyService().
                     UpdateDescWhenNoBTPermission(deviceChangeAction.deviceDescriptors);
             }
-            it->second->OnAvailableDeviceChange(usage, deviceChangeAction);
+            ptr->OnAvailableDeviceChange(usage, deviceChangeAction);
         }
     }
 }

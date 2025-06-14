@@ -398,7 +398,7 @@ int32_t AudioPolicyManager::SetAvailableDeviceChangeCallback(const int32_t clien
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
-    auto deviceChangeCbStub = new(std::nothrow) AudioPolicyManagerListenerStub();
+    auto deviceChangeCbStub = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
     CHECK_AND_RETURN_RET_LOG(deviceChangeCbStub != nullptr, ERROR, "object null");
 
     deviceChangeCbStub->SetAvailableDeviceChangeCallback(callback);

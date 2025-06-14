@@ -680,6 +680,7 @@ ohos_executable("audio_process_client_test") {
     ":audio_client",
     "../audio_policy:audio_foundation",
     "./../../frameworks/native/audioutils:audio_utils",
+    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
   ]
 
   external_deps = [

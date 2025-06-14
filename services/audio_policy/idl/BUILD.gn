@@ -20,6 +20,7 @@ idl_gen_interface("audio_policy_idl_interface") {
     "IStandardConcurrencyStateListener.idl",
     "IStandardClientTracker.idl",
     "IStandardAudioZoneClient.idl",
+    "IStandardAudioPolicyManagerListener.idl",
   ]
   # sources_callback = [
   #   "IStandardSpatializationStateChangeListener.idl",
@@ -43,6 +44,7 @@ config("audio_policy_sa_idl_config") {
     "${target_gen_dir}",
     "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include/",
     "${audio_framework_root}/frameworks/native/audiopolicy/include/",
+    "${audio_framework_root}/interfaces/inner_api/native/audiomanager/include/",
   ]
   print("jilei4 after The value of output_values is: ", include_dirs)
 }
@@ -53,6 +55,7 @@ ohos_source_set("policy_idl_sa_proxy") {
                            [
                              "*_proxy.cpp",
                              "*_types.cpp",
+                             # "*_stub.cpp",
                            ])
 
   public_configs = [ ":audio_policy_sa_idl_config" ]

@@ -48,6 +48,7 @@ ohos_unittest("audio_renderer_unit_test") {
     "../../../../audiodefinitions:audio_definitions",
     "../../../../audiorenderer:audio_renderer",
     "../../../../audioutils:audio_utils",
+    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
   ]
 
   external_deps = [

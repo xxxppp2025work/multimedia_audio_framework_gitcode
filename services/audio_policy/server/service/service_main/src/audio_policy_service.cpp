@@ -1038,12 +1038,13 @@ int32_t AudioPolicyService::SetAvailableDeviceChangeCallback(const int32_t clien
     const sptr<IRemoteObject> &object, bool hasBTPermission)
 {
     sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
+    auto ptr = static_cast<AudioPolicyManagerListenerStubImpl*>(callback.GetRefPtr());
 
-    if (callback != nullptr) {
-        callback->hasBTPermission_ = hasBTPermission;
+    if (ptr != nullptr) {
+        ptr->hasBTPermission_ = hasBTPermission;
 
         if (audioPolicyServerHandler_ != nullptr) {
-            audioPolicyServerHandler_->AddAvailableDeviceChangeMap(clientId, usage, callback);
+            audioPolicyServerHandler_->AddAvailableDeviceChangeMap(clientId, usage, ptr);
         }
     }
 

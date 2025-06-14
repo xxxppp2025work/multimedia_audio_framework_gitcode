@@ -341,6 +341,7 @@ audio_ohos_library("audio_policy_service") {
     "../audio_policy:audio_setting_provider",
     "../audio_service:audio_common",
     "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_proxy",
+    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
     "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
   ]
 
@@ -581,7 +582,7 @@ audio_ohos_library("audio_policy_client") {
     "client/stub/src/audio_anahs_manager_listener_stub.cpp",
     "client/stub/src/audio_policy_client_stub.cpp",
     "client/stub/src/audio_policy_client_stub_impl.cpp",
-    "client/stub/src/audio_policy_manager_listener_stub.cpp",
+    "client/stub/src/audio_policy_manager_listener_stub_impl.cpp",
     "client/stub/src/audio_routing_manager_listener_stub.cpp",
     "client/stub/src/audio_zone_client.cpp",
     "client/stub/src/sle_audio_operation_callback_stub.cpp",
@@ -598,7 +599,10 @@ audio_ohos_library("audio_policy_client") {
 
   public_configs = [ ":audio_policy_client_config" ]
 
-  include_dirs = [ "../../frameworks/native/audioutils/include" ]
+  include_dirs = [ 
+    "../../frameworks/native/audioutils/include",
+    "${audio_framework_root}/services/audio_service/common/include/",
+  ]
 
   external_deps = [
     "bounds_checking_function:libsec_shared",

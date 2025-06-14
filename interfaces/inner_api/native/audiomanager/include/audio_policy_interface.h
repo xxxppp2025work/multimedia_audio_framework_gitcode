@@ -32,10 +32,56 @@ namespace AudioStandard {
  *
  * @since 7
  */
-struct DeviceChangeAction {
+struct DeviceChangeAction : public Parcelable {
     DeviceChangeType type;
     DeviceFlag flag;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors;
+
+    bool Marshalling(Parcel &parcel) const
+    {
+        bool result = parcel.WriteInt32(static_cast<int32_t>(type));
+        result &= parcel.WriteInt32(static_cast<int32_t>(flag));
+        if (!result) {
+            return false;
+        }
+
+        size_t size = deviceDescriptors.size();
+        if (!parcel.WriteUint64(size)) {
+            return false;
+        }
+        for (const auto &device : deviceDescriptors) {
+            if (!device->Marshalling(parcel)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static DeviceChangeAction *Unmarshalling(Parcel &parcel)
+    {
+        DeviceChangeAction *info = new DeviceChangeAction();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->type = static_cast<DeviceChangeType>(parcel.ReadInt32());
+        info->flag = static_cast<DeviceFlag>(parcel.ReadInt32());
+
+        size_t size = parcel.ReadUint64();
+        if (size > std::numeric_limits<size_t>::max()) {
+            size = std::numeric_limits<size_t>::max();
+        }
+
+        for (size_t i = 0; i < size; i++) {
+            std::shared_ptr<AudioDeviceDescriptor> device = std::make_shared<AudioDeviceDescriptor>();
+            if (device == nullptr) {
+                info->deviceDescriptors.clear();
+                return nullptr;
+            }
+            device->UnmarshallingToDeviceDescriptor(parcel);
+            info->deviceDescriptors.emplace_back(device);
+        }
+        return info;
+    }
 };
 
 class AudioFocusInfoChangeCallback {
