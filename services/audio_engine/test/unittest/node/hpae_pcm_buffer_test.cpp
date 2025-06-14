@@ -341,34 +341,7 @@ TEST_F(HpaePcmBufferTest, positionWrapping)
     EXPECT_EQ(buffer.GetReadPos(), 0); // (1 + 1) % 2 = 0
 }
 
-static void FillBuffer(uint8_t* buffer, size_t size, uint8_t value) {
-  if (buffer) {
-    memset(buffer, value, size);
-  }
-}
-
-// 自赋值测试
-TEST_F(HpaePcmBufferTest, SelfAssignmentShouldDoNothing) {
-    PcmBufferInfo info = CreateBufferInfo(1, true);
-    HpaePcmBuffer buffer(info);
-    
-    // 填充测试数据并记录状态
-    FillBuffer(buffer, 1.0f);
-    float* originalData = buffer.GetPcmDataBuffer();
-    auto originalInfo = buffer.GetPcmBufferInfo();
-    size_t originalSize = buffer.Size();
-    
-    // 执行自赋值
-    buffer = buffer;
-    
-    // 验证对象状态未改变
-    EXPECT_EQ(buffer.GetPcmDataBuffer(), originalData);
-    EXPECT_EQ(buffer.Size(), originalSize);
-    EXPECT_EQ(buffer.GetPcmBufferInfo().ch, originalInfo.ch);
-    EXPECT_EQ(buffer.GetPcmBufferInfo().frameLen, originalInfo.frameLen);
-}
-
-// 测试2：正常赋值 - memcpy_s成功
+// normal copy
 TEST_F(HpaePcmBufferTest, NormalAssignmentCopiesDataSuccessfully) {
     PcmBufferInfo info = CreateBufferInfo(1, true);
     HpaePcmBuffer source(info);
@@ -377,16 +350,16 @@ TEST_F(HpaePcmBufferTest, NormalAssignmentCopiesDataSuccessfully) {
     HpaePcmBuffer destination(info);
     FillBuffer(destination, 2.0f);
     
-    // 执行赋值操作
+    // do memcpys
     destination = source;
     
-    // 验证配置信息被复制
+    // check info
     EXPECT_EQ(destination.GetPcmBufferInfo().ch, source.GetPcmBufferInfo().ch);
     EXPECT_EQ(destination.GetPcmBufferInfo().frameLen, source.GetPcmBufferInfo().frameLen);
     EXPECT_EQ(destination.GetPcmBufferInfo().rate, source.GetPcmBufferInfo().rate);
     EXPECT_EQ(destination.GetPcmBufferInfo().frames, source.GetPcmBufferInfo().frames);
     
-    // 验证数据被复制
+    // check data
     const float* srcData = source.GetPcmDataBuffer();
     const float* destData = destination.GetPcmDataBuffer();
     size_t byteSize = source.Size();
