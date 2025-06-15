@@ -1,0 +1,249 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package OHOS.AudioStandard;
+
+sequenceable OHOS.IRemoteObject;
+sequenceable audio_info..OHOS.AudioStandard.AudioRendererInfo;
+sequenceable audio_info..OHOS.AudioStandard.AudioCapturerInfo;
+sequenceable audio_stream_info..OHOS.AudioStandard.AudioStreamInfo;
+sequenceable audio_device_descriptor..OHOS.AudioStandard.AudioDeviceDescriptor;
+sequenceable audio_system_manager..OHOS.AudioStandard.AudioRendererFilter;
+sequenceable audio_system_manager..OHOS.AudioStandard.AudioCapturerFilter;
+sequenceable audio_interrupt_info..OHOS.AudioStandard.AudioInterrupt;
+sequenceable audio_stream_descriptor..OHOS.AudioStandard.AudioStreamDescriptor;
+sequenceable audio_stream_change_info..OHOS.AudioStandard.AudioStreamChangeInfo;
+sequenceable audio_stream_change_info..OHOS.AudioStandard.AudioRendererChangeInfo;
+sequenceable audio_stream_change_info..OHOS.AudioStandard.AudioCapturerChangeInfo;
+sequenceable audio_system_manager..OHOS.AudioStandard.VolumeGroupInfo;
+sequenceable audio_effect..OHOS.AudioStandard.SupportedEffectConfig; //TODO
+sequenceable microphone_descriptor..OHOS.AudioStandard.MicrophoneDescriptor;
+sequenceable audio_effect..OHOS.AudioStandard.AudioSpatializationState;
+sequenceable audio_effect..OHOS.AudioStandard.AudioSpatialDeviceState;
+sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneContext;
+sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneDescriptor;
+sequenceable audio_effect..OHOS.AudioStandard.ConverterConfig;
+sequenceable audio_device_info..OHOS.AudioStandard.AudioStreamDeviceChangeReasonExt; //TODO
+sequenceable audio_interrupt_info..OHOS.AudioStandard.InterruptEvent; //TODO
+sequenceable audio_effect..OHOS.AudioStandard.AudioEffectPropertyArrayV3; //TODO
+sequenceable audio_effect..OHOS.AudioStandard.AudioEffectPropertyArray; //TODO
+sequenceable audio_effect..OHOS.AudioStandard.AudioEnhancePropertyArray; //TODO
+
+interface IAudioPolicy {
+    void GetMaxVolumeLevel([in] int volumeType);
+    void GetMinVolumeLevel([in] int volumeType);
+    void SetSystemVolumeLevelLegacy([in] int volumeType, [in] unsigned int volumeLevel);
+    void SetSystemVolumeLevel([in] int volumeType, [in] unsigned int volumeLevel, [in] unsigned int volumeFlag); /*volumeFlag default 0*/
+    void SetSystemVolumeLevelWithDevice([in] int volumeType, [in] unsigned int volumeLevel, [in] int deviceType, [in] unsigned int volumeFlag); /*volumeFlag default 0*/
+    void GetAppVolumeLevel([in] unsigned int appUid, [out] unsigned int volumeLevel);
+    void GetSelfAppVolumeLevel([out] unsigned int volumeLevel);
+    void SetAppVolumeLevel([in] unsigned int appUid, [in] unsigned int volumeLevel, [in] unsigned int volumeFlag); /*volumeFlag default 0*/
+    void IsAppVolumeMute([in] unsigned int appUid, [in] boolean muted, [out] boolean isMute);
+    void SetAppVolumeMuted([in] unsigned int appUid, [in] boolean muted, [in] unsigned int volumeFlag); /*volumeFlag default 0*/
+    void SetSelfAppVolumeLevel([in] unsigned int volumeLevel, [in] unsigned int volumeFlag); /*volumeFlag default 0*/
+    void GetSystemActiveVolumeType([in] unsigned int clientUid, [out] int audioStreamType);
+    void GetSystemVolumeLevel([in] int volumeType);
+    void SetLowPowerVolume([in] unsigned int streamId, [in] float volume);
+    void GetLowPowerVolume([in] unsigned int streamId, [out] float retVolume);
+    void GetSingleStreamVolume([in] unsigned int streamId, [out] float retVolume);
+    void SetStreamMuteLegacy([in] int volumeType, [in] boolean mute, [out] int deviceType); /*deviceType default DEVICE_TYPE_NONE*/
+    void SetStreamMute([in] int volumeType, [in] boolean mute, [out] int deviceType); /*deviceType default DEVICE_TYPE_NONE*/
+    void GetStreamMute([in] int volumeType, [out] boolean retMute);
+    void IsStreamActive([in] int volumeType, [out] boolean retActive);
+    void IsFastPlaybackSupported([out] AudioStreamInfo streamInfo, [in] int usage, [out] boolean retSupported);
+    void IsFastRecordingSupported([out] AudioStreamInfo streamInfo, [in] int source, [out] boolean retSupported);
+    void GetDevices([in] int deviceFlag, [out] List<sharedptr<AudioDeviceDescriptor>> retDevicesList);
+    void GetDevicesInner([in] int deviceFlag, [out] List<sharedptr<AudioDeviceDescriptor>> retDevicesList);
+    void GetOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter, [out] List<sharedptr<AudioDeviceDescriptor>> retDevicesList);
+    void GetInputDevice([in] sptr<AudioCapturerFilter> audioCapturerFilter, [out] List<sharedptr<AudioDeviceDescriptor>> retDevicesList);
+    void SetDeviceActive([in] int deviceType, [in] boolean active, [in] unsigned int uid); /*uid default INVALID_UID*/
+    void IsDeviceActive([in] int deviceType, [out] boolean retActive);
+    void GetActiveOutputDevice([out] int retDeviceType);
+    void GetDmDeviceType([out] unsigned short retDeviceType);
+    void GetActiveInputDevice([out] int deviceType);
+    void SetRingerModeLegacy([in] int ringMode);
+    void SetRingerMode([in] int ringMode);
+    void GetRingerMode([out] int retRingMode);
+    void SetAudioScene([in] unsigned int scene);
+    void SetMicrophoneMute([in] boolean isMute);
+    void SetMicrophoneMuteAudioConfig([in] boolean isMute);
+    void SetMicrophoneMutePersistent([in] boolean isMute, [in] int type);
+    void GetPersistentMicMuteState([out] boolean retMuteState);
+    void IsMicrophoneMuteLegacy([out] boolean retIsMute);
+    void IsMicrophoneMute([out] boolean retIsMute);
+    void GetAudioScene([out] unsigned int retScene);
+    /*void ActivateAudioSession(const AudioSessionStrategy &strategy);*/
+    void DeactivateAudioSession();
+    void IsAudioSessionActivated([out] boolean retIsActivated);
+    void SetAudioInterruptCallback([in] unsigned int sessionID, [out] IRemoteObject object, [in] unsigned int clientUid, [in] unsigned int zoneID); /* zoneID default value: 0 -- local device */
+    void DeactivateAudioInterrupt([out] AudioInterrupt audioInterrupt, [in] unsigned int zoneID); /* zoneID default value: 0 -- local device */
+    void ActivatePreemptMode();
+    void DeactivatePreemptMode();
+    void SetAudioManagerInterruptCallback([in] unsigned int clientId, [out] IRemoteObject object);
+    void UnsetAudioManagerInterruptCallback([in] unsigned int clientId);
+    void SetQueryClientTypeCallback([out] IRemoteObject object);
+    void SetAudioClientInfoMgrCallback([out] IRemoteObject object);
+    void SetQueryBundleNameListCallback([out] IRemoteObject object);
+    void RequestAudioFocus([in] unsigned int clientId, [out] AudioInterrupt audioInterrupt);
+    void AbandonAudioFocus([in] unsigned int clientId, [out] AudioInterrupt audioInterrupt);
+    void GetStreamInFocus([in] unsigned int zoneID, [out] int retStreamType); /* zoneID default value: 0 -- local device */
+    void GetStreamInFocusByUid([in] unsigned int uid, [in] unsigned int zoneID, [out] int retStreamType); /* zoneID default value: 0 -- local device */
+    void GetSessionInfoInFocus([out] AudioInterrupt audioInterrupt, [in] unsigned int zoneID); /* zoneID default value: 0 -- local device */
+    void ReconfigureAudioChannel([out] unsigned int count, [in] int deviceType);
+    void GetPreferredOutputStreamType([out] AudioRendererInfo rendererInfo);
+    void GetPreferredInputStreamType([out] AudioCapturerInfo capturerInfo);
+    void CreateRendererClient([in] sharedptr<AudioStreamDescriptor> streamDesc, [out] unsigned int flag, [out] unsigned int sessionId);
+    void CreateCapturerClient([in] sharedptr<AudioStreamDescriptor> streamDesc, [out] unsigned int flag, [out] unsigned int sessionId);
+    void RegisterTracker([out] int mode, [out] AudioStreamChangeInfo streamChangeInfo, [out] IRemoteObject object);
+    void UpdateTracker([out] int mode, [out] AudioStreamChangeInfo streamChangeInfo);
+    void GetCurrentRendererChangeInfos([out] List<sharedptr<AudioRendererChangeInfo>> audioRendererChangeInfos);
+    void GetCurrentCapturerChangeInfos([out] List<sharedptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos);
+    void UpdateStreamState([in] unsigned int clientUid, [in] int streamSetState, [in] int streamUsage);
+    void SelectOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+    void GetSelectedDeviceInfo([in] unsigned int uid, [in] unsigned int pid, [in] int streamType, [out] String retStr);
+    void SelectInputDevice([in] sptr<AudioCapturerFilter> audioCapturerFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+    void ExcludeOutputDevices([in] unsigned int audioDevUsage, [out] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+    void UnexcludeOutputDevices([in] unsigned int audioDevUsage, [out] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+    void GetExcludedDevices([in] unsigned int audioDevUsage, [out] List<sharedptr<AudioDeviceDescriptor>> retDevList);
+    void GetVolumeGroupInfos([in] String networkId, [out] List<sptr<VolumeGroupInfo>> infos);
+    void GetNetworkIdByGroupId([in] unsigned int groupId, [out] String networkId);
+    void GetPreferredOutputDeviceDescriptors([out] AudioRendererInfo rendererInfo, [in] boolean forceNoBTPermission, [out] List<sharedptr<AudioDeviceDescriptor>> retDevList);
+    void GetPreferredInputDeviceDescriptors([out] AudioCapturerInfo captureInfo, [out] List<sharedptr<AudioDeviceDescriptor>> retDevList);
+    void SetClientCallbacksEnable([out] unsigned int callbackchange, [out] boolean enable);
+    void SetCallbackRendererInfo([out] AudioRendererInfo rendererInfo);
+    void SetCallbackCapturerInfo([out] AudioCapturerInfo capturerInfo);
+    void GetAudioFocusInfoList([in] List<OrderedMap<AudioInterrupt, int>> focusInfoList, [in] unsigned int zoneID); /* TODO zoneID default value: 0 -- local device */
+    void SetSystemSoundUri([out] String key, [out] String uri);
+    void GetSystemSoundUri([out] String key, [out] String retUri);
+    void GetMinStreamVolume([out] float retVolume);
+    void GetMaxStreamVolume([out] float retVolume);
+    void GetMaxRendererInstances();
+    void IsVolumeUnadjustable([out] boolean retIsUnadjustable);
+    void AdjustVolumeByStep([in] int adjustType);
+    void AdjustSystemVolumeByStep([in] int volumeType, [in] int adjustType);
+    void GetSystemVolumeInDb([in] int volumeType, [in] unsigned int volumeLevel, [in] int deviceType, [out] float retVolume);
+    void QueryEffectSceneMode([out] SupportedEffectConfig supportedEffectConfig);
+    void GetHardwareOutputSamplingRate([out] sharedptr<AudioDeviceDescriptor> desc);
+    void GetAudioCapturerMicrophoneDescriptors([in] unsigned int sessionId, [out] List<sptr<MicrophoneDescriptor>> retMicList);
+    void GetAvailableMicrophones([out] List<sptr<MicrophoneDescriptor>> retMicList);
+    void SetDeviceAbsVolumeSupported([out] String macAddress, [in] boolean support);
+    void IsAbsVolumeScene([out] boolean retVolume);
+    void SetA2dpDeviceVolume([out] String macAddress, [in] unsigned int volume, [in] boolean updateUi);
+    void SetNearlinkDeviceVolume([out] String macAddress, [in] int volumeType, [in] unsigned int volume, [in] boolean updateUi);
+    void GetAvailableDevices([in] unsigned int usage, List<sharedptr<AudioDeviceDescriptor>> retDeviceList);
+    void SetAvailableDeviceChangeCallback([in] unsigned int clientId, [in] unsigned int usage, [out] IRemoteObject object);
+    void UnsetAvailableDeviceChangeCallback([in] unsigned int clientId, [in] unsigned int usage, [out] IRemoteObject object);
+    void ConfigDistributedRoutingRole([in] sharedptr<AudioDeviceDescriptor> descriptor, [in] int type);
+    void SetDistributedRoutingRoleCallback([out] IRemoteObject object);
+    void UnsetDistributedRoutingRoleCallback();
+    void IsSpatializationEnabled([out] boolean ret);
+    void IsSpatializationEnabled([in] String address, [out] boolean ret);
+    void IsSpatializationEnabledForCurrentDevice([out] boolean ret);
+    void SetSpatializationEnabled([in] boolean enable);
+    void SetSpatializationEnabled([out] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [in] boolean enable);
+    void IsHeadTrackingEnabled([out] boolean ret);
+    void IsHeadTrackingEnabled([in] String address, [out] boolean ret);
+    void SetHeadTrackingEnabled([in] boolean enable);
+    void SetHeadTrackingEnabled([out] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [in] boolean enable);
+    void GetSpatializationState([in] int streamUsage, [out] AudioSpatializationState retState);
+    void IsSpatializationSupported([out] boolean ret);
+    void IsSpatializationSupportedForDevice([in] String address, [out] boolean ret);
+    void IsHeadTrackingSupported([out] boolean ret);
+    void IsHeadTrackingSupportedForDevice([in] String address, [out] boolean ret);
+    void UpdateSpatialDeviceState([in] AudioSpatialDeviceState audioSpatialDeviceState);
+    void RegisterSpatializationStateEventListener([in] unsigned int sessionID, [in] int streamUsage, [out] IRemoteObject object);
+    void UnregisterSpatializationStateEventListener([in] unsigned int sessionID);
+    void RegisterPolicyCallbackClient([out] IRemoteObject object, [in] unsigned int zoneID); /* TODO zoneID default value: 0 -- local device */
+    /*TODO*/ void CreateAudioInterruptZone([out] set<int32_t> pids, [in] unsigned int zoneID); /* TODO zoneID default value: 0 -- local device */
+    /*TODO*/ void AddAudioInterruptZonePids([out] set<int32_t> pids, [in] unsigned int zoneID); /* TODO zoneID default value: 0 -- local device */
+    /*TODO*/ void RemoveAudioInterruptZonePids([out] set<int32_t> pids, [in] unsigned int zoneID); /* TODO zoneID default value: 0 -- local device */
+    void ReleaseAudioInterruptZone([in] unsigned int zoneID); /* TODO zoneID default value: 0 -- local device */
+    void RegisterAudioZoneClient([out] IRemoteObject object);
+    void CreateAudioZone([out] String name, [out] AudioZoneContext context);
+    void ReleaseAudioZone([in] unsigned int zoneId);
+    void GetAllAudioZone([out] List<sharedptr<AudioZoneDescriptor>> retZoneDesc);
+    void GetAllAudioZone([in] unsigned int zoneId, [out] sharedptr<AudioZoneDescriptor> retZoneDesc);
+    void BindDeviceToAudioZone([in] unsigned int zoneId, [in] List<sharedptr<AudioDeviceDescriptor>> devices);
+    void UnBindDeviceToAudioZone([in] unsigned int zoneId, [in] List<sharedptr<AudioDeviceDescriptor>> devices)
+    void EnableAudioZoneReport([in] boolean enable);
+    void EnableAudioZoneChangeReport([in] unsigned int zoneId, [in] boolean enable);
+    void AddUidToAudioZone([in] unsigned int zoneId, [in] unsigned int uid);
+    void RemoveUidFromAudioZone([in] unsigned int zoneId, [in] unsigned int uid);
+    void EnableSystemVolumeProxy([in] unsigned int zoneId, [in] boolean enable);
+    /*TODO*/ std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId);
+    /*TODO*/ void GetAudioInterruptForZone(int32_t zoneId, const std::string &deviceTag);
+    void EnableAudioZoneInterruptReport([in] unsigned int zoneId, [out] String deviceTag, [in] boolean enable);
+    /*TODO*/ void InjectInterruptToAudioZone([in] unsigned int zoneId, const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
+    /*TODO*/ void InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag, const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
+    void SetCallDeviceActive([in] int deviceType, [in] boolean active, [in] String address, [in] unsigned int uid); /* TODO uid default INVALID_UID */
+    void GetActiveBluetoothDevice([out] sharedptr<AudioDeviceDescriptor>);
+    void GetConverterConfig([out] ConverterConfig retCnf);
+    void FetchOutputDeviceForTrack([out] AudioStreamChangeInfo streamChangeInfo, [in] AudioStreamDeviceChangeReasonExt reason);
+    void FetchInputDeviceForTrack([out] AudioStreamChangeInfo streamChangeInfo);
+    void IsHighResolutionExist([out] boolean ret);
+    void SetHighResolutionExist([in] bool highResExist);
+    void GetSpatializationSceneType([out] int retSceneType);
+    void SetSpatializationSceneType([in] int spatializationSceneType);
+    void GetMaxAmplitude([in] unsigned int deviceId, [out] float retMaxAmplitude);
+    void DisableSafeMediaVolume();
+    void IsHeadTrackingDataRequested([out] String macAddress, [out] boolean ret);
+    void SetAudioDeviceRefinerCallback([out] IRemoteObject object);
+    void UnsetAudioDeviceRefinerCallback();
+    void TriggerFetchDevice([in] AudioStreamDeviceChangeReasonExt reason);
+    void SetPreferredDevice([in] int preferredType, [out] sharedptr<AudioDeviceDescriptor> desc, [in] unsigned int uid); /* TODO uid default INVALID_UID */
+    void SetAudioDeviceAnahsCallback([out] IRemoteObject object);
+    void UnsetAudioDeviceAnahsCallback();
+    void SetAudioConcurrencyCallback([in] unsigned int sessionID, [out] IRemoteObject object);
+    void UnsetAudioConcurrencyCallback([in] unsigned int sessionID);
+    void ActivateAudioConcurrency([out] int pipeType);
+    void MoveToNewPipe([in] unsigned int sessionId, [in] int pipeType);
+    void InjectInterruption([in] String networkId, [out] InterruptEvent event);
+    void LoadSplitModule([out] String splitArgs, [out] String networkId);
+    void SetInputDevice([in] int deviceType, [in] unsigned int session_ID, [in] int sourceType, [in] boolean isRunning);
+    void IsAllowedPlayback([out] unsigned int uid, [out] unsigned int pid, [out] boolean isAllowed);
+    void SetVoiceRingtoneMute([in] boolean isMute);
+    void NotifySessionStateChange([in] unsigned int uid, [in] unsigned int pid, [in] boolean hasSession);
+    //TODO void NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze)
+    void ResetAllProxy();
+    void SaveRemoteInfo([out] String networkId, [in] int deviceType);
+    void SetDeviceConnectionStatus([out] sharedptr<AudioDeviceDescriptor> desc, [in] boolean isConnected);
+    void GetSupportedAudioEffectProperty([out] AudioEffectPropertyArrayV3 propertyArray);
+    void SetAudioEffectProperty([out] AudioEffectPropertyArrayV3 propertyArray);
+    void GetAudioEffectProperty([out] AudioEffectPropertyArrayV3 propertyArray);
+    void GetSupportedAudioEffectProperty([out] AudioEffectPropertyArray propertyArray);
+    void GetSupportedAudioEnhanceProperty([out] AudioEnhancePropertyArray propertyArray);
+    void SetAudioEffectProperty([out] AudioEffectPropertyArray propertyArray);
+    void GetAudioEffectProperty([out] AudioEffectPropertyArray propertyArray);
+    void SetAudioEnhanceProperty([out] AudioEnhancePropertyArray propertyArray);
+    void GetAudioEnhanceProperty([out] AudioEnhancePropertyArray propertyArray);
+    void SetVirtualCall([in] boolean isVirtual);
+    void SetQueryAllowedPlaybackCallback([out] IRemoteObject object);
+    void SetBackgroundMuteCallback([out] IRemoteObject object);
+    void GetDirectPlaybackSupport([out] AudioStreamInfo streamInfo, [out] int streamUsage, [out] int retMode);
+    void IsAcousticEchoCancelerSupported([in] int sourceType, [out] boolean ret);
+    void ForceStopAudioStream([in] int audioType);
+    void IsCapturerFocusAvailable([out] AudioCapturerChangeInfo capturerInfo, [out] boolean ret);
+    void GetMaxVolumeLevelByUsage([in] int streamUsage);
+    void GetMinVolumeLevelByUsage([in] int streamUsage);
+    void GetVolumeLevelByUsage([in] int streamUsage);
+    void GetStreamMuteByUsage([in] int streamUsage, [out] boolean ret);
+    //TODO void SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages);
+    void UpdateDeviceInfo([out] sharedptr<AudioDeviceDescriptor> deviceDesc, [in] int command);
+    void SetSleAudioOperationCallback([out] IRemoteObject object);
+
+
+
+}
+

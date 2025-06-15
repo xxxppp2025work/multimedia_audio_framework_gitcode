@@ -46,7 +46,7 @@ enum class AudioZoneFocusStrategy {
     DISTRIBUTED_FOCUS_STRATEGY = 1,
 };
 
-class AudioZoneContext {
+class AudioZoneContext : public Parcelable {
 public:
     AudioZoneFocusStrategy focusStrategy_ = AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY;
 
@@ -60,6 +60,17 @@ public:
     void Unmarshalling(Parcel &parcel)
     {
         focusStrategy_ = static_cast<AudioZoneFocusStrategy>(parcel.ReadInt32());
+    }
+
+    static AudioZoneContext *UnmarshallingPtr(Parcel &parcel)
+    {
+        AudioZoneContext *info = new AudioZoneContext();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->focusStrategy_ = static_cast<AudioZoneFocusStrategy>(parcel.ReadInt32());
+        return info;
     }
 };
 

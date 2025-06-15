@@ -21,7 +21,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioRendererChangeInfo {
+class AudioRendererChangeInfo : public Parcelable {
 public:
     int32_t createrUID;
     int32_t clientUID;
@@ -109,9 +109,38 @@ public:
         outputDeviceInfo.Unmarshalling(parcel);
         appVolume = parcel.ReadInt32();
     }
+
+    // static AudioRendererChangeInfo *Unmarshalling(Parcel &parcel)
+    // {
+    //     AudioRendererChangeInfo *info = new AudioRendererChangeInfo();
+    //     if (info == nullptr) {
+    //         return nullptr;
+    //     }
+    //     info->createrUID = parcel.ReadInt32();
+    //     info->clientUID = parcel.ReadInt32();
+    //     info->sessionId = parcel.ReadInt32();
+    //     info->callerPid = parcel.ReadInt32();
+    //     info->clientPid = parcel.ReadInt32();
+    //     info->tokenId = parcel.ReadInt32();
+    //     info->channelCount = parcel.ReadInt32();
+    //     info->backMute = parcel.ReadBool();
+
+    //     info->rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
+    //     info->rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+    //     info->rendererInfo.rendererFlags = parcel.ReadInt32();
+    //     info->rendererInfo.originalFlag = parcel.ReadInt32();
+    //     info->rendererInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+    //     info->rendererInfo.format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
+    //     info->rendererInfo.Unmarshalling(parcel);
+
+    //     info->rendererState = static_cast<RendererState>(parcel.ReadInt32());
+    //     info->outputDeviceInfo.Unmarshalling(parcel);
+    //     info->appVolume = parcel.ReadInt32();
+    //     return info;
+    // }
 };
 
-class AudioCapturerChangeInfo {
+class AudioCapturerChangeInfo : public Parcelable {
 public:
     int32_t createrUID;
     int32_t clientUID;
@@ -172,11 +201,48 @@ public:
         muted = parcel.ReadBool();
         appTokenId = parcel.ReadUint32();
     }
+
+    // static AudioCapturerChangeInfo *Unmarshalling(Parcel &parcel)
+    // {
+    //     AudioCapturerChangeInfo *info = new AudioCapturerChangeInfo();
+    //     if (info == nullptr) {
+    //         return nullptr;
+    //     }
+
+    //     info->createrUID = parcel.ReadInt32();
+    //     info->clientUID = parcel.ReadInt32();
+    //     info->sessionId = parcel.ReadInt32();
+    //     info->callerPid = parcel.ReadInt32();
+    //     info->clientPid = parcel.ReadInt32();
+    //     info->capturerInfo.Unmarshalling(parcel);
+    //     info->capturerState = static_cast<CapturerState>(parcel.ReadInt32());
+    //     info->inputDeviceInfo.Unmarshalling(parcel);
+    //     info->muted = parcel.ReadBool();
+    //     info->appTokenId = parcel.ReadUint32();
+    //     return info;
+    // }
 };
 
-struct AudioStreamChangeInfo {
+struct AudioStreamChangeInfo : public Parcelable {
     AudioRendererChangeInfo audioRendererChangeInfo;
     AudioCapturerChangeInfo audioCapturerChangeInfo;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return audioRendererChangeInfo.Marshalling(parcel)
+            && audioCapturerChangeInfo.Marshalling(parcel);
+    }
+
+    static AudioStreamChangeInfo *Unmarshalling(Parcel &parcel)
+    {
+        AudioStreamChangeInfo *info = new AudioStreamChangeInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->audioRendererChangeInfo.Unmarshalling(parcel);
+        info->audioCapturerChangeInfo.Unmarshalling(parcel);
+        return info;
+    }
 };
 } // namespace AudioStandard
 } // namespace OHOS

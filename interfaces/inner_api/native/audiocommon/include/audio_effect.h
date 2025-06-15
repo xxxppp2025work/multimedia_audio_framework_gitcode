@@ -77,6 +77,18 @@ struct AudioSpatialDeviceState {
 struct Library {
     std::string name;
     std::string path;
+
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteString(name) &&
+            parcel.WriteString(path);
+    }
+
+    void Unmarshalling(Parcel &parcel)
+    {
+        name = parcel.ReadString(name);
+        path = parcel.ReadString(path);
+    }
 };
 
 struct Effect {
@@ -416,10 +428,29 @@ struct AudioSpatializationState : public Parcelable {
     }
 };
 
-struct ConverterConfig {
+struct ConverterConfig : public Parcelable {
     std::string version;
     Library library;
     uint64_t outChannelLayout = 0;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteString(version) &&
+            library.Marshalling(parcel) &&
+            parcel.WriteUint64(outChannelLayout);
+    }
+
+    static ConverterConfig *Unmarshalling(Parcel &parcel)
+    {
+        ConverterConfig *info = new ConverterConfig();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->version = parcel.ReadString();
+        info->library.Unmarshalling(parcel);
+        info->outChannelLayout = parcel.ReadUint64();
+        return info;
+    }
 };
 
 enum AudioSpatializationSceneType {
