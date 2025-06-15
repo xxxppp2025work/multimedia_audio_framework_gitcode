@@ -18,6 +18,7 @@
 #include "hpae_source_input_cluster.h"
 #include "test_case_common.h"
 #include "hpae_format_convert.h"
+#include "audio_enhance_chain_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -26,6 +27,8 @@ namespace HPAE {
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
 const uint32_t DEFAULT_NODE_ID = 1243;
 const uint32_t DEFAULT_FORMAT = 16;
+const uint32_t DEFAULT_SAMPLE_RATE = 48000;
+const uint32_t DEFAULT_CHANNEL = 2;
 static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm";
 
 class HpaeCaptureEffectNodeTest : public testing::Test {
@@ -74,6 +77,13 @@ static AudioSampleFormat ConverFormat(uint32_t format)
     return static_cast<AudioSampleFormat>(format / BITLENGTH - 1);
 }
 
+
+/**
+ * @tc.name  : Test HpaeCaptureEffectNode API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCaptureEffectNodeTest_001
+ * @tc.desc  : Test HpaeCaptureEffectNode::HpaeCaptureEffectNode()
+ */
 TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_001)
 {
     HpaeNodeInfo nodeInfo;
@@ -120,6 +130,12 @@ TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_001)
     EXPECT_EQ(hpaeCaptureEffectNode->Reset(), true);
 }
 
+/**
+ * @tc.name  : Test HpaeCaptureEffectNode API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCaptureEffectNodeTest_002
+ * @tc.desc  : Test HpaeCaptureEffectNode::DoProcess()
+ */
 TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_002)
 {
     HpaeNodeInfo nodeInfo;
@@ -169,6 +185,12 @@ TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_002)
     hpaeSourceInputCluster->CapturerSourceDeInit();
 }
 
+/**
+ * @tc.name  : Test HpaeCaptureEffectNode API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCaptureEffectNodeTest_003
+ * @tc.desc  : Test HpaeCaptureEffectNode::CaptureEffectCreate()/CaptureEffectRelease()
+ */
 TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_003)
 {
     HpaeNodeInfo nodeInfo;
@@ -188,6 +210,107 @@ TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_003)
     };
     EXPECT_NE(hpaeCaptureEffectNode->CaptureEffectCreate(0, attr), 0);
     EXPECT_NE(hpaeCaptureEffectNode->CaptureEffectRelease(0), 0);
+}
+
+/**
+ * @tc.name  : Test HpaeCaptureEffectNode API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCaptureEffectNodeTest_004
+ * @tc.desc  : Test HpaeCaptureEffectNode::HpaeCaptureEffectNode()
+ */
+TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_003)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
+    nodeInfo.statusCallback = testStatuscallback;
+    nodeInfo.effectInfo.enhanceScene = SCENE_NONE;
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+    
+    EXPECT_EQ(hpaeCaptureEffectNode->Reset(), true);
+}
+
+/**
+ * @tc.name  : Test HpaeCaptureEffectNode API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCaptureEffectNodeTest_004
+ * @tc.desc  : Test HpaeCaptureEffectNode::HpaeCaptureEffectNode()
+ */
+TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_004)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
+    nodeInfo.statusCallback = testStatuscallback;
+    nodeInfo.effectInfo.enhanceScene = SCENE_NONE;
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+    
+    EXPECT_EQ(hpaeCaptureEffectNode->Reset(), true);
+}
+
+/**
+ * @tc.name  : Test HpaeCaptureEffectNode API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCaptureEffectNodeTest_005
+ * @tc.desc  : Test HpaeCaptureEffectNode::SignalProcess()
+ */
+TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_005)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
+    nodeInfo.statusCallback = testStatuscallback;
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+    EXPECT_EQ(hpaeCaptureEffectNode->Reset(), true);
+    
+    std::vector<HpaePcmBuffer *> inputs = {};
+    EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(inputs), nullptr);
+}
+
+/**
+ * @tc.name  : Test HpaeCaptureEffectNode API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCaptureEffectNodeTest_006
+ * @tc.desc  : Test HpaeCaptureEffectNode::SignalProcess()
+ */
+TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_006)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
+    nodeInfo.statusCallback = testStatuscallback;
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+    EXPECT_EQ(hpaeCaptureEffectNode->Reset(), true);
+    
+    std::vector<HpaePcmBuffer *> inputs = {};
+    PcmBufferInfo pcmBufferInfo(DEFAULT_CHANNEL, DEFAULT_FRAME_LENGTH, DEFAULT_SAMPLE_RATE);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    hpaePcmBuffer.SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_EC);
+    inputs.emplace_back(hpaePcmBuffer);
+    EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(inputs), inputs[0]);
+}
+
+/**
+ * @tc.name  : Test HpaeCaptureEffectNode API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCaptureEffectNodeTest_007
+ * @tc.desc  : Test HpaeCaptureEffectNode::SignalProcess()
+ */
+TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_007)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
+    nodeInfo.statusCallback = testStatuscallback;
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+    EXPECT_EQ(hpaeCaptureEffectNode->Reset(), true);
+    
+    std::vector<HpaePcmBuffer *> inputs = {};
+    PcmBufferInfo pcmBufferInfo(DEFAULT_CHANNEL, DEFAULT_FRAME_LENGTH, DEFAULT_SAMPLE_RATE);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    hpaePcmBuffer.SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_MICREF);
+    inputs.emplace_back(hpaePcmBuffer);
+    EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(inputs), inputs[0]);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
