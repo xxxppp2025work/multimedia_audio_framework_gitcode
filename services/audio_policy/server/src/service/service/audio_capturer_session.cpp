@@ -211,7 +211,7 @@ void AudioCapturerSession::HandleRemainingSource()
     SourceType openSource = audioEcManager_.GetSourceOpened();
     bool useMatchingPropInfo = false;
     uint32_t highestSession = 0;
-
+    
     // find highest source in remaining session
     for (const auto &iter : sessionWithNormalSourceType_) {
         // Convert sessionWithNormalSourceType to normalSourceInHdi
