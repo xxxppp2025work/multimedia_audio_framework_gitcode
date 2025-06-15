@@ -135,6 +135,7 @@ void AudioActiveDevice::SetCurrentOutputDevice(const AudioDeviceDescriptor &desc
 {
     std::lock_guard<std::mutex> lock(curOutputDevice_);
     currentActiveDevice_ = AudioDeviceDescriptor(desc);
+    currentActiveDevice_.descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
 }
 
 void AudioActiveDevice::SetCurrentOutputDeviceType(DeviceType deviceType)
