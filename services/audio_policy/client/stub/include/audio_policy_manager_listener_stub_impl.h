@@ -30,8 +30,6 @@ public:
     virtual ~AudioPolicyManagerListenerStubImpl();
 
     // IStandardAudioManagerListener override
-    // int OnRemoteRequest(uint32_t code, MessageParcel &data,
-    //     MessageParcel &reply, MessageOption &option) override;
     int32_t OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     int32_t OnAvailableDeviceChange(uint32_t usage, const DeviceChangeAction &deviceChangeAction) override;
     int32_t OnQueryClientType(const std::string &bundleName, uint32_t uid, bool& ret) override;

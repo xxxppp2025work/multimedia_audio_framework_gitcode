@@ -24,6 +24,7 @@ idl_gen_interface("audio_policy_idl_interface") {
     "IStandardAudioRoutingManagerListener.idl",
     "IStandardAudioAnahsManagerListener.idl",
     "IAudioPolicyClient.idl",
+    "IStandardSleAudioOperationCallback.idl",
   ]
   sources_callback = [
   ]

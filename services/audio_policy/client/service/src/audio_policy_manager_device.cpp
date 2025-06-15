@@ -549,7 +549,7 @@ int32_t AudioPolicyManager::SetSleAudioOperationCallback(const std::shared_ptr<S
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
     std::unique_lock<std::mutex> lock(listenerStubMutex_);
-    auto audioSleCb = new (std::nothrow) SleAudioOperationCallbackStub();
+    auto audioSleCb = new (std::nothrow) SleAudioOperationCallbackStubImpl();
     CHECK_AND_RETURN_RET_LOG(audioSleCb != nullptr, ERROR, "object is nullptr");
 
     audioSleCb->SetSleAudioOperationCallback(callback);
