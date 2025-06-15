@@ -662,11 +662,6 @@ int32_t CapturerInServer::Release()
     lock.unlock();
     AUDIO_INFO_LOG("Start release capturer");
 
-    if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        int32_t result =
-            CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
-        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Policy remove client failed, reason: %{public}d", result);
-    }
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
     if (ret < 0) {
@@ -674,6 +669,13 @@ int32_t CapturerInServer::Release()
         status_ = I_STATUS_INVALID;
         return ret;
     }
+
+    if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        int32_t result =
+            CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Policy remove client failed, reason: %{public}d", result);
+    }
+
     if (status_ != I_STATUS_STOPPING &&
         status_ != I_STATUS_STOPPED) {
         HandleOperationStopped(CAPTURER_STAGE_STOP_BY_RELEASE);

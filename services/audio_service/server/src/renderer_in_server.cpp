@@ -1211,10 +1211,8 @@ int32_t RendererInServer::Release()
         AudioService::GetInstance()->CleanAppUseNumMap(processConfig_.appInfo.appUid);
     }
 
-    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
-    ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
+    int32_t ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
 
     AudioVolume::GetInstance()->RemoveStreamVolume(streamIndex_);
     AudioService::GetInstance()->RemoveRenderer(streamIndex_);
@@ -1223,6 +1221,10 @@ int32_t RendererInServer::Release()
         status_ = I_STATUS_INVALID;
         return ret;
     }
+
+    ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
+
     if (status_ != I_STATUS_STOPPING &&
         status_ != I_STATUS_STOPPED) {
         HandleOperationStopped(RENDERER_STAGE_STOP_BY_RELEASE);
