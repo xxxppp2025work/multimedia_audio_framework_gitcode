@@ -888,7 +888,7 @@ struct SinkInfo {
     std::string adapterName;
 };
 
-struct SinkInput {
+struct SinkInput : public Parcelable {
     int32_t streamId;
     AudioStreamType streamType;
 
@@ -900,7 +900,7 @@ struct SinkInput {
     std::string sinkName; // sink name
     int32_t statusMark; // mark the router status
     uint64_t startTime; // when this router is created
-    bool Marshalling(Parcel &parcel) const
+    bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(streamId) &&
                parcel.WriteInt32(static_cast<int32_t>(streamType)) &&
@@ -908,13 +908,20 @@ struct SinkInput {
                parcel.WriteInt32(pid) &&
                parcel.WriteUint32(paStreamId);
     }
-    void Unmarshalling(Parcel &parcel)
+
+    static SinkInput *Unmarshalling(Parcel &parcel)
     {
-        streamId = parcel.ReadInt32();
-        streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
-        uid = parcel.ReadInt32();
-        pid = parcel.ReadInt32();
-        paStreamId = parcel.ReadUint32();
+        auto sinkInput = std::make_unique<SinkInput>();
+        if (sinkInput == nullptr) {
+            return nullptr;
+        }
+
+        sinkInput->streamId = parcel.ReadInt32();
+        sinkInput->streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
+        sinkInput->uid = parcel.ReadInt32();
+        sinkInput->pid = parcel.ReadInt32();
+        sinkInput->paStreamId = parcel.ReadUint32();
+        return sinkInput.release();
     }
 };
 
@@ -1691,11 +1698,33 @@ enum CheckPosTimeRes : int32_t {
     NEED_MODIFY,
 };
 
-struct RestoreInfo {
+struct RestoreInfo : public Parcelable {
     RestoreReason restoreReason = DEFAULT_REASON;
     int32_t deviceChangeReason = 0;
     int32_t targetStreamFlag = AUDIO_FLAG_NORMAL;
     uint32_t routeFlag = 0;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(restoreReason) &&
+               parcel.WriteInt32(deviceChangeReason) &&
+               parcel.WriteInt32(targetStreamFlag) &&
+               parcel.WriteUint32(routeFlag);
+    }
+
+    static RestoreInfo *Unmarshalling(Parcel &parcel)
+    {
+        auto info = std::make_unique<RestoreInfo>();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->restoreReason = static_cast<RestoreReason>(parcel.ReadInt32());
+        info->deviceChangeReason = parcel.ReadInt32();
+        info->targetStreamFlag = parcel.ReadInt32();
+        info->routeFlag = parcel.ReadUint32();
+        return info.release();
+    }
 };
 
 /**

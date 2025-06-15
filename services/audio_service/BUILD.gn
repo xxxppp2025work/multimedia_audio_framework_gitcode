@@ -197,7 +197,6 @@ ohos_shared_library("audio_client") {
     "client/src/audio_effect_manager.cpp",
     "client/src/audio_group_manager.cpp",
     "client/src/audio_manager_listener_stub_impl.cpp",
-    "client/src/audio_manager_proxy.cpp",
     "client/src/audio_process_in_client.cpp",
     "client/src/audio_routing_manager.cpp",
     "client/src/audio_session_manager.cpp",
@@ -498,7 +497,6 @@ audio_ohos_library("audio_service") {
   sources = [
     "server/src/audio_effect_server.cpp",
     "server/src/audio_manager_listener.cpp",
-    "server/src/audio_manager_stub.cpp",
     "server/src/audio_server.cpp",
     "server/src/audio_server_asr.cpp",
     "server/src/audio_server_dump.cpp",
@@ -526,6 +524,7 @@ audio_ohos_library("audio_service") {
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../audio_engine:audio_engine_manager",
     "${audio_framework_root}/services/audio_service/idl:idl_sa_proxy",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
   ]
 
   external_deps = [

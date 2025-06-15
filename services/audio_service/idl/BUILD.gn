@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Copyright (c) 2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -23,6 +23,7 @@ idl_gen_interface("audio_service_idl_interface") {
     "IIpcStream.idl",
     "IAudioProcess.idl",
     "IProcessCb.idl",
+    "IStandardAudioService.idl",
   ]
   if (audio_framework_feature_offline_effect) {
     sources += [ "IIpcOfflineStream.idl" ]
@@ -48,6 +49,7 @@ config("audio_service_sa_idl_config") {
     "${target_gen_dir}",
     "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include/",
     "${audio_framework_root}/services/audio_service/common/include/",
+    "${audio_framework_root}/frameworks/native/hdiadapter_new/include/common/",
   ]
 }
 
@@ -103,7 +105,7 @@ ohos_source_set("idl_sa_stub") {
   sources = filter_include(output_values, [
                             "*_stub.cpp",
                             # "*_proxy.cpp",
-                            "*_types.cpp",
+                            # "*_types.cpp",
                             # "*_callback_proxy.cpp",
                           ])
   print("jileiidl stub source =", sources)

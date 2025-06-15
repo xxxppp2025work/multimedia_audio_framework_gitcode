@@ -23,7 +23,7 @@
 namespace OHOS {
 namespace AudioStandard {
 // if attr struct change, please check ipc serialize and deserialize code
-typedef struct IAudioSinkAttr {
+typedef struct IAudioSinkAttr : public Parcelable {
     std::string adapterName = "";
     uint32_t openMicSpeaker = 0;
     AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
@@ -37,9 +37,49 @@ typedef struct IAudioSinkAttr {
     int32_t audioStreamFlag = 0;
     std::string address;
     const char *aux = nullptr;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteString(adapterName) &&
+            parcel.WriteUint32(openMicSpeaker) &&
+            parcel.WriteUint8(static_cast<uint8_t>(format)) &&
+            parcel.WriteUint32(sampleRate) &&
+            parcel.WriteUint32(channel) &&
+            parcel.WriteFloat(volume) &&
+            parcel.WriteString(filePath == nullptr ? "" : std::string(filePath)) &&
+            parcel.WriteString(deviceNetworkId == nullptr ? "" : std::string(deviceNetworkId)) &&
+            parcel.WriteInt32(deviceType) &&
+            parcel.WriteUint64(channelLayout) &&
+            parcel.WriteInt32(audioStreamFlag) &&
+            parcel.WriteString(address) &&
+            parcel.WriteString(aux == nullptr ? "" : std::string(aux));
+    }
+
+    static IAudioSinkAttr *Unmarshalling(Parcel &parcel)
+    {
+        auto attr = std::make_unique<IAudioSinkAttr>();
+        if (attr == nullptr) {
+            return nullptr;
+        }
+
+        attr->adapterName = parcel.ReadString();
+        attr->openMicSpeaker = parcel.ReadUint32();
+        attr->format = static_cast<AudioSampleFormat>(parcel.ReadUint8());
+        attr->sampleRate = parcel.ReadUint32();
+        attr->channel = parcel.ReadUint32();
+        attr->volume = parcel.ReadFloat();
+        attr->filePath = parcel.ReadString().c_str();
+        attr->deviceNetworkId = parcel.ReadString().c_str();
+        attr->deviceType = parcel.ReadInt32();
+        attr->channelLayout = parcel.ReadUint64();
+        attr->audioStreamFlag = parcel.ReadInt32();
+        attr->address = parcel.ReadString();
+        attr->aux = parcel.ReadString().c_str();
+        return attr.release();
+    }
 } IAudioSinkAttr;
 
-typedef struct IAudioSourceAttr {
+typedef struct IAudioSourceAttr : public Parcelable {
     std::string adapterName = "";
     uint32_t openMicSpeaker = 0;
     AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
@@ -58,6 +98,56 @@ typedef struct IAudioSourceAttr {
     AudioSampleFormat formatEc = AudioSampleFormat::INVALID_WIDTH;
     uint32_t sampleRateEc = 0;
     uint32_t channelEc = 0;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteString(adapterName) &&
+            parcel.WriteUint32(openMicSpeaker) &&
+            parcel.WriteUint8(static_cast<uint8_t>(format)) &&
+            parcel.WriteUint32(sampleRate) &&
+            parcel.WriteUint32(channel) &&
+            parcel.WriteFloat(volume) &&
+            parcel.WriteUint32(bufferSize) &&
+            parcel.WriteBool(isBigEndian) &&
+            parcel.WriteString(filePath == nullptr ? "" : std::string(filePath)) &&
+            parcel.WriteString(deviceNetworkId == nullptr ? "" : std::string(deviceNetworkId)) &&
+            parcel.WriteInt32(deviceType) &&
+            parcel.WriteInt32(sourceType) &&
+            parcel.WriteUint64(channelLayout) &&
+            parcel.WriteInt32(audioStreamFlag) &&
+            parcel.WriteBool(hasEcConfig) &&
+            parcel.WriteUint8(static_cast<uint8_t>(formatEc)) &&
+            parcel.WriteUint32(sampleRateEc) &&
+            parcel.WriteUint32(channelEc);
+    }
+
+    static IAudioSourceAttr *Unmarshalling(Parcel &parcel)
+    {
+        auto attr = std::make_unique<IAudioSourceAttr>();
+        if (attr == nullptr) {
+            return nullptr;
+        }
+
+        attr->adapterName = parcel.ReadString();
+        attr->openMicSpeaker = parcel.ReadUint32();
+        attr->format = static_cast<AudioSampleFormat>(parcel.ReadUint8());
+        attr->sampleRate = parcel.ReadUint32();
+        attr->channel = parcel.ReadUint32();
+        attr->volume = parcel.ReadFloat();
+        attr->bufferSize = parcel.ReadUint32();
+        attr->isBigEndian = parcel.ReadBool();
+        attr->filePath = parcel.ReadString().c_str();
+        attr->deviceNetworkId = parcel.ReadString().c_str();
+        attr->deviceType = parcel.ReadInt32();
+        attr->sourceType = parcel.ReadInt32();
+        attr->channelLayout = parcel.ReadUint64();
+        attr->audioStreamFlag = parcel.ReadInt32();
+        attr->hasEcConfig = parcel.ReadBool();
+        attr->formatEc = static_cast<AudioSampleFormat>(parcel.ReadUint8());
+        attr->sampleRateEc = parcel.ReadUint32();
+        attr->channelEc = parcel.ReadUint32();
+        return attr.release();
+    }
 } IAudioSourceAttr;
 
 typedef struct FrameDesc {

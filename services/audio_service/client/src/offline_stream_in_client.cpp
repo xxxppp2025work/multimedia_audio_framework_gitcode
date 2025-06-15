@@ -27,6 +27,7 @@
 #include "audio_manager_base.h"
 #include "audio_service_log.h"
 #include "audio_errors.h"
+#include "istandard_audio_service.h"
 
 using namespace std;
 
@@ -56,7 +57,8 @@ shared_ptr<OfflineStreamInClient> OfflineStreamInClient::Create()
     sptr<IStandardAudioService> gasp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, nullptr, "Create failed, can not get service.");
     int32_t errCode = 0;
-    sptr<IRemoteObject> ipcProxy = gasp->CreateIpcOfflineStream(errCode);
+    sptr<IRemoteObject> ipcProxy;
+    gasp->CreateIpcOfflineStream(errCode, ipcProxy);
     CHECK_AND_RETURN_RET_LOG(errCode == 0, nullptr, "create audio stream fail, errcode is %{public}d.", errCode);
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, nullptr, "Create failed with null ipcProxy.");
     sptr<IIpcOfflineStream> iOfflineStreamProxy = iface_cast<IIpcOfflineStream>(ipcProxy);

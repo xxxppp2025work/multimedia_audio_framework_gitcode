@@ -39,3 +39,13 @@ enum SessionOperation {
     SESSION_OPERATION_STOP,
     SESSION_OPERATION_RELEASE,
 };
+
+struct StringPair {
+    String firstParam;
+    String secondParam;
+};
+
+struct IntPair {
+    int firstParam;
+    int secondParam;
+};

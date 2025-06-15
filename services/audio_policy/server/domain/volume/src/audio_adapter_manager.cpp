@@ -1086,11 +1086,11 @@ AudioIOHandle AudioAdapterManager::OpenPaAudioPort(std::shared_ptr<AudioPipeInfo
     if (pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT) {
         std::string idInfo = GetHdiSinkIdInfo(pipeInfo->moduleInfo_);
         IAudioSinkAttr attr = GetAudioSinkAttr(pipeInfo->moduleInfo_);
-        ioHandle = audioServerProxy_->CreateHdiSinkPort(pipeInfo->moduleInfo_.className, idInfo, attr);
+        audioServerProxy_->CreateHdiSinkPort(pipeInfo->moduleInfo_.className, idInfo, attr, ioHandle);
     } else if (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT) {
         std::string idInfo = GetHdiSourceIdInfo(pipeInfo->moduleInfo_);
         IAudioSourceAttr attr = GetAudioSourceAttr(pipeInfo->moduleInfo_);
-        ioHandle = audioServerProxy_->CreateHdiSourcePort(pipeInfo->moduleInfo_.className, idInfo, attr);
+        audioServerProxy_->CreateHdiSourcePort(pipeInfo->moduleInfo_.className, idInfo, attr, ioHandle);
     } else {
         AUDIO_ERR_LOG("Invalid pipe role: %{public}u", pipeInfo->pipeRole_);
     }
@@ -1132,7 +1132,7 @@ AudioIOHandle AudioAdapterManager::OpenNotPaAudioPort(std::shared_ptr<AudioPipeI
             }
         }
         std::string identity = IPCSkeleton::ResetCallingIdentity();
-        ioHandle = audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, idType, idInfo, attr);
+        audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, idType, idInfo, attr, ioHandle);
         IPCSkeleton::SetCallingIdentity(identity);
     } else if (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT) {
         std::string idInfo = HDI_ID_INFO_DEFAULT;
@@ -1148,7 +1148,7 @@ AudioIOHandle AudioAdapterManager::OpenNotPaAudioPort(std::shared_ptr<AudioPipeI
             }
         }
         std::string identity = IPCSkeleton::ResetCallingIdentity();
-        ioHandle = audioServerProxy_->CreateSourcePort(HDI_ID_BASE_CAPTURE, idType, idInfo, attr);
+        audioServerProxy_->CreateSourcePort(HDI_ID_BASE_CAPTURE, idType, idInfo, attr, ioHandle);
         IPCSkeleton::SetCallingIdentity(identity);
     } else {
         AUDIO_ERR_LOG("Invalid pipe role: %{public}u", pipeInfo->pipeRole_);
@@ -1207,16 +1207,16 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
     if (audioModuleInfo.lib == "libmodule-inner-capturer-sink.z.so") {
         std::string idInfo = audioModuleInfo.name;
         IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
-        ioHandle = audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, idInfo, attr);
+        audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, idInfo, attr, ioHandle);
     } else {
         if (audioModuleInfo.role == HDI_AUDIO_PORT_SINK_ROLE) {
             std::string idInfo = GetHdiSinkIdInfo(audioModuleInfo);
             IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
-            ioHandle = audioServerProxy_->CreateHdiSinkPort(audioModuleInfo.className, idInfo, attr);
+            audioServerProxy_->CreateHdiSinkPort(audioModuleInfo.className, idInfo, attr, ioHandle);
         } else if (audioModuleInfo.role == HDI_AUDIO_PORT_SOURCE_ROLE) {
             std::string idInfo = GetHdiSourceIdInfo(audioModuleInfo);
             IAudioSourceAttr attr = GetAudioSourceAttr(audioModuleInfo);
-            ioHandle = audioServerProxy_->CreateHdiSourcePort(audioModuleInfo.className, idInfo, attr);
+            audioServerProxy_->CreateHdiSourcePort(audioModuleInfo.className, idInfo, attr, ioHandle);
         }
     }
     IPCSkeleton::SetCallingIdentity(identity);

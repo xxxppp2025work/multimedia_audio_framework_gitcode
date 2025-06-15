@@ -77,7 +77,7 @@ struct AudioRendererDataTransferStateChangeInfo : public Parcelable {
     }
 };
 
-struct DataTransferMonitorParam {
+struct DataTransferMonitorParam : public Parcelable {
     int32_t clientUID;
     int32_t badDataTransferTypeBitMap;
     int32_t timeInterval;
@@ -90,19 +90,26 @@ struct DataTransferMonitorParam {
         return clientUID == param.clientUID && badDataTransferTypeBitMap == param.badDataTransferTypeBitMap &&
         timeInterval == param.timeInterval && badFramesRatio == param.badFramesRatio;
     }
-    bool Marshalling(Parcel &parcel) const
+ 
+    bool Marshalling(Parcel &parcel) const override
     {
-        return parcel.WriteInt32(clientUID)
-            && parcel.WriteInt32(badDataTransferTypeBitMap)
-            && parcel.WriteInt32(timeInterval)
-            && parcel.WriteInt32(badFramesRatio);
+        return parcel.WriteInt32(clientUID) &&
+            parcel.WriteInt32(badDataTransferTypeBitMap) &&
+            parcel.WriteInt32(timeInterval) &&
+            parcel.WriteInt32(badFramesRatio);
     }
-    void Unmarshalling(Parcel &parcel)
+
+    static DataTransferMonitorParam *Unmarshalling(Parcel &parcel)
     {
-        clientUID = parcel.ReadInt32();
-        badDataTransferTypeBitMap = parcel.ReadInt32();
-        timeInterval = parcel.ReadInt32();
-        badFramesRatio = parcel.ReadInt32();
+        auto param = std::make_unique<DataTransferMonitorParam>();
+        if (param == nullptr) {
+            return nullptr;
+        }
+        param->clientUID = parcel.ReadInt32();
+        param->badDataTransferTypeBitMap = parcel.ReadInt32();
+        param->timeInterval = parcel.ReadInt32();
+        param->badFramesRatio = parcel.ReadInt32();
+        return param.release();
     }
 };
 } // namespace AudioStandard

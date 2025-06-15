@@ -56,6 +56,9 @@ const uint32_t AUDIO_ID = 1041;
 // Ringer or alarmer dual tone
 const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;
 
+constexpr int32_t AUDIO_EXTRA_PARAMETERS_COUNT_UPPER_LIMIT = 40;
+constexpr int32_t AUDIO_EFFECT_CHAIN_COUNT_UPPER_LIMIT = 32;
+
 /* Define AudioXcollie timeout flag, consistent with xcollie_define.h in hiviewdfx  */
 static constexpr unsigned int AUDIO_XCOLLIE_FLAG_DEFAULT = (~0); // do all callback function
 static constexpr unsigned int AUDIO_XCOLLIE_FLAG_NOOP = (0); // do nothing but the caller defined function

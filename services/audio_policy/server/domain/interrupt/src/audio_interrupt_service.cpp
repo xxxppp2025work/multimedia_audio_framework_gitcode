@@ -30,6 +30,7 @@
 #include "app_mgr_client.h"
 #include "dfx_msg_manager.h"
 #include "audio_bundle_manager.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {

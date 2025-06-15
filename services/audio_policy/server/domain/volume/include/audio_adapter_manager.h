@@ -32,6 +32,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "hdi_adapter_type.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {

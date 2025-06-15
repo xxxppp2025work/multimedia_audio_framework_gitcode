@@ -38,6 +38,7 @@
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
 #include "audio_safe_block_queue.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {

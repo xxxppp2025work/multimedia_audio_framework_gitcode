@@ -43,6 +43,7 @@
 #include "format_converter.h"
 #include "iaudio_process.h"
 #include "process_cb_stub.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -358,11 +359,13 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     }
 
     int32_t errorCode = 0;
-    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(resetConfig, errorCode);
+    sptr<IRemoteObject> ipcProxy = nullptr;
+    AudioPlaybackCaptureConfig filterConfig = {};
+    gasp->CreateAudioProcess(resetConfig, errorCode, filterConfig, ipcProxy);
     for (int32_t retrycount = 0; (errorCode == ERR_RETRY_IN_CLIENT) && (retrycount < MAX_RETRY_COUNT); retrycount++) {
         AUDIO_WARNING_LOG("retry in client");
         std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
-        ipcProxy = gasp->CreateAudioProcess(config, errorCode);
+        gasp->CreateAudioProcess(config, errorCode, filterConfig, ipcProxy);
     }
     CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, nullptr, "failed with create audio stream fail.");
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, nullptr, "Create failed with null ipcProxy.");

@@ -250,7 +250,8 @@ AudioSharedMemory *AudioSharedMemory::Unmarshalling(Parcel &parcel)
 
     std::string name = msgParcel->ReadString();
 
-    AudioSharedMemoryImpl *memory = new AudioSharedMemoryImpl(fd, size, name);
+    // AudioSharedMemoryImpl *memory = new AudioSharedMemoryImpl(fd, size, name);
+    auto memory = std::make_unique<AudioSharedMemoryImpl>(fd, size, name);
     if (memory == nullptr) {
         AUDIO_ERR_LOG("not enough memory");
         return nullptr;
@@ -258,10 +259,9 @@ AudioSharedMemory *AudioSharedMemory::Unmarshalling(Parcel &parcel)
 
     if (memory->Init() != SUCCESS || memory->GetBase() == nullptr) {
         AUDIO_ERR_LOG("Init failed or GetBase failed");
-        delete memory;
-        memory = nullptr;
+        return nullptr;
     }
-    return memory;
+    return memory.release();
 }
 
 // OHAudioBuffer
@@ -504,7 +504,7 @@ OHAudioBuffer *OHAudioBuffer::Unmarshalling(Parcel &parcel)
     CHECK_AND_RETURN_RET_LOG(dataFd > MINFD, nullptr, "invalid dataFd: %{public}d", dataFd);
     CHECK_AND_RETURN_RET_LOG(infoFd == INVALID_FD || infoFd > MINFD, nullptr, "invalid infoFd: %{public}d", infoFd);
 
-    std::unique_ptr<OHAudioBuffer> buffer = std::make_unique<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
+    auto buffer = std::make_unique<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
     if (buffer == nullptr || buffer->Init(dataFd, infoFd) != SUCCESS) {
         AUDIO_ERR_LOG("buffer init failed.");

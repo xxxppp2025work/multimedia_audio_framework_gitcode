@@ -1971,7 +1971,8 @@ ConverterConfig AudioPolicyProxy::GetConverterConfig()
         data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, result, "failed, error: %d", error);
 
-    result.library = {reply.ReadString(), reply.ReadString()};
+    result.library.name = reply.ReadString();
+    result.library.path = reply.ReadString();
     result.outChannelLayout = reply.ReadUint64();
     return result;
 }
