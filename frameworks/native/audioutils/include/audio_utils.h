@@ -17,6 +17,7 @@
 
 #include <cstdint>
 #include <string>
+#include <list>
 #include <map>
 #include <unordered_map>
 #include <mutex>
@@ -570,6 +571,9 @@ uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
 void CloseFd(int fd);
 
 int32_t CheckSupportedParams(const AudioStreamInfo &info);
+
+std::vector<std::map<AudioInterrupt, int32_t>> ToIpcInterrupts(
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &from);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

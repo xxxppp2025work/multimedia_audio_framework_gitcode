@@ -205,7 +205,6 @@ audio_ohos_library("audio_policy_service") {
     "server/infra/ipc_proxy/src/audio_ability_manager.cpp",
     "server/infra/ipc_proxy/src/audio_server_proxy.cpp",
     "server/infra/state_monitor/audio_policy_state_monitor.cpp",
-    "server/proxy/src/audio_policy_client_proxy.cpp",
     "server/proxy/src/audio_policy_manager_listener_proxy.cpp",
     "server/proxy/src/sle_audio_operation_callback_proxy.cpp",
     "server/common/src/audio_group_handle.cpp",
@@ -580,7 +579,6 @@ audio_ohos_library("audio_policy_client") {
     "client/service/src/audio_anahs_manager_listener.cpp",
     "client/service/src/audio_zone_manager.cpp",
     "server/domain/volume/src/audio_volume_group_info.cpp",
-    "client/stub/src/audio_policy_client_stub.cpp",
     "client/stub/src/audio_policy_client_stub_impl.cpp",
     "client/stub/src/audio_policy_manager_listener_stub_impl.cpp",
     "client/stub/src/audio_zone_client.cpp",
@@ -601,6 +599,9 @@ audio_ohos_library("audio_policy_client") {
   include_dirs = [ 
     "../../frameworks/native/audioutils/include",
     "${audio_framework_root}/services/audio_service/common/include/",
+  ]
+  configs = [
+    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
   ]
 
   external_deps = [
@@ -723,6 +724,10 @@ ohos_shared_library("audio_foundation") {
   ]
 
   public_configs = [ ":audio_foundation_public_config" ]
+
+  configs = [
+    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
+  ]
 
   deps = [
     "../../frameworks/native/audioutils:audio_utils",

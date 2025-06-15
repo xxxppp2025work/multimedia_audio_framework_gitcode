@@ -20,6 +20,7 @@
 #include "audio_policy_service.h"
 #include "audio_core_service.h"
 #include "istandard_audio_routing_manager_listener.h"
+#include "iaudio_policy_client.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -648,7 +649,9 @@ void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::Inn
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         if (it->second && eventContextObj->deviceChangeAction.deviceDescriptors.size() > 0) {
             DeviceChangeAction deviceChangeAction = eventContextObj->deviceChangeAction;
-            if (!(it->second->hasBTPermission_)) {
+            bool hasBtPermission = true;
+            it->second->GetHasBTPermission(hasBtPermission);
+            if (!(hasBtPermission)) {
                 AudioPolicyService::GetAudioPolicyService().
                     UpdateDescWhenNoBTPermission(deviceChangeAction.deviceDescriptors);
             }
@@ -742,8 +745,10 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
             continue;
         }
+        bool hasSystemPermission = true;
+        volumeChangeCb->GetHasSystemPermission(hasSystemPermission);
         if (VolumeUtils::GetVolumeTypeFromStreamType(eventContextObj->volumeEvent.volumeType) == STREAM_SYSTEM &&
-            !volumeChangeCb->hasSystemPermission_) {
+            !hasSystemPermission) {
             AUDIO_DEBUG_LOG("volumeChangeCb: Non system applications do not send system callbacks");
             continue;
         }
@@ -781,7 +786,8 @@ void AudioPolicyServerHandler::HandleAudioSessionDeactiveCallback(const AppExecF
             return;
         }
         AUDIO_INFO_LOG("Trigger AudioSessionDeactiveCallback for client pid : %{public}d", clientPid);
-        audioSessionCb->OnAudioSessionDeactive(eventContextObj->sessionDeactivePair.second);
+        audioSessionCb->OnAudioSessionDeactive(
+            static_cast<int32_t>(eventContextObj->sessionDeactivePair.second.deactiveReason));
     } else {
         AUDIO_ERR_LOG("AudioSessionDeactiveCallback: no registered callback for pid %{public}d", clientPid);
     }
@@ -826,7 +832,7 @@ void AudioPolicyServerHandler::HandleFocusInfoChangeEvent(const AppExecFwk::Inne
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_FOCUS_INFO_CHANGE) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_FOCUS_INFO_CHANGE]) {
-            it->second->OnAudioFocusInfoChange(eventContextObj->focusInfoList);
+            it->second->OnAudioFocusInfoChange(ToIpcInterrupts(eventContextObj->focusInfoList));
         }
     }
 }
@@ -989,7 +995,9 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
         for (auto rendererInfo : rendererInfoList) {
             auto deviceDescs = AudioPolicyService::GetAudioPolicyService().
                 GetPreferredOutputDeviceDescInner(rendererInfo);
-            if (!(it->second->hasBTPermission_)) {
+            bool hasBTPermission = true;
+            it->second->GetHasBTPermission(hasBTPermission);
+            if (!hasBTPermission) {
                 AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
             }
             if (clientCallbacksMap_.count(clientPid) > 0 &&
@@ -1012,7 +1020,9 @@ void AudioPolicyServerHandler::HandlePreferredInputDeviceUpdated()
         for (auto capturerInfo : capturerInfoList) {
             auto deviceDescs = AudioPolicyService::GetAudioPolicyService().
                 GetPreferredInputDeviceDescInner(capturerInfo);
-            if (!(it->second->hasBTPermission_)) {
+            bool hasBTPermission = true;
+            it->second->GetHasBTPermission(hasBTPermission);
+            if (!hasBTPermission) {
                 AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
             }
             if (clientCallbacksMap_.count(clientPid) > 0 &&

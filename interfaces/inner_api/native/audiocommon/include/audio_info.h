@@ -353,7 +353,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
     "check CALLBACK_ENUMS");
 
-struct VolumeEvent {
+struct VolumeEvent : public Parcelable {
     AudioVolumeType volumeType;
     int32_t volume;
     bool updateUi;
@@ -365,7 +365,7 @@ struct VolumeEvent {
         volume(volLevel), updateUi(isUiUpdated) {}
     VolumeEvent() = default;
 
-    bool Marshalling(Parcel &parcel) const
+    bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(static_cast<int32_t>(volumeType))
             && parcel.WriteInt32(volume)
@@ -374,7 +374,7 @@ struct VolumeEvent {
             && parcel.WriteString(networkId)
             && parcel.WriteInt32(static_cast<int32_t>(volumeMode));
     }
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingSelf(Parcel &parcel)
     {
         volumeType = static_cast<AudioVolumeType>(parcel.ReadInt32());
         volume = parcel.ReadInt32();
@@ -383,16 +383,26 @@ struct VolumeEvent {
         networkId = parcel.ReadString();
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
     }
+
+    static VolumeEvent *Unmarshalling(Parcel &parcel)
+    {
+        VolumeEvent *info = new VolumeEvent();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->UnmarshallingSelf(parcel);
+        return info;
+    }
 };
 
-struct StreamVolumeEvent {
+struct StreamVolumeEvent : public Parcelable {
     StreamUsage streamUsage = STREAM_USAGE_INVALID;
     int32_t volume = -1;
     bool updateUi = false;
     int32_t volumeGroupId = -1;
     std::string networkId = "";
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
-    bool Marshalling(Parcel &parcel) const
+    bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(static_cast<int32_t>(streamUsage))
             && parcel.WriteInt32(volume)
@@ -401,7 +411,7 @@ struct StreamVolumeEvent {
             && parcel.WriteString(networkId)
             && parcel.WriteInt32(static_cast<int32_t>(volumeMode));
     }
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingSelf(Parcel &parcel)
     {
         streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
         volume = parcel.ReadInt32();
@@ -409,6 +419,17 @@ struct StreamVolumeEvent {
         volumeGroupId = parcel.ReadInt32();
         networkId = parcel.ReadString();
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
+    }
+
+    static StreamVolumeEvent *Unmarshalling(Parcel &parcel)
+    {
+        StreamVolumeEvent *info = new StreamVolumeEvent();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->UnmarshallingSelf(parcel);
+        return info;
     }
 };
 
@@ -458,7 +479,7 @@ enum RecorderType : int32_t {
     RECORDER_TYPE_AV_RECORDER = 1000,
 };
 
-struct AudioRendererInfo {
+struct AudioRendererInfo : public Parcelable {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
     int32_t rendererFlags = AUDIO_FLAG_NORMAL;
@@ -481,7 +502,15 @@ struct AudioRendererInfo {
     uint64_t expectedPlaybackDurationBytes = 0;
     int32_t effectMode = 1;
 
-    bool Marshalling(Parcel &parcel) const
+    AudioRendererInfo() {}
+    AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
+        : contentType(contentTypeIn), streamUsage(streamUsageIn), rendererFlags(rendererFlagsIn) {}
+    AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn,
+        int32_t rendererFlagsIn, AudioVolumeMode volumeModeIn)
+            : contentType(contentTypeIn), streamUsage(streamUsageIn),
+            rendererFlags(rendererFlagsIn), volumeMode(volumeModeIn) {}
+
+    bool Marshalling(Parcel &parcel) const override
     { 
         return parcel.WriteInt32(static_cast<int32_t>(contentType))
             && parcel.WriteInt32(static_cast<int32_t>(streamUsage))
@@ -501,7 +530,7 @@ struct AudioRendererInfo {
             && parcel.WriteInt32(effectMode)
             && parcel.WriteInt32(static_cast<int32_t>(volumeMode));
     }
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingSelf(Parcel &parcel)
     {
         contentType = static_cast<ContentType>(parcel.ReadInt32());
         streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
@@ -520,6 +549,16 @@ struct AudioRendererInfo {
         expectedPlaybackDurationBytes = parcel.ReadUint64();
         effectMode = parcel.ReadInt32();
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
+    }
+
+    static AudioRendererInfo *Unmarshalling(Parcel &parcel)
+    {
+        AudioRendererInfo *info = new AudioRendererInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->UnmarshallingSelf(parcel);
+        return info;
     }
 };
 
@@ -586,8 +625,23 @@ struct AudioRendererOptions {
     AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
 };
 
-struct MicStateChangeEvent {
+struct MicStateChangeEvent : public Parcelable {
     bool mute;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteBool(mute);
+    }
+
+    static MicStateChangeEvent *Unmarshalling(Parcel &parcel)
+    {
+        MicStateChangeEvent *info = new MicStateChangeEvent();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->mute = parcel.ReadBool();
+        return info;
+    }
 };
 
 enum AudioScene : int32_t {
@@ -1035,7 +1089,7 @@ struct AudioProcessConfig : public Parcelable {
 
     int32_t innerCapId = 0;
 
-
+    AudioProcessConfig() {}
     bool Marshalling(Parcel &parcel) const override
     {
         // AppInfo

@@ -43,7 +43,7 @@ public:
     }
     AudioRendererChangeInfo() = default;
     ~AudioRendererChangeInfo() = default;
-    bool Marshalling(Parcel &parcel) const
+    bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(createrUID)
             && parcel.WriteInt32(clientUID)
@@ -86,7 +86,7 @@ public:
             && outputDeviceInfo.Marshalling(parcel, hasBTPermission, hasSystemPermission, apiVersion)
             && parcel.WriteInt32(appVolume);
     }
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingSelf(Parcel &parcel)
     {
         createrUID = parcel.ReadInt32();
         clientUID = parcel.ReadInt32();
@@ -110,34 +110,16 @@ public:
         appVolume = parcel.ReadInt32();
     }
 
-    // static AudioRendererChangeInfo *Unmarshalling(Parcel &parcel)
-    // {
-    //     AudioRendererChangeInfo *info = new AudioRendererChangeInfo();
-    //     if (info == nullptr) {
-    //         return nullptr;
-    //     }
-    //     info->createrUID = parcel.ReadInt32();
-    //     info->clientUID = parcel.ReadInt32();
-    //     info->sessionId = parcel.ReadInt32();
-    //     info->callerPid = parcel.ReadInt32();
-    //     info->clientPid = parcel.ReadInt32();
-    //     info->tokenId = parcel.ReadInt32();
-    //     info->channelCount = parcel.ReadInt32();
-    //     info->backMute = parcel.ReadBool();
-
-    //     info->rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
-    //     info->rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
-    //     info->rendererInfo.rendererFlags = parcel.ReadInt32();
-    //     info->rendererInfo.originalFlag = parcel.ReadInt32();
-    //     info->rendererInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
-    //     info->rendererInfo.format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
-    //     info->rendererInfo.Unmarshalling(parcel);
-
-    //     info->rendererState = static_cast<RendererState>(parcel.ReadInt32());
-    //     info->outputDeviceInfo.Unmarshalling(parcel);
-    //     info->appVolume = parcel.ReadInt32();
-    //     return info;
-    // }
+    static AudioRendererChangeInfo *Unmarshalling(Parcel &parcel)
+    {
+        AudioRendererChangeInfo *info = new AudioRendererChangeInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        // TODO warning discard hasBTPermission, hasSystemPermission, apiVersion; check if ok
+        info->UnmarshallingSelf(parcel);
+        return info;
+    }
 };
 
 class AudioCapturerChangeInfo : public Parcelable {
@@ -160,7 +142,7 @@ public:
     }
     AudioCapturerChangeInfo() = default;
     ~AudioCapturerChangeInfo() = default;
-    bool Marshalling(Parcel &parcel) const
+    bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(createrUID)
             && parcel.WriteInt32(clientUID)
@@ -188,7 +170,7 @@ public:
             && parcel.WriteUint32(appTokenId);
     }
 
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingSelf(Parcel &parcel)
     {
         createrUID = parcel.ReadInt32();
         clientUID = parcel.ReadInt32();
@@ -202,25 +184,15 @@ public:
         appTokenId = parcel.ReadUint32();
     }
 
-    // static AudioCapturerChangeInfo *Unmarshalling(Parcel &parcel)
-    // {
-    //     AudioCapturerChangeInfo *info = new AudioCapturerChangeInfo();
-    //     if (info == nullptr) {
-    //         return nullptr;
-    //     }
-
-    //     info->createrUID = parcel.ReadInt32();
-    //     info->clientUID = parcel.ReadInt32();
-    //     info->sessionId = parcel.ReadInt32();
-    //     info->callerPid = parcel.ReadInt32();
-    //     info->clientPid = parcel.ReadInt32();
-    //     info->capturerInfo.Unmarshalling(parcel);
-    //     info->capturerState = static_cast<CapturerState>(parcel.ReadInt32());
-    //     info->inputDeviceInfo.Unmarshalling(parcel);
-    //     info->muted = parcel.ReadBool();
-    //     info->appTokenId = parcel.ReadUint32();
-    //     return info;
-    // }
+    static AudioCapturerChangeInfo *Unmarshalling(Parcel &parcel)
+    {
+        AudioCapturerChangeInfo *info = new AudioCapturerChangeInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->UnmarshallingSelf(parcel); // TODO waning discard hasBTPermission, hasSystemPermission, apiVersion; check if ok
+        return info;
+    }
 };
 
 struct AudioStreamChangeInfo : public Parcelable {

@@ -3442,9 +3442,9 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
 
     bool hasBTPermission = VerifyBluetoothPermission();
     bool hasSysPermission = PermissionUtil::VerifySystemPermission();
-    callback->hasBTPermission_ = hasBTPermission;
-    callback->hasSystemPermission_ = hasSysPermission;
-    callback->apiVersion_ = GetApiTargetVersion();
+    callback->SetHasBTPermission(hasBTPermission);
+    callback->SetHasSystemPermission(hasSysPermission);
+    callback->SetApiVersion(GetApiTargetVersion());
     audioPolicyService_.AddAudioPolicyClientProxyMap(clientPid, callback);
 
     RegisterClientDeathRecipient(object, LISTENER_CLIENT);

@@ -32,53 +32,36 @@ namespace AudioStandard {
  *
  * @since 7
  */
-struct DeviceChangeAction : public Parcelable {
+struct DeviceChangeAction : public Parcelable { // TODO  fixme; done;
     DeviceChangeType type;
     DeviceFlag flag;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors;
 
-    bool Marshalling(Parcel &parcel) const
+    bool Marshalling(Parcel &parcel) const override
     {
-        bool result = parcel.WriteInt32(static_cast<int32_t>(type));
-        result &= parcel.WriteInt32(static_cast<int32_t>(flag));
-        if (!result) {
-            return false;
-        }
-
-        size_t size = deviceDescriptors.size();
-        if (!parcel.WriteUint64(size)) {
-            return false;
-        }
-        for (const auto &device : deviceDescriptors) {
-            if (!device->Marshalling(parcel)) {
-                return false;
-            }
+        parcel.WriteInt32(static_cast<int32_t>(type));
+        parcel.WriteInt32(static_cast<int32_t>(flag));
+        int32_t size = static_cast<int32_t>(deviceDescriptors.size());
+        parcel.WriteInt32(size);
+        for (auto &des : deviceDescriptors) {
+            des->Marshalling(parcel);
         }
         return true;
     }
 
     static DeviceChangeAction *Unmarshalling(Parcel &parcel)
     {
+        DeviceChangeType type = static_cast<DeviceChangeType>(parcel.ReadUint32());
+        DeviceFlag flag = static_cast<DeviceFlag>(parcel.ReadUint32());
+        int32_t size = parcel.ReadInt32();
         DeviceChangeAction *info = new DeviceChangeAction();
         if (info == nullptr) {
             return nullptr;
         }
-        info->type = static_cast<DeviceChangeType>(parcel.ReadInt32());
-        info->flag = static_cast<DeviceFlag>(parcel.ReadInt32());
-
-        size_t size = parcel.ReadUint64();
-        if (size > std::numeric_limits<size_t>::max()) {
-            size = std::numeric_limits<size_t>::max();
-        }
-
-        for (size_t i = 0; i < size; i++) {
-            std::shared_ptr<AudioDeviceDescriptor> device = std::make_shared<AudioDeviceDescriptor>();
-            if (device == nullptr) {
-                info->deviceDescriptors.clear();
-                return nullptr;
-            }
-            device->UnmarshallingToDeviceDescriptor(parcel);
-            info->deviceDescriptors.emplace_back(device);
+        info->type = type;
+        info->flag = flag;
+        for (int32_t i = 0; i < size; i++) {
+            info->deviceDescriptors.emplace_back(AudioDeviceDescriptor::UnmarshallingPtr(parcel));
         }
         return info;
     }

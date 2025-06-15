@@ -23,11 +23,12 @@ idl_gen_interface("audio_policy_idl_interface") {
     "IStandardAudioPolicyManagerListener.idl",
     "IStandardAudioRoutingManagerListener.idl",
     "IStandardAudioAnahsManagerListener.idl",
+    "IAudioPolicyClient.idl",
   ]
-  # sources_callback = [
-  #   "IStandardSpatializationStateChangeListener.idl",
-  # ]
-  sources_common = [ ]
+  sources_callback = [
+  ]
+  sources_common = [
+  ]
 
   #client_enable = true
 
@@ -45,6 +46,7 @@ config("audio_policy_sa_idl_config") {
     # "src",
     "${target_gen_dir}",
     "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include/",
+    "${audio_framework_root}/interfaces/inner_api/native/audiomanager/include/",
     "${audio_framework_root}/frameworks/native/audiopolicy/include/",
     "${audio_framework_root}/interfaces/inner_api/native/audiomanager/include/",
   ]

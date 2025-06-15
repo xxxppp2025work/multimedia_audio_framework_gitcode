@@ -47,9 +47,6 @@ public:
     int32_t GetSystemVolumeLevel(const pid_t clientPid, const int32_t zoneId, AudioVolumeType volumeType);
 
 private:
-    std::vector<std::map<AudioInterrupt, int32_t>> ToIpcInterrupts(
-        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &from);
-
     std::unordered_map<pid_t, sptr<IStandardAudioZoneClient>> clients_;
     std::mutex clientMutex_;
     std::shared_ptr<AudioPolicyServerHandler> handler_;

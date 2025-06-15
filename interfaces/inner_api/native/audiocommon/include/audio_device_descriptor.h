@@ -33,7 +33,7 @@ inline bool IsUsb(DeviceType type)
  * @brief The AudioDeviceDescriptor provides
  *         different sets of audio devices and their roles
  */
-class AudioDeviceDescriptor : public Parcelable {
+class AudioDeviceDescriptor : public Parcelable {  //TODO check
 friend class AudioSystemManager;
 public:
     enum {
@@ -74,6 +74,8 @@ public:
 
     bool MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
         int32_t apiVersion) const;
+
+    void UnmarshallingSelf(Parcel &parcel);
 
     static AudioDeviceDescriptor *Unmarshalling(Parcel &parcel);
 
@@ -130,6 +132,8 @@ public:
             return lhs->IsSameDeviceDesc(*rhs);
         }
     };
+
+    void UpdateDeviceInfo(bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion);
 
     DeviceType deviceType_ = DEVICE_TYPE_NONE;
     DeviceRole deviceRole_ = DEVICE_ROLE_NONE;

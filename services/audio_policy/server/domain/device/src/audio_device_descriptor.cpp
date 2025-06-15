@@ -248,7 +248,7 @@ void AudioDeviceDescriptor::UnmarshallingToDeviceDescriptor(Parcel &parcel)
 
 bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
 {
-    return Marshalling(parcel, 0);
+    return Marshalling(parcel, 0);  //TODO need client apiversion
 }
 
 AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
@@ -257,7 +257,7 @@ AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
     if (audioDeviceDescriptor == nullptr) {
         return nullptr;
     }
-    audioDeviceDescriptor->UnmarshallingToDeviceDescriptor(parcel);
+    audioDeviceDescriptor->UnmarshallingSelf(parcel);
     return audioDeviceDescriptor;
 }
 
@@ -358,6 +358,11 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteInt32(a2dpOffloadFlag_) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceCategory_)) &&
         parcel.WriteBool(spatializationSupported_);
+}
+
+void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
+{
+    return UnmarshallingToDeviceInfo(parcel);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioDeviceDescriptor::UnmarshallingPtr(Parcel &parcel)
@@ -481,6 +486,46 @@ DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(int32_t apiVer
         default:
             return deviceType_;
     }
+}
+
+void AudioDeviceDescriptor::UpdateDeviceInfo(bool hasBTPermission, bool hasSystemPermission,
+    int32_t apiVersion)
+{
+    DeviceType devType = deviceType_;
+    int32_t devId = deviceId_;
+    DeviceStreamInfo streamInfo = audioStreamInfo_;
+
+    // If api target version < 11 && does not set deviceType, fix api compatibility.
+    if (apiVersion < API_11 && (deviceType_ == DEVICE_TYPE_NONE || deviceType_ == DEVICE_TYPE_INVALID)) {
+        // DeviceType use speaker or mic instead.
+        if (deviceRole_ == OUTPUT_DEVICE) {
+            devType = DEVICE_TYPE_SPEAKER;
+            devId = 1; // 1 default speaker device id.
+        } else if (deviceRole_ == INPUT_DEVICE) {
+            devType = DEVICE_TYPE_MIC;
+            devId = 2; // 2 default mic device id.
+        }
+
+        //If does not set sampleRates use SAMPLE_RATE_44100 instead.
+        if (streamInfo.samplingRate.empty()) {
+            streamInfo.samplingRate.insert(SAMPLE_RATE_44100);
+        }
+        // If does not set channelCounts use STEREO instead.
+        if (streamInfo.channels.empty()) {
+            streamInfo.channels.insert(STEREO);
+        }
+    }
+
+    deviceId_ = devId;
+    deviceName_ = (!hasBTPermission && (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) ? "" : deviceName_;
+    macAddress_ = (!hasBTPermission && (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) ? "" : macAddress_;
+    deviceType_ = devType;
+    networkId_ = hasSystemPermission ? networkId_ : "";
+    interruptGroupId_ = hasSystemPermission ? interruptGroupId_ : INVALID_GROUP_ID;
+    volumeGroupId_ = hasSystemPermission ? volumeGroupId_ : INVALID_GROUP_ID;
+    audioStreamInfo_ = streamInfo;
 }
 } // AudioStandard
 } // namespace OHOS

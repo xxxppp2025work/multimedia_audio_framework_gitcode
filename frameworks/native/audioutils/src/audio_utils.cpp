@@ -1988,6 +1988,18 @@ int32_t CheckSupportedParams(const AudioStreamInfo &info)
         ERR_INVALID_PARAM, "channelLayout not supported");
     return SUCCESS;
 }
+
+std::vector<std::map<AudioInterrupt, int32_t>> ToIpcInterrupts(
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &from)
+{
+    std::vector<std::map<AudioInterrupt, int32_t>> ipcInterrupts;
+    for (const auto &pair : from) {
+        std::map<AudioInterrupt, int32_t> mapEntry;
+        mapEntry[pair.first] = static_cast<int32_t>(pair.second);
+        ipcInterrupts.push_back(mapEntry);
+    }
+    return ipcInterrupts;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 

@@ -88,6 +88,10 @@ if (!audio_framework_feature_offline_effect) {
       "../../../services/audio_service/common/include",
     ]
 
+    configs = [
+      "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
+    ]
+
     sources = [ "src/offline_audio_effect_server_chain.cpp" ]
 
     deps = [ "../audioutils:audio_utils" ]

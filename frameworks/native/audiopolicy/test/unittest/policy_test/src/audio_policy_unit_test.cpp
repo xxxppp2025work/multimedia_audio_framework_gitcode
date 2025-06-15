@@ -20,7 +20,7 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "parcel.h"
-#include "audio_policy_client.h"
+#include "iaudio_policy_client.h"
 #include "audio_policy_unit_test.h"
 #include "audio_system_manager.h"
 #include "iservice_registry.h"

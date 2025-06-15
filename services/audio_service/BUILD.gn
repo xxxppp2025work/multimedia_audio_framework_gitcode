@@ -507,7 +507,7 @@ audio_ohos_library("audio_service") {
     "server/src/config/audio_param_parser.cpp",
     "server/src/audio_workgroup.cpp",
     "server/src/audio_resource_service.cpp",
-    "../audio_policy/server/domain/device/src/audio_device_descriptor.cpp", # TODO move me
+    "../audio_policy/server/domain/device/src/audio_device_descriptor.cpp", # TODO fix dependency
   ]
 
   configs = [ ":audio_service_config" ]

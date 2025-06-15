@@ -18,6 +18,7 @@
 #include "audio_zone_client_manager.h"
 #include "audio_log.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -100,18 +101,6 @@ void AudioZoneClientManager::DispatchEvent(std::shared_ptr<AudioZoneEvent> event
         default:
             break;
     }
-}
-
-std::vector<std::map<AudioInterrupt, int32_t>> AudioZoneClientManager::ToIpcInterrupts(
-    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &from)
-{
-    std::vector<std::map<AudioInterrupt, int32_t>> ipcInterrupts;
-    for (const auto &pair : from) {
-        std::map<AudioInterrupt, int32_t> mapEntry;
-        mapEntry[pair.first] = static_cast<int32_t>(pair.second);
-        ipcInterrupts.push_back(mapEntry);
-    }
-    return ipcInterrupts;
 }
 
 void AudioZoneClientManager::SendZoneAddEvent(pid_t clientPid, std::shared_ptr<AudioZoneDescriptor> descriptor)

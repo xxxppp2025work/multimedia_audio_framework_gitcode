@@ -115,9 +115,36 @@ public:
  *
  * @since 13
  */
-struct MicrophoneBlockedInfo {
+struct MicrophoneBlockedInfo : public Parcelable { // TODO fixme
     DeviceBlockStatus blockStatus;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteInt32(static_cast<int32_t>(blockStatus));
+        int32_t size = static_cast<int32_t>(devices.size());
+        parcel.WriteInt32(size);
+        int32_t apiVersion = 0; //TODO from AudioPolicyClientProxy
+        for (auto &dev : devices) {
+            dev->Marshalling(parcel, apiVersion);
+        }
+        return true;
+    }
+
+    static MicrophoneBlockedInfo *Unmarshalling(Parcel &parcel)
+    {
+        DeviceBlockStatus status = static_cast<DeviceBlockStatus>(parcel.ReadInt32());
+        int32_t size = parcel.ReadInt32();
+        MicrophoneBlockedInfo *info = new MicrophoneBlockedInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->blockStatus = status;
+        for (int32_t i = 0; i < size; i++) {
+            info->devices.emplace_back(AudioDeviceDescriptor::UnmarshallingPtr(parcel));
+        }
+        return info;
+    }
 };
 
 /**

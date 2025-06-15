@@ -4268,7 +4268,6 @@ ohos_unittest("audio_policy_client_proxy_unit_test") {
   ]
 
   sources = [
-    "../../../services/audio_policy/server/proxy/src/audio_policy_client_proxy.cpp",
     "../../../services/audio_policy/server/domain/device/src/audio_device_descriptor.cpp",
     "./unittest/audio_policy_client_proxy_unit_test/src/audio_policy_client_proxy_unit_test.cpp",
   ]
@@ -4295,6 +4294,8 @@ ohos_unittest("audio_policy_client_proxy_unit_test") {
     "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
+    # TODO  "../../../services/audio_policy/server/proxy/src/audio_policy_client_proxy.cpp", TODO
+    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_proxy",
   ]
 
   external_deps = [

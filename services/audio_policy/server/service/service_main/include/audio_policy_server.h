@@ -40,7 +40,6 @@
 #include "audio_stream_removed_callback.h"
 #include "audio_interrupt_callback.h"
 #include "audio_policy_manager_stub.h"
-#include "audio_policy_client_proxy.h"
 #include "audio_server_death_recipient.h"
 #include "session_processor.h"
 #include "audio_spatialization_service.h"
