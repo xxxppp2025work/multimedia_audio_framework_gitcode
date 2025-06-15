@@ -386,6 +386,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
 AudioStreamAction AudioPipeSelector::JudgeStreamAction(
     std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe)
 {
+    CHECK_AND_RETURN_RET_LOG(newPipe != nullptr && oldPipe != nullptr, AUDIO_STREAM_ACTION_DEFAULT, "pipeInfo is null");
     if (newPipe->adapterName_ == oldPipe->adapterName_ && newPipe->routeFlag_ == oldPipe->routeFlag_) {
         return AUDIO_STREAM_ACTION_DEFAULT;
     }
