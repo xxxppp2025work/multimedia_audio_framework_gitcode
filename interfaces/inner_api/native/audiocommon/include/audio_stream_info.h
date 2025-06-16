@@ -560,6 +560,18 @@ struct BufferDesc {
     uint64_t timeStampInNs;
 };
 
+struct BasicBufferDesc {
+    uint8_t *buffer = nullptr;
+    size_t bufLength = 0;
+};
+
+struct RingBufferWrapper {
+    static inline constexpr size_t DESC_SIZE = 2;
+
+    std::array<BasicBufferDesc, DESC_SIZE> basicBufferDescs = {};
+    size_t dataLenth;
+};
+
 class AudioStreamInfo {
 public:
     AudioSamplingRate samplingRate;
