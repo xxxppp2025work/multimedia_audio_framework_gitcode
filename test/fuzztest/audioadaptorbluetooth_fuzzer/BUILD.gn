@@ -38,7 +38,7 @@ ohos_fuzztest("AudioAdaptorBluetoothFuzzTest") {
   sources = [ "audio_adaptor_bluetooth_fuzzer.cpp" ]
 
   deps = [
-    "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
+    "../../../services/audio_policy:audio_bluetooth_manager",
     "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../../../services/audio_policy:audio_policy_service_static",
   ]
