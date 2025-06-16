@@ -309,7 +309,6 @@ void RendererInServer::HandleOperationStarted()
         standByEnable_ = false;
         AUDIO_INFO_LOG("%{public}u recv stand-by started", streamIndex_);
         audioServerBuffer_->GetStreamStatus()->store(STREAM_RUNNING);
-        FutexTool::FutexWake(audioServerBuffer_->GetFutex());
         playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_STANDBY_END);
     }
     CheckAndWriterRenderStreamStandbySysEvent(false);
@@ -334,9 +333,9 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             status_ = I_STATUS_RELEASED;
             break;
         case OPERATION_UNDERRUN:
-            AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetAvailableDataFrames(): %{public}d",
-                audioServerBuffer_->GetAvailableDataFrames());
-            if (audioServerBuffer_->GetAvailableDataFrames() ==
+            AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetWritableDataFrames(): %{public}d",
+                audioServerBuffer_->GetWritableDataFrames());
+            if (audioServerBuffer_->GetWritableDataFrames() ==
                 static_cast<int32_t>(DEFAULT_SPAN_SIZE * spanSizeInFrame_)) {
                 AUDIO_INFO_LOG("Buffer is empty");
                 needForceWrite_ = 0;
@@ -634,7 +633,6 @@ int32_t RendererInServer::WriteData()
     Trace trace1(traceTag_ + " WriteData"); // RendererInServer::sessionid:100001 WriteData
     if (currentReadFrame + spanSizeInFrame_ > currentWriteFrame) {
         Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun
-        FutexTool::FutexWake(audioServerBuffer_->GetFutex());
         if (!offloadEnable_) {
             CHECK_AND_RETURN_RET_LOG(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
                 "invalid write and read position.");
@@ -674,7 +672,6 @@ int32_t RendererInServer::WriteData()
         uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
     }
-    FutexTool::FutexWake(audioServerBuffer_->GetFutex());
     standByCounter_ = 0;
     lastWriteTime_ = ClockTime::GetCurNano();
     return SUCCESS;
@@ -687,7 +684,6 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
     Trace trace1(traceTag_ + " OnWriteData"); // RendererInServer::sessionid:100001 WriteData
     if (currentReadFrame + spanSizeInFrame_ > currentWriteFrame) {
         Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun
-        FutexTool::FutexWake(audioServerBuffer_->GetFutex());
         if (!offloadEnable_) {
             CHECK_AND_RETURN_RET_LOG(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
                 "invalid write and read position.");
@@ -727,7 +723,6 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
     } else {
         Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
     }
-    FutexTool::FutexWake(audioServerBuffer_->GetFutex());
     standByCounter_ = 0;
     lastWriteTime_ = ClockTime::GetCurNano();
     return SUCCESS;
