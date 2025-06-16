@@ -577,6 +577,9 @@ int32_t CheckSupportedParams(const AudioStreamInfo &info);
 
 std::vector<std::map<AudioInterrupt, int32_t>> ToIpcInterrupts(
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &from);
+
+std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
+    const std::vector<std::map<AudioInterrupt, int32_t>> &from);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

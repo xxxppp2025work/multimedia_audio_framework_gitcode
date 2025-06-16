@@ -42,7 +42,10 @@ std::string AudioPolicyManager::GetSelectedDeviceInfo(int32_t uid, int32_t pid, 
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, "", "audio policy manager proxy is NULL.");
-    return gsp->GetSelectedDeviceInfo(uid, pid, streamType);
+
+    std::string out{};
+    gsp->GetSelectedDeviceInfo(uid, pid, streamType, out);
+    return out;
 }
 
 int32_t AudioPolicyManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
@@ -73,34 +76,37 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetExclu
     AudioDeviceUsage audioDevUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetExcludedDevices: audio policy manager proxy is NULL.");
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
         return deviceInfo;
     }
-    return gsp->GetExcludedDevices(audioDevUsage);
+    gsp->GetExcludedDevices(audioDevUsage, deviceInfo);
+    return deviceInfo;
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevices(DeviceFlag deviceFlag)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetDevices: audio policy manager proxy is NULL.");
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
         return deviceInfo;
     }
-    return gsp->GetDevices(deviceFlag);
+    gsp->GetDevices(deviceFlag, deviceInfo);
+    
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevicesInner(DeviceFlag deviceFlag)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
         return deviceInfo;
     }
-    return gsp->GetDevicesInner(deviceFlag);
+    gsp->GetDevicesInner(deviceFlag, deviceInfo);
+    return deviceInfo;
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferredOutputDeviceDescriptors(
@@ -109,83 +115,97 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPrefe
     AudioXCollie audioXCollie("AudioPolicyManager::GetPreferredOutputDeviceDescriptors", TIME_OUT_SECONDS,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetPreferredOutputDeviceDescriptors: audio policy manager proxy is NULL.");
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
+        
         return deviceInfo;
     }
-    return gsp->GetPreferredOutputDeviceDescriptors(rendererInfo, forceNoBTPermission);
+    gsp->GetPreferredutputDeviceDescriptors(rendererInfo, forceNoBTPermission, deviceInfo);
+    return deviceInfo;
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferredInputDeviceDescriptors(
     AudioCapturerInfo &captureInfo)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
         return deviceInfo;
     }
-    return gsp->GetPreferredInputDeviceDescriptors(captureInfo);
+    gsp->GetPreferredInputDeviceDescriptors(captureInfo, deviceInfo);
+    return deviceInfo;
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetOutputDevice(
     sptr<AudioRendererFilter> audioRendererFilter)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
         return deviceInfo;
     }
-    return gsp->GetOutputDevice(audioRendererFilter);
+    gsp->GetOutputDevice(audioRendererFilter, deviceInfo);
+    return deviceInfo;
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetInputDevice(
     sptr<AudioCapturerFilter> audioCapturerFilter)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
         return deviceInfo;
     }
-    return gsp->GetInputDevice(audioCapturerFilter);
+    gsp->GetInputDevice(audioCapturerFilter, deviceInfo);
+    return deviceInfo;
 }
 
 int32_t AudioPolicyManager::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->SetDeviceActive(deviceType, active, uid);
+    int32_t uidIn = uid;
+    return gsp->SetDeviceActive(deviceType, active, uidIn);
 }
 
 bool AudioPolicyManager::IsDeviceActive(InternalDeviceType deviceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
-    return gsp->IsDeviceActive(deviceType);
+    bool active = false;
+    gsp->IsDeviceActive(deviceType, active);
+    return active; 
 }
 
 DeviceType AudioPolicyManager::GetActiveOutputDevice()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, DEVICE_TYPE_INVALID, "audio policy manager proxy is NULL.");
-    return gsp->GetActiveOutputDevice();
+    DeviceType out = DEVICE_TYPE_INVALID;
+    gsp->GetActiveOutputDevice(out);
+    return out;
 }
 
 uint16_t AudioPolicyManager::GetDmDeviceType()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, DEVICE_TYPE_INVALID, "audio policy manager proxy is NULL.");
-    return gsp->GetDmDeviceType();
+    uint16_t out = DEVICE_TYPE_INVALID;
+    gsp->GetDmDeviceType(out);
+    return out;
 }
 
 DeviceType AudioPolicyManager::GetActiveInputDevice()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, DEVICE_TYPE_INVALID, "audio policy manager proxy is NULL.");
-    return gsp->GetActiveInputDevice();
+    DeviceType out = DEVICE_TYPE_INVALID;
+    gsp->GetActiveInputDevice(out);
+    return out;
 }
 
 int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
@@ -382,13 +402,14 @@ int32_t AudioPolicyManager::UnregisterDeviceChangeWithInfoCallback(const uint32_
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetAvailableDevices(AudioDeviceUsage usage)
 {
+    std::vector<shared_ptr<AudioDeviceDescriptor>> descs;
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetAvailableMicrophones: audio policy manager proxy is NULL.");
-        std::vector<shared_ptr<AudioDeviceDescriptor>> descs;
         return descs;
     }
-    return gsp->GetAvailableDevices(usage);
+    gsp->GetAvailableDevices(usage, descs);
+    return descs;
 }
 
 int32_t AudioPolicyManager::SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
@@ -438,11 +459,13 @@ std::shared_ptr<AudioDeviceDescriptor> AudioPolicyManager::GetActiveBluetoothDev
         AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
         return make_shared<AudioDeviceDescriptor>();
     }
-    return gsp->GetActiveBluetoothDevice();
+    std::shared_ptr<AudioDeviceDescriptor> descs = make_shared<AudioDeviceDescriptor>();
+    gsp->GetActiveBluetoothDevice(descs);
+    return descs;
 }
 
 void AudioPolicyManager::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
-    const AudioStreamDeviceChangeReasonExt reason)
+    const AudioStreamDeviceChangeReasonExt &reason)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp != nullptr) {
@@ -452,14 +475,16 @@ void AudioPolicyManager::FetchOutputDeviceForTrack(AudioStreamChangeInfo &stream
     }
 }
 
-void AudioPolicyManager::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
+int32_t AudioPolicyManager::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp != nullptr) {
         gsp->FetchInputDeviceForTrack(streamChangeInfo);
     } else {
         AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
+        return ERR_MEMORY_ALLOC_FAILED;
     }
+    return SUCCESS;
 }
 
 int32_t AudioPolicyManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)

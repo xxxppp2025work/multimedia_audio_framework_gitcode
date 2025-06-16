@@ -2000,6 +2000,18 @@ std::vector<std::map<AudioInterrupt, int32_t>> ToIpcInterrupts(
     }
     return ipcInterrupts;
 }
+
+std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
+    const std::vector<std::map<AudioInterrupt, int32_t>> &from)
+{
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts;
+    for (const auto &map : from) {
+        for (const auto & entry : map) {
+            interrupts.push_back(std::make_pair(entry.first, static_cast<AudioFocuState>(entry.second)));
+        } 
+    }
+    return interrupts;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
