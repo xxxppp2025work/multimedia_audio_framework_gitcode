@@ -35,6 +35,19 @@ int32_t AudioPolicyManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+
+
+    uint32_t size = audioDeviceDescriptors.size();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_DEVICE_INFO_SIZE_LIMIT,
+        -1, "SelectOutputDevice get invalid device size.");
+
+    int validSize = 20; // Use 20 as limit.
+    int size = audioDeviceDescriptors.size();
+    if (size <= 0 || size > validSize) {
+        AUDIO_ERR_LOG("SelectOutputDevice get invalid device size.");
+        return -1;
+    }
+
     return gsp->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
 }
 
@@ -53,6 +66,10 @@ int32_t AudioPolicyManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+
+    int validSize = 10; // Use 10 as limit.
+    int size = audioDeviceDescriptors.size();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= validSize, -1, "SelectInputDevice get invalid device size.");
     return gsp->SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
 }
 
@@ -61,6 +78,10 @@ int32_t AudioPolicyManager::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+
+    int validSize = 20; // Use 20 as limit.
+    int size = audioDeviceDescriptors.size();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= validSize, -1, "ExcludeOutputDevices get invalid device size.");
     return gsp->ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
 
@@ -69,6 +90,10 @@ int32_t AudioPolicyManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsag
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+
+    int validSize = 20; // Use 20 as limit.
+    int size = audioDeviceDescriptors.size();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= validSize, -1, "UnexcludeOutputDevices get invalid device size.");
     return gsp->UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
 

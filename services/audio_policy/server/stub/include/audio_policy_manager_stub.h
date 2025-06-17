@@ -103,6 +103,8 @@ private:
     void GetToneInfoInternal(MessageParcel &data, MessageParcel &reply);
     void GetSupportedTonesInternal(MessageParcel &data, MessageParcel &reply);
 #endif
+
+///////////////////////////////////////
     void GetPreferredOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredInputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void SetClientCallbacksEnableInternal(MessageParcel &data, MessageParcel &reply);

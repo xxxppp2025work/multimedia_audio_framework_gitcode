@@ -632,6 +632,11 @@ std::vector<int32_t> AudioPolicyManager::GetSupportedTones(const std::string &co
     }
 
     gsp->GetSupportedTones(countryCode, lSupportedToneList);
+
+    int32_t lListSize = static_cast<int32_t>(lSupportedToneList.size());
+    CHECK_AND_RETURN_RET_LOG(lListSize >= 0 && lListSize <= static_cast<int32_t>(MAX_SUPPORTED_TONEINFO_SIZE),
+        {}, "supported tone size exceed limits");
+
     return lSupportedToneList;
 }
 
@@ -2549,7 +2554,9 @@ DirectPlaybackMode AudioPolicyManager::GetDirectPlaybackSupport(const AudioStrea
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, DIRECT_PLAYBACK_NOT_SUPPORTED, "audio policy manager proxy is NULL.");
-    return gsp->GetDirectPlaybackSupport(streamInfo, streamUsage);
+    DirectPlaybackMode ret = DIRECT_PLAYBACK_NOT_SUPPORTED;
+    gsp->GetDirectPlaybackSupport(streamInfo, streamUsage, ret);
+    return ret;
 }
 
 bool AudioPolicyManager::IsAcousticEchoCancelerSupported(SourceType sourceType)

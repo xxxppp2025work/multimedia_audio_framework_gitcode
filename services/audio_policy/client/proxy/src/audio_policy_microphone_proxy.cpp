@@ -24,37 +24,37 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-int32_t AudioPolicyProxy::SetMicrophoneMute(bool isMute)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+// int32_t AudioPolicyProxy::SetMicrophoneMute(bool isMute)
+// {
+//     MessageParcel data;
+//     MessageParcel reply;
+//     MessageOption option;
 
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-    data.WriteBool(isMute);
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_MICROPHONE_MUTE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set microphoneMute failed, error: %d", error);
+//     bool ret = data.WriteInterfaceToken(GetDescriptor());
+//     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+//     data.WriteBool(isMute);
+//     int32_t error = Remote()->SendRequest(
+//         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_MICROPHONE_MUTE), data, reply, option);
+//     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set microphoneMute failed, error: %d", error);
 
-    return reply.ReadInt32();
-}
+//     return reply.ReadInt32();
+// }
 
-int32_t AudioPolicyProxy::SetMicrophoneMuteAudioConfig(bool isMute)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+// int32_t AudioPolicyProxy::SetMicrophoneMuteAudioConfig(bool isMute)
+// {
+//     MessageParcel data;
+//     MessageParcel reply;
+//     MessageOption option;
 
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-    data.WriteBool(isMute);
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_MICROPHONE_MUTE_AUDIO_CONFIG), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set microphoneMute failed, error: %d", error);
+//     bool ret = data.WriteInterfaceToken(GetDescriptor());
+//     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+//     data.WriteBool(isMute);
+//     int32_t error = Remote()->SendRequest(
+//         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_MICROPHONE_MUTE_AUDIO_CONFIG), data, reply, option);
+//     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set microphoneMute failed, error: %d", error);
 
-    return reply.ReadInt32();
-}
+//     return reply.ReadInt32();
+// }
 
 int32_t AudioPolicyProxy::SetMicrophoneMutePersistent(const bool isMute, const PolicyType type)
 {
@@ -72,37 +72,37 @@ int32_t AudioPolicyProxy::SetMicrophoneMutePersistent(const bool isMute, const P
     return reply.ReadInt32();
 }
 
-bool AudioPolicyProxy::IsMicrophoneMuteLegacy()
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+// bool AudioPolicyProxy::IsMicrophoneMuteLegacy()
+// {
+//     MessageParcel data;
+//     MessageParcel reply;
+//     MessageOption option;
 
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+//     bool ret = data.WriteInterfaceToken(GetDescriptor());
+//     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_MICROPHONE_MUTE_LEGACY), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set microphoneMute failed, error: %d", error);
+//     int32_t error = Remote()->SendRequest(
+//         static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_MICROPHONE_MUTE_LEGACY), data, reply, option);
+//     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set microphoneMute failed, error: %d", error);
 
-    return reply.ReadBool();
-}
+//     return reply.ReadBool();
+// }
 
-bool AudioPolicyProxy::IsMicrophoneMute()
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+// bool AudioPolicyProxy::IsMicrophoneMute()
+// {
+//     MessageParcel data;
+//     MessageParcel reply;
+//     MessageOption option;
 
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+//     bool ret = data.WriteInterfaceToken(GetDescriptor());
+//     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_MICROPHONE_MUTE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set microphoneMute failed, error: %d", error);
+//     int32_t error = Remote()->SendRequest(
+//         static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_MICROPHONE_MUTE), data, reply, option);
+//     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set microphoneMute failed, error: %d", error);
 
-    return reply.ReadBool();
-}
+//     return reply.ReadBool();
+// }
 
 std::vector<sptr<MicrophoneDescriptor>> AudioPolicyProxy::GetAudioCapturerMicrophoneDescriptors(
     int32_t sessionId)

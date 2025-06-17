@@ -1542,7 +1542,17 @@ int32_t AudioPolicyServer::SelectOutputDevice(const sptr<AudioRendererFilter> &a
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "SelectOutputDevice: No system permission");
-    return eventEntry_->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> targetOutputDevice;
+    for (auto desc : audioDeviceDescriptors) {
+        std::shared_ptr<AudioDeviceDescriptor> newDeviceDescriptor =
+            std::const_pointer_cast<AudioDeviceDescriptor>(desc);
+        CHECK_AND_RETURN_LOG(newDeviceDescriptor != nullptr, "memory alloc failed");
+        MapExternalToInternalDeviceType(*newDeviceDescriptor);
+        targetOutputDevice.push_back(newDeviceDescriptor);
+    }
+
+    return eventEntry_->SelectOutputDevice(audioRendererFilter, targetOutputDevice);
 }
 
 int32_t AudioPolicyServer::GetSelectedDeviceInfo(int32_t uid, int32_t pid, int32_t streamTypeIn,
@@ -1558,27 +1568,39 @@ int32_t AudioPolicyServer::SelectInputDevice(const sptr<AudioCapturerFilter> &au
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "SelectInputDevice: No system permission");
-    int32_t ret = eventEntry_->SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> targetInputDevice;
+    for (auto desc : audioDeviceDescriptors) {
+        std::shared_ptr<AudioDeviceDescriptor> newDeviceDescriptor =
+            std::const_pointer_cast<AudioDeviceDescriptor>(desc);
+        CHECK_AND_RETURN_LOG(newDeviceDescriptor != nullptr, "memory alloc failed");
+        MapExternalToInternalDeviceType(*newDeviceDescriptor);
+        targetInputDevice.push_back(newDeviceDescriptor);
+    }
+
+    int32_t ret = eventEntry_->SelectInputDevice(audioCapturerFilter, targetInputDevice);
     return ret;
 }
 
 int32_t AudioPolicyServer::ExcludeOutputDevices(int32_t audioDevUsageIn,
-    vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+    const vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
+    auto newAudioDeviceDescriptors = audioDeviceDescriptors;
     AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(audioDevUsageIn);
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "No system permission");
-    return eventEntry_->ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    return eventEntry_->ExcludeOutputDevices(audioDevUsage, newAudioDeviceDescriptors);
 }
 
 int32_t AudioPolicyServer::UnexcludeOutputDevices(int32_t audioDevUsageIn,
-    vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+    const vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
+    auto newAudioDeviceDescriptors = audioDeviceDescriptors;
     AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(audioDevUsageIn);
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "No system permission");
 
-    return audioPolicyService_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    return audioPolicyService_.UnexcludeOutputDevices(audioDevUsage, newAudioDeviceDescriptors);
 }
 
 int32_t AudioPolicyServer::GetExcludedDevices(int32_t audioDevUsageIn,
@@ -1589,6 +1611,14 @@ int32_t AudioPolicyServer::GetExcludedDevices(int32_t audioDevUsageIn,
         "No system permission");
 
     device = audioPolicyService_.GetExcludedDevices(audioDevUsage);
+
+    int32_t apiVersion = HasUsbDevice(device) ? GetApiTargetVersion() : 0;
+    for (auto &desc : device) {
+        CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
+        if (desc->IsAudioDeviceDescriptor()) {
+            desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion);
+        }
+    }
     return SUCCESS;
 }
 
@@ -1614,8 +1644,14 @@ int32_t AudioPolicyServer::GetDevices(int32_t deviceFlagIn,
     }
 
     deviceDescs = eventEntry_->GetDevices(deviceFlag);
-    if (!hasSystemPermission) {
-        for (std::shared_ptr<AudioDeviceDescriptor> desc : deviceDescs) {
+
+    int32_t apiVersion = HasUsbDevice(deviceDescs) ? GetApiTargetVersion() : 0;
+    for (std::shared_ptr<AudioDeviceDescriptor> desc : deviceDescs) {
+        CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
+        if (desc->IsAudioDeviceDescriptor()) {
+            desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion);
+        }
+        if (!hasSystemPermission) {
             desc->networkId_ = "";
             desc->interruptGroupId_ = GROUP_ID_NONE;
             desc->volumeGroupId_ = GROUP_ID_NONE;
@@ -1651,6 +1687,15 @@ int32_t AudioPolicyServer::GetOutputDevice(sptr<AudioRendererFilter> audioRender
         return ERR_INVALID_OPERATION;
     }
     deviceDescs = audioPolicyService_.GetOutputDevice(audioRendererFilter);
+
+    int32_t apiVersion = HasUsbDevice(deviceDescs) ? GetApiTargetVersion() : 0;
+    for (auto &desc : deviceDescs) {
+        CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
+        if (desc->IsAudioDeviceDescriptor()) {
+            desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion);
+        }
+    }
+
     return SUCCESS;
 }
 
@@ -1662,6 +1707,15 @@ int32_t AudioPolicyServer::GetInputDevice(sptr<AudioCapturerFilter> audioCapture
         return ERR_INVALID_OPERATION;
     }
     deviceDescs = audioPolicyService_.GetInputDevice(audioCapturerFilter);
+
+    int32_t apiVersion = HasUsbDevice(deviceDescs) ? GetApiTargetVersion() : 0;
+    for (auto &desc : deviceDescs) {
+        CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
+        if (desc->IsAudioDeviceDescriptor()) {
+            desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion);
+        }
+    }
+
     return SUCCESS;
 }
 
@@ -2513,13 +2567,19 @@ int32_t AudioPolicyServer::CreateRendererClient(const std::shared_ptr<AudioStrea
         std::string bundleName = AudioBundleManager::GetBundleName();
         streamDesc->SetBunduleName(bundleName);
     }
-    return eventEntry_->CreateRendererClient(streamDesc, flag, sessionId);
+    uint32_t flagIn = AUDIO_OUTPUT_FLAG_NORMAL;
+    int32_t ret = eventEntry_->CreateRendererClient(streamDesc, flagIn, sessionId);
+    flag = flagIn;
+    return ret;
 }
 
 int32_t AudioPolicyServer::CreateCapturerClient(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     uint32_t &flag, uint32_t &sessionId)
 {
-    return eventEntry_->CreateCapturerClient(streamDesc, flag, sessionId);
+    uint32_t flagIn = AUDIO_INPUT_FLAG_NORMAL;
+    int32_t ret =  eventEntry_->CreateCapturerClient(streamDesc, flagIn, sessionId);
+    flag = flagIn;
+    return ret;
 }
 
 int32_t AudioPolicyServer::RegisterTracker(int32_t modeIn, AudioStreamChangeInfo &streamChangeInfo,

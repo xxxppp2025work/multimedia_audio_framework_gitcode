@@ -246,130 +246,130 @@ constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *)
 static_assert(codeNums == (static_cast<size_t> (AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX) + 1),
     "keep same with AudioPolicyInterfaceCode");
 }
-void AudioPolicyManagerStub::ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode,
-    AudioStreamChangeInfo &streamChangeInfo)
-{
-    if (mode == AUDIO_MODE_PLAYBACK) {
-        streamChangeInfo.audioRendererChangeInfo.Unmarshalling(data);
-    } else {
-        // mode == AUDIO_MODE_RECORDING
-        streamChangeInfo.audioCapturerChangeInfo.Unmarshalling(data);
-    }
-}
+// void AudioPolicyManagerStub::ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode,
+//     AudioStreamChangeInfo &streamChangeInfo)
+// {
+//     if (mode == AUDIO_MODE_PLAYBACK) {
+//         streamChangeInfo.audioRendererChangeInfo.Unmarshalling(data);
+//     } else {
+//         // mode == AUDIO_MODE_RECORDING
+//         streamChangeInfo.audioCapturerChangeInfo.Unmarshalling(data);
+//     }
+// }
 
-void AudioPolicyManagerStub::GetMaxVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
-    int32_t maxLevel = GetMaxVolumeLevel(volumeType);
-    reply.WriteInt32(maxLevel);
-}
+// void AudioPolicyManagerStub::GetMaxVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+//     int32_t maxLevel = GetMaxVolumeLevel(volumeType);
+//     reply.WriteInt32(maxLevel);
+// }
 
-void AudioPolicyManagerStub::GetMinVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
-    int32_t minLevel = GetMinVolumeLevel(volumeType);
-    reply.WriteInt32(minLevel);
-}
+// void AudioPolicyManagerStub::GetMinVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+//     int32_t minLevel = GetMinVolumeLevel(volumeType);
+//     reply.WriteInt32(minLevel);
+// }
 
-void AudioPolicyManagerStub::SetSystemVolumeLevelLegacyInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
-    int32_t volumeLevel = data.ReadInt32();
-    int result = SetSystemVolumeLevelLegacy(volumeType, volumeLevel);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::SetSystemVolumeLevelLegacyInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+//     int32_t volumeLevel = data.ReadInt32();
+//     int result = SetSystemVolumeLevelLegacy(volumeType, volumeLevel);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::SetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
-    int32_t volumeLevel = data.ReadInt32();
-    int32_t volumeFlag = data.ReadInt32();
-    int result = SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::SetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+//     int32_t volumeLevel = data.ReadInt32();
+//     int32_t volumeFlag = data.ReadInt32();
+//     int result = SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::SetSystemVolumeLevelWithDeviceInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
-    int32_t volumeLevel = data.ReadInt32();
-    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
-    int32_t volumeFlag = data.ReadInt32();
-    int result = SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType, volumeFlag);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::SetSystemVolumeLevelWithDeviceInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+//     int32_t volumeLevel = data.ReadInt32();
+//     DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+//     int32_t volumeFlag = data.ReadInt32();
+//     int result = SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType, volumeFlag);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::SetSelfAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t volumeLevel = data.ReadInt32();
-    int32_t volumeFlag = data.ReadInt32();
-    int result = SetSelfAppVolumeLevel(volumeLevel, volumeFlag);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::SetSelfAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t volumeLevel = data.ReadInt32();
+//     int32_t volumeFlag = data.ReadInt32();
+//     int result = SetSelfAppVolumeLevel(volumeLevel, volumeFlag);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::SetAppVolumeMutedInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t appUid = data.ReadInt32();
-    bool muted = data.ReadBool();
-    int32_t volumeFlag = data.ReadInt32();
-    int result = SetAppVolumeMuted(appUid, muted, volumeFlag);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::SetAppVolumeMutedInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t appUid = data.ReadInt32();
+//     bool muted = data.ReadBool();
+//     int32_t volumeFlag = data.ReadInt32();
+//     int result = SetAppVolumeMuted(appUid, muted, volumeFlag);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::GetAppVolumeIsMuteInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t appUid = data.ReadInt32();
-    bool owned = data.ReadBool();
-    bool isMute = false;
-    int result = IsAppVolumeMute(appUid, owned, isMute);
-    reply.WriteBool(isMute);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::GetAppVolumeIsMuteInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t appUid = data.ReadInt32();
+//     bool owned = data.ReadBool();
+//     bool isMute = false;
+//     int result = IsAppVolumeMute(appUid, owned, isMute);
+//     reply.WriteBool(isMute);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::SetAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t appUid = data.ReadInt32();
-    int32_t volumeLevel = data.ReadInt32();
-    int32_t volumeFlag = data.ReadInt32();
-    int result = SetAppVolumeLevel(appUid, volumeLevel, volumeFlag);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::SetAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t appUid = data.ReadInt32();
+//     int32_t volumeLevel = data.ReadInt32();
+//     int32_t volumeFlag = data.ReadInt32();
+//     int result = SetAppVolumeLevel(appUid, volumeLevel, volumeFlag);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::SetRingerModeLegacyInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioRingerMode rMode = static_cast<AudioRingerMode>(data.ReadInt32());
-    int32_t result = SetRingerModeLegacy(rMode);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::SetRingerModeLegacyInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioRingerMode rMode = static_cast<AudioRingerMode>(data.ReadInt32());
+//     int32_t result = SetRingerModeLegacy(rMode);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::SetRingerModeInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioRingerMode rMode = static_cast<AudioRingerMode>(data.ReadInt32());
-    int32_t result = SetRingerMode(rMode);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::SetRingerModeInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioRingerMode rMode = static_cast<AudioRingerMode>(data.ReadInt32());
+//     int32_t result = SetRingerMode(rMode);
+//     reply.WriteInt32(result);
+// }
 
-#ifdef FEATURE_DTMF_TONE
-void AudioPolicyManagerStub::GetToneInfoInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t ltonetype = data.ReadInt32();
-    std::string countryCode = data.ReadString();
-    std::shared_ptr<ToneInfo> ltoneInfo = GetToneConfig(ltonetype, countryCode);
-    CHECK_AND_RETURN_LOG(ltoneInfo != nullptr, "obj is null");
-    ltoneInfo->Marshalling(reply);
-}
+// #ifdef FEATURE_DTMF_TONE
+// void AudioPolicyManagerStub::GetToneInfoInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t ltonetype = data.ReadInt32();
+//     std::string countryCode = data.ReadString();
+//     std::shared_ptr<ToneInfo> ltoneInfo = GetToneConfig(ltonetype, countryCode);
+//     CHECK_AND_RETURN_LOG(ltoneInfo != nullptr, "obj is null");
+//     ltoneInfo->Marshalling(reply);
+// }
 
-void AudioPolicyManagerStub::GetSupportedTonesInternal(MessageParcel &data, MessageParcel &reply)
-{
-    std::string countryCode = data.ReadString();
-    int32_t lToneListSize = 0;
-    std::vector<int32_t> lToneList = GetSupportedTones(countryCode);
-    lToneListSize = static_cast<int32_t>(lToneList.size());
-    reply.WriteInt32(lToneListSize);
-    for (int i = 0; i < lToneListSize; i++) {
-        reply.WriteInt32(lToneList[i]);
-    }
-}
-#endif
+// void AudioPolicyManagerStub::GetSupportedTonesInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     std::string countryCode = data.ReadString();
+//     int32_t lToneListSize = 0;
+//     std::vector<int32_t> lToneList = GetSupportedTones(countryCode);
+//     lToneListSize = static_cast<int32_t>(lToneList.size());
+//     reply.WriteInt32(lToneListSize);
+//     for (int i = 0; i < lToneListSize; i++) {
+//         reply.WriteInt32(lToneList[i]);
+//     }
+// }
+// #endif
 
 void AudioPolicyManagerStub::GetRingerModeInternal(MessageParcel &data, MessageParcel &reply)
 {
@@ -377,152 +377,152 @@ void AudioPolicyManagerStub::GetRingerModeInternal(MessageParcel &data, MessageP
     reply.WriteInt32(static_cast<int>(rMode));
 }
 
-void AudioPolicyManagerStub::SetAudioSceneInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioScene audioScene = static_cast<AudioScene>(data.ReadInt32());
-    int32_t result = SetAudioScene(audioScene);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::SetAudioSceneInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioScene audioScene = static_cast<AudioScene>(data.ReadInt32());
+//     int32_t result = SetAudioScene(audioScene);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::SetMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply)
-{
-    bool isMute = data.ReadBool();
-    int32_t result = SetMicrophoneMute(isMute);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::SetMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     bool isMute = data.ReadBool();
+//     int32_t result = SetMicrophoneMute(isMute);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::SetMicrophoneMuteAudioConfigInternal(MessageParcel &data, MessageParcel &reply)
-{
-    bool isMute = data.ReadBool();
-    int32_t result = SetMicrophoneMuteAudioConfig(isMute);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::SetMicrophoneMuteAudioConfigInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     bool isMute = data.ReadBool();
+//     int32_t result = SetMicrophoneMuteAudioConfig(isMute);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::IsMicrophoneMuteLegacyInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t result = IsMicrophoneMuteLegacy();
-    reply.WriteBool(result);
-}
+// void AudioPolicyManagerStub::IsMicrophoneMuteLegacyInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t result = IsMicrophoneMuteLegacy();
+//     reply.WriteBool(result);
+// }
 
-void AudioPolicyManagerStub::IsMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t result = IsMicrophoneMute();
-    reply.WriteBool(result);
-}
+// void AudioPolicyManagerStub::IsMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t result = IsMicrophoneMute();
+//     reply.WriteBool(result);
+// }
 
-void AudioPolicyManagerStub::GetAudioSceneInternal(MessageParcel & /* data */, MessageParcel &reply)
-{
-    AudioScene audioScene = GetAudioScene();
-    reply.WriteInt32(static_cast<int>(audioScene));
-}
+// void AudioPolicyManagerStub::GetAudioSceneInternal(MessageParcel & /* data */, MessageParcel &reply)
+// {
+//     AudioScene audioScene = GetAudioScene();
+//     reply.WriteInt32(static_cast<int>(audioScene));
+// }
 
-void AudioPolicyManagerStub::GetSystemActiveVolumeTypeInternal(MessageParcel& data, MessageParcel& reply)
-{
-    int32_t clientUid = data.ReadInt32();
-    AudioStreamType volumeType = GetSystemActiveVolumeType(clientUid);
-    reply.WriteInt32(volumeType);
-}
+// void AudioPolicyManagerStub::GetSystemActiveVolumeTypeInternal(MessageParcel& data, MessageParcel& reply)
+// {
+//     int32_t clientUid = data.ReadInt32();
+//     AudioStreamType volumeType = GetSystemActiveVolumeType(clientUid);
+//     reply.WriteInt32(volumeType);
+// }
 
-void AudioPolicyManagerStub::GetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
-    int32_t volumeLevel = GetSystemVolumeLevel(streamType);
-    reply.WriteInt32(volumeLevel);
-}
+// void AudioPolicyManagerStub::GetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
+//     int32_t volumeLevel = GetSystemVolumeLevel(streamType);
+//     reply.WriteInt32(volumeLevel);
+// }
 
-void AudioPolicyManagerStub::GetAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t appUid = data.ReadInt32();
-    int32_t volumeLevel = 0;
-    int32_t ret = GetAppVolumeLevel(appUid, volumeLevel);
-    reply.WriteInt32(volumeLevel);
-    reply.WriteInt32(ret);
-}
+// void AudioPolicyManagerStub::GetAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t appUid = data.ReadInt32();
+//     int32_t volumeLevel = 0;
+//     int32_t ret = GetAppVolumeLevel(appUid, volumeLevel);
+//     reply.WriteInt32(volumeLevel);
+//     reply.WriteInt32(ret);
+// }
 
-void AudioPolicyManagerStub::GetSelfAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t volumeLevel = 0;
-    int32_t ret = GetSelfAppVolumeLevel(volumeLevel);
-    reply.WriteInt32(volumeLevel);
-    reply.WriteInt32(ret);
-}
+// void AudioPolicyManagerStub::GetSelfAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t volumeLevel = 0;
+//     int32_t ret = GetSelfAppVolumeLevel(volumeLevel);
+//     reply.WriteInt32(volumeLevel);
+//     reply.WriteInt32(ret);
+// }
 
-void AudioPolicyManagerStub::SetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t streamId = data.ReadInt32();
-    float volume = data.ReadFloat();
-    int result = SetLowPowerVolume(streamId, volume);
-    if (result == SUCCESS)
-        reply.WriteInt32(AUDIO_OK);
-    else
-        reply.WriteInt32(AUDIO_ERR);
-}
+// void AudioPolicyManagerStub::SetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t streamId = data.ReadInt32();
+//     float volume = data.ReadFloat();
+//     int result = SetLowPowerVolume(streamId, volume);
+//     if (result == SUCCESS)
+//         reply.WriteInt32(AUDIO_OK);
+//     else
+//         reply.WriteInt32(AUDIO_ERR);
+// }
 
-void AudioPolicyManagerStub::GetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t streamId = data.ReadInt32();
-    float volume = GetLowPowerVolume(streamId);
-    reply.WriteFloat(volume);
-}
+// void AudioPolicyManagerStub::GetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t streamId = data.ReadInt32();
+//     float volume = GetLowPowerVolume(streamId);
+//     reply.WriteFloat(volume);
+// }
 
-void AudioPolicyManagerStub::GetSingleStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t streamId = data.ReadInt32();
-    float volume = GetSingleStreamVolume(streamId);
-    reply.WriteFloat(volume);
-}
+// void AudioPolicyManagerStub::GetSingleStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t streamId = data.ReadInt32();
+//     float volume = GetSingleStreamVolume(streamId);
+//     reply.WriteFloat(volume);
+// }
 
-void AudioPolicyManagerStub::SetStreamMuteLegacyInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
-    bool mute = data.ReadBool();
-    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
-    int result = SetStreamMuteLegacy(volumeType, mute);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::SetStreamMuteLegacyInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+//     bool mute = data.ReadBool();
+//     DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+//     int result = SetStreamMuteLegacy(volumeType, mute);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::SetStreamMuteInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
-    bool mute = data.ReadBool();
-    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
-    int result = SetStreamMute(volumeType, mute, deviceType);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::SetStreamMuteInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+//     bool mute = data.ReadBool();
+//     DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+//     int result = SetStreamMute(volumeType, mute, deviceType);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::GetStreamMuteInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
-    bool mute = GetStreamMute(volumeType);
-    reply.WriteBool(mute);
-}
+// void AudioPolicyManagerStub::GetStreamMuteInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+//     bool mute = GetStreamMute(volumeType);
+//     reply.WriteBool(mute);
+// }
 
-void AudioPolicyManagerStub::IsStreamActiveInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
-    bool isActive = IsStreamActive(volumeType);
-    reply.WriteBool(isActive);
-}
+// void AudioPolicyManagerStub::IsStreamActiveInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+//     bool isActive = IsStreamActive(volumeType);
+//     reply.WriteBool(isActive);
+// }
 
-void AudioPolicyManagerStub::IsFastPlaybackSupportedInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioStreamInfo audioStreamInfo;
-    audioStreamInfo.Unmarshalling(data);
+// void AudioPolicyManagerStub::IsFastPlaybackSupportedInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioStreamInfo audioStreamInfo;
+//     audioStreamInfo.Unmarshalling(data);
 
-    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
-    bool ret = IsFastPlaybackSupported(audioStreamInfo, streamUsage);
-    reply.WriteBool(ret);
-}
+//     StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+//     bool ret = IsFastPlaybackSupported(audioStreamInfo, streamUsage);
+//     reply.WriteBool(ret);
+// }
 
-void AudioPolicyManagerStub::IsFastRecordingSupportedInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioStreamInfo audioStreamInfo;
-    audioStreamInfo.Unmarshalling(data);
+// void AudioPolicyManagerStub::IsFastRecordingSupportedInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioStreamInfo audioStreamInfo;
+//     audioStreamInfo.Unmarshalling(data);
 
-    SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
-    bool ret = IsFastRecordingSupported(audioStreamInfo, sourceType);
-    reply.WriteBool(ret);
-}
+//     SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
+//     bool ret = IsFastRecordingSupported(audioStreamInfo, sourceType);
+//     reply.WriteBool(ret);
+// }
 
 void AudioPolicyManagerStub::AdjustVolumeByStepInternal(MessageParcel &data, MessageParcel &reply)
 {
@@ -600,260 +600,260 @@ void AudioPolicyManagerStub::GetAudioFocusInfoListInternal(MessageParcel &data, 
     }
 }
 
-void AudioPolicyManagerStub::SetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t sessionID = data.ReadUint32();
-    sptr<IRemoteObject> object = data.ReadRemoteObject();
-    uint32_t zoneID = data.ReadUint32();
-    uint32_t clientUid = data.ReadUint32();
-    CHECK_AND_RETURN_LOG(object != nullptr, "AudioPolicyManagerStub: AudioInterruptCallback obj is null");
-    int32_t result = SetAudioInterruptCallback(sessionID, object, clientUid, zoneID);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::SetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     uint32_t sessionID = data.ReadUint32();
+//     sptr<IRemoteObject> object = data.ReadRemoteObject();
+//     uint32_t zoneID = data.ReadUint32();
+//     uint32_t clientUid = data.ReadUint32();
+//     CHECK_AND_RETURN_LOG(object != nullptr, "AudioPolicyManagerStub: AudioInterruptCallback obj is null");
+//     int32_t result = SetAudioInterruptCallback(sessionID, object, clientUid, zoneID);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::UnsetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t sessionID = data.ReadInt32();
-    int32_t zoneID = data.ReadInt32();
-    int32_t result = UnsetAudioInterruptCallback(sessionID, zoneID);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::UnsetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t sessionID = data.ReadInt32();
+//     int32_t zoneID = data.ReadInt32();
+//     int32_t result = UnsetAudioInterruptCallback(sessionID, zoneID);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::ActivateInterruptInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t zoneID = data.ReadInt32();
-    bool isUpdatedAudioStrategy = data.ReadBool();
-    AudioInterrupt audioInterrupt = {};
-    AudioInterrupt::Unmarshalling(data, audioInterrupt);
-    int32_t result = ActivateAudioInterrupt(audioInterrupt, zoneID, isUpdatedAudioStrategy);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::ActivateInterruptInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t zoneID = data.ReadInt32();
+//     bool isUpdatedAudioStrategy = data.ReadBool();
+//     AudioInterrupt audioInterrupt = {};
+//     AudioInterrupt::Unmarshalling(data, audioInterrupt);
+//     int32_t result = ActivateAudioInterrupt(audioInterrupt, zoneID, isUpdatedAudioStrategy);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::DeactivateInterruptInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t zoneID = data.ReadInt32();
-    AudioInterrupt audioInterrupt = {};
-    AudioInterrupt::Unmarshalling(data, audioInterrupt);
-    int32_t result = DeactivateAudioInterrupt(audioInterrupt, zoneID);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::DeactivateInterruptInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t zoneID = data.ReadInt32();
+//     AudioInterrupt audioInterrupt = {};
+//     AudioInterrupt::Unmarshalling(data, audioInterrupt);
+//     int32_t result = DeactivateAudioInterrupt(audioInterrupt, zoneID);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::ActivatePreemptModeInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t result = ActivatePreemptMode();
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::ActivatePreemptModeInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t result = ActivatePreemptMode();
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::DeactivatePreemptModeInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t result = DeactivatePreemptMode();
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::DeactivatePreemptModeInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t result = DeactivatePreemptMode();
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::SetAudioManagerInterruptCbInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t clientId = data.ReadInt32();
-    sptr<IRemoteObject> object = data.ReadRemoteObject();
-    CHECK_AND_RETURN_LOG(object != nullptr, "AudioPolicyManagerStub: AudioInterruptCallback obj is null");
-    int32_t result = SetAudioManagerInterruptCallback(clientId, object);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::SetAudioManagerInterruptCbInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t clientId = data.ReadInt32();
+//     sptr<IRemoteObject> object = data.ReadRemoteObject();
+//     CHECK_AND_RETURN_LOG(object != nullptr, "AudioPolicyManagerStub: AudioInterruptCallback obj is null");
+//     int32_t result = SetAudioManagerInterruptCallback(clientId, object);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::UnsetAudioManagerInterruptCbInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t clientId = data.ReadInt32();
-    int32_t result = UnsetAudioManagerInterruptCallback(clientId);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::UnsetAudioManagerInterruptCbInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t clientId = data.ReadInt32();
+//     int32_t result = UnsetAudioManagerInterruptCallback(clientId);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::RequestAudioFocusInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioInterrupt audioInterrupt = {};
-    int32_t clientId = data.ReadInt32();
-    AudioInterrupt::Unmarshalling(data, audioInterrupt);
-    int32_t result = RequestAudioFocus(clientId, audioInterrupt);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::RequestAudioFocusInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioInterrupt audioInterrupt = {};
+//     int32_t clientId = data.ReadInt32();
+//     AudioInterrupt::Unmarshalling(data, audioInterrupt);
+//     int32_t result = RequestAudioFocus(clientId, audioInterrupt);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::AbandonAudioFocusInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioInterrupt audioInterrupt = {};
-    int32_t clientId = data.ReadInt32();
-    AudioInterrupt::Unmarshalling(data, audioInterrupt);
-    int32_t result = AbandonAudioFocus(clientId, audioInterrupt);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::AbandonAudioFocusInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioInterrupt audioInterrupt = {};
+//     int32_t clientId = data.ReadInt32();
+//     AudioInterrupt::Unmarshalling(data, audioInterrupt);
+//     int32_t result = AbandonAudioFocus(clientId, audioInterrupt);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::GetStreamInFocusInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t zoneID = data.ReadInt32();
-    AudioStreamType streamInFocus = GetStreamInFocus(zoneID);
-    reply.WriteInt32(static_cast<int32_t>(streamInFocus));
-}
+// void AudioPolicyManagerStub::GetStreamInFocusInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t zoneID = data.ReadInt32();
+//     AudioStreamType streamInFocus = GetStreamInFocus(zoneID);
+//     reply.WriteInt32(static_cast<int32_t>(streamInFocus));
+// }
 
-void AudioPolicyManagerStub::GetStreamInFocusByUidInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t zoneID = data.ReadInt32();
-    int32_t uid = data.ReadInt32();
-    AudioStreamType streamInFocus = GetStreamInFocusByUid(uid, zoneID);
-    reply.WriteInt32(static_cast<int32_t>(streamInFocus));
-}
+// void AudioPolicyManagerStub::GetStreamInFocusByUidInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t zoneID = data.ReadInt32();
+//     int32_t uid = data.ReadInt32();
+//     AudioStreamType streamInFocus = GetStreamInFocusByUid(uid, zoneID);
+//     reply.WriteInt32(static_cast<int32_t>(streamInFocus));
+// }
 
-void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t invalidSessionID = static_cast<uint32_t>(-1);
-    AudioInterrupt audioInterrupt {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
-        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, invalidSessionID};
-    int32_t zoneID = data.ReadInt32();
-    int32_t ret = GetSessionInfoInFocus(audioInterrupt, zoneID);
-    AudioInterrupt::Marshalling(reply, audioInterrupt);
-    reply.WriteInt32(ret);
-}
+// void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     uint32_t invalidSessionID = static_cast<uint32_t>(-1);
+//     AudioInterrupt audioInterrupt {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
+//         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, invalidSessionID};
+//     int32_t zoneID = data.ReadInt32();
+//     int32_t ret = GetSessionInfoInFocus(audioInterrupt, zoneID);
+//     AudioInterrupt::Marshalling(reply, audioInterrupt);
+//     reply.WriteInt32(ret);
+// }
 
-void AudioPolicyManagerStub::GetPreferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioRendererInfo rendererInfo;
-    rendererInfo.Unmarshalling(data);
-    int32_t result = GetPreferredOutputStreamType(rendererInfo);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::GetPreferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioRendererInfo rendererInfo;
+//     rendererInfo.Unmarshalling(data);
+//     int32_t result = GetPreferredOutputStreamType(rendererInfo);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::GetPreferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioCapturerInfo capturerInfo;
-    capturerInfo.Unmarshalling(data);
-    int32_t result = GetPreferredInputStreamType(capturerInfo);
-    reply.WriteInt32(result);
-}
+// void AudioPolicyManagerStub::GetPreferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioCapturerInfo capturerInfo;
+//     capturerInfo.Unmarshalling(data);
+//     int32_t result = GetPreferredInputStreamType(capturerInfo);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::CreateRendererClientInternal(MessageParcel &data, MessageParcel &reply)
-{
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->Unmarshalling(data);
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
-    uint32_t sessionId = data.ReadUint32();
-    int32_t ret = CreateRendererClient(streamDesc, flag, sessionId);
-    reply.WriteUint32(flag);
-    reply.WriteUint32(sessionId);
-    reply.WriteInt32(ret);
-}
+// void AudioPolicyManagerStub::CreateRendererClientInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+//     streamDesc->Unmarshalling(data);
+//     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+//     uint32_t sessionId = data.ReadUint32();
+//     int32_t ret = CreateRendererClient(streamDesc, flag, sessionId);
+//     reply.WriteUint32(flag);
+//     reply.WriteUint32(sessionId);
+//     reply.WriteInt32(ret);
+// }
 
-void AudioPolicyManagerStub::CreateCapturerClientInternal(MessageParcel &data, MessageParcel &reply)
-{
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->Unmarshalling(data);
-    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
-    uint32_t sessionId = data.ReadUint32();
-    int32_t ret = CreateCapturerClient(streamDesc, flag, sessionId);
-    reply.WriteUint32(flag);
-    reply.WriteUint32(sessionId);
-    reply.WriteInt32(ret);
-}
+// void AudioPolicyManagerStub::CreateCapturerClientInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+//     streamDesc->Unmarshalling(data);
+//     uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
+//     uint32_t sessionId = data.ReadUint32();
+//     int32_t ret = CreateCapturerClient(streamDesc, flag, sessionId);
+//     reply.WriteUint32(flag);
+//     reply.WriteUint32(sessionId);
+//     reply.WriteInt32(ret);
+// }
 
-void AudioPolicyManagerStub::ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t count = data.ReadUint32();
-    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
-    int32_t ret = ReconfigureAudioChannel(count, deviceType);
-    reply.WriteInt32(ret);
-}
+// void AudioPolicyManagerStub::ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     uint32_t count = data.ReadUint32();
+//     DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+//     int32_t ret = ReconfigureAudioChannel(count, deviceType);
+//     reply.WriteInt32(ret);
+// }
 
-void AudioPolicyManagerStub::RegisterTrackerInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioStreamChangeInfo streamChangeInfo = {};
-    AudioMode mode = static_cast<AudioMode> (data.ReadInt32());
-    ReadStreamChangeInfo(data, mode, streamChangeInfo);
-    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
-    CHECK_AND_RETURN_LOG(remoteObject != nullptr, "Client Tracker obj is null");
+// void AudioPolicyManagerStub::RegisterTrackerInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioStreamChangeInfo streamChangeInfo = {};
+//     AudioMode mode = static_cast<AudioMode> (data.ReadInt32());
+//     ReadStreamChangeInfo(data, mode, streamChangeInfo);
+//     sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
+//     CHECK_AND_RETURN_LOG(remoteObject != nullptr, "Client Tracker obj is null");
 
-    int ret = RegisterTracker(mode, streamChangeInfo, remoteObject);
-    reply.WriteInt32(ret);
-}
+//     int ret = RegisterTracker(mode, streamChangeInfo, remoteObject);
+//     reply.WriteInt32(ret);
+// }  // TODO check me
 
-void AudioPolicyManagerStub::UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioStreamChangeInfo streamChangeInfo = {};
-    AudioMode mode = static_cast<AudioMode> (data.ReadInt32());
-    ReadStreamChangeInfo(data, mode, streamChangeInfo);
-    int ret = UpdateTracker(mode, streamChangeInfo);
-    reply.WriteInt32(ret);
-}
+// void AudioPolicyManagerStub::UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioStreamChangeInfo streamChangeInfo = {};
+//     AudioMode mode = static_cast<AudioMode> (data.ReadInt32());
+//     ReadStreamChangeInfo(data, mode, streamChangeInfo);
+//     int ret = UpdateTracker(mode, streamChangeInfo);
+//     reply.WriteInt32(ret);
+// } // TODO check me
 
-void AudioPolicyManagerStub::GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply)
-{
-    size_t size = 0;
-    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-    int ret = GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub:GetRendererChangeInfos Error!!");
-        reply.WriteInt32(size);
-        return;
-    }
+// void AudioPolicyManagerStub::GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     size_t size = 0;
+//     std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+//     int ret = GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+//     if (ret != SUCCESS) {
+//         AUDIO_ERR_LOG("AudioPolicyManagerStub:GetRendererChangeInfos Error!!");
+//         reply.WriteInt32(size);
+//         return;
+//     }
 
-    size = audioRendererChangeInfos.size();
-    reply.WriteInt32(size);
-    for (const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo: audioRendererChangeInfos) {
-        CHECK_AND_CONTINUE_LOG(rendererChangeInfo != nullptr,
-            "AudioPolicyManagerStub:Renderer change info null, something wrong!!");
-        rendererChangeInfo->Marshalling(reply);
-    }
-}
+//     size = audioRendererChangeInfos.size();
+//     reply.WriteInt32(size);
+//     for (const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo: audioRendererChangeInfos) {
+//         CHECK_AND_CONTINUE_LOG(rendererChangeInfo != nullptr,
+//             "AudioPolicyManagerStub:Renderer change info null, something wrong!!");
+//         rendererChangeInfo->Marshalling(reply);
+//     }
+// }
 
-void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data, MessageParcel &reply)
-{
-    size_t size = 0;
-    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
-    int32_t ret = GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub:GetCapturerChangeInfos Error!!");
-        reply.WriteInt32(size);
-        return;
-    }
+// void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     size_t size = 0;
+//     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+//     int32_t ret = GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
+//     if (ret != SUCCESS) {
+//         AUDIO_ERR_LOG("AudioPolicyManagerStub:GetCapturerChangeInfos Error!!");
+//         reply.WriteInt32(size);
+//         return;
+//     }
 
-    size = audioCapturerChangeInfos.size();
-    reply.WriteInt32(size);
-    for (const std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo: audioCapturerChangeInfos) {
-        CHECK_AND_CONTINUE_LOG(capturerChangeInfo != nullptr,
-            "AudioPolicyManagerStub:Capturer change info null, something wrong!!");
-        capturerChangeInfo->Marshalling(reply);
-    }
-}
+//     size = audioCapturerChangeInfos.size();
+//     reply.WriteInt32(size);
+//     for (const std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo: audioCapturerChangeInfos) {
+//         CHECK_AND_CONTINUE_LOG(capturerChangeInfo != nullptr,
+//             "AudioPolicyManagerStub:Capturer change info null, something wrong!!");
+//         capturerChangeInfo->Marshalling(reply);
+//     }
+// }
 
-void AudioPolicyManagerStub::UpdateStreamStateInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t clientUid = data.ReadInt32();
-    StreamSetState streamSetState = static_cast<StreamSetState>(data.ReadInt32());
-    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+// void AudioPolicyManagerStub::UpdateStreamStateInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t clientUid = data.ReadInt32();
+//     StreamSetState streamSetState = static_cast<StreamSetState>(data.ReadInt32());
+//     StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
 
-    int32_t result = UpdateStreamState(clientUid, streamSetState, streamUsage);
-    reply.WriteInt32(result);
-}
+//     int32_t result = UpdateStreamState(clientUid, streamSetState, streamUsage);
+//     reply.WriteInt32(result);
+// }
 
-void AudioPolicyManagerStub::GetVolumeGroupInfoInternal(MessageParcel& data, MessageParcel& reply)
-{
-    std::string networkId = data.ReadString();
-    std::vector<sptr<VolumeGroupInfo>> groupInfos;
-    int32_t ret = GetVolumeGroupInfos(networkId, groupInfos);
-    int32_t size = static_cast<int32_t>(groupInfos.size());
-    if (ret == SUCCESS && size > 0) {
-        reply.WriteInt32(size);
-        for (int i = 0; i < size; i++) {
-            groupInfos[i]->Marshalling(reply);
-        }
-    } else {
-        reply.WriteInt32(ret);
-    }
-}
+// void AudioPolicyManagerStub::GetVolumeGroupInfoInternal(MessageParcel& data, MessageParcel& reply)
+// {
+//     std::string networkId = data.ReadString();
+//     std::vector<sptr<VolumeGroupInfo>> groupInfos;
+//     int32_t ret = GetVolumeGroupInfos(networkId, groupInfos);
+//     int32_t size = static_cast<int32_t>(groupInfos.size());
+//     if (ret == SUCCESS && size > 0) {
+//         reply.WriteInt32(size);
+//         for (int i = 0; i < size; i++) {
+//             groupInfos[i]->Marshalling(reply);
+//         }
+//     } else {
+//         reply.WriteInt32(ret);
+//     }
+// }
 
-void AudioPolicyManagerStub::GetNetworkIdByGroupIdInternal(MessageParcel& data, MessageParcel& reply)
-{
-    int32_t groupId = data.ReadInt32();
-    std::string networkId;
-    int32_t ret = GetNetworkIdByGroupId(groupId, networkId);
+// void AudioPolicyManagerStub::GetNetworkIdByGroupIdInternal(MessageParcel& data, MessageParcel& reply)
+// {
+//     int32_t groupId = data.ReadInt32();
+//     std::string networkId;
+//     int32_t ret = GetNetworkIdByGroupId(groupId, networkId);
 
-    reply.WriteString(networkId);
-    reply.WriteInt32(ret);
-}
+//     reply.WriteString(networkId);
+//     reply.WriteInt32(ret);
+// }
 
 void AudioPolicyManagerStub::SetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply)
 {

@@ -34,18 +34,18 @@ static bool HasUsbDevice(const std::vector<std::shared_ptr<AudioDeviceDescriptor
     return false;
 }
 
-void AudioPolicyManagerStub::GetDevicesInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int deviceFlag = data.ReadInt32();
-    DeviceFlag deviceFlagConfig = static_cast<DeviceFlag>(deviceFlag);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = GetDevices(deviceFlagConfig);
-    int32_t size = static_cast<int32_t>(devices.size());
-    int32_t apiVersion = HasUsbDevice(devices) ? GetApiTargetVersion() : 0;
-    reply.WriteInt32(size);
-    for (int i = 0; i < size; i++) {
-        devices[i]->Marshalling(reply, apiVersion);
-    }
-}
+// void AudioPolicyManagerStub::GetDevicesInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int deviceFlag = data.ReadInt32();
+//     DeviceFlag deviceFlagConfig = static_cast<DeviceFlag>(deviceFlag);
+//     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = GetDevices(deviceFlagConfig);
+//     int32_t size = static_cast<int32_t>(devices.size());
+//     int32_t apiVersion = HasUsbDevice(devices) ? GetApiTargetVersion() : 0;
+//     reply.WriteInt32(size);
+//     for (int i = 0; i < size; i++) {
+//         devices[i]->Marshalling(reply, apiVersion);
+//     }
+// }
 
 void AudioPolicyManagerStub::GetDevicesInnerInternal(MessageParcel &data, MessageParcel &reply)
 {
@@ -88,141 +88,141 @@ void AudioPolicyManagerStub::GetPreferredInputDeviceDescriptorsInternal(MessageP
     }
 }
 
-void AudioPolicyManagerStub::SetDeviceActiveInternal(MessageParcel &data, MessageParcel &reply)
-{
-    InternalDeviceType deviceType = static_cast<InternalDeviceType>(data.ReadInt32());
-    bool active = data.ReadBool();
-    int32_t uid = data.ReadInt32();
-    int32_t result = SetDeviceActive(deviceType, active, uid);
-    if (result == SUCCESS)
-        reply.WriteInt32(AUDIO_OK);
-    else
-        reply.WriteInt32(AUDIO_ERR);
-}
+// void AudioPolicyManagerStub::SetDeviceActiveInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     InternalDeviceType deviceType = static_cast<InternalDeviceType>(data.ReadInt32());
+//     bool active = data.ReadBool();
+//     int32_t uid = data.ReadInt32();
+//     int32_t result = SetDeviceActive(deviceType, active, uid);
+//     if (result == SUCCESS)
+//         reply.WriteInt32(AUDIO_OK);
+//     else
+//         reply.WriteInt32(AUDIO_ERR);
+// }
 
-void AudioPolicyManagerStub::IsDeviceActiveInternal(MessageParcel &data, MessageParcel &reply)
-{
-    InternalDeviceType deviceType = static_cast<InternalDeviceType>(data.ReadInt32());
-    bool result = IsDeviceActive(deviceType);
-    reply.WriteBool(result);
-}
+// void AudioPolicyManagerStub::IsDeviceActiveInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     InternalDeviceType deviceType = static_cast<InternalDeviceType>(data.ReadInt32());
+//     bool result = IsDeviceActive(deviceType);
+//     reply.WriteBool(result);
+// }
 
-void AudioPolicyManagerStub::GetActiveOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)
-{
-    InternalDeviceType deviceType = GetActiveOutputDevice();
-    reply.WriteInt32(static_cast<int>(deviceType));
-}
+// void AudioPolicyManagerStub::GetActiveOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     InternalDeviceType deviceType = GetActiveOutputDevice();
+//     reply.WriteInt32(static_cast<int>(deviceType));
+// }
 
-void AudioPolicyManagerStub::GetDmDeviceTypeInternal(MessageParcel &data, MessageParcel &reply)
-{
-    uint16_t dmDeviceType = GetDmDeviceType();
-    reply.WriteUint16(static_cast<uint16_t>(dmDeviceType));
-}
+// void AudioPolicyManagerStub::GetDmDeviceTypeInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     uint16_t dmDeviceType = GetDmDeviceType();
+//     reply.WriteUint16(static_cast<uint16_t>(dmDeviceType));
+// }
 
-void AudioPolicyManagerStub::GetActiveInputDeviceInternal(MessageParcel &data, MessageParcel &reply)
-{
-    InternalDeviceType deviceType = GetActiveInputDevice();
-    reply.WriteInt32(static_cast<int>(deviceType));
-}
+// void AudioPolicyManagerStub::GetActiveInputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     InternalDeviceType deviceType = GetActiveInputDevice();
+//     reply.WriteInt32(static_cast<int>(deviceType));
+// }
 
-void AudioPolicyManagerStub::SelectOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)
-{
-    sptr<AudioRendererFilter> audioRendererFilter = AudioRendererFilter::Unmarshalling(data);
-    CHECK_AND_RETURN_LOG(audioRendererFilter != nullptr, "AudioRendererFilter unmarshall fail.");
+// void AudioPolicyManagerStub::SelectOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     sptr<AudioRendererFilter> audioRendererFilter = AudioRendererFilter::Unmarshalling(data);
+//     CHECK_AND_RETURN_LOG(audioRendererFilter != nullptr, "AudioRendererFilter unmarshall fail.");
 
-    int validSize = 20; // Use 20 as limit.
-    int size = data.ReadInt32();
-    if (size <= 0 || size > validSize) {
-        AUDIO_ERR_LOG("SelectOutputDevice get invalid device size.");
-        return;
-    }
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> targetOutputDevice;
-    for (int i = 0; i < size; i++) {
-        std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
-        CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
-        MapExternalToInternalDeviceType(*audioDeviceDescriptor);
-        targetOutputDevice.push_back(audioDeviceDescriptor);
-    }
+//     int validSize = 20; // Use 20 as limit.
+//     int size = data.ReadInt32();
+//     if (size <= 0 || size > validSize) {
+//         AUDIO_ERR_LOG("SelectOutputDevice get invalid device size.");
+//         return;
+//     }
+//     std::vector<std::shared_ptr<AudioDeviceDescriptor>> targetOutputDevice;
+//     for (int i = 0; i < size; i++) {
+//         std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
+//         CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+//         MapExternalToInternalDeviceType(*audioDeviceDescriptor);
+//         targetOutputDevice.push_back(audioDeviceDescriptor);
+//     }
 
-    int32_t ret = SelectOutputDevice(audioRendererFilter, targetOutputDevice);
-    reply.WriteInt32(ret);
-}
+//     int32_t ret = SelectOutputDevice(audioRendererFilter, targetOutputDevice);
+//     reply.WriteInt32(ret);
+// }
 
-void AudioPolicyManagerStub::GetSelectedDeviceInfoInternal(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t uid = data.ReadInt32();
-    int32_t pid = data.ReadInt32();
-    AudioStreamType streamType =  static_cast<AudioStreamType>(data.ReadInt32());
+// void AudioPolicyManagerStub::GetSelectedDeviceInfoInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     int32_t uid = data.ReadInt32();
+//     int32_t pid = data.ReadInt32();
+//     AudioStreamType streamType =  static_cast<AudioStreamType>(data.ReadInt32());
 
-    std::string deviceName = GetSelectedDeviceInfo(uid, pid, streamType);
-    reply.WriteString(deviceName);
-}
+//     std::string deviceName = GetSelectedDeviceInfo(uid, pid, streamType);
+//     reply.WriteString(deviceName);
+// }
 
-void AudioPolicyManagerStub::SelectInputDeviceInternal(MessageParcel &data, MessageParcel &reply)
-{
-    sptr<AudioCapturerFilter> audioCapturerFilter = AudioCapturerFilter::Unmarshalling(data);
-    CHECK_AND_RETURN_LOG(audioCapturerFilter != nullptr, "AudioCapturerFilter unmarshall fail.");
+// void AudioPolicyManagerStub::SelectInputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     sptr<AudioCapturerFilter> audioCapturerFilter = AudioCapturerFilter::Unmarshalling(data);
+//     CHECK_AND_RETURN_LOG(audioCapturerFilter != nullptr, "AudioCapturerFilter unmarshall fail.");
 
-    int validSize = 10; // Use 10 as limit.
-    int size = data.ReadInt32();
-    CHECK_AND_RETURN_LOG(size > 0 && size <= validSize, "SelectInputDevice get invalid device size.");
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> targetInputDevice;
-    for (int i = 0; i < size; i++) {
-        std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
-        CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
-        MapExternalToInternalDeviceType(*audioDeviceDescriptor);
-        targetInputDevice.push_back(audioDeviceDescriptor);
-    }
+//     int validSize = 10; // Use 10 as limit.
+//     int size = data.ReadInt32();
+//     CHECK_AND_RETURN_LOG(size > 0 && size <= validSize, "SelectInputDevice get invalid device size.");
+//     std::vector<std::shared_ptr<AudioDeviceDescriptor>> targetInputDevice;
+//     for (int i = 0; i < size; i++) {
+//         std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
+//         CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+//         MapExternalToInternalDeviceType(*audioDeviceDescriptor);
+//         targetInputDevice.push_back(audioDeviceDescriptor);
+//     }
 
-    int32_t ret = SelectInputDevice(audioCapturerFilter, targetInputDevice);
-    reply.WriteInt32(ret);
-}
+//     int32_t ret = SelectInputDevice(audioCapturerFilter, targetInputDevice);
+//     reply.WriteInt32(ret);
+// }
 
-void AudioPolicyManagerStub::ExcludeOutputDevicesInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(data.ReadInt32());
-    int validSize = 20; // Use 20 as limit.
-    int size = data.ReadInt32();
-    CHECK_AND_RETURN_LOG(size > 0 && size <= validSize, "ExcludeOutputDevices get invalid device size.");
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
-    for (int i = 0; i < size; i++) {
-        std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
-        CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
-        audioDeviceDescriptors.push_back(audioDeviceDescriptor);
-    }
+// void AudioPolicyManagerStub::ExcludeOutputDevicesInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(data.ReadInt32());
+//     int validSize = 20; // Use 20 as limit.
+//     int size = data.ReadInt32();
+//     CHECK_AND_RETURN_LOG(size > 0 && size <= validSize, "ExcludeOutputDevices get invalid device size.");
+//     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+//     for (int i = 0; i < size; i++) {
+//         std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
+//         CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+//         audioDeviceDescriptors.push_back(audioDeviceDescriptor);
+//     }
 
-    int32_t ret = ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    reply.WriteInt32(ret);
-}
+//     int32_t ret = ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+//     reply.WriteInt32(ret);
+// }
 
-void AudioPolicyManagerStub::UnexcludeOutputDevicesInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(data.ReadInt32());
-    int validSize = 20; // Use 20 as limit.
-    int size = data.ReadInt32();
-    CHECK_AND_RETURN_LOG(size > 0 && size <= validSize, "UnexcludeOutputDevices get invalid device size.");
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
-    for (int i = 0; i < size; i++) {
-        std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
-        CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
-        audioDeviceDescriptors.push_back(audioDeviceDescriptor);
-    }
+// void AudioPolicyManagerStub::UnexcludeOutputDevicesInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(data.ReadInt32());
+//     int validSize = 20; // Use 20 as limit.
+//     int size = data.ReadInt32();
+//     CHECK_AND_RETURN_LOG(size > 0 && size <= validSize, "UnexcludeOutputDevices get invalid device size.");
+//     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+//     for (int i = 0; i < size; i++) {
+//         std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
+//         CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+//         audioDeviceDescriptors.push_back(audioDeviceDescriptor);
+//     }
 
-    int32_t ret = UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    reply.WriteInt32(ret);
-}
+//     int32_t ret = UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+//     reply.WriteInt32(ret);
+// }
 
-void AudioPolicyManagerStub::GetExcludedDevicesInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(data.ReadInt32());
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = GetExcludedDevices(audioDevUsage);
-    int32_t size = static_cast<int32_t>(devices.size());
-    int32_t apiVersion = HasUsbDevice(devices) ? GetApiTargetVersion() : 0;
-    reply.WriteInt32(size);
-    for (int i = 0; i < size; i++) {
-        devices[i]->Marshalling(reply, apiVersion);
-    }
-}
+// void AudioPolicyManagerStub::GetExcludedDevicesInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(data.ReadInt32());
+//     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = GetExcludedDevices(audioDevUsage);
+//     int32_t size = static_cast<int32_t>(devices.size());
+//     int32_t apiVersion = HasUsbDevice(devices) ? GetApiTargetVersion() : 0;
+//     reply.WriteInt32(size);
+//     for (int i = 0; i < size; i++) {
+//         devices[i]->Marshalling(reply, apiVersion);
+//     }
+// }
 
 void AudioPolicyManagerStub::GetAvailableDevicesInternal(MessageParcel &data, MessageParcel &reply)
 {
@@ -285,31 +285,31 @@ void AudioPolicyManagerStub::FetchInputDeviceForTrackInternal(MessageParcel &dat
     FetchInputDeviceForTrack(streamChangeInfo);
 }
 
-void AudioPolicyManagerStub::GetOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)
-{
-    sptr<AudioRendererFilter> audioRendererFilter = AudioRendererFilter::Unmarshalling(data);
-    CHECK_AND_RETURN_LOG(audioRendererFilter != nullptr, "AudioRendererFilter unmarshall fail.");
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = GetOutputDevice(audioRendererFilter);
-    int32_t size = static_cast<int32_t>(devices.size());
-    int32_t apiVersion = HasUsbDevice(devices) ? GetApiTargetVersion() : 0;
-    reply.WriteInt32(size);
-    for (int i = 0; i < size; i++) {
-        devices[i]->Marshalling(reply, apiVersion);
-    }
-}
+// void AudioPolicyManagerStub::GetOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     sptr<AudioRendererFilter> audioRendererFilter = AudioRendererFilter::Unmarshalling(data);
+//     CHECK_AND_RETURN_LOG(audioRendererFilter != nullptr, "AudioRendererFilter unmarshall fail.");
+//     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = GetOutputDevice(audioRendererFilter);
+//     int32_t size = static_cast<int32_t>(devices.size());
+//     int32_t apiVersion = HasUsbDevice(devices) ? GetApiTargetVersion() : 0;
+//     reply.WriteInt32(size);
+//     for (int i = 0; i < size; i++) {
+//         devices[i]->Marshalling(reply, apiVersion);
+//     }
+// }
 
-void AudioPolicyManagerStub::GetInputDeviceInternal(MessageParcel &data, MessageParcel &reply)
-{
-    sptr<AudioCapturerFilter> audioCapturerFilter = AudioCapturerFilter::Unmarshalling(data);
-    CHECK_AND_RETURN_LOG(audioCapturerFilter != nullptr, "AudioCapturerFilter unmarshall fail.");
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = GetInputDevice(audioCapturerFilter);
-    int32_t size = static_cast<int32_t>(devices.size());
-    int32_t apiVersion = HasUsbDevice(devices) ? GetApiTargetVersion() : 0;
-    reply.WriteInt32(size);
-    for (int i = 0; i < size; i++) {
-        devices[i]->Marshalling(reply, apiVersion);
-    }
-}
+// void AudioPolicyManagerStub::GetInputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+// {
+//     sptr<AudioCapturerFilter> audioCapturerFilter = AudioCapturerFilter::Unmarshalling(data);
+//     CHECK_AND_RETURN_LOG(audioCapturerFilter != nullptr, "AudioCapturerFilter unmarshall fail.");
+//     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = GetInputDevice(audioCapturerFilter);
+//     int32_t size = static_cast<int32_t>(devices.size());
+//     int32_t apiVersion = HasUsbDevice(devices) ? GetApiTargetVersion() : 0;
+//     reply.WriteInt32(size);
+//     for (int i = 0; i < size; i++) {
+//         devices[i]->Marshalling(reply, apiVersion);
+//     }
+// }
 
 void AudioPolicyManagerStub::SetInputDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
