@@ -43,9 +43,6 @@ static constexpr int32_t MIN_BUFFER_SIZE = 2;
 static constexpr uint64_t FRAME_LEN_10MS = 10;
 static constexpr uint64_t FRAME_LEN_20MS = 20;
 static constexpr uint64_t FRAME_LEN_40MS = 40;
-static constexpr uint32_t AUDIO_NS_PER_US = 1000;
-static constexpr uint32_t AUDIO_US_PER_MS = 1000;
-static constexpr uint32_t AUDIO_MS_PER_S = 1000;
 static constexpr int32_t DEFAULT_PAUSED_LATENCY = 40;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
@@ -343,9 +340,11 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
         deviceNetId_ = callBackStreamInfo.deviceNetId;
     }
     if (isCallbackMode_) { // callback buffer
+        auto requestDataLen = callBackStreamInfo.requestDataLen;
         auto writeCallback = writeCallback_.lock();
         if (callBackStreamInfo.needData && writeCallback) {
-            return writeCallback->OnWriteData(callBackStreamInfo.inputData, callBackStreamInfo.requestDataLen);
+            writeCallback->GetAvailableSize(requestDataLen);
+            return writeCallback->OnWriteData(callBackStreamInfo.inputData, requestDataLen);
         }
     } else { // write buffer
         return WriteDataFromRingBuffer(callBackStreamInfo.inputData, callBackStreamInfo.requestDataLen);

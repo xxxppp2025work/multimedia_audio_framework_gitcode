@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -731,9 +731,8 @@ int32_t OHAudioBufferBase::GetBufferByFrame(uint64_t beginPosInFrame, uint64_t s
     return GetBufferByOffset(offset, dataLenth, buffer);
 }
 
-int32_t OHAudioBufferBase::GetAllWritableBuffer(RingBufferWrapper &buffer)
+int32_t OHAudioBufferBase::GetAllWritableBufferFromPosFrame(uint64_t writePosInFrame, RingBufferWrapper &buffer)
 {
-    uint64_t writePosInFrame = GetCurWriteFrame();
     uint64_t basePos = basicBufferInfo_->basePosInFrame.load();
     uint64_t readPos = basicBufferInfo_->curReadFrame.load();
     uint64_t maxWriteDelta = 2 * totalSizeInFrame_; // 0 ~ 2*totalSizeInFrame_
@@ -750,9 +749,14 @@ int32_t OHAudioBufferBase::GetAllWritableBuffer(RingBufferWrapper &buffer)
     return GetBufferByFrame(writePosInFrame, sizeInFrame, buffer);
 }
 
-int32_t OHAudioBufferBase::GetAllReadableBuffer(RingBufferWrapper &buffer)
+int32_t OHAudioBufferBase::GetAllWritableBuffer(RingBufferWrapper &buffer)
 {
-    uint64_t readPosInFrame = GetCurReadFrame();
+    uint64_t writePosInFrame = GetCurWriteFrame();
+    return GetAllWritableBufferFromPosFrame(writePosInFrame, buffer);
+}
+
+int32_t OHAudioBufferBase::GetAllReadableBufferFromPosFrame(uint64_t readPosInFrame, RingBufferWrapper &buffer)
+{
     uint64_t basePos = basicBufferInfo_->basePosInFrame.load();
     uint64_t writePos = basicBufferInfo_->curWriteFrame.load();
 
@@ -767,6 +771,46 @@ int32_t OHAudioBufferBase::GetAllReadableBuffer(RingBufferWrapper &buffer)
     }
 
     return GetBufferByFrame(readPosInFrame, sizeInFrame, buffer);
+}
+
+int32_t OHAudioBufferBase::GetAllReadableBuffer(RingBufferWrapper &buffer)
+{
+    uint64_t readPosInFrame = GetCurReadFrame();
+    return GetAllReadableBufferFromPosFrame(readPosInFrame, buffer);
+}
+
+int32_t OHAudioBufferBase::Dequeue(RingBufferWrapper &buffer)
+{
+    uint64_t readPosInFrame = GetCurReadFrame();
+    RingBufferWrapper innerBuffer;
+    int32_t ret = GetAllReadableBufferFromPosFrame(readPosInFrame, innerBuffer);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "err: %{public}d", ret);
+    if (innerBuffer.dataLenth < buffer.dataLenth) {
+        AUDIO_WARNING_LOG("not enough");
+        return ERR_INVALID_PARAM;
+    }
+    innerBuffer.dataLenth = buffer.dataLenth;
+    ret = buffer.MemCopyFrom(innerBuffer);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "memCopyFrom err: %{public}d", ret);
+
+    return SetCurReadFrame(readPosInFrame + (buffer.dataLenth * byteSizePerFrame_));
+}
+
+int32_t OHAudioBufferBase::Enqueue(const RingBufferWrapper &buffer)
+{
+    uint64_t writePosInFrame = GetCurWriteFrame();
+    RingBufferWrapper innerBuffer;
+    int32_t ret = GetAllWritableBufferFromPosFrame(writePosInFrame, innerBuffer);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "err: %{public}d", ret);
+    if (innerBuffer.dataLenth < buffer.dataLenth) {
+        AUDIO_WARNING_LOG("not enough");
+        return ERR_INVALID_PARAM;
+    }
+    innerBuffer.dataLenth = buffer.dataLenth;
+    ret = innerBuffer.MemCopyFrom(buffer);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "memCopyFrom err: %{public}d", ret);
+
+    return SetCurWriteFrame(writePosInFrame + (buffer.dataLenth * byteSizePerFrame_));
 }
 
 int64_t OHAudioBufferBase::GetLastWrittenTime()

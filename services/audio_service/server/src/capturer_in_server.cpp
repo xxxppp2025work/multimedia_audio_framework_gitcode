@@ -848,5 +848,11 @@ int32_t CapturerInServer::StopSession()
     audioServerBuffer_->SetStopFlag(true);
     return SUCCESS;
 }
+
+int32_t CapturerInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+    uint32_t &spanSizeInFrame)
+{
+    return ERR_NOT_SUPPORTED;
+}
 } // namespace AudioStandard
 } // namespace OHOS
