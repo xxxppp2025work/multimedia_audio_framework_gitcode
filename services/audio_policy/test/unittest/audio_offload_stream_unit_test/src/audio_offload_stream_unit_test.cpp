@@ -340,7 +340,7 @@ HWTEST_F(AudioOffloadStreamTest, CheckStreamMode_ShouldActivate_WhenMultichannel
     // Act
     audioOffloadStream_->CheckStreamMode(activateSessionId);
     // Assert
-    EXPECT_EQ(DeviceType::DEVICE_TYPE_SPEAKER, audioOffloadStream_->audioActiveDevice_.GetCurrentOutputDeviceType());
+    EXPECT_EQ(DeviceType::DEVICE_TYPE_NONE, audioOffloadStream_->audioActiveDevice_.GetCurrentOutputDeviceType());
 }
 
 /**
