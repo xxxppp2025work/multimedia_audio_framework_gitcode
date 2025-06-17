@@ -1047,7 +1047,8 @@ AudioStreamDeviceChangeReason TaiheAudioEnum::ToTaiheAudioStreamDeviceChangeReas
 {
     auto iter = AUDIO_STREAM_DEVICE_CHANGE_REASON_TAIHE_MAP.find(reason);
     if (iter == AUDIO_STREAM_DEVICE_CHANGE_REASON_TAIHE_MAP.end()) {
-        AUDIO_WARNING_LOG("ToTaiheAudioStreamDeviceChangeReason invalid mode: %{public}d", static_cast<int32_t>(reason));
+        AUDIO_WARNING_LOG("ToTaiheAudioStreamDeviceChangeReason invalid mode: %{public}d",
+            static_cast<int32_t>(reason));
         return AudioStreamDeviceChangeReason::key_t::REASON_UNKNOWN;
     }
     return iter->second;
