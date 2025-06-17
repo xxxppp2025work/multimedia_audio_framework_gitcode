@@ -18,8 +18,6 @@
 
 #include "taihe_audio_micstatechange_callback.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 std::mutex TaiheAudioManagerMicStateChangeCallback::sWorkerMutex_;
 TaiheAudioManagerMicStateChangeCallback::TaiheAudioManagerMicStateChangeCallback(ani_env *env)

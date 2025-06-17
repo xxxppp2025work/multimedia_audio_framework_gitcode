@@ -21,8 +21,6 @@
 #include "taihe_audio_enum.h"
 #include "taihe_param_utils.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 static const int32_t WRITE_CALLBACK_TIMEOUT_IN_MS = 1000; // 1s
 std::mutex TaiheRendererWriteDataCallback::sWorkerMutex_;
@@ -74,6 +72,7 @@ void TaiheRendererWriteDataCallback::AddCallbackReference(const std::string &cal
 
 void TaiheRendererWriteDataCallback::RemoveCallbackReference(std::shared_ptr<uintptr_t> &callback)
 {
+    CHECK_AND_RETURN_LOG(rendererWriteDataCallback_ != nullptr, "Cannot find the reference of writeData callback");
     std::lock_guard<std::mutex> lock(mutex_);
     if (callback == nullptr) {
         rendererWriteDataCallback_->cb_ = nullptr;

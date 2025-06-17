@@ -33,8 +33,6 @@
 #include "taihe_audio_renderer_policy_service_died_callback.h"
 #include "taihe_audio_renderer_write_data_callback.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 std::unique_ptr<OHOS::AudioStandard::AudioRendererOptions> AudioRendererImpl::sRendererOptions_ = nullptr;
 std::mutex AudioRendererImpl::createMutex_;
@@ -115,9 +113,6 @@ std::shared_ptr<AudioRendererImpl> AudioRendererImpl::CreateAudioRendererNativeO
 AudioRenderer AudioRendererImpl::CreateAudioRendererWrapper(OHOS::AudioStandard::AudioRendererOptions rendererOptions)
 {
     std::lock_guard<std::mutex> lock(createMutex_);
-    if (sRendererOptions_ != nullptr) {
-        sRendererOptions_.release();
-    }
     sRendererOptions_ = std::make_unique<OHOS::AudioStandard::AudioRendererOptions>();
     if (sRendererOptions_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "sRendererOptions_ create failed");
@@ -438,7 +433,7 @@ AudioEffectMode AudioRendererImpl::GetAudioEffectModeSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioRenderer_ is nullptr");
         return AudioEffectMode::key_t::EFFECT_NONE;
     }
-    return AudioEffectMode(static_cast<AudioEffectMode::key_t>(audioRenderer_->GetAudioEffectMode()));
+    return TaiheAudioEnum::ToTaiheAudioEffectMode(audioRenderer_->GetAudioEffectMode());
 }
 
 void AudioRendererImpl::SetAudioEffectModeSync(AudioEffectMode mode)
@@ -600,7 +595,7 @@ void AudioRendererImpl::RegisterPeriodPositionCallback(int64_t frame, std::share
             taiheRenderer->periodPositionCbTaihe_ = std::make_shared<TaiheRendererPeriodPositionCallback>(get_env());
             CHECK_AND_RETURN_RET_LOG(taiheRenderer->periodPositionCbTaihe_ != nullptr,
                 TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY),
-                "periodPositionCbTaihe_ is nullptr, No memery");
+                "periodPositionCbTaihe_ is nullptr, No memory");
 
             int32_t ret = taiheRenderer->audioRenderer_->SetRendererPeriodPositionCallback(frame,
                 taiheRenderer->periodPositionCbTaihe_);
@@ -647,7 +642,7 @@ void AudioRendererImpl::RegisterRendererDeviceChangeCallback(std::shared_ptr<uin
         taiheRenderer->rendererDeviceChangeCallbackTaihe_ =
             std::make_shared<TaiheAudioRendererDeviceChangeCallback>(get_env());
         CHECK_AND_RETURN_LOG(taiheRenderer->rendererDeviceChangeCallbackTaihe_ != nullptr,
-            "rendererDeviceChangeCallbackTaihe_ is nullptr, No memery");
+            "rendererDeviceChangeCallbackTaihe_ is nullptr, No memory");
 
         int32_t ret = taiheRenderer->audioRenderer_->RegisterOutputDeviceChangeWithInfoCallback(
             taiheRenderer->rendererDeviceChangeCallbackTaihe_);
@@ -682,7 +677,7 @@ void AudioRendererImpl::RegisterRendererOutputDeviceChangeWithInfoCallback(std::
         taiheRenderer->rendererOutputDeviceChangeWithInfoCallbackTaihe_ =
             std::make_shared<TaiheAudioRendererOutputDeviceChangeWithInfoCallback>(get_env());
         CHECK_AND_RETURN_LOG(taiheRenderer->rendererOutputDeviceChangeWithInfoCallbackTaihe_ != nullptr,
-            "rendererOutputDeviceChangeWithInfoCallbackTaihe_ is nullptr, No memery");
+            "rendererOutputDeviceChangeWithInfoCallbackTaihe_ is nullptr, No memory");
 
         int32_t ret = taiheRenderer->audioRenderer_->RegisterOutputDeviceChangeWithInfoCallback(
             taiheRenderer->rendererOutputDeviceChangeWithInfoCallbackTaihe_);
@@ -1022,4 +1017,4 @@ AudioRenderer CreateAudioRendererSync(AudioRendererOptions const &options)
 }
 } // namespace ANI::Audio
 
-TH_EXPORT_CPP_API_CreateAudioRendererSync(CreateAudioRendererSync);
+TH_EXPORT_CPP_API_CreateAudioRendererSync(ANI::Audio::CreateAudioRendererSync);

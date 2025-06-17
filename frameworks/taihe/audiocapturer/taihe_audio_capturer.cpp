@@ -34,8 +34,6 @@
 #include "taihe_capturer_position_callback.h"
 #include "taihe_param_utils.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 std::unique_ptr<OHOS::AudioStandard::AudioCapturerOptions> AudioCapturerImpl::sCapturerOptions_ = nullptr;
 std::mutex AudioCapturerImpl::createMutex_;
@@ -777,4 +775,4 @@ AudioCapturer CreateAudioCapturerSync(AudioCapturerOptions const &options)
 }
 } // namespace ANI::Audio
 
-TH_EXPORT_CPP_API_CreateAudioCapturerSync(CreateAudioCapturerSync);
+TH_EXPORT_CPP_API_CreateAudioCapturerSync(ANI::Audio::CreateAudioCapturerSync);

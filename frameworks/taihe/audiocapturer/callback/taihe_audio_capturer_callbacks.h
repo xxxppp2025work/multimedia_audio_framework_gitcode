@@ -43,7 +43,6 @@ public:
     void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> &callback) override;
     void RemoveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> &callback) override;
     bool CheckIfTargetCallbackName(const std::string &callbackName) override;
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 protected:
     std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
 
@@ -65,6 +64,7 @@ private:
     std::shared_ptr<AutoRef> interruptCallback_ = nullptr;
     std::shared_ptr<AutoRef> stateChangeCallback_ = nullptr;
     static std::mutex sWorkerMutex_;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio
 

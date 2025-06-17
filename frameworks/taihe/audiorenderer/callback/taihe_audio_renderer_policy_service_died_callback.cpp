@@ -20,7 +20,6 @@
 #include "taihe_audio_renderer_callback.h"
 #include "taihe_param_utils.h"
 
-using namespace ANI::Audio;
 namespace ANI::Audio {
 TaiheAudioRendererPolicyServiceDiedCallback::TaiheAudioRendererPolicyServiceDiedCallback(AudioRendererImpl *renderer)
     : renderer_(renderer)

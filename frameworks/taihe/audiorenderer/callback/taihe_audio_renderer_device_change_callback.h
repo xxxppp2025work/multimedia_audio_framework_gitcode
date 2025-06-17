@@ -38,10 +38,8 @@ public:
         const OHOS::AudioStandard::AudioStreamDeviceChangeReason reason) override;
     void RemoveAllCallbacks();
     int32_t GetCallbackListSize() const;
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 protected:
     std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
-
 private:
     struct AudioRendererDeviceChangeJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
@@ -55,6 +53,7 @@ private:
     ani_env *env_ = nullptr;
     std::list<std::shared_ptr<AutoRef>> callbacks_ {};
     std::shared_ptr<AutoRef> renderPeriodPositionCallback_ = nullptr;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 
 class TaiheAudioRendererOutputDeviceChangeWithInfoCallback :
@@ -69,7 +68,6 @@ public:
     bool CheckIfTargetCallbackName(const std::string &callbackName) override;
     void RemoveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> callback) override;
     int32_t GetCallbackListSize() const;
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 protected:
     std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
 
@@ -89,6 +87,7 @@ private:
     ani_env *env_ = nullptr;
     std::list<std::shared_ptr<AutoRef>> callbacks_ {};
     static std::mutex sWorkerMutex_;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio
 #endif // TAIHE_AUDIO_RENDERER_DEVICE_CHANGE_CALLBACK_H

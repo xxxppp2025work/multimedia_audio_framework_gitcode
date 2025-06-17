@@ -21,8 +21,6 @@
 #include "taihe_audio_error.h"
 #include "taihe_param_utils.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 std::mutex TonePlayerImpl::createMutex_;
 int32_t TonePlayerImpl::isConstructSuccess_ = OHOS::AudioStandard::SUCCESS;
@@ -108,7 +106,7 @@ TonePlayer CreateTonePlayerSync(AudioRendererInfo const &options)
     std::unique_ptr<OHOS::AudioStandard::AudioRendererInfo> audioRendererInfo =
         std::make_unique<OHOS::AudioStandard::AudioRendererInfo>(rendererInfo);
     if (audioRendererInfo == nullptr) {
-        AUDIO_ERR_LOG("audioRendererInfo create failed,no memery.");
+        AUDIO_ERR_LOG("audioRendererInfo create failed,no memory.");
         TaiheAudioError::ThrowError(TAIHE_ERR_NO_MEMORY);
         return make_holder<TonePlayerImpl, TonePlayer>();
     }
@@ -116,4 +114,4 @@ TonePlayer CreateTonePlayerSync(AudioRendererInfo const &options)
 }
 } // namespace ANI::Audio
 
-TH_EXPORT_CPP_API_CreateTonePlayerSync(CreateTonePlayerSync);
+TH_EXPORT_CPP_API_CreateTonePlayerSync(ANI::Audio::CreateTonePlayerSync);

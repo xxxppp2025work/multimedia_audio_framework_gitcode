@@ -21,7 +21,6 @@
 #include "taihe_audio_renderer_callback.h"
 #include "taihe_param_utils.h"
 
-using namespace ANI::Audio;
 namespace ANI::Audio {
 std::mutex TaiheRendererPeriodPositionCallback::sWorkerMutex_;
 TaiheRendererPeriodPositionCallback::TaiheRendererPeriodPositionCallback(ani_env *env)

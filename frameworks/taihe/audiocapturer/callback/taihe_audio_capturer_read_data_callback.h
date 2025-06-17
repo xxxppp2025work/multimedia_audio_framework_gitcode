@@ -32,7 +32,6 @@ public:
     void AddCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> &callback);
     void RemoveCallbackReference(std::shared_ptr<uintptr_t> &callback);
     void RemoveTaiheCapturer();
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 
 private:
     struct CapturerReadDataJsCallback {
@@ -53,6 +52,7 @@ private:
     AudioCapturerImpl *taiheCapturer_;
     bool isCallbackInited_ = false;
     static std::mutex sWorkerMutex_;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio
 #endif // TAIHE_AUDIO_CAPTURER_READ_DATA_CALLBACK_H

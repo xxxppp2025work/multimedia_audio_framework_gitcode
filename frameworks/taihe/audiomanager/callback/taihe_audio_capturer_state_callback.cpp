@@ -21,8 +21,6 @@
 #include "taihe_audio_capturer_state_callback.h"
 #include "taihe_param_utils.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 std::mutex TaiheAudioCapturerStateCallback::sWorkerMutex_;
 TaiheAudioCapturerStateCallback::TaiheAudioCapturerStateCallback(ani_env *env)

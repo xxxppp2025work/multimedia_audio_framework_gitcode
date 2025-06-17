@@ -22,8 +22,6 @@
 #include "taihe_param_utils.h"
 #include "taihe_appvolume_change_callback.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 AudioVolumeManagerImpl::AudioVolumeManagerImpl() : audioSystemMngr_(nullptr) {}
 

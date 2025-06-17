@@ -26,8 +26,6 @@
 #include "taihe_audio_error.h"
 #include "taihe_audio_enum.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 std::mutex TaiheAudioManagerAppVolumeChangeCallback::sWorkerMutex_;
 TaiheAudioManagerAppVolumeChangeCallback::TaiheAudioManagerAppVolumeChangeCallback(ani_env *env)

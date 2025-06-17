@@ -112,6 +112,21 @@ public:
     static DeviceChangeType ToTaiheDeviceChangeType(OHOS::AudioStandard::DeviceChangeType type);
     static AudioSessionDeactivatedReason ToTaiheSessionDeactiveReason(
         OHOS::AudioStandard::AudioSessionDeactiveReason reason);
+    static ohos::multimedia::audio::AsrNoiseSuppressionMode ToTaiheAsrNoiseSuppressionMode(
+        ::AsrNoiseSuppressionMode mode);
+    static ohos::multimedia::audio::AsrAecMode ToTaiheAsrAecMode(::AsrAecMode mode);
+    static ohos::multimedia::audio::AsrWhisperDetectionMode ToTaiheAsrWhisperDetectionMode(
+        ::AsrWhisperDetectionMode mode);
+    static InterruptForceType ToTaiheInterruptForceType(OHOS::AudioStandard::InterruptForceType type);
+    static AudioSpatializationSceneType ToTaiheAudioSpatializationSceneType(
+        OHOS::AudioStandard::AudioSpatializationSceneType type);
+    static AudioVolumeType ToTaiheAudioVolumeType(TaiheAudioEnum::AudioJsVolumeType type);
+    static ohos::multimedia::audio::AudioRingMode ToTaiheAudioRingMode(OHOS::AudioStandard::AudioRingerMode mode);
+    static AudioEffectMode ToTaiheAudioEffectMode(OHOS::AudioStandard::AudioEffectMode mode);
+    static AudioStreamDeviceChangeReason ToTaiheAudioStreamDeviceChangeReason(
+        OHOS::AudioStandard::AudioStreamDeviceChangeReason reason);
+    static AudioChannelLayout ToTaiheAudioChannelLayout(OHOS::AudioStandard::AudioChannelLayout layout);
+    static DeviceBlockStatus ToTaiheDeviceBlockStatus(OHOS::AudioStandard::DeviceBlockStatus status);
 };
 } // namespace ANI::Audio
 

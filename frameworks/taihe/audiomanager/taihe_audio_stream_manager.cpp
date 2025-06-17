@@ -21,8 +21,6 @@
 #include "taihe_param_utils.h"
 #include "taihe_audio_enum.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 AudioStreamManagerImpl::AudioStreamManagerImpl() : audioStreamMngr_(nullptr) {}
 

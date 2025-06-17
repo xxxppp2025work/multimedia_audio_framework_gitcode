@@ -35,7 +35,6 @@ public:
     void OnPeriodReached(const int64_t &frameNumber) override;
     bool CheckIfTargetCallbackName(const std::string &callbackName) override;
 
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 protected:
     std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
 
@@ -53,6 +52,7 @@ private:
     static std::mutex sWorkerMutex_;
     ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> capturerPeriodPositionCallback_ = nullptr;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio
 #endif // TAIHE_CAPTURER_PERIOD_POSITION_CALLBACK_H

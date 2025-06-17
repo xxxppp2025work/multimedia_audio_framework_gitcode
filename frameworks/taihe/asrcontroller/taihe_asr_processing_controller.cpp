@@ -28,8 +28,6 @@
 #include "taihe_param_utils.h"
 #include "taihe_audio_capturer.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 using namespace std;
 using namespace OHOS::HiviewDFX;
@@ -128,8 +126,7 @@ bool AsrProcessingControllerImpl::SetAsrAecMode(::ohos::multimedia::audio::AsrAe
         TaiheAudioError::ThrowErrorAndReturn(GetResInt(res), GetResStr(res));
         return false;
     }
-    bool setSuc = ((res == 0) ? true : false);
-    return setSuc;
+    return (res == 0);
 }
 
 ::ohos::multimedia::audio::AsrAecMode AsrProcessingControllerImpl::GetAsrAecMode()
@@ -145,7 +142,7 @@ bool AsrProcessingControllerImpl::SetAsrAecMode(::ohos::multimedia::audio::AsrAe
         TaiheAudioError::ThrowErrorAndReturn(GetResInt(res), GetResStr(res));
         return ::ohos::multimedia::audio::AsrAecMode::key_t::BYPASS;
     }
-    return ::ohos::multimedia::audio::AsrAecMode(static_cast<::ohos::multimedia::audio::AsrAecMode::key_t>(asrAecMode));
+    return TaiheAudioEnum::ToTaiheAsrAecMode(asrAecMode);
 }
 
 bool AsrProcessingControllerImpl::SetAsrNoiseSuppressionMode(::ohos::multimedia::audio::AsrNoiseSuppressionMode mode)
@@ -187,8 +184,7 @@ bool AsrProcessingControllerImpl::SetAsrNoiseSuppressionMode(::ohos::multimedia:
         TaiheAudioError::ThrowErrorAndReturn(GetResInt(res), GetResStr(res));
         return ::ohos::multimedia::audio::AsrNoiseSuppressionMode::key_t::BYPASS;
     }
-    return ::ohos::multimedia::audio::AsrNoiseSuppressionMode(
-        static_cast<::ohos::multimedia::audio::AsrNoiseSuppressionMode::key_t>(asrNoiseSuppressionMode));
+    return TaiheAudioEnum::ToTaiheAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
 }
 
 bool AsrProcessingControllerImpl::SetAsrWhisperDetectionMode(::ohos::multimedia::audio::AsrWhisperDetectionMode mode)
@@ -228,8 +224,7 @@ bool AsrProcessingControllerImpl::SetAsrWhisperDetectionMode(::ohos::multimedia:
         TaiheAudioError::ThrowErrorAndReturn(GetResInt(res), GetResStr(res));
         return ::ohos::multimedia::audio::AsrWhisperDetectionMode::key_t::BYPASS;
     }
-    return ::ohos::multimedia::audio::AsrWhisperDetectionMode(
-        static_cast<::ohos::multimedia::audio::AsrWhisperDetectionMode::key_t>(asrWhisperDetectionMode));
+    return TaiheAudioEnum::ToTaiheAsrWhisperDetectionMode(asrWhisperDetectionMode);
 }
 
 bool AsrProcessingControllerImpl::SetAsrVoiceControlMode(::ohos::multimedia::audio::AsrVoiceControlMode mode,
@@ -320,4 +315,4 @@ AsrProcessingController CreateAsrProcessingController(weak::AudioCapturer audioC
 }
 } // namespace ANI::Audio
 
-TH_EXPORT_CPP_API_CreateAsrProcessingController(CreateAsrProcessingController);
+TH_EXPORT_CPP_API_CreateAsrProcessingController(ANI::Audio::CreateAsrProcessingController);

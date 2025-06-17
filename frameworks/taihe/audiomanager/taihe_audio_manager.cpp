@@ -28,8 +28,6 @@
 #include "taihe_audio_spatialization_manager.h"
 #include "taihe_param_utils.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 AudioManagerImpl::AudioManagerImpl() : audioMngr_(nullptr) {}
 
@@ -202,4 +200,4 @@ AudioManager GetAudioManager()
 }
 } // namespace ANI::Audio
 
-TH_EXPORT_CPP_API_GetAudioManager(GetAudioManager);
+TH_EXPORT_CPP_API_GetAudioManager(ANI::Audio::GetAudioManager);

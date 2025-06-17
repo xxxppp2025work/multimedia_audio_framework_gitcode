@@ -33,7 +33,6 @@ public:
     void RemoveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> callback) override;
     bool CheckIfTargetCallbackName(const std::string &callbackName) override;
     void OnPeriodReached(const int64_t &frameNumber) override;
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 protected:
     std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
 
@@ -49,6 +48,7 @@ private:
     static std::mutex sWorkerMutex_;
     ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> renderPeriodPositionCallback_ = nullptr;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio
 #endif // TAIHE_RENDERER_PERIOD_POSITION_CALLBACK_H

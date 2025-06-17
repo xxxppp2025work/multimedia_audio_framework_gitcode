@@ -18,9 +18,9 @@
 
 #include "taihe_audio_renderer_callback.h"
 #include <thread>
+#include "taihe_audio_enum.h"
 #include "taihe_param_utils.h"
 
-using namespace ANI::Audio;
 namespace ANI::Audio {
 std::mutex TaiheAudioRendererCallback::sWorkerMutex_;
 TaiheAudioRendererCallback::TaiheAudioRendererCallback(ani_env *env)
@@ -154,9 +154,9 @@ void TaiheAudioRendererCallback::SafeJsCallbackInterruptWork(ani_env *env, Audio
     });
     std::string request = event->callbackName;
     InterruptEvent interruptEvent = {
-        .eventType = static_cast<InterruptType::key_t>(event->interruptEvent.eventType),
-        .forceType = static_cast<InterruptForceType::key_t>(event->interruptEvent.forceType),
-        .hintType = static_cast<InterruptHint::key_t>(event->interruptEvent.hintType),
+        .eventType = TaiheAudioEnum::ToTaiheInterruptType(event->interruptEvent.eventType),
+        .forceType = TaiheAudioEnum::ToTaiheInterruptForceType(event->interruptEvent.forceType),
+        .hintType = TaiheAudioEnum::ToTaiheInterruptHint(event->interruptEvent.hintType),
     };
     do {
         std::shared_ptr<taihe::callback<void(InterruptEvent const&)>> cacheCallback =
@@ -200,7 +200,7 @@ void TaiheAudioRendererCallback::SafeJsCallbackStateChangeWork(ani_env *env, Aud
         std::shared_ptr<taihe::callback<void(AudioState)>> cacheCallback =
             std::reinterpret_pointer_cast<taihe::callback<void(AudioState)>>(event->callback->cb_);
         CHECK_AND_BREAK_LOG(cacheCallback != nullptr, "%{public}s get reference value fail", request.c_str());
-        (*cacheCallback)(static_cast<AudioState::key_t>(event->state));
+        (*cacheCallback)(TaiheAudioEnum::ToTaiheAudioState(event->state));
     } while (0);
 }
 } // namespace ANI::Audio

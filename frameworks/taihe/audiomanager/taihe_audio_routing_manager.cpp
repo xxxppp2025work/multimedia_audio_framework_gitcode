@@ -27,7 +27,6 @@
 #include "taihe_audio_rounting_available_devicechange_callback.h"
 #include "taihe_audio_routing_manager_callbacks.h"
 
-using namespace ANI::Audio;
 namespace ANI::Audio {
 AudioRoutingManagerImpl::AudioRoutingManagerImpl() : audioMngr_(nullptr) {}
 

@@ -21,8 +21,6 @@
 #include "taihe_param_utils.h"
 #include "taihe_audio_enum.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 AudioSpatializationManagerImpl::AudioSpatializationManagerImpl() : audioSpatializationMngr_(nullptr) {}
 
@@ -318,14 +316,14 @@ AudioSpatializationSceneType AudioSpatializationManagerImpl::GetSpatializationSc
         OHOS::AudioStandard::AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_DEFAULT;
     if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
-        return AudioSpatializationSceneType(static_cast<AudioSpatializationSceneType::key_t>(sceneType));
+        return TaiheAudioEnum::ToTaiheAudioSpatializationSceneType(sceneType);
     }
     if (audioSpatializationMngr_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioSpatializationMngr_ is nullptr");
-        return AudioSpatializationSceneType(static_cast<AudioSpatializationSceneType::key_t>(sceneType));
+        return TaiheAudioEnum::ToTaiheAudioSpatializationSceneType(sceneType);
     }
     sceneType = audioSpatializationMngr_->GetSpatializationSceneType();
-    return AudioSpatializationSceneType(static_cast<AudioSpatializationSceneType::key_t>(sceneType));
+    return TaiheAudioEnum::ToTaiheAudioSpatializationSceneType(sceneType);
 }
 
 void AudioSpatializationManagerImpl::OnSpatializationEnabledChangeForCurrentDevice(callback_view<void(bool)> callback)

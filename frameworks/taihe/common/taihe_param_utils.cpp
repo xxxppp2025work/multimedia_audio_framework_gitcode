@@ -430,6 +430,8 @@ AudioStreamInfo TaiheParamUtils::ToTaiheAudioStreamInfo(std::shared_ptr<OHOS::Au
         .channels = ToTaiheAudioChannel(src->channels),
         .sampleFormat = ToTaiheAudioSampleFormat(src->format),
         .encodingType = TaiheAudioEnum::ToTaiheAudioEncodingType(src->encoding),
+        .channelLayout = taihe::optional<AudioChannelLayout>(std::in_place_t{},
+            TaiheAudioEnum::ToTaiheAudioChannelLayout(src->channelLayout)),
     };
     return streamInfo;
 }
@@ -557,7 +559,7 @@ DeviceBlockStatusInfo TaiheParamUtils::SetValueBlockedDeviceAction(
     const OHOS::AudioStandard::MicrophoneBlockedInfo &microphoneBlockedInfo)
 {
     DeviceBlockStatusInfo taiheDeviceBlockStatusInfo {
-        .blockStatus = DeviceBlockStatus(static_cast<DeviceBlockStatus::key_t>(microphoneBlockedInfo.blockStatus)),
+        .blockStatus = TaiheAudioEnum::ToTaiheDeviceBlockStatus(microphoneBlockedInfo.blockStatus),
         .devices = TaiheParamUtils::SetDeviceDescriptors(microphoneBlockedInfo.devices),
     };
 
@@ -715,7 +717,7 @@ taihe::array<AudioEffectMode> TaiheParamUtils::SetEffectInfo(
 {
     std::vector<AudioEffectMode> result;
     for (const auto &mode : audioSceneEffectInfo.mode) {
-        result.emplace_back(AudioEffectMode(static_cast<AudioEffectMode::key_t>(mode)));
+        result.emplace_back(TaiheAudioEnum::ToTaiheAudioEffectMode(mode));
     }
     return taihe::array<AudioEffectMode>(result);
 }

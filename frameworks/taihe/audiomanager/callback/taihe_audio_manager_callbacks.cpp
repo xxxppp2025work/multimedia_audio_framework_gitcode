@@ -18,8 +18,6 @@
 
 #include "taihe_audio_manager_callbacks.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 std::mutex TaiheAudioManagerCallback::sWorkerMutex_;
 TaiheAudioManagerCallback::TaiheAudioManagerCallback(ani_env *env)

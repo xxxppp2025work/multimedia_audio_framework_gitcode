@@ -45,7 +45,6 @@ public:
     void OnStateChange(const OHOS::AudioStandard::RendererState state,
         const OHOS::AudioStandard::StateChangeCmdType __attribute__((unused)) cmdType) override;
     void RemoveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> callback) override;
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 protected:
     std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
 
@@ -65,6 +64,7 @@ private:
     ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> interruptCallback_ = nullptr;
     std::shared_ptr<AutoRef> stateChangeCallback_ = nullptr;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio
 #endif // TAIHE_AUDIO_RENDERER_CALLBACK_H

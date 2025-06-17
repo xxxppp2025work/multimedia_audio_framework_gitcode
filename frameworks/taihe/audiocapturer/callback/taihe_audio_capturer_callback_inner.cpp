@@ -35,7 +35,7 @@ void TaiheAudioCapturerCallbackInner::SaveCallbackReferenceInner(const std::stri
     if (successed != nullptr) {
         successed(cb);
     }
-};
+}
 
 bool TaiheAudioCapturerCallbackInner::ContainSameJsCallbackInner(const std::string &callbackName,
     std::shared_ptr<uintptr_t> &callback)
@@ -48,7 +48,7 @@ bool TaiheAudioCapturerCallbackInner::ContainSameJsCallbackInner(const std::stri
     CHECK_AND_RETURN_RET_LOG(callbackCur != nullptr, false, "callbackCur is null");
     CHECK_AND_RETURN_RET_LOG(callbackCur->cb_ != nullptr, false, "callbackCur.cb_ is null");
     return TaiheParamUtils::IsSameRef(callback, callbackCur->cb_);
-};
+}
 
 void TaiheAudioCapturerCallbackInner::RemoveCallbackReferenceInner(
     const std::string &callbackName, std::shared_ptr<uintptr_t> &callback, std::function<void()> successed)
@@ -72,5 +72,5 @@ void TaiheAudioCapturerCallbackInner::RemoveCallbackReferenceInner(
     if (successed != nullptr) {
         successed();
     }
-};
+}
 } // namespace ANI::Audio

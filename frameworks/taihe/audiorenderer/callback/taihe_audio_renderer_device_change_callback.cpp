@@ -19,9 +19,9 @@
 #include "taihe_audio_renderer_device_change_callback.h"
 #include <thread>
 #include "taihe_audio_renderer_callback.h"
+#include "taihe_audio_enum.h"
 #include "taihe_param_utils.h"
 
-using namespace ANI::Audio;
 namespace ANI::Audio {
 std::mutex TaiheAudioRendererDeviceChangeCallback::sWorkerMutex_;
 std::mutex TaiheAudioRendererOutputDeviceChangeWithInfoCallback::sWorkerMutex_;
@@ -300,7 +300,7 @@ void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::SafeJsCallbackOutputD
         CHECK_AND_BREAK_LOG(cacheCallback != nullptr, "%{public}s get reference value fail", request.c_str());
         AudioStreamDeviceChangeInfo audioStreamDeviceChangeInfo {
             .devices = event->deviceInfo_,
-            .changeReason = static_cast<AudioStreamDeviceChangeReason::key_t>(event->reason_),
+            .changeReason = TaiheAudioEnum::ToTaiheAudioStreamDeviceChangeReason(event->reason_),
         };
         (*cacheCallback)(audioStreamDeviceChangeInfo);
     } while (0);

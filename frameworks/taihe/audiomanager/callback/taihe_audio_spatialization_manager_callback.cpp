@@ -22,8 +22,6 @@
 #include "taihe_param_utils.h"
 #include "taihe_audio_manager_callbacks.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 using namespace std;
 

@@ -103,10 +103,10 @@ void AudioVolumeGroupManagerImpl::SetVolumeWithFlagSync(AudioVolumeType volumeTy
 AudioVolumeType AudioVolumeGroupManagerImpl::GetActiveVolumeTypeSync(int32_t uid)
 {
     int32_t clientUid = uid;
-    OHOS::AudioStandard::AudioStreamType volType = OHOS::AudioStandard::AudioStreamType::STREAM_DEFAULT;
+    OHOS::AudioStandard::AudioStreamType volType = OHOS::AudioStandard::AudioStreamType::STREAM_VOICE_CALL;
     if (audioGroupMngr_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
-        return AudioVolumeType(static_cast<AudioVolumeType::key_t>(volType));
+        return TaiheAudioEnum::GetJsAudioVolumeType(volType);
     }
     volType = audioGroupMngr_->GetActiveVolumeType(clientUid);
     return TaiheAudioEnum::GetJsAudioVolumeType(volType);
@@ -221,10 +221,10 @@ AudioRingMode AudioVolumeGroupManagerImpl::GetRingerModeSync()
     OHOS::AudioStandard::AudioRingerMode ringerMode = OHOS::AudioStandard::AudioRingerMode::RINGER_MODE_NORMAL;
     if (audioGroupMngr_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
-        return AudioRingMode(static_cast<AudioRingMode::key_t>(ringerMode));
+        return TaiheAudioEnum::ToTaiheAudioRingMode(ringerMode);
     }
     ringerMode = audioGroupMngr_->GetRingerMode();
-    return AudioRingMode(static_cast<AudioRingMode::key_t>(ringerMode));
+    return TaiheAudioEnum::ToTaiheAudioRingMode(ringerMode);
 }
 
 void AudioVolumeGroupManagerImpl::SetMicMuteSync(bool mute)

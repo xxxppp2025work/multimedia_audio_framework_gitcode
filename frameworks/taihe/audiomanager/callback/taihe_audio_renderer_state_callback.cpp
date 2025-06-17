@@ -21,8 +21,6 @@
 #include <thread>
 #include "taihe_param_utils.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 std::mutex TaiheAudioRendererStateCallback::sWorkerMutex_;
 TaiheAudioRendererStateCallback::TaiheAudioRendererStateCallback(ani_env *env)

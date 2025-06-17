@@ -37,7 +37,6 @@ public:
     void OnStateChange(const OHOS::AudioStandard::AudioDeviceDescriptor &deviceInfo) override;
     bool ContainSameJsCallback(std::shared_ptr<uintptr_t> callback);
     bool CheckIfTargetCallbackName(const std::string &callbackName) override;
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 protected:
     std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
 
@@ -56,6 +55,7 @@ private:
     static std::mutex sWorkerMutex_;
     std::shared_ptr<uintptr_t> callback_ = nullptr;
     std::shared_ptr<AutoRef> callbackPtr_ = nullptr;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio
 #endif // TAIHE_AUDIO_CAPTURER_DEVICE_CHANGE_CALLBACK_H

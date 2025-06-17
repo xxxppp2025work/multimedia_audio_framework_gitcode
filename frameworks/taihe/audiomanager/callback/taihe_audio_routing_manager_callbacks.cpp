@@ -18,8 +18,6 @@
 
 #include "taihe_audio_routing_manager_callbacks.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 std::mutex TaiheAudioPreferredInputDeviceChangeCallback::sWorkerMutex_;
 TaiheAudioPreferredInputDeviceChangeCallback::TaiheAudioPreferredInputDeviceChangeCallback(ani_env *env)

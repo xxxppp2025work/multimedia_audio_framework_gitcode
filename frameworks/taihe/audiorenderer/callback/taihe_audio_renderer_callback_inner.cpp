@@ -20,7 +20,6 @@
 #include "taihe_audio_renderer_callback.h"
 #include "taihe_param_utils.h"
 
-using namespace ANI::Audio;
 namespace ANI::Audio {
 void TaiheAudioRendererCallbackInner::SaveCallbackReferenceInner(const std::string &callbackName,
     std::shared_ptr<uintptr_t> callback, std::function<void(std::shared_ptr<AutoRef> generatedCallback)> successed)

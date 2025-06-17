@@ -32,7 +32,6 @@ public:
 
     void AddCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> &callback);
     void RemoveCallbackReference(std::shared_ptr<uintptr_t> &callback);
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 
 private:
     struct RendererWriteDataJsCallback {
@@ -51,6 +50,7 @@ private:
     std::shared_ptr<AutoRef> rendererWriteDataCallback_ = nullptr;
     AudioRendererImpl *taiheRenderer_;
     static std::mutex sWorkerMutex_;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
     static vector<AudioRendererImpl*> activeRenderers_;
