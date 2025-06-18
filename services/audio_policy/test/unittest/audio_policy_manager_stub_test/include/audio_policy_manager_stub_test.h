@@ -18,7 +18,7 @@
 
 #include "audio_errors.h"
 #include "gtest/gtest.h"
-#include "audio_policy_manager_stub.h"
+#include "audio_policy_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {

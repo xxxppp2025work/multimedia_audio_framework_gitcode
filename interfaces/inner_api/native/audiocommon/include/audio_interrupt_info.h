@@ -99,7 +99,34 @@ enum InterruptForceType {
     INTERRUPT_SHARE
 };
 
-struct InterruptEvent {
+struct InterruptEvent : public Parcelable {
+
+    InterruptEvent(){}
+    InterruptEvent(InterruptType eventTypeIn, InterruptForceType forceTypeIn,
+        InterruptHint hintType, bool callbackToAppIn = true)
+        : eventType(eventTypeIn), forceType(forceTypeIn), hintType(hintType), callbackToApp(callbackToAppIn) {}
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteInt32(static_cast<int32_t>(eventType));
+        parcel.WriteInt32(static_cast<int32_t>(forceType));
+        parcel.WriteInt32(static_cast<int32_t>(hintType));
+        parcel.WriteBool(callbackToApp);
+        return true;
+    }
+
+    static InterruptEvent *Unmarshalling(Parcel &parcel)
+    {
+        auto info = std::make_unique<InterruptEvent>();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->eventType = static_cast<InterruptType>(parcel.ReadInt32());
+        info->forceType = static_cast<InterruptForceType>(parcel.ReadInt32());
+        info->hintType = static_cast<InterruptHint>(parcel.ReadInt32());
+        info->callbackToApp = parcel.ReadBool();
+        return info.release();
+    }
+
     /**
      * Interrupt event type, begin or end
      */

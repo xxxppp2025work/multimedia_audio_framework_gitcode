@@ -39,7 +39,7 @@
 #include "audio_policy_utils.h"
 #include "audio_stream_removed_callback.h"
 #include "audio_interrupt_callback.h"
-#include "audio_policy_manager_stub.h"
+#include "audio_policy_stub.h"
 #include "audio_server_death_recipient.h"
 #include "session_processor.h"
 #include "audio_spatialization_service.h"
@@ -60,7 +60,7 @@ class AudioSessionService;
 class BluetoothEventSubscriber;
 
 class AudioPolicyServer : public SystemAbility,
-                          public AudioPolicyManagerStub,
+                          public AudioPolicyStub,
                           public AudioStreamRemovedCallback {
     DECLARE_SYSTEM_ABILITY(AudioPolicyServer);
 
@@ -126,8 +126,8 @@ public:
 
     int32_t IsStreamActive(int32_t streamType, bool &active) override;
 
-    int32_t IsFastPlaybackSupported(int32_t &streamInfo, int32_t usage, bool &support) override;
-    int32_t IsFastRecordingSupported(int32_t &streamInfo, int32_t source, bool &support) override;
+    int32_t IsFastPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t usage, bool &support) override;
+    int32_t IsFastRecordingSupported(const AudioStreamInfo &streamInfo, int32_t source, bool &support) override;
 
     int32_t IsVolumeUnadjustable(bool &unadjustable) override;
 
@@ -138,9 +138,9 @@ public:
     int32_t GetSystemVolumeInDb(int32_t volumeType, int32_t volumeLevel,
         int32_t deviceType, float &volume) override;
 
-    bool IsArmUsbDevice(const AudioDeviceDescriptor &desc) override;
+    bool IsArmUsbDevice(const AudioDeviceDescriptor &desc);
 
-    void MapExternalToInternalDeviceType(AudioDeviceDescriptor &desc) override;
+    void MapExternalToInternalDeviceType(AudioDeviceDescriptor &desc);
 
     int32_t SelectOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
@@ -151,17 +151,17 @@ public:
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
 
     int32_t ExcludeOutputDevices(int32_t audioDevUsage,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
 
     int32_t UnexcludeOutputDevices(int32_t audioDevUsage,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
 
     int32_t GetExcludedDevices(int32_t audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
 
     int32_t GetDevices(int32_t deviceFlag, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs) override;
 
-    int32_t GetDevicesInner(DeviceFlag deviceFlag, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs) override;
+    int32_t GetDevicesInner(int32_t deviceFlag, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs) override;
 
     int32_t SetDeviceActive(int32_t deviceType, bool active, int32_t uid) override;
 
@@ -213,10 +213,10 @@ public:
     int32_t SetAudioInterruptCallback(uint32_t sessionID,
         const sptr<IRemoteObject> &object, uint32_t clientUid, int32_t zoneId) override;
 
-    int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneId = 0) override;
+    int32_t UnsetAudioInterruptCallback(uint32_t sessionID, int32_t zoneId) override;
 
-    int32_t ActivateAudioInterrupt(AudioInterrupt &audioInterrupt, const int32_t zoneId = 0,
-        const bool isUpdatedAudioStrategy = false) override;
+    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneId,
+        bool isUpdatedAudioStrategy) override;
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneId) override;
 
@@ -254,7 +254,7 @@ public:
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
-    int32_t ReconfigureAudioChannel(uint32_t &count, int32_t deviceType) override;
+    int32_t ReconfigureAudioChannel(uint32_t count, int32_t deviceType) override;
 
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo) override;
 
@@ -264,7 +264,7 @@ public:
         uint32_t &flag, uint32_t &sessionId) override;
 
     int32_t CreateCapturerClient(
-        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId) override;
+        const std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, uint32_t &sessionId) override;
 
     int32_t RegisterTracker(int32_t mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object) override;
@@ -307,13 +307,13 @@ public:
     int32_t GetPreferredOutputDeviceDescriptors(const AudioRendererInfo &rendererInfo, bool forceNoBTPermission,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs) override;
 
-    int32_t GetPreferredInputDeviceDescriptors(AudioCapturerInfo &captureInfo,
+    int32_t GetPreferredInputDeviceDescriptors(const AudioCapturerInfo &captureInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs) override;
 
-    int32_t GetOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+    int32_t GetOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs) override;
 
-    int32_t GetInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+    int32_t GetInputDevice(const sptr<AudioCapturerFilter> &audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs) override;
 
     int32_t SetClientCallbacksEnable(int32_t callbackchange, bool enable) override;
@@ -322,7 +322,7 @@ public:
 
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
 
-    int32_t GetAudioFocusInfoList(std::vector<std::map<AudioInterrupt, AudioFocuState>> &focusInfoList,
+    int32_t GetAudioFocusInfoList(std::vector<std::map<AudioInterrupt, int32_t>> &focusInfoList,
         int32_t zoneId) override;
 
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) override;
@@ -337,7 +337,7 @@ public:
 
     void GetStreamVolumeInfoMap(StreamVolumeInfoMap& streamVolumeInfos);
 
-    int32_t QueryEffectSceneMode(const SupportedEffectConfig &supportedEffectConfig) override;
+    int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
 
     int32_t GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc) override;
 
@@ -350,22 +350,22 @@ public:
 
     int32_t IsAbsVolumeScene(bool& ret) override;
 
-    int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi) override;
+    int32_t SetA2dpDeviceVolume(const std::string &macAddress, int32_t volume, bool updateUi) override;
 
-    int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
-        const int32_t volume, const bool updateUi) override;
+    int32_t SetNearlinkDeviceVolume(const std::string &macAddress, int32_t volumeType,
+        int32_t volume, bool updateUi) override;
 
-    int32_t GetAvailableDevices(AudioDeviceUsage usage,
+    int32_t GetAvailableDevices(int32_t usage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descs) override;
 
-    int32_t SetAvailableDeviceChangeCallback(const int32_t /*clientId*/, const AudioDeviceUsage usage,
+    int32_t SetAvailableDeviceChangeCallback(int32_t /*clientId*/, int32_t usage,
         const sptr<IRemoteObject> &object) override;
 
-    int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage) override;
+    int32_t UnsetAvailableDeviceChangeCallback(int32_t clientId, int32_t usage) override;
 
     int32_t IsSpatializationEnabled(bool& ret) override;
 
-    int32_t IsSpatializationEnabled(const std::string address, bool& ret) override;
+    int32_t IsSpatializationEnabled(const std::string &address, bool& ret) override;
 
     int32_t IsSpatializationEnabledForCurrentDevice(bool& ret) override;
 
@@ -376,62 +376,62 @@ public:
 
     int32_t IsHeadTrackingEnabled(bool& ret) override;
 
-    int32_t IsHeadTrackingEnabled(const std::string address, bool& ret) override;
+    int32_t IsHeadTrackingEnabled(const std::string &address, bool& ret) override;
 
     int32_t SetHeadTrackingEnabled(const bool enable) override;
 
     int32_t SetHeadTrackingEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable) override;
 
-    int32_t GetSpatializationState(const StreamUsage streamUsage, AudioSpatializationState& state) override;
+    int32_t GetSpatializationState(int32_t streamUsage, AudioSpatializationState& state) override;
 
     int32_t IsSpatializationSupported(bool& ret) override;
 
-    int32_t IsSpatializationSupportedForDevice(const std::string address, bool& ret) override;
+    int32_t IsSpatializationSupportedForDevice(const std::string &address, bool& ret) override;
 
     int32_t IsHeadTrackingSupported(bool& ret) override;
 
-    int32_t IsHeadTrackingSupportedForDevice(const std::string address, bool& ret) override;
+    int32_t IsHeadTrackingSupportedForDevice(const std::string &address, bool& ret) override;
 
-    int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState) override;
+    int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState &audioSpatialDeviceState) override;
 
-    int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
+    int32_t RegisterSpatializationStateEventListener(uint32_t sessionID, int32_t streamUsage,
         const sptr<IRemoteObject> &object) override;
 
     int32_t ConfigDistributedRoutingRole(
-        const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type) override;
+        const std::shared_ptr<AudioDeviceDescriptor> &descriptor, int32_t type) override;
 
     int32_t SetDistributedRoutingRoleCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetDistributedRoutingRoleCallback() override;
 
-    int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID) override;
+    int32_t UnregisterSpatializationStateEventListener(uint32_t sessionID) override;
 
-    int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t zoneId) override;
+    int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, int32_t zoneId) override;
 
-    int32_t CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneId) override;
+    int32_t CreateAudioInterruptZone(const std::set<int32_t> &pids, int32_t zoneId) override;
 
-    int32_t AddAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneId) override;
+    int32_t AddAudioInterruptZonePids(const std::set<int32_t> &pids, int32_t zoneId) override;
 
-    int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneId) override;
+    int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> &pids, int32_t zoneId) override;
 
-    int32_t ReleaseAudioInterruptZone(const int32_t zoneId) override;
+    int32_t ReleaseAudioInterruptZone(int32_t zoneId) override;
 
     int32_t RegisterAudioZoneClient(const sptr<IRemoteObject>& object) override;
 
     int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context, int32_t& zoneId) override;
 
-    void ReleaseAudioZone(int32_t zoneId) override;
+    int32_t ReleaseAudioZone(int32_t zoneId) override;
 
     int32_t GetAllAudioZone(std::vector<std::shared_ptr<AudioZoneDescriptor>>& descs) override;
 
     int32_t GetAudioZone(int32_t zoneId, std::shared_ptr<AudioZoneDescriptor>& desc) override;
 
     int32_t BindDeviceToAudioZone(int32_t zoneId,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices) override;
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices) override;
 
     int32_t UnBindDeviceToAudioZone(int32_t zoneId,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices) override;
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices) override;
 
     int32_t EnableAudioZoneReport (bool enable) override;
 
@@ -444,36 +444,36 @@ public:
     int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) override;
 
     int32_t GetAudioInterruptForZone(int32_t zoneId,
-        std::list<std::pair<AudioInterrupt, AudioFocuState>>& retList) override;
+        std::vector<std::map<AudioInterrupt, int32_t>>& retList) override;
 
     int32_t GetAudioInterruptForZone(int32_t zoneId, const std::string &deviceTag,
-        std::list<std::pair<AudioInterrupt, AudioFocuState>>& retList) override;
+        std::vector<std::map<AudioInterrupt, int32_t>>& retList) override;
 
     int32_t EnableAudioZoneInterruptReport(int32_t zoneId, const std::string &deviceTag, bool enable) override;
 
     int32_t InjectInterruptToAudioZone(int32_t zoneId,
-        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) override;
+        const std::vector<std::map<AudioInterrupt, int32_t>> &interrupts) override;
     
     int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
-        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) override;
+        const std::vector<std::map<AudioInterrupt, int32_t>> &interrupts) override;
 
-    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t uid) override;
+    int32_t SetCallDeviceActive(int32_t deviceType, bool active, const std::string &address,
+        int32_t uid) override;
 
     int32_t GetActiveBluetoothDevice(std::shared_ptr<AudioDeviceDescriptor>& descs) override;
 
     int32_t GetConverterConfig(ConverterConfig& cfg) override;
 
-    void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
-        const AudioStreamDeviceChangeReasonExt reason) override;
+    int32_t FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
+        const AudioStreamDeviceChangeReasonExt &reason) override;
 
-    void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) override;
+    int32_t FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) override;
 
-    int32_t GetSpatializationSceneType(AudioSpatializationSceneType& type) override;
+    int32_t GetSpatializationSceneType(int32_t& type) override;
 
-    int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) override;
+    int32_t SetSpatializationSceneType(int32_t spatializationSceneType) override;
 
-    int32_t GetMaxAmplitude(const int32_t deviceId, float& ret) override;
+    int32_t GetMaxAmplitude(int32_t deviceId, float& ret) override;
 
     int32_t DisableSafeMediaVolume() override;
 
@@ -484,10 +484,10 @@ public:
     int32_t UnsetAudioDeviceRefinerCallback() override;
 
     int32_t TriggerFetchDevice(
-        AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN) override;
+        const AudioStreamDeviceChangeReasonExt &reason) override;
 
-    int32_t SetPreferredDevice(const PreferredType preferredType,
-        const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid = INVALID_UID) override;
+    int32_t SetPreferredDevice(int32_t preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t uid) override;
 
     int32_t SaveRemoteInfo(const std::string &networkId, int32_t deviceType) override;
 
@@ -619,7 +619,7 @@ protected:
     void RegisterParamCallback();
 
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
-    int32_t GetApiTargetVersion() override;
+    int32_t GetApiTargetVersion();
 
 private:
     friend class AudioInterruptService;

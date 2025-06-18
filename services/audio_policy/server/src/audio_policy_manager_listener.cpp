@@ -16,7 +16,7 @@
 #define LOG_TAG "AudioPolicyManagerListenerProxy"
 #endif
 
-#include "audio_policy_manager_listener_proxy.h"
+#include "audio_policy_manager_listener.h"
 #include "audio_policy_log.h"
 
 namespace OHOS {

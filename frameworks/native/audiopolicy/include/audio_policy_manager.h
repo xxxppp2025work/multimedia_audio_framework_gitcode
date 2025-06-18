@@ -24,7 +24,7 @@
 #include "audio_concurrency_callback.h"
 #include "audio_concurrency_state_listener_callback.h"
 #include "audio_interrupt_callback.h"
-#include "audio_policy_base.h"
+#include "iaudio_policy.h"
 #include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_policy_client_stub_impl.h"
 #include "audio_routing_manager.h"
@@ -494,7 +494,7 @@ public:
     void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
         const AudioStreamDeviceChangeReasonExt reason);
 
-    void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
+    int32_t FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
 
     bool IsHighResolutionExist();
 

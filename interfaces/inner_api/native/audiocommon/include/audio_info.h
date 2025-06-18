@@ -81,7 +81,7 @@ const char* REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
 const char* DUP_STREAM = "DupStream";
 }
 
-#ifdef FEATURE_DTMF_TONE
+//#ifdef FEATURE_DTMF_TONE  cant contain this macro due to idl dependency
 // Maximun number of sine waves in a tone segment
 constexpr uint32_t TONEINFO_MAX_WAVES = 3;
 //Maximun number of SupportedTones
@@ -89,12 +89,15 @@ constexpr uint32_t MAX_SUPPORTED_TONEINFO_SIZE = 65535;
 // Maximun number of segments in a tone descriptor
 constexpr uint32_t TONEINFO_MAX_SEGMENTS = 12;
 constexpr uint32_t TONEINFO_INF = 0xFFFFFFFF;
+
 class ToneSegment : public Parcelable {
 public:
     uint32_t duration;
     uint16_t waveFreq[TONEINFO_MAX_WAVES+1];
     uint16_t loopCnt;
     uint16_t loopIndx;
+
+    ToneSegment() = default;
     bool Marshalling(Parcel &parcel) const override
     {
         parcel.WriteUint32(duration);
@@ -105,14 +108,20 @@ public:
         }
         return true;
     }
-    void Unmarshalling(Parcel &parcel)
+    static ToneSegment *Unmarshalling(Parcel &parcel)
     {
-        duration = parcel.ReadUint32();
-        loopCnt = parcel.ReadUint16();
-        loopIndx = parcel.ReadUint16();
-        for (uint32_t i = 0; i < TONEINFO_MAX_WAVES + 1; i++) {
-            waveFreq[i] = parcel.ReadUint16();
+        auto info = std::make_unique<ToneSegment>();
+        if (info == nullptr) {
+            return nullptr;
         }
+        info->duration = parcel.ReadUint32();
+        info->loopCnt = parcel.ReadUint16();
+        info->loopIndx = parcel.ReadUint16();
+        for (uint32_t i = 0; i < TONEINFO_MAX_WAVES + 1; i++) {
+            info->waveFreq[i] = parcel.ReadUint16();
+        }
+
+        return info.release();
     }
 };
 
@@ -122,6 +131,7 @@ public:
     uint32_t segmentCnt;
     uint32_t repeatCnt;
     uint32_t repeatSegment;
+    ToneInfo() = default;
     bool Marshalling(Parcel &parcel) const override
     {
         parcel.WriteUint32(segmentCnt);
@@ -135,20 +145,25 @@ public:
         }
         return true;
     }
-    void Unmarshalling(Parcel &parcel)
+    static ToneInfo *Unmarshalling(Parcel &parcel)
     {
-        segmentCnt = parcel.ReadUint32();
-        repeatCnt = parcel.ReadUint32();
-        repeatSegment = parcel.ReadUint32();
-        if (!(segmentCnt >= 0 && segmentCnt <= TONEINFO_MAX_SEGMENTS + 1)) {
-            return;
+        auto info = std::make_unique<ToneInfo>();
+        if (info == nullptr) {
+            return nullptr;
         }
-        for (uint32_t i = 0; i < segmentCnt; i++) {
-            segments[i].Unmarshalling(parcel);
+        info->segmentCnt = parcel.ReadUint32();
+        info->repeatCnt = parcel.ReadUint32();
+        info->repeatSegment = parcel.ReadUint32();
+        if (!(info->segmentCnt >= 0 && info->segmentCnt <= TONEINFO_MAX_SEGMENTS + 1)) {
+            return nullptr;
         }
+        for (uint32_t i = 0; i < info->segmentCnt; i++) {
+            info->segments[i].Unmarshalling(parcel);
+        }
+        return info.release();
     }
 };
-#endif
+//#endif
 
 enum VolumeAdjustType {
     /**

@@ -22,7 +22,7 @@
 #include "audio_utils_c.h"
 #include "standard_audio_policy_manager_listener_proxy.h"
 #include "audio_policy_manager_listener_stub_impl.h"
-#include "audio_policy_manager_listener_proxy.h"
+#include "audio_policy_manager_listener.h"
 #include "media_monitor_manager.h"
 #include "audio_log.h"
 
@@ -1734,7 +1734,9 @@ void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audio
 {
     CHECK_AND_RETURN_LOG(policyServer_ != nullptr, "policyServer nullptr");
     CHECK_AND_RETURN_LOG(zoneId == ZONEID_DEFAULT, "zoneId %{public}d is not default", zoneId);
-    AudioScene currentAudioScene = policyServer_->GetAudioScene();
+    int32_t scene = AUDIO_SCENE_INVALID;
+    policyServer_->GetAudioScene(scene);
+    AudioScene currentAudioScene = static_cast<AudioScene>(scene);
 
     AUDIO_PRERELEASE_LOGI("currentScene: %{public}d, targetScene: %{public}d, changeType: %{public}d",
         currentAudioScene, audioScene, changeType);

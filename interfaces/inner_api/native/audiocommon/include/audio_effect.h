@@ -67,11 +67,32 @@ enum FoldState : uint32_t {
     FOLD_STATE_MIDDLE = 3,
 };
 
-struct AudioSpatialDeviceState {
+struct AudioSpatialDeviceState : public Parcelable {
     std::string address;
     bool isSpatializationSupported;
     bool isHeadTrackingSupported;
     AudioSpatialDeviceType spatialDeviceType;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteString(address) &&
+            parcel.WriteBool(isSpatializationSupported) &&
+            parcel.WriteBool(isHeadTrackingSupported) &&
+            parcel.WriteInt32(spatialDeviceType);
+    }
+
+    static AudioSpatialDeviceState *Unmarshalling(Parcel &parcel)
+    {
+        auto deviceState = std::make_unique<AudioSpatialDeviceState>();
+        if (deviceState == nullptr) {
+            return nullptr;
+        }
+        deviceState->address = parcel.ReadString();
+        deviceState->isSpatializationSupported = parcel.ReadBool();
+        deviceState->isHeadTrackingSupported = parcel.ReadBool();
+        deviceState->spatialDeviceType = static_cast<AudioSpatialDeviceType>(parcel.ReadInt32());
+        return deviceState.release();
+    }
 };
 
 struct Library : public Parcelable {
@@ -85,7 +106,7 @@ struct Library : public Parcelable {
 
     static Library *Unmarshalling(Parcel &parcel)
     {
-        std::unique_ptr<Library> library(new (std::nothrow) Library);
+        auto library = std::make_unique<Library>();
         if (library == nullptr) {
             return nullptr;
         }
@@ -292,13 +313,98 @@ struct ProcessNew {
     std::vector<Stream> stream;
 };
 
-struct SupportedEffectConfig {
+struct SupportedEffectConfig : public Parcelable {
     std::vector<EffectChain> effectChains;
     ProcessNew preProcessNew;
     ProcessNew postProcessNew;
     std::vector<SceneMappingItem> postProcessSceneMap;
-};
 
+    bool MarshallingStream(Parcel &parcel, const Stream& stream) const
+    {
+        parcel.WriteString(stream.scene);
+        uint32_t count = static_cast<uint32_t>(stream.streamEffectMode.size());
+        parcel.WriteInt32(count);
+        for (const auto &item : stream.streamEffectMode) {
+            parcel.WriteString(item.mode);
+            uint32_t deviceCount = static_cast<uint32_t>(item.devicePort.size());
+            parcel.WriteInt32(deviceCount);
+            for (const auto &device : item.devicePort) {
+                parcel.WriteString(device.type);
+                parcel.WriteString(device.chain);
+            }
+        }
+        return true;
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        uint32_t countPre = static_cast<uint32_t>(preProcessNew.stream.size());
+        parcel.WriteInt32(countPre);
+        for (const auto &item : preProcessNew.stream) {
+            MarshallingStream(parcel, item);
+        }
+
+        uint32_t countPost = static_cast<uint32_t>(preProcessNew.stream.size());
+        parcel.WriteInt32(countPost);
+        for (const auto &item : postProcessNew.stream) {
+            MarshallingStream(parcel, item);
+        }
+
+        uint32_t countPostMap = static_cast<uint32_t>(postProcessSceneMap.size());
+        parcel.WriteInt32(countPostMap);
+        for (const auto &item : postProcessSceneMap) {
+            parcel.WriteString(item.name);
+            parcel.WriteString(item.sceneType);
+        }
+        return true;
+    }
+
+    static Stream UnmarshallingStream(Parcel &parcel)
+    {
+        Stream stream;
+        stream.scene = parcel.ReadString();
+        uint32_t count = parcel.ReadUint32();
+        for (uint32_t i = 0; i < count; ++i) {
+            StreamEffectMode mode;
+            mode.mode = parcel.ReadString();
+            uint32_t deviceCount = parcel.ReadUint32();
+            for (uint32_t j = 0; j < deviceCount; ++j) {
+                Device device;
+                device.type = parcel.ReadString();
+                device.chain = parcel.ReadString();
+                mode.devicePort.push_back(device);
+            }
+            stream.streamEffectMode.push_back(mode);
+        }
+        return stream;
+    }
+
+    static SupportedEffectConfig *Unmarshalling(Parcel &parcel)
+    {
+        auto config = std::make_unique<SupportedEffectConfig>();
+        if (config == nullptr) {
+            return nullptr;
+        }
+        uint32_t countPre = parcel.ReadUint32();
+        for (uint32_t i = 0; i < countPre; ++i) {
+            config->preProcessNew.stream.push_back(UnmarshallingStream(parcel));
+        }
+
+        uint32_t countPost = parcel.ReadUint32();
+        for (uint32_t i = 0; i < countPost; ++i) {
+            config->postProcessNew.stream.push_back(UnmarshallingStream(parcel));
+        }
+
+        uint32_t countPostMap = parcel.ReadUint32();
+        for (uint32_t i = 0; i < countPostMap; ++i) {
+            SceneMappingItem item;
+            item.name = parcel.ReadString();
+            item.sceneType = parcel.ReadString();
+            config->postProcessSceneMap.push_back(item);
+        }
+        return config.release();
+    }
+};
 
 /**
 * Enumerates the audio scene effect type.

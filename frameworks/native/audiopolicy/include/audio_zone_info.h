@@ -57,20 +57,15 @@ public:
         return parcel.WriteInt32(static_cast<int32_t>(focusStrategy_));
     }
 
-    void Unmarshalling(Parcel &parcel)
+    static AudioZoneContext *Unmarshalling(Parcel &parcel)
     {
-        focusStrategy_ = static_cast<AudioZoneFocusStrategy>(parcel.ReadInt32());
-    }
-
-    static AudioZoneContext *UnmarshallingPtr(Parcel &parcel)
-    {
-        AudioZoneContext *info = new AudioZoneContext();
+        auto info = std::make_unique<AudioZoneContext>();
         if (info == nullptr) {
             return nullptr;
         }
 
         info->focusStrategy_ = static_cast<AudioZoneFocusStrategy>(parcel.ReadInt32());
-        return info;
+        return info.release();
     }
 };
 

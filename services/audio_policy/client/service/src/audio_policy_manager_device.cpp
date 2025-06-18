@@ -36,13 +36,8 @@ int32_t AudioPolicyManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
 
-
-    uint32_t size = audioDeviceDescriptors.size();
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_DEVICE_INFO_SIZE_LIMIT,
-        -1, "SelectOutputDevice get invalid device size.");
-
-    int validSize = 20; // Use 20 as limit.
-    int size = audioDeviceDescriptors.size();
+    int32_t validSize = 20; // Use 20 as limit.
+    int32_t size = static_cast<int32_t>(audioDeviceDescriptors.size());
     if (size <= 0 || size > validSize) {
         AUDIO_ERR_LOG("SelectOutputDevice get invalid device size.");
         return -1;
@@ -67,8 +62,8 @@ int32_t AudioPolicyManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
 
-    int validSize = 10; // Use 10 as limit.
-    int size = audioDeviceDescriptors.size();
+    int32_t validSize = 10; // Use 10 as limit.
+    int32_t size = static_cast<int32_t>(audioDeviceDescriptors.size());
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= validSize, -1, "SelectInputDevice get invalid device size.");
     return gsp->SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
 }
@@ -79,8 +74,8 @@ int32_t AudioPolicyManager::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
 
-    int validSize = 20; // Use 20 as limit.
-    int size = audioDeviceDescriptors.size();
+    int32_t validSize = 20; // Use 20 as limit.
+    int32_t size = static_cast<int32_t>(audioDeviceDescriptors.size());
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= validSize, -1, "ExcludeOutputDevices get invalid device size.");
     return gsp->ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
@@ -91,8 +86,8 @@ int32_t AudioPolicyManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsag
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
 
-    int validSize = 20; // Use 20 as limit.
-    int size = audioDeviceDescriptors.size();
+    int32_t validSize = 20; // Use 20 as limit.
+    int32_t size = static_cast<int32_t>(audioDeviceDescriptors.size());
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= validSize, -1, "UnexcludeOutputDevices get invalid device size.");
     return gsp->UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
@@ -119,7 +114,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevic
         return deviceInfo;
     }
     gsp->GetDevices(deviceFlag, deviceInfo);
-    
+    return deviceInfo;
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevicesInner(DeviceFlag deviceFlag)
@@ -146,7 +141,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPrefe
         
         return deviceInfo;
     }
-    gsp->GetPreferredutputDeviceDescriptors(rendererInfo, forceNoBTPermission, deviceInfo);
+    gsp->GetPreferredOutputDeviceDescriptors(rendererInfo, forceNoBTPermission, deviceInfo);
     return deviceInfo;
 }
 
@@ -210,9 +205,9 @@ DeviceType AudioPolicyManager::GetActiveOutputDevice()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, DEVICE_TYPE_INVALID, "audio policy manager proxy is NULL.");
-    DeviceType out = DEVICE_TYPE_INVALID;
+    int32_t out = DEVICE_TYPE_INVALID;
     gsp->GetActiveOutputDevice(out);
-    return out;
+    return static_cast<DeviceType>(out);
 }
 
 uint16_t AudioPolicyManager::GetDmDeviceType()
@@ -228,9 +223,9 @@ DeviceType AudioPolicyManager::GetActiveInputDevice()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, DEVICE_TYPE_INVALID, "audio policy manager proxy is NULL.");
-    DeviceType out = DEVICE_TYPE_INVALID;
+    int32_t out = DEVICE_TYPE_INVALID;
     gsp->GetActiveInputDevice(out);
-    return out;
+    return static_cast<DeviceType>(out);
 }
 
 int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
@@ -463,7 +458,7 @@ int32_t AudioPolicyManager::UnsetAvailableDeviceChangeCallback(const int32_t cli
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->UnsetAvailableDeviceChangeCallback(clientId, usage);
+    return gsp->UnsetAvailableDeviceChangeCallback(clientId, static_cast<int32_t>(usage));
 }
 
 int32_t AudioPolicyManager::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
@@ -474,7 +469,7 @@ int32_t AudioPolicyManager::SetCallDeviceActive(InternalDeviceType deviceType, b
         AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->SetCallDeviceActive(deviceType, active, address, uid);
+    return gsp->SetCallDeviceActive(static_cast<int32_t>(deviceType), active, address, uid);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioPolicyManager::GetActiveBluetoothDevice()
@@ -490,7 +485,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioPolicyManager::GetActiveBluetoothDev
 }
 
 void AudioPolicyManager::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
-    const AudioStreamDeviceChangeReasonExt &reason)
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp != nullptr) {

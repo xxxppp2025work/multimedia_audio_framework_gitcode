@@ -25,6 +25,7 @@ idl_gen_interface("audio_policy_idl_interface") {
     "IStandardAudioAnahsManagerListener.idl",
     "IAudioPolicyClient.idl",
     "IStandardSleAudioOperationCallback.idl",
+    "IAudioPolicy.idl",
   ]
   sources_callback = [
   ]
@@ -48,6 +49,7 @@ config("audio_policy_sa_idl_config") {
     "${target_gen_dir}",
     "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include/",
     "${audio_framework_root}/interfaces/inner_api/native/audiomanager/include/",
+    "${audio_framework_root}/frameworks/native/audiodefinitions/include/",
     "${audio_framework_root}/frameworks/native/audiopolicy/include/",
     "${audio_framework_root}/interfaces/inner_api/native/audiomanager/include/",
   ]
