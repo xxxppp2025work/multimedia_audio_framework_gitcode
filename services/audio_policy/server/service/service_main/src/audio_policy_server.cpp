@@ -1781,7 +1781,7 @@ int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRender
     int32_t apiVersion = HasUsbDevice(deviceDescs) ? GetApiTargetVersion() : 0;
     for (auto &desc : deviceDescs) {
         CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
-        desc->deviceType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
+        desc->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
         if (desc->IsAudioDeviceDescriptor()) {
             desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion);
         }
@@ -1894,7 +1894,7 @@ int32_t AudioPolicyServer::IsDeviceActive(int32_t deviceType, bool &active)
 
 int32_t AudioPolicyServer::GetActiveOutputDevice(int32_t &deviceType)
 {
-    deviceType = static_cast<int32_t>(audioActiveDevice_.GetActiveOutputDevice());
+    deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     return SUCCESS;
 }
 
@@ -3695,7 +3695,7 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
     callback->SetHasSystemPermission(hasSysPermission);
     callback->SetApiVersion(GetApiTargetVersion());
     if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_.AddAudioPolicyClientProxyMap(clientPid, callback);
+        audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, callback);
     }
 
     RegisterClientDeathRecipient(object, LISTENER_CLIENT);
@@ -4492,7 +4492,6 @@ int32_t AudioPolicyServer::GetVolumeInDbByStream(int32_t streamUsageIn, int32_t 
     int32_t deviceType, float &ret)
 {
     StreamUsage streamUsage = static_cast<StreamUsage>(streamUsageIn);
-    DeviceType deviceType = static_cast<DeviceType>(deviceTypeIn);
     return GetSystemVolumeInDb(VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage), volumeLevel, deviceType, ret);
 }
 
@@ -4584,7 +4583,7 @@ void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t ses
 
 int32_t AudioPolicyServer::IsAcousticEchoCancelerSupported(int32_t sourceType, bool &ret)
 {
-    ret = AudioServerProxy::GetInstance().IsAcousticEchoCancelerSupported(sourceType);
+    ret = AudioServerProxy::GetInstance().IsAcousticEchoCancelerSupported(static_cast<SourceType>(sourceType));
     return SUCCESS;
 }
 
@@ -4643,14 +4642,14 @@ int32_t AudioPolicyServer::IsCollaborativePlaybackSupported(bool &ret)
 }
 
 int32_t AudioPolicyServer::IsCollaborativePlaybackEnabledForDevice(
-    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &ret)
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &enabled)
 {
     if(!PermissionUtil::VerifySystemPermission()) {
-        ret = false;
+        enabled = false;
         AUDIO_ERR_LOG("No system permission");
         return ERR_PERMISSION_DENIED;
     }
-    ret = audioCollaborativeService_.IsCollaborativePlaybackEnabledForDevice(selectedAudioDevice);
+    enabled = audioCollaborativeService_.IsCollaborativePlaybackEnabledForDevice(selectedAudioDevice);
     return SUCCESS;
 }
 } // namespace AudioStandard

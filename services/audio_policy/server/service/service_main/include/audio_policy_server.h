@@ -129,7 +129,7 @@ public:
 
     int32_t IsStreamActive(int32_t streamType, bool &active) override;
 
-    bool IsStreamActiveByStreamUsage(StreamUsage streamUsage) override;
+    int32_t IsStreamActiveByStreamUsage(int32_t streamUsage, bool &active) override;
 
     int32_t IsFastPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t usage, bool &support) override;
     int32_t IsFastRecordingSupported(const AudioStreamInfo &streamInfo, int32_t source, bool &support) override;
@@ -550,7 +550,7 @@ public:
 
     int32_t GetSupportedAudioVolumeTypes(std::vector<int32_t> &ret) override;
 
-    int32_t GetAudioVolumeTypeByStreamUsage(int32_t streamUsage int32_t &ret) override;
+    int32_t GetAudioVolumeTypeByStreamUsage(int32_t streamUsage , int32_t &volumeType) override;
 
     int32_t GetStreamUsagesByVolumeType(int32_t audioVolumeType, std::vector<int32_t> &ret) override;
 
@@ -558,7 +558,7 @@ public:
 
     int32_t ForceStopAudioStream(int32_t audioType) override;
 
-    int32_t IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo, bool &ret) override;
+    int32_t IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo, bool &ret) override;
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 
@@ -573,10 +573,10 @@ public:
     int32_t SetCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled) override;
     
-    bool IsCollaborativePlaybackEnabledForDevice(
-        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice) override;
+    int32_t IsCollaborativePlaybackEnabledForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool& enabled) override;
 
-    bool IsCollaborativePlaybackSupported() override;
+    int32_t IsCollaborativePlaybackSupported(bool &ret) override;
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:

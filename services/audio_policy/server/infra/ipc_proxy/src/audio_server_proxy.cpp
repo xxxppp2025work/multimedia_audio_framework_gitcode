@@ -637,7 +637,8 @@ bool AudioServerProxy::SetKaraokeParameters(const std::string &parameters)
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    bool res = gsp->SetKaraokeParameters(parameters);
+    bool res = false;
+    gsp->SetKaraokeParameters(parameters, res);
     IPCSkeleton::SetCallingIdentity(identity);
     return res;
 }
@@ -647,7 +648,8 @@ bool AudioServerProxy::IsAudioLoopbackSupported(AudioLoopbackMode mode)
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    bool res = gsp->IsAudioLoopbackSupported(mode);
+    bool res = false;
+    gsp->IsAudioLoopbackSupported(mode, res);
     IPCSkeleton::SetCallingIdentity(identity);
     return res;
 }

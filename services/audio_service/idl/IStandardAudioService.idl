@@ -733,5 +733,10 @@ interface IStandardAudioService {
      *
      * @return none.
      */
-     void SetBtHdiInvalidState();
+    void SetBtHdiInvalidState();
+
+    void SetKaraokeParameters([in] String parameters, [out] boolean ret);
+
+    void IsAudioLoopbackSupported([in] int mode /* AudioLoopbackMode */,
+        [out] boolean ret);
 }

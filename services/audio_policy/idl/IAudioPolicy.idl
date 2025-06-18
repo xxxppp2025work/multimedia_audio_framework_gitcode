@@ -246,7 +246,7 @@ interface IAudioPolicy {
     void SetSleAudioOperationCallback([in] IRemoteObject object);
     void UnsetAudioInterruptCallback([in] unsigned int sessionID, [in] int zoneID);
     void ActivateAudioInterrupt([in] AudioInterrupt audioInterrupt, [in] int zoneID, [in] boolean isUpdatedAudioStrategy);
-    void IsStreamActiveByStreamUsage([in] int streamUsage, [out] boolean ret);
+    void IsStreamActiveByStreamUsage([in] int streamUsage, [out] boolean active);
     void IsAudioLoopbackSupported([in] int mode, [out] boolean ret);
     void SetKaraokeParameters([in] String parameters, [out] boolean ret);
     void GetVolumeInDbByStream([in] int streamUsage, [in] int volumeLevel, [in] int deviceType, [out] float ret);

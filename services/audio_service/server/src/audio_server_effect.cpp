@@ -499,25 +499,27 @@ int32_t AudioServer::IsAcousticEchoCancelerSupported(int32_t sourceType,  bool& 
     return SUCCESS;
 }
 
-bool AudioServer::SetKaraokeParameters(const std::string &parameters)
+int32_t AudioServer::SetKaraokeParameters(const std::string &parameters, bool &ret)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), false,
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "SetKaraokeParameters refused for %{public}d", callingUid);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, false, "local device manager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", parameters);
-    return true;
+    ret = true;
+    return SUCCESS;
 }
 
-bool AudioServer::IsAudioLoopbackSupported(AudioLoopbackMode mode)
+int32_t AudioServer::IsAudioLoopbackSupported(int32_t mode, bool &ret)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), false,
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "IsAudioLoopbackSupported refused for %{public}d", callingUid);
     AUDIO_INFO_LOG("IsAudioLoopbackSupported support %{public}d", mode);
-    return true;
+    ret = true;
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS
