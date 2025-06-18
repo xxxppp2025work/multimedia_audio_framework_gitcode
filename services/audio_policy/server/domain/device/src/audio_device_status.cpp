@@ -946,13 +946,13 @@ void AudioDeviceStatus::AddAudioDevice(AudioModuleInfo& moduleInfo, DeviceType d
         AudioPolicyUtils::GetInstance().GetDeviceRole(moduleInfo.role), volumeGroupId, interruptGroupId,
         LOCAL_NETWORK_ID);
     CHECK_AND_RETURN_LOG(audioDescriptor != nullptr, "audioDescriptor is nullptr.");
-    if (!moduleInfo.supportedRate_.empty() && !moduleInfo.supportedChannels_.empty()) {
+    if (!moduleInfo.supportedRate_.empty() && !moduleInfo.supportedChannelLayout_.empty()) {
         DeviceStreamInfo streamInfo = {};
         for (auto supportedRate : moduleInfo.supportedRate_) {
             streamInfo.samplingRate.insert(static_cast<AudioSamplingRate>(supportedRate));
         }
-        for (auto supportedChannels : moduleInfo.supportedChannels_) {
-            streamInfo.channels.insert(static_cast<AudioChannel>(supportedChannels));
+        for (auto supportedLayout : moduleInfo.supportedChannelLayout_) {
+            streamInfo.channelLayout.insert(static_cast<AudioChannelLayout>(supportedLayout));
         }
         audioDescriptor->SetDeviceCapability(streamInfo, 0);
     }

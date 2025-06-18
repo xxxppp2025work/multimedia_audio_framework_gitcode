@@ -230,7 +230,7 @@ void AudioEndPointSeparateConfigFuzzTest()
         SAMPLE_RATE_48000,
         ENCODING_PCM,
         SAMPLE_S16LE,
-        STEREO
+        CH_LAYOUT_STEREO
     };
     deviceInfo.audioStreamInfo_ = audioStreamInfo;
     std::shared_ptr<AudioEndpointSeparate> audioEndpoint = nullptr;

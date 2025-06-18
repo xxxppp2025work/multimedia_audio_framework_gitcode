@@ -82,7 +82,7 @@ static sptr<AudioProcessInServer> CreateAudioProcessInServer()
     AudioService *audioServicePtr = AudioService::GetInstance();
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-    deviceInfo.audioStreamInfo_.channels.insert(STEREO);
+    deviceInfo.audioStreamInfo_.channelLayout.insert(CH_LAYOUT_STEREO);
     AudioProcessConfig serverConfig = InitServerProcessConfig();
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(serverConfig, audioServicePtr);
     std::shared_ptr<OHAudioBuffer> buffer = nullptr;

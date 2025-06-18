@@ -1058,7 +1058,8 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
     // check process in routerMap, return target device for it
     // put the currentActiveDevice_ in deviceinfo, so it can create with current using device.
     // genarate the unique deviceid?
-    AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO}; // note: read from xml
+    // note: read from xml
+    AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO};
     deviceInfo.audioStreamInfo_ = targetStreamInfo;
     deviceInfo.deviceName_ = "mmap_device";
     audioRouteMap_.GetNetworkIDInFastRouterMap(config.appInfo.appUid, deviceInfo.deviceRole_, deviceInfo.networkId_);
@@ -1078,9 +1079,9 @@ int32_t AudioPolicyService::GetVoipDeviceInfo(const AudioProcessConfig &config, 
     deviceInfo.deviceType_ = preferredDeviceList[0]->deviceType_;
     deviceInfo.deviceName_ = preferredDeviceList[0]->deviceName_;
     if (config.streamInfo.samplingRate <= SAMPLE_RATE_16000) {
-        deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+        deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO};
     } else {
-        deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+        deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO};
     }
     if (type == AUDIO_FLAG_VOIP_DIRECT) {
         AUDIO_INFO_LOG("Direct VoIP stream, deviceInfo has been updated: deviceInfo.deviceType %{public}d",

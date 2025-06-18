@@ -596,9 +596,11 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
         return SUCCESS;
     }
     // check
+    std::set<AudioChannel> channelSet;
+    serverStreamInfo.GetChannels(channelSet);
     CHECK_AND_RETURN_RET_LOG(totalSizeInframe != 0 && spanSizeInframe != 0 && totalSizeInframe % spanSizeInframe == 0,
         ERR_INVALID_PARAM, "ConfigProcessBuffer failed: ERR_INVALID_PARAM");
-    CHECK_AND_RETURN_RET_LOG(serverStreamInfo.samplingRate.size() > 0 && serverStreamInfo.channels.size() > 0,
+    CHECK_AND_RETURN_RET_LOG(serverStreamInfo.samplingRate.size() > 0 && channelSet.size() > 0,
         ERR_INVALID_PARAM, "Invalid stream info in server");
     uint32_t spanTime = spanSizeInframe * AUDIO_MS_PER_SECOND / *serverStreamInfo.samplingRate.rbegin();
     spanSizeInframe_ = spanTime * processConfig_.streamInfo.samplingRate / AUDIO_MS_PER_SECOND;
@@ -607,11 +609,11 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
     uint32_t channel = processConfig_.streamInfo.channels;
     uint32_t formatbyte = PcmFormatToBits(processConfig_.streamInfo.format);
     byteSizePerFrame_ = channel * formatbyte;
-    if (*serverStreamInfo.channels.rbegin() != processConfig_.streamInfo.channels ||
+    if (*channelSet.rbegin() != processConfig_.streamInfo.channels ||
         serverStreamInfo.format != processConfig_.streamInfo.format) {
         size_t spanSizeInByte = 0;
         if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
-            uint32_t serverByteSize = *serverStreamInfo.channels.rbegin() * PcmFormatToBits(serverStreamInfo.format);
+            uint32_t serverByteSize = *channelSet.rbegin() * PcmFormatToBits(serverStreamInfo.format);
             spanSizeInByte = static_cast<size_t>(spanSizeInframe * serverByteSize);
         } else {
             spanSizeInByte = static_cast<size_t>(spanSizeInframe_ * byteSizePerFrame_);

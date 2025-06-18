@@ -56,6 +56,11 @@ public:
     
     // update
     void SetNormalVoipFlag(const bool &normalVoipFlag);
+    void UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
+        const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices);
+    void ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName);
+    void ConvertDeviceStreamInfoToStreamPropInfo(const DeviceStreamInfo &deviceStreamInfo,
+        std::list<std::shared_ptr<PipeStreamPropInfo>> &streamPropInfos);
 
     // query
     bool GetModuleListByType(ClassType type, std::list<AudioModuleInfo>& moduleList);
@@ -82,6 +87,7 @@ public:
     bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     bool GetFastStreamSupport(AudioStreamInfo &streamInfo, std::shared_ptr<AdapterDeviceInfo> &deviceInfo);
+    uint32_t GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName);
 
     uint32_t GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> &desc);
     void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<PipeStreamPropInfo> &info);

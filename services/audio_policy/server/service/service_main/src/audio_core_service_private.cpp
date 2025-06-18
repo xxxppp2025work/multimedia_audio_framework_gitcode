@@ -849,9 +849,13 @@ void AudioCoreService::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc,
     bool isActualConnection = (updatedDesc.connectState_ != VIRTUAL_CONNECTED);
     AUDIO_INFO_LOG("Device connection is actual connection: %{public}d", isActualConnection);
 
+    CHECK_AND_RETURN_LOG(!updatedDesc.audioStreamInfo_.empty(), "Invalid audioStreamInfo");
+    DeviceStreamInfo streamInfo = updatedDesc.audioStreamInfo_.back(); // check: more than one, choose last or first?
+    std::set<AudioChannel> channels;
+    streamInfo.GetChannels(channels);
     AudioStreamInfo streamInfo = updatedDesc.audioStreamInfo_.CheckParams() ?
-        AudioStreamInfo(*updatedDesc.audioStreamInfo_.samplingRate.rbegin(), updatedDesc.audioStreamInfo_.encoding,
-        updatedDesc.audioStreamInfo_.format, *updatedDesc.audioStreamInfo_.channels.rbegin()) : AudioStreamInfo();
+        AudioStreamInfo(*streamInfo.samplingRate.rbegin(), streamInfo.encoding, streamInfo.format,
+        *channels.rbegin()) : AudioStreamInfo();
 #ifdef BLUETOOTH_ENABLE
     if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && isActualConnection && isConnected) {
         int32_t ret = Bluetooth::AudioA2dpManager::GetA2dpDeviceStreamInfo(macAddress, streamInfo);

@@ -224,14 +224,16 @@ OH_AudioCommon_Result OHAudioDeviceDescriptor::GetDeviceChannelCounts(uint32_t *
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor_ != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
         "audioDeviceDescriptor_ is nullptr");
     DeviceStreamInfo audioStreamInfo = audioDeviceDescriptor_->audioStreamInfo_;
-    uint32_t channelsSize = (uint32_t)audioStreamInfo.channels.size();
+    std::set<AudioChannel> channelSet;
+    audioStreamInfo.GetChannels(channelSet);
+    uint32_t channelsSize = (uint32_t)channelSet.size();
     if (channelsSize == 0) {
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
     if (audioChannel_ == nullptr) {
         audioChannel_ = new uint32_t[channelsSize];
         int index = 0;
-        for (const auto channels : audioStreamInfo.channels) {
+        for (const auto channels : channelSet) {
             audioChannel_[index++] = static_cast<uint32_t>(channels);
         }
     }

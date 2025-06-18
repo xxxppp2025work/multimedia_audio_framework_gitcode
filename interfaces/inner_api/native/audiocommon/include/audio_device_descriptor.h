@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <map>
+#include <list>
 #include "parcel.h"
 #include "audio_device_info.h"
 
@@ -143,7 +144,7 @@ public:
     std::string networkId_;
     uint16_t dmDeviceType_{0};
     std::string displayName_;
-    DeviceStreamInfo audioStreamInfo_ = {};
+    std::list<DeviceStreamInfo> audioStreamInfo_;
     DeviceCategory deviceCategory_ = CATEGORY_DEFAULT;
     ConnectState connectState_ = CONNECTED;
     // AudioDeviceDescriptor
