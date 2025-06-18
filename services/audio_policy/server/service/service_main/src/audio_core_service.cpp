@@ -211,7 +211,7 @@ int32_t AudioCoreService::CreateCapturerClient(
     AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d",
         streamDesc->GetNewDevicesTypeString().c_str(), sessionId);
 
-    UpdateRecordStreamFlag(streamDesc);
+    UpdateRecordStreamFlag(streamDesc, true);
     AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}d",
         streamDesc->audioFlag_, sessionId);
 
@@ -337,8 +337,10 @@ AudioFlag AudioCoreService::SetFlagForSpecialStream(std::shared_ptr<AudioStreamD
     return AUDIO_OUTPUT_FLAG_NORMAL;
 }
 
-void AudioCoreService::UpdateRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+void AudioCoreService::UpdateRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc, bool isCreateProcess)
 {
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Stream desc is nullptr");
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "Pipe manager is nullptr");
     if (streamDesc->capturerInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL ||
         streamDesc->capturerInfo_.capturerFlags == AUDIO_FLAG_FORCED_NORMAL) {
         streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
@@ -346,9 +348,12 @@ void AudioCoreService::UpdateRecordStreamFlag(std::shared_ptr<AudioStreamDescrip
         return;
     }
 
-    // fast/normal has done in audioCapturerPrivate
-    if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-        // in plan: if has two voip, return normal
+    size_t currentCapturerNum = pipeManager_->GetAllInputStreamDescs().size();
+    size_t limitCapturerNum = isCreateProcess ? 0 : 1;
+    AUDIO_INFO_LOG("Capturer number: %{public}zu, if less than %{public}zu, current stream support low latency",
+        currentCapturerNum, limitCapturerNum);
+    if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
+        currentCapturerNum <= limitCapturerNum) {
         streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_VOIP;
         AUDIO_INFO_LOG("Use voip");
         return;
@@ -362,18 +367,22 @@ void AudioCoreService::UpdateRecordStreamFlag(std::shared_ptr<AudioStreamDescrip
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_WAKEUP) {
         streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_WAKEUP;
     }
+
+    streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    // If there already has other record stream, use normal flag
+    if (currentCapturerNum > limitCapturerNum) {
+        return;
+    }
     switch (streamDesc->capturerInfo_.capturerFlags) {
         case AUDIO_FLAG_MMAP:
             streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_FAST;
             return;
         case AUDIO_FLAG_VOIP_FAST:
-            streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_VOIP_FAST;
+            streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_VOIP;
             return;
         default:
             break;
     }
-    // In plan: streamDesc to audioFlag;
-    streamDesc->audioFlag_ = AUDIO_FLAG_NONE;
 }
 
 int32_t AudioCoreService::StartClient(uint32_t sessionId)
@@ -1107,7 +1116,7 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute()
         AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d with status %{public}u",
             streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->sessionId_, streamDesc->streamStatus_);
 
-        UpdateRecordStreamFlag(streamDesc);
+        UpdateRecordStreamFlag(streamDesc, false);
         if (!HandleInputStreamInRunning(streamDesc)) {
             continue;
         }
