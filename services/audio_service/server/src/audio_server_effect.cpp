@@ -50,7 +50,7 @@ void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std
 }
 
 int32_t AudioServer::CreateEffectChainManager(const std::vector<EffectChain> &effectChains,
-    const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam, bool& isSuccess)
+    const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam)
 {
     CHECK_AND_RETURN_RET_LOG(effectChains.size() >= 0 && effectChains.size() <= AUDIO_EFFECT_CHAIN_COUNT_UPPER_LIMIT,
         AUDIO_ERR, "Create audio effect chains failed, invalid countChains");
@@ -70,11 +70,10 @@ int32_t AudioServer::CreateEffectChainManager(const std::vector<EffectChain> &ef
         audioEnhanceChainManager->InitAudioEnhanceChainManager(effectChains, enhanceParam,
             audioEffectServer_->GetEffectEntries());
     }
-    isSuccess = true;
     return SUCCESS;
 }
 
-int32_t AudioServer::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
+int32_t AudioServer::SetOutputDeviceSink(int32_t deviceType, const std::string &sinkName)
 {
     CHECK_AND_RETURN_RET_LOG(deviceType >= DEVICE_TYPE_NONE && deviceType <= DEVICE_TYPE_MAX, AUDIO_ERR,
         "Set output device sink failed, please check log");
@@ -447,6 +446,8 @@ int32_t AudioServer::LoadAudioEffectLibraries(const std::vector<Library> &librar
     hasEffectsLoaded = audioEffectServer_->LoadAudioEffects(libraries, effects, successEffectList);
     if (!hasEffectsLoaded) {
         AUDIO_WARNING_LOG("Load audio effect failed, please check log");
+        successEffectList.clear();
+        return ERR_INVALID_OPERATION;
     }
     return SUCCESS;
 }

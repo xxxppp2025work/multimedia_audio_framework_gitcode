@@ -372,6 +372,9 @@ size_t AudioPolicyClientStubImpl::GetAudioSceneChangedCallbackSize() const
 
 int32_t AudioPolicyClientStubImpl::OnAudioSceneChange(int32_t audioScene)
 {
+    CHECK_AND_RETURN_RET_LOG(audioScene < AUDIO_SCENE_MAX && audioScene > AUDIO_SCENE_INVALID, \
+        "get invalid audioScene : %{public}d", ERR_INVALID_PARAM, audioScene);
+
     std::lock_guard<std::mutex> lockCbMap(audioSceneChangedMutex_);
     for (const auto &callback : audioSceneChangedCallbackList_) {
         callback->OnAudioSceneChange(static_cast<AudioScene>(audioScene));
@@ -877,6 +880,7 @@ int32_t AudioPolicyClientStubImpl::OnRendererDeviceChange(uint32_t sessionId,
 {
     Trace trace("AudioPolicyClientStubImpl::OnRendererDeviceChange");
     AudioDeviceDescriptor newDeviceDescriptor = deviceInfo;
+    newDeviceDescriptor.descriptorType_ = AudioDeviceDescriptor::DEVICE_INFO;
     if (newDeviceDescriptor.IsAudioDeviceDescriptor()) {
         newDeviceDescriptor.deviceType_ = newDeviceDescriptor.MapInternalToExternalDeviceType(apiVersion_);
     }
@@ -902,7 +906,7 @@ int32_t AudioPolicyClientStubImpl::OnRendererDeviceChange(uint32_t sessionId,
 }
 
 int32_t AudioPolicyClientStubImpl::OnRendererStateChange(
-    std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     int32_t size = static_cast<int32_t>(audioRendererChangeInfos.size());
     CHECK_AND_RETURN_RET_LOG(size < STATE_VALID_SIZE, ERR_INVALID_PARAM,
@@ -993,7 +997,7 @@ size_t AudioPolicyClientStubImpl::GetCapturerStateChangeCallbackSize() const
 }
 
 int32_t AudioPolicyClientStubImpl::OnCapturerStateChange(
-    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     int32_t size = static_cast<int32_t>(audioCapturerChangeInfos.size());
     CHECK_AND_RETURN_RET_LOG(size < STATE_VALID_SIZE, ERR_INVALID_PARAM,

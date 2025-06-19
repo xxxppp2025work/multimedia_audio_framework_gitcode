@@ -414,8 +414,8 @@ bool AudioServerProxy::CreateEffectChainManagerProxy(std::vector<EffectChain> &e
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    bool isSuccess = false;
-    int32_t res = gsp->CreateEffectChainManager(effectChains, effectParam, enhanceParam, isSuccess);
+    int32_t res = gsp->CreateEffectChainManager(effectChains, effectParam, enhanceParam);
+    bool isSuccess = res == SUCCESS;
     IPCSkeleton::SetCallingIdentity(identity);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "CreateEffectChainManager failed");
     return isSuccess;

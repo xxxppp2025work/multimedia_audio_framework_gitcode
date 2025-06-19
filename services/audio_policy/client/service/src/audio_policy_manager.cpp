@@ -1399,14 +1399,18 @@ int32_t AudioPolicyManager::GetPreferredOutputStreamType(AudioRendererInfo &rend
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");
-    return gsp->GetPreferredOutputStreamType(rendererInfo);
+    int32_t streamType = AUDIO_FLAG_INVALID;
+    gsp->GetPreferredOutputStreamType(rendererInfo, streamType);
+    return streamType;
 }
 
 int32_t AudioPolicyManager::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");
-    return gsp->GetPreferredInputStreamType(capturerInfo);
+    int32_t streamType = AUDIO_FLAG_INVALID;
+    gsp->GetPreferredInputStreamType(capturerInfo, streamType);
+    return streamType;
 }
 
 int32_t AudioPolicyManager::CreateRendererClient(

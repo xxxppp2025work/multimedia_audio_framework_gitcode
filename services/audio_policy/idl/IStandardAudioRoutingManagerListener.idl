@@ -18,9 +18,9 @@ package OHOS.AudioStandard;
 sequenceable audio_device_descriptor..OHOS.AudioStandard.AudioDeviceDescriptor;
 interface IStandardAudioRoutingManagerListener {
     void OnDistributedRoutingRoleChange([in] sharedptr<AudioDeviceDescriptor> descriptor, [in] int type); // CastType type
-    void OnAudioOutputDeviceRefined([out] List<sharedptr<AudioDeviceDescriptor>> descs,
+    void OnAudioOutputDeviceRefined([inout] List<sharedptr<AudioDeviceDescriptor>> descs,
         [in] int routerType, [in] int streamUsage, [in] int clientUid, [in] int audioPipeType); // RouterType routerType,  StreamUsage streamUsage, AudioPipeType audioPipeType
-    void OnAudioInputDeviceRefined([out] List<sharedptr<AudioDeviceDescriptor>> descs,
+    void OnAudioInputDeviceRefined([inout] List<sharedptr<AudioDeviceDescriptor>> descs,
         [in] int routerType, [in] int sourceType, [in] int clientUid, [in] int audioPipeType); // SourceType sourceType, AudioPipeType audioPipeType
     void GetSplitInfoRefined([out] String splitInfo);
     void OnDistributedOutputChange([in] boolean isRemote);

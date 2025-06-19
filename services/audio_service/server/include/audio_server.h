@@ -84,9 +84,8 @@ public:
         std::vector<Effect>& successEffectList, bool& hasEffectsLoaded) override;
     int32_t CreatePlaybackCapturerManager(bool& isSuccess) override;
     int32_t CreateEffectChainManager(const std::vector<EffectChain> &effectChains,
-        const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam,
-        bool& isSuccess) override;
-    int32_t SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
+        const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam) override;
+    int32_t SetOutputDeviceSink(int32_t deviceType, const std::string &sinkName) override;
     int32_t SetActiveOutputDevice(int32_t deviceType) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;

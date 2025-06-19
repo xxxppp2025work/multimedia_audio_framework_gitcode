@@ -43,7 +43,7 @@ sequenceable audio_effect..OHOS.AudioStandard.AudioEnhancePropertyArray;
 sequenceable audio_info..OHOS.AudioStandard.ToneInfo;
 
 interface IAudioPolicy {
-    [ipccode 100] void GetMaxVolumeLevel([in] int volumeType, [out] int volumeLevel);
+    [ipccode 0] void GetMaxVolumeLevel([in] int volumeType, [out] int volumeLevel);
     void GetMinVolumeLevel([in] int volumeType, [out] int volumeLevel); // AudioVolumeType volumeType
     void SetSystemVolumeLevelLegacy([in] int streamTypeIn, [in] int volumeLevel); // AudioVolumeType volumeType
     void SetSystemVolumeLevel([in] int volumeType, [in] int volumeLevel, [in] int volumeFlag); /*volumeFlag default 0*/
@@ -91,12 +91,12 @@ interface IAudioPolicy {
     void GetSelectedDeviceInfo([in] int uid, [in] int pid, [in] int streamType, [out] String retStr);
     void SelectInputDevice([in] sptr<AudioCapturerFilter> audioCapturerFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
     void ReconfigureAudioChannel([in] unsigned int count, [in] int deviceType);
-    [ipccode 200] void GetPreferredOutputStreamType([out] AudioRendererInfo rendererInfo);
-    void GetPreferredInputStreamType([out] AudioCapturerInfo capturerInfo);
+    [ipccode 50] void GetPreferredOutputStreamType([in] AudioRendererInfo rendererInfo, [out] int32_t streamType);
+    void GetPreferredInputStreamType([in] AudioCapturerInfo capturerInfo, [out] int32_t streamType);
     void CreateRendererClient([in] sharedptr<AudioStreamDescriptor> streamDesc, [out] unsigned int flag, [out] unsigned int sessionId);
     void CreateCapturerClient([in] sharedptr<AudioStreamDescriptor> streamDesc, [out] unsigned int flag, [out] unsigned int sessionId);
-    void RegisterTracker([in] int mode, [out] AudioStreamChangeInfo streamChangeInfo, [in] IRemoteObject object);
-    void UpdateTracker([in] int mode, [out] AudioStreamChangeInfo streamChangeInfo);
+    void RegisterTracker([in] int mode, [in] AudioStreamChangeInfo streamChangeInfo, [in] IRemoteObject object);
+    void UpdateTracker([in] int mode, [in] AudioStreamChangeInfo streamChangeInfo);
     void GetCurrentRendererChangeInfos([out] List<sharedptr<AudioRendererChangeInfo>> audioRendererChangeInfos);
     void GetCurrentCapturerChangeInfos([out] List<sharedptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos);
     void SetLowPowerVolume([in] int streamId, [in] float volume);
@@ -107,7 +107,7 @@ interface IAudioPolicy {
     void GetNetworkIdByGroupId([in] int groupId, [out] String networkId);
     void GetToneConfig([in] int ltonetype, [in] String countryCode, [out] sharedptr<ToneInfo> config); // [macrodef FEATURE_DTMF_TONE]
     void GetSupportedTones([in] String countryCode, [out] List<int> tones); // [macrodef FEATURE_DTMF_TONE]
-    [ipccode 300] void GetPreferredOutputDeviceDescriptors([in] AudioRendererInfo rendererInfo, [in] boolean forceNoBTPermission, [out] List<sharedptr<AudioDeviceDescriptor>> retDevList);
+    [ipccode 67] void GetPreferredOutputDeviceDescriptors([in] AudioRendererInfo rendererInfo, [in] boolean forceNoBTPermission, [out] List<sharedptr<AudioDeviceDescriptor>> retDevList);
     void GetPreferredInputDeviceDescriptors([in] AudioCapturerInfo captureInfo, [out] List<sharedptr<AudioDeviceDescriptor>> retDevList);
     void SetClientCallbacksEnable([in] int callbackchange, [in] boolean enable);
     void GetAudioFocusInfoList([out] List<OrderedMap<AudioInterrupt, int>> focusInfoList, [in] int zoneId); /*  zoneID default value: 0 -- local device */
@@ -175,8 +175,8 @@ interface IAudioPolicy {
     void SetCallDeviceActive([in] int deviceType, [in] boolean active, [in] String address, [in] int uid);
     void GetConverterConfig([out] ConverterConfig retCnf);
     void GetActiveBluetoothDevice([out] sharedptr<AudioDeviceDescriptor> descs);
-    void FetchOutputDeviceForTrack([out] AudioStreamChangeInfo streamChangeInfo, [in] AudioStreamDeviceChangeReasonExt reason);
-    void FetchInputDeviceForTrack([out] AudioStreamChangeInfo streamChangeInfo);
+    void FetchOutputDeviceForTrack([in] AudioStreamChangeInfo streamChangeInfo, [in] AudioStreamDeviceChangeReasonExt reason);
+    void FetchInputDeviceForTrack([in] AudioStreamChangeInfo streamChangeInfo);
     void IsHighResolutionExist([out] boolean ret);
     void SetHighResolutionExist([in] boolean highResExist);
     void GetSpatializationSceneType([out] int type);

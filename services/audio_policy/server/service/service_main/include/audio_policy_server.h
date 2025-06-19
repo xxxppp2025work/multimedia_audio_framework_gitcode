@@ -261,9 +261,9 @@ public:
 
     int32_t ReconfigureAudioChannel(uint32_t count, int32_t deviceType) override;
 
-    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo) override;
+    int32_t GetPreferredOutputStreamType(const AudioRendererInfo &rendererInfo, int32_t &streamType) override;
 
-    int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo) override;
+    int32_t GetPreferredInputStreamType(const AudioCapturerInfo &capturerInfo, int32_t &streamType) override;
 
     int32_t CreateRendererClient(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         uint32_t &flag, uint32_t &sessionId) override;
@@ -271,10 +271,10 @@ public:
     int32_t CreateCapturerClient(
         const std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, uint32_t &sessionId) override;
 
-    int32_t RegisterTracker(int32_t mode, AudioStreamChangeInfo &streamChangeInfo,
+    int32_t RegisterTracker(int32_t mode, const AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object) override;
 
-    int32_t UpdateTracker(int32_t mode, AudioStreamChangeInfo &streamChangeInfo) override;
+    int32_t UpdateTracker(int32_t mode, const AudioStreamChangeInfo &streamChangeInfo) override;
 
     int32_t GetCurrentRendererChangeInfos(
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
@@ -472,10 +472,10 @@ public:
 
     int32_t GetConverterConfig(ConverterConfig& cfg) override;
 
-    int32_t FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
+    int32_t FetchOutputDeviceForTrack(const AudioStreamChangeInfo &streamChangeInfo,
         const AudioStreamDeviceChangeReasonExt &reason) override;
 
-    int32_t FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) override;
+    int32_t FetchInputDeviceForTrack(const AudioStreamChangeInfo &streamChangeInfo) override;
 
     int32_t GetSpatializationSceneType(int32_t& type) override;
 

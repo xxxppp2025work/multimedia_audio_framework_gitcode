@@ -154,9 +154,9 @@ public:
     int32_t OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
     int32_t OnRendererStateChange(
-        std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+        const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
     int32_t OnCapturerStateChange(
-        std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
+        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
     int32_t OnRendererDeviceChange(uint32_t sessionId,
         const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt &reason) override;
     int32_t OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) override;

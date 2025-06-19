@@ -23,6 +23,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+static constexpr int32_t MAX_SIZE = 1024;
 AudioZoneClient::AudioZoneClient()
 {}
 
@@ -210,6 +211,8 @@ int32_t AudioZoneClient::OnInterruptEvent(int32_t zoneId,
     const std::vector<std::map<AudioInterrupt, int32_t>> &ipcInterrupts,
     int32_t reason)
 {
+    int32_t size = static_cast<int32_t>(ipcInterrupts.size());
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size < MAX_SIZE, "invalid interrupt size: %{public}d", size);
     OnInterruptEvent(zoneId, "", ipcInterrupts, reason);
     return SUCCESS;
 }

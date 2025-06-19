@@ -15,5 +15,5 @@
 
 package OHOS.AudioStandard;
 interface IStandardConcurrencyStateListener {
-    void OnConcedeStream();
+    [oneway] void OnConcedeStream();
 }

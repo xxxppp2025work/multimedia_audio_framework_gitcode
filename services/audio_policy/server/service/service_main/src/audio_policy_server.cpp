@@ -2622,21 +2622,23 @@ void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
     AppendFormat(dumpString, "  -ap\t\t\t|dump audio pipe manager info\n");
 }
 
-int32_t AudioPolicyServer::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo)
+int32_t AudioPolicyServer::GetPreferredOutputStreamType(const AudioRendererInfo &rendererInfo, int32_t &streamType)
 {
     std::string bundleName = "";
     bool isFastControlled = audioPolicyService_.getFastControlParam();
     if (isFastControlled && rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
         bundleName = AudioBundleManager::GetBundleName();
         AUDIO_INFO_LOG("bundleName %{public}s", bundleName.c_str());
-        return eventEntry_->GetPreferredOutputStreamType(rendererInfo, bundleName);
+        streamType = eventEntry_->GetPreferredOutputStreamType(rendererInfo, bundleName);
     }
-    return eventEntry_->GetPreferredOutputStreamType(rendererInfo, "");
+    streamType = eventEntry_->GetPreferredOutputStreamType(rendererInfo, "");
+    return SUCCESS;
 }
 
-int32_t AudioPolicyServer::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
+int32_t AudioPolicyServer::GetPreferredInputStreamType(const AudioCapturerInfo &capturerInfo, int32_t &streamType)
 {
-    return eventEntry_->GetPreferredInputStreamType(capturerInfo);
+    streamType = eventEntry_->GetPreferredInputStreamType(capturerInfo);
+    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::CreateRendererClient(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -2664,7 +2666,7 @@ int32_t AudioPolicyServer::CreateCapturerClient(const std::shared_ptr<AudioStrea
     return ret;
 }
 
-int32_t AudioPolicyServer::RegisterTracker(int32_t modeIn, AudioStreamChangeInfo &streamChangeInfo,
+int32_t AudioPolicyServer::RegisterTracker(int32_t modeIn, const AudioStreamChangeInfo &streamChangeInfo,
     const sptr<IRemoteObject> &object)
 {
     AudioMode mode = static_cast<AudioMode>(modeIn);
@@ -2698,7 +2700,7 @@ int32_t AudioPolicyServer::RegisterTracker(int32_t modeIn, AudioStreamChangeInfo
     return eventEntry_->RegisterTracker(mode, streamChangeInfo, object, apiVersion);
 }
 
-int32_t AudioPolicyServer::UpdateTracker(int32_t modeIn, AudioStreamChangeInfo &streamChangeInfo)
+int32_t AudioPolicyServer::UpdateTracker(int32_t modeIn, const AudioStreamChangeInfo &streamChangeInfo)
 {
     Trace trace("AudioPolicyServer::UpdateTracker");
     AudioMode mode = static_cast<AudioMode>(modeIn);
@@ -2729,7 +2731,7 @@ int32_t AudioPolicyServer::UpdateTracker(int32_t modeIn, AudioStreamChangeInfo &
     return ret;
 }
 
-int32_t AudioPolicyServer::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
+int32_t AudioPolicyServer::FetchOutputDeviceForTrack(const AudioStreamChangeInfo &streamChangeInfo,
     const AudioStreamDeviceChangeReasonExt &reason)
 {
     auto callerPid = IPCSkeleton::GetCallingPid();
@@ -2748,7 +2750,7 @@ int32_t AudioPolicyServer::FetchOutputDeviceForTrack(AudioStreamChangeInfo &stre
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
+int32_t AudioPolicyServer::FetchInputDeviceForTrack(const AudioStreamChangeInfo &streamChangeInfo)
 {
     auto callerPid = IPCSkeleton::GetCallingPid();
     streamChangeInfo.audioCapturerChangeInfo.callerPid = callerPid;

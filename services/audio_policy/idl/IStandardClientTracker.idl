@@ -17,11 +17,11 @@ package OHOS.AudioStandard;
 
 sequenceable audio_info..OHOS.AudioStandard.StreamSetStateEventInternal;
 interface IStandardClientTracker {
-    void MuteStreamImpl([in] StreamSetStateEventInternal streamSetStateEventInternal);
-    void UnmuteStreamImpl([in] StreamSetStateEventInternal streamSetStateEventInternal);
-    void PausedStreamImpl([in] StreamSetStateEventInternal streamSetStateEventInternal);
-    void ResumeStreamImpl([in] StreamSetStateEventInternal streamSetStateEventInternal);
-    void SetLowPowerVolumeImpl([in] float volume);
+    [oneway] void MuteStreamImpl([in] StreamSetStateEventInternal streamSetStateEventInternal);
+    [oneway] void UnmuteStreamImpl([in] StreamSetStateEventInternal streamSetStateEventInternal);
+    [oneway] void PausedStreamImpl([in] StreamSetStateEventInternal streamSetStateEventInternal);
+    [oneway] void ResumeStreamImpl([in] StreamSetStateEventInternal streamSetStateEventInternal);
+    [oneway] void SetLowPowerVolumeImpl([in] float volume);
     void GetLowPowerVolumeImpl([out] float volume);
     void SetOffloadModeImpl([in] int state, [in] boolean isAppBack);
     void UnsetOffloadModeImpl();

@@ -16,5 +16,5 @@
 package OHOS.AudioStandard;
 sequenceable audio_effect..OHOS.AudioStandard.AudioSpatializationState;
 interface IStandardSpatializationStateChangeListener {
-  void OnSpatializationStateChange([in] AudioSpatializationState spatializationState);
+  [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC] void OnSpatializationStateChange([in] AudioSpatializationState spatializationState);
 }

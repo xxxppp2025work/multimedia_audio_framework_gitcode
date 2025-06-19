@@ -54,8 +54,8 @@ interface IStandardAudioService {
     void SetAudioBalanceValue([in] float audioBalance);
     void CreateAudioProcess([in] AudioProcessConfig config, [out] int errorCode, [in] AudioPlaybackCaptureConfig filterConfig, [out] IRemoteObject client);
     void LoadAudioEffectLibraries([in] List<Library> libraries, [in] List<Effect> effects, [out] List<Effect> successEffects, [out] boolean hasEffectsLoaded);
-    void CreateEffectChainManager([in] List<EffectChain> effectChains, [in] EffectChainManagerParam effectParam, [in] EffectChainManagerParam enhanceParam, [out] boolean isSuccess);
-    void SetOutputDeviceSink([in] int device, [out] String sinkName);
+    void CreateEffectChainManager([in] List<EffectChain> effectChains, [in] EffectChainManagerParam effectParam, [in] EffectChainManagerParam enhanceParam);
+    void SetOutputDeviceSink([in] int device, [in] String sinkName);
     void SetActiveOutputDevice([in] int deviceType);
     void CreatePlaybackCapturerManager([out] boolean isSuccess);
     [oneway] void RegiestPolicyProvider([in] IRemoteObject object);

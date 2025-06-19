@@ -1806,7 +1806,9 @@ int32_t AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_
     client = CreateAudioProcessInner(config, errorCode, filterConfig);
     if (client == nullptr) {
         AUDIO_ERR_LOG("CreateAudioProcessInner failed");
-        return AUDIO_ERR;
+        if (errorCode == 0) {
+            errorCode = AUDIO_ERR;
+        } 
     }
     return SUCCESS;
 }
