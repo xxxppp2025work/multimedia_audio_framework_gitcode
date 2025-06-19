@@ -395,7 +395,7 @@ class DataTransferStateChangeCallbackInnerImpl : public DataTransferStateChangeC
 public:
     DataTransferStateChangeCallbackInnerImpl() = default;
     virtual ~DataTransferStateChangeCallbackInnerImpl() = default;
-    void OnDataTransferStateChange(int32_t &callbackId,
+    void OnDataTransferStateChange(const int32_t &callbackId,
         const AudioRendererDataTransferStateChangeInfo &info);
     void SetDataTransferMonitorParam(const DataTransferMonitorParam &param);
 private:
