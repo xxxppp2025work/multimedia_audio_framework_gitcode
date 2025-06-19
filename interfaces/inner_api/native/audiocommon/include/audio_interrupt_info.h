@@ -179,6 +179,40 @@ struct AudioFocusType {
     }
 };
 
+struct AudioStreamUsage {
+    StreamUsage streamUsage = STREAM_USAGE_INVALID;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+    bool isPlay = true;
+    bool operator==(const AudioStreamUsage &value) const
+    {
+        return streamUsage == value.streamUsage && sourceType == value.sourceType && isPlay == value.isPlay;
+    }
+
+    bool operator<(const AudioStreamUsage &value) const
+    {
+        return streamUsage < value.streamUsage || (streamUsage == value.streamUsage && sourceType < value.sourceType);
+    }
+
+    bool operator>(const AudioStreamUsage &value) const
+    {
+        return streamUsage > value.streamUsage || (streamUsage == value.streamUsage && sourceType > value.sourceType);
+    }
+
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(streamUsage))
+            && parcel.WriteInt32(static_cast<int32_t>(sourceType))
+            && parcel.WriteBool(isPlay);
+    }
+
+    void Unmarshalling(Parcel &parcel)
+    {
+        streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        isPlay = parcel.ReadBool();
+    }
+};
+
 enum InterruptStage {
     INTERRUPT_STAGE_START = 0x10,
     INTERRUPT_STAGE_RESTART = 0x11,

@@ -677,7 +677,7 @@ bool VolumeDataMaintainer::SaveMicMuteState(bool isMute)
     return true;
 }
 
-bool VolumeDataMaintainer::GetMicMuteState(bool &isMute)
+bool VolumeDataMaintainer::GetMicMuteState(bool &isMute) const
 {
     AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     const std::string settingKey = "micmute_state";

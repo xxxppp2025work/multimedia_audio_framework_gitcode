@@ -244,6 +244,16 @@ void AudioPolicyService::OnReceiveEvent(const EventFwk::CommonEventData &eventDa
     audioVolumeManager_.OnReceiveEvent(eventData);
 }
 
+int32_t AudioPolicyService::SetAdjustVolumeForZone(int32_t zoneId)
+{
+    return audioVolumeManager_.SetAdjustVolumeForZone(zoneId);
+}
+
+int32_t AudioPolicyService::GetVolumeAdjustZoneId()
+{
+    return audioVolumeManager_.GetVolumeAdjustZoneId();  
+}
+
 int32_t AudioPolicyService::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel)
 {
     // update dump appvolume

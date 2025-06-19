@@ -62,6 +62,12 @@ void AudioPolicyManagerStub::OnAudioZoneRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::REMOVE_UID_FROM_AUDIO_ZONE):
             HandleRemoveUidFromAudioZone(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ADD_STREAM_USAGE_TO_AUDIO_ZONE):
+            HandleAddStreamUsageToAudioZone(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::REMOVE_STREAM_USAGE_FROM_AUDIO_ZONE):
+            HandleRemoveStreamUsageFromAudioZone(data, reply);
+            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::ENABLE_SYSTEM_VOLUME_PROXY):
             HandleEnableSystemVolumeProxy(data, reply);
             break;
@@ -198,6 +204,24 @@ void AudioPolicyManagerStub::HandleRemoveUidFromAudioZone(MessageParcel &data, M
     CHECK_AND_RETURN_LOG(zoneId > 0, "audio zone id is invalid");
     int32_t uid = data.ReadInt32();
     reply.WriteInt32(RemoveUidFromAudioZone(zoneId, uid));
+}
+
+void AudioPolicyManagerStub::HandleAddStreamUsageToAudioZone(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t zoneId = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(zoneId > 0, "audio zone id is invalid");
+    AudioStreamUsage usage;
+    usage.Unmarshalling(data);
+    reply.WriteInt32(AddStreamUsageToAudioZone(zoneId, usage));
+}
+
+void AudioPolicyManagerStub::HandleRemoveStreamUsageFromAudioZone(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t zoneId = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(zoneId > 0, "audio zone id is invalid");
+    AudioStreamUsage usage;
+    usage.Unmarshalling(data);
+    reply.WriteInt32(RemoveStreamUsageFromAudioZone(zoneId, usage));
 }
 
 void AudioPolicyManagerStub::HandleEnableSystemVolumeProxy(MessageParcel &data, MessageParcel &reply)
