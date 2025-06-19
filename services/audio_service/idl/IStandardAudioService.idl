@@ -34,709 +34,109 @@ sequenceable hdi_adapter_type..OHOS.AudioStandard.IAudioSourceAttr;
 sequenceable audio_stutter..OHOS.AudioStandard.DataTransferMonitorParam;
 
 interface IStandardAudioService {
-    /**
-     * Sets Microphone Mute status.
-     *
-     * @param isMute Mute status true or false to be set.
-     * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
-     */
+    [ipccode 0] void GetAudioParameter([in] String key, [out] String value);
+    void SetAudioParameter([in] String key, [in] String value);
+    void GetExtraParameters([in] String mainKey, [in] List<String> subKyes, [out] List<StringPair> parameters);
+    void SetExtraParameters([in] String key, [in] List<StringPair> kvpairs);
     void SetMicrophoneMute([in] boolean isMute);
-
-    /**
-     * @brief Set the Voice Volume.
-     *
-     * @param volume Voice colume to be set.
-     * @return int32_t Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
-     */
+    void SetAudioScene([in] int audioScene, [in] List<int> activeOutputDevices, [in] int activeInputDevice, [in] int a2dpOffloadFlag, [in] boolean scoExcludeFlag);
+    void UpdateActiveDeviceRoute([in] int type, [in] int flag, [in] int a2dpOffloadFlag);
+    void UpdateActiveDevicesRoute([in] List<IntPair> activeDevices, [in] int a2dpOffloadFlag, [in] String deviceName);
+    void UpdateDualToneState([in] boolean enable, [in] int sessionId);
+    void GetTransactionId([in] int deviceType, [in] int deviceRole, [out] unsigned long transactionId);
+    void SetParameterCallback([in] IRemoteObject object);
+    void GetAudioParameter([in] String networkId, [in] int key, [in] String condition, [out] String value);
+    void SetAudioParameter([in] String networkId, [in] int key, [in] String condition, [in] String value);
+    void NotifyDeviceInfo([in] String networkId, [in] boolean connected);
+    void CheckRemoteDeviceState([in] String networkId, [in] int deviceRole, [in] boolean isStartDevice);
     void SetVoiceVolume([in] float volume);
-
+    void SetAudioMonoState([in] boolean audioMono);
+    void SetAudioBalanceValue([in] float audioBalance);
+    void CreateAudioProcess([in] AudioProcessConfig config, [out] int errorCode, [in] AudioPlaybackCaptureConfig filterConfig, [out] IRemoteObject client);
+    void LoadAudioEffectLibraries([in] List<Library> libraries, [in] List<Effect> effects, [out] List<Effect> successEffects, [out] boolean hasEffectsLoaded);
+    void CreateEffectChainManager([in] List<EffectChain> effectChains, [in] EffectChainManagerParam effectParam, [in] EffectChainManagerParam enhanceParam, [out] boolean isSuccess);
+    void SetOutputDeviceSink([in] int device, [out] String sinkName);
+    void SetActiveOutputDevice([in] int deviceType);
+    void CreatePlaybackCapturerManager([out] boolean isSuccess);
+    [oneway] void RegiestPolicyProvider([in] IRemoteObject object);
+    [oneway] void RegistCoreServiceProvider([in] IRemoteObject object);
+    void SetWakeupSourceCallback([in] IRemoteObject object);
+    void UpdateSpatializationState([in] AudioSpatializationState spatializationState);
+    void UpdateSpatialDeviceType([in] int spatialDeviceType);
     void OffloadSetVolume([in] float volume);
+    void NotifyStreamVolumeChanged([in] int streamType, [in] float volume);
+    void SetSpatializationSceneType([in] int spatializationSceneType);
+    void GetMaxAmplitude([in] boolean isOutputDevice, [in] String deviceClass, [in] int sourceType, [out] float maxAmplitude);
+    void ResetAudioEndpoint();
+    void ResetRouteForDisconnect([in] int type);
+    void GetEffectLatency([in] String sessionId, [out] unsigned int latency);
+    void UpdateLatencyTimestamp([in] String timestamp, [in] boolean isRenderer);
+    void SetAsrAecMode([in] int asrAecMode); // AsrAecMode asrAecMode
+    void GetAsrAecMode([out] int asrAecMode); // AsrAecMode asrAecMode
+    void SetAsrNoiseSuppressionMode([in] int asrNoiseSuppressionMode); // AsrNoiseSuppressionMode asrNoiseSuppressionMode
+    void SetOffloadMode([in] unsigned int sessionId, [in] int state, [in] boolean isAppBack);
+    void UnsetOffloadMode([in] unsigned int sessionId);
+    void CheckHibernateState([in] boolean onHibernate);
+    void GetAsrNoiseSuppressionMode([out] int asrNoiseSuppressionMode); // AsrNoiseSuppressionMode asrNoiseSuppressionMode
+    void SetAsrWhisperDetectionMode([in] int asrWhisperDetectionMode); // AsrWhisperDetectionMode asrWhisperDetectionMode
+    void GetAsrWhisperDetectionMode([out] int asrWhisperDetectionMode);
+    void SetAsrVoiceControlMode([in] int asrVoiceControlMode, [in] boolean on);
+    void SetAsrVoiceMuteMode([in] int asrVoiceMuteMode, [in] boolean on); // AsrVoiceMuteMode asrVoiceMuteMode
+    void IsWhispering([out] int whisperRes);
+    void GetEffectOffloadEnabled([out] boolean isEffectOffloadEnabled);
+    void GetAudioEffectProperty([out] AudioEffectPropertyArrayV3 propertyArray, [in] int deviceType);
+    void SetAudioEffectProperty([in] AudioEffectPropertyArrayV3 propertyArray, [in] int deviceType);
+    void GetAudioEnhanceProperty([out] AudioEnhancePropertyArray propertyArray, [in] int deviceType);
+    void GetAudioEffectProperty([out] AudioEffectPropertyArray propertyArray);
+    void SetAudioEnhanceProperty([in] AudioEnhancePropertyArray propertyArray, [in] int deviceType);
+    void SetAudioEffectProperty([in] AudioEffectPropertyArray propertyArray);
     void SuspendRenderSink([in] String sinkName);
     void RestoreRenderSink([in] String sinkName);
-
-    /**
-     * Sets Audio modes.
-     *
-     * @param [AudioScene] audioScene Audio scene type.
-     * @param [DeviceType] activeOutputDevices Active output devices.
-     * @param [DeviceType] activeInputDevice Active input device.
-     * @param [BluetoothOffloadState] a2dpOffloadFlag A2DP offload flag.
-     * @param [bool] scoExcludeFlag Sco exclude flag. scoExcludeFlag = false
-     * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
-     */
-    void SetAudioScene([in] int audioScene, [in] List<int> activeOutputDevices,
-        [in] int activeInputDevice, [in] int a2dpOffloadFlag, [in] boolean scoExcludeFlag);
-
-
-    /**
-     * Set Audio Parameter.
-     *
-     * @param  key for the audio parameter to be set
-     * @param  value associated with the key for the audio parameter to be set
-     * @return none.
-     */
-    void SetAudioParameter([in] String key, [in] String value);
-
-    /**
-     * Set Asr Aec Mode.
-     *
-     * @param key for the audio parameter to be set
-     * @param value associated with the key for the audio parameter to be set
-     * @return none.
-     */
-    void SetAsrAecMode([in] int asrAecMode); // AsrAecMode asrAecMode
-
-    /**
-     * Set Asr Aec Mode.
-     *
-     * @param key for the audio parameter to be set
-     * @param value associated with the key for the audio parameter to be set
-     * @return none.
-     */
-    void GetAsrAecMode([out] int asrAecMode); // AsrAecMode asrAecMode
-
-    /**
-     * Set Asr Aec Mode.
-     *
-     * @param key for the audio parameter to be set
-     * @param value associated with the key for the audio parameter to be set
-     * @return none.
-     */
-    void SetAsrNoiseSuppressionMode([in] int asrNoiseSuppressionMode); // AsrNoiseSuppressionMode asrNoiseSuppressionMode
-
-    /**
-     * Set Asr Aec Mode.
-     *
-     * @param key for the audio parameter to be set
-     * @param value associated with the key for the audio parameter to be set
-     * @return none.
-     */
-    void GetAsrNoiseSuppressionMode([out] int asrNoiseSuppressionMode); // AsrNoiseSuppressionMode asrNoiseSuppressionMode
-
-    /**
-     * Set Asr WhisperDetection Mode.
-     *
-     * @param key for the audio parameter to be set
-     * @param value associated with the key for the audio parameter to be set
-     * @return none.
-     */
-    void SetAsrWhisperDetectionMode([in] int asrWhisperDetectionMode); // AsrWhisperDetectionMode asrWhisperDetectionMode
-
-    /**
-     * Get Asr WhisperDetection Mode.
-     *
-     * @param [AsrWhisperDetectionMode] asrWhisperDetectionMode AsrWhisperDetectionMode to be get
-     *
-     * @return none.
-     */
-    void GetAsrWhisperDetectionMode([out] int asrWhisperDetectionMode);
-
-    /**
-     * Set Voice Control Mode.
-     *
-     * @param [AsrVoiceControlMode] asrVoiceControlMode AsrVoiceControlMode to be set
-     * @param [bool] on on or off
-     *
-     *
-     * @return none.
-     */
-    void SetAsrVoiceControlMode([in] int asrVoiceControlMode, [in] boolean on);
-    /**
-     * Set Voice Mute Mode.
-     *
-     * @param [AsrVoiceMuteMode] asrVoiceMuteMode AsrVoiceMuteMode to be set
-     * @param [bool] on on or off
-     *
-     * @return none.
-     */
-    void SetAsrVoiceMuteMode([in] int asrVoiceMuteMode, [in] boolean on); // AsrVoiceMuteMode asrVoiceMuteMode
-
-    /**
-     * Set Asr Aec Mode.
-     *
-     * @param key for the audio parameter to be set
-     * @param value associated with the key for the audio parameter to be set
-     * @return none.
-     */
-    void IsWhispering([out] int whisperRes);
-
-    /**
-     * Set Audio Parameter.
-     *
-     * @param  networkId for the distributed device
-     * @param  [AudioParamKey] key for the audio parameter to be set
-     * @param  condition for the audio parameter to be set
-     * @param  value associated with the key for the audio parameter to be set
-     * @return none.
-     */
-    void SetAudioParameter([in] String networkId, [in] int key, [in] String condition, [in] String value);
-
-    /**
-     * Get Audio Parameter.
-     *
-     * @param  key for the audio parameter to be set
-     * @return Returns value associated to the key requested.
-     */
-    void GetAudioParameter([in] String key, [out] String value);
-
-    /**
-     * Set Audio Parameter.
-     *
-     * @param  networkId for the distributed device
-     * @param  [AudioParamKey] key for the audio parameter to be set
-     * @param  condition for the audio parameter to be set
-     * @return none.
-     */
-    void GetAudioParameter([in] String networkId, [in] int key, [in] String condition, [out] String value);
-
-    /**
-     * Set Extra Audio Parameters.
-     *
-     * @param key main key for the extra audio parameter to be set
-     * @param kvpairs associated with the sub keys and values for the extra audio parameter to be set
-     * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
-     */
-    void SetExtraParameters([in] String key, [in] List<StringPair> kvpairs);
-
-    /**
-     * Get Extra Audio Parameters.
-     *
-     * @param mainKey main key for the extra audio parameter to be get
-     * @param subKeys associated with the key for the extra audio parameter to be get
-     * @param result value of sub key parameters
-     * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
-     */
-    void GetExtraParameters([in] String mainKey, [in] List<String> subKyes, [out] List<StringPair> parameters);
-
-    /**
-     * Update the audio route after device is detected and route is decided
-     * 
-     * @param [DeviceType] type of the device
-     * @param [DeviceFlag] flag of the device
-     * @param [BluetoothOffloadState] a2dpOffloadFlag of the device
-     *
-     * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
-     */
-    void UpdateActiveDeviceRoute([in] int type, [in] int flag, [in] int a2dpOffloadFlag);
-
-    /**
-     * Set device dmDevice type.
-     *
-     * @return none.
-     */
-    void SetDmDeviceType([in] unsigned short dmDeviceType);
-
-    /**
-     * Update the audio route after devices is detected and route is decided
-     *
-     * @param [vector<pair<DeviceType, DeviceFlag>>] activeDevices of the device
-     * @param [BluetoothOffloadState] a2dpOffloadFlag of the device
-     *
-     * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
-     */
-    void UpdateActiveDevicesRoute([in] List<IntPair> activeDevices, [in] int a2dpOffloadFlag,
-        [in] String deviceName);
-
-    /**
-     * Update the audio dual tone state after devices is detected and route is decided
-     *
-     * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
-     */
-    void UpdateDualToneState([in] boolean enable, [in] int sessionId);
-
-    /**
-     * Get the transaction Id
-     *
-     * @param [DeviceType] deviceType of the device
-     * @param [DeviceRole] deviceRole of the device
-     *
-     * @return Returns transaction id.
-     */
-    void GetTransactionId([in] int deviceType, [in] int deviceRole, [out] unsigned long transactionId);
-
-    /**
-     * Notify device connect info
-     *
-     * @return Returns transaction id.
-     */
-    void NotifyDeviceInfo([in] String networkId, [in] boolean connected);
-
-    /**
-     * Check remote device state.
-     *
-     * @param [string] networkId of the device.
-     * @param [DeviceRole] deviceRole of the device.
-     * @param [boolean] isStartDevice of the device.
-     *
-     * @return Returns transaction id.
-     */
-    void CheckRemoteDeviceState([in] String networkId, [in] int deviceRole, [in] boolean isStartDevice);
-
-    /**
-     * Set parameter callback
-     *
-     * @return Returns the setting result
-     */
-    void SetParameterCallback([in] IRemoteObject object);
-
-    /**
-     * Set wakeupSource callback
-     *
-     * @return Returns the setting result
-     */
-    void SetWakeupSourceCallback([in] IRemoteObject object);
-
-    /**
-     * Set audio mono state for accessibility
-     *
-     * @param  audioMono the state of mono audio for accessibility
-     * @return none.
-     */
-    void SetAudioMonoState([in] boolean audioMono);
-
-    /**
-     * Set audio balance value for accessibility
-     *
-     * @param  audioBalance the value of audio balance for accessibility
-     * @return none.
-     */
-    void SetAudioBalanceValue([in] float audioBalance);
-
-    /**
-     * Create AudioProcess for play.
-     *
-     * @param config the config of the AudioProcess
-     *
-     * @return Returns AudioProcess client.
-     */
-    void CreateAudioProcess([in] AudioProcessConfig config, [out] int errorCode,
-        [in] AudioPlaybackCaptureConfig filterConfig, [out] IRemoteObject client);
-
-    /**
-     * Use effect manager information to load effect libraries.
-     *
-     * @return true/false.
-     */
-    void LoadAudioEffectLibraries([in] List<Library> libraries, [in] List<Effect> effects,
-        [out] List<Effect> successEffects, [out] boolean hasEffectsLoaded);
-
-    /**
-     * Create effect chain manager for audio effect processing.
-     *
-     * @return true/false.
-     */
-    void CreateEffectChainManager([in] List<EffectChain> effectChains,
-        [in] EffectChainManagerParam effectParam, [in] EffectChainManagerParam enhanceParam, [out] boolean isSuccess);
-
-    /**
-     * Set output device sink for effect chain manager.
-     *
-     * @return none.
-     */
-    void SetOutputDeviceSink([in] int device, [out] String sinkName);
-
-    /**
-     * Set active output device
-     *
-     * @param [DeviceType] deviceType of the device
-     *
-     * @return none.
-     */
-    void SetActiveOutputDevice([in] int deviceType);
-
-    /**
-     * Regiest policy provider.
-     *
-     * @return result code.
-     */
-    [oneway] void RegiestPolicyProvider([in] IRemoteObject object);
-
-    /**
-     * Regiest CoreService provider.
-     *
-     * @return result code.
-     */
-    [oneway] void RegistCoreServiceProvider([in] IRemoteObject object);
-
-    /**
-     * Create playback capturer manager.
-     *
-     * @return true/false.
-     */
-    void CreatePlaybackCapturerManager([out] boolean isSuccess);
-
-    /**
-     * Update spatialization enabled state and head tracking enabled state.
-     *
-     * @param state identify the enabled state
-     *
-     * @return result of setting. 0 if success, error number else.
-     */
-    void UpdateSpatializationState([in] AudioSpatializationState spatializationState);
-
-    /**
-     * Update spatial device type.
-     *
-     * @param [AudioSpatialDeviceType] spatialDeviceType identify the spatial device type.
-     *
-     * @return result of setting. 0 if success, error number else.
-    */
-    void UpdateSpatialDeviceType([in] int spatialDeviceType);
-
-    /**
-     * Notify Stream volume changed.
-     *
-     * @param [AudioStreamType] streamType specified streamType whose volume to be notified
-     * @param volume stream volume in float
-     *
-     * @return result of notify. 0 if success, error number else.
-     */
-    void NotifyStreamVolumeChanged([in] int streamType, [in] float volume);
-
-    /**
-     * Set spatialization rendering scene type.
-     *
-     * @param [AudioSpatializationSceneType] spatializationSceneType identify the spatialization rendering scene type to be set.
-     *
-     * @return result of setting. 0 if success, error number else.
-     */
-    void SetSpatializationSceneType([in] int spatializationSceneType);
-
-    /**
-     * Reset route for disconnect.
-     *
-     * @param [DeviceType] type of the device
-     *
-     * @return result of setting. 0 if success, error number else.
-     */
-    void ResetRouteForDisconnect([in] int type);
-
-    /**
-     * get the effect algorithmic latency value for a specified audio stream.
-     *
-     * @param sessionId the session ID value for the stream
-     *
-     * @return Returns the effect algorithmic latency in ms.
-     */
-    void GetEffectLatency([in] String sessionId, [out] unsigned int latency);
-
-    /**
-     * Get max amplitude for device.
-     *
-     * @param isOutputDevice specified if the device is output device
-     * @param deviceClass specified deviceClass to get max amplitude
-     * @param [SourceType] sourceType specified sourceType when capture
-     *
-     * @return result of max amplitude.
-     */
-    void GetMaxAmplitude([in] boolean isOutputDevice, [in] String deviceClass, [in] int sourceType,
-        [out] float maxAmplitude);
-
-    /**
-     * Release old endpoint and re-create one.
-     */
-    void ResetAudioEndpoint();
-
-    void UpdateLatencyTimestamp([in] String timestamp, [in] boolean isRenderer);
-
-    // Check if the multi-channel sound effect is working on the DSP
-    void GetEffectOffloadEnabled([out] boolean isEffectOffloadEnabled);
-    
-    // for effect V3
-    /**
-     * Set audio effect property.
-     *
-     * @param propertyArray the property array to be set
-     * @param [DeviceType] deviceType the device type. = DEVICE_TYPE_NONE
-     *
-     * @return Returns the result of setting audio effect property.
-     */
-    void SetAudioEffectProperty([in] AudioEffectPropertyArrayV3 propertyArray, [in] int deviceType);
-    /**
-     * Get audio effect property.
-     *
-     * @param propertyArray the property array to be filled
-     * @param [DeviceType] deviceType the device type. = DEVICE_TYPE_NONE
-     *
-     * @return Returns the result of getting audio effect property.
-     */
-    void GetAudioEffectProperty([out] AudioEffectPropertyArrayV3 propertyArray, [in] int deviceType);
-    
-    // for effect
-    /**
-     * Set audio effect property.
-     *
-     * @param propertyArray the property array to be set
-     *
-     * @return Returns the result of setting audio effect property.
-     */
-    void SetAudioEffectProperty([in] AudioEffectPropertyArray propertyArray);
-    /**
-     * Get audio effect property.
-     *
-     * @param propertyArray the property array to be filled
-     *
-     * @return Returns the result of getting audio effect property.
-     */
-    void GetAudioEffectProperty([out] AudioEffectPropertyArray propertyArray);
-
-
-    // for enhance
-    /**
-     * Set audio enhance property.
-     *
-     * @param propertyArray the property array to be set
-     * @param [DeviceType] deviceType the device type. = DEVICE_TYPE_NONE
-     *
-     * @return Returns the result of setting audio enhance property.
-     */
-    void SetAudioEnhanceProperty([in] AudioEnhancePropertyArray propertyArray,
-        [in] int deviceType);
-
-    /**
-     * Get audio enhance property.
-     *
-     * @param propertyArray the property array to be filled
-     * @param [DeviceType] deviceType the device type. = DEVICE_TYPE_NONE
-     *
-     * @return Returns the result of getting audio enhance property.
-     */
-    void GetAudioEnhanceProperty([out] AudioEnhancePropertyArray propertyArray,
-        [in] int deviceType);
-
-    /**
-     * Load effect hdi model when audio_host online.
-     */
     void LoadHdiEffectModel();
-
-    /**
-     * Update Effect BtOffload Supported state.
-     */
     void UpdateEffectBtOffloadSupported([in] boolean isSupported);
-
-    /**
-     * Set Sink Mute For Switch Device.
-     */
     void SetSinkMuteForSwitchDevice([in] String devceClass, [in] int durationUs, [in] boolean mute);
-
-    /**
-     * Restore Session
-     */
-    void RestoreSession([in] unsigned int sessionID, [in] RestoreInfo restoreInfo);
-
-    /**
-     * Set Rotation To Effect.
-     */
     void SetRotationToEffect([in] unsigned int rotate);
-
-    /**
-     * Update Session Connection State
-     */
     void UpdateSessionConnectionState([in] int sessionID, [in] int state);
-
-    /**
-     * Set Non Interrupt Mute
-     */
     void SetNonInterruptMute([in] unsigned int sessionId, [in] boolean muteFlag);
-
-    void SetOffloadMode([in] unsigned int sessionId, [in] int state, [in] boolean isAppBack);
-
-    void UnsetOffloadMode([in] unsigned int sessionId);
-
-    void CheckHibernateState([in] boolean onHibernate);
-
-    /**
-     * Create IIpcOfflineStream for audio edition.
-     *
-     * @return Returns IIpcOfflineStream client.
-     */
+    void RestoreSession([in] unsigned int sessionID, [in] RestoreInfo restoreInfo);
     void CreateIpcOfflineStream([out] int errorCode, [out] IRemoteObject client);
-
-    /**
-     * Get all offline audio effect chain names for audio edition.
-     *
-     * @return Returns result of querying, 0 if success, error number else.
-     */
     void GetOfflineAudioEffectChains([out] List<String> effectChains);
-
-    /**
-     * set foregroun list.
-     *
-     * @return Returns result 0 if success, error number else.
-     */
-    void SetForegroundList([in] List<String> list);
-
-    /**
-     * check standby status.
-     *
-     * @return Returns result 0 if success, error number else.
-     */
     void GetStandbyStatus([in] unsigned int sessionId, [out] boolean isStandby, [out] long enterStandbyTime);
-
-    /**
-     * generate sessionId.
-     *
-     * @return Returns result 0 if success, error number else.
-     */
     void GenerateSessionId([out] unsigned int sessionId);
-
-    void NotifyAccountsChanged();
-
-    void NotifySettingsDataReady();
-
     void GetAllSinkInputs([out] List<SinkInput> sinkInputs);
-
     void SetDefaultAdapterEnable([in] boolean isEnable);
-
+    void NotifyAccountsChanged();
     void NotifyAudioPolicyReady();
-
-    /**
-     * check if acoustic echo canceler supported.
-     * @param [SourceType] sourceType specify which source type to check, include microphone, speaker.
-     * @return Returns true if supported, false else.
-     */
-    void IsAcousticEchoCancelerSupported([in] int sourceType, [out] boolean isSupported);
-
-    /**
-     * force stop audio stream.
-     * @param audioType specify which audio type to stop, include playback, capture, both.
-     */
-    void ForceStopAudioStream([in] int audioType);
-
-    /**
-     * set inner capture limit.
-     * @param innerCapLimit inner capture limit num
-     * @return Returns result 0 if success, error number else.
-     */
-    void SetInnerCapLimit([in] unsigned int innerCapLimit);
-    /**
-     * check inner capture limit
-     * @param AudioPlaybackCaptureConfig inner capture filter info
-     * @param innerCapId unique identifier of inner capture
-     * @return Returns result 0 if success, error number else.
-     */
-    void CheckCaptureLimit([in] AudioPlaybackCaptureConfig config, [out] int innerCapId);
-    /**
-     * release inner capture limit
-     * @param innerCapId unique identifier of inner capture
-     * @return Returns result 0 if success, error number else.
-     */
-    void ReleaseCaptureLimit([in] int innerCapId);
-
-    /**
-     * Load adapter of hal.
-     *
-     * @param devMgrType specify which manager to load adapter, include local, bt, remote.
-     * @param adapterName name of adapter to load.
-     *
-     * @return Returns result 0 if success, error number else.
-     */
-    void LoadHdiAdapter([in] unsigned int devMgrType, [in] String adapterName);
-
-    /**
-     * Unload adapter of hal.
-     *
-     * @param devMgrType specify which manager to unload adapter, include local, bt, remote.
-     * @param adapterName name of adapter to unload.
-     * @param force need to force unload adapter.
-     *
-     * @return none.
-     */
+    void SetInnerCapLimit([in] unsigned int innerCapLimit);void LoadHdiAdapter([in] unsigned int devMgrType, [in] String adapterName);
     void UnloadHdiAdapter([in] unsigned int devMgrType, [in] String adapterName, [in] boolean force);
-
-    /**
-     * Create render of hal.
-     *
-     * @param deviceClass specify render type.
-     * @param idInfo info of render id.
-     * @param attr attribute string of render.
-     *
-     * @return Returns render id if success, HDI_INVALID_ID else.
-     */
-    void CreateHdiSinkPort([in] String deviceClass, [in] String idInfo,
-        [in] IAudioSinkAttr attr, [out] unsigned int renderId);
-
-    /**
-     * Create render of hal.
-     *
-     * @param [HdiIdBase] idBase specify render type.
-     * @param [HdiIdType] idType specify sink type.
-     * @param info extra info of render.
-     * @param attr attribute string of render.
-     *
-     * @return Returns render id if success, HDI_INVALID_ID else.
-     */
-    void CreateSinkPort([in] unsigned int idBase, [in] unsigned int idType, [in] String idInfo,
-        [in] IAudioSinkAttr attr, [out] unsigned int renderId);
-
-    /**
-     * Create capture of hal.
-     *
-     * @param deviceClass specify capture type.
-     * @param idInfo info of capture id.
-     * @param attr attribute string of capture.
-     *
-     * @return Returns capture id if success, HDI_INVALID_ID else.
-     */
-    void CreateHdiSourcePort([in] String deviceClass, [in] String idInfo, [in] IAudioSourceAttr attr,
-        [out] unsigned int captureId);
-
-    /**
-     * Create capture of hal.
-     *
-     * @param [HdiIdBase] idBase specify capture type.
-     * @param [HdiIdType] idType specify sink type.
-     * @param info extra info of capture.
-     * @param attr attribute string of capture.
-     *
-     * @return Returns capture id if success, HDI_INVALID_ID else.
-     */
-    void CreateSourcePort([in] unsigned int idBase, [in] unsigned int idType, [in] String idInfo,
-        [in] IAudioSourceAttr attr, [out] unsigned int captureId);
-
-    /**
-     * Destroy render/capture of hal.
-     *
-     * @param id specify which render or capture to destroy.
-     *
-     * @return none.
-     */
+    void CheckCaptureLimit([in] AudioPlaybackCaptureConfig config, [out] int innerCapId);
+    void ReleaseCaptureLimit([in] int innerCapId);
+    void CreateHdiSinkPort([in] String deviceClass, [in] String idInfo, [in] IAudioSinkAttr attr, [out] unsigned int renderId);
+    void CreateSinkPort([in] unsigned int idBase, [in] unsigned int idType, [in] String idInfo, [in] IAudioSinkAttr attr, [out] unsigned int renderId);
+    void CreateHdiSourcePort([in] String deviceClass, [in] String idInfo, [in] IAudioSourceAttr attr, [out] unsigned int captureId);
+    void CreateSourcePort([in] unsigned int idBase, [in] unsigned int idType, [in] String idInfo, [in] IAudioSourceAttr attr, [out] unsigned int captureId);
     void DestroyHdiPort([in] unsigned int id);
-
     void SetDeviceConnectedFlag([in] boolean flag);
-
+    void SetDmDeviceType([in] unsigned short dmDeviceType);
+    void RegisterDataTransferMonitorParam([in] int callbackId, [in] DataTransferMonitorParam param);
+    void UnregisterDataTransferMonitorParam([in] int callbackId);
+    void RegisterDataTransferCallback([in] IRemoteObject object);
+    void NotifySettingsDataReady();
+    void IsAcousticEchoCancelerSupported([in] int sourceType, [out] boolean isSupported);
     void SetSessionMuteState([in] unsigned int sessionId, [in] boolean insert, [in] boolean muteFlag);
-
     void SetLatestMuteState([in] unsigned int sessionId, [in] boolean muteFlag);
-    /**
-     * Create AudioWorkgroup.
-     *
-     * @return Returns workgroup id for current process.
-     */
+    void ForceStopAudioStream([in] int audioType);
     void CreateAudioWorkgroup([in] int pid, [out] int workgroupId);
     void ReleaseAudioWorkgroup([in] int pid, [in] int workgroupId);
     void AddThreadToGroup([in] int pid, [in] int workgroupId, [in] int tokenId);
     void RemoveThreadFromGroup([in] int pid, [in] int workgroupId, [in] int tokenId);
     void StartGroup([in] int pid, [in] int workgroupId, [in] unsigned long startTime, [in] unsigned long deadlineTime);
     void StopGroup([in] int pid, [in] int workgroupId);
-    /**
-     * Register data transfer callback.
-     *
-     * @return result code.
-     */
-    void RegisterDataTransferCallback([in] IRemoteObject object);
-    void RegisterDataTransferMonitorParam([in] int callbackId, [in] DataTransferMonitorParam param);
-    void UnregisterDataTransferMonitorParam([in] int callbackId);
-
-    /**
-     * Set bluetooth hdi invalid state
-     *
-     * @return none.
-     */
     void SetBtHdiInvalidState();
-
     void SetKaraokeParameters([in] String parameters, [out] boolean ret);
+    void IsAudioLoopbackSupported([in] int mode ,[out] boolean ret);
+    // WARNING: above functions correspond with AudioServerInterfaceCode
 
-    void IsAudioLoopbackSupported([in] int mode /* AudioLoopbackMode */,
-        [out] boolean ret);
+    // unsupported for ipc client calling
+    void SetForegroundList([in] List<String> list);
 }
