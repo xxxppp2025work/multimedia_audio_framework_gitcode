@@ -32,7 +32,7 @@ namespace AudioStandard {
  *
  * @since 7
  */
-struct DeviceChangeAction : public Parcelable { // TODO  fixme; done;
+struct DeviceChangeAction : public Parcelable {
     DeviceChangeType type;
     DeviceFlag flag;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors;

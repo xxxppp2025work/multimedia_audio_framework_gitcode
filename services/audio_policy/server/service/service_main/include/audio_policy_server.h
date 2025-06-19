@@ -341,13 +341,14 @@ public:
 
     int32_t GetMaxStreamVolume(float &volume) override;
 
-    int32_t GetMaxRendererInstances() override;
+    int32_t GetMaxRendererInstances(int32_t &ret) override;
 
     void GetStreamVolumeInfoMap(StreamVolumeInfoMap& streamVolumeInfos);
 
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
 
-    int32_t GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc) override;
+    int32_t GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+        int32_t &ret) override;
 
     int32_t GetAudioCapturerMicrophoneDescriptors(int32_t sessionId,
         std::vector<sptr<MicrophoneDescriptor>> &micDescs) override;

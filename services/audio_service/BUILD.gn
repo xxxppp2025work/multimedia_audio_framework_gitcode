@@ -153,6 +153,7 @@ config("audio_client_public_config") {
     "../../interfaces/inner_api/native/audiomanager/include",
     "../../interfaces/inner_api/native/audiorenderer/include",
     "../../frameworks/native/audioqosmanager/include",
+    "${audio_framework_root}/services/audio_policy/server/include",
   ]
 
   cflags = [
@@ -220,10 +221,9 @@ ohos_shared_library("audio_client") {
     sources += [ "client/src/fast_audio_stream.cpp" ]
   }
 
-  public_configs = [ ":audio_client_public_config" ]
-  # TODO refactor
-  configs = [
-    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config"
+  public_configs = [ 
+    ":audio_client_public_config",
+    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
   ]
 
   deps = [

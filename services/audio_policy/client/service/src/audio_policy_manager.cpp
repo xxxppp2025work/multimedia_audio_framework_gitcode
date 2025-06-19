@@ -1571,7 +1571,9 @@ int32_t AudioPolicyManager::GetMaxRendererInstances()
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
-    return gsp->GetMaxRendererInstances();
+    int32_t ret = -1;
+    gsp->GetMaxRendererInstances(ret);
+    return ret;
 }
 
 bool AudioPolicyManager::IsVolumeUnadjustable()
@@ -1618,7 +1620,9 @@ int32_t AudioPolicyManager::GetHardwareOutputSamplingRate(const std::shared_ptr<
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    return gsp->GetHardwareOutputSamplingRate(desc);
+    int32_t ret = ERROR;
+    gsp->GetHardwareOutputSamplingRate(desc, ret);
+    return ret;
 }
 
 vector<sptr<MicrophoneDescriptor>> AudioPolicyManager::GetAudioCapturerMicrophoneDescriptors(int32_t sessionID)

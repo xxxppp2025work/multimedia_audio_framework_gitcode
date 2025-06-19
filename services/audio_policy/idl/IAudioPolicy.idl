@@ -91,8 +91,8 @@ interface IAudioPolicy {
     void GetSelectedDeviceInfo([in] int uid, [in] int pid, [in] int streamType, [out] String retStr);
     void SelectInputDevice([in] sptr<AudioCapturerFilter> audioCapturerFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
     void ReconfigureAudioChannel([in] unsigned int count, [in] int deviceType);
-    [ipccode 50] void GetPreferredOutputStreamType([in] AudioRendererInfo rendererInfo, [out] int32_t streamType);
-    void GetPreferredInputStreamType([in] AudioCapturerInfo capturerInfo, [out] int32_t streamType);
+    [ipccode 50] void GetPreferredOutputStreamType([in] AudioRendererInfo rendererInfo, [out] int streamType);
+    void GetPreferredInputStreamType([in] AudioCapturerInfo capturerInfo, [out] int streamType);
     void CreateRendererClient([in] sharedptr<AudioStreamDescriptor> streamDesc, [out] unsigned int flag, [out] unsigned int sessionId);
     void CreateCapturerClient([in] sharedptr<AudioStreamDescriptor> streamDesc, [out] unsigned int flag, [out] unsigned int sessionId);
     void RegisterTracker([in] int mode, [in] AudioStreamChangeInfo streamChangeInfo, [in] IRemoteObject object);
@@ -115,13 +115,13 @@ interface IAudioPolicy {
     void GetSystemSoundUri([in] String key, [out] String retUri);
     void GetMinStreamVolume([out] float retVolume);
     void GetMaxStreamVolume([out] float retVolume);
-    void GetMaxRendererInstances();
+    void GetMaxRendererInstances([out] int ret);
     void IsVolumeUnadjustable([out] boolean retIsUnadjustable);
     void AdjustVolumeByStep([in] int adjustType);
     void AdjustSystemVolumeByStep([in] int volumeType, [in] int adjustType);
     void GetSystemVolumeInDb([in] int volumeType, [in] int volumeLevel, [in] int deviceType, [out] float retVolume);
     void QueryEffectSceneMode([out] SupportedEffectConfig supportedEffectConfig);
-    void GetHardwareOutputSamplingRate([in] sharedptr<AudioDeviceDescriptor> desc);
+    void GetHardwareOutputSamplingRate([in] sharedptr<AudioDeviceDescriptor> desc, [out] int ret);
     void GetAudioCapturerMicrophoneDescriptors([in] int sessionId, [out] List<sptr<MicrophoneDescriptor>> retMicList);
     void GetAvailableMicrophones([out] List<sptr<MicrophoneDescriptor>> retMicList);
     void SetDeviceAbsVolumeSupported([in] String macAddress, [in] boolean support);

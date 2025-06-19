@@ -372,8 +372,8 @@ size_t AudioPolicyClientStubImpl::GetAudioSceneChangedCallbackSize() const
 
 int32_t AudioPolicyClientStubImpl::OnAudioSceneChange(int32_t audioScene)
 {
-    CHECK_AND_RETURN_RET_LOG(audioScene < AUDIO_SCENE_MAX && audioScene > AUDIO_SCENE_INVALID, \
-        "get invalid audioScene : %{public}d", ERR_INVALID_PARAM, audioScene);
+    CHECK_AND_RETURN_RET_LOG(audioScene < AUDIO_SCENE_MAX && audioScene > AUDIO_SCENE_INVALID,
+        ERR_INVALID_PARAM, "get invalid audioScene : %{public}d", audioScene);
 
     std::lock_guard<std::mutex> lockCbMap(audioSceneChangedMutex_);
     for (const auto &callback : audioSceneChangedCallbackList_) {

@@ -26,8 +26,6 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-// static const int32_t PREFERRED_DEVICE_VALID_SIZE = 128;  TODO check if needed
-
 AudioRoutingManagerListener::AudioRoutingManagerListener()
 {
 }

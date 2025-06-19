@@ -115,7 +115,7 @@ public:
  *
  * @since 13
  */
-struct MicrophoneBlockedInfo : public Parcelable { // TODO fixme
+struct MicrophoneBlockedInfo : public Parcelable {
     DeviceBlockStatus blockStatus;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
 
@@ -124,9 +124,8 @@ struct MicrophoneBlockedInfo : public Parcelable { // TODO fixme
         parcel.WriteInt32(static_cast<int32_t>(blockStatus));
         int32_t size = static_cast<int32_t>(devices.size());
         parcel.WriteInt32(size);
-        int32_t apiVersion = 0; //TODO from AudioPolicyClientProxy
         for (auto &dev : devices) {
-            dev->Marshalling(parcel, apiVersion);
+            dev->Marshalling(parcel);
         }
         return true;
     }
@@ -163,7 +162,7 @@ public:
     int32_t streamId = -1;
 
     bool Marshalling(Parcel &parcel) const override;
-    static sptr<AudioRendererFilter> Unmarshalling(Parcel &in);
+    static AudioRendererFilter* Unmarshalling(Parcel &parcel);
 };
 
 /**
