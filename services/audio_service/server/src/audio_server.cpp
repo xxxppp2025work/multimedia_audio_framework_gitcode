@@ -483,7 +483,7 @@ void DataTransferStateChangeCallbackInnerImpl::SetDataTransferMonitorParam(const
 }
 
 void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
-    int32_t &callbackId, const AudioRendererDataTransferStateChangeInfo &info)
+    const int32_t &callbackId, const AudioRendererDataTransferStateChangeInfo &info)
 {
     if (info.stateChangeType == DATA_TRANS_STOP) {
         ReportEvent(info);
@@ -491,7 +491,7 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
     if (info.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
         if (info.stateChangeType == DATA_TRANS_STOP) {
             std::shared_ptr<RendererInServer> renderer =
-                AudioService::GetInstance()->GetRendererBySessionId(info.sessionId);
+                AudioService::GetInstance()->GetRendererBySessionID(info.sessionId);
             CHECK_AND_RETURN_LOG(renderer != nullptr, "No render in server has sessionId");
             int32_t ret = renderer->ReleaseRenderer();
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "render release fail");
@@ -506,14 +506,14 @@ void DataTransferStateChangeCallbackInnerImpl::ReportEvent(
     std::string bundleName = AudioServer::GetBundleNameFromUid(info.clientUID);
     AUDIO_WARNING_LOG("report stream data trans stop for uid:%{public}d, bundleName:%{public}s",
         info.clientUID, bundleName.c_str());
-    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::shared_ptr<Media::MediaMonitor::EventBean>(
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::EventId::STREAM_FREEZEN,
         Media::MediaMonitor::EventType::FAULT_EVENT);
-    bean.Add("APP_NAME", bundleName);
-    bean.Add("TIME_INTERVAL", param_.timeInterval);
-    bean.Add("STATE_CHANGE_TYPE", info.stateChangeType);
-    bean.Add("STREAM_USAGE", info.streamUsage);
-    Media::MediaMonitor::MediaMonitorManager::GetInstance()->WriteLogMsg(bean);
+    bean->Add("APP_NAME", bundleName);
+    bean->Add("TIME_INTERVAL", param_.timeInterval);
+    bean->Add("STATE_CHANGE_TYPE", info.stateChangeType);
+    bean->Add("STREAM_USAGE", info.streamUsage);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 void AudioServer::InitMaxRendererStreamCntPerUid()
@@ -568,7 +568,7 @@ void AudioServer::OnStart()
     ParseAudioParameter();
     NotifyProcessStatus();
     DlopenUtils::DeInit();
-    RegisterDataTransferStateChangeCallback
+    RegisterDataTransferStateChangeCallback();
 }
 
 void AudioServer::ParseAudioParameter()
