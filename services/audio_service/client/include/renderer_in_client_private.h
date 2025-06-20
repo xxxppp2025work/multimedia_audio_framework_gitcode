@@ -347,7 +347,7 @@ private:
     std::mutex dataConnectionMutex_;
     std::condition_variable dataConnectionCV_;
 
-    Operation notifiedOperation_ = Operation::MAX_OPERATION_CODE;
+    Operation notifiedOperation_ = MAX_OPERATION_CODE;
     int64_t notifiedResult_ = 0;
 
     float lowPowerVolume_ = 1.0;

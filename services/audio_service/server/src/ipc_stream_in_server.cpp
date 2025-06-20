@@ -60,9 +60,9 @@ int32_t StreamListenerHolder::OnOperationHandled(Operation operation, int64_t re
 
 bool StreamListenerHolder::IsWakeUpLaterNeeded(Operation operation)
 {
-    return (operation == Operation::SET_OFFLOAD_ENABLE) ||
-        (operation == Operation::DATA_LINK_CONNECTING) ||
-        (operation == Operation::DATA_LINK_CONNECTED);
+    return (operation == SET_OFFLOAD_ENABLE) ||
+        (operation == DATA_LINK_CONNECTING) ||
+        (operation == DATA_LINK_CONNECTED);
 }
 
 sptr<IpcStreamInServer> IpcStreamInServer::Create(const AudioProcessConfig &config, int32_t &ret)

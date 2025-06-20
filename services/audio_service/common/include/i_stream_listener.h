@@ -16,10 +16,25 @@
 #ifndef I_STREAM_LISTENER_H
 #define I_STREAM_LISTENER_H
 
-#include "audio_service_types.h"
-
 namespace OHOS {
 namespace AudioStandard {
+enum Operation : int32_t {
+    START_STREAM = 0,
+    PAUSE_STREAM,
+    STOP_STREAM,
+    RELEASE_STREAM,
+    FLUSH_STREAM,
+    DRAIN_STREAM,
+    UPDATE_STREAM, // when server notify client index update
+    BUFFER_UNDERRUN,
+    BUFFER_OVERFLOW,
+    SET_OFFLOAD_ENABLE,
+    UNDERFLOW_COUNT_ADD, // notify client underflow count increment
+    DATA_LINK_CONNECTING,  // a2dp offload connecting
+    DATA_LINK_CONNECTED,
+    RESTORE_SESSION,
+    MAX_OPERATION_CODE // in plan add underrun overflow
+};
 class IStreamListener {
 public:
     virtual ~IStreamListener() = default;

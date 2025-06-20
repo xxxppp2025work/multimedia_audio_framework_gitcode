@@ -252,7 +252,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
     switch (operation) {
         case OPERATION_STARTED:
             HandleOperationStarted();
-            stateListener->OnOperationHandled(Operation::START_STREAM, 0);
+            stateListener->OnOperationHandled(START_STREAM, 0);
             break;
         case OPERATION_PAUSED:
             if (standByEnable_) {
@@ -262,17 +262,17 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
                 return;
             }
             status_ = I_STATUS_PAUSED;
-            stateListener->OnOperationHandled(Operation::PAUSE_STREAM, 0);
+            stateListener->OnOperationHandled(PAUSE_STREAM, 0);
             playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_PAUSE_OK);
             break;
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;
-            stateListener->OnOperationHandled(Operation::STOP_STREAM, 0);
+            stateListener->OnOperationHandled(STOP_STREAM, 0);
             HandleOperationStopped(RENDERER_STAGE_STOP_OK);
             break;
         case OPERATION_FLUSHED:
             HandleOperationFlushed();
-            stateListener->OnOperationHandled(Operation::FLUSH_STREAM, 0);
+            stateListener->OnOperationHandled(FLUSH_STREAM, 0);
             break;
         case OPERATION_DRAINED:
             // Client's StopAudioStream will call Drain first and then Stop. If server's drain times out,
@@ -295,7 +295,7 @@ void RendererInServer::OnStatusUpdateExt(IOperation operation, std::shared_ptr<I
 {
     if (status_ == I_STATUS_DRAINING) {
         status_ = I_STATUS_STARTED;
-        stateListener->OnOperationHandled(Operation::DRAIN_STREAM, 0);
+        stateListener->OnOperationHandled(DRAIN_STREAM, 0);
     }
     afterDrain = true;
 }
@@ -329,7 +329,7 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
     int32_t engineFlag = GetEngineFlag();
     switch (operation) {
         case OPERATION_RELEASED:
-            stateListener->OnOperationHandled(Operation::RELEASE_STREAM, 0);
+            stateListener->OnOperationHandled(RELEASE_STREAM, 0);
             status_ = I_STATUS_RELEASED;
             break;
         case OPERATION_UNDERRUN:
@@ -357,7 +357,7 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             if (engineFlag == 1) {
                 ReConfigDupStreamCallback();
             }
-            stateListener->OnOperationHandled(Operation::SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
+            stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
             break;
         default:
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
@@ -1781,11 +1781,11 @@ void RendererInServer::OnDataLinkConnectionUpdate(IOperation operation)
     switch (operation) {
         case OPERATION_DATA_LINK_CONNECTING:
             AUDIO_DEBUG_LOG("OPERATION_DATA_LINK_CONNECTING received");
-            stateListener->OnOperationHandled(Operation::DATA_LINK_CONNECTING, 0);
+            stateListener->OnOperationHandled(DATA_LINK_CONNECTING, 0);
             break;
         case OPERATION_DATA_LINK_CONNECTED:
             AUDIO_DEBUG_LOG("OPERATION_DATA_LINK_CONNECTED received");
-            stateListener->OnOperationHandled(Operation::DATA_LINK_CONNECTED, 0);
+            stateListener->OnOperationHandled(DATA_LINK_CONNECTED, 0);
             break;
         default:
             return;

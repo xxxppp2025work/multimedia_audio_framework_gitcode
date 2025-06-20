@@ -29,8 +29,8 @@ public:
     virtual ~IpcStreamListenerImpl() = default;
 
     // IpcStreamListenerStub
-    int32_t OnOperationHandled(Operation operation, int64_t result) override;
-    int32_t OnOperationHandledLazy(Operation operation, int64_t result) override;
+    int32_t OnOperationHandled(int32_t operation, int64_t result) override;
+    int32_t OnOperationHandledLazy(int32_t operation, int64_t result) override;
 private:
     std::weak_ptr<IStreamListener> innerListener_;
 };

@@ -860,7 +860,7 @@ bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
     }
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return notifiedOperation_ == Operation::DRAIN_STREAM; // will be false when got notified.
+        return notifiedOperation_ == DRAIN_STREAM; // will be false when got notified.
     });
 
     // clear cbBufferQueue
@@ -871,13 +871,13 @@ bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
         };
     }
 
-    if (notifiedOperation_ != Operation::DRAIN_STREAM || notifiedResult_ != SUCCESS) {
+    if (notifiedOperation_ != DRAIN_STREAM || notifiedResult_ != SUCCESS) {
         AUDIO_ERR_LOG("Drain failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
-        notifiedOperation_ = Operation::MAX_OPERATION_CODE;
+        notifiedOperation_ = MAX_OPERATION_CODE;
         return false;
     }
-    notifiedOperation_ = Operation::MAX_OPERATION_CODE;
+    notifiedOperation_ = MAX_OPERATION_CODE;
     waitLock.unlock();
     AUDIO_INFO_LOG("Drain stream SUCCESS, sessionId: %{public}d", sessionId_);
     return true;

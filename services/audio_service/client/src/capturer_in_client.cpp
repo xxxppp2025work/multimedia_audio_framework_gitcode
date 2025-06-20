@@ -319,7 +319,7 @@ private:
     std::mutex callServerMutex_;
     std::condition_variable callServerCV_;
 
-    Operation notifiedOperation_ = Operation::MAX_OPERATION_CODE;
+    Operation notifiedOperation_ = MAX_OPERATION_CODE;
     int64_t notifiedResult_ = 0;
 
     // read data
@@ -407,21 +407,21 @@ CapturerInClientInner::~CapturerInClientInner()
 int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
     // read/write operation may print many log, use debug.
-    if (operation == Operation::UPDATE_STREAM) {
+    if (operation == UPDATE_STREAM) {
         AUDIO_DEBUG_LOG("OnOperationHandled() UPDATE_STREAM result:%{public}" PRId64".", result);
         // notify write if blocked
         readDataCV_.notify_all();
         return SUCCESS;
     }
 
-    if (operation == Operation::BUFFER_OVERFLOW) {
+    if (operation == BUFFER_OVERFLOW) {
         AUDIO_WARNING_LOG("recv overflow %{public}d", overflowCount_);
         // in plan next: do more to reduce overflow
         readDataCV_.notify_all();
         return SUCCESS;
     }
 
-    if (operation == Operation::RESTORE_SESSION) {
+    if (operation == RESTORE_SESSION) {
         if (audioStreamTracker_ && audioStreamTracker_.get()) {
             audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, state_, clientPid_, capturerInfo_);
         }
@@ -1425,10 +1425,10 @@ bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType, AudioSt
 
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return notifiedOperation_ == Operation::START_STREAM; // will be false when got notified.
+        return notifiedOperation_ == START_STREAM; // will be false when got notified.
     });
 
-    if (notifiedOperation_ != Operation::START_STREAM || notifiedResult_ != SUCCESS) {
+    if (notifiedOperation_ != START_STREAM || notifiedResult_ != SUCCESS) {
         AUDIO_ERR_LOG("Start failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
         return false;
@@ -1471,10 +1471,10 @@ bool CapturerInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     }
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return notifiedOperation_ == Operation::PAUSE_STREAM; // will be false when got notified.
+        return notifiedOperation_ == PAUSE_STREAM; // will be false when got notified.
     });
 
-    if (notifiedOperation_ != Operation::PAUSE_STREAM || notifiedResult_ != SUCCESS) {
+    if (notifiedOperation_ != PAUSE_STREAM || notifiedResult_ != SUCCESS) {
         AUDIO_ERR_LOG("Pause failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
         return false;
@@ -1524,10 +1524,10 @@ bool CapturerInClientInner::StopAudioStream()
 
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return notifiedOperation_ == Operation::STOP_STREAM; // will be false when got notified.
+        return notifiedOperation_ == STOP_STREAM; // will be false when got notified.
     });
 
-    if (notifiedOperation_ != Operation::STOP_STREAM || notifiedResult_ != SUCCESS) {
+    if (notifiedOperation_ != STOP_STREAM || notifiedResult_ != SUCCESS) {
         AUDIO_ERR_LOG("Stop failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
         state_ = INVALID;
@@ -1620,16 +1620,16 @@ bool CapturerInClientInner::FlushAudioStream()
     }
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return notifiedOperation_ == Operation::FLUSH_STREAM; // will be false when got notified.
+        return notifiedOperation_ == FLUSH_STREAM; // will be false when got notified.
     });
 
-    if (notifiedOperation_ != Operation::FLUSH_STREAM || notifiedResult_ != SUCCESS) {
+    if (notifiedOperation_ != FLUSH_STREAM || notifiedResult_ != SUCCESS) {
         AUDIO_ERR_LOG("Flush failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
-        notifiedOperation_ = Operation::MAX_OPERATION_CODE;
+        notifiedOperation_ = MAX_OPERATION_CODE;
         return false;
     }
-    notifiedOperation_ = Operation::MAX_OPERATION_CODE;
+    notifiedOperation_ = MAX_OPERATION_CODE;
     waitLock.unlock();
     AUDIO_INFO_LOG("Flush stream SUCCESS, sessionId: %{public}d", sessionId_);
     return true;

@@ -181,27 +181,27 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
         case OPERATION_UNDERFLOW:
             underflowCount += 1;
             AUDIO_INFO_LOG("Underflow!! underflow count %{public}d", underflowCount);
-            stateListener->OnOperationHandled(Operation::BUFFER_OVERFLOW, underflowCount);
+            stateListener->OnOperationHandled(BUFFER_OVERFLOW, underflowCount);
             break;
         case OPERATION_STARTED:
             status_ = I_STATUS_STARTED;
             lastStartTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
-            stateListener->OnOperationHandled(Operation::START_STREAM, 0);
+            stateListener->OnOperationHandled(START_STREAM, 0);
             break;
         case OPERATION_PAUSED:
             status_ = I_STATUS_PAUSED;
-            stateListener->OnOperationHandled(Operation::PAUSE_STREAM, 0);
+            stateListener->OnOperationHandled(PAUSE_STREAM, 0);
             HandleOperationStopped(CAPTURER_STAGE_PAUSE_OK);
             break;
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;
-            stateListener->OnOperationHandled(Operation::STOP_STREAM, 0);
+            stateListener->OnOperationHandled(STOP_STREAM, 0);
             HandleOperationStopped(CAPTURER_STAGE_STOP_OK);
             break;
         case OPERATION_FLUSHED:
             HandleOperationFlushed();
-            stateListener->OnOperationHandled(Operation::FLUSH_STREAM, 0);
+            stateListener->OnOperationHandled(FLUSH_STREAM, 0);
             break;
         default:
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
@@ -251,7 +251,7 @@ bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFr
             BufferDesc dstBuffer = stream_->DequeueBuffer(length);
             stream_->EnqueueBuffer(dstBuffer);
         }
-        stateListener->OnOperationHandled(Operation::UPDATE_STREAM, currentWriteFrame);
+        stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
         return true;
     }
     return false;
@@ -356,7 +356,7 @@ void CapturerInServer::ReadData(size_t length)
     UpdateBufferTimeStamp(dstBuffer.bufLength);
 
     stream_->EnqueueBuffer(srcBuffer);
-    stateListener->OnOperationHandled(Operation::UPDATE_STREAM, currentWriteFrame);
+    stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
 }
 
 int32_t CapturerInServer::OnReadData(size_t length)
@@ -416,7 +416,7 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
 
     UpdateBufferTimeStamp(dstBuffer.bufLength);
 
-    stateListener->OnOperationHandled(Operation::UPDATE_STREAM, currentWriteFrame);
+    stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
     return SUCCESS;
 }
 
