@@ -811,6 +811,10 @@ void AudioDeviceManager::GetAvailableDevicesWithUsage(const AudioDeviceUsage usa
     const list<DevicePrivacyInfo> &deviceInfos, const std::shared_ptr<AudioDeviceDescriptor> &dev,
     vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
+    if (dev == nullptr) {
+        AUDIO_ERR_LOG("The dev parameter is invalid.");
+        return;
+    }
     for (auto &deviceInfo : deviceInfos) {
         if (dev->deviceType_ != deviceInfo.deviceType ||
             IsExistedDevice(dev, audioDeviceDescriptors)) {
@@ -967,6 +971,10 @@ bool AudioDeviceManager::GetScoState()
 void AudioDeviceManager::UpdateDevicesListInfo(const std::shared_ptr<AudioDeviceDescriptor> &d,
     const DeviceInfoUpdateCommand updateCommand)
 {
+    if (d == nullptr) {
+        AUDIO_ERR_LOG("The fd parameter is invalid.");
+        return;
+    }
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(d);
     bool ret = false;
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);

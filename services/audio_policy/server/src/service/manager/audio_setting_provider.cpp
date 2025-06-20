@@ -177,6 +177,10 @@ void AudioSettingProvider::ExecRegisterCb(const sptr<AudioSettingObserver> &obse
 ErrCode AudioSettingProvider::RegisterObserver(const sptr<AudioSettingObserver> &observer, std::string tableType)
 {
     std::string callingIdentity = IPCSkeleton::ResetCallingIdentity();
+    if (observer == nullptr) {
+        AUDIO_ERR_LOG("The observer parameter is invalid.");
+        return ERR_NO_INIT;
+    }
     auto uri = AssembleUri(observer->GetKey(), tableType);
     if (!isDataShareReady_) {
         AUDIO_WARNING_LOG("DataShareHelper is not ready");

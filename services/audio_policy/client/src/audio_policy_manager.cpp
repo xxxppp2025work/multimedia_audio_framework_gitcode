@@ -120,17 +120,19 @@ int32_t AudioPolicyManager::RegisterPolicyCallbackClientFunc(const sptr<IAudioPo
     if (audioPolicyClientStubCB_ == nullptr) {
         audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
     }
-    sptr<IRemoteObject> object = audioPolicyClientStubCB_->AsObject();
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("audioPolicyClientStubCB_->AsObject is nullptr");
+    int32_t ret = 0;
+    if (audioPolicyClientStubCB_ != nullptr) {
+        sptr<IRemoteObject> object = audioPolicyClientStubCB_->AsObject();
+        if (object == nullptr) {
+            AUDIO_ERR_LOG("audioPolicyClientStubCB_->AsObject is nullptr");
+            lock.unlock();
+            return ERROR;
+        }
         lock.unlock();
-        return ERROR;
-    }
-    lock.unlock();
-
-    int32_t ret = gsp->RegisterPolicyCallbackClient(object);
-    if (ret == SUCCESS) {
-        isAudioPolicyClientRegisted_ = true;
+        ret= gsp->RegisterPolicyCallbackClient(object);
+        if (ret == SUCCESS) {
+            isAudioPolicyClientRegisted_ = true;
+        }
     }
     return ret;
 }
