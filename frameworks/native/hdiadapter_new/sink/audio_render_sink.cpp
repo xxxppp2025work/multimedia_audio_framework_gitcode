@@ -477,6 +477,7 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<Device
             (currentAudioScene_ == AUDIO_SCENE_RINGING || currentAudioScene_ == AUDIO_SCENE_VOICE_RINGING)) {
             isRingingToDefaultScene = true;
         }
+        AUDIO_INFO_LOG("Render scoExcludeFlag = %{public}d", scoExcludeFlag);
         currentAudioScene_ = audioScene;
     }
     if (isRingingToDefaultScene) {

@@ -1112,11 +1112,12 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
     if (source == nullptr || !source->IsInited()) {
         AUDIO_WARNING_LOG("Capturer is not initialized.");
     } else {
-        source->SetAudioScene(audioScene, activeInputDevice);
+        source->SetAudioScene(audioScene, activeInputDevice, scoExcludeFlag);
     }
     std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
     if (fastSource != nullptr && fastSource->IsInited()) {
-        fastSource->SetAudioScene(audioScene, activeInputDevice);
+        AUDIO_INFO_LOG("Source setaudioscene scoExcludeFlag = %{public}d", scoExcludeFlag);
+        fastSource->SetAudioScene(audioScene, activeInputDevice, scoExcludeFlag);
     }
     if (sink == nullptr || !sink->IsInited()) {
         AUDIO_WARNING_LOG("Renderer is not initialized.");
@@ -1124,6 +1125,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
         if (activeOutputDevice == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
             activeOutputDevices[0] = DEVICE_TYPE_NONE;
         }
+        AUDIO_INFO_LOG("Render setaudioscene scoExcludeFlag = %{public}d", scoExcludeFlag);
         sink->SetAudioScene(audioScene, activeOutputDevices, scoExcludeFlag);
     }
 
