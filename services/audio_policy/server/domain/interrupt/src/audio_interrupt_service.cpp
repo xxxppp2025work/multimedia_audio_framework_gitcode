@@ -1489,7 +1489,6 @@ std::string AudioInterruptService::GetRealBundleName(uint32_t uid)
 void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
     const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
 {
-    bool ret;
     int32_t uid = incomingInterrupt.uid;
     AudioFocusType incomingAudioFocusType = incomingInterrupt.audioFocusType;
     AudioFocusType existAudioFocusType = currentInterrupt.audioFocusType;
@@ -1497,12 +1496,15 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     CHECK_AND_RETURN_LOG(!bundleName.empty(), "bundleName is empty");
     AudioStreamType existStreamType = existAudioFocusType.streamType;
     AudioStreamType incomingStreamType = incomingAudioFocusType.streamType;
-    if (IsMediaStream(existStreamType) && IsMediaStream(incomingStreamType) &&
-        queryBundleNameListCallback_ != nullptr &&
-        queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, ret) &&
-        focusEntry.hintType == INTERRUPT_HINT_STOP) {
-        focusEntry.hintType = INTERRUPT_HINT_PAUSE;
-        AUDIO_INFO_LOG("%{public}s update audio focus strategy", bundleName.c_str());
+    if (IsMediaStream(existStreamType) && IsMediaStream(incomingStreamType)) {
+        bool isBundleNameInList  = false;
+        if (queryBundleNameListCallback_) {
+            queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, isBundleNameInList);
+        }
+        if (isBundleNameInList && focusEntry.hintType == INTERRUPT_HINT_STOP) {
+            focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+            AUDIO_INFO_LOG("%{public}s update audio focus strategy", bundleName.c_str());
+        }
     }
 
     UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);

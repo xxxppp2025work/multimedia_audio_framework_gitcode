@@ -299,7 +299,7 @@ void AudioPolicyServer::OnStop()
     return;
 }
 
-void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
 {
     AUDIO_INFO_LOG("SA Id is :%{public}d", systemAbilityId);
     int64_t stamp = ClockTime::GetCurNano();
@@ -358,7 +358,7 @@ void AudioPolicyServer::RegisterDefaultVolumeTypeListener()
     interruptService_->RegisterDefaultVolumeTypeListener();
 }
 
-void AudioPolicyServer::OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string& deviceId)
+void AudioPolicyServer::OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string &deviceId)
 {
     switch (systemAbilityId) {
         case APP_MGR_SERVICE_ID:
@@ -379,7 +379,7 @@ void AudioPolicyServer::HandleKvDataShareEvent()
     }
 }
 
-void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
 {
     AUDIO_DEBUG_LOG("AudioPolicyServer::OnRemoveSystemAbility systemAbilityId:%{public}d removed", systemAbilityId);
 }
@@ -1240,7 +1240,7 @@ void AudioPolicyServer::UpdateSystemMuteStateAccordingMusicState(AudioStreamType
     }
 }
 
-void AudioPolicyServer::SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi)
+void AudioPolicyServer::SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool &isUpdateUi)
 {
     VolumeEvent volumeEvent;
     volumeEvent.volumeType = streamType;
@@ -1390,7 +1390,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelWithDeviceInternal(AudioStreamTyp
     return SetSingleStreamVolumeWithDevice(streamType, volumeLevel, isUpdateUi, deviceType);
 }
 
-void AudioPolicyServer::SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi)
+void AudioPolicyServer::SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool &isUpdateUi)
 {
     VolumeEvent volumeEvent;
     volumeEvent.volumeType = streamType;
@@ -1405,7 +1405,7 @@ void AudioPolicyServer::SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType st
 }
 
 void AudioPolicyServer::UpdateMuteStateAccordingToVolLevel(AudioStreamType streamType, int32_t volumeLevel,
-    bool mute, const bool& isUpdateUi)
+    bool mute, const bool &isUpdateUi)
 {
     bool muteStatus = mute;
     if (volumeLevel == 0 && !mute) {
@@ -2474,7 +2474,7 @@ int32_t AudioPolicyServer::ReconfigureAudioChannel(uint32_t count, int32_t devic
 #endif
 }
 
-void AudioPolicyServer::GetStreamVolumeInfoMap(StreamVolumeInfoMap& streamVolumeInfos)
+void AudioPolicyServer::GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos)
 {
     audioPolicyManager_.GetStreamVolumeInfoMap(streamVolumeInfos);
 }
@@ -2942,7 +2942,7 @@ AudioPolicyServer::RemoteParameterCallback::RemoteParameterCallback(sptr<AudioPo
 }
 
 void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const std::string networkId,
-    const AudioParamKey key, const std::string& condition, const std::string& value)
+    const AudioParamKey key, const std::string &condition, const std::string &value)
 {
     AUDIO_INFO_LOG("key:%{public}d, condition:%{public}s, value:%{public}s",
         key, condition.c_str(), value.c_str());
@@ -2964,7 +2964,7 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const st
 }
 
 void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::string networkId,
-    const std::string& condition)
+    const std::string &condition)
 {
     VolumeEvent volumeEvent;
     volumeEvent.networkId = networkId;
@@ -2982,7 +2982,7 @@ void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::strin
 }
 
 void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::string networkId,
-    const std::string& condition)
+    const std::string &condition)
 {
     AUDIO_INFO_LOG("InterruptOnChange : networkId: %{public}s, condition: %{public}s.", networkId.c_str(),
         condition.c_str());
@@ -3017,7 +3017,7 @@ void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::st
 }
 
 void AudioPolicyServer::RemoteParameterCallback::StateOnChange(const std::string networkId,
-    const std::string& condition, const std::string& value)
+    const std::string &condition, const std::string &value)
 {
     char eventDes[EVENT_DES_SIZE];
     char contentDes[ADAPTER_STATE_CONTENT_DES_SIZE];
@@ -3046,7 +3046,7 @@ void AudioPolicyServer::RemoteParameterCallback::StateOnChange(const std::string
 }
 
 void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallback(
-    Security::AccessToken::PermStateChangeInfo& result)
+    Security::AccessToken::PermStateChangeInfo &result)
 {
     ready_ = true;
     Security::AccessToken::HapTokenInfo hapTokenInfo;
@@ -3512,7 +3512,7 @@ int32_t AudioPolicyServer::IsSpatializationEnabled(bool &ret)
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::IsSpatializationEnabled(const std::string &address, bool& ret)
+int32_t AudioPolicyServer::IsSpatializationEnabled(const std::string &address, bool &ret)
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     if (!hasSystemPermission) {
@@ -3522,7 +3522,7 @@ int32_t AudioPolicyServer::IsSpatializationEnabled(const std::string &address, b
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::IsSpatializationEnabledForCurrentDevice(bool& ret)
+int32_t AudioPolicyServer::IsSpatializationEnabledForCurrentDevice(bool &ret)
 {
     ret = audioSpatializationService_.IsSpatializationEnabledForCurrentDevice();
     return SUCCESS;
@@ -3555,7 +3555,7 @@ int32_t AudioPolicyServer::SetSpatializationEnabled(const std::shared_ptr<AudioD
     return audioSpatializationService_.SetSpatializationEnabled(selectedAudioDevice, enable);
 }
 
-int32_t AudioPolicyServer::IsHeadTrackingEnabled(bool& ret)
+int32_t AudioPolicyServer::IsHeadTrackingEnabled(bool &ret)
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     if (!hasSystemPermission) {
@@ -3565,7 +3565,7 @@ int32_t AudioPolicyServer::IsHeadTrackingEnabled(bool& ret)
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::IsHeadTrackingEnabled(const std::string &address, bool& ret)
+int32_t AudioPolicyServer::IsHeadTrackingEnabled(const std::string &address, bool &ret)
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     if (!hasSystemPermission) {
@@ -3609,7 +3609,7 @@ int32_t AudioPolicyServer::GetSpatializationState(int32_t streamUsage,
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::IsSpatializationSupported(bool& ret)
+int32_t AudioPolicyServer::IsSpatializationSupported(bool &ret)
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     if (!hasSystemPermission) {
@@ -3619,7 +3619,7 @@ int32_t AudioPolicyServer::IsSpatializationSupported(bool& ret)
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::IsSpatializationSupportedForDevice(const std::string &address, bool& ret)
+int32_t AudioPolicyServer::IsSpatializationSupportedForDevice(const std::string &address, bool &ret)
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     if (!hasSystemPermission) {
@@ -3629,7 +3629,7 @@ int32_t AudioPolicyServer::IsSpatializationSupportedForDevice(const std::string 
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::IsHeadTrackingSupported(bool& ret)
+int32_t AudioPolicyServer::IsHeadTrackingSupported(bool &ret)
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     if (!hasSystemPermission) {
@@ -3639,7 +3639,7 @@ int32_t AudioPolicyServer::IsHeadTrackingSupported(bool& ret)
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::IsHeadTrackingSupportedForDevice(const std::string &address, bool& ret)
+int32_t AudioPolicyServer::IsHeadTrackingSupportedForDevice(const std::string &address, bool &ret)
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     if (!hasSystemPermission) {
@@ -3740,7 +3740,7 @@ int32_t AudioPolicyServer::RegisterAudioZoneClient(const sptr<IRemoteObject> &ob
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::CreateAudioZone(const std::string &name, const AudioZoneContext &context, int32_t& zoneId)
+int32_t AudioPolicyServer::CreateAudioZone(const std::string &name, const AudioZoneContext &context, int32_t &zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(!name.empty(), ERR_INVALID_PARAM, "audio zone name is empty");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
@@ -3775,7 +3775,7 @@ int32_t AudioPolicyServer::BindDeviceToAudioZone(int32_t zoneId,
 {
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
     size_t size = devices.size();
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size < MAX_SIZE, ERR_INVALID_PARAM, "invalid device size: %{public}d", size);
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size < MAX_SIZE, ERR_INVALID_PARAM, "invalid device size: %{public}zu", size);
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     return AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId, devices);
 }
@@ -3785,7 +3785,7 @@ int32_t AudioPolicyServer::UnBindDeviceToAudioZone(int32_t zoneId,
 {
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
     size_t size = devices.size();
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size < MAX_SIZE, ERR_INVALID_PARAM, "invalid device size: %{public}d", size);
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size < MAX_SIZE, ERR_INVALID_PARAM, "invalid device size: %{public}zu", size);
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     return AudioZoneService::GetInstance().UnBindDeviceToAudioZone(zoneId, devices);
 }
@@ -3857,7 +3857,7 @@ int32_t AudioPolicyServer::InjectInterruptToAudioZone(int32_t zoneId,
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
     size_t size = interruptsIn.size();
     CHECK_AND_RETURN_RET_LOG(size > 0 && size < MAX_SIZE, ERR_INVALID_PARAM, 
-        "invalid interrupt size: %{public}d", size);
+        "invalid interrupt size: %{public}zu", size);
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     auto interrupts = FromIpcInterrupts(interruptsIn);
     return AudioZoneService::GetInstance().InjectInterruptToAudioZone(zoneId, interrupts);
@@ -3869,7 +3869,7 @@ int32_t AudioPolicyServer::InjectInterruptToAudioZone(int32_t zoneId, const std:
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
     size_t size = interruptsIn.size();
     CHECK_AND_RETURN_RET_LOG(size > 0 && size < MAX_SIZE, ERR_INVALID_PARAM, 
-        "invalid interrupt size: %{public}d", size);
+        "invalid interrupt size: %{public}zu", size);
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     auto interrupts = FromIpcInterrupts(interruptsIn);
     return AudioZoneService::GetInstance().InjectInterruptToAudioZone(zoneId, deviceTag, interrupts);
@@ -3915,7 +3915,7 @@ int32_t AudioPolicyServer::GetActiveBluetoothDevice(std::shared_ptr<AudioDeviceD
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::GetConverterConfig(ConverterConfig& cfg)
+int32_t AudioPolicyServer::GetConverterConfig(ConverterConfig &cfg)
 {
     cfg = AudioConverterParser::GetInstance().LoadConfig();
     return SUCCESS;
@@ -3967,7 +3967,7 @@ int32_t AudioPolicyServer::GetApiTargetVersion()
     return apiTargetversion;
 }
 
-int32_t AudioPolicyServer::IsHighResolutionExist(bool& ret)
+int32_t AudioPolicyServer::IsHighResolutionExist(bool &ret)
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     if (!hasSystemPermission) {
