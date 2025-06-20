@@ -124,6 +124,7 @@ public:
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
     int32_t StopSession();
     void dualToneStreamInStart();
+    int32_t ReleaseRenderer();
 
 public:
     const AudioProcessConfig processConfig_;

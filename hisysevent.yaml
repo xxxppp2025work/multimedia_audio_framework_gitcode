@@ -200,6 +200,8 @@ STREAM_FREEZEN:
   __BASE: {type: FAULT, level: CRITICAL, desc: audio stream freezen event}
   APP_NAME: {type: STRING, desc: application name}
   TIME_INTERVAL: {type: INT64, desc: check time interval}
+  STATE_CHANGE_TYPE: {type: INT32, desc: stream state change type}
+  STREAM_USAGE: {type: INT32, desc: stream type}
 
 EXCLUDE_OUTPUT_DEVICE:
   __BASE: {type: BEHAVIOR, level: MINOR, desc: Exclude/Unexclude an audio output device}

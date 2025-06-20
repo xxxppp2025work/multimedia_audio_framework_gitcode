@@ -1205,6 +1205,11 @@ int32_t RendererInServer::StopInner()
     return SUCCESS;
 }
 
+int32_t RendererInServer::ReleaseRenderer()
+{
+    return Release();
+}
+
 int32_t RendererInServer::Release()
 {
     AUDIO_INFO_LOG("Start release");

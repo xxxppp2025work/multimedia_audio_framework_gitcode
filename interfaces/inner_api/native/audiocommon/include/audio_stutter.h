@@ -74,7 +74,7 @@ struct AudioRendererDataTransferStateChangeInfo {
 struct DataTransferMonitorParam {
     int32_t clientUID;
     int32_t badDataTransferTypeBitMap;
-    int32_t timeInterval;
+    int64_t timeInterval;
     int32_t badFramesRatio;
 
     DataTransferMonitorParam() = default;

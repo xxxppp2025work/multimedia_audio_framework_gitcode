@@ -91,6 +91,7 @@ public:
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
         DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag = false) override;
     static void *paDaemonThread(void *arg);
+    static const std::string GetBundleNameFromUid(int32_t uid);
     int32_t SetExtraParameters(const std::string& key,
         const std::vector<std::pair<std::string, std::string>>& kvpairs) override;
     void SetAudioParameter(const std::string& key, const std::string& value) override;
@@ -295,6 +296,7 @@ private:
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
     void RegisterAudioRendererSinkCallback();
+    void RegisterDataTransferStateChangeCallback();
 
     int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
@@ -310,7 +312,6 @@ private:
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);
     int32_t SetSystemVolumeToEffect(const AudioStreamType streamType, float volume);
-    const std::string GetBundleNameFromUid(int32_t uid);
     bool IsFastBlocked(int32_t uid, PlayerType playerType);
     int32_t SetVolumeInfoForEnhanceChain(const AudioStreamType &streamType);
     int32_t SetMicrophoneMuteForEnhanceChain(const bool &isMute);
@@ -388,6 +389,18 @@ private:
 
     std::mutex audioDataTransferMutex_;
     std::map<int32_t, std::shared_ptr<DataTransferStateChangeCallbackInner>> audioDataTransferCbMap_;
+};
+
+class DataTransferStateChangeCallbackInnerImpl : public DataTransferStateChangeCallbackInner {
+public:
+    DataTransferStateChangeCallbackInnerImpl() = default;
+    virtual ~DataTransferStateChangeCallbackInnerImpl() = default;
+    void OnDataTransferStateChange(const int32_t &callbackId,
+        const AudioRendererDataTransferStateChangeInfo &info);
+    void SetDataTransferMonitorParam(const DataTransferMonitorParam &param);
+private:
+    void ReportEvent(const AudioRendererDataTransferStateChangeInfo &info);
+    DataTransferMonitorParam param_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -87,6 +87,7 @@ const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
 const char* MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
 const char* CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
 const char* CAPTURE_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
+constexpr int32_t CHECK_ALL_RENDER_UID = -1;
 static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
     STREAM_USAGE_SYSTEM,
     STREAM_USAGE_DTMF,
@@ -450,6 +451,71 @@ void AudioServer::OnDataTransferStateChange(const int32_t &pid, const int32_t &c
     callback->OnDataTransferStateChange(callbackId, info);
 }
 
+void AudioServer::RegisterDataTransferStateChangeCallback()
+{
+    DataTransferMonitorParam param;
+    param.clientUID = CHECK_ALL_RENDER_UID;
+    param.badDataTransferTypeBitMap = 0b10; //bit0:NO_DATA_TRANS, bit1:SLIENCE_DATA_TRANS
+    param.timeInterval = 10000000000; // 10s
+    param.badFramesRatio = 100;
+
+    std::lock_guard<std::mutex> lock(audioDataTransferMutex_);
+
+    std::shared_ptr<DataTransferStateChangeCallbackInnerImpl> callback =
+        std::make_shared<DataTransferStateChangeCallbackInnerImpl>();
+    CHECK_AND_RETURN_LOG(callback != nullptr, "AudioServer: failed to  create cb obj");
+
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    callback->SetDataTransferMonitorParam(param);
+    audioDataTransferCbMap_[pid] = callback;
+    int32_t ret = AudioStreamMonitor::GetInstance().RegisterAudioRendererDataTransferStateListener(
+        param, pid, -1);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Register fail");
+    AUDIO_INFO_LOG("Pid: %{public}d RegisterDataTransferStateChangeCallback done", pid);
+}
+
+void DataTransferStateChangeCallbackInnerImpl::SetDataTransferMonitorParam(const DataTransferMonitorParam &param)
+{
+    param_.clientUID = param.clientUID;
+    param_.badDataTransferTypeBitMap = param.badDataTransferTypeBitMap;
+    param_.timeInterval = param.timeInterval;
+    param_.badFramesRatio = param.badFramesRatio;
+}
+
+void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
+    const int32_t &callbackId, const AudioRendererDataTransferStateChangeInfo &info)
+{
+    if (info.stateChangeType == DATA_TRANS_STOP) {
+        ReportEvent(info);
+    }
+    if (info.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
+        if (info.stateChangeType == DATA_TRANS_STOP) {
+            std::shared_ptr<RendererInServer> renderer =
+                AudioService::GetInstance()->GetRendererBySessionID(info.sessionId);
+            CHECK_AND_RETURN_LOG(renderer != nullptr, "No render in server has sessionId");
+            int32_t ret = renderer->ReleaseRenderer();
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "render release fail");
+            AUDIO_INFO_LOG("release renderer");
+        }
+    }
+}
+
+void DataTransferStateChangeCallbackInnerImpl::ReportEvent(
+    const AudioRendererDataTransferStateChangeInfo &info)
+{
+    std::string bundleName = AudioServer::GetBundleNameFromUid(info.clientUID);
+    AUDIO_WARNING_LOG("report stream data trans stop for uid:%{public}d, bundleName:%{public}s",
+        info.clientUID, bundleName.c_str());
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::EventId::STREAM_FREEZEN,
+        Media::MediaMonitor::EventType::FAULT_EVENT);
+    bean->Add("APP_NAME", bundleName);
+    bean->Add("TIME_INTERVAL", param_.timeInterval);
+    bean->Add("STATE_CHANGE_TYPE", info.stateChangeType);
+    bean->Add("STREAM_USAGE", info.streamUsage);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 void AudioServer::InitMaxRendererStreamCntPerUid()
 {
     bool result = GetSysPara("const.multimedia.audio.stream_cnt_uid", maxRendererStreamCntPerUid_);
@@ -502,6 +568,7 @@ void AudioServer::OnStart()
     ParseAudioParameter();
     NotifyProcessStatus();
     DlopenUtils::DeInit();
+    RegisterDataTransferStateChangeCallback();
 }
 
 void AudioServer::ParseAudioParameter()
