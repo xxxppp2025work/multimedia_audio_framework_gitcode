@@ -224,6 +224,7 @@ group("audio_fuzz_test") {
     "fuzztest/volumedatamaintainer_fuzzer:fuzztest",
     "fuzztest/captureclockmanager_fuzzer:fuzztest",
     "fuzztest/streamfilterrouter_fuzzer:fuzztest",
+    "fuzztest/audiopnpserver_fuzzer:fuzztest",
   ]
 }
 
