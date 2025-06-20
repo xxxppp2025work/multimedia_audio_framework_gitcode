@@ -1,4 +1,3 @@
-dd
 /*
  * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -85,8 +84,6 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioResourceManager(OH_AudioResourceMa
  * @return
  *     {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
  *     {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} if input param is nullptr
- *     {@link #AUDIOCOMMON_RESULT_ERROR_NO_MEMORY} out of workgroup resources
- *     {@link #AUDIOCOMMON_RESULT_ERROR_SYSTEM} system process error occurs
  * @since 20
  */
 OH_AudioCommon_Result OH_AudioResourceManager_CreateWorkgroup(OH_AudioResourceManager *resourceManager,
@@ -100,7 +97,7 @@ OH_AudioCommon_Result OH_AudioResourceManager_CreateWorkgroup(OH_AudioResourceMa
  * @return
  *     {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
  *     {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} if input param is nullptr
- *     {@link #AUDIOCOMMON_RESULT_ERROR_SYSTEM} system process error occurs
+ *     {@link #AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE} if system illegal state
  * @since 20
  */
 OH_AudioCommon_Result OH_AudioResourceManager_ReleaseWorkgroup(OH_AudioResourceManager *resourceManager,
@@ -114,8 +111,7 @@ OH_AudioCommon_Result OH_AudioResourceManager_ReleaseWorkgroup(OH_AudioResourceM
  * @return
  *     {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
  *     {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} if input param is nullptr
- *     {@link #AUDIOCOMMON_RESULT_ERROR_NO_MEMORY} out of resources for the new thread
- *     {@link #AUDIOCOMMON_RESULT_ERROR_SYSTEM} system process error occurs
+ *     {@link #AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE} if system illegal state
  * @since 20
  */
 OH_AudioCommon_Result OH_AudioWorkgroup_AddCurrentThread(OH_AudioWorkgroup *group, int32_t *tokenId);
@@ -127,8 +123,7 @@ OH_AudioCommon_Result OH_AudioWorkgroup_AddCurrentThread(OH_AudioWorkgroup *grou
  * @param tokenId id for thread returned by {@link #OH_AudioWorkgroup_AddCurrentThread}.
  * @return
  *     {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
- *     {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} if input param is nullptr or token id is invalid
- *     {@link #AUDIOCOMMON_RESULT_ERROR_SYSTEM} system process error occurs
+ *     {@link #AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE} if system illegal state
  * @since 20
  */
 OH_AudioCommon_Result OH_AudioWorkgroup_RemoveThread(OH_AudioWorkgroup *group, int32_t tokenId);
@@ -141,8 +136,7 @@ OH_AudioCommon_Result OH_AudioWorkgroup_RemoveThread(OH_AudioWorkgroup *group, i
  * @param deadlineTime the time before which audio work should be finished, otherwise underrun may happens.
  * @return
  *     {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
- *     {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} if input param is nullptr, or time is invalid
- *     {@link #AUDIOCOMMON_RESULT_ERROR_SYSTEM} system process error occurs
+ *     {@link #AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE} if system illegal state
  * @since 20
  */
 OH_AudioCommon_Result OH_AudioWorkgroup_Start(OH_AudioWorkgroup *group, uint64_t startTime, uint64_t deadlineTime);
@@ -153,8 +147,7 @@ OH_AudioCommon_Result OH_AudioWorkgroup_Start(OH_AudioWorkgroup *group, uint64_t
  * @param group {@link #OH_AudioWorkgroup} handle provided by {@link #OH_AudioResourceManager_CreateWorkgroup}.
  * @return
  *     {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
- *     {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} if input param is nullptr
- *     {@link #AUDIOCOMMON_RESULT_ERROR_SYSTEM} system process error occurs
+ *     {@link #AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE} if system illegal state
  * @since 20
  */
 OH_AudioCommon_Result OH_AudioWorkgroup_Stop(OH_AudioWorkgroup *group);
