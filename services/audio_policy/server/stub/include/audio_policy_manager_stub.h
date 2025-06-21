@@ -251,6 +251,7 @@ private:
     void IsCollaborativePlaybackSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void SetCollaborativePlayBackEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void IsCollaborativePlaybackEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void ClearAudioFocusBySessionIDInternal(MessageParcel &data, MessageParcel &reply);
 
     void OnMiddleTweRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleEleRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
