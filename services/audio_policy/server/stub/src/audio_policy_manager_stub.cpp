@@ -2549,7 +2549,7 @@ void AudioPolicyManagerStub::IsCollaborativePlaybackEnabledForDeviceInternal(Mes
 
 void AudioPolicyManagerStub::ClearAudioFocusBySessionIDInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t sessionID = data.readInt32();
+    int32_t sessionID = data.ReadInt32();
     int32_t result = ClearAudioFocusBySessionID(sessionID);
     reply.WriteInt32(result);
 }
