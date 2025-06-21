@@ -1044,7 +1044,7 @@ void HpaeManager::HandleDumpSourceInfo(std::string deviceName, std::string dumpS
     }
 }
 
-void HpaeManager::HandleInitDeviceResult(std::string deviceName, int32_t result)
+void HpaeManager::HandleInitDeviceResult(std::string deviceName, int32_t result, SourceType sourceType)
 {
     AUDIO_INFO_LOG("deviceName:%{public}s result:%{public}d ", deviceName.c_str(), result);
     auto serviceCallback = serviceCallback_.lock();
@@ -1066,6 +1066,12 @@ void HpaeManager::HandleInitDeviceResult(std::string deviceName, int32_t result)
     } else {
         AUDIO_INFO_LOG("OnOpenAudioPortCb is nullptr");
     }
+    if (result == SUCCESS && sourceType == SOURCE_TYPE_LIVE &&
+        (effectLiveState_ == "NROFF" || effectLiveState_ == "NRON")) {
+        const std::string combinedParam = "live_effect=" + effectLiveState_;
+        HpaePolicyManager::GetInstance().SetAudioParameter("primary",
+            AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
+        }
 }
 
 void HpaeManager::HandleDeInitDeviceResult(std::string deviceName, int32_t result)
@@ -1316,12 +1322,6 @@ int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t session
                 capturerManagerMap_[capturerIdSourceNameMap_[sessionId]]->Start(sessionId);
             }
             capturerIdStreamInfoMap_[sessionId].state = HPAE_SESSION_RUNNING;
-            if (capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType == SOURCE_TYPE_LIVE &&
-                (effectLiveState_ == "NROFF" || effectLiveState_ == "NRON")) {
-                const std::string combinedParam = "live_effect=" + effectLiveState_;
-                HpaePolicyManager::GetInstance().SetAudioParameter("primary",
-                    AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
-            }
         } else {
             AUDIO_WARNING_LOG("Start can not find sessionId streamClassType  %{public}d, sessionId %{public}u",
                 streamClassType, sessionId);

@@ -604,7 +604,7 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
         for (const auto &moveInfo : moveInfos) {
             AddSingleNodeToSource(moveInfo, true);
         }
-        TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
+        TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret, sourceInfo_.sourceType);
     };
     SendRequest(request, true);
     hpaeSignalProcessThread_->ActivateThread(shared_from_this());
@@ -659,7 +659,7 @@ int32_t HpaeCapturerManager::Init()
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this] {
         int32_t ret = InitCapturerManager();
-        TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
+        TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret, sourceInfo_.sourceType);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "Init HpaeCapturerManager failed");
         AUDIO_INFO_LOG("Init HpaeCapturerManager success");
         CheckIfAnyStreamRunning();
