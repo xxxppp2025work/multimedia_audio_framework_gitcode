@@ -4179,21 +4179,29 @@ bool AudioPolicyServer::GetStreamMuteByUsage(StreamUsage streamUsage)
 
 float AudioPolicyServer::GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType)
 {
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKOWN && streamUsage <= STREAM_USAGE_MAX,
+        static_cast<float>(ERR_INVALID_PARAM), "GetVolumeInDbByStream: Invalid streamUsage");
     return GetSystemVolumeInDb(VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage), volumeLevel, deviceType);
 }
 
 std::vector<AudioVolumeType> AudioPolicyServer::GetSupportedAudioVolumeTypes()
 {
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, {}, "No system permission");
     return VolumeUtils::GetSupportedAudioVolumeTypes();
 }
 
 AudioVolumeType AudioPolicyServer::GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage)
 {
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, STREAM_DEFAULT, "No system permission");
     return VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage);
 }
 
 std::vector<StreamUsage> AudioPolicyServer::GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType)
 {
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, {}, "No system permission");
     return VolumeUtils::GetStreamUsagesByVolumeType(audioVolumeType);
 }
 
