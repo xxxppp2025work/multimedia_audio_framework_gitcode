@@ -2639,7 +2639,8 @@ float AudioPolicyProxy::GetVolumeInDbByStream(StreamUsage streamUsage, int32_t v
     CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, static_cast<float>(ERROR), "Remote() is nullptr");
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_VOLUME_IN_DB_BY_STREAM), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, static_cast<float>(ERROR), "SendRequest failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, static_cast<float>(ERROR),
+        "SendRequest failed, error: %{public}d", error);
 
     return reply.ReadFloat();
 }

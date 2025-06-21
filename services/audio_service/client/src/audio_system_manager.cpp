@@ -2122,12 +2122,12 @@ float AudioSystemManager::GetVolumeInDbByStream(StreamUsage streamUsage, int32_t
         case STREAM_USAGE_ENFORCED_TONE:
         case STREAM_USAGE_ULTRASONIC: {
             bool ret = PermissionUtil::VerifySelfPermission();
-            CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
+            CHECK_AND_RETURN_RET_LOG(ret, static_cast<float>(ERR_PERMISSION_DENIED), "No system permission");
             break;
         }
         default:
             AUDIO_ERR_LOG("streamUsage=%d{public}d not supported", streamUsage);
-            return ERR_NOT_SUPPORTED;
+            return static_cast<float>(ERR_NOT_SUPPORTED);
     }
     return AudioPolicyManager::GetInstance().GetVolumeInDbByStream(streamUsage, volumeLevel, deviceType);
 }
@@ -2135,7 +2135,7 @@ float AudioSystemManager::GetVolumeInDbByStream(StreamUsage streamUsage, int32_t
 std::vector<AudioVolumeType> AudioSystemManager::GetSupportedAudioVolumeTypes()
 {
     bool ret = PermissionUtil::VerifySelfPermission();
-    CHECK_AND_RETURN_RET_PRELOG(ret, {}, "No system App");
+    CHECK_AND_RETURN_RET_LOG(ret, {}, "No system App");
     AUDIO_INFO_LOG("enter AudioSystemManager::GetSupportedAudioVolumeTypes");
     return AudioPolicyManager::GetInstance().GetSupportedAudioVolumeTypes();
 }
@@ -2143,7 +2143,7 @@ std::vector<AudioVolumeType> AudioSystemManager::GetSupportedAudioVolumeTypes()
 AudioVolumeType AudioSystemManager::GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage)
 {
     bool ret = PermissionUtil::VerifySelfPermission();
-    CHECK_AND_RETURN_RET_PRELOG(ret, STREAM_DEFAULT "No system App");
+    CHECK_AND_RETURN_RET_LOG(ret, STREAM_DEFAULT, "No system App");
     AUDIO_INFO_LOG("enter AudioSystemManager::GetAudioVolumeTypeByStreamUsage");
     return AudioPolicyManager::GetInstance().GetAudioVolumeTypeByStreamUsage(streamUsage);
 }
@@ -2151,7 +2151,7 @@ AudioVolumeType AudioSystemManager::GetAudioVolumeTypeByStreamUsage(StreamUsage 
 std::vector<StreamUsage> AudioSystemManager::GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType)
 {
     bool ret = PermissionUtil::VerifySelfPermission();
-    CHECK_AND_RETURN_RET_PRELOG(ret, {}, "No system App");
+    CHECK_AND_RETURN_RET_LOG(ret, {}, "No system App");
     AUDIO_INFO_LOG("enter AudioSystemManager::GetStreamUsagesByVolumeType");
     return AudioPolicyManager::GetInstance().GetStreamUsagesByVolumeType(audioVolumeType);
 }
