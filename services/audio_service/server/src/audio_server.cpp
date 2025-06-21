@@ -59,7 +59,7 @@
 #include "audio_info.h"
 #include "i_hpae_manager.h"
 #include "audio_server_hpae_dump.h"
-#include "audio_policy_manager.h";
+#include "audio_policy_manager.h"
 
 #define PA
 #ifdef PA
@@ -455,7 +455,7 @@ void AudioServer::OnDataTransferStateChange(const int32_t &pid, const int32_t &c
 void AudioServer::RegisterDataTransferStateChangeCallback()
 {
     DataTransferMonitorParam param;
-    param.ClientUID = CHECK_ALL_RENDER_UID;
+    param.clientUID = CHECK_ALL_RENDER_UID;
     param.badDataTransferTypeBitMap = 0b01; // bit0:NO_DATA_TRANS, bit1:SILENCE_DATA_TRANS
     param.timeInterval = 10000000000; // 10s
     param.badFramesRatio = 100;
@@ -478,7 +478,7 @@ void AudioServer::RegisterDataTransferStateChangeCallback()
 void DataTransferStateChangeCallbackInnerImpl::SetDataTransferMonitorParam(
     const DataTransferMonitorParam &param)
 {
-    param_.ClientUID = param.ClientUID;
+    param_.clientUID = param.clientUID;
     param_.badDataTransferTypeBitMap = param.badDataTransferTypeBitMap;
     param_.timeInterval = param.timeInterval;
     param_.badFramesRatio = param.badFramesRatio;
@@ -507,8 +507,8 @@ void DataTransferStateChangeCallbackInnerImpl::ReportEvent(
     CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
 
     bean->Add("IS_PLAYBACK", 1);
-    bean->Add("SESSIONID", static_cast<int32_t>(indo.sessionId));
-    bean->Add("UID", info.ClientUID);
+    bean->Add("SESSIONID", static_cast<int32_t>(info.sessionId));
+    bean->Add("UID", info.clientUID);
     bean->Add("STREAM_OR_SOURCE_TYPE", info.streamUsage);
     bean->Add("START_TIME", static_cast<uint64_t>(0));
     bean->Add("UPLOAD_TIME", static_cast<uint64_t>(0));
