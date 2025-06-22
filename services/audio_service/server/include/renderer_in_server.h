@@ -36,6 +36,7 @@ public:
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnWriteData(size_t length) override;
     int32_t OnWriteData(int8_t *inputData, size_t requestDataLen) override;
+    int32_t GetAvailableSize(size_t &length) override;
     std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
 private:
     uint32_t streamIndex_ = 0;
@@ -55,6 +56,7 @@ public:
     void HandleOperationStarted();
     int32_t OnWriteData(size_t length) override;
     int32_t OnWriteData(int8_t *inputData, size_t requestDataLen) override;
+    int32_t GetAvailableSize(size_t &length) override;
 
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer);
     int32_t GetSessionId(uint32_t &sessionId);
@@ -125,6 +127,9 @@ public:
     int32_t StopSession();
     void dualToneStreamInStart();
 
+    int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+        uint32_t &spanSizeInFrame);
+
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -134,7 +139,7 @@ private:
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
     void OtherStreamEnqueue(const BufferDesc &bufferDesc);
-    void DoFadingOut(BufferDesc& bufferDesc);
+    void DoFadingOut(RingBufferWrapper& bufferDesc);
     int32_t SetStreamVolumeInfoForEnhanceChain();
     void StandByCheck();
     bool ShouldEnableStandBy();
@@ -150,6 +155,7 @@ private:
     void HandleOperationStopped(RendererStage stage);
     int32_t StartInnerDuringStandby();
     void RecordStandbyTime(bool isStandby, bool isStart);
+    int32_t FlushOhAudioBuffer();
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -181,13 +187,14 @@ private:
     std::shared_ptr<IRendererStream> dualToneStream_ = nullptr;
 
     std::weak_ptr<IStreamListener> streamListener_;
-    size_t totalSizeInFrame_ = 0;
+    size_t engineTotalSizeInFrame_ = 0;
+    size_t bufferTotalSizeInFrame_ = 0;
     size_t spanSizeInFrame_ = 0;
     size_t spanSizeInByte_ = 0;
     size_t byteSizePerFrame_ = 0;
     bool isBufferConfiged_  = false;
     std::atomic<bool> isInited_ = false;
-    std::shared_ptr<OHAudioBuffer> audioServerBuffer_ = nullptr;
+    std::shared_ptr<OHAudioBufferBase> audioServerBuffer_ = nullptr;
     std::atomic<size_t> needForceWrite_ = 0;
     bool afterDrain = false;
     float lowPowerVolume_ = 1.0f;
@@ -229,6 +236,9 @@ private:
     int64_t sourceDuration_ = -1;
     std::unique_ptr<PlayerDfxWriter> playerDfx_;
     std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
+
+    // Only use in Writedate(). Protect by writeMutex_.
+    std::vector<uint8_t> rendererTmpBuffer_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
