@@ -121,6 +121,9 @@ public:
 
     int32_t SetOffloadDataCallbackState(int32_t state) override;
 
+    int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+        uint32_t &spanSizeInFrame) override;
+
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();
     std::shared_ptr<CapturerInServer> GetCapturer();

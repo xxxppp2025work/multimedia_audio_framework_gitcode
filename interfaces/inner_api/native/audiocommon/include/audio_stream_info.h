@@ -23,6 +23,9 @@
 
 #include "audio_source_type.h"
 #include "timestamp.h"
+#include "audio_errors.h"
+#include "securec.h"
+#include "audio_buffer_desc.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -548,16 +551,6 @@ const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
     STREAM_USAGE_VOICE_RINGTONE,
     STREAM_USAGE_VOICE_CALL_ASSISTANT,
-};
-
-struct BufferDesc {
-    uint8_t *buffer;
-    size_t bufLength;
-    size_t dataLength;
-    uint8_t *metaBuffer;
-    size_t metaLength;
-    uint64_t position;
-    uint64_t timeStampInNs;
 };
 
 class AudioStreamInfo {

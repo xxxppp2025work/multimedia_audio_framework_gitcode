@@ -592,7 +592,14 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDoFadingOut_001, TestSize.Lev
     int32_t ret = rendererInServer->Init();
     ASSERT_EQ(SUCCESS, ret);
     rendererInServer->fadeoutFlag_ = NO_FADING;
-    rendererInServer->DoFadingOut(bufferDesc);
+    RingBufferWrapper bufferWrapper = {
+        .basicBufferDescs = {{
+            {bufferDesc.buffer, bufferDesc.bufLength},
+            {}
+        }},
+        .dataLenth = bufferDesc.dataLength
+    };
+    rendererInServer->DoFadingOut(bufferWrapper);
     EXPECT_NE(FADING_OUT_DONE, rendererInServer->fadeoutFlag_);
 }
 
@@ -611,7 +618,14 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDoFadingOut_002, TestSize.Lev
     EXPECT_NE(nullptr, rendererInServer);
 
     rendererInServer->fadeoutFlag_ = DO_FADINGOUT;
-    rendererInServer->DoFadingOut(bufferDesc);
+    RingBufferWrapper bufferWrapper = {
+        .basicBufferDescs = {{
+            {bufferDesc.buffer, bufferDesc.bufLength},
+            {}
+        }},
+        .dataLenth = bufferDesc.dataLength 
+    };
+    rendererInServer->DoFadingOut(bufferWrapper);
     EXPECT_EQ(FADING_OUT_DONE, rendererInServer->fadeoutFlag_);
 }
 
@@ -630,7 +644,14 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDoFadingOut_003, TestSize.Lev
     EXPECT_NE(nullptr, rendererInServer);
 
     rendererInServer->fadeoutFlag_ = DO_FADINGOUT;
-    rendererInServer->DoFadingOut(bufferDesc);
+        RingBufferWrapper bufferWrapper = {
+        .basicBufferDescs = {{
+            {bufferDesc.buffer, bufferDesc.bufLength},
+            {}
+        }},
+        .dataLenth = bufferDesc.dataLength 
+    };
+    rendererInServer->DoFadingOut(bufferWrapper);
     EXPECT_EQ(FADING_OUT_DONE, rendererInServer->fadeoutFlag_);
 }
 
@@ -769,7 +790,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerVolumeHandle_002, TestSize.Le
     int32_t ret = rendererInServer->Init();
     ASSERT_EQ(SUCCESS, ret);
     rendererInServer->lowPowerVolume_ = 0.0f;
-    rendererInServer->audioServerBuffer_-> basicBufferInfo_->duckFactor.store(0.0f);
+    rendererInServer->audioServerBuffer_->basicBufferInfo_->duckFactor.store(0.0f);
     rendererInServer->silentModeAndMixWithOthers_ = 0;
 
     rendererInServer->VolumeHandle(bufferDesc);
