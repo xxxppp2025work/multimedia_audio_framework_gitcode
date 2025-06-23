@@ -22,7 +22,6 @@ ohos_fuzztest("AudioPolicyServerConfigFuzzTest") {
 
   include_dirs = [
     "../../../services/audio_policy/server/include",
-    "../../../../../communication/bluetooth/interfaces/inner_api/include",
   ]
   cflags = [
     "-g",
@@ -70,6 +69,7 @@ ohos_fuzztest("AudioPolicyServerConfigFuzzTest") {
     "relational_store:native_appdatafwk",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "bluetooth:btframework",
   ]
   if (accessibility_enable == true) {
     external_deps += [
