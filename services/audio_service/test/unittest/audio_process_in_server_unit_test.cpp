@@ -972,10 +972,10 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_036, TestSize.Level1)
 /**
  * @tc.name  : Test AudioProcessInServer API
  * @tc.type  : FUNC
- * @tc.number: AudioProcessInServer_036
- * @tc.desc  : Test AudioProcessInServer interface.
+ * @tc.number: AudioProcessInServer_037
+ * @tc.desc  : Test HandleStreamStatusToCapturerState interface.
  */
-HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_036, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_037, TestSize.Level1)
 {
     StreamStatus status = STREAM_IDEL;
     CapturerState state = HandleStreamStatusToCapturerState(status);
