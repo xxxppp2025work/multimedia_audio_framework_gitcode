@@ -23,7 +23,6 @@ ohos_fuzztest("AudioUtilsFuzzTest") {
   include_dirs = [
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include",
-    "../../../../../communication/bluetooth/interfaces/inner_api/include",
     "../../../frameworks/native/audioutils/include",
   ]
   cflags = [

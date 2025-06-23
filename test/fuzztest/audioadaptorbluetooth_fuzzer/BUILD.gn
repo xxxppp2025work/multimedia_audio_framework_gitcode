@@ -23,7 +23,6 @@ ohos_fuzztest("AudioAdaptorBluetoothFuzzTest") {
   include_dirs = [
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include",
-    "../../../../../communication/bluetooth/interfaces/inner_api/include",
     "../../../frameworks/native/hdiadapter_new/include",
   ]
   cflags = [
@@ -84,6 +83,10 @@ ohos_fuzztest("AudioAdaptorBluetoothFuzzTest") {
   defines = []
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
+  }
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+    defines += [ "BLUETOOTH_PART_ENABLE" ]
   }
 }
 
