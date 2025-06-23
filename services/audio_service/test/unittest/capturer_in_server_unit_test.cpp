@@ -1152,5 +1152,63 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038, TestSize.Level1
     auto ret = capturerInServer_->TurnOffMicIndicator(capturerState);
     EXPECT_EQ(ret, true);
 }
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_039.
+ * @tc.desc  : Test HandleStreamStatusToCapturerState interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_039, TestSize.Level1)
+{
+    StreamStatus status = I_STATUS_IDLE;
+    CapturerState state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_PREPARED);
+
+    status = I_STATUS_STARTING;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_RUNNING);
+
+    status = I_STATUS_STARTED;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_RUNNING);
+
+    status = I_STATUS_FLUSHING_WHEN_STARTED;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_RUNNING);
+
+    status = I_STATUS_PAUSING;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_PAUSED);
+    
+    status = I_STATUS_PAUSED;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_PAUSED);
+
+    status = I_STATUS_FLUSHING_WHEN_PAUSED;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_PAUSED);
+
+    status = I_STATUS_STOPPING;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_STOPPED);
+
+    status = I_STATUS_STOPPED;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_STOPPED);
+
+    status = I_STATUS_FLUSHING_WHEN_STOPPED;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_STOPPED);
+
+    status = I_STATUS_RELEASING;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_RELEASED);
+
+    status = I_STATUS_RELEASED;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_RELEASED);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
