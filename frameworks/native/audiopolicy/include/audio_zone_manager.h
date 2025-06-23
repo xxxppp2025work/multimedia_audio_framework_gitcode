@@ -93,6 +93,10 @@ public:
 
     virtual int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) = 0;
 
+    virtual int32_t AddStreamUsageToAudioZone(int32_t zoneId, AudioStreamUsage usage) = 0;
+
+    virtual int32_t RemoveStreamUsageFromAudioZone(int32_t zoneId, AudioStreamUsage usage) = 0;
+
     virtual int32_t RegisterSystemVolumeProxy(int32_t zoneId,
         const std::shared_ptr<AudioZoneVolumeProxy> &proxy) = 0;
 
