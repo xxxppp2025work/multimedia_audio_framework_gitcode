@@ -42,6 +42,27 @@ namespace {
 static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
 }
 
+static CapturerState HandleStreamStatusToCapturerState(const StreamStatus &status)
+{
+    switch (status) {
+        case STREAM_IDEL:
+        case STREAM_STAND_BY:
+            return CAPTURER_PREPARED;
+        case STREAM_STARTING:
+        case STREAM_RUNNING:
+            return CAPTURER_RUNNING;
+        case STREAM_PAUSING:
+        case STREAM_PAUSED:
+            return CAPTURER_PAUSED;
+        case STREAM_STOPPING:
+        case STREAM_STOPPED:
+            return CAPTURER_STOPPED;
+        case STREAM_RELEASED:
+            return CAPTURER_RELEASED;
+        default:
+            return CAPTURER_INVALID;
+    }
+}
 sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig &processConfig,
     ProcessReleaseCallback *releaseCallback)
 {
@@ -211,7 +232,7 @@ bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
     } else {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, sessionId_),
             false, "NotifyPrivacyStart failed!");
-        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off"
+        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off "
             "after NotifyPrivacyStart success!", sessionId_);
         isMicIndicatorOn_ = true;
     }
@@ -802,6 +823,21 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
 {
     RestoreStatus restoreStatus = processBuffer_->SetRestoreStatus(NEED_RESTORE);
     if (restoreStatus == NEED_RESTORE) {
+        if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
+            SwitchStreamInfo info = {
+                sessionId_,
+                processConfig_.callerUid,
+                processConfig_.appInfo.appUid,
+                processConfig_.appInfo.appPid,
+                processConfig_.appInfo.appTokenId,
+                HandleStreamStatusToCapturerState(streamStatus_->load())
+            };
+            AUDIO_INFO_LOG("Insert fast record stream:%{public}u uid:%{public}d tokenId:%{public}u "
+                "into switchStreamRecord because restoreStatus:NEED_RESTORE",
+                sessionId_, info.callerUid, info.appTokenId);
+            SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
+        }
+
         processBuffer_->SetRestoreInfo(restoreInfo);
     }
     return restoreStatus;
