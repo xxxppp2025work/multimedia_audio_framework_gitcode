@@ -1161,7 +1161,6 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038, TestSize.Level1
  */
 HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_039, TestSize.Level1)
 {
-{
     StreamStatus status = I_STATUS_IDLE;
     CapturerState state = HandleStreamStatusToCapturerState(status);
     EXPECT_EQ(state, CAPTURER_PREPARED);
@@ -1210,6 +1209,6 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_039, TestSize.Level1
     state = HandleStreamStatusToCapturerState(status);
     EXPECT_EQ(state, CAPTURER_RELEASED);
 }
-}
+
 } // namespace AudioStandard
 } // namespace OHOS

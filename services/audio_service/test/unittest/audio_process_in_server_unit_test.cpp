@@ -1014,6 +1014,5 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_037, TestSize.Level1)
     EXPECT_EQ(state, CAPTURER_RELEASED);
 }
 
-}
 } // namespace AudioStandard
 } // namespace OHOS
