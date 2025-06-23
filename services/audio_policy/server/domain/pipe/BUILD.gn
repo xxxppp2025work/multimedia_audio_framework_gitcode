@@ -21,7 +21,7 @@ import("${audio_policy_root}/../../av_session.gni")
 import("${audio_policy_root}/../../bluetooth_part.gni")
 import("${audio_policy_root}/../../config.gni")
 
-config("audio_volume_include") {
+config("audio_pipe_include") {
   include_dirs = [
     "${audio_policy_root}/client/service/include",
     "${audio_policy_root}/server/infra/ipc_proxy/include",
@@ -43,25 +43,38 @@ config("audio_volume_include") {
     "${audio_policy_root}/server/domain/device/src/pnp",
     "${audio_policy_root}/server/domain/device/src/sle",
     "${audio_policy_root}/server/domain/router",
+    "${audio_policy_root}/server/domain/zone/include",
     "${audio_policy_root}/server/domain/device/src/a2dp",
     "${audio_policy_root}/server/domain/session/include",
     "${audio_policy_root}/server/service/service_main/include",
     "${audio_policy_root}/../audio_service/client/include",
     "${audio_policy_root}/../audio_service/common/include",
+    "${audio_policy_root}/../../frameworks/native/audioinnercall/include",
     "${audio_policy_root}/../../frameworks/native/audioadapter/include",
     "${audio_policy_root}/../../frameworks/native/bluetoothclient",
     "${audio_policy_root}/../../frameworks/native/hdiadapter_new/include",
     "${audio_policy_root}/../../frameworks/native/hdiadapter_new/include/common",
+    "${audio_policy_root}/../../interfaces/inner_api/native/audiocommon/include",
+    "${audio_policy_root}/../../interfaces/inner_api/native/audiomanager/include",
   ]
 }
 
-ohos_static_library("audio_volume_static_library") {
+ohos_static_library("audio_pipe_static_library") {
   sources = [
-    "src/audio_volume_group_info.cpp",
-    "src/audio_adapter_manager.cpp",
-    "src/audio_adapter_manager_handler.cpp",
-    "src/volume_data_maintainer.cpp",
-    "src/audio_volume_manager.cpp",
+    "src/audio_definition_adapter_info.cpp",
+    "src/audio_definition_policy_utils.cpp",
+    "src/audio_concurrency_service.cpp",
+    "src/audio_global_config_manager.cpp",
+    "src/audio_a2dp_offload_flag.cpp",
+    "src/audio_a2dp_offload_manager.cpp",
+    "src/audio_capturer_session.cpp",
+    "src/audio_config_manager.cpp",
+    "src/audio_ec_manager.cpp",
+    "src/audio_iohandle_map.cpp",
+    "src/audio_offload_stream.cpp",
+    "src/audio_policy_config_manager.cpp",
+    "src/audio_pipe_manager.cpp",
+    "src/audio_pipe_selector.cpp",
   ]
 
   sanitize = {
@@ -74,7 +87,7 @@ ohos_static_library("audio_volume_static_library") {
     boundary_sanitize = true
   }
 
-  public_configs = [ ":audio_volume_include" ]
+  public_configs = [ ":audio_pipe_include" ]
 
   cflags = [
     "-Wall",
@@ -132,13 +145,22 @@ ohos_static_library("audio_volume_static_library") {
 
   deps = [
     "${audio_policy_root}/../../frameworks/native/audiodefinitions:audio_definitions",
+    "${audio_policy_root}/../../frameworks/native/audioinnercall:audio_inner_call",
     "${audio_policy_root}/../../frameworks/native/audioutils:audio_xml_utils",
     "${audio_policy_root}/../audio_policy:audio_foundation",
   ]
 
   external_deps = [
     "hilog:libhilog",
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
     "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:app_manager",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
     "ability_runtime:wantagent_innerkits",
     "access_token:libaccesstoken_sdk",
     "data_share:datashare_consumer",
@@ -191,59 +213,6 @@ ohos_static_library("audio_volume_static_library") {
 
   cflags += [ "-Os" ]
   cflags_cc = cflags
-  subsystem_name = "multimedia"
-  part_name = "audio_framework"
-}
-
-ohos_shared_library("audio_safe_volume_notification_impl") {
-  stack_protector_ret = true
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    cfi_vcall_icall_only = true
-    debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
-  }
-  install_enable = true
-
-  include_dirs = [
-    "include",
-    "../../../../../interfaces/inner_api/native/audiocommon/include",
-    "../../../../../interfaces/inner_api/native/audiomanager/include",
-    "../../../../../services/audio_service/client/include",
-  ]
-
-  sources = [ "src/audio_safe_volume_notification_impl.cpp" ]
-
-  deps = [ "../../../../audio_policy:audio_policy_common" ]
-
-  external_deps = [
-    "ability_base:want",
-    "ability_base:zuri",
-    "ability_runtime:wantagent_innerkits",
-    "c_utils:utils",
-    "distributed_notification_service:ans_innerkits",
-    "hilog:libhilog",
-    "i18n:intl_util",
-    "image_framework:image_native",
-    "ipc:ipc_single",
-    "os_account:os_account_innerkits",
-  ]
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-  ]
-
-  if (target_cpu == "arm") {
-    cflags += [ "-DBINDER_IPC_32BIT" ]
-  }
-
-  ldflags = [ "-Wl" ]
-
-  innerapi_tags = [ "platformsdk" ]
   subsystem_name = "multimedia"
   part_name = "audio_framework"
 }

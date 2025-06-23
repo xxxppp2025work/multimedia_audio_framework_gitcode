@@ -1,0 +1,158 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+audio_policy_root = "//foundation/multimedia/audio_framework/services/audio_policy"
+
+import("//build/ohos.gni")
+import("${audio_policy_root}/../../accessibility.gni")
+import("${audio_policy_root}/../../appgallery.gni")
+import("${audio_policy_root}/../../audio_framework_test_sources.gni")
+import("${audio_policy_root}/../../av_session.gni")
+import("${audio_policy_root}/../../bluetooth_part.gni")
+import("${audio_policy_root}/../../config.gni")
+
+config("audio_session_include") {
+  include_dirs = [
+    "${audio_policy_root}/server/infra/state_monitor",
+    "${audio_policy_root}/server/domain/session/include",
+    "${audio_policy_root}/../../frameworks/native/audioutils/include",
+    "${audio_policy_root}/../../interfaces/inner_api/native/audiocommon/include",
+  ]
+}
+
+ohos_static_library("audio_session_static_library") {
+  sources = [
+    "src/audio_session.cpp",
+    "src/audio_session_service.cpp",
+    "src/audio_session_state_monitor.cpp",
+  ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+
+  public_configs = [ ":audio_session_include" ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+
+  if (target_cpu == "arm") {
+    cflags += [ "-DBINDER_IPC_32BIT" ]
+  }
+
+  if (accessibility_enable == true) {
+    cflags += [ "-DACCESSIBILITY_ENABLE" ]
+  }
+
+  if (bluetooth_part_enable == true) {
+    cflags += [ "-DBLUETOOTH_ENABLE" ]
+  }
+
+  if (avsession_part_enable == true && !(use_libfuzzer || use_clang_coverage)) {
+    cflags += [ "-DAVSESSION_ENABLE" ]
+  }
+
+  ldflags = [ "-Wl" ]
+
+  defines = []
+  if (audio_framework_feature_wired_audio) {
+    defines += [ "AUDIO_WIRED_DETECT" ]
+  }
+
+  if (build_variant == "user") {
+    defines += [ "AUDIO_BUILD_VARIANT_USER" ]
+  } else if (build_variant == "root") {
+    defines += [ "AUDIO_BUILD_VARIANT_ROOT" ]
+  }
+
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
+
+  if (audio_framework_feature_support_os_account) {
+    defines += [ "SUPPORT_USER_ACCOUNT" ]
+  }
+
+  if (audio_framework_feature_dtmf_tone) {
+    defines += [ "FEATURE_DTMF_TONE" ]
+  }
+
+  if (is_emulator) {
+    defines += [ "IS_EMULATOR" ]
+  }
+
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
+
+  deps = [
+  ]
+
+  external_deps = [
+    "hilog:libhilog",
+    "power_manager:power_setting",
+  ]
+
+  public_external_deps = [ "ffrt:libffrt" ]
+
+  public_external_deps += [
+    "libxml2:libxml2",
+    "openssl:libcrypto_shared",
+  ]
+
+  if (audio_framework_feature_usb_audio) {
+    defines += [ "USB_ENABLE" ]
+    public_external_deps += [ "usb_manager:usbsrv_client" ]
+  }
+
+  if (audio_framework_feature_detect_soundbox) {
+    defines += [ "DETECT_SOUNDBOX" ]
+  }
+
+  if (audio_framework_config_policy_enable) {
+    defines += [ "USE_CONFIG_POLICY" ]
+    external_deps += [ "config_policy:configpolicy_util" ]
+  }
+
+  if (appgallery_part_enable == true) {
+    defines += [ "FEATURE_APPGALLERY" ]
+  }
+
+  if (bluetooth_part_enable == true) {
+    deps += [ "${audio_policy_root}/../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
+    external_deps += [ "bluetooth:btframework" ]
+  }
+
+  if (audio_framework_feature_input) {
+    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
+    external_deps += [ "input:libmmi-client" ]
+  }
+
+  if (audio_framework_feature_device_manager) {
+    defines += [ "FEATURE_DEVICE_MANAGER" ]
+    external_deps += [ "device_manager:devicemanagersdk" ]
+  }
+
+  cflags += [ "-Os" ]
+  cflags_cc = cflags
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
