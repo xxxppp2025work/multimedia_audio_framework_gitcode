@@ -177,7 +177,7 @@ private:
     void RegisterHandler(HpaeMsgCode cmdID, void (HpaeManager::*func)(Args...));
     void HandleUpdateStatus(
         HpaeStreamClassType streamClassType, uint32_t sessionId, HpaeSessionState status, IOperation operation);
-    void HandleInitDeviceResult(std::string deviceName, int32_t result, SourceType sourceType == SOURCE_TYPE_INVALID);
+    void HandleInitDeviceResult(std::string deviceName, int32_t result, SourceType sourceType = SOURCE_TYPE_INVALID);
     void HandleDeInitDeviceResult(std::string deviceName, int32_t result);
     void HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> sinkInputNode, std::string sinkName);
     void HandleMoveAllSinkInputs(std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName,
