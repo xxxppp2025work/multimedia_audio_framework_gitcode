@@ -968,5 +968,52 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_036, TestSize.Level1)
     ret = audioProcessInServer->GetLastAudioDuration();
     EXPECT_EQ(ret, 90);
 }
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_036
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_036, TestSize.Level1)
+{
+    StreamStatus status = STREAM_IDEL;
+    CapturerState state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_PREPARED);
+
+    status = STREAM_STAND_BY;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_PREPARED);
+
+    status = STREAM_STARTING;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_RUNNING);
+
+    status = STREAM_RUNNING;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_RUNNING);
+
+    status = STREAM_PAUSING;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_PAUSED);
+
+    status = STREAM_PAUSED;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_PAUSED);
+
+    status = STREAM_STOPPING;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_STOPPED);
+
+    status = STREAM_STOPPED;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_STOPPED);
+
+    status = STREAM_RELEASED;
+    state = HandleStreamStatusToCapturerState(status);
+    EXPECT_EQ(state, CAPTURER_RELEASED);
+}
+
+}
 } // namespace AudioStandard
 } // namespace OHOS
