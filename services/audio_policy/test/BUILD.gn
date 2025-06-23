@@ -3036,7 +3036,7 @@ ohos_unittest("audio_policy_manager_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./unittest/audio_policy_manager_unit_test/include",
-    "../../../../frameworks/native/audiopolicy/include",
+    "../../../frameworks/native/audiopolicy/include",
   ]
 
   use_exceptions = true

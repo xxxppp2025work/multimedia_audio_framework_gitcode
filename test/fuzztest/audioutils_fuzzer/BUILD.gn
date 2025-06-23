@@ -23,7 +23,6 @@ ohos_fuzztest("AudioUtilsFuzzTest") {
   include_dirs = [
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include",
-    "../../../../../communication/bluetooth/interfaces/inner_api/include",
     "../../../frameworks/native/audioutils/include",
   ]
   cflags = [
@@ -78,6 +77,7 @@ ohos_fuzztest("AudioUtilsFuzzTest") {
     "relational_store:native_appdatafwk",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "bluetooth:btframework",
   ]
   if (sonic_enable == true) {
     external_deps += [ "pulseaudio:sonic" ]
