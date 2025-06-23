@@ -334,7 +334,7 @@ JavaScript应用可以使用系统提供的音频管理接口，来控制音量�
 请参考 [**js-apis-audio.md**](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-audio-kit/js-apis-audio.md#audiomanager) 来获取音量和设备管理相关JavaScript接口的用法。
 
 ### 蓝牙SCO呼叫<a name="section645572311287_007"></a>
-可以使用提供的接口 [**audio_bluetooth_manager.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/frameworks/native/bluetoothclient/audio_bluetooth_manager.h) 实现同步连接导向链路（SCO）的蓝牙呼叫。
+可以使用提供的接口 [**audio_bluetooth_manager.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/services/audio_policy/server/device/bluetooth/audio_bluetooth_manager.h) 实现同步连接导向链路（SCO）的蓝牙呼叫。
 
 1. 为监听SCO状态更改，您可以使用 **OnScoStateChanged**.
 ```

@@ -17,16 +17,14 @@
 
 #include <list>
 #include <unordered_map>
+#include <mutex>
 #include <cinttypes>
+#include "errors.h"
 
-#include "os_account_manager.h"
 #include "ipc_skeleton.h"
 #include "datashare_helper.h"
-#include "errors.h"
-#include "mutex"
 #include "data_ability_observer_stub.h"
-
-#include "audio_policy_log.h"
+#include "os_account_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

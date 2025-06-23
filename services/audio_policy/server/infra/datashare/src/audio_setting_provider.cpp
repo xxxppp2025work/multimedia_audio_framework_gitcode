@@ -19,8 +19,10 @@
 #include "audio_setting_provider.h"
 
 #include "iservice_registry.h"
-#include "audio_errors.h"
 #include "system_ability_definition.h"
+
+#include "audio_policy_log.h"
+#include "audio_errors.h"
 #include "audio_utils.h"
 
 namespace OHOS {

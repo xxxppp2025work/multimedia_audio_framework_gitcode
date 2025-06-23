@@ -121,7 +121,7 @@ ohos_fuzztest("AudioPolicyServiceMoreFuzzTest") {
 
   if (bluetooth_part_enable == true) {
     deps +=
-        [ "../../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
+        [ "../../../services/audio_policy:audio_bluetooth_manager" ]
     external_deps += [ "bluetooth:btframework" ]
   }
 

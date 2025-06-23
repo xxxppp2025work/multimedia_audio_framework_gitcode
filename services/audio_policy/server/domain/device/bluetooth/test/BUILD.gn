@@ -15,18 +15,18 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 import("../../../../config.gni")
 
-module_output_path = "multimedia_audio_framework/bluetooth_client"
+module_output_path = "multimedia_audio_framework/bluetooth_manager"
 
-config("bluetooth_client_private_config") {
+config("bluetooth_manager_private_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
     "../",
-    "../../audioutils/include",
-    "../../../../interfaces/inner_api/native/audiocommon/include",
-    "../../../../interfaces/inner_api/native/audiomanager/include",
-    "../../../../services/audio_policy/server/include/service/interface",
-    "../../../../services/audio_service/client/include",
+    "../../../../include/service/interface",
+    "../../../../../../audio_service/client/include",
+    "../../../../../../../frameworks/native/audioutils/include",
+    "../../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../../interfaces/inner_api/native/audiomanager/include",
   ]
 }
 
@@ -44,10 +44,10 @@ ohos_unittest("bluetooth_sco_manager_unit_test") {
     "../bluetooth_device_utils.cpp",
   ]
 
-  configs = [ ":bluetooth_client_private_config" ]
+  configs = [ ":bluetooth_manager_private_config" ]
 
   deps = [
-    "../../audioutils:audio_utils",
+    "../../../../../../../frameworks/native/audioutils:audio_utils",
   ]
 
   external_deps = [
@@ -79,11 +79,11 @@ ohos_unittest("bluetooth_hfp_manager_unit_test") {
     "../bluetooth_device_manager.cpp",
   ]
 
-  configs = [ ":bluetooth_client_private_config" ]
+  configs = [ ":bluetooth_manager_private_config" ]
 
   deps = [
-    "../../audioutils:audio_utils",
-    "../../../../services/audio_policy:audio_foundation",
+    "../../../../../:audio_foundation",
+    "../../../../../../../frameworks/native/audioutils:audio_utils",
   ]
 
   external_deps = [
