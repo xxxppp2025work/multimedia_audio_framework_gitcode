@@ -283,6 +283,7 @@ int32_t AudioGroupManager::Init()
         return SUCCESS;
     }
 }
+// LCOV_EXCL_STOP
 
 bool AudioGroupManager::IsAlived()
 {

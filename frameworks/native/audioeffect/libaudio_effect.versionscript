@@ -92,19 +92,10 @@
     *ReleaseAudioEnhanceChainDynamic*;
     *GetOutputChannelInfo*;
     *ReturnEffectChannelInfo*;
-    *ExistAudioEnhanceChain*;
     *AudioEnhanceChainGetAlgoConfig*;
-    *IsEmptyEnhanceChain*;
-    *InitEnhanceBuffer*;
-    *CopyToEnhanceBuffer*;
-    *CopyEcToEnhanceBuffer*;
-    *CopyMicRefToEnhanceBuffer*;
-    *CopyFromEnhanceBuffer*;
-    *ApplyAudioEnhanceChain*;
-    *ApplyAudioEnhanceChainDefault*;
-    *SendInitCommand*;
     *CheckProcessClusterInstances*;
     *QueryEffectChannelInfo*;
+    *ResetInfo*;
   local:
     *;
 };

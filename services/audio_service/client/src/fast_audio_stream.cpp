@@ -101,12 +101,16 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
         config.rendererInfo.originalFlag = rendererInfo_.originalFlag;
         config.rendererInfo.playerType = rendererInfo_.playerType;
         config.rendererInfo.expectedPlaybackDurationBytes = rendererInfo_.expectedPlaybackDurationBytes;
+        config.rendererInfo.isLoopback = rendererInfo_.isLoopback;
+        config.rendererInfo.loopbackMode = rendererInfo_.loopbackMode;
     } else if (eMode_ == AUDIO_MODE_RECORD) {
         AUDIO_DEBUG_LOG("FastAudioStream: Initialize recording");
         config.capturerInfo.sourceType = capturerInfo_.sourceType;
         config.capturerInfo.capturerFlags = STREAM_FLAG_FAST;
         config.capturerInfo.originalFlag = capturerInfo_.originalFlag;
         config.capturerInfo.recorderType = capturerInfo_.recorderType;
+        config.capturerInfo.isLoopback = capturerInfo_.isLoopback;
+        config.capturerInfo.loopbackMode = capturerInfo_.loopbackMode;
     } else {
         return ERR_INVALID_OPERATION;
     }
@@ -328,6 +332,18 @@ float FastAudioStream::GetVolume()
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, 1.0f, "SetVolume failed: null process"); // 1.0f for default
     return processClient_->GetVolume();
+}
+
+int32_t FastAudioStream::SetLoudnessGain(float loudnessGain)
+{
+    AUDIO_WARNING_LOG("SetLoudnessGain is only for renderer");
+    return ERROR;
+}
+
+float FastAudioStream::GetLoudnessGain()
+{
+    AUDIO_WARNING_LOG("GetLoudnessGain is only for renderer");
+    return 0.0;
 }
 
 int32_t FastAudioStream::SetMute(bool mute)

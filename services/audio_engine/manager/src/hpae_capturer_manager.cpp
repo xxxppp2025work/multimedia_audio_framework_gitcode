@@ -119,9 +119,10 @@ int32_t HpaeCapturerManager::CaptureEffectRelease(const HpaeProcessorType &scene
 
 void HpaeCapturerManager::DisConnectSceneClusterFromSourceInputCluster(HpaeProcessorType &sceneType)
 {
-    if (!SafeGetMap(sceneClusterMap_, sceneType) || sceneClusterMap_[sceneType]->GetOutputPortNum() != 0) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneType), "connot find sceneType:%{public}u", sceneType);
+    CHECK_AND_RETURN_LOG(sceneClusterMap_[sceneType]->GetOutputPortNum() == 0,
+        "sceneType:%{public}u outputNum:%{public}u",
+        sceneType, static_cast<uint32_t>(sceneClusterMap_[sceneType]->GetOutputPortNum()));
     // need to disconnect sceneCluster and sourceInputCluster
     HpaeNodeInfo ecNodeInfo;
     if (CheckSceneTypeNeedEc(sceneType) &&
@@ -178,6 +179,11 @@ int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId)
     } else if (SafeGetMap(sourceInputClusterMap_, mainMicType_)) {
         sourceOutputNodeMap_[sessionId]->DisConnectWithInfo(sourceInputClusterMap_[mainMicType_],
             sourceOutputNodeMap_[sessionId]->GetNodeInfo());
+    }
+
+    if (SafeGetMap(sourceInputClusterMap_, mainMicType_) &&
+        sourceInputClusterMap_[mainMicType_]->GetOutputPortNum() == 0) {
+        CapturerSourceStop();
     }
     sourceOutputNodeMap_.erase(sessionId);
     sessionNodeMap_.erase(sessionId);
@@ -372,23 +378,18 @@ int32_t HpaeCapturerManager::Drain(uint32_t sessionId)
 
 int32_t HpaeCapturerManager::CapturerSourceStop()
 {
-    CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[mainMicType_], ERR_ILLEGAL_STATE,
+    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sourceInputClusterMap_, mainMicType_), ERR_ILLEGAL_STATE,
         "sourceInputClusterMap_[%{public}d] is nullptr", mainMicType_);
     CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[mainMicType_]->GetSourceState() != STREAM_MANAGER_SUSPENDED,
         SUCCESS, "capturer source is already stopped");
-    int32_t ret = sourceInputClusterMap_[mainMicType_]->CapturerSourceStop();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "capturer source stop error, ret = %{public}d.\n", ret);
-    if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER) {
-        CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[HPAE_SOURCE_EC], ERR_ILLEGAL_STATE,
-            "sourceInputClusterMap_[%{public}d] is nullptr", HPAE_SOURCE_EC);
-        ret = sourceInputClusterMap_[HPAE_SOURCE_EC]->CapturerSourceStop();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ec capturer source stop error, ret = %{public}d.\n", ret);
+    sourceInputClusterMap_[mainMicType_]->CapturerSourceStop();
+
+    if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_EC)) {
+        sourceInputClusterMap_[HPAE_SOURCE_EC]->CapturerSourceStop();
     }
-    if (sourceInfo_.micRef == HPAE_REF_ON) {
-        CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[HPAE_SOURCE_MICREF], ERR_ILLEGAL_STATE,
-            "sourceInputClusterMap_[%{public}d] is nullptr", HPAE_SOURCE_MICREF);
-        ret = sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceStop();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ec capturer source stop error, ret = %{public}d.\n", ret);
+
+    if (sourceInfo_.micRef == HPAE_REF_ON && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_MICREF)) {
+        sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceStop();
     }
     return SUCCESS;
 }
@@ -589,6 +590,7 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
         int32_t ret = InitCapturerManager();
         if (ret != SUCCESS) {
             AUDIO_INFO_LOG("re-Init HpaeCapturerManager failed");
+            TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
             return;
         }
         AUDIO_INFO_LOG("re-Init HpaeCapturerManager success");
@@ -640,7 +642,8 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "get mic capturer soruce instance error, ret = %{public}d.\n", ret);
     PrepareCapturerEc(ecNodeInfo);
     PrepareCapturerMicRef(micRefNodeInfo);
-    CHECK_AND_RETURN_RET_LOG(InitCapturer() == SUCCESS, ret, "init main capturer error");
+    ret = InitCapturer();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "init main capturer error");
     isInit_.store(true);
     return SUCCESS;
 }
@@ -651,13 +654,12 @@ int32_t HpaeCapturerManager::Init()
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this] {
         int32_t ret = InitCapturerManager();
-        if (ret == SUCCESS) {
-            AUDIO_INFO_LOG("Init HpaeCapturerManager success");
-            TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
-            CheckIfAnyStreamRunning();
-            HpaePolicyManager::GetInstance().SetInputDevice(captureId_,
-                static_cast<DeviceType>(sourceInfo_.deviceType));
-        }
+        TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "Init HpaeCapturerManager failed");
+        AUDIO_INFO_LOG("Init HpaeCapturerManager success");
+        CheckIfAnyStreamRunning();
+        HpaePolicyManager::GetInstance().SetInputDevice(captureId_,
+            static_cast<DeviceType>(sourceInfo_.deviceType));
     };
     SendRequest(request, true);
     hpaeSignalProcessThread_->ActivateThread(shared_from_this());
@@ -675,21 +677,15 @@ int32_t HpaeCapturerManager::DeInit(bool isMoveDefault)
     for (auto outputNode : sourceOutputNodeMap_) {
         outputNode.second->ResetAll();
     }
-    int32_t ret = CapturerSourceStop();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_OPERATION,
-        "capturerSource stop error, ret = %{public}d.\n", ret);
-    ret = sourceInputClusterMap_[mainMicType_]->CapturerSourceDeInit();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_OPERATION,
-        "capturerSourceDeInit error, ret = %{public}d.\n", ret);
-    if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER) {
-        ret = sourceInputClusterMap_[HPAE_SOURCE_EC]->CapturerSourceDeInit();
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_INVALID_OPERATION,
-            "deinit ec source input node err.ret = %d.\n", ret);
+    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sourceInputClusterMap_, mainMicType_), ERR_INVALID_OPERATION,
+        "sourceInputClusterMap_[%{public}d] is nullptr", mainMicType_);
+    CapturerSourceStop();
+    sourceInputClusterMap_[mainMicType_]->CapturerSourceDeInit();
+    if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_EC)) {
+        sourceInputClusterMap_[HPAE_SOURCE_EC]->CapturerSourceDeInit();
     }
-    if (sourceInfo_.micRef == HPAE_REF_ON) {
-        ret = sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceDeInit();
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_INVALID_OPERATION,
-            "deinit micref source input node err.ret = %d.\n", ret);
+    if (sourceInfo_.micRef == HPAE_REF_ON && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_MICREF)) {
+        sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceDeInit();
     }
     isInit_.store(false);
     
@@ -804,7 +800,8 @@ int32_t HpaeCapturerManager::AddNodeToSource(const HpaeCaptureMoveInfo &moveInfo
 void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveInfo, bool isConnect)
 {
     uint32_t sessionId = moveInfo.sessionId;
-    AUDIO_INFO_LOG("[FinishMove] session :%{public}u to source:[%{public}s].", sessionId, sourceInfo_.sourceName.c_str());
+    AUDIO_INFO_LOG("[FinishMove] session :%{public}u to source:[%{public}s].",
+        sessionId, sourceInfo_.sourceName.c_str());
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;
     HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;

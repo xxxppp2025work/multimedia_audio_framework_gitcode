@@ -116,7 +116,6 @@ AudioRenderer::~AudioRenderer() = default;
 AudioRendererPrivate::~AudioRendererPrivate()
 {
     AUDIO_INFO_LOG("Destruct in");
-    abortRestore_ = true;
 
     std::shared_ptr<OutputDeviceChangeWithInfoCallbackImpl> outputDeviceChangeCallback = outputDeviceChangeCallback_;
     if (outputDeviceChangeCallback != nullptr) {
@@ -349,6 +348,8 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     audioRenderer->rendererInfo_.volumeMode = rendererOptions.rendererInfo.volumeMode;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
+    audioRenderer->rendererInfo_.isLoopback = rendererOptions.rendererInfo.isLoopback;
+    audioRenderer->rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
     audioRenderer->privacyType_ = rendererOptions.privacyType;
     audioRenderer->strategy_ = rendererOptions.strategy;
     audioRenderer->originalStrategy_ = rendererOptions.strategy;
@@ -885,6 +886,10 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
+
+    if (abortRestore_) {
+        return SUCCESS;
+    }
     // Return in advance if there's no need for restore.
     CHECK_AND_RETURN_RET_LOG(audioStream_, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
     RestoreStatus restoreStatus = audioStream_->CheckRestoreStatus();
@@ -969,7 +974,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
-    AUDIO_INFO_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
+    AUDIO_WARNING_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
         "volume: %{public}f, interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType,
         GetVolumeInner(), audioInterrupt_.mode);
     CHECK_AND_RETURN_RET_LOG(IsAllowedStartBackgroud(), false, "Start failed. IsAllowedStartBackgroud is false");
@@ -987,7 +992,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 
     float duckVolume = audioStream_->GetDuckVolume();
     bool isMute = audioStream_->GetMute();
-    AUDIO_INFO_LOG("VolumeInfo for Renderer::Start. duckVolume: %{public}f, isMute: %{public}d, MinStreamVolume:"\
+    AUDIO_WARNING_LOG("VolumeInfo for Renderer::Start. duckVolume: %{public}f, isMute: %{public}d, MinStreamVolume:"\
         "MinStreamVolume: %{public}f, MaxStreamVolume: %{public}f",
         duckVolume, isMute, GetMinStreamVolume(), GetMaxStreamVolume());
 
@@ -1139,7 +1144,7 @@ bool AudioRendererPrivate::Unmute(StateChangeCmdType cmdType) const
     }
     AUDIO_INFO_LOG("StreamClientState for Renderer::Unmute. id: %{public}u", sessionID_);
     (void)audioStream_->SetMute(false);
-    UpdateAudioInterruptStrategy(GetVolumeInner());
+    UpdateAudioInterruptStrategy(GetVolumeInner(), false);
     return true;
 }
 
@@ -1154,7 +1159,7 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
-    AUDIO_INFO_LOG("StreamClientState for Renderer::Pause. id: %{public}u", sessionID_);
+    AUDIO_WARNING_LOG("StreamClientState for Renderer::Pause. id: %{public}u", sessionID_);
 
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Pause failed. Switching state: %{public}d", isSwitching_);
 
@@ -1188,7 +1193,7 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
 bool AudioRendererPrivate::Stop()
 {
     Trace trace("KeyAction AudioRenderer::Stop " + std::to_string(sessionID_));
-    AUDIO_INFO_LOG("StreamClientState for Renderer::Stop. id: %{public}u", sessionID_);
+    AUDIO_WARNING_LOG("StreamClientState for Renderer::Stop. id: %{public}u", sessionID_);
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
@@ -1225,8 +1230,13 @@ bool AudioRendererPrivate::Release()
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
-    AUDIO_INFO_LOG("StreamClientState for Renderer::Release. id: %{public}u", sessionID_);
+    AUDIO_WARNING_LOG("StreamClientState for Renderer::Release. id: %{public}u", sessionID_);
 
+    abortRestore_ = true;
+    if (audioStream_ == nullptr) {
+        AUDIO_ERR_LOG("audioStream is null");
+        return true;
+    }
     bool result = audioStream_->ReleaseAudioStream();
 
     // If Stop call was skipped, Release to take care of Deactivation
@@ -1291,17 +1301,18 @@ int32_t AudioRendererPrivate::SetVolumeMode(int32_t mode)
 
 int32_t AudioRendererPrivate::SetVolume(float volume) const
 {
-    UpdateAudioInterruptStrategy(volume);
+    UpdateAudioInterruptStrategy(volume, true);
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->SetVolume(volume);
 }
 
-void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume) const
+void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume, bool setVolume) const
 {
     CHECK_AND_RETURN_LOG(audioStream_ != nullptr, "audioStream_ is nullptr");
     State currentState = audioStream_->GetState();
     bool isMute = audioStream_->GetMute();
+    bool noNeedActive = setVolume && (audioStream_->GetVolume() > 0) && (volume > 0);
     if (currentState == NEW || currentState == PREPARED) {
         AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume before RUNNING,  volume=%{public}f", volume);
         isStillZeroStreamVolume_ = (volume == 0);
@@ -1310,7 +1321,7 @@ void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume) const
         audioInterrupt_.sessionStrategy.concurrencyMode =
             (originalStrategy_.concurrencyMode == AudioConcurrencyMode::INVALID ?
             AudioConcurrencyMode::DEFAULT : originalStrategy_.concurrencyMode);
-        if (currentState == RUNNING) {
+        if (currentState == RUNNING && !noNeedActive) {
             AudioInterrupt audioInterrupt = audioInterrupt_;
             AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume,  volume=%{public}f", volume);
             int ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt, 0, true);
@@ -1324,6 +1335,20 @@ float AudioRendererPrivate::GetVolume() const
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->GetVolume();
+}
+
+int32_t AudioRendererPrivate::SetLoudnessGain(float loudnessGain) const
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    return currentStream->SetLoudnessGain(loudnessGain);
+}
+
+float AudioRendererPrivate::GetLoudnessGain() const
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    return currentStream->GetLoudnessGain();
 }
 
 int32_t AudioRendererPrivate::SetRenderRate(AudioRendererRate renderRate) const

@@ -25,6 +25,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+const unsigned int ON_REMOTE_REQUEST_TIMEOUT_SEC = 20;
 bool IpcStreamStub::CheckInterfaceToken(MessageParcel &data)
 {
     static auto localDescriptor = IpcStream::GetDescriptor();
@@ -74,6 +75,8 @@ int IpcStreamStub::OnMiddleCodeRemoteRequest(uint32_t code, MessageParcel &data,
             return HandleSetDuckFactor(data, reply);
         case ON_SET_OFFLOAD_DATA_CALLBACK_STATE:
             return HandleSetOffloadDataCallbackState(data, reply);
+        case ON_SET_LOUDNESSGAIN:
+            return HandleSetLoudnessGain(data, reply);
         default:
             return OnMiddleCodeRemoteRequestExt(code, data, reply, option);
     }
@@ -101,6 +104,7 @@ int IpcStreamStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessagePa
         return AUDIO_ERR;
     }
     Trace trace("IpcStream::Handle::" + std::to_string(code));
+    AudioXCollie audioXCollie("IpcStreamStub::OnRemoteRequest", ON_REMOTE_REQUEST_TIMEOUT_SEC);
     if (code >= IpcStreamMsg::IPC_STREAM_MAX_MSG) {
         AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
         return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -407,6 +411,13 @@ int32_t IpcStreamStub::HandleSetSilentModeAndMixWithOthers(MessageParcel &data, 
 int32_t IpcStreamStub::HandleSetClientVolume(MessageParcel &data, MessageParcel &reply)
 {
     reply.WriteInt32(SetClientVolume());
+    return AUDIO_OK;
+}
+
+int32_t IpcStreamStub::HandleSetLoudnessGain(MessageParcel &data, MessageParcel &reply)
+{
+    float loudnessGain = data.ReadFloat();
+    reply.WriteInt32(SetLoudnessGain(loudnessGain));
     return AUDIO_OK;
 }
 

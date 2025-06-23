@@ -62,6 +62,7 @@ public:
     bool IsMsgProcessing() override;
     bool DeactivateThread() override;
     int32_t SetClientVolume(uint32_t sessionId, float volume) override;
+    int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     int32_t SetRate(uint32_t sessionId, int32_t rate) override;
     int32_t SetAudioEffectMode(uint32_t sessionId, int32_t effectMode) override;
     int32_t GetAudioEffectMode(uint32_t sessionId, int32_t &effectMode) override;
@@ -104,9 +105,6 @@ private:
     bool isSplitProcessorType(HpaeProcessorType sceneType);
     int32_t ConnectInputSession(uint32_t sessionId);
     int32_t DisConnectInputSession(uint32_t sessionId);
-    int32_t ConnectMchInputSession(uint32_t sessionId);
-    int32_t DisConnectMchInputSession(uint32_t sessionId);
-    int32_t DeleteMchInputSession(uint32_t sessionId);
     void SetSessionState(uint32_t sessionId, HpaeSessionState renderState);
     void AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t>& moveIds,
@@ -125,6 +123,7 @@ private:
     int32_t HandlePriPaPower(uint32_t sessionId);
     bool CheckIsStreamRunning();
     HpaeProcessorType GetProcessorType(uint32_t sessionId);
+    HpaeProcessorType TransToProperSceneType(StreamUsage streamUsage, AudioEffectScene effectScene);
     void ReConnectNodeForCollaboration(uint32_t sessionID);
     void EnableCollaboration();
     void DisableCollaboration();
@@ -133,7 +132,6 @@ private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeProcessCluster>> sceneClusterMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;
-    std::unordered_map<uint32_t, std::shared_ptr<HpaeGainNode>> mchIdGainNodeMap_;
     std::unique_ptr<HpaeOutputCluster> outputCluster_ = nullptr;
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;

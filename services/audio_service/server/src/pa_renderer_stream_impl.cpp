@@ -171,6 +171,11 @@ int32_t PaRendererStreamImpl::Start()
     }
 
     streamCmdStatus_ = 0;
+    uint32_t oldFadeFlag = AudioVolume::GetInstance()->GetFadeoutState(sinkInputIndex_);
+    AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, NO_FADE);
+    if (oldFadeFlag != NO_FADE) {
+        AUDIO_INFO_LOG("SinkInput[%{public}u] fadeflag:%{public}u set to NO_FADE", sinkInputIndex_, oldFadeFlag);
+    }
     operation = pa_stream_cork(paStream_, 0, PAStreamStartSuccessCb, reinterpret_cast<void *>(this));
     CHECK_AND_RETURN_RET_LOG(operation != nullptr, ERR_OPERATION_FAILED, "pa_stream_cork operation is null");
     pa_operation_unref(operation);
@@ -1316,6 +1321,12 @@ int32_t PaRendererStreamImpl::SetClientVolume(float clientVolume)
     AUDIO_PRERELEASE_LOGI("set client volume success");
 
     return SUCCESS;
+}
+
+int32_t PaRendererStreamImpl::SetLoudnessGain(float loudnessGain)
+{
+    AUDIO_WARNING_LOG("SetLoudnessGain only for hpae renderer stream");
+    return ERROR;
 }
 
 void PaRendererStreamImpl::UpdatePaTimingInfo()

@@ -61,6 +61,8 @@ public:
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
 
+    AudioStreamInfo GetFastStreamInfo() override;
+
     float GetLowPowerVolume(int32_t streamId) override;
 
     float GetSingleStreamVolume(int32_t streamId) override;
@@ -74,6 +76,8 @@ public:
     bool GetStreamMute(AudioVolumeType volumeType, int32_t uid = 0) override;
 
     bool IsStreamActive(AudioVolumeType volumeType) override;
+
+    bool IsStreamActiveByStreamUsage(StreamUsage streamUsage) override;
 
     bool IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage) override;
     bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source) override;
@@ -366,7 +370,7 @@ public:
 
     int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) override;
-    
+
     int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) override;
 
@@ -464,9 +468,13 @@ public:
 
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
 
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode) override;
+
     int32_t ForceStopAudioStream(StopAudioType audioType) override;
 
-    bool IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo) override;
+    bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo) override;
+
+    bool SetKaraokeParameters(const std::string &parameters) override;
 
     int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage) override;
 
@@ -476,10 +484,26 @@ public:
 
     bool GetStreamMuteByUsage(StreamUsage streamUsage) override;
 
+    float GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType) override;
+
+    std::vector<AudioVolumeType> GetSupportedAudioVolumeTypes() override;
+
+    AudioVolumeType GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage) override;
+
+    std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType) override;
+
     int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages) override;
     int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         const DeviceInfoUpdateCommand command) override;
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) override;
+
+    bool IsCollaborativePlaybackSupported() override;
+
+    bool IsCollaborativePlaybackEnabledForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice) override;
+
+    int32_t SetCollaborativePlaybackEnabledForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

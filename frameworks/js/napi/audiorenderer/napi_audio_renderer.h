@@ -64,6 +64,7 @@ private:
         size_t bufferSize;
         int32_t volType;
         double volLevel;
+        double loudnessGain;
         uint32_t rendererSampleRate;
         uint32_t audioStreamId;
         size_t totalBytesWritten;
@@ -108,6 +109,8 @@ private:
     static napi_value GetAudioStreamIdSync(napi_env env, napi_callback_info info);
     static napi_value SetVolume(napi_env env, napi_callback_info info);
     static napi_value GetVolume(napi_env env, napi_callback_info info);
+    static napi_value SetLoudnessGain(napi_env env, napi_callback_info info);
+    static napi_value GetLoudnessGain(napi_env env, napi_callback_info info);
     static napi_value GetRendererInfo(napi_env env, napi_callback_info info);
     static napi_value GetRendererInfoSync(napi_env env, napi_callback_info info);
     static napi_value GetStreamInfo(napi_env env, napi_callback_info info);
@@ -159,16 +162,16 @@ private:
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *argv,
         const std::string &cbName);
     static void RegisterRendererDeviceChangeCallback(napi_env env, napi_value *argv,
-        const std::string &cbName, NapiAudioRenderer *napiRenderer);
+        NapiAudioRenderer *napiRenderer);
     static void UnregisterRendererCallback(napi_env env, size_t argc, const std::string &cbName,
         napi_value *argv, NapiAudioRenderer *napiRenderer);
-    static void UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc, const std::string &cbName,
+    static void UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc,
         napi_value *argv, NapiAudioRenderer *napiRenderer);
 
     static void RegisterRendererOutputDeviceChangeWithInfoCallback(napi_env env, napi_value *argv,
-        const std::string &cbName, NapiAudioRenderer *napiRenderer);
+        NapiAudioRenderer *napiRenderer);
     static void UnregisterRendererOutputDeviceChangeWithInfoCallback(napi_env env, size_t argc,
-        const std::string &cbName, napi_value *argv, NapiAudioRenderer *napiRenderer);
+        napi_value *argv, NapiAudioRenderer *napiRenderer);
 
     static void RegisterRendererWriteDataCallback(napi_env env, napi_value *argv,
         const std::string &cbName, NapiAudioRenderer *napiRenderer);

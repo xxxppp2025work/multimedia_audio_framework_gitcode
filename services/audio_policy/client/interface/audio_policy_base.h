@@ -68,6 +68,8 @@ public:
 
     virtual int32_t SetLowPowerVolume(int32_t streamId, float volume) = 0;
 
+    virtual AudioStreamInfo GetFastStreamInfo() = 0;
+
     virtual float GetLowPowerVolume(int32_t streamId) = 0;
 
     virtual float GetSingleStreamVolume(int32_t streamId) = 0;
@@ -81,6 +83,8 @@ public:
     virtual bool GetStreamMute(AudioVolumeType volumeType, int32_t uid = 0) = 0;
 
     virtual bool IsStreamActive(AudioVolumeType volumeType) = 0;
+
+    virtual bool IsStreamActiveByStreamUsage(StreamUsage streamUsage) = 0;
 
     virtual bool IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage) = 0;
     virtual bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source) = 0;
@@ -379,7 +383,7 @@ public:
 
     virtual int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) = 0;
-    
+
     virtual int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) = 0;
 
@@ -478,12 +482,16 @@ public:
 
     virtual DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
         const StreamUsage &streamUsage) = 0;
-    
+
     virtual bool IsAcousticEchoCancelerSupported(SourceType sourceType) = 0;
+
+    virtual bool IsAudioLoopbackSupported(AudioLoopbackMode mode) = 0;
 
     virtual int32_t ForceStopAudioStream(StopAudioType audioType) = 0;
 
-    virtual bool IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo) = 0;
+    virtual bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo) = 0;
+
+    virtual bool SetKaraokeParameters(const std::string &parameters) = 0;
 
     virtual int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage) = 0;
 
@@ -493,11 +501,27 @@ public:
 
     virtual bool GetStreamMuteByUsage(StreamUsage streamUsage) = 0;
 
+    virtual float GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType) = 0;
+
+    virtual std::vector<AudioVolumeType> GetSupportedAudioVolumeTypes() = 0;
+
+    virtual AudioVolumeType GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage) = 0;
+
+    virtual std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType) = 0;
+
     virtual int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages) = 0;
 
     virtual int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         const DeviceInfoUpdateCommand command) = 0;
     virtual int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) = 0;
+
+    virtual bool IsCollaborativePlaybackSupported() = 0;
+    
+    virtual int32_t SetCollaborativePlaybackEnabledForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled) = 0;
+    
+    virtual bool IsCollaborativePlaybackEnabledForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

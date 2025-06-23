@@ -62,10 +62,8 @@ HpaeSourceInputNode::HpaeSourceInputNode(HpaeNodeInfo &nodeInfo)
     nodeInfoMap_[sourceBufferType].frameLen = FRAME_DURATION_DEFAULT * nodeInfo.samplingRate / MILLISECOND_PER_SECOND;
     capturerFrameDataMap_.emplace(sourceBufferType, frameByteSizeMap_.at(sourceBufferType));
     outputStreamMap_.emplace(sourceBufferType, this);
-    historyDataMap_.emplace(sourceBufferType, frameByteSizeMap_.at(sourceBufferType));
-    if (historyDataMap_.find(sourceBufferType) != historyDataMap_.end()) {
-        historyDataMap_.at(sourceBufferType).resize(0);
-    }
+    historyDataMap_.emplace(sourceBufferType, 0);
+    historyRemainSizeMap_.emplace(sourceBufferType, 0);
 #ifdef ENABLE_HOOK_PCM
     inputPcmDumperMap_.emplace(sourceBufferType,
         std::make_unique<HpaePcmDumper>("HpaeSourceInputNode_id_"+ std::to_string(GetSessionId()) +
@@ -142,6 +140,65 @@ void HpaeSourceInputNode::DoProcessInner(const HpaeSourceBufferType &bufferType,
     }
 }
 
+#ifdef IS_EMULATOR
+void HpaeSourceInputNode::DoProcessMicInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes)
+{
+    AUDIO_DEBUG_LOG("DoProcessMicInner, replyBytes: %{public}" PRIu64, replyBytes);
+    auto &historyData = historyDataMap_.at(bufferType);
+    uint32_t byteSize = nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen *
+        static_cast<uint32_t>(GetSizeFromFormat(nodeInfoMap_.at(bufferType).format));
+
+    // todo: do not convert to float in SourceInputNode
+    ConvertToFloat(nodeInfoMap_.at(bufferType).format,
+        nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen,
+        historyData.data() + historyData.size() - historyRemainSizeMap_.at(bufferType),
+        inputAudioBufferMap_.at(bufferType).GetPcmDataBuffer());
+    historyRemainSizeMap_[bufferType] -= byteSize;
+    outputStreamMap_.at(bufferType).WriteDataToOutput(&inputAudioBufferMap_.at(bufferType));
+}
+
+void HpaeSourceInputNode::DoProcess()
+{
+    Trace trace("[" + std::to_string(GetNodeId()) + "]HpaeSourceInputNode::DoProcess " + GetTraceInfo());
+    CHECK_AND_RETURN_LOG(audioCapturerSource_ != nullptr,
+        "audioCapturerSource_ is nullptr NodeId: %{public}u", GetNodeId());
+    uint64_t replyBytes = 0;
+    if (sourceInputNodeType_ == HpaeSourceInputNodeType::HPAE_SOURCE_MIC_EC) {
+        uint64_t replyBytesEc = 0;
+        audioCapturerSource_->CaptureFrameWithEc(&fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_MIC), replyBytes,
+                                                 &fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc);
+        SetBufferValid(HPAE_SOURCE_BUFFER_TYPE_MIC, replyBytes);
+        DoProcessInner(HPAE_SOURCE_BUFFER_TYPE_MIC, replyBytes);
+        DoProcessInner(HPAE_SOURCE_BUFFER_TYPE_EC, replyBytesEc);
+    } else {
+        HpaeSourceBufferType sourceBufferType = nodeInfoMap_.begin()->second.sourceBufferType;
+        uint32_t byteSize = nodeInfoMap_.at(sourceBufferType).channels * nodeInfoMap_.at(sourceBufferType).frameLen *
+            static_cast<uint32_t>(GetSizeFromFormat(nodeInfoMap_.at(sourceBufferType).format));
+        auto &historyData = historyDataMap_.at(sourceBufferType);
+        while (historyRemainSizeMap_[sourceBufferType] < byteSize) {
+            if (historyRemainSizeMap_[sourceBufferType] > 0) {
+                historyData.erase(historyData.begin(), historyData.begin() + historyData.size() -
+                    historyRemainSizeMap_[sourceBufferType]);
+            }
+            audioCapturerSource_->CaptureFrame(capturerFrameDataMap_.at(sourceBufferType).data(),
+                (uint64_t)frameByteSizeMap_.at(sourceBufferType), replyBytes);
+            CHECK_AND_RETURN_LOG(replyBytes != 0, "replyBytes is 0");
+#ifdef ENABLE_HOOK_PCM
+            if (inputPcmDumperMap_.find(sourceBufferType) != inputPcmDumperMap_.end() &&
+                inputPcmDumperMap_.at(sourceBufferType)) {
+                inputPcmDumperMap_.at(sourceBufferType)->Dump(
+                    (int8_t *) capturerFrameDataMap_.at(sourceBufferType).data(), replyBytes);
+            }
+#endif
+            auto newData = capturerFrameDataMap_.at(sourceBufferType).data();
+            historyData.insert(historyData.end(), newData, newData + replyBytes);
+            historyRemainSizeMap_[sourceBufferType] += replyBytes;
+        }
+        DoProcessMicInner(sourceBufferType, replyBytes);
+    }
+}
+
+#else
 void HpaeSourceInputNode::DoProcessMicInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes)
 {
     AUDIO_DEBUG_LOG("DoProcessMicInner, replyBytes: %{public}" PRIu64, replyBytes);
@@ -202,6 +259,7 @@ void HpaeSourceInputNode::DoProcess()
         DoProcessMicInner(sourceBufferType, replyBytes);
     }
 }
+#endif
 
 int32_t HpaeSourceInputNode::WriteCapturerData(char *data, int32_t dataSize)
 {
@@ -300,11 +358,18 @@ int32_t HpaeSourceInputNode::GetCapturerSourceInstance(const std::string &device
 
 int32_t HpaeSourceInputNode::CapturerSourceInit(IAudioSourceAttr &attr)
 {
-    if (audioCapturerSource_ == nullptr) {
-        return ERROR;
-    }
-
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        ERROR, "invalid audioCapturerSource");
+    Trace trace("HpaeSourceInputNode::CapturerSourceInit");
     if (audioCapturerSource_->IsInited()) {
+        SetSourceState(STREAM_MANAGER_IDLE);
+#ifdef IS_EMULATOR
+        AUDIO_INFO_LOG("do start and stop");
+        if (sourceInputNodeType_ == HPAE_SOURCE_MIC || sourceInputNodeType_ == HPAE_SOURCE_MIC_EC) {
+            audioCapturerSource_->Start();
+            audioCapturerSource_->Stop();
+        }
+#endif
         return SUCCESS;
     }
 
@@ -325,29 +390,29 @@ int32_t HpaeSourceInputNode::CapturerSourceInit(IAudioSourceAttr &attr)
 
 int32_t HpaeSourceInputNode::CapturerSourceDeInit()
 {
-    if (audioCapturerSource_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        ERROR, "invalid audioCapturerSource");
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
+    Trace trace("HpaeSourceInputNode::CapturerSourceDeInit");
     audioCapturerSource_->DeInit();
     audioCapturerSource_ = nullptr;
-    // todo: check where to release captureId_
     HdiAdapterManager::GetInstance().ReleaseId(captureId_);
     return SUCCESS;
 }
 
 int32_t HpaeSourceInputNode::CapturerSourceFlush(void)
 {
-    if (audioCapturerSource_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        ERROR, "invalid audioCapturerSource");
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
     return audioCapturerSource_->Flush();
 }
 
 int32_t HpaeSourceInputNode::CapturerSourcePause(void)
 {
-    if (audioCapturerSource_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        ERROR, "invalid audioCapturerSource");
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Pause() == SUCCESS, ERROR, "Source pause fail");
     SetSourceState(STREAM_MANAGER_SUSPENDED);
     return SUCCESS;
@@ -355,17 +420,15 @@ int32_t HpaeSourceInputNode::CapturerSourcePause(void)
 
 int32_t HpaeSourceInputNode::CapturerSourceReset(void)
 {
-    if (audioCapturerSource_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        ERROR, "invalid audioCapturerSource");
     return audioCapturerSource_->Reset();
 }
 
 int32_t HpaeSourceInputNode::CapturerSourceResume(void)
 {
-    if (audioCapturerSource_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        ERROR, "invalid audioCapturerSource");
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Resume() == SUCCESS, ERROR, "Source resume fail");
     SetSourceState(STREAM_MANAGER_RUNNING);
     return SUCCESS;
@@ -373,9 +436,10 @@ int32_t HpaeSourceInputNode::CapturerSourceResume(void)
 
 int32_t HpaeSourceInputNode::CapturerSourceStart(void)
 {
-    if (audioCapturerSource_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        ERROR, "invalid audioCapturerSource");
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
+    Trace trace("HpaeSourceInputNode::CapturerSourceStart");
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Start() == SUCCESS, ERROR, "Source start fail");
     SetSourceState(STREAM_MANAGER_RUNNING);
     return SUCCESS;
@@ -383,11 +447,14 @@ int32_t HpaeSourceInputNode::CapturerSourceStart(void)
 
 int32_t HpaeSourceInputNode::CapturerSourceStop(void)
 {
-    if (audioCapturerSource_ == nullptr) {
-        return ERROR;
-    }
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Stop() == SUCCESS, ERROR, "Source stop fail");
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        ERROR, "invalid audioCapturerSource");
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
+    Trace trace("HpaeSourceInputNode::CapturerSourceStop");
     SetSourceState(STREAM_MANAGER_SUSPENDED);
+    if (audioCapturerSource_->Stop() != SUCCESS) {
+        AUDIO_ERR_LOG("CapturerSourceStop error, sourceInputNode[%{public}u]", sourceInputNodeType_);
+    }
     return SUCCESS;
 }
 
@@ -444,8 +511,9 @@ HpaeNodeInfo &HpaeSourceInputNode::GetNodeInfoWithInfo(HpaeSourceBufferType &typ
 
 void HpaeSourceInputNode::UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUid, std::vector<int32_t> &sessionsId)
 {
-    CHECK_AND_RETURN_LOG(audioCapturerSource_ != nullptr, "audioCapturerSource_ is nullptr");
-    CHECK_AND_RETURN_LOG(audioCapturerSource_->IsInited(), "audioCapturerSource_ not init");
+    CHECK_AND_RETURN_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        "audioCapturerSource_ is nullptr");
+    CHECK_AND_RETURN_LOG(audioCapturerSource_->IsInited(), "invalid source state");
     audioCapturerSource_->UpdateAppsUid(appsUid);
     std::shared_ptr<AudioSourceClock> clock =
         CapturerClockManager::GetInstance().GetAudioSourceClock(captureId_);
