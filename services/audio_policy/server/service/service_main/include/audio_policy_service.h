@@ -98,6 +98,10 @@ public:
 
     void OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status);
 
+    int32_t SetAdjustVolumeForZone(int32_t zoneId);
+
+    int32_t GetVolumeAdjustZoneId();
+
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
 
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) const;
