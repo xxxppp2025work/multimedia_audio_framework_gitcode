@@ -93,13 +93,13 @@
             "qos_manager",
             "media_foundation",
             "usb_manager",
-            "frame_aware_sched"
+            "frame_aware_sched",
+            "openssl",
+            "libxml2",
+            "glib",
+            "libsnd"
             ],
           "third_party": [
-            "glib",
-            "libsnd",
-            "libxml2",
-            "openssl"
           ]
         },
         "build": {
