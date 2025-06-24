@@ -211,7 +211,7 @@ int32_t PolicyHandler::GetAndSaveClientType(uint32_t uid, const std::string &bun
 int32_t PolicyHandler::GetMaxRendererInstances()
 {
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
-    int32_t ret;
+    int32_t ret = ERROR;
     iPolicyProvider_->GetMaxRendererInstances(ret);
     return ret;
 }

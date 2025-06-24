@@ -71,7 +71,7 @@ void SleAudioDeviceManager::GetSleVirtualAudioDeviceList(std::vector<AudioDevice
 bool SleAudioDeviceManager::IsInBandRingOpen(const std::string &device) const
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, false, "callback is nullptr");
-    bool ret;
+    bool ret = false;
     callback_->IsInBandRingOpen(device, ret);
     return ret;
 }
@@ -79,7 +79,7 @@ bool SleAudioDeviceManager::IsInBandRingOpen(const std::string &device) const
 uint32_t SleAudioDeviceManager::GetSupportStreamType(const std::string &device) const
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
-    uint32_t retType;
+    uint32_t retType = static_cast<uint32_t>(ERROR);
     callback_->GetSupportStreamType(device, retType);
     return retType;
 }
@@ -87,7 +87,7 @@ uint32_t SleAudioDeviceManager::GetSupportStreamType(const std::string &device) 
 int32_t SleAudioDeviceManager::SetActiveSinkDevice(const std::string &device, uint32_t streamType)
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
-    int32_t ret;
+    int32_t ret = ERROR;
     callback_->SetActiveSinkDevice(device, streamType, ret);
     return ret;
 }
@@ -98,7 +98,7 @@ int32_t SleAudioDeviceManager::StartPlaying(const std::string &device, uint32_t 
 
     AUDIO_INFO_LOG("sle streamType %{public}u", streamType);
     std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
-    int32_t ret;
+    int32_t ret = ERROR;
     if (!startedSleStreamType_[device][streamType].empty()) {
         AUDIO_INFO_LOG("sle stream type %{public}u is already started", streamType);
         return SUCCESS;
@@ -111,7 +111,7 @@ int32_t SleAudioDeviceManager::StopPlaying(const std::string &device, uint32_t s
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
-    int32_t ret;
+    int32_t ret = ERROR;
     AUDIO_INFO_LOG("sle streamType %{public}u", streamType);
     callback_->StopPlaying(device, streamType, ret);
     return ret;
@@ -120,7 +120,7 @@ int32_t SleAudioDeviceManager::StopPlaying(const std::string &device, uint32_t s
 int32_t SleAudioDeviceManager::ConnectAllowedProfiles(const std::string &remoteAddr) const
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
-    int32_t ret;
+    int32_t ret = ERROR;
     callback_->ConnectAllowedProfiles(remoteAddr, ret);
     return ret;
 }
@@ -128,7 +128,7 @@ int32_t SleAudioDeviceManager::ConnectAllowedProfiles(const std::string &remoteA
 int32_t SleAudioDeviceManager::SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType)
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
-    int32_t ret;
+    int32_t ret = ERROR;
     callback_->SetDeviceAbsVolume(remoteAddr, volume, streamType, ret);
     return ret;
 }
@@ -136,7 +136,7 @@ int32_t SleAudioDeviceManager::SetDeviceAbsVolume(const std::string &remoteAddr,
 int32_t SleAudioDeviceManager::SendUserSelection(const std::string &device, uint32_t streamType)
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
-    int32_t ret;
+    int32_t ret = ERROR;
     callback_->SendUserSelection(device, streamType, ret);
     return ret;
 }

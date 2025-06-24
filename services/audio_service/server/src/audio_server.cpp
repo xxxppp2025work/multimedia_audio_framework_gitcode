@@ -1225,7 +1225,7 @@ int32_t AudioServer::SetAudioScene(int32_t audioScene, const std::vector<int32_t
 {
     AUDIO_INFO_LOG("Scene: %{public}d, device: %{public}d, scoExcludeFlag: %{public}d",
         audioScene, activeInputDevice, scoExcludeFlag);
-    CHECK_AND_RETURN_RET_LOG(!activeOutputDevices.empty() && 
+    CHECK_AND_RETURN_RET_LOG(!activeOutputDevices.empty() &&
         activeOutputDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "activeOutputDevices is empty");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
