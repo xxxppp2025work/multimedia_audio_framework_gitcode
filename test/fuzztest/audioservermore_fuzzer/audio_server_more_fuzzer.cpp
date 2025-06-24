@@ -26,6 +26,7 @@
 #include "audio_param_parser.h"
 #include "audio_process_config.h"
 #include "ipc_stream_in_server.h"
+#include "pulseaudio_ipc_interface_code.h"
 using namespace std;
 
 namespace OHOS {

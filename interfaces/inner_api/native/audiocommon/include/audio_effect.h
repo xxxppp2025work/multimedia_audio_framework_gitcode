@@ -73,6 +73,14 @@ struct AudioSpatialDeviceState : public Parcelable {
     bool isHeadTrackingSupported;
     AudioSpatialDeviceType spatialDeviceType;
 
+    AudioSpatialDeviceState() = default;
+    AudioSpatialDeviceState(const std::string &address, bool isSpatializationSupported,
+        bool isHeadTrackingSupported, AudioSpatialDeviceType spatialDeviceType) :
+        address(address), isSpatializationSupported(isSpatializationSupported),
+        isHeadTrackingSupported(isHeadTrackingSupported), spatialDeviceType(spatialDeviceType)
+    {
+    }
+
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteString(address) &&
@@ -161,6 +169,12 @@ struct EffectChain : public Parcelable {
     std::string label = "";
     static constexpr int32_t AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT = 16;
 
+    EffectChain() = default;
+    EffectChain(std::string sName, std::vector<std::string> applyVec, std::string sLabel)
+        : name(sName), apply(applyVec), label(sLabel)
+    {
+    }
+
     bool Marshalling(Parcel &parcel) const override
     {
         parcel.WriteString(name);
@@ -244,6 +258,15 @@ struct EffectChainManagerParam : public Parcelable {
     std::vector<std::string> priorSceneList;
     std::unordered_map<std::string, std::string> sceneTypeToChainNameMap;
     std::unordered_map<std::string, std::string> effectDefaultProperty;
+
+    EffectChainManagerParam() = default;
+    EffectChainManagerParam(uint32_t maxExtraNum, std::string defaultSceneName, std::vector<std::string> priorSceneList,
+        std::unordered_map<std::string, std::string> sceneTypeToChainNameMap,
+        std::unordered_map<std::string, std::string> effectDefaultProperty)
+        : maxExtraNum(maxExtraNum), defaultSceneName(defaultSceneName), priorSceneList(priorSceneList),
+        sceneTypeToChainNameMap(sceneTypeToChainNameMap), effectDefaultProperty(effectDefaultProperty)
+    {
+    }
 
     bool Marshalling(Parcel &parcel) const override
     {

@@ -664,6 +664,7 @@ ohos_executable("audio_process_client_test") {
     "../../frameworks/native/audioutils/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "client/include",
+    "../audio_policy/server/include",
   ]
 
   sources = [ "test/example/audio_process_client_test.cpp" ]

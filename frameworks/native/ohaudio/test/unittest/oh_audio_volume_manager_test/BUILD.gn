@@ -51,5 +51,10 @@ ohos_unittest("audio_oh_volume_manager_unit_test") {
 
   deps = [ "${audio_framework_root}/frameworks/native/ohaudio:ohaudio" ]
 
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+  ]
 }

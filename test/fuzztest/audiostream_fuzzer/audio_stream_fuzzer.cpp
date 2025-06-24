@@ -29,6 +29,7 @@
 #include "audio_inner_call.h"
 #include "audio_server.h"
 #include "audio_service.h"
+#include "audio_service_types.h"
 #include "audio_param_parser.h"
 #include "audio_process_config.h"
 #include "audio_utils.h"
@@ -99,6 +100,12 @@ public:
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning) override;
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int32_t LoadModernInnerCapSink(int32_t innerCapId) override;
+
+    int32_t UnloadModernInnerCapSink(int32_t innerCapId) override;
+#endif
 
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
 };
@@ -180,6 +187,19 @@ int32_t MockPolicyProvider::SetDefaultOutputDevice(const DeviceType defaultOutpu
 {
     return SUCCESS;
 }
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t MockPolicyProvider::LoadModernInnerCapSink(int32_t innerCapId)
+{
+    return SUCCESS;
+}
+
+int32_t MockPolicyProvider::UnloadModernInnerCapSink(int32_t innerCapId)
+{
+    return SUCCESS;
+}
+#endif
+
 void AudioFuzzTestGetPermission()
 {
     uint64_t tokenId;
@@ -224,7 +244,7 @@ AudioServer *GetServerPtr()
             AUDIO_INFO_LOG("Audio extra parameters load configuration successfully.");
         }
 
-        std::vector<std::pair<std::string, std::string>> kvpairs = {
+        std::vector<StringPair> kvpairs = {
             {"key1", "value1"},
             {"key2", "value2"},
             {"key3", "value3"}
@@ -249,13 +269,14 @@ void InitAudioServer()
 
     std::shared_ptr<AudioSharedMemory> buffer;
     wrapper->InitSharedVolume(buffer);
+    bool ret = false;
     AudioProcessConfig config;
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     wrapper->GetProcessDeviceInfo(config, true, deviceInfo);
     wrapper->SetWakeUpAudioCapturerFromAudioServer(config);
     wrapper->NotifyCapturerAdded(config.capturerInfo, config.streamInfo, 0);
     wrapper->NotifyWakeUpCapturerRemoved();
-    wrapper->IsAbsVolumeSupported();
+    wrapper->IsAbsVolumeSupported(ret);
 }
 
 void ModifyStreamInfoFormat(AudioProcessConfig &config)
@@ -328,11 +349,12 @@ void CallStreamFuncs(sptr<IpcStreamInServer> ipcStream)
 
     std::string name = "fuzz_test";
     ipcStream->RegisterThreadPriority(0, name, METHOD_START);
+    bool ret = false;
     uint32_t sessionId = 0;
     ipcStream->GetAudioSessionID(sessionId);
     ipcStream->Start();
     ipcStream->Pause();
-    ipcStream->Drain();
+    ipcStream->Drain(ret);
     AudioPlaybackCaptureConfig config = {{{STREAM_USAGE_MUSIC}, FilterMode::INCLUDE, {0}, FilterMode::INCLUDE}, false};
     ipcStream->UpdatePlaybackCaptureConfig(config);
     uint64_t framePos = 0;
@@ -376,7 +398,7 @@ void DoStreamFuzzTest(const AudioProcessConfig &config, const uint8_t *rawData, 
         return;
     }
 
-    uint32_t code = GetData<uint32_t>() % (IpcStream::IpcStreamMsg::IPC_STREAM_MAX_MSG);
+    uint32_t code = 20;
     rawData = rawData + sizeof(uint32_t);
     size = size - sizeof(uint32_t);
 
@@ -449,8 +471,10 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
     ModifyProcessConfig(config);
 
     int32_t errorCode = 0;
-    auto remoteObj = GetServerPtr()->CreateAudioProcess(config, errorCode);
-    if (remoteObj != nullptr) {
+    AudioPlaybackCaptureConfig filterConfig = AudioPlaybackCaptureConfig();
+    sptr<IRemoteObject> ret = nullptr;
+    GetServerPtr()->CreateAudioProcess(config, errorCode, filterConfig, ret);
+    if (ret != nullptr) {
         DoStreamFuzzTest(config, rawData, size);
     }
     if (config.appInfo.appUid == 0) {

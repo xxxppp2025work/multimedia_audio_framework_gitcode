@@ -276,7 +276,8 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_212, TestSize.Level1)
     EXPECT_NE(audioPolicyServer->eventEntry_, nullptr);
 
     AudioCapturerInfo captureInfo;
-    auto ret = audioPolicyServer->GetPreferredInputDeviceDescriptors(captureInfo);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret;
+    audioPolicyServer->GetPreferredInputDeviceDescriptors(captureInfo, ret);
     EXPECT_NE(ret.size(), 0);
 }
 

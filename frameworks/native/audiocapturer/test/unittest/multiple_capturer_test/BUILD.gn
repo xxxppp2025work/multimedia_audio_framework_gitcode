@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/test.gni")
+import("../../../../../../config.gni")
 
 module_output_path =
     "audio_framework/audio_framework_route/multiple_audio_capturer"
@@ -30,7 +31,11 @@ ohos_unittest("multiple_audio_capturer_unit_test") {
 
   sources = [ "src/multiple_audio_capturer_unit_test.cpp" ]
 
-  deps = [ "../../../../audiocapturer:audio_capturer" ]
+  deps = [
+    "../../../../audiocapturer:audio_capturer",
+    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
+  ]
 
   external_deps = [ "hilog:libhilog" ]
 }

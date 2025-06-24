@@ -824,6 +824,24 @@ struct CaptureFilterOptions {
     std::vector<int32_t> pids;
     FilterMode pidFilterMode {FilterMode::INCLUDE};
 
+    CaptureFilterOptions() = default;
+    CaptureFilterOptions(const std::vector<StreamUsage>& usage, FilterMode uFilterMode,
+        const std::vector<int32_t>& pid, FilterMode pFilterMode)
+    {
+        this->usages = usage;
+        this->usageFilterMode = uFilterMode;
+        this->pids = pid;
+        this->pidFilterMode = pFilterMode;
+    }
+
+    CaptureFilterOptions(const CaptureFilterOptions& filter)
+    {
+        usages = filter.usages;
+        usageFilterMode = filter.usageFilterMode;
+        pids = filter.pids;
+        pidFilterMode = filter.pidFilterMode;
+    }
+
     bool operator ==(CaptureFilterOptions& filter)
     {
         std::sort(filter.usages.begin(), filter.usages.end());
@@ -841,6 +859,17 @@ inline constexpr uint32_t MAX_VALID_PIDS_SIZE = 128; // 128 for pids
 struct AudioPlaybackCaptureConfig : public Parcelable {
     CaptureFilterOptions filterOptions;
     bool silentCapture {false}; // To be deprecated since 12
+
+    AudioPlaybackCaptureConfig() = default;
+    AudioPlaybackCaptureConfig(const CaptureFilterOptions& filter, const bool slient) :
+        filterOptions(filter), silentCapture(slient)
+    {
+    }
+
+    AudioPlaybackCaptureConfig(const AudioPlaybackCaptureConfig& capturerConfig) :
+        filterOptions(capturerConfig.filterOptions), silentCapture(capturerConfig.silentCapture)
+    {
+    }
 
     bool operator ==(AudioPlaybackCaptureConfig& filter)
     {

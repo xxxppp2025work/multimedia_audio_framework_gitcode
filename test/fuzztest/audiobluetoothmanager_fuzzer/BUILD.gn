@@ -40,6 +40,8 @@ ohos_fuzztest("AudioBluetoothManagerFuzzTest") {
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client_static",
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_client",
+    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_proxy",
   ]
 
   external_deps = [
@@ -77,6 +79,9 @@ ohos_fuzztest("AudioBluetoothManagerFuzzTest") {
     ]
   }
   defines = []
+  if (audio_framework_feature_dtmf_tone) {
+    defines += [ "FEATURE_DTMF_TONE" ]
+  }
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
   }

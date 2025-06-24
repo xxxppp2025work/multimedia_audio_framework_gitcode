@@ -64,6 +64,8 @@ ohos_unittest("renderer_in_server_unit_test") {
     "../../../../../services/audio_service:audio_service",
     "../../../../audio_service:audio_process_service_static",
     "../../../../../frameworks/native/audioclock:audio_clock",
+    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
   ]
 
   external_deps = [
@@ -121,6 +123,8 @@ ohos_unittest("renderer_in_server_second_unit_test") {
     "../../../../../services/audio_service:audio_service",
     "../../../../audio_service:audio_process_service_static",
     "../../../../../frameworks/native/audioclock:audio_clock",
+    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
   ]
 
   external_deps = [

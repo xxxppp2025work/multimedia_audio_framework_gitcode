@@ -67,7 +67,8 @@ void AudioServiceCommonUnitTest::TearDown(void)
  */
 HWTEST(AudioServiceCommonUnitTest, ProcessConfigTest_001, TestSize.Level1)
 {
-    AudioPlaybackCaptureConfig config = {{{STREAM_USAGE_MUSIC}, FilterMode::INCLUDE, {0}, FilterMode::INCLUDE}, false};
+    CaptureFilterOptions filterOptions = {{STREAM_USAGE_MUSIC}, FilterMode::INCLUDE, {0}, FilterMode::INCLUDE};
+    AudioPlaybackCaptureConfig config = {filterOptions, false};
     std::string dumpStr = ProcessConfig::DumpInnerCapConfig(config);
     EXPECT_NE(dumpStr, "");
 }
@@ -682,7 +683,8 @@ HWTEST(AudioServiceCommonUnitTest, AudioRingCache_008, TestSize.Level1)
 */
 HWTEST(AudioServiceCommonUnitTest, DumpInnerCapConfig_001, TestSize.Level1)
 {
-    AudioPlaybackCaptureConfig config = {{{STREAM_USAGE_MUSIC}, FilterMode::EXCLUDE, {0}, FilterMode::EXCLUDE}, false};
+    CaptureFilterOptions filterOptions = {{STREAM_USAGE_MUSIC}, FilterMode::EXCLUDE, {0}, FilterMode::EXCLUDE};
+    AudioPlaybackCaptureConfig config = {filterOptions, false};
     std::string dumpStr = ProcessConfig::DumpInnerCapConfig(config);
     EXPECT_NE(dumpStr, "");
 }
@@ -694,8 +696,9 @@ HWTEST(AudioServiceCommonUnitTest, DumpInnerCapConfig_001, TestSize.Level1)
 */
 HWTEST(AudioServiceCommonUnitTest, DumpInnerCapConfig_002, TestSize.Level1)
 {
-    AudioPlaybackCaptureConfig config = {{{STREAM_USAGE_MUSIC},
-        FilterMode::MAX_FILTER_MODE, {0}, FilterMode::MAX_FILTER_MODE}, false};
+    CaptureFilterOptions filterOptions = {{STREAM_USAGE_MUSIC},
+        FilterMode::MAX_FILTER_MODE, {0}, FilterMode::MAX_FILTER_MODE};
+    AudioPlaybackCaptureConfig config = {filterOptions, false};
     std::string dumpStr = ProcessConfig::DumpInnerCapConfig(config);
     EXPECT_NE(dumpStr, "");
 }

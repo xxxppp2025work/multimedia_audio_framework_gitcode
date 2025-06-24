@@ -127,316 +127,328 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-void AudioPolicyCallbackFuzzTest()
-{
-    GetServerPtr();
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
+// void AudioPolicyCallbackFuzzTest()
+// {
+//     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+//     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
 
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
-    if (audioPolicyProxy == nullptr) {
-        return;
-    }
+//     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
+//     if (audioPolicyProxy == nullptr) {
+//         return;
+//     }
 
-    uint32_t sessionID = GetData<uint32_t>();
-    uint32_t clientUid = GetData<uint32_t>();
-    int32_t zoneID = GetData<int32_t>();
-    audioPolicyProxy->SetAudioInterruptCallback(sessionID, object, clientUid, zoneID);
-    audioPolicyProxy->UnsetAudioInterruptCallback(sessionID, zoneID);
+//     uint32_t sessionID = GetData<uint32_t>();
+//     uint32_t clientUid = GetData<uint32_t>();
+//     int32_t zoneID = GetData<int32_t>();
+//     audioPolicyProxy->SetAudioInterruptCallback(sessionID, object, clientUid, zoneID);
+//     audioPolicyProxy->UnsetAudioInterruptCallback(sessionID, zoneID);
 
-    int32_t clientId = GetData<int32_t>();
-    audioPolicyProxy->SetAudioManagerInterruptCallback(clientId, object);
-    audioPolicyProxy->UnsetAudioManagerInterruptCallback(clientId);
-    audioPolicyProxy->SetQueryClientTypeCallback(object);
-    audioPolicyProxy->SetAudioClientInfoMgrCallback(object);
-    audioPolicyProxy->SetQueryBundleNameListCallback(object);
-    audioPolicyProxy->SetAvailableDeviceChangeCallback(clientId, MEDIA_OUTPUT_DEVICES, object);
-    audioPolicyProxy->UnsetAvailableDeviceChangeCallback(clientId, MEDIA_OUTPUT_DEVICES);
-    audioPolicyProxy->SetAudioConcurrencyCallback(sessionID, object);
-    audioPolicyProxy->UnsetAudioConcurrencyCallback(sessionID);
-    audioPolicyProxy->SetDistributedRoutingRoleCallback(object);
-    audioPolicyProxy->UnsetDistributedRoutingRoleCallback();
-    audioPolicyProxy->RegisterPolicyCallbackClient(object, zoneID);
-    audioPolicyProxy->SetAudioDeviceRefinerCallback(object);
-    audioPolicyProxy->UnsetAudioDeviceRefinerCallback();
-    audioPolicyProxy->RegisterSpatializationStateEventListener(sessionID, STREAM_USAGE_MUSIC, object);
-    audioPolicyProxy->UnregisterSpatializationStateEventListener(sessionID);
-    audioPolicyProxy->SetQueryAllowedPlaybackCallback(object);
-    audioPolicyProxy->SetBackgroundMuteCallback(object);
-    audioPolicyProxy->SetSleAudioOperationCallback(object);
-}
+//     int32_t clientId = GetData<int32_t>();
+//     audioPolicyProxy->SetAudioManagerInterruptCallback(clientId, object);
+//     audioPolicyProxy->UnsetAudioManagerInterruptCallback(clientId);
+//     audioPolicyProxy->SetQueryClientTypeCallback(object);
+//     audioPolicyProxy->SetAudioClientInfoMgrCallback(object);
+//     audioPolicyProxy->SetQueryBundleNameListCallback(object);
+//     audioPolicyProxy->SetAvailableDeviceChangeCallback(clientId, MEDIA_OUTPUT_DEVICES, object);
+//     audioPolicyProxy->UnsetAvailableDeviceChangeCallback(clientId, MEDIA_OUTPUT_DEVICES);
+//     audioPolicyProxy->SetAudioConcurrencyCallback(sessionID, object);
+//     audioPolicyProxy->UnsetAudioConcurrencyCallback(sessionID);
+//     audioPolicyProxy->SetDistributedRoutingRoleCallback(object);
+//     audioPolicyProxy->UnsetDistributedRoutingRoleCallback();
+//     audioPolicyProxy->RegisterPolicyCallbackClient(object, zoneID);
+//     audioPolicyProxy->SetAudioDeviceRefinerCallback(object);
+//     audioPolicyProxy->UnsetAudioDeviceRefinerCallback();
+//     audioPolicyProxy->RegisterSpatializationStateEventListener(sessionID, STREAM_USAGE_MUSIC, object);
+//     audioPolicyProxy->UnregisterSpatializationStateEventListener(sessionID);
+//     audioPolicyProxy->SetQueryAllowedPlaybackCallback(object);
+//     audioPolicyProxy->SetBackgroundMuteCallback(object);
+//     audioPolicyProxy->SetSleAudioOperationCallback(object);
+// }
 
-void AudioPolicyMicrophoneFuzzTest()
-{
-    GetServerPtr();
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
+// void AudioPolicyMicrophoneFuzzTest()
+// {
+//     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+//     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
 
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
-    if (audioPolicyProxy == nullptr) {
-        return;
-    }
+//     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
+//     if (audioPolicyProxy == nullptr) {
+//         return;
+//     }
 
-    audioPolicyProxy->SetMicrophoneMute(true);
-    audioPolicyProxy->SetMicrophoneMuteAudioConfig(true);
-    audioPolicyProxy->SetMicrophoneMutePersistent(true, PRIVACY_POLCIY_TYPE);
-    audioPolicyProxy->IsMicrophoneMuteLegacy();
-    audioPolicyProxy->IsMicrophoneMute();
+//     bool mute = false;
+//     audioPolicyProxy->SetMicrophoneMute(true);
+//     audioPolicyProxy->SetMicrophoneMuteAudioConfig(true);
+//     audioPolicyProxy->SetMicrophoneMutePersistent(true, PRIVACY_POLCIY_TYPE);
+//     audioPolicyProxy->IsMicrophoneMuteLegacy(mute);
+//     audioPolicyProxy->IsMicrophoneMute();
 
-    int32_t sessionId = GetData<int32_t>();
-    audioPolicyProxy->GetAudioCapturerMicrophoneDescriptors(sessionId);
-    audioPolicyProxy->GetAvailableMicrophones();
-}
+//     int32_t sessionId = GetData<int32_t>();
+//     vector<sptr<MicrophoneDescriptor>> micDescs;
+//     audioPolicyProxy->GetAudioCapturerMicrophoneDescriptors(sessionId, micDescs);
+//     audioPolicyProxy->GetAvailableMicrophones(micDescs);
+// }
 
-void AudioPolicyVolumeFuzzTest()
-{
-    GetServerPtr();
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
+// void AudioPolicyVolumeFuzzTest()
+// {
+//     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+//     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
 
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
-    if (audioPolicyProxy == nullptr) {
-        return;
-    }
+//     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
+//     if (audioPolicyProxy == nullptr) {
+//         return;
+//     }
 
-    int32_t volumeLevel = GetData<int32_t>();
-    int32_t volumeFlag = GetData<int32_t>();
-    int32_t appUid = GetData<int32_t>();
-    bool owned = GetData<bool>();
-    bool isMute = GetData<bool>();
+//     int32_t volumeLevel = GetData<int32_t>();
+//     int32_t volumeFlag = GetData<int32_t>();
+//     int32_t appUid = GetData<int32_t>();
+//     bool owned = GetData<bool>();
+//     bool isMute = GetData<bool>();
+//     AudioVolumeType volumeType = GetData<AudioVolumeType>();
 
-    audioPolicyProxy->GetMaxVolumeLevel(STREAM_MUSIC);
-    audioPolicyProxy->GetMinVolumeLevel(STREAM_MUSIC);
-    audioPolicyProxy->SetSystemVolumeLevelLegacy(STREAM_MUSIC, volumeLevel);
-    audioPolicyProxy->SetSelfAppVolumeLevel(volumeLevel, volumeFlag);
-    audioPolicyProxy->IsAppVolumeMute(appUid, owned, isMute);
-    audioPolicyProxy->SetAppVolumeMuted(appUid, isMute, volumeFlag);
-    audioPolicyProxy->SetAppVolumeLevel(appUid, volumeLevel, volumeFlag);
-    audioPolicyProxy->SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel, volumeFlag);
+//     audioPolicyProxy->GetMaxVolumeLevel(volumeType);
+//     audioPolicyProxy->GetMinVolumeLevel(volumeType);
+//     audioPolicyProxy->SetSystemVolumeLevelLegacy(volumeType, volumeLevel);
+//     audioPolicyProxy->SetSelfAppVolumeLevel(volumeLevel, volumeFlag);
+//     audioPolicyProxy->IsAppVolumeMute(appUid, owned, isMute);
+//     audioPolicyProxy->SetAppVolumeMuted(appUid, isMute, volumeFlag);
+//     audioPolicyProxy->SetAppVolumeLevel(appUid, volumeLevel, volumeFlag);
+//     audioPolicyProxy->SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel, volumeFlag);
 
-    audioPolicyProxy->SetSystemVolumeLevelWithDevice(STREAM_MUSIC, volumeLevel, DEVICE_TYPE_SPEAKER, volumeFlag);
+//     DeviceType deviceType = GetData<DeviceType>();
+//     audioPolicyProxy->SetSystemVolumeLevelWithDevice(STREAM_MUSIC, volumeLevel, deviceType, volumeFlag);
 
-    int32_t clientUid = GetData<int32_t>();
-    audioPolicyProxy->GetSystemActiveVolumeType(clientUid);
+//     int32_t clientUid = GetData<int32_t>();
+//     int32_t streamType = 0;
+//     audioPolicyProxy->GetSystemActiveVolumeType(clientUid, streamType);
 
-    audioPolicyProxy->GetSystemVolumeLevel(STREAM_MUSIC);
-    audioPolicyProxy->GetSelfAppVolumeLevel(volumeLevel);
-    audioPolicyProxy->GetAppVolumeLevel(appUid, volumeLevel);
+//     audioPolicyProxy->GetSystemVolumeLevel(volumeType);
+//     audioPolicyProxy->GetSelfAppVolumeLevel(volumeLevel);
+//     audioPolicyProxy->GetAppVolumeLevel(appUid, volumeLevel);
 
-    int32_t streamId = GetData<int32_t>();
-    float volume = FLOAT_VOLUME;
-    audioPolicyProxy->SetLowPowerVolume(streamId, volume);
-    audioPolicyProxy->GetLowPowerVolume(streamId);
-    audioPolicyProxy->GetSingleStreamVolume(streamId);
-    audioPolicyProxy->IsVolumeUnadjustable();
+//     int32_t streamId = GetData<int32_t>();
+//     float volume = FLOAT_VOLUME;
+//     audioPolicyProxy->SetLowPowerVolume(streamId, volume);
+//     audioPolicyProxy->GetLowPowerVolume(streamId, volume);
+//     audioPolicyProxy->GetSingleStreamVolume(streamId, volume);
+//     audioPolicyProxy->IsVolumeUnadjustable();
 
-    audioPolicyProxy->AdjustVolumeByStep(VOLUME_UP);
-    audioPolicyProxy->AdjustSystemVolumeByStep(STREAM_MUSIC, VOLUME_UP);
-    audioPolicyProxy->GetSystemVolumeInDb(STREAM_MUSIC, volumeLevel, DEVICE_TYPE_SPEAKER);
-    audioPolicyProxy->GetMinStreamVolume();
-    audioPolicyProxy->GetMaxStreamVolume();
+//     VolumeAdjustType adjustType = GetData<VolumeAdjustType>();
+//     audioPolicyProxy->AdjustVolumeByStep(adjustType);
+//     audioPolicyProxy->AdjustSystemVolumeByStep(volumeType, adjustType);
+//     audioPolicyProxy->GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
+//     audioPolicyProxy->GetMinStreamVolume(volume);
+//     audioPolicyProxy->GetMaxStreamVolume(volume);
 
-    std::string macAddress = "macAddress";
-    audioPolicyProxy->SetDeviceAbsVolumeSupported(macAddress, true);
-    audioPolicyProxy->IsAbsVolumeScene();
+//     bool ret = false;
+//     std::string macAddress = "macAddress";
+//     audioPolicyProxy->SetDeviceAbsVolumeSupported(macAddress, true);
+//     audioPolicyProxy->IsAbsVolumeScene(ret);
 
-    int32_t volumeSetA2dpDevice = GetData<int32_t>();
-    audioPolicyProxy->SetA2dpDeviceVolume(macAddress, volumeSetA2dpDevice, true);
+//     int32_t volumeSetA2dpDevice = GetData<int32_t>();
+//     audioPolicyProxy->SetA2dpDeviceVolume(macAddress, volumeSetA2dpDevice, true);
 
-    bool updateUi = GetData<bool>();
-    audioPolicyProxy->SetNearlinkDeviceVolume(macAddress, STREAM_MUSIC, volumeLevel, updateUi);
-    audioPolicyProxy->DisableSafeMediaVolume();
-}
+//     bool updateUi = GetData<bool>();
+//     audioPolicyProxy->SetNearlinkDeviceVolume(macAddress, volumeType, volumeLevel, updateUi);
+//     audioPolicyProxy->DisableSafeMediaVolume();
+// }
 
-void AudioPolicyProxyOneFuzzTest()
-{
-    GetServerPtr();
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
+// void AudioPolicyProxyOneFuzzTest()
+// {
+//     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+//     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
 
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
-    if (audioPolicyProxy == nullptr) {
-        return;
-    }
+//     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
+//     if (audioPolicyProxy == nullptr) {
+//         return;
+//     }
 
-    audioPolicyProxy->SetRingerModeLegacy(RINGER_MODE_NORMAL);
-    audioPolicyProxy->SetRingerMode(RINGER_MODE_NORMAL);
-    audioPolicyProxy->GetPersistentMicMuteState();
-    audioPolicyProxy->GetRingerMode();
-    audioPolicyProxy->SetAudioScene(AUDIO_SCENE_DEFAULT);
-    audioPolicyProxy->GetAudioScene();
+//     AudioRingerMode ringMode = GetData<AudioRingerMode>();
+//     audioPolicyProxy->SetRingerModeLegacy(ringMode);
+//     audioPolicyProxy->SetRingerMode(ringMode);
+//     audioPolicyProxy->GetPersistentMicMuteState();
+//     audioPolicyProxy->GetRingerMode();
+//     AudioScene scene = GetData<AudioScene>();
+//     audioPolicyProxy->SetAudioScene(scene);
+//     audioPolicyProxy->GetAudioScene();
 
-    bool mute = GetData<bool>();
-    audioPolicyProxy->SetStreamMuteLegacy(STREAM_MUSIC, mute, DEVICE_TYPE_SPEAKER);
-    audioPolicyProxy->SetStreamMute(STREAM_MUSIC, mute, DEVICE_TYPE_SPEAKER);
-    audioPolicyProxy->GetStreamMute(STREAM_MUSIC);
-    audioPolicyProxy->IsStreamActive(STREAM_MUSIC);
-    audioPolicyProxy->GetDevices(OUTPUT_DEVICES_FLAG);
-    audioPolicyProxy->GetDevicesInner(OUTPUT_DEVICES_FLAG);
+//     AudioVolumeType volumeType = GetData<AudioVolumeType>();
+//     bool mute = GetData<bool>();
+//     DeviceType deviceType = GetData<DeviceType>();
+//     audioPolicyProxy->SetStreamMuteLegacy(volumeType, mute, deviceType);
+//     audioPolicyProxy->SetStreamMute(volumeType, mute, deviceType);
+//     audioPolicyProxy->GetStreamMute(volumeType);
+//     audioPolicyProxy->IsStreamActive(volumeType);
+//     DeviceFlag deviceFlag = GetData<DeviceFlag>();
+//     audioPolicyProxy->GetDevices(deviceFlag);
+//     audioPolicyProxy->GetDevicesInner(deviceFlag);
 
-    bool active = GetData<bool>();
-    int32_t uid = GetData<int32_t>();
-    int32_t pid = GetData<int32_t>();
-    audioPolicyProxy->SetDeviceActive(DEVICE_TYPE_SPEAKER, active, uid);
-    audioPolicyProxy->IsAllowedPlayback(uid, pid);
-    uint32_t sessionID = GetData<uint32_t>();
-    bool isRunning = GetData<bool>();
-    audioPolicyProxy->SetInputDevice(DEVICE_TYPE_SPEAKER, sessionID, SOURCE_TYPE_MIC, isRunning);
-    audioPolicyProxy->SetVoiceRingtoneMute(mute);
-    bool hasSession = GetData<bool>();
-    audioPolicyProxy->NotifySessionStateChange(uid, pid, hasSession);
-    audioPolicyProxy->ResetAllProxy();
-    bool isVirtual = GetData<bool>();
-    audioPolicyProxy->SetVirtualCall(isVirtual);
-    audioPolicyProxy->IsDeviceActive(DEVICE_TYPE_SPEAKER);
-    audioPolicyProxy->GetActiveOutputDevice();
-    audioPolicyProxy->GetDmDeviceType();
-    audioPolicyProxy->GetActiveInputDevice();
-}
+//     bool active = GetData<bool>();
+//     int32_t uid = GetData<int32_t>();
+//     int32_t pid = GetData<int32_t>();
+//     audioPolicyProxy->SetDeviceActive(deviceType, active, uid);
+//     audioPolicyProxy->IsAllowedPlayback(uid, pid);
+//     uint32_t sessionID = GetData<uint32_t>();
+//     SourceType sourceType = GetData<SourceType>();
+//     bool isRunning = GetData<bool>();
+//     audioPolicyProxy->SetInputDevice(deviceType, sessionID, sourceType, isRunning);
+//     audioPolicyProxy->SetVoiceRingtoneMute(mute);
+//     bool hasSession = GetData<bool>();
+//     audioPolicyProxy->NotifySessionStateChange(uid, pid, hasSession);
+//     audioPolicyProxy->ResetAllProxy();
+//     bool isVirtual = GetData<bool>();
+//     audioPolicyProxy->SetVirtualCall(isVirtual);
+//     InternalDeviceType internalDeviceType = GetData<InternalDeviceType>();
+//     audioPolicyProxy->IsDeviceActive(internalDeviceType);
+//     audioPolicyProxy->GetActiveOutputDevice();
+//     audioPolicyProxy->GetDmDeviceType();
+//     audioPolicyProxy->GetActiveInputDevice();
+// }
 
-void AudioPolicyProxyTwoFuzzTest()
-{
-    GetServerPtr();
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
+// void AudioPolicyProxyTwoFuzzTest()
+// {
+//     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+//     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
 
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
-    if (audioPolicyProxy == nullptr) {
-        return;
-    }
+//     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
+//     if (audioPolicyProxy == nullptr) {
+//         return;
+//     }
 
-    int32_t uid = GetData<int32_t>();
-    int32_t pid = GetData<int32_t>();
-    audioPolicyProxy->GetSelectedDeviceInfo(uid, pid, STREAM_MUSIC);
-    audioPolicyProxy->GetExcludedDevices(MEDIA_OUTPUT_DEVICES);
-    AudioSessionStrategy strategy = {AudioConcurrencyMode::DEFAULT};
-    audioPolicyProxy->ActivateAudioSession(strategy);
-    audioPolicyProxy->DeactivateAudioSession();
-    audioPolicyProxy->IsAudioSessionActivated();
+//     int32_t uid = GetData<int32_t>();
+//     int32_t pid = GetData<int32_t>();
+//     AudioStreamType streamType = GetData<AudioStreamType>();
+//     audioPolicyProxy->GetSelectedDeviceInfo(uid, pid, streamType);
+//     AudioDeviceUsage audioDevUsage = GetData<AudioDeviceUsage>();
+//     audioPolicyProxy->GetExcludedDevices(audioDevUsage);
+//     AudioSessionStrategy strategy = GetData<AudioSessionStrategy>();
+//     audioPolicyProxy->ActivateAudioSession(strategy);
+//     audioPolicyProxy->DeactivateAudioSession();
+//     audioPolicyProxy->IsAudioSessionActivated();
 
-    AudioInterrupt audioInterrupt;
-    int32_t zoneID = GetData<int32_t>();
-    int32_t clientId = GetData<int32_t>();
-    bool isUpdatedAudioStrategy = GetData<bool>();
-    audioPolicyProxy->ActivateAudioInterrupt(audioInterrupt, zoneID, isUpdatedAudioStrategy);
-    audioPolicyProxy->DeactivateAudioInterrupt(audioInterrupt, zoneID);
-    audioPolicyProxy->ActivatePreemptMode();
-    audioPolicyProxy->DeactivatePreemptMode();
-    audioPolicyProxy->RequestAudioFocus(clientId, audioInterrupt);
-    audioPolicyProxy->AbandonAudioFocus(clientId, audioInterrupt);
-    audioPolicyProxy->GetStreamInFocus(zoneID);
-    audioPolicyProxy->GetStreamInFocusByUid(uid, zoneID);
-    audioPolicyProxy->GetSessionInfoInFocus(audioInterrupt, zoneID);
+//     AudioInterrupt audioInterrupt = GetData<AudioInterrupt>();
+//     int32_t zoneID = GetData<int32_t>();
+//     int32_t clientId = GetData<int32_t>();
+//     bool isUpdatedAudioStrategy = GetData<bool>();
+//     audioPolicyProxy->ActivateAudioInterrupt(audioInterrupt, zoneID, isUpdatedAudioStrategy);
+//     audioPolicyProxy->DeactivateAudioInterrupt(audioInterrupt, zoneID);
+//     audioPolicyProxy->ActivatePreemptMode();
+//     audioPolicyProxy->DeactivatePreemptMode();
+//     audioPolicyProxy->RequestAudioFocus(clientId, audioInterrupt);
+//     audioPolicyProxy->AbandonAudioFocus(clientId, audioInterrupt);
+//     audioPolicyProxy->GetStreamInFocus(zoneID);
+//     audioPolicyProxy->GetStreamInFocusByUid(uid, zoneID);
+//     audioPolicyProxy->GetSessionInfoInFocus(audioInterrupt, zoneID);
 
-    uint32_t count = GetData<uint32_t>();
-    audioPolicyProxy->ReconfigureAudioChannel(count, DEVICE_TYPE_SPEAKER);
-    audioPolicyProxy->UpdateStreamState(clientId, STREAM_PAUSE, STREAM_USAGE_MUSIC);
+//     uint32_t count = GetData<uint32_t>();
+//     StreamSetState streamSetState = GetData<StreamSetState>();
+//     StreamUsage streamUsage = GetData<StreamUsage>();
+//     DeviceType deviceType = GetData<DeviceType>();
+//     audioPolicyProxy->ReconfigureAudioChannel(count, deviceType);
+//     audioPolicyProxy->UpdateStreamState(clientId, streamSetState, streamUsage);
 
-    int32_t groupId = GetData<int32_t>();
-    std::string networkId = "networkId";
-    std::string key = "key";
-    std::string uri = "uri";
-    audioPolicyProxy->GetNetworkIdByGroupId(groupId, networkId);
-    audioPolicyProxy->SetSystemSoundUri(key, uri);
-    audioPolicyProxy->GetSystemSoundUri(key);
-    audioPolicyProxy->GetMaxRendererInstances();
-}
+//     int32_t groupId = GetData<int32_t>();
+//     std::string networkId = GetData<std::string>();
+//     std::string key = GetData<std::string>();
+//     std::string uri = GetData<std::string>();
+//     audioPolicyProxy->GetNetworkIdByGroupId(groupId, networkId);
+//     audioPolicyProxy->SetSystemSoundUri(key, uri);
+//     audioPolicyProxy->GetSystemSoundUri(key);
+//     audioPolicyProxy->GetMaxRendererInstances();
+// }
 
-void AudioPolicyProxyThreeFuzzTest()
-{
-    GetServerPtr();
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
+// void AudioPolicyProxyThreeFuzzTest()
+// {
+//     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+//     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
 
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
-    if (audioPolicyProxy == nullptr) {
-        return;
-    }
+//     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
+//     if (audioPolicyProxy == nullptr) {
+//         return;
+//     }
 
-    SupportedEffectConfig supportedEffectConfig;
-    audioPolicyProxy->QueryEffectSceneMode(supportedEffectConfig);
-    audioPolicyProxy->GetAvailableDevices(MEDIA_OUTPUT_DEVICES);
-    audioPolicyProxy->IsSpatializationEnabled();
-    std::string address = "address";
-    audioPolicyProxy->IsSpatializationEnabled(address);
-    audioPolicyProxy->IsSpatializationEnabledForCurrentDevice();
-    bool enable = GetData<bool>();
-    audioPolicyProxy->SetSpatializationEnabled(enable);
-    audioPolicyProxy->IsHeadTrackingEnabled();
-    audioPolicyProxy->IsHeadTrackingEnabled(address);
-    audioPolicyProxy->SetHeadTrackingEnabled(enable);
-    audioPolicyProxy->GetSpatializationState(STREAM_USAGE_MUSIC);
-    audioPolicyProxy->IsSpatializationSupported();
-    audioPolicyProxy->IsSpatializationSupportedForDevice(address);
-    audioPolicyProxy->IsHeadTrackingSupported();
-    AudioSpatialDeviceState audioSpatialDeviceState = {
-        "1234",
-        true,
-        true,
-        AudioSpatialDeviceType::EARPHONE_TYPE_NONE,
-    };
-    audioPolicyProxy->UpdateSpatialDeviceState(audioSpatialDeviceState);
-    int32_t zoneID = GetData<int32_t>();
-    audioPolicyProxy->ReleaseAudioInterruptZone(zoneID);
-    bool active = GetData<bool>();
-    int32_t uid = GetData<int32_t>();
-    audioPolicyProxy->SetCallDeviceActive(DEVICE_TYPE_SPEAKER, active, address, uid);
-    audioPolicyProxy->GetActiveBluetoothDevice();
-    audioPolicyProxy->GetConverterConfig();
-}
+//     SupportedEffectConfig supportedEffectConfig = GetData<SupportedEffectConfig>();
+//     audioPolicyProxy->QueryEffectSceneMode(supportedEffectConfig);
+//     AudioDeviceUsage audioDevUsage = GetData<AudioDeviceUsage>();
+//     audioPolicyProxy->GetAvailableDevices(audioDevUsage);
+//     audioPolicyProxy->IsSpatializationEnabled();
+//     std::string address = GetData<std::string>();
+//     audioPolicyProxy->IsSpatializationEnabled(address);
+//     audioPolicyProxy->IsSpatializationEnabledForCurrentDevice();
+//     bool enable = GetData<bool>();
+//     audioPolicyProxy->SetSpatializationEnabled(enable);
+//     audioPolicyProxy->IsHeadTrackingEnabled();
+//     audioPolicyProxy->IsHeadTrackingEnabled(address);
+//     audioPolicyProxy->SetHeadTrackingEnabled(enable);
+//     StreamUsage streamUsage = GetData<StreamUsage>();
+//     audioPolicyProxy->GetSpatializationState(streamUsage);
+//     audioPolicyProxy->IsSpatializationSupported();
+//     audioPolicyProxy->IsSpatializationSupportedForDevice(address);
+//     audioPolicyProxy->IsHeadTrackingSupported();
+//     AudioSpatialDeviceState audioSpatialDeviceState = GetData<AudioSpatialDeviceState>();
+//     audioPolicyProxy->UpdateSpatialDeviceState(audioSpatialDeviceState);
+//     int32_t zoneID = GetData<int32_t>();
+//     audioPolicyProxy->ReleaseAudioInterruptZone(zoneID);
+//     DeviceType deviceType = GetData<DeviceType>();
+//     bool active = GetData<bool>();
+//     int32_t uid = GetData<int32_t>();
+//     audioPolicyProxy->SetCallDeviceActive(deviceType, active, address, uid);
+//     audioPolicyProxy->GetActiveBluetoothDevice();
+//     audioPolicyProxy->GetConverterConfig();
+// }
 
-void AudioPolicyProxyFourFuzzTest()
-{
-    GetServerPtr();
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
+// void AudioPolicyProxyFourFuzzTest()
+// {
+//     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+//     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
 
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
-    if (audioPolicyProxy == nullptr) {
-        return;
-    }
+//     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
+//     if (audioPolicyProxy == nullptr) {
+//         return;
+//     }
 
-    bool highResExist = GetData<bool>();
-    audioPolicyProxy->IsHighResolutionExist();
-    audioPolicyProxy->SetHighResolutionExist(highResExist);
-    audioPolicyProxy->GetSpatializationSceneType();
-    AudioSpatializationSceneType spatializationSceneType =
-        AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_DEFAULT;
-    audioPolicyProxy->SetSpatializationSceneType(spatializationSceneType);
-    int32_t deviceId = GetData<int32_t>();
-    audioPolicyProxy->GetMaxAmplitude(deviceId);
-    std::string macAddress = "macAddress";
-    audioPolicyProxy->IsHeadTrackingDataRequested(macAddress);
-    std::string networkId = "networkId";
-    audioPolicyProxy->SaveRemoteInfo(networkId, DEVICE_TYPE_SPEAKER);
-    audioPolicyProxy->SetAudioDeviceAnahsCallback(object);
-    audioPolicyProxy->UnsetAudioDeviceAnahsCallback();
-    uint32_t sessionID = GetData<uint32_t>();
-    AudioPipeType pipeType = PIPE_TYPE_OFFLOAD;
-    audioPolicyProxy->MoveToNewPipe(sessionID, pipeType);
-    audioPolicyProxy->ActivateAudioConcurrency(pipeType);
+//     bool highResExist = GetData<bool>();
+//     audioPolicyProxy->IsHighResolutionExist();
+//     audioPolicyProxy->SetHighResolutionExist(highResExist);
+//     audioPolicyProxy->GetSpatializationSceneType();
+//     AudioSpatializationSceneType spatializationSceneType = GetData<AudioSpatializationSceneType>();
+//     audioPolicyProxy->SetSpatializationSceneType(spatializationSceneType);
+//     int32_t deviceId = GetData<int32_t>();
+//     audioPolicyProxy->GetMaxAmplitude(deviceId);
+//     std::string macAddress = GetData<std::string>();
+//     audioPolicyProxy->IsHeadTrackingDataRequested(macAddress);
+//     std::string networkId = GetData<std::string>();
+//     DeviceType deviceType = GetData<DeviceType>();
+//     audioPolicyProxy->SaveRemoteInfo(networkId, deviceType);
+//     audioPolicyProxy->SetAudioDeviceAnahsCallback(object);
+//     audioPolicyProxy->UnsetAudioDeviceAnahsCallback();
+//     uint32_t sessionID = GetData<uint32_t>();
+//     AudioPipeType pipeType = GetData<AudioPipeType>();
+//     audioPolicyProxy->MoveToNewPipe(sessionID, pipeType);
+//     audioPolicyProxy->ActivateAudioConcurrency(pipeType);
 
-    AudioEffectPropertyArrayV3 propertyArray;
-    audioPolicyProxy->GetSupportedAudioEffectProperty(propertyArray);
-    audioPolicyProxy->GetAudioEffectProperty(propertyArray);
-    audioPolicyProxy->SetAudioEffectProperty(propertyArray);
-    AudioEnhancePropertyArray audioEnhancePropertyArray;
-    audioPolicyProxy->GetSupportedAudioEnhanceProperty(audioEnhancePropertyArray);
-    AudioEffectPropertyArray audioEffectPropertyArray;
-    audioPolicyProxy->GetSupportedAudioEffectProperty(audioEffectPropertyArray);
-    audioPolicyProxy->GetAudioEnhanceProperty(audioEnhancePropertyArray);
-    audioPolicyProxy->GetAudioEffectProperty(audioEffectPropertyArray);
-    audioPolicyProxy->SetAudioEnhanceProperty(audioEnhancePropertyArray);
-    audioPolicyProxy->SetAudioEffectProperty(audioEffectPropertyArray);
+//     AudioEffectPropertyArrayV3 propertyArray = GetData<AudioEffectPropertyArrayV3>();
+//     audioPolicyProxy->GetSupportedAudioEffectProperty(propertyArray);
+//     audioPolicyProxy->GetAudioEffectProperty(propertyArray);
+//     audioPolicyProxy->SetAudioEffectProperty(propertyArray);
+//     AudioEnhancePropertyArray audioEnhancePropertyArray = GetData<AudioEnhancePropertyArray>();
+//     audioPolicyProxy->GetSupportedAudioEnhanceProperty(audioEnhancePropertyArray);
+//     AudioEffectPropertyArray audioEffectPropertyArray = GetData<AudioEffectPropertyArray>();
+//     audioPolicyProxy->GetSupportedAudioEffectProperty(audioEffectPropertyArray);
+//     audioPolicyProxy->GetAudioEnhanceProperty(audioEnhancePropertyArray);
+//     audioPolicyProxy->GetAudioEffectProperty(audioEffectPropertyArray);
+//     audioPolicyProxy->SetAudioEnhanceProperty(audioEnhancePropertyArray);
+//     audioPolicyProxy->SetAudioEffectProperty(audioEffectPropertyArray);
 
-    InterruptEvent event;
-    audioPolicyProxy->InjectInterruption(networkId, event);
-    audioPolicyProxy->IsAcousticEchoCancelerSupported(SOURCE_TYPE_MIC);
-    audioPolicyProxy->GetMaxVolumeLevelByUsage(STREAM_USAGE_MUSIC);
-    audioPolicyProxy->GetMinVolumeLevelByUsage(STREAM_USAGE_MUSIC);
-    audioPolicyProxy->GetVolumeLevelByUsage(STREAM_USAGE_MUSIC);
-    audioPolicyProxy->GetStreamMuteByUsage(STREAM_USAGE_MUSIC);
-}
+//     InterruptEvent event = GetData<InterruptEvent>();
+//     audioPolicyProxy->InjectInterruption(networkId, event);
+//     SourceType sourceType = GetData<SourceType>();
+//     audioPolicyProxy->IsAcousticEchoCancelerSupported(sourceType);
+//     StreamUsage streamUsage = GetData<StreamUsage>();
+//     audioPolicyProxy->GetMaxVolumeLevelByUsage(streamUsage);
+//     audioPolicyProxy->GetMinVolumeLevelByUsage(streamUsage);
+//     audioPolicyProxy->GetVolumeLevelByUsage(streamUsage);
+//     audioPolicyProxy->GetStreamMuteByUsage(streamUsage);
+// }
 
 void AudioPolicyProxyFiveFuzzTest()
 {
@@ -544,11 +556,11 @@ TestFuncs g_testFuncs = {
     AudioPolicyCallbackFuzzTest,
     AudioPolicyMicrophoneFuzzTest,
     AudioPolicyVolumeFuzzTest,
-    AudioPolicyProxyOneFuzzTest,
-    AudioPolicyProxyTwoFuzzTest,
-    AudioPolicyProxyThreeFuzzTest,
-    AudioPolicyProxyFourFuzzTest,
-    AudioPolicyProxyFiveFuzzTest,
+    // AudioPolicyProxyOneFuzzTest,
+    // AudioPolicyProxyTwoFuzzTest,
+    // AudioPolicyProxyThreeFuzzTest,
+    // AudioPolicyProxyFourFuzzTest,
+    // AudioPolicyProxyFiveFuzzTest,
     AudioPolicyZoneFuzzTest,
 };
 

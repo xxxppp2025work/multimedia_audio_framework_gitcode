@@ -233,6 +233,11 @@ std::shared_ptr<AudioSharedMemory> AudioSharedMemory::ReadFromParcel(MessageParc
     return memory;
 }
 
+bool AudioSharedMemory::Marshalling(Parcel &parcel) const
+{
+    return true;
+}
+
 AudioSharedMemory *AudioSharedMemory::Unmarshalling(Parcel &parcel)
 {
     // Parcel -> MessageParcel

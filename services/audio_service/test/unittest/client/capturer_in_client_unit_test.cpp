@@ -21,6 +21,7 @@
 #include "audio_policy_manager.h"
 #include "system_ability_definition.h"
 #include "capturer_in_client.h"
+#include "audio_service_types.h"
 #include "capturer_in_client_inner.h"
 
 using namespace testing::ext;
@@ -153,20 +154,20 @@ HWTEST(CapturerInClientUnitTest, OnOperationHandled_001, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Operation operation = UPDATE_STREAM;
+    Operation operation = Operation::UPDATE_STREAM;
     int64_t result = 1;
     int32_t ret = capturerInClientInner_->OnOperationHandled(operation, result);
     EXPECT_EQ(ret, SUCCESS);
 
-    operation = BUFFER_OVERFLOW;
+    operation = Operation::BUFFER_OVERFLOW;
     ret = capturerInClientInner_->OnOperationHandled(operation, result);
     EXPECT_EQ(ret, SUCCESS);
 
-    operation = RESTORE_SESSION;
+    operation = Operation::RESTORE_SESSION;
     ret = capturerInClientInner_->OnOperationHandled(operation, result);
     EXPECT_EQ(ret, SUCCESS);
 
-    operation = START_STREAM;
+    operation = Operation::START_STREAM;
     ret = capturerInClientInner_->OnOperationHandled(operation, result);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -1034,7 +1035,7 @@ HWTEST(CapturerInClientUnitTest, StartAudioStream_002, TestSize.Level1)
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     capturerInClientInner_->audioStreamTracker_ = nullptr;
     capturerInClientInner_->state_ = State::PREPARED;
-    capturerInClientInner_->notifiedOperation_ = PAUSE_STREAM;
+    capturerInClientInner_->notifiedOperation_ = Operation::PAUSE_STREAM;
     capturerInClientInner_->notifiedResult_ = ERR_ILLEGAL_STATE;
     StateChangeCmdType cmdType = CMD_FROM_CLIENT;
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
@@ -1054,7 +1055,7 @@ HWTEST(CapturerInClientUnitTest, StartAudioStream_003, TestSize.Level1)
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     capturerInClientInner_->audioStreamTracker_ = nullptr;
     capturerInClientInner_->state_ = State::PREPARED;
-    capturerInClientInner_->notifiedOperation_ = PAUSE_STREAM;
+    capturerInClientInner_->notifiedOperation_ = Operation::PAUSE_STREAM;
     capturerInClientInner_->notifiedResult_ = SUCCESS;
     StateChangeCmdType cmdType = CMD_FROM_CLIENT;
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;

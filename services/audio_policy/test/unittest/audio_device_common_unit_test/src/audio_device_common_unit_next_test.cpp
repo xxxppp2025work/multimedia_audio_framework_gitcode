@@ -998,7 +998,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, MoveToRemoteOutputDevice_001, TestSize.L
     audioDeviceCommon.DeInit();
 
     std::vector<SinkInput> sinkInputs;
-    SinkInput sinkInput = {1};
+    SinkInput sinkInput = {};
     sinkInputs.push_back(sinkInput);
 
     std::shared_ptr<AudioDeviceDescriptor> remoteDevice = std::make_shared<AudioDeviceDescriptor>();
@@ -1026,7 +1026,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, MoveToRemoteOutputDevice_002, TestSize.L
     audioDeviceCommon.DeInit();
 
     std::vector<SinkInput> sinkInputs;
-    SinkInput sinkInput = {1};
+    SinkInput sinkInput = {};
     sinkInputs.push_back(sinkInput);
 
     std::string moduleName = "123";
@@ -1054,7 +1054,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, MoveToRemoteOutputDevice_003, TestSize.L
     audioDeviceCommon.DeInit();
 
     std::vector<SinkInput> sinkInputs;
-    SinkInput sinkInput = {1};
+    SinkInput sinkInput = {};
     sinkInputs.push_back(sinkInput);
 
     std::string moduleName = "123";

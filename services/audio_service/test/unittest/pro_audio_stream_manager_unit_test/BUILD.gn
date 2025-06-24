@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("//build/test.gni")
+import("../../../../../config.gni")
 
 module_output_path =
     "audio_framework/audio_framework_route/part1/pro_audio_stream_manager"
@@ -55,6 +56,8 @@ ohos_unittest("pro_audio_stream_manager_unit_test") {
     "../../../../audio_service:audio_client",
     "../../../../audio_service:audio_common",
     "../../../../audio_service:audio_process_service_static",
+    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
   ]
 
   external_deps = [

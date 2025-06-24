@@ -25,7 +25,7 @@
 #include <cinttypes>
 #include "audio_service_log.h"
 #include "audio_errors.h"
-#include "ipc_stream.h"
+#include "iipc_stream.h"
 #include "message_parcel.h"
 #include "parcel.h"
 

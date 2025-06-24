@@ -42,6 +42,8 @@ ohos_fuzztest("AudioA2dpOffloadManagerFuzzTest") {
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_common",
+    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
   ]
 
   external_deps = [

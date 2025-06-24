@@ -26,6 +26,7 @@
 #include "policy_handler.h"
 #include "system_ability_definition.h"
 #include "iservice_registry.h"
+#include "audio_service_types.h"
 
 using namespace testing::ext;
 
@@ -92,7 +93,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetExtraParameters_001, TestSize.Level1
 {
     EXPECT_NE(nullptr, audioServer);
 
-    std::vector<std::pair<std::string, std::string>> kvpairs;
+    std::vector<StringPair> kvpairs;
     int32_t ret = audioServer->SetExtraParameters("PCM_DUMP", kvpairs);
     EXPECT_NE(SUCCESS, ret);
 }
@@ -108,10 +109,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAsrAecModer_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
 
-    int32_t ret = audioServer->SetAsrAecMode(AsrAecMode::BYPASS);
+    int32_t ret = audioServer->SetAsrAecMode(static_cast<int32_t>(AsrAecMode::BYPASS));
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioServer->SetAsrAecMode(AsrAecMode::STANDARD);
+    ret = audioServer->SetAsrAecMode(static_cast<int32_t>(AsrAecMode::STANDARD));
     EXPECT_EQ(SUCCESS, ret);
 }
 #endif
@@ -141,20 +142,20 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAsrNoiseSuppressionMode_001, TestSiz
 {
     EXPECT_NE(nullptr, audioServer);
 
-    AsrNoiseSuppressionMode asrNoiseSuppressionMode;
+    int32_t asrNoiseSuppressionMode = 0;
     int32_t ret = audioServer->GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
     EXPECT_NE(SUCCESS, ret);
 
-    ret = audioServer->SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode::BYPASS);
+    ret = audioServer->SetAsrNoiseSuppressionMode(static_cast<int32_t>(AsrNoiseSuppressionMode::BYPASS));
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioServer->SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode::FAR_FIELD);
+    ret = audioServer->SetAsrNoiseSuppressionMode(static_cast<int32_t>(AsrNoiseSuppressionMode::FAR_FIELD));
     EXPECT_EQ(SUCCESS, ret);
 
     ret = audioServer->GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioServer->SetAsrNoiseSuppressionMode(static_cast<AsrNoiseSuppressionMode>(4));
+    ret = audioServer->SetAsrNoiseSuppressionMode(static_cast<int32_t>(4));
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -169,14 +170,14 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAsrWhisperDetectionMode_001, TestSiz
 {
     EXPECT_NE(nullptr, audioServer);
 
-    AsrWhisperDetectionMode asrWhisperDetectionMode;
+    int32_t asrWhisperDetectionMode;
     int32_t ret = audioServer->GetAsrWhisperDetectionMode(asrWhisperDetectionMode);
     EXPECT_NE(SUCCESS, ret);
 
-    ret = audioServer->SetAsrWhisperDetectionMode(AsrWhisperDetectionMode::BYPASS);
+    ret = audioServer->SetAsrWhisperDetectionMode(static_cast<int32_t>(AsrWhisperDetectionMode::BYPASS));
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioServer->SetAsrWhisperDetectionMode(static_cast<AsrWhisperDetectionMode>(4));
+    ret = audioServer->SetAsrWhisperDetectionMode(static_cast<int32_t>(4));
     EXPECT_NE(SUCCESS, ret);
 
     ret = audioServer->GetAsrWhisperDetectionMode(asrWhisperDetectionMode);
@@ -194,16 +195,17 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAsrWhisperDetectionMode_001, TestSiz
 HWTEST_F(AudioServerUnitTest, AudioServerSetAsrVoiceControlMode_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    int32_t ret = audioServer->SetAsrVoiceControlMode(AsrVoiceControlMode::AUDIO_2_VOICETX, true);
+    int32_t ret = audioServer->SetAsrVoiceControlMode(
+        static_cast<int32_t>(AsrVoiceControlMode::AUDIO_2_VOICETX), true);
 
     EXPECT_EQ(SUCCESS, ret);
-    ret = audioServer->SetAsrVoiceControlMode(AsrVoiceControlMode::AUDIO_2_VOICETX, false);
+    ret = audioServer->SetAsrVoiceControlMode(static_cast<int32_t>(AsrVoiceControlMode::AUDIO_2_VOICETX), false);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioServer->SetAsrVoiceControlMode(static_cast<AsrVoiceControlMode>(4), true);
+    ret = audioServer->SetAsrVoiceControlMode(4, true);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioServer->SetAsrVoiceControlMode(static_cast<AsrVoiceControlMode>(4), false);
+    ret = audioServer->SetAsrVoiceControlMode(4, false);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -219,16 +221,16 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAsrVoiceMuteMode_001, TestSize.Level
 {
     EXPECT_NE(nullptr, audioServer);
 
-    int32_t ret = audioServer->SetAsrVoiceMuteMode(AsrVoiceMuteMode::OUTPUT_MUTE, true);
+    int32_t ret = audioServer->SetAsrVoiceMuteMode(static_cast<int32_t>(AsrVoiceMuteMode::OUTPUT_MUTE), true);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioServer->SetAsrVoiceMuteMode(AsrVoiceMuteMode::OUTPUT_MUTE, false);
+    ret = audioServer->SetAsrVoiceMuteMode(static_cast<int32_t>(AsrVoiceMuteMode::OUTPUT_MUTE), false);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioServer->SetAsrVoiceMuteMode(static_cast<AsrVoiceMuteMode>(5), true);
+    ret = audioServer->SetAsrVoiceMuteMode(5, true);
     EXPECT_NE(SUCCESS, ret);
 
-    ret = audioServer->SetAsrVoiceMuteMode(static_cast<AsrVoiceMuteMode>(5), false);
+    ret = audioServer->SetAsrVoiceMuteMode(5, false);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -242,7 +244,8 @@ HWTEST_F(AudioServerUnitTest, AudioServerIsWhispering_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
 
-    int32_t ret = audioServer->IsWhispering();
+    int32_t ret = 0;
+    audioServer->IsWhispering(ret);
     EXPECT_EQ(0, ret);
 }
 #endif
@@ -257,7 +260,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_001, TestSize.Level1
 {
     EXPECT_NE(nullptr, audioServer);
 
-    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<StringPair> result;
     std::vector<std::string> subKeys;
     int32_t ret = audioServer->GetExtraParameters("", subKeys, result);
     EXPECT_NE(SUCCESS, ret);
@@ -273,7 +276,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_002, TestSize.Level1
 {
     EXPECT_NE(nullptr, audioServer);
 
-    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<StringPair> result;
     std::vector<std::string> subKeys;
     std::string mainKey = "PCM_DUMP";
     int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
@@ -290,7 +293,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_003, TestSize.Level1
 {
     EXPECT_NE(nullptr, audioServer);
 
-    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<StringPair> result;
     std::vector<std::string> subKeys;
     std::string mainKey = "test_003";
     AudioServer::audioParameterKeys = {
@@ -319,7 +322,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_004, TestSize.Level1
 {
     EXPECT_NE(nullptr, audioServer);
 
-    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<StringPair> result;
     std::vector<std::string> subKeys;
     std::string mainKey = "test_004";
     AudioServer::audioParameterKeys = {
@@ -348,7 +351,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_005, TestSize.Level1
 {
     EXPECT_NE(nullptr, audioServer);
 
-    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<StringPair> result;
     std::vector<std::string> subKeys = {"test_005"};
     std::string mainKey = "test_005";
     AudioServer::audioParameterKeys = {
@@ -377,7 +380,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_006, TestSize.Level1
 {
     EXPECT_NE(nullptr, audioServer);
 
-    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<StringPair> result;
     std::vector<std::string> subKeys = {""};
     std::string mainKey = "test_006";
     AudioServer::audioParameterKeys = {
@@ -406,6 +409,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioParameter_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
 
+    string str = "test";
     audioServer->SetAudioParameter("A2dpSuspended", "");
     audioServer->SetAudioParameter("AUDIO_EXT_PARAM_KEY_LOWPOWER", "");
     audioServer->SetAudioParameter("bt_headset_nrec", "");
@@ -413,17 +417,20 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioParameter_001, TestSize.Level1)
     audioServer->SetAudioParameter("AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG", "");
     audioServer->SetAudioParameter("mmi", "");
     audioServer->SetAudioParameter("perf_info", "");
-    audioServer->GetAudioParameter("");
-    audioServer->GetAudioParameter("AUDIO_EXT_PARAM_KEY_LOWPOWER");
-    audioServer->GetAudioParameter("perf_info");
-    audioServer->GetAudioParameter("getSmartPAPOWER");
-    audioServer->GetAudioParameter("Is_Fast_Blocked_For_AppName#");
+    audioServer->GetAudioParameter("", str);
+    audioServer->GetAudioParameter("AUDIO_EXT_PARAM_KEY_LOWPOWER", str);
+    audioServer->GetAudioParameter("perf_info", str);
+    audioServer->GetAudioParameter("getSmartPAPOWER", str);
+    audioServer->GetAudioParameter("Is_Fast_Blocked_For_AppName#", str);
     auto result = audioServer->GetUsbParameter("address=card2;device=0 role=1");
-    audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::USB_DEVICE, "address=card=2;device=0 role=0");
-    audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::USB_DEVICE, "address=card=2;device=0 role=1");
-    audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::USB_DEVICE, "address=card=2;device=0 role=2");
-    audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::GET_DP_DEVICE_INFO, "");
-    audioServer->GetAudioParameter("", AudioParamKey::GET_DP_DEVICE_INFO, "");
+    audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::USB_DEVICE,
+        "address=card=2;device=0 role=0", str);
+    audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::USB_DEVICE,
+        "address=card=2;device=0 role=1", str);
+    audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::USB_DEVICE,
+        "address=card=2;device=0 role=2", str);
+    audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::GET_DP_DEVICE_INFO, "", str);
+    audioServer->GetAudioParameter("", AudioParamKey::GET_DP_DEVICE_INFO, "", str);
 }
 
 /**
@@ -435,17 +442,17 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioParameter_001, TestSize.Level1)
 HWTEST_F(AudioServerUnitTest, AudioServerGetTransactionId_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    std::vector<std::pair<std::string, std::string>> result;
-    uint64_t ret = audioServer->GetTransactionId(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET, DeviceRole::DEVICE_ROLE_MAX);
+    uint64_t ret;
+    audioServer->GetTransactionId(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET, DeviceRole::DEVICE_ROLE_MAX, ret);
     EXPECT_NE(0, ret);
 
-    ret = audioServer->GetTransactionId(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET, DeviceRole::INPUT_DEVICE);
+    audioServer->GetTransactionId(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET, DeviceRole::INPUT_DEVICE, ret);
     EXPECT_EQ(0, ret);
 
-    ret = audioServer->GetTransactionId(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    audioServer->GetTransactionId(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE, ret);
     EXPECT_EQ(0, ret);
 
-    ret = audioServer->GetTransactionId(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET, DeviceRole::OUTPUT_DEVICE);
+    audioServer->GetTransactionId(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET, DeviceRole::OUTPUT_DEVICE, ret);
     EXPECT_EQ(0, ret);
 }
 
@@ -459,10 +466,11 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioScene_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
 
-    std::vector<DeviceType> activeOutputDevices;
+    bool scoExcludeFlag = false;
+    std::vector<int32_t> activeOutputDevices;
     activeOutputDevices.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
     int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, activeOutputDevices, DEVICE_TYPE_USB_ARM_HEADSET,
-        NO_A2DP_DEVICE);
+        NO_A2DP_DEVICE, scoExcludeFlag);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -477,10 +485,11 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioScene_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
 
-    std::vector<DeviceType> activeOutputDevices;
+    bool scoExcludeFlag = false;
+    std::vector<int32_t> activeOutputDevices;
     activeOutputDevices.push_back(DEVICE_TYPE_ACCESSORY);
     int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, activeOutputDevices, DEVICE_TYPE_ACCESSORY,
-        NO_A2DP_DEVICE);
+        NO_A2DP_DEVICE, scoExcludeFlag);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -512,34 +521,36 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetIORoutes_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
 
+    bool scoExcludeFlag = false;
+    std::string deviceName;
     std::vector<DeviceType> deviceTypes;
-    std::vector<DeviceType> activeOutputDevices;
+    std::vector<int32_t> activeOutputDevices;
 
     activeOutputDevices.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
     int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_DEFAULT, activeOutputDevices, DEVICE_TYPE_USB_ARM_HEADSET,
-        A2DP_OFFLOAD);
+        A2DP_OFFLOAD, scoExcludeFlag);
 
     ret = audioServer->SetIORoutes(DEVICE_TYPE_USB_ARM_HEADSET, DeviceFlag::ALL_DEVICES_FLAG, deviceTypes,
-        A2DP_OFFLOAD);
+        A2DP_OFFLOAD, deviceName);
     EXPECT_EQ(SUCCESS, ret);
 
     ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, activeOutputDevices, DEVICE_TYPE_USB_ARM_HEADSET,
-        A2DP_OFFLOAD);
+        A2DP_OFFLOAD, scoExcludeFlag);
     activeOutputDevices.clear();
     activeOutputDevices.push_back(DEVICE_TYPE_BLUETOOTH_A2DP);
     ret = audioServer->SetIORoutes(DEVICE_TYPE_USB_ARM_HEADSET, DeviceFlag::ALL_DEVICES_FLAG, deviceTypes,
-        A2DP_OFFLOAD);
+        A2DP_OFFLOAD, deviceName);
     EXPECT_EQ(SUCCESS, ret);
 
     deviceTypes.push_back(DEVICE_TYPE_BLUETOOTH_A2DP);
     ret = audioServer->SetIORoutes(DEVICE_TYPE_BLUETOOTH_A2DP, DeviceFlag::OUTPUT_DEVICES_FLAG, deviceTypes,
-        A2DP_NOT_OFFLOAD);
+        A2DP_NOT_OFFLOAD, deviceName);
     EXPECT_EQ(SUCCESS, ret);
 
     deviceTypes.clear();
     deviceTypes.push_back(DEVICE_TYPE_WIRED_HEADPHONES);
     ret = audioServer->SetIORoutes(DEVICE_TYPE_BLUETOOTH_A2DP, DeviceFlag::OUTPUT_DEVICES_FLAG, deviceTypes,
-        A2DP_NOT_OFFLOAD);
+        A2DP_NOT_OFFLOAD, deviceName);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -780,7 +791,8 @@ HWTEST_F(AudioServerUnitTest, AudioServerCheckRecorderPermission_001, TestSize.L
 HWTEST_F(AudioServerUnitTest, AudioServeCreatePlaybackCapturerManager_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    bool ret = audioServer->CreatePlaybackCapturerManager();
+    bool ret = false;
+    audioServer->CreatePlaybackCapturerManager(ret);
     EXPECT_TRUE(ret);
 }
 #endif
@@ -798,16 +810,17 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetMaxAmplitude_001, TestSize.Level1)
     std::string timestamp = "";
     audioServer->UpdateLatencyTimestamp(timestamp, true);
     audioServer->UpdateLatencyTimestamp(timestamp, false);
-    float ret = audioServer->GetMaxAmplitude(false, "usb", SOURCE_TYPE_MIC);
+    float ret;
+    audioServer->GetMaxAmplitude(false, "usb", SOURCE_TYPE_MIC, ret);
     EXPECT_EQ(0, ret);
 
-    ret = audioServer->GetMaxAmplitude(false, "a2dp", SOURCE_TYPE_MIC);
+    audioServer->GetMaxAmplitude(false, "a2dp", SOURCE_TYPE_MIC, ret);
     EXPECT_EQ(0, ret);
 
-    ret = audioServer->GetMaxAmplitude(true, "usb", SOURCE_TYPE_INVALID);
+    audioServer->GetMaxAmplitude(true, "usb", SOURCE_TYPE_INVALID, ret);
     EXPECT_EQ(0, ret);
 
-    ret = audioServer->GetMaxAmplitude(true, "a2dp", SOURCE_TYPE_INVALID);
+    audioServer->GetMaxAmplitude(true, "a2dp", SOURCE_TYPE_INVALID, ret);
     EXPECT_EQ(0, ret);
 }
 
@@ -914,8 +927,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioProcess_001, TestSize.Level1
     EXPECT_NE(nullptr, audioServer);
     AudioProcessConfig config;
     config.audioMode = AUDIO_MODE_RECORD;
+    AudioPlaybackCaptureConfig filterConfig = AudioPlaybackCaptureConfig();
+    sptr<IRemoteObject> ret = nullptr;
     int32_t errorCode = 0;
-    auto ret = audioServer->CreateAudioProcess(config, errorCode);
+    audioServer->CreateAudioProcess(config, errorCode, filterConfig, ret);
     EXPECT_EQ(ret, nullptr);
 }
 
@@ -929,9 +944,11 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioProcess_002, TestSize.Level1
 {
     EXPECT_NE(nullptr, audioServer);
     AudioProcessConfig config;
+    AudioPlaybackCaptureConfig filterConfig = AudioPlaybackCaptureConfig();
+    sptr<IRemoteObject> ret = nullptr;
     int32_t errorCode = 0;
     audioServer->waitCreateStreamInServerCount_ = 6;
-    audioServer->CreateAudioProcess(config, errorCode);
+    audioServer->CreateAudioProcess(config, errorCode, filterConfig, ret);
     EXPECT_EQ(errorCode, ERR_RETRY_IN_CLIENT);
 }
 
@@ -1021,11 +1038,12 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_001, TestSize.Le
         .flag = RENDER_EFFECT_FLAG,
     };
 
+    int32_t ret = 0;
     AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
     audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV31);
     audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV32);
 
-    int32_t ret = audioServer->SetAudioEffectProperty(audioEffectPropertyArrayV3);
+    audioServer->SetAudioEffectProperty(audioEffectPropertyArrayV3, ret);
     EXPECT_EQ(SUCCESS, ret);
 }
 #endif
@@ -1054,7 +1072,8 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_002, TestSize.Le
     audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV31);
     audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV32);
 
-    int32_t ret = audioServer->SetAudioEffectProperty(audioEffectPropertyArrayV3);
+    int32_t ret = 0;
+    audioServer->SetAudioEffectProperty(audioEffectPropertyArrayV3, ret);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -1083,7 +1102,8 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_003, TestSize.Le
     audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV31);
     audioEffectPropertyArrayV3.property.push_back(audioEffectPropertyV32);
 
-    int32_t ret = audioServer->SetAudioEffectProperty(audioEffectPropertyArrayV3);
+    int32_t ret = 0;
+    audioServer->SetAudioEffectProperty(audioEffectPropertyArrayV3, ret);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -1100,7 +1120,8 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioEffectProperty_001, TestSize.Le
 
     AudioEffectPropertyArrayV3 audioEffectPropertyArrayV3 = {};
 
-    int32_t ret = audioServer->GetAudioEffectProperty(audioEffectPropertyArrayV3);
+    int32_t ret = 0;
+    audioServer->GetAudioEffectProperty(audioEffectPropertyArrayV3, ret);
     EXPECT_EQ(SUCCESS, ret);
 }
 #endif
@@ -1150,8 +1171,9 @@ HWTEST_F(AudioServerUnitTest, AudioServerLoadAudioEffectLibraries_001, TestSize.
     std::vector<Library> libraries;
     std::vector<Effect> effects;
     std::vector<Effect> successEffectList;
-    int32_t ret = audioServer->LoadAudioEffectLibraries(libraries, effects, successEffectList);
-    EXPECT_EQ(SUCCESS, ret);
+    bool ret = false;
+    audioServer->LoadAudioEffectLibraries(libraries, effects, successEffectList, ret);
+    EXPECT_EQ(false, ret);
 }
 
 /**

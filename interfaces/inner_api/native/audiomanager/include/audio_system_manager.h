@@ -107,7 +107,7 @@ public:
      * @since 8
      * @return Returns volume group info
      */
-    static sptr<VolumeGroupInfo> Unmarshalling(Parcel &parcel);
+    static VolumeGroupInfo *Unmarshalling(Parcel &parcel);
 };
 
 /**

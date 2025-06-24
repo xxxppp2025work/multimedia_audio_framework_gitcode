@@ -17,6 +17,7 @@
 #define AUDIO_CLIENT_TRACKER_CALLBACK_PROXY_UNIT_TEST_H
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "audio_stream_manager.h"
 #include "standard_client_tracker_proxy.h"
 #include "standard_client_tracker_stub.h"
 

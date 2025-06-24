@@ -40,6 +40,8 @@ ohos_fuzztest("AudioPipeManagerFuzzTest") {
     "../../../frameworks/native/audioutils:audio_utils",
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../../services/audio_policy:audio_policy_service_static",
+    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
+    "${audio_framework_root}/services/audio_service/idl:idl_sa_proxy",
   ]
 
   external_deps = [
