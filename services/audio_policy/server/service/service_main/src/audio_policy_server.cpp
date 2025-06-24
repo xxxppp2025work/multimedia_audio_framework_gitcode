@@ -4822,7 +4822,7 @@ int32_t AudioPolicyServer::SetCollaborativePlaybackEnabledForDevice(
 
 int32_t AudioPolicyServer::IsCollaborativePlaybackSupported(bool &ret)
 {
-    if(!PermissionUtil::VerifySystemPermission()) {
+    if (!PermissionUtil::VerifySystemPermission()) {
         ret = false;
         AUDIO_ERR_LOG("No system permission");
         return ERR_PERMISSION_DENIED;
