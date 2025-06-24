@@ -948,6 +948,27 @@ int32_t AudioStreamCollector::GetUid(int32_t sessionId)
     return defaultUid;
 }
 
+bool AudioStreamCollector::IsSessionIdExisted(int32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    const auto &itRenderer = std::find_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
+        [&sessionId](const std::shared_ptr<AudioRendererChangeInfo> &changeInfo) {
+            return changeInfo->sessionId == sessionId;
+        });
+    if (itRenderer != audioRendererChangeInfos_.end()) {
+        return true;
+    }
+    const auto &itCapturer = std::find_if(audioCapturerChangeInfos_.begin(), audioCapturerChangeInfos_.end(),
+        [&sessionId](const std::shared_ptr<AudioCapturerChangeInfo> &changeInfo) {
+            return changeInfo->sessionId == sessionId;
+        });
+    if (itCapturer != audioCapturerChangeInfos_.end()) {
+        return true;
+    }
+
+    return false;
+}
+
 int32_t AudioStreamCollector::ResumeStreamState()
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
