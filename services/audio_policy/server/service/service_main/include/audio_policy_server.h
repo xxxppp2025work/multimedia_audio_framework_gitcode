@@ -173,7 +173,8 @@ public:
 
     int32_t GetDevices(int32_t deviceFlag, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs) override;
 
-    int32_t GetDevicesInner(int32_t deviceFlag, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs) override;
+    int32_t GetDevicesInner(int32_t deviceFlag,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs) override;
 
     int32_t SetDeviceActive(int32_t deviceType, bool active, int32_t uid) override;
 
@@ -562,7 +563,7 @@ public:
 
     int32_t GetSupportedAudioVolumeTypes(std::vector<int32_t> &ret) override;
 
-    int32_t GetAudioVolumeTypeByStreamUsage(int32_t streamUsage , int32_t &volumeType) override;
+    int32_t GetAudioVolumeTypeByStreamUsage(int32_t streamUsage, int32_t &volumeType) override;
 
     int32_t GetStreamUsagesByVolumeType(int32_t audioVolumeType, std::vector<int32_t> &ret) override;
 

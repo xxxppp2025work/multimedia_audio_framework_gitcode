@@ -2740,7 +2740,7 @@ bool AudioPolicyManager::GetStreamMuteByUsage(StreamUsage streamUsage)
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
     bool isMute = false;
-    gsp->GetStreamMuteByUsage(streamUsage,isMute);
+    gsp->GetStreamMuteByUsage(streamUsage, isMute);
     return isMute;
 }
 

@@ -12,15 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef AUDIO_SERVICE_ENUM_H
+#define AUDIO_SERVICE_ENUM_H
+#include <cstdint>
 
-package OHOS.AudioStandard;
-
-struct StringPair {
-    String firstParam;
-    String secondParam;
+namespace OHOS {
+namespace AudioStandard {
+enum SessionOperation : uint32_t {
+    SESSION_OPERATION_START = 0,
+    SESSION_OPERATION_PAUSE,
+    SESSION_OPERATION_STOP,
+    SESSION_OPERATION_RELEASE,
 };
 
-struct IntPair {
-    int firstParam;
-    int secondParam;
+enum SessionOperationMsg : uint32_t {
+    SESSION_OP_MSG_DEFAULT = 0,
+    SESSION_OP_MSG_REMOVE_PIPE = 1,
 };
+} // namespace AudioStandard
+} // namespace OHOS
+#endif // AUDIO_SERVICE_ENUM_H

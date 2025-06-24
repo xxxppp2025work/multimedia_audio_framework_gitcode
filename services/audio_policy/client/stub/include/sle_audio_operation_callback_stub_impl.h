@@ -36,7 +36,8 @@ public:
     int32_t StartPlaying(const std::string &device, uint32_t streamType, int32_t& ret) override;
     int32_t StopPlaying(const std::string &device, uint32_t streamType, int32_t& ret) override;
     int32_t ConnectAllowedProfiles(const std::string &remoteAddr, int32_t& ret) override;
-    int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType, int32_t& ret) override;
+    int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType,
+        int32_t& ret) override;
     int32_t SendUserSelection(const std::string &device, uint32_t streamType, int32_t& ret) override;
 
 private:

@@ -2037,7 +2037,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
 {
     std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts;
     for (const auto &map : from) {
-        for (const auto & entry : map) {
+        for (const auto &entry : map) {
             interrupts.push_back(std::make_pair(entry.first, static_cast<AudioFocuState>(entry.second)));
         }
     }

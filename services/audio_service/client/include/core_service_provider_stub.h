@@ -26,7 +26,7 @@ public:
     ~CoreServiceProviderWrapper();
     CoreServiceProviderWrapper(ICoreServiceProvider *coreServiceWorker);
 
-    int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation, SessionOperationMsg opMsg) override;
+    int32_t UpdateSessionOperation(uint32_t sessionId, uint32_t operation, uint32_t opMsg) override;
     int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice, uint32_t sessionID, int32_t streamUsage,
         bool isRunning) override;
     int32_t GetAdapterNameBySessionId(uint32_t sessionId, std::string& name) override;

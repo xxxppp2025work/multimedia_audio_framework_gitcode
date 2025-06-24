@@ -4108,7 +4108,8 @@ int32_t AudioPolicyServer::GetSpatializationSceneType(int32_t &type)
 
 int32_t AudioPolicyServer::SetSpatializationSceneType(int32_t spatializationSceneTypeIn)
 {
-    AudioSpatializationSceneType spatializationSceneType = static_cast<AudioSpatializationSceneType>(spatializationSceneTypeIn);
+    AudioSpatializationSceneType spatializationSceneType =
+        static_cast<AudioSpatializationSceneType>(spatializationSceneTypeIn);
     if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
         AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
         return ERR_PERMISSION_DENIED;
@@ -4678,7 +4679,7 @@ int32_t AudioPolicyServer::GetStreamMuteByUsage(int32_t streamUsage, bool &isMut
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::GetVolumeInDbByStream(int32_t streamUsageIn, int32_t volumeLevel, 
+int32_t AudioPolicyServer::GetVolumeInDbByStream(int32_t streamUsageIn, int32_t volumeLevel,
     int32_t deviceType, float &ret)
 {
     StreamUsage streamUsage = static_cast<StreamUsage>(streamUsageIn);
@@ -4834,7 +4835,7 @@ int32_t AudioPolicyServer::IsCollaborativePlaybackSupported(bool &ret)
 int32_t AudioPolicyServer::IsCollaborativePlaybackEnabledForDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &enabled)
 {
-    if(!PermissionUtil::VerifySystemPermission()) {
+    if (!PermissionUtil::VerifySystemPermission()) {
         enabled = false;
         AUDIO_ERR_LOG("No system permission");
         return ERR_PERMISSION_DENIED;

@@ -38,7 +38,7 @@
 #include "audio_performance_monitor.h"
 #include "audio_volume_c.h"
 #include "core_service_handler.h"
-#include "audio_service_types.h"
+#include "audio_service_enum.h"
 #include "i_hpae_manager.h"
 #include "stream_dfx_manager.h"
 
@@ -903,8 +903,7 @@ int32_t RendererInServer::StartInnerDuringStandby()
     standByCounter_ = 0;
     startedTime_ = ClockTime::GetCurNano();
     audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
-    ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_,
-        SessionOperation::SESSION_OPERATION_START);
+    ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
     ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
@@ -932,8 +931,7 @@ int32_t RendererInServer::StartInner()
     AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
     fadeoutFlag_ = NO_FADING;
     fadeLock.unlock();
-    ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_,
-        SessionOperation::SESSION_OPERATION_START);
+    ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
     ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
@@ -1034,7 +1032,7 @@ int32_t RendererInServer::Pause()
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
-    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SessionOperation::SESSION_OPERATION_PAUSE);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE, isStandbyTmp);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     return SUCCESS;
@@ -1201,7 +1199,7 @@ int32_t RendererInServer::StopInner()
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
-    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SessionOperation::SESSION_OPERATION_STOP);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP, false);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     return SUCCESS;
@@ -1226,8 +1224,7 @@ int32_t RendererInServer::Release()
         AudioService::GetInstance()->CleanAppUseNumMap(processConfig_.appInfo.appUid);
     }
 
-    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_,
-        SessionOperation::SESSION_OPERATION_RELEASE);
+    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
