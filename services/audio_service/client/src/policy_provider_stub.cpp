@@ -110,18 +110,26 @@ int32_t PolicyProviderWrapper::SetDefaultOutputDevice(int32_t defaultOutputDevic
         sessionID, static_cast<StreamUsage>(streamUsage), isRunning);
 }
 
-#ifdef HAS_FEATURE_INNERCAPTURER
 int32_t PolicyProviderWrapper::LoadModernInnerCapSink(int32_t innerCapId)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->LoadModernInnerCapSink(innerCapId);
+#else
+    (void)innerCapId;
+    return AUDIO_ERR;
+#endif
 }
 
 int32_t PolicyProviderWrapper::UnloadModernInnerCapSink(int32_t innerCapId)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->UnloadModernInnerCapSink(innerCapId);
-}
+#else
+    (void)innerCapId;
+    return AUDIO_ERR;
 #endif
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -2782,10 +2782,9 @@ int32_t AudioServer::NotifyAudioPolicyReady()
 }
 
 // LCOV_EXCL_START
-#ifdef HAS_FEATURE_INNERCAPTURER
 int32_t AudioServer::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId)
 {
-#ifdef AUDIO_BUILD_VARIANT_ROOT
+#if defined(AUDIO_BUILD_VARIANT_ROOT) && defined(HAS_FEATURE_INNERCAPTURER)
     // root user case for auto test
     uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     if (callingUid == ROOT_UID) {
@@ -2797,6 +2796,7 @@ int32_t AudioServer::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config,
 
 int32_t AudioServer::SetInnerCapLimit(uint32_t innerCapLimit)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED,
         "refused for %{public}d", callingUid);
@@ -2806,12 +2806,14 @@ int32_t AudioServer::SetInnerCapLimit(uint32_t innerCapLimit)
         AUDIO_ERR_LOG("SetInnerCapLimit error");
     }
     return ret;
+#endif
+    return ERR_NOT_SUPPORTED;
 }
 // LCOV_EXCL_STOP
 
 int32_t AudioServer::ReleaseCaptureLimit(int32_t innerCapId)
 {
-#ifdef AUDIO_BUILD_VARIANT_ROOT
+#if defined(AUDIO_BUILD_VARIANT_ROOT) && defined(HAS_FEATURE_INNERCAPTURER)
     // root user case for auto test
     uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     if (callingUid == ROOT_UID) {
@@ -2821,7 +2823,6 @@ int32_t AudioServer::ReleaseCaptureLimit(int32_t innerCapId)
 #endif
     return ERR_NOT_SUPPORTED;
 }
-#endif
 
 int32_t AudioServer::LoadHdiAdapter(uint32_t devMgrType, const std::string &adapterName)
 {

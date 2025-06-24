@@ -42,10 +42,10 @@ public:
     int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
     int32_t SetDefaultOutputDevice(const int32_t defaultOutputDevice, const uint32_t sessionID,
         const int32_t streamUsage, bool isRunning) override;
-#ifdef HAS_FEATURE_INNERCAPTURER
+// #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId) override;
     int32_t UnloadModernInnerCapSink(int32_t innerCapId) override;
-#endif
+// #endif
 private:
     IPolicyProvider *policyWorker_;
 };
