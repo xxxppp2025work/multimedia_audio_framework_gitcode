@@ -464,10 +464,8 @@ int32_t AudioPolicyService::SetAvailableDeviceChangeCallback(const int32_t clien
 {
     sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
     auto ptr = static_cast<AudioPolicyManagerListenerStubImpl*>(callback.GetRefPtr());
-
     if (ptr != nullptr) {
         ptr->hasBTPermission_ = hasBTPermission;
-
         if (audioPolicyServerHandler_ != nullptr) {
             audioPolicyServerHandler_->AddAvailableDeviceChangeMap(clientId, usage, ptr);
         }

@@ -302,8 +302,9 @@ PipeInfoGuard::PipeInfoGuard(uint32_t sessionId)
 PipeInfoGuard::~PipeInfoGuard()
 {
     if (releaseFlag_) {
-        CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, 
-            SessionOperation::SESSION_OPERATION_RELEASE, SessionOperationMsg::SESSION_OP_MSG_REMOVE_PIPE);
+        CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_,
+            SessionOperation::SESSION_OPERATION_RELEASE,
+            SessionOperationMsg::SESSION_OP_MSG_REMOVE_PIPE);
     }
 }
 
@@ -1886,7 +1887,7 @@ int32_t AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_
         AUDIO_ERR_LOG("CreateAudioProcessInner failed");
         if (errorCode == 0) {
             errorCode = AUDIO_ERR;
-        } 
+        }
     }
     return SUCCESS;
 }

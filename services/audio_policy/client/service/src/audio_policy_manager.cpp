@@ -1125,7 +1125,8 @@ int32_t AudioPolicyManager::SetAudioManagerInterruptCallback(const int32_t clien
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     std::unique_lock<std::mutex> lock(listenerStubMutex_);
-    sptr<AudioPolicyManagerListenerStubImpl> interruptListenerStub = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
+    sptr<AudioPolicyManagerListenerStubImpl> interruptListenerStub =
+        new(std::nothrow) AudioPolicyManagerListenerStubImpl();
     CHECK_AND_RETURN_RET_LOG(interruptListenerStub != nullptr, ERROR, "object null");
     interruptListenerStub->SetInterruptCallback(callback);
 

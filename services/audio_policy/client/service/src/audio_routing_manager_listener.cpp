@@ -72,7 +72,7 @@ int32_t AudioRoutingManagerListener::OnAudioOutputDeviceRefined(
         ERR_CALLBACK_NOT_REGISTERED, "audioDeviceRefinerCallback_ is nullptr");
     lock.unlock();
 
-    return audioDeviceRefinerCallback->OnAudioOutputDeviceRefined(descs, 
+    return audioDeviceRefinerCallback->OnAudioOutputDeviceRefined(descs,
         static_cast<RouterType>(routerType), static_cast<StreamUsage>(streamUsage), clientUid,
         static_cast<AudioPipeType>(audioPipeType));
 }
