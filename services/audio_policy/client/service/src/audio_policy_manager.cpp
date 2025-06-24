@@ -1678,7 +1678,7 @@ bool AudioPolicyManager::IsAbsVolumeScene()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    bool ret;
+    bool ret = true;
     gsp->IsAbsVolumeScene(ret);
     return ret;
 }
@@ -1744,7 +1744,7 @@ bool AudioPolicyManager::IsSpatializationEnabled()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
-    bool ret;
+    bool ret = false;
     return gsp->IsSpatializationEnabled(ret);
 }
 
@@ -1752,7 +1752,7 @@ bool AudioPolicyManager::IsSpatializationEnabled(const std::string address)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
-    bool ret;
+    bool ret = false;
     return gsp->IsSpatializationEnabled(address, ret);
 }
 
@@ -1760,7 +1760,7 @@ bool AudioPolicyManager::IsSpatializationEnabledForCurrentDevice()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
-    bool ret;
+    bool ret = false;
     gsp->IsSpatializationEnabledForCurrentDevice(ret);
     return ret;
 }
@@ -1978,7 +1978,7 @@ AudioSpatializationState AudioPolicyManager::GetSpatializationState(const Stream
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetSpatializationState: audio policy manager proxy is NULL.");
-        AudioSpatializationState spatializationState = {};
+        AudioSpatializationState spatializationState = {false, false};
         return spatializationState;
     }
     AudioSpatializationState state;
@@ -1990,7 +1990,7 @@ bool AudioPolicyManager::IsSpatializationSupported()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
-    bool ret;
+    bool ret = false;
     gsp->IsSpatializationSupported(ret);
     return ret;
 }
@@ -1999,7 +1999,7 @@ bool AudioPolicyManager::IsSpatializationSupportedForDevice(const std::string ad
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
-    bool ret;
+    bool ret = false;
     gsp->IsSpatializationSupportedForDevice(address, ret);
     return ret;
 }
@@ -2008,7 +2008,7 @@ bool AudioPolicyManager::IsHeadTrackingSupported()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
-    bool ret;
+    bool ret = false;
     gsp->IsHeadTrackingSupported(ret);
     return ret;
 }
@@ -2017,7 +2017,7 @@ bool AudioPolicyManager::IsHeadTrackingSupportedForDevice(const std::string addr
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
-    bool ret;
+    bool ret = false;
     gsp->IsHeadTrackingSupportedForDevice(address, ret);
     return ret;
 }
@@ -2260,7 +2260,7 @@ float AudioPolicyManager::GetMaxAmplitude(const int32_t deviceId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, SPATIALIZATION_SCENE_TYPE_DEFAULT, "audio policy manager proxy is NULL.");
-    float ret;
+    float ret = SPATIALIZATION_SCENE_TYPE_DEFAULT;
     gsp->GetMaxAmplitude(deviceId, ret);
     return ret;
 }
@@ -2276,7 +2276,7 @@ bool AudioPolicyManager::IsHeadTrackingDataRequested(const std::string &macAddre
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
-    bool ret;
+    bool ret = false;
     gsp->IsHeadTrackingDataRequested(macAddress, ret);
     return ret;
 }

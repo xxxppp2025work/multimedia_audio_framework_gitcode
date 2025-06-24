@@ -299,7 +299,7 @@ void AudioSpatializationService::HandleHeadTrackingEnabledChange(
 AudioSpatializationState AudioSpatializationService::GetSpatializationState(const StreamUsage streamUsage)
 {
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
-    AudioSpatializationState spatializationState = {};
+    AudioSpatializationState spatializationState = {false, false};
     if (IsSpatializationSupportedUsage(streamUsage)) {
         spatializationState.spatializationEnabled = spatializationEnabledReal_;
         spatializationState.headTrackingEnabled = headTrackingEnabledReal_;
@@ -592,7 +592,7 @@ void AudioSpatializationService::HandleSpatializationStateChange(bool outputDevi
     std::lock_guard<std::mutex> lock(spatializationStateChangeListnerMutex_);
 
     AudioSpatializationState spatializationState = {spatializationEnabledReal_, headTrackingEnabledReal_};
-    AudioSpatializationState spatializationNotSupported = {};
+    AudioSpatializationState spatializationNotSupported = {false, false};
     std::unordered_map<uint32_t, bool> sessionIDToSpatializationEnabledMap;
 
     for (auto it = spatializationStateCBMap_.begin(); it != spatializationStateCBMap_.end(); ++it) {

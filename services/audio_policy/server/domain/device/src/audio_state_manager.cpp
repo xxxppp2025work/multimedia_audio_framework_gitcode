@@ -43,7 +43,7 @@ void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<Audio
 {
     std::lock_guard<std::mutex> lock(mutex_);
     
-    bool ret;
+    bool ret = false;
     int32_t callerUid = uid;
     auto callerPid = IPCSkeleton::GetCallingPid();
     std::string bundleName = AudioBundleManager::GetBundleNameFromUid(callerUid);
