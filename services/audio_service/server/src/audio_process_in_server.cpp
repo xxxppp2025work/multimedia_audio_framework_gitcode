@@ -59,9 +59,7 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
         sessionId_ = processConfig.originalSessionId;
     }
 
-    // const auto [samplingRate, encoding, format, channels, channelLayout] = processConfig.streamInfo;
     AudioSamplingRate samplingRate = processConfig_.streamInfo.samplingRate;
-    // AudioEncodingType encoding = processConfig_.streamInfo.encoding;
     AudioSampleFormat format = processConfig_.streamInfo.format;
     AudioChannel channels = processConfig_.streamInfo.channels;
     // AudioChannelLayout channelLayout = processConfig_.streamInfo.channelLayout;

@@ -250,7 +250,6 @@ AudioSharedMemory *AudioSharedMemory::Unmarshalling(Parcel &parcel)
 
     std::string name = msgParcel->ReadString();
 
-    // AudioSharedMemoryImpl *memory = new AudioSharedMemoryImpl(fd, size, name);
     auto memory = std::make_unique<AudioSharedMemoryImpl>(fd, size, name);
     if (memory == nullptr) {
         AUDIO_ERR_LOG("not enough memory");

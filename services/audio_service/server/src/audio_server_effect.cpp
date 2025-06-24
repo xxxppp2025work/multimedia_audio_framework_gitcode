@@ -383,7 +383,8 @@ int32_t AudioServer::UpdateEffectBtOffloadSupported(bool isSupported)
 int32_t AudioServer::SetRotationToEffect(const uint32_t rotate)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "set rotation to effect refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "set rotation to effect refused for %{public}d", callingUid);
 
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {

@@ -49,7 +49,7 @@ enum SpatializationStateOffset {
 
 static void UnpackSpatializationState(uint32_t pack, AudioSpatializationState &state)
 {
-    state = {pack >> SPATIALIZATION_OFFSET & 1, pack >> HEADTRACKING_OFFSET & 1};
+    state = {(pack >> SPATIALIZATION_OFFSET) & 1, (pack >> HEADTRACKING_OFFSET) & 1};
 }
 
 static uint32_t PackSpatializationState(AudioSpatializationState state)

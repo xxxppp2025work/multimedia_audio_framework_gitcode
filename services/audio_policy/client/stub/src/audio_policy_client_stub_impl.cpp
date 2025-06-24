@@ -135,7 +135,7 @@ int32_t AudioPolicyClientStubImpl::OnAudioFocusInfoChange(
     const std::vector<std::map<AudioInterrupt, int32_t>> &focusInfoList)
 {
     int32_t size = static_cast<int32_t>(focusInfoList.size());
-    CHECK_AND_RETURN_RET_LOG(size < FOCUS_INFO_VALID_SIZE, ERR_INVALID_PARAM,"get invalid size : %{public}d", size);
+    CHECK_AND_RETURN_RET_LOG(size < FOCUS_INFO_VALID_SIZE, ERR_INVALID_PARAM, "get invalid size : %{public}d", size);
     std::lock_guard<std::mutex> lockCbMap(focusInfoChangeMutex_);
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> newFocusInfoList;

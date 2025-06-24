@@ -1063,9 +1063,7 @@ int32_t AudioProcessInClientInner::Start()
     Trace traceStart("AudioProcessInClient::Start");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
-    // const auto [samplingRate, encoding, format, channels, channelLayout] = processConfig_.streamInfo;
     AudioSamplingRate samplingRate = processConfig_.streamInfo.samplingRate;
-    // AudioEncodingType encoding = processConfig_.streamInfo.encoding;
     AudioSampleFormat format = processConfig_.streamInfo.format;
     AudioChannel channels = processConfig_.streamInfo.channels;
     // AudioChannelLayout channelLayout = processConfig_.streamInfo.channelLayout;

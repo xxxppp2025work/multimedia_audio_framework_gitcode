@@ -100,7 +100,6 @@ enum InterruptForceType {
 };
 
 struct InterruptEvent : public Parcelable {
-
     InterruptEvent(){}
     InterruptEvent(InterruptType eventTypeIn, InterruptForceType forceTypeIn,
         InterruptHint hintType, bool callbackToAppIn = true)

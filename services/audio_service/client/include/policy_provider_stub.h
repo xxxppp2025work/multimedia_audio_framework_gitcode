@@ -18,8 +18,6 @@
 
 #include "i_policy_provider.h"
 #include "policy_provider_ipc_stub.h"
-//#include "ipc_types.h"
-//#include "iremote_stub.h"
 #include "audio_process_config.h"
 
 namespace OHOS {

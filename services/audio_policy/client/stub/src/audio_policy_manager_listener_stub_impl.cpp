@@ -62,73 +62,6 @@ void AudioPolicyManagerListenerStubImpl::ReadAudioDeviceChangeData(MessageParcel
     devChange.deviceDescriptors = deviceChangeDesc;
 }
 
-// int AudioPolicyManagerListenerStubImpl::OnRemoteRequest(
-//     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
-// {
-//     CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(), AUDIO_INVALID_PARAM,
-//         "ReadInterfaceToken failed");
-//     Trace trace("AudioPolicyManagerListenerStubImpl::OnRemoteRequest:" + std::to_string(code));
-//     switch (code) {
-//         case ON_INTERRUPT: {
-//             InterruptEventInternal interruptEvent = {};
-//             ReadInterruptEventParams(data, interruptEvent);
-//             // To be modified by enqueuing the interrupt action scheduler
-//             OnInterrupt(interruptEvent);
-//             return AUDIO_OK;
-//         }
-//         case ON_AVAILABLE_DEVICE_CAHNGE: {
-//             AudioDeviceUsage usage = static_cast<AudioDeviceUsage>(data.ReadInt32());
-//             DeviceChangeAction deviceChangeAction = {};
-//             ReadAudioDeviceChangeData(data, deviceChangeAction);
-//             OnAvailableDeviceChange(usage, deviceChangeAction);
-//             return AUDIO_OK;
-//         }
-//         case ON_QUERY_CLIENT_TYPE: {
-//             std::string bundleName = data.ReadString();
-//             uint32_t uid = data.ReadUint32();
-//             OnQueryClientType(bundleName, uid);
-//             return AUDIO_OK;
-//         }
-//         case ON_QUERY_ALLOWED_PLAYBACK: {
-//             int32_t uid = data.ReadInt32();
-//             int32_t pid = data.ReadInt32();
-//             bool ret = OnQueryAllowedPlayback(uid, pid);
-//             reply.WriteBool(ret);
-//             return AUDIO_OK;
-//         }
-//         case ON_BACKGROUND_MUTE: {
-//             int32_t uid = data.ReadInt32();
-//             OnBackgroundMute(uid);
-//             return AUDIO_OK;
-//         }
-//         case ON_CHECK_CLIENT_INFO: {
-//             std::string bundleName = data.ReadString();
-//             int32_t uid = data.ReadInt32();
-//             int32_t pid = data.ReadInt32();
-//             OnCheckClientInfo(bundleName, uid, pid);
-//             return AUDIO_OK;
-//         }
-//         default:
-//             return OnMiddleFirRemoteRequest(code, data, reply, option);
-//     }
-// }
-
-// int32_t AudioPolicyManagerListenerStubImpl::OnMiddleFirRemoteRequest(
-//     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
-// {
-//     switch (code) {
-//         case ON_QUERY_BUNDLE_NAME_LIST: {
-//             std::string bundleName = data.ReadString();
-//             OnQueryBundleNameIsInList(bundleName);
-//             return AUDIO_OK;
-//         }
-//         default: {
-//             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
-//             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
-//         }
-//     }
-// }
-
 int32_t AudioPolicyManagerListenerStubImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
 {
     std::shared_ptr<AudioInterruptCallback> cb = callback_.lock();
@@ -220,12 +153,14 @@ void AudioPolicyManagerListenerStubImpl::SetAvailableDeviceChangeCallback(
     audioAvailableDeviceChangeCallback_ = cb;
 }
 
-void AudioPolicyManagerListenerStubImpl::SetQueryClientTypeCallback(const std::weak_ptr<AudioQueryClientTypeCallback> &cb)
+void AudioPolicyManagerListenerStubImpl::SetQueryClientTypeCallback(
+    const std::weak_ptr<AudioQueryClientTypeCallback> &cb)
 {
     audioQueryClientTypeCallback_ = cb;
 }
 
-void AudioPolicyManagerListenerStubImpl::SetAudioClientInfoMgrCallback(const std::weak_ptr<AudioClientInfoMgrCallback> &cb)
+void AudioPolicyManagerListenerStubImpl::SetAudioClientInfoMgrCallback(
+    const std::weak_ptr<AudioClientInfoMgrCallback> &cb)
 {
     audioClientInfoMgrCallback_ = cb;
 }
@@ -236,7 +171,8 @@ void AudioPolicyManagerListenerStubImpl::SetQueryAllowedPlaybackCallback(
     audioQueryAllowedPlaybackCallback_ = cb;
 }
 
-void AudioPolicyManagerListenerStubImpl::SetBackgroundMuteCallback(const std::weak_ptr<AudioBackgroundMuteCallback> &cb)
+void AudioPolicyManagerListenerStubImpl::SetBackgroundMuteCallback(
+    const std::weak_ptr<AudioBackgroundMuteCallback> &cb)
 {
     audioBackgroundMuteCallback_ = cb;
 }
