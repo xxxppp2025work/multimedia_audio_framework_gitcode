@@ -63,6 +63,7 @@ public:
 
     void SetDpSinkModuleInfo(const AudioModuleInfo &moduleInfo);
     void SetPrimaryMicModuleInfo(const AudioModuleInfo &moduleInfo);
+    void SetOpenedNormalSourceSessionId(uint64_t sessionId);
     SourceType GetSourceOpened();
     bool GetEcFeatureEnable();
     bool GetMicRefFeatureEnable();

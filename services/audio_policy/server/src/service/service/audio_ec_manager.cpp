@@ -690,6 +690,12 @@ int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionIn
     return SUCCESS;
 }
 
+void AudioEcManager::SetOpenedNormalSourceSessionId(uint64_t sessionId)
+{
+    AUDIO_INFO_LOG("set normal source sessionId: %{public}" PRIu64, sessionId);
+    sessionIdUsedToOpenSource_ = sessionId;
+}
+
 void AudioEcManager::SetDpSinkModuleInfo(const AudioModuleInfo &moduleInfo)
 {
     dpSinkModuleInfo_ = moduleInfo;
