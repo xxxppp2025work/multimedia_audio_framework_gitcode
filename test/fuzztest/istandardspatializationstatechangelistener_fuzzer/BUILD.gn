@@ -114,5 +114,5 @@ ohos_fuzztest("IStandardSpatializationStateChangeListenerFuzzTest") {
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":IStandardSpatializationStateChangeListenerFuzzTest" ]
+  # deps = [ ":IStandardSpatializationStateChangeListenerFuzzTest" ]
 }

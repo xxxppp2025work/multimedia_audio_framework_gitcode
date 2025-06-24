@@ -36,7 +36,10 @@ ohos_fuzztest("AudioServerBalanceFuzzTest") {
   configs = [ "../../../services/audio_service:audio_service_config" ]
   cflags_cc = [ "-std=c++20" ]
 
-  deps = [ "../../../services/audio_service:audio_service_static" ]
+  deps = [
+    "../../../services/audio_service:audio_service_static",
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+  ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",

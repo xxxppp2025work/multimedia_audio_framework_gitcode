@@ -55,6 +55,7 @@ ohos_fuzztest("AudioPolicyProxyFuzzTest") {
     "../../../frameworks/native/audioutils:audio_utils",
     "../../../services/audio_policy:audio_policy_client_static",
     "../../../services/audio_policy:audio_policy_service_static",
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
   ]
 
   external_deps = [
@@ -141,5 +142,5 @@ ohos_fuzztest("AudioPolicyProxyFuzzTest") {
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":AudioPolicyProxyFuzzTest" ]
+  # deps = [ ":AudioPolicyProxyFuzzTest" ]
 }

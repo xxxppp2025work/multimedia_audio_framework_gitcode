@@ -131,9 +131,11 @@ void AudioPolicyClientProxyOnVolumeKeyEventFuzzTest()
 void AudioPolicyClientProxyOnAudioFocusInfoChangeFuzzTest()
 {
     AudioInterrupt audioInterrupt;
-    AudioFocuState audioFocuState;
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
-    focusInfoList.emplace_back(make_pair(audioInterrupt, audioFocuState));
+    AudioFocuState audioFocuState = AudioFocuState::ACTIVE;
+    std::vector<std::map<AudioInterrupt, int32_t>> focusInfoList;
+    std::map<AudioInterrupt, int32_t> interruptMap;
+    interruptMap[audioInterrupt] = audioFocuState;
+    focusInfoList.emplace_back(interruptMap);
 
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto audioPolicyClientProxy = std::make_shared<AudioPolicyClientProxy>(impl);
@@ -315,7 +317,6 @@ void AudioPolicyClientProxyOnSpatializationEnabledChangeFuzzTest()
 {
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     std::shared_ptr<IAudioPolicyClient> iAudioPolicyClient = std::make_shared<AudioPolicyClientProxy>(impl);
-    iAudioPolicyClient->hasSystemPermission_ = GetData<bool>();
     bool enabled = GetData<bool>();
     iAudioPolicyClient->OnSpatializationEnabledChange(enabled);
 }
@@ -325,7 +326,6 @@ void AudioPolicyClientProxyOnSpatializationEnabledChangeForAnyDeviceFuzzTest()
     std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     std::shared_ptr<IAudioPolicyClient> iAudioPolicyClient = std::make_shared<AudioPolicyClientProxy>(impl);
-    iAudioPolicyClient->hasSystemPermission_ = GetData<bool>();
     bool enabled = GetData<bool>();
     iAudioPolicyClient->OnSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
 }

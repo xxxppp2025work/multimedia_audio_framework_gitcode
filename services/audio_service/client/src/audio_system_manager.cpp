@@ -26,16 +26,16 @@
 #include "audio_common_log.h"
 #include "audio_errors.h"
 #include "audio_manager_base.h"
-#include "audio_manager_proxy.h"
 #include "audio_server_death_recipient.h"
 #include "audio_policy_manager.h"
 #include "audio_utils.h"
-#include "audio_manager_listener_stub.h"
+#include "audio_manager_listener_stub_impl.h"
 #include "audio_policy_interface.h"
 #include "audio_focus_info_change_callback_impl.h"
 #include "audio_workgroup_callback_stub.h"
 #include "audio_qosmanager.h"
 #include "rtg_interface.h"
+#include "istandard_audio_service.h"
 using namespace OHOS::RME;
 
 namespace OHOS {
@@ -50,7 +50,7 @@ const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::s
 mutex g_asProxyMutex;
 mutex g_audioListenerMutex;
 sptr<IStandardAudioService> g_asProxy = nullptr;
-sptr<AudioManagerListenerStub> g_audioListener = nullptr;
+sptr<AudioManagerListenerStubImpl> g_audioListener = nullptr;
 class AudioWorkgroupClientCallback : public AudioWorkgroupCallbackStub {};
 
 const std::vector<AudioStreamType> workgroupValidStreamType = {
@@ -230,7 +230,7 @@ int32_t AudioSystemManager::RegisterRendererDataTransferCallback(const DataTrans
 
     lock_guard<mutex> lock(g_audioListenerMutex);
     if (g_audioListener == nullptr) {
-        g_audioListener = new(std::nothrow) AudioManagerListenerStub();
+        g_audioListener = new(std::nothrow) AudioManagerListenerStubImpl();
         if (g_audioListener == nullptr) {
             AUDIO_ERR_LOG("g_audioListener is null");
             return ERROR;
@@ -404,15 +404,17 @@ int32_t AudioSystemManager::SetAsrAecMode(const AsrAecMode asrAecMode)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
-    return gasp->SetAsrAecMode(asrAecMode);
+    return gasp->SetAsrAecMode(static_cast<int32_t>(asrAecMode));
 }
 
 int32_t AudioSystemManager::GetAsrAecMode(AsrAecMode &asrAecMode)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
-    int32_t ret = gasp->GetAsrAecMode(asrAecMode);
+    int32_t mode = 0;
+    int32_t ret = gasp->GetAsrAecMode(mode);
     CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrAec Mode audio parameters failed");
+    asrAecMode = static_cast<AsrAecMode>(mode);
     return 0;
 }
 
@@ -420,15 +422,17 @@ int32_t AudioSystemManager::SetAsrNoiseSuppressionMode(const AsrNoiseSuppression
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
-    return gasp->SetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+    return gasp->SetAsrNoiseSuppressionMode(static_cast<int32_t>(asrNoiseSuppressionMode));
 }
 
 int32_t AudioSystemManager::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
-    int32_t ret = gasp->GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+    int32_t mode = 0;
+    int32_t ret = gasp->GetAsrNoiseSuppressionMode(mode);
     CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrAec Mode audio parameters failed");
+    asrNoiseSuppressionMode = static_cast<AsrNoiseSuppressionMode>(mode);
     return 0;
 }
 
@@ -436,15 +440,17 @@ int32_t AudioSystemManager::SetAsrWhisperDetectionMode(const AsrWhisperDetection
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
-    return gasp->SetAsrWhisperDetectionMode(asrWhisperDetectionMode);
+    return gasp->SetAsrWhisperDetectionMode(static_cast<int32_t>(asrWhisperDetectionMode));
 }
 
 int32_t AudioSystemManager::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
-    int32_t ret = gasp->GetAsrWhisperDetectionMode(asrWhisperDetectionMode);
+    int32_t mode = 0;
+    int32_t ret = gasp->GetAsrWhisperDetectionMode(mode);
     CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrWhisperDetection Mode audio parameters failed");
+    asrWhisperDetectionMode = static_cast<AsrWhisperDetectionMode>(mode);
     return 0;
 }
 
@@ -452,28 +458,32 @@ int32_t AudioSystemManager::SetAsrVoiceControlMode(const AsrVoiceControlMode asr
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
-    return gasp->SetAsrVoiceControlMode(asrVoiceControlMode, on);
+    return gasp->SetAsrVoiceControlMode(static_cast<int32_t>(asrVoiceControlMode), on);
 }
 
 int32_t AudioSystemManager::SetAsrVoiceMuteMode(const AsrVoiceMuteMode asrVoiceMuteMode, bool on)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
-    return gasp->SetAsrVoiceMuteMode(asrVoiceMuteMode, on);
+    return gasp->SetAsrVoiceMuteMode(static_cast<int32_t>(asrVoiceMuteMode), on);
 }
 
 int32_t AudioSystemManager::IsWhispering()
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
-    return gasp->IsWhispering();
+    int32_t whisperRes = 0;
+    gasp->IsWhispering(whisperRes);
+    return whisperRes;
 }
 
 const std::string AudioSystemManager::GetAudioParameter(const std::string key)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, "", "Audio service unavailable.");
-    return gasp->GetAudioParameter(key);
+    std::string value = "";
+    gasp->GetAudioParameter(key, value);
+    return value;
 }
 
 void AudioSystemManager::SetAudioParameter(const std::string &key, const std::string &value)
@@ -488,7 +498,13 @@ int32_t AudioSystemManager::GetExtraParameters(const std::string &mainKey,
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
-    return gasp->GetExtraParameters(mainKey, subKeys, result);
+    std::vector<StringPair> resultPair;
+    int32_t ret = gasp->GetExtraParameters(mainKey, subKeys, resultPair);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, 0, "Get extra parameters failed");
+    for (auto &pair : resultPair) {
+        result.push_back(std::make_pair(pair.firstParam, pair.secondParam));
+    }
+    return ret;
 }
 
 int32_t AudioSystemManager::SetExtraParameters(const std::string &key,
@@ -496,14 +512,21 @@ int32_t AudioSystemManager::SetExtraParameters(const std::string &key,
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
-    return gasp->SetExtraParameters(key, kvpairs);
+    std::vector<StringPair> pairs;
+    for (const auto &pair : kvpairs) {
+        pairs.push_back({pair.first, pair.second});
+    }
+    return gasp->SetExtraParameters(key, pairs);
 }
 
 uint64_t AudioSystemManager::GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
-    return gasp->GetTransactionId(deviceType, deviceRole);
+    uint64_t transactionId = 0;
+    int32_t res = gasp->GetTransactionId(deviceType, deviceRole, transactionId);
+    CHECK_AND_RETURN_RET_LOG(res == 0, 0, "GetTransactionId failed");
+    return transactionId;
 }
 
 int32_t AudioSystemManager::SetSelfAppVolume(int32_t volume, int32_t flag)
@@ -1294,11 +1317,8 @@ int32_t AudioSystemManager::DeactivatePreemptMode() const
 
 int32_t AudioSystemManager::SetForegroundList(std::vector<std::string> list)
 {
-    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_ILLEGAL_STATE, "Audio service unavailable.");
-    int32_t ret = gasp->SetForegroundList(list);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "failed: %{public}d", ret);
-    return ret;
+    AUDIO_WARNING_LOG("Called in %{public}d", getuid());
+    return ERR_INVALID_OPERATION;
 }
 
 int32_t AudioSystemManager::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)
@@ -1727,7 +1747,7 @@ int32_t AudioSystemManager::RegisterWakeupSourceCallback()
     AUDIO_INFO_LOG("RegisterWakeupSourceCallback");
     remoteWakeUpCallback_ = std::make_shared<WakeUpCallbackImpl>(this);
 
-    sptr<AudioManagerListenerStub> wakeupCloseCbStub = new(std::nothrow) AudioManagerListenerStub();
+    sptr<AudioManagerListenerStubImpl> wakeupCloseCbStub = new(std::nothrow) AudioManagerListenerStubImpl();
     CHECK_AND_RETURN_RET_LOG(wakeupCloseCbStub != nullptr, ERROR,
         "wakeupCloseCbStub is null");
     wakeupCloseCbStub->SetWakeupSourceCallback(remoteWakeUpCallback_);
@@ -1913,7 +1933,10 @@ uint32_t AudioSystemManager::GetEffectLatency(const std::string &sessionId)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
-    return gasp->GetEffectLatency(sessionId);
+    uint32_t latency = 0;
+    int32_t res = gasp->GetEffectLatency(sessionId, latency);
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERR_OPERATION_FAILED, "GetEffectLatency failed");
+    return latency;
 }
 
 int32_t AudioSystemManager::DisableSafeMediaVolume()
@@ -2093,7 +2116,11 @@ int32_t AudioSystemManager::CreateAudioWorkgroup()
 
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
-    return gasp->CreateAudioWorkgroup(getpid(), object);
+    int32_t workgroupId = 0;
+    int32_t res = gasp->CreateAudioWorkgroup(getpid(), object, workgroupId);
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS && workgroupId >= 0, AUDIO_ERR,
+        "CreateAudioWorkgroup failed, res:%{public}d workgroupId:%{public}d", res, workgroupId);
+    return workgroupId;
 }
 
 int32_t AudioSystemManager::ReleaseAudioWorkgroup(int32_t workgroupId)
