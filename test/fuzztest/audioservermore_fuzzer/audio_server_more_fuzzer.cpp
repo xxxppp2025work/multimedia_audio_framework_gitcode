@@ -19,7 +19,7 @@
 #include <string>
 
 #include "audio_manager_base.h"
-#include "audio_policy_manager_listener_stub.h"
+#include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_server.h"
 #include "message_parcel.h"
 #include "audio_process_in_client.h"

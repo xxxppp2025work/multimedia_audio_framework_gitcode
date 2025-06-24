@@ -17,8 +17,8 @@
 #define AUDIO_CLIENT_TRACKER_CALLBACK_PROXY_UNIT_TEST_H
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "audio_client_tracker_callback_proxy.h"
-#include "audio_client_tracker_callback_stub.h"
+#include "standard_client_tracker_proxy.h"
+#include "standard_client_tracker_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {

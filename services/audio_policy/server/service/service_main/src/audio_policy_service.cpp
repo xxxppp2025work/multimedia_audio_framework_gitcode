@@ -21,7 +21,7 @@
 #include <dlfcn.h>
 #include "iservice_registry.h"
 
-#include "audio_manager_listener_stub.h"
+#include "audio_manager_listener_stub_impl.h"
 #include "parameter.h"
 #include "parameters.h"
 #include "device_init_callback.h"
@@ -463,12 +463,13 @@ int32_t AudioPolicyService::SetAvailableDeviceChangeCallback(const int32_t clien
     const sptr<IRemoteObject> &object, bool hasBTPermission)
 {
     sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
+    auto ptr = static_cast<AudioPolicyManagerListenerStubImpl*>(callback.GetRefPtr());
 
-    if (callback != nullptr) {
-        callback->hasBTPermission_ = hasBTPermission;
+    if (ptr != nullptr) {
+        ptr->hasBTPermission_ = hasBTPermission;
 
         if (audioPolicyServerHandler_ != nullptr) {
-            audioPolicyServerHandler_->AddAvailableDeviceChangeMap(clientId, usage, callback);
+            audioPolicyServerHandler_->AddAvailableDeviceChangeMap(clientId, usage, ptr);
         }
     }
 
@@ -726,7 +727,7 @@ int32_t AudioPolicyService::InitSharedVolume(std::shared_ptr<AudioSharedMemory> 
 void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback)
 {
     AUDIO_INFO_LOG("Start");
-    sptr<AudioManagerListenerStub> parameterChangeCbStub = new(std::nothrow) AudioManagerListenerStub();
+    sptr<AudioManagerListenerStubImpl> parameterChangeCbStub = new(std::nothrow) AudioManagerListenerStubImpl();
     CHECK_AND_RETURN_LOG(parameterChangeCbStub != nullptr,
         "parameterChangeCbStub null");
     parameterChangeCbStub->SetParameterCallback(callback);

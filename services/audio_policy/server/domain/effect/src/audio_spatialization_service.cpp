@@ -21,10 +21,11 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 
-#include "audio_spatialization_state_change_listener_proxy.h"
-
+#include "audio_spatialization_state_change_listener.h"
+#include "audio_spatialization_state_change_callback.h"
 #include "audio_policy_service.h"
 #include "audio_setting_provider.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -48,8 +49,7 @@ enum SpatializationStateOffset {
 
 static void UnpackSpatializationState(uint32_t pack, AudioSpatializationState &state)
 {
-    state = {.spatializationEnabled = pack >> SPATIALIZATION_OFFSET & 1,
-        .headTrackingEnabled = pack >> HEADTRACKING_OFFSET & 1};
+    state = {pack >> SPATIALIZATION_OFFSET & 1, pack >> HEADTRACKING_OFFSET & 1};
 }
 
 static uint32_t PackSpatializationState(AudioSpatializationState state)
@@ -299,7 +299,7 @@ void AudioSpatializationService::HandleHeadTrackingEnabledChange(
 AudioSpatializationState AudioSpatializationService::GetSpatializationState(const StreamUsage streamUsage)
 {
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
-    AudioSpatializationState spatializationState = {false, false};
+    AudioSpatializationState spatializationState = {};
     if (IsSpatializationSupportedUsage(streamUsage)) {
         spatializationState.spatializationEnabled = spatializationEnabledReal_;
         spatializationState.headTrackingEnabled = headTrackingEnabledReal_;
@@ -592,7 +592,7 @@ void AudioSpatializationService::HandleSpatializationStateChange(bool outputDevi
     std::lock_guard<std::mutex> lock(spatializationStateChangeListnerMutex_);
 
     AudioSpatializationState spatializationState = {spatializationEnabledReal_, headTrackingEnabledReal_};
-    AudioSpatializationState spatializationNotSupported = {false, false};
+    AudioSpatializationState spatializationNotSupported = {};
     std::unordered_map<uint32_t, bool> sessionIDToSpatializationEnabledMap;
 
     for (auto it = spatializationStateCBMap_.begin(); it != spatializationStateCBMap_.end(); ++it) {

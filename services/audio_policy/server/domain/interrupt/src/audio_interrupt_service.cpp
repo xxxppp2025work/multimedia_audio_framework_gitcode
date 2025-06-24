@@ -20,7 +20,9 @@
 
 #include "audio_focus_parser.h"
 #include "audio_utils_c.h"
-#include "audio_policy_manager_listener_proxy.h"
+#include "standard_audio_policy_manager_listener_proxy.h"
+#include "audio_policy_manager_listener_stub_impl.h"
+#include "audio_policy_manager_listener.h"
 #include "media_monitor_manager.h"
 #include "audio_log.h"
 
@@ -28,6 +30,7 @@
 #include "app_mgr_client.h"
 #include "dfx_msg_manager.h"
 #include "audio_bundle_manager.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1493,12 +1496,15 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     CHECK_AND_RETURN_LOG(!bundleName.empty(), "bundleName is empty");
     AudioStreamType existStreamType = existAudioFocusType.streamType;
     AudioStreamType incomingStreamType = incomingAudioFocusType.streamType;
-    if (IsMediaStream(existStreamType) && IsMediaStream(incomingStreamType) &&
-        queryBundleNameListCallback_ != nullptr &&
-        queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName) &&
-        focusEntry.hintType == INTERRUPT_HINT_STOP) {
-        focusEntry.hintType = INTERRUPT_HINT_PAUSE;
-        AUDIO_INFO_LOG("%{public}s update audio focus strategy", bundleName.c_str());
+    if (IsMediaStream(existStreamType) && IsMediaStream(incomingStreamType)) {
+        bool isBundleNameInList  = false;
+        if (queryBundleNameListCallback_) {
+            queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, isBundleNameInList);
+        }
+        if (isBundleNameInList && focusEntry.hintType == INTERRUPT_HINT_STOP) {
+            focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+            AUDIO_INFO_LOG("%{public}s update audio focus strategy", bundleName.c_str());
+        }
     }
 
     UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
@@ -1732,7 +1738,9 @@ void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audio
 {
     CHECK_AND_RETURN_LOG(policyServer_ != nullptr, "policyServer nullptr");
     CHECK_AND_RETURN_LOG(zoneId == ZONEID_DEFAULT, "zoneId %{public}d is not default", zoneId);
-    AudioScene currentAudioScene = policyServer_->GetAudioScene();
+    int32_t scene = AUDIO_SCENE_INVALID;
+    policyServer_->GetAudioScene(scene);
+    AudioScene currentAudioScene = static_cast<AudioScene>(scene);
 
     AUDIO_PRERELEASE_LOGI("currentScene: %{public}d, targetScene: %{public}d, changeType: %{public}d",
         currentAudioScene, audioScene, changeType);

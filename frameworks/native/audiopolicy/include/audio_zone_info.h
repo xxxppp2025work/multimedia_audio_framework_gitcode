@@ -46,7 +46,7 @@ enum class AudioZoneFocusStrategy {
     DISTRIBUTED_FOCUS_STRATEGY = 1,
 };
 
-class AudioZoneContext {
+class AudioZoneContext : public Parcelable {
 public:
     AudioZoneFocusStrategy focusStrategy_ = AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY;
 
@@ -57,9 +57,15 @@ public:
         return parcel.WriteInt32(static_cast<int32_t>(focusStrategy_));
     }
 
-    void Unmarshalling(Parcel &parcel)
+    static AudioZoneContext *Unmarshalling(Parcel &parcel)
     {
-        focusStrategy_ = static_cast<AudioZoneFocusStrategy>(parcel.ReadInt32());
+        auto info = std::make_unique<AudioZoneContext>();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->focusStrategy_ = static_cast<AudioZoneFocusStrategy>(parcel.ReadInt32());
+        return info.release();
     }
 };
 
@@ -93,7 +99,7 @@ public:
         return true;
     }
 
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingInner(Parcel &parcel)
     {
         zoneId_ = parcel.ReadInt32();
         name_ = parcel.ReadString();
@@ -122,12 +128,23 @@ public:
             return nullptr;
         }
 
-        desc->Unmarshalling(parcel);
+        desc->UnmarshallingInner(parcel);
+        return desc;
+    }
+
+    static AudioZoneDescriptor *Unmarshalling(Parcel &parcel)
+    {
+        AudioZoneDescriptor *desc = new AudioZoneDescriptor();
+        if (desc == nullptr) {
+            return nullptr;
+        }
+
+        desc->UnmarshallingInner(parcel);
         return desc;
     }
 };
 
-struct AudioZoneStream {
+struct AudioZoneStream : public Parcelable {
     StreamUsage streamUsage = STREAM_USAGE_INVALID;
     SourceType sourceType = SOURCE_TYPE_INVALID;
     bool isPlay = true;
@@ -146,18 +163,24 @@ struct AudioZoneStream {
         return streamUsage > value.streamUsage || (streamUsage == value.streamUsage && sourceType > value.sourceType);
     }
 
-    bool Marshalling(Parcel &parcel) const
+    bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(static_cast<int32_t>(streamUsage))
             && parcel.WriteInt32(static_cast<int32_t>(sourceType))
             && parcel.WriteBool(isPlay);
     }
 
-    void Unmarshalling(Parcel &parcel)
+    static AudioZoneStream *Unmarshalling(Parcel &parcel)
     {
-        streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
-        sourceType = static_cast<SourceType>(parcel.ReadInt32());
-        isPlay = parcel.ReadBool();
+        auto stream = std::make_unique<AudioZoneStream>();
+        if (stream == nullptr) {
+            return nullptr;
+        }
+
+        stream->streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        stream->sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        stream->isPlay = parcel.ReadBool();
+        return stream.release();
     }
 };
 } // namespace AudioStandard

@@ -77,7 +77,7 @@ void AudioEffectServiceFuzzTest()
 
     int32_t clientId = GetData<int32_t>();
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback = nullptr;
-    audioPolicyServerHandler->AddExternInterruptCbsMap(clientId, audioInterruptCallback);
+    audioPolicyServerHandler->AddExternInterruptCbsMap(clientId, audioInterruptCallback);   
     audioPolicyServerHandler->RemoveExternInterruptCbsMap(clientId);
 
     AudioDeviceUsage usage = GetData<AudioDeviceUsage>();
