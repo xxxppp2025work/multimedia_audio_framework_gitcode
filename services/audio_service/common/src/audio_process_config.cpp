@@ -27,8 +27,6 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-static const uint32_t MAX_VALID_USAGE_SIZE = 30; // 128 for pids
-static const uint32_t MAX_VALID_PIDS_SIZE = 128; // 128 for pids
 static std::map<StreamUsage, std::string> USAGE_TO_STRING_MAP = {
     {STREAM_USAGE_INVALID, "INVALID"},
     {STREAM_USAGE_UNKNOWN, "UNKNOWN"},

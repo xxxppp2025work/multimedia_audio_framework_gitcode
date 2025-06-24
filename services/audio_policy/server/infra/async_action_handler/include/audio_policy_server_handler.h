@@ -22,10 +22,8 @@
 
 #include "audio_policy_log.h"
 #include "audio_system_manager.h"
-#include "audio_policy_client.h"
-#include "i_standard_concurrency_state_listener.h"
-#include "i_standard_audio_policy_manager_listener.h"
-#include "i_standard_audio_routing_manager_listener.h"
+#include "istandard_concurrency_state_listener.h"
+#include "istandard_audio_policy_manager_listener.h"
 #include "i_audio_interrupt_event_dispatcher.h"
 #include "i_audio_concurrency_event_dispatcher.h"
 #include "i_audio_zone_event_dispatcher.h"
@@ -33,6 +31,8 @@
 namespace OHOS {
 namespace AudioStandard {
 
+class IStandardAudioRoutingManagerListener;
+class IAudioPolicyClient;
 class AudioPolicyServerHandler : public AppExecFwk::EventHandler {
     DECLARE_DELAYED_SINGLETON(AudioPolicyServerHandler)
 public:

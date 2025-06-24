@@ -14,7 +14,7 @@
  */
 
 #include "audio_client_tracker_callback_stub_unit_test.h"
-#include "i_standard_client_tracker.h"
+#include "istandard_client_tracker.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 #include "audio_info.h"

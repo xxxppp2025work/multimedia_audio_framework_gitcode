@@ -17,7 +17,7 @@
 #define AUDIO_ROUTING_MANAGER_LISTENER_STUB_UNIT_TEST_H
 
 #include "gtest/gtest.h"
-#include "audio_routing_manager_listener_stub.h"
+#include "standard_audio_routing_manager_listener_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {

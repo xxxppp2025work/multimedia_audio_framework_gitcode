@@ -52,7 +52,10 @@ ohos_shared_library("ohaudio") {
     "../../native/audiopolicy/include/",
   ]
 
-  configs = [ ":audio_config" ]
+  configs = [
+    ":audio_config",
+    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
+  ]
 
   sources = [
     "./OHAudioCapturer.cpp",

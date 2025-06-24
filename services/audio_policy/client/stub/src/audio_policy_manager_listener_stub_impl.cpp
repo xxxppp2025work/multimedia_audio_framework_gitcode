@@ -1,0 +1,250 @@
+/*
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#ifndef LOG_TAG
+#define LOG_TAG "AudioPolicyManagerListenerStubImpl"
+#endif
+
+#include "audio_errors.h"
+#include "audio_policy_log.h"
+#include "audio_policy_manager_listener_stub_impl.h"
+#include "audio_utils.h"
+
+namespace OHOS {
+namespace AudioStandard {
+
+static const int32_t DEVICE_CHANGE_VALID_SIZE = 128;
+
+AudioPolicyManagerListenerStubImpl::AudioPolicyManagerListenerStubImpl()
+{
+}
+
+AudioPolicyManagerListenerStubImpl::~AudioPolicyManagerListenerStubImpl()
+{
+}
+
+void AudioPolicyManagerListenerStubImpl::ReadInterruptEventParams(MessageParcel &data,
+    InterruptEventInternal &interruptEvent)
+{
+    interruptEvent.eventType = static_cast<InterruptType>(data.ReadInt32());
+    interruptEvent.forceType = static_cast<InterruptForceType>(data.ReadInt32());
+    interruptEvent.hintType = static_cast<InterruptHint>(data.ReadInt32());
+    interruptEvent.duckVolume = data.ReadFloat();
+    interruptEvent.callbackToApp = data.ReadBool();
+}
+
+void AudioPolicyManagerListenerStubImpl::ReadAudioDeviceChangeData(MessageParcel &data, DeviceChangeAction &devChange)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceChangeDesc = {};
+
+    int32_t type = data.ReadInt32();
+    int32_t flag = data.ReadInt32();
+    int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size < DEVICE_CHANGE_VALID_SIZE, "get invalid size : %{public}d", size);
+
+    for (int32_t i = 0; i < size; i++) {
+        deviceChangeDesc.push_back(AudioDeviceDescriptor::UnmarshallingPtr(data));
+    }
+
+    devChange.type = static_cast<DeviceChangeType>(type);
+    devChange.flag = static_cast<DeviceFlag>(flag);
+    devChange.deviceDescriptors = deviceChangeDesc;
+}
+
+// int AudioPolicyManagerListenerStubImpl::OnRemoteRequest(
+//     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+// {
+//     CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(), AUDIO_INVALID_PARAM,
+//         "ReadInterfaceToken failed");
+//     Trace trace("AudioPolicyManagerListenerStubImpl::OnRemoteRequest:" + std::to_string(code));
+//     switch (code) {
+//         case ON_INTERRUPT: {
+//             InterruptEventInternal interruptEvent = {};
+//             ReadInterruptEventParams(data, interruptEvent);
+//             // To be modified by enqueuing the interrupt action scheduler
+//             OnInterrupt(interruptEvent);
+//             return AUDIO_OK;
+//         }
+//         case ON_AVAILABLE_DEVICE_CAHNGE: {
+//             AudioDeviceUsage usage = static_cast<AudioDeviceUsage>(data.ReadInt32());
+//             DeviceChangeAction deviceChangeAction = {};
+//             ReadAudioDeviceChangeData(data, deviceChangeAction);
+//             OnAvailableDeviceChange(usage, deviceChangeAction);
+//             return AUDIO_OK;
+//         }
+//         case ON_QUERY_CLIENT_TYPE: {
+//             std::string bundleName = data.ReadString();
+//             uint32_t uid = data.ReadUint32();
+//             OnQueryClientType(bundleName, uid);
+//             return AUDIO_OK;
+//         }
+//         case ON_QUERY_ALLOWED_PLAYBACK: {
+//             int32_t uid = data.ReadInt32();
+//             int32_t pid = data.ReadInt32();
+//             bool ret = OnQueryAllowedPlayback(uid, pid);
+//             reply.WriteBool(ret);
+//             return AUDIO_OK;
+//         }
+//         case ON_BACKGROUND_MUTE: {
+//             int32_t uid = data.ReadInt32();
+//             OnBackgroundMute(uid);
+//             return AUDIO_OK;
+//         }
+//         case ON_CHECK_CLIENT_INFO: {
+//             std::string bundleName = data.ReadString();
+//             int32_t uid = data.ReadInt32();
+//             int32_t pid = data.ReadInt32();
+//             OnCheckClientInfo(bundleName, uid, pid);
+//             return AUDIO_OK;
+//         }
+//         default:
+//             return OnMiddleFirRemoteRequest(code, data, reply, option);
+//     }
+// }
+
+// int32_t AudioPolicyManagerListenerStubImpl::OnMiddleFirRemoteRequest(
+//     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+// {
+//     switch (code) {
+//         case ON_QUERY_BUNDLE_NAME_LIST: {
+//             std::string bundleName = data.ReadString();
+//             OnQueryBundleNameIsInList(bundleName);
+//             return AUDIO_OK;
+//         }
+//         default: {
+//             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
+//             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+//         }
+//     }
+// }
+
+int32_t AudioPolicyManagerListenerStubImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
+{
+    std::shared_ptr<AudioInterruptCallback> cb = callback_.lock();
+    if (cb != nullptr) {
+        cb->OnInterrupt(interruptEvent);
+    } else {
+        AUDIO_WARNING_LOG("AudioPolicyManagerListenerStubImpl: callback_ is nullptr");
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManagerListenerStubImpl::OnAvailableDeviceChange(uint32_t usage,
+    const DeviceChangeAction &deviceChangeAction)
+{
+    std::shared_ptr<AudioManagerAvailableDeviceChangeCallback> availabledeviceChangedCallback =
+        audioAvailableDeviceChangeCallback_.lock();
+
+    CHECK_AND_RETURN_RET_LOG(availabledeviceChangedCallback != nullptr, AUDIO_INVALID_PARAM,
+        "OnAvailableDeviceChange: deviceChangeCallback_ or deviceChangeAction is nullptr");
+
+    availabledeviceChangedCallback->OnAvailableDeviceChange(static_cast<AudioDeviceUsage>(usage), deviceChangeAction);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManagerListenerStubImpl::OnQueryClientType(const std::string &bundleName, uint32_t uid, bool& ret)
+{
+    std::shared_ptr<AudioQueryClientTypeCallback> audioQueryClientTypeCallback =
+        audioQueryClientTypeCallback_.lock();
+
+    CHECK_AND_RETURN_RET_LOG(audioQueryClientTypeCallback != nullptr, AUDIO_INVALID_PARAM,
+        "audioQueryClientTypeCallback_ is nullptr");
+    ret = audioQueryClientTypeCallback->OnQueryClientType(bundleName, uid);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManagerListenerStubImpl::OnCheckClientInfo(
+    const std::string &bundleName, int32_t &uid, int32_t pid, bool& ret)
+{
+    std::shared_ptr<AudioClientInfoMgrCallback> audioClientInfoMgrCallback = audioClientInfoMgrCallback_.lock();
+
+    CHECK_AND_RETURN_RET_LOG(audioClientInfoMgrCallback != nullptr, AUDIO_INVALID_PARAM,
+        "audioClientInfoMgrCallback is nullptr");
+    ret = audioClientInfoMgrCallback->OnCheckClientInfo(bundleName, uid, pid);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManagerListenerStubImpl::OnQueryAllowedPlayback(int32_t uid, int32_t pid, bool& ret)
+{
+    std::shared_ptr<AudioQueryAllowedPlaybackCallback> audioQueryAllowedPlaybackCallback =
+        audioQueryAllowedPlaybackCallback_.lock();
+
+    CHECK_AND_RETURN_RET_LOG(audioQueryAllowedPlaybackCallback != nullptr, AUDIO_INVALID_PARAM,
+        "audioQueryAllowedPlaybackCallback_ is nullptr");
+    ret = audioQueryAllowedPlaybackCallback->OnQueryAllowedPlayback(uid, pid);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManagerListenerStubImpl::OnBackgroundMute(const int32_t uid)
+{
+    std::shared_ptr<AudioBackgroundMuteCallback> audioBackgroundMuteCallback =
+    audioBackgroundMuteCallback_.lock();
+
+    CHECK_AND_RETURN_RET_LOG(audioBackgroundMuteCallback != nullptr, AUDIO_INVALID_PARAM,
+        "audioBackgroundMuteCallback_ is nullptr");
+
+    audioBackgroundMuteCallback->OnBackgroundMute(uid);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManagerListenerStubImpl::OnQueryBundleNameIsInList(const std::string &bundleName, bool& ret)
+{
+    std::shared_ptr<AudioQueryBundleNameListCallback> audioQueryBundleNameListCallback =
+        audioQueryBundleNameListCallback_.lock();
+
+    CHECK_AND_RETURN_RET_LOG(audioQueryBundleNameListCallback != nullptr, AUDIO_INVALID_PARAM,
+        "audioQueryBundleNameListCallback_ is nullptr");
+    ret = audioQueryBundleNameListCallback->OnQueryBundleNameIsInList(bundleName);
+    return SUCCESS;
+}
+
+void AudioPolicyManagerListenerStubImpl::SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback)
+{
+    callback_ = callback;
+}
+
+void AudioPolicyManagerListenerStubImpl::SetAvailableDeviceChangeCallback(
+    const std::weak_ptr<AudioManagerAvailableDeviceChangeCallback> &cb)
+{
+    audioAvailableDeviceChangeCallback_ = cb;
+}
+
+void AudioPolicyManagerListenerStubImpl::SetQueryClientTypeCallback(const std::weak_ptr<AudioQueryClientTypeCallback> &cb)
+{
+    audioQueryClientTypeCallback_ = cb;
+}
+
+void AudioPolicyManagerListenerStubImpl::SetAudioClientInfoMgrCallback(const std::weak_ptr<AudioClientInfoMgrCallback> &cb)
+{
+    audioClientInfoMgrCallback_ = cb;
+}
+
+void AudioPolicyManagerListenerStubImpl::SetQueryAllowedPlaybackCallback(
+    const std::weak_ptr<AudioQueryAllowedPlaybackCallback> &cb)
+{
+    audioQueryAllowedPlaybackCallback_ = cb;
+}
+
+void AudioPolicyManagerListenerStubImpl::SetBackgroundMuteCallback(const std::weak_ptr<AudioBackgroundMuteCallback> &cb)
+{
+    audioBackgroundMuteCallback_ = cb;
+}
+
+void AudioPolicyManagerListenerStubImpl::SetQueryBundleNameListCallback(
+    const std::weak_ptr<AudioQueryBundleNameListCallback> &cb)
+{
+    audioQueryBundleNameListCallback_ = cb;
+}
+} // namespace AudioStandard
+} // namespace OHOS

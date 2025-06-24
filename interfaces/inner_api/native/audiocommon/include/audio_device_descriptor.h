@@ -76,7 +76,9 @@ public:
     bool MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
         int32_t apiVersion) const;
 
-    void Unmarshalling(Parcel &parcel);
+    void UnmarshallingSelf(Parcel &parcel);
+
+    static AudioDeviceDescriptor *Unmarshalling(Parcel &parcel);
 
     static std::shared_ptr<AudioDeviceDescriptor> UnmarshallingPtr(Parcel &parcel);
 
@@ -131,6 +133,8 @@ public:
             return lhs->IsSameDeviceDesc(*rhs);
         }
     };
+
+    void UpdateDeviceInfo(bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion);
 
     DeviceType deviceType_ = DEVICE_TYPE_NONE;
     DeviceRole deviceRole_ = DEVICE_ROLE_NONE;

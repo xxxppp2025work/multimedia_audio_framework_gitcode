@@ -28,6 +28,7 @@
 #include "audio_volume_config.h"
 #include "microphone_descriptor.h"
 #include "audio_errors.h"
+#include "audio_device_descriptor.h"
 
 
 namespace OHOS {

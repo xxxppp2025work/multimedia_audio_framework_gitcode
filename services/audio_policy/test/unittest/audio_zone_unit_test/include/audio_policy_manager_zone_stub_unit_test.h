@@ -17,7 +17,7 @@
 #define AUDIO_POLICY_MANAGER_ZONE_STUB_UNIT_TEST_H
  
 #include "gtest/gtest.h"
-#include "audio_policy_manager_stub.h"
+#include "audio_policy_stub.h"
 #include "audio_utils.h"
  
 namespace OHOS {
@@ -34,7 +34,7 @@ public:
     // TearDown: Called after each test cases
     void TearDown(void);
 
-    std::shared_ptr<AudioPolicyManagerStub> stub_ = nullptr;
+    std::shared_ptr<AudioPolicyStub> stub_ = nullptr;
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
