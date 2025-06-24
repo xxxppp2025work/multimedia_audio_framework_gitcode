@@ -302,9 +302,8 @@ PipeInfoGuard::PipeInfoGuard(uint32_t sessionId)
 PipeInfoGuard::~PipeInfoGuard()
 {
     if (releaseFlag_) {
-        CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_,
-            SessionOperation::SESSION_OPERATION_RELEASE,
-            SessionOperationMsg::SESSION_OP_MSG_REMOVE_PIPE);
+        CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE,
+            SESSION_OP_MSG_REMOVE_PIPE);
     }
 }
 
@@ -819,7 +818,7 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
 
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR,"local device manager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
 
     AudioParamKey parmKey = AudioParamKey::NONE;
     if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
@@ -881,7 +880,7 @@ int32_t AudioServer::SetAudioParameter(const std::string& networkId, int32_t key
 
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR,"device manager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "device manager is nullptr");
     deviceManager->SetAudioParameter(networkId.c_str(), static_cast<AudioParamKey>(key), condition, value);
     return SUCCESS;
 }
@@ -975,7 +974,7 @@ int32_t AudioServer::GetExtraParametersInner(const std::string &mainKey,
     return SUCCESS;
 }
 
-int32_t AudioServer::GetAudioParameter(const std::string &key, std::string& value) 
+int32_t AudioServer::GetAudioParameter(const std::string &key, std::string &value)
 {
     value = GetAudioParameterInner(key);
     return SUCCESS;

@@ -17,11 +17,8 @@
 #endif
 
 #include "audio_routing_manager_listener.h"
-
-#include "audio_errors.h"   
+#include "audio_errors.h"
 #include "audio_policy_log.h"
-
-using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {

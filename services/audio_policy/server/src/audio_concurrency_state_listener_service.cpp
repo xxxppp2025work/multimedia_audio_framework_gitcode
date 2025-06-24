@@ -44,7 +44,8 @@ int32_t AudioConcurrencyStateListenerService::OnConcedeStream()
     return SUCCESS;
 }
 
-void AudioConcurrencyStateListenerService::SetConcurrencyCallback(const std::weak_ptr<AudioConcurrencyCallback> &callback)
+void AudioConcurrencyStateListenerService::SetConcurrencyCallback(
+    const std::weak_ptr<AudioConcurrencyCallback> &callback)
 {
     callback_ = callback;
 }

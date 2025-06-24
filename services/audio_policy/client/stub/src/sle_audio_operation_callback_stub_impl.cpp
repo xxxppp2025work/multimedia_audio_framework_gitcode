@@ -149,7 +149,8 @@ int32_t SleAudioOperationCallbackStubImpl::SetDeviceAbsVolume(
     return SUCCESS;
 }
 
-int32_t SleAudioOperationCallbackStubImpl::SendUserSelection(const std::string &device, uint32_t streamType, int32_t& ret)
+int32_t SleAudioOperationCallbackStubImpl::SendUserSelection(const std::string &device, uint32_t streamType,
+    int32_t &ret)
 {
     std::unique_lock lock(sleAudioOperationCallbackMutex_);
     std::shared_ptr<SleAudioOperationCallback> sleAudioOperationCallback = sleAudioOperationCallback_.lock();

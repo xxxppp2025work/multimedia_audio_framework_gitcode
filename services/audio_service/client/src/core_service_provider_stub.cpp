@@ -33,11 +33,11 @@ CoreServiceProviderWrapper::CoreServiceProviderWrapper(ICoreServiceProvider *cor
 {
 }
 
-int32_t CoreServiceProviderWrapper::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
-    SessionOperationMsg opMsg)
+int32_t CoreServiceProviderWrapper::UpdateSessionOperation(uint32_t sessionId, uint32_t operation, uint32_t opMsg)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    return coreServiceWorker_->UpdateSessionOperation(sessionId, operation, opMsg);
+    return coreServiceWorker_->UpdateSessionOperation(sessionId, static_cast<SessionOperation>(operation),
+        static_cast<SessionOperationMsg>(opMsg));
 }
 
 int32_t CoreServiceProviderWrapper::SetDefaultOutputDevice(int32_t defaultOutputDevice,

@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "icore_service_provider_ipc.h"
+#include "audio_service_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -35,7 +36,7 @@ public:
     int32_t ConfigCoreServiceProvider(const sptr<ICoreServiceProviderIpc> policyProvider);
 
     int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
-        SessionOperationMsg opMsg = SessionOperationMsg::SESSION_OP_MSG_DEFAULT);
+        SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT);
     int32_t SetDefaultOutputDevice(
         const DeviceType defaultOutputDevice, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);

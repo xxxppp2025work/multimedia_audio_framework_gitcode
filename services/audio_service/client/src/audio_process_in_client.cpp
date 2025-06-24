@@ -1066,7 +1066,6 @@ int32_t AudioProcessInClientInner::Start()
     AudioSamplingRate samplingRate = processConfig_.streamInfo.samplingRate;
     AudioSampleFormat format = processConfig_.streamInfo.format;
     AudioChannel channels = processConfig_.streamInfo.channels;
-    // AudioChannelLayout channelLayout = processConfig_.streamInfo.channelLayout;
     // eg: 100005_dump_process_client_audio_48000_2_1.pcm
     std::string dumpFileName = std::to_string(sessionId_) + "_dump_process_client_audio_" +
         std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +

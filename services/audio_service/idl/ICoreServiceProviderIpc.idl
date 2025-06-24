@@ -19,7 +19,10 @@ import AudioServiceTypes;
 
 sequenceable audio_device_descriptor..OHOS.AudioStandard.AudioDeviceDescriptor;
 interface ICoreServiceProviderIpc {
-    [ipccode 0] void UpdateSessionOperation([in] unsigned int sessionId, [in] SessionOperation operation, [in] SessionOperationMsg operationMsg);
+    [ipccode 0] void UpdateSessionOperation(
+        [in] unsigned int sessionId,
+        [in] unsigned int operation, /* SessionOperation */
+        [in] unsigned int operationMsg /* SessionOperationMsg */);
     void SetDefaultOutputDevice([in] int defaultOutputDevice, [in] unsigned int sessionID, [in] int streamUsage, [in] boolean isRunning);  // DeviceType  StreamUsage
     void GetAdapterNameBySessionId([in] unsigned int sessionID, [out] String name);
     void GetProcessDeviceInfoBySessionId([in] unsigned int sessionID, [out] AudioDeviceDescriptor deviceInfo);

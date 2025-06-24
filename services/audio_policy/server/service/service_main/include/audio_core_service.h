@@ -37,7 +37,7 @@
 #include "device_status_listener.h"
 #include "core_service_provider_stub.h"
 #include "audio_pipe_info.h"
-#include "audio_service_types.h"
+#include "audio_service_enum.h"
 #include "audio_pipe_manager.h"
 #include "audio_pipe_selector.h"
 #include "audio_policy_config_manager.h"
@@ -61,7 +61,7 @@ public:
 
         // ICoreServiceProvider
         int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
-            SessionOperationMsg opMsg = SessionOperationMsg::SESSION_OP_MSG_DEFAULT) override;
+            SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT) override;
         int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionId,
             const StreamUsage streamUsage, bool isRunning) override;
         std::string GetAdapterNameBySessionId(uint32_t sessionId) override;
@@ -156,8 +156,7 @@ private:
     int32_t StartClient(uint32_t sessionId);
     int32_t PauseClient(uint32_t sessionId);
     int32_t StopClient(uint32_t sessionId);
-    int32_t ReleaseClient(uint32_t sessionId,
-        SessionOperationMsg opMsg = SessionOperationMsg::SESSION_OP_MSG_DEFAULT);
+    int32_t ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT);
 
     // ICoreServiceProvider from EventEntry
     int32_t SetDefaultOutputDevice(
