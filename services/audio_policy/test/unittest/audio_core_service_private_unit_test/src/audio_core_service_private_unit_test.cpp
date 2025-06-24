@@ -1957,6 +1957,19 @@ HWTEST(AudioCoreServicePrivateTest, IsFastAllowedTest_002, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioCoreService.
+ * @tc.number: HandleFetchOutputWhenNoRunningStream_001
+ * @tc.desc  : Test AudioCoreService::HandleFetchOutputWhenNoRunningStream, fetch output when no running stream.
+ */
+HWTEST(AudioCoreServicePrivateTest, HandleFetchOutputWhenNoRunningStream_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    auto ret = audioCoreService->HandleFetchOutputWhenNoRunningStream();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
  * @tc.number: CheckModemScene_001
  * @tc.desc  : Test AudioCoreService::CheckModemScene, set streamStatus to started if scene is AUDIO_SCENE_PHONE_CALL
  */
