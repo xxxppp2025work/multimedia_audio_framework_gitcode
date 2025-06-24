@@ -108,9 +108,10 @@ int32_t AudioRecoveryDevice::HandleRecoveryPreferredDevices(int32_t preferredTyp
             preferredType == Media::MediaMonitor::RING_RENDER ||
             preferredType == Media::MediaMonitor::TONE_RENDER) {
             sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
-            audioRendererFilter->uid = -1;
-            audioRendererFilter->rendererInfo.streamUsage =
-                static_cast<StreamUsage>(usageOrSourceType);
+            if (audioRendererFilter != nullptr) {
+                audioRendererFilter->uid = -1;
+                audioRendererFilter->rendererInfo.streamUsage = static_cast<StreamUsage>(usageOrSourceType);
+            }
             result = SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
         } else if (preferredType == Media::MediaMonitor::CALL_CAPTURE ||
                     preferredType == Media::MediaMonitor::RECORD_CAPTURE) {
