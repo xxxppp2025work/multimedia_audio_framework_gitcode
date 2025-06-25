@@ -658,6 +658,7 @@ enum AudioInputType AudioCaptureSource::ConvertToHDIAudioInputType(int32_t sourc
     }
     return hdiAudioInputType;
 }
+
 void AudioCaptureSource::checkAcousticEchoCancelerSupported(int32_t &hdiAudioInputType)
 {
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
