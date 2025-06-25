@@ -36,7 +36,7 @@ enum class HpaeSoftLinkState : int32_t {
 
 class HpaeSoftLink : public std::enable_shared_from_this<HpaeSoftLink>,
                      public IHpaeSoftLink,
-                     public IStatusCallback,
+                     public IStreamStatusCallback,
                      public IStreamCallback,
                      public ICapturerStreamCallback {
 public:
@@ -47,7 +47,7 @@ public:
     int32_t Start() override;
     int32_t Stop() override;
     int32_t Release() override;
-    void OnStatusUpdate(IOperation operation) override;
+    void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
     int32_t OnStreamData(AudioCallBackStreamInfo& callbackStreamInfo) override;
     int32_t OnStreamData(AudioCallBackCapturerStreamInfo& callbackStreamInfo) override;
 

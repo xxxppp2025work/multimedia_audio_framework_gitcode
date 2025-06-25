@@ -26,7 +26,7 @@ constexpr uint32_t MILLISECOND_PER_SECOND = 1000;
 struct HpaeSessionInfo {
     HpaeStreamInfo streamInfo;
     HpaeSessionState state = HPAE_SESSION_NEW;
-    std::weak_ptr<IStatusCallback> statusCallback;
+    std::weak_ptr<IStreamStatusCallback> statusCallback;
     int32_t offloadType = OFFLOAD_DEFAULT;
     bool offloadEnable = false;
 };

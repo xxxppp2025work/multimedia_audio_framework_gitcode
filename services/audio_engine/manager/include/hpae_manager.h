@@ -106,7 +106,7 @@ public:
     int32_t Stop(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Release(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t RegisterStatusCallback(HpaeStreamClassType streamClassType, uint32_t sessionId,
-        const std::weak_ptr<IStatusCallback> &callback) override;
+        const std::weak_ptr<IStreamStatusCallback> &callback) override;
     // record stream interface
     int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) override;
     int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeStreamInfo &streamInfo) override;

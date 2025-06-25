@@ -235,7 +235,7 @@ int32_t HpaeManagerImpl::Release(HpaeStreamClassType streamClassType, uint32_t s
 }
 
 int32_t HpaeManagerImpl::RegisterStatusCallback(HpaeStreamClassType streamClassType, uint32_t sessionId,
-    const std::weak_ptr<IStatusCallback> &callback)
+    const std::weak_ptr<IStreamStatusCallback> &callback)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
     return manager_->RegisterStatusCallback(streamClassType, sessionId, callback);

@@ -66,8 +66,8 @@ public:
     virtual int32_t Drain(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
     virtual int32_t Stop(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
     virtual int32_t Release(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
-    virtual int32_t RegisterStatusCallback(
-        HpaeStreamClassType streamClassType, uint32_t sessionId, const std::weak_ptr<IStatusCallback> &callback) = 0;
+    virtual int32_t RegisterStatusCallback(HpaeStreamClassType streamClassType, uint32_t sessionId,
+        const std::weak_ptr<IStreamStatusCallback> &callback) = 0;
 
     virtual int32_t RegisterReadCallback(uint32_t sessionId,
         const std::weak_ptr<ICapturerStreamCallback> &callback) = 0;
