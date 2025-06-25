@@ -515,6 +515,8 @@ public:
     
     virtual bool IsCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice) = 0;
+    
+    virtual int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };
