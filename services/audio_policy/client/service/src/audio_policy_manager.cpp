@@ -2696,6 +2696,13 @@ bool AudioPolicyManager::IsCapturerFocusAvailable(const AudioCapturerInfo &captu
     return gsp->IsCapturerFocusAvailable(capturerInfo);
 }
 
+int32_t AudioPolicyManager::ClearAudioFocusBySessionID(const int32_t &sessionID)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->ClearAudioFocusBySessionID(sessionID);
+}
+
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;

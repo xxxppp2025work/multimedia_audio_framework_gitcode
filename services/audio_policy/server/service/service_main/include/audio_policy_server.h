@@ -561,6 +561,8 @@ public:
 
     bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo) override;
 
+    int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) override;
+
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 
     void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false);
