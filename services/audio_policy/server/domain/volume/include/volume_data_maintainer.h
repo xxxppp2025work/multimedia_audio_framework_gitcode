@@ -83,11 +83,7 @@ public:
         GET_MIC_MUTE_STATE,
     };
 
-    static VolumeDataMaintainer& GetVolumeDataMaintainer()
-    {
-        static VolumeDataMaintainer volumeDataMainTainer;
-        return volumeDataMainTainer;
-    }
+    VolumeDataMaintainer();
     ~VolumeDataMaintainer();
 
     void SetDataShareReady(std::atomic<bool> isDataShareReady);
@@ -128,14 +124,13 @@ public:
     bool GetRestoreVolumeLevel(DeviceType deviceType, int32_t &volume);
     void RegisterCloned();
     bool SaveMicMuteState(bool isMute);
-    bool GetMicMuteState(bool &isMute);
+    bool GetMicMuteState(bool &isMute) const;
     bool CheckOsAccountReady();
 
     void StoreRemoteVolumeLevelMap(void);
     void LoadRemoteVolumeLevelMap(void);
 
 private:
-    VolumeDataMaintainer();
     static std::string GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType,
         std::string networkId = "LocalDevice");
     static std::string GetMuteKeyForDataShare(DeviceType deviceType, AudioStreamType streamType);
