@@ -1071,7 +1071,7 @@ void HpaeManager::HandleInitDeviceResult(std::string deviceName, int32_t result,
         const std::string combinedParam = "live_effect=" + effectLiveState_;
         HpaePolicyManager::GetInstance().SetAudioParameter("primary",
             AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
-        }
+    }
 }
 
 void HpaeManager::HandleDeInitDeviceResult(std::string deviceName, int32_t result)
