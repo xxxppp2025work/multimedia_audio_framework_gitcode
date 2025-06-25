@@ -518,7 +518,6 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
             CHECK_AND_RETURN_LOG(ret ==SUCCESS, "focus clear fail");
         }
     }
-    }
 }
 
 void DataTransferStateChangeCallbackInnerImpl::ReportEvent(
