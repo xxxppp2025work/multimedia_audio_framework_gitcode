@@ -137,8 +137,9 @@ void AudioPolicyServiceEnhanceOneFuzzTest()
     uint32_t sessionId = GetData<uint32_t>();
     GetServerPtr()->audioPolicyService_.NotifyCapturerAdded(capturerInfo, streamInfo, sessionId);
 
-    DeviceType deviceType = GetData<DeviceType>();
-    GetServerPtr()->audioPolicyService_.audioActiveDevice_.SetCurrentInputDeviceType(deviceType);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = GetData<DeviceType>();
+    GetServerPtr()->audioPolicyService_.audioActiveDevice_.SetCurrentInputDevice(deviceDescriptor);
 }
 
 void AudioPolicyServiceEnhanceTwoFuzzTest()
