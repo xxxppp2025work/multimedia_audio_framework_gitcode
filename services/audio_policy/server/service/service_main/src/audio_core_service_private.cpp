@@ -1484,16 +1484,7 @@ void AudioCoreService::TriggerRecreateCapturerStreamCallback(shared_ptr<AudioStr
     AUDIO_INFO_LOG("Trigger recreate capturer stream %{public}d, pid: %{public}d, routeflag: 0x%{public}x",
         streamDesc->sessionId_, streamDesc->callerPid_, streamDesc->routeFlag_);
 
-    SwitchStreamInfo info = {
-        streamDesc->sessionId_,
-        streamDesc->callerUid_,
-        streamDesc->appInfo_.appUid,
-        streamDesc->appInfo_.appPid,
-        streamDesc->appInfo_.appTokenId,
-        HandleStreamStatusToCapturerState(streamDesc->streamStatus_),
-    };
     if (audioPolicyServerHandler_ != nullptr) {
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
         audioPolicyServerHandler_->SendRecreateCapturerStreamEvent(streamDesc->appInfo_.appPid,
             streamDesc->sessionId_, streamDesc->routeFlag_, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     } else {
@@ -1759,6 +1750,9 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream()
     audioVolumeManager_.SetVolumeForSwitchDevice(*descs.front());
     if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         SwitchActiveA2dpDevice(std::make_shared<AudioDeviceDescriptor>(*descs.front()));
+    }
+    if (audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_DEFAULT) {
+        audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
     }
     OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
     return SUCCESS;
