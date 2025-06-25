@@ -497,6 +497,8 @@ public:
 
     int32_t SetCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable) override;
+
+    int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

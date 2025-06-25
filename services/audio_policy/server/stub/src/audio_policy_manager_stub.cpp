@@ -250,7 +250,8 @@ const char *g_audioPolicyCodeStrs[] = {
     "IS_AUDIO_LOOPBACK_SUPPORTED",
     "SET_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE",
     "IS_COLLABORATIVE_PALYBACK_SUPPORTED",
-    "IS_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE"
+    "IS_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE",
+    "CLEAR_AUDIO_FOCUS_BY_SESSIONID"
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1369,6 +1370,9 @@ void AudioPolicyManagerStub::OnMiddleTweRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_USAGES_BY_VOLUME_TYPE):
             GetStreamUsagesByVolumeTypeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::CLEAR_AUDIO_FOCUS_BY_SESSIONID):
+            ClearAudioFocusBySessionIDInternal(data, reply);
             break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
@@ -2552,6 +2556,13 @@ void AudioPolicyManagerStub::IsCollaborativePlaybackEnabledForDeviceInternal(Mes
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
     bool result = IsCollaborativePlaybackEnabledForDevice(audioDeviceDescriptor);
     reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::ClearAudioFocusBySessionIDInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t sessionID = data.ReadInt32();
+    int32_t result = ClearAudioFocusBySessionID(sessionID);
+    reply.WriteInt32(result);
 }
 } // namespace audio_policy
 } // namespace OHOS

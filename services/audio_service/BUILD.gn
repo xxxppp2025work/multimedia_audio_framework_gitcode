@@ -517,6 +517,7 @@ audio_ohos_library("audio_service") {
     "../../frameworks/native/audioutils:audio_xml_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../audio_engine:audio_engine_manager",
+    "../audio_policy:audio_policy_client",
   ]
 
   external_deps = [
@@ -539,6 +540,7 @@ audio_ohos_library("audio_service") {
     "samgr:samgr_proxy",
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
+    "eventhandler:libeventhandler",
   ]
 
   public_external_deps = [ "libxml2:libxml2" ]
