@@ -141,8 +141,11 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
       audioCollaborativeService_(AudioCollaborativeService::GetAudioCollaborativeService()),
       audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
       audioPolicyDump_(AudioPolicyDump::GetInstance()),
-      audioActiveDevice_(AudioActiveDevice::GetInstance()),
-      usbManager_(AudioUsbManager::GetInstance())
+#ifdef USB_ENABLE
+      usbManager_(AudioUsbManager::GetInstance()),
+#endif
+      audioActiveDevice_(AudioActiveDevice::GetInstance())
+
 {
     volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
     AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
@@ -993,6 +996,11 @@ int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
         return ERROR;
     }
     return streamCollector_.SetLowPowerVolume(streamId, volume);
+}
+
+AudioStreamInfo AudioPolicyServer::GetFastStreamInfo()
+{
+    return audioPolicyService_.GetFastStreamInfo();
 }
 
 float AudioPolicyServer::GetLowPowerVolume(int32_t streamId)
@@ -3856,6 +3864,19 @@ int32_t AudioPolicyServer::UnsetAudioDeviceAnahsCallback()
     return coreService_->UnsetAudioDeviceAnahsCallback();
 }
 
+void AudioPolicyServer::SendVolumeKeyEventToRssWhenAccountsChanged()
+{
+    AUDIO_INFO_LOG("Send VolumeKeyEvent to Rss");
+    VolumeEvent volumeEvent;
+    volumeEvent.volumeType = STREAM_MUSIC;
+    volumeEvent.volume = GetSystemVolumeLevelInternal(STREAM_MUSIC);
+    volumeEvent.updateUi = false;
+    volumeEvent.notifyRssWhenAccountsChange = true;
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
+    }
+}
+
 void AudioPolicyServer::NotifyAccountsChanged(const int &id)
 {
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
@@ -3863,6 +3884,7 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id)
     // Asynchronous clear audio focus infos
     usleep(WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US);
     audioPolicyService_.NotifyAccountsChanged(id);
+    SendVolumeKeyEventToRssWhenAccountsChanged();
     RegisterDefaultVolumeTypeListener();
 }
 

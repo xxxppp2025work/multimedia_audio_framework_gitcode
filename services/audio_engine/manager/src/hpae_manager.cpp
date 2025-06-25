@@ -671,8 +671,8 @@ int32_t HpaeManager::MoveSourceOutputByIndexOrName(
             AUDIO_ERR_LOG("move session:%{public}u failed,source name is empty.", sourceOutputId);
             isReturn = true;
         }
-        std::shared_ptr<IHpaeCapturerManager> capturerManager = GetCapturerManagerByName(sourceName);
-        if (capturerManager == nullptr || !capturerManager->IsInit()) {
+        std::shared_ptr<IHpaeCapturerManager> captureManager = GetCapturerManagerByName(sourceName);
+        if (captureManager == nullptr || !captureManager->IsInit()) {
             AUDIO_ERR_LOG("move session:%{public}u failed, can not find source:%{public}s or source is not open.",
                 sourceOutputId, sourceName.c_str());
             isReturn = true;
@@ -1583,6 +1583,22 @@ int32_t HpaeManager::SetClientVolume(uint32_t sessionId, float volume)
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->SetClientVolume(sessionId, volume);
         } else {
             AUDIO_WARNING_LOG("SetClientVolume can not find sessionId, sessionId %{public}u", sessionId);
+        }
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeManager::SetLoudnessGain(uint32_t sessionId, float loudnessGain)
+{
+    auto request = [this, sessionId, loudnessGain]() {
+        AUDIO_INFO_LOG("SetLoudnessGain sessionId %{public}u %{public}f", sessionId, loudnessGain);
+        if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
+            CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
+                "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
+            rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->SetLoudnessGain(sessionId, loudnessGain);
+        } else {
+            AUDIO_WARNING_LOG("SetLoudnessGain can not find sessionId, sessionId %{public}u", sessionId);
         }
     };
     SendRequest(request, __func__);

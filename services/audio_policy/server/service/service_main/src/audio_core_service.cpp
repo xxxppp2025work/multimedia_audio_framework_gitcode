@@ -187,6 +187,7 @@ int32_t AudioCoreService::CreateRendererClient(
         streamDesc->audioFlag_, sessionId);
 
     // Fetch pipe
+    audioActiveDevice_.UpdateStreamDeviceMap("CreateRendererClient");
     int32_t ret = FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
     AddSessionId(sessionId);
@@ -874,14 +875,6 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid)
 
     audioDeviceCommon_.ClientDiedDisconnectScoNormal();
     audioDeviceCommon_.ClientDiedDisconnectScoRecognition();
-
-    if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_OFFLOAD)) {
-        audioOffloadStream_.DynamicUnloadOffloadModule();
-    }
-
-    if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL)) {
-        audioOffloadStream_.UnloadMchModule();
-    }
 }
 
 bool AudioCoreService::ConnectServiceAdapter()
@@ -1092,6 +1085,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
             streamDesc->audioFlag_, streamDesc->sessionId_);
     }
 
+    audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
     if (IsNoRunningStream(outputStreamDescs)) {
         AUDIO_INFO_LOG("no running stream");

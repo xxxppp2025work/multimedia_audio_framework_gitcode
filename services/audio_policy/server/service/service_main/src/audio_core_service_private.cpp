@@ -568,6 +568,11 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         AUDIO_INFO_LOG("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
             pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
+        if (pipeInfo->moduleInfo_.name == OFFLOAD_PRIMARY_SPEAKER &&
+            pipeInfo->streamDescriptors_.size() > 0) {
+            isOffloadOpened_.store(true);
+            offloadCloseCondition_.notify_all();
+        }
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) { // new
@@ -1478,16 +1483,7 @@ void AudioCoreService::TriggerRecreateCapturerStreamCallback(shared_ptr<AudioStr
     AUDIO_INFO_LOG("Trigger recreate capturer stream %{public}d, pid: %{public}d, routeflag: 0x%{public}x",
         streamDesc->sessionId_, streamDesc->callerPid_, streamDesc->routeFlag_);
 
-    SwitchStreamInfo info = {
-        streamDesc->sessionId_,
-        streamDesc->callerUid_,
-        streamDesc->appInfo_.appUid,
-        streamDesc->appInfo_.appPid,
-        streamDesc->appInfo_.appTokenId,
-        HandleStreamStatusToCapturerState(streamDesc->streamStatus_),
-    };
     if (audioPolicyServerHandler_ != nullptr) {
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
         audioPolicyServerHandler_->SendRecreateCapturerStreamEvent(streamDesc->appInfo_.appPid,
             streamDesc->sessionId_, streamDesc->routeFlag_, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     } else {
@@ -1709,11 +1705,6 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
         return false;
     }
 
-    if (streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        // a2dp offload
-        return true;
-    }
-
     // LowPower: Speaker, USB headset, a2dp offload
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_SPEAKER &&
         streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_USB_HEADSET &&
@@ -1758,6 +1749,9 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream()
     audioVolumeManager_.SetVolumeForSwitchDevice(*descs.front());
     if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         SwitchActiveA2dpDevice(std::make_shared<AudioDeviceDescriptor>(*descs.front()));
+    }
+    if (audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_DEFAULT) {
+        audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
     }
     OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
     return SUCCESS;
@@ -1835,6 +1829,10 @@ void AudioCoreService::WriteOutputRouteChangeEvent(std::shared_ptr<AudioDeviceDe
     bean->Add("TIMESTAMP", static_cast<uint64_t>(timeStamp));
     bean->Add("DEVICE_TYPE_BEFORE_CHANGE", curOutputDeviceType);
     bean->Add("DEVICE_TYPE_AFTER_CHANGE", desc->deviceType_);
+    bean->Add("PRE_AUDIO_SCENE", static_cast<int32_t>(audioSceneManager_.GetLastAudioScene()));
+    bean->Add("CUR_AUDIO_SCENE", static_cast<int32_t>(audioSceneManager_.GetAudioScene(true)));
+    bean->Add("DEVICE_LIST", audioDeviceManager_.GetConnDevicesStr());
+    bean->Add("ROUTER_TYPE", static_cast<int32_t>(desc->routerType_));
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -1849,6 +1847,10 @@ void AudioCoreService::WriteInputRouteChangeEvent(std::shared_ptr<AudioDeviceDes
     bean->Add("TIMESTAMP", static_cast<uint64_t>(timeStamp));
     bean->Add("DEVICE_TYPE_BEFORE_CHANGE", audioActiveDevice_.GetCurrentInputDeviceType());
     bean->Add("DEVICE_TYPE_AFTER_CHANGE", desc->deviceType_);
+    bean->Add("PRE_AUDIO_SCENE", static_cast<int32_t>(audioSceneManager_.GetLastAudioScene()));
+    bean->Add("CUR_AUDIO_SCENE", static_cast<int32_t>(audioSceneManager_.GetAudioScene(true)));
+    bean->Add("DEVICE_LIST", audioDeviceManager_.GetConnDevicesStr());
+    bean->Add("ROUTER_TYPE", static_cast<int32_t>(desc->routerType_));
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
