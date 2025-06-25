@@ -507,16 +507,14 @@ void AudioPolicyManager::FetchOutputDeviceForTrack(AudioStreamChangeInfo &stream
     }
 }
 
-int32_t AudioPolicyManager::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
+void AudioPolicyManager::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp != nullptr) {
         gsp->FetchInputDeviceForTrack(streamChangeInfo);
     } else {
         AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
-        return ERR_MEMORY_ALLOC_FAILED;
     }
-    return SUCCESS;
 }
 
 int32_t AudioPolicyManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)

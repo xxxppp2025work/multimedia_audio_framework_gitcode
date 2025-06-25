@@ -48,7 +48,6 @@ ohos_shared_library("audio_loopback") {
 
   configs = [
     ":audio_loopback_config",
-    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
     ]
 
   sources = [ "src/audio_loopback.cpp" ]

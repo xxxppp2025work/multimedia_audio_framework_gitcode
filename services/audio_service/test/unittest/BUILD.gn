@@ -822,7 +822,6 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "../../../../services/audio_service:audio_process_service",
     "../../../../services/audio_service:audio_service",
     "../../../audio_policy:audio_foundation",
-    "${audio_framework_root}/services/audio_service/idl:idl_sa_proxy",
   ]
 
   external_deps = [
@@ -975,7 +974,6 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../services/audio_service:audio_process_service",
     "../../../../services/audio_service:audio_service",
     "../../../audio_policy:audio_foundation",
-    "${audio_framework_root}/services/audio_service/idl:idl_sa_proxy",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
@@ -1136,7 +1134,6 @@ ohos_unittest("audio_manager_listener_proxy_unit_test") {
 
   configs = [
     ":module_private_config",
-    "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config",
   ]
 
   include_dirs = [

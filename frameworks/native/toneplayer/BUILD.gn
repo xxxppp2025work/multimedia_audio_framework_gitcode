@@ -56,7 +56,6 @@ if (!audio_framework_feature_dtmf_tone) {
 
     configs = [
       ":audio_toneplayer_config",
-      "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config"
       ]
 
     sources = [ "src/toneplayer_impl.cpp" ]
@@ -67,6 +66,7 @@ if (!audio_framework_feature_dtmf_tone) {
       "../../../services/audio_policy:audio_policy_client",
       "../audiorenderer:audio_renderer",
       "../audioutils:audio_utils",
+      "${audio_framework_root}/services/audio_service:audio_common",
     ]
 
     public_configs = [ ":audio_external_library_config" ]

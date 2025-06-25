@@ -63,9 +63,6 @@ ohos_shared_library("audio_engine_utils") {
     "hilog:libhilog",
   ]
 
-  configs = [
-    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config"
-  ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
@@ -160,7 +157,6 @@ ohos_shared_library("audio_engine_node") {
 
   configs = [
     ":audio_engine_node_config",
-    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
   ]
 
   sources = [
@@ -220,7 +216,6 @@ ohos_shared_library("audio_engine_manager") {
 
   configs = [
     ":audio_engine_node_config",
-    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
   ]
 
   include_dirs = [
