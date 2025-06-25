@@ -515,7 +515,7 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
         ReportEvent(info);
         if (info.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
             int32_t ret = AudioPolicyManager::GetInstance().ClearAudioFocusBySessionID(info.sessionId);
-            CHECK_AND_RETURN_LOG(ret ==SUCCSEE, "focus clear fail");
+            CHECK_AND_RETURN_LOG(ret ==SUCCESS, "focus clear fail");
         }
     }
     }
