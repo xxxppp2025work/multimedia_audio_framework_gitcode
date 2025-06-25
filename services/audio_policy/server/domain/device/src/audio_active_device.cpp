@@ -360,7 +360,9 @@ void AudioActiveDevice::UpdateInputDeviceInfo(DeviceType deviceType)
         default:
             break;
     }
-
+    std::vector<shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs
+        = audioDeviceManager_.GetDevicesByFilter(curType, INPUT_DEVICE, "", "", SUSPEND_CONNECTED);
     SetCurrentInputDeviceType(curType);
 
     AUDIO_INFO_LOG("Input device updated to %{public}d", curType);
