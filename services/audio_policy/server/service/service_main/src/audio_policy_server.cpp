@@ -4338,6 +4338,12 @@ bool AudioPolicyServer::IsCapturerFocusAvailable(const AudioCapturerInfo &captur
     return interruptService_->IsCapturerFocusAvailable(zoneId, capturerInfo);
 }
 
+int32_t AudioPolicyServer::ClearAudioFocusBySessionID(const int32_t &sessionID)
+{
+    CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, false, "interruptService_ is nullptr");
+    return interruptService_->ClearAudioFocusBySessionID(sessionID);
+}
+
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionID);

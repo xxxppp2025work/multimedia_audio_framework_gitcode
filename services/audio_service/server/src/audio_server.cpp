@@ -59,6 +59,7 @@
 #include "audio_info.h"
 #include "i_hpae_manager.h"
 #include "audio_server_hpae_dump.h"
+#include "audio_policy_manager.h"
 
 #define PA
 #ifdef PA
