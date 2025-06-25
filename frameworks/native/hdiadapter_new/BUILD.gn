@@ -122,10 +122,6 @@ ohos_shared_library("hdiadapter_new") {
     defines += [ "FEATURE_POWER_MANAGER" ]
   }
 
-  configs = [
-    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config"
-  ]
-
   part_name = "audio_framework"
   subsystem_name = "multimedia"
   version_script = "libhdiadapter_new.versionscript"

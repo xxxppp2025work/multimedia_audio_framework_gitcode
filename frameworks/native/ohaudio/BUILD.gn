@@ -54,7 +54,6 @@ ohos_shared_library("ohaudio") {
 
   configs = [
     ":audio_config",
-    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
   ]
 
   sources = [

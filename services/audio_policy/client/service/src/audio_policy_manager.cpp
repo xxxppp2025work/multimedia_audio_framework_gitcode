@@ -2108,7 +2108,7 @@ bool AudioPolicyManager::IsHighResolutionExist()
         AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
         return false;
     }
-    bool gspIsHighResolutionExist;
+    bool gspIsHighResolutionExist = false;
     gsp->IsHighResolutionExist(gspIsHighResolutionExist);
     return gspIsHighResolutionExist;
 }

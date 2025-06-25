@@ -334,10 +334,7 @@ audio_ohos_library("audio_policy_service") {
     "../audio_policy:audio_foundation",
     "../audio_policy:audio_setting_provider",
     "../audio_service:audio_common",
-    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_proxy",
-    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
-    "${audio_framework_root}/services/audio_service/idl:idl_sa_proxy",
-    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
   ]
 
   external_deps = [
@@ -584,8 +581,7 @@ audio_ohos_library("audio_policy_client") {
   deps = [
     "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioutils:audio_utils",
-    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
-    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_proxy",
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
   ]
 
   public_configs = [ ":audio_policy_client_config" ]
@@ -593,9 +589,6 @@ audio_ohos_library("audio_policy_client") {
   include_dirs = [
     "../../frameworks/native/audioutils/include",
     "${audio_framework_root}/services/audio_service/common/include/",
-  ]
-  configs = [
-    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
   ]
 
   external_deps = [
@@ -717,18 +710,16 @@ ohos_shared_library("audio_foundation") {
     "server/domain/effect/src/audio_effect_map.cpp",
   ]
 
-  public_configs = [ ":audio_foundation_public_config" ]
-
-  configs = [
-    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
+  public_configs = [
+    ":audio_foundation_public_config",
+    "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config",
+    "${audio_framework_root}/services/audio_service/idl:audio_policy_sa_idl_config",
   ]
 
   deps = [
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_policy_client",
     "../audio_service:audio_common",
-    "${audio_framework_root}/services/audio_service/idl:idl_sa_proxy",
-    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
   ]
 
   external_deps = [ "hilog:libhilog" ]
@@ -778,10 +769,6 @@ ohos_shared_library("audio_manager_client") {
   ]
 
   public_configs = [ ":audio_manager_client_public_config" ]
-  configs = [
-    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
-    "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config",
-  ]
 
   deps = [
     ":audio_foundation",

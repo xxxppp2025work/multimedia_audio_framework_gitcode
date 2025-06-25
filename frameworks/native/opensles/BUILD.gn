@@ -56,7 +56,6 @@ if (!audio_framework_feature_opensl_es) {
 
     configs = [
       ":audio_config",
-      "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
     ]
 
     sources = [

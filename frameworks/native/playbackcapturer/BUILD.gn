@@ -44,7 +44,6 @@ ohos_shared_library("playback_capturer") {
 
   configs = [
     ":playback_capturer_config",
-    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
   ]
 
   defines = []

@@ -33,9 +33,6 @@ ohos_shared_library("audio_clock") {
   }
   public_configs = [ ":audio_clock_public_config" ]
 
-  configs = [
-    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config",
-  ]
 
   install_enable = true
   include_dirs = [

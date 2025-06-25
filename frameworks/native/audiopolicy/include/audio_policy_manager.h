@@ -531,7 +531,7 @@ public:
     void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
         const AudioStreamDeviceChangeReasonExt reason);
 
-    int32_t FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
+    void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
 
     bool IsHighResolutionExist();
 

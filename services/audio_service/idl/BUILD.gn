@@ -14,6 +14,8 @@
 import("//build/config/components/idl_tool/idl.gni")
 import("//foundation/multimedia/audio_framework/config.gni")
 
+audio_policy_idl_location="${audio_framework_root}/services/audio_policy/idl"
+
 idl_gen_interface("audio_service_idl_interface") {
   sources = [
     "IIpcStreamListener.idl",
@@ -34,11 +36,33 @@ idl_gen_interface("audio_service_idl_interface") {
     "AudioServiceTypes.idl"
   ]
 
-  #client_enable = true
-
-  hitrace = "HITRACE_TAG_ABILITY_MANAGER"
-
+  # client_enable = true
   # log_tag = "audio_service"
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+idl_gen_interface("audio_policy_idl_interface") {
+  sources = [
+    "${audio_policy_idl_location}/IStandardSpatializationStateChangeListener.idl",
+    "${audio_policy_idl_location}/IStandardConcurrencyStateListener.idl",
+    "${audio_policy_idl_location}/IStandardClientTracker.idl",
+    "${audio_policy_idl_location}/IStandardAudioZoneClient.idl",
+    "${audio_policy_idl_location}/IStandardAudioPolicyManagerListener.idl",
+    "${audio_policy_idl_location}/IStandardAudioRoutingManagerListener.idl",
+    "${audio_policy_idl_location}/IStandardAudioAnahsManagerListener.idl",
+    "${audio_policy_idl_location}/IAudioPolicyClient.idl",
+    "${audio_policy_idl_location}/IStandardSleAudioOperationCallback.idl",
+    "${audio_policy_idl_location}/IAudioPolicy.idl",
+  ]
+  sources_callback = [
+  ]
+  sources_common = [
+  ]
+
+  # client_enable = true
+  # log_tag = "audio_policy"
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
@@ -53,89 +77,74 @@ config("audio_service_sa_idl_config") {
   ]
 }
 
-ohos_source_set("idl_sa_proxy") {
-  output_values = get_target_outputs(":audio_service_idl_interface")
-  sources = filter_include(output_values, [
-                            "*_proxy.cpp",
-                            "*_types.cpp",
-                          ])
-  public_configs = [ ":audio_service_sa_idl_config" ]
+config("audio_policy_sa_idl_config") {
+  include_dirs = [
+    "${target_gen_dir}",
+    "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include/",
+    "${audio_framework_root}/interfaces/inner_api/native/audiomanager/include/",
+    "${audio_framework_root}/frameworks/native/audiodefinitions/include/",
+    "${audio_framework_root}/frameworks/native/audiopolicy/include/",
+    "${audio_framework_root}/interfaces/inner_api/native/audiomanager/include/",
+  ]
+}
 
-  deps = [ ":audio_service_idl_interface" ]
+ohos_shared_library("audio_framework_interface") {
+  branch_protector_ret = "pac_ret"
 
-  cflags = [
-    "-Wall",
-    "-fPIC",
+  public_configs = [
+    ":audio_service_sa_idl_config",
+    ":audio_policy_sa_idl_config",
+  ]
+
+  cflags_cc = [
+    "-fomit-frame-pointer",
     "-fdata-sections",
     "-ffunction-sections",
-    "-fno-asynchronous-unwind-tables",
+    "-fno-unroll-loops",
+    "-fno-exceptions",
     "-fno-unwind-tables",
+    "-fno-asynchronous-unwind-tables",
     "-Os",
   ]
-  if (target_cpu == "arm") {
-    cflags += [ "-DBINDER_IPC_32BIT" ]
-  }
 
-  sanitize = {
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
-    cfi = true
-    cfi_cross_dso = true
-    cfi_vcall_icall_only = true
-    debug = false
-  }
+  # ldflags = [ "-Wl,--exclude-libs=ALL" ]
+
+  output_values = get_target_outputs(":audio_service_idl_interface")
+  output_values += get_target_outputs(":audio_policy_idl_interface")
+
+  sources = [
+    "${audio_framework_root}/services/audio_service/common/src/oh_audio_buffer.cpp",
+    "${audio_framework_root}/services/audio_policy/server/domain/device/src/audio_device_descriptor.cpp",
+    "${audio_framework_root}/services/audio_service/client/src/microphone_descriptor.cpp",
+    "${audio_framework_root}/services/audio_policy/server/domain/volume/src/audio_volume_group_info.cpp",
+    "${audio_framework_root}/frameworks/native/audiodefinitions/src/audio_stream_descriptor.cpp",
+    "${audio_framework_root}/services/audio_service/client/src/audio_filter.cpp",
+  ]
+  sources += filter_include(output_values, [ "*_proxy.cpp" ])
+  sources += filter_include(output_values, [ "*stub.cpp" ])
+  sources += filter_include(output_values, [ "*_types.cpp" ])
+
+  deps = [
+    "${audio_framework_root}/frameworks/native/audioutils:audio_utils",
+    ":audio_service_idl_interface",
+    ":audio_policy_idl_interface",
+  ]
 
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
-    "hitrace:hitrace_meter",
+    "ipc:ipc_core",
     "ipc:ipc_single",
+    "samgr:samgr_proxy",
   ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
-}
-
-ohos_source_set("idl_sa_stub") {
-  output_values = get_target_outputs(":audio_service_idl_interface")
-  sources = filter_include(output_values, [
-                            "*_stub.cpp",
-                          ])
-  public_configs = [ ":audio_service_sa_idl_config" ]
-
-  deps = [ ":audio_service_idl_interface" ]
-
-  cflags = [
-    "-Wall",
-    "-fPIC",
-    "-fdata-sections",
-    "-ffunction-sections",
-    "-fno-asynchronous-unwind-tables",
-    "-fno-unwind-tables",
-    "-Os",
-  ]
-  if (target_cpu == "arm") {
-    cflags += [ "-DBINDER_IPC_32BIT" ]
-  }
 
   sanitize = {
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
     cfi = true
     cfi_cross_dso = true
-    cfi_vcall_icall_only = true
     debug = false
   }
-
-  external_deps = [
-    "c_utils:utils",
-    "hilog:libhilog",
-    "hitrace:hitrace_meter",
-    "ipc:ipc_single",
-  ]
-
-  part_name = "audio_framework"
-  subsystem_name = "multimedia"
 }
+

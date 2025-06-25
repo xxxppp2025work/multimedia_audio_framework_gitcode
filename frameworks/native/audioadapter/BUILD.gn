@@ -67,9 +67,6 @@ ohos_shared_library("pulse_audio_service_adapter") {
     "samgr:samgr_proxy",
   ]
 
-  configs = [
-    "${audio_framework_root}/services/audio_policy/idl:audio_policy_sa_idl_config"
-  ]
   part_name = "audio_framework"
   subsystem_name = "multimedia"
   version_script = "libpulse_audio_service_adapter.versionscript"
