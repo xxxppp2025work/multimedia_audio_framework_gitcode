@@ -30,13 +30,13 @@ typedef struct IAudioSinkAttr : public Parcelable {
     uint32_t sampleRate = 0;
     uint32_t channel = 0;
     float volume = 0.0f;
-    const char *filePath = nullptr;
-    const char *deviceNetworkId = nullptr;
+    std::string filePath = "";
+    std::string deviceNetworkId = "";
     int32_t deviceType = 0;
     uint64_t channelLayout = 0;
     int32_t audioStreamFlag = 0;
     std::string address;
-    const char *aux = nullptr;
+    std::string aux = "";
 
     bool Marshalling(Parcel &parcel) const override
     {
@@ -46,13 +46,13 @@ typedef struct IAudioSinkAttr : public Parcelable {
             parcel.WriteUint32(sampleRate) &&
             parcel.WriteUint32(channel) &&
             parcel.WriteFloat(volume) &&
-            parcel.WriteString(filePath == nullptr ? "" : std::string(filePath)) &&
-            parcel.WriteString(deviceNetworkId == nullptr ? "" : std::string(deviceNetworkId)) &&
+            parcel.WriteString(filePath) &&
+            parcel.WriteString(deviceNetworkId) &&
             parcel.WriteInt32(deviceType) &&
             parcel.WriteUint64(channelLayout) &&
             parcel.WriteInt32(audioStreamFlag) &&
             parcel.WriteString(address) &&
-            parcel.WriteString(aux == nullptr ? "" : std::string(aux));
+            parcel.WriteString(aux);
     }
 
     static IAudioSinkAttr *Unmarshalling(Parcel &parcel)
@@ -68,13 +68,13 @@ typedef struct IAudioSinkAttr : public Parcelable {
         attr->sampleRate = parcel.ReadUint32();
         attr->channel = parcel.ReadUint32();
         attr->volume = parcel.ReadFloat();
-        attr->filePath = parcel.ReadString().c_str();
-        attr->deviceNetworkId = parcel.ReadString().c_str();
+        attr->filePath = parcel.ReadString();
+        attr->deviceNetworkId = parcel.ReadString();
         attr->deviceType = parcel.ReadInt32();
         attr->channelLayout = parcel.ReadUint64();
         attr->audioStreamFlag = parcel.ReadInt32();
         attr->address = parcel.ReadString();
-        attr->aux = parcel.ReadString().c_str();
+        attr->aux = parcel.ReadString();
         return attr.release();
     }
 } IAudioSinkAttr;
@@ -88,8 +88,8 @@ typedef struct IAudioSourceAttr : public Parcelable {
     float volume = 0.0f;
     uint32_t bufferSize = 0;
     bool isBigEndian = false;
-    const char *filePath = nullptr;
-    const char *deviceNetworkId = nullptr;
+    std::string filePath = "";
+    std::string deviceNetworkId = "";
     int32_t deviceType = 0;
     int32_t sourceType = 0;
     uint64_t channelLayout = 0;
@@ -109,8 +109,8 @@ typedef struct IAudioSourceAttr : public Parcelable {
             parcel.WriteFloat(volume) &&
             parcel.WriteUint32(bufferSize) &&
             parcel.WriteBool(isBigEndian) &&
-            parcel.WriteString(filePath == nullptr ? "" : std::string(filePath)) &&
-            parcel.WriteString(deviceNetworkId == nullptr ? "" : std::string(deviceNetworkId)) &&
+            parcel.WriteString(filePath) &&
+            parcel.WriteString(deviceNetworkId) &&
             parcel.WriteInt32(deviceType) &&
             parcel.WriteInt32(sourceType) &&
             parcel.WriteUint64(channelLayout) &&
@@ -136,8 +136,8 @@ typedef struct IAudioSourceAttr : public Parcelable {
         attr->volume = parcel.ReadFloat();
         attr->bufferSize = parcel.ReadUint32();
         attr->isBigEndian = parcel.ReadBool();
-        attr->filePath = parcel.ReadString().c_str();
-        attr->deviceNetworkId = parcel.ReadString().c_str();
+        attr->filePath = parcel.ReadString();
+        attr->deviceNetworkId = parcel.ReadString();
         attr->deviceType = parcel.ReadInt32();
         attr->sourceType = parcel.ReadInt32();
         attr->channelLayout = parcel.ReadUint64();
