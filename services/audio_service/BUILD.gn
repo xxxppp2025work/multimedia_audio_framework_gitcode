@@ -406,9 +406,7 @@ audio_ohos_library("audio_process_service") {
     ]
   }
 
-  configs = [
-    ":audio_service_config",
-  ]
+  configs = [ ":audio_service_config" ]
   
   include_dirs = [
     "../../services/audio_engine/plugin/channel_converter/include",

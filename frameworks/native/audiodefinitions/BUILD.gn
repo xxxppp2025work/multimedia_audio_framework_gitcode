@@ -28,8 +28,6 @@ ohos_shared_library("audio_definitions") {
     debug = false
   }
   public_configs = [ ":audio_utils_public_config" ]
-
-
   install_enable = true
   include_dirs = [
     "./include",

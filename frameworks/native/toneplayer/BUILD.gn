@@ -54,9 +54,7 @@ if (!audio_framework_feature_dtmf_tone) {
     }
     install_enable = true
 
-    configs = [
-      ":audio_toneplayer_config",
-      ]
+    configs = [ ":audio_toneplayer_config" ]
 
     sources = [ "src/toneplayer_impl.cpp" ]
 

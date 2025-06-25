@@ -46,9 +46,7 @@ ohos_shared_library("audio_loopback") {
   }
   install_enable = true
 
-  configs = [
-    ":audio_loopback_config",
-    ]
+  configs = [ ":audio_loopback_config" ]
 
   sources = [ "src/audio_loopback.cpp" ]
 

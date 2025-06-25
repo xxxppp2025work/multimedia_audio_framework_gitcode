@@ -34,7 +34,6 @@ ohos_shared_library("audio_schedule") {
     "../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
-
   sources = [ "audio_schedule.cpp" ]
 
   cflags = [
