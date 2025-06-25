@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
 
 ohos_shared_library("pulse_audio_service_adapter") {
   sanitize = {
@@ -66,7 +65,6 @@ ohos_shared_library("pulse_audio_service_adapter") {
     "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]
-
   part_name = "audio_framework"
   subsystem_name = "multimedia"
   version_script = "libpulse_audio_service_adapter.versionscript"

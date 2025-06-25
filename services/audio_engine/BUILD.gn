@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
 
 ohos_shared_library("audio_engine_utils") {
   stack_protector_ret = true
@@ -62,7 +61,6 @@ ohos_shared_library("audio_engine_utils") {
     "c_utils:utils",
     "hilog:libhilog",
   ]
-
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
@@ -155,9 +153,7 @@ ohos_shared_library("audio_engine_node") {
     defines += [ "IS_EMULATOR" ]
   }
 
-  configs = [
-    ":audio_engine_node_config",
-  ]
+  configs = [ ":audio_engine_node_config" ]
 
   sources = [
     "node/src/hpae_audio_format_converter_node.cpp",
@@ -214,9 +210,7 @@ ohos_shared_library("audio_engine_manager") {
   }
   install_enable = true
 
-  configs = [
-    ":audio_engine_node_config",
-  ]
+  configs = [ ":audio_engine_node_config" ]
 
   include_dirs = [
     "manager/include",

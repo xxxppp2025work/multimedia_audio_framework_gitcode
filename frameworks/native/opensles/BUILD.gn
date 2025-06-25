@@ -54,9 +54,7 @@ if (!audio_framework_feature_opensl_es) {
       "../../../interfaces/inner_api/native/andiorenderer/include/",
     ]
 
-    configs = [
-      ":audio_config",
-    ]
+    configs = [ ":audio_config" ]
 
     sources = [
       "src/adapter/audiocapturer_adapter.cpp",
