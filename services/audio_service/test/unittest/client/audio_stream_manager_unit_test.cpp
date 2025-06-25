@@ -57,5 +57,28 @@ HWTEST(AudioStreamManagerUnitTest, IsStreamActive_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamActive_001 result3:%{public}d", result);
     EXPECT_EQ(result, false);
 }
+
+/**
+ * @tc.name  : Test IsStreamActiveByStreamUsage API
+ * @tc.number: IsStreamActiveByStreamUsage_001
+ * @tc.desc  : Test IsStreamActiveByStreamUsage interface.
+ */
+HWTEST(AudioStreamManagerUnitTest, IsStreamActiveByStreamUsage_001, TestSize.Level1)
+{
+    int32_t ILLEGAL_STREAM_USAGE = STREAM_USAGE_MAX+999;
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamActiveByStreamUsage_001 start");
+    bool result = AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_MUSIC);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamActiveByStreamUsage_001 result1:%{public}d", result);
+    EXPECT_EQ(result, false);
+
+    result = AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_ULTRASONIC);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamActiveByStreamUsage_001 result2:%{public}d", result);
+    EXPECT_EQ(result, false);
+
+    result = AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(ILLEGAL_STREAM_USAGE);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamActiveByStreamUsage_001 result2:%{public}d", result);
+    EXPECT_EQ(result, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS
