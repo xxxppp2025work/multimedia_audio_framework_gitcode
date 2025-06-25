@@ -61,17 +61,6 @@ int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
     } else {
         attr_ = attr;
     }
-    if (attr_.sourceType == SOURCE_TYPE_LIVE) {
-        HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-        std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-        CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
-        std::string value = deviceManager->GetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE,
-            "source_type_live_aec_supported");
-        if (value != "true") {
-            AUDIO_ERR_LOG("SOURCE_TYPE_LIVE not supported will be changed to SOURCE_TYPE_MIC");
-            attr_.sourceType = SOURCE_TYPE_LIVE;
-        }
-    }
     adapterNameCase_ = attr_.adapterName;
     if (adapterNameCase_ == "" && halName_ == "primary") {
         adapterNameCase_ = "primary";
@@ -661,12 +650,25 @@ enum AudioInputType AudioCaptureSource::ConvertToHDIAudioInputType(int32_t sourc
             break;
         case SOURCE_TYPE_LIVE:
             hdiAudioInputType = AUDIO_INPUT_LIVE_TYPE;
+            checkAcousticEchoCancelerSupported(hdiAudioInputType);
             break;
         default:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
             break;
     }
     return hdiAudioInputType;
+}
+void AudioCaptureSource::checkAcousticEchoCancelerSupported(int32_t &hdiAudioInputType)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
+    std::string value = deviceManager->GetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE,
+        "source_type_live_aec_supported");
+    if (value != "true") {
+        AUDIO_ERR_LOG("SOURCE_TYPE_LIVE not supported will be changed to SOURCE_TYPE_MIC");
+        hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
+    }
 }
 
 AudioSampleFormat AudioCaptureSource::ParseAudioFormat(const std::string &format)
