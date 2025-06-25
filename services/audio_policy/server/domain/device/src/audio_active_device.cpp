@@ -121,13 +121,6 @@ DeviceType AudioActiveDevice::GetCurrentInputDeviceType()
     return currentActiveInputDevice_.deviceType_;
 }
 
-void AudioActiveDevice::SetCurrentInputDeviceType(DeviceType deviceType)
-{
-    std::lock_guard<std::mutex> lock(curInputDevice_);
-    AUDIO_INFO_LOG("Just set type: %{public}d", deviceType);
-    currentActiveInputDevice_.deviceType_ = deviceType;
-}
-
 std::string AudioActiveDevice::GetCurrentInputDeviceMacAddr()
 {
     std::lock_guard<std::mutex> lock(curInputDevice_);
@@ -139,13 +132,6 @@ void AudioActiveDevice::SetCurrentOutputDevice(const AudioDeviceDescriptor &desc
     std::lock_guard<std::mutex> lock(curOutputDevice_);
     AUDIO_INFO_LOG("Set as type: %{public}d id: %{public}d", desc.deviceType_, desc.deviceId_);
     currentActiveDevice_ = AudioDeviceDescriptor(desc);
-}
-
-void AudioActiveDevice::SetCurrentOutputDeviceType(DeviceType deviceType)
-{
-    std::lock_guard<std::mutex> lock(curOutputDevice_);
-    AUDIO_INFO_LOG("Just set type: %{public}d", deviceType);
-    currentActiveDevice_.deviceType_ = deviceType;
 }
 
 const AudioDeviceDescriptor AudioActiveDevice::GetCurrentOutputDevice()
@@ -360,8 +346,9 @@ void AudioActiveDevice::UpdateInputDeviceInfo(DeviceType deviceType)
         default:
             break;
     }
-
-    SetCurrentInputDeviceType(curType);
+    std::vector<shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs
+        = audioDeviceManager_.GetDevicesByFilter(curType, INPUT_DEVICE, "", "", SUSPEND_CONNECTED);
 
     AUDIO_INFO_LOG("Input device updated to %{public}d", curType);
 }
