@@ -104,14 +104,19 @@ struct Library : public Parcelable {
         return parcel.WriteString(name) && parcel.WriteString(path);
     }
 
+    void UnmarshallingSelf(Parcel &parcel)
+    {
+        name = parcel.ReadString();
+        path = parcel.ReadString();
+    }
+
     static Library *Unmarshalling(Parcel &parcel)
     {
         auto library = std::make_unique<Library>();
         if (library == nullptr) {
             return nullptr;
         }
-        library->name = parcel.ReadString();
-        library->path = parcel.ReadString();
+        library->UnmarshallingSelf(parcel);
         return library.release();
     }
 };
@@ -473,7 +478,7 @@ struct AudioEffectPropertyV3 {
             parcel.WriteString(category)&&
             parcel.WriteInt32(flag);
     };
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingSelf(Parcel &parcel)
     {
         name = parcel.ReadString();
         category = parcel.ReadString();
@@ -506,7 +511,7 @@ struct AudioEffectPropertyArrayV3 : public Parcelable {
         int32_t size = parcel.ReadInt32();
         for (int32_t i = 0; i < size; i++) {
             AudioEffectPropertyV3 property;
-            property.Unmarshalling(parcel);
+            property.UnmarshallingSelf(parcel);
             propertyArray->property.push_back(property);
         }
         return propertyArray.release();
@@ -525,7 +530,7 @@ struct AudioEnhanceProperty {
         return parcel.WriteString(enhanceClass)&&
             parcel.WriteString(enhanceProp);
     }
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingSelf(Parcel &parcel)
     {
         enhanceClass = parcel.ReadString();
         enhanceProp = parcel.ReadString();
@@ -557,7 +562,7 @@ struct AudioEnhancePropertyArray : public Parcelable {
         int32_t size = parcel.ReadInt32();
         for (int32_t i = 0; i < size; i++) {
             AudioEnhanceProperty property;
-            property.Unmarshalling(parcel);
+            property.UnmarshallingSelf(parcel);
             propertyArray->property.push_back(property);
         }
         return propertyArray.release();
@@ -576,7 +581,7 @@ struct AudioEffectProperty {
         return parcel.WriteString(effectClass)&&
             parcel.WriteString(effectProp);
     }
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingSelf(Parcel &parcel)
     {
         effectClass = parcel.ReadString();
         effectProp = parcel.ReadString();
@@ -608,7 +613,7 @@ struct AudioEffectPropertyArray : public Parcelable {
         int32_t size = parcel.ReadInt32();
         for (int32_t i = 0; i < size; i++) {
             AudioEffectProperty property;
-            property.Unmarshalling(parcel);
+            property.UnmarshallingSelf(parcel);
             propertyArray->property.push_back(property);
         }
         return propertyArray.release();
@@ -769,7 +774,7 @@ struct ConverterConfig : public Parcelable {
             return nullptr;
         }
         info->version = parcel.ReadString();
-        info->library.Unmarshalling(parcel);
+        info->library.UnmarshallingSelf(parcel);
         info->outChannelLayout = parcel.ReadUint64();
         return info;
     }

@@ -103,10 +103,9 @@ public:
         rendererInfo.originalFlag = parcel.ReadInt32();
         rendererInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
         rendererInfo.format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
-        rendererInfo.Unmarshalling(parcel);
-
+        rendererInfo.UnmarshallingSelf(parcel);
         rendererState = static_cast<RendererState>(parcel.ReadInt32());
-        outputDeviceInfo.Unmarshalling(parcel);
+        outputDeviceInfo.UnmarshallingSelf(parcel);
         appVolume = parcel.ReadInt32();
     }
 
@@ -176,9 +175,9 @@ public:
         sessionId = parcel.ReadInt32();
         callerPid = parcel.ReadInt32();
         clientPid = parcel.ReadInt32();
-        capturerInfo.Unmarshalling(parcel);
+        capturerInfo.UnmarshallingSelf(parcel);
         capturerState = static_cast<CapturerState>(parcel.ReadInt32());
-        inputDeviceInfo.Unmarshalling(parcel);
+        inputDeviceInfo.UnmarshallingSelf(parcel);
         muted = parcel.ReadBool();
         appTokenId = parcel.ReadUint32();
     }
@@ -210,8 +209,8 @@ struct AudioStreamChangeInfo : public Parcelable {
         if (info == nullptr) {
             return nullptr;
         }
-        info->audioRendererChangeInfo.Unmarshalling(parcel);
-        info->audioCapturerChangeInfo.Unmarshalling(parcel);
+        info->audioRendererChangeInfo.UnmarshallingSelf(parcel);
+        info->audioCapturerChangeInfo.UnmarshallingSelf(parcel);
         return info;
     }
 };

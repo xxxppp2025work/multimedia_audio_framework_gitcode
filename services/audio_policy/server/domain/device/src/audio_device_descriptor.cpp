@@ -229,7 +229,7 @@ void AudioDeviceDescriptor::UnmarshallingToDeviceDescriptor(Parcel &parcel)
     deviceType_ = static_cast<DeviceType>(parcel.ReadInt32());
     deviceRole_ = static_cast<DeviceRole>(parcel.ReadInt32());
     deviceId_ = parcel.ReadInt32();
-    audioStreamInfo_.Unmarshalling(parcel);
+    audioStreamInfo_.UnmarshallingSelf(parcel);
     channelMasks_ = parcel.ReadInt32();
     channelIndexMasks_ = parcel.ReadInt32();
     deviceName_ = parcel.ReadString();
@@ -385,7 +385,7 @@ void AudioDeviceDescriptor::UnmarshallingToDeviceInfo(Parcel &parcel)
     channelIndexMasks_ = parcel.ReadInt32();
     deviceName_ = parcel.ReadString();
     macAddress_ = parcel.ReadString();
-    audioStreamInfo_.Unmarshalling(parcel);
+    audioStreamInfo_.UnmarshallingSelf(parcel);
     networkId_ = parcel.ReadString();
     dmDeviceType_ = parcel.ReadUint16();
     displayName_ = parcel.ReadString();

@@ -109,19 +109,25 @@ public:
         }
         return true;
     }
+
+    void UnmarshallingSelf(Parcel &parcel)
+    {
+        duration = parcel.ReadUint32();
+        loopCnt = parcel.ReadUint16();
+        loopIndx = parcel.ReadUint16();
+        for (uint32_t i = 0; i < TONEINFO_MAX_WAVES + 1; i++) {
+            waveFreq[i] = parcel.ReadUint16();
+        }
+    }
+
     static ToneSegment *Unmarshalling(Parcel &parcel)
     {
         auto info = std::make_unique<ToneSegment>();
         if (info == nullptr) {
             return nullptr;
         }
-        info->duration = parcel.ReadUint32();
-        info->loopCnt = parcel.ReadUint16();
-        info->loopIndx = parcel.ReadUint16();
-        for (uint32_t i = 0; i < TONEINFO_MAX_WAVES + 1; i++) {
-            info->waveFreq[i] = parcel.ReadUint16();
-        }
 
+        info->UnmarshallingSelf(parcel);
         return info.release();
     }
 };
@@ -159,7 +165,7 @@ public:
             return nullptr;
         }
         for (uint32_t i = 0; i < info->segmentCnt; i++) {
-            info->segments[i].Unmarshalling(parcel);
+            info->segments[i].UnmarshallingSelf(parcel);
         }
         return info.release();
     }
@@ -649,23 +655,29 @@ public:
             parcel.WriteBool(isLoopback) &&
             parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
     }
+
+    void UnmarshallingSelf(Parcel &parcel)
+    {
+        sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        capturerFlags = parcel.ReadInt32();
+        originalFlag = parcel.ReadInt32();
+        pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
+        samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+        encodingType = parcel.ReadUint8();
+        channelLayout = parcel.ReadUint64();
+        sceneType = parcel.ReadString();
+        recorderType = static_cast<RecorderType>(parcel.ReadInt32());
+        isLoopback = parcel.ReadBool();
+        loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
+    }
+
     static AudioCapturerInfo *Unmarshalling(Parcel &parcel)
     {
         AudioCapturerInfo *audioCapturerInfo = new AudioCapturerInfo();
         if (audioCapturerInfo == nullptr) {
             return nullptr;
         }
-        audioCapturerInfo->sourceType = static_cast<SourceType>(parcel.ReadInt32());
-        audioCapturerInfo->capturerFlags = parcel.ReadInt32();
-        audioCapturerInfo->originalFlag = parcel.ReadInt32();
-        audioCapturerInfo->pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
-        audioCapturerInfo->samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
-        audioCapturerInfo->encodingType = parcel.ReadUint8();
-        audioCapturerInfo->channelLayout = parcel.ReadUint64();
-        audioCapturerInfo->sceneType = parcel.ReadString();
-        audioCapturerInfo->recorderType = static_cast<RecorderType>(parcel.ReadInt32());
-        audioCapturerInfo->isLoopback = parcel.ReadBool();
-        audioCapturerInfo->loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
+        audioCapturerInfo->UnmarshallingSelf(parcel);
         return audioCapturerInfo;
     }
 };

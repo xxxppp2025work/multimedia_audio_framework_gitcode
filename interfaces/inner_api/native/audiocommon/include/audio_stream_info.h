@@ -582,17 +582,23 @@ public:
             && parcel.WriteInt64(static_cast<int64_t>(channelLayout));
     }
 
+    void UnmarshallingSelf(Parcel &parcel)
+    {
+        samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+        encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
+        format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
+        channels = static_cast<AudioChannel>(parcel.ReadInt32());
+        channelLayout = static_cast<AudioChannelLayout>(parcel.ReadInt64());
+    }
+
     static AudioStreamInfo *Unmarshalling(Parcel &parcel)
     {
         AudioStreamInfo *info = new AudioStreamInfo();
         if (info == nullptr) {
             return nullptr;
         }
-        info->samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
-        info->encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
-        info->format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
-        info->channels = static_cast<AudioChannel>(parcel.ReadInt32());
-        info->channelLayout = static_cast<AudioChannelLayout>(parcel.ReadInt64());
+
+        info->UnmarshallingSelf(parcel);
         return info;
     }
 };

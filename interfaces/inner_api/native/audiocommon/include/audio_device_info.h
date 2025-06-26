@@ -434,7 +434,7 @@ struct DeviceStreamInfo {
             && MarshallingSetInt32(samplingRate, parcel)
             && MarshallingSetInt32(channels, parcel);
     }
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingSelf(Parcel &parcel)
     {
         encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
