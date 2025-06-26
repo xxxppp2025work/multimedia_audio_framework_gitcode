@@ -1,0 +1,304 @@
+diff --git a/frameworks/native/audiodefinitions/src/audio_stream_descriptor.cpp b/frameworks/native/audiodefinitions/src/audio_stream_descriptor.cpp
+index bf07391c8..ce9f108b8 100644
+--- a/frameworks/native/audiodefinitions/src/audio_stream_descriptor.cpp
++++ b/frameworks/native/audiodefinitions/src/audio_stream_descriptor.cpp
+@@ -77,13 +77,13 @@ AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
+         return nullptr;
+     }
+ 
+-    info->streamInfo_.Unmarshalling(parcel);
++    info->streamInfo_.UnmarshallingSelf(parcel);
+     info->audioMode_ = static_cast<AudioMode>(parcel.ReadUint32());
+     info->audioFlag_ = static_cast<AudioFlag>(parcel.ReadUint32());
+     info->routeFlag_ = static_cast<uint32_t>(parcel.ReadUint32());
+     info->startTimeStamp_ = parcel.ReadInt64();
+-    info->rendererInfo_.Unmarshalling(parcel);
+-    info->capturerInfo_.Unmarshalling(parcel);
++    info->rendererInfo_.UnmarshallingSelf(parcel);
++    info->capturerInfo_.UnmarshallingSelf(parcel);
+     info->appInfo_.appUid = parcel.ReadInt32();
+     info->appInfo_.appTokenId = parcel.ReadUint32();
+     info->appInfo_.appPid = parcel.ReadInt32();
+diff --git a/interfaces/inner_api/native/audiocommon/include/audio_device_info.h b/interfaces/inner_api/native/audiocommon/include/audio_device_info.h
+index ad8a52342..13ffc9149 100644
+--- a/interfaces/inner_api/native/audiocommon/include/audio_device_info.h
++++ b/interfaces/inner_api/native/audiocommon/include/audio_device_info.h
+@@ -434,7 +434,7 @@ struct DeviceStreamInfo {
+             && MarshallingSetInt32(samplingRate, parcel)
+             && MarshallingSetInt32(channels, parcel);
+     }
+-    void Unmarshalling(Parcel &parcel)
++    void UnmarshallingSelf(Parcel &parcel)
+     {
+         encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
+         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
+diff --git a/interfaces/inner_api/native/audiocommon/include/audio_effect.h b/interfaces/inner_api/native/audiocommon/include/audio_effect.h
+index a23fcb57e..4626517cd 100644
+--- a/interfaces/inner_api/native/audiocommon/include/audio_effect.h
++++ b/interfaces/inner_api/native/audiocommon/include/audio_effect.h
+@@ -104,14 +104,19 @@ struct Library : public Parcelable {
+         return parcel.WriteString(name) && parcel.WriteString(path);
+     }
+ 
++    void UnmarshallingSelf(Parcel &parcel)
++    {
++        name = parcel.ReadString();
++        path = parcel.ReadString();
++    }
++
+     static Library *Unmarshalling(Parcel &parcel)
+     {
+         auto library = std::make_unique<Library>();
+         if (library == nullptr) {
+             return nullptr;
+         }
+-        library->name = parcel.ReadString();
+-        library->path = parcel.ReadString();
++        library->UnmarshallingSelf(parcel);
+         return library.release();
+     }
+ };
+@@ -473,7 +478,7 @@ struct AudioEffectPropertyV3 {
+             parcel.WriteString(category)&&
+             parcel.WriteInt32(flag);
+     };
+-    void Unmarshalling(Parcel &parcel)
++    void UnmarshallingSelf(Parcel &parcel)
+     {
+         name = parcel.ReadString();
+         category = parcel.ReadString();
+@@ -506,7 +511,7 @@ struct AudioEffectPropertyArrayV3 : public Parcelable {
+         int32_t size = parcel.ReadInt32();
+         for (int32_t i = 0; i < size; i++) {
+             AudioEffectPropertyV3 property;
+-            property.Unmarshalling(parcel);
++            property.UnmarshallingSelf(parcel);
+             propertyArray->property.push_back(property);
+         }
+         return propertyArray.release();
+@@ -525,7 +530,7 @@ struct AudioEnhanceProperty {
+         return parcel.WriteString(enhanceClass)&&
+             parcel.WriteString(enhanceProp);
+     }
+-    void Unmarshalling(Parcel &parcel)
++    void UnmarshallingSelf(Parcel &parcel)
+     {
+         enhanceClass = parcel.ReadString();
+         enhanceProp = parcel.ReadString();
+@@ -557,7 +562,7 @@ struct AudioEnhancePropertyArray : public Parcelable {
+         int32_t size = parcel.ReadInt32();
+         for (int32_t i = 0; i < size; i++) {
+             AudioEnhanceProperty property;
+-            property.Unmarshalling(parcel);
++            property.UnmarshallingSelf(parcel);
+             propertyArray->property.push_back(property);
+         }
+         return propertyArray.release();
+@@ -576,7 +581,7 @@ struct AudioEffectProperty {
+         return parcel.WriteString(effectClass)&&
+             parcel.WriteString(effectProp);
+     }
+-    void Unmarshalling(Parcel &parcel)
++    void UnmarshallingSelf(Parcel &parcel)
+     {
+         effectClass = parcel.ReadString();
+         effectProp = parcel.ReadString();
+@@ -608,7 +613,7 @@ struct AudioEffectPropertyArray : public Parcelable {
+         int32_t size = parcel.ReadInt32();
+         for (int32_t i = 0; i < size; i++) {
+             AudioEffectProperty property;
+-            property.Unmarshalling(parcel);
++            property.UnmarshallingSelf(parcel);
+             propertyArray->property.push_back(property);
+         }
+         return propertyArray.release();
+@@ -769,7 +774,7 @@ struct ConverterConfig : public Parcelable {
+             return nullptr;
+         }
+         info->version = parcel.ReadString();
+-        info->library.Unmarshalling(parcel);
++        info->library.UnmarshallingSelf(parcel);
+         info->outChannelLayout = parcel.ReadUint64();
+         return info;
+     }
+diff --git a/interfaces/inner_api/native/audiocommon/include/audio_info.h b/interfaces/inner_api/native/audiocommon/include/audio_info.h
+index 0a6ff88b8..82f4adb49 100644
+--- a/interfaces/inner_api/native/audiocommon/include/audio_info.h
++++ b/interfaces/inner_api/native/audiocommon/include/audio_info.h
+@@ -109,19 +109,25 @@ public:
+         }
+         return true;
+     }
++
++    void UnmarshallingSelf(Parcel &parcel)
++    {
++        duration = parcel.ReadUint32();
++        loopCnt = parcel.ReadUint16();
++        loopIndx = parcel.ReadUint16();
++        for (uint32_t i = 0; i < TONEINFO_MAX_WAVES + 1; i++) {
++            waveFreq[i] = parcel.ReadUint16();
++        }
++    }
++
+     static ToneSegment *Unmarshalling(Parcel &parcel)
+     {
+         auto info = std::make_unique<ToneSegment>();
+         if (info == nullptr) {
+             return nullptr;
+         }
+-        info->duration = parcel.ReadUint32();
+-        info->loopCnt = parcel.ReadUint16();
+-        info->loopIndx = parcel.ReadUint16();
+-        for (uint32_t i = 0; i < TONEINFO_MAX_WAVES + 1; i++) {
+-            info->waveFreq[i] = parcel.ReadUint16();
+-        }
+ 
++        info->UnmarshallingSelf(parcel);
+         return info.release();
+     }
+ };
+@@ -159,7 +165,7 @@ public:
+             return nullptr;
+         }
+         for (uint32_t i = 0; i < info->segmentCnt; i++) {
+-            info->segments[i].Unmarshalling(parcel);
++            info->segments[i].UnmarshallingSelf(parcel);
+         }
+         return info.release();
+     }
+@@ -649,23 +655,29 @@ public:
+             parcel.WriteBool(isLoopback) &&
+             parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
+     }
++
++    void UnmarshallingSelf(Parcel &parcel)
++    {
++        sourceType = static_cast<SourceType>(parcel.ReadInt32());
++        capturerFlags = parcel.ReadInt32();
++        originalFlag = parcel.ReadInt32();
++        pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
++        samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
++        encodingType = parcel.ReadUint8();
++        channelLayout = parcel.ReadUint64();
++        sceneType = parcel.ReadString();
++        recorderType = static_cast<RecorderType>(parcel.ReadInt32());
++        isLoopback = parcel.ReadBool();
++        loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
++    }
++
+     static AudioCapturerInfo *Unmarshalling(Parcel &parcel)
+     {
+         AudioCapturerInfo *audioCapturerInfo = new AudioCapturerInfo();
+         if (audioCapturerInfo == nullptr) {
+             return nullptr;
+         }
+-        audioCapturerInfo->sourceType = static_cast<SourceType>(parcel.ReadInt32());
+-        audioCapturerInfo->capturerFlags = parcel.ReadInt32();
+-        audioCapturerInfo->originalFlag = parcel.ReadInt32();
+-        audioCapturerInfo->pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
+-        audioCapturerInfo->samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+-        audioCapturerInfo->encodingType = parcel.ReadUint8();
+-        audioCapturerInfo->channelLayout = parcel.ReadUint64();
+-        audioCapturerInfo->sceneType = parcel.ReadString();
+-        audioCapturerInfo->recorderType = static_cast<RecorderType>(parcel.ReadInt32());
+-        audioCapturerInfo->isLoopback = parcel.ReadBool();
+-        audioCapturerInfo->loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
++        audioCapturerInfo->UnmarshallingSelf(parcel);
+         return audioCapturerInfo;
+     }
+ };
+diff --git a/interfaces/inner_api/native/audiocommon/include/audio_stream_change_info.h b/interfaces/inner_api/native/audiocommon/include/audio_stream_change_info.h
+index 9f27f97bd..dca1aa381 100644
+--- a/interfaces/inner_api/native/audiocommon/include/audio_stream_change_info.h
++++ b/interfaces/inner_api/native/audiocommon/include/audio_stream_change_info.h
+@@ -103,10 +103,9 @@ public:
+         rendererInfo.originalFlag = parcel.ReadInt32();
+         rendererInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+         rendererInfo.format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
+-        rendererInfo.Unmarshalling(parcel);
+-
++        rendererInfo.UnmarshallingSelf(parcel);
+         rendererState = static_cast<RendererState>(parcel.ReadInt32());
+-        outputDeviceInfo.Unmarshalling(parcel);
++        outputDeviceInfo.UnmarshallingSelf(parcel);
+         appVolume = parcel.ReadInt32();
+     }
+ 
+@@ -176,9 +175,9 @@ public:
+         sessionId = parcel.ReadInt32();
+         callerPid = parcel.ReadInt32();
+         clientPid = parcel.ReadInt32();
+-        capturerInfo.Unmarshalling(parcel);
++        capturerInfo.UnmarshallingSelf(parcel);
+         capturerState = static_cast<CapturerState>(parcel.ReadInt32());
+-        inputDeviceInfo.Unmarshalling(parcel);
++        inputDeviceInfo.UnmarshallingSelf(parcel);
+         muted = parcel.ReadBool();
+         appTokenId = parcel.ReadUint32();
+     }
+@@ -210,8 +209,8 @@ struct AudioStreamChangeInfo : public Parcelable {
+         if (info == nullptr) {
+             return nullptr;
+         }
+-        info->audioRendererChangeInfo.Unmarshalling(parcel);
+-        info->audioCapturerChangeInfo.Unmarshalling(parcel);
++        info->audioRendererChangeInfo.UnmarshallingSelf(parcel);
++        info->audioCapturerChangeInfo.UnmarshallingSelf(parcel);
+         return info;
+     }
+ };
+diff --git a/interfaces/inner_api/native/audiocommon/include/audio_stream_info.h b/interfaces/inner_api/native/audiocommon/include/audio_stream_info.h
+index e42861861..9eea6516a 100644
+--- a/interfaces/inner_api/native/audiocommon/include/audio_stream_info.h
++++ b/interfaces/inner_api/native/audiocommon/include/audio_stream_info.h
+@@ -582,17 +582,23 @@ public:
+             && parcel.WriteInt64(static_cast<int64_t>(channelLayout));
+     }
+ 
++    void UnmarshallingSelf(Parcel &parcel)
++    {
++        samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
++        encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
++        format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
++        channels = static_cast<AudioChannel>(parcel.ReadInt32());
++        channelLayout = static_cast<AudioChannelLayout>(parcel.ReadInt64());
++    }
++
+     static AudioStreamInfo *Unmarshalling(Parcel &parcel)
+     {
+         AudioStreamInfo *info = new AudioStreamInfo();
+         if (info == nullptr) {
+             return nullptr;
+         }
+-        info->samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+-        info->encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
+-        info->format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
+-        info->channels = static_cast<AudioChannel>(parcel.ReadInt32());
+-        info->channelLayout = static_cast<AudioChannelLayout>(parcel.ReadInt64());
++
++        info->UnmarshallingSelf(parcel);
+         return info;
+     }
+ };
+diff --git a/services/audio_policy/server/domain/device/src/audio_device_descriptor.cpp b/services/audio_policy/server/domain/device/src/audio_device_descriptor.cpp
+index a6670f07f..534f69f98 100644
+--- a/services/audio_policy/server/domain/device/src/audio_device_descriptor.cpp
++++ b/services/audio_policy/server/domain/device/src/audio_device_descriptor.cpp
+@@ -229,7 +229,7 @@ void AudioDeviceDescriptor::UnmarshallingToDeviceDescriptor(Parcel &parcel)
+     deviceType_ = static_cast<DeviceType>(parcel.ReadInt32());
+     deviceRole_ = static_cast<DeviceRole>(parcel.ReadInt32());
+     deviceId_ = parcel.ReadInt32();
+-    audioStreamInfo_.Unmarshalling(parcel);
++    audioStreamInfo_.UnmarshallingSelf(parcel);
+     channelMasks_ = parcel.ReadInt32();
+     channelIndexMasks_ = parcel.ReadInt32();
+     deviceName_ = parcel.ReadString();
+@@ -385,7 +385,7 @@ void AudioDeviceDescriptor::UnmarshallingToDeviceInfo(Parcel &parcel)
+     channelIndexMasks_ = parcel.ReadInt32();
+     deviceName_ = parcel.ReadString();
+     macAddress_ = parcel.ReadString();
+-    audioStreamInfo_.Unmarshalling(parcel);
++    audioStreamInfo_.UnmarshallingSelf(parcel);
+     networkId_ = parcel.ReadString();
+     dmDeviceType_ = parcel.ReadUint16();
+     displayName_ = parcel.ReadString();

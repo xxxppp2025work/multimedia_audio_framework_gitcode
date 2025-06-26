@@ -77,13 +77,13 @@ AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
         return nullptr;
     }
 
-    info->streamInfo_.Unmarshalling(parcel);
+    info->streamInfo_.UnmarshallingSelf(parcel);
     info->audioMode_ = static_cast<AudioMode>(parcel.ReadUint32());
     info->audioFlag_ = static_cast<AudioFlag>(parcel.ReadUint32());
     info->routeFlag_ = static_cast<uint32_t>(parcel.ReadUint32());
     info->startTimeStamp_ = parcel.ReadInt64();
-    info->rendererInfo_.Unmarshalling(parcel);
-    info->capturerInfo_.Unmarshalling(parcel);
+    info->rendererInfo_.UnmarshallingSelf(parcel);
+    info->capturerInfo_.UnmarshallingSelf(parcel);
     info->appInfo_.appUid = parcel.ReadInt32();
     info->appInfo_.appTokenId = parcel.ReadUint32();
     info->appInfo_.appPid = parcel.ReadInt32();
