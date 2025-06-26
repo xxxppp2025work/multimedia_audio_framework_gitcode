@@ -1278,6 +1278,8 @@ void AudioCoreService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescripto
 
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
+        audioPolicyServerHandler_->SendAudioSessionDeviceChange(deviceDescriptor,
+            AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE, false);
     }
     if (deviceDescriptor.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
         spatialDeviceMap_.insert(make_pair(deviceDescriptor.macAddress_, deviceDescriptor.deviceType_));
@@ -1298,6 +1300,11 @@ void AudioCoreService::OnPreferredInputDeviceUpdated(DeviceType deviceType, std:
 
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendPreferredInputDeviceUpdated();
+        AudioDeviceDescriptor desc;
+        desc.deviceType_ = deviceType;
+        desc.networkId_ = networkId;
+        AudioPolicyServerHandler_->SendAudioSessionDeviceChange(desc,
+            AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE, true);
     }
 }
 
@@ -1730,14 +1737,38 @@ int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, co
     CHECK_AND_RETURN_RET_LOG(pipeManager_->GetStreamDescById(sessionID) != nullptr, ERR_NOT_SUPPORTED,
         "sessionId is not exist");
 
+    DeviceType defaultDevice = DEVICE_TYPE_NONE;
+
+    audioSessionService_.GetSessionDefaultOutputDevice(sessionID, defaultDevice);
+    defaultDevice = (defaultDevice == DEVICE_TYPE_NONE) ? deviceType : defaultDevice;
+
     AUDIO_INFO_LOG("[ADeviceEvent] device %{public}d for %{public}s stream %{public}u", deviceType,
         isRunning ? "running" : "not running", sessionID);
-    int32_t ret = audioDeviceManager_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
+    int32_t ret = audioDeviceManager_.SetDefaultOutputDevice(defaultDevice, sessionID, streamUsage, isRunning);
     if (ret == NEED_TO_FETCH) {
         FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
         return SUCCESS;
     }
     return ret;
+}
+
+int32_t AudioCoreService::GetCurrentOutputDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceInfos)
+{
+    AudioRendererInfo renderInfo;
+    renderInfo.streamUsage = STREAM_USAGE_UNKNOWN;
+
+    deviceInfos = GetPreferredOutputDeviceDescInner(renderInfo, LOCAL_NETWORK_ID);
+    return SUCCESS;
+}
+
+int32_t AudioCoreService::SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType)
+{
+    int32_t ret = audioSessionService_.SetSessionDefaultOutputDevice(callerPid, deviceType);
+    if (ret == NEED_TO_FETCH) {
+        FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
+    }
+
+    return SUCCESS;
 }
 
 int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream()

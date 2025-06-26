@@ -20,6 +20,9 @@
 #include "audio_policy_log.h"
 #include "audio_errors.h"
 #include "audio_session_state_monitor.h"
+#include "audio_device_manager.h"
+#include "audio_pipe_manager.h"
+#include "audio_stream_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -149,5 +152,49 @@ bool AudioSession::IsAudioRendererEmpty()
     }
     return true;
 }
+
+int32_t AudioSession::SetCurrentOutputDevice(const DeviceType &deviceType)
+{
+    bool isNeedToFetch = false;
+    int32_t ret = SUCCESS;
+    std::shared_ptr<AudioPipeManager> pipeManager = AudioPipeManager::GetPipeManager();
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = nullptr;
+
+    defaultDeviceType_ = deviceType;
+
+    for (uint32_t streamId : audioStreamIds_) {
+        audioStreamDescriptor = pipeManager->GetStreamDescByIdInner(streamId);
+        if (audioStreamDescriptor == nullptr) {
+            AUDIO_ERR_LOG("audioStreamDescriptor is null, stream id is %{public}u", streamId);
+            continue;
+        }
+
+        ret = AudioDeviceManager::GetAudioDeviceManager().SetDefaultOutputDevice(deviceType, streamId,
+            audioStreamDescriptor->rendererInfo_.streamUsage, audioStreamDescriptor->streamStatus_ == STREAM_STATUS_STARTED);
+        if ((ret != SUCCESS) && (ret != NEED_TO_FETCH)) {
+            AUDIO_ERR_LOG("SetDefaultOutputDevice for stream %{public}u failed, ret is %{public}d", streamId, ret);
+            continue;
+        }
+
+        isNeedToFetch |= (ret == NEED_TO_FETCH); 
+    }
+
+    return isNeedToFetch ? NEED_TO_FETCH : ret;
+}
+
+void AudioSession::GetCurrentSessionDefaultOutputDevice(DeviceType &deviceType)
+{
+    deviceType = defaultDeviceType_;
+}
+
+bool AudioSession::IsStreamContainedInCurrentSession(const uint32_t & streamId)
+{
+    if (std::find(audioStreamIds_.begin(), audioStreamIds_.end(), streamId) != audioStreamIds_.end()) {
+        return true;
+    }
+
+    return false;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

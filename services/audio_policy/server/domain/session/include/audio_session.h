@@ -20,6 +20,7 @@
 
 #include "audio_interrupt_info.h"
 #include "audio_session_info.h"
+#include "audio_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -49,6 +50,9 @@ public:
     int32_t RemoveAudioInterrptByStreamId(const uint32_t &streamId);
     bool IsAudioSessionEmpty();
     bool IsAudioRendererEmpty();
+    int32_t SetCurrentSessionDefaultOutputDevice(const DeviceType &deviceType);
+    void GetCurrentSessionDefaultOutputDevice(DeviceType &deviceType);
+    bool IsStreamContainedInCurrentSession(const uint32_t &streamId);
 
 private:
     std::mutex sessionMutex_;
@@ -59,6 +63,8 @@ private:
 
     AudioSessionState state_ = AudioSessionState::SESSION_INVALID;
     std::unordered_map<uint32_t, std::pair<AudioInterrupt, AudioFocuState>> interruptMap_;
+    DeviceType defaultDeviceType_ = DEVICE_TYPE_NONE;
+    std::vector<uint32_t> audioStreamIds_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

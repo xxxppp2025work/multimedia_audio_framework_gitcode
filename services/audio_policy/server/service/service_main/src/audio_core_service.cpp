@@ -70,7 +70,8 @@ AudioCoreService::AudioCoreService()
       audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
       sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance()),
       audioPipeSelector_(AudioPipeSelector::GetPipeSelector()),
-      pipeManager_(AudioPipeManager::GetPipeManager())
+      pipeManager_(AudioPipeManager::GetPipeManager()),
+      audioSessionService_(AudioSessionService::GetAudioSessionService())
 {
     AUDIO_INFO_LOG("Ctor");
 }
@@ -683,6 +684,20 @@ std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetActiveBluetoothDevic
     }
     shared_ptr<AudioDeviceDescriptor> res = std::move(activeDeviceDescriptors[index]);
     return res;
+}
+
+int32_t AudioCoreService::EventEntry::GetCurrentOutputDevices(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceInfos)
+{
+    std::shared_lock<std::shared_mutex> lock(eventMutex_);
+    return coreService_->GetCurrentOutputDevices(deviceInfos);
+}
+
+int32_t AudioCoreService::EventEntry::SetSessionDefaultOutputDevice(const int32_t callerPid,
+    const DeviceType &deviceType)
+{
+    std::shared_lock<std::shared_mutex> lock(eventMutex_);
+    return coreService_->SetSessionDefaultOutputDevice(callerPid, deviceType);
 }
 
 void AudioCoreService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)

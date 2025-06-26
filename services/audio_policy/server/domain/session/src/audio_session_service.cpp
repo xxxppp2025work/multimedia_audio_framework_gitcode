@@ -52,6 +52,12 @@ AudioSessionService::~AudioSessionService()
 {
 }
 
+AudioSessionService& AudioSessionService::GetAudioSessionService()
+{
+    static AudioSessionService audioSessionService;
+    return audioSessionService;
+}
+
 bool AudioSessionService::IsSameTypeForAudioSession(const AudioStreamType incomingType,
     const AudioStreamType existedType)
 {
@@ -189,5 +195,24 @@ void AudioSessionService::AudioSessionInfoDump(std::string &dumpString)
     dumpString += "\n";
 }
 
+int32_t AudioSessionService::SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    if ((sessionMap_.count(callerPid) > 0) && (sessionMap_[callerPid_] != nullptr)) {
+        return sessionMap_[callerPid]->SetCurrentSessionDefaultOutputDevice(deviceType);
+    }
+
+    return SUCCESS;
+}
+
+void AudioSessionService::GetSessionDefaultOutputDevice(const uint32_t streamId, DeviceType &deviceType)
+{
+    for (const auto& pair : sessionMap_) {
+        if ((pair.second != nullptr) && (pair.second->IsStreamContainedInCurrentSession(streamId))) {
+            pair.second->GetCurrentSessionDefaultOutputDevice(deviceType);
+            return;
+        }
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

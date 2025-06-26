@@ -129,6 +129,8 @@ void AudioDeviceCommon::OnPreferredOutputDeviceUpdated(const AudioDeviceDescript
 
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
+        audioPolicyServerHandler_->SendAudioSessionDeviceChange(deviceDescriptor,
+            AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE, false);
     }
     if (deviceDescriptor.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
         spatialDeviceMap_.insert(make_pair(deviceDescriptor.macAddress_, deviceDescriptor.deviceType_));
@@ -157,6 +159,11 @@ void AudioDeviceCommon::OnPreferredInputDeviceUpdated(DeviceType deviceType, std
 
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendPreferredInputDeviceUpdated();
+        AudioDeviceDescriptor desc;
+        desc.deviceType_ = deviceType;
+        desc.networkId_ = networkId;
+        audioPolicyServerHandler_->SendAudioSessionDeviceChange(desc,
+            AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE, true);
     }
 }
 
