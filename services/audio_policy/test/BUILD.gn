@@ -835,7 +835,6 @@ ohos_unittest("audio_policy_service_second_unit_test") {
   ]
 
   sources = [
-    "../../audio_policy/client/stub/src/audio_client_tracker_callback_stub.cpp",
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_second_unit_test.cpp",
     "./unittest/audio_policy_service_unit_test/src/get_server_util.cpp",
   ]
@@ -2743,7 +2742,6 @@ ohos_unittest("audio_policy_async_action_handler_test") {
 
   sources = [
     "../../../services/audio_policy/server/infra/async_action_handler/src/audio_policy_async_action_handler.cpp",
-    "../../../services/audio_service/server/src/audio_manager_listener_proxy.cpp",
     "./unittest/audio_policy_async_action_handler_test/audio_policy_async_action_handler_test.cpp",
   ]
 
@@ -2757,6 +2755,10 @@ ohos_unittest("audio_policy_async_action_handler_test") {
     "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
+  ]
+
+  configs = [
+    "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config"
   ]
 
   external_deps = [
@@ -4041,8 +4043,6 @@ ohos_unittest("audio_client_tracker_callback_proxy_unit_test") {
   ]
 
   sources = [
-    "../../../services/audio_policy/client/stub/src/audio_client_tracker_callback_stub.cpp",
-    "../../../services/audio_policy/server/proxy/src/audio_client_tracker_callback_proxy.cpp",
     "./unittest/audio_client_tracker_callback_proxy_unit_test/src/audio_client_tracker_callback_proxy_unit_test.cpp",
   ]
 
@@ -4353,7 +4353,6 @@ ohos_unittest("audio_policy_client_proxy_unit_test") {
   ]
 
   sources = [
-    "../../../services/audio_policy/server/proxy/src/audio_policy_client_proxy.cpp",
     "../../../services/audio_policy/server/domain/device/src/audio_device_descriptor.cpp",
     "./unittest/audio_policy_client_proxy_unit_test/src/audio_policy_client_proxy_unit_test.cpp",
   ]

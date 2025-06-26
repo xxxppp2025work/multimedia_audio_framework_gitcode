@@ -434,7 +434,7 @@ struct DeviceStreamInfo {
             && MarshallingSetInt32(samplingRate, parcel)
             && MarshallingSetInt32(channels, parcel);
     }
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingSelf(Parcel &parcel)
     {
         encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
@@ -467,7 +467,7 @@ enum class AudioStreamDeviceChangeReason {
     OVERRODE = 3
 };
 
-class AudioStreamDeviceChangeReasonExt {
+class AudioStreamDeviceChangeReasonExt : public Parcelable {
 public:
     enum class ExtEnum {
         UNKNOWN = 0,
@@ -496,6 +496,8 @@ public:
         return static_cast<int>(reason_);
     }
 
+    AudioStreamDeviceChangeReasonExt()
+        : reason_(ExtEnum::UNKNOWN) {}
     AudioStreamDeviceChangeReasonExt(const AudioStreamDeviceChangeReason &reason)
         : reason_(static_cast<ExtEnum>(reason)) {}
 
@@ -529,6 +531,21 @@ public:
     bool IsSetDefaultOutputDevice() const
     {
         return reason_ == ExtEnum::SET_DEFAULT_OUTPUT_DEVICE;
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(reason_));
+    }
+
+    static AudioStreamDeviceChangeReasonExt *Unmarshalling(Parcel &parcel)
+    {
+        auto info = std::make_unique<AudioStreamDeviceChangeReasonExt>();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->reason_ = static_cast<ExtEnum>(parcel.ReadInt32());
+        return info.release();
     }
 
 private:

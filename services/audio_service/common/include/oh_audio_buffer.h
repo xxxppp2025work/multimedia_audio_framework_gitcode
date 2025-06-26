@@ -118,7 +118,7 @@ struct SpanInfo {
     int32_t volumeEnd;
 };
 
-class OHAudioBuffer {
+class OHAudioBuffer : public Parcelable {
 public:
     static const int INVALID_BUFFER_FD = -1;
     OHAudioBuffer(AudioBufferHolder bufferHolder, uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
@@ -134,6 +134,10 @@ public:
     // for ipc.
     static int32_t WriteToParcel(const std::shared_ptr<OHAudioBuffer> &buffer, MessageParcel &parcel);
     static std::shared_ptr<OHAudioBuffer> ReadFromParcel(MessageParcel &parcel);
+
+    // idl
+    bool Marshalling(Parcel &parcel) const override;
+    static OHAudioBuffer *Unmarshalling(Parcel &parcel);
 
     AudioBufferHolder GetBufferHolder();
 

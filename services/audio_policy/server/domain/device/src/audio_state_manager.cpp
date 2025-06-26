@@ -43,6 +43,7 @@ void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<Audio
 {
     std::lock_guard<std::mutex> lock(mutex_);
     
+    bool ret = false;
     int32_t callerUid = uid;
     auto callerPid = IPCSkeleton::GetCallingPid();
     std::string bundleName = AudioBundleManager::GetBundleNameFromUid(callerUid);
@@ -50,7 +51,7 @@ void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<Audio
         "deviceType: %{public}d, uid: %{public}d, callerPid: %{public}d, bundle name: %{public}s, caller: %{public}s",
         deviceDescriptor->deviceType_, callerUid, callerPid, bundleName.c_str(), caller.c_str());
     if (audioClientInfoMgrCallback_ != nullptr) {
-        audioClientInfoMgrCallback_->OnCheckClientInfo(bundleName, callerUid, callerPid);
+        audioClientInfoMgrCallback_->OnCheckClientInfo(bundleName, callerUid, callerPid, ret);
     }
     AUDIO_INFO_LOG("check result uid: %{public}d", callerUid);
     if (deviceDescriptor->deviceType_ == DEVICE_TYPE_NONE) {

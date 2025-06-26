@@ -35,6 +35,7 @@ namespace {
     static const int INVALID_FD = -1;
     static const size_t MAX_MMAP_BUFFER_SIZE = 10 * 1024 * 1024; // 10M
     static const std::string STATUS_INFO_BUFFER = "status_info_buffer";
+    static constexpr int MINFD = 2;
 }
 class AudioSharedMemoryImpl : public AudioSharedMemory {
 public:
@@ -51,6 +52,8 @@ public:
 
     int32_t Init();
 
+    bool Marshalling(Parcel &parcel) const override;
+
 private:
     void Close();
 
@@ -58,6 +61,19 @@ private:
     int fd_;
     size_t size_;
     std::string name_;
+};
+
+class ScopedFd {
+public:
+    explicit ScopedFd(int fd) : fd_(fd) {}
+    ~ScopedFd()
+    {
+        if (fd_ > MINFD) {
+            CloseFd(fd_);
+        }
+    }
+private:
+    int fd_ = -1;
 };
 
 AudioSharedMemoryImpl::AudioSharedMemoryImpl(size_t size, const std::string &name)
@@ -108,6 +124,17 @@ int32_t AudioSharedMemoryImpl::Init()
     AUDIO_DEBUG_LOG("Init %{public}s <%{public}s> done.", (isFromRemote ? "remote" : "local"),
         name_.c_str());
     return SUCCESS;
+}
+
+bool AudioSharedMemoryImpl::Marshalling(Parcel &parcel) const
+{
+    // Parcel -> MessageParcel
+    MessageParcel *msgParcel = static_cast<MessageParcel *>(&parcel);
+    CHECK_AND_RETURN_RET_LOG(msgParcel != nullptr, false, "Unmarshalling failed: invalid parcel.");
+    CHECK_AND_RETURN_RET_LOG((size_ > 0 && size_ < MAX_MMAP_BUFFER_SIZE), false, "invalid size: %{public}zu", size_);
+    return msgParcel->WriteFileDescriptor(fd_) &&
+        msgParcel->WriteUint64(static_cast<uint64_t>(size_)) &&
+        msgParcel->WriteString(name_);
 }
 
 void AudioSharedMemoryImpl::Close()
@@ -204,6 +231,36 @@ std::shared_ptr<AudioSharedMemory> AudioSharedMemory::ReadFromParcel(MessageParc
     }
     CloseFd(fd);
     return memory;
+}
+
+AudioSharedMemory *AudioSharedMemory::Unmarshalling(Parcel &parcel)
+{
+    // Parcel -> MessageParcel
+    MessageParcel *msgParcel = static_cast<MessageParcel *>(&parcel);
+    CHECK_AND_RETURN_RET_LOG(msgParcel != nullptr, nullptr, "Unmarshalling failed: invalid parcel.");
+
+    int fd = msgParcel->ReadFileDescriptor();
+    int minfd = 2; // ignore stdout, stdin and stderr.
+    CHECK_AND_RETURN_RET_LOG(fd > minfd, nullptr, "CreateFromRemote failed: invalid fd: %{public}d", fd);
+    ScopedFd scopedFd(fd);
+
+    uint64_t sizeTmp = msgParcel->ReadUint64();
+    CHECK_AND_RETURN_RET_LOG((sizeTmp > 0 && sizeTmp < MAX_MMAP_BUFFER_SIZE), nullptr, "failed with invalid size");
+    size_t size = static_cast<size_t>(sizeTmp);
+
+    std::string name = msgParcel->ReadString();
+
+    auto memory = std::make_unique<AudioSharedMemoryImpl>(fd, size, name);
+    if (memory == nullptr) {
+        AUDIO_ERR_LOG("not enough memory");
+        return nullptr;
+    }
+
+    if (memory->Init() != SUCCESS || memory->GetBase() == nullptr) {
+        AUDIO_ERR_LOG("Init failed or GetBase failed");
+        return nullptr;
+    }
+    return memory.release();
 }
 
 // OHAudioBuffer
@@ -404,6 +461,64 @@ std::shared_ptr<OHAudioBuffer> OHAudioBuffer::ReadFromParcel(MessageParcel &parc
     AUDIO_DEBUG_LOG("ReadFromParcel done.");
     return buffer;
 }
+
+bool OHAudioBuffer::Marshalling(Parcel &parcel) const
+{
+    CHECK_AND_RETURN_RET_LOG(bufferHolder_ == AudioBufferHolder::AUDIO_SERVER_SHARED ||
+        bufferHolder_ == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT,
+        false, "buffer holder error:%{public}d", bufferHolder_);
+    MessageParcel &messageParcel = static_cast<MessageParcel &>(parcel);
+
+    return messageParcel.WriteUint32(bufferHolder_) &&
+        messageParcel.WriteUint32(totalSizeInFrame_) &&
+        messageParcel.WriteUint32(spanSizeInFrame_) &&
+        messageParcel.WriteUint32(byteSizePerFrame_) &&
+        messageParcel.WriteFileDescriptor(dataMem_->GetFd()) &&
+        messageParcel.WriteFileDescriptor(statusInfoMem_->GetFd());
+}
+
+OHAudioBuffer *OHAudioBuffer::Unmarshalling(Parcel &parcel)
+{
+    MessageParcel &messageParcel = static_cast<MessageParcel &>(parcel);
+    uint32_t holder = messageParcel.ReadUint32();
+    AudioBufferHolder bufferHolder = static_cast<AudioBufferHolder>(holder);
+    if (bufferHolder != AudioBufferHolder::AUDIO_SERVER_SHARED &&
+        bufferHolder != AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) {
+        AUDIO_ERR_LOG("ReadFromParcel buffer holder error:%{public}d", bufferHolder);
+        return nullptr;
+    }
+
+    bufferHolder = bufferHolder == AudioBufferHolder::AUDIO_SERVER_SHARED ?
+         AudioBufferHolder::AUDIO_CLIENT : bufferHolder;
+    uint32_t totalSizeInFrame = messageParcel.ReadUint32();
+    uint32_t spanSizeInFrame = messageParcel.ReadUint32();
+    uint32_t byteSizePerFrame = messageParcel.ReadUint32();
+
+    int dataFd = messageParcel.ReadFileDescriptor();
+    int infoFd = messageParcel.ReadFileDescriptor();
+    ScopedFd dataFdHandle(dataFd);
+    ScopedFd infoFdHandle(infoFd);
+
+    AUDIO_DEBUG_LOG("dataFd %{public}d, infoFd %{public}d", dataFd, infoFd);
+    CHECK_AND_RETURN_RET_LOG(dataFd > MINFD, nullptr, "invalid dataFd: %{public}d", dataFd);
+    CHECK_AND_RETURN_RET_LOG(infoFd == INVALID_FD || infoFd > MINFD, nullptr, "invalid infoFd: %{public}d", infoFd);
+
+    auto buffer = std::make_unique<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
+        spanSizeInFrame, byteSizePerFrame);
+    if (buffer == nullptr || buffer->Init(dataFd, infoFd) != SUCCESS) {
+        AUDIO_ERR_LOG("buffer init failed.");
+        return nullptr;
+    }
+
+    if (totalSizeInFrame != buffer->basicBufferInfo_->totalSizeInFrame ||
+        spanSizeInFrame != buffer->basicBufferInfo_->spanSizeInFrame ||
+        byteSizePerFrame != buffer->basicBufferInfo_->byteSizePerFrame) {
+        AUDIO_WARNING_LOG("data in shared memory diff.");
+    }
+
+    return buffer.release();
+}
+
 
 AudioBufferHolder OHAudioBuffer::GetBufferHolder()
 {
