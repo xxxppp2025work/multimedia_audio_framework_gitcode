@@ -42,15 +42,20 @@ class HpaeSoftLink : public std::enable_shared_from_this<HpaeSoftLink>,
 public:
     HpaeSoftLink(int32_t renderIdx, int32_t captureIdx, SoftLinkMode mode);
     ~HpaeSoftLink();
-
-    int32_t Init();
+    static uint32_t GenerateSessionId();
+    int32_t Init() override;
     int32_t Start() override;
     int32_t Stop() override;
     int32_t Release() override;
     void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
     int32_t OnStreamData(AudioCallBackStreamInfo& callbackStreamInfo) override;
     int32_t OnStreamData(AudioCallBackCapturerStreamInfo& callbackStreamInfo) override;
-
+    void OnDeviceInfoReceived();
+private:
+    int32_t GetSinkInfoByIdx();
+    int32_t GetSourceInfoByIdx();
+    int32_t CreateStream();
+    void TransSinkInfoToStreamInfo(HpaeStreamInfo &info, const HpaeStreamClassType &streamClassType);
 private:
     int32_t renderIdx_ = -1;
     int32_t captureIdx_ = -1;
@@ -61,6 +66,12 @@ private:
     HpaeStreamInfo capturerStreamInfo_;
     std::unique_ptr<AudioRingCache> bufferQueue_ = nullptr;
     HpaeSoftLinkState state_ = HpaeSoftLinkState::INVALID;
+    std::mutex stateMutex_;
+    std::unordered_map<uint32_t, HpaeSoftLinkState> streamStateMap_;
+    std::mutex callbackMutex_;
+    std::condition_variable callbackCV_;
+    bool isGetDeviceInfoFinish_ = false;
+    bool isOperationFinish_ = false;
 };
 } // namespace HPAE
 } // namespace AudioStandard

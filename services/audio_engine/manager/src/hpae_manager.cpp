@@ -532,6 +532,42 @@ int32_t HpaeManager::CloseAudioPort(int32_t audioHandleIndex)
     return SUCCESS;
 }
 
+int32_t HpaeManager::GetSinkInfoByIdx(const int32_t &renderIdx, HpaeSinkInfo &sinkInfo, int32_t &result,
+    std::function<void()> callback)
+{
+    auto request = [this, renderIdx, &sinkInfo, &result, callback]() {
+        if (sinkIdSinkNameMap_.find(renderIdx) == sinkIdSinkNameMap_.end() ||
+            rendererManagerMap_.find(sinkIdSinkNameMap_[renderIdx]) == rendererManagerMap_.end()) {
+            AUDIO_ERR_LOG("GetSinkInfoByIdx err, sink id %{public}u not open", renderIdx);
+            result = ERROR;
+            callback();
+        }
+        sinkInfo = rendererManagerMap_[sinkIdSinkNameMap_[renderIdx]]->GetSinkInfo();
+        result = SUCCESS;
+        callback();
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeManager::GetSourceInfoByIdx(const int32_t &captureIdx, HpaeSourceInfo &sourceInfo, int32_t &result,
+    std::function<void()> callback)
+{
+    auto request = [this, captureIdx, &sourceInfo, &result, callback]() {
+        if (sourceIdSourceNameMap_.find(captureIdx) == sourceIdSourceNameMap_.end() ||
+            capturerManagerMap_.find(sourceIdSourceNameMap_[captureIdx]) == capturerManagerMap_.end()) {
+            AUDIO_ERR_LOG("GetSourceInfoByIdx err, source id %{public}u not open", captureIdx);
+            result = ERROR;
+            callback();
+        }
+        sourceInfo = capturerManagerMap_[sourceIdSourceNameMap_[captureIdx]]->GetSourceInfo();
+        result = SUCCESS;
+        callback();
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 int32_t HpaeManager::SetDefaultSink(std::string name)
 {
     CHECK_AND_RETURN_RET_LOG(!name.empty(), ERROR_INVALID_PARAM, "invalid sink name");

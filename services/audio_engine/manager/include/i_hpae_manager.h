@@ -21,6 +21,7 @@
 #include "audio_service_hpae_callback.h"
 #include "audio_service_hpae_dump_callback.h"
 #include "audio_effect.h"
+#include "hpae_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -41,6 +42,10 @@ public:
     virtual void DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo) = 0;
     virtual uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) = 0;
     virtual int32_t CloseAudioPort(int32_t audioHandleIndex) = 0;
+    virtual int32_t GetSinkInfoByIdx(const int32_t &renderIdx, HpaeSinkInfo &sinkInfo, int32_t &result,
+        std::function<void()> callback) = 0;
+    virtual int32_t GetSourceInfoByIdx(const int32_t &captureIdx, HpaeSourceInfo &sourceInfo, int32_t &result,
+        std::function<void()> callback) = 0;
 
     virtual int32_t SetDefaultSink(std::string name) = 0;
     virtual int32_t SetDefaultSource(std::string name) = 0;

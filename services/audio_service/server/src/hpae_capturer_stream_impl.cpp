@@ -75,9 +75,9 @@ int32_t HpaeCapturerStreamImpl::InitParams(const std::string &deviceName)
 
     // Register Callback
     ret = hpaeManager.RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_RECORD, streamInfo.sessionId, shared_from_this());
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "RegisterStatusCallback is error");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "RegisterStatusCallback is error");
     ret = hpaeManager.RegisterReadCallback(streamInfo.sessionId, shared_from_this());
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "RegisterReadCallback is error");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "RegisterReadCallback is error");
     return SUCCESS;
 }
 
