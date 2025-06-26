@@ -479,6 +479,12 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<Device
         }
         currentAudioScene_ = audioScene;
     }
+
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
+    deviceMnagaer->SetAudioScene(currentAudioScene_);
+
     if (isRingingToDefaultScene) {
         AUDIO_INFO_LOG("ringing scene to default scene");
         return SUCCESS;
