@@ -2025,7 +2025,7 @@ HWTEST(AudioCoreServicePrivateTest, IsStreamSupportLowpower_001, TestSize.Level1
     streamDesc->rendererInfo_.isOffloadAllowed = true;
     streamDesc->streamInfo_.channels = STEREO;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
-    streamDesc->rendererInfo_.playerType == PLAYER_TYPE_SOUND_POOL;
+    streamDesc->rendererInfo_.playerType = PLAYER_TYPE_SOUND_POOL;
     bool isSupportLowPower = audioCoreService->IsStreamSupportLowpower(streamDesc);
     EXPECT_EQ(isSupportLowPower, false);
 }
@@ -2044,7 +2044,7 @@ HWTEST(AudioCoreServicePrivateTest, IsStreamSupportLowpower_002, TestSize.Level1
     streamDesc->rendererInfo_.isOffloadAllowed = true;
     streamDesc->streamInfo_.channels = STEREO;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
-    streamDesc->rendererInfo_.playerType == PLAYER_TYPE_OPENSL_ES;
+    streamDesc->rendererInfo_.playerType = PLAYER_TYPE_OPENSL_ES;
     bool isSupportLowPower = audioCoreService->IsStreamSupportLowpower(streamDesc);
     EXPECT_EQ(isSupportLowPower, false);
 }
