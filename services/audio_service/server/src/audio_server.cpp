@@ -1031,6 +1031,14 @@ const std::string AudioServer::GetUsbParameter(const std::string &condition)
     return usbInfoStr;
 }
 
+const std::string AudioServer::GetDPParameter(const std::string &condition)
+{
+    std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY, true);
+    CHECK_AND_RETURN_RET_LOG(source != nullptr, "", "get accessory sink fail");
+
+    return source->GetAudioParameter(AudioParamKey::GET_PENCIL_INFO, condition);
+}
+
 const std::string AudioServer::GetAudioParameter(const std::string& networkId, const AudioParamKey key,
     const std::string& condition)
 {
@@ -1046,6 +1054,9 @@ const std::string AudioServer::GetAudioParameter(const std::string& networkId, c
         }
         if (key == AudioParamKey::GET_DP_DEVICE_INFO) {
             return GetDPParameter(condition);
+        }
+        if (key == AudioParamKey::GET_PENCIL_INFO) {
+            return GetAccessoryParameter(condition);
         }
     } else {
         std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_REMOTE, networkId);

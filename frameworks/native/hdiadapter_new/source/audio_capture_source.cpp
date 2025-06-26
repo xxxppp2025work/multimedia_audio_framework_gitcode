@@ -378,7 +378,96 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
 
 std::string AudioCaptureSource::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
+    std::lock_guard<std::mutex> lock(statusMutex_);
+    AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, halName: %{public}s", key, condition.c_str(),
+        halName_.c_str());
+    if (key == AudioParamKey::GET_PENCIL_INFO && halName_ == HDI_ID_INFO_ACCESSORY) {
+        // init adapter and source to get parameter before load source module (need fix)
+        return GetAccessoryDeviceInfo(condition);
+    }
     return "";
+}
+
+std::string AudioCaptureSource::GetAccessoryDeviceInfo(const std::string &condition)
+{
+    int32_t ret = UpdateAccessoryAttr(condition);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "init attr fail");
+
+    ret = InitCapture();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "init capture fail");
+
+    struct AudioSampleAttributes attrInfo = {};
+    ret = audioCapture_->GetSampleAttributes(audioCapture_, &attrInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "get sample attr fail");
+
+    AUDIO_DEBUG_LOG("sampleRate: %{public}d, format: %{public}d, channelCount: %{public}d, size: %{public}d",
+        attrInfo.sampleRate, attrInfo.format, attrInfo.channelCount, attrInfo.frameSize);
+    return GetAttrInfoStr(attrInfo);
+}
+
+int32_t AudioCaptureSource::UpdateAccessoryAttr(const std::string &info)
+{
+    CHECK_AND_RETURN_RET_LOG(!info.empty(), ERR_INVALID_PARAM, "accessory info is empty");
+
+    auto sinkRate_begin = info.find("rate=");
+    auto sinkRate_end = info.find_first_of(" ", sinkRate_begin);
+    std::string sampleRateStr = info.substr(sinkRate_begin + std::strlen("rate="),
+        sinkRate_end - sinkRate_begin - std::strlen("rate="));
+
+    auto sinkBuffer_begin = info.find("buffer_size=");
+    auto sinkBuffer_end = info.find_first_of(" ", sinkBuffer_begin);
+    std::string bufferSizeStr = info.substr(sinkBuffer_begin + std::strlen("buffer_size="),
+        sinkBuffer_end - sinkBuffer_begin - std::strlen("buffer_size="));
+
+    auto sinkChannel_begin = info.find("channels=");
+    auto sinkChannel_end = info.find_first_of(" ", sinkChannel_begin);
+    std::string channelStr = info.substr(sinkChannel_begin + std::strlen("channels="),
+        sinkChannel_end - sinkChannel_begin - std::strlen("channels="));
+
+    auto address_begin = info.find("address=");
+    auto address_end = info.find_first_of(" ", address_begin);
+    std::string addressStr = info.substr(address_begin + std::strlen("address="),
+        address_end - address_begin - std::strlen("address="));
+
+    bool ret = StringConverter(sampleRateStr, attr_.sampleRate);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_INVALID_PARAM, "convert fail, sampleRate: %{public}s", sampleRateStr.c_str());
+    ret = StringConverter(channelStr, attr_.channel);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_INVALID_PARAM, "convert fail, channel: %{public}s", channelStr.c_str());
+
+    attr_.address = addressStr;
+    uint32_t formatByte = 0;
+    if (attr_.channel <= 0 || attr_.sampleRate <= 0 || bufferSizeStr.empty()) {
+        AUDIO_ERR_LOG("check attr fail, channel: %{public}d, sampleRate: %{public}d", attr_.channel, attr_.sampleRate);
+    } else {
+        uint32_t bufferSize = 0;
+        ret = StringConverter(bufferSizeStr, bufferSize);
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_INVALID_PARAM, "convert fail, bufferSize: %{public}s", bufferSizeStr.c_str());
+        formatByte = bufferSize * BUFFER_CALC_1000MS / BUFFER_CALC_20MS / attr_.channel / attr_.sampleRate;
+    }
+
+    attr_.format = static_cast<AudioSampleFormat>(ConvertByteToAudioFormat(formatByte));
+
+    AUDIO_DEBUG_LOG("sampleRate: %{public}d, format: %{public}d, channelCount: %{public}d, address: %{public}s",
+        attr_.sampleRate, attr_.format, attr_.channel, addressStr.c_str());
+
+    adapterNameCase_ = "accessory";
+    openSpeaker_ = 0;
+    return SUCCESS;
+}
+
+std::string AudioCaptureSource::GetAttrInfoStr(const struct AudioSampleAttributes &attrInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(attrInfo.sampleRate > 0, "", "invalid rate: %{public}d", attrInfo.sampleRate);
+    CHECK_AND_RETURN_RET_LOG(attrInfo.format > 0, "", "invalid format: %{public}d", attrInfo.format);
+    CHECK_AND_RETURN_RET_LOG(attrInfo.channelCount > 0, "", "invalid channel: %{public}d", attrInfo.channelCount);
+
+    uint32_t bufferSize = attrInfo.sampleRate * attrInfo.format * attrInfo.channelCount *
+        BUFFER_CALC_20MS / BUFFER_CALC_1000MS;
+    std::string attrInfoStr = "rate=" + std::to_string(attrInfo.sampleRate) + " format=" +
+        ParseAudioFormatToStr(attrInfo.format) + " channels=" + std::to_string(attrInfo.channelCount) +
+        " buffer_size=" + std::to_string(bufferSize);
+    AUDIO_INFO_LOG("attrInfoStr: %{public}s", attrInfoStr.c_str());
+    return attrInfoStr;
 }
 
 int32_t AudioCaptureSource::SetVolume(float left, float right)

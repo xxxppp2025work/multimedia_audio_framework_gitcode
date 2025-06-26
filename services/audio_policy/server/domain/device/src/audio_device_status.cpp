@@ -374,10 +374,12 @@ int32_t AudioDeviceStatus::HandleAccessoryDevice(DeviceType deviceType, const st
     GetModuleInfo(ClassType::TYPE_ACCESSORY, defaulyAccessoryInfo);
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
+    getAccessoryInfo = AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID,
+        GET_PENCIL_INFO, defaulyAccessoryInfo + " address=" + address + " ");
     AUDIO_INFO_LOG("device info from accessory hal is defaulyAccessoryInfo: %{public}s",
         defaulyAccessoryInfo.c_str());
 
-    getAccessoryInfo = defaulyAccessoryInfo;
+    getAccessoryInfo = getAccessoryInfo.empty() ? defaulyAccessoryInfo : getAccessoryInfo;
     int32_t ret = LoadAccessoryModule(getAccessoryInfo);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG ("load accessory module failed");

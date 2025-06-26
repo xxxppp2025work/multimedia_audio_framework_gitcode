@@ -305,6 +305,7 @@ private:
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter(const std::string &condition);
+    const std::string GetAccessoryParameter(const std::string &condition);
     void WriteServiceStartupError();
     void ParseAudioParameter();
     bool CacheExtraParameters(const std::string &key,

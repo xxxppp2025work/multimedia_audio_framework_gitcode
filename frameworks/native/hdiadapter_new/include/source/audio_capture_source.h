@@ -109,6 +109,9 @@ private:
     int32_t DoStop(void);
     void DumpData(char *frame, uint64_t &replyBytes);
     void InitRunningLock(void);
+    std::string GetAccessoryDeviceInfo(const std::string &condition);
+    std::string GetAttrInfoStr(const struct AudioSampleAttributes &attrInfo);
+    int32_t UpdateAccessoryAttr(const std::string &info);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
