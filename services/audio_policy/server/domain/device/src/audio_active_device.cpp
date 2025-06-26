@@ -470,7 +470,7 @@ bool AudioActiveDevice::IsDeviceInVector(std::shared_ptr<AudioDeviceDescriptor> 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs)
 {
     for (auto &it : descs) {
-        CHECK_AND_RETURN_RET(!it->IsSameDeviceDesc(desc), true);
+        CHECK_AND_RETURN_RET(!it->IsSameDeviceDescPtr(desc), true);
     }
     return false;
 }
