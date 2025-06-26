@@ -3361,5 +3361,95 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_170, TestSize.Level1)
 
     server->SubscribeBackgroundTask();
 }
+/**
+ * @tc.name  : Test AudioPolicyServer
+ * @tc.number: IsStreamActiveByStreamUsage_001
+ * @tc.desc  : AudioPolicyServer::IsStreamActiveByStreamUsage
+ */
+HWTEST(AudioPolicyUnitTest, IsStreamActiveByStreamUsage_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 0;
+    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
+    ASSERT_NE(audioPolicyServer, nullptr);
+
+    EXPECT_NE(static_cast<uid_t>(IPCSkeleton::GetCallingUid()), audioPolicyServer->PREEMPT_UID);
+
+    auto ret = audioPolicyServer->IsStreamActiveByStreamUsage(streamUsage);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer
+ * @tc.number: GetVolumeInDbByStream_001
+ * @tc.desc  : AudioPolicyServer::GetVolumeInDbByStream
+ */
+HWTEST(AudioPolicyUnitTest, GetVolumeInDbByStream_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 0;
+    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
+    int32_t volLevel = 5;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
+    ASSERT_NE(audioPolicyServer, nullptr);
+
+    EXPECT_NE(static_cast<uid_t>(IPCSkeleton::GetCallingUid()), audioPolicyServer->PREEMPT_UID);
+
+    auto ret = audioPolicyServer->GetVolumeInDbByStream(streamUsage, volLevel, deviceType);
+    EXPECT_NE(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer
+ * @tc.number: GetSupportedAudioVolumeTypes_001
+ * @tc.desc  : AudioPolicyServer::GetSupportedAudioVolumeTypes
+ */
+HWTEST(AudioPolicyUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 0;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
+    ASSERT_NE(audioPolicyServer, nullptr);
+
+    EXPECT_NE(static_cast<uid_t>(IPCSkeleton::GetCallingUid()), audioPolicyServer->PREEMPT_UID);
+
+    auto ret = audioPolicyServer->GetSupportedAudioVolumeTypes();
+    EXPECT_GT(ret.size(), 0);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer
+ * @tc.number: GetAudioVolumeTypeByStreamUsage_001
+ * @tc.desc  : AudioPolicyServer::GetAudioVolumeTypeByStreamUsage
+ */
+HWTEST(AudioPolicyUnitTest, GetAudioVolumeTypeByStreamUsage_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 0;
+    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
+    ASSERT_NE(audioPolicyServer, nullptr);
+
+    EXPECT_NE(static_cast<uid_t>(IPCSkeleton::GetCallingUid()), audioPolicyServer->PREEMPT_UID);
+
+    auto ret = audioPolicyServer->GetAudioVolumeTypeByStreamUsage(streamUsage);
+    EXPECT_NE(ret, AudioVolumeType::STREAM_DEFAULT);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer
+ * @tc.number: GetStreamUsagesByVolumeType_001
+ * @tc.desc  : AudioPolicyServer::GetStreamUsagesByVolumeType
+ */
+HWTEST(AudioPolicyUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 0;
+    AudioVolumeType volType = AudioVolumeType::STREAM_MUSIC;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
+    ASSERT_NE(audioPolicyServer, nullptr);
+
+    EXPECT_NE(static_cast<uid_t>(IPCSkeleton::GetCallingUid()), audioPolicyServer->PREEMPT_UID);
+
+    auto ret = audioPolicyServer->GetStreamUsagesByVolumeType(volType);
+    EXPECT_GT(ret.size(), 0);
+}
 } // AudioStandard
 } // OHOS
