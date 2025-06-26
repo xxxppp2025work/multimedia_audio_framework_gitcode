@@ -206,6 +206,16 @@ void ClearAudioFocusInfoListOnAccountsChangedFuzzTest()
     interruptService->ClearAudioFocusInfoListOnAccountsChanged(zoneId);
 }
 
+void ClearAudioFocusBySessionIDFuzzTest()
+{
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    int sessionID = GetData<int32_t>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    interruptService->ClearAudioFocusBySessionID(sessionID);
+}
+
 void GetStreamTypePriorityFuzzTest()
 {
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
@@ -460,13 +470,14 @@ void AudioPolicyManagerFuzzTest()
 #endif
 }
 
-typedef void (*TestFuncs[15])();
+typedef void (*TestFuncs[16])();
 
 TestFuncs g_testFuncs = {
     InitFuzzTest,
     GetHighestPriorityAudioSceneFuzzTest,
     AudioInterruptZoneDumpFuzzTest,
     ClearAudioFocusInfoListOnAccountsChangedFuzzTest,
+    ClearAudioFocusBySessionIDFuzzTest,
     GetStreamTypePriorityFuzzTest,
     GetStreamPriorityMapFuzzTest,
     SendInterruptEventFuzzTest,
