@@ -668,7 +668,7 @@ describe("AudioStreamManagerJsTest", function () {
 
   /*
  * @tc.name:setAudioEffectProperty005
- * @tc.desc:Get setAudioEffectProperty invalid parameter - upper limit 
+ * @tc.desc:Get setAudioEffectProperty invalid parameter - upper limit
  * @tc.type: FUNC
  * @tc.require: I7V04L
  */
@@ -778,7 +778,7 @@ describe("AudioStreamManagerJsTest", function () {
 
   /*
  * @tc.name:setAudioEnhanceProperty005
- * @tc.desc:Get setAudioEnhanceProperty invalid parameter - upper limit 
+ * @tc.desc:Get setAudioEnhanceProperty invalid parameter - upper limit
  * @tc.type: FUNC
  * @tc.require: I7V04L
  */
@@ -1525,6 +1525,30 @@ describe("AudioStreamManagerJsTest", function () {
     } catch(e) {
       console.error(`${TAG} isActiveSync011 ERROR: ${e.message}`);
       expect(e.code).assertEqual(ERROR_INVALID_PARAM);
+      done();
+      return;
+    }
+  });
+
+  /*
+   * @tc.name:isStreamActive001
+   * @tc.desc:Get isStreamActive success - VOICE_CALL - When stream is NOT playing
+   * @tc.type: FUNC
+   * @tc.require: ICH6FD
+   */
+  it("isStreamActive001", 0, async function (done) {
+    let audioStreamManager = null;
+
+    try {
+      audioStreamManager = audio.getAudioManager().getStreamManager();
+      let isActive = audioStreamManager.IsStreamActiveByStreamUsage(audio.StreamUsage.STREAM_USAGE_MEDIA);
+      console.info(`The active status is obtained ${isActive}.`);
+      expect(isActive).assertEqual(false);
+
+      done();
+    } catch(e) {
+      console.error(`${TAG} isActiveSync001 ERROR: ${e.message}`);
+      expect(false).assertTrue();
       done();
       return;
     }
