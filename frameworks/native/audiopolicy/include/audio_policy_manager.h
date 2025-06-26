@@ -667,6 +667,7 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled);
     bool IsCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
+    int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

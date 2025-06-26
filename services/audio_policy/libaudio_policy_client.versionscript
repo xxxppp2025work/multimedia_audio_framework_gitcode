@@ -17,6 +17,7 @@
     *AudioPolicyManager*;
     *AudioServiceLoad*;
     *ParseGlobalConfigXml*;
+    *ClearAudioFocusBySessionID*;
   local:
     *;
 };

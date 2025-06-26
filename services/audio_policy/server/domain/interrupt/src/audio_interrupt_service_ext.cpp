@@ -267,5 +267,27 @@ bool AudioInterruptService::IsCapturerFocusAvailable(const int32_t zoneId, const
     int32_t res = ProcessActiveStreamFocus(audioFocusInfoList, incomingInterrupt, incomingState, activeInterrupt);
     return res == SUCCESS && incomingState < PAUSE;
 }
+
+int32_t AudioInterruptService::ClearAudioFocusBySessionID(const int32_t &sessionID)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    AUDIO_INFO_LOG("start clear audio focus, target sessionID:%{public}d", sessionID);
+    InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
+    for (const auto&[zoneId, audioInterruptZone] : zonesMap_) {
+        CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
+        std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator it =
+            audioInterruptZone->audioFocusInfoList.begin();
+        while (it != audioInterruptZone->audioFocusInfoList.end()) {
+            if ((sessionID >= 0) && ((*it).first.streamId == static_cast<uint32_t>(sessionID))) {
+                CHECK_AND_RETURN_RET_LOG(handler_ != nullptr, ERROR, "handler is nullptr");
+                SendInterruptEventCallback(interruptEvent, (*it).first.streamId, (*it).first);
+                it = audioInterruptZone->audioFocusInfoList.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+    return SUCCESS;
+}
 }
 } // namespace OHOS

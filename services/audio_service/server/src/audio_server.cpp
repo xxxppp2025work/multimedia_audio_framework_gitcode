@@ -59,6 +59,7 @@
 #include "audio_info.h"
 #include "i_hpae_manager.h"
 #include "audio_server_hpae_dump.h"
+#include "audio_policy_manager.h"
 
 #define PA
 #ifdef PA
@@ -479,7 +480,7 @@ void AudioServer::RegisterDataTransferStateChangeCallback()
 {
     DataTransferMonitorParam param;
     param.clientUID = CHECK_ALL_RENDER_UID;
-    param.badDataTransferTypeBitMap = 0b01; // bit0:NO_DATA_TRANS, bit1:SILENCE_DATA_TRANS
+    param.badDataTransferTypeBitMap = (1 << NO_DATA_TRANS);
     param.timeInterval = RENDER_DETECTION_CYCLE_NS;
     param.badFramesRatio = RENDER_BAD_FRAMES_RATIO;
 
@@ -512,6 +513,10 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
 {
     if (info.stateChangeType == DATA_TRANS_STOP) {
         ReportEvent(info);
+        if (info.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
+            int32_t ret = AudioPolicyManager::GetInstance().ClearAudioFocusBySessionID(info.sessionId);
+            CHECK_AND_RETURN_LOG(ret ==SUCCESS, "focus clear fail");
+        }
     }
 }
 
