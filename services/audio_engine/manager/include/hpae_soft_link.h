@@ -30,7 +30,7 @@ enum class HpaeSoftLinkState : int32_t {
     NEW,
     PREPARED,
     RUNNING,
-    STOPED,
+    STOPPED,
     RELEASED,
 };
 
