@@ -1703,7 +1703,7 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
 
     if (streamDesc->rendererInfo_.playerType == PLAYER_TYPE_SOUND_POOL ||
         streamDesc->rendererInfo_.playerType == PLAYER_TYPE_OPENSL_ES) {
-        AUDIO_INFO_LOG("normal stream beacuse playerType %{public}d.");
+        AUDIO_INFO_LOG("normal stream beacuse playerType %{public}d.", streamDesc->rendererInfo_.playerType);
         return false;
     }
 
