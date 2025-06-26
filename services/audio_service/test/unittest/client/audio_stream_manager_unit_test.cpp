@@ -65,7 +65,7 @@ HWTEST(AudioStreamManagerUnitTest, IsStreamActive_001, TestSize.Level1)
  */
 HWTEST(AudioStreamManagerUnitTest, IsStreamActiveByStreamUsage_001, TestSize.Level1)
 {
-    int32_t ILLEGAL_STREAM_USAGE = STREAM_USAGE_MAX+999;
+    StreamUsage ILLEGAL_STREAM_USAGE = static_cast<StreamUsage>(static_cast<int32_t>(STREAM_USAGE_MAX)+999);
 
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamActiveByStreamUsage_001 start");
     bool result = AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_MUSIC);

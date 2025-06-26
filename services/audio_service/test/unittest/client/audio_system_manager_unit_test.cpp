@@ -26,7 +26,7 @@ namespace AudioStandard {
 
 const int32_t TEST_RET_NUM = 0;
 const int32_t TEST_RET_MAX_VOLUME = 15;
-const int32_t ILLEGAL_STREAM_USAGE = STREAM_USAGE_MAX+999;
+const StreamUsage ILLEGAL_STREAM_USAGE = static_cast<StreamUsage>(static_cast<int32_t>(STREAM_USAGE_MAX)+999);
 const int32_t TEST_RET_ERROR_NOT_SUPPORTED = ERR_NOT_SUPPORTED;
 
 class AudioSystemManagerUnitTest : public testing::Test {
@@ -46,6 +46,11 @@ public:
 class DataTransferStateChangeCallbackTest : public AudioRendererDataTransferStateChangeCallback {
 public:
     void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) override {}
+};
+
+class SystemVolumeChangeCallbackTest : public SystemVolumeChangeCallback {
+public:
+    void OnSystemVolumeChange(VolumeEvent volumeEvent) override {}
 };
 
 /**
@@ -926,7 +931,7 @@ HWTEST(AudioSystemManagerUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Le
 {
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSupportedAudioVolumeTypes_001 start");
     std::vector<AudioVolumeType> result = AudioSystemManager::GetInstance()->GetSupportedAudioVolumeTypes();
-    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSupportedAudioVolumeTypes_001 result size1:%{public}d", result.size());
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSupportedAudioVolumeTypes_001 result size1:%{public}zu", result.size());
     EXPECT_GT(result.size(), TEST_RET_NUM);
 }
 
@@ -953,7 +958,7 @@ HWTEST(AudioSystemManagerUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Lev
 {
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetStreamUsagesByVolumeType_001 start");
     std::vector<StreamUsage> result = AudioSystemManager::GetInstance()->GetStreamUsagesByVolumeType(AudioVolumeType::STREAM_MUSIC);
-    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetStreamUsagesByVolumeType_001 result size1:%{public}d", result.size());
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetStreamUsagesByVolumeType_001 result size1:%{public}zu", result.size());
     EXPECT_GT(result.size(), TEST_RET_NUM);
 }
 
@@ -966,7 +971,7 @@ HWTEST(AudioSystemManagerUnitTest, RegisterSystemVolumeChnageCallback_001, TestS
 {
     int32_t testClientId = 300300;
     std::shared_ptr<SystemVolumeChangeCallback> callback = std::make_shared<
-            NapiAudioSystemVolumeChangeCallback>();
+            SystemVolumeChangeCallbackTest>();
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterSystemVolumeChnageCallback_001 start");
     int32_t result = AudioSystemManager::GetInstance()->RegisterSystemVolumeChangeCallback(testClientId, callback);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterSystemVolumeChnageCallback_001 result1:%{public}d", result);
