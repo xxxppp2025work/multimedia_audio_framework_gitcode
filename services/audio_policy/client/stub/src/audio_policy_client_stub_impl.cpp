@@ -258,22 +258,11 @@ int32_t AudioPolicyClientStubImpl::OnDeviceChange(const DeviceChangeAction &dca)
     CHECK_AND_RETURN_RET_LOG(size < DEVICE_CHANGE_VALID_SIZE, ERR_INVALID_PARAM,
         "get invalid size : %{public}d", size);
     std::lock_guard<std::mutex> lockCbMap(deviceChangeMutex_);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDevices;
-    for (const auto &desc : dca.deviceDescriptors) {
-        std::shared_ptr<AudioDeviceDescriptor> newDeviceDescriptor =
-            std::const_pointer_cast<AudioDeviceDescriptor>(desc);
-        CHECK_AND_RETURN_RET_LOG(newDeviceDescriptor, ERR_MEMORY_ALLOC_FAILED, "nullptr");
-        if (newDeviceDescriptor->IsAudioDeviceDescriptor()) {
-            newDeviceDescriptor->deviceType_ = newDeviceDescriptor->MapInternalToExternalDeviceType(apiVersion_);
-        }
-        newDevices.push_back(newDeviceDescriptor);
-    }
-
     DeviceChangeAction deviceChangeAction;
     deviceChangeAction.type = dca.type;
     for (auto it = deviceChangeCallbackList_.begin(); it != deviceChangeCallbackList_.end(); ++it) {
         deviceChangeAction.flag = it->first;
-        deviceChangeAction.deviceDescriptors = DeviceFilterByFlag(it->first, newDevices);
+        deviceChangeAction.deviceDescriptors = DeviceFilterByFlag(it->first, dca.deviceDescriptors);
         if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {
             it->second->OnDeviceChange(deviceChangeAction);
         }
@@ -287,21 +276,10 @@ int32_t AudioPolicyClientStubImpl::OnMicrophoneBlocked(const MicrophoneBlockedIn
     CHECK_AND_RETURN_RET_LOG(size < MIC_BLOCKED_VALID_SIZE, ERR_INVALID_PARAM,
         "get invalid size : %{public}d", size);
     std::lock_guard<std::mutex> lockCbMap(microphoneBlockedMutex_);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDevices;
-    for (const auto &desc : blockedInfo.devices) {
-        std::shared_ptr<AudioDeviceDescriptor> newDeviceDescriptor =
-            std::const_pointer_cast<AudioDeviceDescriptor>(desc);
-        CHECK_AND_RETURN_RET_LOG(newDeviceDescriptor, ERR_MEMORY_ALLOC_FAILED, "nullptr");
-        if (newDeviceDescriptor->IsAudioDeviceDescriptor()) {
-            newDeviceDescriptor->deviceType_ = newDeviceDescriptor->MapInternalToExternalDeviceType(apiVersion_);
-        }
-        newDevices.push_back(newDeviceDescriptor);
-    }
-
     MicrophoneBlockedInfo microphoneBlockedInfo;
     microphoneBlockedInfo.blockStatus = blockedInfo.blockStatus;
     for (auto it = microphoneBlockedCallbackList_.begin(); it != microphoneBlockedCallbackList_.end(); ++it) {
-        microphoneBlockedInfo.devices = newDevices;
+        microphoneBlockedInfo.devices = blockedInfo.devices;
         if (it->second && microphoneBlockedInfo.devices.size() > 0) {
             it->second->OnMicrophoneBlocked(microphoneBlockedInfo);
         }
@@ -733,24 +711,12 @@ int32_t AudioPolicyClientStubImpl::OnPreferredOutputDeviceUpdated(const AudioRen
     CHECK_AND_RETURN_RET_LOG(size < PREFERRED_DEVICE_VALID_SIZE, ERR_INVALID_PARAM,
         "get invalid size : %{public}d", size);
     std::lock_guard<std::mutex> lockCbMap(pOutputDeviceChangeMutex_);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDevices;
-    for (const auto &des : desc) {
-        std::shared_ptr<AudioDeviceDescriptor> newDeviceDescriptor =
-            std::const_pointer_cast<AudioDeviceDescriptor>(des);
-        CHECK_AND_RETURN_RET_LOG(newDeviceDescriptor, ERR_MEMORY_ALLOC_FAILED, "nullptr");
-        if (newDeviceDescriptor->IsAudioDeviceDescriptor()) {
-            newDeviceDescriptor->deviceType_ = newDeviceDescriptor->MapInternalToExternalDeviceType(apiVersion_);
-        }
-        newDevices.push_back(newDeviceDescriptor);
-    }
-
     auto it = preferredOutputDeviceCallbackMap_.find(rendererInfo.streamUsage);
     CHECK_AND_RETURN_RET_LOG(it != preferredOutputDeviceCallbackMap_.end(),
         ERR_CALLBACK_NOT_REGISTERED, "streamUsage not found");
     for (auto iter = it->second.begin(); iter != it->second.end(); ++iter) {
         CHECK_AND_CONTINUE_LOG(iter != it->second.end() && (*iter) != nullptr, "iter is null");
-    (*iter)->OnPreferredOutputDeviceUpdated(newDevices);
+    (*iter)->OnPreferredOutputDeviceUpdated(desc);
     }
     return SUCCESS;
 }
@@ -793,23 +759,12 @@ int32_t AudioPolicyClientStubImpl::OnPreferredInputDeviceUpdated(const AudioCapt
     CHECK_AND_RETURN_RET_LOG(size < PREFERRED_DEVICE_VALID_SIZE, ERR_INVALID_PARAM,
         "get invalid size : %{public}d", size);
     std::lock_guard<std::mutex> lockCbMap(pInputDeviceChangeMutex_);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDevices;
-    for (const auto &des : desc) {
-        std::shared_ptr<AudioDeviceDescriptor> newDeviceDescriptor =
-            std::const_pointer_cast<AudioDeviceDescriptor>(des);
-        CHECK_AND_RETURN_RET_LOG(newDeviceDescriptor, ERR_MEMORY_ALLOC_FAILED, "nullptr");
-        if (newDeviceDescriptor->IsAudioDeviceDescriptor()) {
-            newDeviceDescriptor->deviceType_ = newDeviceDescriptor->MapInternalToExternalDeviceType(apiVersion_);
-        }
-        newDevices.push_back(newDeviceDescriptor);
-    }
-
     auto it = preferredInputDeviceCallbackMap_.find(capturerInfo.sourceType);
     CHECK_AND_RETURN_RET_LOG(it != preferredInputDeviceCallbackMap_.end(),
         ERR_CALLBACK_NOT_REGISTERED, "sourceType not found");
     for (auto iter = it->second.begin(); iter != it->second.end(); ++iter) {
         CHECK_AND_CONTINUE_LOG(iter != it->second.end() && (*iter) != nullptr, "iter is null");
-        (*iter)->OnPreferredInputDeviceUpdated(newDevices);
+        (*iter)->OnPreferredInputDeviceUpdated(desc);
     }
     return SUCCESS;
 }
@@ -879,12 +834,6 @@ int32_t AudioPolicyClientStubImpl::OnRendererDeviceChange(uint32_t sessionId,
     const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt &reason)
 {
     Trace trace("AudioPolicyClientStubImpl::OnRendererDeviceChange");
-    AudioDeviceDescriptor newDeviceDescriptor = deviceInfo;
-    newDeviceDescriptor.descriptorType_ = AudioDeviceDescriptor::DEVICE_INFO;
-    if (newDeviceDescriptor.IsAudioDeviceDescriptor()) {
-        newDeviceDescriptor.deviceType_ = newDeviceDescriptor.MapInternalToExternalDeviceType(apiVersion_);
-    }
-
     std::shared_ptr<DeviceChangeWithInfoCallback> callback = nullptr;
     {
         std::lock_guard<std::mutex> lockCbMap(deviceChangeWithInfoCallbackMutex_);
@@ -900,7 +849,7 @@ int32_t AudioPolicyClientStubImpl::OnRendererDeviceChange(uint32_t sessionId,
     if (callback != nullptr) {
         Trace traceCallback("callback->OnDeviceChangeWithInfo sessionid:" + std::to_string(sessionId)
             + " reason:" + std::to_string(static_cast<int>(reason)));
-        callback->OnDeviceChangeWithInfo(sessionId, newDeviceDescriptor, reason);
+        callback->OnDeviceChangeWithInfo(sessionId, deviceInfo, reason);
     }
     return SUCCESS;
 }
@@ -911,11 +860,6 @@ int32_t AudioPolicyClientStubImpl::OnRendererStateChange(
     int32_t size = static_cast<int32_t>(audioRendererChangeInfos.size());
     CHECK_AND_RETURN_RET_LOG(size < STATE_VALID_SIZE, ERR_INVALID_PARAM,
         "get invalid size : %{public}d", size);
-    for (auto &render : audioRendererChangeInfos) {
-        CHECK_AND_RETURN_RET_LOG(render, ERR_MEMORY_ALLOC_FAILED, "nullptr");
-        render->outputDeviceInfo.UpdateDeviceInfo(hasBTPermission_, hasSystemPermission_, apiVersion_);
-    }
-
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> callbacks;
     {
         std::lock_guard<std::mutex> lockCbMap(rendererStateChangeMutex_);
@@ -1002,11 +946,6 @@ int32_t AudioPolicyClientStubImpl::OnCapturerStateChange(
     int32_t size = static_cast<int32_t>(audioCapturerChangeInfos.size());
     CHECK_AND_RETURN_RET_LOG(size < STATE_VALID_SIZE, ERR_INVALID_PARAM,
         "get invalid size : %{public}d", size);
-    for (auto &capturer : audioCapturerChangeInfos) {
-        CHECK_AND_RETURN_RET_LOG(capturer, ERR_MEMORY_ALLOC_FAILED, "nullptr");
-        capturer->inputDeviceInfo.UpdateDeviceInfo(hasBTPermission_, hasSystemPermission_, apiVersion_);
-    }
-
     std::vector<std::shared_ptr<AudioCapturerStateChangeCallback>> tmpCallbackList;
     {
         std::lock_guard<std::mutex> lockCbMap(capturerStateChangeMutex_);
@@ -1102,12 +1041,8 @@ size_t AudioPolicyClientStubImpl::GetSpatializationEnabledChangeCallbackSize() c
 int32_t AudioPolicyClientStubImpl::OnSpatializationEnabledChange(bool enabled)
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
-    bool enabledBySys = enabled;
-    if (!hasSystemPermission_) {
-        enabledBySys = false;
-    }
     for (const auto &callback : spatializationEnabledChangeCallbackList_) {
-        callback->OnSpatializationEnabledChange(enabledBySys);
+        callback->OnSpatializationEnabledChange(enabled);
     }
     return SUCCESS;
 }
@@ -1116,19 +1051,8 @@ int32_t AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForAnyDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, bool enabled)
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
-    std::shared_ptr<AudioDeviceDescriptor> newDeviceDescriptor =
-        std::const_pointer_cast<AudioDeviceDescriptor>(deviceDescriptor);
-    CHECK_AND_RETURN_RET_LOG(newDeviceDescriptor, ERR_MEMORY_ALLOC_FAILED, "nullptr");
-    if (newDeviceDescriptor->IsAudioDeviceDescriptor()) {
-        newDeviceDescriptor->deviceType_ = newDeviceDescriptor->MapInternalToExternalDeviceType(apiVersion_);
-    }
-
-    bool enabledBySys = enabled;
-    if (!hasSystemPermission_) {
-        enabledBySys = false;
-    }
     for (const auto &callback : spatializationEnabledChangeCallbackList_) {
-        callback->OnSpatializationEnabledChangeForAnyDevice(newDeviceDescriptor, enabledBySys);
+        callback->OnSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     }
     return SUCCESS;
 }
@@ -1187,12 +1111,8 @@ size_t AudioPolicyClientStubImpl::GetHeadTrackingEnabledChangeCallbacSize() cons
 int32_t AudioPolicyClientStubImpl::OnHeadTrackingEnabledChange(bool enabled)
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
-    bool enabledBySys = enabled;
-    if (!hasSystemPermission_) {
-        enabledBySys = false;
-    }
     for (const auto &callback : headTrackingEnabledChangeCallbackList_) {
-        callback->OnHeadTrackingEnabledChange(enabledBySys);
+        callback->OnHeadTrackingEnabledChange(enabled);
     }
     return SUCCESS;
 }
@@ -1201,18 +1121,8 @@ int32_t AudioPolicyClientStubImpl::OnHeadTrackingEnabledChangeForAnyDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, bool enabled)
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
-    std::shared_ptr<AudioDeviceDescriptor> newDeviceDescriptor =
-        std::const_pointer_cast<AudioDeviceDescriptor>(deviceDescriptor);
-    CHECK_AND_RETURN_RET_LOG(newDeviceDescriptor, ERR_MEMORY_ALLOC_FAILED, "nullptr");
-    if (newDeviceDescriptor->IsAudioDeviceDescriptor()) {
-        newDeviceDescriptor->deviceType_ = newDeviceDescriptor->MapInternalToExternalDeviceType(apiVersion_);
-    }
-    bool enabledBySys = enabled;
-    if (!hasSystemPermission_) {
-        enabledBySys = false;
-    }
     for (const auto &callback : headTrackingEnabledChangeCallbackList_) {
-        callback->OnHeadTrackingEnabledChangeForAnyDevice(newDeviceDescriptor, enabledBySys);
+        callback->OnHeadTrackingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     }
     return SUCCESS;
 }
@@ -1330,42 +1240,5 @@ int32_t AudioPolicyClientStubImpl::OnStreamVolumeChange(const StreamVolumeEvent 
     }
     return SUCCESS;
 }
-
-int32_t AudioPolicyClientStubImpl::SetHasBTPermission(bool hasBTPermission)
-{
-    hasBTPermission_ = hasBTPermission;
-    return SUCCESS;
-}
-
-int32_t AudioPolicyClientStubImpl::SetHasSystemPermission(bool hasSysPermission)
-{
-    hasSystemPermission_ = hasSysPermission;
-    return SUCCESS;
-}
-
-int32_t AudioPolicyClientStubImpl::SetApiVersion(int32_t apiVersion)
-{
-    apiVersion_ = apiVersion;
-    return SUCCESS;
-}
-
-int32_t AudioPolicyClientStubImpl::GetHasBTPermission(bool &hasBTPermission)
-{
-    hasBTPermission = hasBTPermission_;
-    return SUCCESS;
-}
-
-int32_t AudioPolicyClientStubImpl::GetHasSystemPermission(bool &hasSysPermission)
-{
-    hasSysPermission = hasSystemPermission_;
-    return SUCCESS;
-}
-
-int32_t AudioPolicyClientStubImpl::GetApiVersion(int32_t &apiVersion)
-{
-    apiVersion = apiVersion_;
-    return SUCCESS;
-}
-
 } // namespace AudioStandard
 } // namespace OHOS

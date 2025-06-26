@@ -540,12 +540,12 @@ public:
 
     static AudioStreamDeviceChangeReasonExt *Unmarshalling(Parcel &parcel)
     {
-        AudioStreamDeviceChangeReasonExt *info = new AudioStreamDeviceChangeReasonExt();
+        auto info = std::make_unique<AudioStreamDeviceChangeReasonExt>();
         if (info == nullptr) {
             return nullptr;
         }
         info->reason_ = static_cast<ExtEnum>(parcel.ReadInt32());
-        return info;
+        return info.release();
     }
 
 private:

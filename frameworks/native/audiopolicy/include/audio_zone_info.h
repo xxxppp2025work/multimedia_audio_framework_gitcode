@@ -111,12 +111,11 @@ public:
         }
 
         for (size_t i = 0; i < size; i++) {
-            std::shared_ptr<AudioDeviceDescriptor> device = std::make_shared<AudioDeviceDescriptor>();
+            std::shared_ptr<AudioDeviceDescriptor> device(AudioDeviceDescriptor::Unmarshalling(parcel));
             if (device == nullptr) {
                 devices_.clear();
                 return;
             }
-            device->UnmarshallingToDeviceDescriptor(parcel);
             devices_.emplace_back(device);
         }
     }

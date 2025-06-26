@@ -29,7 +29,6 @@ public:
     void SetAudioDeviceAnahsCallback(const std::weak_ptr<AudioDeviceAnahs> &callback);
     int32_t OnExtPnpDeviceStatusChanged(const std::string &anahsStatus, const std::string &anahsShowType) override;
 private:
-    void OnExtPnpDeviceStatusChangedInternal(MessageParcel &data, MessageParcel &reply);
     std::weak_ptr<AudioDeviceAnahs> audioDeviceAnahsCallback_;
 };
 } // namespace AudioStandard

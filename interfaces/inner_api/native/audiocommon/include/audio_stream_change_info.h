@@ -43,6 +43,12 @@ public:
     }
     AudioRendererChangeInfo() = default;
     ~AudioRendererChangeInfo() = default;
+
+    void SetClientInfo(std::shared_ptr<AudioDeviceDescriptor::ClinetInfo> clientInfo) const
+    {
+        outputDeviceInfo.SetClientInfo(clientInfo);
+    }
+
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(createrUID)
@@ -64,28 +70,7 @@ public:
             && outputDeviceInfo.Marshalling(parcel)
             && parcel.WriteInt32(appVolume);
     }
-    bool Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion) const
-    {
-        return parcel.WriteInt32(createrUID)
-            && parcel.WriteInt32(hasSystemPermission ? clientUID : EMPTY_UID)
-            && parcel.WriteInt32(sessionId)
-            && parcel.WriteInt32(callerPid)
-            && parcel.WriteInt32(clientPid)
-            && parcel.WriteInt32(tokenId)
-            && parcel.WriteInt32(channelCount)
-            && parcel.WriteBool(backMute)
-            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
-            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
-            && parcel.WriteInt32(rendererInfo.rendererFlags)
-            && parcel.WriteInt32(rendererInfo.originalFlag)
-            && parcel.WriteInt32(rendererInfo.samplingRate)
-            && parcel.WriteInt32(rendererInfo.format)
-            && rendererInfo.Marshalling(parcel)
-            && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(rendererState) :
-                RENDERER_INVALID)
-            && outputDeviceInfo.Marshalling(parcel, hasBTPermission, hasSystemPermission, apiVersion)
-            && parcel.WriteInt32(appVolume);
-    }
+
     void UnmarshallingSelf(Parcel &parcel)
     {
         createrUID = parcel.ReadInt32();
@@ -140,6 +125,12 @@ public:
     }
     AudioCapturerChangeInfo() = default;
     ~AudioCapturerChangeInfo() = default;
+
+    void SetClientInfo(std::shared_ptr<AudioDeviceDescriptor::ClinetInfo> clientInfo) const
+    {
+        inputDeviceInfo.SetClientInfo(clientInfo);
+    }
+
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(createrUID)
@@ -150,20 +141,6 @@ public:
             && capturerInfo.Marshalling(parcel)
             && parcel.WriteInt32(static_cast<int32_t>(capturerState))
             && inputDeviceInfo.Marshalling(parcel)
-            && parcel.WriteBool(muted)
-            && parcel.WriteUint32(appTokenId);
-    }
-
-    bool Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion) const
-    {
-        return parcel.WriteInt32(createrUID)
-            && parcel.WriteInt32(hasSystemPermission ? clientUID : EMPTY_UID)
-            && parcel.WriteInt32(sessionId)
-            && parcel.WriteInt32(callerPid)
-            && parcel.WriteInt32(clientPid)
-            && capturerInfo.Marshalling(parcel)
-            && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(capturerState) : CAPTURER_INVALID)
-            && inputDeviceInfo.Marshalling(parcel, hasBTPermission, hasSystemPermission, apiVersion)
             && parcel.WriteBool(muted)
             && parcel.WriteUint32(appTokenId);
     }

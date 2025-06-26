@@ -30,9 +30,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static const int32_t UPDATE_CALLBACK_CLIENT = 0;
-static const int32_t API_VERSION_MAX = 1000;
-
 class AudioPolicyClientStubImpl : public AudioPolicyClientStub {
 public:
     int32_t AddVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
@@ -173,13 +170,6 @@ public:
     int32_t OnFormatUnsupportedError(int32_t errorCode) override;
     int32_t OnStreamVolumeChange(const StreamVolumeEvent &streamVolumeEvent) override;
     int32_t OnSystemVolumeChange(const VolumeEvent &volumeEvent) override;
-
-    int32_t SetHasBTPermission(bool hasBTPermission) override;
-    int32_t SetHasSystemPermission(bool hasSysPermission) override;
-    int32_t SetApiVersion(int32_t apiVersion) override;
-    int32_t GetHasBTPermission(bool &hasBTPermission) override;
-    int32_t GetHasSystemPermission(bool &hasSysPermission) override;
-    int32_t GetApiVersion(int32_t &apiVersion) override;
 private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& desc);
@@ -246,10 +236,6 @@ private:
     mutable std::mutex formatUnsupportedErrorMutex_;
     mutable std::mutex streamVolumeChangeMutex_;
     mutable std::mutex systemVolumeChangeMutex_;
-
-    bool hasBTPermission_ = true;
-    bool hasSystemPermission_ = true;
-    int32_t apiVersion_ = API_VERSION_MAX;
 };
 } // namespace AudioStandard
 } // namespace OHOS

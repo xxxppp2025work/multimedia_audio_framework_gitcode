@@ -36,6 +36,16 @@ struct DeviceChangeAction : public Parcelable {
     DeviceChangeType type;
     DeviceFlag flag;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors;
+    static constexpr int32_t DEVICE_CHANGE_VALID_SIZE = 128;
+
+    void SetClientInfo(std::shared_ptr<AudioDeviceDescriptor::ClinetInfo> clientInfo) const
+    {
+        for (auto &des : deviceDescriptors) {
+            if (des != nullptr) {
+                des->SetClientInfo(clientInfo);
+            }
+        }
+    }
 
     bool Marshalling(Parcel &parcel) const override
     {
@@ -44,6 +54,9 @@ struct DeviceChangeAction : public Parcelable {
         int32_t size = static_cast<int32_t>(deviceDescriptors.size());
         parcel.WriteInt32(size);
         for (auto &des : deviceDescriptors) {
+            if (des == nullptr) {
+                return false;
+            }
             des->Marshalling(parcel);
         }
         return true;
@@ -51,19 +64,23 @@ struct DeviceChangeAction : public Parcelable {
 
     static DeviceChangeAction *Unmarshalling(Parcel &parcel)
     {
-        DeviceChangeType type = static_cast<DeviceChangeType>(parcel.ReadUint32());
-        DeviceFlag flag = static_cast<DeviceFlag>(parcel.ReadUint32());
-        int32_t size = parcel.ReadInt32();
-        DeviceChangeAction *info = new DeviceChangeAction();
+        auto info = std::make_unique<DeviceChangeAction>();
         if (info == nullptr) {
             return nullptr;
         }
-        info->type = type;
-        info->flag = flag;
-        for (int32_t i = 0; i < size; i++) {
-            info->deviceDescriptors.emplace_back(AudioDeviceDescriptor::UnmarshallingPtr(parcel));
+
+        info->type = static_cast<DeviceChangeType>(parcel.ReadUint32());;
+        info->flag = static_cast<DeviceFlag>(parcel.ReadUint32());
+        int32_t size = parcel.ReadInt32();
+        if (size >= DEVICE_CHANGE_VALID_SIZE) {
+            return nullptr;
         }
-        return info;
+
+        for (int32_t i = 0; i < size; i++) {
+            info->deviceDescriptors.emplace_back(
+                std::shared_ptr<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(parcel)));
+        }
+        return info.release();
     }
 };
 

@@ -23,43 +23,12 @@
 
 namespace OHOS {
 namespace AudioStandard {
-
-static const int32_t DEVICE_CHANGE_VALID_SIZE = 128;
-
 AudioPolicyManagerListenerStubImpl::AudioPolicyManagerListenerStubImpl()
 {
 }
 
 AudioPolicyManagerListenerStubImpl::~AudioPolicyManagerListenerStubImpl()
 {
-}
-
-void AudioPolicyManagerListenerStubImpl::ReadInterruptEventParams(MessageParcel &data,
-    InterruptEventInternal &interruptEvent)
-{
-    interruptEvent.eventType = static_cast<InterruptType>(data.ReadInt32());
-    interruptEvent.forceType = static_cast<InterruptForceType>(data.ReadInt32());
-    interruptEvent.hintType = static_cast<InterruptHint>(data.ReadInt32());
-    interruptEvent.duckVolume = data.ReadFloat();
-    interruptEvent.callbackToApp = data.ReadBool();
-}
-
-void AudioPolicyManagerListenerStubImpl::ReadAudioDeviceChangeData(MessageParcel &data, DeviceChangeAction &devChange)
-{
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceChangeDesc = {};
-
-    int32_t type = data.ReadInt32();
-    int32_t flag = data.ReadInt32();
-    int32_t size = data.ReadInt32();
-    CHECK_AND_RETURN_LOG(size < DEVICE_CHANGE_VALID_SIZE, "get invalid size : %{public}d", size);
-
-    for (int32_t i = 0; i < size; i++) {
-        deviceChangeDesc.push_back(AudioDeviceDescriptor::UnmarshallingPtr(data));
-    }
-
-    devChange.type = static_cast<DeviceChangeType>(type);
-    devChange.flag = static_cast<DeviceFlag>(flag);
-    devChange.deviceDescriptors = deviceChangeDesc;
 }
 
 int32_t AudioPolicyManagerListenerStubImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)

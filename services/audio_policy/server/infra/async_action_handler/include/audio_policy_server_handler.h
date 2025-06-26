@@ -32,7 +32,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 class IStandardAudioRoutingManagerListener;
-class IAudioPolicyClient;
+class AudioPolicyClientHolder;
 class AudioPolicyServerHandler : public AppExecFwk::EventHandler {
     DECLARE_DELAYED_SINGLETON(AudioPolicyServerHandler)
 public:
@@ -142,7 +142,7 @@ public:
 
     void Init(std::shared_ptr<IAudioInterruptEventDispatcher> dispatcher);
 
-    void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient> &cb);
+    void AddAudioPolicyClientProxyMap(int32_t clientPid, const std::shared_ptr<AudioPolicyClientHolder> &cb);
     void RemoveAudioPolicyClientProxyMap(pid_t clientPid);
     void AddExternInterruptCbsMap(int32_t clientId, const std::shared_ptr<AudioInterruptCallback> &callback);
     int32_t RemoveExternInterruptCbsMap(int32_t clientId);
@@ -258,7 +258,7 @@ private:
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
-    void HandleVolumeChangeCallback(int32_t clientId, sptr<IAudioPolicyClient> audioPolicyClient,
+    void HandleVolumeChangeCallback(int32_t clientId, std::shared_ptr<AudioPolicyClientHolder> audioPolicyClient,
         const VolumeEvent &volumeEvent);
 
     void HandleVolumeKeyEventToRssWhenAccountsChange(std::shared_ptr<EventContextObj> &eventContextObj);
@@ -275,7 +275,7 @@ private:
     std::weak_ptr<IAudioConcurrencyEventDispatcher> concurrencyEventDispatcher_;
     std::weak_ptr<IAudioZoneEventDispatcher> audioZoneEventDispatcher_;
 
-    std::unordered_map<int32_t, sptr<IAudioPolicyClient>> audioPolicyClientProxyAPSCbsMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientHolder>> audioPolicyClientProxyAPSCbsMap_;
     std::string pidsStrForPrinting_ = "[]";
 
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptCallback>> amInterruptCbsMap_;

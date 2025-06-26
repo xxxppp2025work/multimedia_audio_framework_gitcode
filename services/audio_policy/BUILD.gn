@@ -204,6 +204,7 @@ audio_ohos_library("audio_policy_service") {
     "server/infra/datashare/src/audio_policy_utils.cpp",
     "server/infra/datashare/src/audio_policy_datashare_listener.cpp",
     "server/infra/ipc_proxy/src/audio_ability_manager.cpp",
+    "server/infra/ipc_proxy/src/audio_policy_client_holder.cpp",
     "server/infra/ipc_proxy/src/audio_server_proxy.cpp",
     "server/infra/state_monitor/audio_policy_state_monitor.cpp",
     "server/common/src/audio_group_handle.cpp",
