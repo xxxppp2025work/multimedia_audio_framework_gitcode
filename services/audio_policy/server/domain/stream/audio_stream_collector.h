@@ -37,7 +37,6 @@ public:
     AudioStreamCollector();
     ~AudioStreamCollector();
 
-    void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb);
     void ReduceAudioPolicyClientProxyMap(pid_t clientPid);
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object);

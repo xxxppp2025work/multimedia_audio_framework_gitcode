@@ -450,13 +450,13 @@ struct StreamVolumeEvent : public Parcelable {
 
     static StreamVolumeEvent *Unmarshalling(Parcel &parcel)
     {
-        StreamVolumeEvent *info = new StreamVolumeEvent();
-        if (info == nullptr) {
+        auto event = std::make_unique<StreamVolumeEvent>();
+        if (event == nullptr) {
             return nullptr;
         }
 
-        info->UnmarshallingSelf(parcel);
-        return info;
+        event->UnmarshallingSelf(parcel);
+        return event.release();
     }
 };
 
@@ -610,12 +610,12 @@ struct AudioRendererInfo : public Parcelable {
 
     static AudioRendererInfo *Unmarshalling(Parcel &parcel)
     {
-        AudioRendererInfo *info = new AudioRendererInfo();
+        auto info = std::make_unique<AudioRendererInfo>();
         if (info == nullptr) {
             return nullptr;
         }
         info->UnmarshallingSelf(parcel);
-        return info;
+        return info.release();
     }
 };
 
@@ -704,12 +704,12 @@ struct MicStateChangeEvent : public Parcelable {
 
     static MicStateChangeEvent *Unmarshalling(Parcel &parcel)
     {
-        MicStateChangeEvent *info = new MicStateChangeEvent();
-        if (info == nullptr) {
+        auto event = std::make_unique<MicStateChangeEvent>();
+        if (event == nullptr) {
             return nullptr;
         }
-        info->mute = parcel.ReadBool();
-        return info;
+        event->mute = parcel.ReadBool();
+        return event.release();
     }
 };
 
@@ -1257,7 +1257,7 @@ struct AudioProcessConfig : public Parcelable {
 
     static AudioProcessConfig *Unmarshalling(Parcel &parcel)
     {
-        AudioProcessConfig *config = new AudioProcessConfig();
+        auto config = std::make_unique<AudioProcessConfig>();
         if (config == nullptr) {
             return nullptr;
         }
@@ -1316,7 +1316,7 @@ struct AudioProcessConfig : public Parcelable {
         config->originalSessionId = parcel.ReadUint32();
         config->innerCapId = parcel.ReadInt32();
 
-        return config;
+        return config.release();
     }
 };
 
@@ -1407,13 +1407,13 @@ struct StreamSetStateEventInternal : public Parcelable {
     }
     static StreamSetStateEventInternal *Unmarshalling(Parcel &parcel)
     {
-        StreamSetStateEventInternal *event = new StreamSetStateEventInternal();
+        auto event = std::make_unique<StreamSetStateEventInternal>();
         if (event == nullptr) {
             return nullptr;
         }
         event->streamSetState = static_cast<StreamSetState>(parcel.ReadInt32());
         event->streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
-        return event;
+        return event.release();
     }
 };
 

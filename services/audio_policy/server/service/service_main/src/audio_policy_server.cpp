@@ -38,6 +38,7 @@
 #include "istandard_audio_zone_client.h"
 #include "audio_bundle_manager.h"
 #include "audio_server_proxy.h"
+#include "audio_policy_client_holder.h"
 
 using OHOS::Security::AccessToken::PrivacyKit;
 using OHOS::Security::AccessToken::TokenIdKit;
@@ -3842,18 +3843,21 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
         "RegisterPolicyCallbackClient listener object is nullptr");
 
-    sptr<IAudioPolicyClient> callback = iface_cast<IAudioPolicyClient>(object);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+    sptr<IAudioPolicyClient> audioPolicyClient = iface_cast<IAudioPolicyClient>(object);
+    CHECK_AND_RETURN_RET_LOG(audioPolicyClient != nullptr, ERR_INVALID_PARAM,
         "RegisterPolicyCallbackClient listener obj cast failed");
+
+    auto callback = std::make_shared<AudioPolicyClientHolder>(audioPolicyClient);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "Create AudioPolicyClientHolder failed");
 
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     AUDIO_DEBUG_LOG("register clientPid: %{public}d", clientPid);
 
     bool hasBTPermission = VerifyBluetoothPermission();
     bool hasSysPermission = PermissionUtil::VerifySystemPermission();
-    callback->SetHasBTPermission(hasBTPermission);
-    callback->SetHasSystemPermission(hasSysPermission);
-    callback->SetApiVersion(GetApiTargetVersion());
+    callback->hasBTPermission_ = hasBTPermission;
+    callback->hasSystemPermission_ = hasSysPermission;
+    callback->apiVersion_ = GetApiTargetVersion();
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, callback);
     }

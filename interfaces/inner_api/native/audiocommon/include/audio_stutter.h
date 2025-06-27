@@ -59,7 +59,7 @@ struct AudioRendererDataTransferStateChangeInfo : public Parcelable {
     }
     static AudioRendererDataTransferStateChangeInfo *Unmarshalling(Parcel &parcel)
     {
-        AudioRendererDataTransferStateChangeInfo *info = new AudioRendererDataTransferStateChangeInfo();
+        auto info = std::make_unique<AudioRendererDataTransferStateChangeInfo>();
         if (info == nullptr) {
             return nullptr;
         }
@@ -73,7 +73,7 @@ struct AudioRendererDataTransferStateChangeInfo : public Parcelable {
         for (uint32_t i = 0; i < MAX_DATATRANS_TYPE; i++) {
             info->badDataRatio[i] = parcel.ReadInt32();
         }
-        return info;
+        return info.release();
     }
 };
 

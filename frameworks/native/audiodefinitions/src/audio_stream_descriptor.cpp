@@ -125,7 +125,7 @@ void AudioStreamDescriptor::UnmarshallingDeviceDescVector(
         return;
     }
     for (int32_t i = 0; i < size; i++) {
-        descs.push_back(AudioDeviceDescriptor::UnmarshallingPtr(parcel));
+        descs.push_back(std::shared_ptr<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(parcel)));
     }
 }
 

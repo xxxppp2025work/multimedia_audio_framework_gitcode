@@ -16,8 +16,12 @@
 #ifndef ST_AUDIO_POLICY_CLIENT_H
 #define ST_AUDIO_POLICY_CLIENT_H
 
+#include <cstdint>
+
 namespace OHOS {
 namespace AudioStandard {
+static const int32_t API_VERSION_MAX = 1000;
+
 enum class AudioPolicyClientCode {
     ON_VOLUME_KEY_EVENT = 0,
     ON_FOCUS_INFO_CHANGED,

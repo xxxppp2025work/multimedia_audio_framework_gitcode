@@ -176,7 +176,7 @@ struct InterruptEventInternal : public Parcelable {
 
     static InterruptEventInternal *Unmarshalling(Parcel &parcel)
     {
-        InterruptEventInternal *interupt = new InterruptEventInternal();
+        auto interupt = std::make_unique<InterruptEventInternal>();
         if (interupt == nullptr) {
             return nullptr;
         }
@@ -185,7 +185,7 @@ struct InterruptEventInternal : public Parcelable {
         interupt->hintType = static_cast<InterruptHint>(parcel.ReadInt32());
         interupt->duckVolume = parcel.ReadFloat();
         interupt->callbackToApp = parcel.ReadBool();
-        return interupt;
+        return interupt.release();
     }
 };
 
@@ -387,12 +387,12 @@ public:
 
     static AudioInterrupt *Unmarshalling(Parcel &parcel)
     {
-        AudioInterrupt *interrupt = new AudioInterrupt();
+        auto interrupt = std::make_unique<AudioInterrupt>();
         if (interrupt == nullptr) {
             return nullptr;
         }
         interrupt->Unmarshalling(parcel, *interrupt);
-        return interrupt;
+        return interrupt.release();
     }
 };
 } // namespace AudioStandard

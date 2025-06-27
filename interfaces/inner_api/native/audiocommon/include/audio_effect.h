@@ -792,14 +792,14 @@ struct ConverterConfig : public Parcelable {
 
     static ConverterConfig *Unmarshalling(Parcel &parcel)
     {
-        ConverterConfig *info = new ConverterConfig();
-        if (info == nullptr) {
+        auto config = std::make_unique<ConverterConfig>();
+        if (config == nullptr) {
             return nullptr;
         }
-        info->version = parcel.ReadString();
-        info->library.UnmarshallingSelf(parcel);
-        info->outChannelLayout = parcel.ReadUint64();
-        return info;
+        config->version = parcel.ReadString();
+        config->library.UnmarshallingSelf(parcel);
+        config->outChannelLayout = parcel.ReadUint64();
+        return config.release();
     }
 };
 

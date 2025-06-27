@@ -215,118 +215,73 @@ bool AudioDeviceDescriptor::IsAudioDeviceDescriptor() const
     return descriptorType_ == AUDIO_DEVICE_DESCRIPTOR;
 }
 
-bool AudioDeviceDescriptor::Marshalling(Parcel &parcel, int32_t apiVersion) const
+void AudioDeviceDescriptor::SetClientInfo(std::shared_ptr<ClinetInfo> clientInfo) const
 {
-    if (IsAudioDeviceDescriptor()) {
-        return MarshallingToDeviceDescriptor(parcel, apiVersion);
-    }
-
-    return MarshallingToDeviceInfo(parcel);
-}
-
-void AudioDeviceDescriptor::UnmarshallingToDeviceDescriptor(Parcel &parcel)
-{
-    deviceType_ = static_cast<DeviceType>(parcel.ReadInt32());
-    deviceRole_ = static_cast<DeviceRole>(parcel.ReadInt32());
-    deviceId_ = parcel.ReadInt32();
-    audioStreamInfo_.UnmarshallingSelf(parcel);
-    channelMasks_ = parcel.ReadInt32();
-    channelIndexMasks_ = parcel.ReadInt32();
-    deviceName_ = parcel.ReadString();
-    macAddress_ = parcel.ReadString();
-    interruptGroupId_ = parcel.ReadInt32();
-    volumeGroupId_ = parcel.ReadInt32();
-    networkId_ = parcel.ReadString();
-    dmDeviceType_ = parcel.ReadUint16();
-    displayName_ = parcel.ReadString();
-    deviceCategory_ = static_cast<DeviceCategory>(parcel.ReadInt32());
-    connectState_ = static_cast<ConnectState>(parcel.ReadInt32());
-    spatializationSupported_ = parcel.ReadBool();
-    mediaVolume_ = parcel.ReadInt32();
-    callVolume_ = parcel.ReadInt32();
+    clientInfo_ = clientInfo;
 }
 
 bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
 {
-    return Marshalling(parcel, 0);
-}
-
-AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
-{
-    AudioDeviceDescriptor *audioDeviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();
-    if (audioDeviceDescriptor == nullptr) {
-        return nullptr;
+    bool ret = MarshallingInner(parcel);
+    if (clientInfo_) {
+        clientInfo_ = nullptr;
     }
-    audioDeviceDescriptor->UnmarshallingSelf(parcel);
-    return audioDeviceDescriptor;
+    return ret;
 }
 
-bool AudioDeviceDescriptor::MarshallingToDeviceDescriptor(Parcel &parcel, int32_t apiVersion) const
+bool AudioDeviceDescriptor::MarshallingInner(Parcel &parcel) const
 {
-    parcel.WriteInt32(MapInternalToExternalDeviceType(apiVersion));
-    parcel.WriteInt32(deviceRole_);
-    parcel.WriteInt32(deviceId_);
-    audioStreamInfo_.Marshalling(parcel);
-    parcel.WriteInt32(channelMasks_);
-    parcel.WriteInt32(channelIndexMasks_);
-    parcel.WriteString(deviceName_);
-    parcel.WriteString(macAddress_);
-    parcel.WriteInt32(interruptGroupId_);
-    parcel.WriteInt32(volumeGroupId_);
-    parcel.WriteString(networkId_);
-    parcel.WriteUint16(dmDeviceType_);
-    parcel.WriteString(displayName_);
-    parcel.WriteInt32(deviceCategory_);
-    parcel.WriteInt32(connectState_);
-    parcel.WriteBool(spatializationSupported_);
-    parcel.WriteInt32(mediaVolume_);
-    parcel.WriteInt32(callVolume_);
-    return true;
-}
+    if (clientInfo_ && !IsAudioDeviceDescriptor()) {
+        return MarshallingToDeviceInfo(parcel, clientInfo_->hasBTPermission_,
+            clientInfo_->hasSystemPermission_, clientInfo_->apiVersion_);
+    }
 
-bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel) const
-{
-    return parcel.WriteInt32(static_cast<int32_t>(deviceType_)) &&
+    int32_t devType = deviceType_;
+    if (IsAudioDeviceDescriptor()) {
+        devType = MapInternalToExternalDeviceType(clientInfo_ ? clientInfo_->apiVersion_ : 0);
+    }
+
+    return  parcel.WriteInt32(devType) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceRole_)) &&
         parcel.WriteInt32(deviceId_) &&
         parcel.WriteInt32(channelMasks_) &&
         parcel.WriteInt32(channelIndexMasks_) &&
         parcel.WriteString(deviceName_) &&
         parcel.WriteString(macAddress_) &&
-        audioStreamInfo_.Marshalling(parcel) &&
+        parcel.WriteInt32(interruptGroupId_) &&
+        parcel.WriteInt32(volumeGroupId_) &&
         parcel.WriteString(networkId_) &&
         parcel.WriteUint16(dmDeviceType_) &&
         parcel.WriteString(displayName_) &&
-        parcel.WriteInt32(interruptGroupId_) &&
-        parcel.WriteInt32(volumeGroupId_) &&
+        audioStreamInfo_.Marshalling(parcel) &&
+        parcel.WriteInt32(static_cast<int32_t>(deviceCategory_)) &&
+        parcel.WriteInt32(static_cast<int32_t>(connectState_)) &&
+        parcel.WriteBool(exceptionFlag_) &&
+        parcel.WriteInt64(connectTimeStamp_) &&
+        parcel.WriteBool(isScoRealConnected_) &&
+        parcel.WriteBool(isEnable_) &&
+        parcel.WriteInt32(mediaVolume_) &&
+        parcel.WriteInt32(callVolume_) &&
         parcel.WriteBool(isLowLatencyDevice_) &&
         parcel.WriteInt32(a2dpOffloadFlag_) &&
-        parcel.WriteInt32(static_cast<int32_t>(deviceCategory_)) &&
-        parcel.WriteBool(spatializationSupported_);
+        parcel.WriteBool(spatializationSupported_) &&
+        parcel.WriteBool(descriptorType_) &&
+        parcel.WriteBool(hasPair_) &&
+        parcel.WriteInt32(routerType_);
 }
 
-bool AudioDeviceDescriptor::Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
-    int32_t apiVersion) const
+void AudioDeviceDescriptor::FixApiCompatibility(int apiVersion, DeviceRole deviceRole,
+    DeviceType &deviceType, int32_t &deviceId, DeviceStreamInfo &streamInfo)
 {
-    return MarshallingToDeviceInfo(parcel, hasBTPermission, hasSystemPermission, apiVersion);
-}
-
-bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
-    int32_t apiVersion) const
-{
-    DeviceType devType = deviceType_;
-    int32_t devId = deviceId_;
-    DeviceStreamInfo streamInfo = audioStreamInfo_;
-
     // If api target version < 11 && does not set deviceType, fix api compatibility.
-    if (apiVersion < API_11 && (deviceType_ == DEVICE_TYPE_NONE || deviceType_ == DEVICE_TYPE_INVALID)) {
+    if (apiVersion < API_11 && (deviceType == DEVICE_TYPE_NONE || deviceType == DEVICE_TYPE_INVALID)) {
         // DeviceType use speaker or mic instead.
-        if (deviceRole_ == OUTPUT_DEVICE) {
-            devType = DEVICE_TYPE_SPEAKER;
-            devId = 1; // 1 default speaker device id.
-        } else if (deviceRole_ == INPUT_DEVICE) {
-            devType = DEVICE_TYPE_MIC;
-            devId = 2; // 2 default mic device id.
+        if (deviceRole == OUTPUT_DEVICE) {
+            deviceType = DEVICE_TYPE_SPEAKER;
+            deviceId = 1; // 1 default speaker device id.
+        } else if (deviceRole == INPUT_DEVICE) {
+            deviceType = DEVICE_TYPE_MIC;
+            deviceId = 2; // 2 default mic device id.
         }
 
         //If does not set sampleRates use SAMPLE_RATE_44100 instead.
@@ -338,6 +293,16 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
             streamInfo.channels.insert(STEREO);
         }
     }
+}
+
+bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
+    int32_t apiVersion) const
+{
+    DeviceType devType = deviceType_;
+    int32_t devId = deviceId_;
+    DeviceStreamInfo streamInfo = audioStreamInfo_;
+
+    FixApiCompatibility(apiVersion, deviceRole_, devType, devId, streamInfo);
 
     return parcel.WriteInt32(static_cast<int32_t>(devType)) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceRole_)) &&
@@ -348,35 +313,29 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
             deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) ? "" : deviceName_) &&
         parcel.WriteString((!hasBTPermission && (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
             deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) ? "" : macAddress_) &&
-        streamInfo.Marshalling(parcel) &&
+        parcel.WriteInt32(hasSystemPermission ? interruptGroupId_ : INVALID_GROUP_ID) &&
+        parcel.WriteInt32(hasSystemPermission ? volumeGroupId_ : INVALID_GROUP_ID) &&
         parcel.WriteString(hasSystemPermission ? networkId_ : "") &&
         parcel.WriteUint16(dmDeviceType_) &&
         parcel.WriteString(displayName_) &&
-        parcel.WriteInt32(hasSystemPermission ? interruptGroupId_ : INVALID_GROUP_ID) &&
-        parcel.WriteInt32(hasSystemPermission ? volumeGroupId_ : INVALID_GROUP_ID) &&
+        streamInfo.Marshalling(parcel) &&
+        parcel.WriteInt32(static_cast<int32_t>(deviceCategory_)) &&
+        parcel.WriteInt32(static_cast<int32_t>(connectState_)) &&
+        parcel.WriteBool(exceptionFlag_) &&
+        parcel.WriteInt64(connectTimeStamp_) &&
+        parcel.WriteBool(isScoRealConnected_) &&
+        parcel.WriteBool(isEnable_) &&
+        parcel.WriteInt32(mediaVolume_) &&
+        parcel.WriteInt32(callVolume_) &&
         parcel.WriteBool(isLowLatencyDevice_) &&
         parcel.WriteInt32(a2dpOffloadFlag_) &&
-        parcel.WriteInt32(static_cast<int32_t>(deviceCategory_)) &&
-        parcel.WriteBool(spatializationSupported_);
+        parcel.WriteBool(spatializationSupported_) &&
+        parcel.WriteBool(descriptorType_) &&
+        parcel.WriteBool(hasPair_) &&
+        parcel.WriteInt32(routerType_);
 }
 
 void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
-{
-    return UnmarshallingToDeviceInfo(parcel);
-}
-
-std::shared_ptr<AudioDeviceDescriptor> AudioDeviceDescriptor::UnmarshallingPtr(Parcel &parcel)
-{
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    if (audioDeviceDescriptor == nullptr) {
-        return nullptr;
-    }
-
-    audioDeviceDescriptor->UnmarshallingToDeviceDescriptor(parcel);
-    return audioDeviceDescriptor;
-}
-
-void AudioDeviceDescriptor::UnmarshallingToDeviceInfo(Parcel &parcel)
 {
     deviceType_ = static_cast<DeviceType>(parcel.ReadInt32());
     deviceRole_ = static_cast<DeviceRole>(parcel.ReadInt32());
@@ -385,16 +344,37 @@ void AudioDeviceDescriptor::UnmarshallingToDeviceInfo(Parcel &parcel)
     channelIndexMasks_ = parcel.ReadInt32();
     deviceName_ = parcel.ReadString();
     macAddress_ = parcel.ReadString();
-    audioStreamInfo_.UnmarshallingSelf(parcel);
+    interruptGroupId_ = parcel.ReadInt32();
+    volumeGroupId_ = parcel.ReadInt32();
     networkId_ = parcel.ReadString();
     dmDeviceType_ = parcel.ReadUint16();
     displayName_ = parcel.ReadString();
-    interruptGroupId_ = parcel.ReadInt32();
-    volumeGroupId_ = parcel.ReadInt32();
+    audioStreamInfo_.UnmarshallingSelf(parcel);
+    deviceCategory_ = static_cast<DeviceCategory>(parcel.ReadInt32());
+    connectState_ = static_cast<ConnectState>(parcel.ReadInt32());
+    exceptionFlag_ = parcel.ReadBool();
+    connectTimeStamp_ = parcel.ReadInt64();
+    isScoRealConnected_ = parcel.ReadBool();
+    isEnable_ = parcel.ReadBool();
+    mediaVolume_ = parcel.ReadInt32();
+    callVolume_ = parcel.ReadInt32();
     isLowLatencyDevice_ = parcel.ReadBool();
     a2dpOffloadFlag_ = parcel.ReadInt32();
-    deviceCategory_ = static_cast<DeviceCategory>(parcel.ReadInt32());
     spatializationSupported_ = parcel.ReadBool();
+    descriptorType_ = parcel.ReadBool();
+    hasPair_ = parcel.ReadBool();
+    routerType_ = static_cast<RouterType>(parcel.ReadInt32());
+}
+
+AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
+{
+    auto deviceDescriptor = std::make_unique<AudioDeviceDescriptor>();
+    if (deviceDescriptor == nullptr) {
+        return nullptr;
+    }
+
+    deviceDescriptor->UnmarshallingSelf(parcel);
+    return deviceDescriptor.release();
 }
 
 void AudioDeviceDescriptor::SetDeviceInfo(std::string deviceName, std::string macAddress)
@@ -486,46 +466,6 @@ DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(int32_t apiVer
         default:
             return deviceType_;
     }
-}
-
-void AudioDeviceDescriptor::UpdateDeviceInfo(bool hasBTPermission, bool hasSystemPermission,
-    int32_t apiVersion)
-{
-    DeviceType devType = deviceType_;
-    int32_t devId = deviceId_;
-    DeviceStreamInfo streamInfo = audioStreamInfo_;
-
-    // If api target version < 11 && does not set deviceType, fix api compatibility.
-    if (apiVersion < API_11 && (deviceType_ == DEVICE_TYPE_NONE || deviceType_ == DEVICE_TYPE_INVALID)) {
-        // DeviceType use speaker or mic instead.
-        if (deviceRole_ == OUTPUT_DEVICE) {
-            devType = DEVICE_TYPE_SPEAKER;
-            devId = 1; // 1 default speaker device id.
-        } else if (deviceRole_ == INPUT_DEVICE) {
-            devType = DEVICE_TYPE_MIC;
-            devId = 2; // 2 default mic device id.
-        }
-
-        //If does not set sampleRates use SAMPLE_RATE_44100 instead.
-        if (streamInfo.samplingRate.empty()) {
-            streamInfo.samplingRate.insert(SAMPLE_RATE_44100);
-        }
-        // If does not set channelCounts use STEREO instead.
-        if (streamInfo.channels.empty()) {
-            streamInfo.channels.insert(STEREO);
-        }
-    }
-
-    deviceId_ = devId;
-    deviceName_ = (!hasBTPermission && (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
-        deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) ? "" : deviceName_;
-    macAddress_ = (!hasBTPermission && (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
-        deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) ? "" : macAddress_;
-    deviceType_ = devType;
-    networkId_ = hasSystemPermission ? networkId_ : "";
-    interruptGroupId_ = hasSystemPermission ? interruptGroupId_ : INVALID_GROUP_ID;
-    volumeGroupId_ = hasSystemPermission ? volumeGroupId_ : INVALID_GROUP_ID;
-    audioStreamInfo_ = streamInfo;
 }
 } // AudioStandard
 } // namespace OHOS

@@ -14,6 +14,7 @@
  */
 
 #include "audio_policy_client_stub_impl_test.h"
+#include "audio_policy_client.h"
 
 #include <iostream>
 #include "gtest/gtest.h"

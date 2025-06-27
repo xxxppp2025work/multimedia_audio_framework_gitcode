@@ -46,9 +46,6 @@ public:
     void SetBackgroundMuteCallback(const std::weak_ptr<AudioBackgroundMuteCallback> &cb);
     void SetQueryBundleNameListCallback(const std::weak_ptr<AudioQueryBundleNameListCallback> &cb);
 private:
-    void ReadInterruptEventParams(MessageParcel &data, InterruptEventInternal &interruptEvent);
-    void ReadAudioDeviceChangeData(MessageParcel &data, DeviceChangeAction &devChange);
-    int32_t OnMiddleFirRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
 
     std::weak_ptr<AudioInterruptCallback> callback_;
     std::weak_ptr<AudioManagerAvailableDeviceChangeCallback> audioAvailableDeviceChangeCallback_;

@@ -119,12 +119,24 @@ struct MicrophoneBlockedInfo : public Parcelable {
     DeviceBlockStatus blockStatus;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
 
+    void SetClientInfo(std::shared_ptr<AudioDeviceDescriptor::ClinetInfo> clientInfo) const
+    {
+        for (auto &dev : devices) {
+            if (dev != nullptr) {
+                dev->SetClientInfo(clientInfo);
+            }
+        }
+    }
+
     bool Marshalling(Parcel &parcel) const override
     {
         parcel.WriteInt32(static_cast<int32_t>(blockStatus));
         int32_t size = static_cast<int32_t>(devices.size());
         parcel.WriteInt32(size);
         for (auto &dev : devices) {
+            if (dev == nullptr) {
+                return false;
+            }
             dev->Marshalling(parcel);
         }
         return true;
@@ -132,17 +144,18 @@ struct MicrophoneBlockedInfo : public Parcelable {
 
     static MicrophoneBlockedInfo *Unmarshalling(Parcel &parcel)
     {
-        DeviceBlockStatus status = static_cast<DeviceBlockStatus>(parcel.ReadInt32());
-        int32_t size = parcel.ReadInt32();
-        MicrophoneBlockedInfo *info = new MicrophoneBlockedInfo();
+        auto info = std::make_unique<MicrophoneBlockedInfo>();
         if (info == nullptr) {
             return nullptr;
         }
-        info->blockStatus = status;
+
+        info->blockStatus = static_cast<DeviceBlockStatus>(parcel.ReadInt32());
+        int32_t size = parcel.ReadInt32();
         for (int32_t i = 0; i < size; i++) {
-            info->devices.emplace_back(AudioDeviceDescriptor::UnmarshallingPtr(parcel));
+            info->devices.emplace_back(
+                std::shared_ptr<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(parcel)));
         }
-        return info;
+        return info.release();
     }
 };
 

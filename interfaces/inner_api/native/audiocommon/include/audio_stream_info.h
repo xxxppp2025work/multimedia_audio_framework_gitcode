@@ -593,13 +593,13 @@ public:
 
     static AudioStreamInfo *Unmarshalling(Parcel &parcel)
     {
-        AudioStreamInfo *info = new AudioStreamInfo();
+        auto info = std::make_unique<AudioStreamInfo>();
         if (info == nullptr) {
             return nullptr;
         }
 
         info->UnmarshallingSelf(parcel);
-        return info;
+        return info.release();
     }
 };
 
