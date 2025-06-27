@@ -51,6 +51,12 @@ public:
     // Dump AudioSession Info
     void AudioSessionInfoDump(std::string &dumpString);
 
+    bool IsAudioSessionFocusMode(int32_t pid);
+    bool ShouldBypassFocusForStream(const AudioInterrupt &incomingInterrupt);
+    std::vector<AudioInterrupt> GetStreams(int32_t pid);
+    AudioInterrupt GetFakeAudioInterrupt(int32_t pid);
+    void RemoveStreamInfo(const AudioInterrupt &audioInterrupt);
+
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);
     std::shared_ptr<AudioSessionStateMonitor> GetSelfSharedPtr() override;

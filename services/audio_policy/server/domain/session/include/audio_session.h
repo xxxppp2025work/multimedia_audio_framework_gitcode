@@ -17,7 +17,7 @@
 #define ST_AUDIO_SESSION_H
 
 #include <mutex>
-
+#include <vector>
 #include "audio_interrupt_info.h"
 #include "audio_session_info.h"
 
@@ -30,6 +30,15 @@ enum class AudioSessionState {
     SESSION_DEACTIVE = 2,
     SESSION_RELEASED = 3,
 };
+
+enum class AudioSessionScene {
+    AUDIO_SESSION_SCENE_INVALID = -1,
+    AUDIO_SESSION_SCENE_MEDIA = 0,
+    AUDIO_SESSION_SCENE_GAME = 1,
+    AUDIO_SESSION_SCENE_VOICE_COMMUNICATION = 2,
+};
+
+#define AUDIO_SESSION_FAKE_STREAMID = MAX_STREAMID + 1;
 
 class AudioSessionStateMonitor;
 
@@ -49,16 +58,25 @@ public:
     int32_t RemoveAudioInterrptByStreamId(const uint32_t &streamId);
     bool IsAudioSessionEmpty();
     bool IsAudioRendererEmpty();
+    bool IsSceneParameterSet();
+    int32_t SetAudioSessionScene(AudioSessionScene audioSessionScene);
+    bool IsActivated() const;
+    std::vector<AudioInterrupt> GetStreams() const;
+    StreamUsage GetFakeStreamUsage();
+    void AddStreamInfo(const AudioInterrupt &incomingInterrupt);
+    void RemoveStreamInfo(uint32_t streamId);
 
 private:
     std::mutex sessionMutex_;
-
     int32_t callerPid_;
     AudioSessionStrategy strategy_;
     std::weak_ptr<AudioSessionStateMonitor> audioSessionStateMonitor_;
 
     AudioSessionState state_ = AudioSessionState::SESSION_INVALID;
     std::unordered_map<uint32_t, std::pair<AudioInterrupt, AudioFocuState>> interruptMap_;
+    AudioSessionScene audioSessionScene_ {AudioSessionScene::AUDIO_SESSION_SCENE_INVALID};
+    // These are streams included in audiosession focus.
+    std::vector<AudioInterrupt> bypassStreamInfoVec_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
