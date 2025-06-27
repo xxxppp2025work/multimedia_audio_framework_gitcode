@@ -50,11 +50,11 @@ public:
     static bool IsSameTypeForAudioSession(const AudioStreamType incomingType, const AudioStreamType existedType);
     // Dump AudioSession Info
     void AudioSessionInfoDump(std::string &dumpString);
-
-    bool IsAudioSessionFocusMode(int32_t pid);
+    int32_t SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene);
+    bool IsAudioSessionFocusMode(int32_t callerPid);
     bool ShouldBypassFocusForStream(const AudioInterrupt &incomingInterrupt);
-    std::vector<AudioInterrupt> GetStreams(int32_t pid);
-    AudioInterrupt GetFakeAudioInterrupt(int32_t pid);
+    std::vector<AudioInterrupt> GetStreams(int32_t callerPid);
+    AudioInterrupt GenerateFakeAudioInterrupt(int32_t callerPid);
     void RemoveStreamInfo(const AudioInterrupt &audioInterrupt);
 
 private:

@@ -31,15 +31,6 @@ enum class AudioSessionState {
     SESSION_RELEASED = 3,
 };
 
-enum class AudioSessionScene {
-    AUDIO_SESSION_SCENE_INVALID = -1,
-    AUDIO_SESSION_SCENE_MEDIA = 0,
-    AUDIO_SESSION_SCENE_GAME = 1,
-    AUDIO_SESSION_SCENE_VOICE_COMMUNICATION = 2,
-};
-
-#define AUDIO_SESSION_FAKE_STREAMID = MAX_STREAMID + 1;
-
 class AudioSessionStateMonitor;
 
 class AudioSession {
@@ -62,9 +53,10 @@ public:
     int32_t SetAudioSessionScene(AudioSessionScene audioSessionScene);
     bool IsActivated() const;
     std::vector<AudioInterrupt> GetStreams() const;
-    StreamUsage GetFakeStreamUsage();
+    AudioStreamType GetFakeStreamType();
     void AddStreamInfo(const AudioInterrupt &incomingInterrupt);
     void RemoveStreamInfo(uint32_t streamId);
+    void Dump(std::string &dumpString);
 
 private:
     std::mutex sessionMutex_;
@@ -74,7 +66,7 @@ private:
 
     AudioSessionState state_ = AudioSessionState::SESSION_INVALID;
     std::unordered_map<uint32_t, std::pair<AudioInterrupt, AudioFocuState>> interruptMap_;
-    AudioSessionScene audioSessionScene_ {AudioSessionScene::AUDIO_SESSION_SCENE_INVALID};
+    AudioSessionScene audioSessionScene_ {AudioSessionScene::INVALID};
     // These are streams included in audiosession focus.
     std::vector<AudioInterrupt> bypassStreamInfoVec_;
 };

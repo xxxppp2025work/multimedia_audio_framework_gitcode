@@ -20,6 +20,7 @@
 #include "audio_policy_log.h"
 #include "audio_errors.h"
 #include "audio_session_state_monitor.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -153,7 +154,7 @@ bool AudioSession::IsAudioRendererEmpty()
 
 bool AudioSession::IsSceneParameterSet()
 {
-    return audioSessionScene != AudioSessionScene::AUDIO_SESSION_SCENE_INVALID;
+    return audioSessionScene_ != AudioSessionScene::INVALID;
 }
 
 int32_t AudioSession::SetAudioSessionScene(AudioSessionScene scene)
@@ -163,8 +164,8 @@ int32_t AudioSession::SetAudioSessionScene(AudioSessionScene scene)
         return ERROR;
     }
 
-    if (scene < AudioSessionScene::AUDIO_SESSION_SCENE_MEDIA ||
-        scene > AudioSessionScene::AUDIO_SESSION_SCENE_VOICE_COMMUNICATION) {
+    if (scene < AudioSessionScene::MEDIA ||
+        scene > AudioSessionScene::VOICE_COMMUNICATION) {
         AUDIO_ERR_LOG("AudioSessionScene = %{public}d out of range.", static_cast<int>(scene));
         return ERROR;
     }
@@ -183,12 +184,12 @@ std::vector<AudioInterrupt> AudioSession::GetStreams() const
     return bypassStreamInfoVec_;
 }
 
-StreamUsage AudioSession::GetFakeStreamUsage()
+AudioStreamType AudioSession::GetFakeStreamType()
 {
-    static const std::unordered_map<AudioSessionScene, StreamUsage> mapping = {
-        {AudioSessionScene::AUDIO_SESSION_SCENE_MEDIA, StreamUsage::STREAM_USAGE_MEDIA},
-        {AudioSessionScene::AUDIO_SESSION_SCENE_GAME, StreamUsage::STREAM_USAGE_GAME},
-        {AudioSessionScene::AUDIO_SESSION_SCENE_VOICE_COMMUNICATION, StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION}
+    static const std::unordered_map<AudioSessionScene, AudioStreamType> mapping = {
+        {AudioSessionScene::MEDIA, AudioStreamType::STREAM_MUSIC},
+        {AudioSessionScene::GAME, AudioStreamType::STREAM_GAME},
+        {AudioSessionScene::VOICE_COMMUNICATION, AudioStreamType::STREAM_VOICE_COMMUNICATION}
     };
 
     auto it = mapping.find(audioSessionScene_);
@@ -196,7 +197,7 @@ StreamUsage AudioSession::GetFakeStreamUsage()
         return it->second;
     }
 
-    return STREAM_USAGE_INVALID;
+    return AudioStreamType::STREAM_DEFAULT;
 }
 
 void AudioSession::AddStreamInfo(const AudioInterrupt &incomingInterrupt)
@@ -215,11 +216,26 @@ void AudioSession::AddStreamInfo(const AudioInterrupt &incomingInterrupt)
 void AudioSession::RemoveStreamInfo(uint32_t streamId)
 {
     std::lock_guard<std::mutex> lock(sessionMutex_);
-    for (auto it = bypassStreamInfoVec_.begin(), it != bypassStreamInfoVec_.end(); ++it) {
+    for (auto it = bypassStreamInfoVec_.begin(); it != bypassStreamInfoVec_.end(); ++it) {
         if (it->streamId == streamId) {
-            bypassStreamInfoVec_.ereas(it);
+            bypassStreamInfoVec_.erase(it);
             break;
         }
+    }
+}
+
+void AudioSession::Dump(std::string &dumpString)
+{
+    std::lock_guard<std::mutex> lock(sessionMutex_);
+    if (interruptMap_.size() == 0) {
+        AppendFormat(dumpString, "    - pid: %d, AudioSession is empty.\n", callerPid_);
+    } else {
+        AppendFormat(dumpString, "    - pid: %d, AudioSession strategy is: %d.\n",
+            callerPid_,static_cast<uint32_t>(strategy_.concurrencyMode));
+        AppendFormat(dumpString, "    - pid: %d, AudioSession scene is: %d.\n",
+            callerPid_, static_cast<uint32_t>(audioSessionScene_));
+        AppendFormat(dumpString, "    - pid: %d, AudioSession state is: %u.\n",
+            callerPid_, static_cast<uint32_t>(state_));
     }
 }
 

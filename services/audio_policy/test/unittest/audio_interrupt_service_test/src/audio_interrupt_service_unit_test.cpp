@@ -1038,5 +1038,34 @@ HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_051, TestSize.Level1
     activeInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
     audioInterruptService->ReportRecordGetFocusFail(incomingInterrupt, activeInterrupt, RECORD_ERROR_GET_FOCUS_FAIL);
 }
+
+/**
+* @tc.name  : Test AudioSessionFocusMode
+* @tc.number: AudioInterruptService_052
+* @tc.desc  : Test AudioSessionFocusMode
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_052, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    int32_t fakePid = 123;
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.pid = fakePid;
+    incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    incomingInterrupt.streamId = 8888;
+
+    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
+    audioInterruptService->sessionService_ = sessionService;
+    int ret = sessionService->SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioSessionStrategy audioSessionStrategy;
+    audioSessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+    ret = sessionService->ActivateAudioSession(fakePid, audioSessionStrategy);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = audioInterruptService->ActivateAudioInterrupt(0, incomingInterrupt, false);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

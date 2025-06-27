@@ -115,6 +115,9 @@ public:
     void RegisterDefaultVolumeTypeListener();
     int32_t ProcessFocusEntryForAudioSession(int32_t pid);
     bool ShouldBypassAudioSessionFocus(const AudioInterrupt &incomingInterrupt);
+    void DeactivateAudioSessionFakeInterrupt(int32_t zoneId, int32_t callerPid);
+    void DispatchInterruptEventForAudioSession(
+        InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt) override;
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -280,7 +283,6 @@ private:
     bool IsGameAvoidCallbackCase(const AudioInterrupt &audioInterrupt);
     void ResetNonInterruptControl(AudioInterrupt audioInterrupt);
     ClientType GetClientTypeByStreamId(int32_t streamId);
-    int32_t ProcessFocusEntryForAudioSession(int32_t pid);
 
     int32_t ProcessActiveStreamFocus(std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
         const AudioInterrupt &incomingInterrupt, AudioFocuState &incomingState,
