@@ -89,7 +89,7 @@ ohos_unittest("audio_fast_renderer_unit_test") {
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_service:audio_client",
     "../../../../audiorenderer:audio_renderer",
-    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
   ]
 
   external_deps = [
@@ -257,8 +257,6 @@ ohos_unittest("renderer_in_client_unit_test") {
     "../../../../../../services/audio_service:audio_common",
     "../../../../audiorenderer:audio_renderer",
     "../../../../audioutils:audio_utils",
-    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
-    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
   ]
 
   external_deps = [

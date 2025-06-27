@@ -33,9 +33,10 @@ ohos_unittest("multiple_audio_capturer_unit_test") {
 
   deps = [
     "../../../../audiocapturer:audio_capturer",
-    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
-    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
   ]
 
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+    "hilog:libhilog",
+    "c_utils:utils",
+  ]
 }

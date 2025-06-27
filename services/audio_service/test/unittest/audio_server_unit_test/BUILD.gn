@@ -44,8 +44,7 @@ ohos_unittest("audio_server_unit_test") {
     "../../../../../services/audio_service:audio_service_static",
     "../../../../audio_service:audio_process_service",
     "../../../../../frameworks/native/audioclock:audio_clock",
-    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
-    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
   ]
 
   external_deps = [

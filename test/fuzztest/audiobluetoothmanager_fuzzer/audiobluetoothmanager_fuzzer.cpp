@@ -131,7 +131,7 @@ void FetchOutputDeviceForTrackInternalFuzzTest(const uint8_t *rawData, size_t si
     AudioStreamChangeInfo streamChangeInfo = {};
     streamChangeInfo.audioRendererChangeInfo.Unmarshalling(data);
     sptr<AudioPolicyServer> AudioPolicyServerPtr = sptr<AudioPolicyServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioPolicyServerPtr->audioPolicyService_.FetchOutputDeviceForTrack(streamChangeInfo,
+    AudioPolicyServerPtr->FetchOutputDeviceForTrack(streamChangeInfo,
         AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
 }
 } // namespace AudioStandard

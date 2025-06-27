@@ -40,8 +40,6 @@ ohos_unittest("audio_renderer_multi_test") {
     "../../../../../services/audio_service:audio_client",
     "../../../../../services/audio_service:audio_common",
     "../../../audiorenderer:audio_renderer",
-    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
-    "${audio_framework_root}/services/audio_service/idl:idl_sa_proxy",
   ]
 
   external_deps = [

@@ -26,8 +26,9 @@ ohos_benchmarktest("BenchmarkAudioRendererTest") {
   sources = [ "benchmark_audiorenderer_test.cpp" ]
   deps = [
     "../../../audiorenderer:audio_renderer",
-    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
-    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
+  ]
+  external_deps = [
+    "c_utils:utils",
   ]
   resource_config_file =
       "../../../../../test/resource/audio_renderer/ohos_test.xml"

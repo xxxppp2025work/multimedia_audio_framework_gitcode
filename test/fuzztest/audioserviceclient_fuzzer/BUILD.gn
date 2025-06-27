@@ -46,8 +46,7 @@ ohos_fuzztest("AudioServiceClientFuzzTest") {
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
     "../../../frameworks/native/audiodefinitions:audio_definitions",
-    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
-    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
   ]
   external_deps = [
     "ability_base:want",

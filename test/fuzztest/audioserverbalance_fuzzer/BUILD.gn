@@ -38,8 +38,7 @@ ohos_fuzztest("AudioServerBalanceFuzzTest") {
 
   deps = [
     "../../../services/audio_service:audio_service_static",
-    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
-    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",

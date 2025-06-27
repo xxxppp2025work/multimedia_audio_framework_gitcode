@@ -110,8 +110,6 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest/pa_adapter_manager_unit_test:pa_adapter_manager_unit_test",
     "../services/audio_service/test/unittest/pro_audio_stream_manager_unit_test:pro_audio_stream_manager_unit_test",
     "../services/audio_service/test/unittest/pro_renderer_stream_impl_unit_test:pro_renderer_stream_impl_unit_test",
-    "${audio_framework_root}/services/audio_policy/idl:policy_idl_sa_stub",
-    "${audio_framework_root}/services/audio_service/idl:idl_sa_stub",
   ]
 
   if (audio_framework_feature_opensl_es) {

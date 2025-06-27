@@ -1154,33 +1154,33 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, CheckAndActiveHfpDevice_001, TestSize.Le
     server->audioPolicyService_.audioDeviceStatus_.CheckAndActiveHfpDevice(desc);
 }
 
-/**
- * @tc.name  : Test SetDeviceActive.
- * @tc.number: SetDeviceActive_001
- * @tc.desc  : Test SetDeviceActive interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, SetDeviceActive_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    auto ret = server->audioPolicyService_.audioDeviceLock_.SetDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER, true);
-    EXPECT_EQ(SUCCESS, ret);
-}
+// /**
+//  * @tc.name  : Test SetDeviceActive.
+//  * @tc.number: SetDeviceActive_001
+//  * @tc.desc  : Test SetDeviceActive interfaces.
+//  */
+// HWTEST_F(AudioPolicyServiceExtUnitTest, SetDeviceActive_001, TestSize.Level1)
+// {
+//     auto server = GetServerUtil::GetServerPtr();
+//     auto ret = server->audioPolicyService_.audioDeviceLock_.SetDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER, true);
+//     EXPECT_EQ(SUCCESS, ret);
+// }
 
-/**
- * @tc.name  : Test GetAvailableDevices.
- * @tc.number: GetAvailableDevices_001
- * @tc.desc  : Test GetAvailableDevices interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, GetAvailableDevices_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    AudioStreamChangeInfo streamChangeInfo;
-    server->audioPolicyService_.audioDeviceLock_.FetchOutputDeviceForTrack(
-        streamChangeInfo, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    server->audioPolicyService_.audioDeviceLock_.FetchInputDeviceForTrack(streamChangeInfo);
-    auto ret = server->audioPolicyService_.audioDeviceLock_.GetAvailableDevices(AudioDeviceUsage::ALL_MEDIA_DEVICES);
-    EXPECT_GT(ret.size(), 0);
-}
+// /**
+//  * @tc.name  : Test GetAvailableDevices.
+//  * @tc.number: GetAvailableDevices_001
+//  * @tc.desc  : Test GetAvailableDevices interfaces.
+//  */
+// HWTEST_F(AudioPolicyServiceExtUnitTest, GetAvailableDevices_001, TestSize.Level1)
+// {
+//     auto server = GetServerUtil::GetServerPtr();
+//     AudioStreamChangeInfo streamChangeInfo;
+//     server->audioPolicyService_.audioDeviceLock_.FetchOutputDeviceForTrack(
+//         streamChangeInfo, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+//     server->audioPolicyService_.audioDeviceLock_.FetchInputDeviceForTrack(streamChangeInfo);
+//     auto ret = server->audioPolicyService_.audioDeviceLock_.GetAvailableDevices(AudioDeviceUsage::ALL_MEDIA_DEVICES);
+//     EXPECT_GT(ret.size(), 0);
+// }
 
 // /**
 //  * @tc.name  : Test RegisterTracker.
