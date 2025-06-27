@@ -1182,29 +1182,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, CheckAndActiveHfpDevice_001, TestSize.Le
 //     EXPECT_GT(ret.size(), 0);
 // }
 
-// /**
-//  * @tc.name  : Test RegisterTracker.
-//  * @tc.number: RegisterTracker_001
-//  * @tc.desc  : Test RegisterTracker interfaces.
-//  */
-// HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterTracker_001, TestSize.Level1)
-// {
-//     auto server = GetServerUtil::GetServerPtr();
-//     AudioMode mode = AudioMode::AUDIO_MODE_PLAYBACK;
-//     AudioStreamChangeInfo streamChangeInfo;
-//     streamChangeInfo.audioRendererChangeInfo.clientUID = 1001;
-//     streamChangeInfo.audioRendererChangeInfo.sessionId = 2001;
-//     streamChangeInfo.audioRendererChangeInfo.rendererState = RendererState::RENDERER_RUNNING;
-
-//     sptr<AudioClientTrackerCallbackStub> callback = new AudioClientTrackerCallbackStub();
-//     std::shared_ptr<AudioClientTracker> clientTrackerObj = nullptr;
-//     callback->SetClientTrackerCallback(clientTrackerObj);
-//     sptr<IRemoteObject> object = callback->AsObject();
-//     auto ret = server->audioPolicyService_.audioDeviceLock_.RegisterTracker(
-//         mode, streamChangeInfo, object, API_VERSION::API_9);
-//     EXPECT_EQ(ret, SUCCESS);
-// }
-
 /**
  * @tc.name  : Test IsDevicePlaybackSupported.
  * @tc.number: IsDevicePlaybackSupported_001

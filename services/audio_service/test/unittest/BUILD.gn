@@ -783,14 +783,10 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "../../../../services/audio_service/server/src/audio_engine_manager.cpp",
     "../../../../services/audio_service/server/src/audio_playback_engine.cpp",
     "../../../../services/audio_service/server/src/audio_process_in_server.cpp",
-    # "../../../../services/audio_service/server/src/audio_process_stub.cpp",
     "../../../../services/audio_service/server/src/audio_service.cpp",
     "../../../../services/audio_service/server/src/capturer_in_server.cpp",
     "../../../../services/audio_service/server/src/core_service_handler.cpp",
     "../../../../services/audio_service/server/src/direct_playback_engine.cpp",
-    # "../../../../services/audio_service/server/src/i_stream_manager.cpp",
-    # "../../../../services/audio_service/server/src/ipc_stream_in_server.cpp",
-    # "../../../../services/audio_service/server/src/ipc_stream_stub.cpp",
     "../../../../services/audio_service/server/src/none_mix_engine.cpp",
     "../../../../services/audio_service/server/src/offline_stream_in_server.cpp",
     "../../../../services/audio_service/server/src/pa_adapter_manager.cpp",
@@ -896,7 +892,6 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../services/audio_service/server/src/audio_engine_manager.cpp",
     "../../../../services/audio_service/server/src/audio_playback_engine.cpp",
     "../../../../services/audio_service/server/src/audio_process_in_server.cpp",
-    # "../../../../services/audio_service/server/src/audio_process_stub.cpp",
     "../../../../services/audio_service/server/src/audio_service.cpp",
     "../../../../services/audio_service/server/src/capturer_in_server.cpp",
     "../../../../services/audio_service/server/src/core_service_handler.cpp",
@@ -906,7 +901,6 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../services/audio_service/server/src/hpae_renderer_stream_impl.cpp",
     "../../../../services/audio_service/server/src/i_stream_manager.cpp",
     "../../../../services/audio_service/server/src/ipc_stream_in_server.cpp",
-    # "../../../../services/audio_service/server/src/ipc_stream_stub.cpp",
     "../../../../services/audio_service/server/src/none_mix_engine.cpp",
     "../../../../services/audio_service/server/src/offline_stream_in_server.cpp",
     "../../../../services/audio_service/server/src/pa_adapter_manager.cpp",
@@ -1055,48 +1049,6 @@ ohos_unittest("futex_tool_unit_test") {
     "googletest:gtest",
     "hilog:libhilog",
     "ipc:ipc_single",
-  ]
-}
-
-ohos_unittest("policy_provider_stub_unit_test") {
-  testonly = true
-  module_out_path = module_output_path
-
-  include_dirs = [
-    "../../../../services/audio_service/client/include",
-    "../../../../services/audio_service/common/include/dfx",
-    "../../../../frameworks/native/playbackcapturer/include",
-    "../../../../frameworks/native/audioclock/include",
-  ]
-
-  sources = [ "policy_provider_stub_unit_test.cpp" ]
-
-  configs = [ ":module_private_config" ]
-  cflags = [ "-fno-access-control" ]
-  cflags_cc = cflags
-  cflags_cc += [ "-std=c++20" ]
-
-  deps = [
-    "../../../audio_service:audio_client",
-    "../../../../frameworks/native/audioclock:audio_clock"
-  ]
-
-  defines = []
-  if (audio_framework_feature_inner_capturer) {
-    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
-  }
-
-  external_deps = [
-    "c_utils:utils",
-    "drivers_interface_audio:libeffect_proxy_1.0",
-    "eventhandler:libeventhandler",
-    "googletest:gmock",
-    "hicollie:libhicollie",
-    "hilog:libhilog",
-    "ipc:ipc_single",
-    "media_foundation:media_monitor_client",
-    "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
   ]
 }
 
