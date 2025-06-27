@@ -2838,5 +2838,24 @@ bool AudioPolicyProxy::IsCollaborativePlaybackEnabledForDevice(
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %{public}d", error);
     return reply.ReadBool();
 }
+
+int32_t AudioPolicyProxy::ClearAudioFocusBySessionID(const int32_t &sessionID)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+
+    data.WriteInt32(sessionID);
+
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, false, "Remote() is nullptr");
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::CLEAR_AUDIO_FOCUS_BY_SESSIONID),
+        data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

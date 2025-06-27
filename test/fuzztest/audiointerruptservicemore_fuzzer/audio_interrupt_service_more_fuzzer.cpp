@@ -183,13 +183,20 @@ void ClearAudioFocusInfoListOnAccountsChangedFuzzTest()
     interruptService->ClearAudioFocusInfoListOnAccountsChanged(id);
 }
 
-typedef void (*TestFuncs[4])();
+void ClearAudioFocusBySessionIDFuzzTest()
+{
+    int sessionID = GetData<int32_t>();
+    GetServerPtr()->interruptService_->ClearAudioFocusBySessionID(sessionID);
+}
+
+typedef void (*TestFuncs[5])();
 
 TestFuncs g_testFuncs = {
     MoreFuzzTest,
     AddAudioSessionFuzzTest,
     AddSetAudioManagerInterruptCallbackFuzzTest,
     ClearAudioFocusInfoListOnAccountsChangedFuzzTest,
+    ClearAudioFocusBySessionIDFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
