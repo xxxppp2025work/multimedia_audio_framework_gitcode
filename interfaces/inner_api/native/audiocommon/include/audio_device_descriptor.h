@@ -42,16 +42,16 @@ public:
         DEVICE_INFO,
     };
 
-    class ClinetInfo {
+    class ClientInfo {
     public:
         bool hasBTPermission_ = false;
         bool hasSystemPermission_ = false;
         int32_t apiVersion_ = 0;
 
-        ClinetInfo() = default;
-        ClinetInfo(int32_t apiVersion)
+        ClientInfo() = default;
+        ClientInfo(int32_t apiVersion)
             : apiVersion_(apiVersion) {}
-        ClinetInfo(bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion)
+        ClientInfo(bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion)
             : hasBTPermission_(hasBTPermission), hasSystemPermission_(hasSystemPermission), apiVersion_(apiVersion) {}
     };
 
@@ -130,7 +130,7 @@ public:
         }
     };
 
-    void SetClientInfo(std::shared_ptr<ClinetInfo> clientInfo) const;
+    void SetClientInfo(std::shared_ptr<ClientInfo> clientInfo) const;
 private:
     static void FixApiCompatibility(int apiVersion, DeviceRole deviceRole,
         DeviceType &deviceType, int32_t &deviceId, DeviceStreamInfo &streamInfo);
@@ -171,7 +171,7 @@ public:
     bool spatializationSupported_ = false;
     bool hasPair_{false};
     RouterType routerType_ = ROUTER_TYPE_NONE;
-    mutable std::shared_ptr<ClinetInfo> clientInfo_ = nullptr;
+    mutable std::shared_ptr<ClientInfo> clientInfo_ = nullptr;
 
 private:
     bool IsOutput()

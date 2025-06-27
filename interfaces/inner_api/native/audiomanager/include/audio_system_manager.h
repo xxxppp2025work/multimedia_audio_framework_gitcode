@@ -119,7 +119,7 @@ struct MicrophoneBlockedInfo : public Parcelable {
     DeviceBlockStatus blockStatus;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
 
-    void SetClientInfo(std::shared_ptr<AudioDeviceDescriptor::ClinetInfo> clientInfo) const
+    void SetClientInfo(std::shared_ptr<AudioDeviceDescriptor::ClientInfo> clientInfo) const
     {
         for (auto &dev : devices) {
             if (dev != nullptr) {

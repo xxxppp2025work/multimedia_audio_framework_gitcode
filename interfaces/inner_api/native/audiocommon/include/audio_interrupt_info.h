@@ -391,7 +391,7 @@ public:
         if (interrupt == nullptr) {
             return nullptr;
         }
-        interrupt->Unmarshalling(parcel, *interrupt);
+        Unmarshalling(parcel, *interrupt);
         return interrupt.release();
     }
 };

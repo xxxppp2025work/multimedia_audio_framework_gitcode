@@ -19,6 +19,7 @@
     *AudioSystemManager*;
     *AudioStreamManager*;
     *AudioDeviceDescriptor*;
+    *AudioManagerListenerStub*;
     *AudioGroupManager*;
     *AudioRendererFilter*;
     *AudioRoutingManager*;

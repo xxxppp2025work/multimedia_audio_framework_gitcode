@@ -99,7 +99,7 @@ public:
         return true;
     }
 
-    void UnmarshallingInner(Parcel &parcel)
+    void UnmarshallingSelf(Parcel &parcel)
     {
         zoneId_ = parcel.ReadInt32();
         name_ = parcel.ReadString();
@@ -120,17 +120,6 @@ public:
         }
     }
 
-    static std::shared_ptr<AudioZoneDescriptor> UnmarshallingPtr(Parcel &parcel)
-    {
-        std::shared_ptr<AudioZoneDescriptor> desc = std::make_shared<AudioZoneDescriptor>();
-        if (desc == nullptr) {
-            return nullptr;
-        }
-
-        desc->UnmarshallingInner(parcel);
-        return desc;
-    }
-
     static AudioZoneDescriptor *Unmarshalling(Parcel &parcel)
     {
         auto desc = std::make_unique<AudioZoneDescriptor>();
@@ -138,7 +127,7 @@ public:
             return nullptr;
         }
 
-        desc->UnmarshallingInner(parcel);
+        desc->UnmarshallingSelf(parcel);
         return desc.release();
     }
 };

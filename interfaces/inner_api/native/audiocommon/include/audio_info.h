@@ -413,12 +413,12 @@ struct VolumeEvent : public Parcelable {
 
     static VolumeEvent *Unmarshalling(Parcel &parcel)
     {
-        VolumeEvent *info = new VolumeEvent();
-        if (info == nullptr) {
+        auto event = std::make_unique<VolumeEvent>();
+        if (event == nullptr) {
             return nullptr;
         }
-        info->UnmarshallingSelf(parcel);
-        return info;
+        event->UnmarshallingSelf(parcel);
+        return event.release();
     }
 };
 
@@ -673,12 +673,12 @@ public:
 
     static AudioCapturerInfo *Unmarshalling(Parcel &parcel)
     {
-        AudioCapturerInfo *audioCapturerInfo = new AudioCapturerInfo();
+        auto audioCapturerInfo = std::unique_ptr<AudioCapturerInfo>();
         if (audioCapturerInfo == nullptr) {
             return nullptr;
         }
         audioCapturerInfo->UnmarshallingSelf(parcel);
-        return audioCapturerInfo;
+        return audioCapturerInfo.release();
     }
 };
 

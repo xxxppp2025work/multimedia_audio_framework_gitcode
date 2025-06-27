@@ -215,7 +215,7 @@ bool AudioDeviceDescriptor::IsAudioDeviceDescriptor() const
     return descriptorType_ == AUDIO_DEVICE_DESCRIPTOR;
 }
 
-void AudioDeviceDescriptor::SetClientInfo(std::shared_ptr<ClinetInfo> clientInfo) const
+void AudioDeviceDescriptor::SetClientInfo(std::shared_ptr<ClientInfo> clientInfo) const
 {
     clientInfo_ = clientInfo;
 }

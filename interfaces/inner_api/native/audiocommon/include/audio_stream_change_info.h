@@ -44,7 +44,7 @@ public:
     AudioRendererChangeInfo() = default;
     ~AudioRendererChangeInfo() = default;
 
-    void SetClientInfo(std::shared_ptr<AudioDeviceDescriptor::ClinetInfo> clientInfo) const
+    void SetClientInfo(std::shared_ptr<AudioDeviceDescriptor::ClientInfo> clientInfo) const
     {
         outputDeviceInfo.SetClientInfo(clientInfo);
     }
@@ -126,7 +126,7 @@ public:
     AudioCapturerChangeInfo() = default;
     ~AudioCapturerChangeInfo() = default;
 
-    void SetClientInfo(std::shared_ptr<AudioDeviceDescriptor::ClinetInfo> clientInfo) const
+    void SetClientInfo(std::shared_ptr<AudioDeviceDescriptor::ClientInfo> clientInfo) const
     {
         inputDeviceInfo.SetClientInfo(clientInfo);
     }
