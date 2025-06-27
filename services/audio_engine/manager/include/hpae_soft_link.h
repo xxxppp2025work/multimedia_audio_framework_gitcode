@@ -65,13 +65,15 @@ private:
     HpaeStreamInfo rendererStreamInfo_;
     HpaeStreamInfo capturerStreamInfo_;
     std::unique_ptr<AudioRingCache> bufferQueue_ = nullptr;
+    std::vector<char> tempBuffer_;
     HpaeSoftLinkState state_ = HpaeSoftLinkState::INVALID;
     std::mutex stateMutex_;
     std::unordered_map<uint32_t, HpaeSoftLinkState> streamStateMap_;
     std::mutex callbackMutex_;
     std::condition_variable callbackCV_;
-    bool isGetDeviceInfoFinish_ = false;
     bool isOperationFinish_ = false;
+    int32_t overFlowCount_ = 0;
+    int32_t underRunCount_ = 0;
 };
 } // namespace HPAE
 } // namespace AudioStandard

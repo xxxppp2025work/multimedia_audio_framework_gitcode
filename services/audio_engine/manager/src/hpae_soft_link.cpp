@@ -17,6 +17,9 @@
 #define LOG_TAG "HpaeSoftLink"
 #endif
 #include "hpae_soft_link.h"
+#ifdef ENABLE_HOOK_PCM
+#include <thread>
+#endif
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "i_hpae_manager.h"
@@ -30,7 +33,8 @@ static constexpr int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static constexpr int32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr int32_t MS_PER_SECOND = 1000;
 static constexpr int32_t DEFAULT_RING_BUFFER_NUM = 4;
-static std::atomic<uint32_t> g_sessionId = {FIRST_SESSIONID};
+static std::atomic<uint32_t> g_sessionId = {FIRST_SESSIONID}; // begin at 90000
+static constexpr int32_t MAX_OVERFLOW_UNDERRUN_COUNT = 50; // 1s
 std::shared_ptr<IHpaeSoftLink> IHpaeSoftLink::CreateSoftLink(int32_t renderIdx, int32_t captureIdx, SoftLinkMode mode)
 {
     std::shared_ptr<IHpaeSoftLink> softLink = std::make_shared<HpaeSoftLink>(renderIdx, captureIdx, mode);
@@ -70,10 +74,11 @@ int32_t HpaeSoftLink::Init()
     ret = GetSourceInfoByIdx();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetSourceInfoByIdx error");
 
-    size_t size = DEFAULT_RING_BUFFER_NUM * sinkInfo_.channels * GetSizeFromFormat(sinkInfo_.format) *
+    size_t frameBytes = sinkInfo_.channels * GetSizeFromFormat(sinkInfo_.format) *
         DEFAULT_FRAME_LEN_MS * sinkInfo_.samplingRate / MS_PER_SECOND;
+    size_t size = DEFAULT_RING_BUFFER_NUM * frameBytes;
     bufferQueue_ = AudioRingCache::Create(size);
-
+    tempBuffer_.resize(frameBytes);
     ret = CreateStream();
     if (ret == SUCCESS) {
         state_ = HpaeSoftLinkState::PREPARED;
@@ -84,13 +89,13 @@ int32_t HpaeSoftLink::Init()
 int32_t HpaeSoftLink::GetSinkInfoByIdx()
 {
     Trace trace("HpaeSoftLink::GetSinkInfoByIdx");
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    std::unique_lock<std::mutex> lock(callbackMutex_);
     isOperationFinish_ = false;
     int32_t ret = ERROR;
     IHpaeManager::GetHpaeManager().GetSinkInfoByIdx(renderIdx_, sinkInfo_, ret, [this](){
         this->OnDeviceInfoReceived();
     });
-    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+    bool stopWaiting = callbackCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isOperationFinish_;
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "GetSinkInfoByIdx timeout");
@@ -100,13 +105,13 @@ int32_t HpaeSoftLink::GetSinkInfoByIdx()
 int32_t HpaeSoftLink::GetSourceInfoByIdx()
 {
     Trace trace("HpaeSoftLink::GetSourceInfoByIdx");
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    std::unique_lock<std::mutex> lock(callbackMutex_);
     isOperationFinish_ = false;
     int32_t ret = ERROR;
     IHpaeManager::GetHpaeManager().GetSourceInfoByIdx(captureIdx_, sourceInfo_, ret, [this](){
         this->OnDeviceInfoReceived();
     });
-    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+    bool stopWaiting = callbackCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isOperationFinish_;
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "GetSourceInfoByIdx timeout");
@@ -155,8 +160,8 @@ int32_t HpaeSoftLink::CreateStream()
 
 void HpaeSoftLink::OnDeviceInfoReceived()
 {
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    isGetDeviceInfoFinish_ = true;
+    std::unique_lock<std::mutex> lock(callbackMutex_);
+    isOperationFinish_ = true;
     callbackCV_.notify_all();
 }
 
@@ -170,7 +175,7 @@ int32_t HpaeSoftLink::Start()
         std::unique_lock<std::mutex> lock(callbackMutex_);
         isOperationFinish_ = false;
         IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
-        bool  stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        bool  stopWaiting = callbackCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
             return isOperationFinish_;
         });
         CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "start renderer timeout");
@@ -181,7 +186,7 @@ int32_t HpaeSoftLink::Start()
         std::unique_lock<std::mutex> lock(callbackMutex_);
         isOperationFinish_ = false;
         IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_RECORD, capturerStreamInfo_.sessionId);
-        bool  stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        bool  stopWaiting = callbackCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
             return isOperationFinish_;
         });
         CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "start capturer timeout");
@@ -195,8 +200,9 @@ int32_t HpaeSoftLink::Start()
 
 int32_t HpaeSoftLink::Stop()
 {
-    CHECK_AND_RETURN_RET_LOG(state_ == HpaeSoftLinkState::PREPARED, ERR_ILLEGAL_STATE, "softlink not init");
     CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::STOPPED, SUCCESS, "softlink already stop");
+    CHECK_AND_RETURN_RET_LOG(state_ == HpaeSoftLinkState::RUNNING, ERR_ILLEGAL_STATE, "softlink not init");
+    Trace trace("HpaeSoftLink::Stop");
     IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
     IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_RECORD, capturerStreamInfo_.sessionId);
     std::lock_guard<std::mutex> lock(stateMutex_);
@@ -206,6 +212,7 @@ int32_t HpaeSoftLink::Stop()
 
 int32_t HpaeSoftLink::Release()
 {
+    Trace trace("HpaeSoftLink::Release");
     IHpaeManager::GetHpaeManager().Release(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
     IHpaeManager::GetHpaeManager().Release(HPAE_STREAM_CLASS_TYPE_RECORD, capturerStreamInfo_.sessionId);
     // todo : check stop result
@@ -226,20 +233,35 @@ void HpaeSoftLink::OnStatusUpdate(IOperation operation, uint32_t streamIndex)
     }
     std::lock_guard<std::mutex> lock(callbackMutex_);
     isOperationFinish_ = true;
-    callbackMutex_.notify_all();
+    callbackCV_.notify_all();
 }
 
 int32_t HpaeSoftLink::OnStreamData(AudioCallBackStreamInfo& callbackStreamInfo)
 {
-    Trace trace("HpaeSfotLink::OnStreamData, renderer sessionId: %{public}u", rendererStreamInfo_.sessionId);
+    Trace trace("HpaeSoftLink::OnStreamData, [" +std::to_string(rendererStreamInfo_.sessionId) + "]OnWriteData");
+#ifdef ENABLE_HOOK_PCM
+    if (sinkInfo_.adapterName == "file_io") {
+        std::this_thread::sleep_for(std::chrono::milliseconds(20)); // 20s for file io sleep
+    }
+#endif
     int8_t *inputData = callbackStreamInfo.inputData;
     size_t requestDataLen = callbackStreamInfo.requestDataLen;
     OptResult result = bufferQueue_->GetReadableSize();
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, 
         "ringBuffer get readable invalid size: %{public}zu", result.size);
-    CHECK_AND_RETURN_RET_LOG(result.size != 0 && result.size >= requestDataLen, ERROR,
-        "readable size is invalid, result.size: %{public}zu, requestDataLen: %{public}zu",
-        result.size, requestDataLen);
+    if (result.size == 0 || result.size < requestDataLen) {
+        ++underRunCount_;
+        AUDIO_INFO_LOG("underrun[%{public}d]!, readable size is invalid, result.size[%{public}zu],"
+            "requestDataLen[%{public}zu]", underRunCount_, result.size, requestDataLen);
+    } else {
+        underRunCount_ = 0;
+    }
+    if (underRunCount_ >= MAX_OVERFLOW_UNDERRUN_COUNT) {
+        IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
+        AUDIO_WARNING_LOG("renderer[%{public}u] will stop", rendererStreamInfo_.sessionId);
+        underRunCount_ = 0;
+        return ERROR;
+    }
     AUDIO_DEBUG_LOG("readable size: %{public}zu, requestDataLen: %{public}zu", result.size, requestDataLen);
     result = bufferQueue_->Dequeue({reinterpret_cast<uint8_t *>(inputData), requestDataLen});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringBuffer dequeue failed");
@@ -248,16 +270,32 @@ int32_t HpaeSoftLink::OnStreamData(AudioCallBackStreamInfo& callbackStreamInfo)
 
 int32_t HpaeSoftLink::OnStreamData(AudioCallBackCapturerStreamInfo& callbackStreamInfo)
 {
-    Trace trace("HpaeSfotLink::OnStreamData, capturer sessionId: %{public}u", capturerStreamInfo_.sessionId);
+    Trace trace("HpaeSoftLink::OnStreamData, [" + std::to_string(capturerStreamInfo_.sessionId) + "]OnReadData");
+#ifdef ENABLE_HOOK_PCM
+    if (sourceInfo_.adapterName == "file_io") {
+        std::this_thread::sleep_for(std::chrono::milliseconds(20)); // 20s for file io sleep
+    }
+#endif
     int8_t *outputData = callbackStreamInfo.outputData;
     size_t requestDataLen = callbackStreamInfo.requestDataLen;
     // todo : channel select
     OptResult result = bufferQueue_->GetWritableSize();
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_READ_FAILED, 
         "ringBuffer get writeable invalid size: %{public}zu", result.size);
-    CHECK_AND_RETURN_RET_LOG(result.size != 0 && result.size >= requestDataLen, ERROR,
-        "writable size is invalid, result.size: %{public}zu, requestDataLen: %{public}zu",
-        result.size, requestDataLen);
+    if (result.size == 0 || result.size < requestDataLen) {
+        ++overFlowCount_;
+        AUDIO_INFO_LOG("overflow[%{public}d]!, writable size is invalid, result.size[%{public}zu],"
+            "requestDataLen[%{public}zu]", overFlowCount_, result.size, requestDataLen);
+        bufferQueue_->Dequeue({reinterpret_cast<uint8_t *>(tempBuffer_.data()), requestDataLen});
+    } else {
+        overFlowCount_ = 0;
+    }
+    if (overFlowCount_ >= MAX_OVERFLOW_UNDERRUN_COUNT) {
+        IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_RECORD, capturerStreamInfo_.sessionId);
+        AUDIO_WARNING_LOG("capturer[%{public}u] will stop", capturerStreamInfo_.sessionId);
+        overFlowCount_ = 0;
+        return ERROR;
+    }
     AUDIO_DEBUG_LOG("writable size: %{public}zu, requestDataLen: %{public}zu", result.size, requestDataLen);
     result = bufferQueue_->Enqueue({reinterpret_cast<uint8_t *>(outputData), requestDataLen});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringBuffer enqueue failed");

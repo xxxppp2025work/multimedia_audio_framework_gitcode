@@ -126,6 +126,7 @@ TEST_F(HpaeSoftLinkTest, testSoftLink)
     softLink_->Start();
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::RUNNING);
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000)); // 2s for sleep
     softLink_->Stop();
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::STOPPED);
