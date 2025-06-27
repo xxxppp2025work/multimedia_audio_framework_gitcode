@@ -34,6 +34,7 @@ namespace OHOS {
 namespace AudioStandard {
 const int32_t SYSTEM_ABILITY_ID = 3001;
 const bool RUN_ON_CREATE = false;
+constexpr int32_t INVALID_VALUE = -1;
 
 static std::shared_ptr<AudioServer> audioServer;
 
@@ -1407,7 +1408,8 @@ HWTEST_F(AudioServerUnitTest, GetVolumeDataCount_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     std::string testName = "testSink";
-    int64_t volueDataCount = audioServer->GetVolumeDataCount(testName);
+    int64_t volueDataCount = INVALID_VALUE;
+    audioServer->GetVolumeDataCount(testName, volueDataCount);
     EXPECT_EQ(volueDataCount, 0);
 }
 
@@ -1421,7 +1423,8 @@ HWTEST_F(AudioServerUnitTest, GetVolumeDataCount_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     std::string testName = "primary";
-    int64_t volueDataCount = audioServer->GetVolumeDataCount(testName);
+    int64_t volueDataCount = INVALID_VALUE;
+    audioServer->GetVolumeDataCount(testName, volueDataCount);
     EXPECT_EQ(volueDataCount, 0);
 }
 
