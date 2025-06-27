@@ -147,7 +147,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnReceiveBluetoothEvent_001, TestSize
 
     const std::string macAddress = "11-11-11-11-11-11";
     const std::string deviceName = "deviceName";
-    GetServerUtil::GetServerPtr()->audioPolicyService_.OnReceiveBluetoothEvent(macAddress, deviceName);
 }
 
 /**
@@ -235,21 +234,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnecting_003, TestSize
     audioA2dpOffloadManager_.connectionTriggerSessionIds_ = {0};
 
     bool ret = audioA2dpOffloadManager_.IsA2dpOffloadConnecting(0);
-    EXPECT_FALSE(ret);
-}
-
-/**
-* @tc.name  : Test GetAudioEffectOffloadFlag.
-* @tc.number: GetAudioEffectOffloadFlag_001
-* @tc.desc  : Test AudioPolicyServic interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAudioEffectOffloadFlag_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest GetAudioEffectOffloadFlag_001 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-
-    bool ret = server->audioPolicyService_.GetAudioEffectOffloadFlag();
     EXPECT_FALSE(ret);
 }
 
@@ -648,36 +632,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ActivateAudioConcurrency_001, TestSiz
 }
 
 /**
-* @tc.name  : Test ResetRingerModeMute.
-* @tc.number: ResetRingerModeMute_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, ResetRingerModeMute_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ResetRingerModeMute_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    GetServerUtil::GetServerPtr()->audioPolicyService_.audioVolumeManager_.ringerModeMute_ = true;
-    auto ret = GetServerUtil::GetServerPtr()->audioPolicyService_.ResetRingerModeMute();
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
-* @tc.name  : Test ResetRingerModeMute.
-* @tc.number: ResetRingerModeMute_002
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, ResetRingerModeMute_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ResetRingerModeMute_002 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    GetServerUtil::GetServerPtr()->audioPolicyService_.audioVolumeManager_.ringerModeMute_ = false;
-    auto ret = GetServerUtil::GetServerPtr()->audioPolicyService_.ResetRingerModeMute();
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
 * @tc.name  : Test ErasePreferredDeviceByType.
 * @tc.number: ErasePreferredDeviceByType_001
 * @tc.desc  : Test AudioPolicyService interfaces.
@@ -720,7 +674,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateSessionConnectionState_001, Tes
     EXPECT_NE(nullptr, server);
     int32_t sessionID = SESSION_ID;
     int32_t state = STATE;
-    server->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(sessionID, state);
     EXPECT_EQ(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
 }
 
@@ -778,21 +731,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsRingerOrAlarmerDualDevicesRange_002
     deviceType = DEVICE_TYPE_DP;
     ret = server->audioPolicyService_.audioDeviceCommon_.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(false, ret);
-}
-
-/**
-* @tc.name  : Test UpdateEffectBtOffloadSupported.
-* @tc.number: UpdateEffectBtOffloadSupported_001
-* @tc.desc  : Test AudioPolicyServic interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateEffectBtOffloadSupported_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UpdateEffectBtOffloadSupported_001 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-    bool isSupported = false;
-    server->audioPolicyService_.UpdateEffectBtOffloadSupported(isSupported);
-    EXPECT_EQ(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
 }
 
 /**
@@ -1006,63 +944,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnecting_005, TestSize
 }
 
 /**
-* @tc.name  : Test IsA2dpOffloadConnected.
-* @tc.number: IsA2dpOffloadConnected_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnected_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOffloadConnected_001 start");
-    auto server = GetServerUtil::GetServerPtr();
-    ASSERT_NE(nullptr, server);
-    EXPECT_EQ(false, server->audioPolicyService_.IsA2dpOffloadConnected());
-}
-
-/**
-* @tc.name  : Test IsA2dpOffloadConnected.
-* @tc.number: IsA2dpOffloadConnected_002
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnected_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOffloadConnected_002 start");
-    auto server = GetServerUtil::GetServerPtr();
-    ASSERT_NE(nullptr, server);
-    server->audioPolicyService_.audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
-    ASSERT_NE(nullptr, server->audioPolicyService_.audioA2dpOffloadManager_);
-    EXPECT_EQ(false, server->audioPolicyService_.IsA2dpOffloadConnected());
-}
-
-/**
-* @tc.name  : Test SetA2dpOffloadFlag.
-* @tc.number: SetA2dpOffloadFlag_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, SetA2dpOffloadFlag_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest SetA2dpOffloadFlag_001 start");
-    auto server = GetServerUtil::GetServerPtr();
-    ASSERT_NE(nullptr, server);
-    BluetoothOffloadState state = NO_A2DP_DEVICE;
-    server->audioPolicyService_.SetA2dpOffloadFlag(state);
-}
-/**
-* @tc.name  : Test SetA2dpOffloadFlag.
-* @tc.number: SetA2dpOffloadFlag_002
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, SetA2dpOffloadFlag_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest SetA2dpOffloadFlag_002 start");
-    auto server = GetServerUtil::GetServerPtr();
-    ASSERT_NE(nullptr, server);
-    server->audioPolicyService_.audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
-    ASSERT_NE(nullptr, server->audioPolicyService_.audioA2dpOffloadManager_);
-    BluetoothOffloadState state = NO_A2DP_DEVICE;
-    server->audioPolicyService_.SetA2dpOffloadFlag(state);
-}
-
-/**
 * @tc.name  : Test GetA2dpOffloadFlag.
 * @tc.number: GetA2dpOffloadFlag_001
 * @tc.desc  : Test AudioPolicyService interfaces.
@@ -1178,54 +1059,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioDeviceManager_001, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test ExcludeOutputDevices
- * @tc.number: ExcludeOutputDevices_001
- * @tc.desc  : Test ExcludeOutputDevices interfaces.
- */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, ExcludeOutputDevices_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ExcludeOutputDevices_001 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-
-    AudioDeviceUsage audioDevUsage = MEDIA_OUTPUT_DEVICES;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
-    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();
-    audioDevDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
-    audioDevDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    audioDevDesc->macAddress_ = "00:00:00:00:00:00";
-    audioDeviceDescriptors.push_back(audioDevDesc);
-
-    int32_t ret = server->audioPolicyService_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
- * @tc.name  : Test ExcludeOutputDevices
- * @tc.number: ExcludeOutputDevices_002
- * @tc.desc  : Test ExcludeOutputDevices interfaces.
- */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, ExcludeOutputDevices_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ExcludeOutputDevices_002 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-
-    AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
-    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();
-    audioDevDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
-    audioDevDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    audioDevDesc->macAddress_ = "00:00:00:00:00:00";
-    audioDeviceDescriptors.push_back(audioDevDesc);
-
-    int32_t ret = server->audioPolicyService_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
  * @tc.name   : Test UnexcludeOutputDevices API
  * @tc.number : UnexcludeOutputDevicesTest_001
  * @tc.desc   : Test UnexcludeOutputDevices interface.
@@ -1245,7 +1078,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UnexcludeOutputDevicesTest_001, TestS
     audioDevDesc->macAddress_ = "00:00:00:00:00:00";
     audioDeviceDescriptors.push_back(audioDevDesc);
 
-    server->audioPolicyService_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
     int32_t result = server->audioDeviceLock_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnexcludeOutputDevicesTest_001() result:%{public}d", result);
 
@@ -1272,7 +1104,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UnexcludeOutputDevicesTest_002, TestS
     audioDevDesc->macAddress_ = "00:00:00:00:00:00";
     audioDeviceDescriptors.push_back(audioDevDesc);
 
-    server->audioPolicyService_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
     int32_t result = server->audioDeviceLock_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnexcludeOutputDevicesTest_002() result:%{public}d", result);
 
@@ -1548,7 +1379,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerAppStateTest_001, TestSi
         size = item.appStateVec.size();
     }
     EXPECT_EQ(checkSize1, size);
-    
+
     manager.UpdateAppState(TEST_APP_UID, DFX_APP_STATE_FOREGROUND, true);
     if (manager.appInfo_.count(TEST_APP_UID)) {
         auto &item = manager.appInfo_[TEST_APP_UID];

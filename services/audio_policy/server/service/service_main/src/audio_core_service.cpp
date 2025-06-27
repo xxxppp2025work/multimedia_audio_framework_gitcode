@@ -30,6 +30,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+const size_t SELECT_DEVICE_HISTORY_LIMIT = 10;
 const uint32_t FIRST_SESSIONID = 100000;
 static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
@@ -187,6 +188,7 @@ int32_t AudioCoreService::CreateRendererClient(
         streamDesc->audioFlag_, sessionId);
 
     // Fetch pipe
+    audioActiveDevice_.UpdateStreamDeviceMap("CreateRendererClient");
     int32_t ret = FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
     AddSessionId(sessionId);
@@ -374,12 +376,16 @@ void AudioCoreService::UpdateRecordStreamFlag(std::shared_ptr<AudioStreamDescrip
     streamDesc->audioFlag_ = AUDIO_FLAG_NONE;
 }
 
-void AudioCoreService::CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc)
+void AudioCoreService::CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t sessionId)
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     CHECK_AND_RETURN_LOG(!IsSameDevice(desc, audioActiveDevice_.GetCurrentOutputDevice()),
         "current output device is same as new device");
     audioActiveDevice_.SetCurrentOutputDevice(*(desc));
+    std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(desc, sessionId);
+    if (audioDeviceManager_.IsDeviceConnected(desc)) {
+        audioVolumeManager_.SetVolumeForSwitchDevice(*(desc), sinkName);
+    }
     OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
 }
 
@@ -417,10 +423,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
-        CheckAndSetCurrentOutputDevice(streamDesc->newDeviceDescs_.front());
-        std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->newDeviceDescs_.front(),
-            streamDesc->sessionId_);
-        audioVolumeManager_.SetVolumeForSwitchDevice(*(streamDesc->newDeviceDescs_.front()), sinkName);
+        CheckAndSetCurrentOutputDevice(streamDesc->newDeviceDescs_.front(), streamDesc->sessionId_);
         std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
         if (policyConfigMananger_.GetUpdateRouteSupport()) {
             UpdateOutputRoute(streamDesc);
@@ -875,14 +878,6 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid)
 
     audioDeviceCommon_.ClientDiedDisconnectScoNormal();
     audioDeviceCommon_.ClientDiedDisconnectScoRecognition();
-
-    if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_OFFLOAD)) {
-        audioOffloadStream_.DynamicUnloadOffloadModule();
-    }
-
-    if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL)) {
-        audioOffloadStream_.UnloadMchModule();
-    }
 }
 
 bool AudioCoreService::ConnectServiceAdapter()
@@ -896,9 +891,42 @@ void AudioCoreService::OnReceiveBluetoothEvent(const std::string macAddress, con
     audioConnectedDevice_.SetDisplayName(macAddress, deviceName);
 }
 
+void AudioCoreService::DumpSelectHistory(std::string &dumpString)
+{
+    dumpString += "Select device history infos\n";
+    std::lock_guard<std::mutex> lock(hisQueueMutex_);
+    dumpString += "  - TotalPipeNums: " + std::to_string(selectDeviceHistory_.size()) + "\n\n";
+    for (auto &item : selectDeviceHistory_) {
+        dumpString += item + "\n";
+    }
+    dumpString += "\n";
+}
+
+void AudioCoreService::RecordSelectDevice(const std::string &selectHistory)
+{
+    std::lock_guard<std::mutex> lock(hisQueueMutex_);
+    if (selectDeviceHistory_.size() < SELECT_DEVICE_HISTORY_LIMIT) {
+        selectDeviceHistory_.push_back(selectHistory);
+        return;
+    }
+    while (selectDeviceHistory_.size() >= SELECT_DEVICE_HISTORY_LIMIT) {
+        selectDeviceHistory_.pop_front();
+    }
+    selectDeviceHistory_.push_back(selectHistory);
+    return;
+}
+
 int32_t AudioCoreService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
+    if (!selectedDesc.empty() && selectedDesc[0] != nullptr) {
+        // eg. 2025-06-22-21:12:07:666|Uid: 6700 select output device: LOCAL_DEVICE type:2
+        std::string selectHistory = GetTime() + "|Uid:" + std::to_string(IPCSkeleton::GetCallingUid()) + " Pid:" +
+            std::to_string(IPCSkeleton::GetCallingPid()) + " select output device:" + selectedDesc[0]->networkId_ +
+            " type:" + std::to_string(selectedDesc[0]->deviceType_);
+        RecordSelectDevice(selectHistory);
+    }
+
     return audioRecoveryDevice_.SelectOutputDevice(audioRendererFilter, selectedDesc);
 }
 
@@ -910,6 +938,14 @@ void AudioCoreService::NotifyDistributedOutputChange(const AudioDeviceDescriptor
 int32_t AudioCoreService::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
+    if (!selectedDesc.empty() && selectedDesc[0] != nullptr) {
+        // eg. 2025-06-22-21:12:07:666|Uid: 6700 select input device: LOCAL_DEVICE type:15
+        std::string selectHistory = GetTime() + "|Uid:" + std::to_string(IPCSkeleton::GetCallingUid()) + " Pid:" +
+            std::to_string(IPCSkeleton::GetCallingPid()) + " select input device:" + selectedDesc[0]->networkId_ +
+            " type:" + std::to_string(selectedDesc[0]->deviceType_);
+        RecordSelectDevice(selectHistory);
+    }
+
     return audioRecoveryDevice_.SelectInputDevice(audioCapturerFilter, selectedDesc);
 }
 
@@ -1093,6 +1129,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
             streamDesc->audioFlag_, streamDesc->sessionId_);
     }
 
+    audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
     if (IsNoRunningStream(outputStreamDescs)) {
         AUDIO_INFO_LOG("no running stream");
