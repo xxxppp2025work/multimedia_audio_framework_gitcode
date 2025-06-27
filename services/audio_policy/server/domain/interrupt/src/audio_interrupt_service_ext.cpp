@@ -270,8 +270,7 @@ bool AudioInterruptService::IsCapturerFocusAvailable(const int32_t zoneId, const
 
 int32_t AudioInterruptService::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "No permission");
 
     AUDIO_INFO_LOG("start clear audio focus, target sessionID:%{public}d", sessionID);
 
