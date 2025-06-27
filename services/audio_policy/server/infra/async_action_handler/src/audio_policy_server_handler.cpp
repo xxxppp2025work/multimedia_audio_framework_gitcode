@@ -22,6 +22,7 @@
 #include "istandard_audio_routing_manager_listener.h"
 #include "iaudio_policy_client.h"
 #include "audio_policy_client_holder.h"
+#include "audio_policy_manager_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -101,7 +102,7 @@ int32_t AudioPolicyServerHandler::RemoveExternInterruptCbsMap(int32_t clientId)
 }
 
 void AudioPolicyServerHandler::AddAvailableDeviceChangeMap(int32_t clientId, const AudioDeviceUsage usage,
-    const sptr<IStandardAudioPolicyManagerListener> &callback)
+    const std::shared_ptr<AudioPolicyManagerListenerCallback> &callback)
 {
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     availableDeviceChangeCbsMap_[{clientId, usage}] = callback;
@@ -696,13 +697,12 @@ void AudioPolicyServerHandler::HandleAvailableDeviceChange(const AppExecFwk::Inn
         DeviceChangeAction deviceChangeAction = eventContextObj->deviceChangeAction;
         deviceChangeAction.deviceDescriptors = AudioPolicyService::GetAudioPolicyService().
             DeviceFilterByUsageInner(it->first.second, deviceChangeAction.deviceDescriptors);
-        auto ptr = static_cast<AudioPolicyManagerListenerStubImpl*>((it->second).GetRefPtr());
-        if (ptr && deviceChangeAction.deviceDescriptors.size() > 0) {
-            if (!(ptr->hasBTPermission_)) {
+        if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {
+            if (!(it->second->hasBTPermission_)) {
                 AudioPolicyService::GetAudioPolicyService().
                     UpdateDescWhenNoBTPermission(deviceChangeAction.deviceDescriptors);
             }
-            ptr->OnAvailableDeviceChange(usage, deviceChangeAction);
+            it->second->OnAvailableDeviceChange(usage, deviceChangeAction);
         }
     }
 }

@@ -38,5 +38,50 @@ void AudioPolicyManagerListenerCallback::OnInterrupt(const InterruptEventInterna
         listener_->OnInterrupt(interruptEvent);
     }
 }
+
+void AudioPolicyManagerListenerCallback::OnAvailableDeviceChange(const AudioDeviceUsage usage,
+    const DeviceChangeAction &deviceChangeAction)
+{
+    CHECK_AND_RETURN_LOG(listener_ != nullptr, "listener_ is nullptr");
+    listener_->OnAvailableDeviceChange(usage, deviceChangeAction);
+}
+
+bool AudioPolicyManagerListenerCallback::OnQueryClientType(const std::string &bundleName, uint32_t uid)
+{
+    CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, false, "listener_ is nullptr");
+    bool ret = false;
+    listener_->OnQueryClientType(bundleName, uid, ret);
+    return ret;
+}
+
+bool AudioPolicyManagerListenerCallback::OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid)
+{
+    CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, false, "listener_ is nullptr");
+    bool ret = false;
+    listener_->OnCheckClientInfo(bundleName, uid, pid, ret);
+    return ret;
+}
+
+bool AudioPolicyManagerListenerCallback::OnQueryAllowedPlayback(int32_t uid, int32_t pid)
+{
+    CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, false, "listener_ is nullptr");
+    bool ret = false;
+    listener_->OnQueryAllowedPlayback(uid, pid, ret);
+    return ret;
+}
+
+void AudioPolicyManagerListenerCallback::OnBackgroundMute(const int32_t uid)
+{
+    CHECK_AND_RETURN_LOG(listener_ != nullptr, "listener_ is nullptr");
+    listener_->OnBackgroundMute(uid);
+}
+
+bool AudioPolicyManagerListenerCallback::OnQueryBundleNameIsInList(const std::string &bundleName)
+{
+    CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, false, "listener_ is nullptr");
+    bool ret = false;
+    listener_->OnQueryBundleNameIsInList(bundleName, ret);
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

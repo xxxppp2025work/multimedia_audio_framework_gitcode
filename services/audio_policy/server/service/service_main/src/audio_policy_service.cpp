@@ -46,6 +46,7 @@
 #include "audio_background_manager.h"
 #include "audio_core_service.h"
 #include "audio_policy_datashare_listener.h"
+#include "audio_policy_manager_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -463,11 +464,14 @@ int32_t AudioPolicyService::SetAvailableDeviceChangeCallback(const int32_t clien
     const sptr<IRemoteObject> &object, bool hasBTPermission)
 {
     sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
-    auto ptr = static_cast<AudioPolicyManagerListenerStubImpl*>(callback.GetRefPtr());
-    if (ptr != nullptr) {
-        ptr->hasBTPermission_ = hasBTPermission;
+
+    if (callback != nullptr) {
+        auto cb = std::make_shared<AudioPolicyManagerListenerCallback>(callback);
+        CHECK_AND_RETURN_RET_LOG(cb != nullptr, SUCCESS, "AudioPolicyManagerListenerCallback create failed");
+        cb->hasBTPermission_ = hasBTPermission;
+
         if (audioPolicyServerHandler_ != nullptr) {
-            audioPolicyServerHandler_->AddAvailableDeviceChangeMap(clientId, usage, ptr);
+            audioPolicyServerHandler_->AddAvailableDeviceChangeMap(clientId, usage, cb);
         }
     }
 

@@ -28,6 +28,17 @@ public:
     virtual ~AudioPolicyManagerListenerCallback();
     DISALLOW_COPY_AND_MOVE(AudioPolicyManagerListenerCallback);
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
+    void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction);
+    bool OnQueryClientType(const std::string &bundleName, uint32_t uid);
+    bool OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid);
+    bool OnQueryAllowedPlayback(int32_t uid, int32_t pid);
+    void OnBackgroundMute(const int32_t uid);
+    bool OnQueryBundleNameIsInList(const std::string &bundleName);
+
+public:
+    bool hasBTPermission_ = true;
+    bool hasSystemPermission_ = true;
+
 private:
     sptr<IStandardAudioPolicyManagerListener> listener_ = nullptr;
 };

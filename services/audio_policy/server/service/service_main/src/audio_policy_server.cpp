@@ -3537,7 +3537,6 @@ int32_t AudioPolicyServer::SetDistributedRoutingRoleCallback(const sptr<IRemoteO
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
         "SetDistributedRoutingRoleCallback set listener object is nullptr");
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    VerifyBluetoothPermission();
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     sptr<IStandardAudioRoutingManagerListener> listener = iface_cast<IStandardAudioRoutingManagerListener>(object);
     if (listener != nullptr && audioPolicyServerHandler_ != nullptr) {
@@ -3898,8 +3897,6 @@ int32_t AudioPolicyServer::RegisterAudioZoneClient(const sptr<IRemoteObject> &ob
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     AUDIO_DEBUG_LOG("register clientPid: %{public}d", clientPid);
 
-    VerifyBluetoothPermission();
-    PermissionUtil::VerifySystemPermission();
     AudioZoneService::GetInstance().RegisterAudioZoneClient(clientPid, client);
 
     RegisterClientDeathRecipient(object, LISTENER_CLIENT);

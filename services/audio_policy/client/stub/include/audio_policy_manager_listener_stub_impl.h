@@ -54,10 +54,6 @@ private:
     std::weak_ptr<AudioBackgroundMuteCallback> audioBackgroundMuteCallback_;
     std::weak_ptr<AudioClientInfoMgrCallback> audioClientInfoMgrCallback_;
     std::weak_ptr<AudioQueryBundleNameListCallback> audioQueryBundleNameListCallback_;
-
-public:
-    bool hasBTPermission_ = true;
-    bool hasSystemPermission_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS

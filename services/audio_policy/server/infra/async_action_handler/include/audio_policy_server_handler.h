@@ -33,6 +33,7 @@ namespace AudioStandard {
 
 class IStandardAudioRoutingManagerListener;
 class AudioPolicyClientHolder;
+class AudioPolicyManagerListenerCallback;
 class AudioPolicyServerHandler : public AppExecFwk::EventHandler {
     DECLARE_DELAYED_SINGLETON(AudioPolicyServerHandler)
 public:
@@ -147,7 +148,7 @@ public:
     void AddExternInterruptCbsMap(int32_t clientId, const std::shared_ptr<AudioInterruptCallback> &callback);
     int32_t RemoveExternInterruptCbsMap(int32_t clientId);
     void AddAvailableDeviceChangeMap(int32_t clientId, const AudioDeviceUsage usage,
-        const sptr<IStandardAudioPolicyManagerListener> &callback);
+        const std::shared_ptr<AudioPolicyManagerListenerCallback> &callback);
     void RemoveAvailableDeviceChangeMap(const int32_t clientId, AudioDeviceUsage usage);
     void AddDistributedRoutingRoleChangeCbsMap(int32_t clientId,
         const sptr<IStandardAudioRoutingManagerListener> &callback);
@@ -280,7 +281,7 @@ private:
 
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptCallback>> amInterruptCbsMap_;
     std::map<std::pair<int32_t, AudioDeviceUsage>,
-        sptr<IStandardAudioPolicyManagerListener>> availableDeviceChangeCbsMap_;
+        std::shared_ptr<AudioPolicyManagerListenerCallback>> availableDeviceChangeCbsMap_;
     std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> distributedRoutingRoleChangeCbsMap_;
     std::unordered_map<int32_t,  std::unordered_map<CallbackChange, bool>> clientCallbacksMap_;
     int32_t pidOfRss_ = -1;
