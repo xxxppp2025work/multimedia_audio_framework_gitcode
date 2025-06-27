@@ -46,7 +46,7 @@ std::shared_ptr<IHpaeSoftLink> IHpaeSoftLink::CreateSoftLink(int32_t renderIdx, 
 uint32_t HpaeSoftLink::GenerateSessionId()
 {
     uint32_t sessionId = g_sessionId++;
-    AUDIO_INFO_LOG("hpae softlink sessionId: %{public}d", sessionId);
+    AUDIO_INFO_LOG("hpae softlink sessionId: %{public}u", sessionId);
     if (g_sessionId > MAX_VALID_SESSIONID) {
         AUDIO_WARNING_LOG("sessionId is too large, reset it!");
         g_sessionId = FIRST_SESSIONID;
@@ -215,7 +215,7 @@ int32_t HpaeSoftLink::Release()
     Trace trace("HpaeSoftLink::Release");
     IHpaeManager::GetHpaeManager().Release(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
     IHpaeManager::GetHpaeManager().Release(HPAE_STREAM_CLASS_TYPE_RECORD, capturerStreamInfo_.sessionId);
-    // todo : check stop result
+    std::lock_guard<std::mutex> lock(stateMutex_);
     state_ = HpaeSoftLinkState::RELEASED;
     return SUCCESS;
 }
@@ -230,7 +230,7 @@ void HpaeSoftLink::OnStatusUpdate(IOperation operation, uint32_t streamIndex)
         streamStateMap_[streamIndex] = HpaeSoftLinkState::STOPPED;
     } else if (operation == OPERATION_RELEASED){
         streamStateMap_[streamIndex] = HpaeSoftLinkState::RELEASED;
-    }
+    } // todo : other operation value
     std::lock_guard<std::mutex> lock(callbackMutex_);
     isOperationFinish_ = true;
     callbackCV_.notify_all();
@@ -241,13 +241,13 @@ int32_t HpaeSoftLink::OnStreamData(AudioCallBackStreamInfo& callbackStreamInfo)
     Trace trace("HpaeSoftLink::OnStreamData, [" +std::to_string(rendererStreamInfo_.sessionId) + "]OnWriteData");
 #ifdef ENABLE_HOOK_PCM
     if (sinkInfo_.adapterName == "file_io") {
-        std::this_thread::sleep_for(std::chrono::milliseconds(20)); // 20s for file io sleep
+        std::this_thread::sleep_for(std::chrono::milliseconds(20)); // 20s for file_io sleep
     }
 #endif
     int8_t *inputData = callbackStreamInfo.inputData;
     size_t requestDataLen = callbackStreamInfo.requestDataLen;
     OptResult result = bufferQueue_->GetReadableSize();
-    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, 
+    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
         "ringBuffer get readable invalid size: %{public}zu", result.size);
     if (result.size == 0 || result.size < requestDataLen) {
         ++underRunCount_;
@@ -273,14 +273,14 @@ int32_t HpaeSoftLink::OnStreamData(AudioCallBackCapturerStreamInfo& callbackStre
     Trace trace("HpaeSoftLink::OnStreamData, [" + std::to_string(capturerStreamInfo_.sessionId) + "]OnReadData");
 #ifdef ENABLE_HOOK_PCM
     if (sourceInfo_.adapterName == "file_io") {
-        std::this_thread::sleep_for(std::chrono::milliseconds(20)); // 20s for file io sleep
+        std::this_thread::sleep_for(std::chrono::milliseconds(20)); // 20s for file_io sleep
     }
 #endif
     int8_t *outputData = callbackStreamInfo.outputData;
     size_t requestDataLen = callbackStreamInfo.requestDataLen;
     // todo : channel select
     OptResult result = bufferQueue_->GetWritableSize();
-    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_READ_FAILED, 
+    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_READ_FAILED,
         "ringBuffer get writeable invalid size: %{public}zu", result.size);
     if (result.size == 0 || result.size < requestDataLen) {
         ++overFlowCount_;

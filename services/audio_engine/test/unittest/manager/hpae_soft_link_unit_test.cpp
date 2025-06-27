@@ -31,7 +31,7 @@ public:
     int32_t sourceId_;
 };
 
-static void WaitForMsgProcessing(IHpaeManager> &hpaeManager)
+static void WaitForMsgProcessing(IHpaeManager &hpaeManager)
 {
     int waitCount = 0;
     const int waitCountThd = 5;
@@ -101,7 +101,7 @@ void HpaeSoftLinkTest::SetUp()
     WaitForMsgProcessing(hpaeManager_);
     sinkId_ = callback->GetPortId();
     AudioModuleInfo audioSourceModuleInfo = GetSourceAudioModeInfo();
-    EXPECT_EQ(hpaeManager_.OpenAudioPort(audioSinkModuleInfo), SUCCESS);
+    EXPECT_EQ(hpaeManager_.OpenAudioPort(audioSourceModuleInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     sourceId_ = callback->GetPortId();
 }
@@ -112,7 +112,7 @@ void HpaeSoftLinkTest::TearDown()
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_.CloseAudioPort(sourceId_);
     WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->DeInit();
+    hpaeManager_.DeInit();
 }
 
 TEST_F(HpaeSoftLinkTest, testSoftLink)

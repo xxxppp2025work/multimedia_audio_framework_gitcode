@@ -1034,7 +1034,7 @@ void HpaeManager::HandleMoveSessionFailed(HpaeStreamClassType streamClassType, u
         }
     } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
         if (auto serviceCallback = serviceCallback_.lock()) {
-            serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
+            serviceCallback->OnMoveSourceOutputByIndexOrNameCb(ERROR_INVALID_PARAM);
         }
     }
 }
