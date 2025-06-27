@@ -112,6 +112,7 @@ ohos_unittest("hpae_manager_test") {
     "common/test_case_common.cpp",
     "manager/hpae_audio_service_callback_unit_test.cpp",
     "manager/hpae_manager_test.cpp",
+    "manager/hpae_soft_link_unit_test.cpp",
   ]
 
   configs = [ ":audio_engine_private_config" ]

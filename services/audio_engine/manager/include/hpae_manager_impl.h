@@ -37,6 +37,11 @@ public:
     void DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo) override;
     uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) override;
     int32_t CloseAudioPort(int32_t audioHandleIndex) override;
+    int32_t GetSinkInfoByIdx(const int32_t &renderIdx, HpaeSinkInfo &sinkInfo, int32_t &result,
+        std::function<void()> callback) override;
+    int32_t GetSourceInfoByIdx(const int32_t &captureIdx, HpaeSourceInfo &sourceInfo, int32_t &result,
+        std::function<void()> callback) override;
+
     int32_t GetAllSinkInputs() override;
     int32_t GetAllSourceOutputs() override;
     int32_t MoveSourceOutputByIndexOrName(
