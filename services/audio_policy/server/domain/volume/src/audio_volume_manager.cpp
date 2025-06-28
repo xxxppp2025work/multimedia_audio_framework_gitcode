@@ -1002,8 +1002,10 @@ void AudioVolumeManager::SetAbsVolumeSceneAsync(const std::string &macAddress, c
     if (btDevice == macAddress) {
         audioPolicyManager_.SetAbsVolumeScene(support);
         SetSharedAbsVolumeScene(support);
-        int32_t volumeLevel = audioPolicyManager_.GetSystemVolumeLevelNoMuteState(STREAM_MUSIC);
-        audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel);
+        if (audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            int32_t volumeLevel = audioPolicyManager_.GetSystemVolumeLevelNoMuteState(STREAM_MUSIC);
+            audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel);
+        }
     }
 }
 
