@@ -648,12 +648,6 @@ void AudioPolicyServer::SendMonitrtEvent(const int32_t keyType, int32_t resultOf
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-void AudioPolicyServer::SubscribeSafeVolumeEvent()
-{
-    AUDIO_INFO_LOG("enter");
-    audioPolicyService_.SubscribeSafeVolumeEvent();
-}
-
 bool AudioPolicyServer::IsVolumeTypeValid(AudioStreamType streamType)
 {
     bool result = false;
@@ -782,7 +776,7 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
 #ifdef USB_ENABLE
     usbManager_.SubscribeEvent();
 #endif
-    SubscribeSafeVolumeEvent();
+    audioVolumeManager_.SubscribeSafeVolumeEvent();
 }
 
 void AudioPolicyServer::SubscribeCommonEvent(const std::string event)
@@ -1508,7 +1502,7 @@ void AudioPolicyServer::ProcUpdateRingerMode()
 
 int32_t AudioPolicyServer::SetAppSingleStreamVolume(int32_t appUid, int32_t volumeLevel, bool isUpdateUi)
 {
-    int32_t ret = audioPolicyService_.SetAppVolumeLevel(appUid, volumeLevel);
+    int32_t ret = audioVolumeManager_.SetAppVolumeLevel(appUid, volumeLevel);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set App Volume level");
 
     VolumeEvent volumeEvent;
@@ -2594,7 +2588,9 @@ void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
 int32_t AudioPolicyServer::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo)
 {
     std::string bundleName = "";
-    bool isFastControlled = audioPolicyService_.getFastControlParam();
+    int32_t fastControlFlag = 1; // default 1, set isFastControlled_ true
+    GetSysPara("persist.multimedia.audioflag.fastcontrolled", fastControlFlag);
+    bool isFastControlled = fastControlFlag != 0;
     if (isFastControlled && rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
         bundleName = AudioBundleManager::GetBundleName();
         AUDIO_INFO_LOG("bundleName %{public}s", bundleName.c_str());
@@ -3126,7 +3122,7 @@ void AudioPolicyServer::RegisterDataObserver()
 
 int32_t AudioPolicyServer::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
 {
-    int32_t ret = audioPolicyService_.QueryEffectManagerSceneMode(supportedEffectConfig);
+    int32_t ret = audioEffectService_.QueryEffectManagerSceneMode(supportedEffectConfig);
     return ret;
 }
 
@@ -3299,11 +3295,6 @@ int32_t AudioPolicyServer::UnsetAvailableDeviceChangeCallback(const int32_t /*cl
         audioPolicyServerHandler_->RemoveAvailableDeviceChangeMap(clientPid, usage);
     }
     return SUCCESS;
-}
-
-int32_t AudioPolicyServer::OffloadStopPlaying(const AudioInterrupt &audioInterrupt)
-{
-    return audioPolicyService_.OffloadStopPlaying(std::vector<int32_t>(1, audioInterrupt.streamId));
 }
 
 // LCOV_EXCL_START
@@ -4121,7 +4112,7 @@ int32_t AudioPolicyServer::GetAudioEnhanceProperty(AudioEnhancePropertyArray &pr
 {
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
-    return audioPolicyService_.GetAudioEnhanceProperty(propertyArray);
+    return AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(propertyArray);
 }
 
 int32_t AudioPolicyServer::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)

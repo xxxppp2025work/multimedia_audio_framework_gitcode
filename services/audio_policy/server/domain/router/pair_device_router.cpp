@@ -18,9 +18,8 @@
 
 #include "pair_device_router.h"
 
-#include "audio_policy_service.h"
-
 #include "audio_bluetooth_manager.h"
+#include "audio_active_device.h"
 
 using namespace std;
 
@@ -41,7 +40,7 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallCaptureDevice(SourceT
     const uint32_t sessionID)
 {
     shared_ptr<AudioDeviceDescriptor> desc =
-        AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
+        make_shared<AudioDeviceDescriptor>(AudioActiveDevice::GetInstance().GetCurrentOutputDevice());
     std::shared_ptr<AudioDeviceDescriptor> pairDevice = desc->pairDeviceDescriptor_;
     bool isScoStateConnect = Bluetooth::AudioHfpManager::IsAudioScoStateConnect();
     if (pairDevice != nullptr && pairDevice->connectState_ != SUSPEND_CONNECTED && !pairDevice->exceptionFlag_ &&

@@ -25,6 +25,7 @@
 
 #include "audio_policy_service.h"
 #include "audio_setting_provider.h"
+#include "audio_device_lock.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -662,7 +663,7 @@ void AudioSpatializationService::InitSpatializationState()
             UnpackSpatializationState(pack, spatializationStateFlag_);
             UpdateSpatializationStateReal(false);
         }
-        
+
         CHECK_AND_RETURN(InitSpatializationScene() == SUCCESS);
 
         for (uint32_t i = 1; i <= MAX_DEVICE_NUM; ++i) {
@@ -780,7 +781,7 @@ void AudioSpatializationService::UpdateSpatializationSupported(const std::string
         AUDIO_INFO_LOG("specified address for spatialization is not in memory");
         return;
     }
-    AudioPolicyService::GetAudioPolicyService().UpdateSpatializationSupported(encryptedAddress,
+    AudioDeviceLock::GetInstance().UpdateSpatializationSupported(encryptedAddress,
         addressToSpatialDeviceStateMap_[encryptedAddress].isSpatializationSupported && isSpatializationSupported_);
 }
 

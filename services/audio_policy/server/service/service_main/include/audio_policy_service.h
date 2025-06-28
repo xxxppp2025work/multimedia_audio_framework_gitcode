@@ -98,13 +98,9 @@ public:
 
     void OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status);
 
-    int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
-
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) const;
 
     std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
 
@@ -119,13 +115,7 @@ public:
 
     bool IsAbsVolumeSupported();
 
-    shared_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor();
-
-    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
-
     void OnUpdateAnahsSupport(std::string anahsShowType);
-
-    void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
 
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,
@@ -179,32 +169,17 @@ public:
     static void BluetoothServiceCrashedCallback(pid_t pid, pid_t uid);
 #endif
 
-    void RegisterBluetoothListener();
-
     void SubscribeAccessibilityConfigObserver();
 
     void RegisterRemoteDevStatusCallback();
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
-        AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
-        AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
-        AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
 
     int32_t GetMaxRendererInstances();
 
     void RegisterDataObserver();
 
-    int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
-
     void UpdateDescWhenNoBTPermission(vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
 
     int32_t GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc);
-
-    int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionIds);
 
     int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
 
@@ -236,22 +211,16 @@ public:
     // for enhance
     int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-    bool getFastControlParam();
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
-    void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
-    void SubscribeSafeVolumeEvent();
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
-    void UpdateSpatializationSupported(const std::string macAddress, const bool support);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId);
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
-    void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
 
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object);
 private:
@@ -300,8 +269,6 @@ private:
 
     void RegisterNameMonitorHelper();
 
-    void RegisterAccessibilityMonitorHelper();
-
     PipeInfo& GetPipeInfoByPipeName(std::string &supportPipe, AudioAdapterInfo &adapterInfo);
 
     int32_t CheckDeviceCapability(AudioAdapterInfo &adapterInfo, int32_t flag, DeviceType deviceType);
@@ -312,22 +279,14 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &preferredDeviceList);
 
     bool LoadAudioPolicyConfig();
-    void CreateRecoveryThread();
-
-    void LoadHdiEffectModel();
 
     void UpdateInputDeviceWhenStopping(const bool &isSupported);
-
-    void SetDefaultDeviceLoadFlag(bool isLoad);
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
 
     void UnregisterBluetoothListener();
 
-    int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionIds);
-
     BluetoothOffloadState GetA2dpOffloadFlag();
-    void SetDefaultAdapterEnable(bool isEnable);
     bool IsDevicePlaybackSupported(const AudioProcessConfig &config, const AudioDeviceDescriptor &deviceInfo);
 private:
 
@@ -337,7 +296,6 @@ private:
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
     int32_t maxRendererInstances_ = 128;
-    bool isFastControlled_ = true;
     static constexpr int32_t MIN_SERVICE_COUNT = 2;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
@@ -424,17 +382,6 @@ private:
 
 };
 
-class SafeVolumeEventSubscriber : public EventFwk::CommonEventSubscriber {
-public:
-    explicit SafeVolumeEventSubscriber(const EventFwk::CommonEventSubscribeInfo &subscribeInfo,
-        std::function<void(const EventFwk::CommonEventData&)> receiver)
-        : EventFwk::CommonEventSubscriber(subscribeInfo), eventReceiver_(receiver) {}
-    ~SafeVolumeEventSubscriber() {}
-    void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override;
-private:
-    SafeVolumeEventSubscriber() = default;
-    std::function<void(const EventFwk::CommonEventData&)> eventReceiver_;
-};
 } // namespace AudioStandard
 } // namespace OHOS
 

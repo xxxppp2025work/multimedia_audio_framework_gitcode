@@ -53,7 +53,7 @@ sptr<AudioPolicyServer> GetPolicyServerUnitTest()
         server->OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
         server->OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
         server->OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
-        server->audioPolicyService_.SetDefaultDeviceLoadFlag(true);
+        server->audioVolumeManager_.SetDefaultDeviceLoadFlag(true);
         g_hasServerInit = true;
     }
     return server;
@@ -975,7 +975,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_044, TestSize.Level1)
     AudioRendererInfo rendererInfo;
     int32_t ret = ptrAudioPolicyServer->GetPreferredOutputStreamType(rendererInfo);
     EXPECT_EQ(ret, 0);
-    ptrAudioPolicyServer->audioPolicyService_.isFastControlled_ = true;
     ret = ptrAudioPolicyServer->GetPreferredOutputStreamType(rendererInfo);
     EXPECT_EQ(ret, 0);
     rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
