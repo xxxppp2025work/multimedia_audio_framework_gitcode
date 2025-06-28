@@ -56,7 +56,7 @@ AudioPolicyServer* GetServerPtr()
         server.OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
         server.OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
         server.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
-        server.audioPolicyService_.SetDefaultDeviceLoadFlag(true);
+        server.audioVolumeManager_.SetDefaultDeviceLoadFlag(true);
         g_hasServerInit = true;
     }
     return &server;
@@ -474,7 +474,7 @@ void AudioPolicyProxyFiveFuzzTest()
     captureInfo.sourceType = SOURCE_TYPE_MIC;
     audioPolicyProxy->GetPreferredOutputDeviceDescriptors(rendererInfo, forceNoBTPermission);
     audioPolicyProxy->GetPreferredInputDeviceDescriptors(captureInfo);
-    
+
     int32_t ltonetype = GetData<int32_t>();
     std::string countryCode = "countryCode";
     audioPolicyProxy->GetToneConfig(ltonetype, countryCode);

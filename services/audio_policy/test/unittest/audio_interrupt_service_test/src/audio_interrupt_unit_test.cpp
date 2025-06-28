@@ -96,7 +96,7 @@ sptr<AudioPolicyServer> GetPolicyServerTest()
         server->OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
         server->OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
         server->OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
-        server->audioPolicyService_.SetDefaultDeviceLoadFlag(true);
+        server->audioVolumeManager_.SetDefaultDeviceLoadFlag(true);
         g_hasServerInit = true;
     }
     return server;
@@ -2160,7 +2160,7 @@ HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_003, TestSize.Level1)
     interruptServiceTest->zonesMap_.clear();
     interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
     interruptServiceTest->zonesMap_[1] = std::make_shared<AudioInterruptZone>();
-    
+
     SetUid1041();
     EXPECT_NO_THROW(
         interruptServiceTest->InjectInterruptToAudioZone(1, interrupts);
@@ -2244,7 +2244,7 @@ HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_007, TestSize.Level1)
     interruptServiceTest->zonesMap_.clear();
     interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
     interruptServiceTest->zonesMap_[1] = std::make_shared<AudioInterruptZone>();
-    
+
     SetUid1041();
     EXPECT_NO_THROW(
         interruptServiceTest->InjectInterruptToAudioZone(1, "1", interrupts);
@@ -3595,7 +3595,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_118, TestSize.Level1)
     auto iterActive = myList.begin();
 
     AudioFocuState oldState = ACTIVE;
-    
+
     std::list<std::pair<AudioInterrupt, AudioFocuState>> myList2;
     myList.emplace_back(AudioInterrupt(), AudioFocuState::PAUSEDBYREMOTE);
     auto iterNew = myList.begin();

@@ -146,7 +146,7 @@ AudioPolicyServer *GetServerPtr()
 #ifdef USB_ENABLE
         g_server.OnAddSystemAbility(USB_SYSTEM_ABILITY_ID, "");
 #endif
-        g_server.audioPolicyService_.SetDefaultDeviceLoadFlag(true);
+        g_server.audioVolumeManager_.SetDefaultDeviceLoadFlag(true);
         g_isInit = true;
     }
     return &g_server;

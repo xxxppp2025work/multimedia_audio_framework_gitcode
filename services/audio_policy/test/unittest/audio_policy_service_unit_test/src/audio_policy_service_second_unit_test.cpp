@@ -1011,44 +1011,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, TriggerAvailableDeviceChangedCallback_00
 }
 
 /**
- * @tc.name  : Test OffloadStartPlaying.
- * @tc.number: OffloadStartPlaying_001
- * @tc.desc  : Test OffloadStartPlaying interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadStartPlaying_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    std::vector<int32_t> sessionIds = {0};
-    int32_t ret;
-
-    ret = server->audioPolicyService_.OffloadStartPlaying(sessionIds);
-    EXPECT_EQ(ret, SUCCESS);
-
-    sessionIds.clear();
-    ret = server->audioPolicyService_.OffloadStartPlaying(sessionIds);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test OffloadStopPlaying.
- * @tc.number: OffloadStopPlaying_001
- * @tc.desc  : Test OffloadStopPlaying interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadStopPlaying_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    std::vector<int32_t> sessionIds = {0};
-    int32_t ret;
-
-    ret = server->audioPolicyService_.OffloadStopPlaying(sessionIds);
-    EXPECT_EQ(ret, SUCCESS);
-
-    sessionIds.clear();
-    ret = server->audioPolicyService_.OffloadStopPlaying(sessionIds);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test OffloadGetRenderPosition.
  * @tc.number: OffloadGetRenderPosition_001
  * @tc.desc  : Test OffloadGetRenderPosition interfaces.
@@ -1216,24 +1178,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, IsDevicePlaybackSupported_004, TestSize.
     desc.deviceType_ = DeviceType::DEVICE_TYPE_LINE_DIGITAL;
     auto ret = server->audioPolicyService_.IsDevicePlaybackSupported(config, desc);
     EXPECT_EQ(ret, true);
-}
-
-/**
-* @tc.name  : Test RegisterAccessibilityMonitorHelper.
-* @tc.number: RegisterAccessibilityMonitorHelperTest
-* @tc.desc  : Test RegisterAccessibilityMonitorHelper interfaces.
-*/
-HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterAccessibilityMonitorHelperTest, TestSize.Level1)
-{
-    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    bool isDataShareReady = settingProvider.isDataShareReady_.load();
-    settingProvider.SetDataShareReady(true);
-    ASSERT_TRUE(settingProvider.isDataShareReady_.load());
-    auto server = GetServerUtil::GetServerPtr();
-    ASSERT_TRUE(server != nullptr);
-    // The result can be verified only after the datashare mock framework is completed.
-    server->audioPolicyService_.RegisterAccessibilityMonitorHelper();
-    settingProvider.SetDataShareReady(isDataShareReady);
 }
 
 /**

@@ -1175,7 +1175,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetDevices_001, TestSize.Level1)
     DeviceFlag deviceFlag = OUTPUT_DEVICES_FLAG;
     std::shared_ptr<AudioDeviceDescriptor> ptr = nullptr;
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(ptr);
-    GetServerPtr()->audioPolicyService_.GetDevices(deviceFlag);
 
     // case deviceType_ is DEVICE_TYPE_REMOTE_CAST
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
@@ -1190,11 +1189,9 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetDevices_001, TestSize.Level1)
             audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
             GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(
                 audioDeviceDescriptor);
-            GetServerPtr()->audioPolicyService_.GetDevices(deviceFlag);
             audioDeviceDescriptor->networkId_ = REMOTE_NETWORK_ID;
             GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(
                 audioDeviceDescriptor);
-            GetServerPtr()->audioPolicyService_.GetDevices(deviceFlag);
         }
     }
 
@@ -1207,11 +1204,9 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetDevices_001, TestSize.Level1)
             audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
             GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(
                 audioDeviceDescriptor);
-            GetServerPtr()->audioPolicyService_.GetDevices(deviceFlag);
             audioDeviceDescriptor->networkId_ = REMOTE_NETWORK_ID;
             GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(
                 audioDeviceDescriptor);
-            GetServerPtr()->audioPolicyService_.GetDevices(deviceFlag);
         }
     }
 }

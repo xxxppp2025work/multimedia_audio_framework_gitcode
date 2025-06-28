@@ -315,6 +315,7 @@ int32_t AudioVolumeManager::SetAppVolumeLevel(int32_t appUid, int32_t volumeLeve
 {
     AUDIO_INFO_LOG("enter AudioVolumeManager::SetAppVolumeLevel");
     // audioPolicyManager_ : AudioAdapterManager
+    AudioStreamCollector::GetAudioStreamCollector().UpdateAppVolume(appUid, volumeLevel);
     int32_t result = audioPolicyManager_.SetAppVolumeLevel(appUid, volumeLevel);
     return result;
 }
@@ -937,6 +938,29 @@ void AudioVolumeManager::OnReceiveEvent(const EventFwk::CommonEventData &eventDa
         DealWithEventVolume(INCREASE_VOLUME_NOTIFICATION_ID);
         SetSafeVolumeCallback(STREAM_MUSIC);
     }
+}
+
+class SafeVolumeEventSubscriber : public EventFwk::CommonEventSubscriber {
+public:
+    explicit SafeVolumeEventSubscriber(const EventFwk::CommonEventSubscribeInfo &subscribeInfo)
+        : EventFwk::CommonEventSubscriber(subscribeInfo) {}
+    ~SafeVolumeEventSubscriber() {}
+    void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override
+    {
+        AudioVolumeManager::GetInstance().OnReceiveEvent(eventData);
+    }
+};
+
+void AudioVolumeManager::SubscribeSafeVolumeEvent()
+{
+    AUDIO_INFO_LOG("enter.");
+    EventFwk::MatchingSkills matchingSkills;
+    matchingSkills.AddEvent(AUDIO_RESTORE_VOLUME_EVENT);
+    matchingSkills.AddEvent(AUDIO_INCREASE_VOLUME_EVENT);
+    EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
+    auto subscriber = std::make_shared<SafeVolumeEventSubscriber>(subscribeInfo);
+    CHECK_AND_RETURN_LOG(subscriber, "Create SafeVolumeEventSubscriber Failed.");
+    EventFwk::CommonEventManager::SubscribeCommonEvent(subscriber);
 }
 
 void AudioVolumeManager::SetDeviceSafeVolumeStatus()

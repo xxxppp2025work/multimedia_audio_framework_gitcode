@@ -55,6 +55,11 @@ static std::string GetEncryptAddr(const std::string &addr)
 void AudioRecoveryDevice::Init(std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager)
 {
     audioA2dpOffloadManager_ = audioA2dpOffloadManager;
+    thread th([this] {
+        RecoverExcludedOutputDevices();
+        RecoveryPreferredDevices();
+    });
+    pthread_setname_np(th.native_handle(), "OS_APSRecovery");
 }
 
 void AudioRecoveryDevice::DeInit()
