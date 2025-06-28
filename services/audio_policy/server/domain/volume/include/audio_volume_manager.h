@@ -112,6 +112,7 @@ public:
     void SetRingerModeMute(bool flag);
     int32_t ResetRingerModeMute();
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
+    void SubscribeSafeVolumeEvent();
     int32_t SetVoiceRingtoneMute(bool isMute);
     void SetVoiceCallVolume(int32_t volume);
     bool GetVolumeGroupInfosNotWait(std::vector<sptr<VolumeGroupInfo>> &infos);

@@ -85,7 +85,7 @@ namespace AudioStandard {
 
 class AudioA2dpOffloadManager;
 
-class AudioPolicyService : public IDeviceStatusObserver, public IPolicyProvider {
+class AudioPolicyService : public IPolicyProvider {
 public:
     static AudioPolicyService& GetAudioPolicyService()
     {
@@ -96,53 +96,15 @@ public:
     bool Init(void);
     void Deinit(void);
 
-    void OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status);
+    int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) override;
 
-    int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
+    int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo, uint32_t sessionId) override;
 
-    int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) const;
-
-    std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter);
-    int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config);
-
-    int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo, uint32_t sessionId);
-
-    int32_t NotifyWakeUpCapturerRemoved();
+    int32_t NotifyWakeUpCapturerRemoved() override;
 
     AudioStreamInfo GetFastStreamInfo();
 
-    bool IsAbsVolumeSupported();
-
-    shared_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor();
-
-    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
-
-    void OnUpdateAnahsSupport(std::string anahsShowType);
-
-    void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
-
-    void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
-        const std::string &macAddress, const std::string &deviceName,
-        const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE, bool hasPair = false);
-    void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
-
-    void OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
-
-    void OnDeviceConfigurationChanged(DeviceType deviceType,
-        const std::string &macAddress, const std::string &deviceName,
-        const AudioStreamInfo &streamInfo);
-
-    void OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop = false);
-
-    void OnServiceDisconnected(AudioServiceIndex serviceIndex);
-
-    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
+    bool IsAbsVolumeSupported() override;
 
     void LoadEffectLibrary();
 
@@ -159,11 +121,6 @@ public:
     int32_t SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
         const sptr<IRemoteObject> &object, bool hasBTPermission);
 
-    int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object);
-
-    int32_t GetCurrentCapturerChangeInfos(vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
-        bool hasBTPermission, bool hasSystemPermission);
-
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
 
     void SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback);
@@ -171,48 +128,29 @@ public:
     void RegiestPolicy();
 
     // override for IPolicyProvider
-    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, AudioDeviceDescriptor &deviceInfo);
+    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, AudioDeviceDescriptor &deviceInfo) override;
 
-    int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
+    int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) override;
 
 #ifdef BLUETOOTH_ENABLE
     static void BluetoothServiceCrashedCallback(pid_t pid, pid_t uid);
 #endif
 
-    void RegisterBluetoothListener();
-
     void SubscribeAccessibilityConfigObserver();
 
     void RegisterRemoteDevStatusCallback();
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
-        AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
-        AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
-        AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
-
-    int32_t GetMaxRendererInstances();
+    int32_t GetMaxRendererInstances() override;
 
     void RegisterDataObserver();
-
-    int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
 
     void UpdateDescWhenNoBTPermission(vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
 
     int32_t GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc);
 
-    int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionIds);
+    int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp) override;
 
-    int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
-
-    int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName);
-
-    DistributedRoutingInfo GetDistributedRoutingRoleInfo();
-
-    void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
+    int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName) override;
 
     void UpdateA2dpOffloadFlagBySpatialService(
         const std::string& macAddress, std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnableMap);
@@ -222,7 +160,7 @@ public:
 
     void NotifyAccountsChanged(const int &id);
 
-    int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
+    int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe) override;
 
     int32_t DynamicUnloadModule(const AudioPipeType pipeType);
     // for effect V3
@@ -236,22 +174,16 @@ public:
     // for enhance
     int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-    bool getFastControlParam();
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning);
-    void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
-    void SubscribeSafeVolumeEvent();
-    int32_t NotifyCapturerRemoved(uint64_t sessionId);
-    void UpdateSpatializationSupported(const std::string macAddress, const bool support);
+        const StreamUsage streamUsage, bool isRunning) override;
+    int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
 #ifdef HAS_FEATURE_INNERCAPTURER
-    int32_t LoadModernInnerCapSink(int32_t innerCapId);
-    int32_t UnloadModernInnerCapSink(int32_t innerCapId);
+    int32_t LoadModernInnerCapSink(int32_t innerCapId) override;
+    int32_t UnloadModernInnerCapSink(int32_t innerCapId) override;
 #endif
-    void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
 
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object);
 private:
@@ -269,7 +201,6 @@ private:
 #endif
         audioGlobalConfigManager_(AudioGlobalConfigManager::GetAudioGlobalConfigManager()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
-        audioRouteMap_(AudioRouteMap::GetInstance()),
         audioConfigManager_(AudioPolicyConfigManager::GetInstance()),
         audioConnectedDevice_(AudioConnectedDevice::GetInstance()),
         audioToneManager_(AudioToneManager::GetInstance()),
@@ -287,9 +218,7 @@ private:
         audioDeviceLock_(AudioDeviceLock::GetInstance()),
         audioDeviceStatus_(AudioDeviceStatus::GetInstance()),
         sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance())
-    {
-        deviceStatusListener_ = std::make_unique<DeviceStatusListener>(*this);
-    }
+    {}
 
     ~AudioPolicyService();
 
@@ -299,8 +228,6 @@ private:
     int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray);
 
     void RegisterNameMonitorHelper();
-
-    void RegisterAccessibilityMonitorHelper();
 
     PipeInfo& GetPipeInfoByPipeName(std::string &supportPipe, AudioAdapterInfo &adapterInfo);
 
@@ -312,22 +239,12 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &preferredDeviceList);
 
     bool LoadAudioPolicyConfig();
-    void CreateRecoveryThread();
-
-    void LoadHdiEffectModel();
 
     void UpdateInputDeviceWhenStopping(const bool &isSupported);
 
-    void SetDefaultDeviceLoadFlag(bool isLoad);
-
-    void OnServiceConnected(AudioServiceIndex serviceIndex);
-
     void UnregisterBluetoothListener();
 
-    int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionIds);
-
     BluetoothOffloadState GetA2dpOffloadFlag();
-    void SetDefaultAdapterEnable(bool isEnable);
     bool IsDevicePlaybackSupported(const AudioProcessConfig &config, const AudioDeviceDescriptor &deviceInfo);
 private:
 
@@ -337,7 +254,6 @@ private:
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
     int32_t maxRendererInstances_ = 128;
-    bool isFastControlled_ = true;
     static constexpr int32_t MIN_SERVICE_COUNT = 2;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
@@ -346,7 +262,6 @@ private:
 
     AudioStreamCollector& streamCollector_;
     AudioRouterCenter& audioRouterCenter_;
-    std::unique_ptr<DeviceStatusListener> deviceStatusListener_;
 
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     AudioScene lastAudioScene_ = AUDIO_SCENE_DEFAULT;
@@ -402,7 +317,6 @@ private:
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
 
     AudioIOHandleMap& audioIOHandleMap_;
-    AudioRouteMap& audioRouteMap_;
     AudioPolicyConfigManager& audioConfigManager_;
     AudioConnectedDevice& audioConnectedDevice_;
     AudioToneManager& audioToneManager_;
@@ -424,17 +338,6 @@ private:
 
 };
 
-class SafeVolumeEventSubscriber : public EventFwk::CommonEventSubscriber {
-public:
-    explicit SafeVolumeEventSubscriber(const EventFwk::CommonEventSubscribeInfo &subscribeInfo,
-        std::function<void(const EventFwk::CommonEventData&)> receiver)
-        : EventFwk::CommonEventSubscriber(subscribeInfo), eventReceiver_(receiver) {}
-    ~SafeVolumeEventSubscriber() {}
-    void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override;
-private:
-    SafeVolumeEventSubscriber() = default;
-    std::function<void(const EventFwk::CommonEventData&)> eventReceiver_;
-};
 } // namespace AudioStandard
 } // namespace OHOS
 

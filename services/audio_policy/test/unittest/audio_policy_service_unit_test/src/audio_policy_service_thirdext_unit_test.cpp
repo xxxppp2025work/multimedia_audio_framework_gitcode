@@ -123,19 +123,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetSupportedAudioEffectProperty_001, 
 }
 
 /**
-* @tc.name  : Test LoadHdiEffectModel.
-* @tc.number: LoadHdiEffectModel_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, LoadHdiEffectModel_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest LoadHdiEffectModel_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    GetServerUtil::GetServerPtr()->audioPolicyService_.LoadHdiEffectModel();
-}
-
-/**
 * @tc.name  : Test OnReceiveBluetoothEvent.
 * @tc.number: OnReceiveBluetoothEvent_001
 * @tc.desc  : Test AudioPolicyService interfaces.

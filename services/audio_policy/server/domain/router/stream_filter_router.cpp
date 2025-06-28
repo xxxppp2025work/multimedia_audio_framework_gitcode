@@ -17,8 +17,7 @@
 #endif
 
 #include "stream_filter_router.h"
-
-#include "audio_policy_service.h"
+#include "audio_core_service.h"
 
 using namespace std;
 
@@ -28,7 +27,7 @@ namespace AudioStandard {
 shared_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetMediaRenderDevice(StreamUsage streamUsage,
     int32_t clientUID)
 {
-    DistributedRoutingInfo routingInfo = AudioPolicyService::GetAudioPolicyService().GetDistributedRoutingRoleInfo();
+    DistributedRoutingInfo routingInfo = AudioCoreService::GetCoreService()->GetDistributedRoutingRoleInfo();
     if (routingInfo.descriptor != nullptr) {
         std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
         CastType type = routingInfo.type;
@@ -74,7 +73,7 @@ shared_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetMediaRenderDevice(Strea
 shared_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallRenderDevice(StreamUsage streamUsage,
     int32_t clientUID)
 {
-    DistributedRoutingInfo routingInfo = AudioPolicyService::GetAudioPolicyService().GetDistributedRoutingRoleInfo();
+    DistributedRoutingInfo routingInfo = AudioCoreService::GetCoreService()->GetDistributedRoutingRoleInfo();
     if (routingInfo.descriptor != nullptr) {
         std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
         CastType type = routingInfo.type;
@@ -115,7 +114,7 @@ shared_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallRenderDevice(Stream
 shared_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallCaptureDevice(SourceType sourceType,
     int32_t clientUID, const uint32_t sessionID)
 {
-    DistributedRoutingInfo routingInfo = AudioPolicyService::GetAudioPolicyService().GetDistributedRoutingRoleInfo();
+    DistributedRoutingInfo routingInfo = AudioCoreService::GetCoreService()->GetDistributedRoutingRoleInfo();
     if (routingInfo.descriptor != nullptr) {
         std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
         CastType type = routingInfo.type;
@@ -162,7 +161,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> StreamFilterRouter::GetRingRender
 shared_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetRecordCaptureDevice(SourceType sourceType,
     int32_t clientUID, const uint32_t sessionID)
 {
-    DistributedRoutingInfo routingInfo = AudioPolicyService::GetAudioPolicyService().GetDistributedRoutingRoleInfo();
+    DistributedRoutingInfo routingInfo = AudioCoreService::GetCoreService()->GetDistributedRoutingRoleInfo();
     if (routingInfo.descriptor != nullptr) {
         std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = routingInfo.descriptor;
         CastType type = routingInfo.type;

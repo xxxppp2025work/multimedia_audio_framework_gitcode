@@ -199,7 +199,7 @@ int32_t AudioCoreService::CreateCapturerClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_INVALID_PARAM, "streamDesc is nullptr");
-    
+
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", sessionId);
     streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
     std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc =
@@ -398,6 +398,11 @@ void AudioCoreService::CheckAndSetCurrentInputDevice(std::shared_ptr<AudioDevice
     OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(), "");
 }
 
+DistributedRoutingInfo AudioCoreService::GetDistributedRoutingRoleInfo()
+{
+    return distributedRoutingInfo_;
+}
+
 int32_t AudioCoreService::StartClient(uint32_t sessionId)
 {
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
@@ -488,7 +493,7 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
     if (!isSameScene) {
         OnAudioSceneChange(audioScene);
     }
-    
+
     if (audioScene == AUDIO_SCENE_PHONE_CALL) {
         // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.
         audioVolumeManager_.SetVoiceCallVolume(audioVolumeManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL));
@@ -848,7 +853,7 @@ int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
             Bluetooth::AudioHfpManager::DeleteVirtualCallStream(rendererChangeInfo.sessionId);
         }
     }
-    
+
     UpdateTracker(mode, streamChangeInfo, rendererState);
 
     if (audioA2dpOffloadManager_) {

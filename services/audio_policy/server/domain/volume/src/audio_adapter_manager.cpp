@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "audio_server_proxy.h"
 #ifndef LOG_TAG
 #define LOG_TAG "AudioAdapterManager"
 #endif
@@ -986,7 +987,7 @@ vector<SinkInfo> AudioAdapterManager::GetAllSinks()
 
 void AudioAdapterManager::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
 {
-    AudioPolicyService::GetAudioPolicyService().GetAllSinkInputs(sinkInputs);
+    AudioServerProxy::GetInstance().GetAllSinkInputsProxy(sinkInputs);
 }
 
 vector<SourceOutput> AudioAdapterManager::GetAllSourceOutputs()
@@ -1156,7 +1157,7 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
             AUDIO_WARNING_LOG("Os account is not ready, skip visiting datashare.");
         }
     }
-    
+
     AdjustBluetoothVoiceAssistantVolume(deviceDescriptor.deviceType_, isSameVolumeGroup);
 
     auto iter = defaultVolumeTypeList_.begin();

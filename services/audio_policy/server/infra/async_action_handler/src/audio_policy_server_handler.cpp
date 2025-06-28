@@ -19,6 +19,8 @@
 #include "audio_policy_server_handler.h"
 #include "audio_policy_service.h"
 #include "audio_core_service.h"
+#include "audio_server_proxy.h"
+#include "audio_device_common.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1017,7 +1019,7 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
         int32_t clientPid = it->first;
         std::vector<AudioRendererInfo> rendererInfoList = GetCallbackRendererInfoList(clientPid);
         for (auto rendererInfo : rendererInfoList) {
-            auto deviceDescs = AudioPolicyService::GetAudioPolicyService().
+            auto deviceDescs = AudioDeviceCommon::GetInstance().
                 GetPreferredOutputDeviceDescInner(rendererInfo);
             if (!(it->second->hasBTPermission_)) {
                 AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
@@ -1040,7 +1042,7 @@ void AudioPolicyServerHandler::HandlePreferredInputDeviceUpdated()
         int32_t clientPid = it->first;
         std::vector<AudioCapturerInfo> capturerInfoList = GetCallbackCapturerInfoList(clientPid);
         for (auto capturerInfo : capturerInfoList) {
-            auto deviceDescs = AudioPolicyService::GetAudioPolicyService().
+            auto deviceDescs = AudioDeviceCommon::GetInstance().
                 GetPreferredInputDeviceDescInner(capturerInfo);
             if (!(it->second->hasBTPermission_)) {
                 AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
@@ -1167,7 +1169,7 @@ void AudioPolicyServerHandler::HandleSendRecreateRendererStreamEvent(const AppEx
     restoreInfo.restoreReason = DEVICE_CHANGED;
     restoreInfo.deviceChangeReason = static_cast<int32_t>(eventContextObj->reason_);
     restoreInfo.routeFlag = static_cast<uint32_t>(eventContextObj->routeFlag);
-    AudioPolicyService::GetAudioPolicyService().RestoreSession(eventContextObj->sessionId, restoreInfo);
+    AudioServerProxy::GetInstance().RestoreSessionProxy(eventContextObj->sessionId, restoreInfo);
 }
 
 void AudioPolicyServerHandler::HandleSendRecreateCapturerStreamEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -1179,7 +1181,7 @@ void AudioPolicyServerHandler::HandleSendRecreateCapturerStreamEvent(const AppEx
     restoreInfo.restoreReason = DEVICE_CHANGED;
     restoreInfo.deviceChangeReason = static_cast<int32_t>(eventContextObj->reason_);
     restoreInfo.routeFlag = static_cast<uint32_t>(eventContextObj->routeFlag);
-    AudioPolicyService::GetAudioPolicyService().RestoreSession(eventContextObj->sessionId, restoreInfo);
+    AudioServerProxy::GetInstance().RestoreSessionProxy(eventContextObj->sessionId, restoreInfo);
 }
 
 void AudioPolicyServerHandler::HandleNnStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -1358,7 +1360,7 @@ void AudioPolicyServerHandler::HandleConcurrencyEventWithSessionID(const AppExec
     restoreInfo.restoreReason = STREAM_CONCEDED;
     restoreInfo.targetStreamFlag = AUDIO_FLAG_FORCED_NORMAL;
     restoreInfo.routeFlag = AUDIO_FLAG_NONE;
-    AudioPolicyService::GetAudioPolicyService().RestoreSession(eventContextObj->sessionId, restoreInfo);
+    AudioServerProxy::GetInstance().RestoreSessionProxy(eventContextObj->sessionId, restoreInfo);
 }
 
 void AudioPolicyServerHandler::HandleFormatUnsupportedErrorEvent(const AppExecFwk::InnerEvent::Pointer &event)

@@ -243,6 +243,7 @@ private:
     void SetAudioServerProxy();
     bool GetDisableFastStreamParam();
     bool IsFastAllowed(std::string &bundleName);
+    DistributedRoutingInfo GetDistributedRoutingRoleInfo();
 
 private:
     static std::string GetEncryptAddr(const std::string &addr);

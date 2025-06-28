@@ -46,7 +46,6 @@
 #include "audio_collaborative_service.h"
 #include "audio_spatialization_service.h"
 #include "audio_policy_server_handler.h"
-#include "audio_interrupt_service.h"
 #include "audio_device_manager.h"
 #include "audio_policy_dump.h"
 #include "app_state_listener.h"
@@ -582,7 +581,7 @@ public:
 
     int32_t SetCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled) override;
-    
+
     bool IsCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice) override;
 
@@ -728,7 +727,6 @@ private:
     // Permission and privacy
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
     bool VerifyBluetoothPermission();
-    int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
     int32_t SetAudioSceneInternal(AudioScene audioScene, const int32_t uid = INVALID_UID,
         const int32_t pid = INVALID_PID);
 
@@ -763,7 +761,6 @@ private:
     void RegisterAppStateListener();
     void AddRemoteDevstatusCallback();
     void OnDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor, const CastType type);
-    void SubscribeSafeVolumeEvent();
     void SubscribeCommonEventExecute();
     void SubscribeBackgroundTask();
     void SendMonitrtEvent(const int32_t keyType, int32_t resultOfVolumeKey);

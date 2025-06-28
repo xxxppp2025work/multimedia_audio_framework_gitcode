@@ -18,6 +18,7 @@
 
 #include "audio_routing_manager.h"
 #include "i_standard_audio_routing_manager_listener.h"
+#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

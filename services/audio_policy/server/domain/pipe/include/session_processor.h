@@ -21,7 +21,8 @@
 #include <condition_variable>
 #include <queue>
 #include <functional>
-#include "audio_policy_server.h"
+#include "audio_log.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {

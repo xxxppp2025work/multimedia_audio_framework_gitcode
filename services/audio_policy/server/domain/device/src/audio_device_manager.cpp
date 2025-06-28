@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "audio_affinity_manager.h"
 #ifndef LOG_TAG
 #define LOG_TAG "AudioDeviceManager"
 #endif
@@ -23,6 +24,8 @@
 #include "audio_device_parser.h"
 #include "audio_policy_utils.h"
 #include "audio_bluetooth_manager.h"
+#include "audio_connected_device.h"
+#include "audio_router_map.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1505,5 +1508,56 @@ bool AudioDeviceManager::ExistSameRemoteDeviceByMacAddress(std::shared_ptr<Audio
     }
     return false;
 }
+
+std::string AudioDeviceManager::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
+{
+    (void)streamType;
+
+    std::string selectedDevice = AudioRouteMap::GetInstance().GetDeviceInfoByUidAndPid(uid, pid);
+    if (selectedDevice == "") {
+        return selectedDevice;
+    }
+
+    if (LOCAL_NETWORK_ID == selectedDevice) {
+        AUDIO_INFO_LOG("uid[%{public}d]-->local.", uid);
+        return "";
+    }
+    // check if connected.
+    if (AudioConnectedDevice::GetInstance().CheckDeviceConnected(selectedDevice)) {
+        AUDIO_INFO_LOG("result[%{public}s]", selectedDevice.c_str());
+        return selectedDevice;
+    } else {
+        AudioRouteMap::GetInstance().DelRouteMapInfoByKey(uid);
+        AUDIO_INFO_LOG("device already disconnected.");
+        return "";
+    }
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetOutputDevice(
+    sptr<AudioRendererFilter> audioRendererFilter)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
+    if (audioRendererFilter->uid != -1) {
+        shared_ptr<AudioDeviceDescriptor> preferredDesc =
+            AudioAffinityManager::GetAudioAffinityManager().GetRendererDevice(audioRendererFilter->uid);
+        std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*preferredDesc);
+        deviceList.push_back(devDesc);
+    }
+    return deviceList;
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetInputDevice(
+    sptr<AudioCapturerFilter> audioCapturerFilter)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
+    if (audioCapturerFilter->uid != -1) {
+        shared_ptr<AudioDeviceDescriptor> preferredDesc =
+            AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(audioCapturerFilter->uid);
+        std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*preferredDesc);
+        deviceList.push_back(devDesc);
+    }
+    return deviceList;
+}
+
 }
 }

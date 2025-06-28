@@ -101,6 +101,9 @@ public:
         std::string macAddress, DeviceRole deviceRole, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
     bool IsSessionSetDefaultDevice(uint32_t sessionId);
     bool ExistSameRemoteDeviceByMacAddress(std::shared_ptr<AudioDeviceDescriptor> desc);
+    std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter);
 
 private:
     AudioDeviceManager();
