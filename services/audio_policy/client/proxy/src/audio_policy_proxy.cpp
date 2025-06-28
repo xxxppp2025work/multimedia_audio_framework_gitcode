@@ -2533,7 +2533,7 @@ bool AudioPolicyProxy::SetKaraokeParameters(const std::string &parameters)
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
-    
+
     data.WriteString(parameters);
 
     CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, false, "Remote() is nullptr");
@@ -2541,7 +2541,7 @@ bool AudioPolicyProxy::SetKaraokeParameters(const std::string &parameters)
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_KARAOKE_PARAMETERS), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %{public}d",
         error);
-    
+
     return reply.ReadBool();
 }
 
@@ -2553,7 +2553,7 @@ bool AudioPolicyProxy::IsAudioLoopbackSupported(AudioLoopbackMode mode)
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
-    
+
     data.WriteInt32(static_cast<int32_t>(mode));
 
     CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, false, "Remote() is nullptr");
@@ -2561,7 +2561,7 @@ bool AudioPolicyProxy::IsAudioLoopbackSupported(AudioLoopbackMode mode)
         static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_LOOPBACK_SUPPORTED), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %{public}d",
         error);
-    
+
     return reply.ReadBool();
 }
 
@@ -2648,16 +2648,17 @@ float AudioPolicyProxy::GetVolumeInDbByStream(StreamUsage streamUsage, int32_t v
     MessageOption option;
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(ret, static_cast<float>(ERROR), "WriteInterfaceToken failed");
 
     data.WriteInt32(static_cast<int32_t>(streamUsage));
     data.WriteInt32(volumeLevel);
     data.WriteInt32(static_cast<int32_t>(deviceType));
 
-    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, false, "Remote() is nullptr");
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, static_cast<float>(ERROR), "Remote() is nullptr");
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_VOLUME_IN_DB_BY_STREAM), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, static_cast<float>(ERROR),
+        "SendRequest failed, error: %{public}d", error);
 
     return reply.ReadFloat();
 }
