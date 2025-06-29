@@ -994,6 +994,15 @@ void RendererInClientInner::ResetCallbackLoopTid()
     callbackLoopTid_ = -1;
 }
 
+void RendererInClientInner::FlushSpeedBuffer()
+{
+    std::lock_guard lock(speedMutex_);
+
+    if (audioSpeed_ != nullptr) {
+        audioSpeed_->Flush();
+    }
+}
+
 SpatializationStateChangeCallbackImpl::SpatializationStateChangeCallbackImpl()
 {
     AUDIO_INFO_LOG("Instance create");
