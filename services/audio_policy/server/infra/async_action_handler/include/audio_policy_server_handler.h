@@ -29,6 +29,7 @@
 #include "i_audio_interrupt_event_dispatcher.h"
 #include "i_audio_concurrency_event_dispatcher.h"
 #include "i_audio_zone_event_dispatcher.h"
+#include "i_standard_audio_session_manager_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -82,6 +83,7 @@ public:
         SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
         AUDIO_ZONE_EVENT,
         FORMAT_UNSUPPORTED_ERROR,
+        SESSION_DEVICE_CHANGE,
     };
     /* event data */
     class EventContextObj {
@@ -113,6 +115,7 @@ public:
         std::shared_ptr<AudioZoneEvent> audioZoneEvent;
         uint32_t routeFlag;
         AudioErrors errorCode;
+        bool isInputDeviceChanged;
     };
 
     struct RendererDeviceChangeEvent {
@@ -209,6 +212,10 @@ public:
     bool SendAudioZoneEvent(std::shared_ptr<AudioZoneEvent> event);
     bool SendFormatUnsupportedErrorEvent(const AudioErrors &errorCode);
     int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages);
+    bool SendAudioSessionDeviceChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor,
+        AudioStreamDeviceChangeReason changedReason, bool isInputDeviceChanged);
+    void AddSessionDeviceChangeCbsMap(int32_t clientId, const sptr<IStandardAudioSessionManagerListener> &callback);
+    int32_t RemoveSessionDeviceChangeCbsMap(int32_t clientId);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -253,6 +260,7 @@ private:
     void HandleAudioZoneEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleFormatUnsupportedErrorEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleActiveVolumeTypeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleAudioSessionDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
@@ -287,6 +295,7 @@ private:
     std::unordered_map<int32_t, std::vector<AudioRendererInfo>> clientCbRendererInfoMap_;
     std::unordered_map<int32_t, std::vector<AudioCapturerInfo>> clientCbCapturerInfoMap_;
     std::unordered_map<int32_t, std::set<StreamUsage>> clientCbStreamUsageMap_;
+    std::unordered_map<int32_t, sptr<IStandardAudioSessionManagerListener>> audioSessionDeviceChangeCbsMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

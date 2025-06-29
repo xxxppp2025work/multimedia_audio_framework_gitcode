@@ -39,6 +39,7 @@
 #include "audio_pipe_info.h"
 #include "audio_service_enum.h"
 #include "audio_pipe_manager.h"
+#include "audio_session_service.h"
 #include "audio_pipe_selector.h"
 #include "audio_policy_config_manager.h"
 #include "audio_core_service_utils.h"
@@ -111,6 +112,7 @@ public:
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
         int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+        int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
 
         // Functions related to get operations - device related
         bool IsArmUsbDevice(const AudioDeviceDescriptor &deviceDesc);
@@ -130,6 +132,7 @@ public:
         int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
         int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
         std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
+        int32_t GetCurrentOutputDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceInfos);
 private:
         std::shared_ptr<AudioCoreService> coreService_;
         std::shared_mutex eventMutex_;
@@ -430,6 +433,7 @@ private:
     AudioAffinityManager &audioAffinityManager_;
     SleAudioDeviceManager &sleAudioDeviceManager_;
     std::shared_ptr<AudioPipeSelector> audioPipeSelector_;
+    AudioSessionService &audioSessionService_;
 
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     std::shared_ptr<DeviceStatusListener> deviceStatusListener_;

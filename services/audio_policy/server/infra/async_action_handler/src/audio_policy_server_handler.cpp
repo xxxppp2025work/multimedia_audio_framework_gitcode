@@ -148,6 +148,30 @@ int32_t AudioPolicyServerHandler::RemoveDistributedRoutingRoleChangeCbsMap(int32
     return SUCCESS;
 }
 
+void AudioPolicyServerHandler::AddSessionDeviceChangeCbsMap(int32_t clientId,
+    const sptr<IStandardAudioSessionManagerListener> &callback)
+{
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    if (callback != nullptr) {
+        audioSessionDeviceChangeCbsMap_[clientId] = callback;
+    }
+    AUDIO_DEBUG_LOG("AddSessionDeviceChangeCbsMap: audioSessionDeviceChangeMap_ size : %{public}zu",
+        audioSessionDeviceChangeCbsMap_.size());
+}
+
+int32_t AudioPolicyServerHandler::RemoveSessionDeviceChangeCbsMap(int32_t clientId)
+{
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    if (audioSessionDeviceChangeCbsMap_.erase(clientId) == 0) {
+        AUDIO_ERR_LOG("RemoveSessionDeviceChangeCbsMap clientPid %{public}d not present", clientId);
+        return ERR_INVALID_OPERATION;
+    }
+
+    AUDIO_DEBUG_LOG("UnsetSessionOutputDeviceChangeCallback: audioSessionDeviceChangeCbsMap_ size: %{public}zu",
+        audioSessionDeviceChangeCbsMap_.size());
+    return SUCCESS;
+}
+
 void AudioPolicyServerHandler::AddConcurrencyEventDispatcher(
     std::shared_ptr<IAudioConcurrencyEventDispatcher> dispatcher)
 {
@@ -377,6 +401,23 @@ bool AudioPolicyServerHandler::SendDistributedRoutingRoleChange(
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::DISTRIBUTED_ROUTING_ROLE_CHANGE,
         eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "SendDistributedRoutingRoleChange event failed");
+    return ret;
+}
+
+bool AudioPolicyServerHandler::SendAudioSessionDeviceChange(
+    const std::shared_ptr<AudioDeviceDescriptor> descriptor,
+    AudioStreamDeviceChangeReason changedReason, bool isInputDeviceChanged)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->descriptor = descriptor;
+    AudioStreamDeviceChangeReason reason(changedReason);
+    eventContextObj->reason_.reason_ = reason;
+    eventContextObj->isInputDeviceChanged = isInputDeviceChanged;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::SESSION_DEVICE_CHANGE,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "SendAudioSessionDeviceChange event failed");
     return ret;
 }
 
@@ -1064,6 +1105,17 @@ void AudioPolicyServerHandler::HandleDistributedRoutingRoleChangeEvent(const App
     }
 }
 
+void AudioPolicyServerHandler::HandleAudioSessionDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    for (auto it = audioSessionDeviceChangeCbsMap_.begin(); it != audioSessionDeviceChangeCbsMap_.end(); it++) {
+        it->second->OnDistributedRoutingRoleChange(eventContextObj->descriptor, eventContextObj->reason_.reason_,
+        eventContextObj->isInputDeviceChanged);
+    }
+}
+
 void AudioPolicyServerHandler::HandleRendererInfoEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -1521,6 +1573,9 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
             break;
         case EventAudioServerCmd::HEAD_TRACKING_ENABLED_CHANGE:
             HandleHeadTrackingEnabledChangeEvent(event);
+            break;
+        case EventAudioServerCmd::SESSION_DEVICE_CHANGE:
+            HandleAudioSessionDeviceChangeEvent(event);
             break;
         default:
             break;
