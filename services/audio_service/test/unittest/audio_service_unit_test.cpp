@@ -303,13 +303,15 @@ HWTEST(AudioServiceUnitTest, AudioDeviceDescriptor_001, TestSize.Level1)
         SAMPLE_RATE_48000,
         ENCODING_PCM,
         SAMPLE_S16LE,
-        STEREO
+        CH_LAYOUT_STEREO
     };
     int32_t channelMask = 1;
-    audioDeviceDescriptor->SetDeviceCapability(audioStreamInfo, channelMask);
+    audioDeviceDescriptor->SetDeviceCapability({ audioStreamInfo }, channelMask);
 
-    DeviceStreamInfo streamInfo = audioDeviceDescriptor->audioStreamInfo_;
-    EXPECT_EQ(streamInfo.channels, audioStreamInfo.channels);
+    DeviceStreamInfo devStreamInfo;
+    auto &streamInfo = audioDeviceDescriptor->audioStreamInfo_.empty() ? devStreamInfo :
+        (*audioDeviceDescriptor->audioStreamInfo_.rbegin());
+    EXPECT_EQ(streamInfo.channelLayout, audioStreamInfo.channelLayout);
     EXPECT_EQ(streamInfo.encoding, audioStreamInfo.encoding);
     EXPECT_EQ(streamInfo.format, audioStreamInfo.format);
     EXPECT_EQ(streamInfo.samplingRate, audioStreamInfo.samplingRate);
