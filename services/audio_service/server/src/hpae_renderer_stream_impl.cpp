@@ -349,6 +349,11 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
                     callBackStreamInfo.requestDataLen - requestDataLen, chToFill,
                     callBackStreamInfo.requestDataLen - requestDataLen);
             }
+            // offload latency < 40ms, force output remain data.
+            if (offloadEnable_ && callBackStreamInfo.latency > 40000 &&
+                callBackStreamInfo.requestDataLen > requestDataLen) {
+                requestDataLen = 0;
+            }
             return writeCallback->OnWriteData(callBackStreamInfo.inputData,
                 std::min(requestDataLen, callBackStreamInfo.requestDataLen));
         }
