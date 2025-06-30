@@ -95,7 +95,7 @@ void ProcessLimiterFuzzTest()
     std::vector<float> outBufferVector(frameLen, 0);
     float *inBuffer = inBufferVector.data();
     float *outBuffer = outBufferVector.data();
-    int32_t frameLength = GetData<uint32_t>() % NUM_2 == 0 ? frameLen: 0;
+    int32_t frameLength = GetData<uint32_t>() % NUM_2 == 0 ? frameLen : 0;
     limiterManager->ProcessLimiter(sinkIndex, frameLength, inBuffer, outBuffer);
 }
 

@@ -44,6 +44,7 @@ const size_t THRESHOLD = 10;
 const uint8_t TESTSIZE = 26;
 const uint32_t RESIZENUM = 2;
 const uint32_t IDNUM = 2;
+const uint32_t NUM_2 = 2;
 typedef void (*TestFuncs)();
 
 vector<AudioFlag> AudioFlagVec = {
