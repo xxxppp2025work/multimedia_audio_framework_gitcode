@@ -72,6 +72,7 @@ static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000; // ms
 static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
+constexpr uint32_t SONIC_LATENCY_IN_MS = 20; // cache in sonic
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -1766,8 +1767,10 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency, base);
     readIdx = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
     uint64_t frameWrite = static_cast<uint64_t>(totalBytesWrittenNoSpeed_ / sizePerFrameInByte_);
-    uint64_t deepReadIdx = GetFramesWritten() > readIdx ? GetFramesWritten() - readIdx : 0;
-    uint64_t frameLatency = (latency + deepReadIdx) * speed_;
+    uint64_t deepReadIdx = static_cast<uint64_t>(GetFramesWritten()) > readIdx ?
+        static_cast<uint64_t>(GetFramesWritten()) - readIdx : 0;
+    uint64_t frameLatency = (latency + deepReadIdx +
+        SONIC_LATENCY_IN_MS * static_cast<uint64_t>(curStreamParams_.samplingRate) / AUDIO_MS_PER_S) * speed_;
     uint64_t framePosition = frameWrite > frameLatency ? frameWrite - frameLatency : 0;
     // add MCR latency
     uint32_t mcrLatency = 0;
