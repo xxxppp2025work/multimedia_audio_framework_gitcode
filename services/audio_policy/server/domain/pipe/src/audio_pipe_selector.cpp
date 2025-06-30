@@ -347,7 +347,8 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.moduleInfo_.rate = std::to_string(streamPropInfo->sampleRate_);
     info.moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
         streamPropInfo->channelLayout_));
-    info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
+    info.moduleInfo_.channelLayout = std::to_string(StreamPropInfo->channelLayout_);
+    info.moduleInfo_.bufferSize = std::to_string(StreamPropInfo->bufferSize_);
 
     info.moduleInfo_.lib = pipeInfoPtr->paProp_.lib_;
     info.moduleInfo_.role = pipeInfoPtr->paProp_.role_;

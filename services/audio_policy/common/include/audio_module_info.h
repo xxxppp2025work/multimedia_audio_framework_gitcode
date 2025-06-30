@@ -110,6 +110,7 @@ struct AudioModuleInfo {
 
     std::string format;
     std::string channels;
+    std::string channelLayout;
     std::string bufferSize;
     std::string fixedLatency;
     std::string sinkLatency;

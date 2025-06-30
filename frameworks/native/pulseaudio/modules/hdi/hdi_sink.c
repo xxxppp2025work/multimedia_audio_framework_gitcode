@@ -118,6 +118,7 @@ const char *MCH_SINK_NAME = "MCH_Speaker";
 const char *BT_SINK_NAME = "Bt_Speaker";
 const char *OFFLOAD_SINK_NAME = "Offload_Speaker";
 const char *DP_SINK_NAME = "DP_speaker";
+const char *DP_MCH_SINK_NAME = "DP_MCH_speaker";
 
 const int32_t WAIT_CLOSE_PA_OR_EFFECT_TIME = 4; // secs
 const int32_t MONITOR_CLOSE_PA_TIME_SEC = 5 * 60; // 5min
@@ -2471,7 +2472,7 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
     AUTO_CTRACE("hdi_sink::SinkRenderPrimary");
     // Change from pa_sink_render to pa_sink_render_full for alignment issue in 3516
 
-    if (!strcmp(u->sink->name, DP_SINK_NAME) && u->render_full_enable) {
+    if (!strcmp(u->sink->name, DP_MCH_SINK_NAME) && u->render_full_enable) {
         // dp update volume
         SetSinkVolumeByDeviceClass(u->sink, u->primary.sinkAdapter->deviceClass);
         pa_sink_render_full(u->sink, u->sink->thread_info.max_request, &chunk); // only work for dp-96k-8ch
@@ -4292,6 +4293,7 @@ static int32_t PrepareDevice(struct Userdata *u, const char *filePath)
     int32_t ret;
 
     sample_attrs.format = ConvertPaToHdiAdapterFormat(u->ss.format);
+    sample_attrs.channelLayout = u->channelLayout;
     sample_attrs.adapterName = u->defaultAdapterEnable ? "dp" : u->adapterName;
     sample_attrs.openMicSpeaker = u->open_mic_speaker;
     sample_attrs.sampleRate = (uint32_t) u->ss.rate;
@@ -4339,6 +4341,7 @@ static int32_t PrepareDeviceOffload(struct Userdata *u)
     sample_attrs.openMicSpeaker = u->open_mic_speaker;
     sample_attrs.sampleRate = u->ss.rate;
     sample_attrs.channel = u->ss.channels;
+    sample_attrs.channelLayout = u->channelLayout;
     sample_attrs.volume = MAX_SINK_VOLUME_LEVEL;
     sample_attrs.filePath = filePath;
     sample_attrs.deviceNetworkId = deviceNetworkId;
@@ -4415,21 +4418,21 @@ static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
         AUDIO_ERR_LOG("Failed to parse sample specification and channel map");
         goto fail;
     }
-
-    AUDIO_INFO_LOG("Initializing HDI rendering device with rate: %{public}d, channels: %{public}d",
-        u->ss.rate, u->ss.channels);
+    if (pa_modargs_get_value_u64(ma, "channel_layout", &u->channelLayout) < 0) {
+        AUDIO_ERR_LOG("Failed to parse channel_layout argument.");
+    }
+    AUDIO_INFO_LOG("Initializing HDI rendering device with rate: %{public}d, channels: %{public}d,
+        channelLayout: %{public}lu", u->ss.rate, u->ss.channels, u->channelLayout);
     if (PrepareDevice(u, pa_modargs_get_value(ma, "file_path", "")) < 0) { goto fail; }
-
+    ConvertChLayoutToPaChMap(u->channelLayout, &u->map);
     u->primary.prewrite = 0;
     if (u->offload_enable && !strcmp(u->primary.sinkAdapter->deviceClass, DEVICE_CLASS_PRIMARY)) {
         u->primary.prewrite = u->block_usec * 7; // 7 frame, set cache len in hdi, avoid pop
     }
-
     AUDIO_DEBUG_LOG("Initialization of HDI rendering device[%{public}s] completed", u->adapterName);
     pa_sink_new_data_init(&data);
     data.driver = driver;
     data.module = m;
-
     PaHdiSinkUserdataInit(u);
     pa_sink_new_data_set_name(&data, pa_modargs_get_value(ma, "sink_name", DEFAULT_SINK_NAME));
     pa_sink_new_data_set_sample_spec(&data, &u->ss);
@@ -4440,13 +4443,11 @@ static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
         (u->adapterName ? u->adapterName : DEFAULT_AUDIO_DEVICE_NAME));
     pa_proplist_sets(data.proplist, "filePath", pa_modargs_get_value(ma, "file_path", ""));
     pa_proplist_sets(data.proplist, "networkId", pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID));
-
     if (pa_modargs_get_proplist(ma, "sink_properties", data.proplist, PA_UPDATE_REPLACE) < 0) {
         AUDIO_ERR_LOG("Invalid properties");
         pa_sink_new_data_done(&data);
         goto fail;
     }
-
     if (u->fixed_latency) {
         sink = pa_sink_new(m->core, &data, PA_SINK_HARDWARE | PA_SINK_LATENCY);
     } else {

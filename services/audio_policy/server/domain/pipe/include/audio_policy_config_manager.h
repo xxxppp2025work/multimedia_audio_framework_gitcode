@@ -54,7 +54,8 @@ public:
     void OnUpdateAnahsSupport(std::string anahsShowType);
     void OnUpdateEac3Support(bool isSupported);
     void OnHasEarpiece();
-    
+    void OnMultSupMode(bool supportMultSupMode);
+
     // update
     void SetNormalVoipFlag(const bool &normalVoipFlag);
 
@@ -94,6 +95,7 @@ public:
     DirectPlaybackMode GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
         const AudioStreamInfo &streamInfo);
     bool IsStreamPropMatch(const AudioStreamInfo &streamInfo, std::list<std::shared_ptr<PipeStreamPropInfo>> &infos);
+    bool GetSupportMultSupMode();
 
     AudioPolicyConfigManager() : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioPolicyConfig_(AudioPolicyConfigData::GetInstance())
@@ -123,6 +125,7 @@ private:
     uint32_t sinkLatencyInMsec_ {0};
     AudioSampleFormat fastFormat_ = SAMPLE_S16LE;
     bool normalVoipFlag_ = false;
+    bool supportMultSupMode_ = false;
 
     std::atomic<bool> isAdapterInfoMap_ = false;
     AudioDeviceManager &audioDeviceManager_;
