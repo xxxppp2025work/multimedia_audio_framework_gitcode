@@ -426,11 +426,6 @@ private:
     uint64_t lastFlushReadIndex_ = 0;
     bool isDataLinkConnected_ = false;
 
-    uint64_t lastLatency_ = 0;
-    uint64_t lastLatencyPosition_ = 0;
-    uint64_t lastReadIdx_ = 0;
-    float lastSpeed_ = 1.0;
-
     enum {
         STATE_CHANGE_EVENT = 0,
         RENDERER_MARK_REACHED_EVENT,

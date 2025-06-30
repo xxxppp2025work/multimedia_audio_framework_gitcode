@@ -248,6 +248,7 @@ int32_t HpaeRendererStreamImpl::GetLatency(uint64_t &latency)
     GetLatencyInner(timestamp, latency, base);
     return SUCCESS;
 }
+
 void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &latencyUs, int32_t base)
 {
     int32_t baseUsed = base >= 0 && base < Timestamp::Timestampbase::BASESIZE ?
