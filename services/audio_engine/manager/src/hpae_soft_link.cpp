@@ -22,6 +22,7 @@
 #endif
 #include "audio_errors.h"
 #include "audio_utils.h"
+#include "audio_volume.h"
 #include "i_hpae_manager.h"
 
 namespace OHOS {
@@ -33,8 +34,8 @@ static constexpr int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static constexpr int32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr int32_t MS_PER_SECOND = 1000;
 static constexpr int32_t DEFAULT_RING_BUFFER_NUM = 4;
-static std::atomic<uint32_t> g_sessionId = {FIRST_SESSIONID}; // begin at 90000
 static constexpr int32_t MAX_OVERFLOW_UNDERRUN_COUNT = 50; // 1s
+std::atomic<uint32_t> HpaeSoftLink::g_sessionId = {FIRST_SESSIONID}; // begin at 90000
 std::shared_ptr<IHpaeSoftLink> IHpaeSoftLink::CreateSoftLink(int32_t renderIdx, int32_t captureIdx, SoftLinkMode mode)
 {
     std::shared_ptr<IHpaeSoftLink> softLink = std::make_shared<HpaeSoftLink>(renderIdx, captureIdx, mode);
@@ -57,22 +58,26 @@ uint32_t HpaeSoftLink::GenerateSessionId()
 HpaeSoftLink::HpaeSoftLink(int32_t renderIdx, int32_t captureIdx, SoftLinkMode mode)
     : renderIdx_(renderIdx), captureIdx_(captureIdx), linkMode_(mode)
 {
-    (void)linkMode_;
     state_ = HpaeSoftLinkState::NEW;
 }
 
 HpaeSoftLink::~HpaeSoftLink()
-{}
+{
+    AUDIO_INFO_LOG("~HpaeSoftLink");
+}
 
 int32_t HpaeSoftLink::Init()
 {
+    AUDIO_INFO_LOG("init in");
+    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::PREPARED, SUCCESS, "softlink already inited");
+    CHECK_AND_RETURN_RET_LOG(state_ == HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "init error state");
     Trace trace("HpaeSoftLink::Init");
-    // todo : check renderid
+    CHECK_AND_RETURN_RET_LOG(renderIdx_ >= 0 && captureIdx_ >= 0, ERR_INVALID_PARAM, "error renderIdx or capturerIdx");
     int ret = GetSinkInfoByIdx();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetSinkInfoByIdx error");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetSinkInfoByIdx error");
     
     ret = GetSourceInfoByIdx();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetSourceInfoByIdx error");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetSourceInfoByIdx error");
 
     size_t frameBytes = sinkInfo_.channels * GetSizeFromFormat(sinkInfo_.format) *
         DEFAULT_FRAME_LEN_MS * sinkInfo_.samplingRate / MS_PER_SECOND;
@@ -89,6 +94,7 @@ int32_t HpaeSoftLink::Init()
 int32_t HpaeSoftLink::GetSinkInfoByIdx()
 {
     Trace trace("HpaeSoftLink::GetSinkInfoByIdx");
+    AUDIO_INFO_LOG("GetSinkInfoByIdx");
     std::unique_lock<std::mutex> lock(callbackMutex_);
     isOperationFinish_ = false;
     int32_t ret = ERROR;
@@ -105,6 +111,7 @@ int32_t HpaeSoftLink::GetSinkInfoByIdx()
 int32_t HpaeSoftLink::GetSourceInfoByIdx()
 {
     Trace trace("HpaeSoftLink::GetSourceInfoByIdx");
+    AUDIO_INFO_LOG("GetSourceInfoByIdx");
     std::unique_lock<std::mutex> lock(callbackMutex_);
     isOperationFinish_ = false;
     int32_t ret = ERROR;
@@ -126,16 +133,17 @@ void HpaeSoftLink::TransSinkInfoToStreamInfo(HpaeStreamInfo &info, const HpaeStr
     info.channelLayout = sinkInfo_.channelLayout;
     info.frameLen = DEFAULT_FRAME_LEN_MS * static_cast<uint32_t>(sinkInfo_.samplingRate) / MS_PER_SECOND;
     info.streamType = STREAM_DEFAULT; // todo : check which streamType
-    info.fadeType = DEFAULT_FADE; // ?
+    info.fadeType = DEFAULT_FADE;
     info.streamClassType = streamClassType;
     // info.effectInfo; // todo : check effect mode
-    info.sourceType = SOURCE_TYPE_INVALID;
     info.isMoveAble = false;
     info.sessionId = GenerateSessionId();
     if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
         info.deviceName = sinkInfo_.deviceName;
+        info.sourceType = SOURCE_TYPE_INVALID;
     } else {
         info.deviceName = sourceInfo_.deviceName;
+        info.sourceType = SOURCE_TYPE_MIC;
     }
 }
 // todo : check state at func in
@@ -146,13 +154,18 @@ int32_t HpaeSoftLink::CreateStream()
 
     uint32_t &rendererSessionId = rendererStreamInfo_.sessionId;
     IHpaeManager::GetHpaeManager().CreateStream(rendererStreamInfo_);
-    IHpaeManager::GetHpaeManager().RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_PLAY, rendererSessionId, shared_from_this());
+    IHpaeManager::GetHpaeManager().RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_PLAY, rendererSessionId,
+        shared_from_this());
     IHpaeManager::GetHpaeManager().RegisterWriteCallback(rendererSessionId, shared_from_this());
+    AudioVolume::GetInstance()->AddStreamVolume(rendererSessionId, rendererStreamInfo_.streamType,
+        rendererStreamInfo_.effectInfo.streamUsage, -1, -1,
+        false, AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL);
     streamStateMap_[rendererStreamInfo_.sessionId] = HpaeSoftLinkState::PREPARED;
 
     uint32_t &capturerSessionId = capturerStreamInfo_.sessionId;
     IHpaeManager::GetHpaeManager().CreateStream(capturerStreamInfo_);
-    IHpaeManager::GetHpaeManager().RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_RECORD, capturerSessionId, shared_from_this());
+    IHpaeManager::GetHpaeManager().RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_RECORD, capturerSessionId,
+        shared_from_this());
     IHpaeManager::GetHpaeManager().RegisterReadCallback(capturerSessionId, shared_from_this());
     streamStateMap_[capturerStreamInfo_.sessionId] = HpaeSoftLinkState::PREPARED;
     return SUCCESS;
@@ -167,6 +180,7 @@ void HpaeSoftLink::OnDeviceInfoReceived()
 
 int32_t HpaeSoftLink::Start()
 {
+    AUDIO_INFO_LOG("Start in");
     CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::RUNNING, SUCCESS, "softlink already start");
     CHECK_AND_RETURN_RET_LOG(state_ == HpaeSoftLinkState::PREPARED || state_ == HpaeSoftLinkState::STOPPED,
         ERR_ILLEGAL_STATE, "softlink not init");
@@ -224,13 +238,18 @@ void HpaeSoftLink::OnStatusUpdate(IOperation operation, uint32_t streamIndex)
 {
     AUDIO_INFO_LOG("stream %{public}u recv operation:%{public}d", streamIndex, operation);
     CHECK_AND_RETURN_LOG(operation != OPERATION_RELEASED, "stream already released");
-    if (operation == OPERATION_STARTED) {
-       streamStateMap_[streamIndex] = HpaeSoftLinkState::RUNNING;
-    } else if (operation == OPERATION_STOPPED) {
-        streamStateMap_[streamIndex] = HpaeSoftLinkState::STOPPED;
-    } else if (operation == OPERATION_RELEASED){
-        streamStateMap_[streamIndex] = HpaeSoftLinkState::RELEASED;
-    } // todo : other operation value
+    {
+        std::lock_guard<std::mutex> lock(stateMutex_);
+        if (operation == OPERATION_STARTED) {
+            streamStateMap_[streamIndex] = HpaeSoftLinkState::RUNNING;
+        } else if (operation == OPERATION_STOPPED) {
+            streamStateMap_[streamIndex] = HpaeSoftLinkState::STOPPED;
+        } else if (operation == OPERATION_RELEASED){
+            streamStateMap_[streamIndex] = HpaeSoftLinkState::RELEASED;
+        } else {
+            return;
+        }
+    }
     std::lock_guard<std::mutex> lock(callbackMutex_);
     isOperationFinish_ = true;
     callbackCV_.notify_all();
@@ -268,6 +287,20 @@ int32_t HpaeSoftLink::OnStreamData(AudioCallBackStreamInfo& callbackStreamInfo)
     return SUCCESS;
 }
 
+static void CopyLeftToRight(uint8_t *data, size_t size, const AudioSampleFormat &format)
+{
+    CHECK_AND_RETURN_LOG(data != nullptr && size > 0, "error param");
+    const uint8_t bytesPerSample = GetSizeFromFormat(format);
+    const size_t frameSize = bytesPerSample * 2;
+    uint8_t *left = nullptr;
+    uint8_t *right = nullptr;
+    for (size_t i = 0; i < size; i += frameSize) {
+        left = data + i;
+        right = left + bytesPerSample;
+        CHECK_AND_RETURN_LOG(memcpy_s(right, bytesPerSample, left, bytesPerSample) == 0, "memcpy_s failed");
+    }
+}
+
 int32_t HpaeSoftLink::OnStreamData(AudioCallBackCapturerStreamInfo& callbackStreamInfo)
 {
     Trace trace("HpaeSoftLink::OnStreamData, [" + std::to_string(capturerStreamInfo_.sessionId) + "]OnReadData");
@@ -279,6 +312,9 @@ int32_t HpaeSoftLink::OnStreamData(AudioCallBackCapturerStreamInfo& callbackStre
     int8_t *outputData = callbackStreamInfo.outputData;
     size_t requestDataLen = callbackStreamInfo.requestDataLen;
     // todo : channel select
+    if (linkMode_ == SoftLinkMode::HEARING_AID && sinkInfo_.channels == STEREO) {
+        CopyLeftToRight(reinterpret_cast<uint8_t *>(outputData), requestDataLen, sinkInfo_.format);
+    }
     OptResult result = bufferQueue_->GetWritableSize();
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_READ_FAILED,
         "ringBuffer get writeable invalid size: %{public}zu", result.size);

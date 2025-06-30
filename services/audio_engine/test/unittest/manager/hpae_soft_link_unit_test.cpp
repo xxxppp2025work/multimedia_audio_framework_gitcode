@@ -25,7 +25,10 @@ class HpaeSoftLinkTest : public testing::Test {
 public:
     void SetUp();
     void TearDown();
+    void OpenAudioPort(bool openSink = true);
+    void CloseAudioPort(bool closeSink = true);
     IHpaeManager &hpaeManager_ = IHpaeManager::GetHpaeManager();
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback_ = nullptr;
     std::shared_ptr<HpaeSoftLink> softLink_ = nullptr;
     int32_t sinkId_;
     int32_t sourceId_;
@@ -94,25 +97,31 @@ static AudioModuleInfo GetSourceAudioModeInfo(std::string name = "mic")
 void HpaeSoftLinkTest::SetUp()
 {
     hpaeManager_.Init();
-    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
-    hpaeManager_.RegisterSerivceCallback(callback);
-    AudioModuleInfo audioSinkModuleInfo = GetSinkAudioModeInfo();
-    EXPECT_EQ(hpaeManager_.OpenAudioPort(audioSinkModuleInfo), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-    sinkId_ = callback->GetPortId();
-    AudioModuleInfo audioSourceModuleInfo = GetSourceAudioModeInfo();
-    EXPECT_EQ(hpaeManager_.OpenAudioPort(audioSourceModuleInfo), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-    sourceId_ = callback->GetPortId();
+    callback_ = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    hpaeManager_.RegisterSerivceCallback(callback_);
+    OpenAudioPort();
+    OpenAudioPort(false);
 }
 
 void HpaeSoftLinkTest::TearDown()
 {
-    hpaeManager_.CloseAudioPort(sinkId_);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_.CloseAudioPort(sourceId_);
-    WaitForMsgProcessing(hpaeManager_);
+    CloseAudioPort();
+    CloseAudioPort(false);
     hpaeManager_.DeInit();
+}
+
+void HpaeSoftLinkTest::OpenAudioPort(bool openSink)
+{
+    AudioModuleInfo moduleInfo = openSink ? GetSinkAudioModeInfo() : GetSourceAudioModeInfo();
+    EXPECT_EQ(hpaeManager_.OpenAudioPort(moduleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    openSink ? sinkId_ : sourceId_ = callback_->GetPortId();
+}
+
+void HpaeSoftLinkTest::CloseAudioPort(bool closeSink)
+{
+    hpaeManager_.CloseAudioPort(closeSink ? sinkId_ : sourceId_);
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 TEST_F(HpaeSoftLinkTest, testSoftLink)
@@ -120,19 +129,109 @@ TEST_F(HpaeSoftLinkTest, testSoftLink)
     softLink_ = std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
     EXPECT_NE(softLink_, nullptr);
     EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::NEW);
-    softLink_->Init();
-    WaitForMsgProcessing(hpaeManager_);
+
+    EXPECT_EQ(softLink_->Init(), SUCCESS);
     EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::PREPARED);
-    softLink_->Start();
-    WaitForMsgProcessing(hpaeManager_);
+
+    EXPECT_EQ(softLink_->Init(), SUCCESS); // init after init
+    EXPECT_EQ(softLink_->Stop(), ERR_ILLEGAL_STATE); // stop after init
+
+    EXPECT_EQ(softLink_->Start(), SUCCESS);
     EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::RUNNING);
+
+    EXPECT_EQ(softLink_->Init(), ERR_ILLEGAL_STATE); // init after start
+    EXPECT_EQ(softLink_->Start(), SUCCESS); // start after start
+
     std::this_thread::sleep_for(std::chrono::milliseconds(2000)); // 2s for sleep
-    softLink_->Stop();
-    WaitForMsgProcessing(hpaeManager_);
+
+    EXPECT_EQ(softLink_->Stop(), SUCCESS);
     EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::STOPPED);
+
+    EXPECT_EQ(softLink_->Stop(), SUCCESS); // stop after stop
+
     softLink_->Release();
-    WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::RELEASED);
+    softLink_ = nullptr;
+}
+
+TEST_F(HpaeSoftLinkTest, testCapturerOverFlow)
+{
+    softLink_ = std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink_, nullptr);
+    EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::NEW);
+    EXPECT_EQ(softLink_->Init(), SUCCESS);
+    EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::PREPARED);
+    EXPECT_EQ(softLink_->Start(), SUCCESS);
+    EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::RUNNING);
+
+    auto &capturerSessionId = softLink_->capturerStreamInfo_.sessionId;
+    if (softLink_->state_ == HpaeSoftLinkState::RUNNING &&
+        softLink_->streamStateMap_.find(capturerSessionId) != softLink_->streamStateMap_.end()) {
+        EXPECT_EQ(softLink_->streamStateMap_[capturerSessionId], HpaeSoftLinkState::RUNNING);
+    }
+
+    CloseAudioPort();
+    std::this_trhead::sleep_for(std::chrono::milliseconds(2000)); // 2s for sleep
+    if (softLink_->state_ == HpaeSoftLinkState::RUNNING &&
+        softLink_->streamStateMap_.find(capturerSessionId) != softLink_->streamStateMap_.end()) {
+        AUDIO_INFO_LOG("capturer has stopped");
+        EXPECT_EQ(softLink_->streamStateMap_[capturerSessionId], HpaeSoftLinkState::STOPPED);
+    }
+    softLink_->Release();
+    EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::RELEASED);
+    softLink_ = nullptr;
+}
+
+TEST_F(HpaeSoftLinkTest, testRendererUnderRun)
+{
+    OpenAudioPort();
+    softLink_ = std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink_, nullptr);
+    EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::NEW);
+    EXPECT_EQ(softLink_->Init(), SUCCESS);
+    EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::PREPARED);
+    EXPECT_EQ(softLink_->Start(), SUCCESS);
+    EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::RUNNING);
+
+    auto &rendererSessionId = softLink_->rendererStreamInfo_.sessionId;
+    if (softLink_->state_ == HpaeSoftLinkState::RUNNING &&
+        softLink_->streamStateMap_.find(rendererSessionId) != softLink_->streamStateMap_.end()) {
+        EXPECT_EQ(softLink_->streamStateMap_[rendererSessionId], HpaeSoftLinkState::RUNNING);
+    }
+
+    CloseAudioPort(false);
+    std::this_trhead::sleep_for(std::chrono::milliseconds(2000)); // 2s for sleep
+    if (softLink_->state_ == HpaeSoftLinkState::RUNNING &&
+        softLink_->streamStateMap_.find(rendererSessionId) != softLink_->streamStateMap_.end()) {
+        AUDIO_INFO_LOG("capturer has stopped");
+        EXPECT_EQ(softLink_->streamStateMap_[rendererSessionId], HpaeSoftLinkState::STOPPED);
+    }
+    softLink_->Release();
+    EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::RELEASED);
+    softLink_ = nullptr;
+}
+
+TEST_F(HpaeSoftLinkTest, testStaticFunc)
+{
+    OpenAudioPort();
+    OpenAudioPort(false);
+    std::shared_ptr<IHpaeSoftLink> softLink1 = 
+        IHpaeSoftLink::CreateSoftLink(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink1, nullptr);
+
+    CloseAudioPort(false);
+    WaitForMsgProcessing(hpaeManager_);
+    std::shared_ptr<IHpaeSoftLink> softLink2 = 
+        IHpaeSoftLink::CreateSoftLink(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_EQ(softLink2, nullptr);
+
+    std::shared_ptr<IHpaeSoftLink> softLink3 = 
+        IHpaeSoftLink::CreateSoftLink(sinkId_, -1, SoftLinkMode::HEARING_AID);
+    EXPECT_EQ(softLink3, nullptr);
+
+    HpaeSoftLink::g_sessionId = 99999; // 99999 for max sessionId;
+    EXPECT_EQ(HpaeSoftLink::GenerateSessionId(), 99999); // 99999 for max sessionId;
+    EXPECT_EQ(HpaeSoftLink::g_sessionId, 90000); // 90000 for min sessionId;
 }
 } // namespace HPAE
 } // namespace AudioStandard
