@@ -3252,7 +3252,7 @@ HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_006, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Level1)
 {
     auto ret = VolumeUtils::GetSupportedAudioVolumeTypes();
-    EXPECT_Gt(ret.size(), 0);
+    EXPECT_GT(ret.size(), 0);
 }
 
 /**
@@ -3264,7 +3264,7 @@ HWTEST(AudioUtilsUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
 {
     auto ret = VolumeUtils::GetStreamUsagesByVolumeType(STREAM_MUSIC);
-    EXPECT_Gt(ret.size(), 0);
+    EXPECT_GT(ret.size(), 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS
