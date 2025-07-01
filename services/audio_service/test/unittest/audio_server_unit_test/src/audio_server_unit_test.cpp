@@ -1768,7 +1768,6 @@ HWTEST_F(AudioServerUnitTest, SetIORoutes_005, TestSize.Level1)
     audioServer->audioScene_ = AUDIO_SCENE_DEFAULT;
     ret = audioServer->SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
     EXPECT_EQ(ret, SUCCESS);
-
 }
 
 /**
@@ -2106,6 +2105,5 @@ HWTEST_F(AudioServerUnitTest, CheckMaxLoopbackInstances_002, TestSize.Level1)
     int32_t ret = audioServer->CheckMaxLoopbackInstances(AUDIO_MODE_RECORD);
     EXPECT_EQ(ret, ERR_EXCEED_MAX_STREAM_CNT);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
