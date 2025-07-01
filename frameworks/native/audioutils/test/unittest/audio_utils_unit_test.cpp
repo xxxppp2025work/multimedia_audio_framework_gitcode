@@ -3242,5 +3242,29 @@ HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_006, TestSize.Level1)
     ret = PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId);
     EXPECT_EQ(ret, false);
 }
+
+/**
+* @tc.name  : Test GetSupportedAudioVolumeTypes  API
+* @tc.type  : FUNC
+* @tc.number: GetSupportedAudioVolumeTypes_001
+* @tc.desc  : Test GetSupportedAudioVolumeTypes API
+*/
+HWTEST(AudioUtilsUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Level1)
+{
+    auto ret = VolumeUtils::GetSupportedAudioVolumeTypes();
+    EXPECT_Gt(ret.size(), 0);
+}
+
+/**
+* @tc.name  : Test GetStreamUsagesByVolumeType  API
+* @tc.type  : FUNC
+* @tc.number: GetStreamUsagesByVolumeType_001
+* @tc.desc  : Test GetStreamUsagesByVolumeType API
+*/
+HWTEST(AudioUtilsUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
+{
+    auto ret = VolumeUtils::GetStreamUsagesByVolumeType(STREAM_MUSIC);
+    EXPECT_Gt(ret.size(), 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
