@@ -90,7 +90,7 @@ ani_object AniAudioManager::Constructor([[maybe_unused]] ani_env *env)
     }
 
     ani_method ctor;
-    if (ANI_OK != env->Class_FindMethod(cls, "<ctor>", "J:V", &ctor)) {
+    if (ANI_OK != env->Class_FindMethod(cls, "<ctor>", "l:", &ctor)) {
         AUDIO_ERR_LOG("Failed to find method: %{public}s", "ctor");
         return result;
     }
