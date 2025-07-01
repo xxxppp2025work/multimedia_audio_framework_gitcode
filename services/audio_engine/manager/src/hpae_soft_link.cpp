@@ -98,7 +98,7 @@ int32_t HpaeSoftLink::GetSinkInfoByIdx()
     std::unique_lock<std::mutex> lock(callbackMutex_);
     isOperationFinish_ = false;
     int32_t ret = ERROR;
-    IHpaeManager::GetHpaeManager().GetSinkInfoByIdx(renderIdx_, sinkInfo_, ret, [this](){
+    IHpaeManager::GetHpaeManager().GetSinkInfoByIdx(renderIdx_, sinkInfo_, ret, [this]() {
         this->OnDeviceInfoReceived();
     });
     bool stopWaiting = callbackCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
@@ -115,7 +115,7 @@ int32_t HpaeSoftLink::GetSourceInfoByIdx()
     std::unique_lock<std::mutex> lock(callbackMutex_);
     isOperationFinish_ = false;
     int32_t ret = ERROR;
-    IHpaeManager::GetHpaeManager().GetSourceInfoByIdx(captureIdx_, sourceInfo_, ret, [this](){
+    IHpaeManager::GetHpaeManager().GetSourceInfoByIdx(captureIdx_, sourceInfo_, ret, [this]() {
         this->OnDeviceInfoReceived();
     });
     bool stopWaiting = callbackCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
@@ -228,6 +228,7 @@ int32_t HpaeSoftLink::Release()
 {
     Trace trace("HpaeSoftLink::Release");
     IHpaeManager::GetHpaeManager().Release(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
+    AudioVolume::GetInstance()->RemoveStreamVolume(rendererStreamInfo_.sessionId);
     IHpaeManager::GetHpaeManager().Release(HPAE_STREAM_CLASS_TYPE_RECORD, capturerStreamInfo_.sessionId);
     std::lock_guard<std::mutex> lock(stateMutex_);
     state_ = HpaeSoftLinkState::RELEASED;
