@@ -37,6 +37,7 @@ public:
     int32_t ConnectAllowedProfiles(const std::string &remoteAddr) override;
     int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType) override;
     int32_t SendUserSelection(const std::string &device, uint32_t streamType) override;
+    void OnSleDspChrDataSend(const std::string &sleChrDspData, uint32_t len) override;
 private:
     static inline BrokerDelegator<SleAudioOperationCallbackProxy> delegator_;
 };

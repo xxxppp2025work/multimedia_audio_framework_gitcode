@@ -50,6 +50,7 @@ private:
     static int32_t ReadAndScanDpName(const std::string &path, std::string &name);
     static int32_t AudioNnDetectDevice(struct AudioPnpUevent *audioPnpUevent);
     static int32_t AudioMicBlockDevice(struct AudioPnpUevent *audioPnpUevent);
+    static int32_t AudioSendSleChrDspData(struct AudioPnpUevent *audioPnpUevent);
 };
 
 } // namespace AudioStandard

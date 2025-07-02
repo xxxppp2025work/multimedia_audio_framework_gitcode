@@ -204,5 +204,20 @@ int32_t SleAudioOperationCallbackProxy::SendUserSelection(const std::string &dev
 
     return reply.ReadInt32();
 }
+
+void SleAudioOperationCallbackProxy::OnSleDspChrDataSend(const std::string &sleChrDspData, uint32_t len)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    CHECK_AND_RETURN_LOG(data.WriteInterfaceToken(GetDescriptor()),
+        "OnSleDspChrDataSend WriteInterfaceToken failed");
+
+    data.WriteUint32(len);
+    data.WriteString(sleChrDspData);
+    
+    int error = Remote()->SendRequest(SEND_SLE_CHR_DSP_DATA, data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "OnSleDspChrDataSend Failed, error: %{public}d", error);
+}
 } // namespace AudioStandard
 } // namespace OHOS
