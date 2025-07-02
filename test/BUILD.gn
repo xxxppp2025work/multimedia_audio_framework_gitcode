@@ -189,6 +189,8 @@ group("audio_fuzz_test") {
     "fuzztest/audiointerruptzone_fuzzer:fuzztest",
     "fuzztest/audiolimitermanager_fuzzer:fuzztest",
     "fuzztest/audiomanager_fuzzer:fuzztest",
+    "fuzztest/audiomanagerstub_fuzzer:fuzztest",
+    "fuzztest/audiopipeinfo_fuzzer:fuzztest",
     "fuzztest/audiopipemanager_fuzzer:fuzztest",
     "fuzztest/audiopipeselector_fuzzer:fuzztest",
     "fuzztest/audiopnpserver_fuzzer:fuzztest",
