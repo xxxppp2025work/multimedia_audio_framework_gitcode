@@ -396,6 +396,12 @@ void AudioCapturerSession::ReloadSourceForDeviceChange(const AudioDeviceDescript
             return;
         }
     } else {
+        if (inputDevice.deviceType_ != DEVICE_TYPE_DEFAULT &&
+            GetInputDeviceTypeForReload().deviceType_ == DEVICE_TYPE_DEFAULT) {
+            SetInputDeviceTypeForReload(inputDevice);
+            AUDIO_INFO_LOG("mic source reload ignore for inputDeviceForReload_ not update");
+            return;
+        }
         if (inputDevice.deviceType_ == DEVICE_TYPE_DEFAULT ||
             inputDevice.IsSameDeviceDesc(GetInputDeviceTypeForReload())) {
             AUDIO_INFO_LOG("mic source reload ignore for device not changed");
