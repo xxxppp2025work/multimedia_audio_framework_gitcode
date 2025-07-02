@@ -14,7 +14,8 @@
  */
 
 #include "audio_stream_collector.h"
-#include "audio_client_tracker_callback_proxy.h"
+#include "istandard_client_tracker.h"
+#include "audio_client_tracker_callback_listener.h"
 using namespace std;
 
 namespace OHOS {
@@ -880,10 +881,9 @@ void AudioStreamCollectorIsStreamActiveFuzzTest(const uint8_t *rawData, size_t s
 void AudioStreamCollectorGetRunningStreamFuzzTest(const uint8_t *rawData, size_t size)
 {
     uint32_t index = static_cast<uint32_t>(size);
-    AudioRendererInfo rendererInfo = {
-        .contentType = g_testContentTypes[index % g_testContentTypes.size()],
-        .streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()]
-    };
+    AudioRendererInfo rendererInfo;
+    rendererInfo.contentType = g_testContentTypes[index % g_testContentTypes.size()];
+    rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
     std::unique_ptr<AudioRendererChangeInfo> info = std::make_unique<AudioRendererChangeInfo>();
     int32_t randIntValue = static_cast<int32_t>(size);
     info->sessionId = randIntValue;
@@ -1098,10 +1098,9 @@ void AudioStreamCollectorHasVoipRendererStreamFuzzTest(const uint8_t *rawData, s
 void AudioStreamCollectorIsMediaPlayingFuzzTest(const uint8_t *rawData, size_t size)
 {
     uint32_t index = static_cast<uint32_t>(size);
-    AudioRendererInfo rendererInfo = {
-        .contentType = g_testContentTypes[index % g_testContentTypes.size()],
-        .streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()]
-    };
+    AudioRendererInfo rendererInfo;
+    rendererInfo.contentType = g_testContentTypes[index % g_testContentTypes.size()];
+    rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
     std::unique_ptr<AudioRendererChangeInfo> info = std::make_unique<AudioRendererChangeInfo>();
     int32_t randIntValue = static_cast<int32_t>(size);
     info->sessionId = randIntValue % NUM_2;
@@ -1116,9 +1115,8 @@ void AudioStreamCollectorIsMediaPlayingFuzzTest(const uint8_t *rawData, size_t s
 void AudioStreamCollectorIsVoipStreamActiveFuzzTest(const uint8_t *rawData, size_t size)
 {
     uint32_t index = static_cast<uint32_t>(size);
-    AudioRendererInfo rendererInfo = {
-        .streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()]
-    };
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
     std::unique_ptr<AudioRendererChangeInfo> info = std::make_unique<AudioRendererChangeInfo>();
     int32_t randIntValue = static_cast<int32_t>(size);
     info->sessionId = randIntValue % NUM_2;

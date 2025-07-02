@@ -68,5 +68,6 @@ ohos_unittest("audio_policy_unit_test") {
     "../../../../../../services/audio_service:audio_client",
     "../../../../audiocapturer:audio_capturer",
     "../../../../audiorenderer:audio_renderer",
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
   ]
 }

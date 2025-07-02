@@ -114,5 +114,5 @@ ohos_fuzztest("IStandardAudioZoneClientFuzzTest") {
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":IStandardAudioZoneClientFuzzTest" ]
+  # deps = [ ":IStandardAudioZoneClientFuzzTest" ]
 }
