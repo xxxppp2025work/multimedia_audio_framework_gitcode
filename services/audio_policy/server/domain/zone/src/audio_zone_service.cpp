@@ -246,6 +246,16 @@ int32_t AudioZoneService::AddUidToAudioZone(int32_t zoneId, int32_t uid)
     return AddKeyToAudioZone(zoneId, uid, "", "", StreamUsage::STREAM_USAGE_INVALID);
 }
 
+void AudioZoneService::SetZoneDeviceVisible(bool visible)
+{
+    zoneDeviceVisible_ = visible;
+}
+
+bool AudioZoneService::GetZoneDeviceVisible()
+{
+    return zoneDeviceVisible_;
+}
+
 int32_t AudioZoneService::AddKeyToAudioZone(int32_t zoneId, int32_t uid,
     const std::string &deviceTag, const std::string &streamTag, const StreamUsage &usage)
 {
