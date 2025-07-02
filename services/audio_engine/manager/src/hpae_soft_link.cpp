@@ -98,7 +98,7 @@ int32_t HpaeSoftLink::GetSinkInfoByIdx()
     std::unique_lock<std::mutex> lock(callbackMutex_);
     isOperationFinish_ = false;
     int32_t ret = ERROR;
-    IHpaeManager::GetHpaeManager().GetSinkInfoByIdx(renderIdx_, sinkInfo_, ret, [this]() {
+    IHpaeManager::GetHpaeManager().GetSinkInfoByIdx(renderIdx_, sinkInfo_, ret, [this] {
         this->OnDeviceInfoReceived();
     });
     bool stopWaiting = callbackCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
@@ -115,7 +115,7 @@ int32_t HpaeSoftLink::GetSourceInfoByIdx()
     std::unique_lock<std::mutex> lock(callbackMutex_);
     isOperationFinish_ = false;
     int32_t ret = ERROR;
-    IHpaeManager::GetHpaeManager().GetSourceInfoByIdx(captureIdx_, sourceInfo_, ret, [this]() {
+    IHpaeManager::GetHpaeManager().GetSourceInfoByIdx(captureIdx_, sourceInfo_, ret, [this] {
         this->OnDeviceInfoReceived();
     });
     bool stopWaiting = callbackCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
@@ -337,6 +337,14 @@ int32_t HpaeSoftLink::OnStreamData(AudioCallBackCapturerStreamInfo& callbackStre
     result = bufferQueue_->Enqueue({reinterpret_cast<uint8_t *>(outputData), requestDataLen});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringBuffer enqueue failed");
     return SUCCESS;
+}
+
+// for test
+HpaeSoftLinkState HpaeSoftLink::GetStreamStateById(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(streamStateMap_.find(sessionId) != streamStateMap_.end(), HpaeSoftLinkState::INVALID,
+        "invalid param");
+    return streamStateMap_[sessionId];
 }
 } // namespace HPAE
 } // namespace AudioStandard

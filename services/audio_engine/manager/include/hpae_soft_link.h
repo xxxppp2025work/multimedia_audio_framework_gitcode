@@ -51,6 +51,9 @@ public:
     int32_t OnStreamData(AudioCallBackStreamInfo& callbackStreamInfo) override;
     int32_t OnStreamData(AudioCallBackCapturerStreamInfo& callbackStreamInfo) override;
     void OnDeviceInfoReceived();
+
+    // for unit test
+    HpaeSoftLinkState GetStreamStateById(uint32_t sessionId);
 private:
     int32_t GetSinkInfoByIdx();
     int32_t GetSourceInfoByIdx();
