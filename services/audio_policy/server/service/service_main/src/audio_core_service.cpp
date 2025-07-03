@@ -1124,12 +1124,12 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
     AUDIO_INFO_LOG("[DeviceFetchStart] for %{public}zu output streams, in devices %{public}s",
         outputStreamDescs.size(), audioDeviceManager_.GetConnDevicesStr().c_str());
 
-    CheckModemScene(reason);
-    if (outputStreamDescs.empty()) {
+    if (outputStreamDescs.empty() && !pipeManager_->IsModemCommunicationIdExist()) {
         return HandleFetchOutputWhenNoRunningStream();
     }
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs;
+    CheckModemScene(modemDescs, reason);
 
-    isVoiceCallMuted_ = false;
     for (auto &streamDesc : outputStreamDescs) {
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
         streamDesc->newDeviceDescs_ =
@@ -1143,6 +1143,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
 
     audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
+    UpdateModemRoute(modemDescs);
     if (IsNoRunningStream(outputStreamDescs)) {
         AUDIO_INFO_LOG("no running stream");
         HandleFetchOutputWhenNoRunningStream();
