@@ -16,7 +16,7 @@
 import { AsyncCallback, Callback, BusinessError } from '@ohos.base';
 
 class AudioAniError extends BusinessError {
-  constructor(code: number, message: string) {
+  constructor(code: int, message: string) {
     super();
     this.code = code;
     this.message = message;
