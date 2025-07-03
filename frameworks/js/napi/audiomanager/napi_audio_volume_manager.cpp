@@ -511,9 +511,8 @@ napi_value NapiAudioVolumeManager::GetVolumeGroupInfosSync(napi_env env, napi_ca
 
 napi_value NapiAudioVolumeManager::GetSystemVolume(napi_env env, napi_callback_info info)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERROR_PERMISSION_DENIED, "No system permission"),
-        "No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(), NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_PERMISSION_DENIED, "No system permission"), "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
@@ -546,9 +545,8 @@ napi_value NapiAudioVolumeManager::GetSystemVolume(napi_env env, napi_callback_i
 
 napi_value NapiAudioVolumeManager::GetMinSystemVolume(napi_env env, napi_callback_info info)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERROR_PERMISSION_DENIED, "No system permission"),
-        "No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(), NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_PERMISSION_DENIED, "No system permission"), "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
@@ -581,9 +579,8 @@ napi_value NapiAudioVolumeManager::GetMinSystemVolume(napi_env env, napi_callbac
 
 napi_value NapiAudioVolumeManager::GetMaxSystemVolume(napi_env env, napi_callback_info info)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERROR_PERMISSION_DENIED, "No system permission"),
-        "No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(), NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_PERMISSION_DENIED, "No system permission"), "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
@@ -616,9 +613,8 @@ napi_value NapiAudioVolumeManager::GetMaxSystemVolume(napi_env env, napi_callbac
 
 napi_value NapiAudioVolumeManager::IsSystemMuted(napi_env env, napi_callback_info info)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERROR_PERMISSION_DENIED, "No system permission"),
-        "No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(), NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_PERMISSION_DENIED, "No system permission"), "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
@@ -651,9 +647,8 @@ napi_value NapiAudioVolumeManager::IsSystemMuted(napi_env env, napi_callback_inf
 
 napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDb(napi_env env, napi_callback_info info)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERROR_PERMISSION_DENIED, "No system permission"),
-        "No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(), NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_PERMISSION_DENIED, "No system permission"), "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_THREE;
     napi_value args[ARGS_THREE] = {};
@@ -893,9 +888,8 @@ napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDbByStream(napi_env env, nap
 
 napi_value NapiAudioVolumeManager::GetSupportedAudioVolumeTypes(napi_env env, napi_callback_info info)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERROR_PERMISSION_DENIED, "No system permission"),
-        "No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(), NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_PERMISSION_DENIED, "No system permission"), "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_ZERO;
     napi_value args[ARGS_ONE] = {};
@@ -914,9 +908,8 @@ napi_value NapiAudioVolumeManager::GetSupportedAudioVolumeTypes(napi_env env, na
 
 napi_value NapiAudioVolumeManager::GetAudioVolumeTypeByStreamUsage(napi_env env, napi_callback_info info)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERROR_PERMISSION_DENIED, "No system permission"),
-        "No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(), NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_PERMISSION_DENIED, "No system permission"), "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
@@ -953,9 +946,8 @@ napi_value NapiAudioVolumeManager::GetAudioVolumeTypeByStreamUsage(napi_env env,
 
 napi_value NapiAudioVolumeManager::GetStreamUsagesByVolumeType(napi_env env, napi_callback_info info)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERROR_PERMISSION_DENIED, "No system permission"),
-        "No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(), NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_PERMISSION_DENIED, "No system permission"), "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
@@ -1256,9 +1248,8 @@ napi_value NapiAudioVolumeManager::RegisterStreamVolumeChangeCallback(napi_env e
 napi_value NapiAudioVolumeManager::RegisterSystemVolumeChangeCallback(napi_env env, napi_value *args,
     const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERROR_PERMISSION_DENIED, "No system permission"),
-        "No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(), NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_PERMISSION_DENIED, "No system permission"), "No system permission");
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
     if (napiAudioVolumeManager->systemVolumeChangeCallbackNapi_ == nullptr) {
@@ -1525,9 +1516,8 @@ void NapiAudioVolumeManager::UnregisterStreamVolumeChangeCallback(napi_env env, 
 void NapiAudioVolumeManager::UnregisterSystemVolumeChangeCallback(napi_env env, napi_value *args,
     size_t argc, NapiAudioVolumeManager *napiAudioVolumeManager)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERROR_PERMISSION_DENIED, "No system permission"),
-        "No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil.VerifySelfPermission(),NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_PERMISSION_DENIED, "No system permission"), "No system permission");
     napi_value callback = nullptr;
     if (argc == ARGS_TWO) {
         callback = args[PARAM1];
