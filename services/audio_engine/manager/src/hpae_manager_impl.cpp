@@ -533,7 +533,7 @@ int32_t HpaeManagerImpl::UpdateCollaborativeState(bool isCollaborationEnabled)
     return manager_->UpdateCollaborativeState(isCollaborationEnabled);
 }
 
-int32_t HpaeManagerImpl::IsNeedInitDupBuffer(const uint32_t sessionId)
+bool HpaeManagerImpl::IsNeedInitDupBuffer(const uint32_t sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
     return manager_->IsNeedInitDupBuffer(sessionId);
