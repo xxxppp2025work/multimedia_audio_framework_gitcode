@@ -36,6 +36,7 @@
 #ifdef HAS_FEATURE_INNERCAPTURER
 #include "playback_capturer_manager.h"
 #endif
+#include "audio_resource_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -140,6 +141,7 @@ void AudioService::ReleaseProcess(const std::string endpointName, const int32_t 
     std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
     releasingEndpointSet_.insert(endpointName);
     auto releaseMidpointThread = [this, endpointName, delayTime] () {
+        std::lock_guard<std::mutex> processListLock(processListMutex_);
         this->DelayCallReleaseEndpoint(endpointName, delayTime);
     };
     std::thread releaseEndpointThread(releaseMidpointThread);
@@ -962,9 +964,7 @@ void AudioService::DelayCallReleaseEndpoint(std::string endpointName, int32_t de
         return;
     }
     releasingEndpointSet_.erase(endpointName);
-    lock.unlock();
 
-    std::lock_guard<std::mutex> processListLock(processListMutex_);
     std::shared_ptr<AudioEndpoint> temp = nullptr;
     CHECK_AND_RETURN_LOG(endpointList_.find(endpointName) != endpointList_.end() &&
         endpointList_[endpointName] != nullptr, "Endpoint %{public}s not available, stop call release",
@@ -1124,6 +1124,7 @@ int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, floa
         }
     }
 #endif
+    UpdateSystemVolume(streamType, volume);
     return ret;
 }
 
@@ -1305,8 +1306,8 @@ int32_t AudioService::SetOffloadMode(uint32_t sessionId, int32_t state, bool isA
         lock.unlock();
         return ERROR;
     }
-    int32_t ret = renderer->SetOffloadMode(state, isAppBack);
     lock.unlock();
+    int32_t ret = renderer->SetOffloadMode(state, isAppBack);
     return ret;
 }
 
@@ -1651,6 +1652,73 @@ int32_t AudioService::ForceStopAudioStream(StopAudioType audioType)
     }
 #endif
     return SUCCESS;
+}
+
+float AudioService::GetSystemVolume()
+{
+    std::unique_lock<std::mutex> lock(musicOrVoipSystemVolumeMutex_);
+    return musicOrVoipSystemVolume_;
+}
+
+void AudioService::UpdateSystemVolume(AudioStreamType streamType, float volume)
+{
+    AUDIO_INFO_LOG("[WorkgroupInServer] streamType:%{public}d, systemvolume:%{public}f", streamType, volume);
+    if ((streamType != STREAM_MUSIC) && (streamType != STREAM_VOICE_COMMUNICATION)) {
+        return;
+    }
+    {
+        std::unique_lock<std::mutex> lock(musicOrVoipSystemVolumeMutex_);
+        musicOrVoipSystemVolume_ = volume;
+    }
+    std::vector<int32_t> pids = AudioResourceService::GetInstance()->GetProcessesOfAudioWorkgroup();
+    for (int32_t pid : pids) {
+        RenderersCheckForAudioWorkgroup(pid);
+    }
+}
+
+void AudioService::RenderersCheckForAudioWorkgroup(int32_t pid)
+{
+    if (!AudioResourceService::GetInstance()->IsProcessInWorkgroup(pid)) {
+        return;
+    }
+    if (AudioResourceService::GetInstance()->IsProcessHasSystemPermission(pid)) {
+        return;
+    }
+
+    std::unordered_map<int32_t, std::unordered_map<int32_t, bool>> allRenderPerProcessMap;
+    {
+        std::unique_lock<std::mutex> lock(rendererMapMutex_);
+        for (auto it = allRendererMap_.begin(); it != allRendererMap_.end(); it++) {
+            std::shared_ptr<RendererInServer> renderer = it->second.lock();
+            if (renderer == nullptr) {
+                continue;
+            }
+            if (renderer->processConfig_.appInfo.appPid != pid) {
+                continue;
+            }
+            if ((renderer->processConfig_.streamType != STREAM_MUSIC) &&
+                (renderer->processConfig_.streamType != STREAM_VOICE_COMMUNICATION)) {
+                continue;
+            }
+            allRenderPerProcessMap[pid][renderer->processConfig_.originalSessionId]
+                = renderer->CollectInfosForWorkgroup(GetSystemVolume());
+        }
+    }
+    // all processes in workgroup
+    for (const auto &outerPair : allRenderPerProcessMap) {
+        int32_t pid = outerPair.first;
+        const auto &innerMap = outerPair.second;
+        bool isAllowed = false;
+        // check all renderer info this process
+        for (const auto &innerPair : innerMap) {
+            if (innerPair.second) {
+                // this process allowed if one renderer running and voiced
+                isAllowed = true;
+                break;
+            }
+        }
+        AudioResourceService::GetInstance()->WorkgroupRendererMonitor(pid, isAllowed);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

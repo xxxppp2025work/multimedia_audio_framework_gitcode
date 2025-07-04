@@ -876,13 +876,13 @@ int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
     return ret;
 }
 
-void AudioCoreService::RegisteredTrackerClientDied(pid_t uid)
+void AudioCoreService::RegisteredTrackerClientDied(pid_t uid, pid_t pid)
 {
     UpdateDefaultOutputDeviceWhenStopping(static_cast<int32_t>(uid));
     UpdateInputDeviceWhenStopping(static_cast<int32_t>(uid));
 
     audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
-    streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));
+    streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid), static_cast<int32_t>(pid));
     std::vector<uint32_t> sessionIds = pipeManager_->GetFastStreamIdsByUid(uid);
     for (auto sessionId : sessionIds) {
         ReleaseClient(sessionId);
@@ -1122,16 +1122,17 @@ bool AudioCoreService::IsNoRunningStream(std::vector<std::shared_ptr<AudioStream
 
 int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChangeReasonExt reason)
 {
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is nullptr");
     std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
     AUDIO_INFO_LOG("[DeviceFetchStart] for %{public}zu output streams, in devices %{public}s",
         outputStreamDescs.size(), audioDeviceManager_.GetConnDevicesStr().c_str());
 
-    CheckModemScene(reason);
-    if (outputStreamDescs.empty()) {
+    if (outputStreamDescs.empty() && !pipeManager_->IsModemCommunicationIdExist()) {
         return HandleFetchOutputWhenNoRunningStream(reason);
     }
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs;
+    CheckModemScene(modemDescs, reason);
 
-    isVoiceCallMuted_ = false;
     for (auto &streamDesc : outputStreamDescs) {
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
         streamDesc->newDeviceDescs_ =
@@ -1145,6 +1146,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
 
     audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
+    UpdateModemRoute(modemDescs);
     if (IsNoRunningStream(outputStreamDescs)) {
         AUDIO_INFO_LOG("no running stream");
         HandleFetchOutputWhenNoRunningStream(reason);
