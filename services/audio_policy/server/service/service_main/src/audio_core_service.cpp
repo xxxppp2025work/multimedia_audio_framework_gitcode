@@ -398,7 +398,8 @@ void AudioCoreService::CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDevic
     if (audioDeviceManager_.IsDeviceConnected(desc)) {
         audioVolumeManager_.SetVolumeForSwitchDevice(*(desc), sinkName);
     }
-    OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
+    OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
+        AudioStreamDeviceChangeReason::STREAM_PRIORITY_CHANGED);
 }
 
 void AudioCoreService::CheckAndSetCurrentInputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc)
@@ -1001,7 +1002,8 @@ void AudioCoreService::NotifyRemoteRenderState(std::string networkId, std::strin
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc = {};
     desc.push_back(localDevice);
     UpdateTrackerDeviceChange(desc);
-    audioDeviceCommon_.OnPreferredOutputDeviceUpdated(curOutputDeviceDesc);
+    audioDeviceCommon_.OnPreferredOutputDeviceUpdated(curOutputDeviceDesc,
+        AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE);
     AUDIO_DEBUG_LOG("Success");
 }
 
@@ -1126,7 +1128,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
 
     CheckModemScene(reason);
     if (outputStreamDescs.empty()) {
-        return HandleFetchOutputWhenNoRunningStream();
+        return HandleFetchOutputWhenNoRunningStream(reason);
     }
 
     isVoiceCallMuted_ = false;
@@ -1145,7 +1147,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
     if (IsNoRunningStream(outputStreamDescs)) {
         AUDIO_INFO_LOG("no running stream");
-        HandleFetchOutputWhenNoRunningStream();
+        HandleFetchOutputWhenNoRunningStream(reason);
     }
     return ret;
 }

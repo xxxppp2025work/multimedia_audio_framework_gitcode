@@ -82,6 +82,7 @@ public:
         SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
         AUDIO_ZONE_EVENT,
         FORMAT_UNSUPPORTED_ERROR,
+        SESSION_DEVICE_CHANGE,
     };
     /* event data */
     class EventContextObj {
@@ -113,6 +114,7 @@ public:
         std::shared_ptr<AudioZoneEvent> audioZoneEvent;
         uint32_t routeFlag;
         AudioErrors errorCode;
+        int32_t callerPid_ = -1;
     };
 
     struct RendererDeviceChangeEvent {
@@ -209,6 +211,7 @@ public:
     bool SendAudioZoneEvent(std::shared_ptr<AudioZoneEvent> event);
     bool SendFormatUnsupportedErrorEvent(const AudioErrors &errorCode);
     int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages);
+    bool SendAudioSessionDeviceChange(const AudioStreamDeviceChangeReason changeReason, int32_t callerPid = -1);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -230,6 +233,7 @@ private:
     void HandlePreferredOutputDeviceUpdated();
     void HandlePreferredInputDeviceUpdated();
     void HandleDistributedRoutingRoleChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleAudioSessionDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRendererInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRendererDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
