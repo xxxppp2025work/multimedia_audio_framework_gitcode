@@ -78,6 +78,7 @@ public:
     void BlockStream() noexcept override;
     int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) override;
     void OnStatusUpdate(IOperation operation) override;
+    bool IsNeedInitDupBuffer(const uint32_t sessionId) override;
 private:
     void SyncOffloadMode();
     void InitRingBuffer();

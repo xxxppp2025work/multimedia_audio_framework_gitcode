@@ -127,6 +127,7 @@ public:
     bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
+    bool IsNeedInitDupBuffer(const uint32_t sessionId) override;
 private:
     std::shared_ptr<HpaeManager> manager_;
 };

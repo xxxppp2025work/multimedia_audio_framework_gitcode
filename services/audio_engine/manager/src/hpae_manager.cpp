@@ -1321,8 +1321,10 @@ int32_t HpaeManager::DestroyStream(HpaeStreamClassType streamClassType, uint32_t
             rendererIdStreamInfoMap_.erase(sessionId);
             sinkInputs_.erase(sessionId);
             idPreferSinkNameMap_.erase(sessionId);
+            dupStreamIdToInnerCapStreamIdMap_.erase(sessionId);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
             DestroyCapture(sessionId);
+            InnerCapSinkNameToCapIdMap_.erase(capturerIdSourceNameMap_[sessionId]);
             capturerIdSourceNameMap_.erase(sessionId);
             capturerIdStreamInfoMap_.erase(sessionId);
             sourceOutputs_.erase(sessionId);
@@ -2007,9 +2009,11 @@ void HpaeManager::HandleRendererManager(const std::string &sinkName, const HpaeS
     if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
         rendererIdSinkNameMap_[streamInfo.sessionId] = sinkName;
         rendererIdStreamInfoMap_[streamInfo.sessionId] = {streamInfo, HPAE_SESSION_NEW};
+        dupStreamIdToInnerCapStreamIdMap_[streamInfo.sessionId] = InnerCapSinkNameToCapIdMap_[sinkName];
     } else if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
         capturerIdSourceNameMap_[streamInfo.sessionId] = sinkName;
         capturerIdStreamInfoMap_[streamInfo.sessionId] = {streamInfo, HPAE_SESSION_NEW};
+        InnerCapSinkNameToCapIdMap_[sinkName] = streamInfo.sessionId;
     }
 }
 
@@ -2261,6 +2265,21 @@ void HpaeManager::HandleDisConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode>
         defaultRendererManager->DisConnectCoBufferNode(hpaeCoBufferNode);
     };
     SendRequest(request, __func__);
+}
+
+bool HpaeManager::IsNeedInitDupBuffer(const uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(dupStreamIdToInnerCapStreamIdMap_.find(sessionId) !=
+        dupStreamIdToInnerCapStreamIdMap_.end(), false,
+        "dupStreamIdToInnerCapStreamIdMap_ is not find dupStream sessionId: %{public}u", sessionId);
+    CHECK_AND_RETURN_RET_LOG(capturerIdSourceNameMap_.find(dupStreamIdToInnerCapStreamIdMap_[sessionId]) !=
+        capturerIdSourceNameMap_.end(), false, "capturerIdSourceNameMap_ is not find CapStream sessionId: %{public}u",
+        dupStreamIdToInnerCapStreamIdMap_[sessionId]);
+    auto rendererManger = SafeGetMap(rendererManagerMap_,
+        capturerIdSourceNameMap_[dupStreamIdToInnerCapStreamIdMap_[sessionId]]);
+    CHECK_AND_RETURN_RET_LOG(rendererManger != nullptr, false, "rendererManger is nullptr");
+    return !rendererManger->IsRunning();
+    
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
