@@ -225,7 +225,8 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
     audioActiveDevice_.NotifyUserSelectionEventToBt(selectedDesc[0], strUsage);
     HandleFetchDeviceChange(AudioStreamDeviceChangeReason::OVERRODE, "SelectOutputDevice");
     if (selectedDesc[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
-        audioDeviceCommon_.OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
+        audioDeviceCommon_.OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
+            AudioStreamDeviceChangeReason::OVERRODE);
     }
     WriteSelectOutputSysEvents(selectedDesc, strUsage);
     return SUCCESS;

@@ -126,6 +126,10 @@ public:
     int32_t RemoveAudioSessionStateCallback();
     int32_t RemoveAudioSessionStateCallback(const std::shared_ptr<AudioSessionStateChangedCallback> &cb);
     size_t GetAudioSessionStateCallbackSize() const;
+    int32_t AddAudioSessionDeviceCallback(const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &cb);
+    int32_t RemoveAudioSessionDeviceCallback();
+    int32_t RemoveAudioSessionDeviceCallback(const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &cb);
+    size_t GetAudioSessionDeviceCallbackSize() const;
     int32_t AddAudioSceneChangedCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &cb);
     int32_t RemoveAudioSceneChangedCallback(
@@ -170,6 +174,7 @@ public:
     void OnNnStateChange(const int32_t &nnState) override;
     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override;
     void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent) override;
+    void OnAudioSessionCurrentDeviceChanged(const CurrentOutputDeviceChangedEvent &deviceChangedEvent) override;
     void OnAudioSceneChange(const AudioScene &audioScene) override;
     void OnFormatUnsupportedError(const AudioErrors &errorCode) override;
     void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent) override;
@@ -202,6 +207,7 @@ private:
     std::vector<std::shared_ptr<AudioNnStateChangeCallback>> nnStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSessionCallback>> audioSessionCallbackList_;
     std::vector<std::weak_ptr<AudioSessionStateChangedCallback>> audioSessionStateCallbackList_;
+    std::vector<std::weak_ptr<AudioSessionCurrentDeviceChangedCallback>> audioSessionDeviceCallbackList_;
     std::vector<std::pair<int32_t, std::shared_ptr<AudioManagerMicrophoneBlockedCallback>>>
         microphoneBlockedCallbackList_;
     std::vector<std::shared_ptr<AudioManagerAudioSceneChangedCallback>> audioSceneChangedCallbackList_;
@@ -238,6 +244,7 @@ private:
     mutable std::mutex nnStateChangeMutex_;
     mutable std::mutex audioSessionMutex_;
     mutable std::mutex audioSessionStateMutex_;
+    mutable std::mutex audioSessionDeviceMutex_;
     mutable std::mutex microphoneBlockedMutex_;
     mutable std::mutex audioSceneChangedMutex_;
     mutable std::mutex formatUnsupportedErrorMutex_;
