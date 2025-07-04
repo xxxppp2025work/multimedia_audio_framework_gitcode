@@ -1949,5 +1949,57 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleStartStreamMuteState_002, TestSize.
     audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false);
     EXPECT_FALSE(changeInfo->backMute);
 }
+
+/**
+* @tc.name  : Test GetRunningRenderInfos.
+* @tc.number: GetRunningRenderInfos_001
+* @tc.desc  : Test GetRunningRenderInfos.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, GetRunningRenderInfos_001, TestSize.Level1)
+{
+    AudioStreamCollector audioStreamCollector_;
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;
+    int32_t result = audioStreamCollector_.GetRunningRenderInfos(infos);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_TRUE(infos.empty());
+}
+
+/**
+* @tc.name  : Test GetRunningRenderInfos.
+* @tc.number: GetRunningRenderInfos_002
+* @tc.desc  : Test GetRunningRenderInfos.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, GetRunningRenderInfos_002, TestSize.Level1)
+{
+    AudioStreamCollector audioStreamCollector_;
+    audioStreamCollector_audioRenderChangeInfos_.push_back(std::shared_ptr<AudioRendererChangeInfo>());
+    audioStreamCollector_audioRenderChangeInfos_.back()->rendererState = RENDERER_RUNNING;
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;
+    int32_t result = audioStreamCollector_.GetRunningRenderInfos(infos);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(infos.size(), 1);
+    EXPECT_TRUE(infos[0]->rendererState,RENDERER_RUNNING);
+}
+
+/**
+* @tc.name  : Test GetRunningRenderInfos.
+* @tc.number: GetRunningRenderInfos_003
+* @tc.desc  : Test GetRunningRenderInfos.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, GetRunningRenderInfos_003, TestSize.Level1)
+{
+    AudioStreamCollector audioStreamCollector_;
+    auto info1 = std::shared_ptr<AudioRendererChangeInfo>();
+    info1->rendererState = RENDERER_RUNNING;
+    audioStreamCollector_audioRenderChangeInfos_.push_back(info1);
+    auto info2 = std::shared_ptr<AudioRendererChangeInfo>();
+    info2->rendererState = RENDERER_STOPPED;
+    audioStreamCollector_audioRenderChangeInfos_.push_back(info2);
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;
+    int32_t result = audioStreamCollector_.GetRunningRenderInfos(infos);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(infos.size(), 1);
+    EXPECT_TRUE(infos[0]->rendererState,RENDERER_RUNNING);
+}
 } // namespace AudioStandard
 } // namespace OHOS
