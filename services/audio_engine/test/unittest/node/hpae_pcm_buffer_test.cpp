@@ -19,7 +19,9 @@
 #include "test_case_common.h"
 #include <vector>
 
-namespace {
+namespace OHOS {
+namespace AudioStandard {
+namespace HPAE {
 constexpr uint32_t DEFAULT_CHANNEL_COUNT = 2;
 constexpr uint32_t DEFAULT_FRAME_LEN = 480;
 constexpr uint32_t DEFAULT_SAMPLE_RATE = 48000;
@@ -27,10 +29,6 @@ constexpr uint32_t DEFAULT_FRAME_NUM = 2;
 constexpr uint32_t DEFAULT_FRAME_SIZE = DEFAULT_CHANNEL_COUNT * DEFAULT_FRAME_LEN;
 constexpr uint32_t NUM_TWO = 2;
 constexpr uint32_t NUM_THREE = 3;
-
-using namespace OHOS;
-using namespace AudioStandard;
-using namespace HPAE;
 
 class HpaePcmBufferTest : public testing::Test {
 public:
@@ -51,6 +49,14 @@ public:
     std::vector<float> CreateTestVector(float value = 1.0f)
     {
         return std::vector<float>(DEFAULT_FRAME_SIZE, value);
+    }
+
+    void FillBuffer(HpaePcmBuffer& buffer, float value) {
+        float* data = buffer.GetPcmDataBuffer();
+        size_t size = buffer.Size() / sizeof(float);
+        for (size_t i = 0; i < size; i++) {
+            data[i] = value;
+        }
     }
     
     std::vector<std::vector<float>> CreateTestMatrix(float value = 1.0f, size_t frames = 1)
@@ -334,4 +340,35 @@ TEST_F(HpaePcmBufferTest, positionWrapping)
     EXPECT_EQ(buffer.GetWritePos(), 1);
     EXPECT_EQ(buffer.GetReadPos(), 0); // (1 + 1) % 2 = 0
 }
+
+// normal copy
+TEST_F(HpaePcmBufferTest, NormalAssignmentCopiesDataSuccessfully) {
+    PcmBufferInfo info = CreateBufferInfo(1, true);
+    HpaePcmBuffer source(info);
+    FillBuffer(source, 1.5f);
+
+    HpaePcmBuffer destination(info);
+    FillBuffer(destination, 2.0f);
+    
+    // do memcpys
+    destination = source;
+    
+    // check info
+    EXPECT_EQ(destination.GetPcmBufferInfo().ch, source.GetPcmBufferInfo().ch);
+    EXPECT_EQ(destination.GetPcmBufferInfo().frameLen, source.GetPcmBufferInfo().frameLen);
+    EXPECT_EQ(destination.GetPcmBufferInfo().rate, source.GetPcmBufferInfo().rate);
+    EXPECT_EQ(destination.GetPcmBufferInfo().frames, source.GetPcmBufferInfo().frames);
+    
+    // check data
+    const float* srcData = source.GetPcmDataBuffer();
+    const float* destData = destination.GetPcmDataBuffer();
+    size_t byteSize = source.Size();
+    EXPECT_EQ(byteSize, destination.Size());
+    
+    for (size_t i = 0; i < byteSize / sizeof(float); i++) {
+        EXPECT_FLOAT_EQ(destData[i], srcData[i]);
+    }
 }
+} // namespace HPAE
+} // namespace AudioStandard
+} // namespace OHOS
