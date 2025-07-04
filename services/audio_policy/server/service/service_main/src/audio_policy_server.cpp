@@ -4215,6 +4215,9 @@ int32_t AudioPolicyServer::ActivateAudioSession(const AudioSessionStrategy &stra
         coreService_->FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
     }
 
+    audioPolicyServerHandler_->SendAudioSessionDeviceChange(
+        AudioStreamDeviceChangeReason::AUDIO_SESSION_ACTIVATE, callerPid);
+
     return ret;
 }
 

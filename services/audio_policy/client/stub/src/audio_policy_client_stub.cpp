@@ -79,6 +79,9 @@ void AudioPolicyClientStub::OnFirMaxRemoteRequest(uint32_t updateCode, MessagePa
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_AUDIO_SESSION_STATE_CHANGED):
             HandleAudioSessionStateCallback(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_AUDIO_SESSION_CURRENT_DEVICE_CHANGED):
+            HandleAudioSessionDeviceCallback(data, reply);
+            break;
         default:
             break;
     }
@@ -442,6 +445,22 @@ void AudioPolicyClientStub::HandleAudioSessionStateCallback(MessageParcel &data,
     AudioSessionStateChangedEvent stateChangedEvent;
     stateChangedEvent.stateChangeHint = static_cast<AudioSessionStateChangeHint>(data.ReadInt32());
     OnAudioSessionStateChanged(stateChangedEvent);
+}
+
+void AudioPolicyClientStub::HandleAudioSessionDeviceCallback(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_INFO_LOG("HandleAudioSessionDeviceCallback");
+    CurrentOutputDeviceChangedEvent deviceChangedEvent;
+    deviceChangedEvent.changeReason = static_cast<AudioStreamDeviceChangeReason>(data.ReadInt32());
+    deviceChangedEvent.recommendedAction = static_cast<DeviceChangeRecommendedAction>(data.ReadInt32());
+
+    int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size < DEVICE_CHANGE_VALID_SIZE, "get invalid size : %{public}d", size);
+    for (int32_t i = 0; i < size; i++) {
+        deviceChangedEvent.devices.emplace_back(AudioDeviceDescriptor::UnmarshallingPtr(data));
+    }
+
+    OnAudioSessionCurrentDeviceChanged(deviceChangedEvent);
 }
 
 void AudioPolicyClientStub::HandleFormatUnsupportedError(MessageParcel &data, MessageParcel &reply)

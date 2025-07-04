@@ -21,6 +21,8 @@
 #include "audio_interrupt_info.h"
 #include "audio_session_info.h"
 #include "audio_device_info.h"
+#include "audio_device_descriptor.h"
+#include "audio_policy_server_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -42,6 +44,7 @@ public:
 
     int32_t Activate();
     int32_t Deactivate();
+    bool IsActivated();
     AudioSessionState GetSessionState();
     void SetSessionStrategy(const AudioSessionStrategy strategy);
     AudioSessionStrategy GetSessionStrategy();
@@ -54,15 +57,21 @@ public:
     void GetSessionDefaultOutputDevice(DeviceType &deviceType);
     bool IsStreamContainedInCurrentSession(const uint32_t &streamId);
     bool IsNeedToFetchDefaultDevice();
+    bool IsRecommendToStopAudio(const std::shared_ptr<AudioPolicyServerHandler::EventContextObj> eventContextObj);
+    bool IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    StreamUsage GetSessionStreamUsage();
 
 private:
     StreamUsage GetStreamUsageByAudioSessionScene(const AudioSessionScene audioSessionScene);
     bool IsLegalDevice(const DeviceType deviceType);
+    bool IsCurrentDevicePrivateDevice(const std::shared_ptr<AudioDeviceDescriptor> desc);
+    bool IsDeviceContainedInVector(std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices,
+        const std::shared_ptr<AudioDeviceDescriptor> desc);
     int32_t EnableDefaultDevice();
     std::mutex sessionMutex_;
 
     int32_t callerPid_;
-    bool needToFetch = false;
+    bool needToFetch_ = false;
     AudioSessionStrategy strategy_;
     std::weak_ptr<AudioSessionStateMonitor> audioSessionStateMonitor_;
 
@@ -71,6 +80,7 @@ private:
     std::vector<AudioInterrupt> bypassStreamInfoVec_;
     AudioSessionScene audioSessionScene_ {AudioSessionScene::INVALID};
     DeviceType defaultDeviceType_ = DEVICE_TYPE_INVALID;
+    AudioDeviceDescriptor deviceDescriptor_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

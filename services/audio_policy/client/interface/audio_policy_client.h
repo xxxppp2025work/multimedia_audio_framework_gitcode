@@ -23,6 +23,7 @@
 #include "audio_system_manager.h"
 #include "audio_interrupt_info.h"
 #include "audio_stream_manager.h"
+#include "audio_session_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -60,7 +61,8 @@ enum class AudioPolicyClientCode {
     ON_STREAM_VOLUME_CHANGE,
     ON_SYSTEM_VOLUME_CHANGE,
     ON_AUDIO_SESSION_STATE_CHANGED,
-    AUDIO_POLICY_CLIENT_CODE_MAX = ON_AUDIO_SESSION_STATE_CHANGED,
+    ON_AUDIO_SESSION_CURRENT_DEVICE_CHANGED,
+    AUDIO_POLICY_CLIENT_CODE_MAX = ON_AUDIO_SESSION_CURRENT_DEVICE_CHANGED,
 };
 class IAudioPolicyClient : public IRemoteBroker {
 public:
@@ -99,6 +101,7 @@ public:
     virtual void OnNnStateChange(const int32_t &nnState) = 0;
     virtual void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) = 0;
     virtual void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent) = 0;
+    virtual void OnAudioSessionCurrentDeviceChanged(const CurrentOutputDeviceChangedEvent &deviceChangedEvent) = 0;
     virtual void OnAudioSceneChange(const AudioScene &audioScene) = 0;
     virtual void OnFormatUnsupportedError(const AudioErrors &errorCode) = 0;
     virtual void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent) = 0;
