@@ -2279,7 +2279,6 @@ bool HpaeManager::IsNeedInitDupBuffer(const uint32_t sessionId)
         capturerIdSourceNameMap_[dupStreamIdToInnerCapStreamIdMap_[sessionId]]);
     CHECK_AND_RETURN_RET_LOG(rendererManger != nullptr, false, "rendererManger is nullptr");
     return !rendererManger->IsRunning();
-    
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -2098,7 +2098,8 @@ int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc, int3
         AUDIO_INFO_LOG("dup buffer is nnullptr, failed WriteDupBuffer!");
         return ERROR;
     }
-    bool isInitDupBufferFlage = IsNeedInitDupBuffer(innerCapId, innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupStreamSessionId());
+    bool isInitDupBufferFlage = IsNeedInitDupBuffer(innerCapId, innerCapIdToDupStreamCallbackMap_[innerCapId]->
+        GetDupStreamSessionId());
     if (IsNeedByPassWriteDupBuffer(isInitDupBufferFlage, innerCapId) == true) {
         return SUCCESS;
     }
