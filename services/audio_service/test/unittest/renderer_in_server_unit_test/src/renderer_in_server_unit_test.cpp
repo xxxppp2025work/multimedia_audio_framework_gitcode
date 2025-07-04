@@ -3436,5 +3436,33 @@ HWTEST_F(RendererInServerUnitTest, SetSourceDuration_001, TestSize.Level1)
     int32_t ret = rendererInServer->SetSourceDuration(duration);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: IsNeedByPassWriteDupBuffer_001
+ * @tc.desc  : Test IsNeedByPassWriteDupBuffer API
+ */
+HWTEST_F(RendererInServerUnitTest, IsNeedByPassWriteDupBuffer_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    int32_t innerCapId = 123456;
+    uint32_t dupStreamIndex = 123456;
+    size_t dupTotalSizeInFrame_ = 10;
+    size_t dupByteSizePerFrame_ = 20;
+    rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId] =
+        std::make_shared<StreamCallbacks>(dupStreamIndex);
+    rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() =
+        AudioRingCache::Create(dupTotalSizeInFrame_ * dupByteSizePerFrame_);
+    
+    bool isInitDupBufferFlage = true;
+    EXPECT_EQ(rendererInServer->IsNeedByPassWriteDupBuffer(isInitDupBufferFlage, innerCapId), true);
+    EXPECT_EQ(rendererInServer->IsNeedByPassWriteDupBuffer(isInitDupBufferFlage, innerCapId), true);
+    isInitDupBufferFlage = false;
+    EXPECT_EQ(rendererInServer->IsNeedByPassWriteDupBuffer(isInitDupBufferFlage, innerCapId), false);
+}
 } // namespace AudioStandard
 } // namespace OHOS
