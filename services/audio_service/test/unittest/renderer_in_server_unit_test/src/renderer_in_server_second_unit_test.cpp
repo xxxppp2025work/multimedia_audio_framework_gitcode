@@ -745,7 +745,6 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerRestoreSession_001, TestSi
 }
 
 /**
-<<<<<<< master
  * @tc.name  : Test RendererInServer
  * @tc.type  : FUNC
  * @tc.number: IsNeedByPassWriteDupBuffer_001
@@ -772,6 +771,7 @@ HWTEST_F(RendererInServerExtUnitTest, IsNeedByPassWriteDupBuffer_001, TestSize.L
     EXPECT_EQ(server->IsNeedByPassWriteDupBuffer(isInitDupBufferFlage, innerCapId), false);
 }
 
+/**
  * @tc.name  : Test WriteMuteDataSysEvent API
  * @tc.type  : FUNC
  * @tc.number: RendererInServerWriteMuteDataSysEvent_006

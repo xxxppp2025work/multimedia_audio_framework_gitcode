@@ -2141,7 +2141,6 @@ int32_t RendererInServer::StopSession()
     return SUCCESS;
 }
 
-<<<<<<< master
 bool RendererInServer::IsNeedInitDupBuffer(int32_t innerCapId, uint32_t sessionId)
 {
     return captureInfos_[innerCapId].dupStream->IsNeedInitDupBuffer(sessionId);
