@@ -166,6 +166,7 @@ public:
     bool hasPair_{false};
     RouterType routerType_ = ROUTER_TYPE_NONE;
     bool isVrSupported_ = true;
+    VolumeBehavior volumeBehavior_;
 
 private:
     bool IsOutput()

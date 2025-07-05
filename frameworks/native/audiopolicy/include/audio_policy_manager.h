@@ -218,6 +218,9 @@ public:
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
 
+    int32_t SetQueryDeviceVolumeBehaviorCallback(
+        const std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> &callback);
+
     int32_t SetQueryBundleNameListCallback(const std::shared_ptr<AudioQueryBundleNameListCallback> &callback);
 
     int32_t SetAudioManagerInterruptCallback(const int32_t clientId,
@@ -610,7 +613,7 @@ public:
 
     static void RegisterServerDiedCallBack(AudioServerDiedCallBack func);
 
-    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
+    void SetDeviceVolumeBehavior(const std::string &networkId, DeviceType devicetype, VolumeBehavior &volumeBehavior);
 
     int32_t SetVirtualCall(const bool isVirtual);
 

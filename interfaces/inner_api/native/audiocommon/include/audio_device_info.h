@@ -363,6 +363,12 @@ enum BluetoothOffloadState {
     A2DP_OFFLOAD = 2,
 };
 
+struct VolumeBehavior {
+    bool isReady = false;
+    std::string databaseVolumeName = "";
+    bool cannotAdjustVolume = false;
+};
+
 struct DevicePrivacyInfo {
     std::string deviceName;
     DeviceType deviceType;

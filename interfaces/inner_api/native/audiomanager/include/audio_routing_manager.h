@@ -57,7 +57,7 @@ public:
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc,
         const int32_t uid = INVALID_UID);
-    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
+    void SetDeviceVolumeBehavior(const std::string &networkId, DeviceType devicetype, VolumeBehavior &volumeBehavior);
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, const bool isConnected);
 private:
     int32_t GetCallingPid();
