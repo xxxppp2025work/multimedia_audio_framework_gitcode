@@ -536,6 +536,8 @@ struct AudioRendererInfo {
     bool isLoopback = false;
     AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
     bool isVirtualKeyboard = false;
+    // store the finally select routeflag after concurrency
+    uint32_t audioFlag = 0x0;
 
     bool Marshalling(Parcel &parcel) const
     {
@@ -558,7 +560,8 @@ struct AudioRendererInfo {
             && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
             && parcel.WriteBool(isLoopback)
             && parcel.WriteInt32(static_cast<int32_t>(loopbackMode))
-            && parcel.WriteBool(isVirtualKeyboard);
+            && parcel.WriteBool(isVirtualKeyboard)
+            && parcel.WriteUint32(audioFlag);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -582,6 +585,7 @@ struct AudioRendererInfo {
         isLoopback = parcel.ReadBool();
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         isVirtualKeyboard = parcel.ReadBool();
+        audioFlag = parcel.ReadUint32();
     }
 };
 
