@@ -218,6 +218,8 @@ public:
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
 
+    int32_t SetQueryDeviceVolumeBehaviorCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
+
     int32_t SetQueryBundleNameListCallback(const std::shared_ptr<AudioQueryBundleNameListCallback> &callback);
 
     int32_t SetAudioManagerInterruptCallback(const int32_t clientId,
@@ -629,6 +631,8 @@ public:
     int32_t UnsetAudioFormatUnsupportedErrorCallback();
 
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
+
+    void SetDeviceVolumeBehavior(const std::string &networkId, DeviceType devicetype, VolumeBehavior &volumeBehavior);
 
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
