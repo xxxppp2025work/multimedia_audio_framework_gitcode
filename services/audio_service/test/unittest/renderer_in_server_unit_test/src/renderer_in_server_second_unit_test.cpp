@@ -755,20 +755,21 @@ HWTEST_F(RendererInServerExtUnitTest, IsNeedByPassWriteDupBuffer_001, TestSize.L
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
         AudioChannelLayout::CH_LAYOUT_MONO);
     InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
-    server = std::make_shared<RendererInServer>(processConfig, streamListener);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     int32_t innerCapId = 123456;
     uint32_t dupStreamIndex = 123456;
     size_t dupTotalSizeInFrame_ = 10;
     size_t dupByteSizePerFrame_ = 20;
-    server->innerCapIdToDupStreamCallbackMap_[innerCapId] = std::make_shared<StreamCallbacks>(dupStreamIndex);
-    server->innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() =
+    rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId] =
+        std::make_shared<StreamCallbacks>(dupStreamIndex);
+    rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() =
         AudioRingCache::Create(dupTotalSizeInFrame_ * dupByteSizePerFrame_);
     
     bool isInitDupBufferFlage = true;
-    EXPECT_EQ(server->IsNeedByPassWriteDupBuffer(isInitDupBufferFlage, innerCapId), true);
-    EXPECT_EQ(server->IsNeedByPassWriteDupBuffer(isInitDupBufferFlage, innerCapId), true);
+    EXPECT_EQ(rendererInServer->IsNeedByPassWriteDupBuffer(isInitDupBufferFlage, innerCapId), true);
+    EXPECT_EQ(rendererInServer->IsNeedByPassWriteDupBuffer(isInitDupBufferFlage, innerCapId), true);
     isInitDupBufferFlage = false;
-    EXPECT_EQ(server->IsNeedByPassWriteDupBuffer(isInitDupBufferFlage, innerCapId), false);
+    EXPECT_EQ(rendererInServer->IsNeedByPassWriteDupBuffer(isInitDupBufferFlage, innerCapId), false);
 }
 
 /**
