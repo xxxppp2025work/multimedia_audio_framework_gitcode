@@ -2642,7 +2642,7 @@ void AudioPolicyManagerStub::GetDefaultOutputDeviceInternal(MessageParcel &data,
     DeviceType deviceType;
     int32_t ret = GetDefaultOutputDevice(deviceType);
     if (ret != SUCCESS) {
-        deviceType = static_cast<DeviceType>(DEVICE_TYPE_NONE);
+        deviceType = static_cast<DeviceType>(DEVICE_TYPE_INVALID);
     }
     reply.WriteInt32(static_cast<int32_t>(deviceType));
 }

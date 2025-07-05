@@ -634,7 +634,32 @@ void AudioPolicyClientProxy::OnAudioSessionStateChanged(const AudioSessionStateC
     data.WriteInt32(static_cast<int32_t>(stateChangedEvent.stateChangeHint));
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {
-        AUDIO_ERR_LOG("Error while sending volume key event %{public}d", error);
+        AUDIO_ERR_LOG("Error while sending state changed event %{public}d", error);
+    }
+    reply.ReadInt32();
+}
+
+void AudioPolicyClientProxy::OnAudioSessionCurrentDeviceChanged(
+    const CurrentOutputDeviceChangedEvent &deviceChangedEvent)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_AUDIO_SESSION_CURRENT_DEVICE_CHANGED));
+    data.WriteInt32(static_cast<int32_t>(deviceChangedEvent.changeReason));
+    data.WriteInt32(static_cast<int32_t>(deviceChangedEvent.recommendedAction));
+    int32_t size = static_cast<int32_t>(deviceChangedEvent.devices.size());
+    data.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        deviceChangedEvent.devices[i]->Marshalling(data, apiVersion_);
+    }
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != 0) {
+        AUDIO_ERR_LOG("Error while sending current device change event %{public}d", error);
     }
     reply.ReadInt32();
 }
