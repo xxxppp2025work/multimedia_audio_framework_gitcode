@@ -745,7 +745,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerRestoreSession_001, TestSi
  * @tc.number: IsNeedByPassWriteDupBuffer_001
  * @tc.desc  : Test IsNeedByPassWriteDupBuffer API
  */
-HWTEST_F(RendererInServerUnitTest, IsNeedByPassWriteDupBuffer_001, TestSize.Level1)
+HWTEST_F(RendererInServerExtUnitTest, IsNeedByPassWriteDupBuffer_001, TestSize.Level1)
 {
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
         AudioChannelLayout::CH_LAYOUT_MONO);
