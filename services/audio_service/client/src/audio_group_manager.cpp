@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -404,9 +404,10 @@ int32_t AudioGroupManager::AdjustVolumeByStep(VolumeAdjustType adjustType)
     return AudioPolicyManager::GetInstance().AdjustVolumeByStep(adjustType);
 }
 
-int32_t AudioGroupManager::AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType)
+int32_t AudioGroupManager::AdjustSystemVolumeByStep(
+    AudioVolumeType volumeType, VolumeAdjustType adjustType, int32_t volumeFlag)
 {
-    return AudioPolicyManager::GetInstance().AdjustSystemVolumeByStep(volumeType, adjustType);
+    return AudioPolicyManager::GetInstance().AdjustSystemVolumeByStep(volumeType, adjustType, volumeFlag);
 }
 
 float AudioGroupManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType)

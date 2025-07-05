@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -355,7 +355,8 @@ int32_t AudioPolicyProxy::AdjustVolumeByStep(VolumeAdjustType adjustType)
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType)
+int32_t AudioPolicyProxy::AdjustSystemVolumeByStep(
+    AudioVolumeType volumeType, VolumeAdjustType adjustType, int32_t volumeFlag)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -365,6 +366,7 @@ int32_t AudioPolicyProxy::AdjustSystemVolumeByStep(AudioVolumeType volumeType, V
     CHECK_AND_RETURN_RET_LOG(ret, IPC_PROXY_ERR, "WriteInterfaceToken failed");
     data.WriteInt32(volumeType);
     data.WriteInt32(adjustType);
+    data.WriteInt32(volumeFlag);
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ADJUST_SYSTEM_VOLUME_BY_STEP), data, reply, option);

@@ -369,7 +369,7 @@ public:
 
     int32_t AdjustVolumeByStep(VolumeAdjustType adjustType);
 
-    int32_t AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType);
+    int32_t AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType, int32_t volumeFlag = 0);
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
 

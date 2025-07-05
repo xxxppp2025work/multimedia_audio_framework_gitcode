@@ -147,7 +147,7 @@ public:
 
     int32_t AdjustVolumeByStep(VolumeAdjustType adjustType) override;
 
-    int32_t AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType) override;
+    int32_t AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType, int32_t volumeFlag = 0) override;
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) override;
 

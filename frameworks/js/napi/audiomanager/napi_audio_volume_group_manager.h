@@ -90,6 +90,7 @@ private:
     static napi_value IsVolumeUnadjustable(napi_env env, napi_callback_info info);
     static napi_value AdjustVolumeByStep(napi_env env, napi_callback_info info);
     static napi_value AdjustSystemVolumeByStep(napi_env env, napi_callback_info info);
+    static napi_value AdjustSystemVolumeByStepWithFlag(napi_env env, napi_callback_info info);
     static napi_value GetSystemVolumeInDb(napi_env env, napi_callback_info info);
     static napi_value GetSystemVolumeInDbSync(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
