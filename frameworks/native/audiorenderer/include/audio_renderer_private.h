@@ -153,6 +153,7 @@ public:
     int32_t StartDataCallback() override;
     int32_t StopDataCallback() override;
     void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
+    void ResetFirstFrameState() override;
 
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override;
 
@@ -239,7 +240,8 @@ private:
     FastStatus GetFastStatusInner();
     void FastStatusChangeCallback(FastStatus status);
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams, AudioStreamType audioStreamType);
-    void SetRestoreInfo(RestoreInfo &restoreInfo, IAudioStream::StreamClass &targetClass, RestoreStatus restoreStatus);
+    int32_t StartSwitchProcess(RestoreInfo &restoreInfo, IAudioStream::StreamClass &targetClass,
+        std::string callingFunc);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
