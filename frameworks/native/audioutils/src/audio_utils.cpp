@@ -1678,6 +1678,9 @@ const std::string AudioInfoDumpUtils::GetDeviceTypeName(DeviceType deviceType)
         case DEVICE_TYPE_REMOTE_CAST:
             device = "REMOTE_CAST";
             break;
+        case DEVICE_TYPE_HEARING_AID:
+            device = "HEARING_AID";
+            break;
         default:
             device = "UNKNOWN";
     }
