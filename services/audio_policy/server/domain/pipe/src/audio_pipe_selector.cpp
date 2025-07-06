@@ -325,6 +325,7 @@ std::string AudioPipeSelector::GetAdapterNameByStreamDesc(std::shared_ptr<AudioS
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
     configManager_.GetStreamPropInfo(streamDesc, streamPropInfo);
 
+    CHECK_AND_RETURN_RET_LOG(streamPropInfo != nullptr, "", "StreamProp info is null");
     std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = streamPropInfo->pipeInfo_.lock();
     if (pipeInfoPtr == nullptr) {
         AUDIO_ERR_LOG("Adapter info is null");
