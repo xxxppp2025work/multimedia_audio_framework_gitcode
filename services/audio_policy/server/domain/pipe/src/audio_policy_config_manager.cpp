@@ -503,6 +503,13 @@ void AudioPolicyConfigManager::GetStreamPropInfoForRecord(
     std::shared_ptr<AudioStreamDescriptor> desc, std::shared_ptr<AdapterPipeInfo> adapterPipeInfo,
     std::shared_ptr<PipeStreamPropInfo> &info, const AudioChannel &tempChannel)
 {
+    if (tempChannel == MONO && ((desc->routeFlag_ == AUDIO_INPUT_FLAG_FAST) ||
+        (desc->routeFlag_ == (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST))) {
+        AUDIO_WARNING_LOG("Change Channel from MONO to STEREO, channels:%{public}d, "
+        "input route flag:%{public}u", tempChannel, desc->routeFlag_);
+        tempChannel = STEREO;
+    }
+
     CHECK_AND_RETURN_LOG(desc != nullptr, "stream desc is nullptr");
     CHECK_AND_RETURN_LOG(adapterPipeInfo != nullptr, "adapterPipeInfo is nullptr");
     if (desc->routeFlag_ & AUDIO_INPUT_FLAG_FAST) {
@@ -588,14 +595,16 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     CHECK_AND_RETURN_LOG(pipeIt != deviceInfo->supportPipeMap_.end(), "Find pipeInfo failed;none streamProp");
 
     AudioChannel tempChannel = desc->streamInfo_.channels;
-    if ((desc->routeFlag_ == (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST)) ||
-        (desc->routeFlag_ == (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_FAST))) {
-        tempChannel = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
-    }
 
     if (desc->audioMode_ == AUDIO_MODE_RECORD) {
         GetStreamPropInfoForRecord(desc, pipeIt->second, info, tempChannel);
         return;
+    }
+    if (tempChannel == MONO && ((desc->routeFlag_ == AUDIO_OUTPUT_FLAG_FAST) ||
+        (desc->routeFlag_ == (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_FAST))) {
+        AUDIO_WARNING_LOG("Change channel from MONO to STEREO, channels:%{public}d, "
+        "output route flag:%{public}u", tempChannel, desc->routeFlag_);
+        tempChannel = STEREO;
     }
 
     auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, desc->streamInfo_.format,
