@@ -66,7 +66,7 @@ private:
 
 private:
     bool idAllocator_[MAX_CB_ID_NUM] = {false};
-    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyStateMonitorCallback>> monitoredObj_;
+    std::unordered_map<int32_t, std::weak_ptr<AudioPolicyStateMonitorCallback>> monitoredObj_;
     std::shared_ptr<std::thread> stateMonitorThread_;
     std::mutex monitorMutex_;
     std::mutex condMutex_;

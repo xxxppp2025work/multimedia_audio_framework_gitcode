@@ -20,7 +20,6 @@
 #include <list>
 #include <functional>
 #include <unordered_map>
-
 #include "iremote_object.h"
 
 #include "i_audio_interrupt_event_dispatcher.h"
@@ -46,9 +45,7 @@ class AudioInterruptService : public std::enable_shared_from_this<AudioInterrupt
                               public IAudioInterruptEventDispatcher,
                               public SessionTimeOutCallback {
 public:
-    AudioInterruptService();
-    virtual ~AudioInterruptService();
-
+    std::shared_ptr<AudioInterruptService> GetInstance();
     const sptr<IStandardAudioService> GetAudioServerProxy();
 
     // callback run in handler thread
@@ -69,6 +66,7 @@ public:
     bool IsAudioSessionActivated(const int32_t callerPid);
     int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
     int32_t GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType);
+    bool IsStreamAllowedToSetDevice(const uint32_t streamId);
 
     // deprecated interrupt interfaces
     int32_t SetAudioManagerInterruptCallback(const sptr<IRemoteObject> &object);
@@ -113,7 +111,7 @@ public:
     int32_t ClearAudioFocusInfoList();
     void AudioInterruptZoneDump(std::string &dumpString);
     void AudioSessionInfoDump(std::string &dumpString);
-    AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
+    AudioScene GetHighestPriorityAudioScene(const int32_t zoneId);
     // for audiosessionv2
     int32_t SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene);
 
@@ -122,6 +120,14 @@ public:
     void RegisterDefaultVolumeTypeListener();
 
 private:
+    // Methods for Managing Singleton with shared_ptr
+    AudioInterruptService();
+    virtual ~AudioInterruptService();
+    AudioInterruptService& operator=(const AudioInterruptService &) = delete;
+    AudioInterruptService(const AudioInterruptService&) = delete;
+    static std::shared_ptr<AudioInterruptService> audioInterruptService_;
+    static std::mutex createInstMutx_;
+
     static constexpr int32_t ZONEID_DEFAULT = 0;
     static constexpr float DUCK_FACTOR = 0.2f;
     static constexpr int32_t DEFAULT_APP_PID = -1;
@@ -314,7 +320,7 @@ private:
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
     std::shared_ptr<AudioPolicyServerHandler> handler_;
-    std::shared_ptr<AudioSessionService> sessionService_;
+    AudioSessionService sessionService_;
     friend class AudioInterruptZoneManager;
     AudioInterruptZoneManager zoneManager_;
 

@@ -39,7 +39,6 @@
 #include "audio_pipe_info.h"
 #include "audio_service_enum.h"
 #include "audio_pipe_manager.h"
-#include "audio_session_service.h"
 #include "audio_pipe_selector.h"
 #include "audio_policy_config_manager.h"
 #include "audio_core_service_utils.h"
@@ -450,7 +449,6 @@ private:
     AudioAffinityManager &audioAffinityManager_;
     SleAudioDeviceManager &sleAudioDeviceManager_;
     std::shared_ptr<AudioPipeSelector> audioPipeSelector_;
-    std::shared_ptr<AudioSessionService> audioSessionService_ = nullptr;
 
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     std::shared_ptr<DeviceStatusListener> deviceStatusListener_;

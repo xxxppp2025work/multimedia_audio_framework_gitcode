@@ -16,7 +16,6 @@
 #ifndef ST_AUDIO_SESSION_SERVICE_H
 #define ST_AUDIO_SESSION_SERVICE_H
 
-#include <mutex>
 #include <vector>
 #include "audio_session.h"
 #include "audio_session_state_monitor.h"
@@ -31,13 +30,12 @@ public:
     virtual void OnSessionTimeout(const int32_t pid) = 0;
 };
 
-class AudioSessionService : public AudioSessionStateMonitor, public std::enable_shared_from_this<AudioSessionService> {
+class AudioSessionService : public AudioSessionStateMonitor {
 public:
     AudioSessionService();
     ~AudioSessionService() override;
 
     // Audio session manager interfaces
-    static std::shared_ptr<AudioSessionService> GetAudioSessionService(void);
     int32_t ActivateAudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy);
     int32_t DeactivateAudioSession(const int32_t callerPid);
     bool IsAudioSessionActivated(const int32_t callerPid);
@@ -69,7 +67,6 @@ public:
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);
-    std::shared_ptr<AudioSessionStateMonitor> GetSelfSharedPtr() override;
     void GenerateFakeStreamId(int32_t callerPid);
 
 private:

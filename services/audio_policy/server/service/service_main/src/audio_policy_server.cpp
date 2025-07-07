@@ -224,7 +224,13 @@ void AudioPolicyServer::OnStart()
 {
     AUDIO_INFO_LOG("Audio policy server on start");
     DlopenUtils::Init();
-    interruptService_ = std::make_shared<AudioInterruptService>();
+    interruptService_ = AudioInterruptService::GetInstance();
+
+    if (interruptService_ == nullptr) {
+        AUDIO_FATAL_LOG("Fatal Error, AudioInterruptService is null");
+        return;
+    }
+
     interruptService_->Init(this);
 
     audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
