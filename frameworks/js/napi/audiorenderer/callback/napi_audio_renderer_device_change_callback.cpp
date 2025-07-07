@@ -44,6 +44,9 @@ void NapiAudioRendererDeviceChangeCallback::AddCallbackReference(napi_value args
     napi_value copyValue = nullptr;
 
     for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
+            if (*autoRef == nullptr) {
+                CHECK_AND_RETURN_LOG(*autoRef != nullptr, "autoRef is nullptr")
+            }
         napi_get_reference_value(env_, (*autoRef)->cb_, &copyValue);
         CHECK_AND_RETURN_LOG(napi_strict_equals(env_, copyValue, args, &isEquals) == napi_ok,
             "get napi_strict_equals failed");
@@ -81,10 +84,13 @@ void NapiAudioRendererDeviceChangeCallback::RemoveCallbackReference(napi_env env
     napi_value copyValue = nullptr;
 
     if (args == nullptr) {
-        for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
-            napi_status ret = napi_delete_reference(env, (*autoRef)->cb_);
+        for (auto autoRef_ = callbacks_.begin(); autoRef_ != callbacks_.end(); ++autoRef_) {
+            if (*autoRef_ == nullptr) {
+                CHECK_AND_RETURN_LOG(*autoRef_ != nullptr, "autoRef_ is nullptr");
+            }
+            napi_status ret = napi_delete_reference(env, (*autoRef_)->cb_);
             CHECK_AND_RETURN_LOG(napi_ok == ret, "delete callback reference failed");
-            (*autoRef)->cb_ = nullptr;
+            (*autoRef_)->cb_ = nullptr;
         }
         callbacks_.clear();
         AUDIO_INFO_LOG("Remove all JS Callback");
@@ -92,6 +98,9 @@ void NapiAudioRendererDeviceChangeCallback::RemoveCallbackReference(napi_env env
     }
 
     for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
+            if (*autoRef == nullptr) {
+                CHECK_AND_RETURN_LOG(*autoRef != nullptr, "autoRef is nullptr")
+            }
         napi_get_reference_value(env, (*autoRef)->cb_, &copyValue);
         CHECK_AND_RETURN_LOG(copyValue != nullptr, "copyValue is nullptr");
         CHECK_AND_RETURN_LOG(napi_strict_equals(env, args, copyValue, &isEquals) == napi_ok,
@@ -204,6 +213,7 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::AddCallbackReference(n
     napi_value copyValue = nullptr;
 
     for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
+        CHECK_AND_RETURN_LOG(*autoRef != nullptr, "autoRef is nullptr");
         napi_get_reference_value(env_, (*autoRef)->cb_, &copyValue);
         CHECK_AND_RETURN_LOG(napi_strict_equals(env_, copyValue, args, &isEquals) == napi_ok,
             "get napi_strict_equals failed");
@@ -247,6 +257,9 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::RemoveCallbackReferenc
     }
 
     for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
+        if (*autoRef == nullptr) {
+            CHECK_AND_RETURN_LOG(*autoRef != nullptr, "autoRef is nullptr")
+        }
         napi_get_reference_value(env, (*autoRef)->cb_, &copyValue);
         CHECK_AND_RETURN_LOG(copyValue != nullptr, "copyValue is nullptr");
         CHECK_AND_RETURN_LOG(napi_strict_equals(env, args, copyValue, &isEquals) == napi_ok,
