@@ -789,9 +789,10 @@ HWTEST(AudioSystemManagerUnitTest, StartGroup_001, TestSize.Level1)
  */
 HWTEST(AudioSystemManagerUnitTest, GetVolumeInUnitOfDb_001, TestSize.Level1)
 {
-    int32_t volLevel = 5;
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeInUnitOfDb_001 start");
-    float result = AudioSystemManager::GetInstance()->GetVolumeInUnitOfDb(AudioVolumeType::STREAM_MUSIC,
+    AudioSystemManager manager;
+    int32_t volLevel = 5;
+    float result = manager.GetVolumeInUnitOfDb(AudioVolumeType::STREAM_MUSIC,
         volLevel,
         DeviceType::DEVICE_TYPE_SPEAKER);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeInUnitOfDb_001 result1:%{public}f", result);
@@ -806,15 +807,16 @@ HWTEST(AudioSystemManagerUnitTest, GetVolumeInUnitOfDb_001, TestSize.Level1)
 HWTEST(AudioSystemManagerUnitTest, GetMaxVolumeByUsage_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMaxVolumeByUsage_001 start");
-    int32_t result = AudioSystemManager::GetInstance()->GetMaxVolumeByUsage(StreamUsage::STREAM_USAGE_MUSIC);
+    AudioSystemManager manager;
+    int32_t result = manager.GetMaxVolumeByUsage(StreamUsage::STREAM_USAGE_MUSIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMaxVolumeByUsage_001 result1:%{public}d", result);
     EXPECT_GE(result, TEST_RET_NUM);
     EXPECT_LE(result, TEST_RET_MAX_VOLUME);
-    result = AudioSystemManager::GetInstance()->GetMaxVolumeByUsage(StreamUsage::STREAM_USAGE_ULTRASONIC);
+    result = manager.GetMaxVolumeByUsage(StreamUsage::STREAM_USAGE_ULTRASONIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMaxVolumeByUsage_001 result2:%{public}d", result);
     EXPECT_GE(result, TEST_RET_NUM);
     EXPECT_LE(result, TEST_RET_MAX_VOLUME);
-    result = AudioSystemManager::GetInstance()->GetMaxVolumeByUsage(ILLEGAL_STREAM_USAGE);
+    result = manager.GetMaxVolumeByUsage(ILLEGAL_STREAM_USAGE);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMaxVolumeByUsage_001 result3:%{public}d", result);
     EXPECT_EQ(result, TEST_RET_ERROR_NOT_SUPPORTED);
 }
@@ -827,15 +829,16 @@ HWTEST(AudioSystemManagerUnitTest, GetMaxVolumeByUsage_001, TestSize.Level1)
 HWTEST(AudioSystemManagerUnitTest, GetMinVolumeByUsage_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMinVolumeByUsage_001 start");
-    int32_t result = AudioSystemManager::GetInstance()->GetMinVolumeByUsage(StreamUsage::STREAM_USAGE_MUSIC);
+    AudioSystemManager manager;
+    int32_t result = manager.GetMinVolumeByUsage(StreamUsage::STREAM_USAGE_MUSIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMinVolumeByUsage_001 result1:%{public}d", result);
     EXPECT_GE(result, TEST_RET_NUM);
     EXPECT_LE(result, TEST_RET_MAX_VOLUME);
-    result = AudioSystemManager::GetInstance()->GetMinVolumeByUsage(StreamUsage::STREAM_USAGE_ULTRASONIC);
+    result = manager.GetMinVolumeByUsage(StreamUsage::STREAM_USAGE_ULTRASONIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMinVolumeByUsage_001 result2:%{public}d", result);
     EXPECT_GE(result, TEST_RET_NUM);
     EXPECT_LE(result, TEST_RET_MAX_VOLUME);
-    result = AudioSystemManager::GetInstance()->GetMinVolumeByUsage(ILLEGAL_STREAM_USAGE);
+    result = manager.>GetMinVolumeByUsage(ILLEGAL_STREAM_USAGE);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMinVolumeByUsage_001 result3:%{public}d", result);
     EXPECT_EQ(result, TEST_RET_ERROR_NOT_SUPPORTED);
 }
@@ -848,15 +851,16 @@ HWTEST(AudioSystemManagerUnitTest, GetMinVolumeByUsage_001, TestSize.Level1)
 HWTEST(AudioSystemManagerUnitTest, GetVolumeByUsage_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeByUsage_001 start");
-    int32_t result = AudioSystemManager::GetInstance()->GetVolumeByUsage(StreamUsage::STREAM_USAGE_MUSIC);
+    AudioSystemManager manager;
+    int32_t result = manager.GetVolumeByUsage(StreamUsage::STREAM_USAGE_MUSIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeByUsage_001 result1:%{public}d", result);
     EXPECT_GE(result, TEST_RET_NUM);
     EXPECT_LE(result, TEST_RET_MAX_VOLUME);
-    result = AudioSystemManager::GetInstance()->GetVolumeByUsage(StreamUsage::STREAM_USAGE_ULTRASONIC);
+    result = manager.GetVolumeByUsage(StreamUsage::STREAM_USAGE_ULTRASONIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeByUsage_001 result2:%{public}d", result);
     EXPECT_GE(result, TEST_RET_NUM);
     EXPECT_LE(result, TEST_RET_MAX_VOLUME);
-    result = AudioSystemManager::GetInstance()->GetVolumeByUsage(ILLEGAL_STREAM_USAGE);
+    result = manager.GetVolumeByUsage(ILLEGAL_STREAM_USAGE);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeByUsage_001 result3:%{public}d", result);
     EXPECT_EQ(result, TEST_RET_ERROR_NOT_SUPPORTED);
 }
@@ -868,15 +872,16 @@ HWTEST(AudioSystemManagerUnitTest, GetVolumeByUsage_001, TestSize.Level1)
  */
 HWTEST(AudioSystemManagerUnitTest, IsStreamMuteByUsage_001, TestSize.Level1)
 {
-    bool isMuted = false;
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMuteByUsage_001 start");
-    int32_t result = AudioSystemManager::GetInstance()->IsStreamMuteByUsage(StreamUsage::STREAM_USAGE_MUSIC, isMuted);
+    AudioSystemManager manager;
+    bool isMuted = false;
+    int32_t result = manager.IsStreamMuteByUsage(StreamUsage::STREAM_USAGE_MUSIC, isMuted);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMuteByUsage_001 result1:%{public}d", result);
     EXPECT_EQ(result, SUCCESS);
-    result = AudioSystemManager::GetInstance()->IsStreamMuteByUsage(StreamUsage::STREAM_USAGE_ULTRASONIC, isMuted);
+    result = manager.IsStreamMuteByUsage(StreamUsage::STREAM_USAGE_ULTRASONIC, isMuted);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMuteByUsage_001 result2:%{public}d", result);
     EXPECT_EQ(result, SUCCESS);
-    result = AudioSystemManager::GetInstance()->IsStreamMuteByUsage(ILLEGAL_STREAM_USAGE, isMuted);
+    result = manager.IsStreamMuteByUsage(ILLEGAL_STREAM_USAGE, isMuted);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMuteByUsage_001 result3:%{public}d", result);
     EXPECT_EQ(result, TEST_RET_ERROR_NOT_SUPPORTED);
 }
@@ -888,19 +893,20 @@ HWTEST(AudioSystemManagerUnitTest, IsStreamMuteByUsage_001, TestSize.Level1)
  */
 HWTEST(AudioSystemManagerUnitTest, GetVolumeInDbByStream_001, TestSize.Level1)
 {
-    int32_t volLevel = 5;
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeInDbByStream_001 start");
-    float result = AudioSystemManager::GetInstance()->GetVolumeInDbByStream(StreamUsage::STREAM_USAGE_MUSIC,
+    AudioSystemManager manager;
+    int32_t volLevel = 5;
+    float result = manager.GetVolumeInDbByStream(StreamUsage::STREAM_USAGE_MUSIC,
         volLevel,
         DeviceType::DEVICE_TYPE_SPEAKER);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeInDbByStream_001 result1:%{public}f", result);
     EXPECT_GE(result, TEST_RET_NUM);
-    result = AudioSystemManager::GetInstance()->GetVolumeInDbByStream(StreamUsage::STREAM_USAGE_ULTRASONIC,
+    result = manager.GetVolumeInDbByStream(StreamUsage::STREAM_USAGE_ULTRASONIC,
         volLevel,
         DeviceType::DEVICE_TYPE_SPEAKER);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeInDbByStream_001 result2:%{public}f", result);
     EXPECT_GE(result, TEST_RET_NUM);
-    result = AudioSystemManager::GetInstance()->GetVolumeInDbByStream(ILLEGAL_STREAM_USAGE,
+    result = manager.GetVolumeInDbByStream(ILLEGAL_STREAM_USAGE,
         volLevel,
         DeviceType::DEVICE_TYPE_SPEAKER);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeInDbByStream_001 result3:%{public}f", result);
@@ -915,7 +921,8 @@ HWTEST(AudioSystemManagerUnitTest, GetVolumeInDbByStream_001, TestSize.Level1)
 HWTEST(AudioSystemManagerUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSupportedAudioVolumeTypes_001 start");
-    std::vector<AudioVolumeType> result = AudioSystemManager::GetInstance()->GetSupportedAudioVolumeTypes();
+    AudioSystemManager manager;
+    std::vector<AudioVolumeType> result = manager.GetSupportedAudioVolumeTypes();
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSupportedAudioVolumeTypes_001 result size1:%{public}zu", result.size());
     EXPECT_GT(result.size(), TEST_RET_NUM);
 }
@@ -928,7 +935,8 @@ HWTEST(AudioSystemManagerUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Le
 HWTEST(AudioSystemManagerUnitTest, GetAudioVolumeTypeByStreamUsage_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetAudioVolumeTypeByStreamUsage_001 start");
-    AudioVolumeType result = AudioSystemManager::GetInstance()->GetAudioVolumeTypeByStreamUsage(StreamUsage::STREAM_USAGE_MUSIC);
+    AudioSystemManager manager;
+    AudioVolumeType result = manager.GetAudioVolumeTypeByStreamUsage(StreamUsage::STREAM_USAGE_MUSIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetAudioVolumeTypeByStreamUsage_001 result1:%{public}d", result);
     EXPECT_GE(result, AudioVolumeType::STREAM_DEFAULT);
     EXPECT_LE(result, AudioVolumeType::STREAM_ALL);
@@ -942,7 +950,8 @@ HWTEST(AudioSystemManagerUnitTest, GetAudioVolumeTypeByStreamUsage_001, TestSize
 HWTEST(AudioSystemManagerUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetStreamUsagesByVolumeType_001 start");
-    std::vector<StreamUsage> result = AudioSystemManager::GetInstance()->GetStreamUsagesByVolumeType(AudioVolumeType::STREAM_MUSIC);
+    AudioSystemManager manager;
+    std::vector<StreamUsage> result = manager.GetStreamUsagesByVolumeType(AudioVolumeType::STREAM_MUSIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetStreamUsagesByVolumeType_001 result size1:%{public}zu", result.size());
     EXPECT_GT(result.size(), TEST_RET_NUM);
 }
@@ -954,17 +963,18 @@ HWTEST(AudioSystemManagerUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Lev
  */
 HWTEST(AudioSystemManagerUnitTest, RegisterSystemVolumeChnageCallback_001, TestSize.Level1)
 {
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterSystemVolumeChnageCallback_001 start");
     int32_t testClientId = 300300;
     std::shared_ptr<SystemVolumeChangeCallback> callback = std::make_shared<
             SystemVolumeChangeCallbackTest>();
-    AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterSystemVolumeChnageCallback_001 start");
-    int32_t result = AudioSystemManager::GetInstance()->RegisterSystemVolumeChangeCallback(testClientId, callback);
+    AudioSystemManager manager;
+    int32_t result = manager.RegisterSystemVolumeChangeCallback(testClientId, callback);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterSystemVolumeChnageCallback_001 result1:%{public}d", result);
     EXPECT_EQ(result, SUCCESS);
-    result = AudioSystemManager::GetInstance()->UnregisterSystemVolumeChangeCallback(testClientId, callback);
+    result = manager.UnregisterSystemVolumeChangeCallback(testClientId, callback);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterSystemVolumeChnageCallback_001 result2:%{public}d", result);
     EXPECT_EQ(result, SUCCESS);
-    result = AudioSystemManager::GetInstance()->RegisterSystemVolumeChangeCallback(testClientId, nullptr);
+    result = manager.RegisterSystemVolumeChangeCallback(testClientId, nullptr);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterSystemVolumeChnageCallback_001 result3:%{public}d", result);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
 }
