@@ -3441,11 +3441,11 @@ HWTEST(AudioPolicyUnitTest, TriggerMuteCheck_002, TestSize.Level1)
     auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
     EXPECT_NE(ptrAudioPolicyServer, nullptr);
     std::shared_ptr<AudioRendererChangeInfo> info = std::shared_ptr<AudioRendererChangeInfo>();
-    info->renderState = RENDERER_RUNNING;
+    info->rendererState = RENDERER_RUNNING;
     AudioStreamCollector::GetAudioStreamCollector().audioRendererChangeInfos_.push_back(info);
     ptrAudioPolicyServer->TriggerMuteCheck();
     info = std::shared_ptr<AudioRendererChangeInfo>();
-    info->renderState = RENDERER_RUNNING;
+    info->rendererState = RENDERER_RUNNING;
     info->outputDeviceInfo.networkId_ = LOCAL_NETWORK_ID;
     ptrAudioPolicyServer->TriggerMuteCheck();
 }
