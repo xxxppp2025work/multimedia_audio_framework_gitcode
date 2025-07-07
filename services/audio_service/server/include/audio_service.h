@@ -29,7 +29,6 @@
 #endif
 
 #include "i_audio_process_stream.h"
-#include "i_audio_process.h"
 #include "audio_info.h"
 #include "audio_device_descriptor.h"
 #include "ipc_stream_in_server.h"
@@ -137,6 +136,7 @@ public:
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
+    void RenderersCheckForAudioWorkgroup(int32_t pid);
 
 private:
     AudioService();
@@ -174,6 +174,8 @@ private:
     void ReLinkProcessToEndpoint();
     void AddFilteredRender(int32_t innerCapId, std::shared_ptr<RendererInServer> renderer);
     bool IsMuteSwitchStream(uint32_t sessionId);
+    float GetSystemVolume();
+    void UpdateSystemVolume(AudioStreamType streamType, float volume);
 
 private:
     std::mutex foregroundSetMutex_;
@@ -221,6 +223,8 @@ private:
     std::map<uint32_t, MuteStateChangeCallbck> muteStateCallbacks_{};
     std::mutex muteStateMapMutex_;
     std::map<uint32_t, bool> muteStateMap_{};
+    std::mutex musicOrVoipSystemVolumeMutex_;
+    float musicOrVoipSystemVolume_ = 0.0f;
 };
 } // namespace AudioStandard
 } // namespace OHOS

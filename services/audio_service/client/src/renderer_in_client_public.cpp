@@ -106,9 +106,9 @@ RendererInClientInner::~RendererInClientInner()
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
-    Trace trace(traceTag_ + " OnOperationHandled:" + std::to_string(operation));
-    AUDIO_INFO_LOG("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_, operation,
-        result);
+    Trace trace(traceTag_ + " OnOperationHandled:" + std::to_string(static_cast<int>(operation)));
+    AUDIO_INFO_LOG("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_,
+        static_cast<int>(operation), result);
     if (operation == SET_OFFLOAD_ENABLE) {
         AUDIO_INFO_LOG("SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
         if (!offloadEnable_ && static_cast<bool>(result)) {
@@ -361,6 +361,15 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
     return true;
 }
 
+void RendererInClientInner::SetSwitchInfoTimestamp(
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair)
+{
+    lastFramePosAndTimePair_ = lastFramePosAndTimePair;
+    for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
+        lastSwitchPosition_[base] = lastFramePosAndTimePair[base].first;
+    }
+}
+
 bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false, "Renderer stream state is not RUNNING");
@@ -372,20 +381,21 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
     uint64_t latency = 0;
     int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency, base);
 
-    uint64_t framePosition = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
+    uint64_t framePosition = lastSwitchPosition_[base] +
+        (readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0);
     framePosition = framePosition > latency ? framePosition - latency : 0;
 
     // reset the timestamp
-    if (lastFramePosition_[base].first < framePosition || lastFramePosition_[base].second == 0) {
-        lastFramePosition_[base] = {framePosition, timestampVal};
+    if (lastFramePosAndTimePair_[base].first < framePosition || lastFramePosAndTimePair_[base].second == 0) {
+        lastFramePosAndTimePair_[base] = {framePosition, timestampVal};
     } else {
         AUDIO_DEBUG_LOG("The frame position should be continuously increasing");
-        framePosition = lastFramePosition_[base].first;
-        timestampVal = lastFramePosition_[base].second;
+        framePosition = lastFramePosAndTimePair_[base].first;
+        timestampVal = lastFramePosAndTimePair_[base].second;
     }
     AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
-        ", timestamp %{public}" PRIu64 ", Sinklatency %{public}" PRIu64, framePosition,
-        lastFlushReadIndex_, timestampVal, latency);
+        ", timestamp %{public}" PRIu64 ", Sinklatency %{public}" PRIu64 ", lastSwitchPosition_ %{public}" PRIu64,
+        framePosition, lastFlushReadIndex_, timestampVal, latency, lastSwitchPosition_[base]);
 
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
@@ -1094,7 +1104,7 @@ bool RendererInClientInner::StopAudioStream()
 void RendererInClientInner::JoinCallbackLoop()
 {
     std::unique_lock<std::mutex> statusLock(loopMutex_);
-    if (renderMode_ == RENDER_MODE_CALLBACK && !cbThreadReleased_) {
+    if (renderMode_ == RENDER_MODE_CALLBACK) {
         cbThreadReleased_ = true; // stop loop
         cbThreadCv_.notify_all();
         CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "clientBuffer_ is nullptr!");
@@ -1419,6 +1429,7 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.sessionId = sessionId_;
     info.streamTrackerRegistered = streamTrackerRegistered_;
     info.defaultOutputDevice = defaultOutputDevice_;
+    info.lastFramePosAndTimePair = lastFramePosAndTimePair_;
     GetStreamSwitchInfo(info);
 
     {
@@ -1795,12 +1806,13 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     uint64_t framePosition = unprocessSamples > frameLatency ? unprocessSamples - frameLatency : 0;
 
     // reset the timestamp
-    if (lastFramePositionWithSpeed_[base].first < framePosition || lastFramePositionWithSpeed_[base].second == 0) {
-        lastFramePositionWithSpeed_[base] = {framePosition, timestampVal};
+    if (lastFramePosAndTimePairWithSpeed_[base].first < framePosition ||
+        lastFramePosAndTimePairWithSpeed_[base].second == 0) {
+        lastFramePosAndTimePairWithSpeed_[base] = {framePosition, timestampVal};
     } else {
         AUDIO_DEBUG_LOG("The frame position should be continuously increasing");
-        framePosition = lastFramePositionWithSpeed_[base].first;
-        timestampVal = lastFramePositionWithSpeed_[base].second;
+        framePosition = lastFramePosAndTimePairWithSpeed_[base].first;
+        timestampVal = lastFramePosAndTimePairWithSpeed_[base].second;
     }
     AUDIO_DEBUG_LOG("[CLIENT]Latency info: unprocessSamples %{public}" PRIu64 ", samplesWritten %{public}" PRIu64
         ", lastSpeedPosition %{public}" PRIu64, unprocessSamples, samplesWritten, lastSpeedPosition);
@@ -1903,6 +1915,13 @@ bool RendererInClientInner::GetStopFlag() const
 {
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "Client OHAudioBuffer is nullptr");
     return clientBuffer_->GetStopFlag();
+}
+
+void RendererInClientInner::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
+{
+    CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->SetAudioHapticsSyncId(audioHapticsSyncId);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Set sync id failed");
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -310,6 +310,27 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     return std::make_unique<SharedAudioRendererWrapper>(sharedRenderer);
 }
 
+void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions,
+    const AppInfo &appInfo)
+{
+    rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
+    rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
+    rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
+    /* Set isOffloadAllowed during renderer creation when setOffloadAllowed is disabled. */
+    rendererInfo_.isOffloadAllowed = rendererOptions.rendererInfo.isOffloadAllowed;
+    rendererInfo_.playerType = rendererOptions.rendererInfo.playerType;
+    rendererInfo_.expectedPlaybackDurationBytes
+        = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
+    rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
+    rendererInfo_.volumeMode = rendererOptions.rendererInfo.volumeMode;
+    rendererInfo_.isLoopback = rendererOptions.rendererInfo.isLoopback;
+    rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
+
+    privacyType_ = rendererOptions.privacyType;
+    strategy_ = rendererOptions.strategy;
+    originalStrategy_ = rendererOptions.strategy;
+}
+
 std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRendererOptions &rendererOptions,
     const AppInfo &appInfo)
 {
@@ -338,25 +359,15 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_FAST ? AUDIO_FLAG_MMAP : rendererFlags;
 
     AUDIO_INFO_LOG("StreamClientState for Renderer::Create. content: %{public}d, usage: %{public}d, "\
-        "isVKB: %{public}s, flags: %{public}d, uid: %{public}d", rendererOptions.rendererInfo.contentType,
-        rendererOptions.rendererInfo.streamUsage, isVirtualKeyboard ? "T" : "F", rendererFlags, appInfo.appUid);
-
-    audioRenderer->rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
-    audioRenderer->rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
-    audioRenderer->rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
-    audioRenderer->rendererInfo_.playerType = rendererOptions.rendererInfo.playerType;
-    audioRenderer->rendererInfo_.expectedPlaybackDurationBytes
-        = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
-    audioRenderer->rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
-    audioRenderer->rendererInfo_.volumeMode = rendererOptions.rendererInfo.volumeMode;
+        "isOffloadAllowed: %{public}s, isVKB: %{public}s, flags: %{public}d, uid: %{public}d",
+        rendererOptions.rendererInfo.contentType, rendererOptions.rendererInfo.streamUsage,
+        rendererOptions.rendererInfo.isOffloadAllowed ? "T" : "F",
+        isVirtualKeyboard ? "T" : "F", rendererFlags, appInfo.appUid);
+    
+    audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
-    audioRenderer->rendererInfo_.isLoopback = rendererOptions.rendererInfo.isLoopback;
-    audioRenderer->rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
-    audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
-    audioRenderer->privacyType_ = rendererOptions.privacyType;
-    audioRenderer->strategy_ = rendererOptions.strategy;
-    audioRenderer->originalStrategy_ = rendererOptions.strategy;
+    audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
     AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
         AUDIO_ERR_LOG("SetParams failed in renderer");
@@ -608,7 +619,8 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
 #endif
-    int32_t ret = PrepareAudioStream(audioStreamParams, audioStreamType, streamClass);
+    rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
+    int32_t ret = PrepareAudioStream(audioStreamParams, audioStreamType, streamClass, rendererInfo_.audioFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "PrepareAudioStream failed");
 
     ret = InitAudioStream(audioStreamParams);
@@ -637,15 +649,15 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 }
 
 int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamParams,
-    const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass)
+    const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass, uint32_t &flag)
 {
     AUDIO_INFO_LOG("Create stream with flag: %{public}d, original flag: %{public}d, streamClass: %{public}d",
         rendererInfo_.rendererFlags, rendererInfo_.originalFlag, streamClass);
 
     // Create Client
     std::shared_ptr<AudioStreamDescriptor> streamDesc = ConvertToStreamDescriptor(audioStreamParams);
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
-    
+    flag = AUDIO_OUTPUT_FLAG_NORMAL;
+
     int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(
         streamDesc, flag, audioStreamParams.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
@@ -884,49 +896,14 @@ std::shared_ptr<IAudioStream> AudioRendererPrivate::GetInnerStream() const
     return audioStream_;
 }
 
-void AudioRendererPrivate::SetRestoreInfo(RestoreInfo &restoreInfo, IAudioStream::StreamClass &targetClass,
-    RestoreStatus restoreStatus)
+int32_t AudioRendererPrivate::StartSwitchProcess(RestoreInfo &restoreInfo, IAudioStream::StreamClass &targetClass,
+    std::string callingFunc)
 {
-    // Get restore info and target stream class for switching.
-    audioStream_->GetRestoreInfo(restoreInfo);
-    SetClientInfo(restoreInfo.routeFlag, targetClass);
-    if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
-        restoreInfo.targetStreamFlag = AUDIO_FLAG_FORCED_NORMAL;
+    // hold rendererMutex_ to avoid render control and switch process called in concurrency
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
-}
-
-int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFunc)
-{
-    RestoreInfo restoreInfo;
-    std::shared_ptr<IAudioStream> oldStream = nullptr;
-    IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
-    {
-        std::unique_lock<std::shared_mutex> lock;
-        if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
-            lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
-        }
-
-        // Return in advance if there's no need for restore.
-        CHECK_AND_RETURN_RET_LOG(audioStream_, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
-        RestoreStatus restoreStatus = audioStream_->CheckRestoreStatus();
-        if (abortRestore_ || restoreStatus == NO_NEED_FOR_RESTORE) {
-            return SUCCESS;
-        }
-        if (restoreStatus == RESTORING) {
-            AUDIO_WARNING_LOG("%{public}s when restoring, return", callingFunc.c_str());
-            return ERR_ILLEGAL_STATE;
-        }
-
-        SetRestoreInfo(restoreInfo, targetClass, restoreStatus);
-        // Check if split stream. If true, fetch output device and return.
-        CHECK_AND_RETURN_RET(ContinueAfterSplit(restoreInfo), true, "Stream split");
-        // Check if continue to switch after some concede operation.
-        CHECK_AND_RETURN_RET_LOG(ContinueAfterConcede(targetClass, restoreInfo),
-            true, "No need for switch");
-        oldStream = audioStream_;
-    }
-    // ahead join callbackLoop and do not hold rendererMutex_ when waiting for callback
-    oldStream->JoinCallbackLoop();
 
     // Block interrupt calback, avoid pausing wrong stream.
     std::shared_ptr<AudioRendererInterruptCallbackImpl> interruptCbImpl = nullptr;
@@ -961,6 +938,47 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
         interruptCbImpl->FinishSwitch();
     }
     return SUCCESS;
+}
+
+int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFunc)
+{
+    RestoreInfo restoreInfo;
+    std::shared_ptr<IAudioStream> oldStream = nullptr;
+    IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
+    {
+        std::unique_lock<std::shared_mutex> lock;
+        if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+            lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+        }
+
+        // Return in advance if there's no need for restore.
+        CHECK_AND_RETURN_RET_LOG(audioStream_, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
+        RestoreStatus restoreStatus = audioStream_->CheckRestoreStatus();
+        if (abortRestore_ || restoreStatus == NO_NEED_FOR_RESTORE) {
+            return SUCCESS;
+        }
+        if (restoreStatus == RESTORING) {
+            AUDIO_WARNING_LOG("%{public}s when restoring, return", callingFunc.c_str());
+            return ERR_ILLEGAL_STATE;
+        }
+
+        // Get restore info and target stream class for switching.
+        audioStream_->GetRestoreInfo(restoreInfo);
+        SetClientInfo(restoreInfo.routeFlag, targetClass);
+        if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
+            restoreInfo.targetStreamFlag = AUDIO_FLAG_FORCED_NORMAL;
+        }
+        // Check if split stream. If true, fetch output device and return.
+        CHECK_AND_RETURN_RET(ContinueAfterSplit(restoreInfo), true, "Stream split");
+        // Check if continue to switch after some concede operation.
+        CHECK_AND_RETURN_RET_LOG(ContinueAfterConcede(targetClass, restoreInfo),
+            true, "No need for switch");
+        oldStream = audioStream_;
+    }
+    // ahead join callbackLoop and do not hold rendererMutex_ when waiting for callback
+    oldStream->JoinCallbackLoop();
+
+    return StartSwitchProcess(restoreInfo, targetClass, callingFunc);
 }
 
 int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc)
@@ -1795,6 +1813,7 @@ float AudioRendererPrivate::GetLowPowerVolume() const
     return currentStream->GetLowPowerVolume();
 }
 
+// in plan: need remove
 int32_t AudioRendererPrivate::SetOffloadAllowed(bool isAllowed)
 {
     AUDIO_PRERELEASE_LOGI("offload allowed: %{public}d", isAllowed);
@@ -1989,6 +2008,7 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetRendererWriteCallback(info.rendererWriteCallback);
 
     audioStream->SetRendererFirstFrameWritingCallback(info.rendererFirstFrameWritingCallback);
+    audioStream->SetSwitchInfoTimestamp(info.lastFramePosAndTimePair);
     return true;
 }
 
@@ -2770,7 +2790,30 @@ int32_t AudioRendererPrivate::StartDataCallback()
 void AudioRendererPrivate::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
 {
     AUDIO_PRERELEASE_LOGI("AudioRendererPrivate::SetAudioHapticsSyncId %{public}d", audioHapticsSyncId);
-    audioHapticsSyncId_ = audioHapticsSyncId;
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
+
+    CHECK_AND_RETURN_LOG(audioStream_ != nullptr, "audio stream is null");
+
+    if (audioHapticsSyncId > 0) {
+        audioHapticsSyncId_ = audioHapticsSyncId;
+        audioStream_->SetAudioHapticsSyncId(audioHapticsSyncId);
+    }
+}
+
+void AudioRendererPrivate::ResetFirstFrameState()
+{
+    AUDIO_PRERELEASE_LOGI("AudioRendererPrivate::ResetFirstFrameState");
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
+
+    CHECK_AND_RETURN_LOG(audioStream_ != nullptr, "audio stream is null");
+
+    audioStream_->ResetFirstFrameState();
 }
 
 int32_t AudioRendererPrivate::StopDataCallback()

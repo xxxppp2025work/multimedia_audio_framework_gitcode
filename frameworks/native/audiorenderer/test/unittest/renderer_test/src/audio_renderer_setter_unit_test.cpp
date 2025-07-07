@@ -24,6 +24,7 @@
 #include "audio_policy_manager.h"
 #include "audio_renderer_private.h"
 #include "fast_audio_stream.h"
+#include "audio_stream_enum.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -1346,11 +1347,9 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetOffloadAllowed_001, TestSize.Lev
 
     AudioRendererOptions rendererOptions;
     AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    rendererOptions.rendererInfo.isOffloadAllowed = false;
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
-
-    ret = audioRenderer->SetOffloadAllowed(false);
-    EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
@@ -1671,8 +1670,9 @@ HWTEST(AudioRendererUnitTest, SetSourceDuration_001, TestSize.Level1)
     AudioStreamParams audioStreamParams;
     const AudioStreamType audioStreamType = STREAM_VOICE_CALL;
     IAudioStream::StreamClass streamClass;
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
 
-    int32_t ret = audioRendererPrivate->PrepareAudioStream(audioStreamParams, audioStreamType, streamClass);
+    int32_t ret = audioRendererPrivate->PrepareAudioStream(audioStreamParams, audioStreamType, streamClass, flag);
     EXPECT_EQ(ret, SUCCESS);
 
     audioRendererPrivate->SetSourceDuration(duration);
@@ -1843,9 +1843,16 @@ HWTEST(AudioRendererUnitTest, SetAudioHapticsSyncId_001, TestSize.Level0)
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
     ASSERT_TRUE(audioRendererPrivate != nullptr);
 
+    std::shared_ptr<IAudioStream> testAudioStreamStub = std::make_shared<TestAudioStremStub>();
+    audioRendererPrivate->audioStream_ = testAudioStreamStub;
+
     int32_t syncId = 100000;
     audioRendererPrivate->SetAudioHapticsSyncId(syncId);
-    EXPECT_NE(audioRendererPrivate->audioHapticsSyncId_, syncId);
+    EXPECT_EQ(audioRendererPrivate->audioHapticsSyncId_, syncId);
+
+    int32_t syncId2 = -100000;
+    audioRendererPrivate->SetAudioHapticsSyncId(syncId2);
+    EXPECT_EQ(audioRendererPrivate->audioHapticsSyncId_, syncId);
 }
 
 /**
