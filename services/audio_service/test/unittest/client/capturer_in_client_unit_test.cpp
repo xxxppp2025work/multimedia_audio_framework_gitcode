@@ -186,6 +186,8 @@ public:
 
     virtual int32_t SetOffloadDataCallbackState(int32_t state) override { return 0; }
 
+    virtual void SetSpeed(float speed) override {}
+
     sptr<IRemoteObject> AsObject() override { return nullptr; }
 
     virtual int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,

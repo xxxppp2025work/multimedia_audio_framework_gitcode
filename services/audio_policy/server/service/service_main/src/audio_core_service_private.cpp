@@ -2102,9 +2102,7 @@ void AudioCoreService::CheckOffloadStream(AudioStreamChangeInfo &streamChangeInf
     std::string adapterName = GetAdapterNameBySessionId(streamChangeInfo.audioRendererChangeInfo.sessionId);
     AUDIO_INFO_LOG("session: %{public}u, adapter name: %{public}s",
         streamChangeInfo.audioRendererChangeInfo.sessionId, adapterName.c_str());
-    if (adapterName != OFFLOAD_PRIMARY_SPEAKER) {
-        return;
-    }
+    CHECK_AND_RETURN(adapterName == OFFLOAD_PRIMARY_SPEAKER || adapterName.find("_offload") != std::string::npos);
 
     if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_PAUSED ||
         streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_STOPPED ||
