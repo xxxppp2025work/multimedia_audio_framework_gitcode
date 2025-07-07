@@ -49,6 +49,21 @@ AudioStreamDescriptor::~AudioStreamDescriptor()
 {
 }
 
+bool AudioStreamDescriptor::IsFastRouteFlag()
+{
+    return routeFlag_ & FAST_FLAG_MASK != 0;
+}
+
+bool AudioStreamDescriptor::IsOutputRouteFlag()
+{
+    return routeFlag_ < INPUT_FLAG_MIN;
+}
+
+bool AudioStreamDescriptor::IsVoipRouteFlag()
+{
+    return routeFlag_ & VOIP_FLAG_MASK != 0;
+}
+
 bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
 {
     return streamInfo_.Marshalling(parcel) &&

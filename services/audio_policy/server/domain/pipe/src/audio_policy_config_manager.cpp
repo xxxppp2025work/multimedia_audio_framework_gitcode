@@ -588,10 +588,8 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     CHECK_AND_RETURN_LOG(pipeIt != deviceInfo->supportPipeMap_.end(), "Find pipeInfo failed;none streamProp");
 
     AudioChannel tempChannel = desc->streamInfo_.channels;
-    if (tempChannel == MONO && ((desc->routeFlag_ == AUDIO_INPUT_FLAG_FAST) ||
-        (desc->routeFlag_ == (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST)) ||
-        (desc->routeFlag_ == (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_FAST)))) {
-        AUDIO_WARNING_LOG("Change Channel from MONO to STEREO, Channels:%{public}d, Route flag:%{public}d", 
+    if (tempChannel == MONO && desc->isFastRouteFlag()) {
+        AUDIO_WARNING_LOG("Change Channel from MONO to STEREO, Channels:%{public}d, Route flag:%{public}u", 
             tempChannel, desc->routeFlag_);
         tempChannel = STEREO ;
     }

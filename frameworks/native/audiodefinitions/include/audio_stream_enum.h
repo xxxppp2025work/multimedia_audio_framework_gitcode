@@ -18,6 +18,10 @@
 
 #include <cstdint>
 
+constexpr uint32_t FAST_FLAG_MASK = 0x20 | 0x80 | 0x2000 | 0x8000;
+constexpr uint32_t VOIP_FLAG_MASK = 0x40 | 0x80 | 0x4000 | 0x8000;
+constexpr uint32_t INPUT_FLAG_MIN = 0x1000;
+
 enum StreamClass : uint32_t {
     PA_STREAM = 0,
     FAST_STREAM,

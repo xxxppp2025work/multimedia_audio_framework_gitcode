@@ -60,6 +60,9 @@ public:
     void UnmarshallingDeviceDescVector(Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
 
     void SetBunduleName(std::string &bundleName);
+    bool IsFastRouteFlag();
+    bool IsOutputRouteFlag();
+    bool IsVoipRouteFlag(); 
 
     // log and dump
     void Dump(std::string &dumpString);
