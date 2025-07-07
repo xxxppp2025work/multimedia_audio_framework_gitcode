@@ -51,7 +51,7 @@ AudioStreamDescriptor::~AudioStreamDescriptor()
 
 bool AudioStreamDescriptor::IsFastRouteFlag()
 {
-    return routeFlag_ & FAST_FLAG_MASK != 0;
+    return (routeFlag_ & FAST_FLAG_MASK) != 0;
 }
 
 bool AudioStreamDescriptor::IsOutputRouteFlag()
@@ -61,7 +61,7 @@ bool AudioStreamDescriptor::IsOutputRouteFlag()
 
 bool AudioStreamDescriptor::IsVoipRouteFlag()
 {
-    return routeFlag_ & VOIP_FLAG_MASK != 0;
+    return (routeFlag_ & VOIP_FLAG_MASK) != 0;
 }
 
 bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
