@@ -1080,9 +1080,9 @@ HWTEST_F(AudioCoreServiceUnitTest, RecordSelectDevice_002, TestSize.Level1)
     audioCoreService->selectDeviceHistory_ = {};
     std::string newhistory = "device2";
     size_t limit = 10; //SELECT_DEVICE_HISTORY_LIMIT
-    while(audioCoreService->selectDeviceHistory_.size() < limit) {
+    while (audioCoreService->selectDeviceHistory_.size() < limit) {
         audioCoreService->RecordSelectDevice(newhistory);
-    }  
+    } 
     ASSERT_EQ(audioCoreService->selectDeviceHistory_.size(), limit);
     ASSERT_EQ(audioCoreService->selectDeviceHistory_.front(), newhistory);
     audioCoreService->selectDeviceHistory_ = {};
@@ -1098,7 +1098,7 @@ HWTEST_F(AudioCoreServiceUnitTest, RecordSelectDevice_003, TestSize.Level1)
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     audioCoreService->selectDeviceHistory_ = {};
     size_t limit = 10; //SELECT_DEVICE_HISTORY_LIMIT
-    for(int i = 0; i < limit + 2; i++) {
+    for (int i = 0; i < limit + 2; ++i) {
         std::string history = "device" + std::to_string(i);
         audioCoreService->RecordSelectDevice(history);
     }  
@@ -1132,7 +1132,8 @@ HWTEST_F(AudioCoreServiceUnitTest, DumpSelectHistory_002, TestSize.Level1)
     audioCoreService->selectDeviceHistory_.push_back("HistoryRecord2");
     std::string dumpString;
     audioCoreService->DumpSelectHistory(dumpString);
-    std::string expectedDump = "Select device history infos\n - TotalPipeNums: 2\n\nHistory Record1\nHistoryRecord2\n\n";
+    std::string expectedDump = "Select device history infos\n - TotalPipeNums: 2\n\nHistory Record1\n"
+                               "HistoryRecord2\n\n";
     EXPECT_EQ(dumpString, expectedDump);
 }
 } // namespace AudioStandard
