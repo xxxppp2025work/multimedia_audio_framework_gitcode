@@ -277,6 +277,10 @@ private:
 
     void ResetCallbackLoopTid();
 
+    bool IsRemoteOffload();
+
+    bool DoRemoteOffloadSetSpeed(float speed);
+
     void WaitForBufferNeedWrite();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
