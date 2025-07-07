@@ -139,6 +139,5 @@ HWTEST_F(AdapterUnitTest, AdapterUnitTest_006, TestSize.Level1)
 {
     TestSetAndGet(HDI_DEVICE_MANAGER_TYPE_REMOTE);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
