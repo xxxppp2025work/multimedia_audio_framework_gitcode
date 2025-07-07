@@ -589,7 +589,9 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
 
     AudioChannel tempChannel = desc->streamInfo_.channels;
     if ((desc->routeFlag_ == (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST)) ||
-        (desc->routeFlag_ == (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_FAST))) {
+        (desc->routeFlag_ == (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_FAST)) ||
+        (desc->routeFlag_ == AUDIO_INPUT_FLAG_FAST)) {
+        AUDIO_WARNING_LOG("Channels:%{public}d, Route flag:%{public}d", tempChannel, desc->routeFlag_);
         tempChannel = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
     }
 
