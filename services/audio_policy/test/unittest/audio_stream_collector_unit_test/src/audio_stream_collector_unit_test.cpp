@@ -1987,7 +1987,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetRunningRendererInfos_003, TestSize.Lev
     int32_t result = audioStreamCollector_.GetRunningRendererInfos(infos);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(infos.size(), 1);
-    EXPECT_EQ(infos[0]->rendererState,RENDERER_RUNNING);
+    EXPECT_EQ(infos[0]->rendererState, RENDERER_RUNNING);
 }
 } // namespace AudioStandard
 } // namespace OHOS
