@@ -1960,13 +1960,13 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetRunningRendererInfos_001, TestSize.Lev
 HWTEST_F(AudioStreamCollectorUnitTest, GetRunningRendererInfos_002, TestSize.Level1)
 {
     AudioStreamCollector audioStreamCollector_;
-    audioStreamCollector_audioRendererChangeInfos_.push_back(std::shared_ptr<AudioRendererChangeInfo>());
-    audioStreamCollector_audioRendererChangeInfos_.back()->rendererState = RENDERER_RUNNING;
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::shared_ptr<AudioRendererChangeInfo>());
+    audioStreamCollector_.audioRendererChangeInfos_.back()->rendererState = RENDERER_RUNNING;
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;
     int32_t result = audioStreamCollector_.GetRunningRendererInfos(infos);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(infos.size(), 1);
-    EXPECT_TRUE(infos[0]->rendererState,RENDERER_RUNNING);
+    EXPECT_EQ(infos[0]->rendererState,RENDERER_RUNNING);
 }
 
 /**
@@ -1979,15 +1979,15 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetRunningRendererInfos_003, TestSize.Lev
     AudioStreamCollector audioStreamCollector_;
     auto info1 = std::shared_ptr<AudioRendererChangeInfo>();
     info1->rendererState = RENDERER_RUNNING;
-    audioStreamCollector_audioRendererChangeInfos_.push_back(info1);
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(info1);
     auto info2 = std::shared_ptr<AudioRendererChangeInfo>();
     info2->rendererState = RENDERER_STOPPED;
-    audioStreamCollector_audioRendererChangeInfos_.push_back(info2);
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(info2);
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;
     int32_t result = audioStreamCollector_.GetRunningRendererInfos(infos);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(infos.size(), 1);
-    EXPECT_TRUE(infos[0]->rendererState,RENDERER_RUNNING);
+    EXPECT_EQ(infos[0]->rendererState,RENDERER_RUNNING);
 }
 } // namespace AudioStandard
 } // namespace OHOS
