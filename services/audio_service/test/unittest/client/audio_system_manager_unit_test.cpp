@@ -694,7 +694,7 @@ HWTEST(AudioSystemManagerUnitTest, GetMinVolumeByUsage_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMinVolumeByUsage_001 result2:%{public}d", result);
     EXPECT_GE(result, TEST_RET_NUM);
     EXPECT_LE(result, TEST_RET_MAX_VOLUME);
-    result = manager.>GetMinVolumeByUsage(ILLEGAL_STREAM_USAGE);
+    result = manager.GetMinVolumeByUsage(ILLEGAL_STREAM_USAGE);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMinVolumeByUsage_001 result3:%{public}d", result);
     EXPECT_EQ(result, TEST_RET_ERROR_NOT_SUPPORTED);
 }
@@ -779,7 +779,8 @@ HWTEST(AudioSystemManagerUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Le
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSupportedAudioVolumeTypes_001 start");
     AudioSystemManager manager;
     std::vector<AudioVolumeType> result = manager.GetSupportedAudioVolumeTypes();
-    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSupportedAudioVolumeTypes_001 result size1:%{public}zu", result.size());
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSupportedAudioVolumeTypes_001 result size1:%{public}zu",
+        result.size());
     EXPECT_GT(result.size(), TEST_RET_NUM);
 }
 
@@ -808,7 +809,8 @@ HWTEST(AudioSystemManagerUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Lev
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetStreamUsagesByVolumeType_001 start");
     AudioSystemManager manager;
     std::vector<StreamUsage> result = manager.GetStreamUsagesByVolumeType(AudioVolumeType::STREAM_MUSIC);
-    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetStreamUsagesByVolumeType_001 result size1:%{public}zu", result.size());
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetStreamUsagesByVolumeType_001 result size1:%{public}zu",
+        result.size());
     EXPECT_GT(result.size(), TEST_RET_NUM);
 }
 
