@@ -41,6 +41,7 @@
 #include "audio_service_enum.h"
 #include "i_hpae_manager.h"
 #include "stream_dfx_manager.h"
+#include "audio_stream_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -149,7 +150,7 @@ void RendererInServer::GetEAC3ControlParam()
 
 int32_t RendererInServer::Init()
 {
-    if (IsHighResolution()) {
+    if (processConfig_.rendererInfo.audioFlag == (AUDIO_OUTPUT_FLAG_HD|AUDIO_OUTPUT_FLAG_DIRECT)) {
         Trace trace("current stream marked as high resolution");
         managerType_ = DIRECT_PLAYBACK;
         AUDIO_INFO_LOG("current stream marked as high resolution");
@@ -219,6 +220,7 @@ void RendererInServer::CheckAndWriterRenderStreamStandbySysEvent(bool standbyEna
     payload["sessionId"] = std::to_string(streamIndex_);
     payload["isStandby"] = std::to_string(standbyEnable ? 1 : 0);
     ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_STANDBY);
+    AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(processConfig_.appInfo.appPid);
 }
 
 void RendererInServer::OnStatusUpdate(IOperation operation)
@@ -265,6 +267,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
         default:
             OnStatusUpdateSub(operation);
     }
+    AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(processConfig_.appInfo.appPid);
 }
 
 int64_t RendererInServer::GetLastAudioDuration()
@@ -556,6 +559,10 @@ void RendererInServer::WriteMuteDataSysEvent(BufferDesc &bufferDesc)
             payload["isSilent"] = std::to_string(false);
             ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);
         }
+    }
+
+    if ((!latestForWorkgroupInited_) || (latestForWorkgroup_.isInSilentState != isInSilentState_)) {
+        AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(processConfig_.appInfo.appPid);
     }
 }
 
@@ -1766,6 +1773,7 @@ int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
     if (offloadEnable_) {
         OffloadSetVolumeInner();
     }
+    AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(processConfig_.appInfo.appPid);
     return SUCCESS;
 }
 
@@ -1806,12 +1814,14 @@ int32_t RendererInServer::SetLoudnessGain(float loudnessGain)
 {
     loudnessGain_ = loudnessGain;
     int32_t ret = stream_->SetLoudnessGain(loudnessGain);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "setloudnessGain failed");
     for (auto &capInfo : captureInfos_) {
         if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
             ret += capInfo.second.dupStream->SetLoudnessGain(loudnessGain);
         }
     }
-    return ret;
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "setloudnessGain failed during capture, error: %{public}d", ret);
+    return SUCCESS;
 }
 
 int32_t RendererInServer::SetMute(bool isMute)
@@ -2113,6 +2123,48 @@ int32_t RendererInServer::StopSession()
     CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_INVALID_PARAM, "audioServerBuffer_ is nullptr");
     audioServerBuffer_->SetStopFlag(true);
     return SUCCESS;
+}
+
+int32_t RendererInServer::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
+{
+    audioHapticsSyncId_.store(audioHapticsSyncId);
+    return SUCCESS;
+}
+
+void RendererInServer::UpdateLatestForWorkgroup(float systemVolume)
+{
+    latestForWorkgroup_.status = status_;
+    latestForWorkgroup_.isInSilentState = isInSilentState_;
+    latestForWorkgroup_.silentModeAndMixWithOthers = silentModeAndMixWithOthers_.load();
+    latestForWorkgroup_.lastWriteStandbyEnableStatus = lastWriteStandbyEnableStatus_;
+    latestForWorkgroup_.streamVolume = audioServerBuffer_->GetStreamVolume();
+    latestForWorkgroup_.systemVolume = systemVolume;
+    AUDIO_INFO_LOG("[WorkgroupInServer] pid = %{public}d, status_ = %{public}d, "
+        "isInSilentState_ = %{public}d, "
+        "silentModeAndMixWithOthers_ = %{public}d, "
+        "lastWriteStandbyEnableStatus_ = %{public}d, "
+        "streamVolume = %{public}f, "
+        "systemVolume = %{public}f",
+        processConfig_.appInfo.appPid, latestForWorkgroup_.status, latestForWorkgroup_.isInSilentState,
+        latestForWorkgroup_.silentModeAndMixWithOthers, latestForWorkgroup_.lastWriteStandbyEnableStatus,
+        latestForWorkgroup_.streamVolume, latestForWorkgroup_.systemVolume);
+}
+
+bool RendererInServer::CollectInfosForWorkgroup(float systemVolume)
+{
+    bool running = (status_ == I_STATUS_STARTED) ? true : false;
+    float streamVolume = audioServerBuffer_->GetStreamVolume();
+    bool haveStreamSound = (fabs(streamVolume) > AUDIO_VOLOMUE_EPSILON) ? true : false;
+    bool haveSystemSound = (fabs(systemVolume) > AUDIO_VOLOMUE_EPSILON) ? true : false;
+
+    if (!latestForWorkgroupInited_) {
+        UpdateLatestForWorkgroup(systemVolume);
+        latestForWorkgroupInited_ = true;
+    }
+    UpdateLatestForWorkgroup(systemVolume);
+
+    return running && haveStreamSound && haveSystemSound &&
+        !isInSilentState_ && !silentModeAndMixWithOthers_ && !lastWriteStandbyEnableStatus_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

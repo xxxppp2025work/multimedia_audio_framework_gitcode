@@ -18,11 +18,10 @@
 #include <chrono>
 #include <thread>
 
-#include "audio_errors.h"
-#include "audio_info.h"
 #include "audio_renderer_proxy_obj.h"
 #include "audio_policy_manager.h"
 #include "audio_renderer_private.h"
+#include "audio_stream_enum.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -1432,7 +1431,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_008, TestSize.Level
         AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
         bool isStopped = audioRenderer->Stop();
-        EXPECT_EQ(false, isStopped);
+        EXPECT_EQ(true, isStopped);
 
         fread(buffer, 1, bufferLen, wavFile);
         fread(metaBuffer, 1, RenderUT::AVS3METADATA_SIZE, metaFile);
@@ -3411,8 +3410,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Direct_VoIP_001, TestSize.Level1)
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
-    std::this_thread::sleep_for(1s);
-
     bool isStopped = audioRenderer->Stop();
     EXPECT_EQ(true, isStopped);
     bool isReleased = audioRenderer->Release();
@@ -3858,8 +3855,9 @@ HWTEST(AudioRendererUnitTest, PrepareAudioStream_001, TestSize.Level1)
     AudioStreamParams audioStreamParams;
     const AudioStreamType audioStreamType = STREAM_VOICE_CALL;
     IAudioStream::StreamClass streamClass;
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
 
-    int32_t ret = audioRendererPrivate->PrepareAudioStream(audioStreamParams, audioStreamType, streamClass);
+    int32_t ret = audioRendererPrivate->PrepareAudioStream(audioStreamParams, audioStreamType, streamClass, flag);
     EXPECT_EQ(ret, SUCCESS);
 }
 

@@ -33,6 +33,7 @@
 #include "common/hdi_adapter_info.h"
 #include "hdi_adapter_type.h"
 #include "audio_device_manager.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -136,6 +137,8 @@ public:
     AudioIOHandle OpenAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
 
     AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex);
+
+    AudioIOHandle ReloadAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex);
 
     int32_t CloseAudioPort(AudioIOHandle ioHandle, uint32_t paIndex = HDI_INVALID_ID);
 
@@ -319,6 +322,7 @@ private:
         : ringerMode_(RINGER_MODE_NORMAL),
           audioPolicyKvStore_(nullptr),
           audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
+          audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
           volumeDataMaintainer_()
     {
         InitVolumeMapIndex();
@@ -437,6 +441,7 @@ private:
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     AudioStreamRemovedCallback *sessionCallback_ = nullptr;
+    AudioDeviceManager &audioDeviceManager_;
     VolumeDataMaintainer volumeDataMaintainer_;
     std::unordered_map<int32_t, std::shared_ptr<VolumeDataMaintainer>> volumeDataExtMaintainer_;
     bool isVolumeUnadjustable_ = false;

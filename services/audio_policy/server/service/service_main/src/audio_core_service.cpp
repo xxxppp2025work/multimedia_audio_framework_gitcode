@@ -79,6 +79,7 @@ AudioCoreService::AudioCoreService()
       audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
       sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance()),
       audioPipeSelector_(AudioPipeSelector::GetPipeSelector()),
+      audioSessionService_(AudioSessionService::GetAudioSessionService()),
       pipeManager_(AudioPipeManager::GetPipeManager())
 {
     AUDIO_INFO_LOG("Ctor");
@@ -257,7 +258,8 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
 {
     Trace trace("IsStreamSupportDirect");
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_WIRED_HEADSET &&
-        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_USB_HEADSET) {
+        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_USB_HEADSET &&
+        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_NEARLINK) {
             AUDIO_INFO_LOG("normal stream, deviceType: %{public}d",
                 streamDesc->newDeviceDescs_[0]->deviceType_);
             return false;
@@ -873,13 +875,13 @@ int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
     return ret;
 }
 
-void AudioCoreService::RegisteredTrackerClientDied(pid_t uid)
+void AudioCoreService::RegisteredTrackerClientDied(pid_t uid, pid_t pid)
 {
     UpdateDefaultOutputDeviceWhenStopping(static_cast<int32_t>(uid));
     UpdateInputDeviceWhenStopping(static_cast<int32_t>(uid));
 
     audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
-    streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));
+    streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid), static_cast<int32_t>(pid));
     std::vector<uint32_t> sessionIds = pipeManager_->GetFastStreamIdsByUid(uid);
     for (auto sessionId : sessionIds) {
         ReleaseClient(sessionId);
@@ -1118,16 +1120,17 @@ bool AudioCoreService::IsNoRunningStream(std::vector<std::shared_ptr<AudioStream
 
 int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChangeReasonExt reason)
 {
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is nullptr");
     std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
     AUDIO_INFO_LOG("[DeviceFetchStart] for %{public}zu output streams, in devices %{public}s",
         outputStreamDescs.size(), audioDeviceManager_.GetConnDevicesStr().c_str());
 
-    CheckModemScene(reason);
-    if (outputStreamDescs.empty()) {
+    if (outputStreamDescs.empty() && !pipeManager_->IsModemCommunicationIdExist()) {
         return HandleFetchOutputWhenNoRunningStream();
     }
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs;
+    CheckModemScene(modemDescs, reason);
 
-    isVoiceCallMuted_ = false;
     for (auto &streamDesc : outputStreamDescs) {
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
         streamDesc->newDeviceDescs_ =
@@ -1141,6 +1144,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
 
     audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
+    UpdateModemRoute(modemDescs);
     if (IsNoRunningStream(outputStreamDescs)) {
         AUDIO_INFO_LOG("no running stream");
         HandleFetchOutputWhenNoRunningStream();
@@ -1176,9 +1180,8 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute()
             continue;
         }
 
-        // handle nearlink
-        int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc);
-        CHECK_AND_CONTINUE_LOG(nearlinkFetchResult == SUCCESS, "nearlink fetch output device failed");
+        int32_t inputRet = ActivateInputDevice(streamDesc);
+        CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
 
         if (needUpdateActiveDevice) {
             isUpdateActiveDevice = UpdateInputDevice(inputDeviceDesc, GetRealUid(streamDesc));

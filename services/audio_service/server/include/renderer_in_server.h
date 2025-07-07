@@ -29,6 +29,16 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+struct RendererLatestInfoForWorkgroup {
+    IStatus status;
+    bool isInSilentState;
+    bool silentModeAndMixWithOthers;
+    bool lastWriteStandbyEnableStatus;
+    float streamVolume;
+    float systemVolume;
+};
+
 class StreamCallbacks : public IStatusCallback, public IWriteCallback {
 public:
     explicit StreamCallbacks(uint32_t streamIndex);
@@ -127,9 +137,12 @@ public:
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
     int32_t StopSession();
     void dualToneStreamInStart();
+    bool CollectInfosForWorkgroup(float systemVolume);
 
     int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame);
+
+    int32_t SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId);
 
 public:
     const AudioProcessConfig processConfig_;
@@ -162,6 +175,7 @@ private:
         const RingBufferWrapper& ringBufferDesc);
     void ProcessFadeOutIfNeeded(RingBufferWrapper& ringBufferDesc, uint64_t currentReadFrame,
         uint64_t currentWriteFrame, size_t requestDataInFrame);
+    void UpdateLatestForWorkgroup(float systemVolume);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -246,6 +260,11 @@ private:
     float loudnessGain_ = 0.0f;
     // Only use in Writedate(). Protect by writeMutex_.
     std::vector<uint8_t> rendererTmpBuffer_;
+    // audio haptics play sync param id
+    std::atomic<int32_t> audioHapticsSyncId_ = 0;
+
+    bool latestForWorkgroupInited_ = false;
+    struct RendererLatestInfoForWorkgroup latestForWorkgroup_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

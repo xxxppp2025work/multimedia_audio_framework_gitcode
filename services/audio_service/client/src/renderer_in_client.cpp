@@ -54,6 +54,7 @@
 #include "volume_tools.h"
 
 #include "media_monitor_manager.h"
+#include "istandard_audio_service.h"
 
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
@@ -176,7 +177,9 @@ void RendererInClientInner::InitDirectPipeType()
 int32_t RendererInClientInner::DeinitIpcStream()
 {
     Trace trace("RendererInClientInner::DeinitIpcStream");
-    ipcStream_->Release();
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr && ringCache_ != nullptr, ERROR,
+        "ipcStream_ or ringCache_ is nullptr");
+    ipcStream_->Release(false);
     ringCache_->ResetBuffer();
     return SUCCESS;
 }
@@ -252,14 +255,16 @@ int32_t RendererInClientInner::InitIpcStream()
     sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
     int32_t errorCode = 0;
-    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config, errorCode);
+    sptr<IRemoteObject> ipcProxy = nullptr;
+    AudioPlaybackCaptureConfig playbackConfig = {};
+    gasp->CreateAudioProcess(config, errorCode, playbackConfig, ipcProxy);
     for (int32_t retrycount = 0; (errorCode == ERR_RETRY_IN_CLIENT) && (retrycount < MAX_RETRY_COUNT); retrycount++) {
         AUDIO_WARNING_LOG("retry in client");
         std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
-        ipcProxy = gasp->CreateAudioProcess(config, errorCode);
+        gasp->CreateAudioProcess(config, errorCode, playbackConfig, ipcProxy);
     }
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
-    ipcStream_ = iface_cast<IpcStream>(ipcProxy);
+    ipcStream_ = iface_cast<IIpcStream>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "failed when iface_cast.");
 
     // in plan next: old listener_ is destoried here, will server receive dieth notify?
@@ -620,7 +625,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     std::lock_guard<std::mutex> lock(writeMutex_);
 
-    totalBytesWrittenNoSpeed_ += bufferSize;
+    unprocessedFramesBytes_.fetch_add(bufferSize);
     size_t oriBufferSize = bufferSize;
     bool speedCached = false;
     if (!ProcessSpeed(buffer, bufferSize, speedCached)) {
@@ -656,8 +661,12 @@ void RendererInClientInner::ResetFramePosition()
     }
     // no need to reset timestamp, only reset frameposition
     for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
-        lastFramePosition_[base].first = 0;
+        lastFramePosAndTimePair_[base].first = 0;
+        lastSwitchPosition_[base] = 0;
     }
+    unprocessedFramesBytes_ = 0;
+    totalBytesWrittenAfterFlush_ = 0;
+    writtenAtSpeedChange_.store(WrittenFramesWithSpeed{0, speed_});
 }
 
 bool RendererInClientInner::IsMutePlaying()
@@ -706,7 +715,7 @@ void RendererInClientInner::ReportWriteMuteEvent(int64_t mutePlayDuration)
     bool isClientMute = muteCmd_ == CMD_FROM_CLIENT;
     uint8_t muteState = (isClientMute ? 0x0 : 0x4) | (isMute ? 0x1 : 0x0);
 
-    AUDIO_WARNING_LOG("[%{public}d]MutePlaying for %{public}" PRId64"d ms, muteState:%{public}d", sessionId_,
+    AUDIO_WARNING_LOG("[%{public}d]MutePlaying for %{public}" PRId64" ms, muteState:%{public}d", sessionId_,
         mutePlayDuration, muteState);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::APP_WRITE_MUTE, Media::MediaMonitor::EventType::FAULT_EVENT);

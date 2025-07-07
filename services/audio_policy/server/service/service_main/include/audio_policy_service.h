@@ -25,7 +25,6 @@
 #include "singleton.h"
 #include "audio_group_handle.h"
 #include "audio_manager_base.h"
-#include "audio_policy_client_proxy.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
 #include "audio_router_center.h"
@@ -207,6 +206,8 @@ public:
     int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionIds);
 
     int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
+
+    int32_t NearlinkGetRenderPosition(uint32_t &delayValue);
 
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName);
 

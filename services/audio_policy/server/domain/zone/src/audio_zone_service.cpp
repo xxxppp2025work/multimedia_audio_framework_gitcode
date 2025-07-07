@@ -20,7 +20,6 @@
 #include "audio_info.h"
 #include "audio_errors.h"
 #include "audio_zone.h"
-#include "audio_zone_client_proxy.h"
 #include "audio_zone_client_manager.h"
 #include "audio_zone_interrupt_reporter.h"
 #include "audio_device_lock.h"
@@ -154,11 +153,14 @@ int32_t AudioZoneService::BindDeviceToAudioZone(int32_t zoneId,
 
 void AudioZoneService::RemoveDeviceFromGlobal(std::shared_ptr<AudioDeviceDescriptor> device)
 {
+    CHECK_AND_RETURN_LOG(device != nullptr, "device is nullptr");
+    std::string networkId = device->networkId_;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> connectDevices;
     AudioConnectedDevice::GetInstance().GetAllConnectedDeviceByType(device->networkId_,
         device->deviceType_, device->macAddress_, device->deviceRole_, connectDevices);
     CHECK_AND_RETURN_LOG(connectDevices.size() != 0, "connectDevices is empty.");
     AudioDeviceLock::GetInstance().OnDeviceStatusUpdated(*device, false);
+    device->networkId_ = networkId;
 }
 
 int32_t AudioZoneService::UnBindDeviceToAudioZone(int32_t zoneId,
@@ -241,6 +243,18 @@ int32_t AudioZoneService::RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStr
 int32_t AudioZoneService::AddUidToAudioZone(int32_t zoneId, int32_t uid)
 {
     return AddKeyToAudioZone(zoneId, uid, "", "", StreamUsage::STREAM_USAGE_INVALID);
+}
+
+void AudioZoneService::SetZoneDeviceVisible(bool visible)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    zoneDeviceVisible_ = visible;
+}
+
+bool AudioZoneService::IsZoneDeviceVisible()
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    return zoneDeviceVisible_;
 }
 
 int32_t AudioZoneService::AddKeyToAudioZone(int32_t zoneId, int32_t uid,
