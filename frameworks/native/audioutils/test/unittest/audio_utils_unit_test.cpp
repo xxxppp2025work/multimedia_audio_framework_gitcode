@@ -1038,6 +1038,20 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceTypeName_012, TestSize.Le
 }
 
 /**
+* @tc.name  : Test AudioInfoDumpUtils::GetDeviceTypeName  API
+* @tc.type  : FUNC
+* @tc.number: AudioInfoDumpUtils_GetDeviceTypeName_013
+* @tc.desc  : Test AudioInfoDumpUtils GetDeviceTypeName API,Return NEARLINK
+*             when deviceType is DEVICE_TYPE_NEARLINK
+*/
+HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceTypeName_013, TestSize.Level0)
+{
+    DeviceType deviceType = DEVICE_TYPE_NEARLINK;
+    const std::string deviceTypeName = AudioInfoDumpUtils::GetDeviceTypeName(deviceType);
+    EXPECT_EQ(deviceTypeName, "NEARLINK");
+}
+
+/**
 * @tc.name  : Test AudioInfoDumpUtils::GetConnectTypeName  API
 * @tc.type  : FUNC
 * @tc.number: AudioInfoDumpUtils_GetConnectTypeName_001
@@ -2873,6 +2887,33 @@ HWTEST(AudioUtilsUnitTest, NeedVerifyBackgroundCapture_003, TestSize.Level1)
     SourceType sourceType = SOURCE_TYPE_INVALID;
     bool result = PermissionUtil::NeedVerifyBackgroundCapture(callingUid, sourceType);
     EXPECT_EQ(result, true);
+}
+
+/**
+* @tc.name  : Test CheckCallingUidPermission  API
+* @tc.type  : FUNC
+* @tc.number: CheckCallingUidPermission_001
+* @tc.desc  : Test CheckCallingUidPermission API
+*/
+HWTEST(AudioUtilsUnitTest, CheckCallingUidPermission_001, TestSize.Level1)
+{
+    const std::vector<uid_t> allowedUids = {};
+    bool result = PermissionUtil::CheckCallingUidPermission(allowedUids);
+    EXPECT_EQ(result, false);
+}
+
+
+/**
+* @tc.name  : Test CheckCallingUidPermission  API
+* @tc.type  : FUNC
+* @tc.number: CheckCallingUidPermission_002
+* @tc.desc  : Test CheckCallingUidPermission API
+*/
+HWTEST(AudioUtilsUnitTest, CheckCallingUidPermission_002, TestSize.Level1)
+{
+    const std::vector<uid_t> allowedUids = {3001, 3003};
+    bool result = PermissionUtil::CheckCallingUidPermission(allowedUids);
+    EXPECT_EQ(result, false);
 }
 
 /**

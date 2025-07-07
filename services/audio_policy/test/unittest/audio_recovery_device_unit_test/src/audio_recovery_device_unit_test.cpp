@@ -64,5 +64,53 @@ HWTEST_F(AudioRecoveryDeviceUnitTest, AudioRecoveryDeviceUnitTest_003, TestSize.
         excludedDevices);
     EXPECT_EQ(result, ERROR);
 }
+
+/**
+* @tc.name  : Test SelectOutputDevice.
+* @tc.number: SelectOutputDevice_001.
+* @tc.desc  : Test SelectOutputDevice.
+*/
+HWTEST_F(AudioRecoveryDeviceUnitTest, SelectOutputDevice_001, TestSize.Level1)
+{
+    auto audioRendererFilter = std::make_shared<AudioRecoveryDevice>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceRole_ == DeviceRole::OUTPUT_DEVICE, ERR_INVALID_OPERATION
+    outputDevices.push_back(deviceDesc);
+    audioRendererFilter->uid = -1;
+    audioRendererFilter->rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
+    
+    auto result = audioRecoveryDevice->SelectOutputDevice(audioRendererFilter,
+        selectedDesc);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test ConnectVirtualDevice.
+* @tc.number: ConnectVirtualDevice_001.
+* @tc.desc  : Test ConnectVirtualDevice.
+*/
+HWTEST_F(AudioRecoveryDeviceUnitTest, ConnectVirtualDevice_001, TestSize.Level1)
+{
+    auto audioRendererFilter = std::make_shared<AudioRecoveryDevice>();
+    std::shared_ptr<AudioDeviceDescriptor> selectedDesc = nullptr;
+    
+    auto result = audioRecoveryDevice->ConnectVirtualDevice(audioRendererFilter);
+    EXPECT_EQ(result, ERROR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test ConnectVirtualDevice.
+* @tc.number: ConnectVirtualDevice_002.
+* @tc.desc  : Test ConnectVirtualDevice.
+*/
+HWTEST_F(AudioRecoveryDeviceUnitTest, ConnectVirtualDevice_001, TestSize.Level1)
+{
+    auto audioRendererFilter = std::make_shared<AudioRecoveryDevice>();
+    std::shared_ptr<AudioDeviceDescriptor> selectedDesc = nullptr;
+    
+    auto result = audioRecoveryDevice->ConnectVirtualDevice(audioRendererFilter);
+    EXPECT_EQ(result, ERROR_INVALID_PARAM);
+}
 } // namespace AudioStandard
 } // namespace OHOS
