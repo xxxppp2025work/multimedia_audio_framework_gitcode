@@ -316,6 +316,16 @@ int32_t HpaeRendererStreamImpl::GetPrivacyType(int32_t &privacyType)
     return SUCCESS;
 }
 
+int32_t HpaeRendererStreamImpl::SetSpeed(float speed)
+{
+    CHECK_AND_RETURN_RET_LOG(deviceClass_ == DEVICE_CLASS_REMOTE_OFFLOAD, ERR_INVALID_OPERATION, "not support");
+
+    std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_OPERATION, "audioRendererSink is null");
+    audioRendererSink->SetSpeed(speed);
+    return SUCCESS;
+}
+
 void HpaeRendererStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback)
 {
     AUDIO_DEBUG_LOG("RegisterStatusCallback in");
