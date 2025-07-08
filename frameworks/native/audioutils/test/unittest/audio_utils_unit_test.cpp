@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <cstdint>
 #include <thread>
 #include <gtest/gtest.h>
 #include "gmock/gmock.h"
