@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include "audio_utils.h"
+#include "adapter/local_device_manager.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 
@@ -138,6 +139,92 @@ HWTEST_F(AdapterUnitTest, AdapterUnitTest_005, TestSize.Level1)
 HWTEST_F(AdapterUnitTest, AdapterUnitTest_006, TestSize.Level1)
 {
     TestSetAndGet(HDI_DEVICE_MANAGER_TYPE_REMOTE);
+}
+
+/**
+ * @tc.name   : Test SetOutputPortPin API
+ * @tc.number : SetOutputPortPin_001
+ * @tc.desc   : Test SetOutputPortPin
+ */
+HWTEST_F(AdapterUnitTest, SetOutputPortPin_001, TestSize.Level1)
+{
+    
+    DeviceType deviceType = DEVICE_TYPE_NEARLINK;
+    AudioRouteNode node;
+
+    int32_t result = LocalDeviceManager::SetOutputPortPin(DEVICE_TYPE_NEARLINK, node);
+    
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test HandleNearlinkScene API
+ * @tc.number : HandleNearlinkScene_001
+ * @tc.desc   : Test handle nearlink scene
+ */
+HWTEST_F(AdapterUnitTest, HandleNearlinkScene_001, TestSize.Level1)
+{
+    currentAudioScene_.store(AUDIO_SCENE_INVALID);
+    DeviceType deviceType = DEVICE_TYPE_NEARLINK;
+    AudioRouteNode node;
+
+    int32_t result = LocalDeviceManager::HandleNearlinkScene(DEVICE_TYPE_NEARLINK, node);
+    
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test HandleNearlinkScene API
+ * @tc.number : HandleNearlinkScene_002
+ * @tc.desc   : Test handle nearlink scene
+ */
+HWTEST_F(AdapterUnitTest, HandleNearlinkScene_002, TestSize.Level1)
+{
+    if (currentAudioScene_.load() != AUDIO_SCENE_DEFAULT) {
+        currentAudioScene_.store(AUDIO_SCENE_DEFAULT);
+    }
+
+    DeviceType deviceType = DEVICE_TYPE_NEARLINK;
+    AudioRouteNode node;
+
+    int32_t result = LocalDeviceManager::HandleNearlinkScene(DEVICE_TYPE_NEARLINK, node);
+    
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test HandleNearlinkScene API
+ * @tc.number : HandleNearlinkScene_003
+ * @tc.desc   : Test handle nearlink scene
+ */
+HWTEST_F(AdapterUnitTest, HandleNearlinkScene_003, TestSize.Level1)
+{
+    if (currentAudioScene_.load() != AUDIO_SCENE_DEFAULT) {
+        currentAudioScene_.store(AUDIO_SCENE_DEFAULT);
+    }
+    
+    DeviceType deviceType = DEVICE_TYPE_NEARLINK_IN;
+    AudioRouteNode node;
+
+    int32_t result = LocalDeviceManager::HandleNearlinkScene(DEVICE_TYPE_NEARLINK, node);
+    
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test SetInputPortPin API
+ * @tc.number : SetInputPortPin_001
+ * @tc.desc   : Test SetInputPortPin
+ */
+HWTEST_F(AdapterUnitTest, SetInputPortPin_001, TestSize.Level1)
+{
+    
+    DeviceType deviceType = DEVICE_TYPE_NEARLINK;
+    AudioRouteNode node;
+
+    int32_t result = LocalDeviceManager::SetInputPortPin(DEVICE_TYPE_NEARLINK, node);
+    
+    EXPECT_EQ(result, SUCCESS);
 }
 
 } // namespace AudioStandard
