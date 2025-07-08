@@ -504,7 +504,7 @@ void AudioPolicyConfigManager::GetStreamPropInfoForRecord(
     std::shared_ptr<PipeStreamPropInfo> &info, const AudioChannel &tempChannel)
 {
     if (tempChannel == MONO && ((desc->routeFlag_ == AUDIO_INPUT_FLAG_FAST) ||
-        (desc->routeFlag_ == (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST))) {
+        (desc->routeFlag_ == (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST)))) {
         AUDIO_WARNING_LOG("Change Channel from MONO to STEREO, channels:%{public}d, "
         "input route flag:%{public}u", tempChannel, desc->routeFlag_);
         tempChannel = STEREO;
