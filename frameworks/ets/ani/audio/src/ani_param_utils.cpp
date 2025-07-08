@@ -71,7 +71,7 @@ ani_status AniParamUtils::SetValueEnum(ani_env *env, ani_class cls, ani_object h
     const std::string &key, ani_enum_item value)
 {
     ani_method setter;
-    std::string setterName = "<set>" + key;
+    std::string setterName = "%%set-" + key;
     ani_status status = env->Class_FindMethod(cls, setterName.c_str(), nullptr, &setter);
     if (status != ANI_OK) {
         AUDIO_ERR_LOG("no %{public}s", setterName.c_str());
@@ -90,7 +90,7 @@ ani_status AniParamUtils::SetValueInt(ani_env *env, ani_class cls, ani_object ha
     const std::string &key, int32_t value)
 {
     ani_method setter;
-    std::string setterName = "<set>" + key;
+    std::string setterName = "%%set-" + key;
     ani_status status = env->Class_FindMethod(cls, setterName.c_str(), nullptr, &setter);
     if (status != ANI_OK) {
         AUDIO_ERR_LOG("no %{public}s", setterName.c_str());
@@ -117,7 +117,7 @@ ani_status AniParamUtils::SetValueNumber(ani_env *env, ani_class cls, ani_object
     const std::string &key, int32_t value)
 {
     ani_method setter;
-    std::string setterName = "<set>" + key;
+    std::string setterName = "%%set-" + key;
     ani_status status = env->Class_FindMethod(cls, setterName.c_str(), nullptr, &setter);
     if (status != ANI_OK) {
         AUDIO_ERR_LOG("no %{public}s", setterName.c_str());
@@ -143,7 +143,7 @@ ani_status AniParamUtils::SetValueBool(ani_env *env, ani_class cls, ani_object h
     const std::string &key, bool value)
 {
     ani_method setter;
-    std::string setterName = "<set>" + key;
+    std::string setterName = "%%set-" + key;
     ani_status status = env->Class_FindMethod(cls, setterName.c_str(), nullptr, &setter);
     if (status != ANI_OK) {
         AUDIO_ERR_LOG("no %{public}s", setterName.c_str());
@@ -163,7 +163,7 @@ ani_status AniParamUtils::SetValueString(ani_env *env, ani_class cls, ani_object
     const std::string &key, const std::string &value)
 {
     ani_method setter;
-    std::string setterName = "<set>" + key;
+    std::string setterName = "%%set-" + key;
     ani_status status = env->Class_FindMethod(cls, setterName.c_str(), nullptr, &setter);
     if (status != ANI_OK) {
         AUDIO_ERR_LOG("no %{public}s", setterName.c_str());
@@ -189,7 +189,7 @@ ani_status AniParamUtils::SetValueObject(ani_env *env, ani_class cls, ani_object
     CHECK_AND_RETURN_RET_LOG(value != nullptr, ANI_ERROR, "invalid property.");
 
     ani_method setter;
-    std::string setterName = "<set>" + key;
+    std::string setterName = "%%set-" + key;
     ani_status status = env->Class_FindMethod(cls, setterName.c_str(), nullptr, &setter);
     if (status != ANI_OK) {
         AUDIO_ERR_LOG("no %{public}s", setterName.c_str());
