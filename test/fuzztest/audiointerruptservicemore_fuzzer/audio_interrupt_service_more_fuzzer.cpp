@@ -182,13 +182,22 @@ void ClearAudioFocusInfoListOnAccountsChangedFuzzTest()
     interruptService->ClearAudioFocusInfoListOnAccountsChanged(id);
 }
 
-typedef void (*TestFuncs[4])();
+void ForceVolumeKeyControlTypeFuzzTest()
+{
+    int32_t volumeType = GetData<int32_t>();
+    int32_t duration = GetData<int32_t>();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    interruptService->ForceVolumeKeyControlType(static_cast<AudioStreamType>(volumeType), duration);
+}
+
+typedef void (*TestFuncs[5])();
 
 TestFuncs g_testFuncs = {
     MoreFuzzTest,
     AddAudioSessionFuzzTest,
     AddSetAudioManagerInterruptCallbackFuzzTest,
     ClearAudioFocusInfoListOnAccountsChangedFuzzTest,
+    ForceVolumeKeyControlTypeFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

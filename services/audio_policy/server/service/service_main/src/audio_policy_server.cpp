@@ -4846,6 +4846,17 @@ int32_t AudioPolicyServer::IsCapturerFocusAvailable(const AudioCapturerInfo &cap
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::ForceVolumeKeyControlType(int32_t volumeType, int32_t duration, int32_t &ret)
+{
+    CHECK_AND_RETURN_RET_LOG(VerifyPermission(MODIFY_AUDIO_SETTINGS_PERMISSION), ERR_PERMISSION_DENIED,
+        "MODIFY_AUDIO_SETTINGS_PERMISSION permission check failed");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "no system permission");
+    CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERR_UNKNOWN, "interruptService_ is nullptr");
+    ret = interruptService_->ForceVolumeKeyControlType(static_cast<AudioStreamType>(volumeType), duration);
+    return SUCCESS;
+}
+
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionID);

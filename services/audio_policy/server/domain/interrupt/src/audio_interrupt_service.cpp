@@ -111,6 +111,7 @@ inline int GetAudioScenePriority(const AudioScene audioScene)
 AudioInterruptService::AudioInterruptService()
 {
     zoneManager_.InitService(this);
+    tm_ = std::make_shared<TimerManager>(this);
 }
 
 AudioInterruptService::~AudioInterruptService()
@@ -1153,7 +1154,12 @@ int32_t AudioInterruptService::GetStreamTypePriority(AudioStreamType streamType)
 AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    return GetStreamInFocusInternal(0, zoneId);
+    AudioStreamType streamInFocus = GetStreamInFocusInternal(0, zoneId);
+    if (needForceControlStreamType_ && streamInFocus != STREAM_VOICE_CALL) {
+        AUDIO_INFO_LOG("force volumekey control type, streamType:%{public}d", forceControlStreamType_);
+        return forceControlStreamType_;
+    }
+    return streamInFocus;
 }
 
 AudioStreamType AudioInterruptService::GetStreamInFocusByUid(const int32_t uid, const int32_t zoneId)

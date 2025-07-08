@@ -851,6 +851,34 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_040, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioInterruptService.
+* @tc.number: AudioInterruptService_041
+* @tc.desc  : Test ForceVolumeKeyControlType.
+*/
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_041, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->ForceVolumeKeyControlType(STREAM_RING, 3);
+    EXPECT_EQ(interruptServiceTest->forceControlStreamType_, STREAM_RING);
+    EXPECT_EQ(interruptServiceTest->needForceControlStreamType_, true);
+
+    interruptServiceTest->ForceVolumeKeyControlType(STREAM_MEDIA, 3);
+    EXPECT_EQ(interruptServiceTest->forceControlStreamType_, STREAM_MEDIA);
+    EXPECT_EQ(interruptServiceTest->needForceControlStreamType_, true);
+
+    interruptServiceTest->ForceVolumeKeyControlType(STREAM_MEDIA, -1);
+    EXPECT_EQ(interruptServiceTest->forceControlStreamType_, STREAM_DEFAULT);
+    EXPECT_EQ(interruptServiceTest->needForceControlStreamType_, false);
+
+    interruptServiceTest->ForceVolumeKeyControlType(STREAM_MEDIA, 1);
+    EXPECT_EQ(interruptServiceTest->forceControlStreamType_, STREAM_MEDIA);
+    EXPECT_EQ(interruptServiceTest->needForceControlStreamType_, true);
+    usleep(1500000);
+    EXPECT_EQ(interruptServiceTest->forceControlStreamType_, STREAM_DEFAULT);
+    EXPECT_EQ(interruptServiceTest->needForceControlStreamType_, false);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService.
 * @tc.number: AudioInterruptServiceCanMixForIncomingSession_001
 * @tc.desc  : Test CanMixForIncomingSession. sessionService_ is nullptr.
 */
