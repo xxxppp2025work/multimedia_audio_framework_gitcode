@@ -253,7 +253,8 @@ int32_t SleAudioDeviceManager::SendUserSelection(const AudioDeviceDescriptor &de
 
 int32_t SleAudioDeviceManager::AddNearlinkDevice(const AudioDeviceDescriptor &deviceDesc)
 {
-    CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
+    CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK &&
+        deviceDesc.connectState_ == CONNECTED, ERROR, "device type is not nearlink");
     std::lock_guard<std::mutex> lock(deviceVolumeConfigMutex_);
     deviceVolumeConfigInfo_[deviceDesc.macAddress_] =
         std::make_pair(SleVolumeConfigInfo{STREAM_MUSIC, deviceDesc.mediaVolume_},
@@ -263,7 +264,8 @@ int32_t SleAudioDeviceManager::AddNearlinkDevice(const AudioDeviceDescriptor &de
 
 int32_t SleAudioDeviceManager::RemoveNearlinkDevice(const AudioDeviceDescriptor &deviceDesc)
 {
-    CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
+    CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK &&
+        deviceDesc.connectState_ == CONNECTED, ERROR, "device type is not nearlink");
     std::lock_guard<std::mutex> lock(deviceVolumeConfigMutex_);
     deviceVolumeConfigInfo_.erase(deviceDesc.macAddress_);
     startedSleStreamType_.erase(deviceDesc.macAddress_);
