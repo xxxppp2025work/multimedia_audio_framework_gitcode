@@ -393,6 +393,7 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_020, TestSize.Level1)
 * @tc.number: AudioGeneralManager_021
 * @tc.desc  : AudioGeneralManager::SelectOutputDevice()
 */
+
 HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_021, TestSize.Level1)
 {
     sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
@@ -467,6 +468,5 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_024, TestSize.Level1)
     int32_t ret = audioGeneralManagerPtr->SelectOutputDevice(audioRendererFilter,  audioDeviceDescriptors);
     EXPECT_EQ(ret, SUCCESS);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

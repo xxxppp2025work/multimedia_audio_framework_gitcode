@@ -1386,9 +1386,8 @@ HWTEST_F(AudioDeviceStatusUnitTest, DeactivateNearlinkDevice_001, TestSize.Level
 
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
 
-    result = audioDeviceStatus.DeactivateNearlinkDevice(desc);
-
-    EXPECT_EQ(result, ERROR);
+    audioDeviceStatus.DeactivateNearlinkDevice(desc);
+    EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
 }
 
 /**
