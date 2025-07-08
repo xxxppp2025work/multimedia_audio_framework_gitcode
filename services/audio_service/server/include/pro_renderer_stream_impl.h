@@ -76,6 +76,7 @@ public:
     int32_t SetClientVolume(float clientVolume) override;
     int32_t SetLoudnessGain(float loudnessGain) override;
     void BlockStream() noexcept override;
+    bool IsNeedInitDupBuffer(const uint32_t sessionId) override;
 
 private:
     bool GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &nanoSec);

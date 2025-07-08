@@ -48,11 +48,15 @@ public:
     int32_t OnWriteData(int8_t *inputData, size_t requestDataLen) override;
     int32_t GetAvailableSize(size_t &length) override;
     std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
+    uint32_t GetDupStreamSessionId();
+    void SetDupBufferClearedFlage(bool dupBufferClearedFlage);
+    bool GetDupBufferClearedFlage();
 private:
     uint32_t streamIndex_ = 0;
     FILE *dumpDupOut_ = nullptr;
     std::string dumpDupOutFileName_ = "";
     std::unique_ptr<AudioRingCache> dupRingBuffer_ = nullptr;
+    bool dupBufferClearedFlage_ = false;
 };
 
 class RendererInServer : public IStatusCallback, public IWriteCallback,
@@ -141,6 +145,8 @@ public:
 
     int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame);
+    bool IsNeedInitDupBuffer(int32_t innerCapId, uint32_t sessionId);
+    bool IsNeedByPassWriteDupBuffer(bool isInitDupBufferFlage, int32_t innerCapId);
 
     int32_t SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId);
 

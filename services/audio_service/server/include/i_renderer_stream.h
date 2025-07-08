@@ -67,6 +67,7 @@ public:
     virtual int32_t SetClientVolume(float clientVolume) = 0;
     virtual int32_t SetLoudnessGain(float loudnessGain) = 0;
     virtual void BlockStream() noexcept = 0;
+    virtual bool IsNeedInitDupBuffer(const uint32_t sessionId) = 0;
 };
 
 struct CaptureInfo {

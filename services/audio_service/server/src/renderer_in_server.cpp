@@ -1614,6 +1614,21 @@ void StreamCallbacks::OnStatusUpdate(IOperation operation)
     AUDIO_INFO_LOG("DupStream %{public}u recv operation: %{public}d", streamIndex_, operation);
 }
 
+uint32_t StreamCallbacks::GetDupStreamSessionId()
+{
+    return streamIndex_;
+}
+
+void StreamCallbacks::SetDupBufferClearedFlage(bool dupBufferClearedFlage)
+{
+    dupBufferClearedFlage_ = dupBufferClearedFlage;
+}
+
+bool StreamCallbacks::GetDupBufferClearedFlage()
+{
+    return dupBufferClearedFlage_;
+}
+
 int32_t StreamCallbacks::OnWriteData(size_t length)
 {
     Trace trace("DupStream::OnWriteData length " + std::to_string(length));
@@ -2051,14 +2066,12 @@ std::unique_ptr<AudioRingCache>& RendererInServer::GetDupRingBuffer()
  
 int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
 {
-    // todo dynamic
     if (innerCapIdToDupStreamCallbackMap_.find(innerCapId) == innerCapIdToDupStreamCallbackMap_.end() ||
         innerCapIdToDupStreamCallbackMap_[innerCapId] == nullptr ||
         innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() != nullptr) {
         AUDIO_INFO_LOG("dup buffer already configed!");
         return SUCCESS;
     }
-
     auto &capInfo = captureInfos_[innerCapId];
     capInfo.dupStream->GetSpanSizePerFrame(dupSpanSizeInFrame_);
     if (offloadEnable_ == true) {
@@ -2077,8 +2090,6 @@ int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
     AUDIO_INFO_LOG("dupTotalSizeInFrame_: %{public}zu, dupSpanSizeInFrame_: %{public}zu,"
         "dupByteSizePerFrame_:%{public}zu dupSpanSizeInByte_: %{public}zu,",
         dupTotalSizeInFrame_, dupSpanSizeInFrame_, dupByteSizePerFrame_, dupSpanSizeInByte_);
- 
-    // create dupBuffer in server
     innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() =
         AudioRingCache::Create(dupTotalSizeInFrame_ * dupByteSizePerFrame_);
     CHECK_AND_RETURN_RET_LOG(innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() != nullptr,
@@ -2095,6 +2106,12 @@ int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc, int3
         AUDIO_INFO_LOG("dup buffer is nnullptr, failed WriteDupBuffer!");
         return ERROR;
     }
+    bool isInitDupBufferFlage = IsNeedInitDupBuffer(innerCapId, innerCapIdToDupStreamCallbackMap_[innerCapId]->
+        GetDupStreamSessionId());
+    if (IsNeedByPassWriteDupBuffer(isInitDupBufferFlage, innerCapId) == true) {
+        return SUCCESS;
+    }
+    innerCapIdToDupStreamCallbackMap_[innerCapId]->SetDupBufferClearedFlage(false);
     OptResult result = innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer()->GetWritableSize();
     // todo get writeable size failed
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
@@ -2123,6 +2140,26 @@ int32_t RendererInServer::StopSession()
     CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_INVALID_PARAM, "audioServerBuffer_ is nullptr");
     audioServerBuffer_->SetStopFlag(true);
     return SUCCESS;
+}
+
+bool RendererInServer::IsNeedInitDupBuffer(int32_t innerCapId, uint32_t sessionId)
+{
+    return captureInfos_[innerCapId].dupStream->IsNeedInitDupBuffer(sessionId);
+}
+
+bool RendererInServer::IsNeedByPassWriteDupBuffer(bool isInitDupBufferFlage, int32_t innerCapId)
+{
+    if (isInitDupBufferFlage == true) {
+        if (innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupBufferClearedFlage() == false) {
+            innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer()->
+                ReConfig(dupTotalSizeInFrame_ * dupByteSizePerFrame_, false);
+            innerCapIdToDupStreamCallbackMap_[innerCapId]->SetDupBufferClearedFlage(true);
+            AUDIO_INFO_LOG("CapStream no running, initDupBuffer dupStream: %{public}u",
+                innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupStreamSessionId());
+        }
+        return true;
+    }
+    return false;
 }
 
 int32_t RendererInServer::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)

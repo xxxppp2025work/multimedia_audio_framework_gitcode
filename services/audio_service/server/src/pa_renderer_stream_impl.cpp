@@ -1357,5 +1357,10 @@ void PaRendererStreamImpl::UpdatePaTimingInfo()
         AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
     }
 }
+
+bool PaRendererStreamImpl::IsNeedInitDupBuffer(const uint32_t sessionId)
+{
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS

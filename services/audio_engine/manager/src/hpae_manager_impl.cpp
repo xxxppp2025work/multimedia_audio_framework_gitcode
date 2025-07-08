@@ -532,6 +532,12 @@ int32_t HpaeManagerImpl::UpdateCollaborativeState(bool isCollaborationEnabled)
     CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
     return manager_->UpdateCollaborativeState(isCollaborationEnabled);
 }
+
+bool HpaeManagerImpl::IsNeedInitDupBuffer(const uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
+    return manager_->IsNeedInitDupBuffer(sessionId);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

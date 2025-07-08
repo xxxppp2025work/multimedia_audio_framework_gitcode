@@ -171,6 +171,7 @@ public:
     bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
+    bool IsNeedInitDupBuffer(const uint32_t sessionId) override;
 private:
     int32_t CloseOutAudioPort(std::string sinkName);
     void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo);
@@ -236,6 +237,8 @@ private:
     std::unordered_map<std::string, uint32_t> sinkNameSinkIdMap_;  // todo
     std::unordered_map<uint32_t, std::string> sinkIdSinkNameMap_;
     std::unordered_map<uint32_t, HpaeSessionState> movingIds_;
+    std::unordered_map<uint32_t, uint32_t> dupStreamIdToInnerCapStreamIdMap_;
+    std::unordered_map<std::string, uint32_t> InnerCapSinkNameToCapIdMap_;
     std::string defaultSink_ = "";
     std::string coreSink_ = "";
     std::unordered_map<std::string, uint32_t> sourceNameSourceIdMap_;

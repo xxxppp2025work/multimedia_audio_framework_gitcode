@@ -703,5 +703,10 @@ void ProRendererStreamImpl::BlockStream() noexcept
     isBlock_ = true;
     AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, 0.f);
 }
+
+bool ProRendererStreamImpl::IsNeedInitDupBuffer(const uint32_t sessionId)
+{
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS

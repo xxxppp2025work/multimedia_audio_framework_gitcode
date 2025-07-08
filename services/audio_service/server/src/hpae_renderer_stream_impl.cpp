@@ -658,5 +658,10 @@ static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs)
     // 0 is default; duration > 40ms do default fade
     return DEFAULT_FADE;
 }
+
+bool HpaeRendererStreamImpl::IsNeedInitDupBuffer(const uint32_t sessionId)
+{
+    return IHpaeManager::GetHpaeManager().IsNeedInitDupBuffer(sessionId);
+}
 } // namespace AudioStandard
 } // namespace OHOS
