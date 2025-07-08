@@ -42,6 +42,26 @@ class AudioPolicyServerHandler;
 
 class SessionTimeOutCallback;
 
+class TimerManager {
+public:
+    TimerManager(AudioInterruptService *service);
+    ~TimerManager();
+    void SetTimer(int32_t duration);
+
+private:
+    static constexpr int32_t MAX_DURATION_TIME_S = 10;
+
+    void TimerThread();
+    void DeactivateThread();
+
+    std::thread timerThread_;
+    std::mutex mtx_;
+    std::condition_variable cv_;
+    std::atomic<bool> running_{ false };
+    int remaining_ = 0;
+    AudioInterruptService *service_;
+};
+
 class AudioInterruptService : public std::enable_shared_from_this<AudioInterruptService>,
                               public IAudioInterruptEventDispatcher,
                               public SessionTimeOutCallback {
@@ -120,6 +140,8 @@ public:
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
     void RegisterDefaultVolumeTypeListener();
+    int32_t ForceVolumeKeyControlType(AudioStreamType volumeType, int32_t duration);
+    void OnTimerExpired();
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -341,6 +363,10 @@ private:
     AudioStreamType defaultVolumeType_ = STREAM_MUSIC;
 
     std::mutex audioServerProxyMutex_;
+
+    bool needForceControlStreamType_ = false;
+    AudioStreamType forceControlStreamType_ = STREAM_DEFAULT;
+    std::shared_ptr<TimerManager> tm_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
