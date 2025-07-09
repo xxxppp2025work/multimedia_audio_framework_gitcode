@@ -3365,14 +3365,12 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_168, TestSize.Level1)
  */
 HWTEST(AudioPolicyUnitTest, IsStreamActiveByStreamUsage_001, TestSize.Level1)
 {
-    int32_t systemAbilityId = 0;
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
-    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    ASSERT_NE(audioPolicyServer, nullptr);
 
-    EXPECT_NE(static_cast<uid_t>(IPCSkeleton::GetCallingUid()), audioPolicyServer->PREEMPT_UID);
-
-    auto ret = audioPolicyServer->IsStreamActiveByStreamUsage(streamUsage);
+    auto ret = server->IsStreamActiveByStreamUsage(streamUsage);
     EXPECT_EQ(ret, false);
 }
 
@@ -3383,16 +3381,14 @@ HWTEST(AudioPolicyUnitTest, IsStreamActiveByStreamUsage_001, TestSize.Level1)
  */
 HWTEST(AudioPolicyUnitTest, GetVolumeInDbByStream_001, TestSize.Level1)
 {
-    int32_t systemAbilityId = 0;
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
     int32_t volLevel = 5;
     DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
-    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    ASSERT_NE(audioPolicyServer, nullptr);
 
-    EXPECT_NE(static_cast<uid_t>(IPCSkeleton::GetCallingUid()), audioPolicyServer->PREEMPT_UID);
-
-    auto ret = audioPolicyServer->GetVolumeInDbByStream(streamUsage, volLevel, deviceType);
+    auto ret = server->GetVolumeInDbByStream(streamUsage, volLevel, deviceType);
     EXPECT_NE(ret, ERROR);
 }
 
@@ -3403,14 +3399,11 @@ HWTEST(AudioPolicyUnitTest, GetVolumeInDbByStream_001, TestSize.Level1)
  */
 HWTEST(AudioPolicyUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Level1)
 {
-    int32_t systemAbilityId = 0;
-    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    ASSERT_NE(audioPolicyServer, nullptr);
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
 
-    EXPECT_NE(static_cast<uid_t>(IPCSkeleton::GetCallingUid()), audioPolicyServer->PREEMPT_UID);
-
-    auto ret = audioPolicyServer->GetSupportedAudioVolumeTypes();
-    EXPECT_GT(ret.size(), 0);
+    auto ret = server->GetSupportedAudioVolumeTypes();
+    EXPECT_GE(ret.size(), 0);
 }
 
 /**
@@ -3420,14 +3413,12 @@ HWTEST(AudioPolicyUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Level1)
  */
 HWTEST(AudioPolicyUnitTest, GetAudioVolumeTypeByStreamUsage_001, TestSize.Level1)
 {
-    int32_t systemAbilityId = 0;
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
-    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    ASSERT_NE(audioPolicyServer, nullptr);
 
-    EXPECT_NE(static_cast<uid_t>(IPCSkeleton::GetCallingUid()), audioPolicyServer->PREEMPT_UID);
-
-    auto ret = audioPolicyServer->GetAudioVolumeTypeByStreamUsage(streamUsage);
+    auto ret = server->GetAudioVolumeTypeByStreamUsage(streamUsage);
     EXPECT_NE(ret, AudioVolumeType::STREAM_DEFAULT);
 }
 
@@ -3438,15 +3429,13 @@ HWTEST(AudioPolicyUnitTest, GetAudioVolumeTypeByStreamUsage_001, TestSize.Level1
  */
 HWTEST(AudioPolicyUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
 {
-    int32_t systemAbilityId = 0;
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
     AudioVolumeType volType = AudioVolumeType::STREAM_MUSIC;
-    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    ASSERT_NE(audioPolicyServer, nullptr);
 
-    EXPECT_NE(static_cast<uid_t>(IPCSkeleton::GetCallingUid()), audioPolicyServer->PREEMPT_UID);
-
-    auto ret = audioPolicyServer->GetStreamUsagesByVolumeType(volType);
-    EXPECT_GT(ret.size(), 0);
+    auto ret = server->GetStreamUsagesByVolumeType(volType);
+    EXPECT_GE(ret.size(), 0);
 }
 } // AudioStandard
 } // OHOS

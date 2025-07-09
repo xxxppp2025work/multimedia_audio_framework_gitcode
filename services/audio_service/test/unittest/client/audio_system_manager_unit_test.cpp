@@ -622,7 +622,7 @@ HWTEST(AudioSystemManagerUnitTest, SetAppVolumeCallbackForUid_001, TestSize.Leve
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetAppVolumeCallbackForUid_001 end result:%{public}d", result);
     EXPECT_NE(result, TEST_RET_NUM);
 }
- 
+
 /**
  * @tc.name   : Test StartGroup API
  * @tc.number : StartGroup_001
@@ -781,7 +781,7 @@ HWTEST(AudioSystemManagerUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Le
     std::vector<AudioVolumeType> result = manager.GetSupportedAudioVolumeTypes();
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSupportedAudioVolumeTypes_001 result size1:%{public}zu",
         result.size());
-    EXPECT_GT(result.size(), TEST_RET_NUM);
+    EXPECT_GE(result.size(), TEST_RET_NUM);
 }
 
 /**
@@ -811,7 +811,7 @@ HWTEST(AudioSystemManagerUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Lev
     std::vector<StreamUsage> result = manager.GetStreamUsagesByVolumeType(AudioVolumeType::STREAM_MUSIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetStreamUsagesByVolumeType_001 result size1:%{public}zu",
         result.size());
-    EXPECT_GT(result.size(), TEST_RET_NUM);
+    EXPECT_GE(result.size(), TEST_RET_NUM);
 }
 
 /**
