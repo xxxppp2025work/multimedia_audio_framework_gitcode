@@ -43,17 +43,17 @@ ani_status AniParamUtils::GetInt32(ani_env *env, ani_object arg, int32_t &value)
     CHECK_AND_RETURN_RET_LOG(isUndefined(env, arg) != ANI_TRUE, ANI_ERROR, "invalid property.");
 
     ani_class cls {};
-    static const std::string className = "Lstd/core/Int;";
+    static const std::string className = "std.core.Int";
     ani_status status = env->FindClass(className.c_str(), &cls);
     if (status != ANI_OK) {
-        AUDIO_ERR_LOG("Can't find Lstd/core/Int.");
+        AUDIO_ERR_LOG("Can't find std.core.Int.");
         return status;
     }
 
     ani_method method {};
     status = env->Class_FindMethod(cls, "unboxed", nullptr, &method);
     if (status != ANI_OK) {
-        AUDIO_ERR_LOG("Can't find method unboxed in Lstd/core/Int.");
+        AUDIO_ERR_LOG("Can't find method unboxed in std.core.Int.");
         return status;
     }
 
@@ -279,7 +279,7 @@ ani_status AniParamUtils::SetRendererInfo(ani_env *env,
         AUDIO_ERR_LOG("CreateAudioRendererInfoHandle fail");
         return status;
     }
-    
+
     ani_enum_item aniContent;
     status = AudioEnumAni::ToAniEnum(env, audioRendererInfo.contentType, aniContent);
     if (status != ANI_OK) {
@@ -287,7 +287,7 @@ ani_status AniParamUtils::SetRendererInfo(ani_env *env,
         return status;
     }
     SetValueEnum(env, cls, handle, "content", aniContent);
-    
+
     ani_enum_item aniUsage;
     status = AudioEnumAni::ToAniEnum(env, audioRendererInfo.streamUsage, aniUsage);
     if (status != ANI_OK) {
@@ -404,17 +404,17 @@ ani_status AniParamUtils::MakeAniArrayRetSetMethod(ani_env *env, size_t size,
     ani_object &aniArray, ani_method &setMethod)
 {
     ani_class clas {};
-    static const std::string className = "Lescompat/Array;";
+    static const std::string className = "escompat.Array";
     ani_status status = env->FindClass(className.c_str(), &clas);
     if (status != ANI_OK) {
-        AUDIO_ERR_LOG("Can't find Lstd/core/Int.");
+        AUDIO_ERR_LOG("Can't find escompat.Array.");
         return status;
     }
 
     ani_method method {};
-    status = env->Class_FindMethod(clas, "<ctor>", "I:V", &method);
+    status = env->Class_FindMethod(clas, "<ctor>", "i:", &method);
     if (status != ANI_OK) {
-        AUDIO_ERR_LOG("Can't find method <ctor> in Lescompat/Array.");
+        AUDIO_ERR_LOG("Can't find method <ctor> in escompat.Array.");
         return status;
     }
 
@@ -424,9 +424,9 @@ ani_status AniParamUtils::MakeAniArrayRetSetMethod(ani_env *env, size_t size,
         return status;
     }
 
-    status = env->Class_FindMethod(clas, "$_set", "ILstd/core/Object;:V", &setMethod);
+    status = env->Class_FindMethod(clas, "$_set", "iC{std.core.Object}:", &setMethod);
     if (status != ANI_OK) {
-        AUDIO_ERR_LOG("Can't find method set in Lescompat/Array.");
+        AUDIO_ERR_LOG("Can't find method set in escompat.Array.");
         return status;
     }
 
@@ -723,7 +723,7 @@ ani_status AniParamUtils::ToAniDouble(ani_env *env, const double &arg, ani_doubl
 
 ani_status AniParamUtils::ToAniDoubleObject(ani_env *env, double src, ani_object &aniObj)
 {
-    static const char *className = "Lstd/core/Double;";
+    static const char *className = "std.core.Double";
     ani_class cls {};
     ani_status status = env->FindClass(className, &cls);
     if (status != ANI_OK) {
@@ -732,7 +732,7 @@ ani_status AniParamUtils::ToAniDoubleObject(ani_env *env, double src, ani_object
     }
 
     ani_method ctor {};
-    status = env->Class_FindMethod(cls, "<ctor>", "D:V", &ctor);
+    status = env->Class_FindMethod(cls, "<ctor>", "d:", &ctor);
     if (status != ANI_OK) {
         AUDIO_ERR_LOG("Failed to find method: ctor");
         return status;
@@ -749,7 +749,7 @@ ani_status AniParamUtils::ToAniDoubleObject(ani_env *env, double src, ani_object
 
 ani_status AniParamUtils::ToAniBooleanObject(ani_env *env, bool src, ani_object &aniObj)
 {
-    static const char *className = "Lstd/core/Boolean;";
+    static const char *className = "std.core.Boolean";
     ani_class cls {};
     ani_status status = env->FindClass(className, &cls);
     if (status != ANI_OK) {
@@ -758,7 +758,7 @@ ani_status AniParamUtils::ToAniBooleanObject(ani_env *env, bool src, ani_object 
     }
 
     ani_method ctor {};
-    status = env->Class_FindMethod(cls, "<ctor>", "Z:V", &ctor);
+    status = env->Class_FindMethod(cls, "<ctor>", "z:", &ctor);
     if (status != ANI_OK) {
         AUDIO_ERR_LOG("Failed to find method: ctor");
         return status;
@@ -775,7 +775,7 @@ ani_status AniParamUtils::ToAniBooleanObject(ani_env *env, bool src, ani_object 
 
 ani_status AniParamUtils::ToAniIntObject(ani_env *env, int32_t src, ani_object &aniObj)
 {
-    static const char *className = "Lstd/core/Int;";
+    static const char *className = "std.core.Int";
     ani_class cls {};
     ani_status status = env->FindClass(className, &cls);
     if (status != ANI_OK) {
@@ -784,7 +784,7 @@ ani_status AniParamUtils::ToAniIntObject(ani_env *env, int32_t src, ani_object &
     }
 
     ani_method ctor {};
-    status = env->Class_FindMethod(cls, "<ctor>", "I:V", &ctor);
+    status = env->Class_FindMethod(cls, "<ctor>", "i:", &ctor);
     if (status != ANI_OK) {
         AUDIO_ERR_LOG("Failed to find method: ctor");
         return status;
@@ -800,7 +800,7 @@ ani_status AniParamUtils::ToAniIntObject(ani_env *env, int32_t src, ani_object &
 
 ani_status AniParamUtils::ToAniLongObject(ani_env *env, int64_t src, ani_object &aniObj)
 {
-    static const char *className = "Lescompat/BigInt;";
+    static const char *className = "escompat.BigInt";
     ani_class cls {};
     ani_status status = env->FindClass(className, &cls);
     if (status != ANI_OK) {
@@ -809,7 +809,7 @@ ani_status AniParamUtils::ToAniLongObject(ani_env *env, int64_t src, ani_object 
     }
 
     ani_method ctor {};
-    status = env->Class_FindMethod(cls, "<ctor>", "J:V", &ctor);
+    status = env->Class_FindMethod(cls, "<ctor>", "l:", &ctor);
     if (status != ANI_OK) {
         AUDIO_ERR_LOG("Failed to find method: ctor");
         return status;
@@ -897,7 +897,7 @@ void AniParamUtils::CreateAniErrorObject(ani_env *env, ani_object &errorObj, con
     const std::string &errMsg)
 {
     CHECK_AND_RETURN_LOG(env != nullptr, "Invalid env");
-    static const std::string className = "L@ohos/multimedia/audio/audio/AudioAniError;";
+    static const std::string className = "@ohos.multimedia.audio.audio.AudioAniError";
     ani_class cls;
     ani_status status = env->FindClass(className.c_str(), &cls);
     if (status != ANI_OK) {
@@ -906,7 +906,7 @@ void AniParamUtils::CreateAniErrorObject(ani_env *env, ani_object &errorObj, con
     }
 
     ani_method ctor;
-    if (ANI_OK != env->Class_FindMethod(cls, "<ctor>", "DLstd/core/String;:V", &ctor)) {
+    if (ANI_OK != env->Class_FindMethod(cls, "<ctor>", "dC{std.core.String}:", &ctor)) {
         AUDIO_ERR_LOG("Can't find <ctor> from class %{public}s", className.c_str());
         return;
     }
