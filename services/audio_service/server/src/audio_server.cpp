@@ -1725,7 +1725,8 @@ void AudioServer::SendCreateErrorInfo(const AudioProcessConfig &config, int32_t 
     bool isPlayBack = config.audioMode == AUDIO_MODE_PLAYBACK ? 1 : 0;
     bean->Add("IS_PLAYBACK", (isPlayBack ? 1 : 0));
     bean->Add("CLIENT_UID", config.appInfo.appUid);
-    bean->Add("STREAM_TYPE", isPlayBack ? config.rendererInfo.streamUsage : config.capturerInfo.sourceType);
+    bean->Add("STREAM_TYPE", static_cast<int32_t>(isPlayBack ? config.rendererInfo.streamUsage :
+        config.capturerInfo.sourceType));
     bean->Add("ERROR_CODE", errorCode);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
