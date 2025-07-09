@@ -314,5 +314,71 @@ int32_t AudioInterruptService::ClearAudioFocusBySessionID(const int32_t &session
 
     return SUCCESS;
 }
+
+int32_t AudioInterruptService::ForceVolumeKeyControlType(AudioStreamType volumeType, int32_t duration)
+{
+    CHECK_AND_RETURN_RET_LOG(duration >= -1, ERR_INVALID_PARAM, "invalid duration");
+    CHECK_AND_RETURN_RET_LOG(tm_ != nullptr, ERR_UNKNOWN, "tm_ is nullptr");
+    std::lock_guard<std::mutex> lock(mutex_);
+    needForceControlStreamType_ = (duration == -1 ? false : true);
+    forceControlStreamType_ = (duration == -1 ? STREAM_DEFAULT : volumeType);
+    tm_->SetTimer(duration);
+    return SUCCESS;
+}
+
+void AudioInterruptService::OnTimerExpired()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    needForceControlStreamType_ = false;
+    forceControlStreamType_ = STREAM_DEFAULT;
+}
+
+TimerManager::TimerManager(AudioInterruptService *service)
+{
+    service_ = service;
+}
+
+TimerManager::~TimerManager()
+{
+    DeactivateThread();
+}
+
+void TimerManager::DeactivateThread()
+{
+    if (running_.load()) {
+        running_.store(false);
+        cv_.notify_all();
+    }
+    if (timerThread_.joinable()) {
+        timerThread_.join();
+    }
+}
+
+void TimerManager::SetTimer(int32_t duration)
+{
+    DeactivateThread();
+    std::lock_guard<std::mutex> lock(mtx_);
+    if (duration == -1) {
+        return;
+    }
+    running_.store(true);
+    remaining_ = (duration > MAX_DURATION_TIME_S ? MAX_DURATION_TIME_S : duration);
+    timerThread_ = std::thread(&TimerManager::TimerThread, this);
+}
+
+void TimerManager::TimerThread()
+[
+    std::lock_guard<std::mutex> lock(mtx_);
+    if (cv_.wait_for(lock, std::chrono::seconds(remaining_),
+        [this] { return !running_.load(); })) {
+        return;
+    }
+    AUDIO_INFO_LOG("force volumekey control type timeout.");
+    running_store(false);
+    lock.unlock();
+
+    CHECK_AND_RETURN_LOG(service_ != nullptr, "service_ is nullptr");
+    service_->OnTimerExpired();
+]
 }
 } // namespace OHOS
