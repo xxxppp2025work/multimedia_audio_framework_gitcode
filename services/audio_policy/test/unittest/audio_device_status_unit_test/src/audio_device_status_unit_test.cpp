@@ -327,6 +327,11 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_010, TestSize.Level1)
     audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
     EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
 
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    desc.deviceCategory_ = CATEGORY_DEFAULT;
+    audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
+    EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+
     desc.deviceType_ = DEVICE_TYPE_INVALID;
     desc.deviceCategory_ = CATEGORY_DEFAULT;
     audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
@@ -1342,6 +1347,60 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_063, TestSize.Level1)
     info.supportedChannelLayout_.insert(SAMPLE_RATE_48000);
     audioDeviceStatus.AddAudioDevice(info, DEVICE_TYPE_SPEAKER);
     EXPECT_NE(audioDeviceStatus.audioConnectedDevice_.connectedDevices_.size(), 0);
+}
+
+/**
+* @tc.name : Test AudioDeviceStatus.
+* @tc.number: HandleLocalDeviceConnected_001
+* @tc.desc : Test HandleLocalDeviceConnected interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, HandleLocalDeviceConnected_001, TestSize.Level1)
+{
+    AudioDeviceDescriptor updatedDesc;
+    int32_t result;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    updatedDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+
+    result = audioDeviceStatus.HandleLocalDeviceConnected(updatedDesc);
+
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name : Test AudioDeviceStatus.
+* @tc.number: DeactivateNearlinkDevice_001
+* @tc.desc : Test DeactivateNearlinkDevice interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, DeactivateNearlinkDevice_001, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    desc.macAddress_ = "";
+    int32_t result;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    audioDeviceStatus.DeactivateNearlinkDevice(desc);
+    EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
+}
+
+/**
+* @tc.name : Test AudioDeviceStatus.
+* @tc.number: DeactivateNearlinkDevice_002
+* @tc.desc : Test DeactivateNearlinkDevice interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, DeactivateNearlinkDevice_002, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
+    desc.macAddress_ = "";
+    int32_t result;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    audioDeviceStatus.DeactivateNearlinkDevice(desc);
+    EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS
