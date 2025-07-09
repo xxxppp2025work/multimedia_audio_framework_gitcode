@@ -122,6 +122,7 @@ void AudioSessionManagerImpl::RegisterAudioSessionCallback(std::shared_ptr<uintp
         CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS,
             "Registering of AudioSessionDeactiveEvent Callback Failed");
     }
+
     std::shared_ptr<TaiheAudioSessionCallback> cb =
         std::static_pointer_cast<TaiheAudioSessionCallback>(taiheSessionManager->audioSessionCallbackTaihe_);
     CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");

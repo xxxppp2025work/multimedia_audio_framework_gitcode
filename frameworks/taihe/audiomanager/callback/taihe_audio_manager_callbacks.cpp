@@ -173,6 +173,10 @@ void TaiheAudioManagerCallback::RemoveRoutingManagerDeviceChangeCbRef(std::share
     std::lock_guard<std::mutex> lock(mutex_);
 
     for (auto it = routingManagerDeviceChangeCbList_.begin(); it != routingManagerDeviceChangeCbList_.end(); ++it) {
+        if ((*it).first == nullptr) {
+            AUDIO_ERR_LOG("RemoveRoutingManagerDeviceChangeCbRef: (*it).first or (*it).first->cb_ is null");
+            continue;
+        }
         bool isSameCallback = TaiheAudioManagerCallback::IsSameCallback(callback, (*it).first->cb_);
         if (isSameCallback) {
             AUDIO_INFO_LOG("RemoveRoutingManagerDeviceChangeCbRef: find js callback, erase it");
@@ -206,13 +210,14 @@ void TaiheAudioManagerCallback::OnDeviceChange(const OHOS::AudioStandard::Device
         }
     }
 
-    for (auto it = routingManagerDeviceChangeCbList_.begin(); it != routingManagerDeviceChangeCbList_.end(); it++) {
-        if (deviceChangeAction.flag == (*it).second) {
-            std::unique_ptr<AudioManagerJsCallback> cb = std::make_unique<AudioManagerJsCallback>();
-            cb->callback = (*it).first;
-            cb->callbackName = DEVICE_CHANGE_CALLBACK_NAME;
-            cb->deviceChangeAction = deviceChangeAction;
-            OnJsCallbackDeviceChange(cb);
+    for (auto routingManagerIt = routingManagerDeviceChangeCbList_.begin();
+        routingManagerIt != routingManagerDeviceChangeCbList_.end(); routingManagerIt++) {
+        if (deviceChangeAction.flag == (*routingManagerIt).second) {
+            std::unique_ptr<AudioManagerJsCallback> routingManagerCb = std::make_unique<AudioManagerJsCallback>();
+            routingManagerCb->callback = (*routingManagerIt).first;
+            routingManagerCb->callbackName = DEVICE_CHANGE_CALLBACK_NAME;
+            routingManagerCb->deviceChangeAction = deviceChangeAction;
+            OnJsCallbackDeviceChange(routingManagerCb);
         }
     }
     return;

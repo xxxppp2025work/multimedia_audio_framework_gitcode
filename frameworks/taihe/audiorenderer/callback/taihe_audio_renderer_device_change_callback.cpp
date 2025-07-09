@@ -36,6 +36,10 @@ void TaiheAudioRendererDeviceChangeCallback::AddCallbackReference(std::shared_pt
 {
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
+        if (*autoRef == nullptr) {
+            AUDIO_ERR_LOG("*autoRef is null");
+            continue;
+        }
         CHECK_AND_RETURN_LOG(!(TaiheParamUtils::IsSameRef(callback, (*autoRef)->cb_)), "callback already exits");
     }
 
@@ -66,18 +70,18 @@ void TaiheAudioRendererDeviceChangeCallback::RemoveCallbackReference(std::shared
         return;
     }
 
-    for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
-        if (*autoRef == nullptr) {
+    for (auto it = callbacks_.begin(); it != callbacks_.end(); ++it) {
+        if (*it == nullptr) {
             AUDIO_ERR_LOG("RemoveCallbackReference: nullptr element found in callbacks_");
             continue;
         }
-        if (TaiheParamUtils::IsSameRef(callback, ((*autoRef)->cb_))) {
+        if (TaiheParamUtils::IsSameRef(callback, ((*it)->cb_))) {
             isEquals = true;
         }
         if (isEquals == true) {
             AUDIO_INFO_LOG("found JS Callback, delete it!");
-            callbacks_.remove(*autoRef);
-            (*autoRef)->cb_ = nullptr;
+            callbacks_.remove(*it);
+            (*it)->cb_ = nullptr;
             return;
         }
     }

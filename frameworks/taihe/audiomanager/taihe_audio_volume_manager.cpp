@@ -286,9 +286,9 @@ void AudioVolumeManagerImpl::UnregisterCallback(std::shared_ptr<uintptr_t> &call
         audioVolMngrImpl->volumeKeyEventCallbackTaihe_.reset();
         audioVolMngrImpl->volumeKeyEventCallbackTaihe_ = nullptr;
     } else {
-        int32_t ret = audioVolMngrImpl->audioSystemMngr_->UnregisterVolumeKeyEventCallback(
+        int32_t retValue = audioVolMngrImpl->audioSystemMngr_->UnregisterVolumeKeyEventCallback(
             audioVolMngrImpl->cachedClientId_);
-        CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "Unset of VolumeKeyEventCallback failed");
+        CHECK_AND_RETURN_LOG(retValue == OHOS::AudioStandard::SUCCESS, "Unset of VolumeKeyEventCallback failed");
         audioVolMngrImpl->volumeKeyEventCallbackTaiheList_.clear();
         audioVolMngrImpl->volumeKeyEventCallbackTaihe_.reset();
         audioVolMngrImpl->volumeKeyEventCallbackTaihe_ = nullptr;
@@ -394,8 +394,13 @@ void AudioVolumeManagerImpl::OffAppVolumeChangeForUid(optional_view<callback<voi
 std::shared_ptr<TaiheAudioVolumeKeyEvent> AudioVolumeManagerImpl::GetVolumeEventTaiheCallback(
     std::shared_ptr<uintptr_t> callback, AudioVolumeManagerImpl *audioVolMngrImpl)
 {
+    CHECK_AND_RETURN_RET_LOG(audioVolMngrImpl != nullptr, nullptr, "audioVolMngrImpl is nullptr");
     std::shared_ptr<TaiheAudioVolumeKeyEvent> cb = nullptr;
     for (auto &iter : audioVolMngrImpl->volumeKeyEventCallbackTaiheList_) {
+        if (iter == nullptr) {
+            AUDIO_ERR_LOG("iter is null");
+            continue;
+        }
         if (iter->ContainSameJsCallback(callback)) {
             cb = iter;
         }

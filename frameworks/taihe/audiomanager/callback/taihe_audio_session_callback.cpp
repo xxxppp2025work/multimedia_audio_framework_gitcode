@@ -88,6 +88,7 @@ void TaiheAudioSessionCallback::OnJsCallbackAudioSession(std::unique_ptr<AudioSe
         AUDIO_ERR_LOG("TaiheAudioSessionCallback: OnJsCallbackAudioSession: jsCb.get() is null");
         return;
     }
+    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     AudioSessionJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();

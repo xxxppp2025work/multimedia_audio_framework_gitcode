@@ -38,11 +38,11 @@ void TaiheAudioCapturerInfoChangeCallback::SaveCallbackReference(const std::stri
     std::shared_ptr<uintptr_t> &callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-
     // create function that will operate while save callback reference success.
     std::function<void(std::shared_ptr<AutoRef> generatedCallback)> successed =
         [this](std::shared_ptr<AutoRef> generatedCallback) {
             callbackPtr_ = generatedCallback;
+            CHECK_AND_RETURN_LOG(callbackPtr_ != nullptr, "callbackPtr_ is null");
             callback_ = callbackPtr_->cb_;
         };
     TaiheAudioCapturerCallbackInner::SaveCallbackReferenceInner(callbackName, callback, successed);

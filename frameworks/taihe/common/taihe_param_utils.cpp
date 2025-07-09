@@ -174,6 +174,7 @@ int32_t TaiheParamUtils::GetCapturerInfo(OHOS::AudioStandard::AudioCapturerInfo 
 int32_t TaiheParamUtils::GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOptions *opts,
     AudioCapturerOptions const &options)
 {
+    CHECK_AND_RETURN_RET_LOG(opts != nullptr, AUDIO_ERR, "opts is nullptr");
     int32_t status = AUDIO_OK;
     status = GetStreamInfo(opts->streamInfo, options);
     CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "ParseStreamInfo failed");
@@ -189,7 +190,8 @@ int32_t TaiheParamUtils::GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOp
 int32_t TaiheParamUtils::GetRendererOptions(OHOS::AudioStandard::AudioRendererOptions *opts,
     AudioRendererOptions const &options)
 {
-    int32_t status = 0;
+    CHECK_AND_RETURN_RET_LOG(opts != nullptr, AUDIO_ERR, "opts is nullptr");
+    int32_t status = AUDIO_OK;
     status = GetRendererInfo(opts->rendererInfo, options.rendererInfo);
     CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "Parse RendererInfo failed");
 
@@ -204,6 +206,7 @@ int32_t TaiheParamUtils::GetRendererOptions(OHOS::AudioStandard::AudioRendererOp
 int32_t TaiheParamUtils::GetSpatialDeviceState(OHOS::AudioStandard::AudioSpatialDeviceState *spatialDeviceState,
     AudioSpatialDeviceState in)
 {
+    CHECK_AND_RETURN_RET_LOG(spatialDeviceState != nullptr, AUDIO_ERR, "spatialDeviceState is nullptr");
     spatialDeviceState->address = std::string(in.address);
     spatialDeviceState->isSpatializationSupported = in.isSpatializationSupported;
     spatialDeviceState->isHeadTrackingSupported = in.isHeadTrackingSupported;
@@ -338,6 +341,7 @@ int32_t TaiheParamUtils::GetAudioSessionStrategy(OHOS::AudioStandard::AudioSessi
 
 int32_t TaiheParamUtils::UniqueEffectPropertyData(OHOS::AudioStandard::AudioEffectPropertyArrayV3 &propertyArray)
 {
+    CHECK_AND_RETURN_RET_LOG(!propertyArray.property.empty(), 0, "propertyArray.property is empty");
     int32_t propSize = static_cast<int32_t>(propertyArray.property.size());
     std::set<std::string> classSet;
     for (int32_t i = 0; i < propSize; i++) {
@@ -753,8 +757,12 @@ taihe::array<uint8_t> TaiheParamUtils::ToTaiheArrayBuffer(uint8_t *src, size_t s
 
 bool TaiheParamUtils::IsSameRef(std::shared_ptr<uintptr_t> src, std::shared_ptr<uintptr_t> dst)
 {
+    CHECK_AND_RETURN_RET_LOG(src != nullptr, false, "src is null");
+    CHECK_AND_RETURN_RET_LOG(dst != nullptr, false, "dst is null");
     std::shared_ptr<taihe::callback<void()>> srcPtr = std::reinterpret_pointer_cast<taihe::callback<void()>>(src);
     std::shared_ptr<taihe::callback<void()>> dstPtr = std::reinterpret_pointer_cast<taihe::callback<void()>>(dst);
+    CHECK_AND_RETURN_RET_LOG(srcPtr != nullptr, false, "srcPtr is null");
+    CHECK_AND_RETURN_RET_LOG(dstPtr != nullptr, false, "dstPtr is null");
     return *srcPtr == *dstPtr;
 }
 } // namespace ANI::Audio

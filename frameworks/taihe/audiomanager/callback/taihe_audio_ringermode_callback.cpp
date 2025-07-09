@@ -91,8 +91,7 @@ void TaiheAudioRingerModeCallback::SaveCallbackReference(
     if (callbackName == RINGERMODE_CALLBACK_NAME) {
         ringerModeCallback_ = cb;
     }  else {
-        AUDIO_ERR_LOG("TaiheAudioRingerModeCallback: Unknown callback type: %{public}s",
-            callbackName.c_str());
+        AUDIO_ERR_LOG("TaiheAudioRingerModeCallback: Unknown callback type: %{public}s", callbackName.c_str());
     }
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
     CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");

@@ -52,6 +52,10 @@ static void GetCapturerTaiheCallback(std::shared_ptr<uintptr_t> &callback, const
         return;
     }
     for (auto &iter:audioCapturerCallbacks) {
+        if (iter == nullptr) {
+            AUDIO_ERR_LOG("iter is null");
+            continue;
+        }
         if (!iter->CheckIfTargetCallbackName(cbName)) {
             continue;
         }
@@ -89,6 +93,8 @@ static void UnregisterAudioCapturerCallbackTemplate(std::shared_ptr<uintptr_t> &
     std::function<int32_t(std::shared_ptr<T> callbackPtr, std::shared_ptr<uintptr_t> callback)> removeFunction,
     AudioCapturerImpl *taiheCapturer)
 {
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer != nullptr,
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM), "taiheCapturer is nullptr");
     if (callback != nullptr) {
         std::shared_ptr<T> cb = nullptr;
         GetCapturerTaiheCallback(callback, cbName, taiheCapturer->audioCapturerCallbacks_, &cb);
@@ -99,11 +105,12 @@ static void UnregisterAudioCapturerCallbackTemplate(std::shared_ptr<uintptr_t> &
 
     auto isPresent = [&callback, &cbName, &removeFunction]
         (std::shared_ptr<TaiheAudioCapturerCallbackInner> &iter) {
+            CHECK_AND_RETURN_RET_LOG(iter != nullptr, false, "iter is null");
             if (!iter->CheckIfTargetCallbackName(cbName)) {
                 return false;
             }
-            std::shared_ptr<T> cb = std::static_pointer_cast<T>(iter);
-            UnregisterAudioCapturerSingletonCallbackTemplate(callback, cbName, cb, removeFunction);
+            std::shared_ptr<T> cbInner = std::static_pointer_cast<T>(iter);
+            UnregisterAudioCapturerSingletonCallbackTemplate(callback, cbName, cbInner, removeFunction);
             return true;
         };
     taiheCapturer->audioCapturerCallbacks_.remove_if(isPresent);
@@ -144,6 +151,7 @@ std::shared_ptr<AudioCapturerImpl> AudioCapturerImpl::CreateAudioCapturerNativeO
         AUDIO_ERR_LOG("No memory");
         return nullptr;
     }
+    CHECK_AND_RETURN_RET_LOG(sCapturerOptions_ != nullptr, nullptr, "sCapturerOptions_ is nullptr");
     audioCapturerImpl->sourceType_ = sCapturerOptions_->capturerInfo.sourceType;
     OHOS::AudioStandard::AudioCapturerOptions capturerOptions = *sCapturerOptions_;
     /* AudioCapturer not support other capturerFlags, only support flag 0 */

@@ -32,6 +32,10 @@
 #include "audio_manager_log.h"
 
 namespace ANI::Audio {
+constexpr double VOLUME_DEFAULT_DOUBLE = 0.0;
+constexpr double INPUT_MAX_DEFAULT_DOUBLE = 0.0;
+constexpr double OUTPUT_MAX_DEFAULT_DOUBLE = 0.0;
+
 AudioVolumeGroupManagerImpl::AudioVolumeGroupManagerImpl()
 {
 }
@@ -500,7 +504,7 @@ void AudioVolumeGroupManagerImpl::AdjustSystemVolumeByStepSync(AudioVolumeType v
 double AudioVolumeGroupManagerImpl::GetSystemVolumeInDbSync(AudioVolumeType volumeType, int32_t volumeLevel,
     DeviceType device)
 {
-    double volumeInDb = 0.0;
+    double volumeInDb = VOLUME_DEFAULT_DOUBLE;
     int32_t volType = volumeType.get_value();
     if (!TaiheAudioEnum::IsLegalInputArgumentVolType(volType)) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
@@ -534,11 +538,15 @@ double AudioVolumeGroupManagerImpl::GetSystemVolumeInDbSync(AudioVolumeType volu
 double AudioVolumeGroupManagerImpl::GetMaxAmplitudeForInputDeviceSync(AudioDeviceDescriptor inputDevice)
 {
     bool inputBArgTransFlag = false;
+    double inputMaxAmplitude = INPUT_MAX_DEFAULT_DOUBLE;
+
     std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> inputDeviceDescriptor =
         std::make_shared<OHOS::AudioStandard::AudioDeviceDescriptor>();
-
     TaiheParamUtils::GetAudioDeviceDescriptor(inputDeviceDescriptor, inputBArgTransFlag, inputDevice);
-    double inputMaxAmplitude = 0.0;
+    if (inputDeviceDescriptor == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "inputDeviceDescriptor is nullptr");
+        return inputMaxAmplitude;
+    }
     if (audioGroupMngr_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return inputMaxAmplitude;
@@ -561,11 +569,15 @@ double AudioVolumeGroupManagerImpl::GetMaxAmplitudeForInputDeviceSync(AudioDevic
 double AudioVolumeGroupManagerImpl::GetMaxAmplitudeForOutputDeviceSync(AudioDeviceDescriptor inputDevice)
 {
     bool outputBArgTransFlag = false;
+    double outputMaxAmplitude = OUTPUT_MAX_DEFAULT_DOUBLE;
+
     std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> outputDeviceDescriptor =
         std::make_shared<OHOS::AudioStandard::AudioDeviceDescriptor>();
-
     TaiheParamUtils::GetAudioDeviceDescriptor(outputDeviceDescriptor, outputBArgTransFlag, inputDevice);
-    double outputMaxAmplitude = 0.0;
+    if (outputDeviceDescriptor == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "outputDeviceDescriptor is nullptr");
+        return outputMaxAmplitude;
+    }
     if (audioGroupMngr_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return outputMaxAmplitude;

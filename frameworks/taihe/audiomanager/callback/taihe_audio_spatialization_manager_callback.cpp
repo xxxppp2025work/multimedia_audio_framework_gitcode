@@ -50,25 +50,21 @@ void TaiheAudioSpatializationEnabledChangeCallback::SaveSpatializationEnabledCha
             CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: spatialization manager has same callback");
         }
 
-        CHECK_AND_RETURN_LOG(callback != nullptr,
-            "TaiheAudioSpatializationEnabledChangeCallback: creating reference for callback fail");
-
+        CHECK_AND_RETURN_LOG(callback != nullptr, "creating reference for callback fail");
         std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
-        CHECK_AND_RETURN_LOG(cb != nullptr, "TaiheAudioSpatializationEnabledChangeCallback: creating callback failed");
+        CHECK_AND_RETURN_LOG(cb != nullptr, "creating callback failed");
         spatializationEnabledChangeCbList_.push_back(cb);
     } else if (!callbackName.compare(SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
-        for (auto it = spatializationEnabledChangeCbForAnyDeviceList_.begin();
-            it != spatializationEnabledChangeCbForAnyDeviceList_.end(); ++it) {
-            bool isSameCallback = TaiheAudioManagerCallback::IsSameCallback(callback, (*it)->cb_);
-            CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: spatialization manager has same callback");
+        for (auto anyDeviceIt = spatializationEnabledChangeCbForAnyDeviceList_.begin();
+            anyDeviceIt != spatializationEnabledChangeCbForAnyDeviceList_.end(); ++anyDeviceIt) {
+            bool isSame = TaiheAudioManagerCallback::IsSameCallback(callback, (*anyDeviceIt)->cb_);
+            CHECK_AND_RETURN_LOG(!isSame, "SaveCallbackReference: spatialization manager has same callback");
         }
 
-        CHECK_AND_RETURN_LOG(callback != nullptr,
-            "TaiheAudioSpatializationEnabledChangeCallback: creating reference for callback fail");
-
-        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
-        CHECK_AND_RETURN_LOG(cb != nullptr, "TaiheAudioSpatializationEnabledChangeCallback: creating callback failed");
-        spatializationEnabledChangeCbForAnyDeviceList_.push_back(cb);
+        CHECK_AND_RETURN_LOG(callback != nullptr, "creating reference for callback fail");
+        std::shared_ptr<AutoRef> anyDeviceCb = std::make_shared<AutoRef>(callback);
+        CHECK_AND_RETURN_LOG(anyDeviceCb != nullptr, "creating callback failed");
+        spatializationEnabledChangeCbForAnyDeviceList_.push_back(anyDeviceCb);
     }
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
     CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
@@ -90,12 +86,12 @@ void TaiheAudioSpatializationEnabledChangeCallback::RemoveSpatializationEnabledC
             }
         }
     } else if (!callbackName.compare(SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
-        for (auto it = spatializationEnabledChangeCbForAnyDeviceList_.begin();
-            it != spatializationEnabledChangeCbForAnyDeviceList_.end(); ++it) {
-            bool isSameCallback = TaiheAudioManagerCallback::IsSameCallback(callback, (*it)->cb_);
-            if (isSameCallback) {
+        for (auto anyDeviceIt = spatializationEnabledChangeCbForAnyDeviceList_.begin();
+            anyDeviceIt != spatializationEnabledChangeCbForAnyDeviceList_.end(); ++anyDeviceIt) {
+            bool isSame = TaiheAudioManagerCallback::IsSameCallback(callback, (*anyDeviceIt)->cb_);
+            if (isSame) {
                 AUDIO_INFO_LOG("RemoveSpatializationEnabledChangeCallbackReference: find js callback, erase it");
-                spatializationEnabledChangeCbForAnyDeviceList_.erase(it);
+                spatializationEnabledChangeCbForAnyDeviceList_.erase(anyDeviceIt);
                 return;
             }
         }
@@ -156,18 +152,17 @@ void TaiheAudioSpatializationEnabledChangeCallback::OnSpatializationEnabledChang
         onSpatializationEnabledChangeFlag_ = true;
         OnJsCallbackSpatializationEnabled(cb);
     }
-    for (auto it = spatializationEnabledChangeCbForAnyDeviceList_.begin();
-        it != spatializationEnabledChangeCbForAnyDeviceList_.end(); it++) {
-        std::unique_ptr<AudioSpatializationEnabledJsCallback> cb =
+    for (auto anyDeviceIt = spatializationEnabledChangeCbForAnyDeviceList_.begin();
+        anyDeviceIt != spatializationEnabledChangeCbForAnyDeviceList_.end(); anyDeviceIt++) {
+        std::unique_ptr<AudioSpatializationEnabledJsCallback> anyDeviceCb =
             std::make_unique<AudioSpatializationEnabledJsCallback>();
-        CHECK_AND_RETURN_LOG(cb != nullptr, "No memory!!");
-        cb->callback = (*it);
-        cb->deviceDescriptor = deviceDescriptor;
-        cb->enabled = enabled;
+        CHECK_AND_RETURN_LOG(anyDeviceCb != nullptr, "No memory!!");
+        anyDeviceCb->callback = (*anyDeviceIt);
+        anyDeviceCb->deviceDescriptor = deviceDescriptor;
+        anyDeviceCb->enabled = enabled;
         onSpatializationEnabledChangeFlag_ = false;
-        OnJsCallbackSpatializationEnabled(cb);
+        OnJsCallbackSpatializationEnabled(anyDeviceCb);
     }
-
     return;
 }
 
@@ -364,28 +359,24 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::SaveHeadTrackingEnabledChangeC
             CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: spatialization manager has same callback");
         }
 
-        CHECK_AND_RETURN_LOG(callback != nullptr,
-            "TaiheAudioHeadTrackingEnabledChangeCallback: creating reference for callback fail");
-
+        CHECK_AND_RETURN_LOG(callback != nullptr, "creating reference for callback fail");
         std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
-        CHECK_AND_RETURN_LOG(cb != nullptr, "TaiheAudioHeadTrackingEnabledChangeCallback: creating callback failed");
+        CHECK_AND_RETURN_LOG(cb != nullptr, "creating callback failed");
 
         headTrackingEnabledChangeCbList_.push_back(cb);
     } else if (!callbackName.compare(HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
-        for (auto it = headTrackingEnabledChangeCbForAnyDeviceList_.begin();
-            it != headTrackingEnabledChangeCbForAnyDeviceList_.end(); ++it) {
-            bool isSameCallback = TaiheAudioManagerCallback::IsSameCallback(callback, (*it)->cb_);
-            CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: spatialization manager has same callback");
+        for (auto anyDeviceIt = headTrackingEnabledChangeCbForAnyDeviceList_.begin();
+            anyDeviceIt != headTrackingEnabledChangeCbForAnyDeviceList_.end(); ++anyDeviceIt) {
+            bool isSame = TaiheAudioManagerCallback::IsSameCallback(callback, (*anyDeviceIt)->cb_);
+            CHECK_AND_RETURN_LOG(!isSame, "SaveCallbackReference: spatialization manager has same callback");
         }
 
-        CHECK_AND_RETURN_LOG(callback != nullptr,
-            "TaiheAudioHeadTrackingEnabledChangeCallback: creating reference for callback fail");
-
-        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
-        CHECK_AND_RETURN_LOG(cb != nullptr, "TaiheAudioHeadTrackingEnabledChangeCallback: creating callback failed");
-
-        headTrackingEnabledChangeCbForAnyDeviceList_.push_back(cb);
+        CHECK_AND_RETURN_LOG(callback != nullptr, "creating reference for callback fail");
+        std::shared_ptr<AutoRef> anyDeviceCb = std::make_shared<AutoRef>(callback);
+        CHECK_AND_RETURN_LOG(anyDeviceCb != nullptr, "creating callback failed");
+        headTrackingEnabledChangeCbForAnyDeviceList_.push_back(anyDeviceCb);
     }
+
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
     CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
     mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
@@ -405,12 +396,12 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::RemoveHeadTrackingEnabledChang
             }
         }
     } else if (!callbackName.compare(HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
-        for (auto it = headTrackingEnabledChangeCbForAnyDeviceList_.begin();
-            it != headTrackingEnabledChangeCbForAnyDeviceList_.end(); ++it) {
-            bool isSameCallback = TaiheAudioManagerCallback::IsSameCallback(callback, (*it)->cb_);
-            if (isSameCallback) {
+        for (auto anyDeviceIt = headTrackingEnabledChangeCbForAnyDeviceList_.begin();
+            anyDeviceIt != headTrackingEnabledChangeCbForAnyDeviceList_.end(); ++anyDeviceIt) {
+            bool isSame = TaiheAudioManagerCallback::IsSameCallback(callback, (*anyDeviceIt)->cb_);
+            if (isSame) {
                 AUDIO_INFO_LOG("RemoveHeadTrackingEnabledChangeCallbackReference: find js callback, erase it");
-                headTrackingEnabledChangeCbForAnyDeviceList_.erase(it);
+                headTrackingEnabledChangeCbForAnyDeviceList_.erase(anyDeviceIt);
                 return;
             }
         }
@@ -472,16 +463,16 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::OnHeadTrackingEnabledChangeFor
         onHeadTrackingEnabledChangeFlag_ = true;
         OnJsCallbackHeadTrackingEnabled(cb);
     }
-    for (auto it = headTrackingEnabledChangeCbForAnyDeviceList_.begin();
-        it != headTrackingEnabledChangeCbForAnyDeviceList_.end(); it++) {
-        std::unique_ptr<AudioHeadTrackingEnabledJsCallback> cb =
+    for (auto anyDeviceIt = headTrackingEnabledChangeCbForAnyDeviceList_.begin();
+        anyDeviceIt != headTrackingEnabledChangeCbForAnyDeviceList_.end(); anyDeviceIt++) {
+        std::unique_ptr<AudioHeadTrackingEnabledJsCallback> anyDeviceCb =
             std::make_unique<AudioHeadTrackingEnabledJsCallback>();
-        CHECK_AND_RETURN_LOG(cb != nullptr, "No memory!!");
-        cb->callback = (*it);
-        cb->deviceDescriptor = deviceDescriptor;
-        cb->enabled = enabled;
+        CHECK_AND_RETURN_LOG(anyDeviceCb != nullptr, "No memory!!");
+        anyDeviceCb->callback = (*anyDeviceIt);
+        anyDeviceCb->deviceDescriptor = deviceDescriptor;
+        anyDeviceCb->enabled = enabled;
         onHeadTrackingEnabledChangeFlag_ = false;
-        OnJsCallbackHeadTrackingEnabled(cb);
+        OnJsCallbackHeadTrackingEnabled(anyDeviceCb);
     }
 
     return;

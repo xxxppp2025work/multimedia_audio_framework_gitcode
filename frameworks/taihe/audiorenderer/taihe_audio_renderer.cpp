@@ -88,10 +88,8 @@ void AudioRendererImpl::CreateRendererFailed()
 std::shared_ptr<AudioRendererImpl> AudioRendererImpl::CreateAudioRendererNativeObject()
 {
     std::shared_ptr<AudioRendererImpl> audioRendererImpl = std::make_shared<AudioRendererImpl>();
-    if (audioRendererImpl == nullptr) {
-        AUDIO_ERR_LOG("No memory");
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRendererImpl != nullptr, nullptr, "No memory");
+    CHECK_AND_RETURN_RET_LOG(sRendererOptions_ != nullptr, nullptr, "sRendererOptions_ is nullptr");
     audioRendererImpl->contentType_ = sRendererOptions_->rendererInfo.contentType;
     audioRendererImpl->streamUsage_ = sRendererOptions_->rendererInfo.streamUsage;
 

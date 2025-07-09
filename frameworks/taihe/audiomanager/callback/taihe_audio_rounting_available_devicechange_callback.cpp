@@ -42,6 +42,10 @@ void TaiheAudioRountingAvailableDeviceChangeCallback::SaveRoutingAvailbleDeviceC
     std::lock_guard<std::mutex> lock(mutex_);
 
     for (auto it = availableDeviceChangeCbList_.begin(); it != availableDeviceChangeCbList_.end(); ++it) {
+        if ((*it).first == nullptr) {
+            AUDIO_ERR_LOG("SaveRoutingAvailbleDeviceChangeCbRef: (*it).first is null");
+            continue;
+        }
         bool isSameCallback = TaiheAudioManagerCallback::IsSameCallback(callback, (*it).first->cb_);
         CHECK_AND_RETURN_LOG(!isSameCallback,
             "SaveRoutingAvailbleDeviceChangeCbRef: audio manager has same callback, nothing to do");
@@ -64,6 +68,10 @@ void TaiheAudioRountingAvailableDeviceChangeCallback::RemoveRoutingAvailbleDevic
     std::lock_guard<std::mutex> lock(mutex_);
 
     for (auto it = availableDeviceChangeCbList_.begin(); it != availableDeviceChangeCbList_.end(); ++it) {
+        if ((*it).first == nullptr) {
+            AUDIO_ERR_LOG("RemoveRoutingAvailbleDeviceChangeCbRef: (*it).first is null");
+            continue;
+        }
         bool isSameCallback = TaiheAudioManagerCallback::IsSameCallback(callback, (*it).first->cb_);
         if (isSameCallback) {
             AUDIO_INFO_LOG("RemoveRoutingAvailbleDeviceChangeCbRef: find js callback, erase it");

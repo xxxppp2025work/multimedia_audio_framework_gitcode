@@ -182,6 +182,10 @@ void TaiheAudioManagerAppVolumeChangeCallback::RemoveAudioVolumeChangeForUidCbRe
 {
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto iter = appVolumeChangeForUidList_.begin(); iter != appVolumeChangeForUidList_.end();) {
+        if (iter->first == nullptr) {
+            AUDIO_ERR_LOG("RemoveAudioVolumeChangeForUidCbRef: iter->first is null");
+            continue;
+        }
         if (IsSameCallback(callback, iter->first->cb_)) {
             AUDIO_INFO_LOG("RemoveAudioVolumeChangeForUidCbRef: find js callback, erase it");
             appVolumeChangeForUidList_.erase(iter++);
@@ -196,6 +200,10 @@ void TaiheAudioManagerAppVolumeChangeCallback::RemoveSelfAudioVolumeChangeCbRef(
 {
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto iter = selfAppVolumeChangeList_.begin(); iter != selfAppVolumeChangeList_.end();) {
+        if (*iter == nullptr) {
+            AUDIO_ERR_LOG("RemoveSelfAudioVolumeChangeCbRef: *iter is null");
+            continue;
+        }
         if (IsSameCallback(callback, (*iter)->cb_)) {
             AUDIO_INFO_LOG("RemoveSelfAudioVolumeChangeCbRef: find js callback, erase it");
             selfAppVolumeChangeList_.erase(iter++);

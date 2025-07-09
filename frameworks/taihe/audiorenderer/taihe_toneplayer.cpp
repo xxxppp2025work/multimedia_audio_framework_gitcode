@@ -46,6 +46,11 @@ TonePlayer TonePlayerImpl::CreateTonePlayerWrapper(
     if (rendererInfo->rendererFlags != 0) {
         rendererInfo->rendererFlags = 0;
     }
+
+    if (rendererInfo.get() == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "rendererInfo.get() is invalid");
+        return make_holder<TonePlayerImpl, TonePlayer>();
+    }
     auto tonePlayer = OHOS::AudioStandard::TonePlayer::Create(cacheDir, *(rendererInfo.get()));
     if (tonePlayer  == nullptr) {
         AUDIO_ERR_LOG("Toneplayer Create failed");
