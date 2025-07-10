@@ -2535,6 +2535,10 @@ int32_t AudioPolicyServer::GetStreamInFocus(int32_t zoneID, int32_t &streamType)
     } else {
         streamType = static_cast<int32_t>(STREAM_MUSIC);
     }
+    CHECK_AND_RETURN_RET(audioVolumeManager_.IsNeedForceControlVolumeType() &&
+        streamType != static_cast<int32_t>(STREAM_VOICE_CALL), SUCCESS);
+    streamType = static_cast<int32_t>(audioVolumeManager_.GetForceControlVolumeType());
+    AUDIO_INFO_LOG("force volume type, type:%{public}d", streamType);
     return SUCCESS;
 }
 
@@ -4843,6 +4847,16 @@ int32_t AudioPolicyServer::IsCapturerFocusAvailable(const AudioCapturerInfo &cap
     CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
     ret = interruptService_->IsCapturerFocusAvailable(zoneId, capturerInfo);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::ForceVolumeKeyControlType(int32_t volumeType, int32_t duration, int32_t &ret)
+{
+    CHECK_AND_RETURN_RET_LOG(VerifyPermission(MODIFY_AUDIO_SETTINGS_PERMISSION), ERR_PERMISSION_DENIED,
+        "MODIFY_AUDIO_SETTINGS_PERMISSION permission check failed");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "no system permission");
+    ret = audioVolumeManager_.ForceVolumeKeyControlType(static_cast<AudioVolumeType>(volumeType), duration);
     return SUCCESS;
 }
 
