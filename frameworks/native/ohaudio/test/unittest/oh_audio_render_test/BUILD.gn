@@ -37,6 +37,9 @@ config("audio_renderer_config") {
     "-Werror",
     "-fno-access-control",
   ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-std=c++20" ]
 }
 
 config("audio_ohaudio_config") {
