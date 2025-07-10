@@ -2395,6 +2395,7 @@ int32_t AudioPolicyServer::SetAudioClientInfoMgrCallback(const sptr<IRemoteObjec
     sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
 
     if (callback != nullptr) {
+        coreService_->SetAudioClientInfoMgrCallback(callback);
         return audioStateManager_.SetAudioClientInfoMgrCallback(callback);
     } else {
         AUDIO_ERR_LOG("Client info manager callback is null");

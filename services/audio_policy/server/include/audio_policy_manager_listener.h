@@ -31,6 +31,7 @@ public:
     void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction);
     bool OnQueryClientType(const std::string &bundleName, uint32_t uid);
     bool OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid);
+    bool OnSelectDeviceForClient(const std::string &bundleName, int32_t uid, int32_t pid);
     bool OnQueryAllowedPlayback(int32_t uid, int32_t pid);
     void OnBackgroundMute(const int32_t uid);
     bool OnQueryBundleNameIsInList(const std::string &bundleName, const std::string &listType);

@@ -256,6 +256,7 @@ private:
     void UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
         const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices);
     void ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName);
+    int32_t SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
 
 private:
     static std::string GetEncryptAddr(const std::string &addr);
@@ -489,6 +490,7 @@ private:
     std::condition_variable offloadCloseCondition_[OFFLOAD_TYPE_NUM];
     std::mutex offloadCloseMutex_;
     std::mutex offloadReOpenMutex_;
+    sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_;
 
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,

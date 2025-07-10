@@ -62,6 +62,15 @@ bool AudioPolicyManagerListenerCallback::OnCheckClientInfo(const std::string &bu
     return ret;
 }
 
+bool AudioPolicyManagerListenerCallback::OnSelectDeviceForClient(const std::string &bundleName, int32_t uid,
+    int32_t pid)
+{
+    CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, false, "listener_ is nullptr");
+    bool ret = false;
+    listener_->OnSelectDeviceForClient(bundleName, uid, pid, ret);
+    return ret;
+}
+
 bool AudioPolicyManagerListenerCallback::OnQueryAllowedPlayback(int32_t uid, int32_t pid)
 {
     CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, false, "listener_ is nullptr");

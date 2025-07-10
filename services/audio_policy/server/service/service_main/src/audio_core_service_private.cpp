@@ -29,6 +29,7 @@
 #include "audio_spatialization_service.h"
 #include "audio_collaborative_service.h"
 #include "ipc_skeleton.h"
+#include "audio_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1785,6 +1786,12 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
     return true;
 }
 
+int32_t AudioCoreService::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
+{
+    audioClientInfoMgrCallback_ = callback;
+    return 0;
+}
+
 int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning)
 {
@@ -1795,6 +1802,28 @@ int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, co
     if ((audioSessionService_ != nullptr) && (!audioSessionService_->IsStreamAllowedToSetDevice(sessionID))) {
         AUDIO_ERR_LOG("current stream is contained in a session which had set default output device");
         return ERR_NOT_SUPPORTED;
+    }
+
+    vector<shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
+    for (auto &changeInfo : rendererChangeInfos) {
+        CHECK_AND_CONTINUE(changeInfo->sessionId == static_cast<int32_t>(sessionID) &&
+            changeInfo->rendererInfo.streamUsage != STREAM_USAGE_VOICE_MESSAGE &&
+            audioClientInfoMgrCallback_ != nullptr);
+
+        bool result = false;
+        audioClientInfoMgrCallback_->OnSelectDeviceForClient(
+            AudioBundleManager::GetBundleNameFromUid(changeInfo->clientUID),
+            changeInfo->clientUID, changeInfo->clientPid, result);
+        CHECK_AND_CONTINUE(result);
+
+        sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+        audioRendererFilter->rendererInfo.streamUsage = changeInfo->rendererInfo.streamUsage;
+        vector<shared_ptr<AudioDeviceDescriptor>> deviceDescriptorVector = audioDeviceManager_.GetDevicesByFilter(
+            deviceType, DEVICE_ROLE_NONE, "", "", CONNECTED);
+        SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
+
+        return SUCCESS;
     }
 
     AUDIO_INFO_LOG("[ADeviceEvent] device %{public}d for %{public}s stream %{public}u", deviceType,
