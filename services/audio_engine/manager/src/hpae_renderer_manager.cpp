@@ -585,6 +585,12 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
                 TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
             }
             sceneClusterMap_[sceneType]->SetConnectedFlag(false);
+            for (const auto& it : sinkInputNodeMap_) {
+                int32_t ret = sceneClusterMap_[sceneType]->AudioRendererStop(it.second->GetNodeInfo());
+                if (ret != SUCCESS) {
+                    AUDIO_WARNING_LOG("update audio effect when stopping failed, ret = %{public}d", ret);
+                }
+            }
         }
 
         if (sceneTypeToProcessClusterCountMap_[sceneType] == 0) {
@@ -602,10 +608,13 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
 void HpaeRendererManager::DisConnectInputCluster(uint32_t sessionId, HpaeProcessorType sceneType)
 {
     sceneClusterMap_[sceneType]->DisConnect(sinkInputNodeMap_[sessionId]);
-    int32_t ret = sceneClusterMap_[sceneType]->AudioRendererStop(sinkInputNodeMap_[sessionId]->GetNodeInfo());
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("update audio effect when stopping failed, ret = %{public}d", ret);
+    if (sceneClusterMap_[sceneType]->GetPreOutNum() > 0) {
+        int32_t ret = sceneClusterMap_[sceneType]->AudioRendererStop(sinkInputNodeMap_[sessionId]->GetNodeInfo());
+        if (ret != SUCCESS) {
+            AUDIO_WARNING_LOG("update audio effect when stopping failed, ret = %{public}d", ret);
+        }
     }
+    
 }
 
 void HpaeRendererManager::SetSessionState(uint32_t sessionId, HpaeSessionState renderState)
