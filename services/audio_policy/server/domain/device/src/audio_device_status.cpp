@@ -1161,8 +1161,8 @@ void AudioDeviceStatus::CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc)
 void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
     AUDIO_WARNING_LOG("[ADeviceEvent] bt [%{public}s] type[%{public}d] command: %{public}d category[%{public}d] " \
-        "connectState[%{public}d] isEnable[%{public}d]", GetEncryptAddr(desc.macAddress_).c_str(),
-        desc.deviceType_, command, desc.deviceCategory_, desc.connectState_, desc.isEnable_);
+        "connectState[%{public}d] isEnable[%{public}d] deviceUsage", GetEncryptAddr(desc.macAddress_).c_str(),
+        desc.deviceType_, command, desc.deviceCategory_, desc.connectState_, desc.isEnable_, desc.deviceUsage_);
     std::string portNeedClose = "";
     uint32_t oldPaIndex = OPEN_PORT_FAILURE;
     if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
@@ -1189,11 +1189,11 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
         portNeedClose = BLUETOOTH_SPEAKER;
         oldPaIndex = GetPaIndexByPortName(portNeedClose);
     }
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
-    audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command);
+    reason = audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command);
     CheckForA2dpSuspend(desc);
 
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     OnPreferredStateUpdated(desc, command, reason);
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnDeviceInfoUpdated", reason);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnDeviceInfoUpdated");

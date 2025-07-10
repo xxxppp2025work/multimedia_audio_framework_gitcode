@@ -201,6 +201,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     isScoRealConnected_ = deviceDescriptor.isScoRealConnected_;
     isEnable_ = deviceDescriptor.isEnable_;
     exceptionFlag_ = deviceDescriptor.exceptionFlag_;
+    deviceUsage_ = deviceDescriptor.deviceUsage_;
     // DeviceInfo
     isLowLatencyDevice_ = deviceDescriptor.isLowLatencyDevice_;
     a2dpOffloadFlag_ = deviceDescriptor.a2dpOffloadFlag_;
@@ -234,6 +235,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     isScoRealConnected_ = deviceDescriptor->isScoRealConnected_;
     isEnable_ = deviceDescriptor->isEnable_;
     exceptionFlag_ = deviceDescriptor->exceptionFlag_;
+    deviceUsage_ = deviceDescriptor.deviceUsage_;
     // DeviceInfo
     isLowLatencyDevice_ = deviceDescriptor->isLowLatencyDevice_;
     a2dpOffloadFlag_ = deviceDescriptor->a2dpOffloadFlag_;
@@ -317,7 +319,8 @@ bool AudioDeviceDescriptor::MarshallingInner(Parcel &parcel) const
         parcel.WriteBool(spatializationSupported_) &&
         parcel.WriteBool(hasPair_) &&
         parcel.WriteInt32(routerType_) &&
-        parcel.WriteInt32(isVrSupported_);
+        parcel.WriteInt32(isVrSupported_) &&
+        parcel.WriteInt32(static_cast<int32_t>(deviceUsage_));
 }
 
 void AudioDeviceDescriptor::FixApiCompatibility(int apiVersion, DeviceRole deviceRole,
@@ -376,7 +379,8 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteBool(spatializationSupported_) &&
         parcel.WriteBool(hasPair_) &&
         parcel.WriteInt32(routerType_) &&
-        parcel.WriteInt32(isVrSupported_);
+        parcel.WriteInt32(isVrSupported_) &&
+        parcel.WriteInt32(static_cast<int32_t>(deviceUsage_));
 }
 
 void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
@@ -409,6 +413,7 @@ void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
     hasPair_ = parcel.ReadBool();
     routerType_ = static_cast<RouterType>(parcel.ReadInt32());
     isVrSupported_ = parcel.ReadInt32();
+    deviceUsage_ = static_cast<DeviceUsage>(parcel.ReadInt32());
 }
 
 AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
