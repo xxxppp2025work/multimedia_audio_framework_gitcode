@@ -302,6 +302,12 @@ int32_t AudioRenderSink::RestoreRenderSink(void)
 
 void AudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value)
 {
+    AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
+    CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
+    int32_t ret = audioRender_->SetExtraParams(audioRender_, value.c_str());
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("set parameter fail, error code: %{public}d", ret);
+    }
 }
 
 std::string AudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
@@ -1138,7 +1144,7 @@ std::string AudioRenderSink::GetDPDeviceInfo(const std::string &condition)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "init attr fail");
 
     ret = InitRender();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "init render fail");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && audioRender_ != nullptr, "", "init render fail");
 
     struct AudioSampleAttributes attrInfo = {};
     ret = audioRender_->GetSampleAttributes(audioRender_, &attrInfo);

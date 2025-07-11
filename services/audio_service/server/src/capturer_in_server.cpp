@@ -583,7 +583,14 @@ int32_t CapturerInServer::StartInner()
         CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     }
 
+    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_START) == SUCCESS) {
+        AUDIO_ERR_LOG("ReloadCaptureSession success!");
+    }
+
     status_ = I_STATUS_STARTING;
+    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        PlaybackCapturerManager::GetInstance()->InitAllDupBuffer(innerCapId_);
+    }
     int32_t ret = stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
     resetTime_ = true;
@@ -609,6 +616,10 @@ int32_t CapturerInServer::Pause()
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_PAUSED);
     }
+    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_PAUSE) == SUCCESS) {
+        AUDIO_INFO_LOG("ReloadCaptureSession success!");
+    }
+
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
@@ -682,6 +693,9 @@ int32_t CapturerInServer::Stop()
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_STOPPED);
     }
+    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_STOP) == SUCCESS) {
+        AUDIO_INFO_LOG("ReloadCaptureSession success!");
+    }
 
     int ret = stream_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
@@ -690,11 +704,11 @@ int32_t CapturerInServer::Stop()
     return SUCCESS;
 }
 
-int32_t CapturerInServer::Release()
+int32_t CapturerInServer::Release(bool isSwitchStream)
 {
     AudioXCollie audioXCollie("CapturerInServer::Release", RELEASE_TIMEOUT_IN_SEC,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    AudioService::GetInstance()->RemoveCapturer(streamIndex_);
+    AudioService::GetInstance()->RemoveCapturer(streamIndex_, isSwitchStream);
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ == I_STATUS_RELEASED) {
         AUDIO_INFO_LOG("Already released");
@@ -718,6 +732,9 @@ int32_t CapturerInServer::Release()
     if (status_ != I_STATUS_STOPPING &&
         status_ != I_STATUS_STOPPED) {
         HandleOperationStopped(CAPTURER_STAGE_STOP_BY_RELEASE);
+    }
+    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_RELEASE) == SUCCESS) {
+        AUDIO_INFO_LOG("ReloadCaptureSession success!");
     }
     status_ = I_STATUS_RELEASED;
 

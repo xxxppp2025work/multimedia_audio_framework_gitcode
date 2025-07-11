@@ -84,51 +84,87 @@ int32_t AudioSessionManager::UnsetAudioSessionCallback(
 int32_t AudioSessionManager::SetAudioSessionScene(const AudioSessionScene audioSessionScene)
 {
     AUDIO_INFO_LOG("Set audio session scene: %{public}d", static_cast<int32_t>(audioSessionScene));
-    return SUCCESS;
+    return AudioPolicyManager::GetInstance().SetAudioSessionScene(audioSessionScene);
 }
 
-int32_t AudioSessionManager::SetAudioSessionStateChangedCallback(
+int32_t AudioSessionManager::SetAudioSessionStateChangeCallback(
     const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback)
 {
-    return SUCCESS;
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_RET_LOG(stateChangedCallback != nullptr, ERR_INVALID_PARAM, "stateChangedCallback is null");
+
+    int32_t result = AudioPolicyManager::GetInstance().SetAudioSessionStateChangeCallback(stateChangedCallback);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        "SetAudioSessionStateChangeCallback result:%{public}d", result);
+    return result;
 }
 
-int32_t AudioSessionManager::UnsetAudioSessionStateChangedCallback()
+int32_t AudioSessionManager::UnsetAudioSessionStateChangeCallback()
 {
-    return SUCCESS;
+    AUDIO_INFO_LOG("Unset all audio session state callbacks");
+    int32_t result = AudioPolicyManager::GetInstance().UnsetAudioSessionStateChangeCallback();
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        "UnsetAudioSessionStateChangeCallback(all) result:%{public}d", result);
+    return result;
 }
 
-int32_t AudioSessionManager::UnsetAudioSessionStateChangedCallback(
+int32_t AudioSessionManager::UnsetAudioSessionStateChangeCallback(
     const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback)
 {
-    return SUCCESS;
+    AUDIO_INFO_LOG("Unset one audio session state callback");
+    CHECK_AND_RETURN_RET_LOG(stateChangedCallback != nullptr, ERR_INVALID_PARAM, "stateChangedCallback is null");
+
+    int32_t result = AudioPolicyManager::GetInstance().UnsetAudioSessionStateChangeCallback(stateChangedCallback);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        "UnsetAudioSessionStateChangeCallback result:%{public}d", result);
+    return result;
 }
 
-int32_t AudioSessionManager::GetCurrentOutputDevices(AudioDeviceDescriptor &deviceInfo) const
+int32_t AudioSessionManager::GetDefaultOutputDevice(DeviceType &deviceType)
 {
-    return SUCCESS;
+    AUDIO_INFO_LOG("GetDefaultOutputDevice");
+    return AudioPolicyManager::GetInstance().GetDefaultOutputDevice(deviceType);
 }
 
 int32_t AudioSessionManager::SetDefaultOutputDevice(DeviceType deviceType)
 {
-    return SUCCESS;
+    AUDIO_INFO_LOG("SetDefaultOutputDevice with deviceType: %{public}d", static_cast<int32_t>(deviceType));
+    int32_t ret = AudioPolicyManager::GetInstance().SetDefaultOutputDevice(deviceType);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDefaultOutputDevice failed ret:%{public}d", ret);
+    return ret;
 }
 
-int32_t AudioSessionManager::SetAudioSessionCurrentDeviceChangedCallback(
+int32_t AudioSessionManager::SetAudioSessionCurrentDeviceChangeCallback(
     const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback)
 {
-    return SUCCESS;
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_RET_LOG(deviceChangedCallback != nullptr, ERR_INVALID_PARAM, "deviceChangedCallback is nullptr");
+
+    int32_t ret = AudioPolicyManager::GetInstance().SetAudioSessionCurrentDeviceChangeCallback(deviceChangedCallback);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "SetAudioSessionCurrentDeviceChangeCallback ret:%{public}d", ret);
+    return ret;
 }
 
-int32_t AudioSessionManager::UnsetAudioSessionCurrentDeviceChangedCallback()
+int32_t AudioSessionManager::UnsetAudioSessionCurrentDeviceChangeCallback()
 {
-    return SUCCESS;
+    AUDIO_INFO_LOG("Unset all audio session device callbacks");
+    int32_t ret = AudioPolicyManager::GetInstance().UnsetAudioSessionCurrentDeviceChangeCallback();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "UnsetAudioSessionCurrentDeviceChangeCallback(all) ret:%{public}d", ret);
+    return ret;
 }
 
-int32_t AudioSessionManager::UnsetAudioSessionCurrentDeviceChangedCallback(
+int32_t AudioSessionManager::UnsetAudioSessionCurrentDeviceChangeCallback(
     const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback)
 {
-    return SUCCESS;
+    AUDIO_INFO_LOG("Unset one audio session device callback");
+    CHECK_AND_RETURN_RET_LOG(deviceChangedCallback != nullptr, ERR_INVALID_PARAM, "deviceChangedCallback is nullptr");
+
+    int32_t ret = AudioPolicyManager::GetInstance().UnsetAudioSessionCurrentDeviceChangeCallback(deviceChangedCallback);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "UnsetAudioSessionCurrentDeviceChangeCallback ret:%{public}d", ret);
+    return ret;
 }
+
 } // namespace AudioStandard
 } // namespace OHOS

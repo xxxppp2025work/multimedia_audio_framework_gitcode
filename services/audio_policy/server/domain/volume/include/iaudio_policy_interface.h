@@ -25,6 +25,7 @@
 #include "volume_data_maintainer.h"
 #include "audio_manager_base.h"
 #include "audio_pipe_info.h"
+#include "istandard_audio_service.h"
 
 #include <memory>
 #include <string>
@@ -97,6 +98,8 @@ public:
     virtual AudioIOHandle OpenAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex) = 0;
 
     virtual AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex) = 0;
+    
+    virtual AudioIOHandle ReloadAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex) = 0;
 
     virtual int32_t CloseAudioPort(AudioIOHandle ioHandle, uint32_t paIndex = HDI_INVALID_ID) = 0;
 

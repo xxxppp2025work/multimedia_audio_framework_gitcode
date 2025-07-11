@@ -67,7 +67,8 @@ void AudioServiceCommonUnitTest::TearDown(void)
  */
 HWTEST(AudioServiceCommonUnitTest, ProcessConfigTest_001, TestSize.Level1)
 {
-    AudioPlaybackCaptureConfig config = {{{STREAM_USAGE_MUSIC}, FilterMode::INCLUDE, {0}, FilterMode::INCLUDE}, false};
+    CaptureFilterOptions filterOptions = {{STREAM_USAGE_MUSIC}, FilterMode::INCLUDE, {0}, FilterMode::INCLUDE};
+    AudioPlaybackCaptureConfig config = {filterOptions, false};
     std::string dumpStr = ProcessConfig::DumpInnerCapConfig(config);
     EXPECT_NE(dumpStr, "");
 }
@@ -282,6 +283,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_006, TestSize.Level1)
     RingBufferWrapper ringbufferWrapper;
     ret = g_oHAudioBuffer->ohAudioBufferBase_.GetBufferByFrame(posInFrame, spanSizeInFrame, ringbufferWrapper);
     EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(true, ringbufferWrapper.IsLegal());
 
     posInFrame = 3000 + 1;
     ret = g_oHAudioBuffer->ohAudioBufferBase_.GetBufferByFrame(posInFrame, spanSizeInFrame, ringbufferWrapper);
@@ -484,6 +486,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_002, TestSize.Level1)
     RingBufferWrapper buffer;
     ret = ohAudioBufferBase->GetAllReadableBuffer(buffer);
     EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(true, buffer.IsLegal());
     EXPECT_EQ(buffer.dataLength, totalSizeInBytes - byteSizePerFrame);
     EXPECT_NE(buffer.basicBufferDescs[0].buffer, nullptr);
     EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, totalSizeInBytes - byteSizePerFrame);
@@ -861,7 +864,8 @@ HWTEST(AudioServiceCommonUnitTest, AudioRingCache_008, TestSize.Level1)
 */
 HWTEST(AudioServiceCommonUnitTest, DumpInnerCapConfig_001, TestSize.Level1)
 {
-    AudioPlaybackCaptureConfig config = {{{STREAM_USAGE_MUSIC}, FilterMode::EXCLUDE, {0}, FilterMode::EXCLUDE}, false};
+    CaptureFilterOptions filterOptions = {{STREAM_USAGE_MUSIC}, FilterMode::EXCLUDE, {0}, FilterMode::EXCLUDE};
+    AudioPlaybackCaptureConfig config = {filterOptions, false};
     std::string dumpStr = ProcessConfig::DumpInnerCapConfig(config);
     EXPECT_NE(dumpStr, "");
 }
@@ -873,8 +877,9 @@ HWTEST(AudioServiceCommonUnitTest, DumpInnerCapConfig_001, TestSize.Level1)
 */
 HWTEST(AudioServiceCommonUnitTest, DumpInnerCapConfig_002, TestSize.Level1)
 {
-    AudioPlaybackCaptureConfig config = {{{STREAM_USAGE_MUSIC},
-        FilterMode::MAX_FILTER_MODE, {0}, FilterMode::MAX_FILTER_MODE}, false};
+    CaptureFilterOptions filterOptions = {{STREAM_USAGE_MUSIC},
+        FilterMode::MAX_FILTER_MODE, {0}, FilterMode::MAX_FILTER_MODE};
+    AudioPlaybackCaptureConfig config = {filterOptions, false};
     std::string dumpStr = ProcessConfig::DumpInnerCapConfig(config);
     EXPECT_NE(dumpStr, "");
 }
@@ -892,7 +897,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_001, TestSize.Le
     for (int i = 0; i < 31; i++) {
         config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_MEDIA);
     }
-    int ret = ProcessConfig::ReadInnerCapConfigFromParcel(config, parcel);
+    int ret = config.Marshalling(parcel);
     EXPECT_EQ(ret, SUCCESS);
 }
 /**
@@ -909,7 +914,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_002, TestSize.Le
     for (int i = 0; i < 29; i++) {
         config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT);
     }
-    int ret = ProcessConfig::ReadInnerCapConfigFromParcel(config, parcel);
+    int ret = config.Marshalling(parcel);
     EXPECT_EQ(ret, SUCCESS);
 }
 /**
@@ -927,7 +932,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_003, TestSize.Le
     config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION);
     config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_VOICE_RINGTONE);
 
-    int ret = ProcessConfig::ReadInnerCapConfigFromParcel(config, parcel);
+    int ret = config.Marshalling(parcel);
     EXPECT_EQ(ret, SUCCESS);
 }
 /**
@@ -946,7 +951,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_004, TestSize.Le
     config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_ENFORCED_TONE);
     config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_INVALID);
 
-    int ret = ProcessConfig::ReadInnerCapConfigFromParcel(config, parcel);
+    int ret = config.Marshalling(parcel);
     EXPECT_EQ(ret, SUCCESS);
 }
 /**
@@ -968,7 +973,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_005, TestSize.Le
     config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_ALARM);
 
     int ret = 0;
-    ret = ProcessConfig::ReadInnerCapConfigFromParcel(config, parcel);
+    ret = config.Marshalling(parcel);
     EXPECT_EQ(ret, SUCCESS);
 }
 

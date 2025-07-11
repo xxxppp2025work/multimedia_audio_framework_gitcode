@@ -20,6 +20,7 @@
 #include "audio_stream_collector.h"
 #include "audio_stream_info.h"
 #include "audio_definition_adapter_info.h"
+#include "audio_policy_utils.h"
 #include <algorithm>
 
 namespace OHOS {
@@ -34,6 +35,17 @@ static std::map<int, AudioPipeType> flagPipeTypeMap_ = {
     {AUDIO_OUTPUT_FLAG_MULTICHANNEL, PIPE_TYPE_MULTICHANNEL},
     {AUDIO_OUTPUT_FLAG_DIRECT, PIPE_TYPE_DIRECT_OUT},
 };
+
+static bool IsRemoteOffloadNeedRecreate(std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe)
+{
+    CHECK_AND_RETURN_RET(newPipe != nullptr && oldPipe != nullptr, false);
+    CHECK_AND_RETURN_RET(newPipe->moduleInfo_.className == "remote_offload" &&
+        oldPipe->moduleInfo_.className == "remote_offload", false);
+    return (newPipe->moduleInfo_.format != oldPipe->moduleInfo_.format) ||
+        (newPipe->moduleInfo_.rate != oldPipe->moduleInfo_.rate) ||
+        (newPipe->moduleInfo_.channels != oldPipe->moduleInfo_.channels) ||
+        (newPipe->moduleInfo_.bufferSize != oldPipe->moduleInfo_.bufferSize);
+}
 
 AudioPipeSelector::AudioPipeSelector() : configManager_(AudioPolicyConfigManager::GetInstance())
 {
@@ -67,6 +79,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     streamDesc->streamAction_ = AUDIO_STREAM_ACTION_NEW;
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
     configManager_.GetStreamPropInfo(streamDesc, streamPropInfo);
+    UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
     std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = streamPropInfo->pipeInfo_.lock();
     if (pipeInfoPtr == nullptr) {
         AUDIO_ERR_LOG("Pipe info is null");
@@ -99,6 +112,24 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     AUDIO_INFO_LOG("[PipeFetchInfo] use new Pipe %{public}s for stream %{public}u",
         info.ToString().c_str(), streamDesc->sessionId_);
     return selectedPipeInfoList;
+}
+
+void AudioPipeSelector::UpdataDeviceStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo)
+{
+    if (streamDesc->newDeviceDescs_.empty() || streamPropInfo == nullptr || streamDesc->newDeviceDescs_.front() ==
+        nullptr) {
+        AUDIO_WARNING_LOG("new device desc is empty!");
+        return;
+    }
+    std::shared_ptr<AudioDeviceDescriptor> temp = streamDesc->newDeviceDescs_.front();
+    DeviceStreamInfo streamInfo;
+    streamInfo.format = streamPropInfo->format_;
+    streamInfo.samplingRate = {static_cast<AudioSamplingRate>(streamPropInfo->sampleRate_)};
+    streamInfo.SetChannels({streamPropInfo->channels_});
+    temp->audioStreamInfo_ = {streamInfo};
+    std::string info = streamInfo.Serialize();
+    AUDIO_INFO_LOG("DeviceStreamInfo:%{public}s", info.c_str());
 }
 
 std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipesAndExecute(
@@ -272,8 +303,9 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
         AudioStreamCollector::GetAudioStreamCollector().GetConcurrencyMap();
     ConcurrencyAction action = ruleMap[std::make_pair(GetPipeType(stream->routeFlag_, stream->audioMode_),
         GetPipeType(cmpStream->routeFlag_, cmpStream->audioMode_))];
+
+    AUDIO_INFO_LOG("Action: %{public}u  %{public}u -- %{public}u", action, stream->sessionId_, cmpStream->sessionId_);
     uint32_t newFlag;
-    AUDIO_INFO_LOG("Action: %{public}u", action);
     switch (action) {
         case PLAY_BOTH:
             stream->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
@@ -312,6 +344,7 @@ std::string AudioPipeSelector::GetAdapterNameByStreamDesc(std::shared_ptr<AudioS
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, name, "streamDesc is nullptr");
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
     configManager_.GetStreamPropInfo(streamDesc, streamPropInfo);
+    CHECK_AND_RETURN_RET_LOG(streamPropInfo != nullptr, "", "StreamProp Info is null");
 
     std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = streamPropInfo->pipeInfo_.lock();
     if (pipeInfoPtr == nullptr) {
@@ -328,9 +361,41 @@ std::string AudioPipeSelector::GetAdapterNameByStreamDesc(std::shared_ptr<AudioS
     return name;
 }
 
+static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipeInfo> pipeInfoPtr,
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, std::shared_ptr<PipeStreamPropInfo> streamPropInfo)
+{
+    if (pipeInfoPtr->name_ == "multichannel_output") {
+        info.moduleInfo_.className = "multichannel";
+        info.moduleInfo_.fileName = "mch_dump_file";
+        info.moduleInfo_.fixedLatency = "1"; // for fix max request
+        info.moduleInfo_.bufferSize =
+            std::to_string(((streamPropInfo->bufferSize_ / std::stoul(info.moduleInfo_.channels)) * STEREO));
+        AUDIO_INFO_LOG("Buffer size: %{public}s", info.moduleInfo_.bufferSize.c_str());
+    } else if (pipeInfoPtr->name_ == "offload_output") {
+        info.moduleInfo_.className = "offload";
+        info.moduleInfo_.offloadEnable = "1";
+        info.moduleInfo_.fixedLatency = "1";
+        info.moduleInfo_.fileName = "offload_dump_file";
+    } else if (pipeInfoPtr->name_ == "dp_multichannel_output") {
+        info.moduleInfo_.className = "dp_multichannel";
+        info.moduleInfo_.fileName = "mch_dump_file";
+        info.moduleInfo_.fixedLatency = "1";
+        info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
+    } else if (pipeInfoPtr->name_ == "offload_distributed_output") {
+        info.moduleInfo_.className = "remote_offload";
+        info.moduleInfo_.offloadEnable = "1";
+        info.moduleInfo_.fixedLatency = "1";
+        info.moduleInfo_.fileName = "remote_offload_dump_file";
+        info.moduleInfo_.name =
+            AudioPolicyUtils::GetInstance().GetRemoteModuleName(streamDesc->newDeviceDescs_[0]->networkId_,
+            AudioPolicyUtils::GetInstance().GetDeviceRole(streamDesc->newDeviceDescs_[0]->deviceType_)) + "_offload";
+    }
+}
+
 void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info)
 {
+    CHECK_AND_RETURN_LOG(streamPropInfo != nullptr, "streamPropInfo is nullptr");
     std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = streamPropInfo->pipeInfo_.lock();
     if (pipeInfoPtr == nullptr) {
         AUDIO_ERR_LOG("Adapter info is null");
@@ -357,24 +422,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.moduleInfo_.OpenMicSpeaker = configManager_.GetUpdateRouteSupport() ? "1" : "0";
 
     AUDIO_INFO_LOG("Pipe name: %{public}s", pipeInfoPtr->name_.c_str());
-    if (pipeInfoPtr->name_ == "multichannel_output") {
-        info.moduleInfo_.className = "multichannel";
-        info.moduleInfo_.fileName = "mch_dump_file";
-        info.moduleInfo_.fixedLatency = "1"; // for fix max request
-        info.moduleInfo_.bufferSize =
-            std::to_string(((streamPropInfo->bufferSize_ / std::stoul(info.moduleInfo_.channels)) * STEREO));
-        AUDIO_INFO_LOG("Buffer size: %{public}s", info.moduleInfo_.bufferSize.c_str());
-    } else if (pipeInfoPtr->name_ == "offload_output") {
-        info.moduleInfo_.className = "offload";
-        info.moduleInfo_.offloadEnable = "1";
-        info.moduleInfo_.fixedLatency = "1";
-        info.moduleInfo_.fileName = "offload_dump_file";
-    } else if (pipeInfoPtr->name_ == "dp_multichannel_output") {
-        info.moduleInfo_.className = "dp_multichannel";
-        info.moduleInfo_.fileName = "mch_dump_file";
-        info.moduleInfo_.fixedLatency = "1";
-        info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
-    }
+    FillSpecialPipeInfo(info, pipeInfoPtr, streamDesc, streamPropInfo);
 
     info.moduleInfo_.deviceType = std::to_string(streamDesc->newDeviceDescs_[0]->deviceType_);
     info.moduleInfo_.networkId = streamDesc->newDeviceDescs_[0]->networkId_;
@@ -391,6 +439,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
 AudioStreamAction AudioPipeSelector::JudgeStreamAction(
     std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe)
 {
+    CHECK_AND_RETURN_RET(!IsRemoteOffloadNeedRecreate(newPipe, oldPipe), AUDIO_STREAM_ACTION_RECREATE);
     if (newPipe->adapterName_ == oldPipe->adapterName_ && newPipe->routeFlag_ == oldPipe->routeFlag_) {
         return AUDIO_STREAM_ACTION_DEFAULT;
     }

@@ -23,6 +23,7 @@ ohos_unittest("audio_capturer_unit_test") {
     "../../../include",
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../audiostream/include",
+    "../../../../../../services/audio_policy/server/include",
   ]
 
   cflags = [
@@ -36,9 +37,11 @@ ohos_unittest("audio_capturer_unit_test") {
   cflags_cc += [ "-fno-access-control" ]
 
   external_deps = [
+    "ipc:ipc_core",
     "c_utils:utils",
     "hilog:libhilog",
     "pulseaudio:pulse",
+    "eventhandler:libeventhandler",
   ]
 
   sources = [

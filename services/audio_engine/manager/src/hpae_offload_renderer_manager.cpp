@@ -395,30 +395,41 @@ void HpaeOffloadRendererManager::HandleMsg()
     hpaeNoLockQueue_.HandleRequests();
 }
 
-int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo)
+int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload)
 {
+    if (IsInit()) {
+        AUDIO_INFO_LOG("deinit offload renderer first.");
+        DeInit();
+    }
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
-    auto request = [this, sinkInfo]() {
+    auto request = [this, sinkInfo, isReload]() {
+        if (sinkOutputNode_ != nullptr && sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING) {
+            DisConnectInputSession();
+        }
         sinkInfo_ = sinkInfo;
-        InitSinkInner();
+        InitSinkInner(isReload);
+
+        if (sinkOutputNode_ != nullptr && sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING) {
+            ConnectInputSession();
+        }
     };
     SendRequest(request, true);
     hpaeSignalProcessThread_->ActivateThread(shared_from_this());
     return SUCCESS;
 }
 
-int32_t HpaeOffloadRendererManager::Init()
+int32_t HpaeOffloadRendererManager::Init(bool isReload)
 {
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
-    auto request = [this] {
-        InitSinkInner();
+    auto request = [this, isReload] {
+        InitSinkInner(isReload);
     };
     SendRequest(request, true);
     hpaeSignalProcessThread_->ActivateThread(shared_from_this());
     return SUCCESS;
 }
 
-void HpaeOffloadRendererManager::InitSinkInner()
+void HpaeOffloadRendererManager::InitSinkInner(bool isReload)
 {
     AUDIO_INFO_LOG("HpaeOffloadRendererManager::init");
     HpaeNodeInfo nodeInfo;
@@ -452,7 +463,7 @@ void HpaeOffloadRendererManager::InitSinkInner()
     attr.filePath = sinkInfo_.filePath.c_str();
     int32_t ret = sinkOutputNode_->RenderSinkInit(attr);
     isInit_.store(true);
-    TriggerCallback(INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
+    TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
     AUDIO_INFO_LOG("HpaeOffloadRendererManager::inited");
 }
 
@@ -479,9 +490,13 @@ int32_t HpaeOffloadRendererManager::DeInit(bool isMoveDefault)
         AUDIO_INFO_LOG("move all sink to default sink");
         MoveAllStreamToNewSink(sinkName, ids, MOVE_ALL);
     }
-    sinkOutputNode_->RenderSinkStop();
-    sinkOutputNode_->RenderSinkDeInit();
-    sinkOutputNode_->ResetAll();
+    if (sinkOutputNode_ != nullptr) {
+        sinkOutputNode_->RenderSinkStop();
+        sinkOutputNode_->RenderSinkDeInit();
+        sinkOutputNode_->ResetAll();
+        sinkOutputNode_ = nullptr;
+    }
+    
     isInit_.store(false);
     return SUCCESS;
 }
@@ -663,6 +678,7 @@ void HpaeOffloadRendererManager::OnRewindAndFlush(uint64_t rewindTime)
 
 void HpaeOffloadRendererManager::OnNotifyQueue()
 {
+    CHECK_AND_RETURN_LOG(hpaeSignalProcessThread_, "hpaeSignalProcessThread_ offloadrenderer is nullptr");
     hpaeSignalProcessThread_->Notify();
 }
 

@@ -30,14 +30,14 @@ void AudioDeviceCommonUnitTest::TearDown(void) {}
 /**
 * @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_001
-* @tc.desc  : Test GetHasDpFlag interface.
+* @tc.desc  : Test AudioDeviceCommon interface.
 */
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_001, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.audioPolicyServerHandler_ = nullptr;
     AudioDeviceDescriptor deviceDescriptor;
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
     EXPECT_NE(0, audioDeviceCommon.spatialDeviceMap_.size());
 
     DeviceType deviceType = DEVICE_TYPE_NONE;
@@ -125,7 +125,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_003, TestSize.Level1)
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.audioPolicyServerHandler_ = nullptr;
     AudioDeviceDescriptor deviceDescriptor;
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
 
     DeviceType deviceType = DEVICE_TYPE_NONE;
     audioDeviceCommon.OnPreferredInputDeviceUpdated(deviceType, "");
@@ -152,7 +152,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_004, TestSize.Level1)
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.audioPolicyServerHandler_ = nullptr;
     AudioDeviceDescriptor deviceDescriptor;
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
 
     DeviceType deviceType = DEVICE_TYPE_NONE;
     audioDeviceCommon.OnPreferredInputDeviceUpdated(deviceType, "");
@@ -179,7 +179,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_005, TestSize.Level1)
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.audioPolicyServerHandler_ = nullptr;
     AudioDeviceDescriptor deviceDescriptor;
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
 
     DeviceType deviceType = DEVICE_TYPE_NONE;
     audioDeviceCommon.OnPreferredInputDeviceUpdated(deviceType, "");
@@ -206,7 +206,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_006, TestSize.Level1)
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.audioPolicyServerHandler_ = nullptr;
     AudioDeviceDescriptor deviceDescriptor;
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
 
     DeviceType deviceType = DEVICE_TYPE_NONE;
     audioDeviceCommon.OnPreferredInputDeviceUpdated(deviceType, "");
@@ -429,7 +429,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_028, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
     audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
     audioDeviceCommon.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, audioDeviceDescriptorSptrVector);
-    EXPECT_EQ(false, audioDeviceCommon.hasDpDevice_);
 }
 
 /**
@@ -448,7 +447,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_029, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
     audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
     audioDeviceCommon.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, audioDeviceDescriptorSptrVector);
-    EXPECT_EQ(false, audioDeviceCommon.hasDpDevice_);
+    EXPECT_EQ(true, audioDeviceCommon.audioDeviceManager_.NoDp());
 }
 
 /**
@@ -1022,7 +1021,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_065, TestSize.Level1)
     AudioDeviceDescriptor deviceDescriptor;
     deviceDescriptor.macAddress_ = "F0-FA-C7-8C-46-01";
     deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
     deviceType = audioDeviceCommon.GetSpatialDeviceType(macAddress);
     EXPECT_EQ(DEVICE_TYPE_SPEAKER, deviceType);
 }
@@ -1059,7 +1058,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_067, TestSize.Level1)
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     bool isUpdateActiveDevice = true;
     int32_t runningStreamCount = 0;
-    audioDeviceCommon.FetchOutputEnd(isUpdateActiveDevice, runningStreamCount);
+    audioDeviceCommon.FetchOutputEnd(isUpdateActiveDevice, runningStreamCount, AudioStreamDeviceChangeReason::UNKNOWN);
     EXPECT_NE(0, audioDeviceCommon.spatialDeviceMap_.size());
 }
 
@@ -1074,12 +1073,14 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_068, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     desc->deviceType_ = DEVICE_TYPE_NONE;
-    int32_t ret = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo);
+    int32_t ret = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo,
+        AudioStreamDeviceChangeReason::UNKNOWN);
     EXPECT_EQ(ERR_NEED_NOT_SWITCH_DEVICE, ret);
 
     desc->deviceType_ = DEVICE_TYPE_EARPIECE;
     rendererChangeInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
-    ret = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo);
+    ret = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo,
+        AudioStreamDeviceChangeReason::UNKNOWN);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -1197,8 +1198,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_073, TestSize.Level1)
     outputDevice->networkId_ = "";
     outputDevices.push_back(std::move(outputDevice));
     audioDeviceCommon.ResetOffloadAndMchMode(rendererChangeInfo, outputDevices);
-    audioDeviceCommon.SetHasDpFlag(true);
-    EXPECT_EQ(true, audioDeviceCommon.GetHasDpFlag());
 }
 
 /**
@@ -1216,8 +1215,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_074, TestSize.Level1)
     outputDevice->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
     outputDevices.push_back(std::move(outputDevice));
     audioDeviceCommon.ResetOffloadAndMchMode(rendererChangeInfo, outputDevices);
-    audioDeviceCommon.SetHasDpFlag(true);
-    EXPECT_EQ(true, audioDeviceCommon.GetHasDpFlag());
 }
 
 /**
@@ -1235,8 +1232,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_075, TestSize.Level1)
     outputDevice->deviceType_ = DEVICE_TYPE_DP;
     outputDevices.push_back(std::move(outputDevice));
     audioDeviceCommon.ResetOffloadAndMchMode(rendererChangeInfo, outputDevices);
-    audioDeviceCommon.SetHasDpFlag(false);
-    EXPECT_EQ(false, audioDeviceCommon.GetHasDpFlag());;
 }
 
 /**
@@ -1248,15 +1243,11 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_076, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.JudgeIfLoadMchModule();
-    audioDeviceCommon.SetHasDpFlag(false);
-    EXPECT_EQ(false, audioDeviceCommon.GetHasDpFlag());
 
     AudioIOHandle moduleId = 0;
     std::string moduleName = "MCH_Speaker";
     audioDeviceCommon.audioIOHandleMap_.AddIOHandleInfo(moduleName, moduleId);
     audioDeviceCommon.JudgeIfLoadMchModule();
-    audioDeviceCommon.SetHasDpFlag(true);
-    EXPECT_EQ(true, audioDeviceCommon.GetHasDpFlag());
 }
 
 /**
@@ -1272,8 +1263,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_077, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     descs.push_back(std::move(desc));
     audioDeviceCommon.FetchStreamForA2dpMchStream(rendererChangeInfo, descs);
-    audioDeviceCommon.SetHasDpFlag(true);
-    EXPECT_EQ(true, audioDeviceCommon.GetHasDpFlag());
 }
 
 /**
@@ -1289,8 +1278,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_078, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     descs.push_back(std::move(desc));
     audioDeviceCommon.FetchStreamForSpkMchStream(rendererChangeInfo, descs);
-    audioDeviceCommon.SetHasDpFlag(true);
-    EXPECT_EQ(true, audioDeviceCommon.GetHasDpFlag());
 }
 
 /**
@@ -1359,52 +1346,31 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_081, TestSize.Level1)
     std::string newSinkName = "Offload_Speaker";
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::OVERRODE;
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.SetHasDpFlag(false);
-    bool ret = audioDeviceCommon.GetHasDpFlag();
-    EXPECT_EQ(false, ret);
 
     oldSinkname = "Offload_Speaker";
     newSinkName = "";
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.SetHasDpFlag(false);
-    ret = audioDeviceCommon.GetHasDpFlag();
-    EXPECT_EQ(false, ret);
 
     reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
     newSinkName = "Offload_Speaker";
     oldSinkname = "";
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.SetHasDpFlag(false);
-    ret = audioDeviceCommon.GetHasDpFlag();
-    EXPECT_EQ(false, ret);
 
     newSinkName = "";
     oldSinkname = "Offload_Speaker";
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.SetHasDpFlag(false);
-    ret = audioDeviceCommon.GetHasDpFlag();
-    EXPECT_EQ(false, ret);
 
     reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
     audioDeviceCommon.audioSceneManager_.SetAudioScenePre(AUDIO_SCENE_DEFAULT);
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.SetHasDpFlag(false);
-    ret = audioDeviceCommon.GetHasDpFlag();
-    EXPECT_EQ(false, ret);
 
     audioDeviceCommon.audioSceneManager_.SetAudioScenePre(AUDIO_SCENE_RINGING);
     audioDeviceCommon.audioPolicyManager_.SetRingerMode(RINGER_MODE_SILENT);
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.SetHasDpFlag(false);
-    ret = audioDeviceCommon.GetHasDpFlag();
-    EXPECT_EQ(false, ret);
 
     reason = AudioStreamDeviceChangeReason::UNKNOWN;
     oldSinkname = "RemoteCastInnerCapturer";
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.SetHasDpFlag(true);
-    ret = audioDeviceCommon.GetHasDpFlag();
-    EXPECT_EQ(true, ret);
 }
 
 /**

@@ -166,6 +166,10 @@ void HpaeOutputCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffe
         }
 #endif
     }
+
+    if (GetPreOutNum() == 0) {
+        mixerNode_->InitAudioLimiter();
+    }
     connectedProcessCluster_.erase(sceneType);
 }
 
@@ -262,6 +266,11 @@ int32_t HpaeOutputCluster::SetPriPaPower(void)
 uint32_t HpaeOutputCluster::GetLatency()
 {
     return hpaeSinkOutputNode_->GetLatency();
+}
+
+int32_t HpaeOutputCluster::SetSyncId(int32_t syncId)
+{
+    return hpaeSinkOutputNode_->RenderSinkSetSyncId(syncId);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

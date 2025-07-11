@@ -29,7 +29,8 @@
 #include "system_ability_definition.h"
 #include "securec.h"
 
-#include "ipc_stream.h"
+#include "iipc_stream.h"
+#include "istandard_audio_service.h"
 #include "audio_capturer_log.h"
 #include "audio_errors.h"
 #include "volume_tools.h"
@@ -128,6 +129,7 @@ public:
     bool StopAudioStream() override;
     bool FlushAudioStream() override;
     bool ReleaseAudioStream(bool releaseRunner = true, bool isSwitchStream = false) override;
+    void JoinCallbackLoop() override;
 
     // Playback related APIs
     bool DrainAudioStream(bool stopFlag = false) override;
@@ -206,6 +208,7 @@ public:
     void SetRestoreInfo(RestoreInfo &restoreInfo) override;
     RestoreStatus CheckRestoreStatus() override;
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
+    void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair) override;
     void FetchDeviceForSplitStream() override;
 
     void SetCallStartByUserTid(pid_t tid) override;
@@ -276,7 +279,7 @@ private:
     size_t cbBufferSize_ = 0;
     AudioSafeBlockQueue<BufferDesc> cbBufferQueue_; // only one cbBuffer_
 
-    AudioPlaybackCaptureConfig filterConfig_ = {{{}, FilterMode::INCLUDE, {}, FilterMode::INCLUDE}, false};
+    AudioPlaybackCaptureConfig filterConfig_ = {};
     bool isInnerCapturer_ = false;
     bool isWakeupCapturer_ = false;
 
@@ -311,7 +314,7 @@ private:
     // ipc stream related
     AudioProcessConfig clientConfig_;
     sptr<IpcStreamListenerImpl> listener_ = nullptr;
-    sptr<IpcStream> ipcStream_ = nullptr;
+    sptr<IIpcStream> ipcStream_ = nullptr;
     std::shared_ptr<OHAudioBuffer> clientBuffer_ = nullptr;
 
     // buffer handle

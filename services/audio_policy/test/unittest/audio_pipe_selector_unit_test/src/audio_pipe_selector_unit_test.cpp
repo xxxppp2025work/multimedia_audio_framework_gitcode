@@ -336,6 +336,16 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_001, TestSize.Le
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
     EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
+
+    pipeInfoPtr->name_ = "multichannel_output";
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
+    pipeInfoPtr->name_ = "offload_output";
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
+    pipeInfoPtr->name_ = "offload_distributed_output";
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
 }
 
 /**
@@ -494,6 +504,45 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipeAndExecute_001, TestSize.Level1)
     std::vector<std::shared_ptr<AudioPipeInfo>> result = audioPipeSelector->FetchPipeAndExecute(streamDesc);
     EXPECT_FALSE(result.empty());
     EXPECT_EQ(result[0]->pipeAction_, PIPE_ACTION_DEFAULT);
+}
+
+/**
+ * @tc.name: UpdataDeviceStreamInfo_001
+ * @tc.desc: Test UpdataDeviceStreamInfo
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, UpdataDeviceStreamInfo_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+
+    streamDesc->newDeviceDescs_ = {};
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = nullptr;
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    // test empty
+    audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
+
+    std::shared_ptr<AudioDeviceDescriptor> temp = nullptr;
+    streamDesc->newDeviceDescs_.push_back(temp);
+    audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
+
+    streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
+
+    streamDesc->newDeviceDescs_.front() = std::make_shared<AudioDeviceDescriptor>();
+    audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
+
+    // test nullptr
+    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    streamPropInfo->sampleRate_ = static_cast<uint32_t>(AudioSamplingRate::SAMPLE_RATE_48000);
+    streamPropInfo->channels_ = AudioChannel::STEREO;
+
+    audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
+
+    EXPECT_EQ(streamDesc->newDeviceDescs_.front()->audioStreamInfo_.front().format, streamPropInfo->format_);
+    EXPECT_EQ(*(streamDesc->newDeviceDescs_.front()->audioStreamInfo_.front().samplingRate.rbegin()),
+        AudioSamplingRate::SAMPLE_RATE_48000);
 }
 
 /**

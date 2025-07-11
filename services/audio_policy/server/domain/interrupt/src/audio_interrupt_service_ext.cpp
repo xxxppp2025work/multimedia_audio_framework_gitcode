@@ -19,7 +19,7 @@
 #include "audio_interrupt_service.h"
 
 #include "audio_focus_parser.h"
-#include "audio_policy_manager_listener_proxy.h"
+#include "standard_audio_policy_manager_listener_proxy.h"
 #include "media_monitor_manager.h"
 
 #include "dfx_utils.h"
@@ -66,6 +66,7 @@ void AudioInterruptService::AudioInterruptZoneDump(std::string &dumpString)
             }
             AppendFormat(dumpString, "    - Pid: %d\n", (iter->first).pid);
             AppendFormat(dumpString, "    - StreamId: %u\n", (iter->first).streamId);
+            AppendFormat(dumpString, "    - isAudioSessionInterrupt: %d\n", (iter->first).isAudioSessionInterrupt);
             AppendFormat(dumpString, "    - Audio Focus isPlay Id: %d\n", (iter->first).audioFocusType.isPlay);
             AppendFormat(dumpString, "    - Stream Name: %s\n",
                 AudioInfoDumpUtils::GetStreamName((iter->first).audioFocusType.streamType).c_str());
@@ -196,7 +197,11 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
 
         std::pair<AudioFocusType, AudioFocusType> focusPair =
             std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType);
-        CHECK_AND_RETURN_RET_LOG(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), ERR_INVALID_PARAM, "no focus cfg");
+        CHECK_AND_RETURN_RET_LOG(focusCfgMap_.find(focusPair) != focusCfgMap_.end(),
+            ERR_INVALID_PARAM,
+            "no focus cfg, active stream type = %{public}d, incoming stream type = %{public}d",
+            static_cast<int32_t>(focusPair.first.streamType),
+            static_cast<int32_t>(focusPair.second.streamType));
         AudioFocusEntry focusEntry = focusCfgMap_[focusPair];
         UpdateAudioFocusStrategy(iterActive->first, incomingInterrupt, focusEntry);
         CheckIncommingFoucsValidity(focusEntry, incomingInterrupt, incomingInterrupt.currencySources.sourcesTypes);
@@ -270,14 +275,13 @@ bool AudioInterruptService::IsCapturerFocusAvailable(const int32_t zoneId, const
 
 int32_t AudioInterruptService::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "No Permission");
-
     AUDIO_INFO_LOG("start clear audio focus, target sessionID:%{public}d", sessionID);
 
     int32_t targetZoneId = -1;
     AudioInterrupt targetInterrupt;
     const uint32_t targetSessionID = static_cast<uint32_t>(sessionID);
     bool clearFlag = false;
+    InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
 
     {
         std::unique_lock<std::mutex> lock(mutex_);
@@ -301,6 +305,11 @@ int32_t AudioInterruptService::ClearAudioFocusBySessionID(const int32_t &session
 
     if (clearFlag) {
         (void)DeactivateAudioInterrupt(targetZoneId, targetInterrupt);
+        {
+            std::unique_lock<std::mutex> lock(mutex_);
+            CHECK_AND_RETURN_RET_LOG(handler_ != nullptr, ERROR, "handler is nullptr");
+            SendInterruptEventCallback(interruptEvent, targetInterrupt.streamId, targetInterrupt);
+        }
     }
 
     return SUCCESS;

@@ -20,6 +20,7 @@
 #include <memory>
 #include <vector>
 #include "audio_info.h"
+#include "i_hpae_manager.h"
 using namespace testing::ext;
 
 namespace OHOS {
@@ -70,6 +71,7 @@ void AudioCoreServiceUnitTest::SetUpTestCase(void)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest::SetUpTestCase start-end");
     GetPermission();
+    HPAE::IHpaeManager::GetHpaeManager().Init();
     GetServerPtr()->coreService_->OnServiceConnected(HDI_SERVICE_INDEX);
 }
 void AudioCoreServiceUnitTest::TearDownTestCase(void)
@@ -872,7 +874,7 @@ HWTEST_F(AudioCoreServiceUnitTest, AddAudioCapturerMicrophoneDescriptor_001, Tes
 /**
 * @tc.name  : Test AudioCoreServiceUnit
 * @tc.number: GetCurrentRendererChangeInfos_001
-* @tc.desc  : Test GetHasDpFlag interface.
+* @tc.desc  : Test GetCurrentRendererChangeInfos interface.
 */
 HWTEST_F(AudioCoreServiceUnitTest, GetCurrentRendererChangeInfos_001, TestSize.Level1)
 {
@@ -948,13 +950,14 @@ HWTEST_F(AudioCoreServiceUnitTest, GetPreferredOutputStreamType_001, TestSize.Le
     EXPECT_NE(nullptr, server);
 
     AudioRendererInfo rendererInfo;
-    int32_t ret = server->GetPreferredOutputStreamType(rendererInfo);
+    int32_t ret = 0;
+    server->GetPreferredOutputStreamType(rendererInfo, ret);
     EXPECT_EQ(ret, 0);
     server->coreService_->isFastControlled_ = true;
-    ret = server->GetPreferredOutputStreamType(rendererInfo);
+    server->GetPreferredOutputStreamType(rendererInfo, ret);
     EXPECT_EQ(ret, 0);
     rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
-    ret = server->GetPreferredOutputStreamType(rendererInfo);
+    server->GetPreferredOutputStreamType(rendererInfo, ret);
     EXPECT_EQ(ret, 0);
 }
 
@@ -969,13 +972,14 @@ HWTEST_F(AudioCoreServiceUnitTest, GetPreferredInputStreamType_001, TestSize.Lev
     EXPECT_NE(nullptr, server);
 
     AudioCapturerInfo capturerInfo;
-    int32_t ret = server->GetPreferredInputStreamType(capturerInfo);
+    int32_t ret = 0;
+    server->GetPreferredInputStreamType(capturerInfo, ret);
     EXPECT_EQ(ret, 0);
     server->coreService_->isFastControlled_ = true;
-    ret = server->GetPreferredInputStreamType(capturerInfo);
+    server->GetPreferredInputStreamType(capturerInfo, ret);
     EXPECT_EQ(ret, 0);
     capturerInfo.capturerFlags = AUDIO_FLAG_MMAP;
-    ret = server->GetPreferredInputStreamType(capturerInfo);
+    server->GetPreferredInputStreamType(capturerInfo, ret);
     EXPECT_EQ(ret, 0);
 }
 
@@ -1047,6 +1051,90 @@ HWTEST_F(AudioCoreServiceUnitTest, GetDirectPlaybackSupport_002, TestSize.Level1
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     auto result = server->coreService_->GetDirectPlaybackSupport(streamInfo, streamUsage);
     EXPECT_EQ(result, DIRECT_PLAYBACK_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : RecordSelectDevice_001
+ * @tc.number: RecordSelectDevice_001
+ * @tc.desc  : Test RecordSelectDevice.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, RecordSelectDevice_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
+    audioCoreService->selectDeviceHistory_ = {};
+    ASSERT_EQ(audioCoreService->selectDeviceHistory_.size(), 0);
+    std::string history = "device1";
+    audioCoreService->RecordSelectDevice(history);
+    ASSERT_EQ(audioCoreService->selectDeviceHistory_.size(), 1);
+    ASSERT_EQ(audioCoreService->selectDeviceHistory_.front(), history);
+}
+
+/**
+ * @tc.name  : RecordSelectDevice_002
+ * @tc.number: RecordSelectDevice_002
+ * @tc.desc  : Test RecordSelectDevice.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, RecordSelectDevice_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
+    audioCoreService->selectDeviceHistory_ = {};
+    std::string newhistory = "device2";
+    size_t limit = 10; //SELECT_DEVICE_HISTORY_LIMIT
+    while (audioCoreService->selectDeviceHistory_.size() < limit) {
+        audioCoreService->RecordSelectDevice(newhistory);
+    }
+    ASSERT_EQ(audioCoreService->selectDeviceHistory_.size(), limit);
+    ASSERT_EQ(audioCoreService->selectDeviceHistory_.front(), newhistory);
+    audioCoreService->selectDeviceHistory_ = {};
+}
+
+/**
+ * @tc.name  : RecordSelectDevice_003
+ * @tc.number: RecordSelectDevice_003
+ * @tc.desc  : Test RecordSelectDevice.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, RecordSelectDevice_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
+    audioCoreService->selectDeviceHistory_ = {};
+    size_t limit = 10; //SELECT_DEVICE_HISTORY_LIMIT
+    for (int i = 0; i < limit + 2; i++) {
+        std::string history = "device" + std::to_string(i);
+        audioCoreService->RecordSelectDevice(history);
+    }
+    ASSERT_EQ(audioCoreService->selectDeviceHistory_.back(), "device" + std::to_string(limit + 1));
+}
+
+/**
+ * @tc.name  : DumpSelectHistory_001
+ * @tc.number: DumpSelectHistory_001
+ * @tc.desc  : Test DumpSelectHistory.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, DumpSelectHistory_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
+    audioCoreService->selectDeviceHistory_ = {};
+    std::string dumpString;
+    audioCoreService->DumpSelectHistory(dumpString);
+    std::string expectedDump = "Select device history infos\n - TotalPipeNums: 0\n\n\n";
+    EXPECT_EQ(dumpString, expectedDump);
+}
+
+/**
+ * @tc.name  : DumpSelectHistory_002
+ * @tc.number: DumpSelectHistory_002
+ * @tc.desc  : Test DumpSelectHistory.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, DumpSelectHistory_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
+    audioCoreService->selectDeviceHistory_.push_back("HistoryRecord1");
+    audioCoreService->selectDeviceHistory_.push_back("HistoryRecord2");
+    std::string dumpString;
+    audioCoreService->DumpSelectHistory(dumpString);
+    std::string expectedDump = "Select device history infos\n - TotalPipeNums: 2\n\nHistory Record1\n"
+                               "HistoryRecord2\n\n";
+    EXPECT_EQ(dumpString, expectedDump);
 }
 } // namespace AudioStandard
 } // namespace OHOS

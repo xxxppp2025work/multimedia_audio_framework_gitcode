@@ -23,7 +23,6 @@
 #include "parameter.h"
 #include "parameters.h"
 #include "audio_policy_log.h"
-#include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
 
@@ -53,7 +52,7 @@ bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, Aud
         if (audioA2dpDevice_.GetA2dpDeviceInfo(activeBTDevice_, info)) {
             streamInfo.samplingRate = *info.streamInfo.samplingRate.rbegin();
             streamInfo.format = info.streamInfo.format;
-            streamInfo.channels = *info.streamInfo.channels.rbegin();
+            streamInfo.channels = *info.streamInfo.GetChannels().rbegin();
             return true;
         }
     } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
@@ -61,7 +60,7 @@ bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, Aud
         if (audioA2dpDevice_.GetA2dpInDeviceInfo(activeBTInDevice_, info)) {
             streamInfo.samplingRate = *info.streamInfo.samplingRate.rbegin();
             streamInfo.format = info.streamInfo.format;
-            streamInfo.channels = *info.streamInfo.channels.rbegin();
+            streamInfo.channels = *info.streamInfo.GetChannels().rbegin();
             return true;
         }
     }

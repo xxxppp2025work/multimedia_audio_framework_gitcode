@@ -21,7 +21,8 @@
 #include <mutex>
 #include <vector>
 
-#include "i_policy_provider_ipc.h"
+#include "ipolicy_provider_ipc.h"
+#include "i_policy_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -57,6 +58,8 @@ public:
     bool IsAbsVolumeSupported();
 
     int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
+
+    int32_t NearlinkGetRenderPosition(uint32_t &delayValue);
 
     bool GetHighResolutionExist();
 

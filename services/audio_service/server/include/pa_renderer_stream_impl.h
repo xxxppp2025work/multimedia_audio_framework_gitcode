@@ -42,6 +42,7 @@ public:
     int32_t GetAudioEffectMode(int32_t &effectMode) override;
     int32_t SetPrivacyType(int32_t privacyType) override;
     int32_t GetPrivacyType(int32_t &privacyType) override;
+    int32_t SetSpeed(float speed) override;
 
     void RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback) override;
     void RegisterWriteCallback(const std::weak_ptr<IWriteCallback> &callback) override;
@@ -98,6 +99,7 @@ private:
 
     uint32_t GetEffectChainLatency();
     uint32_t GetA2dpOffloadLatency();
+    uint32_t GetNearlinkLatency();
     uint32_t GetLimiterLatency();
 
     void UpdatePaTimingInfo();

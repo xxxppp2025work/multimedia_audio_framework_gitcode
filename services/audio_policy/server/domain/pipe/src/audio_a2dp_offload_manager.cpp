@@ -24,7 +24,6 @@
 #include "audio_utils.h"
 #include "audio_policy_log.h"
 #include "audio_utils.h"
-#include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
 #include "audio_affinity_manager.h"
@@ -475,7 +474,7 @@ void AudioA2dpOffloadManager::FetchStreamForA2dpOffload(const bool &requireReset
         }
         vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
             audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
-            rendererChangeInfo->clientUID);
+            rendererChangeInfo->clientUID, "FetchStreamForA2dpOffload");
 
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             if (requireReset) {

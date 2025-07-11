@@ -61,7 +61,8 @@ public:
     }
     void Init(std::shared_ptr<AudioPolicyServerHandler> handler);
     void DeInit();
-    void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor);
+    void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor,
+        const AudioStreamDeviceChangeReason reason);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
         AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
@@ -95,8 +96,6 @@ public:
         std::shared_ptr<AudioDeviceDescriptor> &inputDevice);
     DeviceType GetSpatialDeviceType(const std::string& macAddress);
 
-    bool GetHasDpFlag();
-    void SetHasDpFlag(bool flag);
     int32_t ActivateA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -194,11 +193,12 @@ private:
     void ClearRingMuteWhenCallStart(bool pre, bool after);
 
     // fetchOutput
-    void FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount);
-    void FetchOutputDeviceWhenNoRunningStream();
+    void FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount,
+        const AudioStreamDeviceChangeReason reason);
+    void FetchOutputDeviceWhenNoRunningStream(const AudioStreamDeviceChangeReason reason);
     void SetDeviceConnectedFlagWhenFetchOutputDevice();
     int32_t HandleDeviceChangeForFetchOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
-        std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+        std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo, const AudioStreamDeviceChangeReason reason);
     void MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices,
         const AudioStreamDeviceChangeReasonExt reason);
@@ -250,7 +250,6 @@ private:
 private:
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
     bool isCurrentRemoteRenderer = false;
-    bool hasDpDevice_ = false; // Only the first dp device is supported.
     bool enableDualHalToneState_ = false;
     int32_t enableDualHalToneSessionId_ = -1;
     bool isOpenRemoteDevice = false;

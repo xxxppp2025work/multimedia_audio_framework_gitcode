@@ -16,6 +16,7 @@
 #define LOG_TAG "AudioUtils"
 #endif
 
+#include "v5_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include <cinttypes>
 #include <ctime>
@@ -162,6 +163,53 @@ uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
             break;
     }
     return audioPerSampleLength;
+}
+
+uint32_t Util::ConvertToHDIAudioInputType(const SourceType sourceType)
+{
+    enum AudioInputType hdiAudioInputType;
+    switch (sourceType) {
+        case SOURCE_TYPE_INVALID:
+            hdiAudioInputType = AUDIO_INPUT_DEFAULT_TYPE;
+            break;
+        case SOURCE_TYPE_MIC:
+        case SOURCE_TYPE_PLAYBACK_CAPTURE:
+        case SOURCE_TYPE_ULTRASONIC:
+            hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
+            break;
+        case SOURCE_TYPE_WAKEUP:
+            hdiAudioInputType = AUDIO_INPUT_SPEECH_WAKEUP_TYPE;
+            break;
+        case SOURCE_TYPE_VOICE_TRANSCRIPTION:
+        case SOURCE_TYPE_VOICE_COMMUNICATION:
+            hdiAudioInputType = AUDIO_INPUT_VOICE_COMMUNICATION_TYPE;
+            break;
+        case SOURCE_TYPE_VOICE_RECOGNITION:
+            hdiAudioInputType = AUDIO_INPUT_VOICE_RECOGNITION_TYPE;
+            break;
+        case SOURCE_TYPE_VOICE_CALL:
+            hdiAudioInputType = AUDIO_INPUT_VOICE_CALL_TYPE;
+            break;
+        case SOURCE_TYPE_CAMCORDER:
+            hdiAudioInputType = AUDIO_INPUT_CAMCORDER_TYPE;
+            break;
+        case SOURCE_TYPE_EC:
+            hdiAudioInputType = AUDIO_INPUT_EC_TYPE;
+            break;
+        case SOURCE_TYPE_MIC_REF:
+            hdiAudioInputType = AUDIO_INPUT_NOISE_REDUCTION_TYPE;
+            break;
+        case SOURCE_TYPE_UNPROCESSED:
+            hdiAudioInputType = AUDIO_INPUT_RAW_TYPE;
+            break;
+        case SOURCE_TYPE_LIVE:
+            hdiAudioInputType = AUDIO_INPUT_LIVE_TYPE;
+            break;
+        default:
+            hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
+            break;
+    }
+    return static_cast<uint32_t>(hdiAudioInputType);
 }
 
 bool Util::IsScoSupportSource(const SourceType sourceType)
@@ -714,7 +762,7 @@ std::map<std::uint32_t, std::set<uint32_t>> g_tokenIdRecordMap = {};
 int32_t PermissionUtil::StartUsingPermission(uint32_t targetTokenId, const char* permission)
 {
     Trace trace("PrivacyKit::StartUsingPermission");
-    AUDIO_WARNING_LOG("PrivacyKit::StartUsingPermission tokenId:%{public}d permission:%{public}s",
+    AUDIO_WARNING_LOG("PrivacyKit::StartUsingPermission tokenId:%{public}u permission:%{public}s",
         targetTokenId, permission);
     WatchTimeout guard("PrivacyKit::StartUsingPermission:PermissionUtil::StartUsingPermission");
     int32_t res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, permission);
@@ -725,7 +773,7 @@ int32_t PermissionUtil::StartUsingPermission(uint32_t targetTokenId, const char*
 int32_t PermissionUtil::StopUsingPermission(uint32_t targetTokenId, const char* permission)
 {
     Trace trace("PrivacyKit::StopUsingPermission");
-    AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}d permission:%{public}s",
+    AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}u permission:%{public}s",
         targetTokenId, permission);
     WatchTimeout guard("PrivacyKit::StopUsingPermission:PermissionUtil::StopUsingPermission");
     int32_t res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, permission);
@@ -746,7 +794,7 @@ bool PermissionUtil::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t session
         }
     } else {
         AUDIO_INFO_LOG("Notify PrivacyKit to display the microphone privacy indicator "
-            "for tokenId: %{public}d sessionId:%{public}d", targetTokenId, sessionId);
+            "for tokenId: %{public}u sessionId:%{public}u", targetTokenId, sessionId);
         int32_t res = PermissionUtil::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         CHECK_AND_RETURN_RET_LOG(res == 0 || res == Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING, false,
             "StartUsingPermission for tokenId:%{public}u, PrivacyKit error code:%{public}d", targetTokenId, res);
@@ -781,7 +829,7 @@ bool PermissionUtil::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionI
     if (g_tokenIdRecordMap[targetTokenId].empty()) {
         g_tokenIdRecordMap.erase(targetTokenId);
         AUDIO_INFO_LOG("Notify PrivacyKit to remove the microphone privacy indicator "
-            "for tokenId: %{public}d sessionId:%{public}d", targetTokenId, sessionId);
+            "for tokenId: %{public}u sessionId:%{public}u", targetTokenId, sessionId);
         int32_t res = PermissionUtil::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         CHECK_AND_RETURN_RET_LOG(res == 0, false, "StopUsingPermission for tokenId %{public}u!"
             "The PrivacyKit error code:%{public}d", targetTokenId, res);
@@ -1299,7 +1347,7 @@ std::string GetTime()
     // 2025-06-22-21:22:07:666
     char timeBuf[TIME_TEXT_LENGTH] = {0};
     int ret = sprintf_s(timeBuf, sizeof(timeBuf), "%04d-%02d-%02d-%02d:%02d:%02d:%03d", (YEAR_BASE + t->tm_year),
-        t->tm_mon, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec, mSec);
+        (1 + t->tm_mon), t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec, mSec);
     if (ret < 0) {
         return "";
     }
@@ -2020,6 +2068,30 @@ int32_t CheckSupportedParams(const AudioStreamInfo &info)
     CHECK_AND_RETURN_RET_LOG(!NotContain(RENDERER_SUPPORTED_CHANNELLAYOUTS, info.channelLayout),
         ERR_INVALID_PARAM, "channelLayout not supported");
     return SUCCESS;
+}
+
+std::vector<std::map<AudioInterrupt, int32_t>> ToIpcInterrupts(
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &from)
+{
+    std::vector<std::map<AudioInterrupt, int32_t>> ipcInterrupts;
+    for (const auto &pair : from) {
+        std::map<AudioInterrupt, int32_t> mapEntry;
+        mapEntry[pair.first] = static_cast<int32_t>(pair.second);
+        ipcInterrupts.push_back(mapEntry);
+    }
+    return ipcInterrupts;
+}
+
+std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
+    const std::vector<std::map<AudioInterrupt, int32_t>> &from)
+{
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts;
+    for (const auto &map : from) {
+        for (const auto &entry : map) {
+            interrupts.push_back(std::make_pair(entry.first, static_cast<AudioFocuState>(entry.second)));
+        }
+    }
+    return interrupts;
 }
 } // namespace AudioStandard
 } // namespace OHOS

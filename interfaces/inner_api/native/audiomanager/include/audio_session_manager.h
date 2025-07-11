@@ -16,9 +16,8 @@
 #ifndef ST_AUDIO_SESSION_MANAGER_H
 #define ST_AUDIO_SESSION_MANAGER_H
 
-#include "audio_device_descriptor.h"
-#include "audio_session_info.h"
 #include "audio_system_manager.h"
+#include "audio_session_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -46,28 +45,6 @@ public:
     virtual void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent) = 0;
 };
 
-/**
- * Audio session device change info.
- * @since 20
- */
-struct CurrentDeviceChangedEvent {
-    /**
-     * Audio device descriptors after changed.
-     * @since 20
-     */
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
-    /**
-     * Audio device changed reason.
-     * @since 20
-     */
-    AudioStreamDeviceChangeReason changedReason;
-    /**
-     * Recommend action when device changed.
-     * @since 20
-     */
-    DeviceChangedRecommendedAction recommendedAction;
-};
-
 class AudioSessionCurrentDeviceChangedCallback {
 public:
     virtual ~AudioSessionCurrentDeviceChangedCallback() = default;
@@ -77,7 +54,7 @@ public:
      * @param deviceChangedEvent the audio session current device changed event.
      * @since 20
      */
-    virtual void OnAudioSessionCurrentDeviceChanged(const CurrentDeviceChangedEvent &deviceChangedEvent) = 0;
+    virtual void OnAudioSessionCurrentDeviceChanged(const CurrentOutputDeviceChangedEvent &deviceChangedEvent) = 0;
 };
 
 class AudioSessionManager {
@@ -162,7 +139,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 20
      */
-    int32_t SetAudioSessionStateChangedCallback(
+    int32_t SetAudioSessionStateChangeCallback(
         const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback);
 
     /**
@@ -172,7 +149,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 20
      */
-    int32_t UnsetAudioSessionStateChangedCallback();
+    int32_t UnsetAudioSessionStateChangeCallback();
 
     /**
      * @brief Unset the audio session state changed callback.
@@ -182,18 +159,18 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 20
      */
-    int32_t UnsetAudioSessionStateChangedCallback(
+    int32_t UnsetAudioSessionStateChangeCallback(
         const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback);
 
     /**
-     * @brief Get current output device or devices.
+     * @brief Get default output device type.
      *
-     * @param deviceInfo The current output device descriptor.
+     * @param deviceType The default output device type.
      * @return Returns {@link SUCCESS} if the operation is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 20
      */
-    int32_t GetCurrentOutputDevices(AudioDeviceDescriptor &deviceInfo) const;
+    int32_t GetDefaultOutputDevice(DeviceType &deviceType);
 
     /**
      * @brief Set the default output device for audio session scene.
@@ -214,27 +191,27 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 20
      */
-    int32_t SetAudioSessionCurrentDeviceChangedCallback(
+    int32_t SetAudioSessionCurrentDeviceChangeCallback(
         const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
 
     /**
      * @brief Unset all audio session device changed callbacks.
      *
-     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 20
      */
-    int32_t UnsetAudioSessionCurrentDeviceChangedCallback();
+    int32_t UnsetAudioSessionCurrentDeviceChangeCallback();
 
     /**
      * @brief Unset the audio session device changed callback.
      *
      * @param deviceChangedCallback The audio session device changed callback.
-     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 20
      */
-    int32_t UnsetAudioSessionCurrentDeviceChangedCallback(
+    int32_t UnsetAudioSessionCurrentDeviceChangeCallback(
         const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
 };
 } // namespace AudioStandard

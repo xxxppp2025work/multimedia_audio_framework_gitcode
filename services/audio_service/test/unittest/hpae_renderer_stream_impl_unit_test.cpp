@@ -166,6 +166,12 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_004, TestSize.Level1)
     uint64_t latency = 0;
     int32_t ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret, SUCCESS);
+    unit->deviceClass_ = "remote_offload";
+    ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
+    EXPECT_EQ(ret, SUCCESS);
+    unit->deviceClass_ = "offload";
+    ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -511,6 +517,12 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_026, TestSize.Level1)
     uint64_t latency = 0;
     int32_t ret = unit->GetLatency(latency);
     EXPECT_EQ(ret, SUCCESS);
+    unit->deviceClass_ = "remote_offload";
+    ret = unit->GetLatency(latency);
+    EXPECT_EQ(ret, SUCCESS);
+    unit->deviceClass_ = "offload";
+    ret = unit->GetLatency(latency);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -539,6 +551,21 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_028, TestSize.Level1)
     EXPECT_NE(unit, nullptr);
     int32_t rate = RENDER_RATE_NORMAL;
     EXPECT_EQ(unit->SetRate(rate), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test StartWithSyncId.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_029
+ * @tc.desc  : Test StartWithSyncId.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_029, TestSize.Level1)
+{
+    int32_t syncId = 123;
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+    int32_t ret = unit->StartWithSyncId(syncId);
+    EXPECT_EQ(ret, SUCCESS);
 }
 }
 }

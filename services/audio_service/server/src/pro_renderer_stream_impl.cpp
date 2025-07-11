@@ -365,6 +365,12 @@ int32_t ProRendererStreamImpl::GetPrivacyType(int32_t &privacyType)
     return SUCCESS;
 }
 
+int32_t ProRendererStreamImpl::SetSpeed(float speed)
+{
+    AUDIO_WARNING_LOG("not support");
+    return ERR_NOT_SUPPORTED;
+}
+
 void ProRendererStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback)
 {
     AUDIO_DEBUG_LOG("enter in");
@@ -587,7 +593,7 @@ int32_t ProRendererStreamImpl::SetClientVolume(float clientVolume)
 int32_t ProRendererStreamImpl::SetLoudnessGain(float loudnessGain)
 {
     AUDIO_WARNING_LOG("SetLoudnessGain only for hpae renderer stream");
-    return ERROR;
+    return ERR_PRO_STREAM_NOT_SUPPORTED;
 }
 
 int32_t ProRendererStreamImpl::UpdateMaxLength(uint32_t maxLength)

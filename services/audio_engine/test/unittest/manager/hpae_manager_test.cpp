@@ -28,6 +28,9 @@
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
+using namespace testing::ext;
+using namespace testing;
+
 namespace {
 static std::string g_rootPath = "/data/";
 const std::string ROOT_PATH = "/data/source_file_io_48000_2_s16le.pcm";
@@ -140,7 +143,7 @@ HpaeStreamInfo GetCaptureStreamInfo()
     return streamInfo;
 }
 
-TEST_F(HpaeManagerUnitTest, constructHpaeManagerTest)
+HWTEST_F(HpaeManagerUnitTest, constructHpaeManagerTest, TestSize.Level0)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -153,7 +156,7 @@ TEST_F(HpaeManagerUnitTest, constructHpaeManagerTest)
     EXPECT_EQ(hpaeManager_->IsRunning(), false);
 }
 
-TEST_F(HpaeManagerUnitTest, GetHpaeRenderManagerTest)
+HWTEST_F(HpaeManagerUnitTest, GetHpaeRenderManagerTest, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -177,7 +180,7 @@ TEST_F(HpaeManagerUnitTest, GetHpaeRenderManagerTest)
     EXPECT_EQ(hpaeManager_->IsRunning(), false);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeRenderManagerTest)
+HWTEST_F(HpaeManagerUnitTest, IHpaeRenderManagerTest, TestSize.Level1)
 {
     IHpaeManager::GetHpaeManager().Init();
     EXPECT_EQ(IHpaeManager::GetHpaeManager().IsInit(), true);
@@ -191,7 +194,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeRenderManagerTest)
     EXPECT_EQ(IHpaeManager::GetHpaeManager().IsRunning(), false);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest)
+HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -238,7 +241,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest)
     EXPECT_EQ(sinkInputs.size(), 0);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest)
+HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -279,7 +282,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest)
     WaitForMsgProcessing(hpaeManager_);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest002)
+HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest002, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -315,6 +318,13 @@ TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest002)
     EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
 
+    int32_t syncId = 123;
+    hpaeManager_->StartWithSyncId(streamInfo.streamClassType, streamInfo.sessionId, syncId);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
+
     hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
@@ -332,7 +342,61 @@ TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest002)
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest001)
+HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest003, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    hpaeManager_->SetDefaultSink(audioModuleInfo.name);
+    WaitForMsgProcessing(hpaeManager_);
+    HpaeStreamInfo streamInfo = GetRenderStreamInfo();
+    hpaeManager_->CreateStream(streamInfo);
+    WaitForMsgProcessing(hpaeManager_);
+    int32_t fixedNum = 100;
+    std::shared_ptr<WriteFixedValueCb> writeFixedValueCb = std::make_shared<WriteFixedValueCb>(SAMPLE_S16LE, fixedNum);
+    hpaeManager_->RegisterWriteCallback(streamInfo.sessionId, writeFixedValueCb);
+    std::shared_ptr<StatusChangeCb> statusChangeCb = std::make_shared<StatusChangeCb>();
+    hpaeManager_->RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_PLAY, streamInfo.sessionId, statusChangeCb);
+    WaitForMsgProcessing(hpaeManager_);
+    HpaeSessionInfo sessionInfo;
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
+    EXPECT_EQ(sessionInfo.streamInfo.sessionId, streamInfo.sessionId);
+    EXPECT_EQ(sessionInfo.streamInfo.streamType, streamInfo.streamType);
+    EXPECT_EQ(sessionInfo.streamInfo.frameLen, streamInfo.frameLen);
+    EXPECT_EQ(sessionInfo.streamInfo.format, streamInfo.format);
+    EXPECT_EQ(sessionInfo.streamInfo.samplingRate, streamInfo.samplingRate);
+    EXPECT_EQ(sessionInfo.streamInfo.channels, streamInfo.channels);
+    EXPECT_EQ(sessionInfo.streamInfo.streamClassType, streamInfo.streamClassType);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_NEW);
+
+    int32_t syncId = 123;
+    hpaeManager_->StartWithSyncId(streamInfo.streamClassType, streamInfo.sessionId, syncId);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
+
+    hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_PAUSING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_PAUSED);
+
+    hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_STOPPING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STOPPED);
+
+    hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
+}
+
+HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest001, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -391,7 +455,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest001)
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest002)
+HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest002, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -453,7 +517,70 @@ TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest002)
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest002)
+HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest003, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    hpaeManager_->SetDefaultSink(audioModuleInfo.name);
+    AudioModuleInfo audioModuleInfo1 = GetSinkAudioModeInfo("Speaker_File1");
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    HpaeStreamInfo streamInfo = GetRenderStreamInfo();
+    hpaeManager_->CreateStream(streamInfo);
+    WaitForMsgProcessing(hpaeManager_);
+    int32_t fixedNum = 100;
+    int32_t syncId = 123;
+    std::shared_ptr<WriteFixedValueCb> writeFixedValueCb = std::make_shared<WriteFixedValueCb>(SAMPLE_S16LE, fixedNum);
+    hpaeManager_->RegisterWriteCallback(streamInfo.sessionId, writeFixedValueCb);
+    std::shared_ptr<StatusChangeCb> statusChangeCb = std::make_shared<StatusChangeCb>();
+    hpaeManager_->RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_PLAY, streamInfo.sessionId, statusChangeCb);
+    WaitForMsgProcessing(hpaeManager_);
+    HpaeSessionInfo sessionInfo;
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
+    EXPECT_EQ(sessionInfo.streamInfo.sessionId, streamInfo.sessionId);
+    EXPECT_EQ(sessionInfo.streamInfo.streamType, streamInfo.streamType);
+    EXPECT_EQ(sessionInfo.streamInfo.frameLen, streamInfo.frameLen);
+    EXPECT_EQ(sessionInfo.streamInfo.format, streamInfo.format);
+    EXPECT_EQ(sessionInfo.streamInfo.samplingRate, streamInfo.samplingRate);
+    EXPECT_EQ(sessionInfo.streamInfo.channels, streamInfo.channels);
+    EXPECT_EQ(sessionInfo.streamInfo.streamClassType, streamInfo.streamClassType);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_NEW);
+
+    hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 1, "Speaker_File1");
+    hpaeManager_->StartWithSyncId(streamInfo.streamClassType, streamInfo.sessionId, syncId);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
+
+    hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 0, "Speaker_File");
+    hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
+    hpaeManager_->StartWithSyncId(streamInfo.streamClassType, streamInfo.sessionId, syncId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
+
+    hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 1, "Speaker_File1");
+    hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
+    hpaeManager_->StartWithSyncId(streamInfo.streamClassType, streamInfo.sessionId, syncId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
+
+    hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 0, "Speaker_File");
+    hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
+    hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
+}
+
+HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest002, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -499,7 +626,58 @@ TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest002)
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest001)
+HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest003, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    int32_t result = hpaeManager_->RegisterSerivceCallback(callback);
+    EXPECT_EQ(result, SUCCESS);
+
+    AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
+    audioModuleInfo.sourceType = "17";
+    hpaeManager_->effectLiveState_ = "Nosupport";
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest004, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    int32_t result = hpaeManager_->RegisterSerivceCallback(callback);
+    EXPECT_EQ(result, SUCCESS);
+
+    AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
+    audioModuleInfo.sourceType = "17";
+    hpaeManager_->effectLiveState_ = "NRON";
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest005, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    int32_t result = hpaeManager_->RegisterSerivceCallback(callback);
+    EXPECT_EQ(result, SUCCESS);
+
+    AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
+    audioModuleInfo.sourceType = "17";
+    hpaeManager_->effectLiveState_ = "NROFF";
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest001, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -555,7 +733,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest001)
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest002)
+HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest002, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -613,14 +791,14 @@ TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest002)
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
 }
 
-TEST_F(HpaeManagerUnitTest, IsAcousticEchoCancelerSupported001)
+HWTEST_F(HpaeManagerUnitTest, IsAcousticEchoCancelerSupported001, TestSize.Level0)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     bool result = hpaeManager_->IsAcousticEchoCancelerSupported(SOURCE_TYPE_VOICE_COMMUNICATION);
     EXPECT_EQ(result, true);
 }
 
-TEST_F(HpaeManagerUnitTest, IsAcousticEchoCancelerSupported002)
+HWTEST_F(HpaeManagerUnitTest, IsAcousticEchoCancelerSupported002, TestSize.Level0)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -634,7 +812,7 @@ TEST_F(HpaeManagerUnitTest, IsAcousticEchoCancelerSupported002)
     EXPECT_EQ(result, false);
 }
 
-TEST_F(HpaeManagerUnitTest, SetEffectLiveParameter001)
+HWTEST_F(HpaeManagerUnitTest, SetEffectLiveParameter001, TestSize.Level0)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     std::vector<std::pair<std::string, std::string>> params;
@@ -642,7 +820,7 @@ TEST_F(HpaeManagerUnitTest, SetEffectLiveParameter001)
     EXPECT_EQ(result, false);
 }
 
-TEST_F(HpaeManagerUnitTest, SetEffectLiveParameter002)
+HWTEST_F(HpaeManagerUnitTest, SetEffectLiveParameter002, TestSize.Level0)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -658,7 +836,7 @@ TEST_F(HpaeManagerUnitTest, SetEffectLiveParameter002)
     EXPECT_EQ(result, false);
 }
 
-TEST_F(HpaeManagerUnitTest, SetEffectLiveParameter003)
+HWTEST_F(HpaeManagerUnitTest, SetEffectLiveParameter003, TestSize.Level0)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -671,7 +849,7 @@ TEST_F(HpaeManagerUnitTest, SetEffectLiveParameter003)
     EXPECT_EQ(result, false);
 }
 
-TEST_F(HpaeManagerUnitTest, GetEffectLiveParameter001)
+HWTEST_F(HpaeManagerUnitTest, GetEffectLiveParameter001, TestSize.Level0)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     std::vector<std::string> subKeys;
@@ -680,7 +858,7 @@ TEST_F(HpaeManagerUnitTest, GetEffectLiveParameter001)
     EXPECT_EQ(res, true);
 }
 
-TEST_F(HpaeManagerUnitTest, GetEffectLiveParameter002)
+HWTEST_F(HpaeManagerUnitTest, GetEffectLiveParameter002, TestSize.Level0)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -693,7 +871,7 @@ TEST_F(HpaeManagerUnitTest, GetEffectLiveParameter002)
     EXPECT_EQ(res, false);
 }
 
-TEST_F(HpaeManagerUnitTest, GetEffectLiveParameter003)
+HWTEST_F(HpaeManagerUnitTest, GetEffectLiveParameter003, TestSize.Level0)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -709,25 +887,7 @@ TEST_F(HpaeManagerUnitTest, GetEffectLiveParameter003)
     EXPECT_EQ("NoSupport", result[0].second);
 }
 
-/**
- * @tc.name  : Test UpdateCollaborativeState
- * @tc.type  : FUNC
- * @tc.number: UpdateCollaborativeState_001
- * @tc.desc  : Test UpdateCollaborativeState when config in vaild.
- */
-TEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_001)
-{
-    EXPECT_NE(hpaeManager_, nullptr);
-    hpaeManager_->Init();
-    EXPECT_EQ(hpaeManager_->IsInit(), true);
-    int32_t ret = hpaeManager_->UpdateCollaborativeState(true);
-    EXPECT_EQ(ret, true);
-    WaitForMsgProcessing(hpaeManager_);
-    ret = hpaeManager_->UpdateCollaborativeState(false);
-    EXPECT_EQ(ret, true);
-}
-
-TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest003)
+HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest004, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -775,8 +935,12 @@ TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest003)
     EXPECT_EQ(hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 1, "Speaker_File1"), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
+    int32_t syncId = 123;
     hpaeManager_->rendererIdStreamInfoMap_[streamInfo.sessionId].state = HPAE_SESSION_RELEASED;
     EXPECT_EQ(hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->rendererIdStreamInfoMap_[streamInfo.sessionId].state = HPAE_SESSION_RELEASED;
+    EXPECT_EQ(hpaeManager_->StartWithSyncId(streamInfo.streamClassType, streamInfo.sessionId, syncId), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
@@ -837,7 +1001,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest003)
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest003)
+HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest003, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -936,7 +1100,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest003)
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
 }
 
-TEST_F(HpaeManagerUnitTest, GetAllSinks003)
+HWTEST_F(HpaeManagerUnitTest, GetAllSinks003, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -983,7 +1147,7 @@ TEST_F(HpaeManagerUnitTest, GetAllSinks003)
     EXPECT_EQ(devicesInfo_.sourceInfos.size() > 0, true);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink001)
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink001, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -1012,7 +1176,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink001)
     WaitForMsgProcessing(hpaeManager_);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink002)
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink002, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -1028,7 +1192,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink002)
     WaitForMsgProcessing(hpaeManager_);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSource001)
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSource001, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -1060,7 +1224,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSource001)
     WaitForMsgProcessing(hpaeManager_);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest001)
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest001, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -1116,7 +1280,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest001)
     EXPECT_EQ(hpaeManager_->CloseOutAudioPort("Speaker_File"), SUCCESS);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest002)
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest002, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -1171,7 +1335,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest002)
     WaitForMsgProcessing(hpaeManager_);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeManagerSuspend002)
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSuspend002, TestSize.Level0)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -1183,7 +1347,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeManagerSuspend002)
     EXPECT_EQ(hpaeManager_->SetSourceOutputMute(TEST_STREAM_SESSION_ID, true), SUCCESS);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeManagerMoveFailed002)
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerMoveFailed002, TestSize.Level0)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -1205,7 +1369,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeManagerMoveFailed002)
     EXPECT_EQ(hpaeManager_->movingIds_.size(), 0);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeManagerAddPreferSink001)
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerAddPreferSink001, TestSize.Level0)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->rendererIdSinkNameMap_.emplace(TEST_STREAM_SESSION_ID, "speaker_file");
@@ -1213,5 +1377,118 @@ TEST_F(HpaeManagerUnitTest, IHpaeManagerAddPreferSink001)
     EXPECT_EQ(hpaeManager_->idPreferSinkNameMap_.size() == 0, true);
     hpaeManager_->AddPreferSinkForDefaultChange(true, "speaker_file");
     EXPECT_EQ(hpaeManager_->idPreferSinkNameMap_.size() == 1, true);
+}
+
+/**
+ * @tc.name  : Test UpdateCollaborativeState
+ * @tc.type  : FUNC
+ * @tc.number: UpdateCollaborativeState_001
+ * @tc.desc  : Test UpdateCollaborativeState when config in vaild.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    int32_t ret = hpaeManager_->UpdateCollaborativeState(true);
+    EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    ret = hpaeManager_->UpdateCollaborativeState(false);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST_F(HpaeManagerUnitTest, HpaeRenderManagerReloadTest001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    EXPECT_EQ(hpaeManager_->IsRunning(), true);
+
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    hpaeManager_->RegisterSerivceCallback(callback);
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->ReloadAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    int32_t portId = callback->GetPortId();
+
+    EXPECT_EQ(hpaeManager_->ReloadAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    portId = callback->GetPortId();
+
+    hpaeManager_->CloseAudioPort(portId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(callback->GetCloseAudioPortResult(), SUCCESS);
+
+    EXPECT_EQ(hpaeManager_->ReloadAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    portId = callback->GetPortId();
+
+    hpaeManager_->DeInit();
+    EXPECT_EQ(hpaeManager_->IsInit(), false);
+    EXPECT_EQ(hpaeManager_->IsRunning(), false);
+}
+
+HWTEST_F(HpaeManagerUnitTest, HpaeRenderManagerReloadTest002, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    EXPECT_EQ(hpaeManager_->IsRunning(), true);
+
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    hpaeManager_->RegisterSerivceCallback(callback);
+    AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->ReloadAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerGetSinkAndSourceInfoTest, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    sleep(1);
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    hpaeManager_->RegisterSerivceCallback(callback);
+    HpaeSinkInfo sinkInfo;
+    HpaeSourceInfo sourceInfo;
+    int32_t ret = -1;
+
+    EXPECT_EQ(hpaeManager_->GetSinkInfoByIdx(0, sinkInfo, ret, []() {}), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(ret, ERROR);
+
+    ret = -1;
+    EXPECT_EQ(hpaeManager_->GetSourceInfoByIdx(0, sourceInfo, ret, []() {}), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(ret, ERROR);
+
+    AudioModuleInfo audioModuleInfo1 = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    int32_t portId = callback->GetPortId();
+    ret = -1;
+    EXPECT_EQ(hpaeManager_->GetSinkInfoByIdx(portId, sinkInfo, ret, []() {}), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(std::to_string(sinkInfo.channels) == audioModuleInfo1.channels, true);
+    EXPECT_EQ(std::to_string(sinkInfo.samplingRate) == audioModuleInfo1.rate, true);
+    hpaeManager_->CloseAudioPort(portId);
+    WaitForMsgProcessing(hpaeManager_);
+
+    AudioModuleInfo audioModuleInfo2 = GetSourceAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo2), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    portId = callback->GetPortId();
+    ret = -1;
+    EXPECT_EQ(hpaeManager_->GetSourceInfoByIdx(portId, sourceInfo, ret, []() {}), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(std::to_string(sourceInfo.channels) == audioModuleInfo2.channels, true);
+    EXPECT_EQ(std::to_string(sourceInfo.samplingRate) == audioModuleInfo2.rate, true);
+    hpaeManager_->CloseAudioPort(portId);
+    WaitForMsgProcessing(hpaeManager_);
 }
 }  // namespace

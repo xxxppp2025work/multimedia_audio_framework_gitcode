@@ -22,7 +22,6 @@
 #include "parameter.h"
 #include "parameters.h"
 #include "audio_policy_log.h"
-#include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
 #include "i_policy_provider.h"
@@ -228,17 +227,18 @@ int32_t AudioVolumeManager::GetSystemVolumeLevelNoMuteState(AudioStreamType stre
     return audioPolicyManager_.GetSystemVolumeLevelNoMuteState(streamType);
 }
 
-void AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor,
-    const std::string &newSinkName)
+int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor,
+    const std::string &newSinkName, bool enableSetVoiceCallVolume)
 {
     Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceDescriptor.deviceType_));
     // Load volume from KvStore and set volume for each stream type
     audioPolicyManager_.SetVolumeForSwitchDevice(deviceDescriptor);
 
     // The volume of voice_call needs to be adjusted separately
-    if (audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL) {
+    if (enableSetVoiceCallVolume && audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL) {
         SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
     }
+    return SUCCESS;
 }
 
 int32_t AudioVolumeManager::SetVoiceRingtoneMute(bool isMute)

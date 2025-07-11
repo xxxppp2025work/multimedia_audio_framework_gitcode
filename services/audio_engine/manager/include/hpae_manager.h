@@ -75,7 +75,13 @@ public:
     void DumpSourceInfo(std::string deviceName) override;
     void DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo) override;
     uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) override;
+    uint32_t ReloadAudioPort(const AudioModuleInfo &audioModuleInfo) override;
     int32_t CloseAudioPort(int32_t audioHandleIndex) override;
+    int32_t GetSinkInfoByIdx(const int32_t &renderIdx, HpaeSinkInfo &sinkInfo, int32_t &result,
+        std::function<void()> callback) override;
+    int32_t GetSourceInfoByIdx(const int32_t &captureIdx, HpaeSourceInfo &sourceInfo, int32_t &result,
+        std::function<void()> callback) override;
+
     int32_t GetAllSinkInputs() override;
     int32_t GetAllSourceOutputs() override;
     int32_t MoveSourceOutputByIndexOrName(
@@ -100,13 +106,14 @@ public:
     int32_t CreateStream(const HpaeStreamInfo &streamInfo) override;
     int32_t DestroyStream(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Start(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
+    int32_t StartWithSyncId(HpaeStreamClassType streamClassType, uint32_t sessionId, int32_t syncId) override;
     int32_t Pause(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Flush(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Drain(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Stop(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Release(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t RegisterStatusCallback(HpaeStreamClassType streamClassType, uint32_t sessionId,
-        const std::weak_ptr<IStatusCallback> &callback) override;
+        const std::weak_ptr<IStreamStatusCallback> &callback) override;
     // record stream interface
     int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) override;
     int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeStreamInfo &streamInfo) override;
@@ -178,6 +185,7 @@ private:
     void RegisterHandler(HpaeMsgCode cmdID, void (HpaeManager::*func)(Args...));
     void HandleUpdateStatus(
         HpaeStreamClassType streamClassType, uint32_t sessionId, HpaeSessionState status, IOperation operation);
+    void HandleReloadDeviceResult(std::string deviceName, int32_t result);
     void HandleInitDeviceResult(std::string deviceName, int32_t result);
     void HandleDeInitDeviceResult(std::string deviceName, int32_t result);
     void HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> sinkInputNode, std::string sinkName);
@@ -191,6 +199,7 @@ private:
     void HandleDumpSourceInfo(std::string deviceName, std::string dumpStr);
     void HandleConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode> hpaeCobufferNode);
     void HandleDisConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode> hpaeCobufferNode);
+    void HandleInitSourceResult(SourceType sourceType);
 
     void SendRequest(Request &&request, std::string funcName);
     int32_t OpenAudioPortInner(const AudioModuleInfo &audioModuleInfo);
@@ -199,6 +208,8 @@ private:
     int32_t OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex);
     void HandleRendererManager(const std::string& sinkName, const HpaeStreamInfo &streamInfo);
     void CreateStreamForCapInner(const HpaeStreamInfo &streamInfo);
+    int32_t CreateRendererManager(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex,
+        bool isReload = false);
 
     std::shared_ptr<IHpaeRendererManager> GetRendererManagerById(uint32_t sessionId);
     std::shared_ptr<IHpaeCapturerManager> GetCapturerManagerById(uint32_t sessionId);
@@ -207,7 +218,7 @@ private:
     void AddStreamToCollection(const HpaeStreamInfo &streamInfo, const std::string &name);
 
     void MoveToPreferSink(const std::string& name, std::shared_ptr<AudioServiceHpaeCallback> serviceCallback);
-    int32_t ReloadRenderManager(const AudioModuleInfo &audioModuleInfo);
+    int32_t ReloadRenderManager(const AudioModuleInfo &audioModuleInfo, bool isReload = false);
     void DestroyCapture(uint32_t sessionId);
     void LoadEffectLive();
 
@@ -215,6 +226,7 @@ private:
     bool SetMovingStreamState(HpaeStreamClassType streamType, uint32_t sessionId,
         HpaeSessionState status, HpaeSessionState state, IOperation operation);
     void AddPreferSinkForDefaultChange(bool isAdd, const std::string &sinkName);
+    void OnCallbackOpenOrReloadFailed(bool isReload);
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
