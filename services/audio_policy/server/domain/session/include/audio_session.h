@@ -39,7 +39,7 @@ class AudioSessionStateMonitor;
 class AudioSession {
 public:
     AudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy,
-        const std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor);
+        AudioSessionStateMonitor& audioSessionStateMonitor);
     ~AudioSession();
     bool IsSceneParameterSet();
     int32_t SetAudioSessionScene(AudioSessionScene audioSessionScene);
@@ -77,11 +77,10 @@ private:
     bool IsDeviceContainedInVector(std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices,
         const std::shared_ptr<AudioDeviceDescriptor> desc);
     int32_t EnableDefaultDevice();
-    std::mutex sessionMutex_;
     int32_t callerPid_;
     bool needToFetch_ = false;
     AudioSessionStrategy strategy_;
-    std::weak_ptr<AudioSessionStateMonitor> audioSessionStateMonitor_;
+    AudioSessionStateMonitor& audioSessionStateMonitor_;
     AudioSessionScene audioSessionScene_ {AudioSessionScene::INVALID};
     // These are streams included in audiosession focus.
     std::vector<AudioInterrupt> bypassStreamInfoVec_;

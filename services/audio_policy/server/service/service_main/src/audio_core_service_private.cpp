@@ -1797,7 +1797,8 @@ int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, co
     CHECK_AND_RETURN_RET_LOG(pipeManager_->GetStreamDescById(sessionID) != nullptr, ERR_NOT_SUPPORTED,
         "sessionId is not exist");
 
-    if ((audioSessionService_ != nullptr) && (!audioSessionService_->IsStreamAllowedToSetDevice(sessionID))) {
+    auto audioInterruptService = AudioInterruptService::GetInstance();
+    if ((audioInterruptService != nullptr) && (!audioInterruptService->IsStreamAllowedToSetDevice(sessionID))) {
         AUDIO_ERR_LOG("current stream is contained in a session which had set default output device");
         return ERR_NOT_SUPPORTED;
     }

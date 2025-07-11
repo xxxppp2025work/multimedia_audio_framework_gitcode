@@ -92,10 +92,10 @@ void AudioPolicyStateMonitor::TraverseAndInvokeTimeoutCallbacks()
     std::unique_lock<std::mutex> monitorLock(monitorMutex_);
     auto it = monitoredObj_.begin();
     while (it != monitoredObj_.end()) {
-        auto cb = it->second;
+        auto cb = it->second.lock();
         if (cb == nullptr) {
             AUDIO_INFO_LOG("cb is nullptr");
-            ++it;
+            it = monitoredObj_.erase(it);
             continue;
         }
 
@@ -105,7 +105,8 @@ void AudioPolicyStateMonitor::TraverseAndInvokeTimeoutCallbacks()
         }
 
         // Running callback in a standalone thread
-        std::thread callbackThread([](const std::shared_ptr<AudioPolicyStateMonitorCallback> cb) {
+        std::thread callbackThread([](const std::weak_ptr<AudioPolicyStateMonitorCallback> callback) {
+            auto cb = callback.lock();
             if (cb == nullptr) {
                 AUDIO_ERR_LOG("ExecCallbackInThread cb is nullptr");
                 return;
