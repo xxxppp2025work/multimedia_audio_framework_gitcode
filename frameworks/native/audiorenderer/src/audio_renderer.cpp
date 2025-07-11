@@ -484,6 +484,16 @@ int32_t AudioRendererPrivate::InitOutputDeviceChangeCallback()
     return SUCCESS;
 }
 
+void AudioRendererPrivate::InitAudioRouteCallback()
+{
+    uint32_t sessionId;
+    int32_t ret = GetAudioStreamIdInner(sessionId);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Get sessionId failed");
+    audioRouteCallback_ = audioRouteCallback_ == nullptr ? std::make_shared<AudioRouteCallbackImpl>(weak_from_this()) :
+        audioRouteCallback_;
+    AudioPolicyManager::GetInstance().SetAudioRouteCallback(sessionId, audioRouteCallback_);
+}
+
 // Inner function. Must be called with AudioRendererPrivate::rendererMutex_
 // or AudioRendererPrivate::streamMutex_ held.
 int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParams)
@@ -646,6 +656,8 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 
     ret = InitFormatUnsupportedErrorCallback();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitFormatUnsupportedErrorCallback Failed");
+
+    InitAudioRouteCallback();
 
     return InitAudioInterruptCallback();
 }
@@ -1285,6 +1297,8 @@ bool AudioRendererPrivate::Release()
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
 
     (void)AudioPolicyManager::GetInstance().UnsetAudioFormatUnsupportedErrorCallback();
+
+    (void)AudioPolicyManager::GetInstance().UnsetAudioRouteCallback(sessionID_);
 
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
@@ -2797,6 +2811,14 @@ int32_t AudioRendererPrivate::StartDataCallback()
     CHECK_AND_RETURN_RET_LOG(state == RENDERER_RUNNING, ERROR_ILLEGAL_STATE,
         "StartDataCallback failed. Illegal state:%{public}u", state);
     return audioStream_->SetOffloadDataCallbackState(0); // 0 hdi state need data
+}
+
+void AudioRouteCallbackImpl::OnRouteUpdate(uint32_t routeFlag, const std::string &networkId)
+{
+    std::shared_ptr<AudioRendererPrivate> sharedRenderer = renderer_.lock();
+    CHECK_AND_RETURN_LOG(sharedRenderer != nullptr && sharedRenderer->audioStream_ != nullptr,
+        "audioStream is nullptr");
+    sharedRenderer->audioStream_->NotifyRouteUpadate(routeFlag, networkId);
 }
 
 void AudioRendererPrivate::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)

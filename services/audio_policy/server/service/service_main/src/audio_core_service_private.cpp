@@ -597,6 +597,16 @@ int32_t AudioCoreService::FetchDeviceAndRoute(std::string caller, const AudioStr
     return FetchInputDeviceAndRoute(caller + "FetchDeviceAndRoute");
 }
 
+void AudioCoreService::NotifyRouteUpdate(uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty(), "invalid streamDesc");
+    std::lock_guard<std::mutex> lock(routeUpdateCallbackMutex_);
+    CHECK_AND_RETURN_LOG(routeUpdateCallback_.count(sessionId) != 0, "sessionId not found");
+    auto callback = routeUpdateCallback_[sessionId];
+    CHECK_AND_RETURN_LOG(callback != nullptr, "callback is nullptr");
+    callback->OnRouteUpdate(streamDesc->routeFlag_, streamDesc->newDeviceDescs_[0]->networkId_);
+}
+
 int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     uint32_t &sessionId, uint32_t &audioFlag, const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -619,6 +629,7 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
         }
     }
     RemoveUnusedPipe();
+    NotifyRouteUpdate(sessionId, streamDesc);
     return SUCCESS;
 }
 

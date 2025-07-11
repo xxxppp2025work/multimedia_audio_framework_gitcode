@@ -23,6 +23,7 @@
 
 #include "audio_interrupt_callback.h"
 #include "audio_concurrency_callback.h"
+#include "audio_route_callback.h"
 #include "audio_renderer.h"
 #include "audio_renderer_proxy_obj.h"
 #include "audio_utils.h"
@@ -36,8 +37,10 @@ constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
 class RendererPolicyServiceDiedCallback;
 class OutputDeviceChangeWithInfoCallbackImpl;
 class FormatUnsupportedErrorCallbackImpl;
+class AudioRouteCallbackImpl;
 
 class AudioRendererPrivate : public AudioRenderer, public std::enable_shared_from_this<AudioRendererPrivate> {
+    friend class AudioRouteCallbackImpl;
 public:
     int32_t GetFrameCount(uint32_t &frameCount) const override;
     int32_t GetLatency(uint64_t &latency) const override;
@@ -203,6 +206,7 @@ private:
     void SetClientInfo(uint32_t flag, IAudioStream::StreamClass &streamClass);
     int32_t InitAudioInterruptCallback(bool isRestoreAudio = false);
     int32_t InitOutputDeviceChangeCallback();
+    void InitAudioRouteCallback();
     int32_t InitAudioStream(AudioStreamParams audioStreamParams);
     bool SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     void UpdateRendererAudioStream(const std::shared_ptr<IAudioStream> &newAudioStream);
@@ -245,6 +249,7 @@ private:
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
+    std::shared_ptr<AudioRouteCallback> audioRouteCallback_ = nullptr;
     AppInfo appInfo_ = {};
     AudioInterrupt audioInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, 0};
@@ -403,6 +408,18 @@ public:
 private:
     std::weak_ptr<AudioRendererErrorCallback> callback_;
 };
+
+class AudioRouteCallbackImpl : public AudioRouteCallback {
+public:
+    AudioRouteCallbackImpl(std::weak_ptr<AudioRendererPrivate> renderer)
+        : renderer_(renderer) {}
+    virtual ~AudioRouteCallbackImpl() = default;
+    void OnRouteUpdate(uint32_t routeFlag, const std::string &networkId) override;
+
+private:
+    std::weak_ptr<AudioRendererPrivate> renderer_;
+};
+
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif // AUDIO_RENDERER_PRIVATE_H

@@ -2362,6 +2362,21 @@ int32_t AudioPolicyServer::UnsetAudioInterruptCallback(uint32_t sessionID, int32
     return ERR_UNKNOWN;
 }
 
+int32_t AudioPolicyServer::SetAudioRouteCallback(uint32_t sessionId, const sptr<IRemoteObject> &object)
+{
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_UNKNOWN, "coreService_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_UNKNOWN, "object is nullptr");
+    coreService_->SetAudioRouteCallback(sessionId, object);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::UnsetAudioRouteCallback(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_UNKNOWN, "coreService_ is nullptr");
+    coreService_->UnsetAudioRouteCallback(sessionId);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::SetAudioManagerInterruptCallback(int32_t /* clientId */,
                                                             const sptr<IRemoteObject> &object)
 {

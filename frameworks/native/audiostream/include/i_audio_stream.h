@@ -330,6 +330,8 @@ public:
 
     virtual void ResetFirstFrameState() {}
 
+    virtual void NotifyRouteUpadate(uint32_t routeFlag, const std::string &networkId) {}
+
     virtual void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) {}
 };
 } // namespace AudioStandard

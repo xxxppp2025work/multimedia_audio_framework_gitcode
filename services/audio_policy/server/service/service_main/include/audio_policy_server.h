@@ -239,6 +239,10 @@ public:
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneId) override;
 
+    int32_t SetAudioRouteCallback(uint32_t sessionId, const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetAudioRouteCallback(uint32_t sessionId) override;
+
     int32_t ActivatePreemptMode(void) override;
 
     int32_t DeactivatePreemptMode(void) override;

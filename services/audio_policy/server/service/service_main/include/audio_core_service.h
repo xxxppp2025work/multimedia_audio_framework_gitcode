@@ -157,6 +157,8 @@ private:
     bool IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId);
     void DumpPipeManager(std::string &dumpString);
     void DumpSelectHistory(std::string &dumpString);
+    void SetAudioRouteCallback(uint32_t sessionId, const sptr<IRemoteObject> &object);
+    void UnsetAudioRouteCallback(uint32_t sessionId);
 
     // Called by EventEntry - with lock
     // Stream operations
@@ -425,6 +427,7 @@ private:
     void ClearRingMuteWhenCallStart(bool pre, bool after);
     void UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName);
     void UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    void NotifyRouteUpdate(uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> streamDesc);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
@@ -491,10 +494,28 @@ private:
     std::mutex offloadCloseMutex_;
     std::mutex offloadReOpenMutex_;
 
+    // route update callback
+    std::unordered_map<uint32_t, sptr<IStandardAudioPolicyManagerListener>> routeUpdateCallback_;
+    std::mutex routeUpdateCallbackMutex_;
+
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,
         .type = CAST_TYPE_NULL
     };
+};
+
+class AudioRouteCallbackDeathRecipient : public IRemoteObject::DeathRecipient {
+public:
+    explicit AudioRouteCallbackDeathRecipient(const std::shared_ptr<AudioCoreService> &service, uint32_t sessionId);
+    virtual ~AudioRouteCallbackDeathRecipient() = default;
+
+    DISALLOW_COPY_AND_MOVE(AudioRouteCallbackDeathRecipient);
+
+    void OnRemoteDied(const wptr<IRemoteObject> &remote) override;
+
+private:
+    const std::weak_ptr<AudioCoreService> service_;
+    const uint32_t sessionId_;
 };
 }
 }

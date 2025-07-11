@@ -844,6 +844,39 @@ int32_t AudioCoreService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo
     return streamCollector_.RegisterTracker(mode, streamChangeInfo, object);
 }
 
+AudioRouteCallbackDeathRecipient::AudioRouteCallbackDeathRecipient(const std::shared_ptr<AudioCoreService> &service,
+    uint32_t sessionId)
+    : service_(service), sessionId_(sessionId)
+{
+}
+
+void AudioRouteCallbackDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
+{
+    std::shared_ptr<AudioCoreService> service = service_.lock();
+    CHECK_AND_RETURN(service != nullptr);
+    service->UnsetAudioRouteCallback(sessionId_);
+}
+
+void AudioCoreService::SetAudioRouteCallback(uint32_t sessionId, const sptr<IRemoteObject> &object)
+{
+    CHECK_AND_RETURN_LOG(object != nullptr, "object is nullptr");
+    sptr<IStandardAudioPolicyManagerListener> listener = iface_cast<IStandardAudioPolicyManagerListener>(object);
+    CHECK_AND_RETURN_LOG(listener != nullptr, "listener is nullptr");
+    std::lock_guard<std::mutex> lock(routeUpdateCallbackMutex_);
+    CHECK_AND_RETURN_LOG(routeUpdateCallback_.count(sessionId) == 0, "sessionId already exists");
+    sptr<AudioRouteCallbackDeathRecipient> deathRecipient = new AudioRouteCallbackDeathRecipient(shared_from_this(),
+        sessionId);
+    object->AddDeathRecipient(deathRecipient);
+    routeUpdateCallback_[sessionId] = listener;
+}
+
+void AudioCoreService::UnsetAudioRouteCallback(uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(routeUpdateCallbackMutex_);
+    CHECK_AND_RETURN_LOG(routeUpdateCallback_.count(sessionId) != 0, "sessionId not exists");
+    routeUpdateCallback_.erase(sessionId);
+}
+
 int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
