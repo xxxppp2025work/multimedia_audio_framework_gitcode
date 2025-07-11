@@ -287,6 +287,13 @@ bool FastAudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbas
     return true;
 }
 
+void FastAudioStream::SetSwitchInfoTimestamp(
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair)
+{
+    (void)lastFramePosAndTimePair;
+    AUDIO_INFO_LOG("fast stream not support timestamp re-set when stream switching");
+}
+
 bool FastAudioStream::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     return GetAudioTime(timestamp, base);
@@ -972,6 +979,12 @@ void FastAudioStream::ResetFirstFrameState()
         AUDIO_DEBUG_LOG("FastAudioStream::ResetFirstFrameState: reset the first frame state");
         spkProcClientCb_->ResetFirstFrameState();
     }
+}
+
+void FastAudioStream::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
+{
+    CHECK_AND_RETURN_LOG(processClient_ != nullptr, "Start failed, process is null.");
+    processClient_->SetAudioHapticsSyncId(audioHapticsSyncId);
 }
 
 void FastAudioStreamRenderCallback::OnHandleData(size_t length)

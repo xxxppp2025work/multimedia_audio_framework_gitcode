@@ -100,6 +100,7 @@ HpaeManager::HpaeManager() : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT)  // todo Me
     RegisterHandler(CONNECT_CO_BUFFER_NODE, &HpaeManager::HandleConnectCoBufferNode);
     RegisterHandler(DISCONNECT_CO_BUFFER_NODE, &HpaeManager::HandleDisConnectCoBufferNode);
     RegisterHandler(RELOAD_AUDIO_SINK_RESULT, &HpaeManager::HandleReloadDeviceResult);
+    RegisterHandler(INIT_SOURCE_RESULT, &HpaeManager::HandleInitSourceResult);
 }
 
 HpaeManager::~HpaeManager()
@@ -565,6 +566,44 @@ int32_t HpaeManager::CloseAudioPort(int32_t audioHandleIndex)
         if (auto serviceCallback = serviceCallback_.lock()) {
             serviceCallback->OnCloseAudioPortCb(ret);
         }
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeManager::GetSinkInfoByIdx(const int32_t &renderIdx, HpaeSinkInfo &sinkInfo, int32_t &result,
+    std::function<void()> callback)
+{
+    auto request = [this, renderIdx, &sinkInfo, &result, callback]() {
+        if (sinkIdSinkNameMap_.find(renderIdx) == sinkIdSinkNameMap_.end() ||
+            rendererManagerMap_.find(sinkIdSinkNameMap_[renderIdx]) == rendererManagerMap_.end()) {
+            AUDIO_ERR_LOG("GetSinkInfoByIdx err, sink id %{public}d not open", renderIdx);
+            result = ERROR;
+            callback();
+            return;
+        }
+        sinkInfo = rendererManagerMap_[sinkIdSinkNameMap_[renderIdx]]->GetSinkInfo();
+        result = SUCCESS;
+        callback();
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeManager::GetSourceInfoByIdx(const int32_t &captureIdx, HpaeSourceInfo &sourceInfo, int32_t &result,
+    std::function<void()> callback)
+{
+    auto request = [this, captureIdx, &sourceInfo, &result, callback]() {
+        if (sourceIdSourceNameMap_.find(captureIdx) == sourceIdSourceNameMap_.end() ||
+            capturerManagerMap_.find(sourceIdSourceNameMap_[captureIdx]) == capturerManagerMap_.end()) {
+            AUDIO_ERR_LOG("GetSourceInfoByIdx err, source id %{public}d not open", captureIdx);
+            result = ERROR;
+            callback();
+            return;
+        }
+        sourceInfo = capturerManagerMap_[sourceIdSourceNameMap_[captureIdx]]->GetSourceInfo();
+        result = SUCCESS;
+        callback();
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -1036,7 +1075,7 @@ void HpaeManager::HandleMoveSessionFailed(HpaeStreamClassType streamClassType, u
         }
     } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
         if (auto serviceCallback = serviceCallback_.lock()) {
-            serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
+            serviceCallback->OnMoveSourceOutputByIndexOrNameCb(ERROR_INVALID_PARAM);
         }
     }
 }
@@ -1057,7 +1096,7 @@ void HpaeManager::HandleUpdateStatus(
                                                              : capturerIdStreamInfoMap_.find(sessionId);
     if (it != rendererIdStreamInfoMap_.end() && it != capturerIdStreamInfoMap_.end()) {
         if (auto callback = it->second.statusCallback.lock()) {
-            callback->OnStatusUpdate(operation);
+            callback->OnStatusUpdate(operation, sessionId);
         }
     }
 }
@@ -1123,6 +1162,15 @@ void HpaeManager::HandleInitDeviceResult(std::string deviceName, int32_t result)
             result);
     } else {
         AUDIO_INFO_LOG("OnOpenAudioPortCb is nullptr");
+    }
+}
+
+void HpaeManager::HandleInitSourceResult(SourceType sourceType)
+{
+    if (sourceType == SOURCE_TYPE_LIVE && (effectLiveState_ == "NROFF" || effectLiveState_ == "NRON")) {
+        const std::string combinedParam = "live_effect_enable=" + effectLiveState_;
+        HpaePolicyManager::GetInstance().SetAudioParameter("primary",
+            AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
     }
 }
 
@@ -1277,7 +1325,7 @@ bool HpaeManager::SetMovingStreamState(HpaeStreamClassType streamType, uint32_t 
     }
     if (streamType == HPAE_STREAM_CLASS_TYPE_PLAY) {
         if (auto statusCallback = rendererIdStreamInfoMap_[sessionId].statusCallback.lock()) {
-            statusCallback->OnStatusUpdate(operation);
+            statusCallback->OnStatusUpdate(operation, sessionId);
         }
         if (operation == OPERATION_RELEASED) {
             sinkInputs_.erase(sessionId);
@@ -1285,7 +1333,7 @@ bool HpaeManager::SetMovingStreamState(HpaeStreamClassType streamType, uint32_t 
         }
     } else {
         if (auto statusCallback = capturerIdStreamInfoMap_[sessionId].statusCallback.lock()) {
-            statusCallback->OnStatusUpdate(operation);
+            statusCallback->OnStatusUpdate(operation, sessionId);
         }
         if (operation == OPERATION_RELEASED) {
             sourceOutputs_.erase(sessionId);
@@ -1295,7 +1343,7 @@ bool HpaeManager::SetMovingStreamState(HpaeStreamClassType streamType, uint32_t 
         } else if (operation == OPERATION_STARTED) {
             if (capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType == SOURCE_TYPE_LIVE &&
                 (effectLiveState_ == "NROFF" || effectLiveState_ == "NRON")) {
-                const std::string combinedParam = "live_effect=" + effectLiveState_;
+                const std::string combinedParam = "live_effect_enable=" + effectLiveState_;
                 HpaePolicyManager::GetInstance().SetAudioParameter("primary",
                     AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
             }
@@ -1359,7 +1407,9 @@ int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t session
                 "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Start(sessionId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_RUNNING;
-            rendererIdStreamInfoMap_[sessionId].statusCallback.lock()->OnStatusUpdate(OPERATION_STARTED);
+            CHECK_AND_RETURN_LOG(rendererIdStreamInfoMap_[sessionId].statusCallback.lock() != nullptr,
+                "statusCallback for stream[%{public}u] is nullptr", sessionId);
+            rendererIdStreamInfoMap_[sessionId].statusCallback.lock()->OnStatusUpdate(OPERATION_STARTED, sessionId);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
             AUDIO_INFO_LOG("capturer Start sessionId: %{public}u deviceName:%{public}s",
@@ -1374,15 +1424,44 @@ int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t session
                 capturerManagerMap_[capturerIdSourceNameMap_[sessionId]]->Start(sessionId);
             }
             capturerIdStreamInfoMap_[sessionId].state = HPAE_SESSION_RUNNING;
-            if (capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType == SOURCE_TYPE_LIVE &&
-                (effectLiveState_ == "NROFF" || effectLiveState_ == "NRON")) {
-                const std::string combinedParam = "live_effect=" + effectLiveState_;
-                HpaePolicyManager::GetInstance().SetAudioParameter("primary",
-                    AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
-            }
         } else {
             AUDIO_WARNING_LOG("Start can not find sessionId streamClassType  %{public}d, sessionId %{public}u",
                 streamClassType, sessionId);
+        }
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeManager::StartWithSyncId(HpaeStreamClassType streamClassType, uint32_t sessionId, int32_t syncId)
+{
+    auto request = [this, streamClassType, sessionId, syncId]() {
+        if (rendererIdStreamInfoMap_[sessionId].state == HPAE_SESSION_RELEASED) {
+            AUDIO_WARNING_LOG("StartWithSyncId session:%{public}u failed. session already released.", sessionId);
+            return;
+        }
+        AUDIO_INFO_LOG(
+            "HpaeManager::StartWithSyncId sessionId: %{public}u streamClassType:%{public}d syncId: %{public}d",
+            sessionId, streamClassType, syncId);
+        if (SetMovingStreamState(streamClassType, sessionId, HPAE_SESSION_RUNNING,
+            HPAE_SESSION_RUNNING, OPERATION_STARTED)) {
+            return;
+        }
+        if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY &&
+            rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
+            AUDIO_INFO_LOG("renderer Start sessionId: %{public}u deviceName:%{public}s",
+                sessionId, rendererIdSinkNameMap_[sessionId].c_str());
+            CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
+                "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
+            rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Start(sessionId);
+            rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_RUNNING;
+            CHECK_AND_RETURN_LOG(rendererIdStreamInfoMap_[sessionId].statusCallback.lock() != nullptr,
+                "statusCallback for stream[%{public}u] is nullptr", sessionId);
+            rendererIdStreamInfoMap_[sessionId].statusCallback.lock()->OnStatusUpdate(OPERATION_STARTED, sessionId);
+        } else {
+            AUDIO_WARNING_LOG("StartWithSyncId can not find sessionId streamClassType  %{public}d,"
+                "sessionId %{public}u syncId: %{public}d",
+                streamClassType, sessionId, syncId);
         }
     };
     SendRequest(request, __func__);
@@ -1569,8 +1648,8 @@ int32_t HpaeManager::Release(HpaeStreamClassType streamClassType, uint32_t sessi
     return SUCCESS;
 }
 
-int32_t HpaeManager::RegisterStatusCallback(
-    HpaeStreamClassType streamClassType, uint32_t sessionId, const std::weak_ptr<IStatusCallback> &callback)
+int32_t HpaeManager::RegisterStatusCallback(HpaeStreamClassType streamClassType, uint32_t sessionId,
+    const std::weak_ptr<IStreamStatusCallback> &callback)
 {
     auto request = [this, streamClassType, sessionId, callback]() {
         AUDIO_INFO_LOG(
@@ -2082,8 +2161,11 @@ int32_t HpaeManager::SetAudioEnhanceProperty(const AudioEffectPropertyArrayV3 &p
 
 int32_t HpaeManager::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray, DeviceType deviceType)
 {
-    auto request = [&propertyArray, deviceType]() {
+    auto request = [this, &propertyArray, deviceType]() {
         HpaePolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray, deviceType);
+        if (auto serviceCallback = serviceCallback_.lock()) {
+            serviceCallback->OnGetAudioEnhancePropertyCbV3(SUCCESS);
+        }
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -2100,8 +2182,11 @@ int32_t HpaeManager::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &pr
 
 int32_t HpaeManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray, DeviceType deviceType)
 {
-    auto request = [&propertyArray, deviceType]() {
+    auto request = [this, &propertyArray, deviceType]() {
         HpaePolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray, deviceType);
+        if (auto serviceCallback = serviceCallback_.lock()) {
+            serviceCallback->OnGetAudioEnhancePropertyCb(SUCCESS);
+        }
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -2154,7 +2239,7 @@ void HpaeManager::LoadEffectLive()
         AUDIO_ERR_LOG("OS account not ready");
     } else {
         std::string configValue;
-        ret = settingProvider.GetStringValue("live_effect", configValue, "system");
+        ret = settingProvider.GetStringValue("live_effect_enable", configValue, "system");
         if (ret == SUCCESS && !configValue.empty()) {
             effectLiveState_ = configValue;
             return;
@@ -2169,7 +2254,7 @@ void HpaeManager::LoadEffectLive()
     }
     AUDIO_INFO_LOG("EffectLive %{public}s", effectLiveState_.c_str());
     if (settingProvider.CheckOsAccountReady()) {
-        settingProvider.PutStringValue("live_effect", effectLiveState_, "system");
+        settingProvider.PutStringValue("live_effect_enable", effectLiveState_, "system");
     }
 }
 
@@ -2177,7 +2262,7 @@ bool HpaeManager::SetEffectLiveParameter(const std::vector<std::pair<std::string
 {
     CHECK_AND_RETURN_RET_LOG(!params.empty(), false, "params is empty");
     const auto &[paramKey, paramValue] = params[0];
-    if (paramKey != "live_effect" || (paramValue != "NRON" && paramValue != "NROFF")) {
+    if (paramKey != "live_effect_enable" || (paramValue != "NRON" && paramValue != "NROFF")) {
         AUDIO_ERR_LOG("Parameter Error");
         return false;
     }

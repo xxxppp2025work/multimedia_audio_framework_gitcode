@@ -216,15 +216,6 @@ void GetStreamTypePriorityFuzzTest()
     interruptService->GetStreamTypePriority(streamType);
 }
 
-void GetStreamPriorityMapFuzzTest()
-{
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    if (interruptService == nullptr) {
-        return;
-    }
-    interruptService->GetStreamPriorityMap();
-}
-
 void SendInterruptEventFuzzTest()
 {
     AudioFocuState oldState = GetData<AudioFocuState>();
@@ -452,7 +443,18 @@ void AudioPolicyManagerFuzzTest()
 #endif
 }
 
-typedef void (*TestFuncs[15])();
+void ForceVolumeKeyControlTypeFuzzTest()
+{
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    int32_t volumeType = GetData<int32_t>();
+    int32_t duration = GetData<int32_t>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    interruptService->ForceVolumeKeyControlType(static_cast<AudioVolumeType>(volumeType), duration);
+}
+
+typedef void (*TestFuncs[16])();
 
 TestFuncs g_testFuncs = {
     InitFuzzTest,
@@ -460,7 +462,6 @@ TestFuncs g_testFuncs = {
     AudioInterruptZoneDumpFuzzTest,
     ClearAudioFocusInfoListOnAccountsChangedFuzzTest,
     GetStreamTypePriorityFuzzTest,
-    GetStreamPriorityMapFuzzTest,
     SendInterruptEventFuzzTest,
     IsSameAppInShareModeFuzzTest,
     GetAudioFocusInfoListFuzzTest,
@@ -469,6 +470,7 @@ TestFuncs g_testFuncs = {
     AudioPolicyOtherMoreFuzzTest,
     AudioVolumeKeyCallbackStubMoreFuzzTest,
     AudioPolicyManagerFuzzTest,
+    ForceVolumeKeyControlTypeFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

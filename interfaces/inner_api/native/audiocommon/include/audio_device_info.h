@@ -363,6 +363,12 @@ enum BluetoothOffloadState {
     A2DP_OFFLOAD = 2,
 };
 
+struct VolumeBehavior {
+    bool isReady = false;
+    bool isVolumeControlDisabled = false;
+    std::string databaseVolumeName = "";
+};
+
 struct DevicePrivacyInfo {
     std::string deviceName;
     DeviceType deviceType;
@@ -385,16 +391,20 @@ enum class AudioStreamDeviceChangeReason {
     UNKNOWN = 0,
     NEW_DEVICE_AVAILABLE = 1,
     OLD_DEVICE_UNAVALIABLE = 2,
-    OVERRODE = 3
+    OVERRODE = 3,
+    AUDIO_SESSION_ACTIVATE = 4,
+    STREAM_PRIORITY_CHANGED = 5,
 };
 
-class AudioStreamDeviceChangeReasonExt {
+class AudioStreamDeviceChangeReasonExt : public Parcelable {
 public:
     enum class ExtEnum {
         UNKNOWN = 0,
         NEW_DEVICE_AVAILABLE = 1,
         OLD_DEVICE_UNAVALIABLE = 2,
         OVERRODE = 3,
+        AUDIO_SESSION_ACTIVATE = 4,
+        STREAM_PRIORITY_CHANGED = 5,
         MIN = 1000,
         OLD_DEVICE_UNAVALIABLE_EXT = 1000,
         SET_AUDIO_SCENE = 1001,
@@ -417,6 +427,8 @@ public:
         return static_cast<int>(reason_);
     }
 
+    AudioStreamDeviceChangeReasonExt()
+        : reason_(ExtEnum::UNKNOWN) {}
     AudioStreamDeviceChangeReasonExt(const AudioStreamDeviceChangeReason &reason)
         : reason_(static_cast<ExtEnum>(reason)) {}
 
@@ -450,6 +462,21 @@ public:
     bool IsSetDefaultOutputDevice() const
     {
         return reason_ == ExtEnum::SET_DEFAULT_OUTPUT_DEVICE;
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(reason_));
+    }
+
+    static AudioStreamDeviceChangeReasonExt *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new AudioStreamDeviceChangeReasonExt();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->reason_ = static_cast<ExtEnum>(parcel.ReadInt32());
+        return info;
     }
 
 private:

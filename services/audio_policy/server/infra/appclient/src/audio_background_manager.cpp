@@ -20,7 +20,6 @@
 #include "audio_policy_log.h"
 #include "audio_log.h"
 #include "audio_policy_utils.h"
-#include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "i_policy_provider.h"
 
@@ -220,7 +219,9 @@ void AudioBackgroundManager::HandleFreezeStateChange(const int32_t pid, bool isF
 {
     AppState& appState = appStatesMap_[pid];
     if (isFreeze) {
-        streamCollector_.HandleFreezeStateChange(pid, true, appState.hasSession);
+        if (!appState.hasBackTask) {
+            streamCollector_.HandleFreezeStateChange(pid, true, appState.hasSession);
+        }
     } else {
         if (appState.hasBackTask) {
             streamCollector_.HandleFreezeStateChange(pid, false, appState.hasSession);

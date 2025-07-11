@@ -49,7 +49,7 @@ public:
 
     virtual void WriteDumpFile(void *buffer, size_t bufferSize) = 0;
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) = 0;
+    virtual int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice) = 0;
 
     virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
 
@@ -71,6 +71,8 @@ public:
     virtual void AddNormalFrameSize() {}
     virtual void AddNoDataFrameSize() {}
     virtual StreamStatus GetStreamStatus() {return STREAM_IDEL;}
+    virtual int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) = 0;
+    virtual int32_t GetAudioHapticsSyncId() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

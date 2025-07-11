@@ -79,6 +79,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     streamDesc->streamAction_ = AUDIO_STREAM_ACTION_NEW;
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
     configManager_.GetStreamPropInfo(streamDesc, streamPropInfo);
+    UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
     std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = streamPropInfo->pipeInfo_.lock();
     if (pipeInfoPtr == nullptr) {
         AUDIO_ERR_LOG("Pipe info is null");
@@ -111,6 +112,24 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     AUDIO_INFO_LOG("[PipeFetchInfo] use new Pipe %{public}s for stream %{public}u",
         info.ToString().c_str(), streamDesc->sessionId_);
     return selectedPipeInfoList;
+}
+
+void AudioPipeSelector::UpdataDeviceStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo)
+{
+    if (streamDesc->newDeviceDescs_.empty() || streamPropInfo == nullptr || streamDesc->newDeviceDescs_.front() ==
+        nullptr) {
+        AUDIO_WARNING_LOG("new device desc is empty!");
+        return;
+    }
+    std::shared_ptr<AudioDeviceDescriptor> temp = streamDesc->newDeviceDescs_.front();
+    DeviceStreamInfo streamInfo;
+    streamInfo.format = streamPropInfo->format_;
+    streamInfo.samplingRate = {static_cast<AudioSamplingRate>(streamPropInfo->sampleRate_)};
+    streamInfo.SetChannels({streamPropInfo->channels_});
+    temp->audioStreamInfo_ = {streamInfo};
+    std::string info = streamInfo.Serialize();
+    AUDIO_INFO_LOG("DeviceStreamInfo:%{public}s", info.c_str());
 }
 
 std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipesAndExecute(
@@ -284,8 +303,9 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
         AudioStreamCollector::GetAudioStreamCollector().GetConcurrencyMap();
     ConcurrencyAction action = ruleMap[std::make_pair(GetPipeType(stream->routeFlag_, stream->audioMode_),
         GetPipeType(cmpStream->routeFlag_, cmpStream->audioMode_))];
+
+    AUDIO_INFO_LOG("Action: %{public}u  %{public}u -- %{public}u", action, stream->sessionId_, cmpStream->sessionId_);
     uint32_t newFlag;
-    AUDIO_INFO_LOG("Action: %{public}u", action);
     switch (action) {
         case PLAY_BOTH:
             stream->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
@@ -324,6 +344,7 @@ std::string AudioPipeSelector::GetAdapterNameByStreamDesc(std::shared_ptr<AudioS
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, name, "streamDesc is nullptr");
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
     configManager_.GetStreamPropInfo(streamDesc, streamPropInfo);
+    CHECK_AND_RETURN_RET_LOG(streamPropInfo != nullptr, "", "StreamProp Info is null");
 
     std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = streamPropInfo->pipeInfo_.lock();
     if (pipeInfoPtr == nullptr) {

@@ -77,6 +77,11 @@ public:
     uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) override;
     uint32_t ReloadAudioPort(const AudioModuleInfo &audioModuleInfo) override;
     int32_t CloseAudioPort(int32_t audioHandleIndex) override;
+    int32_t GetSinkInfoByIdx(const int32_t &renderIdx, HpaeSinkInfo &sinkInfo, int32_t &result,
+        std::function<void()> callback) override;
+    int32_t GetSourceInfoByIdx(const int32_t &captureIdx, HpaeSourceInfo &sourceInfo, int32_t &result,
+        std::function<void()> callback) override;
+
     int32_t GetAllSinkInputs() override;
     int32_t GetAllSourceOutputs() override;
     int32_t MoveSourceOutputByIndexOrName(
@@ -101,13 +106,14 @@ public:
     int32_t CreateStream(const HpaeStreamInfo &streamInfo) override;
     int32_t DestroyStream(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Start(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
+    int32_t StartWithSyncId(HpaeStreamClassType streamClassType, uint32_t sessionId, int32_t syncId) override;
     int32_t Pause(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Flush(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Drain(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Stop(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Release(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t RegisterStatusCallback(HpaeStreamClassType streamClassType, uint32_t sessionId,
-        const std::weak_ptr<IStatusCallback> &callback) override;
+        const std::weak_ptr<IStreamStatusCallback> &callback) override;
     // record stream interface
     int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) override;
     int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeStreamInfo &streamInfo) override;
@@ -193,6 +199,7 @@ private:
     void HandleDumpSourceInfo(std::string deviceName, std::string dumpStr);
     void HandleConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode> hpaeCobufferNode);
     void HandleDisConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode> hpaeCobufferNode);
+    void HandleInitSourceResult(SourceType sourceType);
 
     void SendRequest(Request &&request, std::string funcName);
     int32_t OpenAudioPortInner(const AudioModuleInfo &audioModuleInfo);

@@ -411,6 +411,7 @@ int32_t HpaeCapturerManager::CapturerSourceStop()
     if (sourceInfo_.micRef == HPAE_REF_ON && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_MICREF)) {
         sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceStop();
     }
+    HpaePolicyManager::GetInstance().SendInitCommandToAlgo();
     return SUCCESS;
 }
 
@@ -622,6 +623,7 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
             AddSingleNodeToSource(moveInfo, true);
         }
         TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
+        TriggerCallback(INIT_SOURCE_RESULT, sourceInfo_.sourceType);
     };
     SendRequest(request, true);
     hpaeSignalProcessThread_->ActivateThread(shared_from_this());
@@ -678,6 +680,7 @@ int32_t HpaeCapturerManager::Init(bool isReload)
         int32_t ret = InitCapturerManager();
         TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "Init HpaeCapturerManager failed");
+        TriggerCallback(INIT_SOURCE_RESULT, sourceInfo_.sourceType);
         AUDIO_INFO_LOG("Init HpaeCapturerManager success");
         CheckIfAnyStreamRunning();
         HpaePolicyManager::GetInstance().SetInputDevice(captureId_,
@@ -824,13 +827,16 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
     uint32_t sessionId = moveInfo.sessionId;
     AUDIO_INFO_LOG("[FinishMove] session :%{public}u to source:[%{public}s].",
         sessionId, sourceInfo_.sourceName.c_str());
+    CHECK_AND_RETURN_LOG(moveInfo.sourceOutputNode != nullptr, "move fail, sourceoutputnode is null");
+    HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
+    nodeInfo.nodeId = OnGetNodeId(); // new node id for dfx
+    moveInfo.sourceOutputNode->SetNodeInfo(nodeInfo);
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;
     HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
     AudioEnhanceScene enhanceScene = TransProcessType2EnhanceScene(sceneType);
     if (sceneType != HPAE_SCENE_EFFECT_NONE) {
         // todo: algorithm instance count control
-        HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
         if (!SafeGetMap(sceneClusterMap_, sceneType)) {
             sceneClusterMap_[sceneType] = std::make_shared<HpaeSourceProcessCluster>(nodeInfo);
         }
@@ -927,6 +933,7 @@ int32_t HpaeCapturerManager::MoveStream(uint32_t sessionId, const std::string& s
 
 void HpaeCapturerManager::OnNotifyQueue()
 {
+    CHECK_AND_RETURN_LOG(hpaeSignalProcessThread_, "hpaeSignalProcessThread_ is nullptr");
     hpaeSignalProcessThread_->Notify();
 }
 

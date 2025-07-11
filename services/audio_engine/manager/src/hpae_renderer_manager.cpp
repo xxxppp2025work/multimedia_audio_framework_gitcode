@@ -538,6 +538,27 @@ int32_t HpaeRendererManager::Start(uint32_t sessionId)
     return SUCCESS;
 }
 
+int32_t HpaeRendererManager::StartWithSyncId(uint32_t sessionId, int32_t syncId)
+{
+    auto request = [this, sessionId, syncId]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::StartWithSyncId");
+        AUDIO_INFO_LOG("StartWithSyncId sessionId %{public}u, deviceName %{public}s",
+            sessionId, sinkInfo_.deviceName.c_str());
+        if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
+            sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
+        }
+        HandlePriPaPower(sessionId);
+        ConnectInputSession(sessionId);
+        SetSessionState(sessionId, HPAE_SESSION_RUNNING);
+        SetSessionFade(sessionId, OPERATION_STARTED);
+        if (syncId >= 0) {
+            HandleSyncId(sessionId, syncId);
+        }
+    };
+    SendRequest(request);
+    return SUCCESS;
+}
+
 int32_t HpaeRendererManager::DisConnectInputSession(uint32_t sessionId)
 {
     if (!SafeGetMap(sinkInputNodeMap_, sessionId)) {
@@ -848,14 +869,19 @@ int32_t HpaeRendererManager::DeInit(bool isMoveDefault)
         AUDIO_INFO_LOG("move all sink to default sink");
         MoveAllStreamToNewSink(sinkName, ids, MOVE_ALL);
     }
-    outputCluster_->Stop();
-    outputCluster_->DeInit();
+    if (outputCluster_ != nullptr) {
+        outputCluster_->Stop();
+        outputCluster_->DeInit();
+    }
     for (const auto &item : sceneClusterMap_) {
         if (item.second) {
             item.second->SetConnectedFlag(false);
         }
     }
-    outputCluster_->ResetAll();
+    if (outputCluster_ != nullptr) {
+        outputCluster_->ResetAll();
+        outputCluster_ = nullptr;
+    }
     isInit_.store(false);
     return SUCCESS;
 }
@@ -1068,6 +1094,7 @@ void HpaeRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &latency
 
 void HpaeRendererManager::OnNotifyQueue()
 {
+    CHECK_AND_RETURN_LOG(hpaeSignalProcessThread_, "hpaeSignalProcessThread_ is nullptr");
     hpaeSignalProcessThread_->Notify();
 }
 
@@ -1274,6 +1301,14 @@ void HpaeRendererManager::DisableCollaboration()
         }
     }
     hpaeCoBufferNode_.reset();
+}
+
+int32_t HpaeRendererManager::HandleSyncId(uint32_t sessionId, int32_t syncId)
+{
+    if (!SafeGetMap(sinkInputNodeMap_, sessionId) || sinkInfo_.deviceClass != "primary") {
+        return ERR_INVALID_OPERATION;
+    }
+    return outputCluster_->SetSyncId(syncId);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

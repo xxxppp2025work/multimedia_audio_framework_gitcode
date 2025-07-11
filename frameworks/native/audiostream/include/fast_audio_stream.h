@@ -206,6 +206,7 @@ public:
     void SetRestoreInfo(RestoreInfo &restoreInfo) override;
     RestoreStatus CheckRestoreStatus() override;
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
+    void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair) override;
     void FetchDeviceForSplitStream() override;
     void SetCallStartByUserTid(pid_t tid) override;
     void SetCallbackLoopTid(int32_t tid) override;
@@ -213,6 +214,7 @@ public:
     void ResetCallbackLoopTid();
     bool GetStopFlag() const override;
     void ResetFirstFrameState() override;
+    void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
     int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);

@@ -41,6 +41,7 @@
 #include "audio_service_enum.h"
 #include "i_hpae_manager.h"
 #include "stream_dfx_manager.h"
+#include "audio_stream_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -149,7 +150,7 @@ void RendererInServer::GetEAC3ControlParam()
 
 int32_t RendererInServer::Init()
 {
-    if (IsHighResolution()) {
+    if (processConfig_.rendererInfo.audioFlag == (AUDIO_OUTPUT_FLAG_HD|AUDIO_OUTPUT_FLAG_DIRECT)) {
         Trace trace("current stream marked as high resolution");
         managerType_ = DIRECT_PLAYBACK;
         AUDIO_INFO_LOG("current stream marked as high resolution");
@@ -630,7 +631,7 @@ BufferDesc RendererInServer::PrepareOutputBuffer(const RingBufferWrapper& ringBu
         tmpWrapper.dataLength = ringBufferDesc.dataLength;
         tmpWrapper.basicBufferDescs[0].buffer = rendererTmpBuffer_.data();
         tmpWrapper.basicBufferDescs[0].bufLength = ringBufferDesc.dataLength;
-        tmpWrapper.MemCopyFrom(ringBufferDesc);
+        tmpWrapper.CopyInputBufferValueToCurBuffer(ringBufferDesc);
 
         bufferDesc.buffer = rendererTmpBuffer_.data();
         bufferDesc.bufLength = ringBufferDesc.dataLength;
@@ -716,7 +717,7 @@ void RendererInServer::CopyDataToInputBuffer(int8_t* inputData, size_t requestDa
         .dataLength = requestDataLen
     };
 
-    CHECK_AND_RETURN_LOG(wrapperInputData.MemCopyFrom(ringBufferDesc) == 0,
+    CHECK_AND_RETURN_LOG(wrapperInputData.CopyInputBufferValueToCurBuffer(ringBufferDesc) == 0,
         "memcpy error");
 }
 
@@ -2112,6 +2113,12 @@ int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc, int3
     return SUCCESS;
 }
 
+int32_t RendererInServer::SetSpeed(float speed)
+{
+    CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "stream_ is null");
+    return stream_->SetSpeed(speed);
+}
+
 int32_t RendererInServer::SetOffloadDataCallbackState(int32_t state)
 {
     return stream_->SetOffloadDataCallbackState(state);
@@ -2164,6 +2171,21 @@ bool RendererInServer::CollectInfosForWorkgroup(float systemVolume)
 
     return running && haveStreamSound && haveSystemSound &&
         !isInSilentState_ && !silentModeAndMixWithOthers_ && !lastWriteStandbyEnableStatus_;
+}
+
+void RendererInServer::InitDupBuffer(int32_t innerCapId)
+{
+    std::lock_guard<std::mutex> lock(dupMutex_);
+    CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_.find(innerCapId) != innerCapIdToDupStreamCallbackMap_.end(),
+        "innerCapIdToDupStreamCallbackMap_ is no find innerCapId: %{public}d", innerCapId);
+    CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_[innerCapId] != nullptr,
+        "innerCapIdToDupStreamCallbackMap_ is null, innerCapId: %{public}d", innerCapId);
+    CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() != nullptr,
+        "DupRingBuffe is null, innerCapId: %{public}d", innerCapId);
+    innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer()->
+        ReConfig(dupTotalSizeInFrame_ * dupByteSizePerFrame_, false);
+    AUDIO_INFO_LOG("InitDupBuffer success, innerCapId: %{public}d, stream sessionId: %{public}u",
+        innerCapId, streamIndex_);
 }
 } // namespace AudioStandard
 } // namespace OHOS

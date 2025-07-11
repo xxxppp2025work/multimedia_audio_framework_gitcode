@@ -40,7 +40,6 @@
 #include "hpae_policy_manager.h"
 #include "audio_policy_state_monitor.h"
 #include "audio_device_info.h"
-#include "audio_server.h"
 #include "audio_effect_volume.h"
 
 namespace OHOS {
@@ -51,7 +50,9 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
+const uint8_t TESTSIZE = 63;
 static int32_t NUM_2 = 2;
+const int32_t SESSIONID = 12345;
 
 typedef void (*TestFuncs)();
 
@@ -257,7 +258,7 @@ void GetPreferredInputDeviceDescInnerFuzzTest()
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.audioPolicyServerHandler_ = nullptr;
     AudioDeviceDescriptor deviceDescriptor;
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
     if (DeviceTypeVec.size() == 0 || StreamUsageVec.size() == 0 || SourceTypeVec.size() == 0) {
         return;
     }
@@ -352,7 +353,7 @@ void IsFastFromA2dpToA2dpFuzzTest()
     rendererChangeInfo->outputDeviceInfo.deviceType_ = DeviceTypeVec[deviceTypeCount];
     rendererChangeInfo->rendererInfo.originalFlag = AUDIO_FLAG_MMAP;
     rendererChangeInfo->outputDeviceInfo.deviceId_ = 0;
-    desc->deviceId_ = GetData<uint32_t>();
+    desc->deviceId_ = GetData<uint32_t>() % NUM_2;
     audioDeviceCommon.IsFastFromA2dpToA2dp(desc, rendererChangeInfo, reason);
 }
 
@@ -395,7 +396,13 @@ void FetchOutputEndFuzzTest()
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     bool isUpdateActiveDevice = GetData<uint32_t>() % NUM_2;
     int32_t runningStreamCount = GetData<int32_t>();
-    audioDeviceCommon.FetchOutputDeviceWhenNoRunningStream();
+    audioDeviceCommon.FetchOutputEnd(isUpdateActiveDevice, runningStreamCount, AudioStreamDeviceChangeReason::UNKNOWN);
+}
+
+void FetchOutputDeviceWhenNoRunningStreamFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.FetchOutputDeviceWhenNoRunningStream(AudioStreamDeviceChangeReason::UNKNOWN);
 }
 
 void HandleDeviceChangeForFetchOutputDeviceFuzzTest()
@@ -408,7 +415,8 @@ void HandleDeviceChangeForFetchOutputDeviceFuzzTest()
     }
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     desc->deviceType_ = DeviceTypeVec[deviceTypeCount];
-    int32_t ret = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo);
+    int32_t ret = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo,
+        AudioStreamDeviceChangeReason::UNKNOWN);
 }
 
 void MuteSinkForSwitchGeneralDeviceFuzzTest()
@@ -587,8 +595,7 @@ void MuteSinkPortFuzzTest()
     AudioStreamDeviceChangeReasonExt reason =
         static_cast<AudioStreamDeviceChangeReason>(GetData<uint8_t>() % reasonCount);
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.SetHasDpFlag(GetData<uint32_t>() % NUM_2);
-    audioDeviceCommon.GetHasDpFlag();
+    audioDeviceCommon.audioDeviceManager_.NoDp();
 }
 
 void TriggerRecreateRendererStreamCallbackFuzzTest()
@@ -653,15 +660,12 @@ void ResetOffloadAndMchModeFuzzTest()
     outputDevice->deviceType_ = DeviceTypeVec[deviceTypeCount];
     outputDevices.push_back(std::move(outputDevice));
     audioDeviceCommon.ResetOffloadAndMchMode(rendererChangeInfo, outputDevices);
-    audioDeviceCommon.SetHasDpFlag(GetData<uint32_t>() % NUM_2);
-    audioDeviceCommon.GetHasDpFlag();
 }
 
 void JudgeIfLoadMchModuleFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.JudgeIfLoadMchModule();
-    audioDeviceCommon.SetHasDpFlag(GetData<uint32_t>() % NUM_2);
     AudioIOHandle moduleId = 0;
     std::string moduleName = "MCH_Speaker";
     audioDeviceCommon.audioIOHandleMap_.AddIOHandleInfo(moduleName, moduleId);
@@ -848,7 +852,7 @@ void GetSpatialDeviceTypeFuzzTest()
     deviceDescriptor.macAddress_ = "F0-FA-C7-8C-46-01";
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     deviceDescriptor.deviceType_ = DeviceTypeVec[deviceTypeCount];
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
     audioDeviceCommon.GetSpatialDeviceType(macAddress);
 }
 
@@ -946,14 +950,144 @@ void ReloadA2dpAudioPortFuzzTest()
 void SwitchActiveA2dpDeviceFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    deviceDescriptor->macAddress_ = Bluetooth::AudioA2dpManager::GetActiveA2dpDevice();
+    deviceDescriptor->deviceName_ = "TestA2dpDevice";
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    deviceDescriptor->deviceType_ = DeviceTypeVec[deviceTypeCount];
+    audioDeviceCommon.audioA2dpDevice_.connectedA2dpDeviceMap_[deviceDescriptor->macAddress_] = A2dpDeviceConfigInfo();
+
+    audioDeviceCommon.audioIOHandleMap_.IOHandles_[BLUETOOTH_SPEAKER] = GetData<uint32_t>();
+    audioDeviceCommon.SwitchActiveA2dpDevice(deviceDescriptor);
+}
+
+void RingToneVoiceControlFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    InternalDeviceType deviceType = DeviceTypeVec[deviceTypeCount];
+    audioDeviceCommon.RingToneVoiceControl(deviceType);
+}
+
+void SetFirstScreenOnFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.SetFirstScreenOn();
+}
+
+void SetVirtualCallFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    pid_t uid = GetData<pid_t>();
+    bool isVirtual = GetData<uint32_t>() % NUM_2;
+    audioDeviceCommon.SetVirtualCall(uid, isVirtual);
+}
+
+void SetHeadsetUnpluggedToSpkOrEpFlagFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    InternalDeviceType oldDeviceType = DeviceTypeVec[deviceTypeCount];
+    deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    InternalDeviceType newDeviceType = DeviceTypeVec[deviceTypeCount];
+    audioDeviceCommon.SetHeadsetUnpluggedToSpkOrEpFlag(oldDeviceType, newDeviceType);
+}
+
+void WriteInputRouteChangeEventFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     desc->deviceType_ = DeviceTypeVec[deviceTypeCount];
-    desc->macAddress_ = "";
-    audioDeviceCommon.SwitchActiveA2dpDevice(desc);
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    audioDeviceCommon.WriteInputRouteChangeEvent(desc, reason);
 }
 
-TestFuncs g_testFuncs[] = {
+void MoveToNewInputDeviceFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    if (capturerChangeInfo == nullptr) {
+        return;
+    }
+    capturerChangeInfo->sessionId = SESSIONID;
+    capturerChangeInfo->inputDeviceInfo.deviceType_ = DEVICE_TYPE_MIC;
+    capturerChangeInfo->inputDeviceInfo.macAddress_ = "00:11:22:33:44:55";
+    capturerChangeInfo->inputDeviceInfo.networkId_ = LOCAL_NETWORK_ID;
+
+    std::shared_ptr<AudioDeviceDescriptor> inputDevice = std::make_shared<AudioDeviceDescriptor>();
+    if (inputDevice == nullptr) {
+        return;
+    }
+    inputDevice->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    inputDevice->macAddress_ = "66:77:88:99:AA:BB";
+    inputDevice->networkId_ = GetData<int32_t>() % NUM_2 == 0 ? LOCAL_NETWORK_ID : REMOTE_NETWORK_ID;
+
+    audioDeviceCommon.audioConfigManager_.OnUpdateRouteSupport(GetData<uint32_t>() % NUM_2);
+    audioDeviceCommon.MoveToNewInputDevice(capturerChangeInfo, inputDevice);
+}
+
+void BluetoothScoFetchFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    if (desc == nullptr) {
+        return;
+    }
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    desc->deviceType_ = DeviceTypeVec[deviceTypeCount];
+    desc->macAddress_ = "00:11:22:33:44:55";
+    desc->networkId_ = GetData<uint32_t>() % NUM_2 == 0 ? LOCAL_NETWORK_ID : REMOTE_NETWORK_ID;
+
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
+    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    uint32_t sourceTypeCount = GetData<uint32_t>() % SourceTypeVec.size();
+    capturerChangeInfo->capturerInfo.sourceType = SourceTypeVec[sourceTypeCount];
+    capturerChangeInfos.push_back(capturerChangeInfo);
+
+    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDevice(*desc);
+    sourceTypeCount = GetData<uint32_t>() % SourceTypeVec.size();
+    SourceType sourceType = SourceTypeVec[sourceTypeCount];
+    audioDeviceCommon.BluetoothScoFetch(desc, capturerChangeInfos, sourceType);
+    audioDeviceCommon.audioActiveDevice_.GetCurrentInputDevice();
+}
+
+void HandleA2dpInputDeviceFetchedFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    uint32_t sourceTypeCount = GetData<uint32_t>() % SourceTypeVec.size();
+    SourceType sourceType = SourceTypeVec[sourceTypeCount];
+    audioDeviceCommon.HandleA2dpInputDeviceFetched(desc, sourceType);
+}
+
+void TriggerRecreateCapturerStreamCallbackFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    int32_t streamFlag = GetData<int32_t>();
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    audioDeviceCommon.TriggerRecreateCapturerStreamCallback(capturerChangeInfo, streamFlag, reason);
+}
+
+void HandleScoInputDeviceFetchedFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
+    audioDeviceCommon.HandleScoInputDeviceFetched(audioDeviceDescriptorSptr, captureChangeInfos);
+}
+
+TestFuncs g_testFuncs[TESTSIZE] = {
     FilterSourceOutputsFuzzTest,
     IsRingerOrAlarmerDualDevicesRangeFuzzTest,
     IsRingOverPlaybackFuzzTest,
@@ -968,6 +1102,7 @@ TestFuncs g_testFuncs[] = {
     FetchOutputDeviceFuzzTest,
     GetDeviceDescriptorInnerFuzzTest,
     FetchOutputEndFuzzTest,
+    FetchOutputDeviceWhenNoRunningStreamFuzzTest,
     HandleDeviceChangeForFetchOutputDeviceFuzzTest,
     MuteSinkForSwitchGeneralDeviceFuzzTest,
     MuteSinkForSwitchBluetoothDeviceFuzzTest,
@@ -1006,6 +1141,16 @@ TestFuncs g_testFuncs[] = {
     LoadA2dpModuleFuzzTest,
     ReloadA2dpAudioPortFuzzTest,
     SwitchActiveA2dpDeviceFuzzTest,
+    RingToneVoiceControlFuzzTest,
+    SetFirstScreenOnFuzzTest,
+    SetVirtualCallFuzzTest,
+    SetHeadsetUnpluggedToSpkOrEpFlagFuzzTest,
+    WriteInputRouteChangeEventFuzzTest,
+    MoveToNewInputDeviceFuzzTest,
+    BluetoothScoFetchFuzzTest,
+    HandleA2dpInputDeviceFetchedFuzzTest,
+    TriggerRecreateCapturerStreamCallbackFuzzTest,
+    HandleScoInputDeviceFetchedFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

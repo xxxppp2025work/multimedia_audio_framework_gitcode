@@ -38,14 +38,15 @@
 #include "securec.h"
 
 #include "audio_manager_base.h"
-#include "audio_process_cb_stub.h"
 #include "audio_server_death_recipient.h"
 #include "fast_audio_stream.h"
-#include "i_audio_process.h"
 #include "linear_pos_time_model.h"
 #include "volume_tools.h"
 #include "format_converter.h"
 #include "ring_buffer_wrapper.h"
+#include "iaudio_process.h"
+#include "process_cb_stub.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -147,6 +148,8 @@ public:
     bool GetStopFlag() const override;
 
     void JoinCallbackLoop() override;
+
+    void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
@@ -371,11 +374,13 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     }
 
     int32_t errorCode = 0;
-    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(resetConfig, errorCode);
+    sptr<IRemoteObject> ipcProxy = nullptr;
+    AudioPlaybackCaptureConfig filterConfig = {};
+    gasp->CreateAudioProcess(resetConfig, errorCode, filterConfig, ipcProxy);
     for (int32_t retrycount = 0; (errorCode == ERR_RETRY_IN_CLIENT) && (retrycount < MAX_RETRY_COUNT); retrycount++) {
         AUDIO_WARNING_LOG("retry in client");
         std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
-        ipcProxy = gasp->CreateAudioProcess(config, errorCode);
+        gasp->CreateAudioProcess(config, errorCode, filterConfig, ipcProxy);
     }
     CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, nullptr, "failed with create audio stream fail.");
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, nullptr, "Create failed with null ipcProxy.");
@@ -809,7 +814,7 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
     ret = RingBufferWrapper{{{
         {.buffer = callbackBuffer_.get(), .bufLength = spanSizeInByte_},
         {.buffer = nullptr, .bufLength = 0}}},
-        .dataLength = spanSizeInByte_}.MemCopyFrom(ringBuffer);
+        .dataLength = spanSizeInByte_}.CopyInputBufferValueToCurBuffer(ringBuffer);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "%{public}s memcpy fail, ret %{public}d,"
         " spanSizeInByte %{public}zu.", __func__, ret, spanSizeInByte_);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(callbackBuffer_.get()), spanSizeInByte_);
@@ -989,31 +994,28 @@ int32_t AudioProcessInClientInner::ProcessData(const BufferDesc &srcDesc, const 
 
 int32_t AudioProcessInClientInner::ProcessData(const BufferDesc &srcDesc, const RingBufferWrapper &dstDesc)
 {
+    BufferDesc tmpDstDesc;
     if (dstDesc.dataLength <= dstDesc.basicBufferDescs[0].bufLength) {
-        BufferDesc tmpDstDesc;
         tmpDstDesc.buffer = dstDesc.basicBufferDescs[0].buffer;
         tmpDstDesc.dataLength = dstDesc.dataLength;
         tmpDstDesc.bufLength = dstDesc.dataLength;
         return ProcessData(srcDesc, tmpDstDesc);
-    } else {
-        std::lock_guard lock(tmpBufferMutex_);
-        tmpBuffer_.resize(0);
-        tmpBuffer_.resize(dstDesc.dataLength);
-        BufferDesc tmpDstDesc;
-        tmpDstDesc.buffer = tmpBuffer_.data();
-        tmpDstDesc.dataLength = dstDesc.dataLength;
-        tmpDstDesc.bufLength = dstDesc.dataLength;
-        int32_t ret = ProcessData(srcDesc, tmpDstDesc);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessData failed!");
-
-        RingBufferWrapper ringBufferDescForCotinueData;
-        ringBufferDescForCotinueData.dataLength = tmpDstDesc.dataLength;
-        ringBufferDescForCotinueData.basicBufferDescs[0].buffer = tmpDstDesc.buffer;
-        ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = tmpDstDesc.dataLength;
-
-        RingBufferWrapper(dstDesc).MemCopyFrom(ringBufferDescForCotinueData);
-        return SUCCESS;
     }
+
+    std::lock_guard lock(tmpBufferMutex_);
+    tmpBuffer_.resize(0);
+    tmpBuffer_.resize(dstDesc.dataLength);
+    tmpDstDesc.buffer = tmpBuffer_.data();
+    tmpDstDesc.dataLength = dstDesc.dataLength;
+    tmpDstDesc.bufLength = dstDesc.dataLength;
+    int32_t ret = ProcessData(srcDesc, tmpDstDesc);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessData failed!");
+    RingBufferWrapper ringBufferDescForCotinueData;
+    ringBufferDescForCotinueData.dataLength = tmpDstDesc.dataLength;
+    ringBufferDescForCotinueData.basicBufferDescs[0].buffer = tmpDstDesc.buffer;
+    ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = tmpDstDesc.dataLength;
+    RingBufferWrapper(dstDesc).CopyInputBufferValueToCurBuffer(ringBufferDescForCotinueData);
+    return SUCCESS;
 }
 
 void AudioProcessInClientInner::WaitForWritableSpace()
@@ -1129,7 +1131,9 @@ int32_t AudioProcessInClientInner::Start()
     Trace traceStart("AudioProcessInClient::Start");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
-    const auto [samplingRate, encoding, format, channels, channelLayout] = processConfig_.streamInfo;
+    AudioSamplingRate samplingRate = processConfig_.streamInfo.samplingRate;
+    AudioSampleFormat format = processConfig_.streamInfo.format;
+    AudioChannel channels = processConfig_.streamInfo.channels;
     // eg: 100005_dump_process_client_audio_48000_2_1.pcm
     std::string dumpFileName = std::to_string(sessionId_) + "_dump_process_client_audio_" +
         std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +
@@ -1176,6 +1180,10 @@ int32_t AudioProcessInClientInner::Pause(bool isFlush)
     }
     startFadeout_.store(true);
     StreamStatus targetStatus = StreamStatus::STREAM_RUNNING;
+
+    if (streamStatus_->load() == StreamStatus::STREAM_STAND_BY) {
+        targetStatus = StreamStatus::STREAM_STAND_BY;
+    }
     bool ret = streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_PAUSING);
     if (!ret) {
         startFadeout_.store(false);
@@ -1351,7 +1359,8 @@ void AudioProcessInClientInner::UpdateHandleInfo(bool isAysnc, bool resetReadWri
     Trace traceSync("AudioProcessInClient::UpdateHandleInfo");
     uint64_t serverHandlePos = 0;
     int64_t serverHandleTime = 0;
-    int32_t ret = processProxy_->RequestHandleInfo(isAysnc);
+    CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "processProxy_ is nullptr");
+    int32_t ret = isAysnc ? processProxy_->RequestHandleInfoAsync() : processProxy_->RequestHandleInfo();
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "RequestHandleInfo failed ret:%{public}d", ret);
     audioBuffer_->GetHandleInfo(serverHandlePos, serverHandleTime);
 
@@ -1554,7 +1563,7 @@ int32_t AudioProcessInClientInner::RecordReSyncServicePos()
     int32_t tryTimes = 3;
     int32_t ret = 0;
     while (tryTimes > 0) {
-        ret = processProxy_->RequestHandleInfo();
+        ret = processProxy_->RequestHandleInfoAsync();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s request handle info fail, ret %{public}d.",
             __func__, ret);
 
@@ -1630,8 +1639,8 @@ bool AudioProcessInClientInner::CheckAndWaitBufferReadyForPlayback()
             return true;
         }
 
-        int32_t wriableSizeInframe = audioBuffer_->GetWritableDataFrames();
-        if ((wriableSizeInframe > 0) && ((totalSizeInFrame_ - wriableSizeInframe) < spanSizeInFrame_)) {
+        int32_t writableSizeInFrame = audioBuffer_->GetWritableDataFrames();
+        if ((writableSizeInFrame > 0) && ((totalSizeInFrame_ - writableSizeInFrame) < spanSizeInFrame_)) {
             return true;
         }
         return false;
@@ -1647,8 +1656,8 @@ bool AudioProcessInClientInner::CheckAndWaitBufferReadyForRecord()
             return true;
         }
 
-        int32_t wriableSizeInframe = audioBuffer_->GetWritableDataFrames();
-        if ((wriableSizeInframe > 0) && ((totalSizeInFrame_ - wriableSizeInframe) >= spanSizeInFrame_)) {
+        int32_t writableSizeInFrame = audioBuffer_->GetWritableDataFrames();
+        if ((writableSizeInFrame > 0) && ((totalSizeInFrame_ - writableSizeInFrame) >= spanSizeInFrame_)) {
             return true;
         }
         return false;
@@ -1856,6 +1865,12 @@ bool AudioProcessInClientInner::GetStopFlag() const
 {
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return audioBuffer_->GetStopFlag();
+}
+
+void AudioProcessInClientInner::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
+{
+    CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "SetAudioHapticsSyncId processProxy_ is nullptr");
+    processProxy_->SetAudioHapticsSyncId(audioHapticsSyncId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

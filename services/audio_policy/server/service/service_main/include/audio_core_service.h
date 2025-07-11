@@ -247,15 +247,16 @@ private:
     void UnregisterBluetoothListener();
     void ConfigDistributedRoutingRole(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
     int32_t SetRingerMode(AudioRingerMode ringMode);
-    int32_t FetchOutputDeviceAndRoute(
+    int32_t FetchOutputDeviceAndRoute(std::string caller,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
-    int32_t FetchInputDeviceAndRoute();
+    int32_t FetchInputDeviceAndRoute(std::string caller);
     void SetAudioServerProxy();
     bool GetDisableFastStreamParam();
     bool IsFastAllowed(std::string &bundleName);
     void UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
         const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices);
     void ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName);
+    uint32_t GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName);
 
 private:
     static std::string GetEncryptAddr(const std::string &addr);
@@ -295,7 +296,7 @@ private:
     void RegisterBluetoothDeathCallback();
     static void BluetoothServiceCrashedCallback(pid_t pid, pid_t uid);
 #endif
-    int32_t FetchDeviceAndRoute(
+    int32_t FetchDeviceAndRoute(std::string caller,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         uint32_t &sessionId, uint32_t &audioFlag,
@@ -350,7 +351,8 @@ private:
     std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId);
     std::vector<SourceOutput> GetSourceOutputs();
     void UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor &deviceDescriptor);
+    void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor &deviceDescriptor,
+        const AudioStreamDeviceChangeReason reason);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
     bool GetFastControlParam();
@@ -371,7 +373,7 @@ private:
         shared_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason);
     int32_t HandleScoOutputDeviceFetched(
         shared_ptr<AudioStreamDescriptor> &streamDesc, const AudioStreamDeviceChangeReasonExt reason);
-    int32_t HandleFetchOutputWhenNoRunningStream();
+    int32_t HandleFetchOutputWhenNoRunningStream(const AudioStreamDeviceChangeReasonExt reason);
     int32_t HandleFetchInputWhenNoRunningStream();
     bool UpdateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t uid,
         const AudioStreamDeviceChangeReasonExt reason);
@@ -381,7 +383,8 @@ private:
         const AudioStreamDeviceChangeReason reason);
     void WriteInputRouteChangeEvent(std::shared_ptr<AudioDeviceDescriptor> &desc,
         const AudioStreamDeviceChangeReason reason);
-    int32_t HandleDeviceChangeForFetchOutputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    int32_t HandleDeviceChangeForFetchOutputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const AudioStreamDeviceChangeReasonExt reason);
     int32_t HandleDeviceChangeForFetchInputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     bool NeedRehandleA2DPDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
     void UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo, RendererState rendererState);

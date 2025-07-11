@@ -73,7 +73,6 @@ static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000; // ms
 static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 constexpr uint32_t SONIC_LATENCY_IN_MS = 20; // cache in sonic
-constexpr float EPSILON = 1e-6f;
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -106,9 +105,9 @@ RendererInClientInner::~RendererInClientInner()
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
-    Trace trace(traceTag_ + " OnOperationHandled:" + std::to_string(operation));
-    AUDIO_INFO_LOG("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_, operation,
-        result);
+    Trace trace(traceTag_ + " OnOperationHandled:" + std::to_string(static_cast<int>(operation)));
+    AUDIO_INFO_LOG("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_,
+        static_cast<int>(operation), result);
     if (operation == SET_OFFLOAD_ENABLE) {
         AUDIO_INFO_LOG("SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
         if (!offloadEnable_ && static_cast<bool>(result)) {
@@ -361,6 +360,15 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
     return true;
 }
 
+void RendererInClientInner::SetSwitchInfoTimestamp(
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair)
+{
+    lastFramePosAndTimePair_ = lastFramePosAndTimePair;
+    for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
+        lastSwitchPosition_[base] = lastFramePosAndTimePair[base].first;
+    }
+}
+
 bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false, "Renderer stream state is not RUNNING");
@@ -372,20 +380,21 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
     uint64_t latency = 0;
     int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency, base);
 
-    uint64_t framePosition = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
+    uint64_t framePosition = lastSwitchPosition_[base] +
+        (readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0);
     framePosition = framePosition > latency ? framePosition - latency : 0;
 
     // reset the timestamp
-    if (lastFramePosition_[base].first < framePosition || lastFramePosition_[base].second == 0) {
-        lastFramePosition_[base] = {framePosition, timestampVal};
+    if (lastFramePosAndTimePair_[base].first < framePosition || lastFramePosAndTimePair_[base].second == 0) {
+        lastFramePosAndTimePair_[base] = {framePosition, timestampVal};
     } else {
         AUDIO_DEBUG_LOG("The frame position should be continuously increasing");
-        framePosition = lastFramePosition_[base].first;
-        timestampVal = lastFramePosition_[base].second;
+        framePosition = lastFramePosAndTimePair_[base].first;
+        timestampVal = lastFramePosAndTimePair_[base].second;
     }
     AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
-        ", timestamp %{public}" PRIu64 ", Sinklatency %{public}" PRIu64, framePosition,
-        lastFlushReadIndex_, timestampVal, latency);
+        ", timestamp %{public}" PRIu64 ", Sinklatency %{public}" PRIu64 ", lastSwitchPosition_ %{public}" PRIu64,
+        framePosition, lastFlushReadIndex_, timestampVal, latency, lastSwitchPosition_[base]);
 
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
@@ -601,6 +610,31 @@ void RendererInClientInner::OnFirstFrameWriting()
     cb->OnFirstFrameWriting(latency);
 }
 
+bool RendererInClientInner::IsRemoteOffload()
+{
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(rendererChangeInfos);
+    std::string networkId = LOCAL_NETWORK_ID;
+    bool isOffload = false;
+    for (auto changeInfo : rendererChangeInfos) {
+        CHECK_AND_CONTINUE(changeInfo && changeInfo->sessionId == sessionId_);
+        networkId = changeInfo->outputDeviceInfo.networkId_;
+        isOffload = changeInfo->rendererInfo.pipeType == PIPE_TYPE_OFFLOAD;
+        break;
+    }
+    return isOffload && networkId != LOCAL_NETWORK_ID;
+}
+
+bool RendererInClientInner::DoRemoteOffloadSetSpeed(float speed)
+{
+    CHECK_AND_RETURN_RET(IsRemoteOffload(), false);
+    AUDIO_INFO_LOG("set speed for remote offload, sessionId: %{public}d, speed: %{public}f", sessionId_, speed);
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, true, "ipcStream is not inited!");
+    ipcStream_->SetSpeed(speed);
+    speed_ = speed;
+    return true;
+}
+
 int32_t RendererInClientInner::SetSpeed(float speed)
 {
     std::lock_guard lock(speedMutex_);
@@ -609,6 +643,7 @@ int32_t RendererInClientInner::SetSpeed(float speed)
         speed_ = speed;
         return SUCCESS;
     }
+    CHECK_AND_RETURN_RET(!DoRemoteOffloadSetSpeed(speed), SUCCESS);
 
     if (audioSpeed_ == nullptr) {
         audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
@@ -617,7 +652,7 @@ int32_t RendererInClientInner::SetSpeed(float speed)
         speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
     }
     audioSpeed_->SetSpeed(speed);
-    if (abs(speed - writtenAtSpeedChange_.load().speed) > EPSILON) {
+    if (std::abs(speed - writtenAtSpeedChange_.load().speed) > std::numeric_limits<float>::epsilon()) {
         writtenAtSpeedChange_.store(WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load(), speed_});
     }
     speed_ = speed;
@@ -1005,6 +1040,7 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     }
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    UpdatePauseReadIndex();
     int32_t ret = ipcStream_->Pause();
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("call server failed:%{public}u", ret);
@@ -1063,6 +1099,7 @@ bool RendererInClientInner::StopAudioStream()
     }
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    UpdatePauseReadIndex();
     int32_t ret = ipcStream_->Stop();
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Stop call server failed:%{public}u", ret);
@@ -1419,6 +1456,7 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.sessionId = sessionId_;
     info.streamTrackerRegistered = streamTrackerRegistered_;
     info.defaultOutputDevice = defaultOutputDevice_;
+    info.lastFramePosAndTimePair = lastFramePosAndTimePair_;
     GetStreamSwitchInfo(info);
 
     {
@@ -1795,12 +1833,13 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     uint64_t framePosition = unprocessSamples > frameLatency ? unprocessSamples - frameLatency : 0;
 
     // reset the timestamp
-    if (lastFramePositionWithSpeed_[base].first < framePosition || lastFramePositionWithSpeed_[base].second == 0) {
-        lastFramePositionWithSpeed_[base] = {framePosition, timestampVal};
+    if (lastFramePosAndTimePairWithSpeed_[base].first < framePosition ||
+        lastFramePosAndTimePairWithSpeed_[base].second == 0) {
+        lastFramePosAndTimePairWithSpeed_[base] = {framePosition, timestampVal};
     } else {
         AUDIO_DEBUG_LOG("The frame position should be continuously increasing");
-        framePosition = lastFramePositionWithSpeed_[base].first;
-        timestampVal = lastFramePositionWithSpeed_[base].second;
+        framePosition = lastFramePosAndTimePairWithSpeed_[base].first;
+        timestampVal = lastFramePosAndTimePairWithSpeed_[base].second;
     }
     AUDIO_DEBUG_LOG("[CLIENT]Latency info: unprocessSamples %{public}" PRIu64 ", samplesWritten %{public}" PRIu64
         ", lastSpeedPosition %{public}" PRIu64, unprocessSamples, samplesWritten, lastSpeedPosition);

@@ -343,6 +343,74 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_015, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
+* @tc.number: SetVolumeForSwitchDevice_001
+* @tc.desc  : Test AudioVolumeManager::SetVolumeForSwitchDevice interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_001, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioSceneManager &audioSceneManager(AudioSceneManager::GetInstance());
+    AudioDeviceDescriptor audioDeviceDescriptor;
+
+    audioSceneManager.audioScene_ = AUDIO_SCENE_PHONE_CALL;
+    int32_t ret = audioVolumeManager.SetVolumeForSwitchDevice(
+        audioDeviceDescriptor, PORT_NONE, true);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: SetVolumeForSwitchDevice_002
+* @tc.desc  : Test AudioVolumeManager::SetVolumeForSwitchDevice interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_002, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioSceneManager &audioSceneManager(AudioSceneManager::GetInstance());
+    AudioDeviceDescriptor audioDeviceDescriptor;
+
+    audioSceneManager.audioScene_ = AUDIO_SCENE_PHONE_CALL;
+    int32_t ret = audioVolumeManager.SetVolumeForSwitchDevice(
+        audioDeviceDescriptor, PORT_NONE, false);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: SetVolumeForSwitchDevice_003
+* @tc.desc  : Test AudioVolumeManager::SetVolumeForSwitchDevice interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_003, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioSceneManager &audioSceneManager(AudioSceneManager::GetInstance());
+    AudioDeviceDescriptor audioDeviceDescriptor;
+
+    audioSceneManager.audioScene_ = AUDIO_SCENE_DEFAULT;
+    int32_t ret = audioVolumeManager.SetVolumeForSwitchDevice(
+        audioDeviceDescriptor, PORT_NONE, true);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: SetVolumeForSwitchDevice_004
+* @tc.desc  : Test AudioVolumeManager::SetVolumeForSwitchDevice interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_004, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioSceneManager &audioSceneManager(AudioSceneManager::GetInstance());
+    AudioDeviceDescriptor audioDeviceDescriptor;
+
+    audioSceneManager.audioScene_ = AUDIO_SCENE_DEFAULT;
+    int32_t ret = audioVolumeManager.SetVolumeForSwitchDevice(
+        audioDeviceDescriptor, PORT_NONE, false);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_016
 * @tc.desc  : Test SetAbsVolumeSceneAsync interface.
 */
@@ -468,6 +536,34 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_022, TestSize.Level1)
         DeviceType::DEVICE_TYPE_EARPIECE, DeviceRole::OUTPUT_DEVICE);
     audioVolumeManager->audioConnectedDevice_.AddConnectedDevice(remoteDeviceDescriptor);
     audioVolumeManager->GetAllDeviceVolumeInfo();
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_023
+* @tc.desc  : Test ForceVolumeKeyControlType interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_023, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    audioVolumeManager.ForceVolumeKeyControlType(STREAM_RING, 3);
+    EXPECT_EQ(audioVolumeManager.forceControlVolumeType_, STREAM_RING);
+    EXPECT_EQ(audioVolumeManager.needForceControlVolumeType_, true);
+
+    audioVolumeManager.ForceVolumeKeyControlType(STREAM_MEDIA, 3);
+    EXPECT_EQ(audioVolumeManager.forceControlVolumeType_, STREAM_MEDIA);
+    EXPECT_EQ(audioVolumeManager.needForceControlVolumeType_, true);
+
+    audioVolumeManager.ForceVolumeKeyControlType(STREAM_MEDIA, -1);
+    EXPECT_EQ(audioVolumeManager.forceControlVolumeType_, STREAM_DEFAULT);
+    EXPECT_EQ(audioVolumeManager.needForceControlVolumeType_, false);
+
+    audioVolumeManager.ForceVolumeKeyControlType(STREAM_MEDIA, 1);
+    EXPECT_EQ(audioVolumeManager.forceControlVolumeType_, STREAM_MEDIA);
+    EXPECT_EQ(audioVolumeManager.needForceControlVolumeType_, true);
+    usleep(1500000);
+    EXPECT_EQ(audioVolumeManager.forceControlVolumeType_, STREAM_DEFAULT);
+    EXPECT_EQ(audioVolumeManager.needForceControlVolumeType_, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

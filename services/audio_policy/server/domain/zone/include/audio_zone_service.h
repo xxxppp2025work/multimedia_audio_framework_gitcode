@@ -19,7 +19,7 @@
 #include <unordered_map>
 #include <memory>
 #include "audio_interrupt_service.h"
-#include "i_standard_audio_zone_client.h"
+#include "istandard_audio_zone_client.h"
 #include "audio_policy_server_handler.h"
 
 namespace OHOS {
@@ -58,7 +58,7 @@ public:
     void SetZoneDeviceVisible(bool visible);
     bool IsZoneDeviceVisible();
     int32_t FindAudioZoneByUid(int32_t uid);
-    int32_t FindAudioZoneByUsage(StreamUsage usage);
+    int32_t FindAudioZone(int32_t uid, StreamUsage usage);
 
     int32_t EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, bool enable);
     bool IsSystemVolumeProxyEnable(int32_t zoneId);

@@ -1001,10 +1001,7 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
                 deviceInfo.audioStreamInfo_ = {{SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO}};
             }
         } else {
-            AUDIO_INFO_LOG("Fast stream");
-            AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO,
-                CH_LAYOUT_STEREO};
-            deviceInfo.audioStreamInfo_ = { targetStreamInfo };
+            AUDIO_INFO_LOG("Fast stream use format:%{public}s", deviceInfo.GetDeviceStreamInfo().Serialize().c_str());
             deviceInfo.deviceName_ = "mmap_device";
         }
         return deviceInfo;
@@ -1719,6 +1716,26 @@ void AudioService::RenderersCheckForAudioWorkgroup(int32_t pid)
         }
         AudioResourceService::GetInstance()->WorkgroupRendererMonitor(pid, isAllowed);
     }
+}
+
+void AudioService::InitAllDupBuffer(int32_t innerCapId)
+{
+    AUDIO_INFO_LOG("InitAllDupBuffer, innerCapId: %{public}d", innerCapId);
+
+    std::unique_lock<std::mutex> lock(rendererMapMutex_);
+    if (filteredRendererMap_.count(innerCapId)) {
+        for (size_t i = 0; i < filteredRendererMap_[innerCapId].size(); i++) {
+            std::shared_ptr<RendererInServer> renderer = filteredRendererMap_[innerCapId][i].lock();
+            if (renderer == nullptr) {
+                AUDIO_WARNING_LOG("Renderer is already released!");
+                continue;
+            }
+            if (ShouldBeInnerCap(renderer->processConfig_, innerCapId)) {
+                renderer->InitDupBuffer(innerCapId);
+            }
+        }
+    }
+    lock.unlock();
 }
 } // namespace AudioStandard
 } // namespace OHOS
