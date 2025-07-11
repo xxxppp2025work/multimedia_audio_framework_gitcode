@@ -59,7 +59,7 @@ int32_t PolicyProviderProxy::InitSharedVolume(std::shared_ptr<AudioSharedMemory>
     int ret = Remote()->SendRequest(IPolicyProviderMsg::INIT_VOLUME_MAP, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "InitSharedVolume failed, error: %{public}d", ret);
     buffer = AudioSharedMemory::ReadFromParcel(reply);
-    CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERR_OPERATION_FAILED, "ReadFromParcel failed");
+    CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERR_OPERATION_FAILED, "ReadFromParcel failed!");
     return SUCCESS;
 }
 

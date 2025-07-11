@@ -86,7 +86,7 @@ std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, 
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
     if (!audioEndpoint->Config(deviceInfo)) {
-        AUDIO_ERR_LOG("Config AudioEndpoint failed.");
+        AUDIO_ERR_LOG("Config AudioEndpoint failed!");
         audioEndpoint = nullptr;
     }
     return audioEndpoint;
@@ -188,7 +188,7 @@ bool AudioEndpointInner::ShouldInnerCap(int32_t innerCapId)
             break;
         }
     }
-    AUDIO_INFO_LOG("find endpoint inner-cap state: %{public}s", shouldBecapped ? "true" : "false");
+    AUDIO_INFO_LOG("ind endpoint inner-cap state: %{public}s", shouldBecapped ? "true" : "false");
     return shouldBecapped;
 }
 

@@ -81,7 +81,7 @@ void PolicyHandler::Dump(std::string &dumpString)
 
 bool PolicyHandler::ConfigPolicyProvider(const sptr<IPolicyProviderIpc> policyProvider)
 {
-    CHECK_AND_RETURN_RET_LOG(policyProvider != nullptr, false, "ConfigPolicyProvider failed with null provider.");
+    CHECK_AND_RETURN_RET_LOG(policyProvider != nullptr, false, "ConfigPolicyProvider failed with null provider!");
     if (iPolicyProvider_ == nullptr) {
         iPolicyProvider_ = policyProvider;
     } else {
@@ -105,7 +105,7 @@ bool PolicyHandler::GetProcessDeviceInfo(const AudioProcessConfig &config, bool 
 
 bool PolicyHandler::InitVolumeMap()
 {
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, false, "InitVolumeMap failed with null provider.");
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, false, "InitVolumeMap failed with null provider!");
     iPolicyProvider_->InitSharedVolume(policyVolumeMap_);
     CHECK_AND_RETURN_RET_LOG((policyVolumeMap_ != nullptr && policyVolumeMap_->GetBase() != nullptr), false,
         "InitSharedVolume failed.");
@@ -160,7 +160,7 @@ DeviceType PolicyHandler::GetActiveOutPutDevice()
 
 int32_t PolicyHandler::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
 {
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
     int32_t ret = iPolicyProvider_->SetWakeUpAudioCapturerFromAudioServer(config);
     return ret;
 }
@@ -168,13 +168,13 @@ int32_t PolicyHandler::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessC
 int32_t PolicyHandler::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
     uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
     return iPolicyProvider_->NotifyCapturerAdded(capturerInfo, streamInfo, sessionId);
 }
 
 int32_t PolicyHandler::NotifyWakeUpCapturerRemoved()
 {
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
     return iPolicyProvider_->NotifyWakeUpCapturerRemoved();
 }
 

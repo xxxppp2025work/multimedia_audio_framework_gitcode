@@ -48,7 +48,7 @@ bool IpcOfflineStreamStub::CheckInterfaceToken(MessageParcel &data)
     static auto localDescriptor = IpcOfflineStream::GetDescriptor();
     auto remoteDescriptor = data.ReadInterfaceToken();
     if (remoteDescriptor != localDescriptor) {
-        AUDIO_ERR_LOG("CheckInterFfaceToken failed.");
+        AUDIO_ERR_LOG("CheckInterFfaceToken failed!");
         return false;
     }
     return true;

@@ -136,7 +136,7 @@ int32_t HpaeRendererStreamImpl::Start()
     ClockTime::GetAllTimeStamp(timestamp_);
     int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Start is error");
+        AUDIO_ERR_LOG("Start is error!");
         return ERR_INVALID_PARAM;
     }
     return SUCCESS;
@@ -147,7 +147,7 @@ int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
     AUDIO_INFO_LOG("Pause");
     int32_t ret = IHpaeManager::GetHpaeManager().Pause(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Pause is error");
+        AUDIO_ERR_LOG("Pause is error!");
         return ERR_INVALID_PARAM;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_PAUSED_LATENCY));
@@ -159,7 +159,7 @@ int32_t HpaeRendererStreamImpl::Flush()
     AUDIO_PRERELEASE_LOGI("Flush Enter");
     int32_t ret = IHpaeManager::GetHpaeManager().Flush(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Flush is error");
+        AUDIO_ERR_LOG("Flush is error!");
         return ERR_INVALID_PARAM;
     }
     return SUCCESS;
@@ -170,7 +170,7 @@ int32_t HpaeRendererStreamImpl::Drain(bool stopFlag)
     AUDIO_INFO_LOG("Drain Enter %{public}d", stopFlag);
     int32_t ret = IHpaeManager::GetHpaeManager().Drain(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Drain is error");
+        AUDIO_ERR_LOG("Drain is error!");
         return ERR_INVALID_PARAM;
     }
     return SUCCESS;
@@ -181,7 +181,7 @@ int32_t HpaeRendererStreamImpl::Stop()
     AUDIO_INFO_LOG("Stop Enter");
     int32_t ret = IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Stop is error");
+        AUDIO_ERR_LOG("Stop is error!");
         return ERR_INVALID_PARAM;
     }
     state_ = STOPPING;
@@ -198,7 +198,7 @@ int32_t HpaeRendererStreamImpl::Release()
     int32_t ret = IHpaeManager::GetHpaeManager().DestroyStream(HPAE_STREAM_CLASS_TYPE_PLAY,
         processConfig_.originalSessionId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Release is error");
+        AUDIO_ERR_LOG("Release is error!");
         return ERR_INVALID_PARAM;
     }
     state_ = RELEASED;
@@ -227,7 +227,7 @@ uint32_t HpaeRendererStreamImpl::GetA2dpOffloadLatency()
     auto& handle = PolicyHandler::GetInstance();
     int32_t ret = handle.OffloadGetRenderPosition(a2dpOffloadLatency, a2dpOffloadSendDataSize, a2dpOffloadTimestamp);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("OffloadGetRenderPosition failed");
+        AUDIO_ERR_LOG("OffloadGetRenderPosition failed!");
     }
     return a2dpOffloadLatency;
 }

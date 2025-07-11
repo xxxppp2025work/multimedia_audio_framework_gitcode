@@ -224,7 +224,7 @@ static void UpdateArmInstance(std::shared_ptr<IAudioRenderSink> &sink,
     sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB, true);
     source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB, true);
     std::shared_ptr<IAudioRenderSink> primarySink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
-    CHECK_AND_RETURN_LOG(primarySink, "primarySink is nullptr");
+    CHECK_AND_RETURN_LOG(primarySink, "primarySink is nullptr!");
     primarySink->ResetActiveDeviceForDisconnect(DEVICE_TYPE_NONE);
 }
 
@@ -363,7 +363,7 @@ void AudioServer::OnDump() {}
 
 int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
 {
-    AUDIO_INFO_LOG("Dump Process Invoked");
+    AUDIO_INFO_LOG("Dump Process Invoked.");
     if (args.size() == FAST_DUMPINFO_LEN && args[0] == u"-fb") {
         std::string bundleName = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.to_bytes(args[1]);
         std::string result = GetAudioParameter(CHECK_FAST_BLOCK_PREFIX + bundleName);

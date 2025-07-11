@@ -158,7 +158,7 @@ int32_t ProRendererStreamImpl::InitParams()
         downMixer_ = std::make_unique<AudioDownMixStereo>();
         int32_t ret = downMixer_->InitMixer(streamInfo.channelLayout, streamInfo.channels);
         if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("down mixer not supported.");
+            AUDIO_ERR_LOG("down mixer not supported!");
             return ret;
         }
     }
@@ -297,7 +297,7 @@ int32_t ProRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
     int64_t timeNsec = 0;
     uint64_t framePosition;
     bool ret = GetAudioTime(framePosition, timeSec, timeNsec);
-    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "GetAudioTime error");
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "GetAudioTime error!");
     timestamp = static_cast<uint64_t>(timeSec * AUDIO_NS_PER_S + timeNsec);
     return SUCCESS;
 }

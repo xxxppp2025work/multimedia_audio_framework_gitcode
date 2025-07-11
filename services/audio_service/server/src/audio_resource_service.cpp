@@ -107,7 +107,7 @@ int32_t AudioResourceService::AddThreadToGroup(int32_t pid, int32_t workgroupId,
 {
     std::lock_guard<std::mutex> lock(workgroupLock_);
     if (pid == tokenId) {
-        AUDIO_ERR_LOG("[WorkgroupInServer] main thread pid=%{public}d is not allowed to be added", pid);
+        AUDIO_ERR_LOG("[WorkgroupInServer] main thread pid=%{public}d is not allowed to be added!", pid);
         return ERR_OPERATION_FAILED;
     }
     AudioWorkgroup *group = GetAudioWorkgroupPtr(pid, workgroupId);
@@ -119,7 +119,7 @@ int32_t AudioResourceService::AddThreadToGroup(int32_t pid, int32_t workgroupId,
     }
 
     if (group->GetThreadsNums() >= AUDIO_MAX_RT_THREADS) {
-        AUDIO_ERR_LOG("error: Maximum 4 threads can be added per group");
+        AUDIO_ERR_LOG("error: Maximum 4 threads can be added per group!");
         return ERR_NOT_SUPPORTED;
     }
     int32_t ret = group->AddThread(tokenId);
@@ -157,7 +157,7 @@ AudioWorkgroup *AudioResourceService::GetAudioWorkgroupPtr(int32_t pid, int32_t 
 {
     std::shared_ptr<AudioWorkgroup> group_ptr = audioWorkgroupMap[pid][workgroupId];
     if (!group_ptr) {
-        AUDIO_ERR_LOG("[WorkgroupInServer] get AudioWorkgroup ptr failed\n");
+        AUDIO_ERR_LOG("[WorkgroupInServer] get AudioWorkgroup ptr failed!\n");
         return nullptr;
     }
     return group_ptr.get();

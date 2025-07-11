@@ -94,7 +94,7 @@ int32_t AudioEndpointSeparate::SetVolume(AudioStreamType streamType, float volum
 int32_t AudioEndpointSeparate::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
 {
     if (!isInited_.load()) {
-        AUDIO_ERR_LOG("ResolveBuffer failed, buffer is not configured.");
+        AUDIO_ERR_LOG("ResolveBuffer failed, buffer is not configured!");
         return ERR_ILLEGAL_STATE;
     }
     buffer = dstAudioBuffer_;
@@ -364,13 +364,13 @@ void AudioEndpointSeparate::ResyncPosition()
     uint64_t curHdiReadPos = 0;
     int64_t readTime = 0;
     if (!GetDeviceHandleInfo(curHdiReadPos, readTime)) {
-        AUDIO_ERR_LOG("ResyncPosition call GetDeviceHandleInfo failed.");
+        AUDIO_ERR_LOG("ResyncPosition call GetDeviceHandleInfo failed!");
         return;
     }
     int64_t curTime = ClockTime::GetCurNano();
     int64_t temp = curTime - readTime;
     if (temp > spanDuration_) {
-        AUDIO_ERR_LOG("GetDeviceHandleInfo may cost long time.");
+        AUDIO_ERR_LOG("GetDeviceHandleInfo may cost long time!");
     }
 
     dstAudioBuffer_->SetHandleInfo(curHdiReadPos, readTime);

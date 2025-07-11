@@ -109,10 +109,10 @@ int32_t NoneMixEngine::Init(const AudioDeviceDescriptor &type, bool isVoip)
 
 int32_t NoneMixEngine::Start()
 {
-    AUDIO_INFO_LOG("Enter in");
+    AUDIO_INFO_LOG("Enter in.");
     int32_t ret = SUCCESS;
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
-    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "null sink");
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "null sink!");
     CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_NOT_STARTED, "sink Not Inited! Init the sink first");
     fwkSyncTime_ = static_cast<uint64_t>(ClockTime::GetCurNano());
     writeCount_ = 0;
@@ -185,7 +185,7 @@ int32_t NoneMixEngine::StopAudioSink()
     if (sink && sink->IsInited()) {
         ret = sink->Stop();
     } else {
-        AUDIO_ERR_LOG("sink is null or not init");
+        AUDIO_ERR_LOG("sink is null or not init!");
     }
     return ret;
 }

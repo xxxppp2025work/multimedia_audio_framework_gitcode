@@ -47,7 +47,7 @@ void AudioManagerListenerProxy::OnAudioParameterChange(const std::string network
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
     bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed!");
 
     data.WriteString(static_cast<std::string>(networkId));
     data.WriteInt32(static_cast<std::int32_t>(key));
@@ -66,7 +66,7 @@ void AudioManagerListenerProxy::OnCapturerState(bool isActive)
     MessageParcel reply;
     MessageOption option;
     bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed!");
 
     data.WriteBool(isActive);
 
@@ -97,7 +97,7 @@ void AudioManagerListenerProxy::OnDataTransferStateChange(const int32_t &callbac
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
     bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed!");
 
     data.WriteInt32(callbackId);
     info.Marshalling(data);

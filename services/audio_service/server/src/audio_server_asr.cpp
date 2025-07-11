@@ -177,7 +177,7 @@ int32_t AudioServer::SetAsrAecMode(AsrAecMode asrAecMode)
             valueAec = "ASR_AEC=OFF";
         }
     } else {
-        AUDIO_ERR_LOG("get value failed.");
+        AUDIO_ERR_LOG("get value failed!");
         return ERR_INVALID_PARAM;
     }
     AudioServer::audioParameters[key] = value;
@@ -185,7 +185,7 @@ int32_t AudioServer::SetAsrAecMode(AsrAecMode asrAecMode)
     AudioParamKey parmKey = AudioParamKey::NONE;
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr!");
     deviceManager->SetAudioParameter("primary", parmKey, "", value);
     deviceManager->SetAudioParameter("primary", parmKey, "", valueAec);
     return 0;
@@ -194,13 +194,13 @@ int32_t AudioServer::SetAsrAecMode(AsrAecMode asrAecMode)
 int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        "Check playback permission failed, no system permission");
+        "Check playback permission failed, no system permission!");
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     std::string key = "asr_aec_mode";
     AudioParamKey parmKey = AudioParamKey::NONE;
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr!");
     std::string asrAecModeSink = deviceManager->GetAudioParameter("primary", parmKey, key);
     auto it = AudioServer::audioParameters.find(key);
     if (it != AudioServer::audioParameters.end()) {
@@ -216,7 +216,7 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
         } else if (asrAecSink == "ASR_AEC=OFF") {
             asrAecMode = AsrAecMode::BYPASS;
         } else {
-            AUDIO_ERR_LOG("get value failed.");
+            AUDIO_ERR_LOG("get value failed!");
             return ERR_INVALID_PARAM;
         }
         return 0;
@@ -231,11 +231,11 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
         if (itAecMode != AEC_MODE_MAP.end()) {
             asrAecMode = itAecMode->second;
         } else {
-            AUDIO_ERR_LOG("get value failed.");
+            AUDIO_ERR_LOG("get value failed!");
             return ERR_INVALID_PARAM;
         }
     } else {
-        AUDIO_ERR_LOG("get value failed.");
+        AUDIO_ERR_LOG("get value failed!");
         return ERR_INVALID_PARAM;
     }
     return 0;
@@ -253,7 +253,7 @@ int32_t AudioServer::SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoise
     if (it != NS_MODE_MAP_VERSE.end()) {
         value = key + "=" + it->second;
     } else {
-        AUDIO_ERR_LOG("get value failed.");
+        AUDIO_ERR_LOG("get value failed!");
         return ERR_INVALID_PARAM;
     }
     AudioServer::audioParameters[key] = value;

@@ -220,7 +220,7 @@ void AudioService::UpdateMuteControlSet(uint32_t sessionId, bool muteFlag)
     if (mutedSessions_.find(sessionId) != mutedSessions_.end()) {
         mutedSessions_.erase(sessionId);
     } else {
-        AUDIO_WARNING_LOG("Session id %{public}u not in the set", sessionId);
+        AUDIO_WARNING_LOG("Session id %{public}u not in the set!", sessionId);
     }
 }
 
@@ -239,7 +239,7 @@ void AudioService::CheckRenderSessionMuteState(uint32_t sessionId, std::shared_p
     std::unique_lock<std::mutex> mutedSessionsLock(mutedSessionsMutex_);
     if (mutedSessions_.find(sessionId) != mutedSessions_.end() || IsMuteSwitchStream(sessionId)) {
         mutedSessionsLock.unlock();
-        AUDIO_INFO_LOG("Session %{public}u is in control", sessionId);
+        AUDIO_INFO_LOG("Session %{public}u is in control.", sessionId);
         renderer->SetNonInterruptMute(true);
     }
 }

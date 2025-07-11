@@ -87,7 +87,7 @@ int32_t CapturerInServer::ConfigServerBuffer()
         "byteSizePerFrame_: %{public}zu, spanSizeInBytes_ %{public}zu", totalSizeInFrame_, spanSizeInFrame_,
         byteSizePerFrame_, spanSizeInBytes_);
     if (totalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || totalSizeInFrame_ % spanSizeInFrame_ != 0) {
-        AUDIO_ERR_LOG("ConfigProcessBuffer: ERR_INVALID_PARAM");
+        AUDIO_ERR_LOG("ConfigProcessBuffer: ERR_INVALID_PARAM!");
         return ERR_INVALID_PARAM;
     }
 
@@ -111,7 +111,7 @@ int32_t CapturerInServer::ConfigServerBuffer()
 int32_t CapturerInServer::InitBufferStatus()
 {
     if (audioServerBuffer_ == nullptr) {
-        AUDIO_ERR_LOG("InitBufferStatus failed, null buffer.");
+        AUDIO_ERR_LOG("InitBufferStatus failed, null buffer!");
         return ERR_ILLEGAL_STATE;
     }
 
@@ -120,7 +120,7 @@ int32_t CapturerInServer::InitBufferStatus()
     for (uint32_t i = 0; i < spanCount; i++) {
         SpanInfo *spanInfo = audioServerBuffer_->GetSpanInfoByIndex(i);
         if (spanInfo == nullptr) {
-            AUDIO_ERR_LOG("InitBufferStatus failed, null spaninfo");
+            AUDIO_ERR_LOG("InitBufferStatus failed, null spaninfo!");
             return ERR_ILLEGAL_STATE;
         }
         spanInfo->spanStatus = SPAN_READ_DONE;

@@ -38,13 +38,13 @@ void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std
     } else {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
-            AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
+            AUDIO_ERR_LOG("audioEffectChainManager is nullptr!");
             return;
         }
         audioEffectChainManager->UpdateParamExtra(mainkey, subkey, extraSceneType);
         
         AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-        CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
+        CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr!");
         return audioEnhanceChainManager->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
     }
 }
@@ -63,7 +63,7 @@ bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChain
             audioEffectServer_->GetEffectEntries());
         HPAE::IHpaeManager::GetHpaeManager().InitAudioEnhanceChainManager(effectChains, enhanceParam,
             audioEffectServer_->GetEffectEntries());
-        AUDIO_INFO_LOG("AudioEffectChainManager Init");
+        AUDIO_INFO_LOG("AudioEffectChainManager Init.");
     } else {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         audioEffectChainManager->InitAudioEffectChainManager(effectChains, effectParam,

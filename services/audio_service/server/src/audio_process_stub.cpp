@@ -51,7 +51,7 @@ bool AudioProcessStub::CheckInterfaceToken(MessageParcel &data)
 {
     static auto localDescriptor = IAudioProcess::GetDescriptor();
     auto remoteDescriptor = data.ReadInterfaceToken();
-    CHECK_AND_RETURN_RET_LOG(remoteDescriptor == localDescriptor, false, "CheckInterFfaceToken failed.");
+    CHECK_AND_RETURN_RET_LOG(remoteDescriptor == localDescriptor, false, "CheckInterFfaceToken failed!");
     return true;
 }
 
@@ -111,7 +111,7 @@ int32_t AudioProcessStub::HandleResolveBuffer(MessageParcel &data, MessageParcel
     if (ret == AUDIO_OK && buffer != nullptr) {
         OHAudioBuffer::WriteToParcel(buffer, reply);
     } else {
-        AUDIO_ERR_LOG("error: ResolveBuffer failed.");
+        AUDIO_ERR_LOG("error: ResolveBuffer failed!");
         return AUDIO_INVALID_PARAM;
     }
 

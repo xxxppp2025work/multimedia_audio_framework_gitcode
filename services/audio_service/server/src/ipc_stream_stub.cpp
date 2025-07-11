@@ -31,7 +31,7 @@ bool IpcStreamStub::CheckInterfaceToken(MessageParcel &data)
     static auto localDescriptor = IpcStream::GetDescriptor();
     auto remoteDescriptor = data.ReadInterfaceToken();
     if (remoteDescriptor != localDescriptor) {
-        AUDIO_ERR_LOG("CheckInterFfaceToken failed.");
+        AUDIO_ERR_LOG("CheckInterFfaceToken failed!");
         return false;
     }
     return true;
@@ -149,7 +149,7 @@ int32_t IpcStreamStub::HandleRegisterStreamListener(MessageParcel &data, Message
 {
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
-        AUDIO_ERR_LOG("IpcStreamStub: HandleRegisterProcessCb obj is null");
+        AUDIO_ERR_LOG("IpcStreamStub: HandleRegisterProcessCb obj is null!");
         reply.WriteInt32(AUDIO_INVALID_PARAM);
         return AUDIO_INVALID_PARAM;
     }
@@ -166,7 +166,7 @@ int32_t IpcStreamStub::HandleResolveBuffer(MessageParcel &data, MessageParcel &r
     if (ret == AUDIO_OK && buffer != nullptr) {
         OHAudioBuffer::WriteToParcel(buffer, reply);
     } else {
-        AUDIO_ERR_LOG("error: ResolveBuffer failed.");
+        AUDIO_ERR_LOG("error: ResolveBuffer failed!");
         return AUDIO_INVALID_PARAM;
     }
 

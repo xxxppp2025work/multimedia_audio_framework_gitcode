@@ -60,7 +60,7 @@ int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, st
         sessionId = processConfig.originalSessionId;
     }
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig);
-    CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init rendererStream");
+    CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init rendererStream!");
     int32_t ret = CreatePlayBackEngine(rendererStream);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Create play back engine failed. ret:%{public}d", ret);
@@ -87,7 +87,7 @@ int32_t ProAudioStreamManager::StartRender(uint32_t streamIndex)
     }
     currentRender = rendererStreamMap_[streamIndex];
     int32_t result = currentRender->Start();
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to start rendererStream");
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to start rendererStream!");
     if (playbackEngine_) {
         playbackEngine_->Start();
     }
@@ -154,7 +154,7 @@ int32_t ProAudioStreamManager::ReleaseRender(uint32_t streamIndex)
     }
     AUDIO_INFO_LOG("rendererStreamMap_.size() : %{public}zu", rendererStreamMap_.size());
     if (rendererStreamMap_.size() == 0) {
-        AUDIO_INFO_LOG("Release the last stream");
+        AUDIO_INFO_LOG("Release the last stream!");
     }
     return SUCCESS;
 }
@@ -195,7 +195,7 @@ std::shared_ptr<IRendererStream> ProAudioStreamManager::CreateRendererStream(Aud
     std::shared_ptr<ProRendererStreamImpl> rendererStream =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirectStream);
     if (rendererStream->InitParams() != SUCCESS) {
-        AUDIO_ERR_LOG("Create rendererStream Failed");
+        AUDIO_ERR_LOG("Create rendererStream failed!");
         return nullptr;
     }
     return rendererStream;

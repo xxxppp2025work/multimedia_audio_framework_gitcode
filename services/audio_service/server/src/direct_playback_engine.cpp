@@ -81,7 +81,7 @@ int32_t DirectPlayBackEngine::Init(const AudioDeviceDescriptor &type, bool isVoi
 
 int32_t DirectPlayBackEngine::Start()
 {
-    AUDIO_INFO_LOG("Enter in");
+    AUDIO_INFO_LOG("Enter in.");
     int32_t ret = SUCCESS;
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "null sink");
@@ -97,10 +97,10 @@ int32_t DirectPlayBackEngine::Start()
 
 int32_t DirectPlayBackEngine::Stop()
 {
-    AUDIO_INFO_LOG("Enter");
+    AUDIO_INFO_LOG("Enter.");
     int32_t ret = SUCCESS;
     if (!isStart_) {
-        AUDIO_INFO_LOG("already stopped");
+        AUDIO_INFO_LOG("already stopped.");
         return ret;
     }
     AudioXCollie audioXCollie(
@@ -120,14 +120,14 @@ int32_t DirectPlayBackEngine::StopAudioSink()
     if (sink && sink->IsInited()) {
         ret = sink->Stop();
     } else {
-        AUDIO_ERR_LOG("sink is null or not init");
+        AUDIO_ERR_LOG("sink is null or not init!");
     }
     return ret;
 }
 
 int32_t DirectPlayBackEngine::Pause()
 {
-    AUDIO_INFO_LOG("Enter");
+    AUDIO_INFO_LOG("Enter.");
     if (!isStart_) {
         AUDIO_INFO_LOG("already stopped");
         return SUCCESS;
@@ -215,7 +215,7 @@ void DirectPlayBackEngine::MixStreams()
 
 int32_t DirectPlayBackEngine::AddRenderer(const std::shared_ptr<IRendererStream> &stream)
 {
-    AUDIO_INFO_LOG("Enter add");
+    AUDIO_INFO_LOG("Enter add.");
     if (!stream_) {
         AudioProcessConfig config = stream->GetAudioProcessConfig();
         int32_t result = InitSink(config.streamInfo);

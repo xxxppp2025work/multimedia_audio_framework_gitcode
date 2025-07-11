@@ -50,7 +50,7 @@ int32_t StreamListenerHolder::RegisterStreamListener(sptr<IpcStreamListener> lis
 int32_t StreamListenerHolder::OnOperationHandled(Operation operation, int64_t result)
 {
     std::lock_guard<std::mutex> lock(listenerMutex_);
-    CHECK_AND_RETURN_RET_LOG(streamListener_ != nullptr, ERR_OPERATION_FAILED, "stream listrener not set");
+    CHECK_AND_RETURN_RET_LOG(streamListener_ != nullptr, ERR_OPERATION_FAILED, "stream listrener not set!");
     return streamListener_->OnOperationHandled(operation, result);
 }
 

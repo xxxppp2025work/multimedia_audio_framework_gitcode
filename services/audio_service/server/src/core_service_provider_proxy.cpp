@@ -44,7 +44,7 @@ int32_t CoreServiceProviderProxy::UpdateSessionOperation(uint32_t sessionId, Ses
     data.WriteUint32(opMsg);
 
     int ret = Remote()->SendRequest(ICoreServiceProviderMsg::UPDATE_SESSION_OPERATION, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "failed, error: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "Failed, error: %{public}d", ret);
 
     return reply.ReadInt32();
 }

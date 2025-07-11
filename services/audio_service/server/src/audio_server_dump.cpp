@@ -35,7 +35,7 @@ AudioServerDump::AudioServerDump() : mainLoop(nullptr),
     isMainLoopStarted_(false),
     isContextConnected_(false)
 {
-    AUDIO_DEBUG_LOG("AudioServerDump construct");
+    AUDIO_DEBUG_LOG("AudioServerDump construct.");
     InitDumpFuncMap();
 }
 
@@ -67,7 +67,7 @@ void AudioServerDump::ResetPAAudioDump()
     if (context) {
         pa_context_set_state_callback(context, nullptr, nullptr);
         if (isContextConnected_ == true) {
-            AUDIO_INFO_LOG("[AudioServerDump] disconnect context!");
+            AUDIO_INFO_LOG("[AudioServerDump] disconnect context.");
             pa_context_disconnect(context);
         }
         pa_context_unref(context);
@@ -116,7 +116,7 @@ int32_t AudioServerDump::Initialize()
     PaLockGuard lock(mainLoop);
 
     if (pa_threaded_mainloop_start(mainLoop) < 0) {
-        AUDIO_ERR_LOG("Audio Service not started");
+        AUDIO_ERR_LOG("Audio Service not started!");
         ResetPAAudioDump();
         return AUDIO_DUMP_INIT_ERR;
     }

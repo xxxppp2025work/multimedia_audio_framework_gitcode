@@ -1059,7 +1059,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
                 return HandleSecondPartCode(code, data, reply, option);
         }
     }
-    AUDIO_ERR_LOG("default case, need check AudioManagerStub");
+    AUDIO_ERR_LOG("default case, need check AudioManagerStub!");
     return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
 }
 
@@ -1073,7 +1073,7 @@ int AudioManagerStub::HandleSetAudioEffectPropertyV3(MessageParcel &data, Messag
 {
     int32_t size = data.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        ERROR_INVALID_PARAM, "audio enhance property array size invalid");
+        ERROR_INVALID_PARAM, "audio enhance property array size invalid!");
     AudioEffectPropertyArrayV3 propertyArray = {};
     for (int32_t i = 0; i < size; i++) {
         AudioEffectPropertyV3 prop = {};
@@ -1091,7 +1091,7 @@ int AudioManagerStub::HandleGetAudioEffectPropertyV3(MessageParcel &data, Messag
     int32_t result = GetAudioEffectProperty(propertyArray);
     int32_t size = static_cast<int32_t>(propertyArray.property.size());
     CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        ERROR_INVALID_PARAM, "audio enhance property array size invalid");
+        ERROR_INVALID_PARAM, "audio enhance property array size invalid!");
     reply.WriteInt32(size);
     for (int32_t i = 0; i < size; i++) {
         propertyArray.property[i].Marshalling(reply);
@@ -1104,7 +1104,7 @@ int AudioManagerStub::HandleSetAudioEffectProperty(MessageParcel &data, MessageP
 {
     int32_t size = data.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        ERROR_INVALID_PARAM, "Audio enhance property array size invalid");
+        ERROR_INVALID_PARAM, "Audio enhance property array size invalid!");
     AudioEffectPropertyArray propertyArray = {};
     for (int32_t i = 0; i < size; i++) {
         AudioEffectProperty prop = {};

@@ -56,7 +56,7 @@ void AudioEndpointInner::CheckPlaySignal(uint8_t *buffer, size_t bufferSize)
     if (!latencyMeasEnabled_) {
         return;
     }
-    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
+    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr.");
     size_t byteSize = static_cast<size_t>(GetFormatByteSize(dstStreamInfo_.format));
     size_t newlyCheckedTime = bufferSize / (dstStreamInfo_.samplingRate /
         MILLISECOND_PER_SECOND) / (byteSize * sizeof(uint8_t) * dstStreamInfo_.channels);
@@ -78,7 +78,7 @@ void AudioEndpointInner::CheckPlaySignal(uint8_t *buffer, size_t bufferSize)
     }
     signalDetected_ = signalDetectAgent_->CheckAudioData(buffer, bufferSize);
     if (signalDetected_) {
-        AUDIO_INFO_LOG("LatencyMeas fastSink signal detected");
+        AUDIO_INFO_LOG("LatencyMeas fastSink signal detected.");
         detectedTime_ = 0;
     }
 }
@@ -88,7 +88,7 @@ void AudioEndpointInner::CheckRecordSignal(uint8_t *buffer, size_t bufferSize)
     if (!latencyMeasEnabled_) {
         return;
     }
-    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
+    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr.");
     signalDetected_ = signalDetectAgent_->CheckAudioData(buffer, bufferSize);
     if (signalDetected_) {
         AudioParamKey key = NONE;
@@ -146,7 +146,7 @@ void AudioEndpointInner::HandleZeroVolumeStartEvent()
             needReSyncPosition_ = true;
         }
     } else {
-        AUDIO_INFO_LOG("fastSink already started");
+        AUDIO_INFO_LOG("fastSink already started.");
     }
 }
 
@@ -185,7 +185,7 @@ void AudioEndpointInner::CheckStandBy()
     AUDIO_INFO_LOG("endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
     if (endpointStatus_ == IDEL) {
         // delay call sink stop when no process running
-        AUDIO_INFO_LOG("status is IDEL, need delay call stop");
+        AUDIO_INFO_LOG("status is IDEL, need delay call stop.");
         delayStopTime_ = ClockTime::GetCurNano() + ((clientConfig_.audioMode == AUDIO_MODE_PLAYBACK)
             ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : RECORDER_DELAY_STOP_HDI_TIME_NS);
     }

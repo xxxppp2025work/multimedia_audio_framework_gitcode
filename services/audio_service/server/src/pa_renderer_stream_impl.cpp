@@ -139,7 +139,7 @@ int32_t PaRendererStreamImpl::InitParams()
     bufferNullCount_ = 0;
     minBufferSize_ = (size_t)bufferAttr->minreq;
     if (byteSizePerFrame_ == 0) {
-        AUDIO_ERR_LOG("byteSizePerFrame_ should not be zero.");
+        AUDIO_ERR_LOG("byteSizePerFrame_ should not be zero!");
         return ERR_INVALID_PARAM;
     }
     spanSizeInFrame_ = minBufferSize_ / byteSizePerFrame_;
@@ -202,7 +202,7 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
     pa_operation *operation = nullptr;
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
-        AUDIO_ERR_LOG("Stream Stop Failed");
+        AUDIO_ERR_LOG("Stream Stop Failed!");
         return ERR_OPERATION_FAILED;
     }
 
@@ -256,14 +256,14 @@ int32_t PaRendererStreamImpl::Flush()
     pa_operation *operation = nullptr;
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
-        AUDIO_ERR_LOG("Stream Flush Failed");
+        AUDIO_ERR_LOG("Stream Flush failed!");
         return ERR_OPERATION_FAILED;
     }
 
     streamFlushStatus_ = 0;
     operation = pa_stream_flush(paStream_, PAStreamFlushSuccessCb, reinterpret_cast<void *>(this));
     if (operation == nullptr) {
-        AUDIO_ERR_LOG("Stream Flush Operation Failed");
+        AUDIO_ERR_LOG("Stream Flush Operation failed!");
         return ERR_OPERATION_FAILED;
     }
     Trace trace("PaRendererStreamImpl::InitAudioEffectChainDynamic");

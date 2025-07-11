@@ -28,7 +28,7 @@ constexpr unsigned int MS_PER_SECOND = 1000;
 
 AudioWorkgroup::AudioWorkgroup(int32_t id) : workgroupId(id)
 {
-    AUDIO_INFO_LOG("OHAudioWorkgroup Constructor is called\n");
+    AUDIO_INFO_LOG("OHAudioWorkgroup Constructor is called.\n");
 }
 
 int32_t AudioWorkgroup::GetWorkgroupId()
@@ -47,7 +47,7 @@ int32_t AudioWorkgroup::AddThread(int32_t tid)
     OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().SetAudioDeadline(
         ConcurrentTask::AUDIO_DDL_ADD_THREAD, tid, workgroupId, reply);
     if (reply.paramA < 0) {
-        AUDIO_INFO_LOG("AudioWorkgroup AddThread Failed\n");
+        AUDIO_INFO_LOG("AudioWorkgroup AddThread Failed.\n");
         return AUDIO_ERR;
     }
     threads[tid] = true;
@@ -75,7 +75,7 @@ int32_t AudioWorkgroup::Start(uint64_t startTime, uint64_t deadlineTime)
     }
     SetFrameRateAndPrioType(workgroupId, MS_PER_SECOND/(deadlineTime - startTime), 0);
     if (BeginFrameFreq(0) != 0) {
-        AUDIO_ERR_LOG("[WorkgroupInServer] Audio Deadline BeginFrame failed");
+        AUDIO_ERR_LOG("[WorkgroupInServer] Audio Deadline BeginFrame failed!");
         return AUDIO_ERR;
     }
     return AUDIO_OK;
@@ -84,7 +84,7 @@ int32_t AudioWorkgroup::Start(uint64_t startTime, uint64_t deadlineTime)
 int32_t AudioWorkgroup::Stop()
 {
     if (EndFrameFreq(0) != 0) {
-        AUDIO_ERR_LOG("[WorkgroupInServer] Audio Deadline EndFrame failed");
+        AUDIO_ERR_LOG("[WorkgroupInServer] Audio Deadline EndFrame failed!");
         return AUDIO_ERR;
     }
     return AUDIO_OK;
