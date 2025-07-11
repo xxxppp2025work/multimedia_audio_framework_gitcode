@@ -788,6 +788,10 @@ int32_t AudioCoreService::GetCurrentCapturerChangeInfos(
         if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
             size_t capturerInfosSize = audioCapturerChangeInfos.size();
             for (size_t i = 0; i < capturerInfosSize; i++) {
+                if (audioCapturerChangeInfos[i] != nullptr && !audioRouterCenter_.IsConfigRouterStrategy(
+                    audioCapturerChangeInfos[i]->capturerInfo.sourceType)) {
+                    continue;
+                }
                 UpdateCapturerInfoWhenNoPermission(audioCapturerChangeInfos[i], hasSystemPermission);
                 audioDeviceCommon_.UpdateDeviceInfo(audioCapturerChangeInfos[i]->inputDeviceInfo, desc,
                     hasBTPermission, hasSystemPermission);
