@@ -67,7 +67,7 @@ int32_t AudioPolicyManagerListenerStubImpl::OnQueryClientType(const std::string 
 }
 
 int32_t AudioPolicyManagerListenerStubImpl::OnCheckClientInfo(
-    const std::string &bundleName, int32_t &uid, int32_t pid, bool &ret)
+    const std::string &bundleName, int32_t uid, int32_t pid, bool &ret)
 {
     std::shared_ptr<AudioClientInfoMgrCallback> audioClientInfoMgrCallback = audioClientInfoMgrCallback_.lock();
 
@@ -111,7 +111,7 @@ int32_t AudioPolicyManagerListenerStubImpl::OnBackgroundMute(const int32_t uid)
 }
 
 int32_t AudioPolicyManagerListenerStubImpl::OnQueryBundleNameIsInList(const std::string &bundleName,
-    const std::string &listType, bool& ret)
+    const std::string &listType, bool &ret)
 {
     std::shared_ptr<AudioQueryBundleNameListCallback> audioQueryBundleNameListCallback =
         audioQueryBundleNameListCallback_.lock();

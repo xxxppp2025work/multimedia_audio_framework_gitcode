@@ -4378,7 +4378,7 @@ int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyAr
     }
     audioPolicyService_.GetSupportedAudioEffectProperty(propertyArray);
     size_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR,
+    CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR,
         "get supported audio effect property size invalid.");
     return AUDIO_OK;
 }
@@ -4407,7 +4407,7 @@ int32_t AudioPolicyServer::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &pr
     }
     int32_t res = audioPolicyService_.GetAudioEffectProperty(propertyArray);
     size_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR, "size invalid.");
+    CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR, "size invalid.");
     return res;
 }
 
@@ -4417,7 +4417,7 @@ int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyAr
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     int32_t res = audioPolicyService_.GetSupportedAudioEffectProperty(propertyArray);
     size_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR,
+    CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR,
         "get supported audio effect property size invalid.");
     return res;
 }
@@ -4429,7 +4429,7 @@ int32_t AudioPolicyServer::GetSupportedAudioEnhanceProperty(AudioEnhanceProperty
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     int32_t res = audioPolicyService_.GetSupportedAudioEnhanceProperty(propertyArray);
     size_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR,
+    CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR,
         "get supported audio effect property size invalid.");
     return res;
 }
@@ -4467,7 +4467,7 @@ int32_t AudioPolicyServer::GetAudioEffectProperty(AudioEffectPropertyArray &prop
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     int32_t res = audioPolicyService_.GetAudioEffectProperty(propertyArray);
     size_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR, "size invalid.");
+    CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR, "size invalid.");
     return res;
 }
 
@@ -4812,7 +4812,7 @@ int32_t AudioPolicyServer::GetStreamUsagesByVolumeType(int32_t audioVolumeTypeIn
 int32_t AudioPolicyServer::SetCallbackStreamUsageInfo(const std::set<int32_t> &streamUsages)
 {
     size_t size = streamUsages.size();
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= MAX_STREAM_USAGE_COUNT, ERR_INVALID_PARAM, "size upper limit.");
+    CHECK_AND_RETURN_RET_LOG(size <= MAX_STREAM_USAGE_COUNT, ERR_INVALID_PARAM, "size upper limit.");
     std::set<StreamUsage> streamUsagesTmp;
     for (auto streamUsage : streamUsages) {
         CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
