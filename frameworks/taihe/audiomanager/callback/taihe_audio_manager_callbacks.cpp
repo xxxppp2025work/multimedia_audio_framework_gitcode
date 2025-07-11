@@ -174,7 +174,7 @@ void TaiheAudioManagerCallback::RemoveRoutingManagerDeviceChangeCbRef(std::share
 
     for (auto it = routingManagerDeviceChangeCbList_.begin(); it != routingManagerDeviceChangeCbList_.end(); ++it) {
         if ((*it).first == nullptr) {
-            AUDIO_ERR_LOG("RemoveRoutingManagerDeviceChangeCbRef: (*it).first or (*it).first->cb_ is null");
+            AUDIO_ERR_LOG("RemoveRoutingManagerDeviceChangeCbRef: (*it).first is null");
             continue;
         }
         bool isSameCallback = TaiheAudioManagerCallback::IsSameCallback(callback, (*it).first->cb_);

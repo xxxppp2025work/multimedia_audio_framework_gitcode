@@ -57,6 +57,10 @@ void TaiheAudioSpatializationEnabledChangeCallback::SaveSpatializationEnabledCha
     } else if (!callbackName.compare(SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
         for (auto anyDeviceIt = spatializationEnabledChangeCbForAnyDeviceList_.begin();
             anyDeviceIt != spatializationEnabledChangeCbForAnyDeviceList_.end(); ++anyDeviceIt) {
+            if (*anyDeviceIt == nullptr) {
+                AUDIO_ERR_LOG("SaveSpatializationEnabledChangeCallbackReference: *anyDeviceIt is null");
+                continue;
+            }
             bool isSame = TaiheAudioManagerCallback::IsSameCallback(callback, (*anyDeviceIt)->cb_);
             CHECK_AND_RETURN_LOG(!isSame, "SaveCallbackReference: spatialization manager has same callback");
         }
@@ -88,6 +92,10 @@ void TaiheAudioSpatializationEnabledChangeCallback::RemoveSpatializationEnabledC
     } else if (!callbackName.compare(SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
         for (auto anyDeviceIt = spatializationEnabledChangeCbForAnyDeviceList_.begin();
             anyDeviceIt != spatializationEnabledChangeCbForAnyDeviceList_.end(); ++anyDeviceIt) {
+            if (*anyDeviceIt == nullptr) {
+                AUDIO_ERR_LOG("RemoveSpatializationEnabledChangeCallbackReference: *anyDeviceIt is null");
+                continue;
+            }
             bool isSame = TaiheAudioManagerCallback::IsSameCallback(callback, (*anyDeviceIt)->cb_);
             if (isSame) {
                 AUDIO_INFO_LOG("RemoveSpatializationEnabledChangeCallbackReference: find js callback, erase it");
@@ -367,6 +375,10 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::SaveHeadTrackingEnabledChangeC
     } else if (!callbackName.compare(HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
         for (auto anyDeviceIt = headTrackingEnabledChangeCbForAnyDeviceList_.begin();
             anyDeviceIt != headTrackingEnabledChangeCbForAnyDeviceList_.end(); ++anyDeviceIt) {
+            if (*anyDeviceIt == nullptr) {
+                AUDIO_ERR_LOG("SaveHeadTrackingEnabledChangeCallbackReference: *anyDeviceIt is null");
+                continue;
+            }
             bool isSame = TaiheAudioManagerCallback::IsSameCallback(callback, (*anyDeviceIt)->cb_);
             CHECK_AND_RETURN_LOG(!isSame, "SaveCallbackReference: spatialization manager has same callback");
         }
@@ -398,6 +410,10 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::RemoveHeadTrackingEnabledChang
     } else if (!callbackName.compare(HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
         for (auto anyDeviceIt = headTrackingEnabledChangeCbForAnyDeviceList_.begin();
             anyDeviceIt != headTrackingEnabledChangeCbForAnyDeviceList_.end(); ++anyDeviceIt) {
+            if (*anyDeviceIt == nullptr) {
+                AUDIO_ERR_LOG("RemoveHeadTrackingEnabledChangeCallbackReference: *anyDeviceIt is null");
+                continue;
+            }
             bool isSame = TaiheAudioManagerCallback::IsSameCallback(callback, (*anyDeviceIt)->cb_);
             if (isSame) {
                 AUDIO_INFO_LOG("RemoveHeadTrackingEnabledChangeCallbackReference: find js callback, erase it");
