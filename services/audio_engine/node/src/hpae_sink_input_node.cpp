@@ -101,7 +101,7 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
     if (nodeCallback) {
         nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);
     }
-    if (GetDeviceClass() == "offload" && !offloadEnable_) {
+    if ((GetDeviceClass() == "offload" || GetDeviceClass() == "remote_offload") && !offloadEnable_) {
         ret = ERR_OPERATION_FAILED;
         AUDIO_WARNING_LOG("The session %{public}u offloadEnable is false, not request data", GetSessionId());
     } else {
