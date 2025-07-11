@@ -108,6 +108,7 @@ constexpr int32_t UID_MCU = 7500;
 constexpr int32_t UID_CAAS = 5527;
 constexpr int32_t UID_TELEPHONY = 1001;
 constexpr int32_t UID_DMSDP = 7071;
+const int STORAGE_MANAGER_MANAGER_ID = 5003;
 const std::set<int32_t> INTERRUPT_CALLBACK_TRUST_LIST = {
     UID_MEDIA,
     UID_MCU,
@@ -275,6 +276,7 @@ void AudioPolicyServer::OnStart()
     isScreenOffOrLock_ = !PowerMgr::PowerMgrClient::GetInstance().IsScreenOn(true);
     DlopenUtils::DeInit();
     DfxMsgManager::GetInstance().Init();
+    std::thread([&]() { CallRingtoneLibrary(); }).detach();
     AUDIO_INFO_LOG("Audio policy server start end");
 }
 
@@ -812,6 +814,7 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     SubscribeCommonEvent("usual.event.SCREEN_OFF");
     SubscribeCommonEvent("usual.event.SCREEN_LOCKED");
     SubscribeCommonEvent("usual.event.SCREEN_UNLOCKED");
+    SubscribeCommonEvent("usual.event.LOCALE_CHANGED");
 #ifdef USB_ENABLE
     usbManager_.SubscribeEvent();
 #endif
@@ -878,6 +881,8 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
     } else if (action == "usual.event.SCREEN_UNLOCKED") {
         AUDIO_INFO_LOG("receive SCREEN_UNLOCKED action, can change volume");
         isScreenOffOrLock_ = false;
+    } else if (action == "usual.event.LOCALE_CHANGED") {
+        std::thread([&]() { CallRingtoneLibrary(); }).detach();
     }
 }
 
@@ -4935,6 +4940,22 @@ int32_t AudioPolicyServer::IsCollaborativePlaybackEnabledForDevice(
         return ERR_PERMISSION_DENIED;
     }
     enabled = audioCollaborativeService_.IsCollaborativePlaybackEnabledForDevice(selectedAudioDevice);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::CallRingtoneLibrary()
+{
+    AUDIO_INFO_LOG("Enter CallRingtoneLibrary");
+    auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+
+    CHECK_AND_RETURN_RET_LOG(saManager != nullptr, ERROR, "Get system ability manager failed.");
+
+    auto remoteObj = saManager->GetSystemAbility(STORAGE_MANAGER_MANAGER_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObj != nullptr, ERROR, "Get system ability failed.");
+
+    auto dataShareHelper = DataShare::DataShareHelper::Creator(remoteObj, "datashare:///ringtone");
+
+    CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "Create dataShare failed, datashare or library error.");
     return SUCCESS;
 }
 } // namespace AudioStandard
