@@ -56,9 +56,6 @@ public:
     int32_t Deactivate();
     AudioSessionState GetSessionState();
     AudioSessionStrategy GetSessionStrategy();
-    int32_t AddAudioInterrpt(const std::pair<AudioInterrupt, AudioFocuState> interruptPair);
-    int32_t RemoveAudioInterrpt(const std::pair<AudioInterrupt, AudioFocuState> interruptPair);
-    int32_t RemoveAudioInterrptByStreamId(const uint32_t &streamId);
     bool IsAudioSessionEmpty();
     bool IsAudioRendererEmpty();
     int32_t SetSessionDefaultOutputDevice(const DeviceType &deviceType);
@@ -68,6 +65,7 @@ public:
     bool IsRecommendToStopAudio(const std::shared_ptr<AudioPolicyServerHandler::EventContextObj> eventContextObj);
     bool IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     StreamUsage GetSessionStreamUsage();
+    bool IsBackGroundApp(void);
 
 private:
     StreamUsage GetStreamUsageByAudioSessionScene(const AudioSessionScene audioSessionScene);
@@ -86,7 +84,6 @@ private:
     std::vector<AudioInterrupt> bypassStreamInfoVec_;
     uint32_t fakeStreamId_ {0};
     AudioSessionState state_ = AudioSessionState::SESSION_INVALID;
-    std::unordered_map<uint32_t, std::pair<AudioInterrupt, AudioFocuState>> interruptMap_;
     DeviceType defaultDeviceType_ = DEVICE_TYPE_INVALID;
     AudioDeviceDescriptor deviceDescriptor_;
 };

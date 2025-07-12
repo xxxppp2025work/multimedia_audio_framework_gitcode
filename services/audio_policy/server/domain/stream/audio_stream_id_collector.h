@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,31 +12,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef ST_AUDIO_SESSION_STATE_MONITOR_H
-#define ST_AUDIO_SESSION_STATE_MONITOR_H
 
-#include <map>
+#ifnedf LOG_TAG
+#define LOG_TAG "AudioStreamIdAllocator"
+#endif
+
+#ifndef AUDIO_STREAM_ID_COLLECTOR_H
+#define AUDIO_STREAM_ID_COLLECTOR_H
+
+#include <cstdint>
 #include <mutex>
-
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioSessionStateMonitor {
+
+class AudioStreamIdCollector {
 public:
-    virtual ~AudioSessionStateMonitor() = default;
-    virtual void OnAudioSessionTimeOut(int32_t pid) = 0;
-    void StartMonitor(int32_t pid, time_t duration);
-    void StopMonitor(int32_t pid);
-    void RemoveFromMonitorMap(int32_t pid);
+    uint32_t GenerateStreamId();
+    static AudioStreamIdCollector& GetAudioStreamIdCollector()
+    {
+        static AudioStreamIdCollector audioStreamIdCollector;
+        return audioStreamIdCollector;
+    }
+
+    AudioStreamIdCollector();
+    ~AudioStreamIdCollector();
 
 private:
-    virtual std::shared_ptr<AudioSessionStateMonitor> GetSelfSharedPtr() = 0;
+    AudioStreamIdAllocator() {};
+    ~AudioStreamIdAllocator() {};
 
-private:
-    std::mutex sessionMonitorMutex_;
-    std::unordered_map<int32_t, int32_t> pidCbIdMap_;
+    std::mutex sessionIdAllocatoeMutex_;
+
 };
-
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // ST_AUDIO_SESSION_STATE_MONITOR_H
+#endif

@@ -25,9 +25,13 @@
 #include "audio_stream_descriptor.h"
 #include "audio_active_device.h"
 #include "audio_device_common.h"
+#include "app_mgr_client.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+static constexpr time_t AUDIO_SESSION_TIME_OUT_DURATION_S = 60; // Audio session timeout duration : 60 seconds
+static constexpr time_t AUDIO_SESSION_SCENE_TIME_OUT_DURATION_S = 10; // Audio sessionV2 timeout duration : 10 seconds
 
 AudioSession::AudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy,
     const std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor)
@@ -116,6 +120,19 @@ void AudioSession::RemoveStreamInfo(uint32_t streamId)
             break;
         }
     }
+
+    auto monitor = audioSessionStateMonitor_.lock();
+    if (bypassStreamInfoVec_.empty() && monitor != nullptr) {
+        // session v1 60s
+        if (audioSessionScene_ == AudioSessionScene::INVALID) {
+            monitor->StartMonitor(callerPid_, AUDIO_SESSION_TIME_OUT_DURATION_S);
+        }
+
+        // session v2 background 10s
+        if ((audioSessionScene_ != AudioSessionScene::INVALID) && IsBackGroundApp()) {
+            monitor->StartMonitor(callerPid_, AUDIO_SESSION_SCENE_TIME_OUT_DURATION_S);
+        }
+    }
 }
 
 uint32_t AudioSession::GetFakeStreamId()
@@ -137,13 +154,13 @@ void AudioSession::Dump(std::string &dumpString)
         callerPid_, static_cast<uint32_t>(strategy_.concurrencyMode));
     AppendFormat(dumpString, "    - pid: %d, AudioSession scene is: %d.\n",
         callerPid_, static_cast<uint32_t>(audioSessionScene_));
+    AppendFormat(dumpString, "    - pid: %d, AudioSession faleStreamId is: %u.\n",
+        callerPid_, faleStreamId);
+    AppendFormat(dumpString, "    - pid: %d, AudioSession defaultDeviceType is: %d.\n",
+        callerPid_, static_cast<int32_t>(defaultDeviceType));
     AppendFormat(dumpString, "    - pid: %d, AudioSession state is: %u.\n",
         callerPid_, static_cast<uint32_t>(state_));
     AppendFormat(dumpString, "    - pid: %d, Stream in interruptMap are:\n", callerPid_);
-    for (auto &it : interruptMap_) {
-        AppendFormat(dumpString, "        - StreamId is: %u, streamType is: %u\n",
-            it.first, static_cast<uint32_t>(it.second.first.audioFocusType.streamType));
-    }
     AppendFormat(dumpString, "    - pid: %d, Bypass streams are:\n", callerPid_);
     for (auto &it : bypassStreamInfoVec_) {
         AppendFormat(dumpString, "        - StreamId is: %u, streamType is: %u\n",
@@ -175,7 +192,7 @@ int32_t AudioSession::Deactivate()
 {
     std::lock_guard<std::mutex> lock(sessionMutex_);
     state_ = AudioSessionState::SESSION_DEACTIVE;
-    interruptMap_.clear();
+    bypassStreamInfoVec_.clear();
     needToFetch_ = false;
     AUDIO_INFO_LOG("Audio session state change: pid %{public}d, state %{public}d",
         callerPid_, static_cast<int32_t>(state_));
@@ -255,82 +272,17 @@ bool AudioSession::ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt)
     return false;
 }
 
-int32_t AudioSession::AddAudioInterrpt(const std::pair<AudioInterrupt, AudioFocuState> interruptPair)
-{
-    std::lock_guard<std::mutex> lock(sessionMutex_);
-    if (interruptPair.first.isAudioSessionInterrupt) {
-        return SUCCESS;
-    }
-
-    if (state_ == AudioSessionState::SESSION_ACTIVE &&
-        audioSessionScene_ != AudioSessionScene::INVALID &&
-        ShouldExcludeStreamType(interruptPair.first)) {
-        return SUCCESS;
-    }
-
-    uint32_t streamId = interruptPair.first.streamId;
-    AUDIO_INFO_LOG("AddAudioInterrpt: streamId %{public}u", streamId);
-
-    if (interruptMap_.count(streamId) != 0) {
-        AUDIO_WARNING_LOG("The streamId has been added. The old interrupt will be coverd.");
-    }
-    interruptMap_[streamId] = interruptPair;
-    auto monitor = audioSessionStateMonitor_.lock();
-    if (monitor != nullptr) {
-        monitor->StopMonitor(callerPid_);
-    }
-    return SUCCESS;
-}
-
-int32_t AudioSession::RemoveAudioInterrpt(const std::pair<AudioInterrupt, AudioFocuState> interruptPair)
-{
-    uint32_t streamId = interruptPair.first.streamId;
-    AUDIO_INFO_LOG("RemoveAudioInterrpt: streamId %{public}u", streamId);
-
-    std::lock_guard<std::mutex> lock(sessionMutex_);
-    if (interruptMap_.count(streamId) == 0) {
-        AUDIO_WARNING_LOG("The streamId has been removed.");
-        return SUCCESS;
-    }
-    interruptMap_.erase(streamId);
-
-    auto monitor = audioSessionStateMonitor_.lock();
-    if (interruptMap_.empty() && monitor != nullptr) {
-        monitor->StartMonitor(callerPid_);
-    }
-    return SUCCESS;
-}
-
-int32_t AudioSession::RemoveAudioInterrptByStreamId(const uint32_t &streamId)
-{
-    AUDIO_INFO_LOG("RemoveAudioInterrptByStreamId: streamId %{public}u", streamId);
-
-    std::lock_guard<std::mutex> lock(sessionMutex_);
-    if (interruptMap_.count(streamId) == 0) {
-        AUDIO_WARNING_LOG("The streamId has been removed.");
-        return SUCCESS;
-    }
-    interruptMap_.erase(streamId);
-
-    auto monitor = audioSessionStateMonitor_.lock();
-    if (interruptMap_.empty() && monitor != nullptr) {
-        monitor->StartMonitor(callerPid_);
-    }
-
-    return SUCCESS;
-}
-
 bool AudioSession::IsAudioSessionEmpty()
 {
     std::lock_guard<std::mutex> lock(sessionMutex_);
-    return interruptMap_.size() == 0;
+    return bypassStreamInfoVec_.size() == 0;
 }
 
 bool AudioSession::IsAudioRendererEmpty()
 {
     std::lock_guard<std::mutex> lock(sessionMutex_);
-    for (const auto &iter : interruptMap_) {
-        if (iter.second.first.audioFocusType.streamType != STREAM_DEFAULT) {
+    for (const auto &iter : bypassStreamInfoVec_) {
+        if (iter.audioFocusType.streamType != STREAM_DEFAULT) {
             return false;
         }
     }
@@ -432,5 +384,22 @@ StreamUsage AudioSession::GetSessionStreamUsage()
     std::lock_guard<std::mutex> lock(sessionMutex_);
     return GetStreamUsageByAudioSessionScene(audioSessionScene_);
 }
+
+bool AudioSession::IsBackGroundApp(void)
+{
+    OHOS::AppExecFwk::AppMgrClient appManager;
+    OHOS::AppExecFwk::RunningProcessInfo infos;
+    uint8_t state = 0;
+
+    appManager.GetRunningProcessInfoByPid(callerPid_, infos);
+    state = static_cast<uint8_t>(infos.state_);
+    if (state == 0) {
+        AUDIO_WARNING_LOG("Get app foreground and background state failed, callerPid_=%{public}d", callerPid_);
+        return false;
+    }
+
+    return state == static_cast<uint8_t>(AppExecFwk::AppProcessState::APP_STATE_BACKGROUND);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

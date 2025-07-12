@@ -66,6 +66,7 @@ public:
     bool ShouldAudioSessionProcessHintType(InterruptHint hintType);
     bool ShouldAudioStreamProcessHintType(InterruptHint hintType);
     static bool IsSameTypeForAudioSession(const AudioStreamType incomingType, const AudioStreamType existedType);
+    void NotifyAppStateChange(const int32_t pid, bool isBackState);
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);
