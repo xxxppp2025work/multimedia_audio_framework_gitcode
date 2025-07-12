@@ -461,6 +461,15 @@ void IsNewDevicePlaybackSupportedFuzzTest()
     audioCoreService->IsNewDevicePlaybackSupported(streamDesc);
 }
 
+void LoadSplitModuleFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    std::string SPLITARGS = "splitArgs";
+    std::string NETWORKID = "networkId";
+    audioCoreService.LoadSplitModule("", NETWORKID);
+    audioCoreService.LoadSplitModule(SPLITARGS, NETWORKID);
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     ScoInputDeviceFetchedForRecongnitionFuzzTest,
     BluetoothScoFetchFuzzTest,
@@ -487,6 +496,7 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     SwitchActiveA2dpDeviceFuzzTest,
     MoveToNewInputDeviceFuzzTest,
     IsNewDevicePlaybackSupportedFuzzTest,
+    LoadSplitModuleFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
