@@ -29,6 +29,7 @@ group("audio_policy_unittest_packages") {
     ":audio_affinity_manager_unit_test",
     ":audio_affinity_parser_test",
     ":audio_capturer_session_unit_test",
+    ":audio_collaborative_service_unit_test",
     ":audio_concurrency_service_unit_test",
     ":audio_connected_device_unit_test",
     ":audio_core_service_entry_unit_test",
@@ -1842,6 +1843,7 @@ ohos_unittest("audio_collaborative_service_unit_test") {
   sources = [ "./unittest/audio_spatialization_service_unit_test/src/audio_collaborative_service_unit_test.cpp" ]
 
   deps = [
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_policy:audio_setting_provider",
