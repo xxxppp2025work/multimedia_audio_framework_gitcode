@@ -166,7 +166,7 @@ void AudioService::DisableLoopback()
 {
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr!");
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", "Karaoke_enable=disable");
 }
 
@@ -546,7 +546,8 @@ bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
     if (deviceInfo.deviceType_ == DEVICE_TYPE_WIRED_HEADSET || deviceInfo.deviceType_ == DEVICE_TYPE_WIRED_HEADPHONES ||
         deviceInfo.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP || deviceInfo.deviceType_ == DEVICE_TYPE_USB_HEADSET ||
         deviceInfo.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET || deviceInfo.deviceType_ == DEVICE_TYPE_REMOTE_CAST ||
-        (deviceInfo.deviceType_ == DEVICE_TYPE_SPEAKER && deviceInfo.networkId_ != std::string(LOCAL_NETWORK_ID))) {
+        (deviceInfo.deviceType_ == DEVICE_TYPE_SPEAKER && deviceInfo.networkId_ != std::string(LOCAL_NETWORK_ID)) ||
+        deviceInfo.deviceType_ == DEVICE_TYPE_HEARING_AID) {
         switch (config.rendererInfo.streamUsage) {
             case STREAM_USAGE_ALARM:
             case STREAM_USAGE_VOICE_RINGTONE:
@@ -787,7 +788,8 @@ bool AudioService::IsEndpointTypeVoip(const AudioProcessConfig &config, AudioDev
 sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfig &config)
 {
     int32_t ret =  SUCCESS;
-    if (config.streamType != STREAM_VOICE_CALL && config.streamType != STREAM_VOICE_COMMUNICATION) {
+    if (config.streamType != STREAM_VOICE_CALL && config.streamType != STREAM_VOICE_COMMUNICATION &&
+        !config.rendererInfo.isLoopback && !config.capturerInfo.isLoopback) {
         AudioPipeType incomingPipe = config.audioMode == AUDIO_MODE_PLAYBACK ?
             PIPE_TYPE_LOWLATENCY_OUT : PIPE_TYPE_LOWLATENCY_IN;
         ret = PolicyHandler::GetInstance().ActivateConcurrencyFromServer(incomingPipe);
