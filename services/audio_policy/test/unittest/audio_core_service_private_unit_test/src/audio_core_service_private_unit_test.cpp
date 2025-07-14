@@ -2215,7 +2215,7 @@ HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_001, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
 
-    auto ret = audioCoreService.LoadSplitModule("", "");
+    auto ret = audioCoreService->LoadSplitModule("", "");
     EXPECT_NE(ret, 0);
 }
 
@@ -2231,7 +2231,7 @@ HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_002, TestSize.Level1)
 
     std::string splitArgs = "";
     std::string networkId = "b94d27b9934d3e08a52e52d7da";
-    auto ret = audioCoreService.LoadSplitModule(splitArgs, networkId);
+    auto ret = audioCoreService->LoadSplitModule(splitArgs, networkId);
     EXPECT_NE(ret, 0);
 }
 
@@ -2247,7 +2247,7 @@ HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_003, TestSize.Level1)
 
     std::string splitArgs = "8:4096:1";
     std::string networkId = "";
-    auto ret = audioCoreService.LoadSplitModule(splitArgs, networkId);
+    auto ret = audioCoreService->LoadSplitModule(splitArgs, networkId);
     EXPECT_NE(ret, 0);
 }
 
@@ -2263,7 +2263,7 @@ HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_004, TestSize.Level1)
 
     std::string splitArgs = "8:4096:1";
     std::string networkId = "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
-    auto ret = audioCoreService.LoadSplitModule(splitArgs, networkId);
+    auto ret = audioCoreService->LoadSplitModule(splitArgs, networkId);
     EXPECT_EQ(ret, 0);
 }
 } // namespace AudioStandard
