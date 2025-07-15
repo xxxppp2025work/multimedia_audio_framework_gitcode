@@ -21,6 +21,7 @@
 #include "audio_stream_change_info.h"
 #include "microphone_descriptor.h"
 #include "timestamp.h"
+#include "audio_capturer_options.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -43,6 +44,7 @@ struct AudioCapturerParams {
     AudioSampleFormat audioSampleFormat = SAMPLE_S16LE;
     /** Audio Channel Layout */
     AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
+    AudioDeviceDescriptor preferredInputDevice;
 };
 
 class AudioCapturerCallback {
