@@ -53,9 +53,9 @@ enum ReuseEndpointType : uint32_t {
 using MuteStateChangeCallbck = std::function<void(bool)>;
 
 #ifdef SUPPORT_LOW_LATENCY
-class AudioService : public ProcessReleaseCallback, public ICapturerFilterListener
+class AudioService : public ProcessReleaseCallback, public ICapturerFilterListener, public ICollaborativeListener
 #else
-class AudioService : public ICapturerFilterListener
+class AudioService : public ICapturerFilterListener, public ICollaborativeListener
 #endif
 {
 public:
@@ -176,7 +176,9 @@ private:
     bool IsMuteSwitchStream(uint32_t sessionId);
     float GetSystemVolume();
     void UpdateSystemVolume(AudioStreamType streamType, float volume);
-
+    // for collaboration
+    void AudioService::CheckCollaborationForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
+    void OnCollaborativeStateChanged(bool isCollaborative) override;
 private:
     std::mutex foregroundSetMutex_;
     std::set<std::string> foregroundSet_;
@@ -225,6 +227,10 @@ private:
     std::map<uint32_t, bool> muteStateMap_{};
     std::mutex musicOrVoipSystemVolumeMutex_;
     float musicOrVoipSystemVolume_ = 0.0f;
+#ifdef HAS_FEATURE_COLLABORATION
+    IAudioCollaborativeManager& audioCollaborativeManager_;
+    bool isRegisterCollaborativeListened_ = false;
+#endif
 };
 } // namespace AudioStandard
 } // namespace OHOS

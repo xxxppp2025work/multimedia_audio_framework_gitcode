@@ -97,7 +97,7 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
     int32_t ret = InitPaContext();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
     uint32_t sessionId = 0;
-    if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK ||
+    if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK || managerType_ == CO_PLAYBACK ||
         processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
         sessionId = CoreServiceHandler::GetInstance().GenerateSessionId();
     } else {
@@ -318,6 +318,8 @@ int32_t PaAdapterManager::InitPaContext()
         pa_threaded_mainloop_set_name(mainLoop_, "OS_DualRendererML");
     } else if (managerType_ == RECORDER) {
         pa_threaded_mainloop_set_name(mainLoop_, "OS_CapturerML");
+    } else if (managerType_ == CO_PLAYBACK) {
+        pa_threaded_mainloop_set_name(mainLoop_, "OS_CoRendererML");
     } else {
         AUDIO_ERR_LOG("Not supported managerType:%{public}d", managerType_);
     }
@@ -414,7 +416,7 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
 {
     AUDIO_INFO_LOG("In, isInnerCapturer: %{public}d", processConfig.isInnerCapturer);
     std::string adapterName = "";
-    if (managerType_ != DUP_PLAYBACK && managerType_ != DUAL_PLAYBACK) {
+    if (managerType_ != DUP_PLAYBACK && managerType_ != DUAL_PLAYBACK && managerType_ != CO_PLAYBACK) {
         adapterName = CoreServiceHandler::GetInstance().GetAdapterNameBySessionId(sessionId);
     }
     std::lock_guard<std::mutex> lock(paElementsMutex_);
@@ -641,7 +643,8 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
     }
 
     PaLockGuard lock(mainLoop_);
-    if (managerType_ == PLAYBACK || managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
+    if (managerType_ == PLAYBACK || managerType_ == DUP_PLAYBACK ||
+        managerType_ == DUAL_PLAYBACK || managerType_ == CO_PLAYBACK) {
         int32_t rendererRet = ConnectRendererStreamToPA(paStream, sampleSpec, adapterName, innerCapId);
         CHECK_AND_RETURN_RET_LOG(rendererRet == SUCCESS, rendererRet, "ConnectRendererStreamToPA failed");
     }
@@ -677,7 +680,7 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(
     uint32_t maxlength = 4; // 4 is max buffer length of playback
     uint32_t prebuf = 1; // 1 is prebuf of playback
 
-    if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
+    if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK || managerType_ == CO_PLAYBACK) {
         maxlength = 20; // 20 for cover offload
         prebuf = 2; // 2 is double of normal, use more prebuf for dup stream
     }
@@ -694,7 +697,7 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(
     const char *sinkName = nullptr;
     if (managerType_ == DUP_PLAYBACK) {
         sinkName = dupSinkName.c_str();
-    } else if (managerType_ == DUAL_PLAYBACK) {
+    } else if (managerType_ == DUAL_PLAYBACK || managerType_ == CO_PLAYBACK) {
         sinkName = "Speaker";
     } else {
         sinkName = adapterName.c_str();
@@ -707,7 +710,7 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(
     
     uint32_t flags = PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
         PA_STREAM_VARIABLE_RATE;
-    if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
+    if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK || managerType_ == CO_PLAYBACK) {
         flags |= PA_STREAM_DONT_MOVE; // should not move dup streams
     }
     int32_t result = pa_stream_connect_playback(paStream, sinkName, &bufferAttr, static_cast<pa_stream_flags_t>(flags),

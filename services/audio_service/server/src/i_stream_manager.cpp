@@ -81,5 +81,11 @@ IStreamManager &IStreamManager::GetRecorderManager()
         return adapterManager;
     }
 }
+
+IStreamManager &IStreamManager::GetCollaborativeManager()
+{
+    static PaAdapterManager adapterManager(CO_PLAYBACK);
+    return adapterManager;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -29,6 +29,7 @@ enum ManagerType : int32_t {
     VOIP_PLAYBACK,
     EAC3_PLAYBACK,
     RECORDER,
+    CO_PLAYBACK,
 };
 
 class IStreamManager {
@@ -39,6 +40,7 @@ public:
     static IStreamManager &GetRecorderManager();
     static IStreamManager &GetDupPlaybackManager();
     static IStreamManager &GetDualPlaybackManager();
+    static IStreamManager &GetCollaborativeManager();
 
     virtual int32_t CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream) = 0;
     virtual int32_t ReleaseRender(uint32_t streamIndex_) = 0;

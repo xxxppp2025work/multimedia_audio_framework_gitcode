@@ -143,7 +143,8 @@ public:
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame);
 
     int32_t SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId);
-
+    void EnableCollaboration();
+    void DisableCollaboration();
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -176,6 +177,11 @@ private:
     void ProcessFadeOutIfNeeded(RingBufferWrapper& ringBufferDesc, uint64_t currentReadFrame,
         uint64_t currentWriteFrame, size_t requestDataInFrame);
     void UpdateLatestForWorkgroup(float systemVolume);
+// for collaboration
+    void CollaborativeStreamPauseInner();
+    void CollaborativeStreamFlushInner();
+    void CollaborativeStreamDrainInner(bool stopFlag);
+    void CollaborativeStreamStopInner();
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -265,6 +271,11 @@ private:
 
     bool latestForWorkgroupInited_ = false;
     struct RendererLatestInfoForWorkgroup latestForWorkgroup_;
+    // for collaboration
+    std::mutex collaborationMutex_;
+    bool isCollaborationEnabled_ = false;
+    std::shared_ptr<IRendererStream> collaborativeStream_ = nullptr;
+    uint32_t collaborativeStreamIndex_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
