@@ -565,6 +565,51 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_023, TestSize.Level1)
     EXPECT_EQ(audioVolumeManager.forceControlVolumeType_, STREAM_DEFAULT);
     EXPECT_EQ(audioVolumeManager.needForceControlVolumeType_, false);
 }
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_024
+* @tc.desc  : Test SetRestoreVolumeLevel interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_024, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+    const int32_t curVolume = 10;
+    audioVolumeManager->SetRestoreVolumeLevel(DEVICE_TYPE_BLUETOOTH_A2DP, curVolume);
+    audioVolumeManager->SetRestoreVolumeLevel(DEVICE_TYPE_WIRED_HEADSET, curVolume);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_025
+* @tc.desc  : Test CheckLowerDeviceVolume interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_025, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+    audioVolumeManager->CheckLowerDeviceVolume(DEVICE_TYPE_BLUETOOTH_A2DP);
+    audioVolumeManager->CheckLowerDeviceVolume(DEVICE_TYPE_WIRED_HEADSET);
+    audioVolumeManager->CheckLowerDeviceVolume(DEVICE_TYPE_SPEAKER);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_026
+* @tc.desc  : Test CheckRestoreDeviceVolume interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_026, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+    auto ret = audioVolumeManager->CheckRestoreDeviceVolume(DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(ret, SUCCESS);
+    audioVolumeManager->CheckRestoreDeviceVolume(DEVICE_TYPE_WIRED_HEADSET);
+    EXPECT_EQ(ret, SUCCESS);
+    audioVolumeManager->CheckRestoreDeviceVolume(DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(ret, ERROR);
+}
 } // namespace AudioStandard
 } // namespace OHOS
 

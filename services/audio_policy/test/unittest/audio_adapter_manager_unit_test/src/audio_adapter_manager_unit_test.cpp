@@ -367,5 +367,21 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateSinkArgs_002, TestSize.Level1)
     EXPECT_EQ(ret, " network_id=LocalDevice");
 }
 
+/**
+ * @tc.name: GetDeviceVolume_001
+ * @tc.desc: Test GetDeviceVolume
+ * @tc.type: FUNC
+ * @tc.require: #ICMEH8
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceVolume_001, TestSize.Level1)
+{
+    int32_t testVolumeLevel = 10;
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_TRUE(audioAdapterManager != nullptr);
+    auto ret = audioAdapterManager->SaveSpecifiedDeviceVolume(STREAM_MUSIC, testVolumeLevel, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(ret, SUCCESS);
+    auto volumeLevel = audioAdapterManager->GetDeviceVolume(DEVICE_TYPE_SPEAKER, STREAM_MUSIC);
+    EXPECT_EQ(volumeLevel, testVolumeLevel);
+}
 } // namespace AudioStandard
 } // namespace OHOS
