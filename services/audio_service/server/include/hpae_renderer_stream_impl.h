@@ -78,6 +78,10 @@ public:
     void BlockStream() noexcept override;
     int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) override;
     void OnStatusUpdate(IOperation operation) override;
+#ifdef HAS_FEATURE_COLLABORATION
+    void SetCollaborativeEnabled() override;
+#endif
+
 private:
     void SyncOffloadMode();
     void InitRingBuffer();

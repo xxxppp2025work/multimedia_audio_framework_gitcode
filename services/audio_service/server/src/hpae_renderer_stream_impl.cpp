@@ -635,6 +635,13 @@ void HpaeRendererStreamImpl::OnStatusUpdate(IOperation operation)
     }
 }
 
+#ifdef HAS_FEATURE_COLLABORATION
+void HpaeRendererStreamImpl::SetCollaborativeEnabled()
+{
+    return;
+}
+#endif
+
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId)
 {
     uint32_t renderId = HDI_INVALID_ID;

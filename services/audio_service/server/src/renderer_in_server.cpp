@@ -2194,24 +2194,25 @@ bool RendererInServer::CollectInfosForWorkgroup(float systemVolume)
 
 void RendererInServer::EnableCollaboration()
 {
-    std::lock_guard<std::mutex> lock(collaborationMutex_);
-    if (isCollaborationEnabled_) {
-        AUDIO_INFO_LOG("collaborative stream is already enabled");
-        return;
+    {
+        std::lock_guard<std::mutex> lock(collaborationMutex_);
+        if (isCollaborationEnabled_) {
+            AUDIO_INFO_LOG("collaborative stream is already enabled");
+            return;
+        }
+
+        int32_t ret = IStreamManager::GetCollaborativeManager().CreateRender(processConfig_, collaborativeStream_);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS && collaborativeStream_ != nullptr,
+            "create collaborative render failed: %{public}d", ret);
+        collaborativeStreamIndex_ = collaborativeStream_->GetStreamIndex();
+        isCollaborationEnabled_ = true;
+        AUDIO_INFO_LOG("init collaborative renderer:[%{public}u]", collaborativeStreamIndex_);
+        bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
+        StreamVolumeParams streamVolumeParams = { dualToneStreamIndex_, processConfig_.streamType,
+            processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
+            isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
+        AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
     }
-
-    int32_t ret = IStreamManager::GetCollaborativeManager().CreateRender(processConfig_, collaborativeStream_);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS && collaborativeStream_ != nullptr,
-        "create collaborative render failed: %{public}d", ret);
-    collaborativeStreamIndex_ = collaborativeStream_->GetStreamIndex();
-    isCollaborationEnabled_ = true;
-    AUDIO_INFO_LOG("init collaborative renderer:[%{public}u]", collaborativeStreamIndex_);
-    bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
-    StreamVolumeParams streamVolumeParams = { dualToneStreamIndex_, processConfig_.streamType,
-        processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
-        isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
-    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
-
     if (audioServerBuffer_ != nullptr) {
         float clientVolume = audioServerBuffer_->GetStreamVolume();
         float duckFactor = audioServerBuffer_->GetDuckFactor();
@@ -2223,10 +2224,16 @@ void RendererInServer::EnableCollaboration()
         AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(collaborativeStreamIndex_, lowPowerVolume_);
     }
     if (status_ == I_STATUS_STARTED) {
+        stream_->SetCollaborativeEnabled();
         AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the collaborative stream",
             collaborativeStreamIndex_);
-        dualToneStream_->SetAudioEffectMode(EFFECT_NONE);
-        dualToneStream_->Start();
+        std::lock_guard<std::mutex> lock(collaborationMutex_);
+        if (collaborativeStream_ != nullptr) {
+            //Locking before SetAudioEffectMode/GetAudioEffectMode results in a deadlock.
+            collaborativeStream_->SetCollaborativeEnabled();
+            collaborativeStream_->SetAudioEffectMode(EFFECT_NONE);
+            collaborativeStream_->Start();
+        }
     }
     return;
 }

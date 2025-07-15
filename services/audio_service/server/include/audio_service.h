@@ -177,7 +177,7 @@ private:
     float GetSystemVolume();
     void UpdateSystemVolume(AudioStreamType streamType, float volume);
     // for collaboration
-    void AudioService::CheckCollaborationForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
+    void CheckCollaborationForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void OnCollaborativeStateChanged(bool isCollaborative) override;
 private:
     std::mutex foregroundSetMutex_;

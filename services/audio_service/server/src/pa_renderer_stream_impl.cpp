@@ -1357,5 +1357,31 @@ void PaRendererStreamImpl::UpdatePaTimingInfo()
         AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
     }
 }
+
+#ifdef HAS_FEATURE_COLLABORATION
+void PaRendererStreamImpl::SetCollaborativeEnabled()
+{
+    AUDIO_INFO_LOG("SetCollaborativeEnabled");
+    PaLockGuard lock(mainloop_);
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+        return ERR_ILLEGAL_STATE;
+    }
+
+    pa_proplist *propList = pa_proplist_new();
+    if (propList == nullptr) {
+        AUDIO_ERR_LOG("pa_proplist_new failed");
+        return ERR_OPERATION_FAILED;
+    }
+
+    pa_proplist_sets(propList, "collaboration.enabled", "1");
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
+        nullptr, nullptr);
+    pa_proplist_free(propList);
+    CHECK_AND_RETURN_RET_LOG(updatePropOperation != nullptr, ERR_OPERATION_FAILED, "updatePropOperation is nullptr");
+    pa_operation_unref(updatePropOperation);
+
+    return SUCCESS;  
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

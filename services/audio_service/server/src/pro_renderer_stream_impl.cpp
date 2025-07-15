@@ -703,5 +703,12 @@ void ProRendererStreamImpl::BlockStream() noexcept
     isBlock_ = true;
     AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, 0.f);
 }
+
+#ifdef HAS_FEATURE_COLLABORATION
+void ProRendererStreamImpl::SetCollaborativeEnabled()
+{
+    return;
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS
