@@ -1802,5 +1802,20 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetBackgroundMuteCallback_001, TestSiz
     EXPECT_EQ(ret, SUCCESS);
 }
 
+/**
+ * @tc.name  : Test SetSleAudioOperationCallback.
+ * @tc.number: SetSleAudioOperationCallback_001
+ * @tc.desc  : Test SetSleAudioOperationCallback interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, SetSleAudioOperationCallback_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    sptr<IRemoteObject> object = nullptr;
+    int32_t ret = server->SetSleAudioOperationCallback(object);
+    EXPECT_EQ(ret, ERROR);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
