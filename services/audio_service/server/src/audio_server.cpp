@@ -219,24 +219,43 @@ static void UpdateArmInstance(std::shared_ptr<IAudioRenderSink> &sink,
     primarySink->ResetActiveDeviceForDisconnect(DEVICE_TYPE_NONE);
 }
 
-static void SetAudioSceneForAllSource(std::shared_ptr<IAudioCaptureSource> &source,
-    AudioScene audioScene, DeviceType activeInputDevice)
+static void SetAudioSceneForAllSource(AudioScene audioScene)
 {
-    if (source == nullptr || !source->IsInited()) {
-        AUDIO_WARNING_LOG("Capturer is not initialized.");
-    } else {
-        source->SetAudioScene(audioScene, activeInputDevice);
+    std::shared_ptr<IAudioCaptureSource> usbSource = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
+    if (usbSource != nullptr && usbSource->IsInited()) {
+        usbSource->SetAudioScene(audioScene);
+    }
+    std::shared_ptr<IAudioCaptureSource> accSource = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY);
+    if (accSource != nullptr && accSource->IsInited()) {
+        accSource->SetAudioScene(audioScene);
+    }
+    std::shared_ptr<IAudioCaptureSource> primarySource = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY);
+    if (primarySource != nullptr && primarySource->IsInited()) {
+        primarySource->SetAudioScene(audioScene);
     }
 #ifdef SUPPORT_LOW_LATENCY
     std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
     if (fastSource != nullptr && fastSource->IsInited()) {
-        fastSource->SetAudioScene(audioScene, activeInputDevice);
+        fastSource->SetAudioScene(audioScene);
     }
     std::shared_ptr<IAudioCaptureSource> fastVoipSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP, true);
     if (fastVoipSource != nullptr && fastVoipSource->IsInited()) {
-        fastVoipSource->SetAudioScene(audioScene, activeInputDevice);
+        fastVoipSource->SetAudioScene(audioScene);
     }
 #endif
+}
+
+static void SetAudioSceneForAllSink(AudioScene audioScene)
+{
+    std::shared_ptr<IAudioRenderSink> usbSink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
+    if (usbSink != nullptr && usbSink->IsInited()) {
+        usbSink->SetAudioScene(audioScene, scoExcludeFlag);
+    }
+    std::shared_ptr<IAudioRenderSink> primarySink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
+    if (primarySink != nullptr && primarySink->IsInited()) {
+        primarySink->SetAudioScene(audioScene, scoExcludeFlag);
+    }
+
 }
 
 static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &source, DeviceType type)
@@ -1219,60 +1238,26 @@ int32_t AudioServer::OffloadSetVolume(float volume, const std::string &deviceCla
     return sink->SetVolume(volume, volume);
 }
 
-int32_t AudioServer::SetAudioScene(int32_t audioScene, const std::vector<int32_t> &activeOutputDevices,
-    int32_t activeInputDevice, int32_t a2dpOffloadFlag, bool scoExcludeFlag)
+int32_t AudioServer::SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, bool scoExcludeFlag)
 {
-    AUDIO_INFO_LOG("Scene: %{public}d, device: %{public}d, scoExcludeFlag: %{public}d",
-        audioScene, activeInputDevice, scoExcludeFlag);
-    CHECK_AND_RETURN_RET_LOG(!activeOutputDevices.empty() &&
-        activeOutputDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
-        ERR_INVALID_PARAM, "activeOutputDevices is empty");
+    AUDIO_INFO_LOG("Scene: %{public}d, scoExcludeFlag: %{public}d", audioScene, scoExcludeFlag);
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
-    std::vector<DeviceType> activeOutputDevicesInner;
-    for (auto device : activeOutputDevices) {
-        activeOutputDevicesInner.emplace_back(static_cast<DeviceType>(device));
-    }
-    return SetAudioSceneInner(static_cast<AudioScene>(audioScene), activeOutputDevicesInner,
-        static_cast<DeviceType>(activeInputDevice), static_cast<BluetoothOffloadState>(a2dpOffloadFlag),
+    return SetAudioSceneInner(static_cast<AudioScene>(audioScene), static_cast<BluetoothOffloadState>(a2dpOffloadFlag),
         scoExcludeFlag);
 }
 
-int32_t AudioServer::SetAudioSceneInner(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
-    DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag)
+int32_t AudioServer::SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadState a2dpOffloadFlag,
+    bool scoExcludeFlag)
 {
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
-    DeviceType activeOutputDevice = activeOutputDevices.front();
     AudioXCollie audioXCollie("AudioServer::SetAudioScene", TIME_OUT_SECONDS,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    std::shared_ptr<IAudioRenderSink> sink = nullptr;
-    if (activeOutputDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
-        sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
-        std::shared_ptr<IAudioRenderSink> primarySink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
-        CHECK_AND_RETURN_RET_LOG(primarySink, ERROR, "primarySink is nullptr");
-        primarySink->ResetActiveDeviceForDisconnect(DEVICE_TYPE_NONE);
-    } else {
-        sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
-    }
-    std::shared_ptr<IAudioCaptureSource> source = nullptr;
-    if (activeInputDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
-        source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
-    } else if (activeInputDevice == DEVICE_TYPE_ACCESSORY) {
-        source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY);
-    } else {
-        source = GetSourceByProp(HDI_ID_TYPE_PRIMARY);
-    }
+    // primarySink->ResetActiveDeviceForDisconnect(DEVICE_TYPE_NONE);
 
-    SetAudioSceneForAllSource(source, audioScene, activeInputDevice);
-    if (sink == nullptr || !sink->IsInited()) {
-        AUDIO_WARNING_LOG("Renderer is not initialized.");
-    } else {
-        if (activeOutputDevice == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
-            activeOutputDevices[0] = DEVICE_TYPE_NONE;
-        }
-        sink->SetAudioScene(audioScene, activeOutputDevices, scoExcludeFlag);
-    }
+    SetAudioSceneForAllSource(audioScene);
+    SetAudioSceneForAllSink(audioScene);
 
     audioScene_ = audioScene;
     return SUCCESS;
@@ -1320,7 +1305,7 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
     if (flag == DeviceFlag::INPUT_DEVICES_FLAG) {
         if (audioScene_ != AUDIO_SCENE_DEFAULT) {
-            SetAudioSceneForAllSource(source, audioScene_, type);
+            SetAudioSceneForAllSource(source, audioScene_);
         } else {
             UpdateDeviceForAllSource(source, type);
         }
@@ -1333,7 +1318,7 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
         if (audioScene_ != AUDIO_SCENE_DEFAULT) {
-            SetAudioSceneForAllSource(source, audioScene_, type);
+            SetAudioSceneForAllSource(source, audioScene_);
             sink->SetAudioScene(audioScene_, deviceTypes);
         } else {
             UpdateDeviceForAllSource(source, type);
