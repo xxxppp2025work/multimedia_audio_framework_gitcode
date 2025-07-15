@@ -93,7 +93,6 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_002, TestSize.
     auto ret = audioInterruptService->ActivateAudioSession(AudioInterruptService::ZONEID_DEFAULT,
         fakePid, audioSessionStrategy);
     EXPECT_EQ(ERROR, ret);
-    
 }
 
 /**
