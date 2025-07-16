@@ -222,6 +222,13 @@ group("audio_fuzz_test") {
     # "fuzztest/audiopolicymore_fuzzer:fuzztest",
     "fuzztest/audiopolicyproxy_fuzzer:fuzztest",
 
+    "fuzztest/audiohpaeengine_fuzzer:fuzztest",
+    "fuzztest/audiohpaepcmbuffer_fuzzer:fuzztest",
+    "fuzztest/audiohpaepcmprocess_fuzzer:fuzztest",
+    "fuzztest/audiohpaecapturermanager_fuzzer:fuzztest",
+    "fuzztest/audiohpaeinnercapturermanager_fuzzer:fuzztest",
+    #"fuzztest/audiohpaemanagerimpl_fuzzer:fuzztest",
+
     # "fuzztest/audiopolicyservenhance_fuzzer:fuzztest",
     "fuzztest/audiopolicyserverhandler_fuzzer:fuzztest",
 
