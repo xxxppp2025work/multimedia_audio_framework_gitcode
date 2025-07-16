@@ -178,6 +178,7 @@ private:
         uint64_t currentWriteFrame, size_t requestDataInFrame);
     void UpdateLatestForWorkgroup(float systemVolume);
 // for collaboration
+    void CollaborativeStreamStartInner();
     void CollaborativeStreamPauseInner();
     void CollaborativeStreamFlushInner();
     void CollaborativeStreamDrainInner(bool stopFlag);

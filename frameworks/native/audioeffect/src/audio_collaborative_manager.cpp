@@ -34,7 +34,8 @@ static constexpr int32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr int32_t MS_PER_SECOND = 1000;
 static constexpr int32_t TEST_LATENCY = 280;
 static constexpr int32_t ENQUEUE_DONE_FRAME = 10;
-static IAudioCollaborativeManager& AudioCollaborativeManager::GetInstance()
+
+IAudioCollaborativeManager& AudioCollaborativeManager::GetInstance()
 {
     static AudioCollaborativeManager instance;
     return instance;
@@ -48,6 +49,7 @@ AudioCollaborativeManager::AudioCollaborativeManager()
     ringCache_ = AudioRingCache::Create(size);
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
     collaborativeOutput_ = std::make_unique<std::vector<float>>(COLLABORATIVE_CHANNELS * DEFAULT_FRAME_LEN);
+    silenceData_ = std::make_unique<std::vector<float>>(COLLABORATIVE_CHANNELS * DEFAULT_FRAME_LEN, 0.0f);
 }
 
 bool AudioCollaborativeManager::IsCollaborationEnabled()
@@ -56,26 +58,26 @@ bool AudioCollaborativeManager::IsCollaborationEnabled()
     return isCollaborativeEnabled_;
 }
 
-bool AudioCollaborativeManager::IsStreamSupportCollaborative(StreamUsage usage)
+bool AudioCollaborativeManager::IsStreamSupportCollaborative(StreamUsage usage) const
 {
     return std::find(defaultUsages_.begin(), defaultUsages_.end(), usage) != defaultUsages_.end();
 }
 
-int32_t AudioCollaborativeManager::UpdateCollaborativeState(bool isCollaborative)
+void AudioCollaborativeManager::UpdateCollaborativeState(bool isCollaborative)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (isCollaborativeEnabled_ != isCollaborative) {
         isCollaborativeEnabled_ = isCollaborative;
         AUDIO_INFO_LOG("UpdateCollaborativeState, isCollaborative: %{public}d", isCollaborative);
         // Notify listener about the change in collaborative state
-        CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, ERROR,
+        CHECK_AND_RETURN_LOG(listener_ != nullptr,
             "UpdateCollaborativeState failed, listener is null");
         listener_->OnCollaborativeStateChanged(isCollaborative);
     }
-    return SUCCESS;
+    return;
 }
 
-int32_t AudioCollaborativeManager::registerCollaborativeListener(ICollaborativeListener* listener)
+int32_t AudioCollaborativeManager::RegisterCollaborativeListener(ICollaborativeListener* listener)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (listener == nullptr) {
@@ -90,14 +92,14 @@ int32_t AudioCollaborativeManager::registerCollaborativeListener(ICollaborativeL
 bool AudioCollaborativeManager::IsCollaborativeFirstChanged(int32_t sessionID, int32_t collaborationEnabled)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    auto it = sessionCollaborativeState_.find(sessionId);
+    auto it = sessionCollaborativeState_.find(sessionID);
     if (it == sessionCollaborativeState_.end()) {
         // not found, add new session
-        sessionCollaborativeState_[sessionId] = collaborativeState;
+        sessionCollaborativeState_[sessionID] = collaborationEnabled;
         return true;
     }
-    if (it.second != collaborationEnabled) {
-        is.second = collaborationEnabled;
+    if (it->second != collaborationEnabled) {
+        it->second = collaborationEnabled;
         // first changed
         return true;
     }
@@ -129,7 +131,7 @@ void AudioCollaborativeManager::Enqueue(BufferAttr* buffer)
         FillSilenceFramesInner(TEST_LATENCY);
     }
     // set output buffer attributes
-    buffer->numChanOut = COLLABORATIVE_CHANNEL;
+    buffer->numChanOut = COLLABORATIVE_CHANNELS;
     buffer->outChanLayout = COLLABORATIVE_CHANNEL_LAYOUT;
 }
 
@@ -142,7 +144,7 @@ void AudioCollaborativeManager::Dequeue(BufferAttr* buffer)
         return;
     }
     // process output buffer
-    ProcessOutputFrameInner();
+    ProcessOutputFrameInner(buffer);
 }
 
 void AudioCollaborativeManager::ProcessInputFrameInner()
@@ -158,7 +160,7 @@ void AudioCollaborativeManager::ProcessInputFrameInner()
         "Insufficient cache space: %{public}zu < %{public}zu", result.size, writeLen);
     
     // enqueue buffer
-    BufferWrap bufferWrap = {reinterpret_cast<uint8_t*>(buffer->data()), writeLen};
+    BufferWrap bufferWrap = {reinterpret_cast<uint8_t*>(collaborativeOutput_->data()), writeLen};
     result = ringCache_->Enqueue(bufferWrap);
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue data failed");
 }
@@ -184,8 +186,8 @@ void AudioCollaborativeManager::ProcessOutputFrameInner(BufferAttr* buffer)
     result = ringCache_->Dequeue(bufferWrap);
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Dequeue data failed");
     for (uint32_t i = 0; i < DEFAULT_FRAME_LEN; ++i) {
-        buffer->bufOut[DEFAULT_CHANNELS * i] += collaborativeOutput_[COLLABORATIVE_CHANNELS * i];
-        buffer->bufOut[DEFAULT_CHANNELS * i + 1] += collaborativeOutput_[COLLABORATIVE_CHANNELS * i + 1];
+        buffer->bufOut[DEFAULT_CHANNELS * i] += (*collaborativeOutput_)[COLLABORATIVE_CHANNELS * i];
+        buffer->bufOut[DEFAULT_CHANNELS * i + 1] += (*collaborativeOutput_)[COLLABORATIVE_CHANNELS * i + 1];
     }
 }
 
@@ -194,9 +196,9 @@ void AudioCollaborativeManager::SplitCollaborativeDataInner(BufferAttr* buffer)
     for (uint32_t i = 0; i < buffer->frameLen; ++i) {
         buffer->bufOut[DIRECT_CHANNELS * i] = buffer->bufOut[COLLABORATIVE_EFFECT_CHANNEL * i];
         buffer->bufOut[DIRECT_CHANNELS * i + 1] = buffer->bufOut[COLLABORATIVE_EFFECT_CHANNEL * i + 1];
-        collaborativeOutput_[COLLABORATIVE_CHANNELS * i] =
+        (*collaborativeOutput_)[COLLABORATIVE_CHANNELS * i] =
             buffer->bufOut[COLLABORATIVE_EFFECT_CHANNEL * i + COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX];
-        collaborativeOutput_[COLLABORATIVE_CHANNELS * i + 1] =
+        (*collaborativeOutput_)[COLLABORATIVE_CHANNELS * i + 1] =
             buffer->bufOut[COLLABORATIVE_EFFECT_CHANNEL * i + COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX];
     }
 }
@@ -206,7 +208,7 @@ void AudioCollaborativeManager::FillSilenceFramesInner(uint32_t latencyMs)
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Ring cache is null");
     
     uint32_t offset = 0;
-    const size_t frameSize = silenceData_.GetFrameLen() * silenceData_.GetChannelCount() * sizeof(float);
+    const size_t frameSize = DEFAULT_FRAME_LEN * COLLABORATIVE_CHANNELS * sizeof(float);
     
     while (offset < latencyMs) {
         // check writable size
@@ -219,7 +221,7 @@ void AudioCollaborativeManager::FillSilenceFramesInner(uint32_t latencyMs)
         }
         
         // create silence frame
-        BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(silenceData_.GetPcmDataBuffer()), frameSize};
+        BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(silenceData_->data()), frameSize};
         result = ringCache_->Enqueue(bufferWrap);
         CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue silence frame failed");
         offset += DEFAULT_FRAME_LEN_MS;

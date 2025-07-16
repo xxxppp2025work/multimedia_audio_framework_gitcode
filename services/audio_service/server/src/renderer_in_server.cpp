@@ -800,11 +800,11 @@ void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
             dualToneStream_->EnqueueBuffer(bufferDesc); // what if enqueue fail?
         }
     }
-#ifdef HAS_FEATURE_COLLABORATIVE
+#ifdef HAS_FEATURE_COLLABORATION
     // for collaborative
     if (isCollaborationEnabled_) {
         Trace traceDup("RendererInServer::WriteData CollaborativeSteam write");
-        std::lock_guard<std::mutex> lock(collaborativeMutex_);
+        std::lock_guard<std::mutex> lock(collaborationMutex_);
         if (collaborativeStream_ != nullptr) {
             collaborativeStream_->EnqueueBuffer(bufferDesc);
         }
@@ -1028,8 +1028,8 @@ int32_t RendererInServer::StartInner()
     enterStandbyTime_ = 0;
 
     dualToneStreamInStart();
-#ifdef HAS_FEATURE_COLLABORATIVE
-    CollaborativeStreamStart();
+#ifdef HAS_FEATURE_COLLABORATION
+    CollaborativeStreamStartInner();
 #endif
     AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(streamIndex_);
     return SUCCESS;
@@ -1108,8 +1108,8 @@ int32_t RendererInServer::Pause()
             dualToneStream_->SetAudioEffectMode(effectModeWhenDual_);
         }
     }
-#ifdef HAS_FEATURE_COLLABORATIVE
-    CollaborativeStreamPause();
+#ifdef HAS_FEATURE_COLLABORATION
+    CollaborativeStreamPauseInner();
 #endif
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
@@ -1179,8 +1179,8 @@ int32_t RendererInServer::Flush()
             dualToneStream_->Flush();
         }
     }
-#ifdef HAS_FEATURE_COLLABORATIVE
-    CollaborativeStreamFlush();
+#ifdef HAS_FEATURE_COLLABORATION
+    CollaborativeStreamFlushInner();
 #endif
     return SUCCESS;
 }
@@ -1228,8 +1228,8 @@ int32_t RendererInServer::Drain(bool stopFlag)
             dualToneStream_->Drain(stopFlag);
         }
     }
-#ifdef HAS_FEATURE_COLLABORATIVE
-    CollaborativeStreamDrain(stopFlag);
+#ifdef HAS_FEATURE_COLLABORATION
+    CollaborativeStreamDrainInner(stopFlag);
 #endif
     return SUCCESS;
 }
@@ -1293,8 +1293,8 @@ int32_t RendererInServer::StopInner()
             dualToneStream_->SetAudioEffectMode(effectModeWhenDual_);
         }
     }
-#ifdef HAS_FEATURE_COLLABORATIVE
-    CollaborativeStreamStop();
+#ifdef HAS_FEATURE_COLLABORATION
+    CollaborativeStreamStopInner();
 #endif
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
@@ -2247,8 +2247,7 @@ void RendererInServer::DisableCollaboration()
     }
     IStreamManager::GetCollaborativeManager().ReleaseRender(collaborativeStreamIndex_);
     isCollaborationEnabled_ = false;
-    AUDIO_INFO_LOG("Disable collaborative renderer:[%{public}u] with status: %{public}d",
-        collaborativeStreamIndex_, status_.load());
+    AUDIO_INFO_LOG("Disable collaborative renderer:[%{public}u]", collaborativeStreamIndex_);
     AudioVolume::GetInstance()->RemoveStreamVolume(collaborativeStreamIndex_);
     collaborativeStream_ = nullptr;
     return;
@@ -2269,7 +2268,7 @@ void RendererInServer::CollaborativeStreamPauseInner()
     if (isCollaborationEnabled_ && collaborativeStream_ != nullptr) {
         std::lock_guard<std::mutex> lock(collaborationMutex_);
         if (collaborativeStream_ != nullptr) {
-            collaborativeStream_->pause();
+            collaborativeStream_->Pause();
         }
     }
 }
@@ -2279,7 +2278,7 @@ void RendererInServer::CollaborativeStreamFlushInner()
     if (isCollaborationEnabled_ && collaborativeStream_ != nullptr) {
         std::lock_guard<std::mutex> lock(collaborationMutex_);
         if (collaborativeStream_ != nullptr) {
-            collaborativeStream_->flush();
+            collaborativeStream_->Flush();
         }
     }
 }
@@ -2289,7 +2288,7 @@ void RendererInServer::CollaborativeStreamDrainInner(bool stopFlag)
     if (isCollaborationEnabled_ && collaborativeStream_ != nullptr) {
         std::lock_guard<std::mutex> lock(collaborationMutex_);
         if (collaborativeStream_ != nullptr) {
-            collaborativeStream_->drain(stopFlag);
+            collaborativeStream_->Drain(stopFlag);
         }
     }
 }
@@ -2299,7 +2298,7 @@ void RendererInServer::CollaborativeStreamStopInner()
     if (isCollaborationEnabled_ && collaborativeStream_ != nullptr) {
         std::lock_guard<std::mutex> lock(collaborationMutex_);
         if (collaborativeStream_ != nullptr) {
-            collaborativeStream_->stop();
+            collaborativeStream_->Stop();
         }
     }
 }

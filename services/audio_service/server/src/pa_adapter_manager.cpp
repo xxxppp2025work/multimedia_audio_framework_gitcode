@@ -535,7 +535,6 @@ void PaAdapterManager::SetPlaybackProplist(pa_proplist *propList, AudioProcessCo
         std::string streamMode = managerType_ == DUP_PLAYBACK ? DUP_STREAM
             : (managerType_ == DUAL_PLAYBACK ? DUAL_TONE_STREAM : NORMAL_STREAM);
         pa_proplist_sets(propList, "stream.mode", streamMode.c_str());
-        pa_proplist_sets(propList, "stream.flush", "false");
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(processConfig.privacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
         pa_proplist_sets(propList, "scene.type", processConfig.rendererInfo.sceneType.c_str());

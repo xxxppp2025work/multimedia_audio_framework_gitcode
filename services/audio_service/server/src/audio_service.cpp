@@ -73,11 +73,11 @@ AudioService *AudioService::GetInstance()
 }
 
 AudioService::AudioService()
+#ifdef HAS_FEATURE_COLLABORATION
+    : audioCollaborativeManager_(AudioCollaborativeManager::GetInstance())
+#endif
 {
     AUDIO_INFO_LOG("AudioService()");
-#ifdef HAS_FEATURE_COLLABORATION
-    audioCollaborativeManager_ = &AudioCollaborativeManager::GetInstance();
-#endif
 }
 
 AudioService::~AudioService()
@@ -186,7 +186,7 @@ sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &con
 #ifdef HAS_FEATURE_COLLABORATION
     if (!isRegisterCollaborativeListened_) {
         AUDIO_INFO_LOG("isRegisterCollaborativeListened_ is false");
-        audioCollaborativeManager_->RegisterCollaborativeListener(this);
+        audioCollaborativeManager_.RegisterCollaborativeListener(this);
         isRegisterCollaborativeListened_ = true;
     }
 #endif
@@ -204,7 +204,7 @@ sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &con
             CheckInnerCapForRenderer(sessionId, renderer);
 #endif
 #ifdef HAS_FEATURE_COLLABORATION
-            CheckCollaborativeForRenderer(sessionId, renderer);
+            CheckCollaborationForRendererInner(sessionId, renderer);
 #endif
             CheckRenderSessionMuteState(sessionId, renderer);
         }
@@ -434,6 +434,7 @@ void AudioService::AddFilteredRender(int32_t innerCapId, std::shared_ptr<Rendere
     filteredRendererMap_[innerCapId].push_back(renderer);
 }
 
+#ifdef HAS_FEATURE_INNERCAPTURER
 void AudioService::CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
 {
     CHECK_AND_RETURN_LOG(renderer != nullptr, "renderer is null.");
@@ -1730,14 +1731,14 @@ void AudioService::RenderersCheckForAudioWorkgroup(int32_t pid)
     }
 }
 
-void AudioService::CheckCollaborationForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
+void AudioService::CheckCollaborationForRendererInner(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
 {
     CHECK_AND_RETURN_LOG(renderer != nullptr, "renderer is null.");
 
     std::lock_guard<std::mutex> lock(rendererMapMutex_);
-    if (audioCollaborativeManager_->IsStreamSupportCollaborative(
+    if (audioCollaborativeManager_.IsStreamSupportCollaborative(
             renderer->processConfig_.rendererInfo.streamUsage) &&
-        audioCollaborativeManager_->IsCollaborationEnabled()) {
+        audioCollaborativeManager_.IsCollaborationEnabled()) {
         renderer->EnableCollaboration();
     }
 }
@@ -1753,7 +1754,7 @@ void AudioService::OnCollaborativeStateChanged(bool isCollaborative)
             AUDIO_WARNING_LOG("Renderer is already released!");
             continue;
         }
-        if (audioCollaborativeManager_->IsStreamSupportCollaborative(
+        if (audioCollaborativeManager_.IsStreamSupportCollaborative(
                 renderer->processConfig_.rendererInfo.streamUsage)) {
             if (isCollaborative) {
                 renderer->EnableCollaboration();

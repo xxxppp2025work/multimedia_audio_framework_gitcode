@@ -18,13 +18,17 @@
 #endif
 
 #include "audio_collaborative_adapter.h"
+#include "audio_collaborative_manager.h"
 #include "audio_effect_chain_adapter.h"
+#include "audio_effect_log.h"
+#include "audio_stream_info.h"
+
 namespace OHOS {
 namespace AudioStandard {
 
-bool IsStreamSupportCollaborative(StreamUsage usage)
+bool IsStreamSupportCollaborative(int32_t usage)
 {
-    return AudioCollaborativeManager::GetInstance().IsStreamSupportCollaborative(usage);
+    return AudioCollaborativeManager::GetInstance().IsStreamSupportCollaborative((StreamUsage)usage);
 }
 
 bool IsCollaborationEnabled()
@@ -50,12 +54,10 @@ void CollaborativeManagerDequeue(BufferAttr *bufferAttr)
     return;
 }
 
-bool IsCollaborativeFirstChanged(int32_t sessionID, int32_t collaborationEnabled);
+bool IsCollaborativeFirstChanged(int32_t sessionID, int32_t collaborationEnabled)
 {
-    AudioCollaborativeManager *audioCollaborativeManager = AudioCollaborativeManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioCollaborativeManager != nullptr, false, "null audioCollaborativeManager");
     // check if collaborative is first changed for the session
-    return audioCollaborativeManager->IsCollaborativeFirstChanged(sessionID, collaborationEnabled);
+    return AudioCollaborativeManager::GetInstance().IsCollaborativeFirstChanged(sessionID, collaborationEnabled);
 }
 }
 }

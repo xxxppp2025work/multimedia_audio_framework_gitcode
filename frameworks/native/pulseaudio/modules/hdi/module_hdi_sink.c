@@ -28,10 +28,20 @@
 #include "audio_hdi_log.h"
 #include "playback_capturer_adapter.h"
 #include "sink_userdata.h"
+#include "audio_collaborative_adapter.h"
 
 pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver);
 void PaHdiSinkFree(pa_sink *s);
 void PaInputVolumeChangeCb(pa_sink_input *i);
+static void ProplistChangedForCollaboration(pa_sink_input *si, const char *sceneType, const char *sessionID,
+    const SessionInfoPack pack);
+static void SinkInputUnlinkForCollaboration(pa_sink_input *si, const char *sceneType, const char *sessionID);
+static void SinkInputRunningForCollaboration(pa_sink_input *si, const char *sceneType, const char *sessionID,
+    const SessionInfoPack pack);
+static void SinkInputCorkedForCollaboration(pa_sink_input *si, const char *sceneType, const char *sessionID);
+static void DeleteSessionInfoForCollaboration(const char *sceneType, const char *sessionID);
+static void AddSessionInfoForCollaboration(const char *sceneType, const char *sessionID, const SessionInfoPack pack);
+static const char *GetSceneTypeForCollaboration(pa_sink_input *si, const char *sceneType);
 
 PA_MODULE_AUTHOR("OpenHarmony");
 PA_MODULE_DESCRIPTION("OpenHarmony HDI Sink");
@@ -86,7 +96,6 @@ static pa_hook_result_t SinkInputNewCb(const pa_core *c, pa_sink_input *si)
 {
     CHECK_AND_RETURN_RET_LOG(c != NULL, PA_HOOK_OK, "pa core is null");
 
-    const char *flush = pa_proplist_gets(si->proplist, "stream.flush");
     const char *sceneMode = pa_proplist_gets(si->proplist, "scene.mode");
     const char *sceneType = pa_proplist_gets(si->proplist, "scene.type");
     const char *deviceString = pa_proplist_gets(si->sink->proplist, PA_PROP_DEVICE_STRING);
@@ -111,12 +120,9 @@ static pa_hook_result_t SinkInputNewCb(const pa_core *c, pa_sink_input *si)
     if (!pa_safe_streq(clientUid, bootUpMusic)) {
         SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled, streamUsage,
             systemVolumeType};
-#ifdef HAS_FEATURE_COLLABORATIVE
-        ReCreateEffectChainForCollaboration(si, sceneType, sessionID, pack);
+#ifdef HAS_FEATURE_COLLABORATION
+        ProplistChangedForCollaboration(si, sceneType, sessionID, pack);
 #else
-        if (!pa_safe_streq(sceneMode, "EFFECT_NONE") && pa_safe_streq(flush, "true")) {
-            EffectChainManagerInitCb(sceneType);
-        }
         EffectChainManagerCreateCb(sceneType, sessionID);
         if (si->thread_info.state == PA_SINK_INPUT_RUNNING &&
             !EffectChainManagerAddSessionInfo(sceneType, sessionID, pack)) {
@@ -148,7 +154,7 @@ static pa_hook_result_t SinkInputUnlinkCb(const pa_core *c, pa_sink_input *si, v
     const char *bootUpMusic = "1003";
     if (!pa_safe_streq(clientUid, bootUpMusic)) {
         const char *sessionID = pa_proplist_gets(si->proplist, "stream.sessionID");
-#ifdef HAS_FEATURE_COLLABORATIVE
+#ifdef HAS_FEATURE_COLLABORATION
         SinkInputUnlinkForCollaboration(si, sceneType, sessionID);
 #else
         EffectChainManagerReleaseCb(sceneType, sessionID);
@@ -183,7 +189,7 @@ static pa_hook_result_t SinkInputStateChangedCb(const pa_core *c, pa_sink_input 
         !pa_safe_streq(clientUid, bootUpMusic)) {
         SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled, streamUsage,
             systemVolumeType};
-#ifdef HAS_FEATURE_COLLABORATIVE
+#ifdef HAS_FEATURE_COLLABORATION
         SinkInputRunningForCollaboration(si, sceneType, sessionID, pack);
 #else
         if (!EffectChainManagerAddSessionInfo(sceneType, sessionID, pack)) {
@@ -197,7 +203,7 @@ static pa_hook_result_t SinkInputStateChangedCb(const pa_core *c, pa_sink_input 
 
     if ((si->thread_info.state == PA_SINK_INPUT_CORKED || si->thread_info.state == PA_SINK_INPUT_UNLINKED) &&
         si->sink && !pa_safe_streq(clientUid, bootUpMusic)) {
-#ifdef HAS_FEATURE_COLLABORATIVE
+#ifdef HAS_FEATURE_COLLABORATION
         SinkInputCorkedForCollaboration(si, sceneType, sessionID);
 #else
         if (!EffectChainManagerDeleteSessionInfo(sceneType, sessionID)) {
@@ -215,13 +221,15 @@ static void ProplistChangedForCollaboration(pa_sink_input *si, const char *scene
     const SessionInfoPack pack)
 {
     const char *collaborationEnabled = pa_proplist_gets(si->proplist, "collaboration.enabled");
+    const char *oldSceneType = NULL;
+    const char *newSceneType = NULL;
     // change sceneType for collaboration, old sceneType is only used when first changed
     if (collaborationEnabled && !strcmp(collaborationEnabled, "1")) {
-        const char *oldSceneType = sceneType;
-        const char *newSceneType = "SCENE_COLLABORATIVE";
+        oldSceneType = sceneType;
+        newSceneType = "SCENE_COLLABORATIVE";
     } else {
-        const char *oldSceneType = "SCENE_COLLABORATIVE";
-        const char *newSceneType = sceneType;
+        oldSceneType = "SCENE_COLLABORATIVE";
+        newSceneType = sceneType;
     }
     if (IsCollaborativeFirstChanged(atoi(sessionID), atoi(collaborationEnabled))) {
         // release old sceneType effect chain
@@ -229,10 +237,6 @@ static void ProplistChangedForCollaboration(pa_sink_input *si, const char *scene
         if (si->thread_info.state == PA_SINK_INPUT_RUNNING) {
             DeleteSessionInfoForCollaboration(oldSceneType, sessionID);
         }
-    }
-
-    if (!pa_safe_streq(sceneMode, "EFFECT_NONE") && pa_safe_streq(flush, "true")) {
-        EffectChainManagerInitCb(newSceneType);
     }
     // create new sceneType effect chain
     EffectChainManagerCreateCb(newSceneType, sessionID);
@@ -245,10 +249,11 @@ static void SinkInputUnlinkForCollaboration(pa_sink_input *si, const char *scene
 {
     const char *collaborationEnabled = pa_proplist_gets(si->proplist, "collaboration.enabled");
     // change sceneType for collaboration
+    const char *newSceneType = NULL;
     if (!strcmp(collaborationEnabled, "1")) {
-        const char *newSceneType = "SCENE_COLLABORATIVE";
+        newSceneType = "SCENE_COLLABORATIVE";
     } else {
-        const char *newSceneType = sceneType;
+        newSceneType = sceneType;
     }
     EffectChainManagerReleaseCb(newSceneType, sessionID);
     if (si->thread_info.state == PA_SINK_INPUT_RUNNING) {

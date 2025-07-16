@@ -96,6 +96,11 @@
     *CheckProcessClusterInstances*;
     *QueryEffectChannelInfo*;
     *ResetInfo*;
+    *IsStreamSupportCollaborative*；
+    *IsCollaborationEnabled*；
+    *CollaborativeManagerEnqueue*；
+    *CollaborativeManagerDequeue*；
+    *IsCollaborativeFirstChanged*；
   local:
     *;
 };

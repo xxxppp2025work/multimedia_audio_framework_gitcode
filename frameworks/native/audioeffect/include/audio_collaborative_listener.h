@@ -16,7 +16,7 @@
 #ifndef AUDIO_COLLABORATIVE_LISTENER_H
 #define AUDIO_COLLABORATIVE_LISTENER_H
 
-#include <cstdint>
+#include <stdint.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -24,6 +24,7 @@ class ICollaborativeListener {
 public:
     virtual ~ICollaborativeListener() = default;
     virtual void OnCollaborativeStateChanged(bool isCollaborative) = 0;
-}
+};
 } 
 }
+#endif // AUDIO_COLLABORATIVE_LISTENER_H

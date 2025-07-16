@@ -368,12 +368,12 @@ static void CollaborativeProcess(struct Userdata *u, char *sinkSceneType)
         return;
     }
 
-    if (!strcmp(u->sinkName, BT_SINK_NAME) && !strcmp(sinkSceneType, SCENE_COLLABORATIVE)) {
+    if (!strcmp(u->sink->name, BT_SINK_NAME) && !strcmp(sinkSceneType, SCENE_COLLABORATIVE)) {
         CollaborativeManagerEnqueue(u->bufferAttr);
         return;
     }
 
-    if (!strcmp(u->sinkName, SPK_SINK_NAME) && !strcmp(sinkSceneType, SCENE_NONE)) {
+    if (!strcmp(u->sink->name, SPK_SINK_NAME) && !strcmp(sinkSceneType, SCENE_NONE)) {
         CollaborativeManagerDequeue(u->bufferAttr);
         return;
     }
@@ -1426,7 +1426,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     size_t count = 0;
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         CheckAndPushUidToArr(sinkIn, appsUid, &count);
-#ifdef HAS_FEATURE_COLLABORATIVE
+#ifdef HAS_FEATURE_COLLABORATION
         const char *sSceneType = GetSceneTypeForCollaboration(sinkIn->proplist, u->sink->name);
 #else
         const char *sSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");

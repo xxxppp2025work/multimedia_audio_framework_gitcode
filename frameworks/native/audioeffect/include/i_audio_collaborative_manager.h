@@ -17,17 +17,22 @@
 #define I_AUDIO_COLLABORATIVE_MANAGER_H
 
 #include <cstdint>
+#include "audio_effect_chain_adapter.h"
+#include "audio_stream_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
 class IAudioCollaborativeManager {
 public:
     virtual ~IAudioCollaborativeManager() = default;
-    virtual bool IsCollaborationEnabled() const = 0;
+    virtual bool IsCollaborationEnabled() = 0;
     virtual bool IsStreamSupportCollaborative(StreamUsage usage) const = 0;
-    virtual int32_t UpdateCollaborativeState(bool isCollaborative) = 0;
+    virtual void UpdateCollaborativeState(bool collaborationEnabled) = 0;
     virtual int32_t RegisterCollaborativeListener(ICollaborativeListener* listener) = 0;
-    virtual bool IsCollaborativeFirstChanged(uint32_t sessionId, bool collaborativeState) = 0;
-}
+    virtual bool IsCollaborativeFirstChanged(int32_t sessionId, int32_t collaborationEnabled) = 0;
+    virtual void Enqueue(BufferAttr* buffer) = 0;
+    virtual void Dequeue(BufferAttr* buffer) = 0;
+};
 } // namespace AudioStandard
 } // namespace OHOS
+#endif // I_AUDIO_COLLABORATIVE_MANAGER_H

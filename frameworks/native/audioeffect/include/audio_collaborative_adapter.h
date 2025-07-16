@@ -15,13 +15,13 @@
 #ifndef AUDIO_COLLABORATIVE_ADAPTER_H
 #define AUDIO_COLLABORATIVE_ADAPTER_H
 
-#include <cstdint>
-#indlue "audio_collaborative_manager.h"
+#include <stdint.h>
+#include "audio_effect_chain_adapter.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-bool IsStreamSupportCollaborative(StreamUsage usage);
+bool IsStreamSupportCollaborative(int32_t usage);
 bool IsCollaborationEnabled();
 void CollaborativeManagerEnqueue(BufferAttr *bufferAttr);
 void CollaborativeManagerDequeue(BufferAttr *bufferAttr);
