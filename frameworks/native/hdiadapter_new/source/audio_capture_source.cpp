@@ -54,7 +54,8 @@ AudioCaptureSource::~AudioCaptureSource()
 
 int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("AudioSource::Init halName：%{public}s captureId：%{public}u sourceType:%{public}d",
+        attr.adapterName.c_str(), captureId_, attr.sourceType);
     std::lock_guard<std::mutex> lock(statusMutex_);
     if (attr.sourceType == SOURCE_TYPE_MIC_REF || attr.sourceType == SOURCE_TYPE_EC) {
         InitEcOrMicRefAttr(attr);
@@ -94,7 +95,8 @@ void AudioCaptureSource::DeInit(void)
     AudioXCollie audioXCollie("AudioCaptureSource::DeInit", TIMEOUT_SECONDS_5,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
-    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
+    AUDIO_INFO_LOG("AudioSource::DeInit halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     sourceInited_ = false;
     started_.store(false);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
@@ -150,7 +152,8 @@ void AudioCaptureSource::InitRunningLock(void)
 int32_t AudioCaptureSource::Start(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
+    AUDIO_INFO_LOG("AudioSource::Start halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     Trace trace("AudioCaptureSource::Start");
     if (audioSrcClock_ != nullptr) {
         audioSrcClock_->Reset();
@@ -189,6 +192,8 @@ int32_t AudioCaptureSource::Start(void)
 int32_t AudioCaptureSource::Stop(void)
 {
     Trace trace("AudioCaptureSource::Stop");
+    AUDIO_INFO_LOG("AudioSource::Stop halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     std::promise<void> promiseEnsureLock;
     auto futurePromiseEnsureLock = promiseEnsureLock.get_future();
     std::thread stopThread([&promiseEnsureLock, this] {
@@ -209,7 +214,8 @@ int32_t AudioCaptureSource::Stop(void)
 int32_t AudioCaptureSource::Resume(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
+    AUDIO_INFO_LOG("AudioSource::Resume halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     Trace trace("AudioCaptureSource::Resume");
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
 
@@ -225,7 +231,8 @@ int32_t AudioCaptureSource::Resume(void)
 int32_t AudioCaptureSource::Pause(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
+    AUDIO_INFO_LOG("AudioSource::Pause halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     Trace trace("AudioCaptureSource::Pause");
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_OPERATION_FAILED, "not start, invalid state");
@@ -239,7 +246,8 @@ int32_t AudioCaptureSource::Pause(void)
 int32_t AudioCaptureSource::Flush(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
+    AUDIO_INFO_LOG("AudioSource::Flush halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     Trace trace("AudioCaptureSource::Flush");
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_OPERATION_FAILED, "not start, invalid state");
@@ -252,7 +260,8 @@ int32_t AudioCaptureSource::Flush(void)
 int32_t AudioCaptureSource::Reset(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
+    AUDIO_INFO_LOG("AudioSource::Reset halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     Trace trace("AudioCaptureSource::Reset");
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_OPERATION_FAILED, "not start, invalid state");
@@ -896,10 +905,13 @@ int32_t AudioCaptureSource::CreateCapture(void)
     struct AudioDeviceDescriptor deviceDesc;
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
+    AUDIO_INFO_LOG("AudioSource::Start halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
 
-    AUDIO_INFO_LOG("create capture, halName: %{public}s, hdiSourceType: %{public}d, rate: %{public}u, "
-        "channel: %{public}u, format: %{public}u, devicePin: %{public}u, desc: %{public}s", halName_.c_str(),
-        param.sourceType, param.sampleRate, param.channelCount, param.format, deviceDesc.pins, deviceDesc.desc);
+    AUDIO_INFO_LOG("AudioSource::CreateCapture, halName: %{public}s,, captureId：%{public}u, sourceType:%{public}d, "
+        "hdiSourceType:%{public}d, rate:%{public}u, channel: %{public}u, format: %{public}u, "
+        " devicePin: %{public}u, desc: %{public}s", halName_.c_str(), captureId_, attr_.sourceType, param.sourceType,
+        param.sampleRate, param.channelCount, param.format, deviceDesc.pins, deviceDesc.desc);
     if (attr_.hasEcConfig || attr_.sourceType == SOURCE_TYPE_EC) {
         AUDIO_INFO_LOG("config ec, rate: %{public}d, channel: %{public}u, format: %{public}u",
             param.ecSampleAttributes.ecSampleRate, param.ecSampleAttributes.ecChannelCount,
@@ -937,7 +949,9 @@ int32_t AudioCaptureSource::InitCapture(void)
         AUDIO_INFO_LOG("capture already inited");
         return SUCCESS;
     }
-    AUDIO_INFO_LOG("In, openMicL %{public}u, halName: %{public}s", openMic_, halName_.c_str());
+    AUDIO_INFO_LOG("AudioSource::InitCapture halName：%{public}s captureId：%{public}u "
+        "sourceType:%{public}d openMic:%{public}u,", attr.adapterName.c_str(),
+        captureId_, attr.sourceType, openMic_);
     int32_t ret = CreateCapture();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create capture fail");
     if (openMic_) {
