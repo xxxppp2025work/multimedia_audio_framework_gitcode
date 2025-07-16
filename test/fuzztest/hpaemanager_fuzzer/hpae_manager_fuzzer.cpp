@@ -46,53 +46,11 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 1;
-static int32_t NUM_2 = 2;
+const uint8_t TESTSIZE = 6;
 static std::string g_rootPath = "/data/";
-constexpr int32_t TEST_SLEEP_TIME_20 = 20;
-constexpr int32_t TEST_SLEEP_TIME_40 = 40;
-constexpr int32_t FRAME_LENGTH = 882;
-constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
+static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
-
-vector<AudioSpatializationSceneType> AudioSpatializationSceneTypeVec {
-    SPATIALIZATION_SCENE_TYPE_DEFAULT,
-    SPATIALIZATION_SCENE_TYPE_MUSIC,
-    SPATIALIZATION_SCENE_TYPE_MOVIE,
-    SPATIALIZATION_SCENE_TYPE_AUDIOBOOK,
-    SPATIALIZATION_SCENE_TYPE_MAX,
-};
-
-vector<DeviceType> DeviceTypeVec = {
-    DEVICE_TYPE_NONE,
-    DEVICE_TYPE_INVALID,
-    DEVICE_TYPE_EARPIECE,
-    DEVICE_TYPE_SPEAKER,
-    DEVICE_TYPE_WIRED_HEADSET,
-    DEVICE_TYPE_WIRED_HEADPHONES,
-    DEVICE_TYPE_BLUETOOTH_SCO,
-    DEVICE_TYPE_BLUETOOTH_A2DP,
-    DEVICE_TYPE_BLUETOOTH_A2DP_IN,
-    DEVICE_TYPE_MIC,
-    DEVICE_TYPE_WAKEUP,
-    DEVICE_TYPE_USB_HEADSET,
-    DEVICE_TYPE_DP,
-    DEVICE_TYPE_REMOTE_CAST,
-    DEVICE_TYPE_USB_DEVICE,
-    DEVICE_TYPE_ACCESSORY,
-    DEVICE_TYPE_REMOTE_DAUDIO,
-    DEVICE_TYPE_HDMI,
-    DEVICE_TYPE_LINE_DIGITAL,
-    DEVICE_TYPE_NEARLINK,
-    DEVICE_TYPE_NEARLINK_IN,
-    DEVICE_TYPE_FILE_SINK,
-    DEVICE_TYPE_FILE_SOURCE,
-    DEVICE_TYPE_EXTERN_CABLE,
-    DEVICE_TYPE_DEFAULT,
-    DEVICE_TYPE_USB_ARM_HEADSET,
-    DEVICE_TYPE_MAX,
-};
 
 template<class T>
 T GetData()
@@ -120,93 +78,12 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-AudioModuleInfo GetSinkAudioModeInfo(std::string name = "Speaker_File")
-{
-    AudioModuleInfo audioModuleInfo;
-    audioModuleInfo.lib = "libmodule-hdi-sink.z.so";
-    audioModuleInfo.channels = "2";
-    audioModuleInfo.rate = "48000";
-    audioModuleInfo.name = name;
-    audioModuleInfo.adapterName = "file_io";
-    audioModuleInfo.className = "file_io";
-    audioModuleInfo.bufferSize = "7680";
-    audioModuleInfo.format = "s32le";
-    audioModuleInfo.fixedLatency = "1";
-    audioModuleInfo.offloadEnable = "0";
-    audioModuleInfo.networkId = "LocalDevice";
-    audioModuleInfo.fileName = g_rootPath + audioModuleInfo.adapterName + "_" + audioModuleInfo.rate + "_" +
-                               audioModuleInfo.channels + "_" + audioModuleInfo.format + ".pcm";
-    std::stringstream typeValue;
-    typeValue << static_cast<int32_t>(DEVICE_TYPE_SPEAKER);
-    audioModuleInfo.deviceType = typeValue.str();
-    return audioModuleInfo;
-}
-
-void WaitForMsgProcessing(std::shared_ptr<HPAE::HpaeManager> &hpaeManager)
-{
-    int waitCount = 0;
-    const int waitCountThd = 5;
-    while (hpaeManager->IsMsgProcessing()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
-        waitCount++;
-        if (waitCount >= waitCountThd) {
-            break;
-        }
-    }
-    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_40));
-}
-
-HPAE::HpaeStreamInfo GetRenderStreamInfo()
-{
-    HPAE::HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
-    streamInfo.samplingRate = SAMPLE_RATE_44100;
-    streamInfo.format = SAMPLE_S16LE;
-    streamInfo.frameLen = FRAME_LENGTH;
-    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
-    streamInfo.streamType = STREAM_MUSIC;
-    streamInfo.streamClassType = HPAE::HPAE_STREAM_CLASS_TYPE_PLAY;
-    return streamInfo;
-}
-
-AudioModuleInfo GetSourceAudioModeInfo(std::string name = "mic")
-{
-    AudioModuleInfo audioModuleInfo;
-    audioModuleInfo.lib = "libmodule-hdi-source.z.so";
-    audioModuleInfo.channels = "2";
-    audioModuleInfo.rate = "48000";
-    audioModuleInfo.name = name;
-    audioModuleInfo.adapterName = "file_io";
-    audioModuleInfo.className = "file_io";
-    audioModuleInfo.bufferSize = "3840";
-    audioModuleInfo.format = "s16le";
-    audioModuleInfo.fixedLatency = "1";
-    audioModuleInfo.offloadEnable = "0";
-    audioModuleInfo.networkId = "LocalDevice";
-    audioModuleInfo.fileName = g_rootPath + "source_" + audioModuleInfo.adapterName + "_" + audioModuleInfo.rate + "_" +
-                               audioModuleInfo.channels + "_" + audioModuleInfo.format + ".pcm";
-    std::stringstream typeValue;
-    typeValue << static_cast<int32_t>(DEVICE_TYPE_FILE_SOURCE);
-    audioModuleInfo.deviceType = typeValue.str();
-    return audioModuleInfo;
-}
-
-HPAE::HpaeStreamInfo GetCaptureStreamInfo()
-{
-    HPAE::HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
-    streamInfo.samplingRate = SAMPLE_RATE_48000;
-    streamInfo.format = SAMPLE_S16LE;
-    streamInfo.frameLen = FRAME_LENGTH;
-    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
-    streamInfo.streamType = STREAM_MUSIC;
-    streamInfo.streamClassType = HPAE::HPAE_STREAM_CLASS_TYPE_RECORD;
-    return streamInfo;
-}
-
 void InitFuzzTest()
 {
     std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
+    if (hpaeManager_ == nullptr) {
+        return;
+    }
     hpaeManager_->Init();
     hpaeManager_->IsInit();
     sleep(1);
@@ -219,8 +96,99 @@ void InitFuzzTest()
     hpaeManager_ = nullptr;
 }
 
+void SuspendAudioDeviceFuzzTest()
+{
+    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
+    if (hpaeManager_ == nullptr) {
+        return;
+    }
+    hpaeManager_->Init();
+    AudioModuleInfo audioModuleInfo;
+    audioModuleInfo.adapterName = "Speaker_File";
+    bool isSuspend = GetData<uint32_t>() % NUM_2;
+    hpaeManager_->OpenAudioPort(audioModuleInfo);
+    hpaeManager_->SetDefaultSink(audioModuleInfo.name);
+    hpaeManager_->SuspendAudioDevice(audioModuleInfo.adapterName, isSuspend);
+    hpaeManager_->DeInit();
+    hpaeManager_ = nullptr;
+}
+
+void SetSinkMuteFuzzTest()
+{
+    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
+    if (hpaeManager_ == nullptr) {
+        return;
+    }
+    hpaeManager_->Init();
+    std::string deviceName = "virtual1";
+    hpaeManager_->SetSinkMute(deviceName, GetData<uint32_t>() % NUM_2, GetData<uint32_t>() % NUM_2);
+    hpaeManager_->DeInit();
+    hpaeManager_ = nullptr;
+}
+
+void SetSourceOutputMuteFuzzTest()
+{
+    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
+    if (hpaeManager_ == nullptr) {
+        return;
+    }
+    hpaeManager_->Init();
+    int32_t uid = GetData<int32_t>();
+    hpaeManager_->SetSourceOutputMute(uid, GetData<uint32_t>() % NUM_2);
+    hpaeManager_->DeInit();
+    hpaeManager_ = nullptr;
+}
+
+void GetAllSinksFuzzTest()
+{
+    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
+    if (hpaeManager_ == nullptr) {
+        return;
+    }
+    hpaeManager_->Init();
+    hpaeManager_->GetAllSinks();
+    hpaeManager_->DeInit();
+    hpaeManager_ = nullptr;
+}
+
+void RegisterSerivceCallbackFuzzTest()
+{
+    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
+    if (hpaeManager_ == nullptr) {
+        return;
+    }
+    hpaeManager_->Init();
+    AudioModuleInfo audioModuleInfo;
+    audioModuleInfo.lib = "libmodule-hdi-sink.z.so";
+    audioModuleInfo.channels = "2";
+    audioModuleInfo.rate = "48000";
+    audioModuleInfo.name = "Speaker_File";
+    audioModuleInfo.adapterName = "file_io";
+    audioModuleInfo.className = "file_io";
+    audioModuleInfo.bufferSize = "7680";
+    audioModuleInfo.format = "s32le";
+    audioModuleInfo.fixedLatency = "1";
+    audioModuleInfo.offloadEnable = "0";
+    audioModuleInfo.networkId = "LocalDevice";
+    audioModuleInfo.fileName = g_rootPath + audioModuleInfo.adapterName + "_" + audioModuleInfo.rate + "_" +
+                               audioModuleInfo.channels + "_" + audioModuleInfo.format + ".pcm";
+    std::stringstream typeValue;
+    typeValue << static_cast<int32_t>(DEVICE_TYPE_SPEAKER);
+    audioModuleInfo.deviceType = typeValue.str();
+    uint32_t sinkSourceIndex = GetData<uint32_t>();
+    bool isReload = GetData<uint32_t>() % NUM_2;
+    hpaeManager_->CreateRendererManager(audioModuleInfo, sinkSourceIndex, isReload);
+    hpaeManager_->DeInit();
+    hpaeManager_ = nullptr;
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     InitFuzzTest,
+    SuspendAudioDeviceFuzzTest,
+    SetSinkMuteFuzzTest,
+    SetSourceOutputMuteFuzzTest,
+    GetAllSinksFuzzTest,
+    RegisterSerivceCallbackFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
