@@ -30,7 +30,7 @@ namespace {
     std::string g_networkId = "LocalDevice";
 }
 const uint8_t TESTSIZE = 4;
-typedef void (*TestPtr)(const uint8_t *, size_t);
+typedef void (*TestPtr)(const uint8_t *, size_t); 
 
 void AudioRendererStateCallbackFuzz::OnRendererStateChange(
     const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) {}
