@@ -1525,10 +1525,25 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
     uint32_t id = OPEN_PORT_FAILURE;
     CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr && pipeInfo->streamDescriptors_.size() > 0 &&
         pipeInfo->streamDescriptors_.front() != nullptr, OPEN_PORT_FAILURE, "pipeInfo is invalid");
-    if (pipeInfo->streamDescriptors_.front()->newDeviceDescs_.front()->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeInfo->streamDescriptors_[0];
+    CHECK_AND_RETURN_RET_LOG(streamDesc->newDeviceDescs_.size() > 0 &&
+        streamDesc->newDeviceDescs_[0] != nullptr, OPEN_PORT_FAILURE, "invalid streamDesc");
+    if (streamDesc->newDeviceDescs_.front()->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
         AUDIO_INFO_LOG("[PipeExecInfo] remote cast device do not need open pipe");
-        id = pipeInfo->streamDescriptors_.front()->sessionId_;
+        id = streamDesc->sessionId_;
     } else {
+        if (pipeInfo->moduleInfo_.name == BLUETOOTH_MIC &&
+            streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
+            shared_ptr<AudioDeviceDescriptor> desc = streamDesc->newDeviceDescs_[0];
+            audioActiveDevice_.SetActiveBtDeviceMac(desc->macAddress_);
+            AudioStreamInfo a2dpStreamInfo = {};
+            bool ret = audioActiveDevice_.GetActiveA2dpDeviceStreamInfo(DEVICE_TYPE_BLUETOOTH_A2DP_IN,
+                a2dpStreamInfo);
+            CHECK_AND_RETURN_RET_LOG(ret, OPEN_PORT_FAILURE, "invalid streamDesc");
+            streamDesc->streamInfo_ = a2dpStreamInfo;
+            SourceType sourceType = streamDesc->capturerInfo_.sourceType;
+            GetA2dpModuleInfo(pipeInfo->moduleInfo_, a2dpStreamInfo, sourceType);
+        }
         HandleCommonSourceOpened(pipeInfo);
         id = audioPolicyManager_.OpenAudioPort(pipeInfo, paIndex);
         if (audioActiveDevice_.GetCurrentInputDeviceType() == DEVICE_TYPE_MIC ||
