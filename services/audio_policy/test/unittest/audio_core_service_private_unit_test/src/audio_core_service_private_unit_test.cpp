@@ -2177,6 +2177,38 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_122, TestSize.Level1
     EXPECT_EQ(audioCoreService->audioOffloadStream_.offloadSessionID_.has_value(), true);
 }
 
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_124
+ * @tc.desc  : Test AudioCoreService::OpenNewAudioPortAndRoute()
+ */
+HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_124, TestSize.Level1)
+{
+    uint32_t sessionIDTest = 100;
+
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    ASSERT_NE(pipeInfo, nullptr);
+    auto audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(audioStreamDescriptor, nullptr);
+    pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
+
+    auto audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_NE(audioStreamDescriptor, nullptr);
+    AudioDeviceDescriptor->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
+    AudioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
+    AudioStreamDescriptor->sessionId_ = sessionIDTest;
+    pipeInfo->streamDescriptors_[0]->newDeviceDescs_.push_back(audioDeviceDescriptor);
+
+    uint32_t paIndex = 0;
+    auto ret = audioCoreService->OpenNewAudioPortAndRoute(pipeInfo, paIndex);
+
+    EXPECT_EQ(ret, sessionIDTest);
+}
+
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_123
@@ -2207,6 +2239,39 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_123, TestSize.Level1
 
 /**
  * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_125
+ * @tc.desc  : Test AudioCoreService::OpenNewAudioPortAndRoute()
+ */
+HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_125, TestSize.Level1)
+{
+    uint32_t sessionIDTest = 0;
+
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    AudioStreamInfo audioStreamInfo = {};
+    audioStreamInfo.samplingRate =  AudioSamplingRate::SAMPLE_RATE_48000;
+    audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    audioStreamInfo.channels = AudioChannel::STEREO;
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    ASSERT_NE(pipeInfo, nullptr);
+    auto audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(audioStreamDescriptor, nullptr);
+    audioStreamDescriptor->streamInfo_ = audioStreamInfo;
+    pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
+    pipeInfo->moduleInfo_.name = BLUETOOTH_MIC;
+
+    auto audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_NE(audioStreamDescriptor, nullptr);
+    AudioDeviceDescriptor->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
+    AudioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
+    pipeInfo->streamDescriptors_[0]->newDeviceDescs_.push_back(audioDeviceDescriptor);
+
+    uint32_t paIndex = 0;
+    auto ret = audioCoreService->OpenNewAudioPortAndRoute(pipeInfo, paIndex);
+
+    EXPECT_NE(ret, sessionIDTest);
+}
+
  * @tc.number: LoadSplitModule_001
  * @tc.desc  : Test AudioCoreService::LoadSplitModule.
  */
