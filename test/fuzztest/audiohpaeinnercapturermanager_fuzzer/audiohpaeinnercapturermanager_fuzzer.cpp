@@ -65,12 +65,12 @@ uint32_t GetArrLength(T& arr)
 }
 
 
-void CreateStreamFuzzTest()
+void DoProcessFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     const HpaeStreamInfo streamInfo = {};
-    hpaeInnerCapturerManager->CreateStream(streamInfo);
+    hpaeInnerCapturerManager->DoProcess(streamInfo);
 }
 
 void DestroyStreamFuzzTest()
@@ -497,4 +497,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 
     OHOS::AudioStandard::FuzzTest(data, size);
     return 0;
-}
+}
