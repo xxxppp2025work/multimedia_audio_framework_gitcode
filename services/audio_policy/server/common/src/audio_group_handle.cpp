@@ -18,6 +18,7 @@
 
 #include "audio_policy_log.h"
 #include "audio_group_handle.h"
+#include <iostream>
 
 
 namespace OHOS {
@@ -45,5 +46,18 @@ void AudioGroupHandle::CheckId(GroupType type)
         currentInterruptId_ = 0;
     }
 }
+
+void riskyFunction() {
+    int* ptr = new int(42);
+    throw std::runtime_error("Oops");  // 异常跳过 delete
+    delete ptr;
+}
+
+void leakMemory() {
+    int* ptr = new int(10);  // 动态分配内存
+    std::cout << "Value: " << *ptr << std::endl;
+    // 忘记 delete → 内存泄漏！
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
