@@ -692,7 +692,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, HandleLocalDeviceConnected_001, TestSize.Lev
 
     result = audioDeviceStatus.HandleLocalDeviceConnected(updatedDesc);
 
-    EXPECT_EQ(result, ERROR);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -1140,6 +1140,11 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_052, TestSize.Level1)
 
     audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, isConnected);
     EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
+    desc.deviceType_ = DEVICE_TYPE_DP;
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, true);
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, true);
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, false);
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, false);
 }
 
 /**

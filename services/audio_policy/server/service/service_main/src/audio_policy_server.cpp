@@ -26,6 +26,7 @@
 #include "privacy_kit.h"
 #include "tokenid_kit.h"
 #include "common_event_manager.h"
+#include "system_ability_definition.h"
 #include "audio_policy_log.h"
 #include "parameters.h"
 #include "media_monitor_manager.h"
@@ -108,6 +109,7 @@ constexpr int32_t UID_MCU = 7500;
 constexpr int32_t UID_CAAS = 5527;
 constexpr int32_t UID_TELEPHONY = 1001;
 constexpr int32_t UID_DMSDP = 7071;
+static const int32_t DATASHARE_SERVICE_TIMEOUT_FIVE_SECONDS = 5; // 5s is better
 const std::set<int32_t> INTERRUPT_CALLBACK_TRUST_LIST = {
     UID_MEDIA,
     UID_MCU,
@@ -814,6 +816,7 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     SubscribeCommonEvent("usual.event.SCREEN_OFF");
     SubscribeCommonEvent("usual.event.SCREEN_LOCKED");
     SubscribeCommonEvent("usual.event.SCREEN_UNLOCKED");
+    SubscribeCommonEvent("usual.event.LOCALE_CHANGED");
 #ifdef USB_ENABLE
     usbManager_.SubscribeEvent();
 #endif
@@ -880,6 +883,8 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
     } else if (action == "usual.event.SCREEN_UNLOCKED") {
         AUDIO_INFO_LOG("receive SCREEN_UNLOCKED action, can change volume");
         isScreenOffOrLock_ = false;
+    } else if (action == "usual.event.LOCALE_CHANGED") {
+        CallRingtoneLibrary();
     }
 }
 
@@ -2955,9 +2960,9 @@ void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &
 
     pid_t pid = IPCSkeleton::GetCallingPid();
     pid_t uid = IPCSkeleton::GetCallingUid();
-    if (id == TRACKER_CLIENT && std::find(clientDiedListenerState_.begin(), clientDiedListenerState_.end(), uid)
+    if (id == TRACKER_CLIENT && std::find(clientDiedListenerState_.begin(), clientDiedListenerState_.end(), pid)
         != clientDiedListenerState_.end()) {
-        AUDIO_INFO_LOG("Tracker has been registered for %{public}d!", uid);
+        AUDIO_INFO_LOG("Tracker has been registered for uid:%{public}d pid:%{public}d!", uid, pid);
         return;
     }
     sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid, uid);
@@ -2972,7 +2977,7 @@ void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &
         }
         bool result = object->AddDeathRecipient(deathRecipient_);
         if (result && id == TRACKER_CLIENT) {
-            clientDiedListenerState_.push_back(uid);
+            clientDiedListenerState_.push_back(pid);
         }
         if (!result) {
             AUDIO_WARNING_LOG("failed to add deathRecipient");
@@ -2988,8 +2993,8 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     eventEntry_->RegisteredTrackerClientDied(uid, pid);
 
-    auto filter = [&uid](int val) {
-        return uid == val;
+    auto filter = [&pid](int val) {
+        return pid == val;
     };
     clientDiedListenerState_.erase(std::remove_if(clientDiedListenerState_.begin(), clientDiedListenerState_.end(),
         filter), clientDiedListenerState_.end());
@@ -3005,7 +3010,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
         AUDIO_INFO_LOG("Cliet died and reset non-persist mute state");
         audioMicrophoneDescriptor_.SetMicrophoneMute(false);
     }
-    if (interruptService_ != nullptr && interruptService_->IsAudioSessionActivated(pid)) {
+    if (interruptService_ != nullptr) {
         int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
         AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d", pid, zoneId);
         interruptService_->DeactivateAudioSession(zoneId, pid);
@@ -4351,7 +4356,7 @@ int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyAr
     }
     audioPolicyService_.GetSupportedAudioEffectProperty(propertyArray);
     size_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR,
+    CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR,
         "get supported audio effect property size invalid.");
     return AUDIO_OK;
 }
@@ -4380,7 +4385,7 @@ int32_t AudioPolicyServer::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &pr
     }
     int32_t res = audioPolicyService_.GetAudioEffectProperty(propertyArray);
     size_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR, "size invalid.");
+    CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR, "size invalid.");
     return res;
 }
 
@@ -4390,7 +4395,7 @@ int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyAr
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     int32_t res = audioPolicyService_.GetSupportedAudioEffectProperty(propertyArray);
     size_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR,
+    CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR,
         "get supported audio effect property size invalid.");
     return res;
 }
@@ -4402,7 +4407,7 @@ int32_t AudioPolicyServer::GetSupportedAudioEnhanceProperty(AudioEnhanceProperty
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     int32_t res = audioPolicyService_.GetSupportedAudioEnhanceProperty(propertyArray);
     size_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR,
+    CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR,
         "get supported audio effect property size invalid.");
     return res;
 }
@@ -4440,7 +4445,7 @@ int32_t AudioPolicyServer::GetAudioEffectProperty(AudioEffectPropertyArray &prop
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     int32_t res = audioPolicyService_.GetAudioEffectProperty(propertyArray);
     size_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR, "size invalid.");
+    CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR, "size invalid.");
     return res;
 }
 
@@ -4547,29 +4552,31 @@ int32_t AudioPolicyServer::SetAudioSessionScene(int32_t audioSessionScene)
 
 int32_t AudioPolicyServer::GetDefaultOutputDevice(int32_t &deviceType)
 {
-    DeviceType deviceTypeOut = DEVICE_TYPE_NONE;
-    if (interruptService_ != nullptr) {
-        int32_t callerPid = IPCSkeleton::GetCallingPid();
-        int32_t ret = interruptService_->GetSessionDefaultOutputDevice(callerPid, deviceTypeOut);
-        deviceType = deviceTypeOut;
-        return ret;
+    if (eventEntry_ == nullptr) {
+        AUDIO_ERR_LOG("eventEntry_ is nullptr!");
+        return ERR_UNKNOWN;
     }
 
-    return ERR_ILLEGAL_STATE;
+    DeviceType deviceTypeOut = DEVICE_TYPE_NONE;
+    int32_t callerPid = IPCSkeleton::GetCallingPid();
+    int32_t ret = eventEntry_->GetSessionDefaultOutputDevice(callerPid, deviceTypeOut);
+    deviceType = static_cast<int32_t>(deviceTypeOut);
+    return ret;
 }
 
 int32_t AudioPolicyServer::SetDefaultOutputDevice(int32_t deviceType)
 {
-    int32_t ret = ERR_ILLEGAL_STATE;
+    if (eventEntry_ == nullptr) {
+        AUDIO_ERR_LOG("eventEntry_ is nullptr!");
+        return ERR_UNKNOWN;
+    }
 
-    if (interruptService_ != nullptr) {
-        int32_t callerPid = IPCSkeleton::GetCallingPid();
-        ret = interruptService_->SetSessionDefaultOutputDevice(callerPid, static_cast<DeviceType>(deviceType));
-        if (ret == NEED_TO_FETCH) {
-            coreService_->FetchOutputDeviceAndRoute("SetDefaultOutputDevice",
-                AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
-            return SUCCESS;
-        }
+    int32_t callerPid = IPCSkeleton::GetCallingPid();
+    int32_t ret = eventEntry_->SetSessionDefaultOutputDevice(callerPid, static_cast<DeviceType>(deviceType));
+    if (ret == NEED_TO_FETCH) {
+        coreService_->FetchOutputDeviceAndRoute("SetDefaultOutputDevice",
+            AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
+        return SUCCESS;
     }
 
     return ret;
@@ -4785,7 +4792,7 @@ int32_t AudioPolicyServer::GetStreamUsagesByVolumeType(int32_t audioVolumeTypeIn
 int32_t AudioPolicyServer::SetCallbackStreamUsageInfo(const std::set<int32_t> &streamUsages)
 {
     size_t size = streamUsages.size();
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= MAX_STREAM_USAGE_COUNT, ERR_INVALID_PARAM, "size upper limit.");
+    CHECK_AND_RETURN_RET_LOG(size <= MAX_STREAM_USAGE_COUNT, ERR_INVALID_PARAM, "size upper limit.");
     std::set<StreamUsage> streamUsagesTmp;
     for (auto streamUsage : streamUsages) {
         CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
@@ -4918,6 +4925,27 @@ int32_t AudioPolicyServer::IsCollaborativePlaybackEnabledForDevice(
         return ERR_PERMISSION_DENIED;
     }
     enabled = audioCollaborativeService_.IsCollaborativePlaybackEnabledForDevice(selectedAudioDevice);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::CallRingtoneLibrary()
+{
+    Trace trace("AudioPolicyServer::CallRingtoneLibrary");
+    AUDIO_INFO_LOG("Enter CallRingtoneLibrary");
+    auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_RET_LOG(saManager != nullptr, ERROR, "Get system ability manager failed.");
+
+    AudioXCollie audioXCollie("CallRingtoneLibrary::start", DATASHARE_SERVICE_TIMEOUT_FIVE_SECONDS,
+        [](void *) {
+            AUDIO_ERR_LOG("CallRingtoneLibrary timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
+
+    auto remoteObj = saManager->GetSystemAbility(STORAGE_MANAGER_MANAGER_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObj != nullptr, ERROR, "Get system ability failed.");
+
+    auto dataShareHelper = DataShare::DataShareHelper::Creator(remoteObj, "datashare:///ringtone");
+    CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "Create dataShare failed, datashare or library error.");
+    dataShareHelper->Release();
     return SUCCESS;
 }
 } // namespace AudioStandard

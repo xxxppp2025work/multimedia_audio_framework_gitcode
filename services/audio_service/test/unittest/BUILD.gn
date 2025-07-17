@@ -465,6 +465,7 @@ ohos_unittest("ipc_stream_in_server_unit_test") {
   install_enable = false
 
   include_dirs = [
+    "../../../../frameworks/native/audiodefinitions/include",
     "../../../../frameworks/native/audioschedule/include",
     "../../../../frameworks/native/audioutils/include",
     "../../../../frameworks/native/audioclock/include",
@@ -1202,7 +1203,7 @@ ohos_unittest("audio_resource_service_unit_test") {
   sources = [
     "../../server/src/audio_resource_service.cpp",
     "../../server/src/audio_workgroup.cpp",
-    "../../server/src/audio_workgroup_callback_proxy.cpp",
+    "../../server/src/audio_workgroup_callback.cpp",
     "audio_resource_service_unit_test.cpp",
   ]
 
@@ -1211,6 +1212,7 @@ ohos_unittest("audio_resource_service_unit_test") {
   cflags = [ "-fno-access-control" ]
 
   deps = [
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../audio_service:audio_client",
     ]

@@ -14,7 +14,6 @@
  */
 
 #include "sle_audio_device_manager_unit_test.h"
-#include "audio_errors.h"
 #include "audio_stream_info.h"
 #include "audio_info.h"
 
@@ -131,8 +130,8 @@ HWTEST(SleAudioDeviceManagerUnitTest, GetSleVirtualAudioDeviceList_002, TestSize
 {
     std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
         std::make_shared<SleAudioDeviceManager>();
-    sptr<IStandardSleAudioOperationCallbackTest> callback = 
-        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new (std::nothrow) IStandardSleAudioOperationCallbackTest();
     sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
 
     AudioDeviceDescriptor desc_1;
