@@ -33,6 +33,7 @@
 #include "common/hdi_adapter_info.h"
 #include "hdi_adapter_type.h"
 #include "audio_device_manager.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -136,6 +137,8 @@ public:
     AudioIOHandle OpenAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
 
     AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex);
+
+    AudioIOHandle ReloadAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex);
 
     int32_t CloseAudioPort(AudioIOHandle ioHandle, uint32_t paIndex = HDI_INVALID_ID);
 
@@ -289,6 +292,7 @@ public:
     int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled);
     void HandleDistributedVolume(AudioStreamType streamType);
+    void HandleHearingAidVolume(AudioStreamType streamType);
     void RegisterDoNotDisturbStatus();
     void RegisterDoNotDisturbStatusWhiteList();
 private:
@@ -319,6 +323,7 @@ private:
         : ringerMode_(RINGER_MODE_NORMAL),
           audioPolicyKvStore_(nullptr),
           audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
+          audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
           volumeDataMaintainer_()
     {
         InitVolumeMapIndex();
@@ -352,7 +357,7 @@ private:
     void SetAudioVolume(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType, float volumeDb);
     void SetAppAudioVolume(int32_t appUid, float volumeDb);
     void SetAppAudioVolume(std::shared_ptr<AudioDeviceDescriptor> &device, int32_t appUid, float volumeDb);
-    void SetOffloadVolume(AudioStreamType streamType, float volumeDb);
+    void SetOffloadVolume(AudioStreamType streamType, float volumeDb, const std::string &deviceClass);
     int32_t SetStreamMute(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType,
         bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
         const DeviceType &deviceType = DEVICE_TYPE_NONE);
@@ -437,6 +442,7 @@ private:
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     AudioStreamRemovedCallback *sessionCallback_ = nullptr;
+    AudioDeviceManager &audioDeviceManager_;
     VolumeDataMaintainer volumeDataMaintainer_;
     std::unordered_map<int32_t, std::shared_ptr<VolumeDataMaintainer>> volumeDataExtMaintainer_;
     bool isVolumeUnadjustable_ = false;

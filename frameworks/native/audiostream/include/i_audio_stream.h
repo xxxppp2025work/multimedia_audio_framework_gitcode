@@ -104,6 +104,9 @@ public:
         DeviceType defaultOutputDevice = DEVICE_TYPE_NONE;
 
         std::optional<pid_t> lastCallStartByUserTid = std::nullopt;
+        std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair = {
+            Timestamp::Timestampbase::BASESIZE, {0, 0}
+        };
     };
 
     virtual ~IAudioStream() = default;
@@ -311,6 +314,8 @@ public:
 
     virtual RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) = 0;
 
+    virtual void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair) = 0;
+
     virtual void FetchDeviceForSplitStream() = 0;
 
     virtual void SetCallStartByUserTid(pid_t tid) = 0;
@@ -322,6 +327,10 @@ public:
     virtual int32_t SetOffloadDataCallbackState(int32_t cbState) { return 0; };
 
     virtual bool GetStopFlag() const = 0;
+
+    virtual void ResetFirstFrameState() {}
+
+    virtual void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) {}
 };
 } // namespace AudioStandard
 } // namespace OHOS

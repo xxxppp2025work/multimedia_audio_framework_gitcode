@@ -30,9 +30,6 @@ FileAudioCaptureSource::~FileAudioCaptureSource()
 
 int32_t FileAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
-    if (attr.filePath == nullptr) {
-        return ERROR;
-    }
     std::string filePath(attr.filePath);
     std::string dirPath;
     std::string fileName;
@@ -193,7 +190,7 @@ void FileAudioCaptureSource::DumpInfo(std::string &dumpString)
     dumpString += "type: FileSource\n";
 }
 
-void FileAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+void FileAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
 {
     AUDIO_INFO_LOG("not support");
 }

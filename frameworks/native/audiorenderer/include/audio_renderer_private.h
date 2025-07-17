@@ -22,7 +22,6 @@
 #include "securec.h"
 
 #include "audio_interrupt_callback.h"
-#include "audio_concurrency_callback.h"
 #include "audio_renderer.h"
 #include "audio_renderer_proxy_obj.h"
 #include "audio_utils.h"
@@ -133,7 +132,6 @@ public:
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
     bool IsFastRenderer() override;
-    void ConcedeStream();
 
     void SetSilentModeAndMixWithOthers(bool on) override;
     bool GetSilentModeAndMixWithOthers() override;
@@ -153,11 +151,12 @@ public:
     int32_t StartDataCallback() override;
     int32_t StopDataCallback() override;
     void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
+    void ResetFirstFrameState() override;
 
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override;
 
     bool IsVirtualKeyboard(const int32_t flags);
-
+    void HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions, const AppInfo &appInfo);
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
         AudioStreamParams audioStreamParams;
@@ -195,7 +194,7 @@ private:
     int32_t CheckAudioRenderer(std::string callingFunc);
     int32_t CheckAndStopAudioRenderer(std::string callingFunc);
     int32_t PrepareAudioStream(AudioStreamParams &audioStreamParams,
-        const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass);
+        const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass, uint32_t &flag);
     std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescBySwitchInfo(
         const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);
@@ -218,8 +217,6 @@ private:
     void WriteSwitchStreamLogMsg();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     void MockPcmData(uint8_t *buffer, size_t bufferSize) const;
-    void ActivateAudioConcurrency(const AudioStreamParams &audioStreamParams,
-        const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass);
     void WriteUnderrunEvent() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
@@ -239,7 +236,8 @@ private:
     FastStatus GetFastStatusInner();
     void FastStatusChangeCallback(FastStatus status);
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams, AudioStreamType audioStreamType);
-    void SetRestoreInfo(RestoreInfo &restoreInfo, IAudioStream::StreamClass &targetClass, RestoreStatus restoreStatus);
+    int32_t StartSwitchProcess(RestoreInfo &restoreInfo, IAudioStream::StreamClass &targetClass,
+        std::string callingFunc);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;

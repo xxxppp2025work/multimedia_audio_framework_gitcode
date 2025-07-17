@@ -14,7 +14,8 @@
  */
 
 #include "audio_stream_collector.h"
-#include "audio_client_tracker_callback_proxy.h"
+#include "istandard_client_tracker.h"
+#include "audio_client_tracker_callback_listener.h"
 using namespace std;
 
 namespace OHOS {
@@ -722,15 +723,17 @@ void AudioStreamCollectorRegisteredTrackerClientDiedFuzzTest(const uint8_t *rawD
 {
     int32_t randIntValue = static_cast<int32_t>(size);
     int32_t uid = randIntValue / NUM_2;
+    int32_t pid = randIntValue / NUM_2;
     audioStreamCollector_.GetLastestRunningCallStreamUsage();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
 
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
+    rendererChangeInfo->clientPid = randIntValue / NUM_2;
     rendererChangeInfo->sessionId = randIntValue;
     audioStreamCollector_.audioRendererChangeInfos_.clear();
     audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
-    audioStreamCollector_.RegisteredTrackerClientDied(uid);
+    audioStreamCollector_.RegisteredTrackerClientDied(uid, pid);
 }
 
 void AudioStreamCollectorGetAndCompareStreamTypeFuzzTest(const uint8_t *rawData, size_t size)
@@ -850,16 +853,18 @@ void AudioStreamCollectorHandleStartStreamMuteStateFuzzTest(const uint8_t *rawDa
     int32_t randIntValue = static_cast<int32_t>(size);
     int32_t clientUid = randIntValue;
     int32_t createrUID = randIntValue;
+    int32_t clientPid = randIntValue;
     uint32_t index = static_cast<uint32_t>(size);
     bool mute = static_cast<bool>(index % NUM_2);
     auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
     changeInfo->clientUID = clientUid;
     changeInfo->createrUID = createrUID;
+    changeInfo->clientPid = clientPid;
     changeInfo->rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
     changeInfo->sessionId = randIntValue / NUM_2;
     audioStreamCollector_.audioRendererChangeInfos_.clear();
     audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, mute, mute);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, mute, mute);
 }
 
 void AudioStreamCollectorIsStreamActiveFuzzTest(const uint8_t *rawData, size_t size)
@@ -880,10 +885,9 @@ void AudioStreamCollectorIsStreamActiveFuzzTest(const uint8_t *rawData, size_t s
 void AudioStreamCollectorGetRunningStreamFuzzTest(const uint8_t *rawData, size_t size)
 {
     uint32_t index = static_cast<uint32_t>(size);
-    AudioRendererInfo rendererInfo = {
-        .contentType = g_testContentTypes[index % g_testContentTypes.size()],
-        .streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()]
-    };
+    AudioRendererInfo rendererInfo;
+    rendererInfo.contentType = g_testContentTypes[index % g_testContentTypes.size()];
+    rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
     std::unique_ptr<AudioRendererChangeInfo> info = std::make_unique<AudioRendererChangeInfo>();
     int32_t randIntValue = static_cast<int32_t>(size);
     info->sessionId = randIntValue;
@@ -958,13 +962,6 @@ void AudioStreamCollectorUpdateCapturerInfoMuteStatusFuzzTest(const uint8_t *raw
     audioStreamCollector_.audioCapturerChangeInfos_.push_back(std::move(changeInfo));
     audioStreamCollector_.audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     audioStreamCollector_.UpdateCapturerInfoMuteStatus(randIntValue, true);
-}
-
-void AudioStreamCollectorActivateAudioConcurrencyFuzzTest(const uint8_t *rawData, size_t size)
-{
-    uint32_t index = static_cast<uint32_t>(size) % g_testPipeTypes.size();
-    AudioPipeType pipeType = g_testPipeTypes[index];
-    audioStreamCollector_.ActivateAudioConcurrency(pipeType);
 }
 
 void AudioStreamCollectorIsCallStreamUsageFuzzTest(const uint8_t *rawData, size_t size)
@@ -1098,10 +1095,9 @@ void AudioStreamCollectorHasVoipRendererStreamFuzzTest(const uint8_t *rawData, s
 void AudioStreamCollectorIsMediaPlayingFuzzTest(const uint8_t *rawData, size_t size)
 {
     uint32_t index = static_cast<uint32_t>(size);
-    AudioRendererInfo rendererInfo = {
-        .contentType = g_testContentTypes[index % g_testContentTypes.size()],
-        .streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()]
-    };
+    AudioRendererInfo rendererInfo;
+    rendererInfo.contentType = g_testContentTypes[index % g_testContentTypes.size()];
+    rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
     std::unique_ptr<AudioRendererChangeInfo> info = std::make_unique<AudioRendererChangeInfo>();
     int32_t randIntValue = static_cast<int32_t>(size);
     info->sessionId = randIntValue % NUM_2;
@@ -1116,9 +1112,8 @@ void AudioStreamCollectorIsMediaPlayingFuzzTest(const uint8_t *rawData, size_t s
 void AudioStreamCollectorIsVoipStreamActiveFuzzTest(const uint8_t *rawData, size_t size)
 {
     uint32_t index = static_cast<uint32_t>(size);
-    AudioRendererInfo rendererInfo = {
-        .streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()]
-    };
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
     std::unique_ptr<AudioRendererChangeInfo> info = std::make_unique<AudioRendererChangeInfo>();
     int32_t randIntValue = static_cast<int32_t>(size);
     info->sessionId = randIntValue % NUM_2;
@@ -1180,7 +1175,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioStreamCollectorUnsetOffloadModeFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorGetSingleStreamVolumeFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorUpdateCapturerInfoMuteStatusFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorActivateAudioConcurrencyFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorIsCallStreamUsageFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorGetRunningStreamUsageNoUltrasonicFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorGetRunningSourceTypeNoUltrasonicFuzzTest,

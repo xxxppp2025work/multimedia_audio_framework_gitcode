@@ -16,6 +16,7 @@
 #define LOG_TAG "AudioUtils"
 #endif
 
+#include "v5_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include <cinttypes>
 #include <ctime>
@@ -32,6 +33,7 @@
 #endif
 #include "bundle_mgr_interface.h"
 #include "parameter.h"
+#include "parameters.h"
 #include "tokenid_kit.h"
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
@@ -91,8 +93,12 @@ const char* DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
 const char* DUMP_SERVICE_DIR = "/data/local/tmp/";
 const char* DUMP_APP_DIR = "/data/storage/el2/base/cache/";
 
-
-const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
+// keep same with fold_screen_state_internel.h
+const std::string FOLD_TYPE_KEY = "const.window.foldscreen.type";
+const char DUAL_DISPLAY = '2';
+const char SINGLE_POCKET_DISPLAY = '4';
+const char SUPER_FOLD_DISPLAY = '5';
+std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
 #ifdef AUDIO_BUILD_VARIANT_ROOT
     0, // UID_ROOT
 #endif
@@ -100,7 +106,6 @@ const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_INTELLIGENT_VOICE_SA,
     UID_CAAS_SA,
     UID_DISTRIBUTED_AUDIO_SA,
-    UID_THPEXTRA_SA,
     UID_TELEPHONY_SA, // used in distributed communication call
     UID_DMSDP_SA
 };
@@ -141,6 +146,23 @@ static std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_NAME_MAP = {
     {STREAM_VOICE_CALL_ASSISTANT, "VOICE_CALL_ASSISTANT"},
 };
 
+static const std::unordered_map<DeviceType, std::string> DEVICE_TYPE_NAME_MAP = {
+    {DEVICE_TYPE_EARPIECE, "EARPIECE"},
+    {DEVICE_TYPE_SPEAKER, "SPEAKER"},
+    {DEVICE_TYPE_WIRED_HEADSET, "WIRED_HEADSET"},
+    {DEVICE_TYPE_WIRED_HEADPHONES, "WIRED_HEADPHONES"},
+    {DEVICE_TYPE_BLUETOOTH_SCO, "BLUETOOTH_SCO"},
+    {DEVICE_TYPE_BLUETOOTH_A2DP, "BLUETOOTH_A2DP"},
+    {DEVICE_TYPE_NEARLINK, "NEARLINK"},
+    {DEVICE_TYPE_MIC, "MIC"},
+    {DEVICE_TYPE_HDMI, "HDMI"},
+    {DEVICE_TYPE_WAKEUP, "WAKEUP"},
+    {DEVICE_TYPE_NONE, "NONE"},
+    {DEVICE_TYPE_INVALID, "INVALID"},
+    {DEVICE_TYPE_REMOTE_CAST, "REMOTE_CAST"},
+    {DEVICE_TYPE_HEARING_AID, "HEARING_AID"},
+};
+
 uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
 {
     uint32_t audioPerSampleLength = 2; // 2 byte
@@ -162,6 +184,53 @@ uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
             break;
     }
     return audioPerSampleLength;
+}
+
+uint32_t Util::ConvertToHDIAudioInputType(const SourceType sourceType)
+{
+    enum AudioInputType hdiAudioInputType;
+    switch (sourceType) {
+        case SOURCE_TYPE_INVALID:
+            hdiAudioInputType = AUDIO_INPUT_DEFAULT_TYPE;
+            break;
+        case SOURCE_TYPE_MIC:
+        case SOURCE_TYPE_PLAYBACK_CAPTURE:
+        case SOURCE_TYPE_ULTRASONIC:
+            hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
+            break;
+        case SOURCE_TYPE_WAKEUP:
+            hdiAudioInputType = AUDIO_INPUT_SPEECH_WAKEUP_TYPE;
+            break;
+        case SOURCE_TYPE_VOICE_TRANSCRIPTION:
+        case SOURCE_TYPE_VOICE_COMMUNICATION:
+            hdiAudioInputType = AUDIO_INPUT_VOICE_COMMUNICATION_TYPE;
+            break;
+        case SOURCE_TYPE_VOICE_RECOGNITION:
+            hdiAudioInputType = AUDIO_INPUT_VOICE_RECOGNITION_TYPE;
+            break;
+        case SOURCE_TYPE_VOICE_CALL:
+            hdiAudioInputType = AUDIO_INPUT_VOICE_CALL_TYPE;
+            break;
+        case SOURCE_TYPE_CAMCORDER:
+            hdiAudioInputType = AUDIO_INPUT_CAMCORDER_TYPE;
+            break;
+        case SOURCE_TYPE_EC:
+            hdiAudioInputType = AUDIO_INPUT_EC_TYPE;
+            break;
+        case SOURCE_TYPE_MIC_REF:
+            hdiAudioInputType = AUDIO_INPUT_NOISE_REDUCTION_TYPE;
+            break;
+        case SOURCE_TYPE_UNPROCESSED:
+            hdiAudioInputType = AUDIO_INPUT_RAW_TYPE;
+            break;
+        case SOURCE_TYPE_LIVE:
+            hdiAudioInputType = AUDIO_INPUT_LIVE_TYPE;
+            break;
+        default:
+            hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
+            break;
+    }
+    return static_cast<uint32_t>(hdiAudioInputType);
 }
 
 bool Util::IsScoSupportSource(const SourceType sourceType)
@@ -480,6 +549,27 @@ bool PermissionUtil::VerifyPermission(const std::string &permissionName, uint32_
         false, "Permission denied [%{public}s]", permissionName.c_str());
 
     return true;
+}
+
+bool PermissionUtil::IsFoldAble(const char ch)
+{
+    if (ch == DUAL_DISPLAY || ch == SINGLE_POCKET_DISPLAY || ch == SUPER_FOLD_DISPLAY) {
+        return true;
+    }
+    return false;
+}
+
+void PermissionUtil::UpdateBGSet()
+{
+    std::string screenType = system::GetParameter(FOLD_TYPE_KEY, "0,0,0,0");
+    AUDIO_INFO_LOG("FoldType param is %{public}s", screenType.c_str());
+    if (screenType.empty()) {
+        return;
+    }
+    if (IsFoldAble(screenType[0])) {
+        AUDIO_INFO_LOG("Is fold device!");
+        RECORD_ALLOW_BACKGROUND_LIST.insert(UID_THPEXTRA_SA);
+    }
 }
 
 bool PermissionUtil::NeedVerifyBackgroundCapture(int32_t callingUid, SourceType sourceType)
@@ -1299,7 +1389,7 @@ std::string GetTime()
     // 2025-06-22-21:22:07:666
     char timeBuf[TIME_TEXT_LENGTH] = {0};
     int ret = sprintf_s(timeBuf, sizeof(timeBuf), "%04d-%02d-%02d-%02d:%02d:%02d:%03d", (YEAR_BASE + t->tm_year),
-        t->tm_mon, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec, mSec);
+        (1 + t->tm_mon), t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec, mSec);
     if (ret < 0) {
         return "";
     }
@@ -1590,48 +1680,11 @@ const std::string AudioInfoDumpUtils::GetStreamName(AudioStreamType streamType)
 const std::string AudioInfoDumpUtils::GetDeviceTypeName(DeviceType deviceType)
 {
     std::string device;
-    switch (deviceType) {
-        case DEVICE_TYPE_EARPIECE:
-            device = "EARPIECE";
-            break;
-        case DEVICE_TYPE_SPEAKER:
-            device = "SPEAKER";
-            break;
-        case DEVICE_TYPE_WIRED_HEADSET:
-            device = "WIRED_HEADSET";
-            break;
-        case DEVICE_TYPE_WIRED_HEADPHONES:
-            device = "WIRED_HEADPHONES";
-            break;
-        case DEVICE_TYPE_BLUETOOTH_SCO:
-             device = "BLUETOOTH_SCO";
-            break;
-        case DEVICE_TYPE_BLUETOOTH_A2DP:
-            device = "BLUETOOTH_A2DP";
-            break;
-        case DEVICE_TYPE_NEARLINK:
-            device = "NEARLINK";
-            break;
-        case DEVICE_TYPE_MIC:
-            device = "MIC";
-            break;
-        case DEVICE_TYPE_HDMI:
-            device = "HDMI";
-            break;
-        case DEVICE_TYPE_WAKEUP:
-            device = "WAKEUP";
-            break;
-        case DEVICE_TYPE_NONE:
-            device = "NONE";
-            break;
-        case DEVICE_TYPE_INVALID:
-            device = "INVALID";
-            break;
-        case DEVICE_TYPE_REMOTE_CAST:
-            device = "REMOTE_CAST";
-            break;
-        default:
-            device = "UNKNOWN";
+    auto it = DEVICE_TYPE_NAME_MAP.find(deviceType);
+    if (it != DEVICE_TYPE_NAME_MAP.end()) {
+        device = it->second;
+    } else {
+        device = "UNKNOWN";
     }
 
     const std::string deviceTypeName = device;
@@ -2020,6 +2073,51 @@ int32_t CheckSupportedParams(const AudioStreamInfo &info)
     CHECK_AND_RETURN_RET_LOG(!NotContain(RENDERER_SUPPORTED_CHANNELLAYOUTS, info.channelLayout),
         ERR_INVALID_PARAM, "channelLayout not supported");
     return SUCCESS;
+}
+
+std::vector<std::map<AudioInterrupt, int32_t>> ToIpcInterrupts(
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &from)
+{
+    std::vector<std::map<AudioInterrupt, int32_t>> ipcInterrupts;
+    for (const auto &pair : from) {
+        std::map<AudioInterrupt, int32_t> mapEntry;
+        mapEntry[pair.first] = static_cast<int32_t>(pair.second);
+        ipcInterrupts.push_back(mapEntry);
+    }
+    return ipcInterrupts;
+}
+
+std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
+    const std::vector<std::map<AudioInterrupt, int32_t>> &from)
+{
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts;
+    for (const auto &map : from) {
+        for (const auto &entry : map) {
+            interrupts.push_back(std::make_pair(entry.first, static_cast<AudioFocuState>(entry.second)));
+        }
+    }
+    return interrupts;
+}
+
+std::string GetBundleNameByToken(const uint32_t &tokenIdNum)
+{
+    using namespace Security::AccessToken;
+    AUDIO_INFO_LOG("GetBundlNameByToken id %{public}u", tokenIdNum);
+    AccessTokenID tokenId = static_cast<AccessTokenID>(tokenIdNum);
+    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenType(tokenId);
+    CHECK_AND_RETURN_RET_LOG(tokenType == TOKEN_HAP || tokenType == TOKEN_NATIVE, "unknown",
+        "invalid token type %{public}u", tokenType);
+    if (tokenType == TOKEN_HAP) {
+        HapTokenInfoExt tokenInfo = {};
+        int32_t ret = AccessTokenKit::GetHapTokenInfoExtension(tokenId, tokenInfo);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, "unknown", "GetHapTokenInfoExtension failed, ret: %{public}d", ret);
+        return tokenInfo.baseInfo.bundleName;
+    } else {
+        NativeTokenInfo tokenInfo = {};
+        int32_t ret = AccessTokenKit::GetNativeTokenInfo(tokenId, tokenInfo);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, "unknown", "GetNativeTokenInfo failed, ret: %{public}d", ret);
+        return tokenInfo.processName;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

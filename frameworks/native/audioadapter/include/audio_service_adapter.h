@@ -69,6 +69,16 @@ public:
     virtual int32_t OpenAudioPort(std::string audioPortName, const AudioModuleInfo& audioModuleInfo) = 0;
 
     /**
+     * @brief Reload the audio port while loading the audio modules sink.
+     *
+     * @param audioPortName name of the audio modules to be loaded
+     * @param audioModuleInfo audio module info like rate, channel etc
+     * @return Returns module index if module loaded successfully; returns an error code
+     * defined in {@link audio_errors .h} otherwise.
+     */
+    virtual int32_t ReloadAudioPort(const std::string &audioPortName, const AudioModuleInfo& audioModuleInfo) = 0;
+
+    /**
      * @brief closes/unloads the audio modules loaded.
      *
      * @param audioHandleIndex the index of the loaded audio module
@@ -218,6 +228,13 @@ public:
      * @return int32_t the result, only supports proaudio for now.
      */
     virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) NOT_SUPPORT_RET
+
+    /**
+     * @brief Set SetAbsVolumeStateToEffect service enabled
+     *
+     * @return int32_t the result, only supports proaudio for now.
+     */
+    virtual int32_t SetAbsVolumeStateToEffect(const bool absVolumeState) NOT_SUPPORT_RET
     virtual ~AudioServiceAdapter();
 };
 } // namespace AudioStandard

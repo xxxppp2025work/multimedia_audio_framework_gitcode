@@ -18,7 +18,7 @@
 
 #include "audio_stream_collector.h"
 
-#include "audio_client_tracker_callback_proxy.h"
+#include "audio_client_tracker_callback_service.h"
 #include "audio_spatialization_service.h"
 #include "audio_volume_manager.h"
 
@@ -114,9 +114,7 @@ AudioStreamCollector::AudioStreamCollector() : audioAbilityMgr_
 {
     audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
     audioConcurrencyService_ = std::make_shared<AudioConcurrencyService>();
-    audioPolicyServerHandler_->AddConcurrencyEventDispatcher(audioConcurrencyService_);
     audioConcurrencyService_->Init();
-    audioConcurrencyService_->SetCallbackHandler(audioPolicyServerHandler_);
     AUDIO_INFO_LOG("AudioStreamCollector()");
 }
 
@@ -143,6 +141,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     rendererChangeInfo->clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
     rendererChangeInfo->sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
     rendererChangeInfo->callerPid = streamChangeInfo.audioRendererChangeInfo.callerPid;
+    rendererChangeInfo->clientPid = streamChangeInfo.audioRendererChangeInfo.clientPid;
     rendererChangeInfo->tokenId = static_cast<int32_t>(IPCSkeleton::GetCallingTokenID());
     rendererChangeInfo->rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
     rendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;
@@ -930,14 +929,15 @@ int32_t AudioStreamCollector::GetCurrentCapturerChangeInfos(
     return SUCCESS;
 }
 
-void AudioStreamCollector::RegisteredRendererTrackerClientDied(const int32_t uid)
+void AudioStreamCollector::RegisteredRendererTrackerClientDied(const int32_t uid, const int32_t pid)
 {
     int32_t sessionID = -1;
     auto audioRendererBegin = audioRendererChangeInfos_.begin();
     while (audioRendererBegin != audioRendererChangeInfos_.end()) {
         const auto &audioRendererChangeInfo = *audioRendererBegin;
         if (audioRendererChangeInfo == nullptr ||
-            (audioRendererChangeInfo->clientUID != uid && audioRendererChangeInfo->createrUID != uid)) {
+            (audioRendererChangeInfo->clientUID != uid && audioRendererChangeInfo->createrUID != uid) ||
+            audioRendererChangeInfo->clientPid != pid) {
             audioRendererBegin++;
             continue;
         }
@@ -986,13 +986,13 @@ void AudioStreamCollector::RegisteredCapturerTrackerClientDied(const int32_t uid
     }
 }
 
-void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
+void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid, int32_t pid)
 {
     AUDIO_INFO_LOG("TrackerClientDied:client:%{public}d Died", uid);
 
     // Send the release state event notification for all streams of died client to registered app
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    RegisteredRendererTrackerClientDied(uid);
+    RegisteredRendererTrackerClientDied(uid, pid);
     RegisteredCapturerTrackerClientDied(uid);
 }
 
@@ -1135,12 +1135,12 @@ void AudioStreamCollector::HandleKaraokeAppToBack(int32_t uid, int32_t pid)
     }
 }
 
-void AudioStreamCollector::HandleForegroundUnmute(int32_t uid)
+void AudioStreamCollector::HandleForegroundUnmute(int32_t uid, int32_t pid)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo != nullptr && changeInfo->clientUID == uid) {
-            AUDIO_INFO_LOG(" uid=%{public}d is foreground, Don't need mute", uid);
+        if (changeInfo != nullptr && changeInfo->clientUID == uid && changeInfo->clientPid == pid) {
+            AUDIO_INFO_LOG(" uid=%{public}d pid=%{public}d is foreground, Don't need mute", uid, pid);
             std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
             if (callback == nullptr) {
                 AUDIO_ERR_LOG(" callback failed sId:%{public}d", changeInfo->sessionId);
@@ -1217,11 +1217,11 @@ void AudioStreamCollector::HandleBackTaskStateChange(int32_t uid, bool hasSessio
     }
 }
 
-void AudioStreamCollector::HandleStartStreamMuteState(int32_t uid, bool mute, bool skipMedia)
+void AudioStreamCollector::HandleStartStreamMuteState(int32_t uid, int32_t pid, bool mute, bool skipMedia)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo != nullptr && changeInfo->clientUID == uid) {
+        if (changeInfo != nullptr && changeInfo->clientUID == uid && changeInfo->clientPid == pid) {
             AUDIO_INFO_LOG(" uid=%{public}d and state=%{public}d", uid, mute);
             if (skipMedia && std::count(BACKGROUND_MUTE_STREAM_USAGE.begin(), BACKGROUND_MUTE_STREAM_USAGE.end(),
                 changeInfo->rendererInfo.streamUsage) != 0) {
@@ -1463,23 +1463,6 @@ int32_t AudioStreamCollector::UpdateCapturerInfoMuteStatus(int32_t uid, bool mut
     }
 
     return SUCCESS;
-}
-
-int32_t AudioStreamCollector::SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
-{
-    return audioConcurrencyService_->SetAudioConcurrencyCallback(sessionID, object);
-}
-
-int32_t AudioStreamCollector::UnsetAudioConcurrencyCallback(const uint32_t sessionID)
-{
-    return audioConcurrencyService_->UnsetAudioConcurrencyCallback(sessionID);
-}
-
-int32_t AudioStreamCollector::ActivateAudioConcurrency(const AudioPipeType &pipeType)
-{
-    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    return audioConcurrencyService_->ActivateAudioConcurrency(pipeType,
-        audioRendererChangeInfos_, audioCapturerChangeInfos_);
 }
 
 std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction>& AudioStreamCollector::GetConcurrencyMap()
@@ -1767,18 +1750,26 @@ bool AudioStreamCollector::HasRunningRecognitionCapturerStream()
     return hasRunningRecognitionCapturerStream;
 }
 
-bool AudioStreamCollector::HasRunningNormalCapturerStream()
+bool AudioStreamCollector::HasRunningNormalCapturerStream(DeviceType type)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     // judge stream state is running
     bool hasStream = std::any_of(audioCapturerChangeInfos_.begin(), audioCapturerChangeInfos_.end(),
-        [](const auto &changeInfo) {
-            return ((changeInfo->capturerState == CAPTURER_RUNNING) &&
-                (changeInfo->capturerInfo.sourceType != SOURCE_TYPE_VOICE_RECOGNITION) &&
-                (changeInfo->capturerInfo.sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION));
+        [type](const auto &changeInfo) {
+            if ((changeInfo->capturerState == CAPTURER_RUNNING) &&
+                ((changeInfo->capturerInfo.sourceType == SOURCE_TYPE_MIC) ||
+                (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_WAKEUP) ||
+                (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_VOICE_MESSAGE) ||
+                (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_CAMCORDER) ||
+                (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_UNPROCESSED)) &&
+                ((type == DEVICE_TYPE_NONE) || (changeInfo->inputDeviceInfo.deviceType_ == type))) {
+                AUDIO_INFO_LOG("Running Normal Capturer stream : %{public}d with device %{public}d",
+                    changeInfo->sessionId, type);
+                return true;
+            }
+            return false;
         });
 
-        AUDIO_INFO_LOG("Has Running Normal Capturer stream : %{public}d", hasStream);
     return hasStream;
 }
 

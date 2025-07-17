@@ -21,7 +21,8 @@
 #include "audio_errors.h"
 #include "hpae_sink_input_node.h"
 #include "hpae_output_cluster.h"
-
+using namespace testing::ext;
+using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -84,7 +85,7 @@ void HpaeOutputClusterTest::SetUp()
 void HpaeOutputClusterTest::TearDown()
 {}
 
-TEST_F(HpaeOutputClusterTest, constructHpaeOutputClusterNode)
+HWTEST_F(HpaeOutputClusterTest, constructHpaeOutputClusterNode, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = NODE_ID;
@@ -93,6 +94,7 @@ TEST_F(HpaeOutputClusterTest, constructHpaeOutputClusterNode)
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
+    int32_t syncId = 123;
 
     std::shared_ptr<HpaeOutputCluster> hpaeoutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     EXPECT_EQ(hpaeoutputCluster->GetSampleRate(), nodeInfo.samplingRate);
@@ -112,9 +114,10 @@ TEST_F(HpaeOutputClusterTest, constructHpaeOutputClusterNode)
     hpaeoutputCluster->Connect(hpaeSinkInputNode1);
     EXPECT_EQ(hpaeSinkInputNode1.use_count(), NUM_TWO);
     EXPECT_EQ(hpaeoutputCluster->GetConverterNodeCount(), 1);
+    EXPECT_EQ(hpaeoutputCluster->SetSyncId(syncId), SUCCESS);
 }
 
-TEST_F(HpaeOutputClusterTest, testHpaeWriteDataOutSessionTest)
+HWTEST_F(HpaeOutputClusterTest, testHpaeWriteDataOutSessionTest, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     HpaeSinkInfo dummySinkInfo;

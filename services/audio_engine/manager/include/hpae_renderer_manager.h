@@ -43,6 +43,7 @@ public:
     int32_t DestroyStream(uint32_t sessionId) override;
 
     int32_t Start(uint32_t sessionId) override;
+    int32_t StartWithSyncId(uint32_t sessionId, int32_t syncId) override;
     int32_t Pause(uint32_t sessionId) override;
     int32_t Flush(uint32_t sessionId) override;
     int32_t Drain(uint32_t sessionId) override;
@@ -55,7 +56,7 @@ public:
     int32_t SetMute(bool isMute) override;
     void Process() override;
     void HandleMsg() override;
-    int32_t Init() override;
+    int32_t Init(bool isReload = false) override;
     int32_t DeInit(bool isMoveDefault = false) override;
     bool IsInit() override;
     bool IsRunning(void) override;
@@ -87,8 +88,8 @@ public:
     void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
-    void DumpSinkInfo() override;
-    int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
+    int32_t DumpSinkInfo() override;
+    int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload = false) override;
     int32_t SetOffloadPolicy(uint32_t sessionId, int32_t state) override;
     std::string GetDeviceHDFDumpInfo() override;
 
@@ -108,8 +109,10 @@ private:
     bool isSplitProcessorType(HpaeProcessorType sceneType);
     int32_t ConnectInputSession(uint32_t sessionId);
     int32_t DisConnectInputSession(uint32_t sessionId);
+    int32_t DeleteConnectInputProcessor(const std::shared_ptr<HpaeSinkInputNode> &sinkInputNode);
     void SetSessionState(uint32_t sessionId, HpaeSessionState renderState);
     void AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
+    void CreateEffectAndConnect(HpaeNodeInfo &nodeInfo, bool isConnect = true);
     void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t>& moveIds,
         MoveSessionType moveType);
     void UpdateProcessClusterConnection(uint32_t sessionId, int32_t effectMode);
@@ -121,7 +124,7 @@ private:
     bool SetSessionFade(uint32_t sessionId, IOperation operation);
     void CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
-    void InitManager();
+    void InitManager(bool isReload = false);
     void MoveStreamSync(uint32_t sessionId, const std::string &sinkName);
     void UpdateAppsUid();
     int32_t HandlePriPaPower(uint32_t sessionId);
@@ -131,6 +134,7 @@ private:
     void ReConnectNodeForCollaboration(uint32_t sessionID);
     void EnableCollaboration();
     void DisableCollaboration();
+    int32_t HandleSyncId(uint32_t sessionId, int32_t syncId);
 
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;

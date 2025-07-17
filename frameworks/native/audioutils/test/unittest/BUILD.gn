@@ -29,10 +29,12 @@ ohos_unittest("audio_utils_unit_test") {
   ]
 
   external_deps = [
+    "c_utils:utils",
     "googletest:gmock",
     "googletest:gtest",
     "hilog:libhilog",
     "init:libbegetutil",
+    "ipc:ipc_single",
   ]
 
   if (sonic_enable == true) {
@@ -65,9 +67,11 @@ ohos_unittest("audio_utils_plus_unit_test") {
   ]
 
   external_deps = [
+    "c_utils:utils",
     "googletest:gmock",
     "googletest:gtest",
     "init:libbegetutil",
+    "ipc:ipc_single",
   ]
 
   if (sonic_enable == true) {
@@ -96,7 +100,11 @@ ohos_unittest("audio_utils_pro_unit_test") {
     "-fno-access-control",
   ]
 
-  external_deps = [ "init:libbegetutil" ]
+  external_deps = [
+    "c_utils:utils",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+  ]
 
   if (sonic_enable == true) {
     cflags += [ "-DSONIC_ENABLE" ]
@@ -124,7 +132,11 @@ ohos_unittest("audio_speed_unit_test") {
     "-fno-access-control",
   ]
 
-  external_deps = [ "init:libbegetutil" ]
+  external_deps = [
+    "c_utils:utils",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+  ]
 
   if (sonic_enable == true) {
     cflags += [ "-DSONIC_ENABLE" ]

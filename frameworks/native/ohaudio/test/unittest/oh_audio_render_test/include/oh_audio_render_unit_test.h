@@ -30,9 +30,12 @@ constexpr int32_t SAMPLING_RATE = 48000; // 48000:SAMPLING_RATE value
 constexpr int32_t CHANNEL_COUNT = 2; // 2:CHANNEL_COUNT value
 constexpr int32_t LATENCY_MODE = 0;
 constexpr int32_t SAMPLE_FORMAT = 1;
+constexpr int32_t FORMAT_SIZE = 2; // s16le 2 bytes.
 constexpr int32_t FRAME_SIZE = 240; // 240:FRAME_SIZE value
 constexpr float MAX_AUDIO_VOLUME = 1.0f; // volume range is between 0 to 1.
 constexpr float MIN_AUDIO_VOLUME = 0.0f; // volume range is between 0 to 1.
+constexpr float VALID_LOUDNESS_GAIN = 10.0f;
+constexpr float INVALID_LOUDNESS_GAIN = 25.0f;
 constexpr int32_t DURATIONMS = 40; // 40:fade out latency ms
 constexpr int32_t CHANNEL_2 = 2;
 

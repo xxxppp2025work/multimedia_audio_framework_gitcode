@@ -85,10 +85,11 @@ int32_t OfflineStreamInServer::ProcessOfflineEffectChain(uint32_t inSize, uint32
     return effectChain_->Process(inSize, outSize);
 }
 
-void OfflineStreamInServer::ReleaseOfflineEffectChain()
+int32_t OfflineStreamInServer::ReleaseOfflineEffectChain()
 {
-    CHECK_AND_RETURN_LOG(effectChain_, "effectChain not init");
+    CHECK_AND_RETURN_RET_LOG(effectChain_, ERR_ILLEGAL_STATE, "effectChain not init");
     effectChain_->Release();
+    return SUCCESS;
 }
 #endif
 
@@ -97,9 +98,9 @@ int32_t OfflineStreamInServer::AllocSharedMemory(uint32_t inSize, uint32_t outSi
     CHECK_AND_RETURN_RET_LOG(inSize < MAXIMUM_BUFFER_SIZE && outSize < MAXIMUM_BUFFER_SIZE,
         ERR_INVALID_PARAM, "alloc %{public}u inBuf or %{public}u outBuf out of range", inSize, outSize);
     serverBufferIn_ = AudioSharedMemory::CreateFormLocal(inSize, OFFLINE_SERVER_BUFFER_IN);
-    CHECK_AND_RETURN_RET_LOG(serverBufferIn_ != nullptr, ERR_OPERATION_FAILED, "serverBufferIn_ mmap failed.");
+    CHECK_AND_RETURN_RET_LOG(serverBufferIn_ != nullptr, ERR_OPERATION_FAILED, "serverBufferIn_ mmap failed!");
     serverBufferOut_ = AudioSharedMemory::CreateFormLocal(outSize, OFFLINE_SERVER_BUFFER_OUT);
-    CHECK_AND_RETURN_RET_LOG(serverBufferOut_ != nullptr, ERR_OPERATION_FAILED, "serverBufferOut_ mmap failed.");
+    CHECK_AND_RETURN_RET_LOG(serverBufferOut_ != nullptr, ERR_OPERATION_FAILED, "serverBufferOut_ mmap failed!");
     return SUCCESS;
 }
 } // namespace AudioStandard

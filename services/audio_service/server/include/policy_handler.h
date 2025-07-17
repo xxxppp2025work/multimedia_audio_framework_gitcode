@@ -21,7 +21,8 @@
 #include <mutex>
 #include <vector>
 
-#include "i_policy_provider_ipc.h"
+#include "ipolicy_provider_ipc.h"
+#include "i_policy_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -67,8 +68,6 @@ public:
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName);
 
     int32_t GetMaxRendererInstances();
-
-    int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
 
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
 

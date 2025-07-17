@@ -25,9 +25,10 @@
 #include <cinttypes>
 #include "audio_service_log.h"
 #include "audio_errors.h"
-#include "ipc_stream.h"
+#include "iipc_stream.h"
 #include "message_parcel.h"
 #include "parcel.h"
+#include "audio_stream_enum.h"
 
 using namespace testing::ext;
 
@@ -757,17 +758,17 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_030, TestSize.Level1)
     AudioMode modeRet = AUDIO_MODE_RECORD;
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
 
-    auto ret = ipcStreamInServerRet.Release();
+    auto ret = ipcStreamInServerRet.Release(false);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 
     ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
-    ret = ipcStreamInServerRet.Release();
+    ret = ipcStreamInServerRet.Release(false);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 
     ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
     ipcStreamInServerRet.ConfigRenderer();
     EXPECT_NE(ipcStreamInServerRet.rendererInServer_, nullptr);
-    ret = ipcStreamInServerRet.Release();
+    ret = ipcStreamInServerRet.Release(false);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 
@@ -1238,7 +1239,7 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_053, TestSize.Level1)
 
     ipcStreamInServerRet.rendererInServer_ = nullptr;
     ipcStreamInServerRet.capturerInServer_ = nullptr;
-    auto ret = ipcStreamInServerRet.Release();
+    auto ret = ipcStreamInServerRet.Release(false);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 
@@ -1256,7 +1257,7 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_054, TestSize.Level1)
 
     ipcStreamInServerRet.rendererInServer_ = nullptr;
     ipcStreamInServerRet.capturerInServer_ = nullptr;
-    auto ret = ipcStreamInServerRet.Release();
+    auto ret = ipcStreamInServerRet.Release(false);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 
@@ -1610,6 +1611,55 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_072, TestSize.Level1)
     int64_t duration = 0;
     auto result = ipcStreamInServerRet.SetSourceDuration(duration);
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_073
+ * @tc.desc  : Test SetAudioHapticsSyncId interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_073, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+
+    int32_t syncId = 0;
+
+    ipcStreamInServerRet.rendererInServer_ = nullptr;
+    auto result = ipcStreamInServerRet.SetAudioHapticsSyncId(syncId);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
+    result = ipcStreamInServerRet.SetAudioHapticsSyncId(syncId);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+    result = ipcStreamInServerRet.SetAudioHapticsSyncId(syncId);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
+    result = ipcStreamInServerRet.SetAudioHapticsSyncId(syncId);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_074
+ * @tc.desc  : Test IpcStreamInServer interface when flag is DIRECT_PLAYBACK.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_074, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    configRet.rendererInfo.audioFlag = (AUDIO_OUTPUT_FLAG_HD|AUDIO_OUTPUT_FLAG_DIRECT);
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+
+    ipcStreamInServerRet.ConfigRenderer();
+    EXPECT_EQ(ipcStreamInServerRet.rendererInServer_->managerType_, DIRECT_PLAYBACK);
 }
 }
 }

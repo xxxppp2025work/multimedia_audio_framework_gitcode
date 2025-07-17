@@ -648,7 +648,6 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_028, TestSize.Level1)
 
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
     updatedDesc.deviceType_ = DEVICE_TYPE_DP;
-    audioDeviceStatus.audioDeviceCommon_.SetHasDpFlag(true);
 
     result = audioDeviceStatus.HandleLocalDeviceConnected(updatedDesc);
 
@@ -667,7 +666,6 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_029, TestSize.Level1)
 
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
     updatedDesc.deviceType_ = DEVICE_TYPE_DP;
-    audioDeviceStatus.audioDeviceCommon_.SetHasDpFlag(false);
 
     result = audioDeviceStatus.HandleLocalDeviceConnected(updatedDesc);
 
@@ -1119,6 +1117,11 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_052, TestSize.Level1)
 
     audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, isConnected);
     EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
+    desc.deviceType_ = DEVICE_TYPE_DP;
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, true);
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, true);
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, false);
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, false);
 }
 
 /**

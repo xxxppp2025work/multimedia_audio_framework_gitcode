@@ -312,29 +312,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateRoute_002, TestSize.Level1)
 }
 #ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
-* @tc.name  : Test LoadSplitModule.
-* @tc.number: LoadSplitModule_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, LoadSplitModule_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest LoadSplitModule_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    const std::string networkIdOne = "";
-    const std::string splitArgOne = "";
-    int32_t result = GetServerUtil::GetServerPtr()->audioPolicyService_.LoadSplitModule(
-        splitArgOne, networkIdOne);
-    EXPECT_EQ(ERR_INVALID_PARAM, result);
-
-    const std::string networkIdTwo = LOCAL_NETWORK_ID;
-    const std::string splitArgTwo = "11.22";
-    result = GetServerUtil::GetServerPtr()->audioPolicyService_.LoadSplitModule(
-        splitArgTwo, networkIdTwo);
-    EXPECT_EQ(ERR_INVALID_HANDLE, result);
-}
-
-/**
 * @tc.name  : Test UpdateDefaultOutputDeviceWhenStopping.
 * @tc.number: UpdateDefaultOutputDeviceWhenStopping_001
 * @tc.desc  : Test AudioPolicyService interfaces.
@@ -560,49 +537,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAudioEnhanceProperty_001, TestSize
 
     AudioEnhancePropertyArray propertyArrayTest;
     GetServerUtil::GetServerPtr()->GetAudioEnhanceProperty(propertyArrayTest);
-}
-
-/**
-* @tc.name  : Test SetAudioConcurrencyCallback.
-* @tc.number: SetAudioConcurrencyCallback_001
-* @tc.desc  : Test SetAudioConcurrencyCallback interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, SetAudioConcurrencyCallback_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest SetAudioConcurrencyCallback_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    sptr<IRemoteObject> objectSptrTest = nullptr;
-    GetServerUtil::GetServerPtr()->SetAudioConcurrencyCallback(TEST_SESSIONID, objectSptrTest);
-}
-
-/**
-* @tc.name  : Test UnsetAudioConcurrencyCallback.
-* @tc.number: UnsetAudioConcurrencyCallback_001
-* @tc.desc  : Test UnsetAudioConcurrencyCallback interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, UnsetAudioConcurrencyCallback_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnsetAudioConcurrencyCallback_001 start");
-    AudioPolicyServer* server = GetServerUtil::GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    sptr<IRemoteObject> objectSptrTest = nullptr;
-    server->SetAudioConcurrencyCallback(TEST_SESSIONID, objectSptrTest);
-    server->UnsetAudioConcurrencyCallback(TEST_SESSIONID);
-}
-
-/**
-* @tc.name  : Test ActivateAudioConcurrency.
-* @tc.number: ActivateAudioConcurrency_001
-* @tc.desc  : Test ActivateAudioConcurrency interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, ActivateAudioConcurrency_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ActivateAudioConcurrency_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    GetServerUtil::GetServerPtr()->ActivateAudioConcurrency(PIPE_TYPE_UNKNOWN);
 }
 
 /**
@@ -961,7 +895,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, NotifyCapturerRemoved_001, TestSize.L
 }
 
 /**
-* @tc.name  : Test ActivateConcurrencyFromServer.
+* @tc.name  : Test NotifyCapturerRemoved.
 * @tc.number: NotifyCapturerRemoved_002
 * @tc.desc  : Test AudioPolicyService interfaces.
 */
@@ -973,21 +907,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, NotifyCapturerRemoved_002, TestSize.L
     uint64_t sessionId = 0;
     server->audioPolicyService_.audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_EQ(SUCCESS, server->audioPolicyService_.NotifyCapturerRemoved(sessionId));
-}
-
-/**
-* @tc.name  : Test ActivateConcurrencyFromServer.
-* @tc.number: ActivateConcurrencyFromServer_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, ActivateConcurrencyFromServer_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ActivateConcurrencyFromServer_001 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-    int32_t result = server->audioPolicyService_.ActivateConcurrencyFromServer(pipeType);
-    EXPECT_EQ(SUCCESS, result);
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -1588,6 +1507,92 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioDeviceDescriptor_001, TestSize.L
     audioDeviceDescriptor->audioStreamInfo_.push_back(streamInfo);
     audioDeviceDescriptor->MarshallingToDeviceInfo(parcel, false, false, API_10);
     EXPECT_NE(audioDeviceDescriptor->GetDeviceStreamInfo().samplingRate.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: GetStreamPropInfo_001
+* @tc.desc  : Test GetStreamPropInfo
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfo_001, TestSize.Level1)
+{
+    uint32_t routerFlag = AUDIO_OUTPUT_FLAG_FAST;
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(manager.Init(true), true);
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    configData.Reorganize();
+
+    std::shared_ptr<PipeStreamPropInfo> propInfo = std::make_shared<PipeStreamPropInfo>();
+    propInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    propInfo->sampleRate_ = AudioSamplingRate::SAMPLE_RATE_48000;
+    propInfo->channels_ = AudioChannel::STEREO;
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = std::make_shared<AdapterPipeInfo>();
+    pipeInfo->streamPropInfos_ = {propInfo};
+
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
+    deviceInfo->supportPipeMap_.insert({routerFlag, pipeInfo});
+    std::set<std::shared_ptr<AdapterDeviceInfo>> deviceInfoSet = {deviceInfo};
+    auto devicekey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap.insert({devicekey, deviceInfoSet});
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->deviceRole_ = OUTPUT_DEVICE;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "LocalDevice";
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+
+    streamDesc->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    manager.GetStreamPropInfo(streamDesc, streamPropInfo);
+    streamDesc->routeFlag_ = routerFlag;
+    manager.GetStreamPropInfo(streamDesc, streamPropInfo);
+    EXPECT_EQ(streamPropInfo->channels_, AudioChannel::STEREO);
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: UpdateBasicStreamInfo_001
+* @tc.desc  : Test UpdateBasicStreamInfo
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateBasicStreamInfo_001, TestSize.Level1)
+{
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(manager.Init(true), true);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = nullptr;
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = nullptr;
+    AudioStreamInfo streamInfo;
+    manager.UpdateBasicStreamInfo(streamDesc, pipeInfo, streamInfo);
+
+    streamDesc = std::make_shared<AudioStreamDescriptor>();
+    manager.UpdateBasicStreamInfo(streamDesc, pipeInfo, streamInfo);
+
+    pipeInfo = std::make_shared<AdapterPipeInfo>();
+    manager.UpdateBasicStreamInfo(streamDesc, pipeInfo, streamInfo);
+
+    streamDesc->routeFlag_ = (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST);
+    manager.UpdateBasicStreamInfo(streamDesc, pipeInfo, streamInfo);
+    EXPECT_EQ(streamInfo.channels, STEREO);
+
+    streamDesc->routeFlag_ = (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_FAST);
+    manager.UpdateBasicStreamInfo(streamDesc, pipeInfo, streamInfo);
+    EXPECT_EQ(streamInfo.channels, STEREO);
+
+    streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    manager.UpdateBasicStreamInfo(streamDesc, pipeInfo, streamInfo);
+
+    std::shared_ptr<PipeStreamPropInfo> propInfo = std::make_shared<PipeStreamPropInfo>();
+    propInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    propInfo->sampleRate_ = AudioSamplingRate::SAMPLE_RATE_48000;
+    propInfo->channels_ = AudioChannel::STEREO;
+    pipeInfo->streamPropInfos_ = {propInfo};
+    manager.UpdateBasicStreamInfo(streamDesc, pipeInfo, streamInfo);
+
+    EXPECT_EQ(streamInfo.format, AudioSampleFormat::SAMPLE_S16LE);
+    EXPECT_EQ(streamInfo.channels, STEREO);
 }
 } // namespace AudioStandard
 } // namespace OHOS

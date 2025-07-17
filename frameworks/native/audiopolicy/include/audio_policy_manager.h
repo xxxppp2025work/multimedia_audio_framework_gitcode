@@ -18,28 +18,25 @@
 
 #include <cstdint>
 #include <memory>
-#include "audio_client_tracker_callback_stub.h"
+#include "audio_client_tracker_callback_service.h"
+#include "audio_client_tracker_callback_listener.h"
 #include "audio_effect.h"
-#include "audio_concurrency_callback.h"
-#include "audio_concurrency_state_listener_stub.h"
 #include "audio_interrupt_callback.h"
-#include "audio_policy_base.h"
-#include "audio_policy_manager_listener_stub.h"
+#include "iaudio_policy.h"
+#include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_policy_client_stub_impl.h"
 #include "audio_routing_manager.h"
-#include "audio_routing_manager_listener_stub.h"
-#include "audio_anahs_manager_listener_stub.h"
+#include "audio_routing_manager_listener.h"
+#include "audio_anahs_manager_listener.h"
 #include "audio_policy_interface.h"
 #include "audio_system_manager.h"
-#include "i_standard_client_tracker.h"
+#include "istandard_client_tracker.h"
 #include "audio_policy_log.h"
 #include "microphone_descriptor.h"
 #include "audio_spatialization_manager.h"
-#include "audio_spatialization_state_change_listener_stub.h"
-#include "i_standard_spatialization_state_change_listener.h"
 #include "audio_combine_denoising_manager.h"
 #include "audio_stream_descriptor.h"
-#include "sle_audio_operation_callback_stub.h"
+#include "sle_audio_operation_callback_stub_impl.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -55,7 +52,7 @@ struct CallbackChangeInfo {
 class AudioPolicyManager {
 public:
     static AudioPolicyManager& GetInstance();
-    static const sptr<IAudioPolicy> GetAudioPolicyManagerProxy();
+    static const sptr<IAudioPolicy> GetAudioPolicyManagerProxy(bool block = true);
 
     int32_t GetMaxVolumeLevel(AudioVolumeType volumeType);
 
@@ -249,24 +246,24 @@ public:
 
     int32_t SetAudioSessionScene(const AudioSessionScene audioSessionScene);
 
-    int32_t SetAudioSessionStateChangedCallback(
+    int32_t SetAudioSessionStateChangeCallback(
         const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback);
 
-    int32_t UnsetAudioSessionStateChangedCallback();
+    int32_t UnsetAudioSessionStateChangeCallback();
 
-    int32_t UnsetAudioSessionStateChangedCallback(
+    int32_t UnsetAudioSessionStateChangeCallback(
         const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback);
 
-    int32_t GetCurrentOutputDevices(AudioDeviceDescriptor &deviceInfo) const;
+    int32_t GetDefaultOutputDevice(DeviceType &deviceType);
 
     int32_t SetDefaultOutputDevice(DeviceType deviceType);
 
-    int32_t SetAudioSessionCurrentDeviceChangedCallback(
+    int32_t SetAudioSessionCurrentDeviceChangeCallback(
         const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
 
-    int32_t UnsetAudioSessionCurrentDeviceChangedCallback();
+    int32_t UnsetAudioSessionCurrentDeviceChangeCallback();
 
-    int32_t UnsetAudioSessionCurrentDeviceChangedCallback(
+    int32_t UnsetAudioSessionCurrentDeviceChangeCallback(
         const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
 
     int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
@@ -278,8 +275,6 @@ public:
         const std::shared_ptr<SystemVolumeChangeCallback> &callback);
 
     int32_t UnsetSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &callback);
-
-    int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
 
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo);
 
@@ -509,6 +504,8 @@ public:
 
     int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream);
 
+    void SetZoneDeviceVisible(bool visible);
+
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId);
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
@@ -573,13 +570,6 @@ public:
 
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
 
-    int32_t SetAudioConcurrencyCallback(const uint32_t sessionID,
-        const std::shared_ptr<AudioConcurrencyCallback> &callback);
-
-    int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
-
-    int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
-
     void ResetClientTrackerStubMap();
 
     void RemoveClientTrackerStub(int32_t sessionId);
@@ -611,6 +601,8 @@ public:
     int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze);
 
     int32_t ResetAllProxy();
+
+    int32_t NotifyProcessBackgroundState(const int32_t uid, const int32_t pid);
 
     static void RegisterServerDiedCallBack(AudioServerDiedCallBack func);
 
@@ -670,12 +662,14 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled);
     bool IsCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
+    int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
+
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}
 
     int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);
-    int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
+    int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable, bool block = true);
     int32_t SetCallbackStreamInfo(const CallbackChange &callbackChange);
     int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo);
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo);
@@ -690,7 +684,7 @@ private:
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
     static std::weak_ptr<AudioCapturerPolicyServiceDiedCallback> capturerCB_;
     static std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> audioStreamCBMap_;
-    static std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackStub>> clientTrackerStubMap_;
+    static std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackService>> clientTrackerStubMap_;
 
     bool isAudioRendererEventListenerRegistered = false;
     bool isAudioCapturerEventListenerRegistered = false;

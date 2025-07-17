@@ -17,7 +17,6 @@
 #endif
 
 #include "audio_errors.h"
-#include "audio_manager_proxy.h"
 #include "audio_policy_manager.h"
 #include "audio_common_log.h"
 #include "iservice_registry.h"
@@ -122,11 +121,6 @@ int32_t AudioRoutingManager::SetAudioDeviceRefinerCallback(const std::shared_ptr
 int32_t AudioRoutingManager::UnsetAudioDeviceRefinerCallback()
 {
     return AudioPolicyManager::GetInstance().UnsetAudioDeviceRefinerCallback();
-}
-
-int32_t AudioRoutingManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
-{
-    return AudioPolicyManager::GetInstance().TriggerFetchDevice(reason);
 }
 
 int32_t AudioRoutingManager::SetPreferredDevice(const PreferredType preferredType,

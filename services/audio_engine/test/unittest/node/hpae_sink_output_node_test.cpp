@@ -20,6 +20,9 @@
 #include "test_case_common.h"
 #include "audio_errors.h"
 
+using namespace testing::ext;
+using namespace testing;
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -47,7 +50,7 @@ static void PrepareNodeInfo(HpaeNodeInfo &nodeInfo)
     nodeInfo.format = SAMPLE_F32LE;
 }
 
-TEST_F(HpaeSinkOutputNodeTest, constructHpaeSinkOutputNode)
+HWTEST_F(HpaeSinkOutputNodeTest, constructHpaeSinkOutputNode, TestSize.Level0)
 {
     uint32_t sessionId = 10001;
     HpaeNodeInfo nodeInfo;
@@ -79,7 +82,7 @@ static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
     return 0;
 }
 
-TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNode)
+HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNode, TestSize.Level0)
 {
     size_t usedCount = 2;
     HpaeNodeInfo nodeInfo;
@@ -123,7 +126,7 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNode)
     hpaeSinkOutputNode->RenderSinkDeInit();
 }
 
-TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNodeRemote)
+HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNodeRemote, TestSize.Level0)
 {
     size_t usedCount = 2;
     std::string deviceClass = "remote";
@@ -169,7 +172,7 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNodeRemote)
     hpaeSinkOutputNode->RenderSinkDeInit();
 }
 
-TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandlePaPower)
+HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandlePaPower, TestSize.Level0)
 {
     std::string deviceClass = "primary";
     std::string deviceNetId = "LocalDevice";
@@ -215,7 +218,7 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandlePaPower)
 }
 
 #ifdef ENABLE_HOOK_PCM
-TEST_F(HpaeSinkOutputNodeTest, testDoProcessAfterResetPcmDumper)
+HWTEST_F(HpaeSinkOutputNodeTest, testDoProcessAfterResetPcmDumper, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     std::string deviceClass = "remote";
@@ -250,6 +253,52 @@ TEST_F(HpaeSinkOutputNodeTest, testDoProcessAfterResetPcmDumper)
     hpaeSinkOutputNode->RenderSinkDeInit();
 }
 #endif
+
+HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandleHapticParam, TestSize.Level0)
+{
+    size_t usedCount = 2;
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    std::shared_ptr<HpaeSinkOutputNode> hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeSinkOutputNode->Connect(hpaeSinkInputNode);
+    std::shared_ptr<WriteIncDataCb> writeIncDataCb = std::make_shared<WriteIncDataCb>(SAMPLE_F32LE);
+    hpaeSinkInputNode->RegisterWriteCallback(writeIncDataCb);
+    std::string deviceClass = "file_io";
+    std::string deviceNetId = "LocalDevice";
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_NEW, true);
+    IAudioSinkAttr attr;
+    attr.adapterName = "file_io";
+    attr.openMicSpeaker = 0;
+    attr.format = nodeInfo.format;
+    attr.sampleRate = nodeInfo.samplingRate;
+    attr.channel = nodeInfo.channels;
+    attr.volume = 0.0f;
+    attr.filePath = ROOT_PATH;
+    attr.deviceNetworkId = deviceNetId.c_str();
+    attr.deviceType = 0;
+    attr.channelLayout = 0;
+    attr.audioStreamFlag = 0;
+    int32_t syncId = 123;
+
+    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkInit(attr), SUCCESS);
+    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_IDLE, true);
+    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStart(), SUCCESS);
+    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_RUNNING, true);
+    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkPause(), SUCCESS);
+    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_SUSPENDED, true);
+    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStop(), SUCCESS);
+    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_SUSPENDED, true);
+    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkSetSyncId(syncId), SUCCESS);
+    hpaeSinkOutputNode->DoProcess();
+    TestRendererRenderFrame(hpaeSinkOutputNode->GetRenderFrameData(),
+        nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
+    EXPECT_EQ(hpaeSinkInputNode.use_count(), usedCount);
+    hpaeSinkOutputNode->DisConnect(hpaeSinkInputNode);
+    EXPECT_EQ(hpaeSinkInputNode.use_count(), 1);
+    hpaeSinkOutputNode->RenderSinkDeInit();
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

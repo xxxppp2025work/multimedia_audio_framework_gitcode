@@ -19,7 +19,6 @@
 #include "audio_endpoint.h"
 #include "audio_endpoint_private.h"
 
-#include "xcollie/watchdog.h"
 
 #include "audio_errors.h"
 #include "audio_service_log.h"
@@ -56,8 +55,6 @@ namespace {
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
     static const int32_t START_DEVICE_TIMEOUT = 10; // 10s
-    constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
-    constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
     static const int32_t ONE_MINUTE = 60;
     const int32_t DUP_COMMON_LEN = 40; // 40 -> 40ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
@@ -78,16 +75,11 @@ std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, 
     const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo)
 {
     std::shared_ptr<AudioEndpoint> audioEndpoint = nullptr;
-    if (type == EndpointType::TYPE_INDEPENDENT && deviceInfo.deviceRole_ != INPUT_DEVICE &&
-         deviceInfo.networkId_ == LOCAL_NETWORK_ID) {
-        audioEndpoint = std::make_shared<AudioEndpointSeparate>(type, id, clientConfig.streamType);
-    } else {
-        audioEndpoint = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
-    }
+    audioEndpoint = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
     if (!audioEndpoint->Config(deviceInfo)) {
-        AUDIO_ERR_LOG("Config AudioEndpoint failed.");
+        AUDIO_ERR_LOG("Config AudioEndpoint failed!");
         audioEndpoint = nullptr;
     }
     return audioEndpoint;
@@ -124,8 +116,7 @@ int32_t AudioEndpointInner::SetVolume(AudioStreamType streamType, float volume)
 MockCallbacks::MockCallbacks(uint32_t streamIndex) : streamIndex_(streamIndex)
 {
     AUDIO_INFO_LOG("DupStream %{public}u create MockCallbacks", streamIndex_);
-    int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1) {
+    if (GetEngineFlag() == 1) {
         dumpDupOutFileName_ = std::to_string(streamIndex_) + "_endpoint_dup_out_" + ".pcm";
         DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpDupOutFileName_, &dumpDupOut_);
     }
@@ -133,8 +124,7 @@ MockCallbacks::MockCallbacks(uint32_t streamIndex) : streamIndex_(streamIndex)
 
 MockCallbacks::~MockCallbacks()
 {
-    int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1) {
+    if (GetEngineFlag() == 1) {
         DumpFileUtil::CloseDumpFile(&dumpDupOut_);
     }
 }
@@ -153,8 +143,7 @@ int32_t MockCallbacks::OnWriteData(size_t length)
 int32_t MockCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
 {
     Trace trace("DupStream::OnWriteData length " + std::to_string(requestDataLen));
-    int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1 && dupRingBuffer_ != nullptr) {
+    if (GetEngineFlag() == 1 && dupRingBuffer_ != nullptr) {
         OptResult result = dupRingBuffer_->GetReadableSize();
         CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
             "dupBuffer get readable size failed, size is:%{public}zu", result.size);
@@ -163,7 +152,7 @@ int32_t MockCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
             result.size, requestDataLen);
         AUDIO_DEBUG_LOG("requstDataLen is:%{public}zu readSize is:%{public}zu", requestDataLen, result.size);
         result = dupRingBuffer_->Dequeue({reinterpret_cast<uint8_t *>(inputData), requestDataLen});
-        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "dupBuffer dequeue failed");\
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "dupBuffer dequeue failed!");\
         DumpFileUtil::WriteDumpFile(dumpDupOut_, static_cast<void *>(inputData), requestDataLen);
     }
     return SUCCESS;
@@ -243,11 +232,11 @@ int32_t AudioEndpointInner::InitDupStream(int32_t innerCapId)
 
     AUDIO_INFO_LOG("Dup Renderer %{public}d with Endpoint status: %{public}s", dupStreamIndex,
         GetStatusStr(endpointStatus_).c_str());
-    CHECK_AND_RETURN_RET_LOG(endpointStatus_ != INVALID, ERR_ILLEGAL_STATE, "Endpoint is invalid");
+    CHECK_AND_RETURN_RET_LOG(endpointStatus_ != INVALID, ERR_ILLEGAL_STATE, "Endpoint is invalid!");
 
     // buffer init
     dupBufferSize_ = dstSpanSizeInframe_ * dstByteSizePerFrame_; // each
-    CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_ != nullptr, ERR_OPERATION_FAILED, "DstAudioBuffer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_ != nullptr, ERR_OPERATION_FAILED, "DstAudioBuffer is nullptr!");
     CHECK_AND_RETURN_RET_LOG(dupBufferSize_ < dstAudioBuffer_->GetDataSize(), ERR_OPERATION_FAILED, "Init buffer fail");
     dupBuffer_ = std::make_unique<uint8_t []>(dupBufferSize_);
     ret = memset_s(reinterpret_cast<void *>(dupBuffer_.get()), dupBufferSize_, 0, dupBufferSize_);
@@ -293,14 +282,9 @@ int32_t AudioEndpointInner::InitDupBuffer(AudioProcessConfig processConfig, int3
 
 int32_t AudioEndpointInner::EnableFastInnerCap(int32_t innerCapId)
 {
-    if (fastCaptureInfos_.count(innerCapId) && fastCaptureInfos_[innerCapId].isInnerCapEnabled) {
-        AUDIO_INFO_LOG("InnerCap is already enabled");
-        return SUCCESS;
-    }
-
     CHECK_AND_RETURN_RET_LOG(deviceInfo_.deviceRole_ == OUTPUT_DEVICE, ERR_INVALID_OPERATION, "Not output device!");
     int32_t ret = InitDupStream(innerCapId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed!");
     return SUCCESS;
 }
 
@@ -341,15 +325,14 @@ int32_t AudioEndpointInner::HandleDisableFastCap(CaptureInfo &captureInfo)
     }
     if (captureInfo.dupStream == nullptr) {
         captureInfo.isInnerCapEnabled = false;
-        AUDIO_INFO_LOG("dupStream is nullptr");
+        AUDIO_INFO_LOG("dupStream is nullptr.");
         return SUCCESS;
     }
     captureInfo.isInnerCapEnabled = false;
     AUDIO_INFO_LOG("Disable dup renderer %{public}d with Endpoint status: %{public}s",
         captureInfo.dupStream->GetStreamIndex(), GetStatusStr(endpointStatus_).c_str());
 
-    int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1) {
+    if (GetEngineFlag() == 1) {
         uint32_t dupStreamIndex = captureInfo.dupStream->GetStreamIndex();
         if (AudioVolume::GetInstance() != nullptr) {
         AudioVolume::GetInstance()->RemoveStreamVolume(dupStreamIndex);
@@ -583,7 +566,9 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo)
 
     Volume vol = {true, 1.0f, 0};
     DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
-    if (PolicyHandler::GetInstance().GetSharedVolume(STREAM_VOICE_CALL, deviceType, vol)) {
+    if ((clientConfig_.streamType == STREAM_VOICE_COMMUNICATION || clientConfig_.streamType == STREAM_VOICE_CALL) &&
+        endpointType_ == TYPE_VOIP_MMAP) {
+        PolicyHandler::GetInstance().GetSharedVolume(STREAM_VOICE_CALL, deviceType, vol);
         sink->SetVolume(vol.volumeFloat, vol.volumeFloat);
         AUDIO_INFO_LOG("Init Volume %{public}f with Device %{public}d", vol.volumeFloat, deviceType);
     } else {
@@ -1058,6 +1043,8 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
     processBuffer->SetSessionId(processStream->GetAudioSessionId());
     bool needEndpointRunning = processBuffer->GetStreamStatus()->load() == STREAM_RUNNING;
 
+    AddEndpointStreamVolume(processStream);
+
     if (endpointStatus_ == STARTING) {
         AUDIO_INFO_LOG("LinkProcessStream wait start begin.");
         std::unique_lock<std::mutex> lock(loopThreadLock_);
@@ -1105,6 +1092,20 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
     return SUCCESS;
 }
 
+void AudioEndpointInner::AddEndpointStreamVolume(IAudioProcessStream *processStream)
+{
+    Trace trace("AudioEndpointInner::AddEndpointStreamVolume");
+    bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processStream->GetAppInfo().appUid);
+    StreamVolumeParams streamVolumeParams = { processStream->GetAudioSessionId(),
+        processStream->GetAudioProcessConfig().streamType,
+        processStream->GetAudioProcessConfig().rendererInfo.streamUsage,
+        processStream->GetAppInfo().appUid, processStream->GetAppInfo().appPid, isSystemApp,
+        processStream->GetAudioProcessConfig().rendererInfo.volumeMode,
+        processStream->GetAudioProcessConfig().rendererInfo.isVirtualKeyboard };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
+    AUDIO_INFO_LOG("when stream start, add streamVolume for this stream");
+}
+
 void AudioEndpointInner::LinkProcessStreamExt(IAudioProcessStream *processStream,
     const std::shared_ptr<OHAudioBufferBase>& processBuffer)
 {
@@ -1118,6 +1119,7 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
     CHECK_AND_RETURN_RET_LOG(processStream != nullptr, ERR_INVALID_PARAM, "IAudioProcessStream is null");
     std::shared_ptr<OHAudioBufferBase> processBuffer = processStream->GetStreamBuffer();
     CHECK_AND_RETURN_RET_LOG(processBuffer != nullptr, ERR_INVALID_PARAM, "processBuffer is null");
+    AudioVolume::GetInstance()->RemoveStreamVolume(processStream->GetAudioSessionId());
 
     bool isFind = false;
     std::lock_guard<std::mutex> lock(listLock_);
@@ -1219,7 +1221,6 @@ void AudioEndpointInner::WaitAllProcessReady(uint64_t curWritePos)
 void AudioEndpointInner::MixToDupStream(const std::vector<AudioStreamData> &srcDataList, int32_t innerCapId)
 {
     Trace trace("AudioEndpointInner::MixToDupStream");
-    std::lock_guard<std::mutex> lock(dupMutex_);
     CHECK_AND_RETURN_LOG(fastCaptureInfos_.count(innerCapId) && fastCaptureInfos_[innerCapId].dupStream != nullptr,
         "captureInfo is errro");
     CHECK_AND_RETURN_LOG(dupBuffer_ != nullptr, "Buffer is not ready");
@@ -1243,9 +1244,8 @@ void AudioEndpointInner::MixToDupStream(const std::vector<AudioStreamData> &srcD
     dstStream.bufferDesc = temp;
     FormatConverter::DataAccumulationFromVolume(tempList, dstStream);
 
-    int32_t engineFlag = GetEngineFlag();
     int32_t ret;
-    if (engineFlag == 1) {
+    if (GetEngineFlag() == 1) {
         WriteDupBufferInner(temp, innerCapId);
     } else {
         ret = fastCaptureInfos_[innerCapId].dupStream->EnqueueBuffer(temp);
@@ -1330,15 +1330,21 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
     std::function<void()> &moveClientsIndex)
 {
     isExistLoopback_ = false;
+    audioHapticsSyncId_ = 0;
     std::vector<std::function<void()>> moveClientIndexVector;
     for (size_t i = 0; i < processBufferList_.size(); i++) {
-        CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr, "this processBuffer is nullptr");
+        CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr, "this processBuffer is nullptr!");
         uint64_t curRead = processBufferList_[i]->GetCurReadFrame();
         Trace trace("AudioEndpoint::ReadProcessData->" + std::to_string(curRead));
-        CHECK_AND_CONTINUE_LOG(processList_[i] != nullptr, "this process is null");
+        CHECK_AND_CONTINUE_LOG(processList_[i] != nullptr, "this process is nullptr!");
         auto processConfig = processList_[i]->GetAudioProcessConfig();
         if (processConfig.rendererInfo.isLoopback) {
             isExistLoopback_ = true;
+        }
+        // If there is a sync ID in the process and it is the current first frame.
+        // then the sync ID needs to be recorded.
+        if (processList_[i]->GetAudioHapticsSyncId() > 0 && curRead == 0) {
+            audioHapticsSyncId_ = processList_[i]->GetAudioHapticsSyncId();
         }
         std::function<void()> moveClientIndexFunc;
         GetAllReadyProcessDataSub(i, audioDataList, curRead, moveClientIndexFunc);
@@ -1363,8 +1369,8 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
     bool getVolumeRet = PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
-    int32_t doNotDisturbStatusVolume = AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(streamType,
-        clientConfig_.appInfo.appUid, processList_[i]->GetAudioSessionId());
+    int32_t doNotDisturbStatusVolume = static_cast<int32_t>(AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(
+        streamType, clientConfig_.appInfo.appUid, processList_[i]->GetAudioSessionId()));
     float appVolume = AudioVolume::GetInstance()->GetAppVolume(clientConfig_.appInfo.appUid,
         clientConfig_.rendererInfo.volumeMode);
     int32_t volumeFromOhaudioBuffer = processBufferList_[i]->GetStreamVolume() *
@@ -1373,7 +1379,8 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
 
     VolumeResult result;
     if (deviceInfo_.networkId_ != LOCAL_NETWORK_ID || (deviceInfo_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP
-        && volumeType == STREAM_MUSIC && PolicyHandler::GetInstance().IsAbsVolumeSupported()) || !getVolumeRet) {
+        && volumeType == STREAM_MUSIC && PolicyHandler::GetInstance().IsAbsVolumeSupported()) || !getVolumeRet ||
+        IsNearlinkAbsVolSupportStream(deviceInfo_.deviceType_, volumeType)) {
         result.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume);
     } else if (clientConfig_.rendererInfo.isVirtualKeyboard) {
         result.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume);
@@ -1420,6 +1427,14 @@ void AudioEndpointInner::SetupMoveCallback(size_t i, uint64_t curRead, const Rin
     };
 }
 
+bool AudioEndpointInner::IsNearlinkAbsVolSupportStream(DeviceType deviceType, AudioVolumeType volumeType)
+{
+    bool isNearlink = deviceType == DEVICE_TYPE_NEARLINK;
+    bool isMusicStream = volumeType == STREAM_MUSIC;
+    bool isVoiceCallStream = volumeType == STREAM_VOICE_CALL;
+    return isNearlink && (isMusicStream || isVoiceCallStream);
+}
+
 void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
     std::vector<AudioStreamData> &audioDataList, uint64_t curRead, std::function<void()> &moveClientIndex)
 {
@@ -1439,7 +1454,7 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
     RingBufferWrapper ringBuffer;
     if (!PrepareRingBuffer(i, curRead, ringBuffer)) {
         auto tempProcess = processList_[i];
-        CHECK_AND_RETURN_LOG(tempProcess, "tempProcess is nullptr");
+        CHECK_AND_RETURN_LOG(tempProcess, "tempProcess is nullptr!");
         if (tempProcess->GetStreamStatus() == STREAM_RUNNING) {
             tempProcess->AddNoDataFrameSize();
         }
@@ -1458,7 +1473,7 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
         ringBufferDescForCotinueData.dataLength = ringBuffer.dataLength;
         ringBufferDescForCotinueData.basicBufferDescs[0].buffer = processTmpBufferList_[i].data();
         ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = ringBuffer.dataLength;
-        ringBufferDescForCotinueData.MemCopyFrom(ringBuffer);
+        ringBufferDescForCotinueData.CopyInputBufferValueToCurBuffer(ringBuffer);
         streamData.bufferDesc.buffer = processTmpBufferList_[i].data();
         streamData.bufferDesc.bufLength = ringBuffer.dataLength;
         streamData.bufferDesc.dataLength = ringBuffer.dataLength;
@@ -1492,6 +1507,7 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos, std::
 
     std::vector<AudioStreamData> audioDataList;
     GetAllReadyProcessData(audioDataList, moveClientIndex);
+    CheckAudioHapticsSync(curWritePos);
 
     AudioStreamData dstStreamData;
     dstStreamData.streamInfo = dstStreamInfo_;
@@ -1517,13 +1533,14 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos, std::
     }
     AdapterType type = endpointType_ == TYPE_VOIP_MMAP ? ADAPTER_TYPE_VOIP_FAST : ADAPTER_TYPE_FAST;
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(type, ClockTime::GetCurNano());
-
-    for (auto &capture: fastCaptureInfos_) {
-        if (capture.second.isInnerCapEnabled) {
-            ProcessToDupStream(audioDataList, dstStreamData, capture.first);
+    {
+        std::lock_guard<std::mutex> captureLock(dupMutex_);
+        for (auto &capture: fastCaptureInfos_) {
+            if (capture.second.isInnerCapEnabled) {
+                ProcessToDupStream(audioDataList, dstStreamData, capture.first);
+            }
         }
     }
-
     if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
             dstStreamData.bufferDesc.bufLength);
@@ -1576,7 +1593,11 @@ void AudioEndpointInner::ProcessToDupStream(const std::vector<AudioStreamData> &
 
             dstStreamData.bufferDesc = temp;
             HandleRendererDataParams(audioDataList[0], dstStreamData, false);
-            fastCaptureInfos_[innerCapId].dupStream->EnqueueBuffer(temp);
+            if (GetEngineFlag() == 1) {
+                WriteDupBufferInner(temp, innerCapId);
+            } else {
+                fastCaptureInfos_[innerCapId].dupStream->EnqueueBuffer(temp);
+            }
         }
     } else {
         MixToDupStream(audioDataList, innerCapId);
@@ -1884,7 +1905,8 @@ int32_t AudioEndpointInner::WriteToSpecialProcBuf(const std::shared_ptr<OHAudioB
 
 int32_t AudioEndpointInner::WriteToRingBuffer(RingBufferWrapper &writeBuf, const BufferDesc &buffer)
 {
-    return writeBuf.MemCopyFrom(RingBufferWrapper{
+    CHECK_AND_RETURN_RET_LOG(buffer.buffer != nullptr && buffer.bufLength > 0, ERR_WRITE_FAILED, "failed");
+    return writeBuf.CopyInputBufferValueToCurBuffer(RingBufferWrapper{
         .basicBufferDescs = {{
             {.buffer = buffer.buffer, .bufLength = buffer.bufLength},
             {.buffer = nullptr, .bufLength = 0}}},
@@ -1983,32 +2005,6 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
     return SUCCESS;
 }
 
-void EndPointRemoveWatchdog(const std::string &message, const std::string &endPointName)
-{
-    std::string watchDogMessage = message;
-    watchDogMessage += endPointName;
-    HiviewDFX::Watchdog::GetInstance().RemovePeriodicalTask(watchDogMessage);
-    AUDIO_INFO_LOG("%{public}s end %{public}s", watchDogMessage.c_str(), endPointName.c_str());
-}
-
-void AudioEndpointInner::WatchingRecordEndpointWorkLoopFuc()
-{
-    recordEndpointWorkLoopFucThreadStatus_.store(true);
-    auto taskFunc = [this]() {
-        if (recordEndpointWorkLoopFucThreadStatus_.load()) {
-            AUDIO_DEBUG_LOG("Set recordEndpointWorkLoopFucThreadStatus_ to false");
-            recordEndpointWorkLoopFucThreadStatus_.store(false);
-        } else {
-            AUDIO_INFO_LOG("watchdog happened");
-        }
-    };
-    std::string endPointName = GetEndpointName();
-    std::string watchDogMessage = "WatchingRecordEndpointWorkLoopFuc" + endPointName;
-    AUDIO_INFO_LOG("watchdog start");
-    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask(watchDogMessage, taskFunc,
-        WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
-}
-
 void AudioEndpointInner::RecordEndpointWorkLoopFuc()
 {
     SetThreadQosLevel();
@@ -2016,11 +2012,8 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
     uint64_t curReadPos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
     AUDIO_INFO_LOG("Record endpoint work loop fuc start.");
-    // add watchdog
-    WatchingRecordEndpointWorkLoopFuc();
     while (isInited_.load()) {
         if (!KeepWorkloopRunning()) {
-            recordEndpointWorkLoopFucThreadStatus_.store(true);
             continue;
         }
         threadStatus_ = INRUNNING;
@@ -2028,7 +2021,6 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
             RecordReSyncPosition();
             wakeUpTime = ClockTime::GetCurNano();
             needReSyncPosition_ = false;
-            recordEndpointWorkLoopFucThreadStatus_.store(true);
             continue;
         }
         curTime = ClockTime::GetCurNano();
@@ -2051,29 +2043,8 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
         threadStatus_ = SLEEPING;
         CheckWakeUpTime(wakeUpTime);
         ClockTime::AbsoluteSleep(wakeUpTime);
-        recordEndpointWorkLoopFucThreadStatus_.store(true);
     }
     ResetThreadQosLevel();
-    // stop watchdog
-    EndPointRemoveWatchdog("WatchingRecordEndpointWorkLoopFuc", GetEndpointName());
-}
-
-void AudioEndpointInner::WatchingEndpointWorkLoopFuc()
-{
-    endpointWorkLoopFucThreadStatus_.store(true);
-    auto taskFunc = [this]() {
-        if (endpointWorkLoopFucThreadStatus_.load()) {
-            AUDIO_DEBUG_LOG("Set endpointWorkLoopFucThreadStatus_ to false");
-            endpointWorkLoopFucThreadStatus_.store(false);
-        } else {
-            AUDIO_INFO_LOG("watchdog happened");
-        }
-    };
-    std::string endPointName = GetEndpointName();
-    std::string watchDogMessage = "WatchingEndpointWorkLoopFuc" + endPointName;
-    AUDIO_INFO_LOG("watchDog start");
-    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask(watchDogMessage, taskFunc,
-        WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
 }
 
 void AudioEndpointInner::BindCore()
@@ -2131,11 +2102,8 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
     uint64_t curWritePos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
     AUDIO_INFO_LOG("Endpoint work loop fuc start");
-    // add watchdog
-    WatchingEndpointWorkLoopFuc();
     while (isInited_.load()) {
         if (!KeepWorkloopRunning()) {
-            endpointWorkLoopFucThreadStatus_.store(true);
             continue;
         }
         threadStatus_ = INRUNNING;
@@ -2145,7 +2113,6 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
             ReSyncPosition();
             wakeUpTime = curTime;
             needReSyncPosition_ = false;
-            endpointWorkLoopFucThreadStatus_.store(true);
             continue;
         }
 
@@ -2167,7 +2134,6 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         threadStatus_ = SLEEPING;
         CheckWakeUpTime(wakeUpTime);
         ClockTime::AbsoluteSleep(wakeUpTime);
-        endpointWorkLoopFucThreadStatus_.store(true);
     }
     AUDIO_DEBUG_LOG("Endpoint work loop fuc end");
     if (setPriorityResult) {
@@ -2175,8 +2141,6 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
     } else {
         ResetThreadQosLevel();
     }
-    // stop watchdog
-    EndPointRemoveWatchdog("WatchingEndpointWorkLoopFuc", GetEndpointName());
 }
 
 void AudioEndpointInner::ProcessUpdateAppsUidForPlayback()
@@ -2349,6 +2313,21 @@ int32_t AudioEndpointInner::WriteDupBufferInner(const BufferDesc &bufferDesc, in
         DumpFileUtil::WriteDumpFile(dumpDupIn_, static_cast<void *>(bufferDesc.buffer), writeSize);
     }
     return SUCCESS;
+}
+
+void AudioEndpointInner::CheckAudioHapticsSync(uint64_t curWritePos)
+{
+    if (audioHapticsSyncId_ > 0) {
+        std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
+        if (sink != nullptr) {
+            uint64_t offset = dstSpanSizeInframe_ * curWritePos;
+            std::string condition = "AudioHapticsSync";
+            std::string value = "haptic_sessionid=" + std::to_string(audioHapticsSyncId_) +
+                ";haptic_offset=" + std::to_string(offset);
+            sink->SetAudioParameter(AudioParamKey::NONE, condition, value);
+        }
+        audioHapticsSyncId_ = 0;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

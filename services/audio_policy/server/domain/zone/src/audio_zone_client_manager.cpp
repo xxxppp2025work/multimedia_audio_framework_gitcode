@@ -18,6 +18,7 @@
 #include "audio_zone_client_manager.h"
 #include "audio_log.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -74,7 +75,8 @@ void AudioZoneClientManager::DispatchEvent(std::shared_ptr<AudioZoneEvent> event
 
     std::lock_guard<std::mutex> lock(clientMutex_);
     CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
-    CHECK_AND_RETURN_LOG(clients_.find(event->clientPid) != clients_.end(), "client not register");
+    CHECK_AND_RETURN_LOG(clients_.find(event->clientPid) != clients_.end(),
+        "client %{public}d not register", event->clientPid);
 
     switch (event->type) {
         case AudioZoneEventType::AUDIO_ZONE_ADD_EVENT:
@@ -85,15 +87,16 @@ void AudioZoneClientManager::DispatchEvent(std::shared_ptr<AudioZoneEvent> event
             break;
         case AudioZoneEventType::AUDIO_ZONE_CHANGE_EVENT:
             clients_[event->clientPid]->OnAudioZoneChange(event->zoneId,
-                *(event->descriptor), event->zoneChangeReason);
+                *(event->descriptor), static_cast<int32_t>(event->zoneChangeReason));
             break;
         case AudioZoneEventType::AUDIO_ZONE_INTERRUPT_EVENT:
             if (event->deviceTag.empty()) {
                 clients_[event->clientPid]->OnInterruptEvent(event->zoneId,
-                    event->interrupts, event->zoneInterruptReason);
+                    ToIpcInterrupts(event->interrupts), static_cast<int32_t>(event->zoneInterruptReason));
             } else {
                 clients_[event->clientPid]->OnInterruptEvent(event->zoneId,
-                    event->deviceTag, event->interrupts, event->zoneInterruptReason);
+                    event->deviceTag, ToIpcInterrupts(event->interrupts),
+                    static_cast<int32_t>(event->zoneInterruptReason));
             }
             break;
         default:
@@ -106,7 +109,8 @@ void AudioZoneClientManager::SendZoneAddEvent(pid_t clientPid, std::shared_ptr<A
     CHECK_AND_RETURN_LOG(descriptor != nullptr, "descriptor is null");
     std::lock_guard<std::mutex> lock(clientMutex_);
     CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
-    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(), "client not register");
+    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(),
+        "client %{public}d not register", clientPid);
 
     std::shared_ptr<AudioZoneEvent> event = std::make_shared<AudioZoneEvent>();
     CHECK_AND_RETURN_LOG(event != nullptr, "event is null");
@@ -123,7 +127,8 @@ void AudioZoneClientManager::SendZoneRemoveEvent(pid_t clientPid, int32_t zoneId
 {
     std::lock_guard<std::mutex> lock(clientMutex_);
     CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
-    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(), "client not register");
+    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(),
+        "client %{public}d not register", clientPid);
 
     std::shared_ptr<AudioZoneEvent> event = std::make_shared<AudioZoneEvent>();
     CHECK_AND_RETURN_LOG(event != nullptr, "event is null");
@@ -141,7 +146,8 @@ void AudioZoneClientManager::SendZoneChangeEvent(pid_t clientPid, std::shared_pt
     CHECK_AND_RETURN_LOG(descriptor != nullptr, "descriptor is null");
     std::lock_guard<std::mutex> lock(clientMutex_);
     CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
-    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(), "client not register");
+    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(),
+        "client %{public}d not register", clientPid);
 
     std::shared_ptr<AudioZoneEvent> event = std::make_shared<AudioZoneEvent>();
     CHECK_AND_RETURN_LOG(event != nullptr, "event is null");
@@ -161,7 +167,8 @@ void AudioZoneClientManager::SendZoneInterruptEvent(pid_t clientPid, int32_t zon
 {
     std::lock_guard<std::mutex> lock(clientMutex_);
     CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
-    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(), "client not register");
+    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(),
+        "client %{public}d not register", clientPid);
 
     std::shared_ptr<AudioZoneEvent> event = std::make_shared<AudioZoneEvent>();
     CHECK_AND_RETURN_LOG(event != nullptr, "event is null");
@@ -201,7 +208,9 @@ int32_t AudioZoneClientManager::GetSystemVolumeLevel(const pid_t clientPid, cons
     }
     AUDIO_DEBUG_LOG("get audio zone %{public}d volume from client %{public}d",
         zoneId, clientPid);
-    return client->GetSystemVolume(zoneId, volumeType);
+    float outVolume = 0.0f;
+    client->GetSystemVolume(zoneId, volumeType, outVolume);
+    return static_cast<int32_t>(outVolume);
 }
 } // namespace AudioStandard
 } // namespace OHOS

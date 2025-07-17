@@ -111,6 +111,12 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
     }
 }
 
+int32_t AudioCoreService::EventEntry::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return AudioCapturerSession::GetInstance().ReloadCaptureSession(sessionId, operation);
+}
+
 std::string AudioCoreService::EventEntry::GetAdapterNameBySessionId(uint32_t sessionId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
@@ -141,6 +147,12 @@ int32_t AudioCoreService::EventEntry::SetDefaultOutputDevice(const DeviceType de
         deviceType, sessionID, streamUsage, isRunning);
     int32_t ret = coreService_->SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
     return ret;
+}
+
+int32_t AudioCoreService::EventEntry::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->LoadSplitModule(splitArgs, networkId);
 }
 
 // device status listener
@@ -316,11 +328,11 @@ int32_t AudioCoreService::EventEntry::UpdateTracker(AudioMode &mode, AudioStream
     return coreService_->UpdateTracker(mode, streamChangeInfo);
 }
 
-void AudioCoreService::EventEntry::RegisteredTrackerClientDied(pid_t uid)
+void AudioCoreService::EventEntry::RegisteredTrackerClientDied(pid_t uid, pid_t pid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     AUDIO_INFO_LOG("[ADeviceEvent] withlock uid %{public}d", uid);
-    coreService_->RegisteredTrackerClientDied(uid);
+    coreService_->RegisteredTrackerClientDied(uid, pid);
 }
 
 bool AudioCoreService::EventEntry::ConnectServiceAdapter()
@@ -469,6 +481,19 @@ int32_t AudioCoreService::EventEntry::GetPreferredOutputStreamType(AudioRenderer
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->GetPreferredOutputStreamType(rendererInfo, bundleName);
+}
+
+int32_t AudioCoreService::EventEntry::SetSessionDefaultOutputDevice(
+    const int32_t callerPid, const DeviceType &deviceType)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->SetSessionDefaultOutputDevice(callerPid, deviceType);
+}
+
+int32_t AudioCoreService::EventEntry::GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->GetSessionDefaultOutputDevice(callerPid, deviceType);
 }
 
 int32_t AudioCoreService::EventEntry::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)

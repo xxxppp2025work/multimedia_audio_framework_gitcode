@@ -19,7 +19,7 @@
 #include <unordered_map>
 #include <memory>
 #include "audio_interrupt_service.h"
-#include "i_standard_audio_zone_client.h"
+#include "istandard_audio_zone_client.h"
 #include "audio_policy_server_handler.h"
 
 namespace OHOS {
@@ -55,8 +55,10 @@ public:
     int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid);
     int32_t AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream);
     int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream);
+    void SetZoneDeviceVisible(bool visible);
+    bool IsZoneDeviceVisible();
     int32_t FindAudioZoneByUid(int32_t uid);
-    int32_t FindAudioZoneByUsage(StreamUsage usage);
+    int32_t FindAudioZone(int32_t uid, StreamUsage usage);
 
     int32_t EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, bool enable);
     bool IsSystemVolumeProxyEnable(int32_t zoneId);
@@ -94,7 +96,7 @@ private:
     std::unordered_map<int32_t, std::shared_ptr<AudioZone>> zoneMaps_;
     std::set<pid_t> zoneReportClientList_;
     std::mutex zoneMutex_;
-    bool isAppCast = false;
+    bool zoneDeviceVisible_ = true;
 
     std::shared_ptr<AudioZone> FindZone(int32_t zoneId);
     int32_t AddKeyToAudioZone(int32_t zoneId, int32_t uid, const std::string &deviceTag,

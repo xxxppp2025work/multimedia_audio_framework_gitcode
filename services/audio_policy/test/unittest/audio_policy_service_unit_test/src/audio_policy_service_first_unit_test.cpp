@@ -891,8 +891,9 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSinkPortName_001, TestSize.Level1)
 
     // case1 InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP
     deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioPolicyUtils::GetInstance().audioA2dpOffloadFlag_.SetA2dpOffloadFlag(A2DP_OFFLOAD);
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
-    EXPECT_EQ(BLUETOOTH_SPEAKER, retPortName);
+    EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest GetSinkPortName_001 aaa");
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest GetSinkPortName_001 bbb");
     pipeType = PIPE_TYPE_OFFLOAD;
@@ -907,6 +908,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSinkPortName_001, TestSize.Level1)
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
 
+    AudioPolicyUtils::GetInstance().audioA2dpOffloadFlag_.SetA2dpOffloadFlag(A2DP_NOT_OFFLOAD);
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(BLUETOOTH_SPEAKER, retPortName);
 
@@ -2436,8 +2438,8 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetSystemVolumeLevel_001, TestSize.Level1)
     int32_t volumeLevel = 1;
     for (const auto& audioStreamType : audioStreamTypes) {
         GetServerPtr()->audioVolumeManager_.SetSystemVolumeLevel(audioStreamType, volumeLevel);
-        GetServerPtr()->SetSystemVolumeLevel(audioStreamType, volumeLevel, 0);
-        GetServerPtr()->SetSystemVolumeLevel(audioStreamType, volumeLevel, 1);
+        GetServerPtr()->SetSystemVolumeLevel(audioStreamType, volumeLevel, 0, 0);
+        GetServerPtr()->SetSystemVolumeLevel(audioStreamType, volumeLevel, 1, 0);
         GetServerPtr()->audioPolicyService_.audioVolumeManager_.SetVoiceCallVolume(volumeLevel);
     }
 }
@@ -2477,9 +2479,10 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSystemVolumeInDb_001, TestSize.Level1)
     ASSERT_NE(nullptr, GetServerPtr());
     int32_t volumeLevel = DEFAULT_VOLUME_LEVEL;
     DeviceType deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
+    float ret = 0.0;
     for (const auto& volumeType : audioStreamTypes) {
         AUDIO_INFO_LOG("GetSystemVolumeInDb_001 volumeType : %{public}d", static_cast<uint32_t>(volumeType));
-        GetServerPtr()->GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
+        GetServerPtr()->GetSystemVolumeInDb(volumeType, volumeLevel, deviceType, ret);
     }
 
     for (const auto& streamType : audioStreamTypes) {
@@ -2531,12 +2534,13 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetStreamMuteLegacy_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest SetStreamMuteLegacy_001 start");
     ASSERT_NE(nullptr, GetServerPtr());
+    int32_t ret = 0;
     for (const auto& streamType : audioStreamTypes) {
-        int32_t res = GetServerPtr()->SetStreamMuteLegacy(streamType, true);
+        int32_t res = GetServerPtr()->SetStreamMuteLegacy(streamType, true, ret);
         EXPECT_EQ(SUCCESS, res);
     }
     for (const auto& streamType : audioStreamTypes) {
-        int32_t res = GetServerPtr()->SetStreamMuteLegacy(streamType, false);
+        int32_t res = GetServerPtr()->SetStreamMuteLegacy(streamType, false, ret);
         EXPECT_EQ(SUCCESS, res);
     }
 }

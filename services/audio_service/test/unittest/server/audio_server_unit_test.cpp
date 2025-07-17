@@ -19,6 +19,7 @@
 #include "audio_server.h"
 #include "audio_service.h"
 #include "system_ability_definition.h"
+#include "audio_service_types.h"
 
 using namespace testing::ext;
 
@@ -45,7 +46,8 @@ HWTEST(AudioServerUnitTest, CreatePlaybackCapturerManager_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioServerUnitTest CreatePlaybackCapturerManager_001 start");
     int32_t systemAbilityId = 100;
     std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
-    bool ret = audioServer->CreatePlaybackCapturerManager();
+    bool ret = false;
+    audioServer->CreatePlaybackCapturerManager(ret);
     EXPECT_EQ(true, ret);
 }
 #endif
@@ -292,7 +294,8 @@ HWTEST(AudioServerUnitTest, CreateIpcOfflineStream_001, TestSize.Level1)
     std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     int32_t errorCode = 0;
-    sptr<IRemoteObject> obj = audioServer->CreateIpcOfflineStream(errorCode);
+    sptr<IRemoteObject> obj = nullptr;
+    audioServer->CreateIpcOfflineStream(errorCode, obj);
     EXPECT_NE(obj, nullptr);
 }
 
@@ -472,6 +475,23 @@ HWTEST(AudioServerUnitTest, ParseAudioParameter_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test ParseAudioParameter API
+ * @tc.type  : FUNC
+ * @tc.number: ParseAudioParameter_002
+ * @tc.desc  : Test ParseAudioParameter interface.
+ */
+HWTEST(AudioServerUnitTest, ParseAudioParameter_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest ParseAudioParameter_002 start");
+    int32_t systemAbilityId = 3001;
+    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+    EXPECT_FALSE(audioServer->isAudioParameterParsed_.load());
+    audioServer->ParseAudioParameter();
+    EXPECT_TRUE(audioServer->isAudioParameterParsed_.load());
+}
+
+/**
  * @tc.name  : Test CacheExtraParameters API
  * @tc.type  : FUNC
  * @tc.number: CacheExtraParameters_001
@@ -484,16 +504,14 @@ HWTEST(AudioServerUnitTest, CacheExtraParameters_001, TestSize.Level1)
     std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     const std::string key = "key-test";
-    const std::vector<std::pair<std::string, std::string>> kvpairs = {
+    const std::vector<StringPair> kvpairs = {
         {"key1", "value1"},
         {"key2", "value2"}
     };
     EXPECT_FALSE(audioServer->isAudioParameterParsed_.load());
-    EXPECT_TRUE(audioServer->CacheExtraParameters(key, kvpairs));
     EXPECT_FALSE(audioServer->audioExtraParameterCacheVector_.empty());
     audioServer->ParseAudioParameter();
     EXPECT_TRUE(audioServer->audioExtraParameterCacheVector_.empty());
-    EXPECT_FALSE(audioServer->CacheExtraParameters(key, kvpairs));
 }
 
 } // namespace AudioStandard

@@ -65,6 +65,30 @@ uint32_t ProAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, string 
     return SUCCESS;
 }
 
+int32_t ProAudioServiceAdapterImpl::ReloadAudioPort(const std::string &audioPortName,
+    const AudioModuleInfo &audioModuleInfo)
+{
+    AUDIO_PRERELEASE_LOGI("ReloadAudioPort enter.");
+    AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::ReloadAudioPort", HPAE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] ReloadAudioPort timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    Trace trace("ReloadAudioPort");
+    lock_guard<mutex> lock(lock_);
+    isFinishReloadAudioPort_ = false;
+    IHpaeManager::GetHpaeManager().ReloadAudioPort(audioModuleInfo);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return isFinishReloadAudioPort_;  // will be true when got notified.
+    });
+    if (!stopWaiting) {
+        AUDIO_ERR_LOG("ReloadAudioPort timeout");
+        return ERROR;
+    }
+    AUDIO_INFO_LOG("ReloadAudioPort leave");
+    return AudioPortIndex_;
+}
+
 int32_t ProAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, const AudioModuleInfo &audioModuleInfo)
 {
     AUDIO_PRERELEASE_LOGI("OpenAudioPort enter.");
@@ -405,6 +429,15 @@ int32_t ProAudioServiceAdapterImpl::GetAudioEnhanceProperty(AudioEnhanceProperty
     return SUCCESS;
 }
 
+void ProAudioServiceAdapterImpl::OnReloadAudioPortCb(int32_t portId)
+{
+    AUDIO_INFO_LOG("OnReloadAudioPortCb portId: %{public}d", portId);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    isFinishReloadAudioPort_= true;
+    AudioPortIndex_ = portId;
+    callbackCV_.notify_all();
+}
+
 void ProAudioServiceAdapterImpl::OnOpenAudioPortCb(int32_t portId)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
@@ -524,6 +557,14 @@ int32_t ProAudioServiceAdapterImpl::UpdateCollaborativeState(bool isCollaboratio
     AUDIO_INFO_LOG("UpdateCollaborativeState, state %{public}d", isCollaborationEnabled);
     lock_guard<mutex> lock(lock_);
     IHpaeManager::GetHpaeManager().UpdateCollaborativeState(isCollaborationEnabled);
+    return SUCCESS;
+}
+
+int32_t ProAudioServiceAdapterImpl::SetAbsVolumeStateToEffect(const bool absVolumeState)
+{
+    AUDIO_INFO_LOG("SetAbsVolumeStateToEffect, state %{public}d", absVolumeState);
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().SetAbsVolumeStateToEffect(absVolumeState);
     return SUCCESS;
 }
 }  // namespace AudioStandard

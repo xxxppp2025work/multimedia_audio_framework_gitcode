@@ -40,7 +40,7 @@ public:
     virtual int32_t Release(uint32_t sessionId) = 0;
     virtual void Process() = 0;
     virtual void HandleMsg() = 0;
-    virtual int32_t Init() = 0;
+    virtual int32_t Init(bool isReload = false) = 0;
     virtual int32_t DeInit(bool isMoveDefault = false) = 0;
     virtual bool IsInit() = 0;
     virtual bool IsRunning(void) = 0;
@@ -56,7 +56,7 @@ public:
     virtual int32_t AddAllNodesToSource(const std::vector<HpaeCaptureMoveInfo> &moveInfos, bool isConnect) = 0;
     virtual std::string GetThreadName() = 0;
     virtual int32_t ReloadCaptureManager(const HpaeSourceInfo &sourceInfo) = 0;
-    virtual void DumpSourceInfo() {};
+    virtual int32_t DumpSourceInfo() { return 0; };
     virtual void UploadDumpSourceInfo(std::string &deviceName)
     {
 #ifdef ENABLE_HIDUMP_DFX

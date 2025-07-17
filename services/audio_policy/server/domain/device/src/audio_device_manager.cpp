@@ -255,15 +255,8 @@ void AudioDeviceManager::RemoveConnectedDevices(const shared_ptr<AudioDeviceDesc
                 return descriptor->macAddress_ == devDesc->macAddress_ &&
                     descriptor->deviceRole_ == devDesc->deviceRole_;
             }
-            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
-                descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
-                descriptor->deviceType_ != DEVICE_TYPE_NEARLINK &&
-                descriptor->deviceType_ != DEVICE_TYPE_NEARLINK_IN) {
-                return true;
-            } else {
-                // if the disconnecting device is A2DP, need to compare mac address in addition.
-                return descriptor->macAddress_ == devDesc->macAddress_;
-            }
+            // if the disconnecting device, need to compare mac address in addition.
+            return descriptor->macAddress_ == devDesc->macAddress_;
         }
         return false;
     };
@@ -1490,6 +1483,22 @@ bool AudioDeviceManager::IsSessionSetDefaultDevice(uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
     return selectedDefaultOutputDeviceInfo_.find(sessionId) != selectedDefaultOutputDeviceInfo_.end();
+}
+
+bool AudioDeviceManager::ExistsByType(DeviceType devType) const
+{
+    auto it = find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [devType](auto &item) {
+        return item->deviceType_ == devType;
+    });
+    return it != connectedDevices_.cend();
+}
+
+bool AudioDeviceManager::ExistsByTypeAndAddress(DeviceType devType, const string &address) const
+{
+    auto it = find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [devType, &address](auto &item) {
+        return item->deviceType_ == devType && item->macAddress_ == address;
+    });
+    return it != connectedDevices_.cend();
 }
 
 bool AudioDeviceManager::ExistSameRemoteDeviceByMacAddress(std::shared_ptr<AudioDeviceDescriptor> desc)

@@ -73,10 +73,10 @@ CapturerInServer::~CapturerInServer()
 int32_t CapturerInServer::ConfigServerBuffer()
 {
     if (audioServerBuffer_ != nullptr) {
-        AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed!");
+        AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed.");
         return SUCCESS;
     }
-    CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "ConfigServerBuffer failed, stream_ is null");
+    CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "ConfigServerBuffer failed, stream_ is null!");
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
     const size_t bufferNum = ((processConfig_.capturerInfo.sourceType == SOURCE_TYPE_WAKEUP)
         ? CAPTURER_BUFFER_WAKE_UP_NUM : CAPTURER_BUFFER_DEFAULT_NUM);
@@ -111,7 +111,7 @@ int32_t CapturerInServer::ConfigServerBuffer()
 int32_t CapturerInServer::InitBufferStatus()
 {
     if (audioServerBuffer_ == nullptr) {
-        AUDIO_ERR_LOG("InitBufferStatus failed, null buffer.");
+        AUDIO_ERR_LOG("InitBufferStatus failed, null buffer!");
         return ERR_ILLEGAL_STATE;
     }
 
@@ -312,7 +312,7 @@ static uint32_t GetByteSizeByFormat(enum AudioSampleFormat format)
 
 void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
 {
-    CHECK_AND_RETURN_LOG(capturerClock_ != nullptr, "capturerClock_ is nullptr");
+    CHECK_AND_RETURN_LOG(capturerClock_ != nullptr, "capturerClock_ is nullptr!");
     uint64_t timestamp = 0;
     uint32_t sizePerPos = static_cast<uint32_t>(GetByteSizeByFormat(processConfig_.streamInfo.format)) *
         processConfig_.streamInfo.channels;
@@ -335,8 +335,8 @@ void CapturerInServer::ReadData(size_t length)
     CHECK_AND_RETURN_LOG(length >= spanSizeInBytes_,
         "Length %{public}zu is less than spanSizeInBytes %{public}zu", length, spanSizeInBytes_);
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
-    CHECK_AND_RETURN_LOG(stream_ != nullptr, "ReadData failed, stream_ is null");
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr!");
+    CHECK_AND_RETURN_LOG(stream_ != nullptr, "ReadData failed, stream_ is null!");
 
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(length, currentWriteFrame, stateListener)) {
@@ -399,7 +399,7 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     CHECK_AND_RETURN_RET_LOG(requestDataLen >= spanSizeInBytes_, ERR_READ_FAILED,
         "Length %{public}zu is less than spanSizeInBytes %{public}zu", requestDataLen, spanSizeInBytes_);
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-    CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_READ_FAILED, "IStreamListener is nullptr");
+    CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_READ_FAILED, "IStreamListener is nullptr!");
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(requestDataLen, currentWriteFrame, stateListener)) {
         UpdateBufferTimeStamp(requestDataLen);
@@ -583,7 +583,14 @@ int32_t CapturerInServer::StartInner()
         CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     }
 
+    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_START) == SUCCESS) {
+        AUDIO_ERR_LOG("ReloadCaptureSession success!");
+    }
+
     status_ = I_STATUS_STARTING;
+    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        PlaybackCapturerManager::GetInstance()->InitAllDupBuffer(innerCapId_);
+    }
     int32_t ret = stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
     resetTime_ = true;
@@ -609,6 +616,10 @@ int32_t CapturerInServer::Pause()
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_PAUSED);
     }
+    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_PAUSE) == SUCCESS) {
+        AUDIO_INFO_LOG("ReloadCaptureSession success!");
+    }
+
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
@@ -682,6 +693,9 @@ int32_t CapturerInServer::Stop()
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_STOPPED);
     }
+    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_STOP) == SUCCESS) {
+        AUDIO_INFO_LOG("ReloadCaptureSession success!");
+    }
 
     int ret = stream_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
@@ -718,6 +732,9 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
     if (status_ != I_STATUS_STOPPING &&
         status_ != I_STATUS_STOPPED) {
         HandleOperationStopped(CAPTURER_STAGE_STOP_BY_RELEASE);
+    }
+    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_RELEASE) == SUCCESS) {
+        AUDIO_INFO_LOG("ReloadCaptureSession success!");
     }
     status_ = I_STATUS_RELEASED;
 

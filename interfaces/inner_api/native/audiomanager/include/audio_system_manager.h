@@ -31,6 +31,7 @@
 #include "audio_group_manager.h"
 #include "audio_routing_manager.h"
 #include "audio_policy_interface.h"
+#include "audio_workgroup_ipc.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -59,7 +60,7 @@ public:
         ConnectType type);
     virtual ~InterruptGroupInfo();
     bool Marshalling(Parcel &parcel) const override;
-    static sptr<InterruptGroupInfo> Unmarshalling(Parcel &parcel);
+    static InterruptGroupInfo *Unmarshalling(Parcel &parcel);
 };
 
 class VolumeGroupInfo;
@@ -107,7 +108,7 @@ public:
      * @since 8
      * @return Returns volume group info
      */
-    static sptr<VolumeGroupInfo> Unmarshalling(Parcel &parcel);
+    static VolumeGroupInfo *Unmarshalling(Parcel &parcel);
 };
 
 /**
@@ -115,9 +116,48 @@ public:
  *
  * @since 13
  */
-struct MicrophoneBlockedInfo {
+struct MicrophoneBlockedInfo : public Parcelable {
     DeviceBlockStatus blockStatus;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+
+    void SetClientInfo(std::shared_ptr<AudioDeviceDescriptor::ClientInfo> clientInfo) const
+    {
+        for (auto &dev : devices) {
+            if (dev != nullptr) {
+                dev->SetClientInfo(clientInfo);
+            }
+        }
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteInt32(static_cast<int32_t>(blockStatus));
+        int32_t size = static_cast<int32_t>(devices.size());
+        parcel.WriteInt32(size);
+        for (auto &dev : devices) {
+            if (dev == nullptr) {
+                return false;
+            }
+            dev->Marshalling(parcel);
+        }
+        return true;
+    }
+
+    static MicrophoneBlockedInfo *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new MicrophoneBlockedInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->blockStatus = static_cast<DeviceBlockStatus>(parcel.ReadInt32());
+        int32_t size = parcel.ReadInt32();
+        for (int32_t i = 0; i < size; i++) {
+            info->devices.emplace_back(
+                std::shared_ptr<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(parcel)));
+        }
+        return info;
+    }
 };
 
 /**
@@ -136,7 +176,7 @@ public:
     int32_t streamId = -1;
 
     bool Marshalling(Parcel &parcel) const override;
-    static sptr<AudioRendererFilter> Unmarshalling(Parcel &in);
+    static AudioRendererFilter* Unmarshalling(Parcel &parcel);
 };
 
 /**
@@ -153,7 +193,7 @@ public:
     AudioCapturerInfo capturerInfo = {SOURCE_TYPE_INVALID, 0};
 
     bool Marshalling(Parcel &parcel) const override;
-    static sptr<AudioCapturerFilter> Unmarshalling(Parcel &in);
+    static AudioCapturerFilter *Unmarshalling(Parcel &in);
 };
 
 // AudioManagerCallback OnInterrupt is added to handle compilation error in call manager
@@ -315,6 +355,11 @@ public:
     virtual void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) = 0;
 };
 
+class AudioWorkgroupChangeCallback {
+public:
+    virtual ~AudioWorkgroupChangeCallback() = default;
+    virtual void OnWorkgroupChange(const AudioWorkgroupChangeInfo &info) = 0;
+};
 
 /**
  * @brief The AudioSystemManager class is an abstract definition of audio manager.
@@ -1177,17 +1222,6 @@ public:
     int32_t AbandonAudioFocus(const AudioInterrupt &audioInterrupt);
 
     /**
-     * @brief Reconfigure audio channel
-     *
-     * @param count count
-     * @param deviceType device type
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 8
-     */
-    int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
-
-    /**
      * @brief Request independent interrupt
      *
      * @param focusType focus type
@@ -1524,6 +1558,16 @@ public:
     */
     int32_t ResetAllProxy();
 
+    /**
+    * @brief Notify process background state.
+    *
+    * @param uid Specifies uid of app.
+    * @param pid Specifies pid of app.
+    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+    * in {@link audio_errors.h}.
+    */
+    int32_t NotifyProcessBackgroundState(const int32_t uid, const int32_t pid);
+
 #ifdef HAS_FEATURE_INNERCAPTURER
     /**
     * @brief check capture limit
@@ -1708,39 +1752,14 @@ public:
     int32_t StopGroup(int32_t workgroupId);
 
     /**
-    * @brief get volume event from register callback.
+    * @brief set focus stream type when process volume key event.
     *
-    * @return Returns std::unordered_map<AudioStreamType, VolumeEvent>.
+    * @param volumeType Audio stream type.
+    * @param duration duration time to last or cancel force type.
+    * @return Returns {@link AUDIO_OK} if the operation is successfully.
     * @test
     */
-    std::unordered_map<AudioStreamType, VolumeEvent> GetVolumeEvent();
-
-    /**
-    * @brief set latest volume event when callback.
-    *
-    * @param type audio stream type.
-    * @param event volume event.
-    * @test
-    */
-    void SetVolumeEvent(AudioStreamType type, VolumeEvent event);
-
-    /**
-    * @brief get renderer change info from register callback.
-    *
-    * @return Returns std::unordered_map<AudioStreamType, std::shared_ptr<AudioStandard::AudioRendererChangeInfo>>.
-    * @test
-    */
-    std::unordered_map<AudioStreamType, std::shared_ptr<AudioStandard::AudioRendererChangeInfo>>
-        GetAudioRendererChangeInfo();
-
-    /**
-    * @brief set latest renderer change info when callback.
-    *
-    * @param type audio stream type.
-    * @param info renderer change info.
-    * @test
-    */
-    void SetAudioRendererChangeInfo(AudioStreamType type, std::shared_ptr<AudioStandard::AudioRendererChangeInfo> info);
+    int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
 
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
@@ -1801,38 +1820,19 @@ private:
 
     std::shared_ptr<WakeUpCallbackImpl> remoteWakeUpCallback_;
 
-    bool IsValidStreamType(AudioStreamType type);
-    bool IsValidToStartGroup();
-    void InitWorkgroupState();
-    class VolumeKeyEventCallbackImpl : public VolumeKeyEventCallback {
+    class AudioWorkgroupChangeCallbackImpl : public AudioWorkgroupChangeCallback {
     public:
-        VolumeKeyEventCallbackImpl() {};
-        ~VolumeKeyEventCallbackImpl() {};
+        AudioWorkgroupChangeCallbackImpl() {};
+        ~AudioWorkgroupChangeCallbackImpl() {};
     private:
-        void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
+        void OnWorkgroupChange(const AudioWorkgroupChangeInfo &info) override;
     };
 
-    std::unordered_map<AudioStreamType, VolumeEvent> volumeEventMap_;
-    std::mutex volumeEventMutexMap_;
-    void AttachVolumeKeyEventListener();
-    void DetachVolumeKeyEventListener();
-    std::shared_ptr<VolumeKeyEventCallbackImpl> volumeKeyEventCallback_ = nullptr;
-
-    class AudioRendererStateChangeCallbackImpl : public AudioRendererStateChangeCallback {
-    public:
-        AudioRendererStateChangeCallbackImpl() {};
-        ~AudioRendererStateChangeCallbackImpl() {};
-    private:
-        void OnRendererStateChange(
-            const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
-    };
-
-    std::unordered_map<AudioStreamType, std::shared_ptr<AudioStandard::AudioRendererChangeInfo>>
-        audioRendererChangeInfoMap_;
-    std::mutex audioRendererChangeInfoMapMutex_;
-    void AttachAudioRendererEventListener();
-    void DetachAudioRendererEventListener();
-    std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioRendererStateChangeCallback_ = nullptr;
+    std::mutex startGroupPermissionMapMutex_;
+    std::unordered_map<uint32_t, std::unordered_map<uint32_t, bool>> startGroupPermissionMap_;
+    void OnWorkgroupChange(const AudioWorkgroupChangeInfo &info);
+    bool IsValidToStartGroup(int32_t workgroupId);
+    bool hasSystemPermission_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

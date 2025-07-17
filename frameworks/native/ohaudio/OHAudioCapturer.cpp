@@ -34,6 +34,7 @@ static OHOS::AudioStandard::OHAudioCapturer *convertCapturer(OH_AudioCapturer* c
 
 OH_AudioStream_Result OH_AudioCapturer_Release(OH_AudioCapturer* capturer)
 {
+    AUDIO_INFO_LOG("in");
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
     if (audioCapturer->Release()) {
@@ -46,6 +47,7 @@ OH_AudioStream_Result OH_AudioCapturer_Release(OH_AudioCapturer* capturer)
 
 OH_AudioStream_Result OH_AudioCapturer_Start(OH_AudioCapturer* capturer)
 {
+    AUDIO_INFO_LOG("in");
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
     if (audioCapturer->Start()) {
@@ -57,6 +59,7 @@ OH_AudioStream_Result OH_AudioCapturer_Start(OH_AudioCapturer* capturer)
 
 OH_AudioStream_Result OH_AudioCapturer_Pause(OH_AudioCapturer* capturer)
 {
+    AUDIO_INFO_LOG("in");
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
 
@@ -69,6 +72,7 @@ OH_AudioStream_Result OH_AudioCapturer_Pause(OH_AudioCapturer* capturer)
 
 OH_AudioStream_Result OH_AudioCapturer_Stop(OH_AudioCapturer* capturer)
 {
+    AUDIO_INFO_LOG("in");
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
 
@@ -112,6 +116,7 @@ OH_AudioStream_Result OH_AudioCapturer_GetFastStatus(OH_AudioCapturer *capturer,
 
 OH_AudioStream_Result OH_AudioCapturer_Flush(OH_AudioCapturer* capturer)
 {
+    AUDIO_INFO_LOG("in");
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
 
@@ -588,15 +593,8 @@ void OHAudioCapturer::SetStreamEventCallback(CapturerCallback capturerCallbacks,
             (OH_AudioCapturer*)this, userData);
         audioCapturer_->SetAudioCapturerDeviceChangeCallback(callback);
         AUDIO_INFO_LOG("The stream event callback function with result");
-    } else if (streamEventCallbackType_ == STREAM_EVENT_CALLBACK_COMBINED &&
-        capturerCallbacks.callbacks.OH_AudioCapturer_OnStreamEvent != nullptr) {
-        std::shared_ptr<AudioCapturerDeviceChangeCallback> callback =
-            std::make_shared<OHAudioCapturerDeviceChangeCallback>(capturerCallbacks.callbacks,
-            (OH_AudioCapturer*)this, userData);
-        audioCapturer_->SetAudioCapturerDeviceChangeCallback(callback);
-        AUDIO_INFO_LOG("The stream event callback function without result");
     } else {
-        AUDIO_WARNING_LOG("The stream event callback function is not set");
+        AUDIO_WARNING_LOG("The stream event callback function only supports seperated set");
     }
 }
 
@@ -632,13 +630,8 @@ void OHAudioCapturer::SetErrorCallback(CapturerCallback capturerCallbacks, void 
         std::shared_ptr<AudioCapturerErrorCallback> errorCallback = std::make_shared<OHAudioCapturerErrorCallback>(
             capturerCallbacks.onErrorCallback, (OH_AudioCapturer*)this, userData);
         audioCapturer_->SetAudioCapturerErrorCallback(errorCallback);
-    } else if (errorCallbackType_ == ERROR_CALLBACK_COMBINED &&
-        capturerCallbacks.callbacks.OH_AudioCapturer_OnError != nullptr) {
-        std::shared_ptr<AudioCapturerErrorCallback> errorCallback = std::make_shared<OHAudioCapturerErrorCallback>(
-            capturerCallbacks.callbacks, (OH_AudioCapturer*)this, userData);
-        audioCapturer_->SetAudioCapturerErrorCallback(errorCallback);
     } else {
-        AUDIO_WARNING_LOG("The audio capturer error callback function is not set");
+        AUDIO_WARNING_LOG("The audio capturer error callback function only supports seperated set");
     }
 }
 

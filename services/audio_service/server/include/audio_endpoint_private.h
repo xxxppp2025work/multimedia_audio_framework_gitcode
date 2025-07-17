@@ -77,6 +77,7 @@ public:
      *   case5: endpointStatus_ = RUNNING; RUNNING-->RUNNING
     */
     int32_t LinkProcessStream(IAudioProcessStream *processStream, bool startWhenLinking = true) override;
+    void AddEndpointStreamVolume(IAudioProcessStream *processStream);
     void LinkProcessStreamExt(IAudioProcessStream *processStream,
     const std::shared_ptr<OHAudioBufferBase>& processBuffer);
 
@@ -186,6 +187,8 @@ private:
         std::vector<AudioStreamData> &audioDataList, uint64_t curRead, std::function<void()> &moveClientIndex);
     std::string GetStatusStr(EndpointStatus status);
 
+    bool IsNearlinkAbsVolSupportStream(DeviceType deviceType, AudioVolumeType volumeType);
+
     int32_t WriteToSpecialProcBuf(const std::shared_ptr<OHAudioBufferBase> &procBuf, const BufferDesc &readBuf,
         const BufferDesc &convertedBuffer, bool muteFlag);
     void WriteToProcessBuffers(const BufferDesc &readBuf);
@@ -195,8 +198,6 @@ private:
     void EndpointWorkLoopFuc();
     void RecordEndpointWorkLoopFuc();
 
-    void WatchingEndpointWorkLoopFuc();
-    void WatchingRecordEndpointWorkLoopFuc();
     // Call GetMmapHandlePosition in ipc may block more than a cycle, call it in another thread.
     void AsyncGetPosTime();
     bool DelayStopDevice();
@@ -230,6 +231,7 @@ private:
         std::function<void()>& moveClientIndex);
     void AddProcessStreamToList(IAudioProcessStream *processStream,
         const std::shared_ptr<OHAudioBufferBase> &processBuffer);
+    void CheckAudioHapticsSync(uint64_t curWritePos);
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t TWO_MILLISECOND_DURATION = 2000000; // 2ms
@@ -348,11 +350,10 @@ private:
     bool latencyMeasEnabled_ = false;
     size_t detectedTime_ = 0;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
-    std::atomic_bool endpointWorkLoopFucThreadStatus_ { false };
-    std::atomic_bool recordEndpointWorkLoopFucThreadStatus_ { false };
     std::unordered_map<int32_t, CaptureInfo> fastCaptureInfos_;
     bool coreBinded_ = false;
     bool isExistLoopback_ = false;
+    int32_t audioHapticsSyncId_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

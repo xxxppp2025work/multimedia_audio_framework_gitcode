@@ -21,7 +21,7 @@
 #include <dlfcn.h>
 #include "iservice_registry.h"
 
-#include "audio_manager_listener_stub.h"
+#include "audio_manager_listener_stub_impl.h"
 #include "parameter.h"
 #include "parameters.h"
 #include "device_init_callback.h"
@@ -47,6 +47,7 @@
 #include "audio_core_service.h"
 #include "audio_policy_datashare_listener.h"
 #include "audio_zone_service.h"
+#include "audio_policy_manager_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -466,10 +467,12 @@ int32_t AudioPolicyService::SetAvailableDeviceChangeCallback(const int32_t clien
     sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
 
     if (callback != nullptr) {
-        callback->hasBTPermission_ = hasBTPermission;
+        auto cb = std::make_shared<AudioPolicyManagerListenerCallback>(callback);
+        CHECK_AND_RETURN_RET_LOG(cb != nullptr, SUCCESS, "AudioPolicyManagerListenerCallback create failed");
+        cb->hasBTPermission_ = hasBTPermission;
 
         if (audioPolicyServerHandler_ != nullptr) {
-            audioPolicyServerHandler_->AddAvailableDeviceChangeMap(clientId, usage, callback);
+            audioPolicyServerHandler_->AddAvailableDeviceChangeMap(clientId, usage, cb);
         }
     }
 
@@ -523,40 +526,6 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<shared_ptr<Audi
     }
 
     return status;
-}
-
-int32_t AudioPolicyService::ReconfigureAudioChannel(const uint32_t &channelCount, DeviceType deviceType)
-{
-    if (audioActiveDevice_.GetCurrentOutputDeviceType() != DEVICE_TYPE_FILE_SINK) {
-        AUDIO_INFO_LOG("FILE_SINK_DEVICE is not active. Cannot reconfigure now");
-        return ERROR;
-    }
-
-    std::string module = FILE_SINK;
-
-    if (deviceType == DeviceType::DEVICE_TYPE_FILE_SINK) {
-        CHECK_AND_RETURN_RET_LOG(channelCount <= CHANNEL_8 && channelCount >= MONO, ERROR, "Invalid sink channel");
-        module = FILE_SINK;
-    } else if (deviceType == DeviceType::DEVICE_TYPE_FILE_SOURCE) {
-        CHECK_AND_RETURN_RET_LOG(channelCount <= CHANNEL_6 && channelCount >= MONO, ERROR, "Invalid src channel");
-        module = FILE_SOURCE;
-    } else {
-        AUDIO_ERR_LOG("Invalid DeviceType");
-        return ERROR;
-    }
-
-    audioIOHandleMap_.ClosePortAndEraseIOHandle(module);
-
-    std::list<AudioModuleInfo> moduleInfoList;
-    audioConfigManager_.GetModuleListByType(ClassType::TYPE_FILE_IO, moduleInfoList);
-    for (auto &moduleInfo : moduleInfoList) {
-        if (module == moduleInfo.name) {
-            moduleInfo.channels = to_string(channelCount);
-            audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-            audioPolicyManager_.SetDeviceActive(deviceType, module, true);
-        }
-    }
-    return SUCCESS;
 }
 
 void AudioPolicyService::UpdateDescWhenNoBTPermission(vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
@@ -727,7 +696,7 @@ int32_t AudioPolicyService::InitSharedVolume(std::shared_ptr<AudioSharedMemory> 
 void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback)
 {
     AUDIO_INFO_LOG("Start");
-    sptr<AudioManagerListenerStub> parameterChangeCbStub = new(std::nothrow) AudioManagerListenerStub();
+    sptr<AudioManagerListenerStubImpl> parameterChangeCbStub = new(std::nothrow) AudioManagerListenerStubImpl();
     CHECK_AND_RETURN_LOG(parameterChangeCbStub != nullptr,
         "parameterChangeCbStub null");
     parameterChangeCbStub->SetParameterCallback(callback);
@@ -1164,43 +1133,6 @@ int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEnhancePropertyArray &p
     return AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(propertyArray);
 }
 
-int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
-{
-    AUDIO_INFO_LOG("[ADeviceEvent] Start split args: %{public}s", splitArgs.c_str());
-    if (splitArgs.empty() || networkId.empty()) {
-        std::string anonymousNetworkId = networkId.empty() ? "" : networkId.substr(0, 2) + "***";
-        AUDIO_ERR_LOG("invalid param, splitArgs:'%{public}s', networkId:'%{public}s'",
-            splitArgs.c_str(), anonymousNetworkId.c_str());
-        return ERR_INVALID_PARAM;
-    }
-    std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, OUTPUT_DEVICE);
-    std::string currentActivePort = REMOTE_CLASS;
-    audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
-    AudioIOHandle oldModuleId;
-    audioIOHandleMap_.GetModuleIdByKey(moduleName, oldModuleId);
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescriptors =
-        AudioPipeManager::GetPipeManager()->GetStreamDescsByIoHandle(oldModuleId);
-    audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
-
-    AudioModuleInfo moudleInfo = AudioPolicyUtils::GetInstance().ConstructRemoteAudioModuleInfo(networkId,
-        OUTPUT_DEVICE, DEVICE_TYPE_SPEAKER);
-    moudleInfo.lib = "libmodule-split-stream-sink.z.so";
-    moudleInfo.extra = splitArgs;
-    moudleInfo.needEmptyChunk = false;
-
-    int32_t openRet = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleName, moudleInfo);
-    if (openRet != 0) {
-        AUDIO_ERR_LOG("open fail, OpenPortAndInsertIOHandle ret: %{public}d", openRet);
-    }
-    AudioIOHandle newModuleId;
-    audioIOHandleMap_.GetModuleIdByKey(moduleName, newModuleId);
-    AudioPipeManager::GetPipeManager()->UpdateOutputStreamDescsByIoHandle(newModuleId, streamDescriptors);
-    AudioServerProxy::GetInstance().NotifyDeviceInfoProxy(networkId, true);
-    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute();
-    AUDIO_INFO_LOG("fetch device after split stream and open port.");
-    return openRet;
-}
-
 BluetoothOffloadState AudioPolicyService::GetA2dpOffloadFlag()
 {
     if (audioA2dpOffloadManager_) {
@@ -1224,11 +1156,6 @@ int32_t AudioPolicyService::SetSleAudioOperationCallback(const sptr<IRemoteObjec
     sleAudioDeviceManager_.SetSleAudioOperationCallback(sleAudioOperationCallback);
 
     return SUCCESS;
-}
-
-int32_t AudioPolicyService::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
-{
-    return audioOffloadStream_.ActivateConcurrencyFromServer(incomingPipe);
 }
 
 int32_t AudioPolicyService::NotifyCapturerRemoved(uint64_t sessionId)

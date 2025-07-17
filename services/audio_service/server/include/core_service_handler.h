@@ -21,7 +21,8 @@
 #include <mutex>
 #include <vector>
 
-#include "i_core_service_provider_ipc.h"
+#include "icore_service_provider_ipc.h"
+#include "audio_service_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,6 +35,7 @@ public:
     // would be called only once
     int32_t ConfigCoreServiceProvider(const sptr<ICoreServiceProviderIpc> policyProvider);
 
+    int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation);
     int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
         SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT);
     int32_t SetDefaultOutputDevice(

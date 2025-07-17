@@ -21,7 +21,7 @@
 namespace OHOS {
 namespace AudioStandard {
 static const std::string AUDIO_COLLABORATIVE_SERVICE_LABEL = "COLLABORATIVE";
-static const std::string BLUETOOTH_EFFECT_CHAIN_NAME = "EFFECTCHAIN_BT_MUSIC";
+static const std::string BLUETOOTH_EFFECT_CHAIN_NAME = "EFFECTCHAIN_COLLABORATIVE";
 const int ADDRESS_STR_LEN = 17;
 const int START_POS = 6;
 const int END_POS = 13;
@@ -42,6 +42,7 @@ static std::string GetEncryptAddr(const std::string &addr)
 void AudioCollaborativeService::Init(const std::vector<EffectChain> &effectChains)
 {
     AUDIO_INFO_LOG("AudioCollaborative service initialized!");
+    isCollaborativePlaybackSupported_ = false;
     for (auto effectChain: effectChains) {
         if (effectChain.name != BLUETOOTH_EFFECT_CHAIN_NAME) { // only support bluebooth effectchain?
             continue;

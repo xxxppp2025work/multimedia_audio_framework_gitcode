@@ -167,6 +167,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_REMOTE_DAUDIO = 29,
     /**
+     * Indicates a Bluetooth HearingAid device.
+     */
+    DEVICE_TYPE_HEARING_AID = 30,
+    /**
      * Indicates a hdmi device
      */
     DEVICE_TYPE_HDMI = 27,
@@ -235,6 +239,7 @@ enum DmDeviceType {
     DM_DEVICE_TYPE_DEFAULT = 0,
     DM_DEVICE_TYPE_PENCIL = 0xA07,
     DM_DEVICE_TYPE_UWB = 0x06C,
+    DM_DEVICE_TYPE_NEARLINK_SCO = 0x032,
 };
 
 inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
@@ -253,6 +258,7 @@ inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_LINE_DIGITAL,
     DeviceType::DEVICE_TYPE_REMOTE_DAUDIO,
     DeviceType::DEVICE_TYPE_NEARLINK,
+    DeviceType::DEVICE_TYPE_HEARING_AID,
 };
 
 inline bool IsOutputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_ROLE_NONE)
@@ -363,6 +369,12 @@ enum BluetoothOffloadState {
     A2DP_OFFLOAD = 2,
 };
 
+struct VolumeBehavior {
+    bool isReady = false;
+    bool isVolumeControlDisabled = false;
+    std::string databaseVolumeName = "";
+};
+
 struct DevicePrivacyInfo {
     std::string deviceName;
     DeviceType deviceType;
@@ -385,16 +397,20 @@ enum class AudioStreamDeviceChangeReason {
     UNKNOWN = 0,
     NEW_DEVICE_AVAILABLE = 1,
     OLD_DEVICE_UNAVALIABLE = 2,
-    OVERRODE = 3
+    OVERRODE = 3,
+    AUDIO_SESSION_ACTIVATE = 4,
+    STREAM_PRIORITY_CHANGED = 5,
 };
 
-class AudioStreamDeviceChangeReasonExt {
+class AudioStreamDeviceChangeReasonExt : public Parcelable {
 public:
     enum class ExtEnum {
         UNKNOWN = 0,
         NEW_DEVICE_AVAILABLE = 1,
         OLD_DEVICE_UNAVALIABLE = 2,
         OVERRODE = 3,
+        AUDIO_SESSION_ACTIVATE = 4,
+        STREAM_PRIORITY_CHANGED = 5,
         MIN = 1000,
         OLD_DEVICE_UNAVALIABLE_EXT = 1000,
         SET_AUDIO_SCENE = 1001,
@@ -417,6 +433,8 @@ public:
         return static_cast<int>(reason_);
     }
 
+    AudioStreamDeviceChangeReasonExt()
+        : reason_(ExtEnum::UNKNOWN) {}
     AudioStreamDeviceChangeReasonExt(const AudioStreamDeviceChangeReason &reason)
         : reason_(static_cast<ExtEnum>(reason)) {}
 
@@ -450,6 +468,21 @@ public:
     bool IsSetDefaultOutputDevice() const
     {
         return reason_ == ExtEnum::SET_DEFAULT_OUTPUT_DEVICE;
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(reason_));
+    }
+
+    static AudioStreamDeviceChangeReasonExt *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new AudioStreamDeviceChangeReasonExt();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->reason_ = static_cast<ExtEnum>(parcel.ReadInt32());
+        return info;
     }
 
 private:

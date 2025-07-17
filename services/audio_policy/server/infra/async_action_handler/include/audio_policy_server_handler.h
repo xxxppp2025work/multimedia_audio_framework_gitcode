@@ -22,17 +22,16 @@
 
 #include "audio_policy_log.h"
 #include "audio_system_manager.h"
-#include "audio_policy_client.h"
-#include "i_standard_concurrency_state_listener.h"
-#include "i_standard_audio_policy_manager_listener.h"
-#include "i_standard_audio_routing_manager_listener.h"
+#include "istandard_audio_policy_manager_listener.h"
 #include "i_audio_interrupt_event_dispatcher.h"
-#include "i_audio_concurrency_event_dispatcher.h"
 #include "i_audio_zone_event_dispatcher.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
+class IStandardAudioRoutingManagerListener;
+class AudioPolicyClientHolder;
+class AudioPolicyManagerListenerCallback;
 class AudioPolicyServerHandler : public AppExecFwk::EventHandler {
     DECLARE_DELAYED_SINGLETON(AudioPolicyServerHandler)
 public:
@@ -74,7 +73,6 @@ public:
         HEAD_TRACKING_ENABLED_CHANGE,
         HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICE,
         PIPE_STREAM_CLEAN_EVENT,
-        CONCURRENCY_EVENT_WITH_SESSIONID,
         AUDIO_SESSION_DEACTIVE_EVENT,
         MICROPHONE_BLOCKED,
         NN_STATE_CHANGE,
@@ -82,6 +80,8 @@ public:
         SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
         AUDIO_ZONE_EVENT,
         FORMAT_UNSUPPORTED_ERROR,
+        SESSION_DEVICE_CHANGE,
+        INTERRUPT_EVENT_FOR_AUDIO_SESSION,
     };
     /* event data */
     class EventContextObj {
@@ -113,6 +113,7 @@ public:
         std::shared_ptr<AudioZoneEvent> audioZoneEvent;
         uint32_t routeFlag;
         AudioErrors errorCode;
+        int32_t callerPid_ = -1;
     };
 
     struct RendererDeviceChangeEvent {
@@ -142,17 +143,16 @@ public:
 
     void Init(std::shared_ptr<IAudioInterruptEventDispatcher> dispatcher);
 
-    void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient> &cb);
+    void AddAudioPolicyClientProxyMap(int32_t clientPid, const std::shared_ptr<AudioPolicyClientHolder> &cb);
     void RemoveAudioPolicyClientProxyMap(pid_t clientPid);
     void AddExternInterruptCbsMap(int32_t clientId, const std::shared_ptr<AudioInterruptCallback> &callback);
     int32_t RemoveExternInterruptCbsMap(int32_t clientId);
     void AddAvailableDeviceChangeMap(int32_t clientId, const AudioDeviceUsage usage,
-        const sptr<IStandardAudioPolicyManagerListener> &callback);
+        const std::shared_ptr<AudioPolicyManagerListenerCallback> &callback);
     void RemoveAvailableDeviceChangeMap(const int32_t clientId, AudioDeviceUsage usage);
     void AddDistributedRoutingRoleChangeCbsMap(int32_t clientId,
         const sptr<IStandardAudioRoutingManagerListener> &callback);
     int32_t RemoveDistributedRoutingRoleChangeCbsMap(int32_t clientId);
-    void AddConcurrencyEventDispatcher(std::shared_ptr<IAudioConcurrencyEventDispatcher> dispatcher);
     bool SendDeviceChangedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
     bool SendAvailableDeviceChange(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
     bool SendMicrophoneBlockedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc,
@@ -169,6 +169,8 @@ public:
     bool SendInterruptEventInternalCallback(const InterruptEventInternal &interruptEvent);
     bool SendInterruptEventWithStreamIdCallback(const InterruptEventInternal &interruptEvent,
         const uint32_t &streamId);
+    bool SendInterruptEventCallbackForAudioSession(const InterruptEventInternal &interruptEvent,
+        const AudioInterrupt &audioInterrupt);
     bool SendInterruptEventWithClientIdCallback(const InterruptEventInternal &interruptEvent,
         const int32_t &clientId);
     bool SendPreferredOutputDeviceUpdated();
@@ -198,7 +200,6 @@ public:
     bool SendHeadTrackingEnabledChangeForAnyDeviceEvent(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
     bool SendPipeStreamCleanEvent(AudioPipeType pipeType);
-    bool SendConcurrencyEventWithSessionIDCallback(const uint32_t sessionID);
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
     int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo);
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo);
@@ -209,6 +210,7 @@ public:
     bool SendAudioZoneEvent(std::shared_ptr<AudioZoneEvent> event);
     bool SendFormatUnsupportedErrorEvent(const AudioErrors &errorCode);
     int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages);
+    bool SendAudioSessionDeviceChange(const AudioStreamDeviceChangeReason changeReason, int32_t callerPid = -1);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -225,11 +227,13 @@ private:
     void HandleMicStateUpdatedEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleMicStateUpdatedEventWithClientId(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleInterruptEventForAudioSession(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEventWithStreamId(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEventWithClientId(const AppExecFwk::InnerEvent::Pointer &event);
     void HandlePreferredOutputDeviceUpdated();
     void HandlePreferredInputDeviceUpdated();
     void HandleDistributedRoutingRoleChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleAudioSessionDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRendererInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRendererDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
@@ -245,7 +249,6 @@ private:
     void HandleHeadTrackingEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleHeadTrackingEnabledChangeForAnyDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandlePipeStreamCleanEvent(const AppExecFwk::InnerEvent::Pointer &event);
-    void HandleConcurrencyEventWithSessionID(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSessionDeactiveCallback(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleNnStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSceneChange(const AppExecFwk::InnerEvent::Pointer &event);
@@ -258,7 +261,7 @@ private:
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
-    void HandleVolumeChangeCallback(int32_t clientId, sptr<IAudioPolicyClient> audioPolicyClient,
+    void HandleVolumeChangeCallback(int32_t clientId, std::shared_ptr<AudioPolicyClientHolder> audioPolicyClient,
         const VolumeEvent &volumeEvent);
 
     void HandleVolumeKeyEventToRssWhenAccountsChange(std::shared_ptr<EventContextObj> &eventContextObj);
@@ -272,15 +275,14 @@ private:
     std::mutex clientCbCapturerInfoMapMutex_;
     std::mutex clientCbStreamUsageMapMutex_;
     std::weak_ptr<IAudioInterruptEventDispatcher> interruptEventDispatcher_;
-    std::weak_ptr<IAudioConcurrencyEventDispatcher> concurrencyEventDispatcher_;
     std::weak_ptr<IAudioZoneEventDispatcher> audioZoneEventDispatcher_;
 
-    std::unordered_map<int32_t, sptr<IAudioPolicyClient>> audioPolicyClientProxyAPSCbsMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientHolder>> audioPolicyClientProxyAPSCbsMap_;
     std::string pidsStrForPrinting_ = "[]";
 
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptCallback>> amInterruptCbsMap_;
     std::map<std::pair<int32_t, AudioDeviceUsage>,
-        sptr<IStandardAudioPolicyManagerListener>> availableDeviceChangeCbsMap_;
+        std::shared_ptr<AudioPolicyManagerListenerCallback>> availableDeviceChangeCbsMap_;
     std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> distributedRoutingRoleChangeCbsMap_;
     std::unordered_map<int32_t,  std::unordered_map<CallbackChange, bool>> clientCallbacksMap_;
     int32_t pidOfRss_ = -1;

@@ -82,6 +82,11 @@ int32_t HpaePolicyManager::SetEffectSystemVolume(const int32_t systemVolumeType,
     return AudioEffectChainManager::GetInstance()->SetEffectSystemVolume(systemVolumeType, systemVolume);
 }
 
+int32_t HpaePolicyManager::SetAbsVolumeStateToEffect(const bool absVolumeState)
+{
+    return AudioEffectChainManager::GetInstance()->SetAbsVolumeStateToEffect(absVolumeState);
+}
+
 int32_t HpaePolicyManager::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
 {
     return AudioEffectChainManager::GetInstance()->SetAudioEffectProperty(propertyArray);
@@ -204,6 +209,13 @@ void HpaePolicyManager::SetAudioParameter(const std::string &adapterName, const 
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
     deviceManager->SetAudioParameter(adapterName, key, condition, value);
+}
+
+void HpaePolicyManager::SendInitCommandToAlgo()
+{
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is null");
+    audioEnhanceChainManager->SendInitCommand();
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

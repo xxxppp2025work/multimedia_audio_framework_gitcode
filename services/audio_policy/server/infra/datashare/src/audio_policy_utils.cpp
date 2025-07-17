@@ -23,13 +23,11 @@
 #include "parameters.h"
 #include "audio_policy_log.h"
 #include "audio_utils.h"
-#include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
 #include "audio_policy_manager_factory.h"
 #include "device_init_callback.h"
 #include "audio_recovery_device.h"
-#include "audio_config_manager.h"
 
 #include "audio_server_proxy.h"
 
@@ -234,6 +232,9 @@ std::string AudioPolicyUtils::GetNewSinkPortName(DeviceType deviceType)
             break;
         case DeviceType::DEVICE_TYPE_ACCESSORY:
             portName = ACCESSORY_SOURCE;
+            break;
+        case DeviceType::DEVICE_TYPE_HEARING_AID:
+            portName = HEARING_AID_SPEAKER;
             break;
         default:
             portName = PORT_NONE;
@@ -659,7 +660,9 @@ std::string AudioPolicyUtils::GetDevicesStr(const vector<shared_ptr<AudioDeviceD
         devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
         devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceId_)));
         if (iter->getType() == DEVICE_TYPE_BLUETOOTH_A2DP ||
-            iter->getType() == DEVICE_TYPE_BLUETOOTH_SCO) {
+            iter->getType() == DEVICE_TYPE_BLUETOOTH_SCO ||
+            iter->getType() == DEVICE_TYPE_NEARLINK ||
+            iter->getType() == DEVICE_TYPE_NEARLINK_IN) {
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceCategory_)));
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->connectState_)));
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->isEnable_)));
