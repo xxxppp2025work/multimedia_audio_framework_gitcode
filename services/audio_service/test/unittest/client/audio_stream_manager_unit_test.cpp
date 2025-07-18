@@ -57,6 +57,7 @@ HWTEST(AudioStreamManagerUnitTest, IsStreamActive_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamActive_001 result3:%{public}d", result);
     EXPECT_EQ(result, false);
 }
+
 /**
  * @tc.name  : Test IsStreamActiveByStreamUsage API
  * @tc.number: IsStreamActiveByStreamUsage_001
