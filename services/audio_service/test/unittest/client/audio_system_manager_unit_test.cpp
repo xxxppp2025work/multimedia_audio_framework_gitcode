@@ -960,5 +960,22 @@ HWTEST(AudioSystemManagerUnitTest, CreateGroup_001, TestSize.Level1)
     int32_t result = audioSystemManager.CreateAudioWorkgroup();
     EXPECT_GT(result, 0);
 }
+
+/**
+ * @tc.name   : Test SetNearlinkDeviceVolume API
+ * @tc.number : SetNearlinkDeviceVolume_001
+ * @tc.desc   : Test SetNearlinkDeviceVolume interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, SetNearlinkDeviceVolume_001, TestSize.Level1)
+{
+    AudioSystemManager audioSystemManager;
+    std::string macAddress = "LocalDevice";
+    AudioVolumeType volumeType = STREAM_MUSIC;
+    int32_t volume = 0;
+    bool updateUi = true;
+
+    int32_t result = audioSystemManager.SetNearlinkDeviceVolume(macAddress, volumeType, volume, updateUi);
+    EXPECT_NE(result, -2);
+}
 } // namespace AudioStandard
 } // namespace OHOS
