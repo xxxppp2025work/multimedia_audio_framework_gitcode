@@ -69,170 +69,170 @@ uint32_t GetArrLength(T& arr)
 void DoProcessFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->DoProcess();
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->DoProcess();
 }
 
 void ResetFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->Reset();
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->Reset();
 }
 
 void ResetAllFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->ResetAll();
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->ResetAll();
 }
 
 void GetSharedInstanceFuzzTest1()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->GetSharedInstance();
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->GetSharedInstance();
 }
 
 void GetSharedInstanceFuzzTest2()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->GetSharedInstance(nodeInfo);
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->GetSharedInstance(nodeInfo);
 }
 
 void GetOutputPortFuzzTest1()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->GetOutputPort();
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->GetOutputPort();
 }
 
 void GetOutputPortFuzzTest2()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->GetOutputPort(nodeInfo);
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->GetOutputPort(nodeInfo);
 }
 
 void GetCapturerSourceInstanceFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     const std::string deviceClass = nodeInfo.deviceClass;
     const std::string deviceNetId = nodeInfo.deviceNetId;
     const SourceType sourceType;
     const std::string sourceName = nodeInfo.sourceName;
-    hpaeProcessCluster->GetCapturerSourceInstance(deviceClass,deviceNetId,sourceType,sourceName);
+    hpaeSourceInputCluster->GetCapturerSourceInstance(deviceClass,deviceNetId,sourceType,sourceName);
 }
 
 void GetOutputPortFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     IAudioSourceAttr attr;
-    hpaeProcessCluster->GetOutputPort(attr);
+    hpaeSourceInputCluster->GetOutputPort(attr);
 }
 
 void CapturerSourceDeInitFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->CapturerSourceDeInit();
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->CapturerSourceDeInit();
 }
 
 void CapturerSourceFlushFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->CapturerSourceFlush();
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->CapturerSourceFlush();
 }
 
 void CapturerSourcePauseFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->CapturerSourcePause();
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->CapturerSourcePause();
 }
 
 void CapturerSourceResetFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->CapturerSourceReset();
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->CapturerSourceReset();
 }
 
 void CapturerSourceResumeFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->CapturerSourceResume();
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->CapturerSourceResume();
 }
 
 void CapturerSourceStartFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->CapturerSourceStart();
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->CapturerSourceStart();
 }
 
 void CapturerSourceStopFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->CapturerSourceStop();
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->CapturerSourceStop();
 }
 
 void GetSourceStateFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->GetSourceState();
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->GetSourceState();
 }
 
 void GetOutputPortNumFuzzTest1()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->GetOutputPortNum();
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->GetOutputPortNum();
 }
 
 void GetOutputPortNumFuzzTest2()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->GetOutputPortNum(nodeInfo);
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->GetOutputPortNum(nodeInfo);
 }
 
 void GetSourceInputNodeTypeFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->GetSourceInputNodeType();
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->GetSourceInputNodeType();
 }
 
 void GSetSourceInputNodeTypeFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     HpaeSourceInputNodeType type = HpaeSourceInputNodeType::HPAE_SOURCE_DEFAULT;
-    hpaeProcessCluster->SetSourceInputNodeType(type);
+    hpaeSourceInputCluster->SetSourceInputNodeType(type);
 }
 
 void UpdateAppsUidAndSessionIdFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     std::vector<int32_t> appsUid = {GetData<int32_t>()};
     std::vector<int32_t> sessionsId = {GetData<int32_t>()};
-    hpaeProcessCluster->UpdateAppsUidAndSessionId(appsUid,sessionsId);
+    hpaeSourceInputCluster->UpdateAppsUidAndSessionId(appsUid,sessionsId);
 }
 
 void GetCaptureIdFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
-    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo);
-    hpaeProcessCluster->GetCaptureId();
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->GetCaptureId();
 }
 
 typedef void (*TestFuncs[23])();
