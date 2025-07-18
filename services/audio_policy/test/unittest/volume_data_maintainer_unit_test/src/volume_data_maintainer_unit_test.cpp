@@ -332,6 +332,11 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_016, TestSize.
     ret = volumeDataMaintainerRet->GetDeviceTypeName(deviceTypeRet);
     typeRet = "";
     EXPECT_EQ(ret, typeRet);
+    
+    deviceTypeRet = DEVICE_TYPE_NEARLINK;
+    ret = volumeDataMaintainerRet->GetDeviceTypeName(deviceTypeRet);
+    typeRet = "_wireless";
+    EXPECT_EQ(ret, typeRet);
 }
 
 /**

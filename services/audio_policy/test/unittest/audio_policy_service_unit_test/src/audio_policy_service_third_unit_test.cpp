@@ -1801,6 +1801,5 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetBackgroundMuteCallback_001, TestSiz
     int32_t ret = server->audioBackgroundManager_.SetBackgroundMuteCallback(object);
     EXPECT_EQ(ret, SUCCESS);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
