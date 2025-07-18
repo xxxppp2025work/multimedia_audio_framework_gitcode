@@ -16,9 +16,9 @@ import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../config.gni")
 
-ohos_fuzztest("HpaeResampleNode") {
+ohos_fuzztest("HpaePluginNode") {
   module_out_path = "audio_framework/audio_framework_engine"
-  fuzz_config_file = "../hpaeresamplenode_fuzzer"
+  fuzz_config_file = "../hpaepluginnode_fuzzer"
 
   include_dirs = [
     "../../../services/audio_engine/dfx",
@@ -42,7 +42,7 @@ ohos_fuzztest("HpaeResampleNode") {
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
   sources = [ 
-    "hpaeresamplenode_fuzzer.cpp",
+    "hpaepluginnode_fuzzer.cpp",
     ]
 
   deps = [
@@ -97,5 +97,5 @@ defines = []
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":HpaeResampleNode" ]
+  deps = [ ":HpaePluginNode" ]
 }
