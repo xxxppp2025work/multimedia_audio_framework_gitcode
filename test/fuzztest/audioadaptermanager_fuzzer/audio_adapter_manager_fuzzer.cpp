@@ -942,24 +942,24 @@ void AudioVolumeManagerGetPersistMicMuteFuzzTest(const uint8_t *rawData, size_t 
 void AudioVolumeManagerSetSourceOutputStreamMuteFuzzTest(const uint8_t *rawData, size_t size)
 {
     audioAdapterManager_->Init();
-    int 32_t uid = static_cast<int32_t>(size);
+    int32_t uid = static_cast<int32_t>(size);
     bool mute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
     audioAdapterManager_->SetSourceOutputStreamMute(uid, mute);
 }
 
 void AudioVolumeManagerGetStreamVolumeFuzzTest(const uint8_t *rawData, size_t size)
-{   
-    int 32_t index = static_cast<int32_t>(size);
-    AudioStreamType streamType = g_testAudioStreamType[index % g_testAudioStreamYtpes.size()];
+{
+    int32_t index = static_cast<int32_t>(size);
+    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
     audioAdapterManager_->Init();
-    audioAdapterManager_->GetPersistMicMuteState(streamType);
+    audioAdapterManager_->GetStreamVolume(streamType);
 }
 
 void AudioVolumeManagerGetRingerModeInfoFuzzTest(const uint8_t *rawData, size_t size)
-{   
-    std::vector<RingerModeInfo> ringerModeInfo;
+{
+    std::vector<RingerModeAdjustInfo> ringerModeInfo;
     audioAdapterManager_->Init();
-    audioAdapterManager_->GetGetRingerModeInfo(ringerModeInfo);
+    audioAdapterManager_->GetRingerModeInfo(ringerModeInfo);
 }
 
 } // namespace AudioStandard

@@ -59,58 +59,57 @@ T GetData()
 }
 
 void AudioZoneClientManagerGetInstanceFuzzTest()
-{   
-    std::shared_ptr<AudioPolicyServerHandler> Handler;
+{
+    std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
-    AudioZoneClientManager.GetInstance();
+    audioZoneClientManager.GetInstance();
 }
 
 void AudioZoneClientManagerRegisterAudioZoneClientFuzzTest()
-{   
-    std::shared_ptr<AudioPolicyServerHandler> Handler;
+{
+    std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
-    pid_t clientPid = GetDaTa<pid_t>();
+    pid_t clientPid = GetData<pid_t>();
     sptr<IStandardAudioZoneClient> client = nullptr;
-    AudioZoneClientManager.RegisterAudioZoneClient(clientPid, client);
+    audioZoneClientManager.RegisterAudioZoneClient(clientPid, client);
 }
 
 void AudioZoneClientManagerUnRegisterAudioZoneClientFuzzTest()
-{   
-    std::shared_ptr<AudioPolicyServerHandler> Handler;
+{
+    std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
-    pid_t clientPid = GetDaTa<pid_t>();
-    AudioZoneClientManager.UnRegisterAudioZoneClient(clientPid);
+    pid_t clientPid = GetData<pid_t>();
+    audioZoneClientManager.UnRegisterAudioZoneClient(clientPid);
 }
 
 void AudioZoneClientManagerDispatchEventFuzzTest()
-{   
-    std::shared_ptr<AudioPolicyServerHandler> Handler;
+{
+    std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
-    std::shared_ptr<AudioZoneDescriptor>event;
-    AudioZoneClientManager.DispatchEvent(clientPid);
+    std::shared_ptr<AudioZoneEvent> event;
+    audioZoneClientManager.DispatchEvent(event);
 }
 
 void AudioZoneClientManagerSendZoneAddEventFuzzTest()
-{   
-    std::shared_ptr<AudioPolicyServerHandler> Handler;
+{
+    std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
-    pid_t clientPid = GetDaTa<pid_t>();
-    std::shared_ptr<AudioZoneDescriptor>Descriptor;
-    AudioZoneClientManager.SendZoneAddEvent(clientPid, Descriptor);
+    pid_t clientPid = GetData<pid_t>();
+    std::shared_ptr<AudioZoneDescriptor> Descriptor;
+    audioZoneClientManager.SendZoneAddEvent(clientPid, Descriptor);
 }
 
 void AudioZoneClientManagerSendZoneRemoveEventFuzzTest()
-{   
-    std::shared_ptr<AudioPolicyServerHandler> Handler;
+{
+    std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
-    pid_t clientPid = GetDaTa<pid_t>();
-    int32_t zoneId = GetDaTa<int32_t>();
-    std::shared_ptr<AudioZoneDescriptor>Descriptor;
-    AudioZoneClientManager.SendZoneRemoveEvent(clientPid, zoneId);
+    pid_t clientPid = GetData<pid_t>();
+    int32_t zoneId = GetData<int32_t>();
+    audioZoneClientManager.SendZoneRemoveEvent(clientPid, zoneId);
 }
 
 void AudioZoneClientManagerSendZoneChangeEventFuzzTest()
-{   
+{
     std::vector<AudioZoneChangeReason> AudioZoneChangeReason{
         AudioZoneChangeReason::UNKNOWN,
         AudioZoneChangeReason::BIND_NEW_DEVICE,
@@ -118,55 +117,55 @@ void AudioZoneClientManagerSendZoneChangeEventFuzzTest()
         AudioZoneChangeReason::UNBIND_APP
     };
     AudioZoneChangeReason reason =
-        static_cast<AudioZoneChangeReason>(GetDaTa<int32_t>() % audioZoneChangeReason.size());
-    std::shared_ptr<AudioPolicyServerHandler> Handler;
+        static_cast<AudioZoneChangeReason>(GetData<int32_t>() % audioZoneChangeReason.size());
+    std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
-    pid_t clientPid = GetDaTa<pid_t>();
+    pid_t clientPid = GetData<pid_t>();
     std::shared_ptr<AudioZoneDescriptor> descriptor;
-    AudioZoneClientManager.SendZoneChangeEvent(clientPid, descriptor, reason);
+    audioZoneClientManager.SendZoneChangeEvent(clientPid, descriptor, reason);
 }
 
 void AudioZoneClientManagerSendZoneInterruptEventFuzzTest()
-{   
-    std::vector<AudioZoneInterruptReason> AudioZoneInterruptReason{
+{
+    std::vector<AudioZoneInterruptReason> audioZoneInterruptReason{
         AudioZoneInterruptReason::UNKNOWN,
         AudioZoneInterruptReason::LOCAL_INTERRUPT,
         AudioZoneInterruptReason::REMOTE_INJECT,
         AudioZoneInterruptReason::RELEASE_AUDIO_ZONE,
-        AudioZoneInterruptReason::BIND_ADD_TO_ZONE,
-        AudioZoneInterruptReason::UNBIND_APP_FROM_ZONE
+        AudioZoneInterruptReason::BIND_APP_TO_ZONE,
+        AudioZoneInterruptReason::UNBIND_APP_FROM_ZONE,
     };
-    std::shared_ptr<AudioPolicyServerHandler> Handler;
+    std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
-    pid_t clientPid = GetDaTa<pid_t>();
-    int32_t zoneId = GetDaTa<int32_t>();
+    pid_t clientPid = GetData<pid_t>();
+    int32_t zoneId = GetData<int32_t>();
     std::string deviceTag = "test";
     AudioZoneInterruptReason reason =
-        static_cast<AudioZoneInterruptReason>(GetDaTa<int32_t>() % audioZoneInterruptReason.size());
+        static_cast<AudioZoneInterruptReason>(GetData<int32_t>() % audioZoneInterruptReason.size());
     std::list<std::pair<AudioInterrupt,AudioFocuState>> interrupts;
-    AudioZoneClientManager.SendZoneInterruptEvent(clientPid, zoneId, deviceTag, interrupts, reason);
+    audioZoneClientManager.SendZoneInterruptEvent(clientPid, zoneId, deviceTag, interrupts, reason);
 }
 
 void AudioZoneClientManagerSetSystemVolumeLevelFuzzTest()
-{   
-    std::shared_ptr<AudioPolicyServerHandler> Handler;
+{
+    std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
-    pid_t clientPid = GetDaTa<pid_t>();
-    int32_t zoneId = GetDaTa<int32_t>();
-    int32_t volumeLevel = GetDaTa<int32_t>();
-    int32_t volumeFlag = GetDaTa<int32_t>();
-    AudioVolumeType volumeType = GetDaTa<AudioVolumeType>();
-    AudioZoneClientManager.SendZoneRemoveEvent(clientPid, zoneId, volumeType, volumeLevel, volumeFlag);
+    pid_t clientPid = GetData<pid_t>();
+    int32_t zoneId = GetData<int32_t>();
+    int32_t volumeLevel = GetData<int32_t>();
+    int32_t volumeFlag = GetData<int32_t>();
+    AudioVolumeType volumeType = GetData<AudioVolumeType>();
+    audioZoneClientManager.SetSystemVolumeLevel(clientPid, zoneId, volumeType, volumeLevel, volumeFlag);
 }
 
-void AudioZoneClientManagerSendZoneRemoveEventFuzzTest()
-{   
-    std::shared_ptr<AudioPolicyServerHandler> Handler;
+void AudioZoneClientManagerGetSystemVolumeLevelFuzzTest()
+{
+    std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
-    pid_t clientPid = GetDaTa<pid_t>();
-    int32_t zoneId = GetDaTa<int32_t>();
-    std::shared_ptr<AudioZoneDescriptor> Descriptor;
-    AudioZoneClientManager.SendZoneRemoveEvent(clientPid, zoneId);
+    pid_t clientPid = GetData<pid_t>();
+    int32_t zoneId = GetData<int32_t>();
+    AudioVolumeType volumeType = GetData<AudioVolumeType>();
+    audioZoneClientManager.GetSystemVolumeLevel(clientPid, zoneId, volumeType);
 }
 
 TestPtr g_testPtrs[] = {
@@ -178,9 +177,9 @@ TestPtr g_testPtrs[] = {
     AudioZoneClientManagerSendZoneRemoveEventFuzzTest,
     AudioZoneClientManagerSendZoneChangeEventFuzzTest,
     AudioZoneClientManagerSendZoneInterruptEventFuzzTest,
-    AudioZoneClientManagerSendZoneInterruptEventFuzzTest,
-    AudioZoneClientManagerSendZoneRemoveEventFuzzTest,
-}
+    AudioZoneClientManagerSetSystemVolumeLevelFuzzTest,
+    AudioZoneClientManagerGetSystemVolumeLevelFuzzTest,
+};
 
 void FuzzTest(const uint8_t* rawData, size_t size)
 {
