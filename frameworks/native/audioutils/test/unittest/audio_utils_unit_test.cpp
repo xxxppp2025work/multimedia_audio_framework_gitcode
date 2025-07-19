@@ -3435,8 +3435,6 @@ HWTEST(AudioUtilsUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
 * @tc.name  : Test SetVolumeRampConfig  API
 * @tc.type  : FUNC
 * @tc.number: SetVolumeRampConfig_002
-* @tc.desc  : Test SetVolumeRampConfig API,
-*             when rampDirection_ is RAMP_UP
 */
 HWTEST(AudioUtilsUnitTest, SetVolumeRampConfig_002, TestSize.Level1)
 {
@@ -3449,8 +3447,6 @@ HWTEST(AudioUtilsUnitTest, SetVolumeRampConfig_002, TestSize.Level1)
 * @tc.name  : Test GetRampVolume  API
 * @tc.type  : FUNC
 * @tc.number: GetRampVolume_003
-* @tc.desc  : Test GetRampVolume API,
-*             when ret is 0.0f
 */
 HWTEST(AudioUtilsUnitTest, GetRampVolume_003, TestSize.Level1)
 {
@@ -3465,8 +3461,6 @@ HWTEST(AudioUtilsUnitTest, GetRampVolume_003, TestSize.Level1)
  * @tc.name  : Test audio_channel_blend API
  * @tc.type  : FUNC
  * @tc.number: audio_channel_blend_020
- * @tc.desc  : Test AudioBlend Process API,Return buffer
- *             when blendMode is MODE_BLEND_LR,channel 6
  */
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_020, TestSize.Level1)
 {
@@ -3483,8 +3477,6 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_020, TestSize.Level1)
  * @tc.name  : Test audio_channel_blend API
  * @tc.type  : FUNC
  * @tc.number: audio_channel_blend_021
- * @tc.desc  : Test AudioBlend Process API,Return buffer
- *             when blendMode is MODE_BLEND_LR,channel 6
  */
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_021, TestSize.Level1)
 {
@@ -3501,7 +3493,6 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_021, TestSize.Level1)
  * @tc.name  : Test GetAudioFormatSize API
  * @tc.type  : FUNC
  * @tc.number: GetAudioFormatSize_001
- * @tc.desc  : Test GetAudioFormatSize
  */
 HWTEST(AudioUtilsUnitTest, GetAudioFormatSize_001, TestSize.Level1)
 {
@@ -3518,13 +3509,12 @@ HWTEST(AudioUtilsUnitTest, GetAudioFormatSize_001, TestSize.Level1)
  * @tc.name  : Test CountVolume API
  * @tc.type  : FUNC
  * @tc.number: CountVolume_001
- * @tc.desc  : Test CountVolume
  */
 HWTEST(AudioUtilsUnitTest, CountVolume_001, TestSize.Level1)
 {
     std::string value = "Test";
-    Trace:: CountVolume(value, 0);
-    Trace:: CountVolume(value, 2);
+    Trace::CountVolume(value, 0);
+    Trace::CountVolume(value, 2);
     EXPECT_FALSE(static_cast<size_t>(0));
 }
 
@@ -3532,7 +3522,6 @@ HWTEST(AudioUtilsUnitTest, CountVolume_001, TestSize.Level1)
  * @tc.name  : Test ConvertFromFloatTo24Bit API
  * @tc.type  : FUNC
  * @tc.number: ConvertFromFloatTo24Bit_001
- * @tc.desc  : Test ConvertFromFloatTo24Bit
  */
 HWTEST(AudioUtilsUnitTest, ConvertFromFloatTo24Bit_001, TestSize.Level1)
 {
@@ -3548,7 +3537,6 @@ HWTEST(AudioUtilsUnitTest, ConvertFromFloatTo24Bit_001, TestSize.Level1)
  * @tc.name  : Test ConvertToHDIAudioInputType API
  * @tc.type  : FUNC
  * @tc.number: ConvertToHDIAudioInputType_001
- * @tc.desc  : Test ConvertToHDIAudioInputType
  */
 HWTEST(AudioUtilsUnitTest, ConvertToHDIAudioInputType_001, TestSize.Level1)
 {
@@ -3571,7 +3559,6 @@ HWTEST(AudioUtilsUnitTest, ConvertToHDIAudioInputType_001, TestSize.Level1)
  * @tc.name  : Test IsInnerCapSinkName API
  * @tc.type  : FUNC
  * @tc.number: IsInnerCapSinkName_001
- * @tc.desc  : Test IsInnerCapSinkName
  */
 HWTEST(AudioUtilsUnitTest, IsInnerCapSinkName_001, TestSize.Level1)
 {
@@ -3586,19 +3573,17 @@ HWTEST(AudioUtilsUnitTest, IsInnerCapSinkName_001, TestSize.Level1)
  * @tc.name  : Test IsInnerCapSinkName API
  * @tc.type  : FUNC
  * @tc.number: IsInnerCapSinkName_002
- * @tc.desc  : Test IsInnerCapSinkName
  */
 HWTEST(AudioUtilsUnitTest, IsInnerCapSinkName_002, TestSize.Level1)
 {
     char pattern[] = "invalid_pattern"
-   EXPECT_FALSE(IsInnerCapSinkName(pattern));
+    EXPECT_FALSE(IsInnerCapSinkName(pattern));
 }
 
 /**
 * @tc.name  : Test GetFormatByteSize API
 * @tc.type  : FUNC
 * @tc.number: GetFormatByteSize_005
-* @tc.desc  : Test GetFormatByteSize
 */
 HWTEST(AudioUtilsUnitTest, GetFormatByteSize_005, TestSize.Level0)
 {
@@ -3611,7 +3596,6 @@ HWTEST(AudioUtilsUnitTest, GetFormatByteSize_005, TestSize.Level0)
 * @tc.name  : Test CloseFd API
 * @tc.type  : FUNC
 * @tc.number: CloseFd_001
-* @tc.desc  : Test CloseFd
 */
 HWTEST(AudioUtilsUnitTest, CloseFd_001, TestSize.Level0)
 {
@@ -3623,7 +3607,6 @@ HWTEST(AudioUtilsUnitTest, CloseFd_001, TestSize.Level0)
 * @tc.name  : Test CheckAudioData  API
 * @tc.type  : FUNC
 * @tc.number: CheckAudioData_004
-* @tc.desc  : Test CheckAudioData API
 */
 HWTEST(AudioUtilsUnitTest, CheckAudioData_004, TestSize.Level1)
 {
@@ -3639,21 +3622,18 @@ HWTEST(AudioUtilsUnitTest, CheckAudioData_004, TestSize.Level1)
 * @tc.name  : Test MockPcmData  API
 * @tc.type  : FUNC
 * @tc.number: MockPcmData_003
-* @tc.desc  : Test MockPcmData API
 */
 HWTEST(AudioUtilsUnitTest, MockPcmData_003, TestSize.Level1)
 {
     std::shared_ptr<AudioLatencyMeasurement> audioLatencyMeasurement =
         std::make_shared<AudioLatencyMeasurement>(44100, 2, 16, "com.example.null", 1);
-     uint8_t buffer[1024] = {};
-     size_t bufferLen = sizeof(buffer);
-     size_t MOCK_INTERVAL = 2000;
-
-    audioLatencyMeasurement->mockedTime_ = MOCK_INTERVAL + 1;
+    uint8_t buffer[1024] = {};
+    size_t bufferLen = sizeof(buffer);
+    size_t mockInterval = 2000;
+    audioLatencyMeasurement->mockedTime_ = mockInterval + 1;
     audioLatencyMeasurement->format_ = SAMPLE_S16LE;
     bool ret = audioLatencyMeasurement->MockPcmData(buffer, bufferLen);
     EXPECT_EQ(ret, false);
-
     audioLatencyMeasurement->format_ = SAMPLE_S32LE;
     ret = audioLatencyMeasurement->MockPcmData(buffer, bufferLen);
     EXPECT_EQ(ret, true);
