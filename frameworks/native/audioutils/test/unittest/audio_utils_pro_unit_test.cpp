@@ -718,12 +718,12 @@ HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_030, TestSize.Level1)
     SwitchStreamInfo info = {0, 1, 0, 0, 0, CAPTURER_STOPPED};
     SwitchState targetState = SwitchState::SWITCH_STATE_WAITING;
 
-    SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState);
-
+    auto ret = SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState);
+    EXPECT_EQ(ret, true);
     SwitchStreamInfo info2 = {0, 1, 0, 0, 0, CAPTURER_STOPPED};
     SwitchState targetState2 = SwitchState::SWITCH_STATE_WAITING;
 
-    auto ret = SwitchStreamUtil::UpdateSwitchStreamRecord(info2, targetState2);
+    ret = SwitchStreamUtil::UpdateSwitchStreamRecord(info2, targetState2);
     EXPECT_EQ(ret, true);
 
     ret = SwitchStreamUtil::RemoveAllRecordBySessionId(0);
