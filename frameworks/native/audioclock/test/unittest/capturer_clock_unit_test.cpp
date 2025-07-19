@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "capturer_clock_manager.h"
 #include "capturer_clock.h"
+#include "audio_source_clock.h"
 
 using namespace testing::ext;
 using namespace std;
@@ -42,6 +43,7 @@ constexpr uint64_t MOCK_TIMESTAMP_4 = 1'100'000'000;
 constexpr uint64_t MOCK_TIMESTAMP_4_IN_CAPTURER = 1'120'000'000;
 constexpr uint64_t MOCK_TIMESTAMP_5 = 1'120'000'000;
 constexpr uint64_t MOCK_TIMESTAMP_5_IN_CAPTURER = 1'140'000'000;
+constexpr uint32_t MOCK_CHANNEL = 2;
 
 class CapturerClockUnitTest : public testing::Test {
 public:
