@@ -1153,8 +1153,11 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
 
 bool AudioEndpointInner::IsBufferDataInsufficient(int32_t readableDataFrame, uint32_t spanSizeInFrame)
 {
-    return (readableDataFrame >= 0 &&
-        (static_cast<uint32_t>(readableDataFrame) < spanSizeInFrame));
+    if (readableDataFrame < 0) {
+        return false;
+    }
+
+    return (static_cast<uint32_t>(readableDataFrame) < spanSizeInFrame);
 }
 
 bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos)
