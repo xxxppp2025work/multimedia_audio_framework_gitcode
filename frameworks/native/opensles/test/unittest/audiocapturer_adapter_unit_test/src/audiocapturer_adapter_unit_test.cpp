@@ -392,7 +392,7 @@ HWTEST(AudioCapturerAdapterUnitTest, AudioRecorderDestroy_001, TestSize.Level0)
     EXPECT_TRUE(result = SL_RESULT_PARAMETER_INVALID);
 
     result = AudioRecorderDestroy(self);
-    EXPECT_EQ(result,SL_RESULT_SUCCESS);
+    EXPECT_EQ(result, SL_RESULT_SUCCESS);
 }
 
 /**
