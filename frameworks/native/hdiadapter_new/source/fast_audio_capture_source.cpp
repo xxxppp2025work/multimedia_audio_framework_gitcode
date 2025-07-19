@@ -34,7 +34,8 @@ FastAudioCaptureSource::~FastAudioCaptureSource()
 
 int32_t FastAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
-    AUDIO_INFO_LOG("In, flag: %{public}d", attr.audioStreamFlag);
+    AUDIO_INFO_LOG("FastSource::init halName:%{public}s, captureId：%{public}u, sourceType:%{public}d, flag: %{public}d",
+        halName_.c_str(), captureId_, attr.sourceType, attr.audioStreamFlag);
     attr_ = attr;
 
     int32_t ret = CreateCapture();
@@ -51,8 +52,10 @@ int32_t FastAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 
 void FastAudioCaptureSource::DeInit(void)
 {
-    AUDIO_INFO_LOG("in, flag: %{public}d, isCheckPositionSuccess: %{public}d", attr_.audioStreamFlag,
-        isCheckPositionSuccess_.load());
+    AUDIO_INFO_LOG("FastSource::init halName:%{public}s, captureId：%{public}u, sourceType:%{public}d, "
+        "flag: %{public}d, isCheckPositionSuccess: %{public}d",
+        halName_.c_str(), captureId_, attr.sourceType, attr_.audioStreamFlag, isCheckPositionSuccess_.load());
+
     if (started_ || !isCheckPositionSuccess_) {
         Stop();
         started_ = false;
@@ -75,7 +78,8 @@ bool FastAudioCaptureSource::IsInited(void)
 int32_t FastAudioCaptureSource::Start(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("FastSource::init halName:%{public}s, captureId：%{public}u, sourceType:%{public}d, flag: %{public}d",
+        halName_.c_str(), captureId_, attr.sourceType, attr_.audioStreamFlag);
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ == nullptr) {
         WatchTimeout guard("create AudioRunningLock start");
@@ -115,7 +119,9 @@ ERR_RET:
 int32_t FastAudioCaptureSource::Stop(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("in, isCheckPositionSuccess: %{public}d", isCheckPositionSuccess_.load());
+    AUDIO_INFO_LOG("FastSource::Stop halName:%{public}s, captureId：%{public}u, sourceType:%{public}d, "
+        "flag: %{public}d, isCheckPositionSuccess: %{public}d",
+        halName_.c_str(), captureId_, attr.sourceType, attr_.audioStreamFlag, isCheckPositionSuccess_.load());
 
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ != nullptr) {
@@ -140,6 +146,9 @@ int32_t FastAudioCaptureSource::Stop(void)
 
 int32_t FastAudioCaptureSource::Resume(void)
 {
+    AUDIO_INFO_LOG("FastSource::Resume halName:%{public}s, captureId：%{public}u, sourceType:%{public}d, "
+        "flag: %{public}d, isCheckPositionSuccess: %{public}d",
+        halName_.c_str(), captureId_, attr.sourceType, attr_.audioStreamFlag, isCheckPositionSuccess_.load());
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
 
     if (!paused_) {
@@ -166,6 +175,9 @@ int32_t FastAudioCaptureSource::Pause(void)
 
 int32_t FastAudioCaptureSource::Flush(void)
 {
+    AUDIO_INFO_LOG("FastSource::Flush halName:%{public}s, captureId：%{public}u, sourceType:%{public}d, "
+        "flag: %{public}d, isCheckPositionSuccess: %{public}d",
+        halName_.c_str(), captureId_, attr.sourceType, attr_.audioStreamFlag, isCheckPositionSuccess_.load());
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
 
@@ -176,6 +188,9 @@ int32_t FastAudioCaptureSource::Flush(void)
 
 int32_t FastAudioCaptureSource::Reset(void)
 {
+    AUDIO_INFO_LOG("FastSource::Reset halName:%{public}s, captureId：%{public}u, sourceType:%{public}d, "
+        "flag: %{public}d, isCheckPositionSuccess: %{public}d",
+        halName_.c_str(), captureId_, attr.sourceType, attr_.audioStreamFlag, isCheckPositionSuccess_.load());
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
 
@@ -499,9 +514,11 @@ int32_t FastAudioCaptureSource::CreateCapture(void)
     struct AudioDeviceDescriptor deviceDesc;
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
-
-    AUDIO_INFO_LOG("create capture, type: %{public}d, rate: %{public}u, channel: %{public}u, format: %{public}u, "
-        "device: %{public}u", param.type, param.sampleRate, param.channelCount, param.format, attr_.deviceType);
+    
+    AUDIO_INFO_LOG("FastSource::CreateCapture, halName:%{public}s, captureId:%{public}u, sourceType:%{public}d, "
+        "hdiSourceType:%{public}d, type: %{public}d, rate:%{public}u, channel: %{public}u, format: %{public}u, "
+        "devicePin: %{public}u, device: %{public}u", halName_.c_str(), captureId_, attr_.sourceType, param.sourceType,
+        param.type, param.sampleRate, param.channelCount, param.format, deviceDesc.pins, attr_.deviceType);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);

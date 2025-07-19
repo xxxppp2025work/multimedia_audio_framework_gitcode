@@ -54,6 +54,8 @@ BluetoothAudioCaptureSource::~BluetoothAudioCaptureSource()
 
 int32_t BluetoothAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
+    AUDIO_INFO_LOG("A2dpSource::Init halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     if (sourceInited_ && IsValidState()) {
         AUDIO_WARNING_LOG("source already inited");
         return SUCCESS;
@@ -78,6 +80,8 @@ void BluetoothAudioCaptureSource::DeInit(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
     Trace trace("BluetoothAudioCaptureSource::DeInit");
+    AUDIO_INFO_LOG("A2dpSource::DeInit halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
 
     sourceInited_ = false;
     started_ = false;
@@ -101,7 +105,8 @@ int32_t BluetoothAudioCaptureSource::Start(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
     Trace trace("BluetoothAudioCaptureSource::Start");
-    AUDIO_INFO_LOG("in, halName: %{public}s", halName_.c_str());
+    AUDIO_INFO_LOG("A2dpSource::Start halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
 
     InitLatencyMeasurement();
 #ifdef FEATURE_POWER_MANAGER
@@ -147,6 +152,8 @@ int32_t BluetoothAudioCaptureSource::Start(void)
 int32_t BluetoothAudioCaptureSource::Stop(void)
 {
     Trace trace("BluetoothAudioCaptureSource::Stop");
+    AUDIO_INFO_LOG("A2dpSource::Stop halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     std::promise<void> promiseEnsureLock;
     auto futurePromiseEnsureLock = promiseEnsureLock.get_future();
     std::thread stopThread([&promiseEnsureLock, this] {
@@ -162,7 +169,8 @@ int32_t BluetoothAudioCaptureSource::Stop(void)
 int32_t BluetoothAudioCaptureSource::Resume(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("A2dpSource::Resume halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
@@ -177,7 +185,8 @@ int32_t BluetoothAudioCaptureSource::Resume(void)
 int32_t BluetoothAudioCaptureSource::Pause(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("A2dpSource::Pause halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
@@ -191,7 +200,8 @@ int32_t BluetoothAudioCaptureSource::Pause(void)
 
 int32_t BluetoothAudioCaptureSource::Flush(void)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("A2dpSource::Flush halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
@@ -204,7 +214,8 @@ int32_t BluetoothAudioCaptureSource::Flush(void)
 
 int32_t BluetoothAudioCaptureSource::Reset(void)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("A2dpSource::Reset halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
@@ -467,8 +478,10 @@ int32_t BluetoothAudioCaptureSource::CreateCapture(void)
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
 
-    AUDIO_INFO_LOG("create capture, halName: %{public}s, rate: %{public}u, channel: %{public}u, format: %{public}u, "
-        "devicePin: %{public}u", halName_.c_str(), param.sampleRate, param.channelCount, param.format, deviceDesc.pins);
+    AUDIO_INFO_LOG("A2dpSource::CreateCapture, halName:%{public}s, captureId:%{public}u, sourceType:%{public}d, "
+        "hdiSourceType:%{public}d, rate:%{public}u, channel: %{public}u, format: %{public}u, "
+        "devicePin: %{public}u, desc: %{public}s", halName_.c_str(), captureId_, attr_.sourceType, param.sourceType,
+        param.sampleRate, param.channelCount, param.format, deviceDesc.pins, deviceDesc.desc);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_BLUETOOTH);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
@@ -542,7 +555,8 @@ void BluetoothAudioCaptureSource::CheckUpdateState(char *frame, size_t replyByte
 
 int32_t BluetoothAudioCaptureSource::DoStop(void)
 {
-    AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
+    AUDIO_INFO_LOG("A2dpSource::DoStop halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     Trace trace("BluetoothAudioCaptureSource::DoStop");
 
     DeInitLatencyMeasurement();

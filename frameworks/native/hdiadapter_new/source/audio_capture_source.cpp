@@ -905,10 +905,8 @@ int32_t AudioCaptureSource::CreateCapture(void)
     struct AudioDeviceDescriptor deviceDesc;
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
-    AUDIO_INFO_LOG("AudioSource::Start halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
-        halName_.c_str(), captureId_, attr_.sourceType);
 
-    AUDIO_INFO_LOG("AudioSource::CreateCapture, halName: %{public}s,, captureId：%{public}u, sourceType:%{public}d, "
+    AUDIO_INFO_LOG("AudioSource::CreateCapture, halName:%{public}s, captureId:%{public}u, sourceType:%{public}d, "
         "hdiSourceType:%{public}d, rate:%{public}u, channel: %{public}u, format: %{public}u, "
         " devicePin: %{public}u, desc: %{public}s", halName_.c_str(), captureId_, attr_.sourceType, param.sourceType,
         param.sampleRate, param.channelCount, param.format, deviceDesc.pins, deviceDesc.desc);
@@ -1168,7 +1166,8 @@ int32_t AudioCaptureSource::SetAccessoryDeviceState(bool state)
 
 int32_t AudioCaptureSource::DoStop(void)
 {
-    AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
+    AUDIO_INFO_LOG("AudioSource::DoStop halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     Trace trace("AudioCaptureSource::DoStop");
 
     if (IsNonblockingSource(adapterNameCase_)) {

@@ -43,7 +43,8 @@ RemoteAudioCaptureSource::~RemoteAudioCaptureSource()
 
 int32_t RemoteAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("RemoteSource::Init halName:%{public}s captureId:%{public}u sourceType:%{public}d",
+        attr.adapterName.c_str(), captureId_, attr.sourceType);
     attr_ = attr;
     sourceInited_.store(true);
     SetMute(muteState_);
@@ -53,7 +54,8 @@ int32_t RemoteAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 
 void RemoteAudioCaptureSource::DeInit(void)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("RemoteSource::DeInit halName:%{public}s captureId:%{public}u sourceType:%{public}d",
+        attr.adapterName.c_str(), captureId_, attr.sourceType);
     sourceInited_.store(false);
     captureInited_.store(false);
     started_.store(false);
@@ -71,7 +73,8 @@ bool RemoteAudioCaptureSource::IsInited(void)
 
 int32_t RemoteAudioCaptureSource::Start(void)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("RemoteSource::Start halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     std::lock_guard<std::mutex> lock(createCaptureMutex_);
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, DUMP_REMOTE_CAPTURE_SOURCE_FILENAME, &dumpFile_);
     if (!captureInited_.load()) {
@@ -93,7 +96,8 @@ int32_t RemoteAudioCaptureSource::Start(void)
 
 int32_t RemoteAudioCaptureSource::Stop(void)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("RemoteSource::Stop halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     if (!started_.load()) {
         AUDIO_INFO_LOG("already stopped");
         return SUCCESS;
@@ -112,7 +116,8 @@ int32_t RemoteAudioCaptureSource::Stop(void)
 
 int32_t RemoteAudioCaptureSource::Resume(void)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("RemoteSource::Resume halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "not start, invalid state");
 
     if (!paused_.load()) {
@@ -129,7 +134,8 @@ int32_t RemoteAudioCaptureSource::Resume(void)
 
 int32_t RemoteAudioCaptureSource::Pause(void)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("RemoteSource::Pause halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "not start, invalid state");
 
     if (paused_.load()) {
@@ -146,7 +152,8 @@ int32_t RemoteAudioCaptureSource::Pause(void)
 
 int32_t RemoteAudioCaptureSource::Flush(void)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("RemoteSource::Flush halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "not start, invalid state");
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
@@ -157,7 +164,8 @@ int32_t RemoteAudioCaptureSource::Flush(void)
 
 int32_t RemoteAudioCaptureSource::Reset(void)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("RemoteSource::Reset halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "not start, invalid state");
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
@@ -413,7 +421,10 @@ int32_t RemoteAudioCaptureSource::CreateCapture(void)
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
 
-    AUDIO_INFO_LOG("create capture, format: %{public}u", param.format);
+    AUDIO_INFO_LOG("RemoteSource::CreateCapture, halName:%{public}s, captureId:%{public}u, sourceType:%{public}d, "
+        "hdiSourceType:%{public}d, rate:%{public}u, channel: %{public}u, format: %{public}u, "
+        " devicePin: %{public}u, desc: %{public}s", halName_.c_str(), captureId_, attr_.sourceType, param.sourceType,
+        param.sampleRate, param.channelCount, param.format, deviceDesc.pins, deviceDesc.desc);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
@@ -426,7 +437,8 @@ int32_t RemoteAudioCaptureSource::CreateCapture(void)
 
 void RemoteAudioCaptureSource::DestroyCapture(void)
 {
-    AUDIO_INFO_LOG("destroy capture");
+    AUDIO_INFO_LOG("RemoteSource::DestroyCapture halName:%{public}s, captureId：%{public}u, sourceType:%{public}d",
+        halName_.c_str(), captureId_, attr_.sourceType);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
     CHECK_AND_RETURN(deviceManager != nullptr);

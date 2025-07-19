@@ -700,7 +700,7 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo &info, SwitchSt
                 false, "Remove error record for switchStream:%{public}u failed!", iter->first.sessionId);
             CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState),
                 false, "Retry insert switchStream into record failed!");
-            break;
+            return true;
         case SWITCH_STATE_CREATED:
             CHECK_AND_RETURN_RET_LOG(HandleCreatedSwitchInfoInRecord(info, targetState), false,
                 "Handle switch record to SWITCH_STATE_CREATED failed!");
