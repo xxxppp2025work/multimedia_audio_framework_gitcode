@@ -85,6 +85,7 @@ public:
     int32_t AddNearlinkDevice(const AudioDeviceDescriptor &deviceDesc);
     int32_t RemoveNearlinkDevice(const AudioDeviceDescriptor &deviceDesc);
     void UpdateSleStreamTypeCount(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isRemoved = false);
+    void ResetSleStreamTypeCount(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
 
     // Devcice Volume Manager
     int32_t SetNearlinkDeviceMute(const std::string &device, AudioStreamType streamType, bool isMute);
