@@ -1125,6 +1125,37 @@ void AudioStreamCollectorIsVoipStreamActiveFuzzTest(const uint8_t *rawData, size
     audioStreamCollector_.IsVoipStreamActive();
 }
 
+void AudioStreamCollectorGetSessionIdsOnRemoteDeviceBySourceTypeFuzzTest(const uint8_t *rawData, size_t size)
+{   
+    auto changeinfo = std::make_unique<AudioCapturerChangeInfo>();
+    int32_t randIntValue = static_cast<int32_t>(size);
+    uint32_t index = static_cast<uint32_t>(size);
+    changeInfo->clientUID = randIntValue;
+    changeInfo->muted = static_cast<bool>(index % NUM_2);
+    changeInfo->sessionId = randIntValue /NUM_2;
+    changeInfo->capturerInfo.sourceType = g_testSourceTypes[index % g_testSourceTypes.size()];
+    changeInfo->inputDeviceInfo.deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    audioStreamCollector_.audioRendererChangeInfos_.clear();
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
+    audioStreamCollector_.audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    audioStreamCollector_.GetSessionIdsOnRemoteDeviceBySourceType(changeInfo->capturerInfo. sourceType);
+}
+
+void AudioStreamCollectorCheckVoiceCallActiveFuzzTest(const uint8_t *rawData, size_t size)
+{   
+    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t clientPid = randIntValue / NUM_2;
+    uint32_t index = static_cast<uint32_t>(size);
+    bool hasSession = static_cast<bool>(index % NUM_2);
+    auto changeinfo = std::make_unique<AudioRendererChangeInfo>();
+    changeInfo->clientPid = clientPid;
+    changeInfo->rendererInfo.StreamUsages = g_testStreamUsages[index % g_testStreamUsages.size()];
+    changeInfo->sessionId = randIntValue /NUM_2;
+    audioStreamCollector_.audioRendererChangeInfos_.clear();
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
+    audioStreamCollector_.CheckVoiceCallActive(changeInfo->sessionId);
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -1185,6 +1216,8 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioStreamCollectorHasVoipRendererStreamFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorIsMediaPlayingFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorIsVoipStreamActiveFuzzTest,
+    OHOS::AudioStandard::AudioStreamCollectorGetSessionIdsOnRemoteDeviceBySourceTypeFuzzTest,
+    OHOS::AudioStandard::AudioStreamCollectorCheckVoiceCallActiveFuzzTest, 
 };
 
 /* Fuzzer entry point */
