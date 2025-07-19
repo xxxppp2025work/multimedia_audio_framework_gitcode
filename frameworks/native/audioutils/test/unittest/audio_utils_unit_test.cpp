@@ -3577,7 +3577,7 @@ HWTEST(AudioUtilsUnitTest, IsInnerCapSinkName_001, TestSize.Level1)
  */
 HWTEST(AudioUtilsUnitTest, IsInnerCapSinkName_002, TestSize.Level1)
 {
-    char pattern[] = "invalid_pattern"
+    char pattern[] = "invalid_pattern";
     EXPECT_FALSE(IsInnerCapSinkName(pattern));
 }
 
