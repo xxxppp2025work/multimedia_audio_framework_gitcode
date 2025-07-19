@@ -65,8 +65,8 @@ void AudioZoneBindKeyAudioZoneBindKeyFuzzTest()
     std::string streamTag = "testStreamTag";
     int32_t uid = GetData<int32_t>();
     AudioZoneBindKey AudioZoneBindKey_1(uid);
-    AudioZoneBindKey AudioZoneBindKey_2(uid,deviceTag);
-    AudioZoneBindKey AudioZoneBindKey_3(uid,deviceTag,streamTag);
+    AudioZoneBindKey AudioZoneBindKey_2(uid, deviceTag);
+    AudioZoneBindKey AudioZoneBindKey_3(uid, deviceTag, streamTag);
     AudioZoneBindKey AudioZoneBindKey_4(AudioZoneBindKey_1);
     AudioZoneBindKey AudioZoneBindKey_5(std::move(AudioZoneBindKey_1));
 }
@@ -76,7 +76,7 @@ void AudioZoneBindKeyOperatorFuzzTest()
     std::string deviceTag = "testDeviceTag";
     std::string streamTag = "testStreamTag";
     int32_t uid = GetData<int32_t>();
-    AudioZoneBindKey AudioZoneBindKey_1(uid,deviceTag,streamTag);
+    AudioZoneBindKey AudioZoneBindKey_1(uid, deviceTag, streamTag);
     AudioZoneBindKey AudioZoneBindKey_2 = AudioZoneBindKey_1;
 }
 
@@ -108,31 +108,31 @@ void AudioZoneBindKeyGetSupportKeysFuzzTest()
     AudioZoneBindKey audioZoneBindKey(uid);
     AudioZoneBindKey audioZoneBindKey1(uid);
     AudioZoneBindKey.IsContain(audioZoneBindKey1);
-    StreamUsage usage = 
-    static_cast<StreamUsage usage>(GetData<int32_t>() % StreamUsage::STREAM_USAGE_MAX);
-    AudioZoneBindKey AudioZoneBindKey(uid,deviceTag,streamTag);
-    AudioZoneBindKey AudioZoneBindKey_1(uid,deviceTag,streamTag);
+    StreamUsage usage =
+        static_cast<StreamUsage usage>(GetData<int32_t>() % StreamUsage::STREAM_USAGE_MAX);
+    AudioZoneBindKey AudioZoneBindKey(uid,deviceTag, streamTag);
+    AudioZoneBindKey AudioZoneBindKey_1(uid, deviceTag, streamTag);
     AudioZoneBindKey GetSupportKeys(audioZoneBindKey1);
-    AudioZoneBindKey GetSupportKeys(uid,deviceTag,streamTag,usage);
+    AudioZoneBindKey GetSupportKeys(uid,deviceTag, streamTag, usage);
 }
 
 void AudioZoneGetDescriptorFuzzTest()
 {
     std::string name = "testAudioZone";
     AudioZoneContest context;
-    std::shared_ptr<AudioZoneClientManager>zoneClientManager;
-    std::shared_ptr<AudioZone>zone
-        =std::make_shard<AudioZone>(zoneClientManager,name,context);
-        zone->GetDescriptor();
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shard<AudioZone>(zoneClientManager, name, context);
+    zone->GetDescriptor();
 }
 
 void AudioZoneGetStringDescriptorFuzzTest()
 {
     std::string name = "testAudioZone";
     AudioZoneContest context;
-    std::shared_ptr<AudioZoneClientManager>zoneClientManager;
-    std::shared_ptr<AudioZone>zone
-        =std::make_shard<AudioZone>(zoneClientManager,name,context);
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shard<AudioZone>(zoneClientManager, name, context);
     zone->GetDescriptor();
 }
 
@@ -140,9 +140,9 @@ void AudioZoneGetDescriptorNoLockFuzzTest()
 {
     std::string name = "testAudioZone";
     AudioZoneContest context;
-    std::shared_ptr<AudioZoneClientManager>zoneClientManager;
-    std::shared_ptr<AudioZone>zone
-        =std::make_shard<AudioZone>(zoneClientManager,name,context);
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shard<AudioZone>(zoneClientManager, name, context);
     zone->GetDescriptorNoLock();
 }
 
@@ -150,9 +150,9 @@ void AudioZoneBindKeyFuzzTest()
 {
     std::string name = "testAudioZone";
     AudioZoneContest context;
-    std::shared_ptr<AudioZoneClientManager>zoneClientManager;
-    std::shared_ptr<AudioZone>zone;
-        =std::make_shard<AudioZone>(zoneClientManager,name,context);
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shard<AudioZone>(zoneClientManager, name, context);
     int32_t uid = GetData<int32_t>();
     AudioZoneBindKey audioZoneBindKey(uid);
     zone->BindKey(audioZoneBindKey);
@@ -162,9 +162,9 @@ void AudioZoneRemoveKeyFuzzTest()
 {
     std::string name = "testAudioZone";
     AudioZoneContest context;
-    std::shared_ptr<AudioZoneClientManager>zoneClientManager;
-    std::shared_ptr<AudioZone>zone
-        =std::make_shard<AudioZone>(zoneClientManager,name,context);
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shard<AudioZone>(zoneClientManager, name, context);
     int32_t uid = GetData<int32_t>();
     AudioZoneBindKey audioZoneBindKey(uid);
     zone->RemoveKey(audioZoneBindKey);
@@ -174,9 +174,9 @@ void AudioZoneIsContainKeyFuzzTest()
 {
     std::string name = "testAudioZone";
     AudioZoneContest context;
-    std::shared_ptr<AudioZoneClientManager>zoneClientManager;
-    std::shared_ptr<AudioZone>zone
-        =std::make_shard<AudioZone>(zoneClientManager,name,context);
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shard<AudioZone>(zoneClientManager, name, context);
     int32_t uid = GetData<int32_t>();
     AudioZoneBindKey audioZoneBindKey(uid);
     zone->IsContainKey(audioZoneBindKey);
@@ -185,39 +185,39 @@ void AudioZoneIsContainKeyFuzzTest()
 void AudioZoneAddDeviceDescriptorFuzzTest()
 {
     std::string name = "testAudioZone";
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>>device;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> device;
     auto device = std::make_shared<AudioDeviceDescriptor>();
     device.push_back(device);
     AudioZoneContext context;
-    std::shared_ptr<AudioZoneClientManager>zoneClientManager;
-    std::shared_ptr<AudioZone>zone
-        =std::make_shard<AudioZone>(zoneClientManager,name,context);
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shard<AudioZone>(zoneClientManager, name, context);
     zone->AddDeviceDescriptor(device);
 }
 
 void AudioZoneRemoveDeviceDescriptorFuzzTest()
 {
     std::string name = "testAudioZone";
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>>device;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> device;
     auto device = std::make_shared<AudioDeviceDescriptor>();
     device.push_back(device);
     AudioZoneContext context;
-    std::shared_ptr<AudioZoneClientManager>zoneClientManager;
-    std::shared_ptr<AudioZone>zone
-        =std::make_shard<AudioZone>(zoneClientManager,name,context);
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shard<AudioZone>(zoneClientManager, name, context);
     zone->RemoveDeviceDescriptor(device);
 }
 
 void AudioZoneUpdateDeviceDescriptorFuzzTest()
 {
     std::string name = "testAudioZone";
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>>device;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> device;
     auto device = std::make_shared<AudioDeviceDescriptor>();
     device.push_back(device);
     AudioZoneContext context;
-    std::shared_ptr<AudioZoneClientManager>zoneClientManager;
-    std::shared_ptr<AudioZone>zone
-        =std::make_shard<AudioZone>(zoneClientManager,name,context);
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shard<AudioZone>(zoneClientManager, name, context);
     zone->AddDeviceDescriptor(device);
     zone->UpdateDeviceDescriptor(device);
 }
@@ -225,27 +225,27 @@ void AudioZoneUpdateDeviceDescriptorFuzzTest()
 void AudioZoneEnableDeviceDescriptorFuzzTest()
 {
     std::string name = "testAudioZone";
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>>device;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> device;
     auto device = std::make_shared<AudioDeviceDescriptor>();
     device.push_back(device);
     AudioZoneContext context;
-    std::shared_ptr<AudioZoneClientManager>zoneClientManager;
-    std::shared_ptr<AudioZone>zone
-        =std::make_shard<AudioZone>(zoneClientManager,name,context);
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shard<AudioZone>(zoneClientManager, name, context);
     zone->AddDeviceDescriptor(device);
     zone->EnableDeviceDescriptor(device);
 }
 
-void AudioZoneSetDeviceDescriptorStateFuzzTest()
+void AudioZoneDisableDeviceDescriptorStateFuzzTest()
 {
     std::string name = "testAudioZone";
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>>device;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> device;
     auto device = std::make_shared<AudioDeviceDescriptor>();
     device.push_back(device);
     AudioZoneContext context;
-    std::shared_ptr<AudioZoneClientManager>zoneClientManager;
-    std::shared_ptr<AudioZone>zone
-        =std::make_shard<AudioZone>(zoneClientManager,name,context);
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shard<AudioZone>(zoneClientManager, name, context);
     zone->AddDeviceDescriptor(device);
     zone->DisableDeviceDescriptorState(device);
 }
@@ -253,13 +253,13 @@ void AudioZoneSetDeviceDescriptorStateFuzzTest()
 void AudioZoneIsDeviceConnectFuzzTest()
 {
     std::string name = "testAudioZone";
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>>device;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> device;
     auto device = std::make_shared<AudioDeviceDescriptor>();
     device.push_back(device);
     AudioZoneContext context;
-    std::shared_ptr<AudioZoneClientManager>zoneClientManager;
-    std::shared_ptr<AudioZone>zone
-        =std::make_shard<AudioZone>(zoneClientManager,name,context);
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shard<AudioZone>(zoneClientManager, name, context);
     zone->AddDeviceDescriptor(device);
     zone->IsDeviceConnectFuzz(device);
 }
@@ -267,54 +267,52 @@ void AudioZoneIsDeviceConnectFuzzTest()
 void AudioZoneFetchOutputDevicesFuzzTest()
 {   
     std::string name = "testAudioZone";
-    StreamUsage usage = 
-    static_cast<StreamUsage usage>(GetData<int32_t>() % StreamUsage::STREAM_USAGE_MAX);
+    StreamUsage usage =
+        static_cast<StreamUsage>(GetData<int32_t>() % StreamUsage::STREAM_USAGE_MAX);
     int32_t clientUid = GetData<int32_t>();
     RouterType bypassType = GetData<RouterType>();
     AudioZoneContext context;
-    std::shared_ptr<AudioZoneClientManager>zoneClientManager;
-    std::shared_ptr<AudioZone>zone
-        =std::make_shard<AudioZone>(zoneClientManager,name,context);
-    zone->FetchOutputDevices(StreamUsage,clientUid,bypassType);
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shard<AudioZone>(zoneClientManager, name, context);
+    zone->FetchOutputDevices(StreamUsage, clientUid, bypassType);
 }
 
 void AudioZoneFetchInputDevicesFuzzTest()
 {
     std::string name = "testAudioZone";
-    SourceType sourceType = 
-    static_cast<SourceType sourceType>(GetData<int32_t>() % SourceType::SOURCE_TYPE_MAX);
+    SourceType sourceType =
+        static_cast<SourceType>(GetData<int32_t>() % SourceType::SOURCE_TYPE_MAX);
     int32_t clientUid = GetData<int32_t>();
     AudioZoneContext context;
-    std::shared_ptr<AudioZoneClientManager>zoneClientManager;
-    std::shared_ptr<AudioZone>zone
-        =std::make_shard<AudioZone>(zoneClientManager,name,context);
-    zone->FetchOutputDevices(sourceType,clientUid);
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shard<AudioZone>(zoneClientManager, name, context);
+    zone->FetchOutputDevices(sourceType, clientUid);
 }
 
 void AudioZoneEnableChangeReportFuzzTest()
 {
     std::string name = "testAudioZone";
-    bool enable = 
-        static_cast<bool>(GetData<int32_t>() %NUM_2);
-        pid_t clientPid = GetData<pid_t>();
+    bool enable = static_cast<bool>(GetData<int32_t>() %NUM_2);
+    pid_t clientPid = GetData<pid_t>();
     AudioZoneContext context;
-    std::shared_ptr<AudioZoneClientManager>zoneClientManager;
-    std::shared_ptr<AudioZone>zone
-        =std::make_shard<AudioZone>(zoneClientManager,name,context);
-    zone->EnableChangeReport(clientPid,enable);
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shard<AudioZone>(zoneClientManager, name, context);
+    zone->EnableChangeReport(clientPid ,enable);
 }
 
 void AudioZoneEnableSystemVolumeProxyFuzzTest()
 {
     std::string name = "testAudioZone";
-    bool enable = 
-        static_cast<bool>(GetData<int32_t>() %NUM_2);
-        pid_t clientPid = GetData<pid_t>();
+    bool enable =  static_cast<bool>(GetData<int32_t>() %NUM_2);
+    pid_t clientPid = GetData<pid_t>();
     AudioZoneContext context;
-    std::shared_ptr<AudioZoneClientManager>zoneClientManager;
-    std::shared_ptr<AudioZone>zone
-        =std::make_shard<AudioZone>(zoneClientManager,name,context);
-    zone->EnableChangeReport(clientPid,enable);
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shard<AudioZone>(zoneClientManager, name, context);
+    zone->EnableChangeReport(clientPid, enable);
 }
 
 void AudioZoneSetSystemVolumeLevelFuzzTest() 
@@ -324,10 +322,10 @@ void AudioZoneSetSystemVolumeLevelFuzzTest()
     int32_t VolumeLevel = GetData<int32_t>();
     int32_t VolumeFlag = GetData<int32_t>();
     AudioZoneContext context;
-    std::shared_ptr<AudioZoneClientManager>zoneClientManager;
-    std::shared_ptr<AudioZone>zone
-        =std::make_shard<AudioZone>(zoneClientManager,name,context);
-    zone->SetSystemVolumeLevel(volumeProxyClientPid,VolumeLevel,VolumeLevel);
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shard<AudioZone>(zoneClientManager, name, context);
+    zone->SetSystemVolumeLevel(volumeProxyClientPid, VolumeLevel, VolumeLevel);
 }
 
 void AudioZoneGetSystemVolumeLevelFuzzTest()
@@ -335,9 +333,9 @@ void AudioZoneGetSystemVolumeLevelFuzzTest()
     std::string name = "testAudioZone";
     AudioVolumeType volumeProxyClientPid = GetData<AudioVolumeType>();
     AudioZoneContext context;
-    std::shared_ptr<AudioZoneClientManager>zoneClientManager;
-    std::shared_ptr<AudioZone>zone
-        =std::make_shard<AudioZone>(zoneClientManager,name,context);
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shard<AudioZone>(zoneClientManager, name, context);
     zone->GetSystemVolumeLevel(volumeProxyClientPid);
 }
 
@@ -358,7 +356,7 @@ TestPtr g_testPtrs[] = {
     AudioZoneRemoveDeviceDescriptorFuzzTest,
     AudioZoneUpdateDeviceDescriptorFuzzTest,
     AudioZoneEnableDeviceDescriptorFuzzTest,
-    AudioZoneSetDeviceDescriptorStateFuzzTest,
+    AudioZoneDisableDeviceDescriptorStateFuzzTest,
     AudioZoneIsDeviceConnectFuzzTest,
     AudioZoneFetchOutputDevicesFuzzTest,
     AudioZoneFetchInputDevicesFuzzTest,

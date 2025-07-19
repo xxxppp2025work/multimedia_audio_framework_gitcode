@@ -126,122 +126,115 @@ T GetData()
 void AudioZoneServiceCreateAudioZoneFuzzTest()
 {   
     AudioZoneService& audioZoneService = AudioZoneService::GetInstance();
-
     std::string name = "testZone";
     AudioZoneContext context;
-    std::shared_ptr<AudioClientManager>manager = std::make_shared<AudioZoneClientManager>(nullptr);
+    std::shared_ptr<AudioClientManager> manager =
+        std::make_shared<AudioZoneClientManager>(nullptr);
     int32_t zoneId = GetDaTa<int32_t>();
-    std::shared_ptr<AudioZone>zone = std::make_shared<AudioZone>(manager,name,context);
-    audioZoneService.zoneMaps_.insert(make_pair(zoneId,zone));
-    audioZoneService.CreateAudioZone(name,context);
+    std::shared_ptr<AudioZone> zone = std::make_shared<AudioZone>(manager, name, context);
+    audioZoneService.zoneMaps_.insert(make_pair(zoneId, zone));
+    audioZoneService.CreateAudioZone(name, context);
 }
 
 void AudioZoneServiceReleaseAudioZoneFuzzTest()   
 {   
     AudioZoneService& audioZoneService = AudioZoneService::GetInstance();
-
     AudioZoneService.DeInit();
-    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>Handler>::GetInstance();
-    std::make_shared<AudioInterruptService>());
+    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
     std::string name = "testZone";
     AudioZoneContext context;
-    std::shared_ptr<AudioClientManager>manager = std::make_shared<AudioZoneClientManager>(nullptr);
+    std::shared_ptr<AudioClientManager> manager = std::make_shared<AudioZoneClientManager>(nullptr);
     int32_t zoneId = GetDaTa<int32_t>();
-    std::shared_ptr<AudioZone>zone = std::make_shared<AudioZone>(manager,name,context);
-    audioZoneService.zoneMaps_.insert(make_pair(zoneId,zone));
+    std::shared_ptr<AudioZone> zone = std::make_shared<AudioZone>(manager, name, context);
+    audioZoneService.zoneMaps_.insert(make_pair(zoneId, zone));
     audioZoneService.ReleaseAudioZone(zoneId);
 }
 
 void AudioZoneServiceGetAllAudioZoneFuzzTest()   
 {   
     AudioZoneService& audioZoneService = AudioZoneService::GetInstance();
-
     AudioZoneService.DeInit();
-    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>Handler>::GetInstance();
-    std::make_shared<AudioInterruptService>());
+    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
     std::string name = "testZone";
     AudioZoneContext context;
-    std::shared_ptr<AudioClientManager>manager = std::make_shared<AudioZoneClientManager>(nullptr);
+    std::shared_ptr<AudioClientManager> manager = std::make_shared<AudioZoneClientManager>(nullptr);
     int32_t zoneId = GetDaTa<int32_t>();
-    std::shared_ptr<AudioZone>zone = std::make_shared<AudioZone>(manager,name,context);
-    audioZoneService.zoneMaps_.insert(make_pair(zoneId,zone));
+    std::shared_ptr<AudioZone> zone = std::make_shared<AudioZone>(manager, name, context);
+    audioZoneService.zoneMaps_.insert(make_pair(zoneId, zone));
     audioZoneService.GetAllAudioZone();
 }
 
-void AudioZoneServiceGetAllAudioZoneFuzzTest()
+void AudioZoneServiceBindDeviceToAudioZoneFuzzTest()
 {   
     AudioZoneService& audioZoneService = AudioZoneService::GetInstance();
-
     AudioZoneService.DeInit();
-    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>Handler>::GetInstance();
-    std::make_shared<AudioInterruptService>());
+    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
     std::string name = "testZone";
     AudioZoneContext context;
-    std::shared_ptr<AudioClientManager>manager = std::make_shared<AudioZoneClientManager>(nullptr);
+    std::shared_ptr<AudioClientManager> manager = std::make_shared<AudioZoneClientManager>(nullptr);
     int32_t zoneId = GetDaTa<int32_t>();
-    std::shared_ptr<AudioZone>zone = std::make_shared<AudioZone>(manager,name,context);
-    audioZoneService.zoneMaps_.insert(make_pair(zoneId,zone));
-    std::shared_ptr<AudioDeviceDescriptor>audioDeviceDescriptor = make_shared<AudioDeviceDescriptor>();
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>>device;
+    std::shared_ptr<AudioZone> zone = std::make_shared<AudioZone>(manager, name, context);
+    audioZoneService.zoneMaps_.insert(make_pair(zoneId, zone));
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> device;
     device.push_back(audioDeviceDescriptor);
-    audioZoneService.BindDeviceToAudioZone(zoneId,device);
+    audioZoneService.BindDeviceToAudioZone(zoneId, device);
 }
 
 void AudioZoneServiceRemoveDeviceFromGlobalFuzzTest()
 {   
     AudioZoneService& audioZoneService = AudioZoneService::GetInstance();
-
     AudioZoneService.DeInit();
-    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>Handler>::GetInstance();
-    std::make_shared<AudioInterruptService>());
-    std::shared_ptr<AudioDeviceDescriptor>audioDeviceDescriptor = make_shared<AudioDeviceDescriptor>();
+    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = make_shared<AudioDeviceDescriptor>();
     audioZoneService.RemoveDeviceFromGlobal(AudioDeviceDescriptor);
 }
 
 void AudioZoneServiceUnBindDeviceToAudioZoneFuzzTest()
 {   
     AudioZoneService& audioZoneService = AudioZoneService::GetInstance();
-
     AudioZoneService.DeInit();
-    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>Handler>::GetInstance();
-    std::make_shared<AudioInterruptService>());
+    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
     AudioZoneContext context;
     std::string name = "testZone";
-    std::shared_ptr<AudioClientManager>manager = std::make_shared<AudioZoneClientManager>(nullptr);
+    std::shared_ptr<AudioClientManager> manager = std::make_shared<AudioZoneClientManager>(nullptr);
     int32_t zoneId = GetDaTa<int32_t>();
-    std::shared_ptr<AudioZone>zone = std::make_shared<AudioZone>(manager,name,context);
+    std::shared_ptr<AudioZone> zone = std::make_shared<AudioZone>(manager, name, context);
     audioZoneService.zoneMaps_.insert(make_pair(zoneId,zone));
-    std::shared_ptr<AudioDeviceDescriptor>audioDeviceDescriptor = make_shared<AudioDeviceDescriptor>();
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>>device;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> device;
     device.push_back(audioDeviceDescriptor);
-    audioZoneService.UnBindDeviceToAudioZone(zoneId,device);
+    audioZoneService.UnBindDeviceToAudioZone(zoneId, device);
 }
 
 void AudioZoneServiceRegisterAudioZoneClientFuzzTest()
 {   
     AudioZoneService& audioZoneService = AudioZoneService::GetInstance();
-
     AudioZoneService.DeInit();
-    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>Handler>::GetInstance();
-    std::make_shared<AudioInterruptService>());
+    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
     int32_t ClientPid = GetDaTa<int32_t>();
     sptr<IStandarAudioZoneClient> client = nullptr;
-    audioZoneService.RegisterAudioZoneClient(ClientPid,client);
+    audioZoneService.RegisterAudioZoneClient(ClientPid, client);
 }
 
 void AudioZoneServiceUnRegisterAudioZoneClientFuzzTest()
 {   
     AudioZoneService& audioZoneService = AudioZoneService::GetInstance();
-
     AudioZoneService.DeInit();
-    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>Handler>::GetInstance();
-    std::make_shared<AudioInterruptService>());
+    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>::GetInstance();
+        std::make_shared<AudioInterruptService>());
     AudioZoneContext context;
     std::string name = "testZone";
-    std::shared_ptr<AudioClientManager>manager = std::make_shared<AudioZoneClientManager>(nullptr);
+    std::shared_ptr<AudioClientManager> manager = std::make_shared<AudioZoneClientManager>(nullptr);
     int32_t zoneId = GetDaTa<int32_t>();
-    std::shared_ptr<AudioZone>zone = std::make_shared<AudioZone>(manager,name,context);
-    audioZoneService.zoneMaps_.insert(make_pair(zoneId,zone));
+    std::shared_ptr<AudioZone> zone = std::make_shared<AudioZone>(manager, name, context);
+    audioZoneService.zoneMaps_.insert(make_pair(zoneId, zone));
     int32_t ClientPid = GetDaTa<int32_t>();
     audioZoneService.UnRegisterAudioZoneClient(ClientPid);
 }
@@ -249,92 +242,87 @@ void AudioZoneServiceUnRegisterAudioZoneClientFuzzTest()
 void AudioZoneServiceInjectInterruptToAudioZoneFuzzTest()
 {   
     AudioZoneService& audioZoneService = AudioZoneService::GetInstance();
-
     AudioZoneService.DeInit();
-    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>Handler>::GetInstance();
-    std::make_shared<AudioInterruptService>());
+    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>GetInstance(),
+        std::make_shared<AudioInterruptService>());
     AudioZoneContext context;
     std::string name = "testZone";
-    std::shared_ptr<AudioClientManager>manager = std::make_shared<AudioZoneClientManager>(nullptr);
+    std::shared_ptr<AudioClientManager> manager = std::make_shared<AudioZoneClientManager>(nullptr);
     int32_t zoneId = GetDaTa<int32_t>();
-    std::shared_ptr<AudioZone>zone = std::make_shared<AudioZone>(manager,name,context);
+    std::shared_ptr<AudioZone> zone = std::make_shared<AudioZone>(manager, name, context);
     audioZoneService.zoneMaps_.insert(make_pair(zoneId,zone));
     AudioZoneFouseList interrupts = AudioZoneService.GetAudioInterruptForZone(zoneId);
-    audioZoneService.InjectInterruptToAudioZone(zoneId,interrupts);
+    audioZoneService.InjectInterruptToAudioZone(zoneId, interrupts);
 }
 
 void AudioZoneServiceFetchOutputDeviceFuzzTest()
 {   
     AudioZoneService& audioZoneService = AudioZoneService::GetInstance();
-
     AudioZoneService.DeInit();
-    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>Handler>::GetInstance();
-    std::make_shared<AudioInterruptService>());
+    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
     AudioZoneContext context;
     std::string name = "testZone";
-    std::shared_ptr<AudioClientManager>manager = std::make_shared<AudioZoneClientManager>(nullptr);
+    std::shared_ptr<AudioClientManager> manager = std::make_shared<AudioZoneClientManager>(nullptr);
     int32_t zoneId = GetDaTa<int32_t>();
-    std::shared_ptr<AudioZone>zone = std::make_shared<AudioZone>(manager,name,context);
-    audioZoneService.zoneMaps_.insert(make_pair(zoneId,zone));
+    std::shared_ptr<AudioZone> zone = std::make_shared<AudioZone>(manager, name, context);
+    audioZoneService.zoneMaps_.insert(make_pair(zoneId, zone));
     if(g_testStreamUsage.size() == 0 || g_testRouter Type.size() == 0){
         return;
     }
     StreamUsage streamUsage = g_testStreamUsage [GetData<int32_t>() % g_testStreamUsage.size()];
     int32_t ClientPid = GetDaTa<int32_t>();
-    RouterType bypassType = g_testRouter [GetData<int32_t>() % g_testRouter.size()];
-    audioZoneService.FetchOutputDevice(zoneId,streamUsage,ClientPid,bypassType);
+    RouterType bypassType = g_testRouter[GetData<int32_t>() % g_testRouter.size()];
+    audioZoneService.FetchOutputDevice(zoneId,streamUsage, ClientPid, bypassType);
 }
 
 void AudioZoneServiceFetchInputDeviceFuzzTest()
 {   
     AudioZoneService& audioZoneService = AudioZoneService::GetInstance();
-
     AudioZoneService.DeInit();
-    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>Handler>::GetInstance();
-    std::make_shared<AudioInterruptService>());
+    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
     AudioZoneContext context;
     std::string name = "testZone";
-    std::shared_ptr<AudioClientManager>manager = std::make_shared<AudioZoneClientManager>(nullptr);
+    std::shared_ptr<AudioClientManager> manager = std::make_shared<AudioZoneClientManager>(nullptr);
     int32_t zoneId = GetDaTa<int32_t>();
-    std::shared_ptr<AudioZone>zone = std::make_shared<AudioZone>(manager,name,context);
-    audioZoneService.zoneMaps_.insert(make_pair(zoneId,zone));
+    std::shared_ptr<AudioZone> zone = std::make_shared<AudioZone>(manager, name, context);
+    audioZoneService.zoneMaps_.insert(make_pair(zoneId, zone));
     if(g_testSourceTypes.size() == 0){
         return;
     }
-    SourceTypes sourceTypes =  g_testSourceTypes [GetData<int32_t>() % g_testSourceTypes.size()];
+    SourceTypes sourceTypes =  g_testSourceTypes[GetData<int32_t>() % g_testSourceTypes.size()];
     int32_t ClientPid = GetDaTa<int32_t>();
-    audioZoneService.FetchInputDevice(zoneId,sourceTypes,ClientPid);
+    audioZoneService.FetchInputDevice(zoneId,sourceTypes, ClientPid);
 }
 
 void AudioZoneServiceGetZoneStringDeviceDescriptorFuzzTest()
 {   
     AudioZoneService& audioZoneService = AudioZoneService::GetInstance();
-
     AudioZoneService.DeInit();
-    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>Handler>::GetInstance();
-    std::make_shared<AudioInterruptService>());
+    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
     AudioZoneContext context;
     std::string name = "testZone";
-    std::shared_ptr<AudioClientManager>manager = std::make_shared<AudioZoneClientManager>(nullptr);
+    std::shared_ptr<AudioClientManager> manager = std::make_shared<AudioZoneClientManager>(nullptr);
     int32_t zoneId = GetDaTa<int32_t>();
-    std::shared_ptr<AudioZone>zone = std::make_shared<AudioZone>(manager,name,context);
-    audioZoneService.zoneMaps_.insert(make_pair(zoneId,zone));
+    std::shared_ptr<AudioZone>  zone = std::make_shared<AudioZone>(manager, name,   context);
+    audioZoneService.zoneMaps_.insert(make_pair(zoneId, zone));
     audioZoneService.GetZoneStringDeviceDescriptor(zoneId);
 }
 
 void AudioZoneUpdataDeviceFromGlobalForAllZoneFuzzTest()
 {   
     AudioZoneService& audioZoneService = AudioZoneService::GetInstance();
-
     AudioZoneService.DeInit();
-    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>Handler>::GetInstance();
-    std::make_shared<AudioInterruptService>());
+    AudioZoneService.Init(DelaySingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
     AudioZoneContext context;
     std::string name = "testZone";
-    std::shared_ptr<AudioClientManager>manager = std::make_shared<AudioZoneClientManager>(nullptr);
+    std::shared_ptr<AudioClientManager> manager = std::make_shared<AudioZoneClientManager>(nullptr);
     int32_t zoneId = GetDaTa<int32_t>();
-    std::shared_ptr<AudioZone>zone = std::make_shared<AudioZone>(manager,name,context);
-    audioZoneService.zoneMaps_.insert(make_pair(zoneId,zone));
+    std::shared_ptr<AudioZone>  zone = std::make_shared<AudioZone>(manager, name,   context);
+    audioZoneService.zoneMaps_.insert(make_pair(zoneId, zone));
     std::shared_ptr<AudioDeviceDescriptor>audioDeviceDescriptor = make_shared<AudioDeviceDescriptor>();
     audioZoneService.UpdataDeviceFromGlobalForAllZone(device);
 }
@@ -343,7 +331,7 @@ TestPtr g_testPtrs[] = {
     AudioZoneServiceCreateAudioZoneFuzzTest,
     AudioZoneServiceReleaseAudioZoneFuzzTest,
     AudioZoneServiceGetAllAudioZoneFuzzTest,
-    AudioZoneServiceGetAllAudioZoneFuzzTest,
+    AudioZoneServiceBindDeviceToAudioZoneFuzzTest,
     AudioZoneServiceRemoveDeviceFromGlobalFuzzTest,
     AudioZoneServiceUnBindDeviceToAudioZoneFuzzTest,
     AudioZoneServiceRegisterAudioZoneClientFuzzTest,
