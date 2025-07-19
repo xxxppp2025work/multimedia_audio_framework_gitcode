@@ -25,6 +25,7 @@
 #include "audio_errors.h"
 #include "audio_scope_exit.h"
 #include "audio_safe_block_queue.h"
+#include "audio_utils_c.h"
 
 using namespace testing::ext;
 using namespace testing;
