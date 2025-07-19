@@ -419,7 +419,7 @@ void CapturerInClientInner::InitCallbackHandler()
 int32_t CapturerInClientInner::DeinitIpcStream()
 {
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, SUCCESS, "IpcStream is already nullptr");
-    ipcStream_->Release(false);
+    ipcStream_->Release(false, false);
     // in plan:
     ipcStream_ = nullptr;
     ringCache_->ResetBuffer();
@@ -1249,7 +1249,7 @@ bool CapturerInClientInner::StopAudioStream()
     return true;
 }
 
-bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream)
+bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream, bool isDistributedDevice)
 {
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
@@ -1261,7 +1261,7 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
 
     Trace trace("CapturerInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
     if (ipcStream_ != nullptr) {
-        ipcStream_->Release(isSwitchStream);
+        ipcStream_->Release(isSwitchStream, isDistributedDevice);
     } else {
         AUDIO_WARNING_LOG("Release while ipcStream is null");
     }

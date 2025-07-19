@@ -1142,7 +1142,7 @@ void RendererInClientInner::JoinCallbackLoop()
     }
 }
 
-bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream)
+bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream, bool isDistributedDevice)
 {
     (void)isSwitchStream;
     AUDIO_PRERELEASE_LOGI("Enter");
@@ -1157,7 +1157,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
 
     Trace trace("RendererInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
     if (ipcStream_ != nullptr) {
-        ipcStream_->Release(isSwitchStream);
+        ipcStream_->Release(isSwitchStream, isDistributedDevice);
     } else {
         AUDIO_WARNING_LOG("release while ipcStream is null");
     }

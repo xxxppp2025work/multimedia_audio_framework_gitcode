@@ -750,7 +750,7 @@ bool FastAudioStream::DrainAudioStream(bool stopFlag)
     return true;
 }
 
-bool FastAudioStream::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream)
+bool FastAudioStream::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream, bool isDistributedDevice)
 {
     CHECK_AND_RETURN_RET_LOG(state_ != RELEASED && state_ != NEW,
         false, "Illegal state: state = %{public}u", state_);

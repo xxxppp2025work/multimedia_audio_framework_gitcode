@@ -28,7 +28,8 @@ interface IIpcStream {
     void Start();
     void Pause();
     void Stop();
-    void Release([in] boolean isSwitchStream); // isSwitchStream = false
+    void Release([in] boolean isSwitchStream, [in] boolean isDistributedDevice); // isSwitchStream = false,
+        isDistributedDevice = false
     void Flush();
     void Drain([in] boolean stopFlag); // stopFlag = false
     void UpdatePlaybackCaptureConfig([in] AudioPlaybackCaptureConfig config);
