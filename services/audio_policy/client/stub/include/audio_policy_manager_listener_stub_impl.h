@@ -38,6 +38,7 @@ public:
     int32_t OnQueryAllowedPlayback(int32_t uid, int32_t pid, bool &ret) override;
     int32_t OnBackgroundMute(const int32_t uid) override;
     int32_t OnQueryBundleNameIsInList(const std::string &bundleName, const std::string &listType, bool &ret) override;
+    int32_t OnQueryDeviceVolumeBehavior(VolumeBehavior &volumeBehavior) override;
     // AudioManagerListenerStubImpl
     void SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback);
     void SetAvailableDeviceChangeCallback(const std::weak_ptr<AudioManagerAvailableDeviceChangeCallback> &cb);
@@ -47,8 +48,9 @@ public:
     void SetQueryAllowedPlaybackCallback(const std::weak_ptr<AudioQueryAllowedPlaybackCallback> &cb);
     void SetBackgroundMuteCallback(const std::weak_ptr<AudioBackgroundMuteCallback> &cb);
     void SetQueryBundleNameListCallback(const std::weak_ptr<AudioQueryBundleNameListCallback> &cb);
-private:
+    void SetQueryDeviceVolumeBehaviorCallback(const std::weak_ptr<AudioQueryDeviceVolumeBehaviorCallback> &cb);
 
+private:
     std::weak_ptr<AudioInterruptCallback> callback_;
     std::weak_ptr<AudioManagerAvailableDeviceChangeCallback> audioAvailableDeviceChangeCallback_;
     std::weak_ptr<AudioQueryClientTypeCallback> audioQueryClientTypeCallback_;
@@ -57,6 +59,7 @@ private:
     std::weak_ptr<AudioClientInfoMgrCallback> audioClientInfoMgrCallback_;
     std::weak_ptr<AudioVKBInfoMgrCallback> audioVKBInfoMgrCallback_;
     std::weak_ptr<AudioQueryBundleNameListCallback> audioQueryBundleNameListCallback_;
+    std::weak_ptr<AudioQueryDeviceVolumeBehaviorCallback> audioQueryDeviceVolumeBehaviorCallback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -122,6 +122,19 @@ int32_t AudioPolicyManagerListenerStubImpl::OnQueryBundleNameIsInList(const std:
     return SUCCESS;
 }
 
+int32_t AudioPolicyManagerListenerStubImpl::OnQueryDeviceVolumeBehavior(VolumeBehavior &volumeBehavior)
+{
+    std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> audioQueryDeviceVolumeBehaviorCallback =
+        audioQueryDeviceVolumeBehaviorCallback_.lock();
+
+    CHECK_AND_RETURN_RET_LOG(audioQueryDeviceVolumeBehaviorCallback != nullptr, AUDIO_INVALID_PARAM,
+        "audioQueryDeviceVolumeBehaviorCallback is nullptr");
+    volumeBehavior = audioQueryDeviceVolumeBehaviorCallback->OnQueryDeviceVolumeBehavior();
+    AUDIO_INFO_LOG("isReady [%{public}d], isVolumeControlDisabled [%{public}d], databaseVolumeName [%{public}s]",
+        volumeBehavior.isReady, volumeBehavior.isVolumeControlDisabled, volumeBehavior.databaseVolumeName.c_str());
+    return SUCCESS;
+}
+
 void AudioPolicyManagerListenerStubImpl::SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback)
 {
     callback_ = callback;
@@ -167,6 +180,12 @@ void AudioPolicyManagerListenerStubImpl::SetQueryBundleNameListCallback(
     const std::weak_ptr<AudioQueryBundleNameListCallback> &cb)
 {
     audioQueryBundleNameListCallback_ = cb;
+}
+
+void AudioPolicyManagerListenerStubImpl::SetQueryDeviceVolumeBehaviorCallback(
+    const std::weak_ptr<AudioQueryDeviceVolumeBehaviorCallback> &cb)
+{
+    audioQueryDeviceVolumeBehaviorCallback_ = cb;
 }
 } // namespace AudioStandard
 } // namespace OHOS
