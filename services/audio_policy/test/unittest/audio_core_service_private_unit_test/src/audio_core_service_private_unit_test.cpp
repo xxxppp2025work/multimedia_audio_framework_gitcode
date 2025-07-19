@@ -2379,5 +2379,45 @@ HWTEST(AudioCoreServicePrivateTest, SwitchActiveHearingAidDevice_001, TestSize.L
     EXPECT_EQ(ret, SUCCESS);
     audioCoreService->audioIOHandleMap_.DelIOHandleInfo(moduleName);
 }
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: ResetNearlinkDeviceState_001.
+ * @tc.desc  : Test ResetNearlinkDeviceState.
+ */
+HWTEST(AudioCoreServicePrivateTest, ResetNearlinkDeviceState_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    auto deviceDesc1 = std::make_shared<AudioDeviceDescriptor>();
+    EXPECT_NE(deviceDesc1, nullptr);
+    auto deviceDesc2 = std::make_shared<AudioDeviceDescriptor>();
+    EXPECT_NE(deviceDesc2, nullptr);
+
+    auto mac1 = "12:45:56:65:21:43";
+    auto mac2 = "12:45:56:65:21:44";
+    deviceDesc1->deviceType_ = DEVICE_TYPE_NEARLINK;
+    deviceDesc2->deviceType_ = DEVICE_TYPE_NEARLINK;
+    deviceDesc1->macAddress_ = mac1;
+    deviceDesc2->macAddress_ = mac2;
+
+    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(*deviceDesc1);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 100;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc1);
+
+    audioCoreService->sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
+    auto beforeState = audioCoreService->sleAudioDeviceManager_.GetNearlinkStreamTypeMapByDevice(mac1);
+    EXPECT_EQ(beforeState[0x00000002].size(), 1); // 0x00000002: SLE_AUDIO_STREAM_MUSIC
+
+    audioCoreService->ResetNearlinkDeviceState(deviceDesc2);
+
+    auto afterState = audioCoreService->sleAudioDeviceManager_.GetNearlinkStreamTypeMapByDevice(mac1);
+    EXPECT_TRUE(afterState[0x00000002].empty()); // 0x00000002: SLE_AUDIO_STREAM_MUSIC
+}
 } // namespace AudioStandard
 } // namespace OHOS
