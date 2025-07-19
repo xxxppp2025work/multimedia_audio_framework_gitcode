@@ -1311,5 +1311,38 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_Player_Destroy_001, TestSize.
     SLresult result = AudioPlayerDestroy(nullptr);
     EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
 }
+
+HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_Enqueue_001, TestSize.Level1)
+{
+    SLOHBufferQueueItf self = nullptr;
+    const void *buffer = nullptr;
+    SLuint32 size = 0;
+    SLresult result = (*bufferQueueItf_)->Enqueue(self, buffer, size);
+    EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
+}
+
+HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_GetState_003, TestSize.Level1)
+{
+    SLOHBufferQueueItf self = nullptr;
+    SLOHBufferQueueState state;
+    SLresult result = (*bufferQueueItf_)->GetState(self, &state);
+    EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
+}
+
+HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_Clear_001, TestSize.Level1)
+{
+    SLOHBufferQueueItf self = nullptr;
+    SLresult result = (*bufferQueueItf_)->Clear(self);
+    EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
+}
+
+HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_GetBuffer_001, TestSize.Level1)
+{
+    SLOHBufferQueueItf self = nullptr;
+    SLuint8 *buffer = nullptr;
+    SLuint32 size = 0;
+    SLresult result = (*bufferQueueItf_)->GetBuffer(self, &buffer, size);
+    EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
+}
 } // namespace AudioStandard
 } // namespace OHOS

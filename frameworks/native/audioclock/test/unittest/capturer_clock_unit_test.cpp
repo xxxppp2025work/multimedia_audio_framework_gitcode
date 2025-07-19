@@ -108,5 +108,52 @@ HWTEST_F(CapturerClockUnitTest, CapturerClockUnitTest_002, TestSize.Level1)
     EXPECT_EQ(timestamp, MOCK_TIMESTAMP_5_IN_CAPTURER);
 }
 
+/**
+ * @tc.name   : Test Init
+ * @tc.number : Init_001
+ * @tc.desc   : Test Init
+ */
+HWTEST_F(CapturerClockUnitTest, Init_001, TestSize.Level1)
+{
+    AudioSampleFormat format = AudioSampleFormat::SAMPLE_U8;
+    srcClock_->Init(MOCK_SAMPLE_RATE, format, MOCK_CHANNEL);
+    EXPECT_EQ(srcClock_->sizePerPos_, 2);
+}
+
+/**
+ * @tc.name   : Test Init
+ * @tc.number : Init_002
+ * @tc.desc   : Test Init
+ */
+HWTEST_F(CapturerClockUnitTest, Init_002, TestSize.Level1)
+{
+    AudioSampleFormat format = AudioSampleFormat::SAMPLE_S24LE;
+    srcClock_->Init(MOCK_SAMPLE_RATE, format, MOCK_CHANNEL);
+    EXPECT_EQ(srcClock_->sizePerPos_, 6);
+}
+
+/**
+ * @tc.name   : Test Init
+ * @tc.number : Init_003
+ * @tc.desc   : Test Init
+ */
+HWTEST_F(CapturerClockUnitTest, Init_003, TestSize.Level1)
+{
+    AudioSampleFormat format = AudioSampleFormat::SAMPLE_S32LE;
+    srcClock_->Init(MOCK_SAMPLE_RATE, format, MOCK_CHANNEL);
+    EXPECT_EQ(srcClock_->sizePerPos_, 8);
+}
+
+/**
+ * @tc.name   : Test Init
+ * @tc.number : Init_004
+ * @tc.desc   : Test Init
+ */
+HWTEST_F(CapturerClockUnitTest, Init_004, TestSize.Level1)
+{
+    AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
+    srcClock_->Init(MOCK_SAMPLE_RATE, format, MOCK_CHANNEL);
+    EXPECT_EQ(srcClock_->sizePerPos_, 4);
+}
 } // namespace AudioStandard
 } // namespace OHOS
