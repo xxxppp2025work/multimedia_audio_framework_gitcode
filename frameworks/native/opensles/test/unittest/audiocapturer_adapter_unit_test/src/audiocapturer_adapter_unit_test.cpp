@@ -19,6 +19,7 @@
 #include "audiocapturer_adapter.h"
 #include "audio_capturer_private.h"
 #include "audiocapturer_adapter_unit_test.h"
+#include "common.h"
 
 using namespace std;
 using namespace testing::ext;
