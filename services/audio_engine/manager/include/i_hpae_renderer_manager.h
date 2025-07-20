@@ -36,7 +36,10 @@ public:
     virtual int32_t CreateStream(const HpaeStreamInfo &streamInfo) = 0;
     virtual int32_t DestroyStream(uint32_t sessionId) = 0;
     virtual int32_t Start(uint32_t sessionId) = 0;
-    virtual int32_t StartWithSyncId(uint32_t sessionId, int32_t syncId) { return SUCCESS; }
+    virtual int32_t StartWithSyncId(uint32_t sessionId, int32_t syncId)
+    {
+        return Start(sessionId);
+    }
     virtual int32_t Pause(uint32_t sessionId) = 0;
     virtual int32_t Flush(uint32_t sessionId) = 0;
     virtual int32_t Drain(uint32_t sessionId) = 0;
@@ -88,7 +91,7 @@ public:
     };
     virtual std::string GetThreadName() = 0;
 
-    virtual void DumpSinkInfo() {};
+    virtual int32_t DumpSinkInfo() { return 0; };
 
     virtual void UploadDumpSinkInfo(std::string& deviceName);
 

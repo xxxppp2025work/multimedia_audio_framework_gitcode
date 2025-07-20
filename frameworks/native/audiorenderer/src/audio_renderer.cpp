@@ -1396,7 +1396,18 @@ int32_t AudioRendererPrivate::SetLoudnessGain(float loudnessGain) const
 float AudioRendererPrivate::GetLoudnessGain() const
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, 0.0f, "audioStream_ is nullptr");
+
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.streamUsage == STREAM_USAGE_MUSIC ||
+        rendererInfo_.streamUsage == STREAM_USAGE_MOVIE ||
+        rendererInfo_.streamUsage == STREAM_USAGE_AUDIOBOOK, 0.0f, "audio stream type not supported");
+
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
+        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
+        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT &&
+        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT,
+        0.0f, "low latency mode not supported");
+
     return currentStream->GetLoudnessGain();
 }
 
@@ -2193,6 +2204,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
             streamDesc->sessionId_ = switchInfo.params.originalSessionId;
         }
         streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_FORCED_NORMAL;
+        streamDesc->routeFlag_ = AUDIO_FLAG_NONE;
         int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag,
             switchInfo.params.originalSessionId);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateRendererClient failed");
@@ -2660,42 +2672,6 @@ void AudioRendererPrivate::MockPcmData(uint8_t *buffer, size_t bufferSize) const
         std::string timestamp = GetTime();
         audioStream_->UpdateLatencyTimestamp(timestamp, true);
     }
-}
-
-void AudioRendererPrivate::ActivateAudioConcurrency(const AudioStreamParams &audioStreamParams,
-    const AudioStreamType &streamType, IAudioStream::StreamClass &streamClass)
-{
-    rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
-    if (rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-        rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
-        rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
-        rendererInfo_.pipeType = PIPE_TYPE_CALL_OUT;
-    } else if (streamClass == IAudioStream::FAST_STREAM) {
-        rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
-    } else if (streamType == STREAM_MUSIC && audioStreamParams.samplingRate >= SAMPLE_RATE_48000 &&
-        audioStreamParams.format >= SAMPLE_S24LE) {
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors =
-            AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo_, true);
-        if (!deviceDescriptors.empty() && deviceDescriptors[0] != nullptr) {
-            if ((deviceDescriptors[0]->deviceType_ == DEVICE_TYPE_USB_HEADSET ||
-                deviceDescriptors[0]->deviceType_ == DEVICE_TYPE_WIRED_HEADSET)) {
-                rendererInfo_.pipeType = PIPE_TYPE_DIRECT_MUSIC;
-            }
-        }
-    }
-    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioConcurrency(rendererInfo_.pipeType);
-    if (ret != SUCCESS) {
-        if (streamClass == IAudioStream::FAST_STREAM) {
-            streamClass = IAudioStream::PA_STREAM;
-        }
-        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
-    }
-    return;
-}
-
-void AudioRendererPrivate::ConcedeStream()
-{
-    AUDIO_WARNING_LOG("Not in use");
 }
 
 void AudioRendererPrivate::EnableVoiceModemCommunicationStartStream(bool enable)

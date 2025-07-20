@@ -18,10 +18,10 @@
 #endif
 #include "audio_stream_info.h"
 #include "audio_errors.h"
-#include "audio_engine_log.h"
 #include "audio_utils.h"
 #include "hpae_node_common.h"
 #include "hpae_inner_capturer_manager.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -298,7 +298,6 @@ int32_t HpaeInnerCapturerManager::DeInit(bool isMoveDefault)
     int32_t ret = SUCCESS;
     if (hpaeInnerCapSinkNode_  != nullptr) {
         ret = hpaeInnerCapSinkNode_->InnerCapturerSinkDeInit();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InnerCapManagerDeInit error, ret %{public}d.\n", ret);
         hpaeInnerCapSinkNode_->ResetAll();
         hpaeInnerCapSinkNode_ = nullptr;
     }

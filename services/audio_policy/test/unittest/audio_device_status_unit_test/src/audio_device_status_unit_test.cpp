@@ -337,6 +337,17 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_010, TestSize.Level1)
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
     EXPECT_EQ(reason, AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE);
+
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    auto preferredDeviceDesc = std::make_shared<AudioDeviceDescriptor>(desc);
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(preferredDeviceDesc);
+    updateCommand = USAGE_UPDATE;
+    desc.deviceUsage_ = VOICE;
+    audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
+    auto targetDevice = audioDeviceStatus.audioStateManager_.GetPreferredMediaRenderDevice();
+    bool result = targetDevice->deviceType_ == DEVICE_TYPE_NEARLINK && targetDevice->deviceUsage_ == VOICE;
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(std::make_shared<AudioDeviceDescriptor>());
+    EXPECT_EQ(true, result);
 }
 
 /**
@@ -1117,6 +1128,11 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_052, TestSize.Level1)
 
     audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, isConnected);
     EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
+    desc.deviceType_ = DEVICE_TYPE_DP;
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, true);
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, true);
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, false);
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, false);
 }
 
 /**

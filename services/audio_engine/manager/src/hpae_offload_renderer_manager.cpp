@@ -19,8 +19,8 @@
 #include "hpae_offload_renderer_manager.h"
 #include "audio_stream_info.h"
 #include "audio_errors.h"
-#include "audio_engine_log.h"
 #include "hpae_node_common.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -687,13 +687,15 @@ std::string HpaeOffloadRendererManager::GetThreadName()
     return sinkInfo_.deviceName;
 }
 
-void HpaeOffloadRendererManager::DumpSinkInfo()
+int32_t HpaeOffloadRendererManager::DumpSinkInfo()
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "HpaeOffloadRendererManager not init");
     auto request = [this]() {
         AUDIO_INFO_LOG("DumpSinkInfo deviceName %{public}s", sinkInfo_.deviceName.c_str());
         UploadDumpSinkInfo(sinkInfo_.deviceName);
     };
     SendRequest(request);
+    return SUCCESS;
 }
 
 std::string HpaeOffloadRendererManager::GetDeviceHDFDumpInfo()

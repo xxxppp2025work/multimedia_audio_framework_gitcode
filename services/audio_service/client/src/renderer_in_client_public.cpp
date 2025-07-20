@@ -652,9 +652,7 @@ int32_t RendererInClientInner::SetSpeed(float speed)
         speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
     }
     audioSpeed_->SetSpeed(speed);
-    if (std::abs(speed - writtenAtSpeedChange_.load().speed) > std::numeric_limits<float>::epsilon()) {
-        writtenAtSpeedChange_.store(WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load(), speed_});
-    }
+    writtenAtSpeedChange_.store(WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load(), speed_});
     speed_ = speed;
     speedEnable_ = true;
     AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
@@ -1040,7 +1038,6 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     }
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    UpdatePauseReadIndex();
     int32_t ret = ipcStream_->Pause();
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("call server failed:%{public}u", ret);
@@ -1099,7 +1096,6 @@ bool RendererInClientInner::StopAudioStream()
     }
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    UpdatePauseReadIndex();
     int32_t ret = ipcStream_->Stop();
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Stop call server failed:%{public}u", ret);
@@ -1210,6 +1206,8 @@ bool RendererInClientInner::FlushAudioStream()
             AUDIO_ERR_LOG("memset_s buffer failed");
         }
     }
+
+    FlushSpeedBuffer();
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Flush();
@@ -1604,6 +1602,7 @@ void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
 {
     totalBytesWritten_ += static_cast<int64_t>(bytesWritten);
     totalBytesWrittenAfterFlush_.fetch_add(bytesWritten);
+    ringCacheLatencyBytes_.fetch_sub(static_cast<int64_t>(bytesWritten));
     if (sizePerFrameInByte_ == 0) {
         AUDIO_ERR_LOG("HandleRendererPositionChanges: sizePerFrameInByte_ is 0");
         return;
@@ -1814,6 +1813,8 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     // cal latency between readIdx and framesWritten
     uint64_t samplesWritten = totalBytesWrittenAfterFlush_.load() / sizePerFrameInByte_;
     uint64_t deepLatency = samplesWritten > readIdx ? samplesWritten - readIdx : 0;
+    int64_t ringcacheLatency = ringCacheLatencyBytes_.load();
+    deepLatency += ringcacheLatency > 0 ? static_cast<uint64_t>(ringcacheLatency) / sizePerFrameInByte_ : 0;
     // get position and speed since last change
     WrittenFramesWithSpeed fsPair = writtenAtSpeedChange_.load();
     uint64_t lastSpeedPosition = fsPair.writtenFrames;
