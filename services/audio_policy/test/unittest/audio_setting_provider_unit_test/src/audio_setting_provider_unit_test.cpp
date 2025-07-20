@@ -1068,11 +1068,11 @@ HWTEST(AudioSettingProviderUnitTest, ParseJsonArray_017, TestSize.Level1)
     ASSERT_EQ(result.size(), 1);
     for (const auto& mapItem : result) {
         for (const auto& [key, value] : mapItem) {
-            if(key == "123") {
+            if (key == "123") {
                 EXPECT_EQ(key, "123");
                 EXPECT_EQ(value, "1");
             }
-            if(key == "456") {
+            if (key == "456") {
                 EXPECT_EQ(key, "456");
                 EXPECT_EQ(value, "1");
             }
@@ -1099,11 +1099,11 @@ HWTEST(AudioSettingProviderUnitTest, ParseJsonArray_018, TestSize.Level1)
     ASSERT_EQ(result.size(), 1);
     for (const auto& mapItem : result) {
         for (const auto& [key, value] : mapItem) {
-            if(key == "123") {
+            if (key == "123") {
                 EXPECT_EQ(key, "123");
                 EXPECT_EQ(value, "1");
             }
-            if(key == "") {
+            if (key == "") {
                 EXPECT_EQ(key, "");
                 EXPECT_EQ(value, "");
             }
