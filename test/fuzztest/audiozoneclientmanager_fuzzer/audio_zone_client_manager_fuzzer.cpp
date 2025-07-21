@@ -25,7 +25,7 @@ namespace AudioStandard {
 
 static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
-static size_t g_pos; 
+static size_t g_pos;
 const size_t THRESHOLD = 10;
 typedef void (*TestPtr)();
 
@@ -95,8 +95,8 @@ void AudioZoneClientManagerSendZoneAddEventFuzzTest()
     std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
     pid_t clientPid = GetData<pid_t>();
-    std::shared_ptr<AudioZoneDescriptor> Descriptor;
-    audioZoneClientManager.SendZoneAddEvent(clientPid, Descriptor);
+    std::shared_ptr<AudioZoneDescriptor> descriptor;
+    audioZoneClientManager.SendZoneAddEvent(clientPid, descriptor);
 }
 
 void AudioZoneClientManagerSendZoneRemoveEventFuzzTest()
@@ -142,7 +142,7 @@ void AudioZoneClientManagerSendZoneInterruptEventFuzzTest()
     std::string deviceTag = "test";
     AudioZoneInterruptReason reason =
         static_cast<AudioZoneInterruptReason>(GetData<int32_t>() % audioZoneInterruptReason.size());
-    std::list<std::pair<AudioInterrupt,AudioFocuState>> interrupts;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts;
     audioZoneClientManager.SendZoneInterruptEvent(clientPid, zoneId, deviceTag, interrupts, reason);
 }
 
