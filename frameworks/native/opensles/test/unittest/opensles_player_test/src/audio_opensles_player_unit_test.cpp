@@ -1360,9 +1360,11 @@ HWTEST(AudioOpenslesPlayerUnitTest, CreateAudioRecorder_001, TestSize.Level1)
     SLDataSink *pAudioSnk = new SLDataSink
     const SLInterfaceID *pInterfaceIds = new SLInterfaceID;
     const SLboolean *pInterfaceRequired = new SLboolean;
-    SLresult result = (*engineEngine_)->CreateAudioRecorder(self, nullptr, pAudioSrc, pAudioSnk, 0, pInterfaceIds, pInterfaceRequired);
+    SLresult result = (*engineEngine_)->CreateAudioRecorder(
+        self, nullptr, pAudioSrc, pAudioSnk, 0, pInterfaceIds, pInterfaceRequired);
     EXPECT_EQ(result, SL_RESULT_PARAMETER_INVALID);
-    result = (*engineEngine_)->CreateAudioRecorder(self, pRecorder, pAudioSrc, pAudioSnk, 0, pInterfaceIds, pInterfaceRequired);
+    result = (*engineEngine_)->CreateAudioRecorder(
+        self, pRecorder, pAudioSrc, pAudioSnk, 0, pInterfaceIds, pInterfaceRequired);
     EXPECT_EQ(result, SL_RESULT_PARAMETER_INVALID);
     delect pAudioSrc;
     delect pAudioSnk;
@@ -1378,7 +1380,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, CreateOutputMix_002, TestSize.Level1)
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_Destroy_001, TestSize.Level1)
 {
-   (*engineEngine_)->Audio_Opensles_Destroy(nullptr);
+    (*engineEngine_)->Audio_Opensles_Destroy(nullptr);
     EXPECT_TRUE(true);
 }
 } // namespace AudioStandard
