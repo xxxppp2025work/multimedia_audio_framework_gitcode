@@ -171,5 +171,15 @@ int32_t SleAudioOperationCallbackStubImpl::GetRenderPosition(const std::string &
     return sleAudioOperationCallback->GetRenderPosition(device, delayValue);
 }
 
+int32_t SleAudioOperationCallbackStubImpl::OnSleDspChrDataSend(const std::string &sleChrDspData, uint32_t len)
+{
+    std::unique_lock lock(sleAudioOperationCallbackMutex_);
+    std::shared_ptr<SleAudioOperationCallback> sleAudioOperationCallback = sleAudioOperationCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(sleAudioOperationCallback != nullptr, ERROR, "sleAudioOperationCallback_ is nullptr");
+    lock.unlock();
+    sleAudioOperationCallback->OnSleDspChrDataSend(sleChrDspData, len);
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
