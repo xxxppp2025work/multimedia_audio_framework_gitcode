@@ -3662,9 +3662,9 @@ HWTEST(AudioUtilsUnitTest, MockPcmData_003, TestSize.Level1)
         std::make_shared<AudioLatencyMeasurement>(44100, 2, 16, "com.example.null", 1);
     uint8_t buffer[1024] = {};
     size_t bufferLen = sizeof(buffer);
-    size_t MOCK_INTERVAL = 2000;
+    size_t mockInterval = 2000;
 
-    audioLatencyMeasurement->mockedTime_ = MOCK_INTERVAL + 1;
+    audioLatencyMeasurement->mockedTime_ = mockInterval + 1;
     audioLatencyMeasurement->format_ = SAMPLE_S16LE;
     bool ret = audioLatencyMeasurement->MockPcmData(buffer, bufferLen);
     EXPECT_EQ(ret, false);
