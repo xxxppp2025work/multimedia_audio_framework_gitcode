@@ -949,7 +949,7 @@ void AudioVolumeManagerSetSourceOutputStreamMuteFuzzTest(const uint8_t *rawData,
 
 void AudioVolumeManagerGetStreamVolumeFuzzTest(const uint8_t *rawData, size_t size)
 {
-    uint32_t index = static_cast<uint32_t>(size); 
+    uint32_t index = static_cast<uint32_t>(size);
     AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
     audioAdapterManager_->Init();
     audioAdapterManager_->GetStreamVolume(streamType);
