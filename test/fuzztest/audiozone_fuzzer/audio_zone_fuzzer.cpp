@@ -60,7 +60,7 @@ T GetData()
 }
 
 void AudioZoneBindKeyAudioZoneBindKeyFuzzTest()
-{   
+{
     std::string deviceTag = "testDeviceTag";
     std::string streamTag = "testStreamTag";
     int32_t uid = GetData<int32_t>();
@@ -88,7 +88,7 @@ void AudioZoneBindKeyGetUidFuzzTest()
 }
 
 void AudioZoneBindKeyGetStringFuzzTest()
-{   
+{
     int32_t uid = GetData<int32_t>();
     AudioZoneBindKey audioZoneBindKey(uid);
     audioZoneBindKey.GetString();
@@ -111,7 +111,7 @@ void AudioZoneBindKeyGetSupportKeysFuzzTest()
         (GetData<int32_t>() % StreamUsage::STREAM_USAGE_MAX);
     AudioZoneBindKey audioZoneBindKey(uid, deviceTag, streamTag);
     AudioZoneBindKey audioZoneBindKey_1(uid, deviceTag, streamTag);
-    audioZoneBindKey.GetSupportKeys(audioZoneBindKey1);
+    audioZoneBindKey.GetSupportKeys(audioZoneBindKey_1);
     audioZoneBindKey.GetSupportKeys(uid, deviceTag, streamTag, usage);
 }
 
@@ -235,7 +235,7 @@ void AudioZoneEnableDeviceDescriptorFuzzTest()
     zone->EnableDeviceDescriptor(device);
 }
 
-void AudioZoneDisableDeviceDescriptorStateFuzzTest()
+void AudioZoneDisableDeviceDescriptorFuzzTest()
 {
     std::string name = "testAudioZone";
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
@@ -246,7 +246,7 @@ void AudioZoneDisableDeviceDescriptorStateFuzzTest()
     std::shared_ptr<AudioZone> zone =
         std::make_shared<AudioZone>(zoneClientManager, name, context);
     zone->AddDeviceDescriptor(devices);
-    zone->DisableDeviceDescriptorState(device);
+    zone->DisableDeviceDescriptor(device);
 }
 
 void AudioZoneIsDeviceConnectFuzzTest()
@@ -260,7 +260,7 @@ void AudioZoneIsDeviceConnectFuzzTest()
     std::shared_ptr<AudioZone> zone =
         std::make_shard<AudioZone>(zoneClientManager, name, context);
     zone->AddDeviceDescriptor(devices);
-    zone->IsDeviceConnectFuzz(device);
+    zone->IsDeviceConnect(device);
 }
 
 void AudioZoneFetchOutputDevicesFuzzTest()
@@ -351,11 +351,10 @@ TestPtr g_testPtrs[] = {
     AudioZoneBindByKeyFuzzTest,
     AudioZoneRemoveKeyFuzzTest,
     AudioZoneIsContainKeyFuzzTest,
-    AudioZoneAddDeviceDescriptorFuzzTest,
     AudioZoneRemoveDeviceDescriptorFuzzTest,
     AudioZoneAddDeviceDescriptorFuzzTest,
     AudioZoneEnableDeviceDescriptorFuzzTest,
-    AudioZoneDisableDeviceDescriptorStateFuzzTest,
+    AudioZoneDisableDeviceDescriptorFuzzTest,
     AudioZoneIsDeviceConnectFuzzTest,
     AudioZoneFetchOutputDevicesFuzzTest,
     AudioZoneFetchInputDeviceFuzzTest,
