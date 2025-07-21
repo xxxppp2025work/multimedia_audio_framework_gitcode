@@ -4534,7 +4534,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_OnInterrupt_003, TestSize.Level2)
     ASSERT_TRUE(audioInterruptCallback != nullptr);
 
     audioInterruptCallback->switching_ = true;
-    InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_SHAR, INTERRUPT_HINT_RESUME, 20.0f};
+    InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_SHARE, INTERRUPT_HINT_RESUME, 20.0f};
     audioInterruptCallback->OnInterrupt(interruptEvent);
 }
 
