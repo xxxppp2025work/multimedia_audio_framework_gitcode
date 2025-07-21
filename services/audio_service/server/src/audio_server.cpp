@@ -215,7 +215,7 @@ static void UpdateArmInstance(std::shared_ptr<IAudioRenderSink> &sink,
     sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB, true);
     source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB, true);
     std::shared_ptr<IAudioRenderSink> primarySink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
-    CHECK_AND_RETURN_LOG(primarySink, "primarySink is nullptr");
+    CHECK_AND_RETURN_LOG(primarySink, "primarySink is nullptr!");
     primarySink->ResetActiveDeviceForDisconnect(DEVICE_TYPE_NONE);
 }
 
@@ -237,6 +237,10 @@ static void SetAudioSceneForAllSource(std::shared_ptr<IAudioCaptureSource> &sour
         fastVoipSource->SetAudioScene(audioScene, activeInputDevice);
     }
 #endif
+    std::shared_ptr<IAudioCaptureSource> a2dpInSource = GetSourceByProp(HDI_ID_TYPE_BLUETOOTH);
+    if (a2dpInSource != nullptr && a2dpInSource->IsInited()) {
+        a2dpInSource->SetAudioScene(audioScene, activeInputDevice);
+    }
 }
 
 static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &source, DeviceType type)
@@ -280,7 +284,7 @@ static std::vector<StringPair> ConvertStringPair(const std::vector<std::pair<std
 
 void ProxyDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 {
-    CHECK_AND_RETURN_LOG(audioServer_ != nullptr, "audioServer is null");
+    CHECK_AND_RETURN_LOG(audioServer_ != nullptr, "audioServer is nullptr!");
     audioServer_->RemoveRendererDataTransferCallback(pid_);
     AudioStreamMonitor::GetInstance().OnCallbackAppDied(pid_);
 }
@@ -624,6 +628,7 @@ void AudioServer::ParseAudioParameter()
         audioExtraParameterCacheVector_.clear();
     }
     AUDIO_INFO_LOG("Audio extra parameters replay cached successfully.");
+    PermissionUtil::UpdateBGSet();
 }
 
 void AudioServer::WriteServiceStartupError()
@@ -1373,13 +1378,21 @@ int32_t AudioServer::UpdateActiveDevicesRoute(const std::vector<IntPair> &active
     return SetIORoutes(activeOutputDevices, static_cast<BluetoothOffloadState>(a2dpOffloadFlag), deviceName);
 }
 
-int32_t AudioServer::SetDmDeviceType(uint16_t dmDeviceType)
+int32_t AudioServer::SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "refused for %{public}d", callingUid);
-    std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY, true);
-    source->SetDmDeviceType(dmDeviceType);
+
+    std::shared_ptr<IAudioCaptureSource> source;
+    if (static_cast<DeviceType>(deviceType) == DEVICE_TYPE_NEARLINK_IN) {
+        source = GetSourceByProp(HDI_ID_TYPE_PRIMARY);
+    } else {
+        source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY, true);
+    }
+    CHECK_AND_RETURN_RET_LOG(source != nullptr, ERROR, "has no valid source");
+
+    source->SetDmDeviceType(dmDeviceType, static_cast<DeviceType>(deviceType));
     return SUCCESS;
 }
 
@@ -2998,7 +3011,8 @@ int32_t AudioServer::SetBtHdiInvalidState()
         "refused for %{public}d", callingUid);
     auto limitFunc = [](uint32_t id) -> bool {
         std::string info = IdHandler::GetInstance().ParseInfo(id);
-        if (IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_BLUETOOTH) {
+        if (IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_BLUETOOTH &&
+            IdHandler::GetInstance().ParseInfo(id) != HDI_ID_INFO_HEARING_AID) {
             return true;
         }
         return false;

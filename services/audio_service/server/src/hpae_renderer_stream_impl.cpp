@@ -27,13 +27,13 @@
 #include <thread>
 #include "safe_map.h"
 #include "audio_errors.h"
-#include "audio_service_log.h"
 #include "audio_utils.h"
 #include "i_hpae_manager.h"
 #include "audio_stream_info.h"
 #include "audio_effect_map.h"
 #include "down_mixer.h"
 #include "policy_handler.h"
+#include "audio_engine_log.h"
 
 using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
@@ -43,7 +43,6 @@ static constexpr int32_t MIN_BUFFER_SIZE = 2;
 static constexpr uint64_t FRAME_LEN_10MS = 10;
 static constexpr uint64_t FRAME_LEN_20MS = 20;
 static constexpr uint64_t FRAME_LEN_40MS = 40;
-static constexpr int32_t DEFAULT_PAUSED_LATENCY = 40;
 static constexpr uint64_t OFFLOAD_LATENCY_THRESHOLD = 40000; // 40ms latency threshold in microseconds
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
@@ -96,6 +95,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     streamInfo.uid = processConfig_.appInfo.appUid;
     streamInfo.pid = processConfig_.appInfo.appPid;
+    streamInfo.tokenId = processConfig_.appInfo.appTokenId;
     effectMode_ = processConfig_.rendererInfo.effectMode;
     streamInfo.effectInfo.effectMode = (effectMode_ != EFFECT_DEFAULT && effectMode_ != EFFECT_NONE) ? EFFECT_DEFAULT :
         static_cast<AudioEffectMode>(effectMode_);
@@ -107,6 +107,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.sourceType = processConfig_.isInnerCapturer == true ? SOURCE_TYPE_PLAYBACK_CAPTURE : SOURCE_TYPE_INVALID;
     streamInfo.deviceName = deviceName;
     streamInfo.isMoveAble = isMoveAble_;
+    streamInfo.privacyType = processConfig_.privacyType;
     AUDIO_INFO_LOG("InitParams channels %{public}u  end", streamInfo.channels);
     AUDIO_INFO_LOG("InitParams channelLayout %{public}" PRIu64 " end", streamInfo.channelLayout);
     AUDIO_INFO_LOG("InitParams samplingRate %{public}u  end", streamInfo.samplingRate);
@@ -135,7 +136,7 @@ int32_t HpaeRendererStreamImpl::Start()
     ClockTime::GetAllTimeStamp(timestamp_);
     int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Start is error");
+        AUDIO_ERR_LOG("Start is error!");
         return ERR_INVALID_PARAM;
     }
     return SUCCESS;
@@ -148,7 +149,7 @@ int32_t HpaeRendererStreamImpl::StartWithSyncId(const int32_t &syncId)
     int32_t ret = IHpaeManager::GetHpaeManager().StartWithSyncId(HPAE_STREAM_CLASS_TYPE_PLAY,
         processConfig_.originalSessionId, syncId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("StartWithSyncId is error");
+        AUDIO_ERR_LOG("StartWithSyncId is error!");
         return ERR_INVALID_PARAM;
     }
     return SUCCESS;
@@ -159,10 +160,9 @@ int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Pause(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Pause is error");
+        AUDIO_ERR_LOG("Pause is error!");
         return ERR_INVALID_PARAM;
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_PAUSED_LATENCY));
     return SUCCESS;
 }
 
@@ -193,7 +193,7 @@ int32_t HpaeRendererStreamImpl::Stop()
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Stop is error");
+        AUDIO_ERR_LOG("Stop is error!");
         return ERR_INVALID_PARAM;
     }
     state_ = STOPPING;
@@ -239,7 +239,7 @@ uint32_t HpaeRendererStreamImpl::GetA2dpOffloadLatency()
     auto& handle = PolicyHandler::GetInstance();
     int32_t ret = handle.OffloadGetRenderPosition(a2dpOffloadLatency, a2dpOffloadSendDataSize, a2dpOffloadTimestamp);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("OffloadGetRenderPosition failed");
+        AUDIO_ERR_LOG("OffloadGetRenderPosition failed!");
     }
     return a2dpOffloadLatency;
 }
@@ -257,14 +257,14 @@ uint32_t HpaeRendererStreamImpl::GetNearlinkLatency()
 
 int32_t HpaeRendererStreamImpl::GetRemoteOffloadLatency(uint64_t &latency)
 {
-    CHECK_AND_RETURN_RET_LOG(deviceClass_ == DEVICE_CLASS_REMOTE_OFFLOAD, ERR_NOT_SUPPORTED, "not support");
+    CHECK_AND_RETURN_RET(deviceClass_ == DEVICE_CLASS_REMOTE_OFFLOAD, ERR_NOT_SUPPORTED);
 
     std::shared_ptr<IAudioRenderSink> sink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_OPERATION, "audioRendererSink is null");
     uint32_t curLatency = 0;
     int32_t ret = sink->GetLatency(curLatency);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "get latency fail");
-    AUDIO_INFO_LOG("latency from hdi is %{public}u", curLatency);
+    AUDIO_DEBUG_LOG("get latency for remote offload, latency from hdi is %{public}u", curLatency);
     curLatency /= AUDIO_MS_PER_S;
     latency = static_cast<uint64_t>(curLatency);
     return SUCCESS;
@@ -273,7 +273,7 @@ int32_t HpaeRendererStreamImpl::GetRemoteOffloadLatency(uint64_t &latency)
 int32_t HpaeRendererStreamImpl::GetRemoteOffloadCurrentPosition(uint64_t &framePosition, uint64_t &timestamp,
     uint64_t &latency)
 {
-    CHECK_AND_RETURN_RET_LOG(deviceClass_ == DEVICE_CLASS_REMOTE_OFFLOAD, ERR_NOT_SUPPORTED, "not support");
+    CHECK_AND_RETURN_RET(deviceClass_ == DEVICE_CLASS_REMOTE_OFFLOAD, ERR_NOT_SUPPORTED);
 
     std::shared_ptr<IAudioRenderSink> sink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_OPERATION, "audioRendererSink is null");
@@ -284,12 +284,13 @@ int32_t HpaeRendererStreamImpl::GetRemoteOffloadCurrentPosition(uint64_t &frameP
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "get position fail");
 
     uint64_t curLatency = 0;
-    GetRemoteOffloadLatency(curLatency);
-    CHECK_AND_RETURN_RET_LOG(curLatency != 0, ERR_OPERATION_FAILED, "get latency fail");
+    ret = GetRemoteOffloadLatency(curLatency);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "get latency fail");
 
     latency = curLatency;
     framePosition = frames;
     timestamp = static_cast<uint64_t>(timeNSec + timeSec * AUDIO_NS_PER_SECOND);
+    AUDIO_DEBUG_LOG("get position from hdi for remote offload, frame: %{public}" PRIu64, framePosition);
     return SUCCESS;
 }
 
@@ -333,9 +334,10 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
     latencyUs += nearlinkLatency * AUDIO_US_PER_MS;
     std::vector<uint64_t> timestampCurrent = {0};
     ClockTime::GetAllTimeStamp(timestampCurrent);
-    auto interval = (timestampCurrent[baseUsed] - timestamp_[baseUsed]) / AUDIO_NS_PER_US;
-    interval = interval > latencyUs ? latencyUs : interval;
-    latencyUs -= interval;
+    auto interval = (timestampCurrent[baseUsed] > timestamp_[baseUsed]) ?
+        (timestampCurrent[baseUsed] - timestamp_[baseUsed]) / AUDIO_NS_PER_US :
+        0;
+    latencyUs = latencyUs > interval ? latencyUs - interval : 0;
     timestamp = timestampCurrent[baseUsed];
 
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", latencyUs %{public}" PRIu64
@@ -384,11 +386,8 @@ int32_t HpaeRendererStreamImpl::GetPrivacyType(int32_t &privacyType)
 
 int32_t HpaeRendererStreamImpl::SetSpeed(float speed)
 {
-    CHECK_AND_RETURN_RET_LOG(deviceClass_ == DEVICE_CLASS_REMOTE_OFFLOAD, ERR_INVALID_OPERATION, "not support");
-
-    std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_OPERATION, "audioRendererSink is null");
-    audioRendererSink->SetSpeed(speed);
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
+    IHpaeManager::GetHpaeManager().SetSpeed(processConfig_.originalSessionId, speed);
     return SUCCESS;
 }
 

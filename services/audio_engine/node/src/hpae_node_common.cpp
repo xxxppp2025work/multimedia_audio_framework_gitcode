@@ -12,11 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef LOG_TAG
+#define LOG_TAG "HpaeNodeCommon"
+#endif
 
+#include <cinttypes>
 #include "hpae_node_common.h"
 #include "audio_errors.h"
 #include "audio_engine_log.h"
-#include "cinttypes"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -409,6 +412,27 @@ void RecoverNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo)
         AUDIO_INFO_LOG("collaboration disabled, effectScene changed to %{public}d, sceneType changed to %{public}d",
             nodeInfo.effectInfo.effectScene, nodeInfo.sceneType);
     }
+}
+
+void TransStreamInfoToStreamDumpInfo(const std::unordered_map<uint32_t, HpaeSessionInfo> &streamInfoMap,
+    std::vector<HpaeInputOutputInfo> &dumpInfo)
+{
+    std::transform(streamInfoMap.begin(), streamInfoMap.end(), std::back_inserter(dumpInfo),
+        [](const auto &pair) {
+            const HpaeSessionInfo &sessionInfo = pair.second;
+            std::string config;
+            TransDeviceInfoToString(sessionInfo.streamInfo, config);
+            return HpaeInputOutputInfo {
+                .sessionId = sessionInfo.streamInfo.sessionId,
+                .uid = sessionInfo.streamInfo.uid,
+                .pid = sessionInfo.streamInfo.pid,
+                .tokenId = sessionInfo.streamInfo.tokenId,
+                .privacyType = sessionInfo.streamInfo.privacyType,
+                .config = config,
+                .state = sessionInfo.state,
+                .startTime = sessionInfo.startTime
+            };
+        });
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

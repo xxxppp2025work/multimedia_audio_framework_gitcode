@@ -107,6 +107,7 @@ const std::unordered_map<DeviceType, std::vector<std::string>> DEVICE_CLASS_MAP 
     {DEVICE_TYPE_FILE_SOURCE, {FILE_CLASS}},
     {DEVICE_TYPE_HDMI, {PRIMARY_CLASS}},
     {DEVICE_TYPE_ACCESSORY, {ACCESSORY_CLASS}},
+    {DEVICE_TYPE_HEARING_AID, {HEARING_AID_CLASS}},
 };
 } // namespace
 
@@ -135,13 +136,14 @@ bool AudioAdapterManager::Init()
     AudioVolume::GetInstance()->SetDefaultAppVolume(appConfigVolume_.defaultVolume);
     std::string defaultSafeVolume = std::to_string(GetMaxVolumeLevel(STREAM_MUSIC));
     AUDIO_INFO_LOG("defaultSafeVolume %{public}s", defaultSafeVolume.c_str());
-    char currentSafeVolumeValue[3] = {0};
+    char currentSafeVolumeValue[4] = {0};
     ret = GetParameter("const.audio.safe_media_volume", defaultSafeVolume.c_str(),
         currentSafeVolumeValue, sizeof(currentSafeVolumeValue));
     if (ret > 0) {
         safeVolume_ = atoi(currentSafeVolumeValue);
         AUDIO_INFO_LOG("Get currentSafeVolumeValue success %{public}d", safeVolume_);
     } else {
+        safeVolume_ = GetMaxVolumeLevel(STREAM_MUSIC);
         AUDIO_ERR_LOG("Get currentSafeVolumeValue failed %{public}d", ret);
     }
 
@@ -755,10 +757,6 @@ void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float vol
     if (!(streamType == STREAM_MUSIC || streamType == STREAM_SPEECH)) {
         return;
     }
-    DeviceType dev = GetActiveDevice();
-    if (!(dev == DEVICE_TYPE_SPEAKER || dev == DEVICE_TYPE_BLUETOOTH_A2DP || dev == DEVICE_TYPE_USB_HEADSET)) {
-        return;
-    }
     CHECK_AND_RETURN_LOG(audioServerProxy_ != nullptr, "audioServerProxy_ null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     if (offloadSessionID_.has_value()) { // need stream volume and system volume
@@ -1144,10 +1142,6 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
     // Current device must be updated even if kvStore is nullptr.
     currentActiveDevice_ = deviceDescriptor;
     AudioVolume::GetInstance()->SetCurrentActiveDevice(currentActiveDevice_.deviceType_);
-
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP && !isSameVolumeGroup && isDpReConnect_) {
-        RefreshVolumeWhenDpReConnect();
-    }
 
     if (!isSameVolumeGroup) {
         // If there's no os account available when trying to get one, audio_server would sleep for 1 sec
@@ -2260,8 +2254,10 @@ void AudioAdapterManager::HandleDistributedVolume(AudioStreamType streamType)
 
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP && streamType == STREAM_MUSIC) {
         AUDIO_INFO_LOG("first time switch dp, use default volume");
-        volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, MAX_VOLUME_LEVEL);
-        SetSystemVolumeLevel(STREAM_MUSIC, MAX_VOLUME_LEVEL);
+        int32_t initialVolume = GetMaxVolumeLevel(streamType) > MAX_VOLUME_LEVEL ?
+            DP_DEFAULT_VOLUME_LEVEL : GetMaxVolumeLevel(streamType);
+        volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, initialVolume);
+        SetSystemVolumeLevel(STREAM_MUSIC, initialVolume);
     }
 }
 
@@ -2298,6 +2294,7 @@ bool AudioAdapterManager::LoadVolumeMap(void)
         if (!result) {
             AUDIO_ERR_LOG("LoadVolumeMap: Could not load volume for streamType[%{public}d] from kvStore", streamType);
             HandleDistributedVolume(streamType);
+            HandleHearingAidVolume(streamType);
         }
     }
 
@@ -2965,6 +2962,8 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene)
 {
     AUDIO_PRERELEASE_LOGI("SetAbsVolumeScene: %{public}d", isAbsVolumeScene);
     isAbsVolumeScene_ = isAbsVolumeScene;
+    CHECK_AND_RETURN_LOG(audioServiceAdapter_ != nullptr, "SetAbsVolumeScene audio adapter null");
+    audioServiceAdapter_->SetAbsVolumeStateToEffect(isAbsVolumeScene);
     AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(isAbsVolumeScene_);
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         SetVolumeDb(STREAM_MUSIC);
@@ -3159,6 +3158,18 @@ void AudioAdapterManager::RegisterDoNotDisturbStatusWhiteList()
         AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus WhiteList failed");
     } else {
         AUDIO_INFO_LOG("Register doNotDisturbStatus WhiteList successfully");
+    }
+}
+
+void AudioAdapterManager::HandleHearingAidVolume(AudioStreamType streamType)
+{
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_HEARING_AID) {
+        if (streamType == STREAM_MUSIC || streamType == STREAM_VOICE_CALL ||
+            streamType == STREAM_VOICE_ASSISTANT) {
+            int32_t defaultVolume = static_cast<int32_t>(std::ceil(GetMaxVolumeLevel(streamType) * 0.8));
+            AUDIO_INFO_LOG("first time switch hearingAid, use default volume");
+            SetSystemVolumeLevel(streamType, defaultVolume);
+        }
     }
 }
 

@@ -19,8 +19,8 @@
 #include "i_capturer_stream.h"
 #include "hpae_stream_manager.h"
 #include "hpae_capture_move_info.h"
-#include "audio_engine_log.h"
 #include "hpae_dfx_tree.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -57,7 +57,7 @@ public:
     virtual int32_t AddAllNodesToSource(const std::vector<HpaeCaptureMoveInfo> &moveInfos, bool isConnect) = 0;
     virtual std::string GetThreadName() = 0;
     virtual int32_t ReloadCaptureManager(const HpaeSourceInfo &sourceInfo) = 0;
-    virtual void DumpSourceInfo() {};
+    virtual int32_t DumpSourceInfo() { return 0; };
     virtual void UploadDumpSourceInfo(std::string &deviceName)
     {
 #ifdef ENABLE_HIDUMP_DFX

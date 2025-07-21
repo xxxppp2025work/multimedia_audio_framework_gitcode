@@ -1222,17 +1222,6 @@ public:
     int32_t AbandonAudioFocus(const AudioInterrupt &audioInterrupt);
 
     /**
-     * @brief Reconfigure audio channel
-     *
-     * @param count count
-     * @param deviceType device type
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 8
-     */
-    int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
-
-    /**
      * @brief Request independent interrupt
      *
      * @param focusType focus type
@@ -1761,6 +1750,16 @@ public:
     * @test
     */
     int32_t StopGroup(int32_t workgroupId);
+
+    /**
+    * @brief set focus stream type when process volume key event.
+    *
+    * @param volumeType Audio stream type.
+    * @param duration duration time to last or cancel force type.
+    * @return Returns {@link AUDIO_OK} if the operation is successfully.
+    * @test
+    */
+    int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
 
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {

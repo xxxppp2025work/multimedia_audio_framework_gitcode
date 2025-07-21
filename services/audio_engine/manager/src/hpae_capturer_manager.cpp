@@ -19,12 +19,12 @@
 
 #include "hpae_capturer_manager.h"
 #include "audio_info.h"
-#include "audio_engine_log.h"
 #include "audio_errors.h"
 #include "hpae_node_common.h"
 #include "audio_utils.h"
 #include "audio_effect_map.h"
 #include "hpae_policy_manager.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -964,12 +964,14 @@ std::string HpaeCapturerManager::GetThreadName()
     return sourceInfo_.deviceName;
 }
 
-void HpaeCapturerManager::DumpSourceInfo()
+int32_t HpaeCapturerManager::DumpSourceInfo()
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "HpaeCapturerManager not init");
     SendRequest([this]() {
         AUDIO_INFO_LOG("DumpSourceInfo deviceName %{public}s", sourceInfo_.deviceName.c_str());
         UploadDumpSourceInfo(sourceInfo_.deviceName);
     });
+    return SUCCESS;
 }
 
 void HpaeCapturerManager::CheckIfAnyStreamRunning()

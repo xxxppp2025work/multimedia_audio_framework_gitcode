@@ -149,6 +149,12 @@ int32_t AudioCoreService::EventEntry::SetDefaultOutputDevice(const DeviceType de
     return ret;
 }
 
+int32_t AudioCoreService::EventEntry::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->LoadSplitModule(splitArgs, networkId);
+}
+
 // device status listener
 void AudioCoreService::EventEntry::OnDeviceStatusUpdated(
     DeviceType devType, bool isConnected, const std::string& macAddress,
@@ -273,6 +279,17 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry
 {
     std::shared_lock<std::shared_mutex> lock(eventMutex_);
     return coreService_->GetPreferredInputDeviceDescInner(captureInfo, networkId);
+}
+
+int32_t AudioCoreService::EventEntry::FetchOutputDeviceAndRoute(std::string caller,
+    const AudioStreamDeviceChangeReasonExt reason)
+{
+    if (coreService_ == nullptr) {
+        return ERR_UNKNOWN;
+    }
+
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->FetchOutputDeviceAndRoute(caller, reason);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::EventEntry::GetActiveBluetoothDevice()
@@ -475,6 +492,19 @@ int32_t AudioCoreService::EventEntry::GetPreferredOutputStreamType(AudioRenderer
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->GetPreferredOutputStreamType(rendererInfo, bundleName);
+}
+
+int32_t AudioCoreService::EventEntry::SetSessionDefaultOutputDevice(
+    const int32_t callerPid, const DeviceType &deviceType)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->SetSessionDefaultOutputDevice(callerPid, deviceType);
+}
+
+int32_t AudioCoreService::EventEntry::GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->GetSessionDefaultOutputDevice(callerPid, deviceType);
 }
 
 int32_t AudioCoreService::EventEntry::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)

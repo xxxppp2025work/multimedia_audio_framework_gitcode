@@ -23,12 +23,13 @@
 
 #include "hpae_format_convert.h"
 #include "hpae_node_common.h"
-#include "audio_engine_log.h"
 #include "audio_volume.h"
 #include "audio_common_utils.h"
 #ifdef ENABLE_HOOK_PCM
 #include "hpae_pcm_dumper.h"
 #endif
+#include "audio_engine_log.h"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -65,16 +66,15 @@ HpaeOffloadSinkOutputNode::HpaeOffloadSinkOutputNode(HpaeNodeInfo &nodeInfo)
 
 bool HpaeOffloadSinkOutputNode::CheckIfSuspend()
 {
-    static uint32_t suspendCount = 0;
     if (!GetPreOutNum()) {
-        suspendCount++;
+        suspendCount_++;
         usleep(TIME_US_PER_MS * FRAME_TIME_IN_MS);
-        if (suspendCount > timeoutThdFrames_) {
+        if (suspendCount_ > timeoutThdFrames_) {
             RenderSinkStop();
         }
         return true;
     } else {
-        suspendCount = 0;
+        suspendCount_ = 0;
         return false;
     }
 }
@@ -384,6 +384,12 @@ int32_t HpaeOffloadSinkOutputNode::SetOffloadRenderCallbackType(int32_t type)
     AUDIO_INFO_LOG("SetOffloadRenderCallbackType type:%{public}d", type);
     OffloadCallback(static_cast<RenderCallbackType>(type));
     return SUCCESS;
+}
+
+void HpaeOffloadSinkOutputNode::SetSpeed(float speed)
+{
+    CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+    audioRendererSink_->SetSpeed(speed);
 }
 
 void HpaeOffloadSinkOutputNode::RunningLock(bool islock)
