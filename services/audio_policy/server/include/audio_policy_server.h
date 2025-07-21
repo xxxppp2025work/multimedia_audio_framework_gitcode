@@ -520,6 +520,7 @@ public:
 
     void CheckConnectedDevice();
     void SetDeviceConnectedFlagFalseAfterDuration();
+    int32_t CallRingtoneLibrary();
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;

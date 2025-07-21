@@ -26,6 +26,7 @@
 #include "privacy_kit.h"
 #include "tokenid_kit.h"
 #include "common_event_manager.h"
+#include "system_ability_definition.h"
 #include "audio_policy_log.h"
 #include "parameters.h"
 #include "media_monitor_manager.h"
@@ -80,6 +81,7 @@ constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
 constexpr int32_t EVENT_DES_SIZE = 80;
 constexpr int32_t ADAPTER_STATE_CONTENT_DES_SIZE = 60;
 constexpr int32_t API_VERSION_REMAINDER = 1000;
+static const int32_t DATASHARE_SERVICE_TIMEOUT_FIVE_SECONDS = 5; // 5s is better
 constexpr pid_t FIRST_SCREEN_ON_PID = 1000;
 constexpr uid_t UID_CAST_ENGINE_SA = 5526;
 constexpr uid_t UID_AUDIO = 1041;
@@ -631,6 +633,7 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     SubscribeCommonEvent("usual.event.SCREEN_OFF");
     SubscribeCommonEvent("usual.event.SCREEN_LOCKED");
     SubscribeCommonEvent("usual.event.SCREEN_UNLOCKED");
+    SubscribeCommonEvent("usual.event.LOCALE_CHANGED");
 #ifdef USB_ENABLE
     AudioUsbManager::GetInstance().Init(&audioPolicyService_);
     AudioUsbManager::GetInstance().SubscribeEvent();
@@ -695,6 +698,8 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
     } else if (action == "usual.event.SCREEN_UNLOCKED") {
         AUDIO_INFO_LOG("receive SCREEN_UNLOCKED action, can change volume");
         isScreenOffOrLock_ = false;
+    } else if (action == "usual.event.LOCALE_CHANGED") {
+        CallRingtoneLibrary();
     }
 }
 
@@ -3757,6 +3762,27 @@ void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t ses
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
     audioPolicyService_.TriggerFetchDevice();
+}
+
+int32_t AudioPolicyServer::CallRingtoneLibrary()
+{
+    Trace trace("AudioPolicyServer::CallRingtoneLibrary");
+    AUDIO_INFO_LOG("Enter CallRingtoneLibrary");
+    auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_RET_LOG(saManager != nullptr, ERROR, "Get system ability manager failed.");
+
+    AudioXCollie audioXCollie("CallRingtoneLibrary::start", DATASHARE_SERVICE_TIMEOUT_FIVE_SECONDS,
+        [](void *) {
+            AUDIO_ERR_LOG("CallRingtoneLibrary timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
+
+    auto remoteObj = saManager->GetSystemAbility(STORAGE_MANAGER_MANAGER_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObj != nullptr, ERROR, "Get system ability failed.");
+
+    auto dataShareHelper = DataShare::DataShareHelper::Creator(remoteObj, "datashare:///ringtone");
+    CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "Create dataShare failed, datashare or library error.");
+    dataShareHelper->Release();
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

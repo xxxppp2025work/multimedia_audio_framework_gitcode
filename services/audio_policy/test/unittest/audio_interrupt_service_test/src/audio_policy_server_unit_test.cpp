@@ -1469,5 +1469,20 @@ HWTEST(AudioPolicyUnitTest, MicrophoneMuteInfoDump_001, TestSize.Level1)
     std::string dumpString = "";
     ptrAudioPolicyServer->MicrophoneMuteInfoDump(dumpString);
 }
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: AudioPolicyServer_217
+ * @tc.desc  : Test CallRingtoneLibrary.
+ */
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_217, TestSize.Level1)
+{
+    int32_t systemAbilityId = 0;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
+    ASSERT_NE(audioPolicyServer, nullptr);
+
+    int32_t result = audioPolicyServer->CallRingtoneLibrary();
+    EXPECT_EQ(result, SUCCESS);
+}
 } // AudioStandard
 } // OHOS
