@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "capturer_clock_manager.h"
 #include "capturer_clock.h"
+#include "audio_source_clock.h"
 
 using namespace testing::ext;
 using namespace std;
@@ -42,6 +43,8 @@ constexpr uint64_t MOCK_TIMESTAMP_4 = 1'100'000'000;
 constexpr uint64_t MOCK_TIMESTAMP_4_IN_CAPTURER = 1'120'000'000;
 constexpr uint64_t MOCK_TIMESTAMP_5 = 1'120'000'000;
 constexpr uint64_t MOCK_TIMESTAMP_5_IN_CAPTURER = 1'140'000'000;
+constexpr uint32_t MOCK_CHANNEL = 2;
+constexpr AudioSampleFormat MOCK_FORMAT = AudioSampleFormat::SAMPLE_S16LE;
 
 class CapturerClockUnitTest : public testing::Test {
 public:
@@ -51,12 +54,18 @@ public:
     virtual void TearDown() {}
 private:
     static std::shared_ptr<CapturerClock> capturerClock_;
+    static std::shared_ptr<AudioSourceClock> srcClock_;
 };
 
 std::shared_ptr<CapturerClock> CapturerClockUnitTest::capturerClock_ = nullptr;
+std::shared_ptr<AudioSourceClock> AudioSourceClockUnitTest::srcClock_ = nullptr;
 
 void CapturerClockUnitTest::SetUpTestCase()
 {
+    srcClock_ = std::make_shared<AudioSourceClock>();
+    CapturerClockManager::GetInstance().RegisterAudioSourceClock(1, srcClock_);
+    srcClock_->Init(MOCK_SAMPLE_RATE, MOCK_FORMAT, MOCK_CHANNEL);
+    
     CapturerClockManager::GetInstance().CreateCapturerClock(1, MOCK_SAMPLE_RATE);
     capturerClock_ = CapturerClockManager::GetInstance().GetCapturerClock(1);
 }
@@ -108,5 +117,52 @@ HWTEST_F(CapturerClockUnitTest, CapturerClockUnitTest_002, TestSize.Level1)
     EXPECT_EQ(timestamp, MOCK_TIMESTAMP_5_IN_CAPTURER);
 }
 
+/**
+ * @tc.name   : Test Init
+ * @tc.number : Init_001
+ * @tc.desc   : Test Init
+ */
+HWTEST_F(CapturerClockUnitTest, Init_001, TestSize.Level1)
+{
+    AudioSampleFormat format = AudioSampleFormat::SAMPLE_U8;
+    srcClock_->Init(MOCK_SAMPLE_RATE, format, MOCK_CHANNEL);
+    EXPECT_EQ(srcClock_->sizePerPos_, 2);
+}
+
+/**
+ * @tc.name   : Test Init
+ * @tc.number : Init_002
+ * @tc.desc   : Test Init
+ */
+HWTEST_F(CapturerClockUnitTest, Init_002, TestSize.Level1)
+{
+    AudioSampleFormat format = AudioSampleFormat::SAMPLE_S24LE;
+    srcClock_->Init(MOCK_SAMPLE_RATE, format, MOCK_CHANNEL);
+    EXPECT_EQ(srcClock_->sizePerPos_, 6);
+}
+
+/**
+ * @tc.name   : Test Init
+ * @tc.number : Init_003
+ * @tc.desc   : Test Init
+ */
+HWTEST_F(CapturerClockUnitTest, Init_003, TestSize.Level1)
+{
+    AudioSampleFormat format = AudioSampleFormat::SAMPLE_S32LE;
+    srcClock_->Init(MOCK_SAMPLE_RATE, format, MOCK_CHANNEL);
+    EXPECT_EQ(srcClock_->sizePerPos_, 8);
+}
+
+/**
+ * @tc.name   : Test Init
+ * @tc.number : Init_004
+ * @tc.desc   : Test Init
+ */
+HWTEST_F(CapturerClockUnitTest, Init_004, TestSize.Level1)
+{
+    AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
+    srcClock_->Init(MOCK_SAMPLE_RATE, format, MOCK_CHANNEL);
+    EXPECT_EQ(srcClock_->sizePerPos_, 4);
+}
 } // namespace AudioStandard
 } // namespace OHOS
