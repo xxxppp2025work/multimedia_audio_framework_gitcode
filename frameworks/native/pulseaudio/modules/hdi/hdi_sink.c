@@ -59,7 +59,7 @@
 #include "sink_userdata.h"
 #include "time.h"
 #include "audio_performance_monitor_c.h"
-#include "audio_collaborative_adapter.h"
+#include "collaborative_playback_adapter.h"
 
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_AUDIO_DEVICE_NAME "Speaker"
@@ -346,20 +346,12 @@ static const char *GetSceneTypeForCollaboration(const pa_proplist* p, const char
         return "NULL";
     }
 
-    const char* streamUsage = safeProplistGets(p, "stream.usage", "NULL");
-    const char* rawSceneType = safeProplistGets(p, "scene.type", "NULL");
-    if (strcmp(sinkName, BT_SINK_NAME)) {
-        return rawSceneType;
-    }
-    if (!IsCollaborationEnabled()) {
-        return rawSceneType;
+    const char* collaborationEnabled = safeProplistGets(p, "collaboration.enabled", "NULL");
+    if (!strcmp(sinkName, BT_SINK_NAME) && collaborationEnabled && !strcmp(collaborationEnabled, "1")) {
+        return SCENE_COLLABORATIVE;
     }
 
-    if (!streamUsage || !IsStreamSupportCollaborative(atoi(streamUsage))) {
-        return rawSceneType;
-    }
-
-    return SCENE_COLLABORATIVE;
+    return safeProplistGets(p, "scene.type", "NULL");
 }
 
 static void CollaborativeProcess(struct Userdata *u, char *sinkSceneType)
@@ -369,12 +361,12 @@ static void CollaborativeProcess(struct Userdata *u, char *sinkSceneType)
     }
 
     if (!strcmp(u->sink->name, BT_SINK_NAME) && !strcmp(sinkSceneType, SCENE_COLLABORATIVE)) {
-        CollaborativeManagerEnqueue(u->bufferAttr);
+        CollaborativePlaybackEnqueue(u->bufferAttr);
         return;
     }
 
     if (!strcmp(u->sink->name, SPK_SINK_NAME) && !strcmp(sinkSceneType, SCENE_NONE)) {
-        CollaborativeManagerDequeue(u->bufferAttr);
+        CollaborativePlaybackDequeue(u->bufferAttr);
         return;
     }
     return;
@@ -1846,7 +1838,20 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
             continue;
         }
 #ifdef HAS_FEATURE_COLLABORATION
-        const char *sinkSceneTypeTmp = GetSceneTypeForCollaboration(input->proplist, u->sink->name);
+        const char* collaborationEnabled = safeProplistGets(p, "collaboration.enabled", "NULL");
+        const char *sinkSceneTypeTmp = NULL;
+        if (collaborationEnabled && !strcmp(collaborationEnabled, "1")) {
+            if (!strcmp(sinkName, SPK_SINK_NAME)) {
+                g_effectAllStreamVolumeZeroMap[i] = false;
+                g_effectStartVolZeroTimeMap[i] = 0;
+                break;
+            }
+            if (!strcmp(sinkName, BT_SINK_NAME)) {
+                sinkSceneTypeTmp = SCENE_COLLABORATIVE;
+            }
+        } else {
+            sinkSceneTypeTmp = pa_proplist_gets(input->proplist, "scene.type");
+        }
 #else
         const char *sinkSceneTypeTmp = pa_proplist_gets(input->proplist, "scene.type");
 #endif

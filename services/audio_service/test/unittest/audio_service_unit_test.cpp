@@ -2272,5 +2272,102 @@ HWTEST(AudioServiceUnitTest, ForceStopAudioStream_002, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 }
 #endif
+
+#ifdef HAS_FEATURE_COLLABORATION
+class CollaborativePlaybackManagerMock : public ICollaborativePlaybackManager {
+public:
+    CollaborativePlaybackManagerMock() = default;
+    ~CollaborativePlaybackManagerMock() override = default;
+    bool IsCollaborationEnabled() override
+    {
+         // Mock implementation, always returns true
+        return true;
+    }
+    bool IsStreamSupportCollaborative(StreamUsage usage) override
+    {
+         // Mock implementation, always returns true
+        return true;
+    }
+    int32_t UpdateCollaborativeState(bool collaborationEnabled) override
+    {
+         // Mock implementation, always returns success
+        return SUCCESS;
+    }
+    int32_t RegisterCollaborativeListener(ICollaborativeListener* listener) override
+    {
+         // Mock implementation, always returns success
+        return SUCCESS;
+    }
+    bool IsCollaborativeFirstChanged(int32_t sessionId, int32_t collaborationEnabled) override
+    {
+         // Mock implementation, always returns false
+        return false;
+    }
+    void Enqueue(BufferAttr* buffer) override
+    {
+         // Mock implementation, does nothing
+    };
+    void Dequeue(BufferAttr* buffer) override
+    {
+         // Mock implementation, does nothing
+    };
+    void ResetBuffer() override
+    {
+         // Mock implementation, does nothing
+    };
+}
+
+/*
+ * @tc.name  : Test OnCollaborativeStateChanged API
+ * @tc.type  : FUNC
+ * @tc.number: OnCollaborativeStateChanged_001
+ * @tc.desc  : Test OnCollaborativeStateChanged whether callback can invoke.
+ */
+HWTEST(AudioServiceUnitTest, OnCollaborativeStateChanged_001, TestSize.Level1)
+{
+    AudioService::GetInstance()->allRendererMap_.clear();
+
+    AudioProcessConfig config;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    EXPECT_NE(streamListenerHolder, nullptr);
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> renderer =
+        std::make_shared<RendererInServer>(config, streamListener);
+    EXPECT_NE(renderer, nullptr);
+    AudioService::GetInstance()->allRendererMap_.insert(std::make_pair(0, renderer));
+    ICollaborativePlaybackManager mockManager = new CollaborativePlaybackManagerMock();
+    AudioService::GetInstance()->SetCollaborativeManager(&mockManager);
+    bool isCollaborativeEnabled = true;
+    AudioService::GetInstance()->OnCollaborativeStateChanged(isCollaborativeEnabled);
+    isCollaborativeEnabled = false;
+    AudioService::GetInstance()->OnCollaborativeStateChanged(isCollaborativeEnabled);
+}
+
+void CheckCollaborationForRendererInner(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);\
+#ifdef HAS_FEATURE_COLLABORATION
+/*
+ * @tc.name  : Test CheckCollaborationForRendererInner API
+ * @tc.type  : FUNC
+ * @tc.number: CheckCollaborationForRendererInner_001
+ * @tc.desc  : Test CheckCollaborationForRendererInner whether callback can invoke.
+ */
+HWTEST(AudioServiceUnitTest, CheckCollaborationForRendererInner_001, TestSize.Level1)
+{
+    AudioService::GetInstance()->allRendererMap_.clear();
+
+    AudioProcessConfig config;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    EXPECT_NE(streamListenerHolder, nullptr);
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> renderer =
+        std::make_shared<RendererInServer>(config, streamListener);
+    EXPECT_NE(renderer, nullptr);
+    AudioService::GetInstance()->allRendererMap_.insert(std::make_pair(0, renderer));
+    ICollaborativePlaybackManager mockManager = new CollaborativePlaybackManagerMock();
+    AudioService::GetInstance()->CheckCollaborationForRendererInner(0, renderer);
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

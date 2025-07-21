@@ -37,6 +37,7 @@
 #include "playback_capturer_manager.h"
 #endif
 #include "audio_resource_service.h"
+#include "collaborative_playback_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -73,10 +74,10 @@ AudioService *AudioService::GetInstance()
 }
 
 AudioService::AudioService()
-#ifdef HAS_FEATURE_COLLABORATION
-    : audioCollaborativeManager_(AudioCollaborativeManager::GetInstance())
-#endif
 {
+#ifdef HAS_FEATURE_COLLABORATION
+    collaborativePlaybackManager_ = &CollaborativePlaybackManager::GetInstance();
+#endif
     AUDIO_INFO_LOG("AudioService()");
 }
 
@@ -186,7 +187,7 @@ sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &con
 #ifdef HAS_FEATURE_COLLABORATION
     if (!isRegisterCollaborativeListened_) {
         AUDIO_INFO_LOG("isRegisterCollaborativeListened_ is false");
-        audioCollaborativeManager_.RegisterCollaborativeListener(this);
+        collaborativePlaybackManager_->RegisterCollaborativeListener(this);
         isRegisterCollaborativeListened_ = true;
     }
 #endif
@@ -1731,21 +1732,21 @@ void AudioService::RenderersCheckForAudioWorkgroup(int32_t pid)
     }
 }
 
+#ifdef HAS_FEATURE_COLLABORATION
 void AudioService::CheckCollaborationForRendererInner(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
 {
     CHECK_AND_RETURN_LOG(renderer != nullptr, "renderer is null.");
 
     std::lock_guard<std::mutex> lock(rendererMapMutex_);
-    if (audioCollaborativeManager_.IsStreamSupportCollaborative(
+    if (collaborativePlaybackManager_->IsStreamSupportCollaborative(
             renderer->processConfig_.rendererInfo.streamUsage) &&
-        audioCollaborativeManager_.IsCollaborationEnabled()) {
+        collaborativePlaybackManager_->IsCollaborationEnabled()) {
         renderer->EnableCollaboration();
     }
 }
 
 void AudioService::OnCollaborativeStateChanged(bool isCollaborative)
 {
-#ifdef HAS_FEATURE_COLLABORATION
     AUDIO_INFO_LOG("OnCollaborativeStateChanged isCollaborative:%{public}d", isCollaborative);
     std::lock_guard<std::mutex> lock(rendererMapMutex_);
     for (auto it = allRendererMap_.begin(); it != allRendererMap_.end(); it++) {
@@ -1754,7 +1755,7 @@ void AudioService::OnCollaborativeStateChanged(bool isCollaborative)
             AUDIO_WARNING_LOG("Renderer is already released!");
             continue;
         }
-        if (audioCollaborativeManager_.IsStreamSupportCollaborative(
+        if (collaborativePlaybackManager_->IsStreamSupportCollaborative(
                 renderer->processConfig_.rendererInfo.streamUsage)) {
             if (isCollaborative) {
                 renderer->EnableCollaboration();
@@ -1763,9 +1764,13 @@ void AudioService::OnCollaborativeStateChanged(bool isCollaborative)
             }
         }
     }
-#else
-    return;
-#endif
 }
+
+void AudioService::SetCollaborativeManager(ICollaborativePlaybackManager& manager)
+{
+    // for mock test
+    collaborativePlaybackManager_ = &manager;
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

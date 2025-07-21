@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef I_AUDIO_COLLABORATIVE_MANAGER_H
-#define I_AUDIO_COLLABORATIVE_MANAGER_H
+#ifndef I_COLLABORATIVE_PLAYBACK_MANAGER_H
+#define I_COLLABORATIVE_PLAYBACK_MANAGER_H
 
 #include <cstdint>
 #include "audio_effect_chain_adapter.h"
@@ -22,17 +22,18 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class IAudioCollaborativeManager {
+class ICollaborativePlaybackManager {
 public:
-    virtual ~IAudioCollaborativeManager() = default;
+    virtual ~ICollaborativePlaybackManager() = default;
     virtual bool IsCollaborationEnabled() = 0;
     virtual bool IsStreamSupportCollaborative(StreamUsage usage) const = 0;
-    virtual void UpdateCollaborativeState(bool collaborationEnabled) = 0;
+    virtual int32_t UpdateCollaborativeState(bool collaborationEnabled) = 0;
     virtual int32_t RegisterCollaborativeListener(ICollaborativeListener* listener) = 0;
     virtual bool IsCollaborativeFirstChanged(int32_t sessionId, int32_t collaborationEnabled) = 0;
     virtual void Enqueue(BufferAttr* buffer) = 0;
     virtual void Dequeue(BufferAttr* buffer) = 0;
+    virtual void ResetBuffer() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // I_AUDIO_COLLABORATIVE_MANAGER_H
+#endif // I_COLLABORATIVE_PLAYBACK_MANAGER_H

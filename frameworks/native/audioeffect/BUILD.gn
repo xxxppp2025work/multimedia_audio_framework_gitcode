@@ -79,6 +79,8 @@ audio_ohos_library("audio_effect") {
     "src/audio_head_tracker.cpp",
     "src/chain_pool_impl.cpp",
     "src/thread_handler_impl.cpp",
+    "src/collaborative_playback_adapter.cpp",
+    "src/collaborative_playback_manager.cpp",
   ]
 
   deps = [

@@ -14,10 +14,10 @@
  */
 
 #ifndef LOG_TAG
-#define LOG_TAG "AudioCollaborativeManager"
+#define LOG_TAG "CollaborativePlaybackManager"
 #endif
 
-#include "audio_collaborative_manager.h"
+#include "collaborative_playback_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -35,13 +35,13 @@ static constexpr int32_t MS_PER_SECOND = 1000;
 static constexpr int32_t TEST_LATENCY = 280;
 static constexpr int32_t ENQUEUE_DONE_FRAME = 10;
 
-IAudioCollaborativeManager& AudioCollaborativeManager::GetInstance()
+ICollaborativePlaybackManager& CollaborativePlaybackManager::GetInstance()
 {
-    static AudioCollaborativeManager instance;
+    static CollaborativePlaybackManager instance;
     return instance;
 }
 
-AudioCollaborativeManager::AudioCollaborativeManager()
+CollaborativePlaybackManager::CollaborativePlaybackManager()
 {
     const size_t size = SAMPLE_RATE_48000 * static_cast<int32_t>(STEREO) *
         sizeof(float) * MAX_CACHE_SIZE / MS_PER_SECOND;
@@ -52,32 +52,34 @@ AudioCollaborativeManager::AudioCollaborativeManager()
     silenceData_ = std::make_unique<std::vector<float>>(COLLABORATIVE_CHANNELS * DEFAULT_FRAME_LEN, 0.0f);
 }
 
-bool AudioCollaborativeManager::IsCollaborationEnabled()
+bool CollaborativePlaybackManager::IsCollaborationEnabled()
 {
     std::lock_guard<std::mutex> lock(mutex_);
     return isCollaborativeEnabled_;
 }
 
-bool AudioCollaborativeManager::IsStreamSupportCollaborative(StreamUsage usage) const
+bool CollaborativePlaybackManager::IsStreamSupportCollaborative(StreamUsage usage) const
 {
     return std::find(defaultUsages_.begin(), defaultUsages_.end(), usage) != defaultUsages_.end();
 }
 
-void AudioCollaborativeManager::UpdateCollaborativeState(bool isCollaborative)
+int32_t CollaborativePlaybackManager::UpdateCollaborativeState(bool isCollaborative)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     if (isCollaborativeEnabled_ != isCollaborative) {
-        isCollaborativeEnabled_ = isCollaborative;
-        AUDIO_INFO_LOG("UpdateCollaborativeState, isCollaborative: %{public}d", isCollaborative);
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            isCollaborativeEnabled_ = isCollaborative;
+            AUDIO_INFO_LOG("UpdateCollaborativeState, isCollaborative: %{public}d", isCollaborative);
+        }
         // Notify listener about the change in collaborative state
-        CHECK_AND_RETURN_LOG(listener_ != nullptr,
+        CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, ERROR,
             "UpdateCollaborativeState failed, listener is null");
         listener_->OnCollaborativeStateChanged(isCollaborative);
     }
-    return;
+    return SUCCESS;
 }
 
-int32_t AudioCollaborativeManager::RegisterCollaborativeListener(ICollaborativeListener* listener)
+int32_t CollaborativePlaybackManager::RegisterCollaborativeListener(ICollaborativeListener* listener)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (listener == nullptr) {
@@ -89,7 +91,7 @@ int32_t AudioCollaborativeManager::RegisterCollaborativeListener(ICollaborativeL
     return SUCCESS;
 }
 
-bool AudioCollaborativeManager::IsCollaborativeFirstChanged(int32_t sessionID, int32_t collaborationEnabled)
+bool CollaborativePlaybackManager::IsCollaborativeFirstChanged(int32_t sessionID, int32_t collaborationEnabled)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = sessionCollaborativeState_.find(sessionID);
@@ -106,7 +108,7 @@ bool AudioCollaborativeManager::IsCollaborativeFirstChanged(int32_t sessionID, i
     return false;
 }
 
-void AudioCollaborativeManager::Enqueue(BufferAttr* buffer)
+void CollaborativePlaybackManager::Enqueue(BufferAttr* buffer)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_LOG(buffer != nullptr, "Enqueue failed, buffer is null");
@@ -116,6 +118,8 @@ void AudioCollaborativeManager::Enqueue(BufferAttr* buffer)
 
     // spilit data into direct and collaborative output
     SplitCollaborativeDataInner(buffer);
+    DumpFileUtil::WriteDumpFile(dumpFileInput_, static_cast<void *>(buffer->bufOut),
+        DEFAULT_FRAME_LEN * COLLABORATIVE_CHANNELS * sizeof(float));
     // process input buffer
     ProcessInputFrameInner();
     
@@ -135,7 +139,7 @@ void AudioCollaborativeManager::Enqueue(BufferAttr* buffer)
     buffer->outChanLayout = COLLABORATIVE_CHANNEL_LAYOUT;
 }
 
-void AudioCollaborativeManager::Dequeue(BufferAttr* buffer)
+void CollaborativePlaybackManager::Dequeue(BufferAttr* buffer)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     
@@ -145,9 +149,11 @@ void AudioCollaborativeManager::Dequeue(BufferAttr* buffer)
     }
     // process output buffer
     ProcessOutputFrameInner(buffer);
+    DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(buffer->bufOut),
+        DEFAULT_FRAME_LEN * COLLABORATIVE_CHANNELS * sizeof(float));
 }
 
-void AudioCollaborativeManager::ProcessInputFrameInner()
+void CollaborativePlaybackManager::ProcessInputFrameInner()
 {
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Ring cache is null");
     
@@ -165,7 +171,7 @@ void AudioCollaborativeManager::ProcessInputFrameInner()
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue data failed");
 }
 
-void AudioCollaborativeManager::ProcessOutputFrameInner(BufferAttr* buffer)
+void CollaborativePlaybackManager::ProcessOutputFrameInner(BufferAttr* buffer)
 {
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Ring cache is null");
     
@@ -186,12 +192,12 @@ void AudioCollaborativeManager::ProcessOutputFrameInner(BufferAttr* buffer)
     result = ringCache_->Dequeue(bufferWrap);
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Dequeue data failed");
     for (uint32_t i = 0; i < DEFAULT_FRAME_LEN; ++i) {
-        buffer->bufOut[DEFAULT_CHANNELS * i] += (*collaborativeOutput_)[COLLABORATIVE_CHANNELS * i];
-        buffer->bufOut[DEFAULT_CHANNELS * i + 1] += (*collaborativeOutput_)[COLLABORATIVE_CHANNELS * i + 1];
+        buffer->bufOut[DEFAULT_CHANNELS * i] = (*collaborativeOutput_)[COLLABORATIVE_CHANNELS * i];
+        buffer->bufOut[DEFAULT_CHANNELS * i + 1] = (*collaborativeOutput_)[COLLABORATIVE_CHANNELS * i + 1];
     }
 }
 
-void AudioCollaborativeManager::SplitCollaborativeDataInner(BufferAttr* buffer)
+void CollaborativePlaybackManager::SplitCollaborativeDataInner(BufferAttr* buffer)
 {
     for (uint32_t i = 0; i < buffer->frameLen; ++i) {
         buffer->bufOut[DIRECT_CHANNELS * i] = buffer->bufOut[COLLABORATIVE_EFFECT_CHANNEL * i];
@@ -203,7 +209,7 @@ void AudioCollaborativeManager::SplitCollaborativeDataInner(BufferAttr* buffer)
     }
 }
 
-void AudioCollaborativeManager::FillSilenceFramesInner(uint32_t latencyMs)
+void CollaborativePlaybackManager::FillSilenceFramesInner(uint32_t latencyMs)
 {
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Ring cache is null");
     
@@ -227,6 +233,17 @@ void AudioCollaborativeManager::FillSilenceFramesInner(uint32_t latencyMs)
         offset += DEFAULT_FRAME_LEN_MS;
     }
     AUDIO_INFO_LOG("Filled %{public}u ms of silence frames", offset);
+}
+
+void CollaborativePlaybackManager::ResetBuffer()
+{
+    // reset status flag
+    enqueueCount_ = 1;
+    enqueueRunning_ = false;
+    dumpNameIn_ = "dump_collaborative_in.pcm";
+    dumpNameOut_ = "dump_collaborative_out.pcm";
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpNameIn_, &dumpFileInput_);
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpNameOut_, &dumpFileOutput_);
 }
 } // namespace AudioStandard
 } // namespace OHOS

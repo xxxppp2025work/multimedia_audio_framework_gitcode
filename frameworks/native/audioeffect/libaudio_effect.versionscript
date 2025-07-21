@@ -98,9 +98,10 @@
     *ResetInfo*;
     *IsStreamSupportCollaborative*；
     *IsCollaborationEnabled*；
-    *CollaborativeManagerEnqueue*；
-    *CollaborativeManagerDequeue*；
+    *CollaborativePlaybackEnqueue*；
+    *CollaborativePlaybackDequeue*；
     *IsCollaborativeFirstChanged*；
+    *CollaborativePlaybackReset*；
   local:
     *;
 };

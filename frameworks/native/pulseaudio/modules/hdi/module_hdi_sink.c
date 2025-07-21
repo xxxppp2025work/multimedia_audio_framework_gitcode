@@ -28,7 +28,7 @@
 #include "audio_hdi_log.h"
 #include "playback_capturer_adapter.h"
 #include "sink_userdata.h"
-#include "audio_collaborative_adapter.h"
+#include "collaborative_playback_adapter.h"
 
 pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver);
 void PaHdiSinkFree(pa_sink *s);
@@ -221,10 +221,17 @@ static void ProplistChangedForCollaboration(pa_sink_input *si, const char *scene
     const SessionInfoPack pack)
 {
     const char *collaborationEnabled = pa_proplist_gets(si->proplist, "collaboration.enabled");
+    if (!collaborationEnabled || strcmp(si->sink->name, "Bt_Speaker")) {
+        EffectChainManagerCreateCb(sceneType, sessionID);
+        if (si->thread_info.state == PA_SINK_INPUT_RUNNING) {
+            AddSessionInfoForCollaboration(sceneType, sessionID, pack);
+        }
+        return;
+    }
     const char *oldSceneType = NULL;
     const char *newSceneType = NULL;
     // change sceneType for collaboration, old sceneType is only used when first changed
-    if (collaborationEnabled && !strcmp(collaborationEnabled, "1")) {
+    if (!strcmp(collaborationEnabled, "1")) {
         oldSceneType = sceneType;
         newSceneType = "SCENE_COLLABORATIVE";
     } else {
@@ -250,7 +257,7 @@ static void SinkInputUnlinkForCollaboration(pa_sink_input *si, const char *scene
     const char *collaborationEnabled = pa_proplist_gets(si->proplist, "collaboration.enabled");
     // change sceneType for collaboration
     const char *newSceneType = NULL;
-    if (!strcmp(collaborationEnabled, "1")) {
+    if (collaborationEnabled && !strcmp(collaborationEnabled, "1") && !strcmp(si->sink->name, "Bt_Speaker")) {
         newSceneType = "SCENE_COLLABORATIVE";
     } else {
         newSceneType = sceneType;
@@ -265,6 +272,9 @@ static void SinkInputRunningForCollaboration(pa_sink_input *si, const char *scen
     const SessionInfoPack pack)
 {
     const char *realSceneType = GetSceneTypeForCollaboration(si, sceneType);
+    if (!strcmp(realSceneType, "SCENE_COLLABORATIVE")) {
+        CollaborativePlaybackReset();
+    }
     AddSessionInfoForCollaboration(realSceneType, sessionID, pack);
 }
 
@@ -296,7 +306,7 @@ static const char *GetSceneTypeForCollaboration(pa_sink_input *si, const char *s
 {
     const char *collaborationEnabled = pa_proplist_gets(si->proplist, "collaboration.enabled");
     // change sceneType for collaboration
-    if (collaborationEnabled && !strcmp(collaborationEnabled, "1")) {
+    if (collaborationEnabled && !strcmp(collaborationEnabled, "1") && !strcmp(si->sink->name, "Bt_Speaker")) {
         return "SCENE_COLLABORATIVE";
     }
     return sceneType;

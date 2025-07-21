@@ -143,6 +143,7 @@ public:
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame);
 
     int32_t SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId);
+    // for collaboration
     void EnableCollaboration();
     void DisableCollaboration();
 public:

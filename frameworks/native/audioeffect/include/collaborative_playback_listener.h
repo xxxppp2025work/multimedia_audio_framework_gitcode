@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_COLLABORATIVE_LISTENER_H
-#define AUDIO_COLLABORATIVE_LISTENER_H
+#ifndef COLLABORATIVE_PLAYBACK_LISTENER_H
+#define COLLABORATIVE_PLAYBACK_LISTENER_H
 
 #include <stdint.h>
 
@@ -27,4 +27,4 @@ public:
 };
 } 
 }
-#endif // AUDIO_COLLABORATIVE_LISTENER_H
+#endif // COLLABORATIVE_PLAYBACK_LISTENER_H

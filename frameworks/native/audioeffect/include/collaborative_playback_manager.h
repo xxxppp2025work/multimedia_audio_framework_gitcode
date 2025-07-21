@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_COLLABORATIVE_MANAGER_H
-#define AUDIO_COLLABORATIVE_MANAGER_H
+#ifndef COLLABORATIVE_PLAYBACK_MANAGER_H
+#define COLLABORATIVE_PLAYBACK_MANAGER_H
 
 #include <stdint.h>
 #include <mutex>
@@ -22,28 +22,29 @@
 #include "audio_info.h"
 #include "audio_ring_cache.h"
 #include "audio_effect_chain_adapter.h"
-#include "audio_collaborative_listener.h"
-#include "i_audio_collaborative_manager.h"
+#include "collaborative_playback_listener.h"
+#include "i_collaborative_playback_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioCollaborativeManager : public IAudioCollaborativeManager {
+class CollaborativePlaybackManager : public ICollaborativePlaybackManager {
 public:
-    static IAudioCollaborativeManager& GetInstance();
+    static ICollaborativePlaybackManager& GetInstance();
     bool IsCollaborationEnabled() override;
     bool IsStreamSupportCollaborative(StreamUsage usage) const override;
-    void UpdateCollaborativeState(bool collaborationEnabled) override;
+    int32_t UpdateCollaborativeState(bool collaborationEnabled) override;
     int32_t RegisterCollaborativeListener(ICollaborativeListener* listener) override;
     bool IsCollaborativeFirstChanged(int32_t sessionId, int32_t collaborationEnabled) override;
     void Enqueue(BufferAttr* buffer) override;
     void Dequeue(BufferAttr* buffer) override;
-    AudioCollaborativeManager(const AudioCollaborativeManager&) = delete;
-    AudioCollaborativeManager(AudioCollaborativeManager&&) = delete;
-    AudioCollaborativeManager& operator=(const AudioCollaborativeManager&) = delete;
-    AudioCollaborativeManager& operator=(AudioCollaborativeManager&&) = delete;
+    void ResetBuffer() override;
+    CollaborativePlaybackManager(const CollaborativePlaybackManager&) = delete;
+    CollaborativePlaybackManager(CollaborativePlaybackManager&&) = delete;
+    CollaborativePlaybackManager& operator=(const CollaborativePlaybackManager&) = delete;
+    CollaborativePlaybackManager& operator=(CollaborativePlaybackManager&&) = delete;
 private:
-    AudioCollaborativeManager() = default;
-    ~AudioCollaborativeManager() = default;
+    CollaborativePlaybackManager();
+    ~CollaborativePlaybackManager() = default;
     void ProcessInputFrameInner();
     void ProcessOutputFrameInner(BufferAttr* buffer);
     void SplitCollaborativeDataInner(BufferAttr* buffer);
@@ -59,7 +60,11 @@ private:
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
     bool enqueueRunning_ = false;
     int32_t enqueueCount_ = 1;
+    std::string dumpNameIn = "";
+    std::string dumpNameOut = "";
+    FILE *dumpFileInput = nullptr;
+    FILE *dumpFileOutput = nullptr;
 };
 }
 }
-#endif // AUDIO_COLLABORATIVE_MANAGER_H
+#endif // COLLABORATIVE_PLAYBACK_MANAGER_H

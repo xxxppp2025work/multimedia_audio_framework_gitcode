@@ -14,11 +14,11 @@
  */
 
 #ifndef LOG_TAG
-#define LOG_TAG "AudioCollaborativeAdapter"
+#define LOG_TAG "CollaborativePlaybackAdapter"
 #endif
 
-#include "audio_collaborative_adapter.h"
-#include "audio_collaborative_manager.h"
+#include "collaborative_playback_adapter.h"
+#include "collaborative_playback_manager.h"
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect_log.h"
 #include "audio_stream_info.h"
@@ -28,36 +28,42 @@ namespace AudioStandard {
 
 bool IsStreamSupportCollaborative(int32_t usage)
 {
-    return AudioCollaborativeManager::GetInstance().IsStreamSupportCollaborative((StreamUsage)usage);
+    return CollaborativePlaybackManager::GetInstance().IsStreamSupportCollaborative((StreamUsage)usage);
 }
 
 bool IsCollaborationEnabled()
 {
-    return AudioCollaborativeManager::GetInstance().IsCollaborationEnabled();
+    return CollaborativePlaybackManager::GetInstance().IsCollaborationEnabled();
 }
 
-void CollaborativeManagerEnqueue(BufferAttr *bufferAttr)
+void CollaborativePlaybackEnqueue(BufferAttr *bufferAttr)
 {
     CHECK_AND_RETURN_LOG(bufferAttr != nullptr, "bufferAttr is null");
     CHECK_AND_RETURN_LOG(bufferAttr->bufIn != nullptr && bufferAttr->bufOut != nullptr,
         "Input or output buffer is null");
-    AudioCollaborativeManager::GetInstance().Enqueue(bufferAttr);
+    CollaborativePlaybackManager::GetInstance().Enqueue(bufferAttr);
     return;
 }
 
-void CollaborativeManagerDequeue(BufferAttr *bufferAttr)
+void CollaborativePlaybackDequeue(BufferAttr *bufferAttr)
 {
     CHECK_AND_RETURN_LOG(bufferAttr != nullptr, "bufferAttr is null");
     CHECK_AND_RETURN_LOG(bufferAttr->bufIn != nullptr && bufferAttr->bufOut != nullptr,
         "Input or output buffer is null");
-    AudioCollaborativeManager::GetInstance().Dequeue(bufferAttr);
+    CollaborativePlaybackManager::GetInstance().Dequeue(bufferAttr);
     return;
 }
 
 bool IsCollaborativeFirstChanged(int32_t sessionID, int32_t collaborationEnabled)
 {
     // check if collaborative is first changed for the session
-    return AudioCollaborativeManager::GetInstance().IsCollaborativeFirstChanged(sessionID, collaborationEnabled);
+    return CollaborativePlaybackManager::GetInstance().IsCollaborativeFirstChanged(sessionID, collaborationEnabled);
+}
+
+void CollaborativePlaybackReset()
+{
+    CollaborativePlaybackManager::GetInstance().ResetBuffer();
+    return;
 }
 }
 }

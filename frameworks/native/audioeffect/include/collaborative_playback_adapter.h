@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AUDIO_COLLABORATIVE_ADAPTER_H
-#define AUDIO_COLLABORATIVE_ADAPTER_H
+#ifndef COLLABORATIVE_PLAYBACK_ADAPTER_H
+#define COLLABORATIVE_PLAYBACK_ADAPTER_H
 
 #include <stdint.h>
 #include "audio_effect_chain_adapter.h"
@@ -23,10 +23,11 @@ extern "C" {
 
 bool IsStreamSupportCollaborative(int32_t usage);
 bool IsCollaborationEnabled();
-void CollaborativeManagerEnqueue(BufferAttr *bufferAttr);
-void CollaborativeManagerDequeue(BufferAttr *bufferAttr);
+void CollaborativePlaybackEnqueue(BufferAttr *bufferAttr);
+void CollaborativePlaybackDequeue(BufferAttr *bufferAttr);
 bool IsCollaborativeFirstChanged(int32_t sessionID, int32_t collaborationEnabled);
+void CollaborativePlaybackReset();
 #ifdef __cplusplus
 }
 #endif
-#endif // AUDIO_COLLABORATIVE_ADAPTER_H
+#endif // COLLABORATIVE_PLAYBACK_ADAPTER_H
