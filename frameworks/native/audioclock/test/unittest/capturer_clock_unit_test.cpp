@@ -44,6 +44,7 @@ constexpr uint64_t MOCK_TIMESTAMP_4_IN_CAPTURER = 1'120'000'000;
 constexpr uint64_t MOCK_TIMESTAMP_5 = 1'120'000'000;
 constexpr uint64_t MOCK_TIMESTAMP_5_IN_CAPTURER = 1'140'000'000;
 constexpr uint32_t MOCK_CHANNEL = 2;
+constexpr AudioSampleFormat MOCK_FORMAT = AudioSampleFormat::SAMPLE_S16LE;
 
 class CapturerClockUnitTest : public testing::Test {
 public:
@@ -53,12 +54,18 @@ public:
     virtual void TearDown() {}
 private:
     static std::shared_ptr<CapturerClock> capturerClock_;
+    static std::shared_ptr<AudioSourceClock> srcClock_;
 };
 
 std::shared_ptr<CapturerClock> CapturerClockUnitTest::capturerClock_ = nullptr;
+std::shared_ptr<AudioSourceClock> AudioSourceClockUnitTest::srcClock_ = nullptr;
 
 void CapturerClockUnitTest::SetUpTestCase()
 {
+    srcClock_ = std::make_shared<AudioSourceClock>();
+    CapturerClockManager::GetInstance().RegisterAudioSourceClock(1, srcClock_);
+    srcClock_->Init(MOCK_SAMPLE_RATE, MOCK_FORMAT, MOCK_CHANNEL);
+    
     CapturerClockManager::GetInstance().CreateCapturerClock(1, MOCK_SAMPLE_RATE);
     capturerClock_ = CapturerClockManager::GetInstance().GetCapturerClock(1);
 }
