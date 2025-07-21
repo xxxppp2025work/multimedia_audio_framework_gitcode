@@ -2403,19 +2403,22 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_FastStatusChangeCallback_001, TestS
 }
 
 /**
-* @tc.name  : Test FastStatusChangeCallback.
-* @tc.number: Audio_Renderer_FastStatusChangeCallback_002.
-* @tc.desc  : Test FastStatusChangeCallback interface.
+* @tc.name  : Test SetRenderRate.
+* @tc.number: SetRenderRate_002.
+* @tc.desc  : Test SetRenderRate interface.
 */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_FastStatusChangeCallback_002, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRenderRate_002, TestSize.Level1)
 {
-    AppInfo appInfo = {};
-    shared_ptr<AudioRendererPrivate> audioRenderer =
-        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
-    EXPECT_NE(nullptr, audioRenderer);
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
 
-    FastStatus status = static_cast<AudioRendererRate>(100);
-    audioRenderer->FastStatusChangeCallback(status);
+    AudioRendererRate renderRate = static_cast<AudioRendererRate>(100);
+    ret = audioRenderer->SetRenderRate(renderRate);
+    EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
 }
 
 /**
@@ -2455,10 +2458,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GenerateNewStream_002, TestSize.Lev
     EXPECT_NE(nullptr, audioRenderer);
 
     RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = SERVER_DIED;
     RendererState previousState = RENDERER_NEW;
     IAudioStream::SwitchInfo switchInfo;
     switchInfo.eStreamType = STREAM_MUSIC;
-    switchInfo.restoreReason = SERVER_DIED;
 
     auto ret = audioRenderer->GenerateNewStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo,
         previousState, switchInfo);
