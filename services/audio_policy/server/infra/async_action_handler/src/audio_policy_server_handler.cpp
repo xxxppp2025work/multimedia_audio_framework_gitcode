@@ -26,6 +26,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr const int32_t SERVICE_TIMEOUT = 2;
 constexpr int32_t RSS_UID = 1096;
 
 static std::string GeneratePidsStrForPrinting(
@@ -839,6 +840,11 @@ void AudioPolicyServerHandler::HandleRequestCateGoryEvent(const AppExecFwk::Inne
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
 
+    AudioXCollie audioXCollie("AudioPolicyServerHandler::HandleRequestCateGoryEvent", SERVICE_TIMEOUT,
+        [this](void *) {
+            AUDIO_ERR_LOG("HandleRequestCateGoryEvent timeout. audioPolicyClientProxyAPSCbsMap_ size: %{public}d",
+                static_cast<int32_t>(audioPolicyClientProxyAPSCbsMap_.size()));
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         if (clientCallbacksMap_.count(it->first) > 0 &&
