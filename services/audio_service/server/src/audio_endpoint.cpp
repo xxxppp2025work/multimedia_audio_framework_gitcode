@@ -1479,17 +1479,18 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
     if (volResult.muteFlag) {
         ringBuffer.SetBuffersValueWithSpecifyDataLen(0);
     }
-    if (ringBuffer.dataLength > ringBuffer.basicBufferDescs[0].bufLength) {
+    size_t spanSizeInByte = processList_[i]->GetSpanSizeInFrame() * processList_[i]->GetByteSizePerFrame();
+    if (ringBuffer.dataLength > ringBuffer.basicBufferDescs[0].bufLength || ringBuffer.dataLength < spanSizeInByte ) {
         processTmpBufferList_[i].resize(0);
-        processTmpBufferList_[i].resize(ringBuffer.dataLength);
+        processTmpBufferList_[i].resize(spanSizeInByte);
         RingBufferWrapper ringBufferDescForCotinueData;
         ringBufferDescForCotinueData.dataLength = ringBuffer.dataLength;
         ringBufferDescForCotinueData.basicBufferDescs[0].buffer = processTmpBufferList_[i].data();
         ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = ringBuffer.dataLength;
         ringBufferDescForCotinueData.CopyInputBufferValueToCurBuffer(ringBuffer);
         streamData.bufferDesc.buffer = processTmpBufferList_[i].data();
-        streamData.bufferDesc.bufLength = ringBuffer.dataLength;
-        streamData.bufferDesc.dataLength = ringBuffer.dataLength;
+        streamData.bufferDesc.bufLength = spanSizeInByte;
+        streamData.bufferDesc.dataLength = spanSizeInByte;
     } else {
         streamData.bufferDesc.buffer = ringBuffer.basicBufferDescs[0].buffer;
         streamData.bufferDesc.bufLength = ringBuffer.dataLength;
