@@ -1049,15 +1049,18 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDevi
     // Create shared stream.
     int32_t endpointFlag = isVoipStream ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
     std::string deviceKey = AudioEndpoint::GenerateEndpointKey(deviceInfo, endpointFlag);
+    std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
     ReuseEndpointType type = GetReuseEndpointType(deviceInfo, deviceKey);
+
+    if (type == ReuseEndpointType::REUSE_ENDPOINT) {
+        AUDIO_INFO_LOG("AudioService find endpoint already exist for deviceKey:%{public}s", deviceKey.c_str());
+        return endpointList_[deviceKey];
+    }
+    
+    lock.unlock();
     std::shared_ptr<AudioEndpoint> endpoint = nullptr;
 
     switch (type) {
-        case ReuseEndpointType::REUSE_ENDPOINT: {
-            AUDIO_INFO_LOG("AudioService find endpoint already exist for deviceKey:%{public}s", deviceKey.c_str());
-            endpoint = endpointList_[deviceKey];
-            break;
-        }
         case ReuseEndpointType::RECREATE_ENDPOINT: {
             std::string endpointName = endpointList_[deviceKey]->GetEndpointName();
             AUDIO_INFO_LOG("Release endpoint %{public}s change to now", endpointName.c_str());
