@@ -110,7 +110,7 @@ void AudioZoneClientManagerSendZoneRemoveEventFuzzTest()
 
 void AudioZoneClientManagerSendZoneChangeEventFuzzTest()
 {
-    std::vector<AudioZoneChangeReason> AudioZoneChangeReason{
+    std::vector<AudioZoneChangeReason> audioZoneChangeReason {
         AudioZoneChangeReason::UNKNOWN,
         AudioZoneChangeReason::BIND_NEW_DEVICE,
         AudioZoneChangeReason::BIND_NEW_APP,
@@ -127,7 +127,7 @@ void AudioZoneClientManagerSendZoneChangeEventFuzzTest()
 
 void AudioZoneClientManagerSendZoneInterruptEventFuzzTest()
 {
-    std::vector<AudioZoneInterruptReason> audioZoneInterruptReason{
+    std::vector<AudioZoneInterruptReason> audioZoneInterruptReason {
         AudioZoneInterruptReason::UNKNOWN,
         AudioZoneInterruptReason::LOCAL_INTERRUPT,
         AudioZoneInterruptReason::REMOTE_INJECT,
