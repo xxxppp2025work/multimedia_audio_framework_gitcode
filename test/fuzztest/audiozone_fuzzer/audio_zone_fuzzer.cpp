@@ -258,7 +258,7 @@ void AudioZoneIsDeviceConnectFuzzTest()
     AudioZoneContext context;
     std::shared_ptr<AudioZoneClientManager> zoneClientManager;
     std::shared_ptr<AudioZone> zone =
-        std::make_shard<AudioZone>(zoneClientManager, name, context);
+        std::make_shared<AudioZone>(zoneClientManager, name, context);
     zone->AddDeviceDescriptor(devices);
     zone->IsDeviceConnect(device);
 }
