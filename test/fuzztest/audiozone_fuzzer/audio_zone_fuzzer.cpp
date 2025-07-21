@@ -299,7 +299,7 @@ void AudioZoneEnableChangeReportFuzzTest()
     std::shared_ptr<AudioZoneClientManager> zoneClientManager;
     std::shared_ptr<AudioZone> zone =
         std::make_shared<AudioZone>(zoneClientManager, name, context);
-    zone->EnableChangeReport(clientPid ,enable);
+    zone->EnableChangeReport(clientPid, enable);
 }
 
 void AudioZoneEnableSystemVolumeProxyFuzzTest()
