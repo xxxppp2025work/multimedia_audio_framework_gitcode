@@ -538,8 +538,8 @@ HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioRoutingManager_IsMicBlockDetection
 {
     OH_AudioRoutingManager *audioRoutingManager = {};
     bool supported = false;
-    result = OH_AudioRoutingManager_IsMicBlockDetectionSupported(audioRoutingManager, &supported);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    auto result = OH_AudioRoutingManager_IsMicBlockDetectionSupported(audioRoutingManager, &supported);
+    EXPECT_NE(result, AUDIOCOMMON_RESULT_SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS
