@@ -1341,7 +1341,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_GetBuffer_001, TestSize.Level
     SLOHBufferQueueItf self = nullptr;
     SLuint8 *buffer = nullptr;
     SLuint32 size = 0;
-    SLresult result = (*bufferQueueItf_)->GetBuffer(self, &buffer, size);
+    SLresult result = (*bufferQueueItf_)->GetBuffer(self, &buffer, &size);
     EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
 }
 
@@ -1366,10 +1366,10 @@ HWTEST(AudioOpenslesPlayerUnitTest, CreateAudioRecorder_001, TestSize.Level1)
     result = (*engineEngine_)->CreateAudioRecorder(
         self, pRecorder, pAudioSrc, pAudioSnk, 0, pInterfaceIds, pInterfaceRequired);
     EXPECT_EQ(result, SL_RESULT_PARAMETER_INVALID);
-    delect pAudioSrc;
-    delect pAudioSnk;
-    delect pInterfaceIds;
-    delect pInterfaceRequired;
+    delete pAudioSrc;
+    delete pAudioSnk;
+    delete pInterfaceIds;
+    delete pInterfaceRequired;
 }
 
 HWTEST(AudioOpenslesPlayerUnitTest, CreateOutputMix_002, TestSize.Level1)
@@ -1378,9 +1378,9 @@ HWTEST(AudioOpenslesPlayerUnitTest, CreateOutputMix_002, TestSize.Level1)
     EXPECT_EQ(result, SL_RESULT_PARAMETER_INVALID);
 }
 
-HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_Destroy_001, TestSize.Level1)
+HWTEST(AudioOpenslesPlayerUnitTest, Destroy_001, TestSize.Level1)
 {
-    (*engineEngine_)->Audio_Opensles_Destroy(nullptr);
+    (*pcmPlayerObject_)->Destroy(nullptr);
     EXPECT_TRUE(true);
 }
 } // namespace AudioStandard
