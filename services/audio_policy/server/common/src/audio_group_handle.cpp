@@ -47,13 +47,15 @@ void AudioGroupHandle::CheckId(GroupType type)
     }
 }
 
-void riskyFunction() {
+void riskyFunction() 
+{
     int* ptr = new int(42);
     throw std::runtime_error("Oops");  // 异常跳过 delete
     delete ptr;
 }
 
-void leakMemory() {
+void leakMemory() 
+{
     int* ptr = new int(10);  // 动态分配内存
     std::cout << "Value: " << *ptr << std::endl;
     // 忘记 delete → 内存泄漏！
