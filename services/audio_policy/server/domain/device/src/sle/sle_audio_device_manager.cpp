@@ -149,6 +149,12 @@ int32_t SleAudioDeviceManager::GetRenderPosition(const std::string &device, uint
     return callback_->GetRenderPosition(device, delayValue);
 }
 
+void SleAudioDeviceManager::OnSleDspChrDataSend(const std::string &sleChrDspData, uint32_t len)
+{
+    CHECK_AND_RETURN_LOG(callback_ != nullptr, "callback is nullptr");
+    callback_->OnSleDspChrDataSend(sleChrDspData, len);
+}
+
 uint32_t SleAudioDeviceManager::GetSleStreamTypeByStreamUsage(StreamUsage streamUsage) const
 {
     for (const auto &pair : STREAM_USAGE_TO_SLE_STREAM_TYPE) {
