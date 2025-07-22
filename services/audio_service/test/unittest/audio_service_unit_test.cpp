@@ -2337,11 +2337,12 @@ HWTEST(AudioServiceUnitTest, OnCollaborativeStateChanged_001, TestSize.Level1)
     EXPECT_NE(renderer, nullptr);
     AudioService::GetInstance()->allRendererMap_.insert(std::make_pair(0, renderer));
     ICollaborativePlaybackManager mockManager = new CollaborativePlaybackManagerMock();
-    AudioService::GetInstance()->SetCollaborativeManager(&mockManager);
+    AudioService::GetInstance().collaborativePlaybackManager_ = &mockManager;
     bool isCollaborativeEnabled = true;
     AudioService::GetInstance()->OnCollaborativeStateChanged(isCollaborativeEnabled);
     isCollaborativeEnabled = false;
     AudioService::GetInstance()->OnCollaborativeStateChanged(isCollaborativeEnabled);
+    AudioService::GetInstance().collaborativePlaybackManager_ = &CollaborativePlaybakManager::GetInstance();
 }
 
 void CheckCollaborationForRendererInner(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);\
@@ -2366,7 +2367,9 @@ HWTEST(AudioServiceUnitTest, CheckCollaborationForRendererInner_001, TestSize.Le
     EXPECT_NE(renderer, nullptr);
     AudioService::GetInstance()->allRendererMap_.insert(std::make_pair(0, renderer));
     ICollaborativePlaybackManager mockManager = new CollaborativePlaybackManagerMock();
+    AudioService::GetInstance().collaborativePlaybackManager_ = &mockManager;
     AudioService::GetInstance()->CheckCollaborationForRendererInner(0, renderer);
+    AudioService::GetInstance().collaborativePlaybackManager_ = &CollaborativePlaybakManager::GetInstance();
 }
 #endif
 } // namespace AudioStandard

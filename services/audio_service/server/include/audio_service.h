@@ -36,7 +36,6 @@
 #ifdef HAS_FEATURE_COLLABORATION
 #include "collaborative_playback_listener.h"
 #include "i_collaborative_playback_manager.h"
-#include "audio_service_unit_test.cpp"
 #endif
 
 namespace OHOS {
@@ -144,8 +143,6 @@ public:
     void RenderersCheckForAudioWorkgroup(int32_t pid);
 #ifdef HAS_FEATURE_COLLABORATION
     void OnCollaborativeStateChanged(bool isCollaborative) override;
-    // for mock test
-    void SetCollaborativeManager(ICollaborativePlaybackManager& manager);
 #endif
 private:
     AudioService();

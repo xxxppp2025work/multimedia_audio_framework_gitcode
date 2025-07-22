@@ -1765,12 +1765,6 @@ void AudioService::OnCollaborativeStateChanged(bool isCollaborative)
         }
     }
 }
-
-void AudioService::SetCollaborativeManager(ICollaborativePlaybackManager& manager)
-{
-    // for mock test
-    collaborativePlaybackManager_ = &manager;
-}
 #endif
 } // namespace AudioStandard
 } // namespace OHOS

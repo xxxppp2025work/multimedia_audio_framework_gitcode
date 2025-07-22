@@ -17,19 +17,11 @@
 #define LOG_TAG "CollaborativePlaybackAdapterUnitTest"
 #endif
 
-#include "collaborative_playback_adapter_unit_test.h"
-
-#include <chrono>
-#include <thread>
-#include <fstream>
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include "audio_effect.h"
-#include "audio_effect_log.h"
-#include "audio_effect_chain_adapter.h"
-#include "audio_effect_chain_manager.h"
 #include "audio_errors.h"
+#include "collaborative_playback_adapter_unit_test.h"
 
 using namespace std;
 using namespace testing::ext;
