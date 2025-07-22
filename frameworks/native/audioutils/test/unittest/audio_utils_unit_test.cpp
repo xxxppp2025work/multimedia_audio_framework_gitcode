@@ -3486,10 +3486,10 @@ HWTEST(AudioUtilsUnitTest, GetRampVolume_003, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_020, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
-    uint8_t format_ = SAMPLE_F32LE;
+    uint8_t format = SAMPLE_F32LE;
     uint8_t channels = CHANNEL_3;
-    ChannelBlendMode blendMode_ = MODE_ALL_RIGHT;
-    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode_, format_, channels);
+    ChannelBlendMode blendMode = MODE_ALL_RIGHT;
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode, format, channels);
     audioBlend->Process(b, 8);
     EXPECT_EQ(b[0], 2);
 }
@@ -3504,10 +3504,10 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_020, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, audio_channel_blend_021, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
-    uint8_t format_ = INVALID_WIDTH;
+    uint8_t format = INVALID_WIDTH;
     uint8_t channels = CHANNEL_3;
-    ChannelBlendMode blendMode_ = MODE_ALL_RIGHT;
-    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode_, format_, channels);
+    ChannelBlendMode blendMode = MODE_ALL_RIGHT;
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode, format, channels);
     audioBlend->Process(b, 8);
     EXPECT_EQ(b[0], 2);
 }
@@ -3521,10 +3521,10 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_021, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, GetAudioFormatSize_001, TestSize.Level1)
 {
     uint8_t b[8] = {2, 4, 6, 8, 10, 12, 14, 16};
-    uint8_t format_ = INVALID_WIDTH;
+    uint8_t format = INVALID_WIDTH;
     uint8_t channels = CHANNEL_3;
-    ChannelBlendMode blendMode_ = MODE_ALL_RIGHT;
-    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode_, format_, channels);
+    ChannelBlendMode blendMode = MODE_ALL_RIGHT;
+    shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode, format, channels);
     audioBlend->GetAudioFormatSize();
     EXPECT_EQ(b[0], 2);
 }
