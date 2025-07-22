@@ -91,17 +91,17 @@ HWTEST(CollaborativePlaybackAdapterUnitTest, CollaborativePlaybackDequeue_001, T
 }
 
 /**
-* @tc.name   : Test IsCollaborativeFirstChanged API
-* @tc.number : IsCollaborativeFirstChanged_001
-* @tc.desc   : Test IsCollaborativeFirstChanged interface.
+* @tc.name   : Test IsCollaborativeChanged API
+* @tc.number : IsCollaborativeChanged_001
+* @tc.desc   : Test IsCollaborativeChanged interface.
 */
-HWTEST(CollaborativePlaybackAdapterUnitTest, IsCollaborativeFirstChanged_001, TestSize.Level1)
+HWTEST(CollaborativePlaybackAdapterUnitTest, IsCollaborativeChanged_001, TestSize.Level1)
 {
     int32_t sessionID = 1;
     int32_t collaborationEnabled = 1;
-    bool ret = IsCollaborativeFirstChanged(sessionID, collaborationEnabled);
+    bool ret = IsCollaborativeChanged(sessionID, collaborationEnabled);
     EXPECT_EQ(true, ret);
-    ret = IsCollaborativeFirstChanged(sessionID, collaborationEnabled);
+    ret = IsCollaborativeChanged(sessionID, collaborationEnabled);
     EXPECT_EQ(false, ret);
 }
 }

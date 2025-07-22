@@ -2298,7 +2298,7 @@ public:
          // Mock implementation, always returns success
         return SUCCESS;
     }
-    bool IsCollaborativeFirstChanged(int32_t sessionId, int32_t collaborationEnabled) override
+    bool IsCollaborativeChanged(int32_t sessionId, int32_t collaborationEnabled) override
     {
          // Mock implementation, always returns false
         return false;

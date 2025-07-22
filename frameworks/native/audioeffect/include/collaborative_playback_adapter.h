@@ -25,7 +25,7 @@ bool IsStreamSupportCollaborative(int32_t usage);
 bool IsCollaborationEnabled();
 void CollaborativePlaybackEnqueue(BufferAttr *bufferAttr);
 void CollaborativePlaybackDequeue(BufferAttr *bufferAttr);
-bool IsCollaborativeFirstChanged(int32_t sessionID, int32_t collaborationEnabled);
+bool IsCollaborativeChanged(int32_t sessionID, int32_t collaborationEnabled);
 void CollaborativePlaybackReset();
 #ifdef __cplusplus
 }

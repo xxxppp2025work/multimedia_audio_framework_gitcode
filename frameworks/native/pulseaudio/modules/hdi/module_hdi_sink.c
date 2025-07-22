@@ -238,7 +238,7 @@ static void ProplistChangedForCollaboration(pa_sink_input *si, const char *scene
         oldSceneType = "SCENE_COLLABORATIVE";
         newSceneType = sceneType;
     }
-    if (IsCollaborativeFirstChanged(atoi(sessionID), atoi(collaborationEnabled))) {
+    if (IsCollaborativeChanged(atoi(sessionID), atoi(collaborationEnabled))) {
         // release old sceneType effect chain
         EffectChainManagerReleaseCb(oldSceneType, sessionID);
         if (si->thread_info.state == PA_SINK_INPUT_RUNNING) {

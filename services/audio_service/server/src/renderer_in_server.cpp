@@ -2241,7 +2241,7 @@ void RendererInServer::EnableCollaboration()
             AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the collaborative stream",
                 collaborativeStreamIndex_);
             if (collaborativeStream_ != nullptr) {
-                //Locking before SetAudioEffectMode/GetAudioEffectMode results in a deadlock.
+                //Locking before SetCollaborativeEnabled results in a deadlock.
                 collaborativeStream_->Start();
             }
         }

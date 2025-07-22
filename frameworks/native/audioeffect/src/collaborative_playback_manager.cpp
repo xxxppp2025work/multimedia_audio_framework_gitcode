@@ -91,7 +91,7 @@ int32_t CollaborativePlaybackManager::RegisterCollaborativeListener(ICollaborati
     return SUCCESS;
 }
 
-bool CollaborativePlaybackManager::IsCollaborativeFirstChanged(int32_t sessionID, int32_t collaborationEnabled)
+bool CollaborativePlaybackManager::IsCollaborativeChanged(int32_t sessionID, int32_t collaborationEnabled)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = sessionCollaborativeState_.find(sessionID);

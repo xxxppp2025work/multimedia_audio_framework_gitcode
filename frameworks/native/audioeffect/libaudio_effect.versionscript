@@ -100,7 +100,7 @@
     *IsCollaborationEnabled*；
     *CollaborativePlaybackEnqueue*；
     *CollaborativePlaybackDequeue*；
-    *IsCollaborativeFirstChanged*；
+    *IsCollaborativeChanged*；
     *CollaborativePlaybackReset*；
   local:
     *;

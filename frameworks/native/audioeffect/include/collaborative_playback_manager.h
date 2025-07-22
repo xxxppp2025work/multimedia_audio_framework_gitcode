@@ -34,7 +34,7 @@ public:
     bool IsStreamSupportCollaborative(StreamUsage usage) const override;
     int32_t UpdateCollaborativeState(bool collaborationEnabled) override;
     int32_t RegisterCollaborativeListener(ICollaborativeListener* listener) override;
-    bool IsCollaborativeFirstChanged(int32_t sessionId, int32_t collaborationEnabled) override;
+    bool IsCollaborativeChanged(int32_t sessionId, int32_t collaborationEnabled) override;
     void Enqueue(BufferAttr* buffer) override;
     void Dequeue(BufferAttr* buffer) override;
     void ResetBuffer() override;
