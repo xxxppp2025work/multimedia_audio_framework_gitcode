@@ -42,7 +42,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 57;
+const uint8_t TESTSIZE = 73;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -1000,6 +1000,22 @@ void LoadSplitModuleFuzzTest()
 }
 
 TestFuncs g_testFuncs[TESTSIZE] = {
+    FetchRendererPipesAndExecuteFuzzTest,
+    UpdateActiveDeviceAndVolumeBeforeMoveSessionFuzzTest,
+    FetchCapturerPipesAndExecuteFuzzTest,
+    UpdateDefaultOutputDeviceWhenStoppingFuzzTest,
+    UpdateInputDeviceWhenStoppingFuzzTest,
+    FetchDeviceAndRouteFuzzTest,
+    RemoveUnusedPipeFuzzTest,
+    GetAdapterNameBySessionIdFuzzTest,
+    AddSessionIdFuzzTest,
+    DeleteSessionIdFuzzTest,
+    OnDeviceStatusUpdatedFuzzTest,
+    MoveToNewOutputDeviceFuzzTest,
+    OnPnpDeviceStatusUpdatedFuzzTest,
+    OnDeviceConfigurationChangedFuzzTest,
+    OnForcedDeviceSelectedFuzzTest,
+    MoveToRemoteOutputDeviceFuzzTest,
     ScoInputDeviceFetchedForRecongnitionFuzzTest,
     BluetoothScoFetchFuzzTest,
     CheckModemSceneFuzzTest,
