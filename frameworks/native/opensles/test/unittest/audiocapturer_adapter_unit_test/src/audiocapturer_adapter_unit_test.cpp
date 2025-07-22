@@ -388,9 +388,9 @@ HWTEST(AudioCapturerAdapterUnitTest, SlToOhosChannel_001, TestSize.Level0)
 */
 HWTEST(AudioCapturerAdapterUnitTest, AudioRecorderDestroy_001, TestSize.Level0)
 {
-    void *self = new CaudioRecorder();
+    void *self = new CAudioRecorder();
     SLresult result = AudioRecorderDestroy(nullptr);
-    EXPECT_TRUE(result = SL_RESULT_PARAMETER_INVALID);
+    EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
 
     result = AudioRecorderDestroy(self);
     EXPECT_EQ(result, SL_RESULT_SUCCESS);
@@ -421,6 +421,10 @@ HWTEST(AudioCapturerAdapterUnitTest, SetCaptureStateAdapter_003, TestSize.Level0
     audioCapturer->audioStream_ = fastAudioStream;
     AudioCapturerAdapter::GetInstance()->captureMap_[id] = audioCapturer;
     auto ret = AudioCapturerAdapter::GetInstance()->SetCaptureStateAdapter(id, state);
+    EXPECT_EQ(ret, SL_RESULT_RESOURCE_ERROR);
+
+    state = -1;
+    ret = AudioCapturerAdapter::GetInstance()->SetCaptureStateAdapter(id, state);
     EXPECT_EQ(ret, SL_RESULT_RESOURCE_ERROR);
 }
 } // namespace AudioStandard
