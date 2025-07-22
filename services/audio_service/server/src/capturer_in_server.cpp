@@ -704,7 +704,7 @@ int32_t CapturerInServer::Stop()
     return SUCCESS;
 }
 
-int32_t CapturerInServer::Release(bool isSwitchStream)
+int32_t CapturerInServer::Release(bool isSwitchStream, bool isDistributedDevice)
 {
     AudioXCollie audioXCollie("CapturerInServer::Release", RELEASE_TIMEOUT_IN_SEC,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
@@ -758,6 +758,10 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_RELEASED);
     }
+    CHECK_AND_RETURN_RET(isDistributedDevice, SUCCESS);
+    // If device is distributed, stop stream again
+    int ret = stream_->Stop();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     return SUCCESS;
 }
 

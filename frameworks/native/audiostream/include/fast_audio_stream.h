@@ -139,7 +139,8 @@ public:
         AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN) override;
     bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     bool StopAudioStream() override;
-    bool ReleaseAudioStream(bool releaseRunner = true, bool isSwitchStream = false) override;
+    bool ReleaseAudioStream(bool releaseRunner = true, bool isSwitchStream = false,
+        bool isDistributedDevice = false) override;
     bool FlushAudioStream() override;
 
     // Playback related APIs

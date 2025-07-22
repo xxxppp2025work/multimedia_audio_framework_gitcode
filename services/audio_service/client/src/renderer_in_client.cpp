@@ -178,7 +178,7 @@ int32_t RendererInClientInner::DeinitIpcStream()
     Trace trace("RendererInClientInner::DeinitIpcStream");
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR,
         "ipcStream_ is nullptr");
-    ipcStream_->Release(false);
+    ipcStream_->Release(false, false);
     return SUCCESS;
 }
 

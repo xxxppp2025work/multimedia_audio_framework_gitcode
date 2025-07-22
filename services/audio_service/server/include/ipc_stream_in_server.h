@@ -66,7 +66,7 @@ public:
 
     int32_t Stop() override;
 
-    int32_t Release(bool isSwitchStream) override;
+    int32_t Release(bool isSwitchStream, bool isDistributedDevice) override;
 
     int32_t Flush() override;
 

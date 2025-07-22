@@ -128,7 +128,8 @@ public:
     bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     bool StopAudioStream() override;
     bool FlushAudioStream() override;
-    bool ReleaseAudioStream(bool releaseRunner = true, bool isSwitchStream = false) override;
+    bool ReleaseAudioStream(bool releaseRunner = true, bool isSwitchStream = false,
+        bool isDistributedDevice = false) override;
     void JoinCallbackLoop() override;
 
     // Playback related APIs

@@ -917,7 +917,16 @@ bool AudioCapturerPrivate::Release()
 
     RemoveCapturerPolicyServiceDiedCallback();
 
-    return audioStream_->ReleaseAudioStream();
+    // Check whether is the distributed device
+    AudioDeviceDescriptor desc;
+    int ret = GetCurrentInputDevicesInner(desc);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("GetCurrentInputDevicesInner failed");
+    }
+    bool isDistributedDevice = (desc.deviceType_ == DEVICE_TYPE_SPEAKER) &&
+        (desc.networkId_ != LOCAL_NETWORK_ID);
+
+    return audioStream_->ReleaseAudioStream(true, false, isDistributedDevice);
 }
 
 int32_t AudioCapturerPrivate::GetBufferSize(size_t &bufferSize) const
