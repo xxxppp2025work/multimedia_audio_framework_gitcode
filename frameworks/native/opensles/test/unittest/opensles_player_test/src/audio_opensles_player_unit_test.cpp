@@ -1357,7 +1357,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, CreateAudioRecorder_001, TestSize.Level1)
     SLEngineItf self = {};
     SLObjectItf *pRecorder = {};
     SLDataSource *pAudioSrc = new SLDataSource;
-    SLDataSink *pAudioSnk = new SLDataSink
+    SLDataSink *pAudioSnk = new SLDataSink;
     const SLInterfaceID *pInterfaceIds = new SLInterfaceID;
     const SLboolean *pInterfaceRequired = new SLboolean;
     SLresult result = (*engineEngine_)->CreateAudioRecorder(
