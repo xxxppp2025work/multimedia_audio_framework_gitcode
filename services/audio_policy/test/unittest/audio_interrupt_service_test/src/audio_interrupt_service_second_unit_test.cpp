@@ -36,8 +36,7 @@ public:
     DECLARE_INTERFACE_DESCRIPTOR(u"RemoteObjectTestStub");
 };
 
-class IStandardAudioPolicyManagerListenerStub : public IStandardAudioPolicyManagerListener
-{
+class IStandardAudioPolicyManagerListenerStub : public IStandardAudioPolicyManagerListener {
 public:
     sptr<IRemoteObject> AsObject() override { return nullptr; }
 
@@ -48,8 +47,8 @@ public:
     ErrCode OnRouteUpdate(uint32_t routeFlag, const std::string& networkId) override { return SUCCESS; }
 
     ErrCode OnAvailableDeviceChange(uint32_t usage, const DeviceChangeAction& deviceChangeAction) override
-    { 
-        return SUCCESS; 
+    {
+        return SUCCESS;
     }
 
     ErrCode OnQueryClientType(const std::string& bundleName, uint32_t uid, bool& ret) override
@@ -943,7 +942,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_029, TestSize.
         INTERRUPT_HINT_NONE, 1.0f};
     bool removeFocusInfo = false;
     auto iterActive = focusInfoList.begin();
-    AudioInterrupt incomingInterrupt;  
+    AudioInterrupt incomingInterrupt;
     incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
     audioFocusEntry.hintType = INTERRUPT_HINT_MUTE;
     audioInterruptService->ProcessExistInterrupt(iterActive, audioFocusEntry,
