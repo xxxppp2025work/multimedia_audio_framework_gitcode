@@ -909,7 +909,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_028, TestSize.
         INTERRUPT_HINT_NONE, 1.0f};
     bool removeFocusInfo = false;
     auto iterActive = focusInfoList.begin();
-    AudioInterrupt incomingInterrupt;  
+    AudioInterrupt incomingInterrupt;
     incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
     audioFocusEntry.hintType = INTERRUPT_HINT_DUCK;
     audioInterruptService->ProcessExistInterrupt(iterActive, audioFocusEntry,
