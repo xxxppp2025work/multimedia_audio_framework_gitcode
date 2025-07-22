@@ -179,6 +179,30 @@ HWTEST(AudioServiceCommonUnitTest, CheckPosTimeReasonablel_003, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test CheckReasonable API
+* @tc.type  : FUNC
+* @tc.number: CheckReasonable
+* @tc.desc  : Test CheckReasonable interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, CheckPosTimeReasonable_001, TestSize.Level1)
+{
+    uint64_t frame = 100;
+    int64_t nanoTime = 1000000;
+    static constexpr int32_t MAX_STATISTICS_COUNT = 5;
+    for (int i = 0; i < MAX_STATISTICS_COUNT - 1; ++i) {
+        g_linearPosTimeModel->posTimeVec_.push_back(std::make_pair(frame + i, nanoTime + i));
+    }
+    CheckPosTimeRes result = g_linearPosTimeModel->CheckReasonable(frame + MAX_STATISTICS_COUNT - 1, nanoTime + MAX_STATISTICS_COUNT - 1);
+    EXPECT_EQ(result, CHECK_FAILED);
+
+    for (int i = 0; i < MAX_STATISTICS_COUNT; ++i) {
+        g_linearPosTimeModel->posTimeVec_.push_back(std::make_pair(frame + i, nanoTime + i));
+    }
+    result = g_linearPosTimeModel->CheckReasonable(frame + MAX_STATISTICS_COUNT, nanoTime + MAX_STATISTICS_COUNT);
+    EXPECT_EQ(result, NEED_MODIFY);
+}
+
+/**
 * @tc.name  : Test OHAudioBuffer API
 * @tc.type  : FUNC
 * @tc.number: OHAudioBuffer_001

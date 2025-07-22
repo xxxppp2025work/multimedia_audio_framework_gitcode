@@ -3159,5 +3159,97 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ExitStandByIfNeed
 
     delete ptrBufferInfo;
 }
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_WaitIfBufferEmpty_004
+ * @tc.desc  : Test AudioProcessInClientInner::WaitIfBufferEmpty
+ */
+HWTEST(AudioProcessInClientUnitTest, CallClientHandleCurrent_001, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
+    ptrAudioProcessInClientInner->CallClientHandleCurrent();
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_WaitIfBufferEmpty_004
+ * @tc.desc  : Test AudioProcessInClientInner::WaitIfBufferEmpty
+ */
+HWTEST(AudioProcessInClientUnitTest, SetDuckVolume_001, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+
+    int ret = ptrAudioProcessInClientInner->SetDuckVolume(-10);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    ret = ptrAudioProcessInClientInner->SetDuckVolume(10);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_WaitIfBufferEmpty_004
+ * @tc.desc  : Test AudioProcessInClientInner::WaitIfBufferEmpty
+ */
+HWTEST(AudioProcessInClientUnitTest, UpdateHandleInfo_001, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+
+    bool isAysnc = 0;
+    bool resetReadWritePos = 0;
+    ptrAudioProcessInClientInner->UpdateHandleInfo(isAysnc, resetReadWritePos);
+    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
+
+    isAysnc = 1;
+    resetReadWritePos = -1;
+    ptrAudioProcessInClientInner->UpdateHandleInfo(isAysnc, resetReadWritePos);
+    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_WaitIfBufferEmpty_004
+ * @tc.desc  : Test AudioProcessInClientInner::WaitIfBufferEmpty
+ */
+HWTEST(AudioProcessInClientUnitTest, GetPredictNextHandleTime_001, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+
+    bool isAysnc = 1;
+    uint64_t isIndependent = true;
+    int posInFrame = 1;
+    int ret = ptrAudioProcessInClientInner->GetPredictNextHandleTime(posInFrame, isIndependent);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    isIndependent = false;
+    ret = ptrAudioProcessInClientInner->GetPredictNextHandleTime(posInFrame, isIndependent);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS
