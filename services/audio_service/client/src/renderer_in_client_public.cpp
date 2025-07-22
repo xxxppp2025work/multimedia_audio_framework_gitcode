@@ -633,12 +633,12 @@ void RendererInClientInner::NotifyRouteUpdate(uint32_t routeFlag, const std::str
 int32_t RendererInClientInner::SetSpeed(float speed)
 {
     std::lock_guard lock(speedMutex_);
+    CHECK_AND_RETURN_RET(!DoHdiSetSpeed(speed), SUCCESS);
     // set the speed to 1.0 and the speed has never been turned on, no actual sonic stream is created.
     if (isEqual(speed, SPEED_NORMAL) && !speedEnable_) {
         speed_ = speed;
         return SUCCESS;
     }
-    CHECK_AND_RETURN_RET(!DoHdiSetSpeed(speed), SUCCESS);
 
     if (audioSpeed_ == nullptr) {
         audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
