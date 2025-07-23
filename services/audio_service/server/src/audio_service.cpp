@@ -1570,6 +1570,79 @@ void AudioService::RegisterMuteStateChangeCallback(uint32_t sessionId, const Mut
     muteStateCallbacks_[sessionId] = callback;
 }
 
+void AudioService::AddAudioSessionStreamType(
+    const int32_t pid, const uint32_t sessionId, const int32_t streamType)
+{
+    auto it = streamTypeInfoMap_.find(pid);
+
+    if (it != streamTypeInfoMap_.end()) {
+
+        AudioSessionStreamTypeInfo& info = it->second;
+
+        if (info.streamType != streamType) {
+            AUDIO_WARNING_LOG("Stream type changed for PID %{public}d: %{public}d -> %{public}d. "
+                              "Resetting session list.",
+                              pid, info.streamType, streamType);
+            // Set the audioSessionStreamType parameter for each renderer to an invalid value.
+            info.streamType = static_cast<const AudioStreamType>(streamType);
+            info.sessionIds.clear();
+            info.sessionIds.push_back(sessionId);
+            return;
+        }
+
+        auto& sessionIds = info.sessionIds;
+        auto sessionIt = std::find(sessionIds.begin(), sessionIds.end(), sessionId);
+
+        if (sessionIt == sessionIds.end()) {
+            sessionIds.push_back(sessionId);
+            AUDIO_INFO_LOG("Added session %{public}u to PID %{public}d", sessionId, pid);
+        } else {
+            AUDIO_DEBUG_LOG("Session %{public}u already exists for PID %{public}d", sessionId, pid);
+        }
+    } else {
+        AudioSessionStreamTypeInfo newInfo;
+        newInfo.streamType = static_cast<const AudioStreamType>(streamType);
+        newInfo.sessionIds.push_back(sessionId);
+        streamTypeInfoMap_[pid] = newInfo;
+        AUDIO_INFO_LOG("Created new entry for PID %{public}d with session %{public}u", pid, sessionId);
+    }
+}
+
+void AudioService::RemoveAudioSessionStreamType(
+    const int32_t pid, const uint32_t sessionId, const int32_t streamType)
+{
+    auto it = streamTypeInfoMap_.find(pid);
+
+    if (it != streamTypeInfoMap_.end()) {
+        AudioSessionStreamTypeInfo& info = it->second;
+
+        if (info.streamType != streamType) {
+            AUDIO_WARNING_LOG("Cannot delete session %{public}u for PID %{public}d: "
+                              "stream type mismatch (%{public}d vs %{public}d)",
+                              sessionId, pid, info.streamType, streamType);
+            return;
+        }
+
+        auto& sessionIds = info.sessionIds;
+        auto sessionIt = std::find(sessionIds.begin(), sessionIds.end(), sessionId);
+
+        if (sessionIt != sessionIds.end()) {
+            // Set the audioSessionStreamType parameter for renderer to an invalid value.
+            sessionIds.erase(sessionIt);
+            AUDIO_INFO_LOG("Removed session %{public}u from PID %{public}d", sessionId, pid);
+
+            if (sessionIds.empty()) {
+                streamTypeInfoMap_.erase(it);
+                AUDIO_INFO_LOG("Removed empty entry for PID %{public}d", pid);
+            }
+        } else {
+            AUDIO_WARNING_LOG("Session %{public}u not found for PID %{public}d during removal", sessionId, pid);
+        }
+    } else {
+        AUDIO_WARNING_LOG("Cannot delete session %{public}u: PID %{public}d not found", sessionId, pid);
+    }
+}
+
 void AudioService::SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag)
 {
     std::unique_lock<std::mutex> lock(muteStateMapMutex_);

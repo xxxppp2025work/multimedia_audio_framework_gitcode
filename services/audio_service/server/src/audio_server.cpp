@@ -2619,6 +2619,28 @@ int32_t AudioServer::SetLatestMuteState(uint32_t sessionId, bool muteFlag)
     return SUCCESS;
 }
 
+int32_t AudioServer::AddAudioSessionStreamType(
+        const int32_t pid, const uint32_t sessionId, const int32_t streamType)
+{
+    AUDIO_INFO_LOG("pid: %{public}d, streamType: %{public}d, sessionId: %{public}u", pid, streamType, sessionId);
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "Refused for %{public}d", callingUid);
+    AudioService::GetInstance()->AddAudioSessionStreamType(pid, streamType, sessionId);
+    return SUCCESS;
+}
+
+int32_t AudioServer::RemoveAudioSessionStreamType(
+        const int32_t pid, const uint32_t sessionId, const int32_t streamType)
+{
+    AUDIO_INFO_LOG("pid: %{public}d, streamType: %{public}d, sessionId: %{public}u", pid, streamType, sessionId);
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "Refused for %{public}d", callingUid);
+    AudioService::GetInstance()->RemoveAudioSessionStreamType(pid, streamType, sessionId);
+    return SUCCESS;
+}
+
 int32_t AudioServer::SetSessionMuteState(uint32_t sessionId, bool insert, bool muteFlag)
 {
     AUDIO_INFO_LOG("sessionId_: %{public}u, muteFlag: %{public}d", sessionId, muteFlag);

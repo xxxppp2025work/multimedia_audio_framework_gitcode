@@ -50,6 +50,11 @@ enum ReuseEndpointType : uint32_t {
 };
 } // anonymous namespace
 
+struct AudioSessionStreamTypeInfo {
+    AudioStreamType streamType;
+    std::vector<uint32_t> sessionIds;
+};
+
 using MuteStateChangeCallbck = std::function<void(bool)>;
 
 #ifdef SUPPORT_LOW_LATENCY
@@ -132,6 +137,8 @@ public:
     int32_t ForceStopAudioStream(StopAudioType audioType);
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime, uint32_t code);
     void RegisterMuteStateChangeCallback(uint32_t sessionId, const MuteStateChangeCallbck &callback);
+    void AddAudioSessionStreamType(const int32_t pid, const uint32_t sessionId, const int32_t streamType);
+    void RemoveAudioSessionStreamType(const int32_t pid, const uint32_t sessionId, const int32_t streamType);
     void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag);
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag);
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -224,6 +231,9 @@ private:
     std::map<uint32_t, MuteStateChangeCallbck> muteStateCallbacks_{};
     std::mutex muteStateMapMutex_;
     std::map<uint32_t, bool> muteStateMap_{};
+    std::mutex audioSessionStreamTypeMapMutex_;
+    std::unordered_map<int32_t, AudioSessionStreamTypeInfo> streamTypeInfoMap_{};
+    std::map<uint32_t, bool> audioSessionStreamTypeMap_{};
     std::mutex musicOrVoipSystemVolumeMutex_;
     float musicOrVoipSystemVolume_ = 0.0f;
 };

@@ -63,6 +63,8 @@
     *UnloadModernInnerCapSink*;
     *ConfigCoreServiceProvider*;
     *UpdateSessionOperation*;
+    *AddAudioSessionStreamType*;
+    *RemoveAudioSessionStreamType*;
     *SetSessionMuteState*;
     *SetLatestMuteState*;
     *ForceStopAudioStream*;

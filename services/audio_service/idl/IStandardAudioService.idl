@@ -124,6 +124,8 @@ interface IStandardAudioService {
     void NotifySettingsDataReady();
     void IsAcousticEchoCancelerSupported([in] int sourceType, [out] boolean isSupported);
     void SetSessionMuteState([in] unsigned int sessionId, [in] boolean insert, [in] boolean muteFlag);
+    void AddAudioSessionStreamType([in] int pid, [in] unsigned int sessionId, [in] int streamType);
+    void RemoveAudioSessionStreamType([in] int pid, [in] unsigned int sessionId, [in] int streamType);
     void SetLatestMuteState([in] unsigned int sessionId, [in] boolean muteFlag);
     void ForceStopAudioStream([in] int audioType);
     void CreateAudioWorkgroup([in] int pid, [in] IRemoteObject object, [out] int workgroupId);
