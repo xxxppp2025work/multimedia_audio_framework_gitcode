@@ -54,6 +54,22 @@ enum OffloadType {
     OFFLOAD_TYPE_NUM,
 };
 
+static constexpr uint32_t CONCURRENT_CAPTURE_DFX_THRESHOLD = 2;
+static constexpr uint32_t CONCURRENT_CAPTURE_DFX_MSG_ARRAY_MAX = 5;
+static constexpr uint32_t CONCURRENT_CAPTURE_DFX_HDI_SEGMENTS = 2;
+struct ConcurrentCaptureDfxResult {
+    std::vector<std::string> existingAppName{};
+    std::vector<uint8_t> existingAppState{};
+    std::vector<uint8_t> existingSourceType{};
+    std::vector<uint8_t> existingCaptureState{};
+    std::vector<uint32_t> existingCreateDuration{};
+    std::vector<uint32_t> existingStartDuration{};
+    std::vector<bool> existingFastFlag{};
+    uint8_t hdiSourceType{};
+    std::string hdiSourceAlg{};
+    uint8_t deviceType{};
+};
+
 class AudioA2dpOffloadManager;
 class AudioCoreService : public enable_shared_from_this<AudioCoreService> {
 public:
