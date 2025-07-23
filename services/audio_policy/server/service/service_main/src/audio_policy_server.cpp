@@ -563,7 +563,7 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
     IsStreamActive(streamInFocus, active);
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     if (isScreenOffOrLock_ && !active && !VolumeUtils::IsPCVolumeEnable() && !screenOffAdjustVolumeEnable_) {
-        AUDIO_INFO_LOG("screen off or screen lock, this stream is not active, not change volume.");
+        AUDIO_INFO_LOG("screen off or lock canot adjust volume, this stream is not active, not change volume.");
         return AUDIO_OK;
     }
     if (!VolumeUtils::IsPCVolumeEnable()) {
