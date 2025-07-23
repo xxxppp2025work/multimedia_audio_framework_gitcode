@@ -250,6 +250,10 @@ public:
     int32_t IsAcousticEchoCancelerSupported(int32_t sourceType, bool& isSupported) override;
     int32_t SetKaraokeParameters(const std::string &parameters, bool &ret) override;
     int32_t IsAudioLoopbackSupported(int32_t mode, bool &isSupported) override;
+    int32_t AddAudioSessionStreamType(
+        const int32_t pid, const uint32_t sessionId, const int32_t streamType) override;
+    int32_t RemoveAudioSessionStreamType(
+        const int32_t pid, const uint32_t sessionId, const int32_t streamType) override;
     int32_t SetSessionMuteState(uint32_t sessionId, bool insert, bool muteFlag) override;
     int32_t SetLatestMuteState(uint32_t sessionId, bool muteFlag) override;
     int32_t ForceStopAudioStream(int32_t audioType) override;

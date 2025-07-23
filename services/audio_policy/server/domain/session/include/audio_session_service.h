@@ -62,7 +62,6 @@ public:
     bool ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt);
     std::vector<AudioInterrupt> GetStreams(int32_t callerPid);
     AudioInterrupt GenerateFakeAudioInterrupt(int32_t callerPid);
-    void RemoveStreamInfo(const AudioInterrupt &audioInterrupt);
     void ClearStreamInfo(const int32_t callerPid);
     bool ShouldAudioSessionProcessHintType(InterruptHint hintType);
     bool ShouldAudioStreamProcessHintType(InterruptHint hintType);

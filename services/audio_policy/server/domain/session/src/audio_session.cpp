@@ -26,6 +26,7 @@
 #include "app_mgr_client.h"
 #include "audio_device_manager.h"
 #include "audio_pipe_manager.h"
+#include "audio_server_proxy.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -126,6 +127,8 @@ void AudioSession::AddStreamInfo(const AudioInterrupt &incomingInterrupt)
         (void)EnableSingleVoipStreamDefaultOutputDevice(incomingInterrupt);
     }
 
+    AddAudioSessionStreamType(incomingInterrupt);
+
     auto monitor = audioSessionStateMonitor_.lock();
     if (monitor != nullptr) {
         monitor->StopMonitor(callerPid_);
@@ -145,6 +148,8 @@ void AudioSession::RemoveStreamInfo(uint32_t streamId)
             if (IsSessionDefaultDeviceEnabled()) {
                 UpdateSingleVoipStreamDefaultOutputDevice(*it);
             }
+
+            RemoveAudioSessionStreamType(*it);
             bypassStreamInfoVec_.erase(it);
             break;
         }
@@ -180,6 +185,28 @@ void AudioSession::SaveFakeStreamId(uint32_t fakeStreamId)
 {
     std::lock_guard<std::mutex> lock(sessionMutex_);
     fakeStreamId_ = fakeStreamId;
+}
+
+void AudioSession::AddAudioSessionStreamType(const AudioInterrupt &interrupt)
+{
+    AudioStreamType streamType = GetFakeStreamType();
+    if (streamType == AudioStreamType::STREAM_DEFAULT) {
+        return;
+    }
+
+    AudioServerProxy::GetInstance().AddAudioSessionStreamType(
+        interrupt.pid, interrupt.streamId, static_cast<int32_t>(streamType));
+}
+
+void AudioSession::RemoveAudioSessionStreamType(const AudioInterrupt &interrupt)
+{
+    AudioStreamType streamType = GetFakeStreamType();
+    if (streamType == AudioStreamType::STREAM_DEFAULT) {
+        return;
+    }
+
+    AudioServerProxy::GetInstance().RemoveAudioSessionStreamType(
+        interrupt.pid, interrupt.streamId, static_cast<int32_t>(streamType));
 }
 
 void AudioSession::Dump(std::string &dumpString)
@@ -246,6 +273,10 @@ int32_t AudioSession::Deactivate()
 
     if (defaultDeviceType_ != DEVICE_TYPE_INVALID) {
         UpdateVoipStreamsDefaultOutputDevice();
+    }
+
+    for (auto &stream : bypassStreamInfoVec_) {
+        RemoveAudioSessionStreamType(stream);
     }
 
     bypassStreamInfoVec_.clear();

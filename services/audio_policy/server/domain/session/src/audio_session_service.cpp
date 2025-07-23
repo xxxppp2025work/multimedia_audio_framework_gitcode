@@ -320,21 +320,6 @@ void AudioSessionService::GenerateFakeStreamId(int32_t callerPid)
     }
 }
 
-void AudioSessionService::RemoveStreamInfo(const AudioInterrupt &audioInterrupt)
-{
-    // No need to handle fake focus.
-    if (audioInterrupt.isAudioSessionInterrupt) {
-        return;
-    }
-
-    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
-    auto session = sessionMap_.find(audioInterrupt.pid);
-    if (session == sessionMap_.end()) {
-        return;
-    }
-    return session->second->RemoveStreamInfo(audioInterrupt.streamId);
-}
-
 void AudioSessionService::ClearStreamInfo(const int32_t callerPid)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);

@@ -82,6 +82,8 @@ private:
     int32_t EnableDefaultDevice();
     void UpdateSingleVoipStreamDefaultOutputDevice(const AudioInterrupt &interrupt);
     bool IsSessionDefaultDeviceEnabled();
+    void AddAudioSessionStreamType(const AudioInterrupt &interrupt);
+    void RemoveAudioSessionStreamType(const AudioInterrupt &interrupt);
     std::mutex sessionMutex_;
     int32_t callerPid_;
     bool needToFetch_ = false;

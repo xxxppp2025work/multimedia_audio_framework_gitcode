@@ -119,6 +119,8 @@ public:
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag);
     void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag);
+    void AddAudioSessionStreamType(const int32_t pid, const uint32_t sessionId, const int32_t streamType);
+    void RemoveAudioSessionStreamType(const int32_t pid, const uint32_t sessionId, const int32_t streamType);
     void SetBtHdiInvalidState();
     int32_t ForceStopAudioStreamProxy(StopAudioType audioType);
 private:
