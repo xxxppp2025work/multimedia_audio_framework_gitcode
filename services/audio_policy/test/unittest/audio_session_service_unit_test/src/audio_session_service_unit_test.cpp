@@ -161,7 +161,7 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_008, TestSize.
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
     AudioInterrupt audioInterrupt;
     audioInterrupt.streamId = 0;
-    audioSession->bypassStreamInfoVec_.push_back(audioInterrupt);
+    audioSession->streamsInSession_.push_back(audioInterrupt);
 
     audioSessionService->sessionMap_[callerPid] = audioSession;
     audioSessionService->AudioSessionInfoDump(dumpString);
