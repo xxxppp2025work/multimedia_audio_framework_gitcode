@@ -358,7 +358,8 @@ private:
     void SetAudioVolume(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType, float volumeDb);
     void SetAppAudioVolume(int32_t appUid, float volumeDb);
     void SetAppAudioVolume(std::shared_ptr<AudioDeviceDescriptor> &device, int32_t appUid, float volumeDb);
-    void SetOffloadVolume(AudioStreamType streamType, float volumeDb, const std::string &deviceClass);
+    void SetOffloadVolume(AudioStreamType streamType, float volumeDb, const std::string &deviceClass,
+        const std::string &networkId = LOCAL_NETWORK_ID);
     int32_t SetStreamMute(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType,
         bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
         const DeviceType &deviceType = DEVICE_TYPE_NONE);
@@ -445,7 +446,7 @@ private:
     AudioStreamRemovedCallback *sessionCallback_ = nullptr;
     AudioDeviceManager &audioDeviceManager_;
     VolumeDataMaintainer volumeDataMaintainer_;
-    std::unordered_map<int32_t, std::shared_ptr<VolumeDataMaintainer>> volumeDataExtMaintainer_;
+    std::unordered_map<std::string, std::shared_ptr<VolumeDataMaintainer>> volumeDataExtMaintainer_;
     bool isVolumeUnadjustable_ = false;
     bool testModeOn_ {false};
     std::atomic<float> getSystemVolumeInDb_  {0.0f};

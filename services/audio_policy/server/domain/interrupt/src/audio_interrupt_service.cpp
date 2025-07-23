@@ -1162,7 +1162,6 @@ AudioStreamType AudioInterruptService::GetStreamInFocusByUid(const int32_t uid, 
 
 AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t uid, const int32_t zoneId)
 {
-    AUDIO_INFO_LOG("GetStreamInFocusInternal, uid:%{public}d, zoneId: %{public}d", uid, zoneId);
     AudioStreamType streamInFocus = STREAM_DEFAULT;
 
     auto itZone = zonesMap_.find(zoneId);
@@ -1211,6 +1210,7 @@ int32_t AudioInterruptService::GetSessionInfoInFocus(AudioInterrupt &audioInterr
     audioInterrupt = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, invalidStreamId};
 
+    std::unique_lock<std::mutex> lock(mutex_);
     auto itZone = zonesMap_.find(zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
@@ -2684,7 +2684,6 @@ void AudioInterruptService::WriteStartDfxMsg(InterruptDfxBuilder &dfxBuilder, co
     }
 
     if (audioInterrupt.state == State::PREPARED) {
-        AUDIO_WARNING_LOG("WriteStartDfxMsg check app state");
         auto &manager = DfxMsgManager::GetInstance();
         DfxAppState appStartState = static_cast<AppExecFwk::AppProcessState>(GetAppState(audioInterrupt.pid)) ==
             AppExecFwk::AppProcessState::APP_STATE_BACKGROUND ?

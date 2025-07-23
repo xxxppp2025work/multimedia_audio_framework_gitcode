@@ -162,7 +162,6 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
     AUDIO_INFO_LOG("[PipeFetchStart] all %{public}zu output streams", streamDescs.size());
     UpdateActiveDeviceAndVolumeBeforeMoveSession(streamDescs, reason);
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipesAndExecute(streamDescs);
-    AUDIO_INFO_LOG("[PipeExecStart] for all Pipes");
     uint32_t audioFlag;
     for (auto &pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
@@ -359,7 +358,6 @@ int32_t AudioCoreService::BluetoothDeviceFetchOutputHandle(shared_ptr<AudioStrea
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, BLUETOOTH_FETCH_RESULT_CONTINUE, "Device desc is nullptr");
 
     if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        AUDIO_INFO_LOG("A2dp device");
         int32_t ret = ActivateA2dpDeviceWhenDescEnabled(desc, reason);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("Activate a2dp [%{public}s] failed", encryptMacAddr.c_str());
@@ -392,7 +390,7 @@ int32_t AudioCoreService::ActivateA2dpDevice(std::shared_ptr<AudioDeviceDescript
 {
     Trace trace("AudioCoreService::ActiveA2dpDevice");
     int32_t ret = SwitchActiveA2dpDevice(desc);
-    AUDIO_INFO_LOG("ActivateA2dpDevice ret : %{public}d", ret);
+    AUDIO_INFO_LOG("ret : %{public}d", ret);
     // In plan: re-try when failed
     return ret;
 }
@@ -631,7 +629,6 @@ bool AudioCoreService::IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, con
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NULL_POINTER, "invalid deviceDesc");
     if (desc->networkId_ == deviceInfo.networkId_ && desc->deviceType_ == deviceInfo.deviceType_ &&
         desc->macAddress_ == deviceInfo.macAddress_ && desc->connectState_ == deviceInfo.connectState_) {
-        AUDIO_INFO_LOG("Enter");
         if (deviceInfo.IsAudioDeviceDescriptor()) {
             return true;
         }
@@ -665,7 +662,6 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
     AUDIO_INFO_LOG("[PipeFetchStart] for stream %{public}d", sessionId);
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipeAndExecute(streamDesc);
 
-    AUDIO_INFO_LOG("[PipeExecStart] for all Pipes");
     uint32_t sinkId = HDI_INVALID_ID;
     for (auto &pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
@@ -768,7 +764,6 @@ int32_t AudioCoreService::FetchCapturerPipeAndExecute(std::shared_ptr<AudioStrea
     AUDIO_INFO_LOG("[PipeFetchStart] for stream %{public}d", sessionId);
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipeAndExecute(streamDesc);
 
-    AUDIO_INFO_LOG("[PipeExecStart] for all Pipes");
     for (auto &pipeInfo : pipeInfos) {
         AUDIO_INFO_LOG("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
             pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
@@ -1521,7 +1516,6 @@ void AudioCoreService::UpdateDualToneState(const bool &enable, const int32_t &se
 int32_t AudioCoreService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkInputIds,
     std::shared_ptr<AudioPipeInfo> pipeInfo, std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor)
 {
-    AUDIO_INFO_LOG("Start for [%{public}zu] sink-inputs", sinkInputIds.size());
     // check
     CHECK_AND_RETURN_RET_LOG(LOCAL_NETWORK_ID == localDeviceDescriptor->networkId_,
         ERR_INVALID_OPERATION, "failed: not a local device.");
@@ -1899,7 +1893,6 @@ int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, co
 
 int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStreamDeviceChangeReasonExt reason)
 {
-    AUDIO_PRERELEASE_LOGI("No running stream need update several device state");
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1, "HandleFetchOutputWhenNoRunningStream");
     CHECK_AND_RETURN_RET_LOG(!descs.empty(), ERROR, "descs is empty");
@@ -1927,7 +1920,6 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStream
 
 int32_t AudioCoreService::HandleFetchInputWhenNoRunningStream()
 {
-    AUDIO_PRERELEASE_LOGI("No running stream need update several device state");
     std::shared_ptr<AudioDeviceDescriptor> desc;
     AudioDeviceDescriptor tempDesc = audioActiveDevice_.GetCurrentInputDevice();
     if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && Bluetooth::AudioHfpManager::IsRecognitionStatus()) {
@@ -2136,6 +2128,8 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         isRingDualToneOnPrimarySpeaker_, streamUsage);
     if (isRingDualToneOnPrimarySpeaker_ && AudioCoreServiceUtils::IsOverRunPlayback(mode, rendererState) &&
         Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
+        CHECK_AND_RETURN_LOG(!streamCollector_.IsStreamActive(AudioVolumeType::STREAM_RING),
+            "ring still on active, dont over ring dual");
         AUDIO_INFO_LOG("[ADeviceEvent] disable primary speaker dual tone when ringer renderer run over");
         isRingDualToneOnPrimarySpeaker_ = false;
         // Add delay between end of double ringtone and device switch.
