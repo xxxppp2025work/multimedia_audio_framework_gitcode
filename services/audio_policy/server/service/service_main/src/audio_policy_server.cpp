@@ -549,7 +549,6 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
         std::thread([this]() { TriggerMuteCheck(); }).detach();
     }
     int32_t zoneId = audioVolumeManager_.GetVolumeAdjustZoneId();
-    AUDIO_INFO_LOG("zoneId is %{public}d", zoneId);
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
     if (volumeApplyToAll_) {
         streamInFocus = AudioStreamType::STREAM_ALL;
@@ -563,7 +562,8 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
     IsStreamActive(streamInFocus, active);
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     if (isScreenOffOrLock_ && !active && !VolumeUtils::IsPCVolumeEnable() && !screenOffAdjustVolumeEnable_) {
-        AUDIO_INFO_LOG("screen off or lock canot adjust volume, this stream is not active, not change volume.");
+        AUDIO_INFO_LOG("isScreenOffOrLock: %{public}d, active: %{public}d, screenOffAdjustVolumeEnable: %{public}d", 
+            isScreenOffOrLock_, active, screenOffAdjustVolumeEnable_);
         return AUDIO_OK;
     }
     if (!VolumeUtils::IsPCVolumeEnable()) {

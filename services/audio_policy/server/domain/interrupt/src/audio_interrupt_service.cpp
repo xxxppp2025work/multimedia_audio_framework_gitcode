@@ -1162,7 +1162,7 @@ AudioStreamType AudioInterruptService::GetStreamInFocusByUid(const int32_t uid, 
 
 AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t uid, const int32_t zoneId)
 {
-    AUDIO_INFO_LOG("GetStreamInFocusInternal, uid:%{public}d", uid);
+    AUDIO_INFO_LOG("GetStreamInFocusInternal, uid:%{public}d, zoneId: %{public}d", uid, zoneId);
     AudioStreamType streamInFocus = STREAM_DEFAULT;
 
     auto itZone = zonesMap_.find(zoneId);
