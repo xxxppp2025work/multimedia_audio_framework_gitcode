@@ -807,8 +807,9 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
 {
     Trace trace("AudioService::GetAudioProcess for " + std::to_string(config.appInfo.appPid));
     AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
-    AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config);
+
     std::lock_guard<std::mutex> lock(processListMutex_);
+    AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config);
     std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
         IsEndpointTypeVoip(config, deviceInfo));
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "no endpoint found for the process");

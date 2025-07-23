@@ -1161,7 +1161,11 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
     for (uint32_t i = nSamples; i > 0; --i) {
         int32_t value = *frame++;
         if (value < 0) {
-            value = -value;
+            if (value == INT32_MAX) {
+                value = INT32_MAX;
+            } else {
+                value = -value;
+            }
         }
         if (curMaxAmplitude < value) {
             curMaxAmplitude = value;
@@ -1453,6 +1457,8 @@ bool SignalDetectAgent::CheckAudioData(uint8_t *buffer, size_t bufferLen)
 
 bool SignalDetectAgent::DetectSignalData(int32_t *buffer, size_t bufferLen)
 {
+    CHECK_AND_RETURN_RET_LOG(buffer != nullptr, false, "input buffer is nullptr");
+
     std::string curTime = GetTime();
     uint32_t rightZeroSignal = 0;
     int32_t currentPeakIndex = -1;
@@ -1463,7 +1469,8 @@ bool SignalDetectAgent::DetectSignalData(int32_t *buffer, size_t bufferLen)
         int32_t tempMax = SHRT_MIN;
         int32_t tempMin = SHRT_MAX;
         for (uint32_t channel = 0; channel < static_cast<uint32_t>(channels_); channel++) {
-            int32_t temp = buffer[index * static_cast<uint32_t>(channels_) + channel];
+            size_t offset = index * static_cast<size_t>(channels_) + channel;
+            int32_t temp = buffer[offset];
             tempMax = temp > tempMax ? temp : tempMax;
             tempMin = temp < tempMin ? temp : tempMin;
         }
@@ -1490,7 +1497,7 @@ bool SignalDetectAgent::DetectSignalData(int32_t *buffer, size_t bufferLen)
         blankHaveOutput_ = false;
         blankPeriod_ = static_cast<int32_t>(frameCount - rightZeroSignal);
     }
-    int32_t thresholdBlankPeriod = BLANK_THRESHOLD_MS * sampleRate_ / MILLISECOND_PER_SECOND;
+    int64_t thresholdBlankPeriod = (static_cast<int64_t>)(BLANK_THRESHOLD_MS) * sampleRate_ / MILLISECOND_PER_SECOND;
     if (blankPeriod_ > thresholdBlankPeriod) {
         return !blankHaveOutput_;
     }
