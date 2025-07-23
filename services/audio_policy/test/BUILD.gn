@@ -74,6 +74,7 @@ group("audio_policy_unittest_packages") {
     ":audio_session_unit_test",
     ":audio_socket_thread_unit_test",
     ":audio_spatialization_service_unit_test",
+    ":audio_spatialization_service_extended_test",
     ":audio_state_manager_unit_test",
     ":audio_stream_collector_pro_unit_test",
     ":audio_stream_collector_unit_test",
@@ -2030,6 +2031,68 @@ ohos_unittest("audio_spatialization_service_unit_test") {
   ]
 }
 
+ohos_unittest("audio_spatialization_service_extended_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "./unittest/audio_spatialization_service_unit_test/include",
+    "../../audio_policy/server/include/service/spatialization",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  cflags_cc = cflags
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+
+  external_deps = [
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "googletest:gmock",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "eventhandler:libeventhandler",
+  ]
+
+  sources = [ "./unittest/audio_spatialization_service_unit_test/src/audio_spatialization_service_extended_test.cpp" ]
+
+  deps = [
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
+    "../../audio_policy:audio_policy_service_static",
+    "../../audio_policy:audio_setting_provider",
+  ]
+}
+
 ohos_unittest("audio_collaborative_service_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
@@ -2744,6 +2807,15 @@ ohos_unittest("audio_stream_collector_pro_unit_test") {
 
   if (sonic_enable == true) {
     cflags += [ "-DSONIC_ENABLE" ]
+  }
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
 
   external_deps = [
