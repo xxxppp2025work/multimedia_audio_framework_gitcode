@@ -49,15 +49,25 @@ public:
     bool enqueued_ = false;
 
     void StartSync();
+    void StartWithCallback();
+    void StartReturnsPromise();
     int64_t GetAudioTimeSync();
     void DrainSync();
     void FlushSync();
     void PauseSync();
     void StopSync();
+    void StopWithCallback();
+    void StopReturnsPromise();
     void ReleaseSync();
+    void ReleaseWithCallback();
+    void ReleaseReturnsPromise();
     int64_t GetBufferSizeSync();
+    int64_t GetBufferSizeWithCallback();
+    int64_t GetBufferSizeReturnsPromise();
     int64_t GetAudioStreamIdSync();
     void SetVolumeSync(double volume);
+    void SetVolumeWithCallback(double volume);
+    void SetVolumeReturnsPromise(double volume);
     double GetVolume();
     AudioRendererInfo GetRendererInfoSync();
     AudioStreamInfo GetStreamInfoSync();

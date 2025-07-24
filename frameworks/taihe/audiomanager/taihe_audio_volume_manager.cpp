@@ -195,6 +195,16 @@ AudioVolumeGroupManager AudioVolumeManagerImpl::GetVolumeGroupManagerSync(int32_
     return AudioVolumeGroupManagerImpl::CreateAudioVolumeGroupManagerWrapper(groupId);
 }
 
+AudioVolumeGroupManager AudioVolumeManagerImpl::GetVolumeGroupManagerWithCallback(int32_t groupId)
+{
+    return this->GetVolumeGroupManagerSync(groupId);
+}
+
+AudioVolumeGroupManager AudioVolumeManagerImpl::GetVolumeGroupManagerReturnsPromise(int32_t groupId)
+{
+    return this->GetVolumeGroupManagerSync(groupId);
+}
+
 void AudioVolumeManagerImpl::RegisterCallback(std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl)
 {
