@@ -136,13 +136,14 @@ bool AudioAdapterManager::Init()
     AudioVolume::GetInstance()->SetDefaultAppVolume(appConfigVolume_.defaultVolume);
     std::string defaultSafeVolume = std::to_string(GetMaxVolumeLevel(STREAM_MUSIC));
     AUDIO_INFO_LOG("defaultSafeVolume %{public}s", defaultSafeVolume.c_str());
-    char currentSafeVolumeValue[3] = {0};
+    char currentSafeVolumeValue[4] = {0};
     ret = GetParameter("const.audio.safe_media_volume", defaultSafeVolume.c_str(),
         currentSafeVolumeValue, sizeof(currentSafeVolumeValue));
     if (ret > 0) {
         safeVolume_ = atoi(currentSafeVolumeValue);
         AUDIO_INFO_LOG("Get currentSafeVolumeValue success %{public}d", safeVolume_);
     } else {
+        safeVolume_ = GetMaxVolumeLevel(STREAM_MUSIC);
         AUDIO_ERR_LOG("Get currentSafeVolumeValue failed %{public}d", ret);
     }
 
@@ -392,8 +393,8 @@ int32_t AudioAdapterManager::SetAdjustVolumeForZone(int32_t zoneId)
             AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
         CHECK_AND_RETURN_RET_LOG(devices.size() >= 1 && devices[0] != nullptr, ERR_OPERATION_FAILED,
             "zone device error");
-        if (volumeDataExtMaintainer_.find(devices[0]->deviceType_) == volumeDataExtMaintainer_.end()) {
-            volumeDataExtMaintainer_[devices[0]->deviceType_] = std::make_shared<VolumeDataMaintainer>();
+        if (volumeDataExtMaintainer_.find(devices[0]->GetKey()) == volumeDataExtMaintainer_.end()) {
+            volumeDataExtMaintainer_[devices[0]->GetKey()] = std::make_shared<VolumeDataMaintainer>();
             LoadMuteStatusMap(devices[0]);
             LoadVolumeMap(devices[0]);
             auto iter = defaultVolumeTypeList_.begin();
@@ -429,8 +430,8 @@ bool AudioAdapterManager::GetZoneMute(int32_t zoneId, AudioStreamType streamType
         AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
     CHECK_AND_RETURN_RET_LOG(devices.size() >= 1 && devices[0] != nullptr, ERR_OPERATION_FAILED,
         "zone device error");
-    if (volumeDataExtMaintainer_.find(devices[0]->deviceType_) == volumeDataExtMaintainer_.end()) {
-        volumeDataExtMaintainer_[devices[0]->deviceType_] = std::make_shared<VolumeDataMaintainer>();
+    if (volumeDataExtMaintainer_.find(devices[0]->GetKey()) == volumeDataExtMaintainer_.end()) {
+        volumeDataExtMaintainer_[devices[0]->GetKey()] = std::make_shared<VolumeDataMaintainer>();
         LoadMuteStatusMap(devices[0]);
         LoadVolumeMap(devices[0]);
     }
@@ -444,12 +445,12 @@ int32_t AudioAdapterManager::GetZoneVolumeLevel(int32_t zoneId, AudioStreamType 
         AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
     CHECK_AND_RETURN_RET_LOG(devices.size() >= 1 && devices[0] != nullptr, ERR_OPERATION_FAILED,
         "zone device error");
-    CHECK_AND_RETURN_RET_LOG(volumeDataExtMaintainer_.find(devices[0]->deviceType_) !=
+    CHECK_AND_RETURN_RET_LOG(volumeDataExtMaintainer_.find(devices[0]->GetKey()) !=
         volumeDataExtMaintainer_.end(), ERR_OPERATION_FAILED, "volumeDataExtMaintainer_ error");
     if (GetStreamMuteInternal(devices[0], streamType)) {
         return MIN_VOLUME_LEVEL;
     }
-    return volumeDataExtMaintainer_[devices[0]->deviceType_]->GetStreamVolume(streamType);
+    return volumeDataExtMaintainer_[devices[0]->GetKey()]->GetStreamVolume(streamType);
 }
 
 int32_t AudioAdapterManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
@@ -475,13 +476,13 @@ int32_t AudioAdapterManager::SetZoneVolumeLevel(int32_t zoneId, AudioStreamType 
     CHECK_AND_RETURN_RET_LOG(volumeLevel >= mimRet && volumeLevel <= maxRet, ERR_OPERATION_FAILED,
         "volumeLevel not in scope,mimRet:%{public}d maxRet:%{public}d", mimRet, maxRet);
 
-    CHECK_AND_RETURN_RET_LOG(volumeDataExtMaintainer_.find(devices[0]->deviceType_) != volumeDataExtMaintainer_.end(),
+    CHECK_AND_RETURN_RET_LOG(volumeDataExtMaintainer_.find(devices[0]->GetKey()) != volumeDataExtMaintainer_.end(),
         ERR_OPERATION_FAILED, "volumeDataExtMaintainer_ error");
-    volumeDataExtMaintainer_[devices[0]->deviceType_]->SetStreamVolume(streamType, volumeLevel);
+    volumeDataExtMaintainer_[devices[0]->GetKey()]->SetStreamVolume(streamType, volumeLevel);
 
     if (handler_ != nullptr) {
         if (Util::IsDualToneStreamType(streamType) && devices[0]->deviceType_ != DEVICE_TYPE_REMOTE_CAST) {
-            handler_->SendSaveVolume(DEVICE_TYPE_SPEAKER, streamType, volumeLevel);
+            handler_->SendSaveVolume(DEVICE_TYPE_SPEAKER, streamType, volumeLevel, devices[0]->networkId_);
         } else {
             handler_->SendSaveVolume(devices[0]->deviceType_, streamType, volumeLevel);
         }
@@ -608,7 +609,7 @@ int32_t AudioAdapterManager::SetAppVolumeMutedDB(int32_t appUid, bool muted)
 int32_t AudioAdapterManager::SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType)
 {
     int32_t volumeLevel =
-        volumeDataExtMaintainer_[device->deviceType_]->GetStreamVolume(streamType) *
+        volumeDataExtMaintainer_[device->GetKey()]->GetStreamVolume(streamType) *
         (GetStreamMute(device, streamType) ? 0 : 1);
 
     float volumeDb = 1.0f;
@@ -695,7 +696,7 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
     if (currentActiveDevice_.IsDistributedSpeaker()) {
         SystemVolume systemVolume(volumeType, REMOTE_CLASS, volumeDb, volumeLevel, isMuted);
         audioVolume->SetSystemVolume(systemVolume);
-        SetOffloadVolume(volumeType, volumeDb, REMOTE_CLASS);
+        SetOffloadVolume(volumeType, volumeDb, REMOTE_CLASS, currentActiveDevice_.networkId_);
         return;
     }
     if (GetActiveDevice() == DEVICE_TYPE_NEARLINK) {
@@ -729,17 +730,18 @@ void AudioAdapterManager::SetAudioVolume(std::shared_ptr<AudioDeviceDescriptor> 
     AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     bool isMuted = GetStreamMute(device, volumeType);
     int32_t volumeLevel =
-        volumeDataExtMaintainer_[device->deviceType_]->GetStreamVolume(volumeType) *(isMuted ? 0 : 1);
+        volumeDataExtMaintainer_[device->GetKey()]->GetStreamVolume(volumeType) *(isMuted ? 0 : 1);
     auto audioVolume = AudioVolume::GetInstance();
     CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null");
     if (device->IsDistributedSpeaker()) {
         SystemVolume systemVolume(volumeType, REMOTE_CLASS, volumeDb, volumeLevel, isMuted);
         audioVolume->SetSystemVolume(systemVolume);
+        SetOffloadVolume(volumeType, volumeDb, REMOTE_CLASS, device->networkId_);
         return;
     }
     auto it = DEVICE_CLASS_MAP.find(device->deviceType_);
     if (it == DEVICE_CLASS_MAP.end()) {
-        AUDIO_ERR_LOG("unkown device type %{public}d", device->deviceType_);
+        AUDIO_ERR_LOG("unknown device type %{public}d", device->deviceType_);
         return;
     }
     for (auto &deviceClass : it->second) {
@@ -750,14 +752,11 @@ void AudioAdapterManager::SetAudioVolume(std::shared_ptr<AudioDeviceDescriptor> 
     }
 }
 
-void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float volumeDb, const std::string &deviceClass)
+void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float volumeDb, const std::string &deviceClass,
+    const std::string &networkId)
 {
     float volume = volumeDb; // maybe only system volume
     if (!(streamType == STREAM_MUSIC || streamType == STREAM_SPEECH)) {
-        return;
-    }
-    DeviceType dev = GetActiveDevice();
-    if (!(dev == DEVICE_TYPE_SPEAKER || dev == DEVICE_TYPE_BLUETOOTH_A2DP || dev == DEVICE_TYPE_USB_HEADSET)) {
         return;
     }
     CHECK_AND_RETURN_LOG(audioServerProxy_ != nullptr, "audioServerProxy_ null");
@@ -766,7 +765,9 @@ void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float vol
         struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
         volume = AudioVolume::GetInstance()->GetVolume(offloadSessionID_.value(), streamType, deviceClass, &volumes);
         std::string routeDeviceClass = deviceClass == REMOTE_CLASS ? "remote_offload" : "offload";
-        audioServerProxy_->OffloadSetVolume(volume, routeDeviceClass, currentActiveDevice_.networkId_);
+        AUDIO_INFO_LOG("routeDeviceClass:%{public}s, networkId:%{public}s, volume:%{public}f", routeDeviceClass.c_str(),
+            networkId.c_str(), volume);
+        audioServerProxy_->OffloadSetVolume(volume, routeDeviceClass, networkId);
     }
     IPCSkeleton::SetCallingIdentity(identity);
 }
@@ -852,7 +853,7 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(std::shared_ptr<AudioDeviceDe
             streamType, mute);
         return SUCCESS;
     }
-    volumeDataExtMaintainer_[device->deviceType_]->SetStreamMuteStatus(streamType, mute);
+    volumeDataExtMaintainer_[device->GetKey()]->SetStreamMuteStatus(streamType, mute);
 
     if (handler_ != nullptr) {
         handler_->SendStreamMuteStatusUpdate(streamType, mute, streamUsage, deviceType, device->networkId_);
@@ -959,7 +960,7 @@ int32_t AudioAdapterManager::GetStreamVolume(AudioStreamType streamType)
 
 int32_t AudioAdapterManager::GetStreamVolume(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType)
 {
-    return volumeDataExtMaintainer_[device->deviceType_]->GetStreamVolume(streamType);
+    return volumeDataExtMaintainer_[device->GetKey()]->GetStreamVolume(streamType);
 }
 
 bool AudioAdapterManager::GetStreamMuteInternal(AudioStreamType streamType)
@@ -970,7 +971,7 @@ bool AudioAdapterManager::GetStreamMuteInternal(AudioStreamType streamType)
 bool AudioAdapterManager::GetStreamMuteInternal(std::shared_ptr<AudioDeviceDescriptor> &device,
     AudioStreamType streamType)
 {
-    return volumeDataExtMaintainer_[device->deviceType_]->GetStreamMute(streamType);
+    return volumeDataExtMaintainer_[device->GetKey()]->GetStreamMute(streamType);
 }
 
 // LCOV_EXCL_START
@@ -1145,10 +1146,6 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
     // Current device must be updated even if kvStore is nullptr.
     currentActiveDevice_ = deviceDescriptor;
     AudioVolume::GetInstance()->SetCurrentActiveDevice(currentActiveDevice_.deviceType_);
-
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP && !isSameVolumeGroup && isDpReConnect_) {
-        RefreshVolumeWhenDpReConnect();
-    }
 
     if (!isSameVolumeGroup) {
         // If there's no os account available when trying to get one, audio_server would sleep for 1 sec
@@ -2261,8 +2258,10 @@ void AudioAdapterManager::HandleDistributedVolume(AudioStreamType streamType)
 
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP && streamType == STREAM_MUSIC) {
         AUDIO_INFO_LOG("first time switch dp, use default volume");
-        volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, MAX_VOLUME_LEVEL);
-        SetSystemVolumeLevel(STREAM_MUSIC, MAX_VOLUME_LEVEL);
+        int32_t initialVolume = GetMaxVolumeLevel(streamType) > MAX_VOLUME_LEVEL ?
+            DP_DEFAULT_VOLUME_LEVEL : GetMaxVolumeLevel(streamType);
+        volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, initialVolume);
+        SetSystemVolumeLevel(STREAM_MUSIC, initialVolume);
     }
 }
 
@@ -2310,7 +2309,7 @@ bool AudioAdapterManager::LoadVolumeMap(std::shared_ptr<AudioDeviceDescriptor> &
 {
     bool result = false;
     for (auto &streamType: defaultVolumeTypeList_) {
-        result = volumeDataExtMaintainer_[device->deviceType_]->GetVolume(device->deviceType_, streamType);
+        result = volumeDataExtMaintainer_[device->GetKey()]->GetVolume(device->deviceType_, streamType);
         if (!result) {
             AUDIO_ERR_LOG("LoadVolumeMap: Could not load volume for streamType[%{public}d] from kvStore", streamType);
         }
@@ -2447,7 +2446,7 @@ bool AudioAdapterManager::LoadMuteStatusMap(void)
 bool AudioAdapterManager::LoadMuteStatusMap(std::shared_ptr<AudioDeviceDescriptor> &device)
 {
     for (auto &streamType: defaultVolumeTypeList_) {
-        bool result = volumeDataExtMaintainer_[device->deviceType_]->GetMuteStatus(device->deviceType_, streamType);
+        bool result = volumeDataExtMaintainer_[device->GetKey()]->GetMuteStatus(device->deviceType_, streamType);
         if (!result) {
             AUDIO_WARNING_LOG("Could not load mute status for stream type %{public}d from database.", streamType);
         }
@@ -2967,6 +2966,8 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene)
 {
     AUDIO_PRERELEASE_LOGI("SetAbsVolumeScene: %{public}d", isAbsVolumeScene);
     isAbsVolumeScene_ = isAbsVolumeScene;
+    CHECK_AND_RETURN_LOG(audioServiceAdapter_ != nullptr, "SetAbsVolumeScene audio adapter null");
+    audioServiceAdapter_->SetAbsVolumeStateToEffect(isAbsVolumeScene);
     AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(isAbsVolumeScene_);
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         SetVolumeDb(STREAM_MUSIC);
@@ -3093,7 +3094,6 @@ void AudioAdapterManager::SetVgsVolumeSupported(bool isVgsSupported)
 bool AudioAdapterManager::IsVgsVolumeSupported() const
 {
     if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
-        AUDIO_INFO_LOG("Current Active Device isn't SCO, return false");
         return false;
     }
     return isVgsVolumeSupported_;
@@ -3169,9 +3169,9 @@ void AudioAdapterManager::HandleHearingAidVolume(AudioStreamType streamType)
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_HEARING_AID) {
         if (streamType == STREAM_MUSIC || streamType == STREAM_VOICE_CALL ||
             streamType == STREAM_VOICE_ASSISTANT) {
-            int32_t defalutVolume = static_cast<int32_t>(std::ceil(GetMaxVolumeLevel(streamType) * 0.8));
+            int32_t defaultVolume = static_cast<int32_t>(std::ceil(GetMaxVolumeLevel(streamType) * 0.8));
             AUDIO_INFO_LOG("first time switch hearingAid, use default volume");
-            SetSystemVolumeLevel(streamType, defalutVolume);
+            SetSystemVolumeLevel(streamType, defaultVolume);
         }
     }
 }

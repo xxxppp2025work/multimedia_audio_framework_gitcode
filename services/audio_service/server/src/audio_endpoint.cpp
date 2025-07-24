@@ -75,12 +75,7 @@ std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, 
     const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo)
 {
     std::shared_ptr<AudioEndpoint> audioEndpoint = nullptr;
-    if (type == EndpointType::TYPE_INDEPENDENT && deviceInfo.deviceRole_ != INPUT_DEVICE &&
-         deviceInfo.networkId_ == LOCAL_NETWORK_ID) {
-        audioEndpoint = std::make_shared<AudioEndpointSeparate>(type, id, clientConfig.streamType);
-    } else {
-        audioEndpoint = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
-    }
+    audioEndpoint = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
     if (!audioEndpoint->Config(deviceInfo)) {
@@ -287,11 +282,6 @@ int32_t AudioEndpointInner::InitDupBuffer(AudioProcessConfig processConfig, int3
 
 int32_t AudioEndpointInner::EnableFastInnerCap(int32_t innerCapId)
 {
-    if (fastCaptureInfos_.count(innerCapId) && fastCaptureInfos_[innerCapId].isInnerCapEnabled) {
-        AUDIO_INFO_LOG("InnerCap is already enabled");
-        return SUCCESS;
-    }
-
     CHECK_AND_RETURN_RET_LOG(deviceInfo_.deviceRole_ == OUTPUT_DEVICE, ERR_INVALID_OPERATION, "Not output device!");
     int32_t ret = InitDupStream(innerCapId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed!");
@@ -1161,6 +1151,19 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
     return SUCCESS;
 }
 
+bool AudioEndpointInner::IsBufferDataInsufficient(int32_t readableDataFrame, uint32_t spanSizeInFrame)
+{
+    if (readableDataFrame < 0) {
+        return false;
+    }
+
+    if (static_cast<uint32_t>(readableDataFrame) >= spanSizeInFrame) {
+        return false;
+    }
+
+    return true;
+}
+
 bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos)
 {
     bool isAllReady = true;
@@ -1192,8 +1195,8 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
                 continue;
             }
             int32_t readableDataFrame = tempBuffer->GetReadableDataFrames();
-            if (readableDataFrame > 0 &&
-                (static_cast<uint32_t>(readableDataFrame) < processList_[i]->GetSpanSizeInFrame())) {
+            uint32_t spanSizeInFrame = processList_[i]->GetSpanSizeInFrame();
+            if (IsBufferDataInsufficient(readableDataFrame, spanSizeInFrame)) {
                 isAllReady = false;
                 AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_LOWLATENCY_OUT,
                     processList_[i]->GetAppInfo().appUid);
@@ -1231,7 +1234,6 @@ void AudioEndpointInner::WaitAllProcessReady(uint64_t curWritePos)
 void AudioEndpointInner::MixToDupStream(const std::vector<AudioStreamData> &srcDataList, int32_t innerCapId)
 {
     Trace trace("AudioEndpointInner::MixToDupStream");
-    std::lock_guard<std::mutex> lock(dupMutex_);
     CHECK_AND_RETURN_LOG(fastCaptureInfos_.count(innerCapId) && fastCaptureInfos_[innerCapId].dupStream != nullptr,
         "captureInfo is errro");
     CHECK_AND_RETURN_LOG(dupBuffer_ != nullptr, "Buffer is not ready");
@@ -1380,8 +1382,8 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
     bool getVolumeRet = PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
-    int32_t doNotDisturbStatusVolume = AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(streamType,
-        clientConfig_.appInfo.appUid, processList_[i]->GetAudioSessionId());
+    int32_t doNotDisturbStatusVolume = static_cast<int32_t>(AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(
+        streamType, clientConfig_.appInfo.appUid, processList_[i]->GetAudioSessionId()));
     float appVolume = AudioVolume::GetInstance()->GetAppVolume(clientConfig_.appInfo.appUid,
         clientConfig_.rendererInfo.volumeMode);
     int32_t volumeFromOhaudioBuffer = processBufferList_[i]->GetStreamVolume() *
@@ -1544,13 +1546,14 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos, std::
     }
     AdapterType type = endpointType_ == TYPE_VOIP_MMAP ? ADAPTER_TYPE_VOIP_FAST : ADAPTER_TYPE_FAST;
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(type, ClockTime::GetCurNano());
-
-    for (auto &capture: fastCaptureInfos_) {
-        if (capture.second.isInnerCapEnabled) {
-            ProcessToDupStream(audioDataList, dstStreamData, capture.first);
+    {
+        std::lock_guard<std::mutex> captureLock(dupMutex_);
+        for (auto &capture: fastCaptureInfos_) {
+            if (capture.second.isInnerCapEnabled) {
+                ProcessToDupStream(audioDataList, dstStreamData, capture.first);
+            }
         }
     }
-
     if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
             dstStreamData.bufferDesc.bufLength);
@@ -1858,7 +1861,7 @@ bool AudioEndpointInner::KeepWorkloopRunning()
 
     // when return false, EndpointWorkLoopFuc will continue loop immediately. Wait to avoid a inifity loop.
     std::unique_lock<std::mutex> lock(loopThreadLock_);
-    AUDIO_PRERELEASE_LOGI("Status is %{public}s now, wait for %{public}s...", GetStatusStr(endpointStatus_).c_str(),
+    AUDIO_PRERELEASE_LOGI("%{public}s now, wait for %{public}s...", GetStatusStr(endpointStatus_).c_str(),
         GetStatusStr(targetStatus).c_str());
     threadStatus_ = WAITTING;
     workThreadCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_IN_DEFAULT));

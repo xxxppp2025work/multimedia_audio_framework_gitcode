@@ -16,14 +16,17 @@
 #ifndef LOG_TAG
 #define LOG_TAG "HpaeRendererManager"
 #endif
+
 #include "hpae_renderer_manager.h"
 #include "audio_stream_info.h"
 #include "audio_errors.h"
-#include "audio_engine_log.h"
 #include "hpae_node_common.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_utils.h"
 #include "audio_volume.h"
+#include "audio_engine_log.h"
+#include "hpae_output_cluster.h"
+#include "hpae_remote_output_cluster.h"
 
 constexpr int32_t DEFAULT_EFFECT_RATE = 48000;
 constexpr int32_t DEFAULT_EFFECT_FRAME_LEN = 960;
@@ -67,8 +70,6 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
-    nodeInfo.nodeName = "HpaeSinkInputNode";
-    nodeInfo.nodeId = OnGetNodeId();
     sinkInputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     sinkInputNodeMap_[streamInfo.sessionId]->SetAppUid(streamInfo.uid);
     AUDIO_INFO_LOG("streamType %{public}u, sessionId = %{public}u, current sceneType is %{public}d",
@@ -103,7 +104,6 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     // no need history buffer in not offload sink
     nodeInfo.historyFrameCount = 0;
-    nodeInfo.nodeId = OnGetNodeId();
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.sceneType = TransToProperSceneType(nodeInfo.effectInfo.streamUsage, nodeInfo.effectInfo.effectScene);
     // for collaboration
@@ -707,6 +707,8 @@ int32_t HpaeRendererManager::SuspendStreamManager(bool isSuspend)
         if (isSuspend_ == isSuspend) {
             return;
         }
+        AUDIO_INFO_LOG("suspend audio device: %{public}s, isSuspend: %{public}d",
+            sinkInfo_.deviceName.c_str(), isSuspend);
         isSuspend_ = isSuspend;
         if (isSuspend_) {
             if (outputCluster_ != nullptr) {
@@ -780,7 +782,7 @@ void HpaeRendererManager::InitManager(bool isReload)
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.statusCallback = weak_from_this();
     if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
-        outputCluster_ = std::make_unique<HpaeRemoteOutputCluster>(nodeInfo);
+        outputCluster_ = std::make_unique<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo_);
     } else {
         outputCluster_ = std::make_unique<HpaeOutputCluster>(nodeInfo);
     }
@@ -1150,7 +1152,7 @@ bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operatio
         }
         return false;
     }
-    AUDIO_INFO_LOG("get gain node of session %{public}d.", sessionId);
+    AUDIO_INFO_LOG("get gain node of session %{public}d operation %{public}d.", sessionId, operation);
     if (operation != OPERATION_STARTED) {
         HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPING : HPAE_SESSION_PAUSING;
         SetSessionState(sessionId, state);
@@ -1160,13 +1162,15 @@ bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operatio
     return true;
 }
 
-void HpaeRendererManager::DumpSinkInfo()
+int32_t HpaeRendererManager::DumpSinkInfo()
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "HpaeRendererManager not init");
     auto request = [this]() {
         AUDIO_INFO_LOG("DumpSinkInfo deviceName %{public}s", sinkInfo_.deviceName.c_str());
         UploadDumpSinkInfo(sinkInfo_.deviceName);
     };
     SendRequest(request);
+    return SUCCESS;
 }
 
 int32_t HpaeRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)

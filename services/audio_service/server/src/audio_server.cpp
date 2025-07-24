@@ -243,9 +243,13 @@ static void SetAudioSceneForAllSource(AudioScene audioScene)
         fastVoipSource->SetAudioScene(audioScene);
     }
 #endif
+    std::shared_ptr<IAudioCaptureSource> a2dpInSource = GetSourceByProp(HDI_ID_TYPE_BLUETOOTH);
+    if (a2dpInSource != nullptr && a2dpInSource->IsInited()) {
+        a2dpInSource->SetAudioScene(audioScene);
+    }
 }
 
-static void SetAudioSceneForAllSink(AudioScene audioScene)
+static void SetAudioSceneForAllSink(AudioScene audioScene, bool scoExcludeFlag)
 {
     std::shared_ptr<IAudioRenderSink> usbSink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
     if (usbSink != nullptr && usbSink->IsInited()) {
@@ -1257,7 +1261,7 @@ int32_t AudioServer::SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadS
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     SetAudioSceneForAllSource(audioScene);
-    SetAudioSceneForAllSink(audioScene);
+    SetAudioSceneForAllSink(audioScene, scoExcludeFlag);
 
     audioScene_ = audioScene;
     return SUCCESS;
@@ -1274,11 +1278,10 @@ int32_t AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> 
 
     std::vector<DeviceType> deviceTypes;
     for (auto activeDevice : activeDevices) {
-        AUDIO_INFO_LOG("SetIORoutes device type:%{public}d", activeDevice.first);
         deviceTypes.push_back(activeDevice.first);
     }
-    AUDIO_INFO_LOG("SetIORoutes 1st deviceType: %{public}d, flag: %{public}d deviceName:%{public}s",
-        type, flag, deviceName.c_str());
+    AUDIO_INFO_LOG("SetIORoutes 1st deviceType: %{public}d, deviceSize : %{public}d, flag: %{public}d,\
+        deviceName:%{public}s", type, deviceTypes.size(), flag, deviceName.c_str());
     int32_t ret = SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
     return ret;
 }
@@ -1346,13 +1349,21 @@ int32_t AudioServer::UpdateActiveDevicesRoute(const std::vector<IntPair> &active
     return SetIORoutes(activeOutputDevices, static_cast<BluetoothOffloadState>(a2dpOffloadFlag), deviceName);
 }
 
-int32_t AudioServer::SetDmDeviceType(uint16_t dmDeviceType)
+int32_t AudioServer::SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "refused for %{public}d", callingUid);
-    std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY, true);
-    source->SetDmDeviceType(dmDeviceType);
+
+    std::shared_ptr<IAudioCaptureSource> source;
+    if (static_cast<DeviceType>(deviceType) == DEVICE_TYPE_NEARLINK_IN) {
+        source = GetSourceByProp(HDI_ID_TYPE_PRIMARY);
+    } else {
+        source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY, true);
+    }
+    CHECK_AND_RETURN_RET_LOG(source != nullptr, ERROR, "has no valid source");
+
+    source->SetDmDeviceType(dmDeviceType, static_cast<DeviceType>(deviceType));
     return SUCCESS;
 }
 
@@ -2399,7 +2410,6 @@ void AudioServer::RegisterAudioRendererSinkCallback()
 
 int32_t AudioServer::NotifyStreamVolumeChanged(int32_t streamType, float volume)
 {
-    AUDIO_INFO_LOG("Enter the notifyStreamVolumeChanged interface");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     if (!PermissionUtil::VerifyIsAudio()) {
         AUDIO_ERR_LOG("NotifyStreamVolumeChanged refused for %{public}d", callingUid);
@@ -2971,7 +2981,8 @@ int32_t AudioServer::SetBtHdiInvalidState()
         "refused for %{public}d", callingUid);
     auto limitFunc = [](uint32_t id) -> bool {
         std::string info = IdHandler::GetInstance().ParseInfo(id);
-        if (IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_BLUETOOTH) {
+        if (IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_BLUETOOTH &&
+            IdHandler::GetInstance().ParseInfo(id) != HDI_ID_INFO_HEARING_AID) {
             return true;
         }
         return false;
@@ -3016,6 +3027,16 @@ int32_t AudioServer::ForceStopAudioStream(int32_t audioType)
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_SYSTEM_PERMISSION_DENIED, "not audio calling!");
     CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
     return AudioService::GetInstance()->ForceStopAudioStream(static_cast<StopAudioType>(audioType));
+}
+
+int32_t AudioServer::ImproveAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, bool> &threads)
+{
+    return AudioResourceService::GetInstance()->ImproveAudioWorkgroupPrio(pid, threads);
+}
+ 
+int32_t AudioServer::RestoreAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, int32_t> &threads)
+{
+    return AudioResourceService::GetInstance()->RestoreAudioWorkgroupPrio(pid, threads);
 }
 } // namespace AudioStandard
 } // namespace OHOS

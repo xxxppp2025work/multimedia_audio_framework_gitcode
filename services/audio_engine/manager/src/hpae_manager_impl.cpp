@@ -73,6 +73,18 @@ void HpaeManagerImpl::DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo)
     manager_->DumpAllAvailableDevice(devicesInfo);
 }
 
+void HpaeManagerImpl::DumpSinkInputsInfo()
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->DumpSinkInputsInfo();
+}
+
+void HpaeManagerImpl::DumpSourceOutputsInfo()
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->DumpSourceOutputsInfo();
+}
+
 uint32_t HpaeManagerImpl::OpenAudioPort(const AudioModuleInfo &audioModuleInfo)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, 0,
@@ -361,6 +373,12 @@ int32_t HpaeManagerImpl::SetOffloadRenderCallbackType(uint32_t sessionId, int32_
     return manager_->SetOffloadRenderCallbackType(sessionId, type);
 }
 
+void HpaeManagerImpl::SetSpeed(uint32_t sessionId, float speed)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->SetSpeed(sessionId, speed);
+}
+
 // interfaces for render effect
 void HpaeManagerImpl::InitAudioEffectChainManager(const std::vector<EffectChain> &effectChains,
     const EffectChainManagerParam &effectChainManagerParam,
@@ -406,6 +424,11 @@ int32_t HpaeManagerImpl::SetEffectSystemVolume(const int32_t systemVolumeType, c
     return manager_->SetEffectSystemVolume(systemVolumeType, systemVolume);
 }
 
+int32_t HpaeManagerImpl::SetAbsVolumeStateToEffect(const bool absVolumeState)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
+    return manager_->SetAbsVolumeStateToEffect(absVolumeState);
+}
 int32_t HpaeManagerImpl::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");

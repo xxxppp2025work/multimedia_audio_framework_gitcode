@@ -111,7 +111,7 @@ int32_t AudioPolicyManagerListenerStubImpl::OnBackgroundMute(const int32_t uid)
 }
 
 int32_t AudioPolicyManagerListenerStubImpl::OnQueryBundleNameIsInList(const std::string &bundleName,
-    const std::string &listType, bool& ret)
+    const std::string &listType, bool &ret)
 {
     std::shared_ptr<AudioQueryBundleNameListCallback> audioQueryBundleNameListCallback =
         audioQueryBundleNameListCallback_.lock();
@@ -120,6 +120,19 @@ int32_t AudioPolicyManagerListenerStubImpl::OnQueryBundleNameIsInList(const std:
         "audioQueryBundleNameListCallback_ is nullptr");
     ret = audioQueryBundleNameListCallback->OnQueryBundleNameIsInList(bundleName, listType);
     return SUCCESS;
+}
+
+int32_t AudioPolicyManagerListenerStubImpl::OnRouteUpdate(uint32_t routeFlag, const std::string &networkId)
+{
+    std::shared_ptr<AudioRouteCallback> cb = audioRouteCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(cb != nullptr, AUDIO_INVALID_PARAM, "audioRouteCallback_ is nullptr");
+    cb->OnRouteUpdate(routeFlag, networkId);
+    return SUCCESS;
+}
+
+void AudioPolicyManagerListenerStubImpl::SetAudioRouteCallback(const std::weak_ptr<AudioRouteCallback> &callback)
+{
+    audioRouteCallback_ = callback;
 }
 
 void AudioPolicyManagerListenerStubImpl::SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback)

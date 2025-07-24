@@ -45,6 +45,7 @@
 #include "audio_core_service_utils.h"
 #include "sle_audio_device_manager.h"
 #include "audio_event_utils.h"
+#include "audio_stream_id_allocator.h"
 namespace OHOS {
 namespace AudioStandard {
 enum OffloadType {
@@ -77,6 +78,7 @@ public:
         int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
             bool isReloadProcess = false) override;
         uint32_t GenerateSessionId() override;
+        int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
         // IDeviceStatusObserver
         void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command) override;
@@ -120,6 +122,7 @@ public:
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
         int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+        int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
 
         // Functions related to get operations - device related
         bool IsArmUsbDevice(const AudioDeviceDescriptor &deviceDesc);
@@ -136,7 +139,10 @@ public:
         int32_t GetCurrentCapturerChangeInfos(vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
             bool hasBTPermission, bool hasSystemPermission);
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);
+        int32_t FetchOutputDeviceAndRoute(std::string caller,
+            const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
         int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
+        int32_t GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType);
         int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
         std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
 private:
@@ -157,6 +163,8 @@ private:
     bool IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId);
     void DumpPipeManager(std::string &dumpString);
     void DumpSelectHistory(std::string &dumpString);
+    void SetAudioRouteCallback(uint32_t sessionId, const sptr<IRemoteObject> &object);
+    void UnsetAudioRouteCallback(uint32_t sessionId);
 
     // Called by EventEntry - with lock
     // Stream operations
@@ -175,6 +183,7 @@ private:
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo);
     uint32_t GenerateSessionId();
+    int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
     // IDeviceStatusObserver from EventEntry
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
@@ -218,6 +227,7 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
 
     // Functions related to get operations - device related
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
@@ -235,6 +245,7 @@ private:
         bool hasBTPermission, bool hasSystemPermission);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
+    int32_t GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType);
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
     bool GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos);
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
@@ -348,6 +359,7 @@ private:
     void SendA2dpConnectedWhileRunning(const RendererState &rendererState, const uint32_t &sessionId);
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
     void UpdateTrackerDeviceChange(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
+    bool IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     AudioFlag SetFlagForSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     void UpdateRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc);
@@ -428,6 +440,7 @@ private:
     void ClearRingMuteWhenCallStart(bool pre, bool after);
     void UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName);
     void UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    void NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
@@ -493,6 +506,10 @@ private:
     std::condition_variable offloadCloseCondition_[OFFLOAD_TYPE_NUM];
     std::mutex offloadCloseMutex_;
     std::mutex offloadReOpenMutex_;
+
+    // route update callback
+    std::unordered_map<uint32_t, sptr<IStandardAudioPolicyManagerListener>> routeUpdateCallback_;
+    std::mutex routeUpdateCallbackMutex_;
 
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,

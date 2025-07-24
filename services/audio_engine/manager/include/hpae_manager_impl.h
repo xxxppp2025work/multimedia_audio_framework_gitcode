@@ -35,6 +35,8 @@ public:
     void DumpSinkInfo(std::string deviceName) override;
     void DumpSourceInfo(std::string deviceName) override;
     void DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo) override;
+    void DumpSinkInputsInfo() override;
+    void DumpSourceOutputsInfo() override;
     uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) override;
     int32_t CloseAudioPort(int32_t audioHandleIndex) override;
     uint32_t ReloadAudioPort(const AudioModuleInfo &audioModuleInfo) override;
@@ -90,6 +92,7 @@ public:
         uint32_t sessionId, bool spatializationEnabled, bool headTrackingEnabled) override;
     int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) override;
     int32_t SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type) override;
+    void SetSpeed(uint32_t sessionId, float speed) override;
 
     // interfaces for render effect
     void InitAudioEffectChainManager(const std::vector<EffectChain> &effectChains,
@@ -101,6 +104,7 @@ public:
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) override;
     int32_t EffectRotationUpdate(const uint32_t rotationState) override;
     int32_t SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume) override;
+    int32_t SetAbsVolumeStateToEffect(const bool absVolumeState) override;
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray) override;
     int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;

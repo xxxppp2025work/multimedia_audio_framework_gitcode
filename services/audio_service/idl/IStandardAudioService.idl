@@ -117,7 +117,7 @@ interface IStandardAudioService {
     void CreateSourcePort([in] unsigned int idBase, [in] unsigned int idType, [in] String idInfo, [in] IAudioSourceAttr attr, [out] unsigned int captureId);
     void DestroyHdiPort([in] unsigned int id);
     void SetDeviceConnectedFlag([in] boolean flag);
-    void SetDmDeviceType([in] unsigned short dmDeviceType);
+    void SetDmDeviceType([in] unsigned short dmDeviceType, [in] int deviceType);
     void RegisterDataTransferMonitorParam([in] int callbackId, [in] DataTransferMonitorParam param);
     void UnregisterDataTransferMonitorParam([in] int callbackId);
     void RegisterDataTransferCallback([in] IRemoteObject object);
@@ -135,6 +135,8 @@ interface IStandardAudioService {
     void SetBtHdiInvalidState();
     void SetKaraokeParameters([in] String parameters, [out] boolean ret);
     void IsAudioLoopbackSupported([in] int mode ,[out] boolean ret);
+    [oneway] void ImproveAudioWorkgroupPrio([in] int pid, [in] Map<int, boolean> threads);
+    void RestoreAudioWorkgroupPrio([in] int pid, [in] Map<int, int> threads);
     // WARNING: above functions correspond with AudioServerInterfaceCode
 
 
