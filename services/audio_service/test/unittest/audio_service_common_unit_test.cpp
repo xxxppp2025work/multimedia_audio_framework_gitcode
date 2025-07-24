@@ -184,7 +184,7 @@ HWTEST(AudioServiceCommonUnitTest, CheckPosTimeReasonablel_003, TestSize.Level1)
 * @tc.number: CheckReasonable
 * @tc.desc  : Test CheckReasonable interface.
 */
-HWTEST(AudioServiceCommonUnitTest, CheckPosTimeReasonable_001, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, CheckReasonable_001, TestSize.Level1)
 {
     uint64_t frame = 100;
     int64_t nanoTime = 1000000;
