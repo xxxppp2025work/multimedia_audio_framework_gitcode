@@ -249,7 +249,7 @@ static void SetAudioSceneForAllSource(AudioScene audioScene)
     }
 }
 
-static void SetAudioSceneForAllSink(AudioScene audioScene)
+static void SetAudioSceneForAllSink(AudioScene audioScene, bool scoExcludeFlag)
 {
     std::shared_ptr<IAudioRenderSink> usbSink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
     if (usbSink != nullptr && usbSink->IsInited()) {
@@ -1261,7 +1261,7 @@ int32_t AudioServer::SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadS
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     SetAudioSceneForAllSource(audioScene);
-    SetAudioSceneForAllSink(audioScene);
+    SetAudioSceneForAllSink(audioScene, scoExcludeFlag);
 
     audioScene_ = audioScene;
     return SUCCESS;
