@@ -1011,7 +1011,7 @@ const std::string AudioServer::GetAudioParameterInner(const std::string &key)
         }
         if (key == "concurrent_capture_stream_info") {
             return deviceManager->GetAudioParameter("primary", AudioParamKey::NONE, key);
-        }        
+        }
         if (key.size() < BUNDLENAME_LENGTH_LIMIT && key.size() > CHECK_FAST_BLOCK_PREFIX.size() &&
             key.substr(0, CHECK_FAST_BLOCK_PREFIX.size()) == CHECK_FAST_BLOCK_PREFIX) {
             return deviceManager->GetAudioParameter("primary", AudioParamKey::NONE, key);
