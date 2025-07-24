@@ -1088,9 +1088,7 @@ void AudioServerSetAudioSceneByDeviceTypeTest(const uint8_t *rawData, size_t siz
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    static uint32_t step = 0;
     uint32_t index = static_cast<uint32_t>(size);
-    step += index;
     static const vector<AudioScene> testAudioScenes = {
         AUDIO_SCENE_INVALID,
         AUDIO_SCENE_DEFAULT,
