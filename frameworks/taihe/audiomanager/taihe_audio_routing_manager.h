@@ -41,18 +41,32 @@ public:
     bool IsMicBlockDetectionSupportedSync();
 #endif
     array<AudioDeviceDescriptor> GetDevicesSync(DeviceFlag deviceFlag);
+    array<AudioDeviceDescriptor> GetDevicesWithCallback(DeviceFlag deviceFlag);
+    array<AudioDeviceDescriptor> GetDevicesReturnsPromise(DeviceFlag deviceFlag);
     array<AudioDeviceDescriptor> GetAvailableDevices(DeviceUsage usage);
     array<AudioDeviceDescriptor> GetExcludedDevices(DeviceUsage usage);
     array<AudioDeviceDescriptor> GetPreferredOutputDeviceForRendererInfoSync(AudioRendererInfo const &rendererInfo);
+    array<AudioDeviceDescriptor> GetPreferOutputDeviceForRendererInfoWithCallback(AudioRendererInfo const &rendererInfo);
+    array<AudioDeviceDescriptor> GetPreferOutputDeviceForRendererInfoReturnsPromise(AudioRendererInfo const &rendererInfo);
     array<AudioDeviceDescriptor> GetPreferredInputDeviceForCapturerInfoSync(AudioCapturerInfo const &capturerInfo);
+    array<AudioDeviceDescriptor> GetPreferredInputDeviceForCapturerInfoWithCallback(AudioCapturerInfo const &capturerInfo);
+    array<AudioDeviceDescriptor> GetPreferredInputDeviceForCapturerInfoReturnsPromise(AudioCapturerInfo const &capturerInfo);
     void SelectOutputDeviceSync(array_view<AudioDeviceDescriptor> outputAudioDevices);
+    void SelectOutputDeviceWithCallback(array_view<AudioDeviceDescriptor> outputAudioDevices);
+    void SelectOutputDeviceReturnsPromise(array_view<AudioDeviceDescriptor> outputAudioDevices);
     void SelectOutputDeviceByFilterSync(AudioRendererFilter const &filter,
+        array_view<AudioDeviceDescriptor> outputAudioDevices);
+    void SelectOutputDeviceByFilterWithCallback(AudioRendererFilter const &filter,
+        array_view<AudioDeviceDescriptor> outputAudioDevices);
+    void SelectOutputDeviceByFilterReturnsPromise(AudioRendererFilter const &filter,
         array_view<AudioDeviceDescriptor> outputAudioDevices);
     array<AudioDeviceDescriptor> GetPreferredInputDeviceByFilter(AudioCapturerFilter const &filter);
     array<AudioDeviceDescriptor> GetPreferredOutputDeviceByFilter(AudioRendererFilter const &filter);
     void SelectInputDeviceByFilterSync(AudioCapturerFilter const &filter,
         array_view<AudioDeviceDescriptor> inputAudioDevices);
     void SelectInputDeviceSync(array_view<AudioDeviceDescriptor> inputAudioDevices);
+    void SelectInputDeviceWithCallback(array_view<AudioDeviceDescriptor> inputAudioDevices);
+    void SelectInputDeviceReturnsPromise(array_view<AudioDeviceDescriptor> inputAudioDevices);
     void SetCommunicationDeviceSync(CommunicationDeviceType deviceType, bool active);
     bool IsCommunicationDeviceActiveSync(CommunicationDeviceType deviceType);
     void ExcludeOutputDevicesSync(DeviceUsage usage, array_view<AudioDeviceDescriptor> devices);

@@ -159,6 +159,16 @@ void AudioRendererImpl::StartSync()
     }
 }
 
+void AudioRendererImpl::StartWithCallback()
+{
+    return this->StartSync();
+}
+
+void AudioRendererImpl::StartReturnsPromise()
+{
+    return this->StartSync();
+}
+
 int64_t AudioRendererImpl::GetAudioTimeSync()
 {
     if (audioRenderer_ == nullptr) {
@@ -251,6 +261,16 @@ void AudioRendererImpl::StopSync()
     }
 }
 
+void AudioRendererImpl::StopWithCallback()
+{
+    return this->StopSync();
+}
+
+void AudioRendererImpl::StopReturnsPromise()
+{
+    return this->StopSync();
+}
+
 void AudioRendererImpl::ReleaseSync()
 {
     if (audioRenderer_ == nullptr) {
@@ -262,6 +282,16 @@ void AudioRendererImpl::ReleaseSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "Release failure!");
         return;
     }
+}
+
+void AudioRendererImpl::ReleaseWithCallback()
+{
+    return this->ReleaseSync();
+}
+
+void AudioRendererImpl::ReleaseReturnsPromise()
+{
+    return this->ReleaseSync();
 }
 
 int64_t AudioRendererImpl::GetBufferSizeSync()
@@ -276,6 +306,16 @@ int64_t AudioRendererImpl::GetBufferSizeSync()
         return 0;
     }
     return static_cast<int64_t>(bufferSize);
+}
+
+int64_t AudioRendererImpl::GetBufferSizeWithCallback()
+{
+    return this->GetBufferSizeSync();
+}
+
+int64_t AudioRendererImpl::GetBufferSizeReturnsPromise()
+{
+    return this->GetBufferSizeSync();
 }
 
 int64_t AudioRendererImpl::GetAudioStreamIdSync()
@@ -314,6 +354,16 @@ void AudioRendererImpl::SetVolumeSync(double volume)
     if (ret != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
     }
+}
+
+void AudioRendererImpl::SetVolumeWithCallback(double volume)
+{
+    return this->SetVolumeSync(volume);
+}
+
+void AudioRendererImpl::SetVolumeReturnsPromise(double volume)
+{
+    return this->SetVolumeSync(volume);
 }
 
 double AudioRendererImpl::GetVolume()

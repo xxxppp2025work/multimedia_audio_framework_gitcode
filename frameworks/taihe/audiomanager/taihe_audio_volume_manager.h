@@ -40,6 +40,8 @@ public:
     int32_t GetAppVolumePercentageSync();
     void SetAppVolumePercentageSync(int32_t volume);
     AudioVolumeGroupManager GetVolumeGroupManagerSync(int32_t groupId);
+    AudioVolumeGroupManager GetVolumeGroupManagerWithCallback(int32_t groupId);
+    AudioVolumeGroupManager GetVolumeGroupManagerReturnsPromise(int32_t groupId);
     void OnVolumeChange(callback_view<void(VolumeEvent const&)> callback);
     void OnAppVolumeChangeForUid(int32_t uid, callback_view<void(VolumeEvent const&)> callback);
     void OnAppVolumeChange(callback_view<void(VolumeEvent const&)> callback);

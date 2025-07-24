@@ -185,6 +185,18 @@ array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredOutputDeviceFo
     return TaiheParamUtils::SetDeviceDescriptors(outDeviceDescriptors);
 }
 
+array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferOutputDeviceForRendererInfoWithCallback(
+    AudioRendererInfo const &rendererInfo)
+{
+    return this->GetPreferredOutputDeviceForRendererInfoSync(rendererInfo);
+}
+
+array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferOutputDeviceForRendererInfoReturnsPromise(
+    AudioRendererInfo const &rendererInfo)
+{
+    return this->GetPreferredOutputDeviceForRendererInfoSync(rendererInfo);
+}
+
 array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredInputDeviceForCapturerInfoSync(
     AudioCapturerInfo const &capturerInfo)
 {
@@ -211,6 +223,18 @@ array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredInputDeviceFor
     return TaiheParamUtils::SetDeviceDescriptors(inDeviceDescriptors);
 }
 
+array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredInputDeviceForCapturerInfoWithCallback(
+    AudioCapturerInfo const &capturerInfo)
+{
+    return this->GetPreferredInputDeviceForCapturerInfoSync(capturerInfo);
+}
+
+array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredInputDeviceForCapturerInfoReturnsPromise(
+    AudioCapturerInfo const &capturerInfo)
+{
+    return this->GetPreferredInputDeviceForCapturerInfoSync(capturerInfo);
+}
+
 void AudioRoutingManagerImpl::SelectOutputDeviceSync(array_view<AudioDeviceDescriptor> outputAudioDevices)
 {
     std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> deviceDescriptors;
@@ -232,6 +256,16 @@ void AudioRoutingManagerImpl::SelectOutputDeviceSync(array_view<AudioDeviceDescr
     if (audioMngr_->SelectOutputDevice(deviceDescriptors) != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectOutputDevice failed");
     }
+}
+
+void AudioRoutingManagerImpl::SelectOutputDeviceWithCallback(array_view<AudioDeviceDescriptor> outputAudioDevices)
+{
+    return this->SelectOutputDeviceSync(outputAudioDevices);
+}
+
+void AudioRoutingManagerImpl::SelectOutputDeviceReturnsPromise(array_view<AudioDeviceDescriptor> outputAudioDevices)
+{
+    return this->SelectOutputDeviceSync(outputAudioDevices);
 }
 
 void AudioRoutingManagerImpl::SelectOutputDeviceByFilterSync(AudioRendererFilter const &filter,
@@ -259,6 +293,18 @@ void AudioRoutingManagerImpl::SelectOutputDeviceByFilterSync(AudioRendererFilter
     if (audioMngr_->SelectOutputDevice(audioRendererFilter, deviceDescriptors) != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectOutputDeviceByFilter failed");
     }
+}
+
+void AudioRoutingManagerImpl::SelectOutputDeviceByFilterWithCallback(AudioRendererFilter const &filter,
+    array_view<AudioDeviceDescriptor> outputAudioDevices)
+{
+    return this->SelectOutputDeviceByFilterSync(filter, outputAudioDevices);
+}
+
+void AudioRoutingManagerImpl::SelectOutputDeviceByFilterReturnsPromise(AudioRendererFilter const &filter,
+    array_view<AudioDeviceDescriptor> outputAudioDevices)
+{
+    return this->SelectOutputDeviceByFilterSync(filter, outputAudioDevices);
 }
 
 array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredInputDeviceByFilter(AudioCapturerFilter const &filter)
@@ -366,6 +412,16 @@ void AudioRoutingManagerImpl::SelectInputDeviceSync(array_view<AudioDeviceDescri
     }
 }
 
+void AudioRoutingManagerImpl::SelectInputDeviceWithCallback(array_view<AudioDeviceDescriptor> inputAudioDevices)
+{
+    return this->SelectInputDeviceSync(inputAudioDevices);
+}
+
+void AudioRoutingManagerImpl::SelectInputDeviceReturnsPromise(array_view<AudioDeviceDescriptor> inputAudioDevices)
+{
+    return this->SelectInputDeviceSync(inputAudioDevices);
+}
+
 array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetDevicesSync(DeviceFlag deviceFlag)
 {
     std::vector<AudioDeviceDescriptor> emptyResult;
@@ -388,6 +444,16 @@ array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetDevicesSync(DeviceFlag 
     std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> deviceDescriptors =
         audioMngr_->GetDevices(nativeFlag);
     return TaiheParamUtils::SetDeviceDescriptors(deviceDescriptors);
+}
+
+array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetDevicesWithCallback(DeviceFlag deviceFlag)
+{
+    return this->GetDevicesSync(deviceFlag);
+}
+
+array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetDevicesReturnsPromise(DeviceFlag deviceFlag)
+{
+    return this->GetDevicesSync(deviceFlag);
 }
 
 void AudioRoutingManagerImpl::SetCommunicationDeviceSync(CommunicationDeviceType deviceType, bool active)

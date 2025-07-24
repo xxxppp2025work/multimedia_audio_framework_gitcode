@@ -52,9 +52,17 @@ public:
 
     AudioState GetState();
     void StartSync();
+    void StartWithCallback();
+    void StartReturnsPromise();
     void StopSync();
+    void StopWithCallback();
+    void StopReturnsPromise();
     void ReleaseSync();
+    void ReleaseWithCallback();
+    void ReleaseReturnsPromise();
     int64_t GetBufferSizeSync();
+    int64_t GetBufferSizeWithCallback();
+    int64_t GetBufferSizeReturnsPromise();
     AudioCapturerInfo GetCapturerInfoSync();
     AudioStreamInfo GetStreamInfoSync();
     int64_t GetAudioStreamIdSync();

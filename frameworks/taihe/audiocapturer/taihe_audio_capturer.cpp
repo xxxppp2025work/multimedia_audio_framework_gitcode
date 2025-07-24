@@ -348,6 +348,16 @@ void AudioCapturerImpl::StartSync()
     CHECK_AND_RETURN_LOG(ret, "StartSync failure!");
 }
 
+void AudioCapturerImpl::StartWithCallback()
+{
+    return this->StartSync();
+}
+
+void AudioCapturerImpl::StartReturnsPromise()
+{
+    return this->StartSync();
+}
+
 void AudioCapturerImpl::StopSync()
 {
     if (audioCapturer_ == nullptr) {
@@ -358,6 +368,16 @@ void AudioCapturerImpl::StopSync()
     CHECK_AND_RETURN_LOG(ret, "StopSync failure!");
 }
 
+void AudioCapturerImpl::StopWithCallback()
+{
+    return this->StopSync();
+}
+
+void AudioCapturerImpl::StopReturnsPromise()
+{
+    return this->StopSync();
+}
+
 void AudioCapturerImpl::ReleaseSync()
 {
     if (audioCapturer_ == nullptr) {
@@ -366,6 +386,16 @@ void AudioCapturerImpl::ReleaseSync()
     }
     bool ret = audioCapturer_->Release();
     CHECK_AND_RETURN_LOG(ret, "ReleaseSync failure!");
+}
+
+void AudioCapturerImpl::ReleaseWithCallback()
+{
+    return this->ReleaseSync();
+}
+
+void AudioCapturerImpl::ReleaseReturnsPromise()
+{
+    return this->ReleaseSync();
 }
 
 int64_t AudioCapturerImpl::GetBufferSizeSync()
@@ -380,6 +410,16 @@ int64_t AudioCapturerImpl::GetBufferSizeSync()
         return DEFAULT_BUFFER_SIZE;
     }
     return static_cast<int64_t>(bufferSize);
+}
+
+int64_t AudioCapturerImpl::GetBufferSizeWithCallback()
+{
+    return this->GetBufferSizeSync();
+}
+
+int64_t AudioCapturerImpl::GetBufferSizeReturnsPromise()
+{
+    return this->GetBufferSizeSync();
 }
 
 AudioCapturerInfo AudioCapturerImpl::GetCapturerInfoSync()
@@ -818,3 +858,5 @@ AudioCapturer CreateAudioCapturerSync(AudioCapturerOptions const &options)
 } // namespace ANI::Audio
 
 TH_EXPORT_CPP_API_CreateAudioCapturerSync(ANI::Audio::CreateAudioCapturerSync);
+TH_EXPORT_CPP_API_CreateAudioCapturerWithCallback(ANI::Audio::CreateAudioCapturerSync);
+TH_EXPORT_CPP_API_CreateAudioCapturerReturnsPromise(ANI::Audio::CreateAudioCapturerSync);

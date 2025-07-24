@@ -61,6 +61,16 @@ array<AudioRendererChangeInfo> AudioStreamManagerImpl::GetCurrentAudioRendererIn
     return TaiheParamUtils::SetRendererChangeInfos(audioRendererChangeInfos);
 }
 
+array<AudioRendererChangeInfo> AudioStreamManagerImpl::GetCurrentAudioRendererInfoArrayWithCallback()
+{
+    return this->GetCurrentAudioRendererInfoArraySync();
+}
+
+array<AudioRendererChangeInfo> AudioStreamManagerImpl::GetCurrentAudioRendererInfoArrayReturnsPromise()
+{
+    return this->GetCurrentAudioRendererInfoArraySync();
+} 
+
 array<AudioCapturerChangeInfo> AudioStreamManagerImpl::GetCurrentAudioCapturerInfoArraySync()
 {
     std::vector<AudioCapturerChangeInfo> emptyResult;
@@ -74,6 +84,16 @@ array<AudioCapturerChangeInfo> AudioStreamManagerImpl::GetCurrentAudioCapturerIn
         return array<AudioCapturerChangeInfo>(emptyResult);
     }
     return TaiheParamUtils::SetCapturerChangeInfos(audioCapturerChangeInfos);
+}
+
+array<AudioCapturerChangeInfo> AudioStreamManagerImpl::GetCurrentAudioCapturerInfoArrayWithCallback()
+{
+    return this->GetCurrentAudioCapturerInfoArraySync();
+}
+
+array<AudioCapturerChangeInfo> AudioStreamManagerImpl::GetCurrentAudioCapturerInfoArrayReturnsPromise()
+{
+    return this->GetCurrentAudioCapturerInfoArraySync();
 }
 
 array<AudioEffectMode> AudioStreamManagerImpl::GetAudioEffectInfoArraySync(StreamUsage usage)
@@ -114,6 +134,16 @@ bool AudioStreamManagerImpl::IsActiveSync(AudioVolumeType volumeType)
         return false;
     }
     return audioStreamMngr_->IsStreamActive(TaiheAudioEnum::GetNativeAudioVolumeType(volType));
+}
+
+bool AudioStreamManagerImpl::IsActiveWithCallback(AudioVolumeType volumeType)
+{
+    return this->IsActiveSync(volumeType);
+}
+
+bool AudioStreamManagerImpl::IsActiveReturnsPromise(AudioVolumeType volumeType)
+{
+    return this->IsActiveSync(volumeType);
 }
 
 void AudioStreamManagerImpl::OnAudioRendererChange(callback_view<void(array_view<AudioRendererChangeInfo>)> callback)
