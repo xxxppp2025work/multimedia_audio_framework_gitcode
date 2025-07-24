@@ -428,6 +428,12 @@ void AudioCoreService::EventEntry::OnCapturerSessionRemoved(uint64_t sessionID)
     coreService_->OnCapturerSessionRemoved(sessionID);
 }
 
+void AudioCoreService::EventEntry::CloseWakeUpAudioCapturer()
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    coreService_->CloseWakeUpAudioCapturer();
+}
+
 int32_t AudioCoreService::EventEntry::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
@@ -506,6 +512,12 @@ int32_t AudioCoreService::EventEntry::GetPreferredInputStreamType(AudioCapturerI
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->GetPreferredInputStreamType(capturerInfo);
+}
+
+int32_t AudioCoreService::EventEntry::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->SetWakeUpAudioCapturerFromAudioServer(config);
 }
 }
 }

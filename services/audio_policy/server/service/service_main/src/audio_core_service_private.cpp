@@ -2637,5 +2637,10 @@ int32_t AudioCoreService::LoadHearingAidModule(DeviceType deviceType, const Audi
 
     return SUCCESS;
 }
+
+int32_t AudioCoreService::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
+{
+    return audioCapturerSession_.SetWakeUpAudioCapturerFromAudioServer(config);
+}
 } // namespace AudioStandard
 } // namespace OHOS

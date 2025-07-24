@@ -1073,6 +1073,11 @@ void AudioCoreService::OnCapturerSessionRemoved(uint64_t sessionID)
     audioCapturerSession_.OnCapturerSessionRemoved(sessionID);
 }
 
+void AudioCoreService::CloseWakeUpAudioCapturer()
+{
+    audioCapturerSession_.CloseWakeUpAudioCapturer();
+}
+
 int32_t AudioCoreService::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     FetchOutputDeviceAndRoute("TriggerFetchDevice", reason);
