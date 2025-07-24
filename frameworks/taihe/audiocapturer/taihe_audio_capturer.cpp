@@ -348,6 +348,16 @@ void AudioCapturerImpl::StartSync()
     CHECK_AND_RETURN_LOG(ret, "StartSync failure!");
 }
 
+void AudioCapturerImpl::StartWithCallback()
+{
+    return this->StartSync();
+}
+
+void AudioCapturerImpl::StartReturnsPromise()
+{
+    return this->StartSync();
+}
+
 void AudioCapturerImpl::StopSync()
 {
     if (audioCapturer_ == nullptr) {
@@ -358,6 +368,16 @@ void AudioCapturerImpl::StopSync()
     CHECK_AND_RETURN_LOG(ret, "StopSync failure!");
 }
 
+void AudioCapturerImpl::StopWithCallback()
+{
+    return this->StopSync();
+}
+
+void AudioCapturerImpl::StopReturnsPromise()
+{
+    return this->StopSync();
+}
+
 void AudioCapturerImpl::ReleaseSync()
 {
     if (audioCapturer_ == nullptr) {
@@ -366,6 +386,16 @@ void AudioCapturerImpl::ReleaseSync()
     }
     bool ret = audioCapturer_->Release();
     CHECK_AND_RETURN_LOG(ret, "ReleaseSync failure!");
+}
+
+void AudioCapturerImpl::ReleaseWithCallback()
+{
+    return this->ReleaseSync();
+}
+
+void AudioCapturerImpl::ReleaseReturnsPromise()
+{
+    return this->ReleaseSync();
 }
 
 int64_t AudioCapturerImpl::GetBufferSizeSync()
@@ -380,6 +410,16 @@ int64_t AudioCapturerImpl::GetBufferSizeSync()
         return DEFAULT_BUFFER_SIZE;
     }
     return static_cast<int64_t>(bufferSize);
+}
+
+int64_t AudioCapturerImpl::GetBufferSizeWithCallback()
+{
+    return this->GetBufferSizeSync();
+}
+
+int64_t AudioCapturerImpl::GetBufferSizeReturnsPromise()
+{
+    return this->GetBufferSizeSync();
 }
 
 AudioCapturerInfo AudioCapturerImpl::GetCapturerInfoSync()
@@ -699,49 +739,56 @@ void AudioCapturerImpl::RegisterPositionCallback(int64_t frame, std::shared_ptr<
     }
 }
 
-void AudioCapturerImpl::OnAudioInterrupt(callback_view<void(InterruptEvent const&)> callback)
+void AudioCapturerImpl::OnAudioInterrupt(::taihe::string_view type,
+    callback_view<void(InterruptEvent const&)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterCapturerCallback(cacheCallback, AUDIO_INTERRUPT_CALLBACK_NAME, this);
 }
 
-void AudioCapturerImpl::OnStateChange(callback_view<void(AudioState)> callback)
+void AudioCapturerImpl::OnStateChange(::taihe::string_view type,
+    callback_view<void(AudioState)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterCapturerCallback(cacheCallback, STATE_CHANGE_CALLBACK_NAME, this);
 }
 
-void AudioCapturerImpl::OnInputDeviceChange(callback_view<void(array_view<AudioDeviceDescriptor>)> callback)
+void AudioCapturerImpl::OnInputDeviceChange(::taihe::string_view type,
+    callback_view<void(array_view<AudioDeviceDescriptor>)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterAudioCapturerDeviceChangeCallback(cacheCallback, INPUTDEVICE_CHANGE_CALLBACK_NAME, this);
 }
 
-void AudioCapturerImpl::OnAudioCapturerChange(callback_view<void(AudioCapturerChangeInfo const&)> callback)
+void AudioCapturerImpl::OnAudioCapturerChange(::taihe::string_view type,
+    callback_view<void(AudioCapturerChangeInfo const&)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterAudioCapturerInfoChangeCallback(cacheCallback, AUDIO_CAPTURER_CHANGE_CALLBACK_NAME, this);
 }
 
-void AudioCapturerImpl::OnReadData(callback_view<void(array_view<uint8_t>)> callback)
+void AudioCapturerImpl::OnReadData(::taihe::string_view type,
+    callback_view<void(array_view<uint8_t>)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterCapturerReadDataCallback(cacheCallback, READ_DATA_CALLBACK_NAME, this);
 }
 
-void AudioCapturerImpl::OnPeriodReach(int64_t frame, callback_view<void(int64_t)> callback)
+void AudioCapturerImpl::OnPeriodReach(::taihe::string_view type,
+    int64_t frame, callback_view<void(int64_t)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterPeriodPositionCallback(frame, cacheCallback, PERIOD_REACH_CALLBACK_NAME, this);
 }
 
-void AudioCapturerImpl::OnMarkReach(int64_t frame, callback_view<void(int64_t)> callback)
+void AudioCapturerImpl::OnMarkReach(::taihe::string_view type,
+    int64_t frame, callback_view<void(int64_t)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterPositionCallback(frame, cacheCallback, MARK_REACH_CALLBACK_NAME, this);
 }
 
-void AudioCapturerImpl::OffStateChange(optional_view<callback<void(AudioState)>> callback)
+void AudioCapturerImpl::OffStateChange(::taihe::string_view type, optional_view<callback<void(AudioState)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -750,7 +797,8 @@ void AudioCapturerImpl::OffStateChange(optional_view<callback<void(AudioState)>>
     UnregisterCapturerCallback(cacheCallback, STATE_CHANGE_CALLBACK_NAME, this);
 }
 
-void AudioCapturerImpl::OffAudioInterrupt(optional_view<callback<void(InterruptEvent const&)>> callback)
+void AudioCapturerImpl::OffAudioInterrupt(::taihe::string_view type,
+    optional_view<callback<void(InterruptEvent const&)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -759,7 +807,8 @@ void AudioCapturerImpl::OffAudioInterrupt(optional_view<callback<void(InterruptE
     UnregisterCapturerCallback(cacheCallback, AUDIO_INTERRUPT_CALLBACK_NAME, this);
 }
 
-void AudioCapturerImpl::OffInputDeviceChange(optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback)
+void AudioCapturerImpl::OffInputDeviceChange(::taihe::string_view type,
+    optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -768,7 +817,8 @@ void AudioCapturerImpl::OffInputDeviceChange(optional_view<callback<void(array_v
     UnregisterAudioCapturerDeviceChangeCallback(cacheCallback, INPUTDEVICE_CHANGE_CALLBACK_NAME, this);
 }
 
-void AudioCapturerImpl::OffAudioCapturerChange(optional_view<callback<void(AudioCapturerChangeInfo const&)>> callback)
+void AudioCapturerImpl::OffAudioCapturerChange(::taihe::string_view type,
+    optional_view<callback<void(AudioCapturerChangeInfo const&)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -777,7 +827,8 @@ void AudioCapturerImpl::OffAudioCapturerChange(optional_view<callback<void(Audio
     UnregisterAudioCapturerInfoChangeCallback(cacheCallback, AUDIO_CAPTURER_CHANGE_CALLBACK_NAME, this);
 }
 
-void AudioCapturerImpl::OffReadData(optional_view<callback<void(array_view<uint8_t>)>> callback)
+void AudioCapturerImpl::OffReadData(::taihe::string_view type,
+    optional_view<callback<void(array_view<uint8_t>)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -786,7 +837,7 @@ void AudioCapturerImpl::OffReadData(optional_view<callback<void(array_view<uint8
     UnregisterCapturerReadDataCallback(cacheCallback, READ_DATA_CALLBACK_NAME, this);
 }
 
-void AudioCapturerImpl::OffPeriodReach(optional_view<callback<void(int64_t)>> callback)
+void AudioCapturerImpl::OffPeriodReach(::taihe::string_view type, optional_view<callback<void(int64_t)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -795,7 +846,7 @@ void AudioCapturerImpl::OffPeriodReach(optional_view<callback<void(int64_t)>> ca
     UnregisterCapturerPeriodPositionCallback(cacheCallback, PERIOD_REACH_CALLBACK_NAME, this);
 }
 
-void AudioCapturerImpl::OffMarkReach(optional_view<callback<void(int64_t)>> callback)
+void AudioCapturerImpl::OffMarkReach(::taihe::string_view type, optional_view<callback<void(int64_t)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -818,3 +869,5 @@ AudioCapturer CreateAudioCapturerSync(AudioCapturerOptions const &options)
 } // namespace ANI::Audio
 
 TH_EXPORT_CPP_API_CreateAudioCapturerSync(ANI::Audio::CreateAudioCapturerSync);
+TH_EXPORT_CPP_API_CreateAudioCapturerWithCallback(ANI::Audio::CreateAudioCapturerSync);
+TH_EXPORT_CPP_API_CreateAudioCapturerReturnsPromise(ANI::Audio::CreateAudioCapturerSync);

@@ -343,16 +343,20 @@ struct DeviceBlockStatusInfo {
 }
 
 interface AudioRoutingManager {
-  @gen_async("getDevices")
-  @gen_promise("getDevices")
   GetDevicesSync(deviceFlag: DeviceFlag): Array<AudioDeviceDescriptor>;
+  @static_overload("getDevices")
+  @async GetDevicesWithCallback(deviceFlag: DeviceFlag): Array<AudioDeviceDescriptor>;
+  @static_overload("getDevices")
+  @promise GetDevicesReturnsPromise(deviceFlag: DeviceFlag): Array<AudioDeviceDescriptor>;
 
   GetAvailableDevices(deviceUsage: DeviceUsage): Array<AudioDeviceDescriptor>;
   GetExcludedDevices(deviceUsage: DeviceUsage): Array<AudioDeviceDescriptor>;
 
-  @gen_async("selectOutputDevice")
-  @gen_promise("selectOutputDevice")
   SelectOutputDeviceSync(outputAudioDevices: Array<AudioDeviceDescriptor>): void;
+  @static_overload("selectOutputDevice")
+  @async SelectOutputDeviceWithCallback(outputAudioDevices: Array<AudioDeviceDescriptor>): void;
+  @static_overload("selectOutputDevice")
+  @promise SelectOutputDeviceReturnsPromise(outputAudioDevices: Array<AudioDeviceDescriptor>): void;
 
   @gen_async("setCommunicationDevice")
   @gen_promise("setCommunicationDevice")
@@ -362,22 +366,32 @@ interface AudioRoutingManager {
   @gen_promise("isCommunicationDeviceActive")
   IsCommunicationDeviceActiveSync(deviceType: CommunicationDeviceType): bool;
 
-  @gen_async("selectOutputDeviceByFilter")
-  @gen_promise("selectOutputDeviceByFilter")
   SelectOutputDeviceByFilterSync(filter: AudioRendererFilter, outputAudioDevices:
       Array<AudioDeviceDescriptor>): void;
+  @static_overload("selectOutputDeviceByFilter")
+  @async SelectOutputDeviceByFilterWithCallback(filter: AudioRendererFilter, outputAudioDevices:
+      Array<AudioDeviceDescriptor>): void;
+  @static_overload("selectOutputDeviceByFilter")
+  @promise SelectOutputDeviceByFilterReturnsPromise(filter: AudioRendererFilter, outputAudioDevices:
+      Array<AudioDeviceDescriptor>): void;
 
-  @gen_async("selectInputDevice")
-  @gen_promise("selectInputDevice")
   SelectInputDeviceSync(inputAudioDevices: Array<AudioDeviceDescriptor>): void;
+  @static_overload("selectInputDevice")
+  @async SelectInputDeviceWithCallback(inputAudioDevices: Array<AudioDeviceDescriptor>): void;
+  @static_overload("selectInputDevice")
+  @promise SelectInputDeviceReturnsPromise(inputAudioDevices: Array<AudioDeviceDescriptor>): void;
 
-  @gen_async("getPreferOutputDeviceForRendererInfo")
-  @gen_promise("getPreferOutputDeviceForRendererInfo")
   GetPreferredOutputDeviceForRendererInfoSync(rendererInfo: AudioRendererInfo): Array<AudioDeviceDescriptor>;
+  @static_overload("getPreferOutputDeviceForRendererInfo")
+  @async GetPreferOutputDeviceForRendererInfoWithCallback(rendererInfo: AudioRendererInfo): Array<AudioDeviceDescriptor>;
+  @static_overload("getPreferOutputDeviceForRendererInfo")
+  @promise GetPreferOutputDeviceForRendererInfoReturnsPromise(rendererInfo: AudioRendererInfo): Array<AudioDeviceDescriptor>;
 
-  @gen_async("getPreferredInputDeviceForCapturerInfo")
-  @gen_promise("getPreferredInputDeviceForCapturerInfo")
   GetPreferredInputDeviceForCapturerInfoSync(capturerInfo: AudioCapturerInfo): Array<AudioDeviceDescriptor>;
+  @static_overload("getPreferredInputDeviceForCapturerInfo")
+  @async GetPreferredInputDeviceForCapturerInfoWithCallback(capturerInfo: AudioCapturerInfo): Array<AudioDeviceDescriptor>;
+  @static_overload("getPreferredInputDeviceForCapturerInfo")
+  @promise GetPreferredInputDeviceForCapturerInfoReturnsPromise(capturerInfo: AudioCapturerInfo): Array<AudioDeviceDescriptor>;
 
   GetPreferredInputDeviceByFilter(filter: AudioCapturerFilter): Array<AudioDeviceDescriptor>;
 
@@ -398,113 +412,61 @@ interface AudioRoutingManager {
   @gen_promise("unexcludeOutputDevices")
   UnexcludeOutputDevicesWithUsage(usage: DeviceUsage): void;
 
-  @!sts_inject_into_interface("on(type: string, capturerInfo: AudioCapturerInfo, callback: (data: object) => void): void;")
-  @!sts_inject_into_class("""on(type: string, capturerInfo: AudioCapturerInfo, callback: object): void {
-            if (type === "preferredInputDeviceChangeForCapturerInfo") {
-              this.onPreferredInputDeviceChangeForCapturerInfo(capturerInfo, callback as (data: (AudioDeviceDescriptor[])) => void);
-            }
-        }
-  """)
-  OnPreferredInputDeviceChangeForCapturerInfo(capturerInfo: AudioCapturerInfo, callback: (data: Array<AudioDeviceDescriptor>) => void): void;
+  @static_overload("off")
+  OffMicBlockStatusChanged(type: String, callback: Optional<(data: DeviceBlockStatusInfo) => void>): void;
+  @static_overload("off")
+  OffPreferredInputDeviceChangeForCapturerInfo(type: String, callback: Optional<(data: Array<AudioDeviceDescriptor>) => void>): void;
+  @static_overload("off")
+  OffPreferOutputDeviceChangeForRendererInfo(type: String, callback: Optional<(data: Array<AudioDeviceDescriptor>) => void>): void;
+  @static_overload("off")
+  OffDeviceChange(type: String, callback: Optional<(data: DeviceChangeAction) => void>): void;
+  @static_overload("off")
+  OffAvailableDeviceChange(type: String, callback: Optional<(data: DeviceChangeAction) => void>): void;
 
-  @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
-  @!sts_inject_into_class("""on(type: string, callback: object): void {
-            if (type === "micBlockStatusChanged") {
-              this.onMicBlockStatusChanged(callback as (data: DeviceBlockStatusInfo) => void);
-            }
-        }
-  """)
-  OnMicBlockStatusChanged(callback: (data: DeviceBlockStatusInfo) => void): void;
-
-  @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
-  @!sts_inject_into_class("""off(type: string, callback?: object): void {
-            if (type === "micBlockStatusChanged") {
-              this.offMicBlockStatusChanged(callback as ((data: DeviceBlockStatusInfo) => void) | undefined);
-            } else if (type === "preferredInputDeviceChangeForCapturerInfo") {
-              this.offPreferredInputDeviceChangeForCapturerInfo(callback as ((data: (AudioDeviceDescriptor[])) => void) | undefined);
-            } else if (type === "preferOutputDeviceChangeForRendererInfo") {
-              this.offPreferOutputDeviceChangeForRendererInfo(callback as ((data: (AudioDeviceDescriptor[])) => void) | undefined);
-            } else if (type === "deviceChange") {
-              this.offDeviceChange(callback as ((data: DeviceChangeAction) => void) | undefined);
-            } else if (type === "availableDeviceChange") {
-              this.offAvailableDeviceChange(callback as ((data: DeviceChangeAction) => void) | undefined);
-            }
-        }
-  """)
-  OffMicBlockStatusChanged(callback: Optional<(data: DeviceBlockStatusInfo) => void>): void;
-  OffPreferredInputDeviceChangeForCapturerInfo(callback: Optional<(data: Array<AudioDeviceDescriptor>) => void>): void;
-  OffPreferOutputDeviceChangeForRendererInfo(callback: Optional<(data: Array<AudioDeviceDescriptor>) => void>): void;
-  OffDeviceChange(callback: Optional<(data: DeviceChangeAction) => void>): void;
-  OffAvailableDeviceChange(callback: Optional<(data: DeviceChangeAction) => void>): void;
-
-  @!sts_inject_into_interface("on(type: string, deviceFlag: DeviceFlag, callback: (data: object) => void): void;")
-  @!sts_inject_into_interface("on(type: string, deviceUsage: DeviceUsage, callback: (data: object) => void): void;")
-  @!sts_inject_into_class("""on(type: string, deviceFlag: DeviceFlag, callback: object): void {
-            if (type === "deviceChange") {
-              this.onDeviceChange(deviceFlag, callback as (data: DeviceChangeAction) => void);
-            }
-        }
-  """)
-
-  @!sts_inject_into_class("""on(type: string, deviceUsage: DeviceUsage, callback: object): void {
-            if (type === "availableDeviceChange") {
-              this.onAvailableDeviceChange(deviceUsage, callback as (data: DeviceChangeAction) => void);
-            }
-        }
-  """)
-
-  @!sts_inject_into_interface("on(type: string, rendererInfo: AudioRendererInfo, callback: (data: object) => void): void;")
-  @!sts_inject_into_class("""on(type: string, rendererInfo: AudioRendererInfo, callback: object): void {
-            if (type === "preferOutputDeviceChangeForRendererInfo") {
-              this.onPreferOutputDeviceChangeForRendererInfo(rendererInfo, callback as (data: (AudioDeviceDescriptor[])) => void);
-            }
-        }
-  """)
-  OnDeviceChange(deviceFlag: DeviceFlag, callback: (data: DeviceChangeAction) => void): void;
-  OnAvailableDeviceChange(deviceUsage: DeviceUsage, callback: (data: DeviceChangeAction) => void): void;
-  OnPreferOutputDeviceChangeForRendererInfo(rendererInfo: AudioRendererInfo, callback: (data: Array<AudioDeviceDescriptor>) => void): void;
+  @static_overload("on")
+  OnMicBlockStatusChanged(type: String, callback: (data: DeviceBlockStatusInfo) => void): void;
+  @static_overload("on")
+  OnPreferredInputDeviceChangeForCapturerInfo(type: String, capturerInfo: AudioCapturerInfo, callback: (data: Array<AudioDeviceDescriptor>) => void): void;
+  @static_overload("on")
+  OnPreferOutputDeviceChangeForRendererInfo(type: String, rendererInfo: AudioRendererInfo, callback: (data: Array<AudioDeviceDescriptor>) => void): void;
+  @static_overload("on")
+  OnDeviceChange(type: String, deviceFlag: DeviceFlag, callback: (data: DeviceChangeAction) => void): void;
+  @static_overload("on")
+  OnAvailableDeviceChange(type: String, deviceUsage: DeviceUsage, callback: (data: DeviceChangeAction) => void): void;
 }
 
 interface AudioStreamManager {
-  @gen_async("getCurrentAudioRendererInfoArray")
-  @gen_promise("getCurrentAudioRendererInfoArray")
   GetCurrentAudioRendererInfoArraySync(): Array<AudioRendererChangeInfo>;
+  @static_overload("getCurrentAudioRendererInfoArray")
+  @async GetCurrentAudioRendererInfoArrayWithCallback(): Array<AudioRendererChangeInfo>;
+  @static_overload("getCurrentAudioRendererInfoArray")
+  @promise GetCurrentAudioRendererInfoArrayReturnsPromise(): Array<AudioRendererChangeInfo>;
 
-  @gen_async("getCurrentAudioCapturerInfoArray")
-  @gen_promise("getCurrentAudioCapturerInfoArray")
   GetCurrentAudioCapturerInfoArraySync(): Array<AudioCapturerChangeInfo>;
+  @static_overload("getCurrentAudioCapturerInfoArray")
+  @async GetCurrentAudioCapturerInfoArrayWithCallback(): Array<AudioCapturerChangeInfo>;
+  @static_overload("getCurrentAudioCapturerInfoArray")
+  @promise GetCurrentAudioCapturerInfoArrayReturnsPromise(): Array<AudioCapturerChangeInfo>;
 
   @gen_async("getAudioEffectInfoArray")
   @gen_promise("getAudioEffectInfoArray")
   GetAudioEffectInfoArraySync(usage: StreamUsage): Array<AudioEffectMode>;
 
-  @gen_async("isActive")
-  @gen_promise("isActive")
   IsActiveSync(volumeType: AudioVolumeType): bool;
+  @static_overload("isActive")
+  @async IsActiveWithCallback(volumeType: AudioVolumeType): bool;
+  @static_overload("isActive")
+  @promise IsActiveReturnsPromise(volumeType: AudioVolumeType): bool;
 
-  @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
-  @!sts_inject_into_class("""on(type: string, callback: object): void {
-            if (type === "audioRendererChange") {
-              this.onAudioRendererChange(callback as (data: (AudioRendererChangeInfo[])) => void);
-            } else if (type === "audioCapturerChange") {
-              this.onAudioCapturerChange(callback as (data: (AudioCapturerChangeInfo[])) => void);
-            }
-        }
-  """)
-  OnAudioRendererChange(callback: (data: Array<AudioRendererChangeInfo>) => void): void;
-  OnAudioCapturerChange(callback: (data: Array<AudioCapturerChangeInfo>) => void): void;
+  @static_overload("on")
+  OnAudioRendererChange(type: String, callback: (data: Array<AudioRendererChangeInfo>) => void): void;
+  @static_overload("on")
+  OnAudioCapturerChange(type: String, callback: (data: Array<AudioCapturerChangeInfo>) => void): void;
 
-  @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
-  @!sts_inject_into_class("""off(type: string, callback?: object): void {
-            if (type === "audioRendererChange") {
-              this.offAudioRendererChange(callback as ((data: AudioRendererChangeInfo[]) => void) | undefined);
-            } else if (type === "audioCapturerChange") {
-              this.offAudioCapturerChange(callback as ((data: AudioCapturerChangeInfo[]) => void) | undefined);
-            }
-        }
-  """)
-  OffAudioRendererChange(callback: Optional<(data: Array<AudioRendererChangeInfo>) => void>): void;
-  OffAudioCapturerChange(callback: Optional<(data: Array<AudioCapturerChangeInfo>) => void>): void;
+  @static_overload("off")
+  OffAudioRendererChange(type: String, callback: Optional<(data: Array<AudioRendererChangeInfo>) => void>): void;
+  @static_overload("off")
+  OffAudioCapturerChange(type: String, callback: Optional<(data: Array<AudioCapturerChangeInfo>) => void>): void;
 }
 
 interface AudioVolumeManager {
@@ -512,9 +474,11 @@ interface AudioVolumeManager {
   @gen_promise("getVolumeGroupInfos")
   GetVolumeGroupInfosSync(networkId: String): Array<VolumeGroupInfo>;
 
-  @gen_async("getVolumeGroupManager")
-  @gen_promise("getVolumeGroupManager")
   GetVolumeGroupManagerSync(groupId: i32): AudioVolumeGroupManager;
+  @static_overload("getVolumeGroupManager")
+  @async GetVolumeGroupManagerWithCallback(groupId: i32): AudioVolumeGroupManager;
+  @static_overload("getVolumeGroupManager")
+  @promise GetVolumeGroupManagerReturnsPromise(groupId: i32): AudioVolumeGroupManager;
 
   @gen_promise("getAppVolumePercentageForUid")
   GetAppVolumePercentageForUidSync(uid: i32): i32;
@@ -534,80 +498,74 @@ interface AudioVolumeManager {
   @gen_promise("setAppVolumePercentage")
   SetAppVolumePercentageSync(volume: i32): void;
 
-  @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
-  @!sts_inject_into_class("""on(type: string, callback: object): void {
-            if (type === "volumeChange") {
-              this.onVolumeChange(callback as (data: VolumeEvent) => void);
-            } else if (type === "appVolumeChange") {
-              this.onAppVolumeChange(callback as (data: VolumeEvent) => void);
-            }
-        }
-  """)
-  OnVolumeChange(callback: (data: VolumeEvent) => void): void;
-  OnAppVolumeChange(callback: (data: VolumeEvent) => void): void;
+  @static_overload("on")
+  OnVolumeChange(type: String, callback: (data: VolumeEvent) => void): void;
+  @static_overload("on")
+  OnAppVolumeChange(type: String, callback: (data: VolumeEvent) => void): void;
+  @static_overload("on")
+  OnAppVolumeChangeForUid(type: String, uid: i32, callback: (data: VolumeEvent) => void): void;
 
-  @!sts_inject_into_interface("on(type: string, uid: int, callback: (data: object) => void): void;")
-  @!sts_inject_into_class("""on(type: string, uid: int, callback: object): void {
-            if (type === "appVolumeChangeForUid") {
-              this.onAppVolumeChangeForUid(uid, callback as (data: VolumeEvent) => void);
-            }
-        }
-  """)
-  OnAppVolumeChangeForUid(uid: i32, callback: (data: VolumeEvent) => void): void;
-
-  @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
-  @!sts_inject_into_class("""off(type: string, callback?: object): void {
-            if (type === "volumeChange") {
-              this.offVolumeChange(callback as ((data: VolumeEvent) => void) | undefined);
-            } else if (type === "appVolumeChange") {
-              this.offAppVolumeChange(callback as ((data: VolumeEvent) => void) | undefined);
-            } else if (type === "appVolumeChangeForUid") {
-              this.offAppVolumeChangeForUid(callback as ((data: VolumeEvent) => void) | undefined);
-            }
-        }
-  """)
-  OffVolumeChange(callback: Optional<(data: VolumeEvent)=> void>): void;
-  OffAppVolumeChange(callback: Optional<(data: VolumeEvent)=> void>): void;
-  OffAppVolumeChangeForUid(callback: Optional<(data: VolumeEvent)=> void>): void;
+  @static_overload("off")
+  OffVolumeChange(type: String, callback: Optional<(data: VolumeEvent)=> void>): void;
+  @static_overload("off")
+  OffAppVolumeChange(type: String, callback: Optional<(data: VolumeEvent)=> void>): void;
+  @static_overload("off")
+  OffAppVolumeChangeForUid(type: String, callback: Optional<(data: VolumeEvent)=> void>): void;
 }
 
 interface AudioVolumeGroupManager {
-  @gen_async("setVolume")
-  @gen_promise("setVolume")
   SetVolumeSync(volumeType: AudioVolumeType, volume: i32): void;
+  @static_overload("setVolume")
+  @async SetVolumeWithCallback(volumeType: AudioVolumeType, volume: i32): void;
+  @static_overload("setVolume")
+  @promise SetVolumeReturnsPromise(volumeType: AudioVolumeType, volume: i32): void;
 
   @gen_promise("setVolumeWithFlag")
   SetVolumeWithFlagSync(volumeType: AudioVolumeType, volume: i32, flags: i32): void;
 
   GetActiveVolumeTypeSync(uid: i32): AudioVolumeType;
 
-  @gen_async("getVolume")
-  @gen_promise("getVolume")
   GetVolumeSync(volumeType: AudioVolumeType): i32;
+  @static_overload("getVolume")
+  @async GetVolumeWithVolumeTypeCallback(volumeType: AudioVolumeType): i32;
+  @static_overload("getVolume")
+  @promise GetVolumeWithVolumeTypeReturnsPromise(volumeType: AudioVolumeType): i32;
 
-  @gen_async("getMinVolume")
-  @gen_promise("getMinVolume")
   GetMinVolumeSync(volumeType: AudioVolumeType): i32;
+  @static_overload("getMinVolume")
+  @async GetMinVolumeWithCallback(volumeType: AudioVolumeType): i32;
+  @static_overload("getMinVolume")
+  @promise GetMinVolumeReturnsPromise(volumeType: AudioVolumeType): i32;
 
-  @gen_async("getMaxVolume")
-  @gen_promise("getMaxVolume")
   GetMaxVolumeSync(volumeType: AudioVolumeType): i32;
+  @static_overload("getMaxVolume")
+  @async GetMaxVolumeWithCallback(volumeType: AudioVolumeType): i32;
+  @static_overload("getMaxVolume")
+  @promise GetMaxVolumeReturnsPromise(volumeType: AudioVolumeType): i32;
 
-  @gen_async("mute")
-  @gen_promise("mute")
   MuteSync(volumeType: AudioVolumeType, mute: bool): void;
+  @static_overload("mute")
+  @async MuteWithCallback(volumeType: AudioVolumeType, mute: bool): void;
+  @static_overload("mute")
+  @promise MuteReturnsPromise(volumeType: AudioVolumeType, mute: bool): void;
 
-  @gen_async("isMute")
-  @gen_promise("isMute")
   IsMuteSync(volumeType: AudioVolumeType): bool;
+  @static_overload("isMute")
+  @async IsMuteWithCallback(volumeType: AudioVolumeType): bool;
+  @static_overload("isMute")
+  @promise IsMuteReturnsPromise(volumeType: AudioVolumeType): bool;
 
-  @gen_async("setRingerMode")
-  @gen_promise("setRingerMode")
   SetRingerModeSync(mode: AudioRingMode): void;
+  @static_overload("setRingerMode")
+  @async SetRingerModeWithCallback(mode: AudioRingMode): void;
+  @static_overload("setRingerMode")
+  @promise SetRingerModeReturnsPromise(mode: AudioRingMode): void;
 
-  @gen_async("getRingerMode")
-  @gen_promise("getRingerMode")
   GetRingerModeSync(): AudioRingMode;
+  @static_overload("getRingerMode")
+  @async GetRingerModeWithCallback(): AudioRingMode;
+  @static_overload("getRingerMode")
+  @promise GetRingerModeReturnsPromise(): AudioRingMode;
 
   @gen_promise("setMicMute")
   SetMicMuteSync(mute: bool): void;
@@ -617,39 +575,27 @@ interface AudioVolumeGroupManager {
 
   IsPersistentMicMute(): bool;
 
-  @gen_async("isMicrophoneMute")
-  @gen_promise("isMicrophoneMute")
   IsMicrophoneMuteSync(): bool;
+  @static_overload("isMicrophoneMute")
+  @async IsMicrophoneMuteWithCallback(): bool;
+  @static_overload("isMicrophoneMute")
+  @promise IsMicrophoneMuteReturnsPromise(): bool;
 
-  @gen_async("adjustVolumeByStep")
-  @gen_promise("adjustVolumeByStep")
   AdjustVolumeByStepSync(adjustType: VolumeAdjustType): void;
+  @static_overload("adjustVolumeByStep")
+  @async AdjustVolumeByStepWithCallback(adjustType: VolumeAdjustType): void;
+  @static_overload("adjustVolumeByStep")
+  @promise AdjustVolumeByStepReturnsPromise(adjustType: VolumeAdjustType): void;
 
-  @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
-  @!sts_inject_into_class("""on(type: string, callback: object): void {
-            if (type === "ringerModeChange") {
-              this.onRingerModeChange(callback as (data: AudioRingMode) => void);
-            } else if (type === "micStateChange") {
-              this.onMicStateChange(callback as (data: MicStateChangeEvent) => void);
-            }
-        }
-  """)
+  @static_overload("on")
+  OnRingerModeChange(type: String, callback: (data: AudioRingMode) => void): void;
+  @static_overload("on")
+  OnMicStateChange(type: String, callback: (data: MicStateChangeEvent) => void): void;
 
-  OnRingerModeChange(callback: (data: AudioRingMode) => void): void;
-  OnMicStateChange(callback: (data: MicStateChangeEvent) => void): void;
-
-  @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
-  @!sts_inject_into_class("""off(type: string, callback?: object): void {
-            if (type === "ringerModeChange") {
-              this.offRingerModeChange(callback as ((data: AudioRingMode) => void) | undefined);
-            } else if (type === "micStateChange") {
-              this.offMicStateChange(callback as ((data: MicStateChangeEvent) => void) | undefined);
-            }
-        }
-  """)
-
-  OffRingerModeChange(callback: Optional<(data: AudioRingMode) => void>): void;
-  OffMicStateChange(callback: Optional<(data: MicStateChangeEvent) => void>): void;
+  @static_overload("off")
+  OffRingerModeChange(type: String, callback: Optional<(data: AudioRingMode) => void>): void;
+  @static_overload("off")
+  OffMicStateChange(type: String, callback: Optional<(data: MicStateChangeEvent) => void>): void;
 
   IsVolumeUnadjustable(): bool;
 
@@ -789,17 +735,23 @@ interface TonePlayer {
   @gen_promise("load")
   LoadSync(type: ToneType): void;
 
-  @gen_async("release")
-  @gen_promise("release")
   ReleaseSync(): void;
+  @static_overload("release")
+  @async ReleaseWithCallback(): void;
+  @static_overload("release")
+  @promise ReleaseReturnsPromise(): void;
 
-  @gen_async("stop")
-  @gen_promise("stop")
   StopSync(): void;
+  @static_overload("stop")
+  @async StopWithCallback(): void;
+  @static_overload("stop")
+  @promise StopReturnsPromise(): void;
 
-  @gen_async("start")
-  @gen_promise("start")
   StartSync(): void;
+  @static_overload("start")
+  @async StartWithCallback(): void;
+  @static_overload("start")
+  @promise StartReturnsPromise(): void;
 }
 
 enum AudioConcurrencyMode: i32 {
@@ -831,23 +783,11 @@ interface AudioSessionManager {
 
   IsAudioSessionActivated(): bool;
 
-  @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
-  @!sts_inject_into_class("""on(type: string, callback: object): void {
-            if (type === "audioSessionDeactivated") {
-              this.onAudioSessionDeactivated(callback as (data: AudioSessionDeactivatedEvent) => void);
-            }
-        }
-  """)
-  OnAudioSessionDeactivated(callback: (data: AudioSessionDeactivatedEvent) => void): void;
+  @rename("on")
+  OnAudioSessionDeactivated(type: String, callback: (data: AudioSessionDeactivatedEvent) => void): void;
 
-  @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
-  @!sts_inject_into_class("""off(type: string, callback?: object): void {
-            if (type === "audioSessionDeactivated") {
-              this.offAudioSessionDeactivated(callback as ((data: AudioSessionDeactivatedEvent) => void) | undefined);
-            }
-        }
-  """)
-  OffAudioSessionDeactivated(callback: Optional<(data: AudioSessionDeactivatedEvent) => void>): void;
+  @rename("off")
+  OffAudioSessionDeactivated(type: String, callback: Optional<(data: AudioSessionDeactivatedEvent) => void>): void;
 }
 
 enum EffectFlag: i32 {
@@ -896,21 +836,29 @@ interface AudioCapturer {
 
   GetImplPtr(): i64;
 
-  @gen_async("start")
-  @gen_promise("start")
   StartSync(): void;
+  @static_overload("start")
+  @async StartWithCallback(): void;
+  @static_overload("start")
+  @promise StartReturnsPromise(): void;
 
-  @gen_async("stop")
-  @gen_promise("stop")
   StopSync(): void;
+  @static_overload("stop")
+  @async StopWithCallback(): void;
+  @static_overload("stop")
+  @promise StopReturnsPromise(): void;
 
-  @gen_async("release")
-  @gen_promise("release")
   ReleaseSync(): void;
+  @static_overload("release")
+  @async ReleaseWithCallback(): void;
+  @static_overload("release")
+  @promise ReleaseReturnsPromise(): void;
 
-  @gen_async("getBufferSize")
-  @gen_promise("getBufferSize")
   GetBufferSizeSync(): i64;
+  @static_overload("getBufferSize")
+  @async GetBufferSizeWithCallback(): i64;
+  @static_overload("getBufferSize")
+  @promise GetBufferSizeReturnsPromise(): i64;
 
   @gen_async("getCapturerInfo")
   @gen_promise("getCapturerInfo")
@@ -938,65 +886,35 @@ interface AudioCapturer {
 
   GetCurrentAudioCapturerChangeInfo(): AudioCapturerChangeInfo;
 
-  @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
-  @!sts_inject_into_class("""on(type: string, callback: object): void {
-            if (type === "stateChange") {
-              this.onStateChange(callback as (data: AudioState) => void);
-            } else if (type === "audioInterrupt") {
-              this.onAudioInterrupt(callback as (data: InterruptEvent) => void);
-            } else if (type === "inputDeviceChange") {
-              this.onInputDeviceChange(callback as (data: (AudioDeviceDescriptor[])) => void);
-            } else if (type === "audioCapturerChange") {
-              this.onAudioCapturerChange(callback as (data: AudioCapturerChangeInfo) => void);
-            } else if (type === "readData") {
-              this.onReadData(callback as (data: ArrayBuffer) => void);
-            }
-        }
-  """)
-  OnAudioInterrupt(callback: (data: InterruptEvent) => void): void;
-  OnStateChange(callback: (data: AudioState) => void): void;
-  OnInputDeviceChange(callback: (data: Array<AudioDeviceDescriptor>) => void): void;
-  OnAudioCapturerChange(callback: (data: AudioCapturerChangeInfo) => void): void;
-  OnReadData(callback: (data: @arraybuffer Array<u8>) => void): void;
+  @static_overload("on")
+  OnAudioInterrupt(type: String, callback: (data: InterruptEvent) => void): void;
+  @static_overload("on")
+  OnStateChange(type: String, callback: (data: AudioState) => void): void;
+  @static_overload("on")
+  OnInputDeviceChange(type: String, callback: (data: Array<AudioDeviceDescriptor>) => void): void;
+  @static_overload("on")
+  OnAudioCapturerChange(type: String, callback: (data: AudioCapturerChangeInfo) => void): void;
+  @static_overload("on")
+  OnReadData(type: String, callback: (data: @arraybuffer Array<u8>) => void): void;
+  @static_overload("on")
+  OnPeriodReach(type: String, frame: i64, callback: (data: i64) => void): void;
+  @static_overload("on")
+  OnMarkReach(type: String, frame: i64, callback: (data: i64) => void): void;
 
-  @!sts_inject_into_interface("on(type: string, frame: long, callback: (data: object) => void): void;")
-  @!sts_inject_into_class("""on(type: string, frame: long, callback: object): void {
-            if (type === "periodReach") {
-              this.onPeriodReach(frame, callback as (data: long) => void);
-            } else if (type === "markReach") {
-              this.onMarkReach(frame, callback as (data: long) => void);
-            }
-        }
-  """)
-  OnPeriodReach(frame: i64, callback: (data: i64) => void): void;
-  OnMarkReach(frame: i64, callback: (data: i64) => void): void;
-
-  @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
-  @!sts_inject_into_class("""off(type: string, callback?: object): void {
-            if (type === "stateChange") {
-              this.offStateChange(callback as (((data: AudioState) => void) | undefined));
-            } else if (type === "audioInterrupt") {
-              this.offAudioInterrupt(callback as (((data: InterruptEvent) => void) | undefined));
-            } else if (type === "inputDeviceChange") {
-              this.offInputDeviceChange(callback as (((data: (AudioDeviceDescriptor[])) => void) | undefined));
-            } else if (type === "audioCapturerChange") {
-              this.offAudioCapturerChange(callback as (((data: AudioCapturerChangeInfo) => void) | undefined));
-            } else if (type === "readData") {
-              this.offReadData(callback as (((data: ArrayBuffer) => void) | undefined));
-            } else if (type === "periodReach") {
-              this.offPeriodReach(callback as (((data: long) => void) | undefined));
-            } else if (type === "markReach") {
-              this.offMarkReach(callback as (((data: long) => void) | undefined));
-            }
-        }
-  """)
-  OffStateChange(callback: Optional<(data: AudioState) => void>): void;
-  OffAudioInterrupt(callback: Optional<(data: InterruptEvent) => void>): void;
-  OffInputDeviceChange(callback: Optional<(data:  Array<AudioDeviceDescriptor>) => void>): void;
-  OffAudioCapturerChange(callback: Optional<(data: AudioCapturerChangeInfo) => void>): void;
-  OffReadData(callback: Optional<(data: @arraybuffer Array<u8>) => void>): void;
-  OffPeriodReach(callback: Optional<(data: i64) => void>): void;
-  OffMarkReach(callback: Optional<(data: i64) => void>): void;
+  @static_overload("off")
+  OffStateChange(type: String, callback: Optional<(data: AudioState) => void>): void;
+  @static_overload("off")
+  OffAudioInterrupt(type: String, callback: Optional<(data: InterruptEvent) => void>): void;
+  @static_overload("off")
+  OffInputDeviceChange(type: String, callback: Optional<(data:  Array<AudioDeviceDescriptor>) => void>): void;
+  @static_overload("off")
+  OffAudioCapturerChange(type: String, callback: Optional<(data: AudioCapturerChangeInfo) => void>): void;
+  @static_overload("off")
+  OffReadData(type: String, callback: Optional<(data: @arraybuffer Array<u8>) => void>): void;
+  @static_overload("off")
+  OffPeriodReach(type: String, callback: Optional<(data: i64) => void>): void;
+  @static_overload("off")
+  OffMarkReach(type: String, callback: Optional<(data: i64) => void>): void;
 }
 
 enum AudioDataCallbackResult: i32 {
@@ -1032,9 +950,11 @@ interface AudioRenderer {
   @gen_promise("setAudioEffectMode")
   SetAudioEffectModeSync(mode: AudioEffectMode): void;
 
-  @gen_async("start")
-  @gen_promise("start")
   StartSync(): void;
+  @static_overload("start")
+  @async StartWithCallback(): void;
+  @static_overload("start")
+  @promise StartReturnsPromise(): void;
 
   @gen_async("getAudioTime")
   @gen_promise("getAudioTime")
@@ -1054,17 +974,23 @@ interface AudioRenderer {
   @gen_promise("pause")
   PauseSync(): void;
 
-  @gen_async("stop")
-  @gen_promise("stop")
   StopSync(): void;
+  @static_overload("stop")
+  @async StopWithCallback(): void;
+  @static_overload("stop")
+  @promise StopReturnsPromise(): void;
 
-  @gen_async("release")
-  @gen_promise("release")
   ReleaseSync(): void;
+  @static_overload("release")
+  @async ReleaseWithCallback(): void;
+  @static_overload("release")
+  @promise ReleaseReturnsPromise(): void;
 
-  @gen_async("getBufferSize")
-  @gen_promise("getBufferSize")
   GetBufferSizeSync(): i64;
+  @static_overload("getBufferSize")
+  @async GetBufferSizeWithCallback(): i64;
+  @static_overload("getBufferSize")
+  @promise GetBufferSizeReturnsPromise(): i64;
 
   SetSpeed(speed: f64): void;
 
@@ -1074,10 +1000,13 @@ interface AudioRenderer {
   @gen_promise("setInterruptMode")
   SetInterruptModeSync(mode: InterruptMode): void;
 
-  @gen_async("setVolume")
-  @gen_promise("setVolume")
   SetVolumeSync(volume: f64): void;
+  @static_overload("setVolume")
+  @async SetVolumeWithCallback(volume: f64): void;
+  @static_overload("setVolume")
+  @promise SetVolumeReturnsPromise(volume: f64): void;
 
+  @static_overload("getVolume")
   GetVolume(): f64;
 
   SetVolumeWithRamp(volume: f64, duration: i32): void;
@@ -1107,65 +1036,35 @@ interface AudioRenderer {
   @gen_promise("setDefaultOutputDevice")
   SetDefaultOutputDeviceSync(deviceType: DeviceType): void;
 
-  @!sts_inject_into_interface("on(type: string, callback: (data: object) => object): void;")
-  @!sts_inject_into_class("""on(type: string, callback: object): void {
-            if (type === "stateChange") {
-              this.onStateChange(callback as (data: AudioState) => void);
-            } else if (type === "audioInterrupt") {
-              this.onAudioInterrupt(callback as (data: InterruptEvent) => void);
-            } else if (type === "outputDeviceChange") {
-              this.onOutputDeviceChange(callback as (data: (AudioDeviceDescriptor[])) => void);
-            } else if (type === "outputDeviceChangeWithInfo") {
-              this.onOutputDeviceChangeWithInfo(callback as (data: AudioStreamDeviceChangeInfo) => void);
-            } else if (type === "writeData") {
-              this.onWriteData(callback as (data: ArrayBuffer) => AudioDataCallbackResult);
-            }
-        }
-  """)
-  OnAudioInterrupt(callback: (data: InterruptEvent) => void): void;
-  OnStateChange(callback: (data: AudioState) => void): void;
-  OnOutputDeviceChange(callback: (data: Array<AudioDeviceDescriptor>) => void): void;
-  OnOutputDeviceChangeWithInfo(callback: (data: AudioStreamDeviceChangeInfo) => void): void;
-  OnWriteData(callback: (data: @arraybuffer Array<u8>) => AudioDataCallbackResult): void;
+  @static_overload("on")
+  OnAudioInterrupt(type: String, callback: (data: InterruptEvent) => void): void;
+  @static_overload("on")
+  OnStateChange(type: String, callback: (data: AudioState) => void): void;
+  @static_overload("on")
+  OnOutputDeviceChange(type: String, callback: (data: Array<AudioDeviceDescriptor>) => void): void;
+  @static_overload("on")
+  OnOutputDeviceChangeWithInfo(type: String, callback: (data: AudioStreamDeviceChangeInfo) => void): void;
+  @static_overload("on")
+  OnWriteData(type: String, callback: (data: @arraybuffer Array<u8>) => AudioDataCallbackResult): void;
+  @static_overload("on")
+  OnPeriodReach(type: String, frame: i64, callback: (data: i64) => void): void;
+  @static_overload("on")
+  OnMarkReach(type: String, frame: i64, callback: (data: i64) => void): void;
 
-  @!sts_inject_into_interface("on(type: string, frame: long, callback: (data: object) => void): void;")
-  @!sts_inject_into_class("""on(type: string, frame: long, callback: object): void {
-            if (type === "periodReach") {
-              this.onPeriodReach(frame, callback as (data: long) => void);
-            } else if (type === "markReach") {
-              this.onMarkReach(frame, callback as (data: long) => void);
-            }
-        }
-  """)
-  OnPeriodReach(frame: i64, callback: (data: i64) => void): void;
-  OnMarkReach(frame: i64, callback: (data: i64) => void): void;
-
-  @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
-  @!sts_inject_into_class("""off(type: string, callback?: object): void {
-            if (type === "stateChange") {
-              this.offStateChange(callback as (((data: AudioState) => void) | undefined));
-            } else if (type === "audioInterrupt") {
-              this.offAudioInterrupt(callback as (((data: InterruptEvent) => void) | undefined));
-            } else if (type === "outputDeviceChange") {
-              this.offOutputDeviceChange(callback as (((data: (AudioDeviceDescriptor[])) => void) | undefined));
-            } else if (type === "outputDeviceChangeWithInfo") {
-              this.offOutputDeviceChangeWithInfo(callback as (((data: AudioStreamDeviceChangeInfo) => void) | undefined));
-            } else if (type === "periodReach") {
-              this.offPeriodReach(callback as (((data: long) => void) | undefined));
-            } else if (type === "markReach") {
-              this.offMarkReach(callback as (((data: long) => void) | undefined));
-            } else if (type === "writeData") {
-              this.offWriteData(callback as (((data: ArrayBuffer) => AudioDataCallbackResult) | undefined));
-            }
-        }
-  """)
-  OffAudioInterrupt(callback: Optional<(data: InterruptEvent) => void>): void;
-  OffStateChange(callback: Optional<(data: AudioState) => void>): void;
-  OffOutputDeviceChange(callback: Optional<(data:  Array<AudioDeviceDescriptor>) => void>): void;
-  OffOutputDeviceChangeWithInfo(callback: Optional<(data: AudioStreamDeviceChangeInfo) => void>): void;
-  OffPeriodReach(callback: Optional<(data: i64) => void>): void;
-  OffMarkReach(callback: Optional<(data: i64) => void>): void;
-  OffWriteData(callback: Optional<(data: @arraybuffer Array<u8>) => AudioDataCallbackResult>): void;
+  @static_overload("off")
+  OffAudioInterrupt(type: String, callback: Optional<(data: InterruptEvent) => void>): void;
+  @static_overload("off")
+  OffStateChange(type: String, callback: Optional<(data: AudioState) => void>): void;
+  @static_overload("off")
+  OffOutputDeviceChange(type: String, callback: Optional<(data:  Array<AudioDeviceDescriptor>) => void>): void;
+  @static_overload("off")
+  OffOutputDeviceChangeWithInfo(type: String, callback: Optional<(data: AudioStreamDeviceChangeInfo) => void>): void;
+  @static_overload("off")
+  OffPeriodReach(type: String, callback: Optional<(data: i64) => void>): void;
+  @static_overload("off")
+  OffMarkReach(type: String, callback: Optional<(data: i64) => void>): void;
+  @static_overload("off")
+  OffWriteData(type: String, callback: Optional<(data: @arraybuffer Array<u8>) => AudioDataCallbackResult>): void;
 }
 
 enum AudioEffectMode: i32 {
@@ -1250,9 +1149,11 @@ enum AudioChannelLayout: i64 {
 
 function GetAudioManager(): AudioManager;
 
-@gen_async("createAudioCapturer")
-@gen_promise("createAudioCapturer")
 function CreateAudioCapturerSync(options: AudioCapturerOptions): AudioCapturer;
+@static_overload("createAudioCapturer")
+@async function CreateAudioCapturerWithCallback(options: AudioCapturerOptions): AudioCapturer;
+@static_overload("createAudioCapturer")
+@promise function CreateAudioCapturerReturnsPromise(options: AudioCapturerOptions): AudioCapturer;
 
 @gen_async("createAudioRenderer")
 @gen_promise("createAudioRenderer")
@@ -1290,35 +1191,19 @@ interface AudioSpatializationManager {
   SetSpatializationSceneType(spatializationSceneType: AudioSpatializationSceneType): void;
   GetSpatializationSceneType(): AudioSpatializationSceneType;
 
-  @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
-  @!sts_inject_into_class("""on(type: string, callback: object): void {
-            if (type === "spatializationEnabledChangeForCurrentDevice") {
-              this.onSpatializationEnabledChangeForCurrentDevice(callback as (data: boolean) => void);
-            } else if (type === "spatializationEnabledChangeForAnyDevice") {
-              this.onSpatializationEnabledChangeForAnyDevice(callback as (data: AudioSpatialEnabledStateForDevice) => void);
-            } else if (type === "headTrackingEnabledChangeForAnyDevice") {
-              this.onHeadTrackingEnabledChangeForAnyDevice(callback as (data: AudioSpatialEnabledStateForDevice) => void);
-            }
-        }
-  """)
-  OnSpatializationEnabledChangeForCurrentDevice(callback: (data: bool) => void): void;
-  OnSpatializationEnabledChangeForAnyDevice(callback: (data: AudioSpatialEnabledStateForDevice) => void): void;
-  OnHeadTrackingEnabledChangeForAnyDevice(callback: (data: AudioSpatialEnabledStateForDevice) => void): void;
+  @static_overload("on")
+  OnSpatializationEnabledChangeForCurrentDevice(type: String, callback: (data: bool) => void): void;
+  @static_overload("on")
+  OnSpatializationEnabledChangeForAnyDevice(type: String, callback: (data: AudioSpatialEnabledStateForDevice) => void): void;
+  @static_overload("on")
+  OnHeadTrackingEnabledChangeForAnyDevice(type: String, callback: (data: AudioSpatialEnabledStateForDevice) => void): void;
 
-  @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
-  @!sts_inject_into_class("""off(type: string, callback?: object): void {
-            if (type === "spatializationEnabledChangeForCurrentDevice") {
-              this.offSpatializationEnabledChangeForCurrentDevice(callback as ((data: boolean) => void) | undefined);
-            } else if (type === "spatializationEnabledChangeForAnyDevice") {
-              this.offSpatializationEnabledChangeForAnyDevice(callback as ((data: AudioSpatialEnabledStateForDevice) => void) | undefined);
-            } else if (type === "headTrackingEnabledChangeForAnyDevice") {
-              this.offHeadTrackingEnabledChangeForAnyDevice(callback as ((data: AudioSpatialEnabledStateForDevice) => void) | undefined);
-            }
-        }
-  """)
-  OffSpatializationEnabledChangeForCurrentDevice(callback: Optional<(data: bool) => void>): void;
-  OffSpatializationEnabledChangeForAnyDevice(callback: Optional<(data: AudioSpatialEnabledStateForDevice) => void>): void;
-  OffHeadTrackingEnabledChangeForAnyDevice(callback: Optional<(data: AudioSpatialEnabledStateForDevice) => void>): void;
+  @static_overload("off")
+  OffSpatializationEnabledChangeForCurrentDevice(type: String, callback: Optional<(data: bool) => void>): void;
+  @static_overload("off")
+  OffSpatializationEnabledChangeForAnyDevice(type: String, callback: Optional<(data: AudioSpatialEnabledStateForDevice) => void>): void;
+  @static_overload("off")
+  OffHeadTrackingEnabledChangeForAnyDevice(type: String, callback: Optional<(data: AudioSpatialEnabledStateForDevice) => void>): void;
 }
 
 enum AsrNoiseSuppressionMode: i32 {

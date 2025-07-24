@@ -41,37 +41,66 @@ public:
     bool IsMicBlockDetectionSupportedSync();
 #endif
     array<AudioDeviceDescriptor> GetDevicesSync(DeviceFlag deviceFlag);
+    array<AudioDeviceDescriptor> GetDevicesWithCallback(DeviceFlag deviceFlag);
+    array<AudioDeviceDescriptor> GetDevicesReturnsPromise(DeviceFlag deviceFlag);
     array<AudioDeviceDescriptor> GetAvailableDevices(DeviceUsage usage);
     array<AudioDeviceDescriptor> GetExcludedDevices(DeviceUsage usage);
-    array<AudioDeviceDescriptor> GetPreferredOutputDeviceForRendererInfoSync(AudioRendererInfo const &rendererInfo);
-    array<AudioDeviceDescriptor> GetPreferredInputDeviceForCapturerInfoSync(AudioCapturerInfo const &capturerInfo);
+    array<AudioDeviceDescriptor> GetPreferredOutputDeviceForRendererInfoSync(
+        AudioRendererInfo const &rendererInfo);
+    array<AudioDeviceDescriptor> GetPreferOutputDeviceForRendererInfoWithCallback(
+        AudioRendererInfo const &rendererInfo);
+    array<AudioDeviceDescriptor> GetPreferOutputDeviceForRendererInfoReturnsPromise(
+        AudioRendererInfo const &rendererInfo);
+    array<AudioDeviceDescriptor> GetPreferredInputDeviceForCapturerInfoSync(
+        AudioCapturerInfo const &capturerInfo);
+    array<AudioDeviceDescriptor> GetPreferredInputDeviceForCapturerInfoWithCallback(
+        AudioCapturerInfo const &capturerInfo);
+    array<AudioDeviceDescriptor> GetPreferredInputDeviceForCapturerInfoReturnsPromise(
+        AudioCapturerInfo const &capturerInfo);
     void SelectOutputDeviceSync(array_view<AudioDeviceDescriptor> outputAudioDevices);
+    void SelectOutputDeviceWithCallback(array_view<AudioDeviceDescriptor> outputAudioDevices);
+    void SelectOutputDeviceReturnsPromise(array_view<AudioDeviceDescriptor> outputAudioDevices);
     void SelectOutputDeviceByFilterSync(AudioRendererFilter const &filter,
+        array_view<AudioDeviceDescriptor> outputAudioDevices);
+    void SelectOutputDeviceByFilterWithCallback(AudioRendererFilter const &filter,
+        array_view<AudioDeviceDescriptor> outputAudioDevices);
+    void SelectOutputDeviceByFilterReturnsPromise(AudioRendererFilter const &filter,
         array_view<AudioDeviceDescriptor> outputAudioDevices);
     array<AudioDeviceDescriptor> GetPreferredInputDeviceByFilter(AudioCapturerFilter const &filter);
     array<AudioDeviceDescriptor> GetPreferredOutputDeviceByFilter(AudioRendererFilter const &filter);
     void SelectInputDeviceByFilterSync(AudioCapturerFilter const &filter,
         array_view<AudioDeviceDescriptor> inputAudioDevices);
     void SelectInputDeviceSync(array_view<AudioDeviceDescriptor> inputAudioDevices);
+    void SelectInputDeviceWithCallback(array_view<AudioDeviceDescriptor> inputAudioDevices);
+    void SelectInputDeviceReturnsPromise(array_view<AudioDeviceDescriptor> inputAudioDevices);
     void SetCommunicationDeviceSync(CommunicationDeviceType deviceType, bool active);
     bool IsCommunicationDeviceActiveSync(CommunicationDeviceType deviceType);
     void ExcludeOutputDevicesSync(DeviceUsage usage, array_view<AudioDeviceDescriptor> devices);
     void UnexcludeOutputDevicesWithUsageAndDevices(DeviceUsage usage, array_view<AudioDeviceDescriptor> devices);
     void UnexcludeOutputDevicesWithUsage(DeviceUsage usage);
-    void OnPreferredInputDeviceChangeForCapturerInfo(AudioCapturerInfo const &capturerInfo,
+    void OnPreferredInputDeviceChangeForCapturerInfo(::taihe::string_view type,
+        AudioCapturerInfo const &capturerInfo,
         callback_view<void(array_view<AudioDeviceDescriptor>)> callback);
-    void OnMicBlockStatusChanged(callback_view<void(DeviceBlockStatusInfo const&)> callback);
-    void OnDeviceChange(DeviceFlag deviceFlag, callback_view<void(DeviceChangeAction const&)> callback);
-    void OnAvailableDeviceChange(DeviceUsage deviceUsage, callback_view<void(DeviceChangeAction const&)> callback);
-    void OnPreferOutputDeviceChangeForRendererInfo(AudioRendererInfo const &rendererInfo,
+    void OnMicBlockStatusChanged(::taihe::string_view type,
+        callback_view<void(DeviceBlockStatusInfo const&)> callback);
+    void OnDeviceChange(::taihe::string_view type,
+        DeviceFlag deviceFlag, callback_view<void(DeviceChangeAction const&)> callback);
+    void OnAvailableDeviceChange(::taihe::string_view type,
+        DeviceUsage deviceUsage, callback_view<void(DeviceChangeAction const&)> callback);
+    void OnPreferOutputDeviceChangeForRendererInfo(
+        ::taihe::string_view type,
+        AudioRendererInfo const &rendererInfo,
         callback_view<void(array_view<AudioDeviceDescriptor>)> callback);
-    void OffMicBlockStatusChanged(optional_view<callback<void(DeviceBlockStatusInfo const&)>> callback);
-    void OffAvailableDeviceChange(optional_view<callback<void(DeviceChangeAction const&)>> callback);
-    void OffPreferredInputDeviceChangeForCapturerInfo(optional_view<callback<void(array_view<AudioDeviceDescriptor>)>>
-        callback);
-    void OffPreferOutputDeviceChangeForRendererInfo(optional_view<callback<void(array_view<AudioDeviceDescriptor>)>>
-        callback);
-    void OffDeviceChange(optional_view<callback<void(DeviceChangeAction const&)>> callback);
+    void OffMicBlockStatusChanged(::taihe::string_view type,
+        optional_view<callback<void(DeviceBlockStatusInfo const&)>> callback);
+    void OffAvailableDeviceChange(::taihe::string_view type,
+        optional_view<callback<void(DeviceChangeAction const&)>> callback);
+    void OffPreferredInputDeviceChangeForCapturerInfo(::taihe::string_view type,
+        optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback);
+    void OffPreferOutputDeviceChangeForRendererInfo(::taihe::string_view type,
+        optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback);
+    void OffDeviceChange(::taihe::string_view type,
+        optional_view<callback<void(DeviceChangeAction const&)>> callback);
 
 private:
     static void RegisterDeviceChangeCallback(DeviceFlag deviceFlag, std::shared_ptr<uintptr_t> &callback,

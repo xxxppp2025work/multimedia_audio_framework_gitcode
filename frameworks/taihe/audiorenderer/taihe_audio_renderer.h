@@ -49,15 +49,25 @@ public:
     bool enqueued_ = false;
 
     void StartSync();
+    void StartWithCallback();
+    void StartReturnsPromise();
     int64_t GetAudioTimeSync();
     void DrainSync();
     void FlushSync();
     void PauseSync();
     void StopSync();
+    void StopWithCallback();
+    void StopReturnsPromise();
     void ReleaseSync();
+    void ReleaseWithCallback();
+    void ReleaseReturnsPromise();
     int64_t GetBufferSizeSync();
+    int64_t GetBufferSizeWithCallback();
+    int64_t GetBufferSizeReturnsPromise();
     int64_t GetAudioStreamIdSync();
     void SetVolumeSync(double volume);
+    void SetVolumeWithCallback(double volume);
+    void SetVolumeReturnsPromise(double volume);
     double GetVolume();
     AudioRendererInfo GetRendererInfoSync();
     AudioStreamInfo GetStreamInfoSync();
@@ -78,21 +88,30 @@ public:
     bool GetSilentModeAndMixWithOthers();
     void SetDefaultOutputDeviceSync(DeviceType deviceType);
 
-    void OnStateChange(callback_view<void(AudioState)> callback);
-    void OnAudioInterrupt(callback_view<void(InterruptEvent const&)> callback);
-    void OnPeriodReach(int64_t frame, callback_view<void(int64_t)> callback);
-    void OnMarkReach(int64_t frame, callback_view<void(int64_t)> callback);
-    void OnOutputDeviceChange(callback_view<void(array_view<AudioDeviceDescriptor>)> callback);
-    void OnOutputDeviceChangeWithInfo(callback_view<void(AudioStreamDeviceChangeInfo const&)> callback);
-    void OnWriteData(callback_view<AudioDataCallbackResult(array_view<uint8_t>)> callback);
+    void OnStateChange(::taihe::string_view type, callback_view<void(AudioState)> callback);
+    void OnAudioInterrupt(::taihe::string_view type,
+        callback_view<void(InterruptEvent const&)> callback);
+    void OnPeriodReach(::taihe::string_view type, int64_t frame, callback_view<void(int64_t)> callback);
+    void OnMarkReach(::taihe::string_view type, int64_t frame, callback_view<void(int64_t)> callback);
+    void OnOutputDeviceChange(::taihe::string_view type,
+        callback_view<void(array_view<AudioDeviceDescriptor>)> callback);
+    void OnOutputDeviceChangeWithInfo(::taihe::string_view type,
+        callback_view<void(AudioStreamDeviceChangeInfo const&)> callback);
+    void OnWriteData(::taihe::string_view type,
+        callback_view<AudioDataCallbackResult(array_view<uint8_t>)> callback);
 
-    void OffAudioInterrupt(optional_view<callback<void(InterruptEvent const&)>> callback);
-    void OffStateChange(optional_view<callback<void(AudioState)>> callback);
-    void OffOutputDeviceChange(optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback);
-    void OffOutputDeviceChangeWithInfo(optional_view<callback<void(AudioStreamDeviceChangeInfo const&)>> callback);
-    void OffPeriodReach(optional_view<callback<void(int64_t)>> callback);
-    void OffMarkReach(optional_view<callback<void(int64_t)>> callback);
-    void OffWriteData(optional_view<callback<AudioDataCallbackResult(array_view<uint8_t>)>> callback);
+    void OffAudioInterrupt(::taihe::string_view type,
+        optional_view<callback<void(InterruptEvent const&)>> callback);
+    void OffStateChange(::taihe::string_view type, optional_view<callback<void(AudioState)>> callback);
+    void OffOutputDeviceChange(::taihe::string_view type,
+        optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback);
+    void OffOutputDeviceChangeWithInfo(::taihe::string_view type,
+        optional_view<callback<void(AudioStreamDeviceChangeInfo const&)>> callback);
+    void OffPeriodReach(::taihe::string_view type,
+        optional_view<callback<void(int64_t)>> callback);
+    void OffMarkReach(::taihe::string_view type, optional_view<callback<void(int64_t)>> callback);
+    void OffWriteData(::taihe::string_view type,
+        optional_view<callback<AudioDataCallbackResult(array_view<uint8_t>)>> callback);
 
     void DestroyCallbacks();
     void DestroyTaiheCallbacks();

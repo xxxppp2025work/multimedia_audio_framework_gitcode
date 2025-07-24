@@ -36,13 +36,23 @@ public:
     static AudioStreamManager CreateStreamManagerWrapper();
 
     array<AudioRendererChangeInfo> GetCurrentAudioRendererInfoArraySync();
+    array<AudioRendererChangeInfo> GetCurrentAudioRendererInfoArrayWithCallback();
+    array<AudioRendererChangeInfo> GetCurrentAudioRendererInfoArrayReturnsPromise();
     array<AudioCapturerChangeInfo> GetCurrentAudioCapturerInfoArraySync();
+    array<AudioCapturerChangeInfo> GetCurrentAudioCapturerInfoArrayWithCallback();
+    array<AudioCapturerChangeInfo> GetCurrentAudioCapturerInfoArrayReturnsPromise();
     array<AudioEffectMode> GetAudioEffectInfoArraySync(StreamUsage usage);
     bool IsActiveSync(AudioVolumeType volumeType);
-    void OnAudioRendererChange(callback_view<void(array_view<AudioRendererChangeInfo>)> callback);
-    void OnAudioCapturerChange(callback_view<void(array_view<AudioCapturerChangeInfo>)> callback);
-    void OffAudioRendererChange(optional_view<callback<void(array_view<AudioRendererChangeInfo>)>> callback);
-    void OffAudioCapturerChange(optional_view<callback<void(array_view<AudioCapturerChangeInfo>)>> callback);
+    bool IsActiveWithCallback(AudioVolumeType volumeType);
+    bool IsActiveReturnsPromise(AudioVolumeType volumeType);
+    void OnAudioRendererChange(::taihe::string_view type,
+        callback_view<void(array_view<AudioRendererChangeInfo>)> callback);
+    void OnAudioCapturerChange(::taihe::string_view type,
+        callback_view<void(array_view<AudioCapturerChangeInfo>)> callback);
+    void OffAudioRendererChange(::taihe::string_view type,
+        optional_view<callback<void(array_view<AudioRendererChangeInfo>)>> callback);
+    void OffAudioCapturerChange(::taihe::string_view type,
+        optional_view<callback<void(array_view<AudioCapturerChangeInfo>)>> callback);
 
 private:
     static void RegisterRendererStateChangeCallback(std::shared_ptr<uintptr_t> &callback, const std::string &cbName,

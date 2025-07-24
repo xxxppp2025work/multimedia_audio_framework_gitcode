@@ -185,6 +185,18 @@ array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredOutputDeviceFo
     return TaiheParamUtils::SetDeviceDescriptors(outDeviceDescriptors);
 }
 
+array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferOutputDeviceForRendererInfoWithCallback(
+    AudioRendererInfo const &rendererInfo)
+{
+    return this->GetPreferredOutputDeviceForRendererInfoSync(rendererInfo);
+}
+
+array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferOutputDeviceForRendererInfoReturnsPromise(
+    AudioRendererInfo const &rendererInfo)
+{
+    return this->GetPreferredOutputDeviceForRendererInfoSync(rendererInfo);
+}
+
 array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredInputDeviceForCapturerInfoSync(
     AudioCapturerInfo const &capturerInfo)
 {
@@ -211,6 +223,18 @@ array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredInputDeviceFor
     return TaiheParamUtils::SetDeviceDescriptors(inDeviceDescriptors);
 }
 
+array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredInputDeviceForCapturerInfoWithCallback(
+    AudioCapturerInfo const &capturerInfo)
+{
+    return this->GetPreferredInputDeviceForCapturerInfoSync(capturerInfo);
+}
+
+array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredInputDeviceForCapturerInfoReturnsPromise(
+    AudioCapturerInfo const &capturerInfo)
+{
+    return this->GetPreferredInputDeviceForCapturerInfoSync(capturerInfo);
+}
+
 void AudioRoutingManagerImpl::SelectOutputDeviceSync(array_view<AudioDeviceDescriptor> outputAudioDevices)
 {
     std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> deviceDescriptors;
@@ -232,6 +256,16 @@ void AudioRoutingManagerImpl::SelectOutputDeviceSync(array_view<AudioDeviceDescr
     if (audioMngr_->SelectOutputDevice(deviceDescriptors) != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectOutputDevice failed");
     }
+}
+
+void AudioRoutingManagerImpl::SelectOutputDeviceWithCallback(array_view<AudioDeviceDescriptor> outputAudioDevices)
+{
+    return this->SelectOutputDeviceSync(outputAudioDevices);
+}
+
+void AudioRoutingManagerImpl::SelectOutputDeviceReturnsPromise(array_view<AudioDeviceDescriptor> outputAudioDevices)
+{
+    return this->SelectOutputDeviceSync(outputAudioDevices);
 }
 
 void AudioRoutingManagerImpl::SelectOutputDeviceByFilterSync(AudioRendererFilter const &filter,
@@ -259,6 +293,18 @@ void AudioRoutingManagerImpl::SelectOutputDeviceByFilterSync(AudioRendererFilter
     if (audioMngr_->SelectOutputDevice(audioRendererFilter, deviceDescriptors) != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectOutputDeviceByFilter failed");
     }
+}
+
+void AudioRoutingManagerImpl::SelectOutputDeviceByFilterWithCallback(AudioRendererFilter const &filter,
+    array_view<AudioDeviceDescriptor> outputAudioDevices)
+{
+    return this->SelectOutputDeviceByFilterSync(filter, outputAudioDevices);
+}
+
+void AudioRoutingManagerImpl::SelectOutputDeviceByFilterReturnsPromise(AudioRendererFilter const &filter,
+    array_view<AudioDeviceDescriptor> outputAudioDevices)
+{
+    return this->SelectOutputDeviceByFilterSync(filter, outputAudioDevices);
 }
 
 array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredInputDeviceByFilter(AudioCapturerFilter const &filter)
@@ -366,6 +412,16 @@ void AudioRoutingManagerImpl::SelectInputDeviceSync(array_view<AudioDeviceDescri
     }
 }
 
+void AudioRoutingManagerImpl::SelectInputDeviceWithCallback(array_view<AudioDeviceDescriptor> inputAudioDevices)
+{
+    return this->SelectInputDeviceSync(inputAudioDevices);
+}
+
+void AudioRoutingManagerImpl::SelectInputDeviceReturnsPromise(array_view<AudioDeviceDescriptor> inputAudioDevices)
+{
+    return this->SelectInputDeviceSync(inputAudioDevices);
+}
+
 array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetDevicesSync(DeviceFlag deviceFlag)
 {
     std::vector<AudioDeviceDescriptor> emptyResult;
@@ -388,6 +444,16 @@ array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetDevicesSync(DeviceFlag 
     std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> deviceDescriptors =
         audioMngr_->GetDevices(nativeFlag);
     return TaiheParamUtils::SetDeviceDescriptors(deviceDescriptors);
+}
+
+array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetDevicesWithCallback(DeviceFlag deviceFlag)
+{
+    return this->GetDevicesSync(deviceFlag);
+}
+
+array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetDevicesReturnsPromise(DeviceFlag deviceFlag)
+{
+    return this->GetDevicesSync(deviceFlag);
 }
 
 void AudioRoutingManagerImpl::SetCommunicationDeviceSync(CommunicationDeviceType deviceType, bool active)
@@ -433,7 +499,9 @@ bool AudioRoutingManagerImpl::IsCommunicationDeviceActiveSync(CommunicationDevic
     return isActive;
 }
 
-void AudioRoutingManagerImpl::OnPreferredInputDeviceChangeForCapturerInfo(AudioCapturerInfo const &capturerInfo,
+void AudioRoutingManagerImpl::OnPreferredInputDeviceChangeForCapturerInfo(
+    ::taihe::string_view type,
+    AudioCapturerInfo const &capturerInfo,
     callback_view<void(array_view<AudioDeviceDescriptor>)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
@@ -481,7 +549,7 @@ void AudioRoutingManagerImpl::AddPreferredInputDeviceChangeCallback(AudioRouting
 }
 
 void AudioRoutingManagerImpl::OffPreferredInputDeviceChangeForCapturerInfo(
-    optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback)
+    ::taihe::string_view type, optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -491,7 +559,7 @@ void AudioRoutingManagerImpl::OffPreferredInputDeviceChangeForCapturerInfo(
 }
 
 void AudioRoutingManagerImpl::OffPreferOutputDeviceChangeForRendererInfo(
-    optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback)
+    ::taihe::string_view type, optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -605,7 +673,8 @@ void AudioRoutingManagerImpl::RemoveAllPrefOutputDeviceChangeCallback(AudioRouti
     audioRoutingManagerImpl->preferredOutputDeviceCallbacks_.clear();
 }
 
-void AudioRoutingManagerImpl::OnMicBlockStatusChanged(callback_view<void(DeviceBlockStatusInfo const&)> callback)
+void AudioRoutingManagerImpl::OnMicBlockStatusChanged(::taihe::string_view type,
+    callback_view<void(DeviceBlockStatusInfo const&)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterMicrophoneBlockedCallback(cacheCallback, MICROPHONE_BLOCKED_CALLBACK_NAME, this);
@@ -635,7 +704,7 @@ void AudioRoutingManagerImpl::RegisterMicrophoneBlockedCallback(std::shared_ptr<
 }
 
 void AudioRoutingManagerImpl::OffMicBlockStatusChanged(
-    optional_view<callback<void(DeviceBlockStatusInfo const&)>> callback)
+    ::taihe::string_view type, optional_view<callback<void(DeviceBlockStatusInfo const&)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -673,7 +742,8 @@ void AudioRoutingManagerImpl::UnregisterMicrophoneBlockedCallback(std::shared_pt
     }
 }
 
-void AudioRoutingManagerImpl::OffDeviceChange(optional_view<callback<void(DeviceChangeAction const&)>> callback)
+void AudioRoutingManagerImpl::OffDeviceChange(::taihe::string_view type,
+    optional_view<callback<void(DeviceChangeAction const&)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -713,6 +783,7 @@ void AudioRoutingManagerImpl::UnregisterDeviceChangeCallback(std::shared_ptr<uin
 }
 
 void AudioRoutingManagerImpl::OffAvailableDeviceChange(
+    ::taihe::string_view type,
     optional_view<callback<void(DeviceChangeAction const&)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
@@ -752,14 +823,17 @@ void AudioRoutingManagerImpl::UnregisterAvailableDeviceChangeCallback(std::share
     }
 }
 
-void AudioRoutingManagerImpl::OnDeviceChange(DeviceFlag deviceFlag,
+void AudioRoutingManagerImpl::OnDeviceChange(::taihe::string_view type,
+    DeviceFlag deviceFlag,
     callback_view<void(DeviceChangeAction const&)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterDeviceChangeCallback(deviceFlag, cacheCallback, DEVICE_CHANGE_CALLBACK_NAME, this);
 }
 
-void AudioRoutingManagerImpl::OnAvailableDeviceChange(DeviceUsage deviceUsage,
+void AudioRoutingManagerImpl::OnAvailableDeviceChange(
+    ::taihe::string_view type,
+    DeviceUsage deviceUsage,
     callback_view<void(DeviceChangeAction const&)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
@@ -833,7 +907,8 @@ void AudioRoutingManagerImpl::RegisterAvaiableDeviceChangeCallback(DeviceUsage d
     cb->SaveRoutingAvailbleDeviceChangeCbRef(usage, callback);
 }
 
-void AudioRoutingManagerImpl::OnPreferOutputDeviceChangeForRendererInfo(AudioRendererInfo const &rendererInfo,
+void AudioRoutingManagerImpl::OnPreferOutputDeviceChangeForRendererInfo(::taihe::string_view type,
+    AudioRendererInfo const &rendererInfo,
     callback_view<void(array_view<AudioDeviceDescriptor>)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);

@@ -195,6 +195,16 @@ AudioVolumeGroupManager AudioVolumeManagerImpl::GetVolumeGroupManagerSync(int32_
     return AudioVolumeGroupManagerImpl::CreateAudioVolumeGroupManagerWrapper(groupId);
 }
 
+AudioVolumeGroupManager AudioVolumeManagerImpl::GetVolumeGroupManagerWithCallback(int32_t groupId)
+{
+    return this->GetVolumeGroupManagerSync(groupId);
+}
+
+AudioVolumeGroupManager AudioVolumeManagerImpl::GetVolumeGroupManagerReturnsPromise(int32_t groupId)
+{
+    return this->GetVolumeGroupManagerSync(groupId);
+}
+
 void AudioVolumeManagerImpl::RegisterCallback(std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl)
 {
@@ -364,13 +374,15 @@ void AudioVolumeManagerImpl::UnregisterSelfAppVolumeChangeCallback(std::shared_p
     }
 }
 
-void AudioVolumeManagerImpl::OnVolumeChange(callback_view<void(VolumeEvent const&)> callback)
+void AudioVolumeManagerImpl::OnVolumeChange(::taihe::string_view type,
+    callback_view<void(VolumeEvent const&)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterCallback(cacheCallback, VOLUME_KEY_EVENT_CALLBACK_NAME, this);
 }
 
-void AudioVolumeManagerImpl::OffVolumeChange(optional_view<callback<void(VolumeEvent const&)>> callback)
+void AudioVolumeManagerImpl::OffVolumeChange(::taihe::string_view type,
+    optional_view<callback<void(VolumeEvent const&)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -379,13 +391,16 @@ void AudioVolumeManagerImpl::OffVolumeChange(optional_view<callback<void(VolumeE
     UnregisterCallback(cacheCallback, this);
 }
 
-void AudioVolumeManagerImpl::OnAppVolumeChange(callback_view<void(VolumeEvent const&)> callback)
+void AudioVolumeManagerImpl::OnAppVolumeChange(::taihe::string_view type,
+    callback_view<void(VolumeEvent const&)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterSelfAppVolumeChangeCallback(cacheCallback, APP_VOLUME_CHANGE_CALLBACK_NAME, this);
 }
 
-void AudioVolumeManagerImpl::OffAppVolumeChange(optional_view<callback<void(VolumeEvent const&)>> callback)
+void AudioVolumeManagerImpl::OffAppVolumeChange(
+    ::taihe::string_view type,
+    optional_view<callback<void(VolumeEvent const&)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -394,13 +409,16 @@ void AudioVolumeManagerImpl::OffAppVolumeChange(optional_view<callback<void(Volu
     UnregisterSelfAppVolumeChangeCallback(cacheCallback, this);
 }
 
-void AudioVolumeManagerImpl::OnAppVolumeChangeForUid(int32_t uid, callback_view<void(VolumeEvent const&)> callback)
+void AudioVolumeManagerImpl::OnAppVolumeChangeForUid(::taihe::string_view type,
+    int32_t uid, callback_view<void(VolumeEvent const&)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterAppVolumeChangeForUidCallback(uid, cacheCallback, APP_VOLUME_CHANGE_CALLBACK_NAME_FOR_UID, this);
 }
 
-void AudioVolumeManagerImpl::OffAppVolumeChangeForUid(optional_view<callback<void(VolumeEvent const&)>> callback)
+void AudioVolumeManagerImpl::OffAppVolumeChangeForUid(
+    ::taihe::string_view type,
+    optional_view<callback<void(VolumeEvent const&)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {

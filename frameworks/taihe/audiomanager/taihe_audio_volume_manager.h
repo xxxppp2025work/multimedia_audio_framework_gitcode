@@ -40,12 +40,20 @@ public:
     int32_t GetAppVolumePercentageSync();
     void SetAppVolumePercentageSync(int32_t volume);
     AudioVolumeGroupManager GetVolumeGroupManagerSync(int32_t groupId);
-    void OnVolumeChange(callback_view<void(VolumeEvent const&)> callback);
-    void OnAppVolumeChangeForUid(int32_t uid, callback_view<void(VolumeEvent const&)> callback);
-    void OnAppVolumeChange(callback_view<void(VolumeEvent const&)> callback);
-    void OffVolumeChange(optional_view<callback<void(VolumeEvent const&)>> callback);
-    void OffAppVolumeChange(optional_view<callback<void(VolumeEvent const&)>> callback);
-    void OffAppVolumeChangeForUid(optional_view<callback<void(VolumeEvent const&)>> callback);
+    AudioVolumeGroupManager GetVolumeGroupManagerWithCallback(int32_t groupId);
+    AudioVolumeGroupManager GetVolumeGroupManagerReturnsPromise(int32_t groupId);
+    void OnVolumeChange(::taihe::string_view type,
+        callback_view<void(VolumeEvent const&)> callback);
+    void OnAppVolumeChangeForUid(::taihe::string_view type,
+        int32_t uid, callback_view<void(VolumeEvent const&)> callback);
+    void OnAppVolumeChange(::taihe::string_view type,
+        callback_view<void(VolumeEvent const&)> callback);
+    void OffVolumeChange(::taihe::string_view type,
+        optional_view<callback<void(VolumeEvent const&)>> callback);
+    void OffAppVolumeChange(::taihe::string_view type,
+        optional_view<callback<void(VolumeEvent const&)>> callback);
+    void OffAppVolumeChangeForUid(::taihe::string_view type,
+        optional_view<callback<void(VolumeEvent const&)>> callback);
 
 private:
     static void RegisterCallback(std::shared_ptr<uintptr_t> &callback,

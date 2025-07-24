@@ -83,6 +83,16 @@ void AudioVolumeGroupManagerImpl::SetVolumeSync(AudioVolumeType volumeType, int3
     return;
 }
 
+void AudioVolumeGroupManagerImpl::SetVolumeWithCallback(AudioVolumeType volumeType, int32_t volume)
+{
+    return this->SetVolumeSync(volumeType, volume);
+}
+
+void AudioVolumeGroupManagerImpl::SetVolumeReturnsPromise(AudioVolumeType volumeType, int32_t volume)
+{
+    return this->SetVolumeSync(volumeType, volume);
+}
+
 void AudioVolumeGroupManagerImpl::SetVolumeWithFlagSync(AudioVolumeType volumeType, int32_t volume, int32_t flags)
 {
     int32_t volType = volumeType.get_value();
@@ -133,6 +143,16 @@ int32_t AudioVolumeGroupManagerImpl::GetVolumeSync(AudioVolumeType volumeType)
     return volLevel;
 }
 
+int32_t AudioVolumeGroupManagerImpl::GetVolumeWithVolumeTypeCallback(AudioVolumeType volumeType)
+{
+    return this->GetVolumeSync(volumeType);
+}
+
+int32_t AudioVolumeGroupManagerImpl::GetVolumeWithVolumeTypeReturnsPromise(AudioVolumeType volumeType)
+{
+    return this->GetVolumeSync(volumeType);
+}
+
 int32_t AudioVolumeGroupManagerImpl::GetMinVolumeSync(AudioVolumeType volumeType)
 {
     int32_t volType = volumeType.get_value();
@@ -148,6 +168,16 @@ int32_t AudioVolumeGroupManagerImpl::GetMinVolumeSync(AudioVolumeType volumeType
     }
     volLevel = audioGroupMngr_->GetMinVolume(TaiheAudioEnum::GetNativeAudioVolumeType(volType));
     return volLevel;
+}
+
+int32_t AudioVolumeGroupManagerImpl::GetMinVolumeWithCallback(AudioVolumeType volumeType)
+{
+    return this->GetMinVolumeSync(volumeType);
+}
+
+int32_t AudioVolumeGroupManagerImpl::GetMinVolumeReturnsPromise(AudioVolumeType volumeType)
+{
+    return this->GetMinVolumeSync(volumeType);
 }
 
 int32_t AudioVolumeGroupManagerImpl::GetMaxVolumeSync(AudioVolumeType volumeType)
@@ -167,6 +197,16 @@ int32_t AudioVolumeGroupManagerImpl::GetMaxVolumeSync(AudioVolumeType volumeType
     return volLevel;
 }
 
+int32_t AudioVolumeGroupManagerImpl::GetMaxVolumeWithCallback(AudioVolumeType volumeType)
+{
+    return this->GetMaxVolumeSync(volumeType);
+}
+
+int32_t AudioVolumeGroupManagerImpl::GetMaxVolumeReturnsPromise(AudioVolumeType volumeType)
+{
+    return this->GetMaxVolumeSync(volumeType);
+}
+
 void AudioVolumeGroupManagerImpl::MuteSync(AudioVolumeType volumeType, bool mute)
 {
     int32_t volType = volumeType.get_value();
@@ -182,6 +222,16 @@ void AudioVolumeGroupManagerImpl::MuteSync(AudioVolumeType volumeType, bool mute
     CHECK_AND_RETURN_RET(ret == OHOS::AudioStandard::SUCCESS, TaiheAudioError::ThrowErrorAndReturn(
         TAIHE_ERR_SYSTEM, "setmute failed"));
     return;
+}
+
+void AudioVolumeGroupManagerImpl::MuteWithCallback(AudioVolumeType volumeType, bool mute)
+{
+    return this->MuteSync(volumeType, mute);
+}
+
+void AudioVolumeGroupManagerImpl::MuteReturnsPromise(AudioVolumeType volumeType, bool mute)
+{
+    return this->MuteSync(volumeType, mute);
 }
 
 bool AudioVolumeGroupManagerImpl::IsMuteSync(AudioVolumeType volumeType)
@@ -203,6 +253,16 @@ bool AudioVolumeGroupManagerImpl::IsMuteSync(AudioVolumeType volumeType)
     return isMute;
 }
 
+bool AudioVolumeGroupManagerImpl::IsMuteWithCallback(AudioVolumeType volumeType)
+{
+    return this->IsMuteSync(volumeType);
+}
+
+bool AudioVolumeGroupManagerImpl::IsMuteReturnsPromise(AudioVolumeType volumeType)
+{
+    return this->IsMuteSync(volumeType);
+}
+
 void AudioVolumeGroupManagerImpl::SetRingerModeSync(AudioRingMode mode)
 {
     int32_t ringMode = mode.get_value();
@@ -220,6 +280,16 @@ void AudioVolumeGroupManagerImpl::SetRingerModeSync(AudioRingMode mode)
     return;
 }
 
+void AudioVolumeGroupManagerImpl::SetRingerModeWithCallback(AudioRingMode mode)
+{
+    return this->SetRingerModeSync(mode);
+}
+
+void AudioVolumeGroupManagerImpl::SetRingerModeReturnsPromise(AudioRingMode mode)
+{
+    return this->SetRingerModeSync(mode);
+}
+
 AudioRingMode AudioVolumeGroupManagerImpl::GetRingerModeSync()
 {
     OHOS::AudioStandard::AudioRingerMode ringerMode = OHOS::AudioStandard::AudioRingerMode::RINGER_MODE_NORMAL;
@@ -229,6 +299,16 @@ AudioRingMode AudioVolumeGroupManagerImpl::GetRingerModeSync()
     }
     ringerMode = audioGroupMngr_->GetRingerMode();
     return TaiheAudioEnum::ToTaiheAudioRingMode(ringerMode);
+}
+
+AudioRingMode AudioVolumeGroupManagerImpl::GetRingerModeWithCallback()
+{
+    return this->GetRingerModeSync();
+}
+
+AudioRingMode AudioVolumeGroupManagerImpl::GetRingerModeReturnsPromise()
+{
+    return this->GetRingerModeSync();
 }
 
 void AudioVolumeGroupManagerImpl::SetMicMuteSync(bool mute)
@@ -299,6 +379,16 @@ bool AudioVolumeGroupManagerImpl::IsMicrophoneMuteSync()
     return audioGroupMngr_->IsMicrophoneMute();
 }
 
+bool AudioVolumeGroupManagerImpl::IsMicrophoneMuteWithCallback()
+{
+    return this->IsMicrophoneMuteSync();
+}
+
+bool AudioVolumeGroupManagerImpl::IsMicrophoneMuteReturnsPromise()
+{
+    return this->IsMicrophoneMuteSync();
+}
+
 void AudioVolumeGroupManagerImpl::AdjustVolumeByStepSync(VolumeAdjustType adjustType)
 {
     int32_t adjustTypeInt32 = adjustType.get_value();
@@ -325,7 +415,18 @@ void AudioVolumeGroupManagerImpl::AdjustVolumeByStepSync(VolumeAdjustType adjust
     return;
 }
 
-void AudioVolumeGroupManagerImpl::OnRingerModeChange(callback_view<void(AudioRingMode)> callback)
+void AudioVolumeGroupManagerImpl::AdjustVolumeByStepWithCallback(VolumeAdjustType adjustType)
+{
+    return this->AdjustVolumeByStepSync(adjustType);
+}
+
+void AudioVolumeGroupManagerImpl::AdjustVolumeByStepReturnsPromise(VolumeAdjustType adjustType)
+{
+    return this->AdjustVolumeByStepSync(adjustType);
+}
+
+void AudioVolumeGroupManagerImpl::OnRingerModeChange(::taihe::string_view type,
+    callback_view<void(AudioRingMode)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterRingModeCallback(cacheCallback, RINGERMODE_CALLBACK_NAME, this);
@@ -351,7 +452,8 @@ void AudioVolumeGroupManagerImpl::RegisterRingModeCallback(std::shared_ptr<uintp
     cb->SaveCallbackReference(cbName, callback);
 }
 
-void AudioVolumeGroupManagerImpl::OffRingerModeChange(optional_view<callback<void(AudioRingMode)>> callback)
+void AudioVolumeGroupManagerImpl::OffRingerModeChange(::taihe::string_view type,
+    optional_view<callback<void(AudioRingMode)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -385,7 +487,8 @@ void AudioVolumeGroupManagerImpl::UnregisterRingerModeCallback(std::shared_ptr<u
     AUDIO_INFO_LOG("UnregisterRingerModeCallback success");
 }
 
-void AudioVolumeGroupManagerImpl::OnMicStateChange(callback_view<void(MicStateChangeEvent const&)> callback)
+void AudioVolumeGroupManagerImpl::OnMicStateChange(::taihe::string_view type,
+    callback_view<void(MicStateChangeEvent const&)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterMicStateChangeCallback(cacheCallback, MIC_STATE_CHANGE_CALLBACK_NAME, this);
@@ -419,7 +522,8 @@ void AudioVolumeGroupManagerImpl::RegisterMicStateChangeCallback(std::shared_ptr
     AUDIO_DEBUG_LOG("On SetMicStateChangeCallback is successful");
 }
 
-void AudioVolumeGroupManagerImpl::OffMicStateChange(optional_view<callback<void(MicStateChangeEvent const&)>> callback)
+void AudioVolumeGroupManagerImpl::OffMicStateChange(::taihe::string_view type,
+    optional_view<callback<void(MicStateChangeEvent const&)>> callback)
 {
     CHECK_AND_RETURN_RET_LOG(audioGroupMngr_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
         TAIHE_ERR_NO_MEMORY), "audioGroupMngr_ is nullptr");

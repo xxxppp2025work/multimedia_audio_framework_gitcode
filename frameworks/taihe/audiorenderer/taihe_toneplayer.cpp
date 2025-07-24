@@ -81,6 +81,16 @@ void TonePlayerImpl::ReleaseSync()
     }
 }
 
+void TonePlayerImpl::ReleaseWithCallback()
+{
+    return this->ReleaseSync();
+}
+
+void TonePlayerImpl::ReleaseReturnsPromise()
+{
+    return this->ReleaseSync();
+}
+
 void TonePlayerImpl::StopSync()
 {
     CHECK_AND_RETURN_LOG(tonePlayer_ != nullptr, "tonePlayer_ is null.");
@@ -90,6 +100,16 @@ void TonePlayerImpl::StopSync()
     }
 }
 
+void TonePlayerImpl::StopWithCallback()
+{
+    return this->StopSync();
+}
+
+void TonePlayerImpl::StopReturnsPromise()
+{
+    return this->StopSync();
+}
+
 void TonePlayerImpl::StartSync()
 {
     CHECK_AND_RETURN_LOG(tonePlayer_ != nullptr, "tonePlayer_ is null.");
@@ -97,6 +117,16 @@ void TonePlayerImpl::StartSync()
     if (!isTrue) {
         TaiheAudioError::ThrowError(TAIHE_ERR_SYSTEM);
     }
+}
+
+void TonePlayerImpl::StartWithCallback()
+{
+    return this->StartSync();
+}
+
+void TonePlayerImpl::StartReturnsPromise()
+{
+    return this->StartSync();
 }
 
 TonePlayer CreateTonePlayerSync(AudioRendererInfo const &options)
