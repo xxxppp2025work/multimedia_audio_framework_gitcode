@@ -90,8 +90,7 @@ public:
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;
     int32_t OffloadSetVolume(float volume, const std::string &deviceClass, const std::string &networkId) override;
-    int32_t SetAudioScene(int32_t audioScene, const std::vector<int32_t> &activeOutputDevices,
-        int32_t activeInputDevice, int32_t a2dpOffloadFlag, bool scoExcludeFlag) override;
+    int32_t SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, bool scoExcludeFlag) override;
     static void *paDaemonThread(void *arg);
     int32_t SetExtraParameters(const std::string& key,
         const std::vector<StringPair>& kvpairs) override;
