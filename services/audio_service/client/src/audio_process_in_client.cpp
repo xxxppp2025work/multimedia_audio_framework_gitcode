@@ -56,7 +56,7 @@ static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volum
 static const int64_t DELAY_RESYNC_TIME = 10000000000; // 10s
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
-static constexpr int64_t FAST_WRITE_CACHE_TIMEOUT_IN_MS = 5; // 5ms
+static constexpr int64_t FAST_WRITE_CACHE_TIMEOUT_IN_MS = 50; // 50ms
 static const uint32_t FAST_WAIT_FOR_NEXT_CB_US = 2500; // 2.5ms
 static const uint32_t VOIP_WAIT_FOR_NEXT_CB_US = 10000; // 10ms
 }
@@ -1233,6 +1233,8 @@ int32_t AudioProcessInClientInner::Pause(bool isFlush)
     startFadeout_.store(false);
     streamStatus_->store(StreamStatus::STREAM_PAUSED);
 
+    FutexTool::FutexWake(audioBuffer_->GetFutex());
+
     lastPausedTime_ = ClockTime::GetCurNano();
 
     return SUCCESS;
@@ -1311,6 +1313,9 @@ int32_t AudioProcessInClientInner::Stop(AudioProcessStage stage)
     }
     startFadeout_.store(false);
     streamStatus_->store(StreamStatus::STREAM_STOPPED);
+
+    FutexTool::FutexWake(audioBuffer_->GetFutex());
+
     AUDIO_INFO_LOG("Success stop proc client mode %{public}d form %{public}s.",
         processConfig_.audioMode, GetStatusInfo(oldStatus).c_str());
     return SUCCESS;
@@ -1324,6 +1329,7 @@ void AudioProcessInClientInner::JoinCallbackLoop()
         isCallbackLoopEnd_ = true; // change it with lock to break the loop
         threadStatusCV_.notify_all();
         lock.unlock(); // should call unlock before join
+        FutexTool::FutexWake(audioBuffer_->GetFutex(), IS_PRE_EXIT);
         callbackLoop_.join();
     }
 }
@@ -1354,6 +1360,9 @@ int32_t AudioProcessInClientInner::Release(bool isSwitchStream)
     }
 
     streamStatus_->store(StreamStatus::STREAM_RELEASED);
+
+    FutexTool::FutexWake(audioBuffer_->GetFutex());
+
     AUDIO_INFO_LOG("Success release proc client mode %{public}d.", processConfig_.audioMode);
     isInited_ = false;
 
