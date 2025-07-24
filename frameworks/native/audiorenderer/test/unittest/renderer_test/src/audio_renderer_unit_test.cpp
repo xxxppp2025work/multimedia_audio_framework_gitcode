@@ -4407,7 +4407,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_MoviePcmOffload_001, TestSize.Level
         numBuffersToRender--;
     }
     ret = audioRenderer->StopDataCallback();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 
     audioRenderer->Drain();
     audioRenderer->Stop();

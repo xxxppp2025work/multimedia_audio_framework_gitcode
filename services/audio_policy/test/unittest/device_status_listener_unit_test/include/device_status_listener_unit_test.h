@@ -23,6 +23,14 @@
 namespace OHOS {
 namespace AudioStandard {
 
+class IStandardAudioAnahsManagerListenerTest : public IStandardAudioAnahsManagerListener {
+public:
+    sptr<OHOS::IRemoteObject> AsObject() override { return nullptr; }
+
+    ErrCode OnExtPnpDeviceStatusChanged(const std::string& anahsStatus,
+        const std::string& anahsShowType) override { return 0; };
+};
+
 class DeviceStatusListenerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
