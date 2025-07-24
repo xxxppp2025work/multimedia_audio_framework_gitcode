@@ -245,7 +245,7 @@ static void SetAudioSceneForAllSource(AudioScene audioScene)
 #endif
     std::shared_ptr<IAudioCaptureSource> a2dpInSource = GetSourceByProp(HDI_ID_TYPE_BLUETOOTH);
     if (a2dpInSource != nullptr && a2dpInSource->IsInited()) {
-        a2dpInSource->SetAudioScene(audioScene, activeInputDevice);
+        a2dpInSource->SetAudioScene(audioScene);
     }
 }
 
