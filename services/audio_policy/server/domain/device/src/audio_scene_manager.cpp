@@ -78,17 +78,6 @@ bool AudioSceneManager::CheckVoiceCallActive(int32_t sessionId) const
 
 int32_t AudioSceneManager::SetAudioSceneAfter(AudioScene audioScene, BluetoothOffloadState state)
 {
-    std::vector<DeviceType> activeOutputDevices;
-    // mute primary when play media and ring
-    if (activeOutputDevices.size() > 1 && streamCollector_.IsMediaPlaying()) {
-        audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, MEDIA_TO_RING_MUTE_DURATION_TIME_US, true);
-        // Wait for the audio data in the cache to be drained before moving the stream
-        // Increase the delay time for the headset device
-        DeviceType mainDeviceType = activeOutputDevices.front();
-        if (mainDeviceType == DEVICE_TYPE_USB_HEADSET || mainDeviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
-            usleep(HEADSET_SWITCH_DELAY_US); // sleep fix data cache pop.
-        }
-    }
     return AudioServerProxy::GetInstance().SetAudioSceneProxy(audioScene, state);
 }
 

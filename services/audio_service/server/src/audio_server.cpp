@@ -229,7 +229,7 @@ static void SetAudioSceneForAllSource(AudioScene audioScene)
     if (accSource != nullptr && accSource->IsInited()) {
         accSource->SetAudioScene(audioScene);
     }
-    std::shared_ptr<IAudioCaptureSource> primarySource = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY);
+    std::shared_ptr<IAudioCaptureSource> primarySource = GetSourceByProp(HDI_ID_TYPE_PRIMARY);
     if (primarySource != nullptr && primarySource->IsInited()) {
         primarySource->SetAudioScene(audioScene);
     }
@@ -1240,7 +1240,8 @@ int32_t AudioServer::OffloadSetVolume(float volume, const std::string &deviceCla
 
 int32_t AudioServer::SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, bool scoExcludeFlag)
 {
-    AUDIO_INFO_LOG("Scene: %{public}d, scoExcludeFlag: %{public}d", audioScene, scoExcludeFlag);
+    AUDIO_INFO_LOG("Scene: %{public}d, a2dpOffloadFlag: %{public}d, scoExcludeFlag: %{public}d",
+        audioScene, a2dpOffloadFlag, scoExcludeFlag);
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
@@ -1254,7 +1255,6 @@ int32_t AudioServer::SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadS
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
     AudioXCollie audioXCollie("AudioServer::SetAudioScene", TIME_OUT_SECONDS,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    // primarySink->ResetActiveDeviceForDisconnect(DEVICE_TYPE_NONE);
 
     SetAudioSceneForAllSource(audioScene);
     SetAudioSceneForAllSink(audioScene);
@@ -1304,26 +1304,13 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
 
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
     if (flag == DeviceFlag::INPUT_DEVICES_FLAG) {
-        if (audioScene_ != AUDIO_SCENE_DEFAULT) {
-            SetAudioSceneForAllSource(source, audioScene_);
-        } else {
-            UpdateDeviceForAllSource(source, type);
-        }
+        UpdateDeviceForAllSource(source, type);
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
-        if (audioScene_ != AUDIO_SCENE_DEFAULT) {
-            sink->SetAudioScene(audioScene_, deviceTypes);
-        } else {
-            sink->UpdateActiveDevice(deviceTypes);
-        }
+        sink->UpdateActiveDevice(deviceTypes);
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
-        if (audioScene_ != AUDIO_SCENE_DEFAULT) {
-            SetAudioSceneForAllSource(source, audioScene_);
-            sink->SetAudioScene(audioScene_, deviceTypes);
-        } else {
-            UpdateDeviceForAllSource(source, type);
-            sink->UpdateActiveDevice(deviceTypes);
-        }
+        UpdateDeviceForAllSource(source, type);
+        sink->UpdateActiveDevice(deviceTypes);
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
     } else {
         AUDIO_ERR_LOG("SetIORoutes invalid device flag");
