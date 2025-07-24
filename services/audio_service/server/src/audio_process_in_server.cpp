@@ -841,6 +841,7 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
         }
 
         processBuffer_->SetRestoreInfo(restoreInfo);
+        audioServerBuffer_->WakeFutex();
     }
     return restoreStatus;
 }
