@@ -19,12 +19,12 @@
 
 #include <cinttypes>
 #include "audio_errors.h"
-#include "audio_engine_log.h"
 #include "hpae_render_effect_node.h"
 #include "hpae_pcm_buffer.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_effect_map.h"
 #include "audio_utils.h"
+#include "audio_engine_log.h"
 
 static constexpr uint32_t DEFUALT_EFFECT_RATE = 48000;
 static constexpr uint32_t DEFAULT_EFFECT_FRAMELEN = 960;
@@ -67,6 +67,12 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
             "HpaeRenderEffectNodeDirect_id_" + std::to_string(GetNodeId()) + "_scene_" + sceneType_ + ".pcm");
         collaborativePcmDumper_ = std::make_unique<HpaePcmDumper>(
             "HpaeRenderEffectNodeCollaborative_id_" + std::to_string(GetNodeId()) + "_scene_" + sceneType_ + ".pcm");
+    }
+#endif
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeRenderEffectNode");
     }
 #endif
 }

@@ -1419,5 +1419,109 @@ HWTEST_F(AudioVolumeUnitTest, GetSimpleBufferAvg_002, TestSize.Level1)
     auto ret = GetSimpleBufferAvg(&buffer, length);
     EXPECT_EQ(ret, 1);
 }
+/**
+ * @tc.name  : Test GetCurVolume_001 API
+ * @tc.type  : FUNC
+ * @tc.number: GetCurVolume_001
+ * @tc.desc  : Test GetCurVolume_001 interface
+ */
+HWTEST_F(AudioVolumeUnitTest, GetCurVolume_001, TestSize.Level1)
+{
+    uint32_t sessionId = 1;
+    const char *deviceClass = "device";
+    struct VolumeValues volumes;
+    float result = GetCurVolume(sessionId, nullptr, deviceClass, &volumes);
+    EXPECT_FLOAT_EQ(result, 1.0f);
+
+    const char *streamType = "stream";
+    result = GetCurVolume(sessionId, streamType, nullptr, &volumes);
+    EXPECT_FLOAT_EQ(result, 1.0f);
+}
+
+/**
+ * @tc.name  : Test GetCurVolume_002 API
+ * @tc.type  : FUNC
+ * @tc.number: GetCurVolume_002
+ * @tc.desc  : Test GetCurVolume_002 interface
+ */
+HWTEST_F(AudioVolumeUnitTest, GetStopFadeoutState_003, TestSize.Level1)
+{
+    uint32_t streamIndex = -1;
+    float result = GetStopFadeoutState(streamIndex);
+    EXPECT_EQ(result, INVALID_STATE);
+
+    streamIndex = 1;
+    result = GetStopFadeoutState(streamIndex);
+    EXPECT_EQ(result, INVALID_STATE);
+}
+
+/**
+ * @tc.name  : Test GetCurVolume_002 API
+ * @tc.type  : FUNC
+ * @tc.number: GetCurVolume_002
+ * @tc.desc  : Test GetCurVolume_002 interface
+ */
+HWTEST_F(AudioVolumeUnitTest, GetFadeStrategy_003, TestSize.Level1)
+{
+    uint64_t DURATION_TIME_DEFAULT = 40;
+    uint64_t DURATION_TIME_SHORT = 10;
+    uint64_t DURATION_INIT = 0;
+    EXPECT_EQ(FADE_STRATEGY_DEFAULT, GetFadeStrategy(DURATION_INIT));
+    EXPECT_EQ(FADE_STRATEGY_DEFAULT, GetFadeStrategy(DURATION_TIME_DEFAULT + 1));
+    EXPECT_EQ(FADE_STRATEGY_NONE, GetFadeStrategy(DURATION_TIME_SHORT));
+    EXPECT_EQ(FADE_STRATEGY_NONE, GetFadeStrategy(DURATION_INIT + 1));
+    EXPECT_EQ(FADE_STRATEGY_SHORTER, GetFadeStrategy(DURATION_TIME_SHORT + 1));
+    EXPECT_EQ(FADE_STRATEGY_SHORTER, GetFadeStrategy(DURATION_TIME_DEFAULT - 1));
+    EXPECT_EQ(FADE_STRATEGY_SHORTER, GetFadeStrategy(DURATION_TIME_DEFAULT));
+}
+
+/**
+ * @tc.name  : Test SetAppVolumeMute API
+ * @tc.type  : FUNC
+ * @tc.number: SetAppVolumeMute_007
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetAppVolumeMute_007, TestSize.Level1)
+{
+    bool isMuted = true;
+    int32_t appuid = 123;
+    ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
+    AudioVolume::GetInstance()->SetAppVolumeMute(appuid, isMuted);
+
+    isMuted = false;
+    AudioVolume::GetInstance()->SetAppVolumeMute(appuid, isMuted);
+
+    appuid = -1;
+    AudioVolume::GetInstance()->SetAppVolumeMute(appuid, isMuted);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadType_001
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetOffloadType_001, TestSize.Level1)
+{
+    uint32_t streamIndex = 1;
+    int32_t offloadType = OFFLOAD_ACTIVE_BACKGROUND;
+    AudioVolume::GetInstance()->SetOffloadType(streamIndex, offloadType);
+    int32_t getFadeoutState = AudioVolume::GetInstance()->GetFadeoutState(streamIndex);
+    EXPECT_EQ(getFadeoutState, offloadType);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadType_002
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetOffloadType_002, TestSize.Level1)
+{
+    uint32_t streamIndex = 1;
+    AudioVolume::GetInstance()->offloadType_.clear();
+    uint32_t ret = AudioVolume::GetInstance()->GetFadeoutState(streamIndex);
+    EXPECT_EQ(ret, OFFLOAD_DEFAULT);
+}
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS

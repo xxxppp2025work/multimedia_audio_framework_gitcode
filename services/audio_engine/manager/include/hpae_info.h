@@ -93,9 +93,11 @@ struct HpaeStreamInfo {
     SourceType sourceType;
     int32_t uid = -1;
     int32_t pid = 0;
+    int32_t tokenId = 0;
     HpaeEffectInfo effectInfo;
     std::string deviceName;
     bool isMoveAble = true;
+    AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
 };
 
 struct HpaeSinkInfo {
@@ -121,6 +123,7 @@ struct HpaeSinkInfo {
     uint32_t fixedLatency = 0;
     uint32_t sinkLatency = 0;
     std::string splitMode;
+    bool needEmptyChunk = true;
 };
 
 enum HpaeEcType {

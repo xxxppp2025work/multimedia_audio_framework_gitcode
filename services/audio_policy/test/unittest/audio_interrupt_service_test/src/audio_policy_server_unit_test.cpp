@@ -242,26 +242,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_006, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_007
-* @tc.desc  : Test ReconfigureAudioChannel.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_007, TestSize.Level1)
-{
-    #ifdef AUDIO_BUILD_VARIANT_ROOT
-    #undef AUDIO_BUILD_VARIANT_ROOT
-    #endif
-    auto policyServerTest = GetPolicyServerUnitTest();
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
-    uint32_t count = 2;
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_DEFAULT;
-    int32_t result = server->ReconfigureAudioChannel(count, deviceType);
-    EXPECT_NE(result, ERR_PERMISSION_DENIED);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_008
 * @tc.desc  : Test ArgInfoDump.
 */
@@ -1262,6 +1242,88 @@ HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_002, TestSize.Level1
     EXPECT_NE(ptrAudioDeviceDescriptor, nullptr);
     ptrAudioPolicyServer->audioDeviceManager_.connectedDevices_.push_back(ptrAudioDeviceDescriptor);
     ptrAudioPolicyServer->MapExternalToInternalDeviceType(desc);
+}
+
+/**
+* @tc.name  : Test MapExternalToInternalDeviceType.
+* @tc.number: MapExternalToInternalDeviceType_003
+* @tc.desc  : Test MapExternalToInternalDeviceType
+*/
+HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_003, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+    AudioDeviceDescriptor desc;
+
+    desc.deviceType_ == DEVICE_TYPE_NEARLINK;
+    desc.deviceRole_ == INPUT_DEVICE;
+    server->MapExternalToInternalDeviceType(desc);
+    EXPECT_EQ(desc.deviceType_, DEVICE_TYPE_NEARLINK_IN);
+
+    desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc.deviceRole_ == INPUT_DEVICE;
+    server->MapExternalToInternalDeviceType(desc);
+    EXPECT_EQ(desc.deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP_IN);
+}
+
+/**
+* @tc.name  : Test SetNearlinkDeviceVolume.
+* @tc.number: SetNearlinkDeviceVolume_001
+* @tc.desc  : Test SetNearlinkDeviceVolume
+*/
+HWTEST_F(AudioPolicyUnitTest, SetNearlinkDeviceVolume_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+    
+    std::string macAddress = "LocalDevice";
+    int32_t streamTypeIn = 1;
+    int32_t volume = 0;
+    bool updateUi =true;
+
+    int32_t ret = server->SetNearlinkDeviceVolume(macAddress, streamTypeIn, volume, updateUi);
+
+
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+}
+
+/**
+* @tc.name  : Test UpdateDeviceInfo.
+* @tc.number: UpdateDeviceInfo_001
+* @tc.desc  : Test UpdateDeviceInfo.
+*/
+HWTEST(AudioPolicyUnitTest, UpdateDeviceInfo_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc =
+        std::make_shared<AudioDeviceDescriptor>();
+    int32_t command = 1;
+
+    int32_t ret = server->UpdateDeviceInfo(deviceDesc, command);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
+}
+
+/**
+* @tc.name  : Test SetSleAudioOperationCallback.
+* @tc.number: SetSleAudioOperationCallback_001
+* @tc.desc  : Test SetSleAudioOperationCallback.
+*/
+HWTEST(AudioPolicyUnitTest, SetSleAudioOperationCallback_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    sptr<IRemoteObject> objectct = nullptr;
+
+    int32_t ret = server->SetSleAudioOperationCallback(objectct);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    sptr<IRemoteObject> object = new RemoteObjectTestStub();
+
+    ret = server->SetSleAudioOperationCallback(objectct);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 }
 
 /**
@@ -3356,6 +3418,92 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_168, TestSize.Level1)
 
     int32_t result = server->ActivatePreemptMode();
     EXPECT_EQ(result, ERROR);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer
+ * @tc.number: IsStreamActiveByStreamUsage_001
+ * @tc.desc  : AudioPolicyServer::IsStreamActiveByStreamUsage
+ */
+HWTEST(AudioPolicyUnitTest, IsStreamActiveByStreamUsage_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t streamUsage = static_cast<int32_t>(StreamUsage::STREAM_USAGE_MUSIC);
+    bool isStreamActive = true;
+
+    int32_t ret = server->IsStreamActiveByStreamUsage(streamUsage, isStreamActive);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer
+ * @tc.number: GetVolumeInDbByStream_001
+ * @tc.desc  : AudioPolicyServer::GetVolumeInDbByStream
+ */
+HWTEST(AudioPolicyUnitTest, GetVolumeInDbByStream_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t streamUsage = static_cast<int32_t>(StreamUsage::STREAM_USAGE_MUSIC);
+    int32_t volLevel = 5;
+    int32_t deviceType = static_cast<int32_t>(DeviceType::DEVICE_TYPE_SPEAKER);
+    float volDb = 0;
+
+    int32_t ret = server->GetVolumeInDbByStream(streamUsage, volLevel, deviceType, volDb);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer
+ * @tc.number: GetSupportedAudioVolumeTypes_001
+ * @tc.desc  : AudioPolicyServer::GetSupportedAudioVolumeTypes
+ */
+HWTEST(AudioPolicyUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    std::vector<int32_t> audioVolumeTypes = {};
+
+    int32_t ret = server->GetSupportedAudioVolumeTypes(audioVolumeTypes);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer
+ * @tc.number: GetAudioVolumeTypeByStreamUsage_001
+ * @tc.desc  : AudioPolicyServer::GetAudioVolumeTypeByStreamUsage
+ */
+HWTEST(AudioPolicyUnitTest, GetAudioVolumeTypeByStreamUsage_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t streamUsage = static_cast<int32_t>(StreamUsage::STREAM_USAGE_MUSIC);
+    int32_t audioVolumeType = static_cast<int32_t>(AudioVolumeType::STREAM_DEFAULT);
+
+    int32_t ret = server->GetAudioVolumeTypeByStreamUsage(streamUsage, audioVolumeType);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer
+ * @tc.number: GetStreamUsagesByVolumeType_001
+ * @tc.desc  : AudioPolicyServer::GetStreamUsagesByVolumeType
+ */
+HWTEST(AudioPolicyUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t volType = static_cast<int32_t>(AudioVolumeType::STREAM_MUSIC);
+    std::vector<int32_t> streamUsages = {};
+
+    int32_t ret = server->GetStreamUsagesByVolumeType(volType, streamUsages);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // AudioStandard
 } // OHOS

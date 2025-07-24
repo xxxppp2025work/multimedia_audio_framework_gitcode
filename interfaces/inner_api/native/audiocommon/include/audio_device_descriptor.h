@@ -105,6 +105,8 @@ public:
 
     std::string GetDeviceTypeString();
 
+    std::string GetKey();
+
     struct AudioDeviceDescriptorHash {
         size_t operator()(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const
         {
@@ -157,6 +159,7 @@ public:
     std::list<DeviceStreamInfo> audioStreamInfo_;
     DeviceCategory deviceCategory_ = CATEGORY_DEFAULT;
     ConnectState connectState_ = CONNECTED;
+    DeviceUsage deviceUsage_ = ALL_USAGE;
     // AudioDeviceDescriptor
     bool exceptionFlag_ = false;
     int64_t connectTimeStamp_ = 0;

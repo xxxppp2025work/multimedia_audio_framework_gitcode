@@ -58,11 +58,12 @@ namespace {
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
-    constexpr int32_t DEFAULT_SPAN_SIZE = 1;
+    constexpr int32_t DEFAULT_SPAN_SIZE = 2;
     constexpr size_t MSEC_PER_SEC = 1000;
     const int32_t DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
-    const int32_t DUP_COMMON_LEN = 400; // 400 -> 400ms
+    const int32_t DUP_COMMON_LEN = 440; // 400 -> 440ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
+    const int32_t DUP_RECOVERY_AUTISHAKE_BUFFER_COUNT = 2; // 2 -> 2 frames -> 40ms
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -369,7 +370,7 @@ void RendererInServer::ReConfigDupStreamCallback()
         return;
     }
     dupTotalSizeInFrame_ = dupTotalSizeInFrameTemp_;
-    
+    std::lock_guard<std::mutex> lock(dupMutex_);
     for (auto it = innerCapIdToDupStreamCallbackMap_.begin(); it != innerCapIdToDupStreamCallbackMap_.end(); ++it) {
         if (captureInfos_[(*it).first].dupStream != nullptr && (*it).second != nullptr &&
             (*it).second->GetDupRingBuffer() != nullptr) {
@@ -788,9 +789,12 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
 
 void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
 {
-    // for inner capture
-    for (auto &capInfo : captureInfos_) {
-        InnerCaptureOtherStream(bufferDesc, capInfo.second, capInfo.first);
+    {
+        // for inner capture
+        std::lock_guard<std::mutex> captureLock(dupMutex_);
+        for (auto &capInfo : captureInfos_) {
+            InnerCaptureOtherStream(bufferDesc, capInfo.second, capInfo.first);
+        }
     }
     // for dual tone
     if (isDualToneEnabled_) {
@@ -831,7 +835,6 @@ void RendererInServer::InnerCaptureOtherStream(const BufferDesc &bufferDesc, Cap
 {
     if (captureInfo.isInnerCapEnabled) {
         Trace traceDup("RendererInServer::WriteData DupSteam write");
-        std::lock_guard<std::mutex> lock(dupMutex_);
         if (captureInfo.dupStream != nullptr) {
             InnerCaptureEnqueueBuffer(bufferDesc, captureInfo, innerCapId);
         }
@@ -1018,7 +1021,7 @@ int32_t RendererInServer::StartInner()
     enterStandbyTime_ = 0;
 
     dualToneStreamInStart();
-    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(streamIndex_);
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(streamIndex_, processConfig_.appInfo.appTokenId);
     return SUCCESS;
 }
 
@@ -1092,13 +1095,13 @@ int32_t RendererInServer::Pause()
             //Since there was no lock protection before the last time it was awarded dualToneStream_ it was
             //modified elsewhere, it was decided again after the lock was awarded.
             dualToneStream_->Pause();
-            dualToneStream_->SetAudioEffectMode(effectModeWhenDual_);
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE, isStandbyTmp);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
+    AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(streamIndex_);
     return SUCCESS;
 }
 
@@ -1192,7 +1195,7 @@ int32_t RendererInServer::Drain(bool stopFlag)
     }
     DrainAudioBuffer();
     drainedTime_ = ClockTime::GetCurNano();
-    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(streamIndex_);
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(streamIndex_, processConfig_.appInfo.appTokenId);
     int ret = stream_->Drain(stopFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Drain stream failed, reason: %{public}d", ret);
     {
@@ -1268,13 +1271,13 @@ int32_t RendererInServer::StopInner()
             //Since there was no lock protection before the last time it was awarded dualToneStream_ it was
             //modified elsewhere, it was decided again after the lock was awarded.
             dualToneStream_->Stop();
-            dualToneStream_->SetAudioEffectMode(effectModeWhenDual_);
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP, false);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
+    AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(streamIndex_);
     return SUCCESS;
 }
 
@@ -1314,18 +1317,22 @@ int32_t RendererInServer::Release(bool isSwitchStream)
         HandleOperationStopped(RENDERER_STAGE_STOP_BY_RELEASE);
     }
     status_ = I_STATUS_RELEASED;
-    {
-        std::lock_guard<std::mutex> lock(dupMutex_);
-        for (auto &capInfo : captureInfos_) {
-            if (capInfo.second.isInnerCapEnabled) {
-                DisableInnerCap(capInfo.first);
-            }
-        }
-        captureInfos_.clear();
-    }
+    DisableAllInnerCap();
     if (isDualToneEnabled_) {
         DisableDualTone();
     }
+    return SUCCESS;
+}
+
+int32_t RendererInServer::DisableAllInnerCap()
+{
+    std::lock_guard<std::mutex> lock(dupMutex_);
+    for (auto &capInfo : captureInfos_) {
+        if (capInfo.second.isInnerCapEnabled) {
+            DisableInnerCapHandle(capInfo.first);
+        }
+    }
+    captureInfos_.clear();
     return SUCCESS;
 }
 
@@ -1383,10 +1390,13 @@ int32_t RendererInServer::SetLowPowerVolume(float volume)
 
     lowPowerVolume_ = volume;
     AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(streamIndex_, volume);
-    for (auto &capInfo : captureInfos_) {
-        if (capInfo.second.isInnerCapEnabled) {
-            AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(
-                capInfo.second.dupStream->GetStreamIndex(), volume);
+    {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        for (auto &capInfo : captureInfos_) {
+            if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
+                AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(
+                    capInfo.second.dupStream->GetStreamIndex(), volume);
+            }
         }
     }
     if (isDualToneEnabled_) {
@@ -1431,10 +1441,6 @@ int32_t RendererInServer::GetPrivacyType(int32_t &privacyType)
 int32_t RendererInServer::EnableInnerCap(int32_t innerCapId)
 {
     // in plan
-    if (captureInfos_.count(innerCapId) && captureInfos_[innerCapId].isInnerCapEnabled) {
-        AUDIO_INFO_LOG("InnerCap is already enabled,id:%{public}d", innerCapId);
-        return SUCCESS;
-    }
     int32_t ret = InitDupStream(innerCapId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed");
     return SUCCESS;
@@ -1442,10 +1448,16 @@ int32_t RendererInServer::EnableInnerCap(int32_t innerCapId)
 
 int32_t RendererInServer::DisableInnerCap(int32_t innerCapId)
 {
+    std::lock_guard<std::mutex> lock(dupMutex_);
     if (!captureInfos_.count(innerCapId) || !captureInfos_[innerCapId].isInnerCapEnabled) {
         AUDIO_WARNING_LOG("InnerCap is already disabled.capId:%{public}d", innerCapId);
         return ERR_INVALID_OPERATION;
     }
+    return DisableInnerCapHandle(innerCapId);
+}
+
+int32_t RendererInServer::DisableInnerCapHandle(int32_t innerCapId)
+{
     captureInfos_[innerCapId].isInnerCapEnabled = false;
     AUDIO_INFO_LOG("Disable dup renderer %{public}u with status: %{public}d", streamIndex_, status_.load());
     // in plan: call stop?
@@ -1464,9 +1476,13 @@ int32_t RendererInServer::DisableInnerCap(int32_t innerCapId)
 
 int32_t RendererInServer::InitDupStream(int32_t innerCapId)
 {
-    AUDIO_INFO_LOG("InitDupStream for innerCapId：%{public}d", innerCapId);
-    Trace trace(traceTag_ + "InitDupStream innerCapId：" + std::to_string(innerCapId));
+    AUDIO_INFO_LOG("InitDupStream for innerCapId:%{public}d", innerCapId);
+    Trace trace(traceTag_ + "InitDupStream innerCapId:" + std::to_string(innerCapId));
     std::lock_guard<std::mutex> lock(dupMutex_);
+    if (captureInfos_.count(innerCapId) && captureInfos_[innerCapId].isInnerCapEnabled) {
+        AUDIO_INFO_LOG("InnerCap is already enabled,id:%{public}d", innerCapId);
+        return SUCCESS;
+    }
     auto &capInfo = captureInfos_[innerCapId];
     AudioProcessConfig dupConfig = processConfig_;
     dupConfig.innerCapId = innerCapId;
@@ -1493,18 +1509,7 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
 
     AUDIO_INFO_LOG("Dup Renderer %{public}u with status: %{public}d", streamIndex_, status_.load());
     capInfo.isInnerCapEnabled = true;
-
-    if (audioServerBuffer_ != nullptr) {
-        float clientVolume = audioServerBuffer_->GetStreamVolume();
-        float duckFactor = audioServerBuffer_->GetDuckFactor();
-        bool isMuted = (isMuted_ || silentModeAndMixWithOthers_ || muteFlag_);
-        // If some factors are not needed, remove them.
-        AudioVolume::GetInstance()->SetStreamVolume(dupStreamIndex, clientVolume);
-        AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(dupStreamIndex, duckFactor);
-        AudioVolume::GetInstance()->SetStreamVolumeMute(dupStreamIndex, isMuted);
-        AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(dupStreamIndex, lowPowerVolume_);
-    }
-
+    InitDupStreamVolume(dupStreamIndex);
     capInfo.dupStream->SetLoudnessGain(loudnessGain_);
 
     if (status_ == I_STATUS_STARTED) {
@@ -1514,6 +1519,21 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
         if (offloadEnable_) {
             renderEmptyCountForInnerCap_ = OFFLOAD_INNER_CAP_PREBUF;
         }
+    }
+    return SUCCESS;
+}
+
+int32_t RendererInServer::InitDupStreamVolume(uint32_t dupStreamIndex)
+{
+    if (audioServerBuffer_ != nullptr) {
+        float clientVolume = audioServerBuffer_->GetStreamVolume();
+        float duckFactor = audioServerBuffer_->GetDuckFactor();
+        bool isMuted = (isMuted_ || silentModeAndMixWithOthers_ || muteFlag_);
+        // If some factors are not needed, remove them.
+        AudioVolume::GetInstance()->SetStreamVolume(dupStreamIndex, clientVolume);
+        AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(dupStreamIndex, duckFactor);
+        AudioVolume::GetInstance()->SetStreamVolumeMute(dupStreamIndex, isMuted);
+        AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(dupStreamIndex, lowPowerVolume_);
     }
     return SUCCESS;
 }
@@ -1632,9 +1652,18 @@ int32_t StreamCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
         OptResult result = dupBuffer->GetReadableSize();
         CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
             "dupBuffer get readable size failed, size is:%{public}zu", result.size);
-        CHECK_AND_RETURN_RET_LOG((result.size != 0) && (result.size >= requestDataLen), ERROR,
-            "Readable size is invaild, result.size:%{public}zu, requstDataLen:%{public}zu",
-            result.size, requestDataLen);
+        if (result.size == 0 || result.size < requestDataLen) {
+            recoveryAntiShakeBufferCount_ = DUP_RECOVERY_AUTISHAKE_BUFFER_COUNT;
+            AUDIO_INFO_LOG("Readable size is invaild, result.size:%{public}zu, requstDataLen:%{public}zu",
+                result.size, requestDataLen);
+            return ERROR;
+        }
+        if (recoveryAntiShakeBufferCount_ > 0) {
+            recoveryAntiShakeBufferCount_--;
+            AUDIO_INFO_LOG("need recovery data anti-shake, no onWriteData, recoveryAntiShakeBufferCount_: %{public}d",
+                recoveryAntiShakeBufferCount_);
+            return ERROR;
+        }
         AUDIO_DEBUG_LOG("requstDataLen is:%{public}zu readSize is:%{public}zu", requestDataLen, result.size);
         result = dupBuffer->Dequeue({reinterpret_cast<uint8_t *>(inputData), requestDataLen});
         CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "dupBuffer dequeue failed");
@@ -1758,13 +1787,15 @@ bool RendererInServer::IsHighResolution() const noexcept
 int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_ = on;
-    AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", on);
     bool isMuted = (isMuted_ || on || muteFlag_);
     AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, isMuted);
-    for (auto &capInfo : captureInfos_) {
-        if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
-            AudioVolume::GetInstance()->SetStreamVolumeMute(
-                capInfo.second.dupStream->GetStreamIndex(), isMuted);
+    {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        for (auto &capInfo : captureInfos_) {
+            if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
+                AudioVolume::GetInstance()->SetStreamVolumeMute(
+                    capInfo.second.dupStream->GetStreamIndex(), isMuted);
+            }
         }
     }
     if (isDualToneEnabled_) {
@@ -1792,10 +1823,13 @@ int32_t RendererInServer::SetClientVolume()
     int32_t ret = stream_->SetClientVolume(clientVolume);
     SetStreamVolumeInfoForEnhanceChain();
     AudioVolume::GetInstance()->SetStreamVolume(streamIndex_, clientVolume);
-    for (auto &capInfo : captureInfos_) {
-        if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
-            AudioVolume::GetInstance()->SetStreamVolume(
-                capInfo.second.dupStream->GetStreamIndex(), clientVolume);
+    {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        for (auto &capInfo : captureInfos_) {
+            if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
+                AudioVolume::GetInstance()->SetStreamVolume(
+                    capInfo.second.dupStream->GetStreamIndex(), clientVolume);
+            }
         }
     }
     if (isDualToneEnabled_) {
@@ -1815,9 +1849,12 @@ int32_t RendererInServer::SetLoudnessGain(float loudnessGain)
     loudnessGain_ = loudnessGain;
     int32_t ret = stream_->SetLoudnessGain(loudnessGain);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "setloudnessGain failed");
-    for (auto &capInfo : captureInfos_) {
-        if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
-            ret += capInfo.second.dupStream->SetLoudnessGain(loudnessGain);
+    {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        for (auto &capInfo : captureInfos_) {
+            if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
+                ret += capInfo.second.dupStream->SetLoudnessGain(loudnessGain);
+            }
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "setloudnessGain failed during capture, error: %{public}d", ret);
@@ -1830,10 +1867,13 @@ int32_t RendererInServer::SetMute(bool isMute)
     AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", isMute);
     bool isMuted = (isMute || silentModeAndMixWithOthers_ || muteFlag_);
     AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, isMuted);
-    for (auto &capInfo : captureInfos_) {
-        if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
-            AudioVolume::GetInstance()->SetStreamVolumeMute(
-                capInfo.second.dupStream->GetStreamIndex(), isMuted);
+    {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        for (auto &capInfo : captureInfos_) {
+            if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
+                AudioVolume::GetInstance()->SetStreamVolumeMute(
+                    capInfo.second.dupStream->GetStreamIndex(), isMuted);
+            }
         }
     }
     if (isDualToneEnabled_) {
@@ -1859,10 +1899,13 @@ int32_t RendererInServer::SetDuckFactor(float duckFactor)
         static_cast<uint32_t>(AdjustStreamVolume::DUCK_VOLUME_INFO));
 
     AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(streamIndex_, duckFactor);
-    for (auto &capInfo : captureInfos_) {
-        if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
-            AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(
-                capInfo.second.dupStream->GetStreamIndex(), duckFactor);
+    {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        for (auto &capInfo : captureInfos_) {
+            if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
+                AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(
+                    capInfo.second.dupStream->GetStreamIndex(), duckFactor);
+            }
         }
     }
     if (isDualToneEnabled_) {
@@ -2009,10 +2052,13 @@ void RendererInServer::SetNonInterruptMute(const bool muteFlag)
 
     bool isMuted = (isMuted_ || silentModeAndMixWithOthers_ || muteFlag);
     AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, isMuted);
-    for (auto &captureInfo : captureInfos_) {
-        if (captureInfo.second.isInnerCapEnabled && captureInfo.second.dupStream != nullptr) {
-            AudioVolume::GetInstance()->SetStreamVolumeMute(
-                captureInfo.second.dupStream->GetStreamIndex(), isMuted);
+    {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        for (auto &captureInfo : captureInfos_) {
+            if (captureInfo.second.isInnerCapEnabled && captureInfo.second.dupStream != nullptr) {
+                AudioVolume::GetInstance()->SetStreamVolumeMute(
+                    captureInfo.second.dupStream->GetStreamIndex(), isMuted);
+            }
         }
     }
     if (isDualToneEnabled_) {

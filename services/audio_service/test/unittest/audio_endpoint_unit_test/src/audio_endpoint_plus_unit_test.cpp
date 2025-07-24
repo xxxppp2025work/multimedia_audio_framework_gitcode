@@ -103,9 +103,11 @@ void AudioEndpointPlusUnitTest::TearDown(void)
 
 static const size_t BIGNUMBER = 2808348670;
 static const size_t NUMFIVE = 5;
+#ifdef SUPPORT_OLD_ENGINE
 static constexpr uint32_t MORE_SESSIONID = MAX_STREAMID + 1;
 static const int32_t CAPTURER_FLAG = 10;
 static const uint32_t SESSIONID = 123456;
+#endif
 
 constexpr int32_t DEFAULT_STREAM_ID = 10;
 
@@ -1104,6 +1106,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_036, TestSize.Level1)
  * @tc.desc  : Test AudioEndpointInner::ProcessToDupStream()
  */
 #ifdef HAS_FEATURE_INNERCAPTURER
+#ifdef SUPPORT_OLD_ENGINE
 HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_037, TestSize.Level1)
 {
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
@@ -1148,6 +1151,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_037, TestSize.Level1)
     AudioSystemManager::GetInstance()->ReleaseCaptureLimit(1);
     EXPECT_EQ(dstStreamData.bufferDesc.bufLength, audioDataList[0].bufferDesc.bufLength);
 }
+#endif
 #endif
 /*
  * @tc.name  : Test AudioEndpointInner API
@@ -1587,6 +1591,34 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_058, TestSize.Level1)
     audioEndpointInner->deviceInfo_.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
     audioEndpointInner->fastRenderId_ = HDI_INVALID_ID;
     bool ret = audioEndpointInner->GetDeviceHandleInfo(frames, nanoTime);
+    EXPECT_EQ(ret, false);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointInner_059
+ * @tc.desc  : Test AudioEndpointInner::IsBufferDataInsufficient()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_059, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    bool ret = audioEndpointInner->IsBufferDataInsufficient(0, 1);
+    EXPECT_EQ(ret, true);
+
+    ret = audioEndpointInner->IsBufferDataInsufficient(1, 1);
+    EXPECT_EQ(ret, false);
+
+    ret = audioEndpointInner->IsBufferDataInsufficient(-1, 1);
+    EXPECT_EQ(ret, false);
+
+    ret = audioEndpointInner->IsBufferDataInsufficient(ERROR, std::numeric_limits<int32_t>::max());
     EXPECT_EQ(ret, false);
 }
 } // namespace AudioStandard

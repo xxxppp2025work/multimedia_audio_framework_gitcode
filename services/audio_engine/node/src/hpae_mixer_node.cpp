@@ -15,12 +15,14 @@
 #ifndef LOG_TAG
 #define LOG_TAG "HpaeMixerNode"
 #endif
+
 #include <iostream>
 #include "hpae_mixer_node.h"
 #include "hpae_pcm_buffer.h"
 #include "audio_utils.h"
 #include "cinttypes"
 #include "audio_errors.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -37,6 +39,12 @@ HpaeMixerNode::HpaeMixerNode(HpaeNodeInfo &nodeInfo)
     mixedOutput_(pcmBufferInfo_), tmpOutput_(pcmBufferInfo_)
 {
     mixedOutput_.SetSplitStreamType(nodeInfo.GetSplitStreamType());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeMixerNode");
+    }
+#endif
 }
 
 bool HpaeMixerNode::Reset()

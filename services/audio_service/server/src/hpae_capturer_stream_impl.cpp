@@ -19,12 +19,12 @@
 #include "safe_map.h"
 #include "hpae_capturer_stream_impl.h"
 #include "audio_errors.h"
-#include "audio_capturer_log.h"
 #include "audio_utils.h"
 #include "policy_handler.h"
 #include <iostream>
 #include <cinttypes>
 #include "i_hpae_manager.h"
+#include "audio_engine_log.h"
 using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
 namespace AudioStandard {
@@ -67,8 +67,10 @@ int32_t HpaeCapturerStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.sourceType = processConfig_.capturerInfo.sourceType;
     streamInfo.uid = processConfig_.appInfo.appUid;
     streamInfo.pid = processConfig_.appInfo.appPid;
+    streamInfo.tokenId = processConfig_.appInfo.appTokenId;
     streamInfo.deviceName = deviceName;
     streamInfo.isMoveAble = true;
+    streamInfo.privacyType = processConfig_.privacyType;
     auto &hpaeManager = IHpaeManager::GetHpaeManager();
     int32_t ret = hpaeManager.CreateStream(streamInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR_INVALID_PARAM, "CreateStream is error");

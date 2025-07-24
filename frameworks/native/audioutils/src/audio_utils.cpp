@@ -146,7 +146,7 @@ static std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_NAME_MAP = {
     {STREAM_VOICE_CALL_ASSISTANT, "VOICE_CALL_ASSISTANT"},
 };
 
-static std::unordered_map<DeviceType, std::string> DEVICE_TYPE_NAME_MAP = {
+static const std::unordered_map<DeviceType, std::string> DEVICE_TYPE_NAME_MAP = {
     {DEVICE_TYPE_EARPIECE, "EARPIECE"},
     {DEVICE_TYPE_SPEAKER, "SPEAKER"},
     {DEVICE_TYPE_WIRED_HEADSET, "WIRED_HEADSET"},
@@ -502,7 +502,7 @@ bool PermissionUtil::VerifyIsSystemApp()
     bool tmp = Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
     CHECK_AND_RETURN_RET(!tmp, true);
 
-    AUDIO_PRERELEASE_LOGE("Check system app permission reject");
+    AUDIO_PRERELEASE_LOGE("reject");
     return false;
 }
 
@@ -538,7 +538,7 @@ bool PermissionUtil::VerifySystemPermission()
     bool tmp = VerifyIsSystemApp();
     CHECK_AND_RETURN_RET(!tmp, true);
 
-    AUDIO_PRERELEASE_LOGE("Check system permission reject");
+    AUDIO_PRERELEASE_LOGE("reject");
     return false;
 }
 
@@ -1680,9 +1680,8 @@ const std::string AudioInfoDumpUtils::GetStreamName(AudioStreamType streamType)
 const std::string AudioInfoDumpUtils::GetDeviceTypeName(DeviceType deviceType)
 {
     std::string device;
-    std::unordered_map<DeviceType, std::string> map = DEVICE_TYPE_NAME_MAP;
-    auto it = map.find(deviceType);
-    if (it != map.end()) {
+    auto it = DEVICE_TYPE_NAME_MAP.find(deviceType);
+    if (it != DEVICE_TYPE_NAME_MAP.end()) {
         device = it->second;
     } else {
         device = "UNKNOWN";
@@ -2098,6 +2097,27 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
         }
     }
     return interrupts;
+}
+
+std::string GetBundleNameByToken(const uint32_t &tokenIdNum)
+{
+    using namespace Security::AccessToken;
+    AUDIO_INFO_LOG("GetBundlNameByToken id %{public}u", tokenIdNum);
+    AccessTokenID tokenId = static_cast<AccessTokenID>(tokenIdNum);
+    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenType(tokenId);
+    CHECK_AND_RETURN_RET_LOG(tokenType == TOKEN_HAP || tokenType == TOKEN_NATIVE, "unknown",
+        "invalid token type %{public}u", tokenType);
+    if (tokenType == TOKEN_HAP) {
+        HapTokenInfoExt tokenInfo = {};
+        int32_t ret = AccessTokenKit::GetHapTokenInfoExtension(tokenId, tokenInfo);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, "unknown-hap", "hap %{public}u failed: %{public}d", tokenIdNum, ret);
+        return tokenInfo.baseInfo.bundleName;
+    } else {
+        NativeTokenInfo tokenInfo = {};
+        int32_t ret = AccessTokenKit::GetNativeTokenInfo(tokenId, tokenInfo);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, "unknown-native", "native %{public}u failed: %{public}d", tokenIdNum, ret);
+        return tokenInfo.processName;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

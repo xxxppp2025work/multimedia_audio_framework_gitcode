@@ -327,10 +327,20 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_016, TestSize.
     ret = volumeDataMaintainerRet->GetDeviceTypeName(deviceTypeRet);
     typeRet = "_remote_cast";
     EXPECT_EQ(ret, typeRet);
+    
+    deviceTypeRet = DEVICE_TYPE_NEARLINK;
+    ret = volumeDataMaintainerRet->GetDeviceTypeName(deviceTypeRet);
+    typeRet = "_wireless";
+    EXPECT_EQ(ret, typeRet);
 
     deviceTypeRet = DEVICE_TYPE_NONE;
     ret = volumeDataMaintainerRet->GetDeviceTypeName(deviceTypeRet);
     typeRet = "";
+    EXPECT_EQ(ret, typeRet);
+
+    deviceTypeRet = DEVICE_TYPE_HEARING_AID;
+    ret = volumeDataMaintainerRet->GetDeviceTypeName(deviceTypeRet);
+    typeRet = "_hearing_aid";
     EXPECT_EQ(ret, typeRet);
 }
 

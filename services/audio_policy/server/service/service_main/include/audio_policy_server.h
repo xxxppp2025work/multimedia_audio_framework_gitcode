@@ -41,7 +41,6 @@
 #include "audio_interrupt_callback.h"
 #include "audio_policy_stub.h"
 #include "audio_server_death_recipient.h"
-#include "session_processor.h"
 #include "audio_collaborative_service.h"
 #include "audio_spatialization_service.h"
 #include "audio_policy_server_handler.h"
@@ -239,6 +238,10 @@ public:
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneId) override;
 
+    int32_t SetAudioRouteCallback(uint32_t sessionId, const sptr<IRemoteObject> &object, uint32_t clientUid) override;
+
+    int32_t UnsetAudioRouteCallback(uint32_t sessionId) override;
+
     int32_t ActivatePreemptMode(void) override;
 
     int32_t DeactivatePreemptMode(void) override;
@@ -270,8 +273,6 @@ public:
     void OnAudioStreamRemoved(const uint64_t sessionID) override;
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
-
-    int32_t ReconfigureAudioChannel(uint32_t count, int32_t deviceType) override;
 
     int32_t GetPreferredOutputStreamType(const AudioRendererInfo &rendererInfo, int32_t &streamType) override;
 
@@ -524,12 +525,6 @@ public:
 
     int32_t MoveToNewPipe(uint32_t sessionId, int32_t pipeType) override;
 
-    int32_t SetAudioConcurrencyCallback(uint32_t sessionID, const sptr<IRemoteObject> &object) override;
-
-    int32_t UnsetAudioConcurrencyCallback(uint32_t sessionID) override;
-
-    int32_t ActivateAudioConcurrency(int32_t pipeType) override;
-
     int32_t InjectInterruption(const std::string &networkId, const InterruptEvent &event) override;
 
     int32_t SetInputDevice(int32_t deviceType, uint32_t sessionID, int32_t sourceType, bool isRunning) override;
@@ -665,7 +660,7 @@ public:
 
     int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t command) override;
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) override;
-
+    int32_t CallRingtoneLibrary();
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();
@@ -707,7 +702,6 @@ private:
 
     // offload session
     void CheckSubscribePowerStateChange();
-    void CheckStreamMode(const int64_t activateSessionId);
     bool CheckAudioSessionStrategy(const AudioSessionStrategy &sessionStrategy);
 
     // for audio volume and mute status
@@ -745,6 +739,7 @@ private:
     int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
     int32_t SetAudioSceneInternal(AudioScene audioScene, const int32_t uid = INVALID_UID,
         const int32_t pid = INVALID_PID);
+    bool VerifySessionId(uint32_t sessionId, uint32_t clientUid);
 
     // externel function call
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
