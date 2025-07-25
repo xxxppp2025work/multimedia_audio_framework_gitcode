@@ -27,8 +27,23 @@ namespace AudioStandard {
 using namespace std;
 const int32_t LIMITSIZE = 4;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
-const uint8_t TESTSIZE = 18;
+const uint8_t TESTSIZE = 31;
+const uint32_t TEST_ID_MODULO = 3;
 typedef void (*TestPtr)(const uint8_t *, size_t);
+
+static void CreateAudioSessionService(shared_ptr<AudioInterruptService> &interruptService, bool isNull, int32_t id)
+{
+    if (interruptService == nullptr) {
+        return;
+    }
+    interruptService->sessionService_ = std::make_shared<AudioSessionService>();
+    if (interruptService->sessionService_ == nullptr) {
+        return;
+    }
+    AudioSessionStrategy strategy;
+    interruptService->sessionService_->sessionMap_.insert(
+        std::make_pair(id, std::make_shared<AudioSession>(id, strategy, make_shared<AudioSessionService>())));
+}
 
 void InitFuzzTest(const uint8_t *rawData, size_t size)
 {
@@ -333,6 +348,256 @@ void UpdateAudioSceneFromInterruptFuzzTest(const uint8_t *rawData, size_t size)
 
     interruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
 }
+
+void AudioInterruptServiceActivateAudioSessionFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
+    int32_t callerPid = *reinterpret_cast<const int32_t *>(rawData);
+    AudioSessionStrategy strategy;
+    CreateAudioSessionService(interruptService, false, callerPid);
+
+    interruptService->ActivateAudioSession(zoneId, callerPid, strategy);
+}
+
+void AudioInterruptServiceIsSessionNeedToFetchOutputDeviceFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    bool isNullptr = *reinterpret_cast<const bool *>(rawData);
+    int32_t callerPid = *reinterpret_cast<const int32_t *>(rawData);
+    CreateAudioSessionService(interruptService, !isNullptr, callerPid);
+    interruptService->IsSessionNeedToFetchOutputDevice(callerPid);
+}
+
+void AudioInterruptServiceSetAudioSessionSceneFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    bool isNullptr = *reinterpret_cast<const bool *>(rawData);
+    int32_t callerPid = *reinterpret_cast<const int32_t *>(rawData);
+    CreateAudioSessionService(interruptService, !isNullptr, callerPid);
+    AudioSessionScene scene = AudioSessionScene::INVALID;
+    interruptService->SetAudioSessionScene(callerPid, scene);
+}
+
+void AudioInterruptServiceAddActiveInterruptToSessionFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    bool isNullptr = *reinterpret_cast<const bool *>(rawData);
+    int32_t callerPid = *reinterpret_cast<const int32_t *>(rawData);
+    CreateAudioSessionService(interruptService, !isNullptr, callerPid);
+    interruptService->AddActiveInterruptToSession(callerPid);
+}
+
+void AudioInterruptServiceDeactivateAudioSessionFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    bool isNullptr = *reinterpret_cast<const bool *>(rawData);
+    int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
+    int32_t callerPid = *reinterpret_cast<const int32_t *>(rawData);
+    CreateAudioSessionService(interruptService, !isNullptr, callerPid);
+    interruptService->zonesMap_.insert(std::make_pair(zoneId, std::make_shared<AudioInterruptZone>()));
+    interruptService->DeactivateAudioSession(zoneId, callerPid);
+}
+
+void AudioInterruptServiceRemovePlaceholderInterruptForSessionFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    int32_t callerPid = *reinterpret_cast<const int32_t *>(rawData);
+    CreateAudioSessionService(interruptService, false, callerPid);
+    bool isSessionTimeout = *reinterpret_cast<const bool *>(rawData);
+    interruptService->RemovePlaceholderInterruptForSession(callerPid, isSessionTimeout);
+}
+
+void AudioInterruptServiceIsAudioSessionActivatedFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    bool isNullptr = *reinterpret_cast<const bool *>(rawData);
+
+    int32_t callerPid = *reinterpret_cast<const int32_t *>(rawData);
+    CreateAudioSessionService(interruptService, !isNullptr, callerPid);
+    interruptService->IsAudioSessionActivated(callerPid);
+}
+
+void AudioInterruptServiceIsCanMixInterruptFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    AudioInterrupt incomingInterrupt;
+    AudioInterrupt activeInterrupt;
+    uint32_t testId = *reinterpret_cast<const uint32_t *>(rawData) % TEST_ID_MODULO;
+    if (testId == 0) {
+        incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+        activeInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
+    } else if (testId == 1) {
+        incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_INVALID;
+        incomingInterrupt.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION;
+        activeInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    } else {
+        incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+        activeInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+        activeInterrupt.audioFocusType.streamType = STREAM_DEFAULT;
+        incomingInterrupt.audioFocusType.streamType = STREAM_DEFAULT;
+    }
+
+    interruptService->IsCanMixInterrupt(incomingInterrupt, activeInterrupt);
+}
+
+void AudioInterruptServiceCanMixForSessionFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    AudioInterrupt incomingInterrupt;
+    AudioInterrupt activeInterrupt;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    activeInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    activeInterrupt.audioFocusType.streamType = STREAM_DEFAULT;
+    incomingInterrupt.audioFocusType.streamType = STREAM_DEFAULT;
+    AudioFocusEntry focusEntry;
+    focusEntry.isReject = *reinterpret_cast<const bool *>(rawData);
+    interruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
+}
+
+void AudioInterruptServiceCanMixForIncomingSessionFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    AudioInterrupt incomingInterrupt;
+    AudioInterrupt activeInterrupt;
+    incomingInterrupt.pid = *reinterpret_cast<const int32_t *>(rawData);
+    AudioFocusEntry focusEntry;
+    CreateAudioSessionService(interruptService, false, incomingInterrupt.pid);
+    interruptService->CanMixForIncomingSession(incomingInterrupt, activeInterrupt, focusEntry);
+}
+
+void AudioInterruptServiceIsIncomingStreamLowPriorityFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    AudioFocusEntry focusEntry;
+    uint32_t testId = *reinterpret_cast<const uint32_t *>(rawData) % TEST_ID_MODULO;
+    if (testId == 0) {
+        focusEntry.isReject = *reinterpret_cast<const bool *>(rawData);
+        focusEntry.actionOn = INCOMING;
+        focusEntry.hintType = INTERRUPT_HINT_DUCK;
+    } else if (testId == 1) {
+        focusEntry.isReject = !(*reinterpret_cast<const bool *>(rawData));
+        focusEntry.actionOn = INCOMING;
+        focusEntry.hintType = INTERRUPT_HINT_DUCK;
+    } else {
+        focusEntry.isReject = false;
+        focusEntry.actionOn = BOTH;
+    }
+    interruptService->IsIncomingStreamLowPriority(focusEntry);
+}
+
+void AudioInterruptServiceIsActiveStreamLowPriorityFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    AudioFocusEntry focusEntry;
+    bool testFalse = *reinterpret_cast<const bool *>(rawData);
+    if (testFalse) {
+        focusEntry.actionOn = BOTH;
+    } else {
+        focusEntry.actionOn = CURRENT;
+        focusEntry.hintType = INTERRUPT_HINT_DUCK;
+    }
+    interruptService->IsActiveStreamLowPriority(focusEntry);
+}
+
+void AudioInterruptServiceUnsetAudioManagerInterruptCallbackFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioPolicyServerHandler> handler = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    interruptService->SetCallbackHandler(handler);
+    interruptService->UnsetAudioManagerInterruptCallback();
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -354,7 +619,20 @@ OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::SetAudioInterruptCallbackFuzzTest,
     OHOS::AudioStandard::UnsetAudioInterruptCallbackFuzzTest,
     OHOS::AudioStandard::AddAudioInterruptZonePidsFuzzTest,
-    OHOS::AudioStandard::UpdateAudioSceneFromInterruptFuzzTest
+    OHOS::AudioStandard::UpdateAudioSceneFromInterruptFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceActivateAudioSessionFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceIsSessionNeedToFetchOutputDeviceFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceSetAudioSessionSceneFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceAddActiveInterruptToSessionFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceDeactivateAudioSessionFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceRemovePlaceholderInterruptForSessionFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceIsAudioSessionActivatedFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceIsCanMixInterruptFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceCanMixForSessionFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceCanMixForIncomingSessionFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceIsIncomingStreamLowPriorityFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceIsActiveStreamLowPriorityFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceUnsetAudioManagerInterruptCallbackFuzzTest,
 };
 
 /* Fuzzer entry point */

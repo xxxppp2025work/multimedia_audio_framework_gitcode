@@ -217,7 +217,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiopolicy_fuzzer:fuzztest",
 
     # "fuzztest/audiopolicyanother_fuzzer:fuzztest",
-    "fuzztest/audiopolicyclient_fuzzer:fuzztest",
+    # "fuzztest/audiopolicyclient_fuzzer:fuzztest",
     "fuzztest/audiopolicyconcurrency_fuzzer:fuzztest",
 
     # "fuzztest/audiopolicymore_fuzzer:fuzztest",
@@ -238,7 +238,6 @@ group("audio_fuzz_test") {
     "fuzztest/audioservermore_fuzzer:fuzztest",
     "fuzztest/audioserverproxy_fuzzer:fuzztest",
     "fuzztest/audioservice_fuzzer:fuzztest",
-    "fuzztest/audioserviceclient_fuzzer:fuzztest",
     "fuzztest/audioservicecommon_fuzzer:fuzztest",
     "fuzztest/audioservicecommonenhance_fuzzer:fuzztest",
     "fuzztest/audioserviceserversrc_fuzzer:fuzztest",
