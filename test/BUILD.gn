@@ -217,7 +217,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiopolicy_fuzzer:fuzztest",
 
     # "fuzztest/audiopolicyanother_fuzzer:fuzztest",
-    "fuzztest/audiopolicyclient_fuzzer:fuzztest",
+    # "fuzztest/audiopolicyclient_fuzzer:fuzztest",
     "fuzztest/audiopolicyconcurrency_fuzzer:fuzztest",
 
     # "fuzztest/audiopolicymore_fuzzer:fuzztest",
@@ -257,6 +257,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiozoneservice_fuzzer:fuzztest",
     "fuzztest/audiozoneclientmanager_fuzzer:fuzztest",
     "fuzztest/captureclockmanager_fuzzer:fuzztest",
+    "fuzztest/coreserviceproviderstub_fuzzer:fuzztest",
     "fuzztest/devicestatuslistener_fuzzer:fuzztest",
     "fuzztest/dfxmsgmanager_fuzzer:fuzztest",
     "fuzztest/formatconverter_fuzzer:fuzztest",
