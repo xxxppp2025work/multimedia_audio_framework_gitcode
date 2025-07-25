@@ -95,7 +95,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     streamInfo.uid = processConfig_.appInfo.appUid;
     streamInfo.pid = processConfig_.appInfo.appPid;
-    streamInfo.tokenId = processConfig_.appInfo.appTokenId;
+    streamInfo.tokenId = static_cast<uint32_t>(processConfig_.appInfo.appTokenId);
     effectMode_ = processConfig_.rendererInfo.effectMode;
     streamInfo.effectInfo.effectMode = (effectMode_ != EFFECT_DEFAULT && effectMode_ != EFFECT_NONE) ? EFFECT_DEFAULT :
         static_cast<AudioEffectMode>(effectMode_);
