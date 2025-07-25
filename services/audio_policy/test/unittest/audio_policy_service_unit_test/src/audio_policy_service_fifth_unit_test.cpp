@@ -13,17 +13,17 @@
  * limitations under the License.
  */
 
- #include "get_server_util.h"
- #include "audio_policy_service_fifth_unit_test.h"
- #include "audio_policy_config_manager.h"
- #include "audio_server_proxy.h"
- #include "nativetoken_kit.h"
- #include "dfx_msg_manager.h"
- #include "audio_errors.h"
- #include <thread>
- #include <memory>
- #include <vector>
- using namespace testing::ext;
+#include "get_server_util.h"
+#include "audio_policy_service_fifth_unit_test.h"
+#include "audio_policy_config_manager.h"
+#include "audio_server_proxy.h"
+#include "nativetoken_kit.h"
+#include "dfx_msg_manager.h"
+#include "audio_errors.h"
+#include <thread>
+#include <memory>
+#include <vector>
+using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -167,8 +167,8 @@ HWTEST_F(AudioPolicyServiceFifthUnitTest, SafeVolumeEventSubscriber_001, TestSiz
     matchingSkills.AddEvent(AUDIO_RESTORE_VOLUME_EVENT);
     matchingSkills.AddEvent(AUDIO_INCREASE_VOLUME_EVENT);
     EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
-    auto commonSubscribePtr = std::make_shared<SafeVolumeEventSubscriber>(subscribeInfo, 
-        [](const EventFwk::CommonEventData& ){});
+    auto commonSubscribePtr = std::make_shared<SafeVolumeEventSubscriber>(subscribeInfo,
+        [](const EventFwk::CommonEventData&){});
     ASSERT_NE(nullptr, commonSubscribePtr);
     const EventFwk::CommonEventData eventData;
     commonSubscribePtr->OnReceiveEvent(eventData);
