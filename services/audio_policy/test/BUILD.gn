@@ -1565,7 +1565,6 @@ ohos_unittest("audio_policy_service_fifth_unit_test") {
 
   sources = [
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_fifth_unit_test.cpp",
-    "./unittest/audio_policy_service_unit_test/src/get_server_util.cpp",
   ]
 
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]

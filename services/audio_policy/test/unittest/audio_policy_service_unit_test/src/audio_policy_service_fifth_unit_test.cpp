@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include "get_server_util.h"
 #include "audio_policy_service_fifth_unit_test.h"
 #include "audio_policy_config_manager.h"
 #include "audio_server_proxy.h"
