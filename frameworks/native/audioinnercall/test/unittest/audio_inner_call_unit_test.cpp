@@ -38,6 +38,7 @@ public:
 HWTEST_F(AudioInnerCallUnitTest, GetIAudioServerInnerCall_001, TestSize.Level1)
 {
     AudioInnerCall *audioInnerCall = AudioInnerCall::GetInstance();
+    ASSERT_NE(audioInnerCall, nullptr);
     audioInnerCall->isAudioServerRegistered_ = false;
     audioInnerCall->RegisterAudioServer(nullptr);
     IAudioServerInnerCall *result = audioInnerCall->GetIAudioServerInnerCall();
