@@ -27,10 +27,7 @@ public:
     static void SetUpTestCase(){};
     static void TearDownTestCase(){};
     virtual void SetUp(){};
-    virtual void TearDown() {
-        AudioInnerCall::ReleaseInstance();
-    }
-};
+    virtual void TearDown(){};
 
 /**
  * @tc.name   : Test GetIAudioServerInnerCall
