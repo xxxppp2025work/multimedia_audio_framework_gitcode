@@ -2180,6 +2180,7 @@ int32_t AudioCoreService::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex,
         return isOffloadOpened_[type].load();
     });
 
+    CHECK_AND_RETURN_RET_LOG(GetEventEntry(), ERR_INVALID_PARAM, "GetEventEntry() return nullptr");
     {
         std::lock_guard<std::mutex> lk(GetEventEntry()->eventMutex_);
         AUDIO_INFO_LOG("After wait, isOffloadOpened: %{public}d", isOffloadOpened_[type].load());
