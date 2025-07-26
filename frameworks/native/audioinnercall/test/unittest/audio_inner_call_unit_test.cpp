@@ -22,8 +22,6 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-static const int32_t MAX_STREAM_DESCRIPTORS_SIZE = 1000;
-
 class AudioInnerCallUnitTest : public ::testing::Test {
 public:
     static void SetUpTestCase(){};
@@ -39,11 +37,11 @@ public:
  */
 HWTEST_F(AudioInnerCallUnitTest, GetIAudioServerInnerCall_001, TestSize.Level1)
 {
-    AudioInnerCall *audioInnerCall = audioInnerCall::GetInstance();
+    AudioInnerCall *audioInnerCall = AudioInnerCall::GetInstance();
     audioInnerCall->isAudioServerRegistered_ = false;
     audioInnerCall->RegisterAudioServer(nullptr);
-    IAudioServerInnerCall *audioServer = audioInnerCall->GetIAudioServerInnerCall();
-    EXPECT_EQ(audioServer, nullptr);
+    IAudioServerInnerCall *result = audioInnerCall->GetIAudioServerInnerCall();
+    EXPECT_EQ(result, nullptr);
 }
 
 /**
@@ -53,11 +51,11 @@ HWTEST_F(AudioInnerCallUnitTest, GetIAudioServerInnerCall_001, TestSize.Level1)
  */
 HWTEST_F(AudioInnerCallUnitTest, GetIAudioServerInnerCall_002, TestSize.Level1)
 {
-    AudioInnerCall *audioInnerCall = audioInnerCall::GetInstance();
+    AudioInnerCall *audioInnerCall = AudioInnerCall::GetInstance();
     audioInnerCall->isAudioServerRegistered_ = true;
     audioInnerCall->RegisterAudioServer(nullptr);
-    IAudioServerInnerCall *audioServer = audioInnerCall->GetIAudioServerInnerCall();
-    EXPECT_EQ(audioServer, nullptr);
+    IAudioServerInnerCall *result = audioInnerCall->GetIAudioServerInnerCall();
+    EXPECT_EQ(result, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS
