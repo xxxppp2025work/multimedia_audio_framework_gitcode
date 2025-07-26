@@ -28,7 +28,6 @@ ohos_shared_library("pulse_audio_service_adapter") {
   sources = [
     "src/audio_service_adapter.cpp",
     "src/pro_audio_service_adapter_impl.cpp",
-    "src/pulse_audio_service_adapter_impl.cpp",
   ]
 
   cflags = [ "-fPIC" ]
@@ -64,7 +63,6 @@ ohos_shared_library("pulse_audio_service_adapter") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]
   part_name = "audio_framework"

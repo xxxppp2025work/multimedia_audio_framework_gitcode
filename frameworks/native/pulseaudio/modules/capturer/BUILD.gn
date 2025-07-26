@@ -61,7 +61,6 @@ ohos_shared_library("module-inner-capturer-sink") {
 
   external_deps = [
     "hilog:libhilog",
-    "pulseaudio:pulse",
     "pulseaudio:pulsecommon",
     "pulseaudio:pulsecore",
   ]

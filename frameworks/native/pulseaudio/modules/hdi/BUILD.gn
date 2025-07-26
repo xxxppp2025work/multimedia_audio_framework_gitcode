@@ -78,7 +78,6 @@ ohos_shared_library("module-hdi-sink") {
     "drivers_interface_audio:libaudio_proxy_5.0",
     "hilog:libhilog",
     "init:libbegetutil",
-    "pulseaudio:pulse",
     "pulseaudio:pulsecommon",
     "pulseaudio:pulsecore",
   ]
@@ -125,7 +124,6 @@ ohos_shared_library("module-hdi-source") {
     "drivers_interface_audio:libaudio_proxy_5.0",
     "hdf_core:libhdf_utils",
     "hilog:libhilog",
-    "pulseaudio:pulse",
     "pulseaudio:pulsecommon",
     "pulseaudio:pulsecore",
   ]
@@ -164,7 +162,6 @@ ohos_shared_library("module-split-stream-sink") {
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
-    "pulseaudio:pulse",
     "pulseaudio:pulsecommon",
     "pulseaudio:pulsecore",
   ]

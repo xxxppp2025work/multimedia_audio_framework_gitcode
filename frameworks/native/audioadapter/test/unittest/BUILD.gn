@@ -90,7 +90,6 @@ ohos_unittest("pulse_audio_service_adapter_impl_unit_test") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]
 
@@ -98,7 +97,6 @@ ohos_unittest("pulse_audio_service_adapter_impl_unit_test") {
     "../../src/audio_service_adapter.cpp",
     "../../src/pro_audio_service_adapter_impl.cpp",
     "../../src/pulse_audio_service_adapter_impl.cpp",
-    "pulse_audio_service_adapter_impl_unit_test.cpp",
   ]
 
   deps = [
