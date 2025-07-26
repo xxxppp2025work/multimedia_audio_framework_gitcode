@@ -75,7 +75,7 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioRoutingManager(OH_AudioRoutingMana
     OHAudioRoutingManager* ohAudioRoutingManager = OHAudioRoutingManager::GetInstance();
     if (audioRoutingManager == nullptr) {
         AUDIO_ERR_LOG("audioRoutingManager is nullptr!");
-        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+        return AUDIOCOMMON_RESULT_SUCCESS;
     }
     *audioRoutingManager = (OH_AudioRoutingManager*)ohAudioRoutingManager;
     return AUDIOCOMMON_RESULT_SUCCESS;
