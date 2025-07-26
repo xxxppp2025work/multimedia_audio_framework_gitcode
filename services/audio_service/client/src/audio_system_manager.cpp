@@ -1293,6 +1293,12 @@ int32_t AudioSystemManager::ActivateAudioInterrupt(AudioInterrupt &audioInterrup
     return AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
 }
 
+int32_t AudioSystemManager::SetAppConcurrencyMode(const int32_t appUid, const int32_t mode)
+{
+    AUDIO_DEBUG_LOG("stub implementation");
+    return AudioPolicyManager::GetInstance().SetAppConcurrencyMode(appUid, mode);
+}
+
 int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const
 {
     AUDIO_DEBUG_LOG("stub implementation");

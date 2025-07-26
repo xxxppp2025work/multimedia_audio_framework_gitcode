@@ -934,5 +934,19 @@ HWTEST(AudioManagerInterruptUnitTest, RegisterFocusInfoChangeCallback_005, TestS
     ret = AudioSystemManager::GetInstance()->UnregisterFocusInfoChangeCallback(callback2);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name    : SetAppConcurrencyMode_001
+ * @tc.desc    : Test set app concurrency mode
+ * @tc.type    : FUNC
+ * @tc.require : issueI6GYJT
+ */
+HWTEST(AudioManagerInterruptUnitTest,SetAppConcurrencyMode_001, TestSize.Level1)
+{
+    int32_t uid = 0;
+    int32_t mode = 0;
+    auto ret = AudioSystemManager::GetInstance()->SetAppConcurrencyMode(uid, mode);
+    EXPECT_EQ(ret, SUCCESS);
+}
 }
 }

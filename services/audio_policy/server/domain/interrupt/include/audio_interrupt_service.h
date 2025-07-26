@@ -118,6 +118,7 @@ public:
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
     void RegisterDefaultVolumeTypeListener();
+    int32_t SetAppConcurrencyMode(const int32_t ownerPid, const int32_t appUid, const int32_t mode);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -312,6 +313,10 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &activeInterrupt);
     void ReportRecordGetFocusFail(const AudioInterrupt &incomingInterrupt,
         const AudioInterrupt &activeInterrupt, int32_t reason);
+    void eraseDeactivateStandaloneAudioSessionId(const int32_t &uid,
+        const int32_t &zoneId, const int32_t &sessionId);
+    void RemoveExistingFocus(const int32_t &appUid);
+    void ResumeStandalone(const int32_t &appUid);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
@@ -343,6 +348,10 @@ private:
     AudioStreamType defaultVolumeType_ = STREAM_MUSIC;
 
     std::mutex audioServerProxyMutex_;
+    bool locked_ = false;
+    std::pair<int32_t, int32_t> standaloneAppUid_ = {-1, -1}; //{ownerId, Uid}
+    std::unordered_map<int32_t, std::unordered<int32_t, 
+        std::unordered_set<int32_t>>> standaloneApp_; //{Uid, {zoneId, {sessionId}}}
 };
 } // namespace AudioStandard
 } // namespace OHOS

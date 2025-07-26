@@ -207,6 +207,8 @@ public:
     int32_t ActivateAudioInterrupt(
         AudioInterrupt &audioInterrupt, const int32_t zoneID = 0, const bool isUpdatedAudioStrategy = false);
 
+    int32_t SetAppConcurrencyMode(const int32_t appUid, const int32_t mode = 0);
+
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 
     int32_t ActivatePreemptMode(void);
