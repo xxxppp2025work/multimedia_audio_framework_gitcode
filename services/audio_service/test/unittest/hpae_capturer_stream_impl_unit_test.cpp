@@ -379,23 +379,12 @@ HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_017, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreateHpaeCapturerStreamImpl();
     size_t minBufferSize = 10;
-
-    auto ret = capturerStreamImplRet->GetMinimumBufferSize(minBufferSize);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test HpaeCapturerStreamImpl API
- * @tc.type  : FUNC
- * @tc.number: HpaeCapturerStream_018
- * @tc.desc  : Test HpaeCapturerStreamImpl interface.
- */
-HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_018, TestSize.Level1)
-{
-    auto capturerStreamImplRet = CreateHpaeCapturerStreamImpl();
     int32_t abortTimes = 0;
 
     capturerStreamImplRet->AbortCallback(abortTimes);
+
+    auto ret = capturerStreamImplRet->GetMinimumBufferSize(minBufferSize);
+    EXPECT_EQ(ret, SUCCESS);
 }
 }
 }
