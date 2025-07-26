@@ -32,7 +32,7 @@ public:
  * @tc.number : SetThreadQosLevelAsync_001
  * @tc.desc   : Test SetThreadQosLevelAsync
  */
-HWTEST_F(AudioQosmanagerUnitTest, SetThreadQosLevelAsync_001, TestSize.Level1)
+HWTEST_F(AudioQosmanagerUnitTest, SetThreadQosLevelAsync_001, TestSize.Level4)
 {
     SetThreadQosLevelAsync();
     EXPECT_TRUE(true);
