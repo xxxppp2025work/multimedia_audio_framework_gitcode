@@ -62,7 +62,12 @@ struct SourceAdapter *GetSourceAdapter(const char *deviceClass, const int32_t so
     int32_t ret = InitSourceAdapter(adapter, deviceClass, sourceType, info);
     if (ret != 0) {
         AUDIO_ERR_LOG("not support, deviceClass: %{public}s, info: %{public}s", deviceClass, info);
-        free(adapter);
+        if (adapter != NULL) {
+            if (adapter->deviceClass != NULL) {
+                free((char *)(adapter->deviceClass));
+            }
+            free(adapter);
+        }
         return NULL;
     }
     FillAdapterFuncPtr(adapter);
