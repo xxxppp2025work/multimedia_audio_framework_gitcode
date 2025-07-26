@@ -1494,7 +1494,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetInputDevice_001, TestSize.Lev
 {
     OHAudioCapturer oHAudioCapturer;
     OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
-    OH_AudioStream_Result result = OH_AudioCapturer_SetInputDevice(audioCapturer , AUDIO_DEVICE_TYPE_APEAKER);
+    OH_AudioStream_Result result = OH_AudioCapturer_SetInputDevice(audioCapturer, AUDIO_DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_SYSTEM);
 }
 
@@ -1508,7 +1508,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetFastStatus_001, TestSize.Leve
     OH_AudioStream_FastStatus status = AUDIOSTREAM_FASTSTATUS_FAST;
     OHAudioCapturer oHAudioCapturer;
     OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
-    OH_AudioStream_Result result = OH_AudioCapturer_GetFastStatus(audioCapturer , &status);
+    OH_AudioStream_Result result = OH_AudioCapturer_GetFastStatus(audioCapturer, &status);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
 }
 
