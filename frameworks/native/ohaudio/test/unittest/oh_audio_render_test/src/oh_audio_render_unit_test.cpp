@@ -1663,7 +1663,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetFastStatus_001, TestSize.Level
     OH_AudioStream_FastStatus status = AUDIOSTREAM_FASTSTATUS_FAST;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &renderer);
     result = OH_AudioRenderer_GetFastStatus(renderer, &status);
-    EXPECT_EQ(result, AUDIOSTREAM_ERROR_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
     result = OH_AudioRenderer_GetFastStatus(nullptr, &status);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
     result = OH_AudioRenderer_GetFastStatus(renderer, nullptr);
@@ -1711,7 +1711,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetAudioTimestampInfo_001, TestSi
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
     result = OH_AudioRenderer_GetAudioTimestampInfo(renderer, nullptr, &timestamp);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
-    result = OH_AudioRenderer_GetAudioTimestampInfo(renderer,  &framePosition, nullptr);
+    result = OH_AudioRenderer_GetAudioTimestampInfo(renderer, &framePosition, nullptr);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
 }
 
@@ -1740,7 +1740,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_036, TestSize.Level0)
 
     oHAudioRendererModeCallback->encodingType_ = ENCODING_AUDIOVIVID;
     oHAudioRendererModeCallback->writeDataWithMetadataCallback_ = {};
-    oHAudioRendererModeCallback->onwriteDataAdvancedCallback_ = {};
+    oHAudioRendererModeCallback->onWriteDataAdvancedCallback_ = {};
     size_t length = 0;
     oHAudioRendererModeCallback->OnWriteData(length);
 
