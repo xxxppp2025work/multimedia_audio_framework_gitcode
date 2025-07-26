@@ -28,6 +28,7 @@ public:
     static void TearDownTestCase(){};
     virtual void SetUp(){};
     virtual void TearDown(){};
+};
 
 /**
  * @tc.name   : Test GetIAudioServerInnerCall
