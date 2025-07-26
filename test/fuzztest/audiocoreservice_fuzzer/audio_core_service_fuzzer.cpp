@@ -13,12 +13,26 @@
  * limitations under the License.
  */
 
-#include <securec.h>
-#include "audio_log.h"
-#include "audio_policy_client_proxy.h"
-#include "audio_stream_manager.h"
-#include "audio_client_tracker_callback_service.h"
-#include "audio_client_tracker_callback_listener.h"
+#include <iostream>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include "audio_info.h"
+#include "audio_policy_server.h"
+#include "audio_policy_service.h"
+#include "audio_device_info.h"
+#include "audio_utils.h"
+#include "accesstoken_kit.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
+#include "access_token.h"
+#include "audio_channel_blend.h"
+#include "volume_ramp.h"
+#include "audio_speed.h"
+
+#include "audio_policy_utils.h"
+#include "audio_stream_descriptor.h"
+#include "audio_limiter_manager.h"
 
 using namespace std;
 
@@ -29,7 +43,8 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-typedef void (*TestPtr)();
+const uint8_t TESTSIZE = 21;
+typedef void (*TestFuncs)();
 
 class RemoteObjectFuzzTestStub : public IRemoteObject {
 public:
@@ -179,6 +194,7 @@ void AudioCoreServiceDeInitFuzzTest()
     audioCoreService->Init();
     audioCoreService->DeInit();
 }
+
 void AudioCoreServiceDumpPipeManagerFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -186,6 +202,7 @@ void AudioCoreServiceDumpPipeManagerFuzzTest()
     std::string dumpString = "abc";
     audioCoreService->DumpPipeManager(dumpString);
 }
+
 void AudioCoreServiceCheckAndSetCurrentOutputDeviceFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -194,6 +211,7 @@ void AudioCoreServiceCheckAndSetCurrentOutputDeviceFuzzTest()
     int32_t sessionId = 0;
     audioCoreService->CheckAndSetCurrentOutputDevice(desc, sessionId);
 }
+
 void AudioCoreServiceCheckAndSetCurrentInputDeviceFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -201,6 +219,7 @@ void AudioCoreServiceCheckAndSetCurrentInputDeviceFuzzTest()
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     audioCoreService->CheckAndSetCurrentInputDevice(desc);
 }
+
 void AudioCoreServiceSetCallDeviceActiveFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -211,6 +230,7 @@ void AudioCoreServiceSetCallDeviceActiveFuzzTest()
     audioCoreService->Init();
     audioCoreService->SetCallDeviceActive(deviceType, active, address, uid);
 }
+
 void AudioCoreServiceGetExcludedDevicesFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -218,6 +238,7 @@ void AudioCoreServiceGetExcludedDevicesFuzzTest()
     audioCoreService->Init();
     audioCoreService->GetExcludedDevices(audioDevUsage);
 }
+
 void AudioCoreServiceFetchOutputDeviceForTrackFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -226,14 +247,14 @@ void AudioCoreServiceFetchOutputDeviceForTrackFuzzTest()
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     audioCoreService->FetchOutputDeviceForTrack(streamChangeInfo, reason);
 }
+
 void AudioCoreServiceFetchInputDeviceForTrackFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     AudioStreamChangeInfo streamChangeInfo;
-    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
-    AudioStreamDeviceChangeReasonExt reason(extEnum);
-    audioCoreService->FetchInputDeviceForTrack(streamChangeInfo, reason);
+    audioCoreService->FetchInputDeviceForTrack(streamChangeInfo);
 }
+
 void AudioCoreServiceExcludeOutputDevicesFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -242,6 +263,7 @@ void AudioCoreServiceExcludeOutputDevicesFuzzTest()
     audioCoreService->Init();
     audioCoreService->ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
+
 void AudioCoreServiceUnexcludeOutputDevicesFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -255,6 +277,7 @@ void AudioCoreServiceUnexcludeOutputDevicesFuzzTest()
     audioDeviceDescriptors.push_back(audioDevDesc);
     audioCoreService->UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
+
 void AudioCoreServiceOnReceiveBluetoothEventFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -263,6 +286,7 @@ void AudioCoreServiceOnReceiveBluetoothEventFuzzTest()
     audioCoreService->Init();
     audioCoreService->OnReceiveBluetoothEvent(macAddress, deviceName);
 }
+
 void AudioCoreServiceNotifyRemoteRenderStateFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -272,6 +296,7 @@ void AudioCoreServiceNotifyRemoteRenderStateFuzzTest()
     audioCoreService->Init();
     audioCoreService->NotifyRemoteRenderState(networkId, condition, value);
 }
+
 void AudioCoreServiceOnCapturerSessionAddedFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -284,6 +309,7 @@ void AudioCoreServiceOnCapturerSessionAddedFuzzTest()
     audioCoreService->Init();
     audioCoreService->OnCapturerSessionAdded(sessionID, sessionInfo, streamInfo);
 }
+
 void AudioCoreServiceOnCapturerSessionRemovedFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -291,6 +317,7 @@ void AudioCoreServiceOnCapturerSessionRemovedFuzzTest()
     audioCoreService->Init();
     audioCoreService->OnCapturerSessionRemoved(sessionID);
 }
+
 void AudioCoreServiceTriggerFetchDeviceFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -299,6 +326,7 @@ void AudioCoreServiceTriggerFetchDeviceFuzzTest()
     audioCoreService->Init();
     audioCoreService->TriggerFetchDevice(reason);
 }
+
 void AudioCoreServiceSetAudioDeviceAnahsCallbackFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -306,12 +334,14 @@ void AudioCoreServiceSetAudioDeviceAnahsCallbackFuzzTest()
     audioCoreService->Init();
     audioCoreService->SetAudioDeviceAnahsCallback(object);
 }
+
 void AudioCoreServiceUnsetAudioDeviceAnahsCallbackFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     audioCoreService->Init();
     audioCoreService->UnsetAudioDeviceAnahsCallback();
 }
+
 void AudioCoreServiceOnUpdateAnahsSupportFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -319,17 +349,20 @@ void AudioCoreServiceOnUpdateAnahsSupportFuzzTest()
     audioCoreService->Init();
     audioCoreService->OnUpdateAnahsSupport(anahsShowType);
 }
+
 void AudioCoreServiceUnregisterBluetoothListenerFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     audioCoreService->UnregisterBluetoothListener();
 }
+
 void AudioCoreServiceIsNoRunningStreamFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs;
     audioCoreService->IsNoRunningStream(outputStreamDescs);
 }
+
 void AudioCoreServiceBluetoothServiceCrashedCallbackFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
