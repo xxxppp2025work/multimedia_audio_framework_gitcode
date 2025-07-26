@@ -26,7 +26,7 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-static const int32_t MAX_STREAM_DESCRIPTORS_SIZE = 1000;
+static const int32_t MAX_STREAM_DESCRIPTORS_SIZE = 1003;
 
 class AudioStreamDescriptorUnitTest : public ::testing::Test {
 public:
@@ -46,7 +46,7 @@ HWTEST_F(AudioStreamDescriptorUnitTest, WriteDeviceDescVectorToParcel_001, TestS
     AudioStreamDescriptor audioStreamDescriptor;
     Parcel parcel;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
-    for (int i = 0; i < MAX_STREAM_DESCRIPTORS_SIZE + 3; i++) {
+    for (int i = 0; i < MAX_STREAM_DESCRIPTORS_SIZE; i++) {
         descs.push_back(std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE));
     }
     EXPECT_TRUE(audioStreamDescriptor.WriteDeviceDescVectorToParcel(parcel, descs));
