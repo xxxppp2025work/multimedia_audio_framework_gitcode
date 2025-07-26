@@ -59,12 +59,12 @@ HWTEST_F(AudioStreamDescriptorUnitTest, WriteDeviceDescVectorToParcel_001, TestS
  */
 HWTEST_F(AudioStreamDescriptorUnitTest, Dump_001, TestSize.Level1)
 {
-    AudioStreamDescriptor audioStreamDescriptor(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
-    audioStreamDescriptor.deviceId_ = 1;
-    audioStreamDescriptor.deviceName_ = "BuiltinSpeaker";
+    AudioDeviceDescriptor audioDeviceDescriptor(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    audioDeviceDescriptor.deviceId_ = 1;
+    audioDeviceDescriptor.deviceName_ = "BuiltinSpeaker";
     std::string dumpString;
-    audioStreamDescriptor.Dump(dumpString);
-    EXPECT_EQ(dumpString, "    - device 1: role Output type 2 (SPEAKER) name: BuiltinSpeaker\n");
+    audioDeviceDescriptor.Dump(dumpString);
+    EXPECT_EQ(dumpString, "      - device 1: role Output type 2 (SPEAKER) name: BuiltinSpeaker\n");
 }
 
 /**
@@ -74,12 +74,12 @@ HWTEST_F(AudioStreamDescriptorUnitTest, Dump_001, TestSize.Level1)
  */
 HWTEST_F(AudioStreamDescriptorUnitTest, Dump_002, TestSize.Level1)
 {
-    AudioStreamDescriptor audioStreamDescriptor(DeviceType::DEVICE_TYPE_MIC, DeviceRole::INPUT_DEVICE);
-    audioStreamDescriptor.deviceId_ = 2;
-    audioStreamDescriptor.deviceName_ = "BuiltinMic";
+    AudioDeviceDescriptor audioDeviceDescriptor(DeviceType::DEVICE_TYPE_MIC, DeviceRole::INPUT_DEVICE);
+    audioDeviceDescriptor.deviceId_ = 2;
+    audioDeviceDescriptor.deviceName_ = "BuiltinMic";
     std::string dumpString;
-    audioStreamDescriptor.Dump(dumpString);
-    EXPECT_EQ(dumpString, "    - device 2: role Input type 15 (MIC) name: BuiltinMic\n");
+    audioDeviceDescriptor.Dump(dumpString);
+    EXPECT_EQ(dumpString, "      - device 2: role Input type 15 (MIC) name: BuiltinMic\n");
 }
 } // namespace AudioStandard
 } // namespace OHOS
