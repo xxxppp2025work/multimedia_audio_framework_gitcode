@@ -1399,9 +1399,9 @@ HWTEST(AudioOpenslesPlayerUnitTest, GetRecordState_001, TestSize.Level1)
 {
     SLRecordItf self = {};
     SLuint32 state = 1;
-    SLresult result = (*recordItf_)->GetRecordState(nullptr, &state);
+    SLresult result = (*recordItf_)->GetRecordState(nullptr, state);
     EXPECT_EQ(result, SL_RESULT_PARAMETER_INVALID);
-    result = (*recordItf_)->GetRecordState(self, &state);
+    result = (*recordItf_)->GetRecordState(self, state);
     EXPECT_EQ(result, SL_RESULT_SUCCESS);
 }
 } // namespace AudioStandard
