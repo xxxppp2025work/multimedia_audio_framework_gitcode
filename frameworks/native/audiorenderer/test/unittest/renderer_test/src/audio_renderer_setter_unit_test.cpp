@@ -2515,7 +2515,7 @@ HWTEST(AudioRendererUnitTest, SetClientInfo_002, TestSize.Level1)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_ActivateAudioConcurrency_004, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRenderer =
+    shared_ptr<AudioRendererPrivate> audioRenderer =
         std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
     EXPECT_NE(nullptr, audioRenderer);
 
@@ -2526,7 +2526,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_ActivateAudioConcurrency_004, TestS
     audioStreamParams.samplingRate = SAMPLE_RATE_48000;
     audioStreamParams.format = SAMPLE_S24LE;
 
-    audioRenderer->ActivateAudioConcurrency(faudioStreamParams, streamType, streamClass);
+    audioRenderer->ActivateAudioConcurrency(audioStreamParams, streamType, streamClass);
     EXPECT_EQ(audioRenderer->rendererInfo_.pipeType, PIPE_TYPE_NORMAL_OUT);
 }
 } // namespace AudioStandard
