@@ -1387,7 +1387,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Destroy_001, TestSize.Level1)
 
 HWTEST(AudioOpenslesPlayerUnitTest, SetRecordState_001, TestSize.Level1)
 {
-    SLOHBufferQueueItf self = {};
+    SLRecordItf self = {};
     SLuint32 state = 1;
     SLresult result = (*recordItf_)->SetRecordState(nullptr, &state);
     EXPECT_EQ(result, SL_RESULT_PARAMETER_INVALID);
@@ -1397,7 +1397,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, SetRecordState_001, TestSize.Level1)
 
 HWTEST(AudioOpenslesPlayerUnitTest, GetRecordState_001, TestSize.Level1)
 {
-    SLOHBufferQueueItf self = {};
+    SLRecordItf self = {};
     SLuint32 state = 1;
     SLresult result = (*recordItf_)->GetRecordState(nullptr, &state);
     EXPECT_EQ(result, SL_RESULT_PARAMETER_INVALID);
