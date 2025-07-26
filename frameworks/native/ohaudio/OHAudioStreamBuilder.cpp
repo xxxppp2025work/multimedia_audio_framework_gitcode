@@ -139,7 +139,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_Create(OH_AudioStreamBuilder **build
 {
     if (builder == nullptr) {
         AUDIO_ERR_LOG("builder is nullptr");
-        return AUDIOSTREAM_ERROR_INVALID_PARAM;
+        return AUDIOSTREAM_SUCCESS;
     }
 
     int32_t streamType = type == AUDIOSTREAM_TYPE_RENDERER ? RENDERER_TYPE : CAPTURER_TYPE;
