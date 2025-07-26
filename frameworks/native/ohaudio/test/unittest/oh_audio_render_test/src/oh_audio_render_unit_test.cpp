@@ -1742,7 +1742,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_036, TestSize.Level0)
     oHAudioRendererModeCallback->writeDataWithMetadataCallback_ = {};
     oHAudioRendererModeCallback->onWriteDataAdvancedCallback_ = {};
     size_t length = 0;
-    oHAudioRendererModeCallback->OnWriteData(length);   
+    oHAudioRendererModeCallback->OnWriteData(length);
 }
 } // namespace AudioStandard
 } // namespace OHOS
