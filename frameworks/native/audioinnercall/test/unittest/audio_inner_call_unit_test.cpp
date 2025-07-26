@@ -42,6 +42,7 @@ HWTEST_F(AudioInnerCallUnitTest, GetIAudioServerInnerCall_001, TestSize.Level1)
     audioInnerCall->RegisterAudioServer(nullptr);
     IAudioServerInnerCall *result = audioInnerCall->GetIAudioServerInnerCall();
     EXPECT_EQ(result, nullptr);
+    delete audioInnerCall;
 }
 
 /**
@@ -57,6 +58,7 @@ HWTEST_F(AudioInnerCallUnitTest, GetIAudioServerInnerCall_002, TestSize.Level1)
     audioInnerCall->RegisterAudioServer(nullptr);
     IAudioServerInnerCall *result = audioInnerCall->GetIAudioServerInnerCall();
     EXPECT_EQ(result, nullptr);
+    delete audioInnerCall;
 }
 } // namespace AudioStandard
 } // namespace OHOS
