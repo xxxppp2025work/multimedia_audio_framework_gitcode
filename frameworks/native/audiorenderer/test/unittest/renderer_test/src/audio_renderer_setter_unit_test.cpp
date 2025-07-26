@@ -2485,5 +2485,49 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SwitchToTargetStream_002, TestSize.
     auto ret = audioRenderer->SwitchToTargetStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo);
     EXPECT_EQ(ret, false);
 }
+
+/**
+ * @tc.name  : Test AudioRendererPrivate
+ * @tc.number: SetClientInfo_002
+ * @tc.desc  : Test SetClientInfo API
+ */
+HWTEST(AudioRendererUnitTest, SetClientInfo_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    uint32_t flag = AUDIO_OUTPUT_FLAG_DIRECT;
+    IAudioStream::StreamClass streamClass;
+
+    audioRendererPrivate->SetClientInfo(flag, streamClass);
+    EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
+
+    flag = AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_VOIP;
+    audioRendererPrivate->SetClientInfo(flag, streamClass);
+    EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
+}
+
+/**
+ * @tc.name  : Test Audio_Renderer_ActivateAudioConcurrency
+ * @tc.number: Audio_Renderer_ActivateAudioConcurrency_004
+ * @tc.desc  : Test Audio_Renderer_ActivateAudioConcurrency
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_ActivateAudioConcurrency_004, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    AudioStreamParams audioStreamParams;
+    AudioStreamType streamType = STREAM_MUSIC;
+    IAudioStream::StreamClass streamClass = IAudioStream::StreamClass::VOIP_STREAM;
+    audioRenderer->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
+    audioStreamParams.samplingRate = SAMPLE_RATE_48000;
+    audioStreamParams.format = SAMPLE_S24LE;
+
+    audioRenderer->ActivateAudioConcurrency(faudioStreamParams, streamType, streamClass);
+    EXPECT_EQ(audioRenderer->rendererInfo_.pipeType, PIPE_TYPE_NORMAL_OUT);
+}
 } // namespace AudioStandard
 } // namespace OHOS

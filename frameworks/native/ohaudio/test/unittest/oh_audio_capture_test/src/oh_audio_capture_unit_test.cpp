@@ -1484,5 +1484,48 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_016, TestSize.Level0)
     oHAudioCapturer->SetErrorCallback(capturerCallbacks, userData);
 }
 #endif
+
+/**
+* @tc.name  : Test OH_AudioCapturer_SetInputDevice
+* @tc.number: OH_AudioCapturer_SetInputDevice_001
+* @tc.desc  : Test OH_AudioCapturer_SetInputDevice
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetInputDevice_001, TestSize.Level0)
+{
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
+    OH_AudioStream_Result result = OH_AudioCapturer_SetInputDevice(audioCapturer , AUDIO_DEVICE_TYPE_APEAKER);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_SYSTEM);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_GetFastStatus
+* @tc.number: OH_AudioCapturer_GetFastStatus_001
+* @tc.desc  : Test OH_AudioCapturer_GetFastStatus
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetFastStatus_001, TestSize.Level0)
+{
+    OH_AudioStream_FastStatus status = AUDIOSTREAM_FASTSTATUS_FAST;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
+    OH_AudioStream_Result result = OH_AudioCapturer_GetFastStatus(audioCapturer , &status);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_GetTimestamp API via illegal state.
+* @tc.number: OH_AudioCapturer_GetTimestamp_003
+* @tc.desc  : Test OH_AudioCapturer_GetTimestamp interface.Returns false if capturer is nullptr.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetTimestamp_003, TestSize.Level0)
+{
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
+    int64_t framePosition;
+    int64_t timestamp;
+    OH_AudioStream_Result result = OH_AudioCapturer_GetTimestamp(audioCapturer, CLOCK_MONOTONIC,
+        &framePosition, &timestamp);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+}
 } // namespace AudioStandard
 } // namespace OHOS
