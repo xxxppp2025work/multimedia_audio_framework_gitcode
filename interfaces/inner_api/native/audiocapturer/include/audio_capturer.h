@@ -759,6 +759,8 @@ protected:
 private:
     static void SendCapturerCreateError(const SourceType &sourceType,
         const int32_t &errorCode);
+    bool AudioCapturer::CheckCapturerOptions(const AudioCapturerOptions &capturerOptions,
+    const AppInfo &appInfo);
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
