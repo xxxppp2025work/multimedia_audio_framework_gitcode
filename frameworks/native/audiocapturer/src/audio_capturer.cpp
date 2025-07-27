@@ -136,16 +136,23 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
 {
     Trace trace("KeyAction AudioCapturer::Create");
     auto sourceType = capturerOptions.capturerInfo.sourceType;
-    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_MAX || sourceType == AUDIO_SOURCE_TYPE_INVALID_5) {
+
+    AUDIO_INFO_LOG("StreamClientState for Capturer::CreateCapturer sourceType:%{public}d, capturerFlags:%{public}d, "
+        "AppInfo:[%{public}d] [%{public}s] [%{public}s], ", sourceType, capturerOptions.capturerInfo.capturerFlags,
+        appInfo.appUid, appInfo.appTokenId == 0 ? "T" : "F", appInfo.appFullTokenId == 0 ? "T" ："F" );
+
+    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_MAX
+        || sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE || sourceType == AUDIO_SOURCE_TYPE_INVALID_5) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("Invalid source type %{public}d!", sourceType);
         return nullptr;
     }
+
     if (sourceType == SOURCE_TYPE_ULTRASONIC && getuid() != UID_MSDP_SA) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("Create failed: SOURCE_TYPE_ULTRASONIC can only be used by MSDP");
+        return nullptr;
     }
-    CHECK_AND_RETURN_RET_LOG(sourceType != SOURCE_TYPE_ULTRASONIC || getuid() == UID_MSDP_SA, nullptr,
-        "Create failed: SOURCE_TYPE_ULTRASONIC can only be used by MSDP");
     AudioStreamType audioStreamType = FindStreamTypeBySourceType(sourceType);
     AudioCapturerParams params;
     params.audioSampleFormat = capturerOptions.streamInfo.format;
@@ -161,7 +168,6 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         AUDIO_ERR_LOG("Failed to create capturer object");
         return capturer;
     }
-    AUDIO_INFO_LOG("Capturer sourceType: %{public}d, uid: %{public}d", sourceType, appInfo.appUid);
     // InitPlaybackCapturer will be replaced by UpdatePlaybackCaptureConfig.
     capturer->capturerInfo_.sourceType = sourceType;
     capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
@@ -291,7 +297,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
     int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
         streamDesc, flag, audioStreamParams.originalSessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateCapturerClient failed");
     AUDIO_INFO_LOG("StreamClientState for Capturer::CreateClient. id %{public}u, flag :%{public}u",
         audioStreamParams.originalSessionId, flag);
 
