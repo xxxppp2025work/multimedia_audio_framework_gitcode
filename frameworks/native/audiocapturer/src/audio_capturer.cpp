@@ -130,6 +130,23 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     return std::make_unique<SharedCapturerWrapper>(tempSharedPtr);
 }
 
+bool AudioCapturer::CheckCapturerOptions(const AudioCapturerOptions &capturerOptions,
+    const AppInfo &appInfo)
+{
+    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_MAX
+        || sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE || sourceType == AUDIO_SOURCE_TYPE_INVALID_5) {
+        AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("Invalid sourceType %{public}d!", sourceType);
+        return false;
+    }
+
+    if (sourceType == SOURCE_TYPE_ULTRASONIC && getuid() != UID_MSDP_SA) {
+        AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("Create failed: SOURCE_TYPE_ULTRASONIC can only be used by MSDP");
+        return false;
+    }
+    return true;
+}
 // LCOV_EXCL_START
 std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturerOptions &capturerOptions,
     const AppInfo &appInfo)
@@ -139,20 +156,9 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
 
     AUDIO_INFO_LOG("StreamClientState for Capturer::CreateCapturer sourceType:%{public}d, capturerFlags:%{public}d, "
         "AppInfo:[%{public}d] [%{public}s] [%{public}s], ", sourceType, capturerOptions.capturerInfo.capturerFlags,
-        appInfo.appUid, appInfo.appTokenId == 0 ? "T" : "F", appInfo.appFullTokenId == 0 ? "T" ："F" );
-
-    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_MAX
-        || sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE || sourceType == AUDIO_SOURCE_TYPE_INVALID_5) {
-        AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
-        AUDIO_ERR_LOG("Invalid source type %{public}d!", sourceType);
-        return nullptr;
-    }
-
-    if (sourceType == SOURCE_TYPE_ULTRASONIC && getuid() != UID_MSDP_SA) {
-        AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
-        AUDIO_ERR_LOG("Create failed: SOURCE_TYPE_ULTRASONIC can only be used by MSDP");
-        return nullptr;
-    }
+        appInfo.appUid, appInfo.appTokenId == 0 ? "T" : "F", appInfo.appFullTokenId == 0 ? "T" : "F");
+    CHECK_AND_RETURN_RET_LOG(AudioCapturer::CheckCapturerOptions(capturerOptions, appInfo), nullptr,
+        "Error CapturerOptions!");
     AudioStreamType audioStreamType = FindStreamTypeBySourceType(sourceType);
     AudioCapturerParams params;
     params.audioSampleFormat = capturerOptions.streamInfo.format;
