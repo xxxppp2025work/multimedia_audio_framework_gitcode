@@ -562,6 +562,7 @@ int32_t CapturerInServer::Start()
 
 int32_t CapturerInServer::StartInner()
 {
+    AUDIO_INFO_LOG("CapturerServer::StartInner sessionId:%{public}u uid:%{public}u", streamIndex_, processConfig_.callerUid);
     needStart = 0;
     std::unique_lock<std::mutex> lock(statusLock_);
 
@@ -605,13 +606,14 @@ int32_t CapturerInServer::StartInner()
 
 int32_t CapturerInServer::Pause()
 {
+    AUDIO_INFO_LOG("CapturerServer::Pause sessionId:%{public}u uid:%{public}u", streamIndex_, processConfig_.callerUid);
     AudioXCollie audioXCollie(
         "CapturerInServer::Pause", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(statusLock_);
 
     if (status_ != I_STATUS_STARTED) {
-        AUDIO_ERR_LOG("CapturerInServer::Pause failed, Illegal state: %{public}u", status_.load());
+        AUDIO_ERR_LOG("CapturerServer::Pause failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
     if (needCheckBackground_) {
@@ -634,6 +636,7 @@ int32_t CapturerInServer::Pause()
 
 int32_t CapturerInServer::Flush()
 {
+    AUDIO_INFO_LOG("CapturerServer::Flush sessionId:%{public}u uid:%{public}u", streamIndex_, processConfig_.callerUid);
     AudioXCollie audioXCollie(
         "CapturerInServer::Flush", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
@@ -678,6 +681,7 @@ int32_t CapturerInServer::DrainAudioBuffer()
 
 int32_t CapturerInServer::Stop()
 {
+    AUDIO_INFO_LOG("CapturerServer::Stop sessionId:%{public}u uid:%{public}u", streamIndex_, processConfig_.callerUid);
     AudioXCollie audioXCollie(
         "CapturerInServer::Stop", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
@@ -707,6 +711,8 @@ int32_t CapturerInServer::Stop()
 
 int32_t CapturerInServer::Release(bool isSwitchStream)
 {
+    AUDIO_INFO_LOG("CapturerServer::Release sessionId:%{public}u uid:%{public}u isSwitchStream:%{public}s",
+        streamIndex_, processConfig_.callerUid, isSwitchStream ? "true": "flase");
     AudioXCollie audioXCollie("CapturerInServer::Release", RELEASE_TIMEOUT_IN_SEC,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     AudioService::GetInstance()->RemoveCapturer(streamIndex_, isSwitchStream);
@@ -716,7 +722,6 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
         return SUCCESS;
     }
     lock.unlock();
-    AUDIO_INFO_LOG("Start release capturer");
 
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         int32_t result =
@@ -768,7 +773,6 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfigInLegacy(const AudioPlaybac
     Trace trace("UpdatePlaybackCaptureConfigInLegacy");
     // Legacy mode, only usage filter works.
     AUDIO_INFO_LOG("Update config in legacy mode with %{public}zu usage", config.filterOptions.usages.size());
-
     std::vector<int32_t> usage;
     for (size_t i = 0; i < config.filterOptions.usages.size(); i++) {
         usage.push_back(config.filterOptions.usages[i]);

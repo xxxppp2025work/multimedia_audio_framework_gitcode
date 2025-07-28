@@ -161,7 +161,8 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         AUDIO_ERR_LOG("Failed to create capturer object");
         return capturer;
     }
-    AUDIO_INFO_LOG("Capturer sourceType: %{public}d, uid: %{public}d", sourceType, appInfo.appUid);
+    AUDIO_INFO_LOG("StreamClientState for Capturer::CreateCapturer sourceType:%{public}d, "
+        "uid:%{public}d, capturerFlags:%{public}d", sourceType, appInfo.appUid, capturerOptions.capturerInfo.capturerFlags);
     // InitPlaybackCapturer will be replaced by UpdatePlaybackCaptureConfig.
     capturer->capturerInfo_.sourceType = sourceType;
     capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
@@ -291,7 +292,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
     int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
         streamDesc, flag, audioStreamParams.originalSessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateCapturerClient failed");
     AUDIO_INFO_LOG("StreamClientState for Capturer::CreateClient. id %{public}u, flag :%{public}u",
         audioStreamParams.originalSessionId, flag);
 

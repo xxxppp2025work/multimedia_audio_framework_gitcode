@@ -172,6 +172,7 @@ private:
     bool isInited_ = false;
     std::atomic<StreamStatus> *streamStatus_ = nullptr;
     std::mutex statusLock_;
+    std::string ProcessType_ = "Renderer";
 
     uint32_t clientTid_ = 0;
     std::string clientBundleName_;

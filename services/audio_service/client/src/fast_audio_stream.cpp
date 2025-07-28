@@ -36,7 +36,10 @@ FastAudioStream::FastAudioStream(AudioStreamType eStreamType, AudioMode eMode, i
       renderMode_(RENDER_MODE_CALLBACK),
       captureMode_(CAPTURE_MODE_CALLBACK)
 {
-    AUDIO_INFO_LOG("FastAudioStream ctor, appUID = %{public}d", appUid);
+    if (eMode_ == AUDIO_MODE_RECORD) {
+        audioStreamTag_ = "Record";
+    }
+    AUDIO_INFO_LOG("Fast%{public}sStream ctor, appUID = %{public}d", audioStreamTag_.c.str(), appUid);
     audioStreamTracker_ = std::make_unique<AudioStreamTracker>(eMode, appUid);
     AUDIO_DEBUG_LOG("AudioStreamTracker created");
 }
@@ -46,13 +49,13 @@ FastAudioStream::~FastAudioStream()
     if (state_ != RELEASED && state_ != NEW) {
         ReleaseAudioStream(false);
     }
-    AUDIO_INFO_LOG("FastAudioStream dtor, session %{public}u", sessionId_);
+    AUDIO_INFO_LOG("Fast%{public}sStream dtor, session %{public}u", audioStreamTag_.c.str(), sessionId_);
 }
 
 void FastAudioStream::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId)
 {
-    AUDIO_INFO_LOG("Set fast stream client PID:%{public}d UID:%{public}d appTokenId:%{public}u "
-        "fullTokenId:%{public}" PRIu64, clientPid, clientUid, appTokenId, fullTokenId);
+    AUDIO_INFO_LOG("Fast%{public}s::SetClientID PID:%{public}d UID:%{public}d appTokenId:%{public}u "
+        "fullTokenId:%{public}" PRIu64, audioStreamTag_.c.str(), clientPid, clientUid, appTokenId, fullTokenId);
     clientPid_ = clientPid;
     clientUid_ = clientUid;
     appTokenId_ = appTokenId;
@@ -244,7 +247,7 @@ int32_t FastAudioStream::ParamsToStateCmdType(int64_t params, State &state, Stat
 
 int32_t FastAudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
 {
-    AUDIO_INFO_LOG("enter.");
+    AUDIO_INFO_LOG("Fast%{public}s::GetAudioStreamInfo", audioStreamTag_.c.str());
     audioStreamInfo = streamInfo_;
     return SUCCESS;
 }
@@ -652,7 +655,7 @@ void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    AUDIO_PRERELEASE_LOGI("StartAudioStream enter.");
+    AUDIO_PRERELEASE_LOGI("Fast%{public}s::StartAudioStream sessionId:%{public}u.", audioStreamTag_.c.str(), sessionId_);
     CHECK_AND_RETURN_RET_LOG((state_ == PREPARED) || (state_ == STOPPED) || (state_ == PAUSED),
         false, "Illegal state:%{public}u", state_);
 
@@ -689,7 +692,7 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
 
 bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 {
-    AUDIO_PRERELEASE_LOGI("PauseAudioStream enter.");
+    AUDIO_PRERELEASE_LOGI("Fast%{public}s::PauseAudioStream sessionId:%{public}u.", audioStreamTag_.c.str(), sessionId_);
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false,
         "state is not RUNNING. Illegal state:%{public}u", state_);
     State oldState = state_;
@@ -715,6 +718,7 @@ bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 
 bool FastAudioStream::StopAudioStream()
 {
+    AUDIO_PRERELEASE_LOGI("Fast%{public}s::StopAudioStream sessionId:%{public}u.", audioStreamTag_.c.str(), sessionId_);
     CHECK_AND_RETURN_RET_LOG((state_ == RUNNING) || (state_ == PAUSED), false,
         "State is not RUNNING. Illegal state:%{public}u", state_);
     State oldState = state_;
@@ -740,7 +744,7 @@ bool FastAudioStream::StopAudioStream()
 
 bool FastAudioStream::FlushAudioStream()
 {
-    AUDIO_PRERELEASE_LOGI("FlushAudioStream enter.");
+    AUDIO_PRERELEASE_LOGI("Fast%{public}s::FlushAudioStream sessionId:%{public}u.", audioStreamTag_.c.str(), sessionId_);
     return true;
 }
 
@@ -752,6 +756,7 @@ bool FastAudioStream::DrainAudioStream(bool stopFlag)
 
 bool FastAudioStream::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream)
 {
+    AUDIO_PRERELEASE_LOGI("Fast%{public}s::ReleaseAudioStream sessionId:%{public}u.", audioStreamTag_.c.str(), sessionId_);
     CHECK_AND_RETURN_RET_LOG(state_ != RELEASED && state_ != NEW,
         false, "Illegal state: state = %{public}u", state_);
     // If state_ is RUNNING try to Stop it first and Release
@@ -1046,6 +1051,7 @@ void FastAudioStream::UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &regist
 
 bool FastAudioStream::RestoreAudioStream(bool needStoreState)
 {
+    AUDIO_PRERELEASE_LOGI("Fast%{public}s::RestoreAudioStream sessionId:%{public}u.", audioStreamTag_.c.str(), sessionId_);
     CHECK_AND_RETURN_RET_LOG(proxyObj_ != nullptr, false, "proxyObj_ is null");
     CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID && state_ != RELEASED, true,
         "state_ is %{public}d, no need for restore", state_);

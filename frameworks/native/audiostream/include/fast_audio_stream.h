@@ -222,6 +222,7 @@ private:
     void RegisterThreadPriorityOnStart(StateChangeCmdType cmdType);
 
     AudioStreamType eStreamType_;
+    std::string audioStreamTag_ = "Playback";
     AudioMode eMode_;
     std::shared_ptr<AudioProcessInClient> processClient_ = nullptr;
     std::shared_ptr<FastAudioStreamRenderCallback> spkProcClientCb_ = nullptr;

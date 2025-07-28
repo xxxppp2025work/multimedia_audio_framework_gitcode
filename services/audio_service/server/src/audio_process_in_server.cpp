@@ -69,6 +69,7 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
     playerDfx_ = std::make_unique<PlayerDfxWriter>(processConfig_.appInfo, sessionId_);
     recorderDfx_ = std::make_unique<RecorderDfxWriter>(processConfig_.appInfo, sessionId_);
     if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
+        ProcessType_ = "Capturer";
         AudioService::GetInstance()->RegisterMuteStateChangeCallback(sessionId_, [this](bool flag) {
             AUDIO_INFO_LOG("recv mute state change flag %{public}d", flag ? 1 : 0);
             muteFlag_ = flag;
@@ -80,7 +81,7 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
 
 AudioProcessInServer::~AudioProcessInServer()
 {
-    AUDIO_INFO_LOG("~AudioProcessInServer()");
+    AUDIO_INFO_LOG("%{public}sProcess::~AudioProcessInServer()", ProcessType_.c.str());
     if (object_ != nullptr) {
         bool res = object_->RemoveDeathRecipient(deathRecipient_);
         AUDIO_INFO_LOG("RemoveDeathRecipient ret: %{public}d", res);
@@ -295,6 +296,7 @@ int32_t AudioProcessInServer::Start()
 
 int32_t AudioProcessInServer::StartInner()
 {
+    AUDIO_INFO_LOG("%{public}sProcess::StartInner sessionId:%{public}d ", ProcessType_.c.str(), sessionId_);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     std::lock_guard<std::mutex> lock(statusLock_);
@@ -336,6 +338,7 @@ int32_t AudioProcessInServer::StartInner()
 
 int32_t AudioProcessInServer::Pause(bool isFlush)
 {
+    AUDIO_INFO_LOG("%{public}sProcess::Pause sessionId:%{public}d ", ProcessType_.c.str(), sessionId_);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     (void)isFlush;
@@ -374,6 +377,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
 
 int32_t AudioProcessInServer::Resume()
 {
+    AUDIO_INFO_LOG("%{public}sProcess::Resume sessionId:%{public}d ", ProcessType_.c.str(), sessionId_);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STARTING,
@@ -401,6 +405,7 @@ int32_t AudioProcessInServer::Resume()
 
 int32_t AudioProcessInServer::Stop(int32_t stage)
 {
+    AUDIO_INFO_LOG("%{public}sProcess::Stop sessionId:%{public}d ", ProcessType_.c.str(), sessionId_);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     {
@@ -444,6 +449,7 @@ int32_t AudioProcessInServer::Stop(int32_t stage)
 
 int32_t AudioProcessInServer::Release(bool isSwitchStream)
 {
+    AUDIO_INFO_LOG("%{public}sProcess::Release sessionId:%{public}d ", ProcessType_.c.str(), sessionId_);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited or already released");
     {
         std::lock_guard lock(scheduleGuardsMutex_);
@@ -478,11 +484,13 @@ void ProcessDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 {
     CHECK_AND_RETURN_LOG(processHolder_ != nullptr, "processHolder_ is null.");
     int32_t ret = processHolder_->OnProcessRelease(processInServer_);
-    AUDIO_INFO_LOG("OnRemoteDied ret: %{public}d %{public}" PRId64 "", ret, createTime_);
+    AUDIO_INFO_LOG("%{public}sProcess::OnRemoteDied ret: %{public}d %{public}" PRId64 "",
+        processType.c.str(), ret, createTime_);
 }
 
 int32_t AudioProcessInServer::RegisterProcessCb(const sptr<IRemoteObject>& object)
 {
+    AUDIO_INFO_LOG("%{public}sProcess::RegisterProcessCb sessionId:%{public}d ", ProcessType_.c.str(), sessionId_);
     sptr<IProcessCb> processCb = iface_cast<IProcessCb>(object);
     CHECK_AND_RETURN_RET_LOG(processCb != nullptr, ERR_INVALID_PARAM, "RegisterProcessCb obj cast failed");
     deathRecipient_ = new ProcessDeathRecipient(this, releaseCallback_);
@@ -494,8 +502,8 @@ int32_t AudioProcessInServer::RegisterProcessCb(const sptr<IRemoteObject>& objec
 
 void AudioProcessInServer::SetInnerCapState(bool isInnerCapped, int32_t innerCapId)
 {
-    AUDIO_INFO_LOG("process[%{public}u] innercapped: %{public}s, innerCapId:%{public}d",
-        sessionId_, isInnerCapped ? "true" : "false", innerCapId);
+    AUDIO_INFO_LOG("%{public}sProcess::SetInnerCapState sessionId:%{public}d innerCapId:%{public}d innercapped: %{public}s",
+        ProcessType_.c.str(), sessionId_, innerCapId, isInnerCapped ? "true" : "false");
     std::lock_guard<std::mutex> lock(innerCapStateMutex_);
     innerCapStates_[innerCapId] = isInnerCapped;
 }
@@ -681,8 +689,8 @@ int32_t AudioProcessInServer::RemoveProcessStatusListener(std::shared_ptr<IProce
             it++;
         }
     }
-
-    AUDIO_INFO_LOG("%{public}s the endpoint.", (isFind ? "find and remove" : "not find"));
+    AUDIO_INFO_LOG("%{public}sProcess::RemoveProcessStatusListener sessionId:%{public}d %{public}s the endpoint.",
+        ProcessType_.c.str(), sessionId_, (isFind ? "find and remove" : "not find"));
     return SUCCESS;
 }
 
@@ -698,7 +706,8 @@ int32_t AudioProcessInServer::RegisterThreadPriority(int32_t tid, const std::str
 
 int32_t AudioProcessInServer::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
 {
-    AUDIO_INFO_LOG("AudioProcessInServer::SetAudioHapticsSyncId %{public}d", audioHapticsSyncId);
+    AUDIO_INFO_LOG("%{public}sProcess::SetAudioHapticsSyncId sessionId:%{public}d audioHapticsSyncId:%{public}d",
+        ProcessType_.c.str(), sessionId_, audioHapticsSyncId);
     audioHapticsSyncId_.store(audioHapticsSyncId);
     return SUCCESS;
 }
