@@ -46,6 +46,7 @@ HWTEST_F(AudioStreamDescriptorUnitTest, WriteDeviceDescVectorToParcel_001, TestS
     AudioStreamDescriptor audioStreamDescriptor;
     Parcel parcel;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    descs.reserve(MAX_STREAM_DESCRIPTORS_SIZE);
     for (int i = 0; i < MAX_STREAM_DESCRIPTORS_SIZE; i++) {
         descs.push_back(std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE));
     }
