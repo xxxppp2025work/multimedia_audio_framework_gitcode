@@ -279,7 +279,7 @@ HWTEST_F(FormatConverterUnitTest, S16MonoToS16Stereo_003, TestSize.Level1)
     BufferDesc dstDesc;
     int32_t ret = -1;
     uint8_t srcBuffer[8] = {0};
-    uint8_t srcBuffer[4] = {0};
+    uint8_t dstBuffer[4] = {0};
 
     dstDesc.bufLength = 4;
     srcDesc.buffer = srcBuffer;
