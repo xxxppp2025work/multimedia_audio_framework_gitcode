@@ -75,6 +75,10 @@
     *StartGroup*;
     *StopGroup*;
     *AudioWorkgroupCallback*;
+    *ImproveAudioWorkgroupPrio*;
+    *RestoreAudioWorkgroupPrio*;
+    *SaveRenderWhitelist*;
+    *InRenderWhitelist*;
   local:
     *;
 };

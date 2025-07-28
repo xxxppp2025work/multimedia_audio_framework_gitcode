@@ -443,7 +443,7 @@ bool AudioProcessInClientInner::GetAudioTime(uint32_t &framePos, int64_t &sec, i
     }
 
     auto lastHandleInfo = lastHandleInfo_.load();
-    if (lastHandleInfo.serverHandlePos < framePos) {
+    if (lastHandleInfo.serverHandlePos < framePos || lastHandleInfo.serverHandleTime == 0) {
         lastHandleInfo_.compare_exchange_strong(lastHandleInfo, {framePos, serverHandleTime});
     } else {
         framePos = lastHandleInfo.serverHandlePos;
@@ -828,9 +828,10 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
         ERR_OPERATION_FAILED, "get client mmap read buffer failed, ret %{public}d.", ret);
     ringBuffer.dataLength = spanSizeInByte_;
 
-    ret = RingBufferWrapper{{{
-        {.buffer = callbackBuffer_.get(), .bufLength = spanSizeInByte_},
-        {.buffer = nullptr, .bufLength = 0}}},
+    ret = RingBufferWrapper{
+        .basicBufferDescs = {{
+            {.buffer = callbackBuffer_.get(), .bufLength = spanSizeInByte_},
+            {.buffer = nullptr, .bufLength = 0}}},
         .dataLength = spanSizeInByte_}.CopyInputBufferValueToCurBuffer(ringBuffer);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "%{public}s memcpy fail, ret %{public}d,"
         " spanSizeInByte %{public}zu.", __func__, ret, spanSizeInByte_);

@@ -1151,6 +1151,19 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
     return SUCCESS;
 }
 
+bool AudioEndpointInner::IsBufferDataInsufficient(int32_t readableDataFrame, uint32_t spanSizeInFrame)
+{
+    if (readableDataFrame < 0) {
+        return false;
+    }
+
+    if (static_cast<uint32_t>(readableDataFrame) >= spanSizeInFrame) {
+        return false;
+    }
+
+    return true;
+}
+
 bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos)
 {
     bool isAllReady = true;
@@ -1182,8 +1195,8 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
                 continue;
             }
             int32_t readableDataFrame = tempBuffer->GetReadableDataFrames();
-            if (readableDataFrame >= 0 &&
-                (static_cast<uint32_t>(readableDataFrame) < processList_[i]->GetSpanSizeInFrame())) {
+            uint32_t spanSizeInFrame = processList_[i]->GetSpanSizeInFrame();
+            if (IsBufferDataInsufficient(readableDataFrame, spanSizeInFrame)) {
                 isAllReady = false;
                 AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_LOWLATENCY_OUT,
                     processList_[i]->GetAppInfo().appUid);
@@ -1435,6 +1448,40 @@ bool AudioEndpointInner::IsNearlinkAbsVolSupportStream(DeviceType deviceType, Au
     return isNearlink && (isMusicStream || isVoiceCallStream);
 }
 
+bool AudioEndpointInner::NeedUseTempBuffer(const RingBufferWrapper &ringBuffer, size_t spanSizeInByte)
+{
+    if (ringBuffer.dataLength > ringBuffer.basicBufferDescs[0].bufLength) {
+        return true;
+    }
+
+    if (ringBuffer.dataLength < spanSizeInByte) {
+        return true;
+    }
+
+    return false;
+}
+
+void AudioEndpointInner::PrepareStreamDataBuffer(size_t i, size_t spanSizeInByte,
+    RingBufferWrapper &ringBuffer, AudioStreamData &streamData)
+{
+    if (NeedUseTempBuffer(ringBuffer, spanSizeInByte)) {
+        processTmpBufferList_[i].resize(0);
+        processTmpBufferList_[i].resize(spanSizeInByte);
+        RingBufferWrapper ringBufferDescForCotinueData;
+        ringBufferDescForCotinueData.dataLength = ringBuffer.dataLength;
+        ringBufferDescForCotinueData.basicBufferDescs[0].buffer = processTmpBufferList_[i].data();
+        ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = ringBuffer.dataLength;
+        ringBufferDescForCotinueData.CopyInputBufferValueToCurBuffer(ringBuffer);
+        streamData.bufferDesc.buffer = processTmpBufferList_[i].data();
+        streamData.bufferDesc.bufLength = spanSizeInByte;
+        streamData.bufferDesc.dataLength = spanSizeInByte;
+    } else {
+        streamData.bufferDesc.buffer = ringBuffer.basicBufferDescs[0].buffer;
+        streamData.bufferDesc.bufLength = ringBuffer.dataLength;
+        streamData.bufferDesc.dataLength = ringBuffer.dataLength;
+    }
+}
+
 void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
     std::vector<AudioStreamData> &audioDataList, uint64_t curRead, std::function<void()> &moveClientIndex)
 {
@@ -1466,22 +1513,8 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
     if (volResult.muteFlag) {
         ringBuffer.SetBuffersValueWithSpecifyDataLen(0);
     }
-    if (ringBuffer.dataLength > ringBuffer.basicBufferDescs[0].bufLength) {
-        processTmpBufferList_[i].resize(0);
-        processTmpBufferList_[i].resize(ringBuffer.dataLength);
-        RingBufferWrapper ringBufferDescForCotinueData;
-        ringBufferDescForCotinueData.dataLength = ringBuffer.dataLength;
-        ringBufferDescForCotinueData.basicBufferDescs[0].buffer = processTmpBufferList_[i].data();
-        ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = ringBuffer.dataLength;
-        ringBufferDescForCotinueData.CopyInputBufferValueToCurBuffer(ringBuffer);
-        streamData.bufferDesc.buffer = processTmpBufferList_[i].data();
-        streamData.bufferDesc.bufLength = ringBuffer.dataLength;
-        streamData.bufferDesc.dataLength = ringBuffer.dataLength;
-    } else {
-        streamData.bufferDesc.buffer = ringBuffer.basicBufferDescs[0].buffer;
-        streamData.bufferDesc.bufLength = ringBuffer.dataLength;
-        streamData.bufferDesc.dataLength = ringBuffer.dataLength;
-    }
+    size_t spanSizeInByte = processList_[i]->GetSpanSizeInFrame() * processList_[i]->GetByteSizePerFrame();
+    PrepareStreamDataBuffer(i, spanSizeInByte, ringBuffer, streamData);
     CheckPlaySignal(streamData.bufferDesc.buffer, streamData.bufferDesc.bufLength);
     audioDataList.push_back(streamData);
     processList_[i]->WriteDumpFile(static_cast<void *>(streamData.bufferDesc.buffer),
@@ -1848,7 +1881,7 @@ bool AudioEndpointInner::KeepWorkloopRunning()
 
     // when return false, EndpointWorkLoopFuc will continue loop immediately. Wait to avoid a inifity loop.
     std::unique_lock<std::mutex> lock(loopThreadLock_);
-    AUDIO_PRERELEASE_LOGI("Status is %{public}s now, wait for %{public}s...", GetStatusStr(endpointStatus_).c_str(),
+    AUDIO_PRERELEASE_LOGI("%{public}s now, wait for %{public}s...", GetStatusStr(endpointStatus_).c_str(),
         GetStatusStr(targetStatus).c_str());
     threadStatus_ = WAITTING;
     workThreadCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_IN_DEFAULT));

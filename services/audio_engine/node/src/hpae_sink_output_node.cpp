@@ -42,6 +42,20 @@ HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)
       interleveData_(nodeInfo.frameLen * nodeInfo.channels)
 {
     AUDIO_INFO_LOG("HpaeSinkOutputNode name is %{public}s", sinkOutAttr_.adapterName.c_str());
+#ifdef ENABLE_HIDUMP_DFX
+    SetNodeName("hpaeSinkOutputNode");
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(true, 0, GetNodeInfo());
+    }
+#endif
+}
+
+HpaeSinkOutputNode::~HpaeSinkOutputNode()
+{
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
+#endif
 }
 
 void HpaeSinkOutputNode::HandleRemoteTiming()
@@ -132,14 +146,25 @@ bool HpaeSinkOutputNode::ResetAll()
 void HpaeSinkOutputNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeInfo());
+    }
+#endif
 }
 
 void HpaeSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     inputStream_.DisConnect(preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        auto preNodeReal = preNode->GetSharedInstance();
+        callback->OnNotifyDfxNodeInfo(false, preNodeReal->GetNodeId(), preNodeReal->GetNodeInfo());
+    }
+#endif
 }
 
-int32_t HpaeSinkOutputNode::GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId)
+int32_t HpaeSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId)
 {
     if (deviceNetId.empty()) {
         renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, HDI_ID_INFO_DEFAULT, true);

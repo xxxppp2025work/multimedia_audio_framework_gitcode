@@ -606,7 +606,10 @@ public:
 
     static void RegisterServerDiedCallBack(AudioServerDiedCallBack func);
 
-    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
+    int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
+
+    int32_t SetQueryDeviceVolumeBehaviorCallback(
+        const std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> &callback);
 
     int32_t SetVirtualCall(const bool isVirtual);
 
@@ -639,6 +642,8 @@ public:
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
     bool SetKaraokeParameters(const std::string &parameters);
+    int32_t SetAudioRouteCallback(uint32_t sessionId, std::shared_ptr<AudioRouteCallback> callback, uint32_t clientUid);
+    int32_t UnsetAudioRouteCallback(uint32_t sessionId);
 
     int32_t ForceStopAudioStream(StopAudioType audioType);
     bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo);

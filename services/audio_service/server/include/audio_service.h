@@ -75,6 +75,8 @@ public:
     bool InForegroundList(uint32_t uid);
     bool UpdateForegroundState(uint32_t appTokenId, bool isActive);
     void DumpForegroundList(std::string &dumpString);
+    void SaveRenderWhitelist(std::vector<std::string> list);
+    bool InRenderWhitelist(const std::string bundleName);
 
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime);
     sptr<IpcStreamInServer> GetIpcStream(const AudioProcessConfig &config, int32_t &ret);
@@ -141,7 +143,7 @@ public:
 
 private:
     AudioService();
-    void DelayCallReleaseEndpoint(std::string endpointName, int32_t delayInMs);
+    void DelayCallReleaseEndpoint(std::string endpointName);
     ReuseEndpointType GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo, const std::string &deviceKey);
     void InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
@@ -186,6 +188,8 @@ private:
     std::mutex releaseEndpointMutex_;
     std::condition_variable releaseEndpointCV_;
     std::set<std::string> releasingEndpointSet_;
+    std::mutex renderWhitelistMutex_;
+    std::set<std::string> renderWhitelist_;
 
 #ifdef SUPPORT_LOW_LATENCY
     std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> linkedPairedList_;

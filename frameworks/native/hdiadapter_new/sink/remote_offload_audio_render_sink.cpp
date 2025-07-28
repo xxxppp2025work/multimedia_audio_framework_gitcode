@@ -265,12 +265,6 @@ int32_t RemoteOffloadAudioRenderSink::RenderFrame(char &data, uint64_t len, uint
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_OPERATION_FAILED, "not start, invalid state");
     CHECK_AND_RETURN_RET_LOG(!isFlushing_.load(), ERR_OPERATION_FAILED, "during flushing");
 
-    if (audioMonoState_) {
-        AdjustStereoToMono(&data, len);
-    }
-    if (audioBalanceState_) {
-        AdjustAudioBalance(&data, len);
-    }
     Trace trace("RemoteOffloadAudioRenderSink::RenderFrame");
     CheckLatencySignal(reinterpret_cast<uint8_t *>(&data), len);
     std::vector<int8_t> bufferVec(len);
@@ -385,7 +379,10 @@ int32_t RemoteOffloadAudioRenderSink::GetPresentationPosition(uint64_t &frames, 
     CHECK_AND_RETURN_RET_LOG(stamp.tvSec >= 0 && stamp.tvSec <= maxSec && stamp.tvNSec >= 0 &&
         stamp.tvNSec <= SECOND_TO_NANOSECOND, ERR_OPERATION_FAILED,
         "get invalid time, second: %{public}" PRId64 ", nanosecond: %{public}" PRId64, stamp.tvSec, stamp.tvNSec);
-    frames = tmpFrames;
+    CHECK_AND_RETURN_RET_LOG(tmpFrames <= UINT64_MAX / SECOND_TO_MICROSECOND, ERR_OPERATION_FAILED,
+        "frames overflow, tmpFrames: %{public}" PRIu64, tmpFrames);
+    CHECK_AND_RETURN_RET_LOG(attr_.sampleRate != 0, ERR_OPERATION_FAILED, "invalid sample rate");
+    frames = tmpFrames * SECOND_TO_MICROSECOND / attr_.sampleRate;
     timeSec = stamp.tvSec;
     timeNanoSec = stamp.tvNSec;
 
@@ -414,28 +411,12 @@ float RemoteOffloadAudioRenderSink::GetMaxAmplitude(void)
 
 void RemoteOffloadAudioRenderSink::SetAudioMonoState(bool audioMono)
 {
-    audioMonoState_ = audioMono;
+    AUDIO_INFO_LOG("not support");
 }
 
 void RemoteOffloadAudioRenderSink::SetAudioBalanceValue(float audioBalance)
 {
-    // reset the balance coefficient value firstly
-    leftBalanceCoef_ = 1.0f;
-    rightBalanceCoef_ = 1.0f;
-
-    if (std::abs(audioBalance - 0.0f) <= std::numeric_limits<float>::epsilon()) {
-        // audioBalance is equal to 0.0f
-        audioBalanceState_ = false;
-    } else {
-        // audioBalance is not equal to 0.0f
-        audioBalanceState_ = true;
-        // calculate the balance coefficient
-        if (audioBalance > 0.0f) {
-            leftBalanceCoef_ -= audioBalance;
-        } else if (audioBalance < 0.0f) {
-            rightBalanceCoef_ += audioBalance;
-        }
-    }
+    AUDIO_INFO_LOG("not support");
 }
 
 int32_t RemoteOffloadAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
@@ -475,8 +456,7 @@ void RemoteOffloadAudioRenderSink::SetSpeed(float speed)
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "set speed fail, ret: %{public}d", ret);
 }
 
-int32_t RemoteOffloadAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-    bool scoExcludeFlag)
+int32_t RemoteOffloadAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     AUDIO_INFO_LOG("not support");
     return ERR_NOT_SUPPORTED;
@@ -634,6 +614,11 @@ void RemoteOffloadAudioRenderSink::OnAudioParamChange(const std::string &adapter
     callback_.OnRenderSinkParamChange(adapterName, key, condition, value);
 }
 
+void RemoteOffloadAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 uint32_t RemoteOffloadAudioRenderSink::PcmFormatToBit(AudioSampleFormat format)
 {
     AudioFormat hdiFormat = ConvertToHdiFormat(format);
@@ -771,58 +756,6 @@ void RemoteOffloadAudioRenderSink::CheckLatencySignal(uint8_t *data, size_t len)
     if (signalDetected_) {
         AUDIO_INFO_LOG("signal detected");
         signalDetectedTime_ = 0;
-    }
-}
-
-void RemoteOffloadAudioRenderSink::AdjustStereoToMono(char *data, uint64_t len)
-{
-    // only stereo is supported now (stereo channel count is 2)
-    CHECK_AND_RETURN_LOG(attr_.channel == STEREO_CHANNEL_COUNT, "unsupport, channel: %{public}d", attr_.channel);
-
-    switch (attr_.format) {
-        case SAMPLE_U8:
-            AdjustStereoToMonoForPCM8Bit(reinterpret_cast<int8_t *>(data), len);
-            break;
-        case SAMPLE_S16LE:
-            AdjustStereoToMonoForPCM16Bit(reinterpret_cast<int16_t *>(data), len);
-            break;
-        case SAMPLE_S24LE:
-            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<uint8_t *>(data), len);
-            break;
-        case SAMPLE_S32LE:
-            AdjustStereoToMonoForPCM32Bit(reinterpret_cast<int32_t *>(data), len);
-            break;
-        default:
-            // if the audio format is unsupported, the audio data will not be changed
-            AUDIO_ERR_LOG("unsupport, format: %{public}d", attr_.format);
-            break;
-    }
-}
-
-void RemoteOffloadAudioRenderSink::AdjustAudioBalance(char *data, uint64_t len)
-{
-    // only stereo is supported now (stereo channel count is 2)
-    CHECK_AND_RETURN_LOG(attr_.channel == STEREO_CHANNEL_COUNT, "unsupport, channel: %{public}d", attr_.channel);
-
-    switch (attr_.format) {
-        case SAMPLE_U8:
-            // this function needs further tested for usability
-            AdjustAudioBalanceForPCM8Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
-            break;
-        case SAMPLE_S16LE:
-            AdjustAudioBalanceForPCM16Bit(reinterpret_cast<int16_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
-            break;
-        case SAMPLE_S24LE:
-            // this function needs further tested for usability
-            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<uint8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
-            break;
-        case SAMPLE_S32LE:
-            AdjustAudioBalanceForPCM32Bit(reinterpret_cast<int32_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
-            break;
-        default:
-            // if the audio format is unsupported, the audio data will not be changed
-            AUDIO_ERR_LOG("unsupport, format: %{public}d", attr_.format);
-            break;
     }
 }
 

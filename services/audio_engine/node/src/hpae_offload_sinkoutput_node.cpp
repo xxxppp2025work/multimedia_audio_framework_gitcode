@@ -62,6 +62,20 @@ HpaeOffloadSinkOutputNode::HpaeOffloadSinkOutputNode(HpaeNodeInfo &nodeInfo)
         std::to_string(GetChannelCount()) + "_rate_" + std::to_string(GetSampleRate()) + ".pcm");
 #endif
     frameLenMs_ = nodeInfo.samplingRate ? nodeInfo.frameLen * TIME_MS_PER_SEC / nodeInfo.samplingRate : 0;
+#ifdef ENABLE_HIDUMP_DFX
+    SetNodeName("hpaeOffloadSinkOutputNode");
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(true, 0, GetNodeInfo());
+    }
+#endif
+}
+
+HpaeOffloadSinkOutputNode::~HpaeOffloadSinkOutputNode()
+{
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
+#endif
 }
 
 bool HpaeOffloadSinkOutputNode::CheckIfSuspend()
@@ -144,11 +158,22 @@ bool HpaeOffloadSinkOutputNode::ResetAll()
 void HpaeOffloadSinkOutputNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeInfo());
+    }
+#endif
 }
 
 void HpaeOffloadSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     inputStream_.DisConnect(preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        auto preNodeReal = preNode->GetSharedInstance();
+        callback->OnNotifyDfxNodeInfo(false, preNodeReal->GetNodeId(), preNodeReal->GetNodeInfo());
+    }
+#endif
 }
 
 int32_t HpaeOffloadSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass,
@@ -384,6 +409,12 @@ int32_t HpaeOffloadSinkOutputNode::SetOffloadRenderCallbackType(int32_t type)
     AUDIO_INFO_LOG("SetOffloadRenderCallbackType type:%{public}d", type);
     OffloadCallback(static_cast<RenderCallbackType>(type));
     return SUCCESS;
+}
+
+void HpaeOffloadSinkOutputNode::SetSpeed(float speed)
+{
+    CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+    audioRendererSink_->SetSpeed(speed);
 }
 
 void HpaeOffloadSinkOutputNode::RunningLock(bool islock)

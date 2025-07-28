@@ -217,6 +217,7 @@ public:
     void SetCallbackLoopTid(int32_t tid) override;
     int32_t GetCallbackLoopTid() override;
     int32_t SetOffloadDataCallbackState(int32_t cbState) override;
+    void NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId) override;
     bool GetStopFlag() const override;
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
 
@@ -276,15 +277,19 @@ private:
 
     void ResetCallbackLoopTid();
 
-    bool IsRemoteOffload();
-
-    bool DoRemoteOffloadSetSpeed(float speed);
+    bool DoHdiSetSpeed(float speed);
 
     void WaitForBufferNeedWrite();
 
     void UpdatePauseReadIndex();
 
     void FlushSpeedBuffer();
+
+    bool CheckBufferNeedWrite();
+
+    bool NeedStopFlush();
+
+    bool CheckBufferValid(const BufferDesc &bufDesc);
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -408,6 +413,7 @@ private:
     size_t bufferSize_ = 0;
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
     std::atomic<bool> speedEnable_ = false;
+    std::atomic<bool> isHdiSpeed_ = false;
     std::mutex speedMutex_;
 
     std::unique_ptr<AudioSpatialChannelConverter> converter_;
@@ -435,7 +441,6 @@ private:
     std::atomic<WrittenFramesWithSpeed> writtenAtSpeedChange_; // afterSpeed
     std::atomic<uint64_t> unprocessedFramesBytes_ = 0;
     std::atomic<uint64_t> totalBytesWrittenAfterFlush_ = 0;
-    std::atomic<int64_t> ringCacheLatencyBytes_ = 0;
 
     std::string traceTag_;
     std::string spatializationEnabled_ = "Invalid";
@@ -483,6 +488,8 @@ private:
 
     std::mutex lastCallStartByUserTidMutex_;
     std::optional<pid_t> lastCallStartByUserTid_ = std::nullopt;
+
+    std::function<uid_t()> uidGetter_ = [] { return getuid(); };
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

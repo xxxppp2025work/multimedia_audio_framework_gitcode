@@ -321,9 +321,7 @@ void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
     CHECK_AND_RETURN_LOG(readLen >= 0, "readLen is illegal!");
     lastPosInc_ = static_cast<uint64_t>(readLen) / sizePerPos;
 
-    if (!capturerClock_->GetTimeStampByPosition(curProcessPos_, timestamp)) {
-        AUDIO_ERR_LOG("GetTimeStampByPosition fail!");
-    }
+    capturerClock_->GetTimeStampByPosition(curProcessPos_, timestamp);
 
     AUDIO_DEBUG_LOG("update buffer timestamp pos:%{public}" PRIu64 " ts:%{public}" PRIu64,
         curProcessPos_, timestamp);
@@ -444,6 +442,9 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     UpdateBufferTimeStamp(dstBuffer.bufLength);
 
     stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
+
+    CaptureConcurrentCheck(streamIndex_);
+
     return SUCCESS;
 }
 
@@ -909,6 +910,16 @@ int32_t CapturerInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<
     uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame)
 {
     return ERR_NOT_SUPPORTED;
+}
+
+inline void CapturerInServer::CaptureConcurrentCheck(uint32_t streamIndex)
+{
+    if (captureConcurretChecked_) {
+        return;
+    }
+    captureConcurretChecked_ = 1;
+    int32_t ret = PolicyHandler::GetInstance().CaptureConcurrentCheck(streamIndex);
+    AUDIO_INFO_LOG("CaptureConcurrentCheck ret = %{public}d", ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

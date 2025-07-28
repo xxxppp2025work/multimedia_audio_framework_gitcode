@@ -77,7 +77,6 @@ int32_t AudioCoreService::EventEntry::CreateRendererClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock flag %{public}u, sessionId %{public}u", flag, sessionId);
     coreService_->CreateRendererClient(streamDesc, flag, sessionId);
     return SUCCESS;
 }
@@ -86,7 +85,6 @@ int32_t AudioCoreService::EventEntry::CreateCapturerClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock flag %{public}u, sessionId %{public}u", flag, sessionId);
     coreService_->CreateCapturerClient(streamDesc, flag, sessionId);
     return SUCCESS;
 }
@@ -243,7 +241,6 @@ void AudioCoreService::EventEntry::OnForcedDeviceSelected(DeviceType devType, co
 int32_t AudioCoreService::EventEntry::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock");
     coreService_->SetAudioScene(audioScene, uid, pid);
     return SUCCESS;
 }
@@ -328,14 +325,12 @@ int32_t AudioCoreService::EventEntry::RegisterTracker(AudioMode &mode, AudioStre
     const sptr<IRemoteObject> &object, const int32_t apiVersion)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock mode %{public}d", mode);
     return coreService_->RegisterTracker(mode, streamChangeInfo, object, apiVersion);
 }
 
 int32_t AudioCoreService::EventEntry::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock mode %{public}d", mode);
     return coreService_->UpdateTracker(mode, streamChangeInfo);
 }
 
@@ -457,12 +452,10 @@ std::vector<sptr<VolumeGroupInfo>> AudioCoreService::EventEntry::GetVolumeGroupI
 void AudioCoreService::EventEntry::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
     const AudioStreamDeviceChangeReasonExt reason)
 {
-    AUDIO_INFO_LOG("Not support");
 }
 
 void AudioCoreService::EventEntry::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
 {
-    AUDIO_INFO_LOG("Not support");
 }
 
 int32_t AudioCoreService::EventEntry::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,

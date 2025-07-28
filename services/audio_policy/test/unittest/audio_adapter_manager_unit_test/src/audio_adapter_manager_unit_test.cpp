@@ -313,6 +313,23 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetSystemVolumeLevel_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetAbsVolumeMute_001
+ * @tc.desc: Test SetAbsVolumeMute
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetAbsVolumeMute_001, TestSize.Level1)
+{
+    audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
+    bool mute = true;
+
+    audioAdapterManager_->SetAbsVolumeMute(mute);
+    int32_t ret = audioAdapterManager_->SetVolumeDb(STREAM_MUSIC);
+
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
  * @tc.name: UpdateSinkArgs_001
  * @tc.desc: Test UpdateSinkArgs all args have value
  * @tc.type: FUNC
@@ -357,6 +374,40 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateSinkArgs_002, TestSize.Level1)
     AudioAdapterManager::UpdateSinkArgs(info, ret);
     EXPECT_EQ(ret, " network_id=LocalDevice");
 }
+
+/**
+ * @tc.name: Test AudioAdapterManager
+ * @tc.desc: HandleHearingAidVolume_001
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, HandleHearingAidVolume_001, TestSize.Level1)
+{
+    audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_HEARING_AID;
+    AudioStreamType streamType = STREAM_MUSIC;
+    int defaultVolume =
+        static_cast<int>(std::ceil(audioAdapterManager_->GetMaxVolumeLevel(STREAM_MUSIC) * 0.8));
+    audioAdapterManager_->HandleHearingAidVolume(streamType);
+    EXPECT_EQ(audioAdapterManager_->volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC), defaultVolume);
+}
+
+/**
+ * @tc.name: Test SetInnerStreamMute
+ * @tc.desc: SetInnerStreamMute_001
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetInnerStreamMute_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    AudioStreamType streamType = STREAM_MUSIC;
+    bool mute = true;
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    audioAdapterManager->SetInnerStreamMute(streamType, mute, streamUsage);
+    EXPECT_EQ(audioAdapterManager->GetStreamMute(streamType), mute);
+}
+
 
 } // namespace AudioStandard
 } // namespace OHOS

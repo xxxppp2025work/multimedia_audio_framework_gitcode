@@ -20,6 +20,7 @@
 #include "renderer_in_client_private.h"
 #include "i_stream_listener.h"
 #include "meta/audio_types.h"
+#include "oh_audio_buffer.h"
 
 
 using namespace testing::ext;
@@ -1613,21 +1614,21 @@ HWTEST(RendererInClientInnerUnitTest, GetAudioTimestampInfo_001, TestSize.Level0
 
     Timestamp timestamp;
     ptrRendererInClientInner->state_ = State::RUNNING;
-    ptrRendererInClientInner->unprocessedFramesBytes_.store(2000); // 2000 bytes = 500 samples
-    ptrRendererInClientInner->totalBytesWrittenAfterFlush_.store(200); // 200 bytes = 50 samples
+    ptrRendererInClientInner->unprocessedFramesBytes_.store(500);
+    ptrRendererInClientInner->totalBytesWrittenAfterFlush_.store(50);
     for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
         ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
             static_cast<Timestamp::Timestampbase>(i));
         EXPECT_EQ(timestamp.framePosition, 450); // latency = 50, frameposition = 500 - 50 = 450
     }
     ptrRendererInClientInner->SetSpeed(2.0); // lastspeed = 1.0, speed = 2.0, lastFrameWritten = 50
-    ptrRendererInClientInner->totalBytesWrittenAfterFlush_.store(800); // 800 bytes = 200 samples
+    ptrRendererInClientInner->totalBytesWrittenAfterFlush_.store(200);
     for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
         ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
             static_cast<Timestamp::Timestampbase>(i));
         EXPECT_EQ(timestamp.framePosition, 450); // latency = 50 + (200 - 50) * 2 = 350, frameposition = 150 < 450
     }
-    ptrRendererInClientInner->unprocessedFramesBytes_.store(2000); // 4000 bytes = 1000 samples
+    ptrRendererInClientInner->unprocessedFramesBytes_.store(1000);
     for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
         ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
             static_cast<Timestamp::Timestampbase>(i));
@@ -1979,6 +1980,10 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_078, TestSize.Level1
     ptrRendererInClientInner->notifiedOperation_ = FLUSH_STREAM;
     EXPECT_TRUE(ptrRendererInClientInner->FlushAudioStream());
 
+    ptrRendererInClientInner->state_ = STOPPED;
+    ptrRendererInClientInner->uidGetter_ = []() -> uid_t { return 1013; }; // 1013 media_service uid
+    EXPECT_TRUE(ptrRendererInClientInner->FlushAudioStream());
+
     ptrRendererInClientInner->notifiedOperation_ = MAX_OPERATION_CODE;
     EXPECT_FALSE(ptrRendererInClientInner->FlushAudioStream());
 
@@ -2191,6 +2196,56 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_087, TestSize.Level1
     ptrRendererInClientInner->callbackLoopTid_ = -1;
     int32_t ret = ptrRendererInClientInner->GetCallbackLoopTid();
     EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_088
+ * @tc.desc  : Test RendererInClientInner::CheckBufferNeedWrite
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_088, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    // totalsize is 100
+    uint32_t totalSizeInFrame = 100;
+    uint32_t byteSizePerFrame = 1;
+    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ptrRendererInClientInner->sizePerFrameInByte_ = 1;
+    // enginesizeinframe 2
+    ptrRendererInClientInner->engineTotalSizeInFrame_ = 2;
+    ptrRendererInClientInner->cbBufferSize_ = 1;
+
+    // Readable == enginesizeinframe
+    ptrRendererInClientInner->clientBuffer_->SetCurWriteFrame(2);
+    bool ret = ptrRendererInClientInner->CheckBufferNeedWrite();
+
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_089
+ * @tc.desc  : Test RendererInClientInner::CheckBufferNeedWrite
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_089, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    // totalsize is 100
+    uint32_t totalSizeInFrame = 100;
+    uint32_t byteSizePerFrame = 1;
+    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ptrRendererInClientInner->sizePerFrameInByte_ = 1;
+    // enginesizeinframe 2
+    ptrRendererInClientInner->engineTotalSizeInFrame_ = 2;
+    ptrRendererInClientInner->cbBufferSize_ = 1;
+
+    // Readable > enginesizeinframe
+    ptrRendererInClientInner->clientBuffer_->SetCurWriteFrame(3);
+    bool ret = ptrRendererInClientInner->CheckBufferNeedWrite();
+
+    EXPECT_EQ(ret, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

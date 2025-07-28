@@ -1067,6 +1067,20 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceTypeName_014, TestSize.Le
 }
 
 /**
+* @tc.name  : Test AudioInfoDumpUtils::GetDeviceTypeName  API
+* @tc.type  : FUNC
+* @tc.number: AudioInfoDumpUtils_GetDeviceTypeName_015
+* @tc.desc  : Test AudioInfoDumpUtils GetDeviceTypeName API,Return HEARING_AID
+*             when deviceType is DEVICE_TYPE_HEARING_AID
+*/
+HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceTypeName_015, TestSize.Level0)
+{
+    DeviceType deviceType = DEVICE_TYPE_HEARING_AID;
+    const std::string deviceTypeName = AudioInfoDumpUtils::GetDeviceTypeName(deviceType);
+    EXPECT_EQ(deviceTypeName, "HEARING_AID");
+}
+
+/**
 * @tc.name  : Test AudioInfoDumpUtils::GetConnectTypeName  API
 * @tc.type  : FUNC
 * @tc.number: AudioInfoDumpUtils_GetConnectTypeName_001
@@ -1301,6 +1315,22 @@ HWTEST(AudioUtilsUnitTest, GetEncryptStr_002, TestSize.Level0)
     const std::string src = "abcdef";
     std::string dst = GetEncryptStr(src);
     EXPECT_EQ(dst, "*bcdef");
+}
+
+/**
+* @tc.name  : Test Hide API
+* @tc.type  : FUNC
+* @tc.number: Hide_001
+* @tc.desc  : Test Hide API
+*/
+HWTEST(AudioUtilsUnitTest, Hide_001, TestSize.Level0)
+{
+    string str{"12345"};
+    EXPECT_EQ(Hide(str), "*");
+    str = "123456";
+    EXPECT_EQ(Hide(str), "123*456");
+    str = "13682363247";
+    EXPECT_EQ(Hide(str), "136*247");
 }
 
 class DemoThreadData {
@@ -2903,6 +2933,32 @@ HWTEST(AudioUtilsUnitTest, ConvertNetworkId_003, TestSize.Level1)
     const std::string src = LOCAL_NETWORK_ID;
     std::string dst = ConvertNetworkId(src);
     EXPECT_EQ(dst, LOCAL_NETWORK_ID);
+}
+
+/**
+* @tc.name  : Test CheckCallingUidPermission  API
+* @tc.type  : FUNC
+* @tc.number: CheckCallingUidPermission_001
+* @tc.desc  : Test CheckCallingUidPermission API
+*/
+HWTEST(AudioUtilsUnitTest, CheckCallingUidPermission_001, TestSize.Level1)
+{
+    const std::vector<uid_t> allowedUids = {};
+    bool result = PermissionUtil::CheckCallingUidPermission(allowedUids);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test CheckCallingUidPermission  API
+* @tc.type  : FUNC
+* @tc.number: CheckCallingUidPermission_002
+* @tc.desc  : Test CheckCallingUidPermission API
+*/
+HWTEST(AudioUtilsUnitTest, CheckCallingUidPermission_002, TestSize.Level1)
+{
+    const std::vector<uid_t> allowedUids = {3001, 3003};
+    bool result = PermissionUtil::CheckCallingUidPermission(allowedUids);
+    EXPECT_EQ(result, false);
 }
 
 /**

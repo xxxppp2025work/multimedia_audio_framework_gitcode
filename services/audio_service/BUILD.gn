@@ -20,6 +20,8 @@ import("../../ressche_part.gni")
 import("../../sensor.gni")
 import("../../window_manager.gni")
 
+audio_framework_root = "../.."
+
 group("audio_service_packages") {
   deps = [
     ":audio_common",
@@ -81,6 +83,7 @@ ohos_shared_library("audio_common") {
     "common/src/oh_audio_buffer.cpp",
     "common/src/oh_audio_buffer_base.cpp",
     "common/src/volume_tools.cpp",
+    "common/src/app_bundle_manager.cpp",
   ]
 
   cflags = [
@@ -108,6 +111,8 @@ ohos_shared_library("audio_common") {
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "samgr:samgr_proxy",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
   ]
 
   if (sonic_enable == true) {
@@ -258,6 +263,7 @@ ohos_shared_library("audio_client") {
     "resource_management:global_resmgr",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "qos_manager:qos",
   ]
 
   public_external_deps = [

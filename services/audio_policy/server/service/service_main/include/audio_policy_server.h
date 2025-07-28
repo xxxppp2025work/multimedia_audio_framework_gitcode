@@ -238,6 +238,10 @@ public:
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneId) override;
 
+    int32_t SetAudioRouteCallback(uint32_t sessionId, const sptr<IRemoteObject> &object, uint32_t clientUid) override;
+
+    int32_t UnsetAudioRouteCallback(uint32_t sessionId) override;
+
     int32_t ActivatePreemptMode(void) override;
 
     int32_t DeactivatePreemptMode(void) override;
@@ -247,6 +251,8 @@ public:
     int32_t UnsetAudioManagerInterruptCallback(int32_t clientId) override;
 
     int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object) override;
+
+    int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) override;
 
@@ -513,7 +519,8 @@ public:
     int32_t SetPreferredDevice(int32_t preferredType,
         const std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t uid) override;
 
-    int32_t SaveRemoteInfo(const std::string &networkId, int32_t deviceType) override;
+    int32_t SetDeviceVolumeBehavior(const std::string &networkId, int32_t deviceType,
+        const VolumeBehavior &volumeBehavior) override;
 
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) override;
 
@@ -735,6 +742,7 @@ private:
     int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
     int32_t SetAudioSceneInternal(AudioScene audioScene, const int32_t uid = INVALID_UID,
         const int32_t pid = INVALID_PID);
+    bool VerifySessionId(uint32_t sessionId, uint32_t clientUid);
 
     // externel function call
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
@@ -846,6 +854,7 @@ private:
 
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     bool volumeApplyToAll_ = false;
+    bool screenOffAdjustVolumeEnable_ = false;
     bool supportVibrator_ = false;
 
     bool isHighResolutionExist_ = false;

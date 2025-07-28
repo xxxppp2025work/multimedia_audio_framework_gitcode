@@ -64,16 +64,6 @@ void IHpaeRendererManager::OnNotifyDfxNodeInfo(bool isConnect, uint32_t preNodeI
     }
 #endif
 };
-
-uint32_t IHpaeRendererManager::OnGetNodeId()
-{
-    if (nodeIdCounter_.load() == std::numeric_limits<uint32_t>::max()) {
-        nodeIdCounter_.store(MIN_START_NODE_ID);
-    } else {
-        nodeIdCounter_.fetch_add(1);
-    }
-    return nodeIdCounter_.load();
-};
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

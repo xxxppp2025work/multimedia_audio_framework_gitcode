@@ -38,6 +38,7 @@ struct CaptureEffectAttr {
 class HpaeCaptureEffectNode : public HpaePluginNode {
 public:
     HpaeCaptureEffectNode(HpaeNodeInfo &nodeInfo);
+    virtual ~HpaeCaptureEffectNode();
     virtual bool Reset() override;
     void ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode, HpaeNodeInfo &nodeInfo) override;
     void DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode,
@@ -60,7 +61,7 @@ private:
     std::vector<uint8_t> micCache_;
     std::vector<uint8_t> micRefCache_;
     std::vector<uint8_t> cacheDataOut_;
-    HpaePcmBuffer *outPcmBuffer_ { nullptr };
+    std::unique_ptr<HpaePcmBuffer> outPcmBuffer_ { nullptr };
     std::unordered_map<HpaeSourceBufferType, HpaeNodeInfo> capturerEffectConfigMap_;
 };
 }  // namespace HPAE

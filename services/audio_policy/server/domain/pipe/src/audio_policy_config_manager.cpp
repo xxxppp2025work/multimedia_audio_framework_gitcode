@@ -267,7 +267,7 @@ int32_t AudioPolicyConfigManager::GetMaxRendererInstances()
             continue;
         }
         int32_t convertValue = 0;
-        AUDIO_INFO_LOG("Max output normal instance is %{public}s", commonConfig.value_.c_str());
+        AUDIO_INFO_LOG("Max instance is %{public}s", commonConfig.value_.c_str());
         CHECK_AND_RETURN_RET_LOG(StringConverter(commonConfig.value_, convertValue),
             DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES,
             "convert invalid configInfo.value_: %{public}s", commonConfig.value_.c_str());
@@ -500,6 +500,7 @@ void AudioPolicyConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType sou
         case SOURCE_TYPE_CAMCORDER:
             break;
         case SOURCE_TYPE_UNPROCESSED:
+            useMatchingPropInfo = true;
             break;
         default:
             break;
@@ -609,7 +610,6 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     }
 
     if (SupportImplicitConversion(desc->routeFlag_)) {
-        AUDIO_INFO_LOG("Select first attribute");
         info = pipeIt->second->streamPropInfos_.front();
     }
 

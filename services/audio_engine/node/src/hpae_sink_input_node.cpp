@@ -30,6 +30,9 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+const std::string DEVICE_CLASS_OFFLOAD = "offload";
+const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
+
 HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
       pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, (uint64_t)nodeInfo.channelLayout),
@@ -54,10 +57,18 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     if (nodeInfo.samplingRate == SAMPLE_RATE_11025) {
         pullDataFlag_ = true;
     }
+#ifdef ENABLE_HIDUMP_DFX
+    SetNodeName("hpaeSinkInputNode");
+#endif
 }
 
 HpaeSinkInputNode::~HpaeSinkInputNode()
-{}
+{
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
+#endif
+}
 
 void HpaeSinkInputNode::CheckAndDestroyHistoryBuffer()
 {
@@ -101,7 +112,8 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
     if (nodeCallback) {
         nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);
     }
-    if (GetDeviceClass() == "offload" && !offloadEnable_) {
+    if ((GetDeviceClass() == DEVICE_CLASS_OFFLOAD || GetDeviceClass() == DEVICE_CLASS_REMOTE_OFFLOAD) &&
+        !offloadEnable_) {
         ret = ERR_OPERATION_FAILED;
         AUDIO_WARNING_LOG("The session %{public}u offloadEnable is false, not request data", GetSessionId());
     } else {
@@ -113,6 +125,7 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
         if (!streamInfo_.needData && historyBuffer_) {
             historyBuffer_->GetFrameData(inputAudioBuffer_);
             outputStream_.WriteDataToOutput(&inputAudioBuffer_);
+            inputAudioBuffer_.SetBufferValid(true); // historyBuffer always valid
             return false; // do not continue in DoProcess!
         }
         CheckAndDestroyHistoryBuffer();
@@ -214,7 +227,7 @@ bool HpaeSinkInputNode::Drain()
 
 int32_t HpaeSinkInputNode::SetState(HpaeSessionState renderState)
 {
-    AUDIO_INFO_LOG(" Sink[%{public}s]->Session[%{public}u - %{public}d] state change:[%{public}s]-->[%{public}s]",
+    AUDIO_INFO_LOG("Sink[%{public}s]->Session[%{public}u - %{public}d] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass().c_str(), GetSessionId(), GetStreamType(), ConvertSessionState2Str(state_).c_str(),
         ConvertSessionState2Str(renderState).c_str());
     state_ = renderState;

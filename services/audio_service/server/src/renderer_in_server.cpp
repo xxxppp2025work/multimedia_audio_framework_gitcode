@@ -97,7 +97,8 @@ int32_t RendererInServer::ConfigServerBuffer()
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        engineTotalSizeInFrame_ = spanSizeInFrame_ * 2; // 2 * 2 = 4 frames
+        engineTotalSizeInFrame_ = processConfig_.rendererInfo.playerType == PLAYER_TYPE_TONE_PLAYER ?
+            spanSizeInFrame_ * 4 : spanSizeInFrame_ * 2; // default 2 frames, 4 frames for toneplayer
     } else {
         engineTotalSizeInFrame_ = spanSizeInFrame_ * DEFAULT_SPAN_SIZE;
     }
@@ -1787,7 +1788,6 @@ bool RendererInServer::IsHighResolution() const noexcept
 int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_ = on;
-    AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", on);
     bool isMuted = (isMuted_ || on || muteFlag_);
     AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, isMuted);
     {
@@ -1840,7 +1840,8 @@ int32_t RendererInServer::SetClientVolume()
         OffloadSetVolumeInner();
     }
 
-    RendererStage stage = clientVolume == 0 ? RENDERER_STAGE_SET_VOLUME_ZERO : RENDERER_STAGE_SET_VOLUME_NONZERO;
+    RendererStage stage = static_cast<size_t>(clientVolume) == 0 ?
+        RENDERER_STAGE_SET_VOLUME_ZERO : RENDERER_STAGE_SET_VOLUME_NONZERO;
     playerDfx_->WriteDfxActionMsg(streamIndex_, stage);
     return ret;
 }

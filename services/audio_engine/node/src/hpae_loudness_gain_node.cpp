@@ -23,7 +23,7 @@
 #include "hpae_pcm_buffer.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
-#include "audio_engine_log.h"
+#include "audio_effect_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -81,6 +81,9 @@ HpaeLoudnessGainNode::HpaeLoudnessGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
         std::to_string(GetChannelCount()) + "_scenType_" + std::to_string(GetSceneType()) + "_rate_" +
         std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
 #endif
+#ifdef ENABLE_HIDUMP_DFX
+    SetNodeName("hpaeLoudnessGainNode");
+#endif
 }
 
 HpaeLoudnessGainNode::~HpaeLoudnessGainNode()
@@ -94,7 +97,10 @@ HpaeLoudnessGainNode::~HpaeLoudnessGainNode()
         dlHandle_ = nullptr;
         audioEffectLibHandle_ = nullptr;
     }
-    AUDIO_INFO_LOG("HpaeLoudnessGainNode destroyed");
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
+#endif
 }
 
 HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
