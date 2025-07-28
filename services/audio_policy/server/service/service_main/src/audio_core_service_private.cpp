@@ -168,8 +168,6 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
     uint32_t audioFlag;
     for (auto &pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
-        AUDIO_INFO_LOG("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
-            pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
         UpdateOffloadState(pipeInfo);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
@@ -2478,11 +2476,11 @@ void AudioCoreService::HandlePlaybackStreamInA2dp(std::shared_ptr<AudioStreamDes
     }
     auto receiveOffloadFlag =
         static_cast<BluetoothOffloadState>(Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(allSessionInfos));
-    AUDIO_INFO_LOG("A2dp offload flag: %{public}d", receiveOffloadFlag);
     if (receiveOffloadFlag != A2DP_OFFLOAD) {
         streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ = receiveOffloadFlag;
         return;
     }
+    AUDIO_INFO_LOG("A2dp offload flag: %{public}d", receiveOffloadFlag);
     streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ = A2DP_OFFLOAD;
 #endif
 }
@@ -2760,6 +2758,11 @@ void AudioCoreService::WriteCapturerConcurrentEvent(const std::unique_ptr<Concur
     if (ret) {
         AUDIO_ERR_LOG("Write event fail: CONCURRENT_CAPTURE, ret = %{public}d", ret);
     }
+}
+
+int32_t AudioCoreService::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
+{
+    return audioCapturerSession_.SetWakeUpAudioCapturerFromAudioServer(config);
 }
 } // namespace AudioStandard
 } // namespace OHOS

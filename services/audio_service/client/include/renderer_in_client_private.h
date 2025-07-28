@@ -286,6 +286,10 @@ private:
     void FlushSpeedBuffer();
 
     bool CheckBufferNeedWrite();
+
+    bool NeedStopFlush();
+
+    bool CheckBufferValid(const BufferDesc &bufDesc);
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -484,6 +488,8 @@ private:
 
     std::mutex lastCallStartByUserTidMutex_;
     std::optional<pid_t> lastCallStartByUserTid_ = std::nullopt;
+
+    std::function<uid_t()> uidGetter_ = [] { return getuid(); };
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

@@ -59,6 +59,7 @@
 #include "audio_server_hpae_dump.h"
 #include "audio_resource_service.h"
 #include "audio_manager_listener.h"
+#include "app_bundle_manager.h"
 
 #define PA
 #ifdef PA
@@ -545,10 +546,16 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
 {
     if (info.stateChangeType == DATA_TRANS_STOP) {
         ReportEvent(info);
+        std::string bundleName = AppBundleManager::GetBundleNameFromUid(info.clientUID);
+        CHECK_AND_RETURN_LOG(AudioService::GetInstance()->InRenderWhitelist(bundleName),
+            "%{public}s not in whitelist", bundleName.c_str());
         if (((info.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) ||
-            (info.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION)) && info.isBackground) {
+            (info.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) ||
+            (info.streamUsage == STREAM_USAGE_NOTIFICATION_RINGTONE) ||
+            (info.streamUsage == STREAM_USAGE_RINGTONE) ||
+            (info.streamUsage == STREAM_USAGE_NOTIFICATION)) && info.isBackground) {
             int32_t ret = PolicyHandler::GetInstance().ClearAudioFocusBySessionID(info.sessionId);
-            CHECK_AND_RETURN_LOG(ret ==SUCCESS, "focus clear fail");
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "focus clear fail");
         }
     }
 }
@@ -1357,6 +1364,10 @@ int32_t AudioServer::SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType)
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "refused for %{public}d", callingUid);
 
+    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "has no valid sink");
+    sink->SetDmDeviceType(dmDeviceType, static_cast<DeviceType>(deviceType));
+
     std::shared_ptr<IAudioCaptureSource> source;
     if (static_cast<DeviceType>(deviceType) == DEVICE_TYPE_NEARLINK_IN) {
         source = GetSourceByProp(HDI_ID_TYPE_PRIMARY);
@@ -1660,36 +1671,13 @@ bool AudioServer::CheckConfigFormat(const AudioProcessConfig &config)
     return false;
 }
 
-const std::string AudioServer::GetBundleNameFromUid(int32_t uid)
-{
-    AudioXCollie audioXCollie("AudioServer::GetBundleNameFromUid",
-        GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    std::string bundleName {""};
-    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetBundleNameFromUid");
-    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, "", "systemAbilityManager is nullptr");
-    guard.CheckCurrTimeout();
-
-    sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, "", "remoteObject is nullptr");
-
-    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
-    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, "", "bundleMgrProxy is nullptr");
-
-    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetBundleNameFromUid");
-    bundleMgrProxy->GetNameForUid(uid, bundleName);
-    reguard.CheckCurrTimeout();
-
-    return bundleName;
-}
-
 bool AudioServer::IsFastBlocked(int32_t uid, PlayerType playerType)
 {
     // if call from soundpool without the need for check.
     if (playerType == PLAYER_TYPE_SOUND_POOL) {
         return false;
     }
-    std::string bundleName = GetBundleNameFromUid(uid);
+    std::string bundleName = AppBundleManager::GetBundleNameFromUid(uid);
     std::string result;
     GetAudioParameter(CHECK_FAST_BLOCK_PREFIX + bundleName, result);
     return result == "true";
@@ -1882,7 +1870,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
     }
 #ifdef FEATURE_APPGALLERY
     PolicyHandler::GetInstance().GetAndSaveClientType(resetConfig.appInfo.appUid,
-        GetBundleNameFromUid(resetConfig.appInfo.appUid));
+        AppBundleManager::GetBundleNameFromUid(resetConfig.appInfo.appUid));
 #endif
 #ifdef HAS_FEATURE_INNERCAPTURER
     if (!HandleCheckCaptureLimit(resetConfig, filterConfig)) {
@@ -2266,7 +2254,7 @@ bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig 
         return true;
     }
 
-    std::string bundleName = GetBundleNameFromUid(config.appInfo.appUid);
+    std::string bundleName = AppBundleManager::GetBundleNameFromUid(config.appInfo.appUid);
     if (AudioService::GetInstance()->MatchForegroundList(bundleName, config.appInfo.appUid) &&
         config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         AudioService::GetInstance()->UpdateForegroundState(config.appInfo.appTokenId, true);
@@ -2285,6 +2273,14 @@ int32_t AudioServer::SetForegroundList(const std::vector<std::string> &list)
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d",
         IPCSkeleton::GetCallingUid());
     AudioService::GetInstance()->SaveForegroundList(list);
+    return SUCCESS;
+}
+
+int32_t AudioServer::SetRenderWhitelist(const std::vector<std::string> &list)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d",
+        IPCSkeleton::GetCallingUid());
+    AudioService::GetInstance()->SaveRenderWhitelist(list);
     return SUCCESS;
 }
 
@@ -2482,7 +2478,8 @@ int32_t AudioServer::GetMaxAmplitude(bool isOutputDevice, const std::string &dev
 
 int32_t AudioServer::GetVolumeDataCount(const std::string &sinkName, int64_t &volumeDataCount)
 {
-    // this is only called in audio_server, not need to check calling uid
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "refused for %{public}d",
+        IPCSkeleton::GetCallingUid());
     uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(sinkName);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, false);
     if (sink != nullptr) {
