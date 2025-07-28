@@ -35,4 +35,5 @@ public:
 HWTEST_F(AudioQosmanagerUnitTest, SetThreadQosLevelAsync_001, TestSize.Level4)
 {
     SetThreadQosLevelAsync();
+    EXPECT_TRUE(gettid());
 }
