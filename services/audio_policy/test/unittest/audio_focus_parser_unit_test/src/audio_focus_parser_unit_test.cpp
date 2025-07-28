@@ -84,7 +84,7 @@ HWTEST_F(AudioFocusParserUnitTest, AudioFocusParserUnitTest_003, TestSize.Level1
     EXPECT_CALL(*(mockAudioXmlNode_), IsNodeValid())
         .WillOnce(Return(true))
         .WillOnce(Return(true))
-        .WillRepeatedly(Return(false));
+        .WillOnce(Return(false));
 
     EXPECT_CALL(*(mockAudioXmlNode_), CompareName(testing::_)).WillOnce(Return(true));
     EXPECT_CALL(*(mockAudioXmlNode_), MoveToChildren()).Times(1);
@@ -105,7 +105,7 @@ HWTEST_F(AudioFocusParserUnitTest, AudioFocusParserUnitTest_004, TestSize.Level1
 
     EXPECT_CALL(*(mockAudioXmlNode_), IsNodeValid())
         .WillOnce(Return(true))
-        .WillRepeatedly(Return(false));
+        .WillOnce(Return(false));
 
     EXPECT_CALL(*(mockAudioXmlNode_), IsElementNode()).WillOnce(Return(true));
 
