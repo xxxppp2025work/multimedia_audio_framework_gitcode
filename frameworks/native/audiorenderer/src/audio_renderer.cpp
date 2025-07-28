@@ -1292,7 +1292,7 @@ bool AudioRendererPrivate::Release()
     Trace trace("KeyAction AudioRenderer::Release " + std::to_string(sessionID_));
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
-        if (audioStream_ != nullptr && audioStream_->GetStreamClass() == IAudioStream::FAST_STREAM) {
+        if (audioStream_ != nullptr &&  audioStream_->GetStreamClass() == IAudioStream::FAST_STREAM) {
             audioStream_->JoinCallbackLoop();
         }
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
