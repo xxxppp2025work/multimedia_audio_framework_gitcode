@@ -248,11 +248,6 @@ DistributedRoutingInfo AudioPolicyService::GetDistributedRoutingRoleInfo()
     return distributedRoutingInfo_;
 }
 
-int32_t AudioPolicyService::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
-{
-    return audioCapturerSession_.SetWakeUpAudioCapturerFromAudioServer(config);
-}
-
 int32_t AudioPolicyService::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
     uint32_t sessionId)
 {
@@ -490,6 +485,11 @@ int32_t AudioPolicyService::SetQueryClientTypeCallback(const sptr<IRemoteObject>
     }
 #endif
     return SUCCESS;
+}
+
+int32_t AudioPolicyService::SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object)
+{
+    return audioPolicyManager_.SetQueryDeviceVolumeBehaviorCallback(object);
 }
 
 static void UpdateCapturerInfoWhenNoPermission(const shared_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfos,

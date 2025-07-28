@@ -137,10 +137,10 @@ interface IStandardAudioService {
     void IsAudioLoopbackSupported([in] int mode ,[out] boolean ret);
     [oneway] void ImproveAudioWorkgroupPrio([in] int pid, [in] Map<int, boolean> threads);
     void RestoreAudioWorkgroupPrio([in] int pid, [in] Map<int, int> threads);
+    void SetRenderWhitelist([in] List<String> list);
     // WARNING: above functions correspond with AudioServerInterfaceCode
 
-
-    // unsupported for ipc client calling
+    // undefined in AudioServerInterfaceCode
     [ipccode 1000] void SetForegroundList([in] List<String> list);
     void GetVolumeDataCount([in] String sinkName, [out] long ret);
 }
