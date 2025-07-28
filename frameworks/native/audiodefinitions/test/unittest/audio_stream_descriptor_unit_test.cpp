@@ -81,3 +81,5 @@ HWTEST_F(AudioStreamDescriptorUnitTest, Dump_002, TestSize.Level1)
     audioDeviceDescriptor.Dump(dumpString);
     EXPECT_EQ(dumpString, expected);
 }
+} // AudioStandard
+} // namespace OHOS
