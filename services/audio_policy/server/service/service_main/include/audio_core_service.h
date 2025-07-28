@@ -161,7 +161,7 @@ public:
         int32_t GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType);
         int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
         std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
-        std::shared_mutex &GetEventMutex();
+        int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
 private:
         std::shared_ptr<AudioCoreService> coreService_;
         std::shared_mutex eventMutex_;

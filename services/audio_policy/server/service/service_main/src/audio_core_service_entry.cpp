@@ -508,9 +508,16 @@ int32_t AudioCoreService::EventEntry::GetPreferredInputStreamType(AudioCapturerI
     return coreService_->GetPreferredInputStreamType(capturerInfo);
 }
 
-std::shared_mutex &AudioCoreService::EventEntry::GetEventMutex()
+int32_t AudioCoreService::EventEntry::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type)
 {
-    return eventMutex_;
+    CHECK_AND_RETURN_RET_LOG(coreService_, ERR_INVALID_PARAM, "coreService_ is nullptr");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("After wait, isOffloadOpened: %{public}d", coreService_->isOffloadOpened_[type].load());
+    CHECK_AND_RETURN_RET_LOG(!coreService_->isOffloadOpened_[type].load(), ERROR, "offload restart");
+    AUDIO_INFO_LOG("Close hdi port id: %{public}u, index %{public}u", id, paIndex);
+    coreService_->audioPolicyManager_.CloseAudioPort(id, paIndex);
+    coreService_->pipeManager_->RemoveAudioPipeInfo(id);
+    return SUCCESS;
 }
 }
 }
