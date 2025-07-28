@@ -245,9 +245,9 @@ HWTEST(DeviceStatusListenerUnitTest, DeviceStatusListener_010, TestSize.Level1)
     EXPECT_NE(deviceStatusListenerPtr, nullptr);
 
     const std::string info = "abc";
-    sptr<IRemoteObject> object = new OHOS::MockIRemoteObject();
-    EXPECT_NE(object, nullptr);
-    deviceStatusListenerPtr->audioDeviceAnahsCb_ = iface_cast<IStandardAudioAnahsManagerListener>(object);
+
+    deviceStatusListenerPtr->audioDeviceAnahsCb_ = new IStandardAudioAnahsManagerListenerTest();
+    ASSERT_TRUE(deviceStatusListenerPtr->audioDeviceAnahsCb_ != nullptr);
 
     deviceStatusListenerPtr->OnPnpDeviceStatusChanged(info);
 }
@@ -263,9 +263,9 @@ HWTEST(DeviceStatusListenerUnitTest, DeviceStatusListener_011, TestSize.Level1)
     EXPECT_NE(deviceStatusListenerPtr, nullptr);
 
     const std::string info = "ANAHS_NAME=test;EVENT_TYPE=1;DEVICE_TYPE=1;DEVICE_ADDRESS=1;";
-    sptr<IRemoteObject> object = new OHOS::MockIRemoteObject();
-    EXPECT_NE(object, nullptr);
-    deviceStatusListenerPtr->audioDeviceAnahsCb_ = iface_cast<IStandardAudioAnahsManagerListener>(object);
+
+    deviceStatusListenerPtr->audioDeviceAnahsCb_ = new IStandardAudioAnahsManagerListenerTest();
+    ASSERT_TRUE(deviceStatusListenerPtr->audioDeviceAnahsCb_ != nullptr);
 
     deviceStatusListenerPtr->OnPnpDeviceStatusChanged(info);
 }
@@ -281,9 +281,9 @@ HWTEST(DeviceStatusListenerUnitTest, DeviceStatusListener_012, TestSize.Level1)
     EXPECT_NE(deviceStatusListenerPtr, nullptr);
 
     const std::string info = "ANAHS_NAME=test;EVENT_TYPE=1;DEVICE_TYPE=4096;DEVICE_ADDRESS=1;";
-    sptr<IRemoteObject> object = new OHOS::MockIRemoteObject();
-    EXPECT_NE(object, nullptr);
-    deviceStatusListenerPtr->audioDeviceAnahsCb_ = iface_cast<IStandardAudioAnahsManagerListener>(object);
+
+    deviceStatusListenerPtr->audioDeviceAnahsCb_ = new IStandardAudioAnahsManagerListenerTest();
+    ASSERT_TRUE(deviceStatusListenerPtr->audioDeviceAnahsCb_ != nullptr);
 
     deviceStatusListenerPtr->OnPnpDeviceStatusChanged(info);
 }
@@ -299,9 +299,9 @@ HWTEST(DeviceStatusListenerUnitTest, DeviceStatusListener_013, TestSize.Level1)
     EXPECT_NE(deviceStatusListenerPtr, nullptr);
 
     const std::string info = "ANAHS_NAME=test;EVENT_TYPE=1;DEVICE_TYPE=4;DEVICE_ADDRESS=1;";
-    sptr<IRemoteObject> object = new OHOS::MockIRemoteObject();
-    EXPECT_NE(object, nullptr);
-    deviceStatusListenerPtr->audioDeviceAnahsCb_ = iface_cast<IStandardAudioAnahsManagerListener>(object);
+
+    deviceStatusListenerPtr->audioDeviceAnahsCb_ = new IStandardAudioAnahsManagerListenerTest();
+    ASSERT_TRUE(deviceStatusListenerPtr->audioDeviceAnahsCb_ != nullptr);
 
     deviceStatusListenerPtr->OnPnpDeviceStatusChanged(info);
 }
