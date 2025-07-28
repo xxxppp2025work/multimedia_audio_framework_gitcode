@@ -788,6 +788,7 @@ HWTEST(AudioUtilsPlusUnitTest, ReportEvent_001, TestSize.Level4)
 {
     AudioPerformanceMonitor::GetInstance().ReportEvent(
         static_cast<DetectEvent>(100), 1, PIPE_TYPE_UNKNOWN, ADAPTER_TYPE_UNKNOWN, 0);
+    EXPECT_NE(AudioPerformanceMonitor::GetInstance().overTimeLastReportTime_, ClockTime::GetRealNano());
 }
 } // namespace AudioStandard
 } // namespace OHOS
