@@ -703,7 +703,7 @@ HWTEST(AudioUtilsPlusUnitTest, RecordPaSilenceState_001, TestSize.Level3)
     RecordPaSilenceState(sessionId, isSilence, PA_PIPE_TYPE_MULTICHANNEL, uid);
     RecordPaSilenceState(sessionId, isSilence, paPipeType, uid);
     AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(sessionId);
-    EXPECT_TRUE(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.size());
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.size(), true);
 }
 
 /**
