@@ -220,6 +220,22 @@ static void UpdateArmInstance(std::shared_ptr<IAudioRenderSink> &sink,
     primarySink->ResetActiveDeviceForDisconnect(DEVICE_TYPE_NONE);
 }
 
+static bool SetAudioSceneForFastSource(AudioScene audioScene)
+{
+#ifdef SUPPORT_LOW_LATENCY
+    std::shared_ptr<IAudioCaptureSource> fastVoipSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP, false);
+    if (fastVoipSource != nullptr && fastVoipSource->IsInited()) {
+        fastVoipSource->SetAudioScene(audioScene);
+        return true;
+    }
+#endif
+    std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, false);
+    if (fastSource != nullptr && fastSource->IsInited()) {
+        fastSource->SetAudioScene(audioScene);
+        return true;
+    }
+    return false;
+}
 static void SetAudioSceneForAllSource(AudioScene audioScene)
 {
     std::shared_ptr<IAudioCaptureSource> usbSource = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
@@ -234,19 +250,12 @@ static void SetAudioSceneForAllSource(AudioScene audioScene)
     if (primarySource != nullptr && primarySource->IsInited()) {
         primarySource->SetAudioScene(audioScene);
     }
-#ifdef SUPPORT_LOW_LATENCY
-    std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
-    if (fastSource != nullptr && fastSource->IsInited()) {
-        fastSource->SetAudioScene(audioScene);
-    }
-    std::shared_ptr<IAudioCaptureSource> fastVoipSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP, true);
-    if (fastVoipSource != nullptr && fastVoipSource->IsInited()) {
-        fastVoipSource->SetAudioScene(audioScene);
-    }
-#endif
     std::shared_ptr<IAudioCaptureSource> a2dpInSource = GetSourceByProp(HDI_ID_TYPE_BLUETOOTH);
     if (a2dpInSource != nullptr && a2dpInSource->IsInited()) {
         a2dpInSource->SetAudioScene(audioScene);
+    }
+    if (SetAudioSceneForFastSource() == false) {
+        AUDIO_WARNING_LOG("fast source is null or not inited, need not setAudioScene for fast source");
     }
 }
 
