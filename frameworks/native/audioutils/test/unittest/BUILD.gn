@@ -41,7 +41,7 @@ ohos_unittest("audio_utils_unit_test") {
     cflags += [ "-DSONIC_ENABLE" ]
   }
 
-  if (sonic_enable == true) {
+  if (sonic_enable == true && !audio_framework_feature_new_engine_flag) {
     external_deps += [ "pulseaudio:sonic" ]
   }
 
@@ -79,10 +79,9 @@ ohos_unittest("audio_utils_plus_unit_test") {
     cflags += [ "-DSONIC_ENABLE" ]
   }
 
-  if (sonic_enable == true) {
+  if (sonic_enable == true && !audio_framework_feature_new_engine_flag) {
     external_deps += [ "pulseaudio:sonic" ]
   }
-
   sources = [ "audio_utils_plus_unit_test.cpp" ]
 
   deps = [ "../../../audioutils:audio_utils" ]
@@ -111,10 +110,9 @@ ohos_unittest("audio_utils_pro_unit_test") {
     cflags += [ "-DSONIC_ENABLE" ]
   }
 
-  if (sonic_enable == true) {
+  if (sonic_enable == true && !audio_framework_feature_new_engine_flag) {
     external_deps += [ "pulseaudio:sonic" ]
   }
-
   sources = [ "audio_utils_pro_unit_test.cpp" ]
 
   deps = [ "../../../audioutils:audio_utils" ]
@@ -143,7 +141,7 @@ ohos_unittest("audio_speed_unit_test") {
     cflags += [ "-DSONIC_ENABLE" ]
   }
 
-  if (sonic_enable == true) {
+  if (sonic_enable == true && !audio_framework_feature_new_engine_flag) {
     external_deps += [ "pulseaudio:sonic" ]
   }
 

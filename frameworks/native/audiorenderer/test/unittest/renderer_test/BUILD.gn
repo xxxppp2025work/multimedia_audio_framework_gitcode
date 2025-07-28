@@ -58,10 +58,14 @@ ohos_unittest("audio_renderer_unit_test") {
     "hilog:libhilog",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]
 
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+  }
   resource_config_file =
       "../../../../../../test/resource/audio_renderer/ohos_test.xml"
 }
@@ -99,9 +103,13 @@ ohos_unittest("audio_fast_renderer_unit_test") {
     "googletest:gtest",
     "hilog:libhilog",
     "ipc:ipc_core",
-    "pulseaudio:pulse",
   ]
-
+  
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+  }
   defines = []
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
@@ -143,8 +151,13 @@ ohos_unittest("renderer_capture_interrupt_unit_test") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
-    "pulseaudio:pulse",
   ]
+
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+  }
 
   defines = []
   if (audio_framework_feature_low_latency) {
@@ -187,9 +200,13 @@ ohos_unittest("capture_renderer_interrupt_unit_test") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
-    "pulseaudio:pulse",
   ]
 
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+  }
   resource_config_file =
       "../../../../../../test/resource/audio_renderer/ohos_test.xml"
 }
@@ -269,10 +286,14 @@ ohos_unittest("renderer_in_client_unit_test") {
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
     "media_foundation:media_foundation",
-    "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]
 
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+  }
   resource_config_file =
       "../../../../../../test/resource/audio_renderer/ohos_test.xml"
 }

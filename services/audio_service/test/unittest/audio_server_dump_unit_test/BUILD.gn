@@ -77,11 +77,16 @@ ohos_unittest("audio_server_dump_unit_test") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
-    "pulseaudio:pulse",
     "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+  }
 }
 
 ohos_unittest("audio_server_hpae_dump_unit_test") {

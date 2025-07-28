@@ -75,9 +75,13 @@ if (!audio_framework_feature_dtmf_tone) {
       "hilog:libhilog",
       "init:libbegetutil",
       "ipc:ipc_single",
-      "pulseaudio:pulse",
     ]
 
+    if (!audio_framework_feature_new_engine_flag) {
+      external_deps += [
+        "pulseaudio:pulse",
+      ]
+    }
     if (audio_telephony_core_service_enable) {
       external_deps += [ "core_service:tel_core_service_api" ]
       defines += [ "AUDIO_TEL_CORE_SERVICE_ENABLE" ]
@@ -117,9 +121,13 @@ if (!audio_framework_feature_dtmf_tone) {
     external_deps = [
       "c_utils:utils",
       "hilog:libhilog",
-      "pulseaudio:pulse",
     ]
 
+    if (!audio_framework_feature_new_engine_flag) {
+      external_deps += [
+        "pulseaudio:pulse",
+      ]
+    }
     part_name = "audio_framework"
     subsystem_name = "multimedia"
   }
