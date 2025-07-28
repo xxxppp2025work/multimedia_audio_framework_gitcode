@@ -24,11 +24,31 @@ namespace AudioStandard {
 
 class AudioInnerCallUnitTest : public ::testing::Test {
 public:
-    static void SetUpTestCase(){};
-    static void TearDownTestCase(){};
-    virtual void SetUp(){};
-    virtual void TearDown(){};
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp();
+    void TearDown();
 };
+
+void AudioInnerCallUnitTest::SetUpTestCase(void)
+{
+    //input testsuit setup step, setup invoked before all testcases
+}
+
+void AudioInnerCallUnitTest::TearDownTestCase(void)
+{
+    //input testsuit setdown step, setdown invoked after all testcases
+}
+
+void AudioInnerCallUnitTest::SetUp(void)
+{
+    //input testsuit setup step, setup invoked before each testcases
+}
+
+void AudioInnerCallUnitTest::TearDown(void)
+{
+    //input testsuit setdown step, setdown invoked after each testcases
+}
 
 /**
  * @tc.name   : Test GetIAudioServerInnerCall
