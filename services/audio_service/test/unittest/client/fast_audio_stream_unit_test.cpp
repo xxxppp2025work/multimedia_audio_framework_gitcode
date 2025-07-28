@@ -1630,5 +1630,153 @@ HWTEST(FastSystemStreamUnitTest, CheckRestoreStatus_001, TestSize.Level1)
     RestoreStatus status = fastAudioStream->CheckRestoreStatus();
     EXPECT_EQ(status, NEED_RESTORE_TO_NORMAL);
 }
+
+/**
+ * @tc.name  : Test CheckRestoreStatus API
+ * @tc.type  : FUNC
+ * @tc.number: CheckRestoreStatus_001
+ * @tc.desc  : Test CheckRestoreStatus interface. - return RESTORE_TO_NORMAL when spkProcClientCb_ is null
+ */
+HWTEST(FastSystemStreamUnitTest, CheckRestoreStatus_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+
+    fastAudioStream->spkProcClientCb_ = nullptr;
+    fastAudioStream->micProcClientCb_ = nullptr;
+    RestoreStatus status = fastAudioStream->CheckRestoreStatus();
+    EXPECT_EQ(status, NEED_RESTORE_TO_NORMAL);
+}
+
+/**
+ * @tc.name  : Test SetCallbacksWhenRestore API
+ * @tc.type  : FUNC
+ * @tc.number: SetCallbacksWhenRestore_001
+ * @tc.desc  : Test SetCallbacksWhenRestore interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetCallbacksWhenRestore_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+    fastAudioStream->processClient_ = nullptr;
+    fastAudioStream->eMode_ = AUDIO_MODE_PLAYBACK;
+    int ret = fastAudioStream->SetCallbacksWhenRestore();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetCallbacksWhenRestore API
+ * @tc.type  : FUNC
+ * @tc.number: SetCallbacksWhenRestore_002
+ * @tc.desc  : Test SetCallbacksWhenRestore interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetCallbacksWhenRestore_002, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+    fastAudioStream->eMode_ = AUDIO_MODE_PLAYBACK;
+    int erroStore = -1;
+    int ret = fastAudioStream->SetCallbacksWhenRestore();
+    EXPECT_NE(erroStore, ret);
+}
+
+/**
+ * @tc.name  : Test SetCallbacksWhenRestore API
+ * @tc.type  : FUNC
+ * @tc.number: SetCallbacksWhenRestore_002
+ * @tc.desc  : Test SetCallbacksWhenRestore interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetCallbacksWhenRestore_003, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+    fastAudioStream->eMode_ = AUDIO_MODE_RECORD;
+    int erroStore = -1;
+    int ret = fastAudioStream->SetCallbacksWhenRestore();
+    EXPECT_NE(erroStore, ret);
+}
+
+/**
+ * @tc.name  : Test RestoreAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: RestoreAudioStream_001
+ * @tc.desc  : Test RestoreAudioStream interface using unsupported parameters.
+ */
+HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_003, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    bool needStoreState = true;
+    fastAudioStream->proxyObj_ = nullptr;
+    fastAudioStream->state_ = RELEASED;
+    int ret = fastAudioStream->RestoreAudioStream(needStoreState);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test RestoreAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: RestoreAudioStream_004
+ * @tc.desc  : Test RestoreAudioStream interface using unsupported parameters.
+ */
+HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_004, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    bool needStoreState = true;
+    std::shared_ptr<AudioClientTracker> proxyObj = std::make_shared<AudioClientTrackerTest>();
+    fastAudioStream->proxyObj_ = proxyObj;
+    fastAudioStream->state_ = NEW;
+    int ret = fastAudioStream->RestoreAudioStream(needStoreState);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test RestoreAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: RestoreAudioStream_005
+ * @tc.desc  : Test RestoreAudioStream interface using unsupported parameters.
+ */
+HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_005, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    bool needStoreState = true;
+    std::shared_ptr<AudioClientTracker> proxyObj = std::make_shared<AudioClientTrackerTest>();
+    fastAudioStream->proxyObj_ = proxyObj;
+    fastAudioStream->state_ = INVALID;
+    int ret = fastAudioStream->RestoreAudioStream(needStoreState);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test RestoreAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: RestoreAudioStream_006
+ * @tc.desc  : Test RestoreAudioStream interface using unsupported parameters.
+ */
+HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_006, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    bool needStoreState = true;
+    std::shared_ptr<AudioClientTracker> proxyObj = std::make_shared<AudioClientTrackerTest>();
+    fastAudioStream->proxyObj_ = proxyObj;
+    fastAudioStream->state_ = RELEASED;
+    int ret = fastAudioStream->RestoreAudioStream(needStoreState);
+    EXPECT_TRUE(ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS
