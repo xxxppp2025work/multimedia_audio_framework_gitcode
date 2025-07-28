@@ -507,5 +507,10 @@ int32_t AudioCoreService::EventEntry::GetPreferredInputStreamType(AudioCapturerI
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->GetPreferredInputStreamType(capturerInfo);
 }
+
+std::shared_mutex &AudioCoreService::EventEntry::GetEventMutex()
+{
+    return eventMutex_;
+}
 }
 }
