@@ -516,6 +516,7 @@ int32_t AudioCoreService::EventEntry::ReleaseOffloadPipe(AudioIOHandle id, uint3
     CHECK_AND_RETURN_RET_LOG(!coreService_->isOffloadOpened_[type].load(), ERROR, "offload restart");
     AUDIO_INFO_LOG("Close hdi port id: %{public}u, index %{public}u", id, paIndex);
     coreService_->audioPolicyManager_.CloseAudioPort(id, paIndex);
+    CHECK_AND_RETURN_RET_LOG(coreService_->pipeManager_, ERROR, "pipeManager_ is nullptr");
     coreService_->pipeManager_->RemoveAudioPipeInfo(id);
     return SUCCESS;
 }
