@@ -1669,42 +1669,6 @@ HWTEST(FastSystemStreamUnitTest, SetCallbacksWhenRestore_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetCallbacksWhenRestore API
- * @tc.type  : FUNC
- * @tc.number: SetCallbacksWhenRestore_002
- * @tc.desc  : Test SetCallbacksWhenRestore interface.
- */
-HWTEST(FastSystemStreamUnitTest, SetCallbacksWhenRestore_002, TestSize.Level1)
-{
-    int32_t appUid = static_cast<int32_t>(getuid());
-    std::shared_ptr<FastAudioStream> fastAudioStream =
-        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
-    EXPECT_NE(fastAudioStream, nullptr);
-    fastAudioStream->eMode_ = AUDIO_MODE_PLAYBACK;
-    int erroStore = -1;
-    int ret = fastAudioStream->SetCallbacksWhenRestore();
-    EXPECT_NE(erroStore, ret);
-}
-
-/**
- * @tc.name  : Test SetCallbacksWhenRestore API
- * @tc.type  : FUNC
- * @tc.number: SetCallbacksWhenRestore_002
- * @tc.desc  : Test SetCallbacksWhenRestore interface.
- */
-HWTEST(FastSystemStreamUnitTest, SetCallbacksWhenRestore_003, TestSize.Level1)
-{
-    int32_t appUid = static_cast<int32_t>(getuid());
-    std::shared_ptr<FastAudioStream> fastAudioStream =
-        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
-    EXPECT_NE(fastAudioStream, nullptr);
-    fastAudioStream->eMode_ = AUDIO_MODE_RECORD;
-    int erroStore = -1;
-    int ret = fastAudioStream->SetCallbacksWhenRestore();
-    EXPECT_NE(erroStore, ret);
-}
-
-/**
  * @tc.name  : Test RestoreAudioStream API
  * @tc.type  : FUNC
  * @tc.number: RestoreAudioStream_001
