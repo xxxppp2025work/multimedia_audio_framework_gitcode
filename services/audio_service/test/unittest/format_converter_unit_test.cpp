@@ -229,7 +229,6 @@ HWTEST_F(FormatConverterUnitTest, S16MonoToS16Stereo_002, TestSize.Level1)
     BufferDesc srcDesc;
     BufferDesc dstDesc;
     int32_t ret = -1;
-    uint8_t srcBuffer[8] = {0};
     uint8_t dstBuffer[4] = {0};
 
     srcDesc.bufLength = 2;
@@ -268,7 +267,7 @@ HWTEST_F(FormatConverterUnitTest, S16MonoToS16Stereo_002, TestSize.Level1)
     EXPECT_EQ(ret, -1);
 
     ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1); 
+    EXPECT_EQ(ret, -1);
 }
 
 /**
@@ -325,7 +324,6 @@ HWTEST_F(FormatConverterUnitTest, S16MonoToS16Stereo_003, TestSize.Level1)
 
     ret = FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
     EXPECT_EQ(ret, 0);
-
 }
 
 /**
