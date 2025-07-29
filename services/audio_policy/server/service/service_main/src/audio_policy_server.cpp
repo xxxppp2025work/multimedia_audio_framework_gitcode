@@ -3073,7 +3073,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
     if (interruptService_ != nullptr) {
         int32_t ret = AudioZoneService::GetInstance().SetAppConcurrencyMode(pid, uid, 0);
         if (ret == SUCCESS)  {
-            ret = audioVolumeManager_.SetAppVolumeMuted(appUid, muted);
+            ret = audioVolumeManager_.SetAppVolumeMuted(uid, false);
             AUDIO_ERR_LOG("Fail to set App Volume mute");
         }
     }
