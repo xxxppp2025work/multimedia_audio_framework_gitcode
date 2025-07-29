@@ -195,7 +195,6 @@ void AudioSession::Dump(std::string &dumpString)
         callerPid_, static_cast<int32_t>(defaultDeviceType_));
     AppendFormat(dumpString, "    - pid: %d, AudioSession state is: %u.\n",
         callerPid_, static_cast<uint32_t>(state_));
-    AppendFormat(dumpString, "    - pid: %d, Stream in interruptMap are:\n", callerPid_);
     AppendFormat(dumpString, "    - pid: %d, Streams in session are:\n", callerPid_);
     for (auto &it : streamsInSession_) {
         AppendFormat(dumpString, "        - StreamId is: %u, streamType is: %u\n",

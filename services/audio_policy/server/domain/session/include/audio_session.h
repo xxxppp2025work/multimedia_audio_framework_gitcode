@@ -70,7 +70,7 @@ public:
     bool IsBackGroundApp(void);
 
 private:
-    StreamUsage GetStreamUsageByAudioSessionScene(const AudioSessionScene audioSessionScene);
+    StreamUsage GetStreamUsageByAudioSessionScene();
     bool IsLegalDevice(const DeviceType deviceType);
     bool IsCurrentDevicePrivateDevice(const std::shared_ptr<AudioDeviceDescriptor> desc);
     bool IsDeviceContainedInVector(std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices,
