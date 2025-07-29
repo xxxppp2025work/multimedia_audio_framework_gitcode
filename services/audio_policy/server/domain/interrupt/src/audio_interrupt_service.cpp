@@ -1057,7 +1057,7 @@ void AudioInterruptService::ResetNonInterruptControl(AudioInterrupt audioInterru
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
-void AudioInterruptService::eraseDeactivateStandaloneAudioSessionId(const int32_t &uid,
+void AudioInterruptService::EraseDeactivateStandaloneAudioSessionId(const int32_t &uid,
     const int32_t &zoneId, const int32_t &sessionId)
 {
     std::unordered_set<int32_t> tempSessionIdList = standaloneApp_[uid][zoneId];

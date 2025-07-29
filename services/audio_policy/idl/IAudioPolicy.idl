@@ -287,9 +287,9 @@ interface IAudioPolicy {
     void SetAudioSessionScene([in] int audioSessionScene /* AudioSessionScene */);
     void GetDefaultOutputDevice([out] int deviceType /* deviceType */);
     void SetDefaultOutputDevice([in] int deviceType /* deviceType */);
-    void SetAppConcurrencyMode([in] int32_t appUid, [in] int32_t mode);
     void ForceVolumeKeyControlType([in] int volumeType, [in] int duration, [out] int ret);
     void SetQueryDeviceVolumeBehaviorCallback([in] IRemoteObject object);
+    void SetAppConcurrencyMode([in] int32_t appUid, [in] int32_t mode);
 
     // WARNING: above functions correspond with AudioPolicyInterfaceCode
 }

@@ -313,7 +313,7 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &activeInterrupt);
     void ReportRecordGetFocusFail(const AudioInterrupt &incomingInterrupt,
         const AudioInterrupt &activeInterrupt, int32_t reason);
-    void eraseDeactivateStandaloneAudioSessionId(const int32_t &uid,
+    void EraseDeactivateStandaloneAudioSessionId(const int32_t &uid,
         const int32_t &zoneId, const int32_t &sessionId);
     void RemoveExistingFocus(const int32_t &appUid);
     void ResumeStandalone(const int32_t &appUid);
