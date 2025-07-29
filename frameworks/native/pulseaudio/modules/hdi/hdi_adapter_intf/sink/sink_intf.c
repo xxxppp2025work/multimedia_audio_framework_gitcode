@@ -81,6 +81,9 @@ struct SinkAdapter *GetSinkAdapter(const char *deviceClass, const char *info)
     int32_t ret = InitSinkAdapter(adapter, deviceClass, info);
     if (ret != 0) {
         AUDIO_ERR_LOG("not support, deviceClass: %{public}s, info: %{public}s", deviceClass, info);
+        if (adapter->deviceClass != NULL) {
+            free((char *)(adapter->deviceClass));
+        }
         free(adapter);
         return NULL;
     }
