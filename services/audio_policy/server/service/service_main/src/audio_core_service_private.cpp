@@ -2402,6 +2402,14 @@ int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescrip
 
     int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc);
     CHECK_AND_RETURN_RET_LOG(nearlinkFetchResult == SUCCESS, ERROR, "nearlink fetch input device failed");
+
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
+        streamDesc->newDeviceDescs_[0] != nullptr, ERR_INVALID_PARAM, "Invalid stream desc");
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
+    if (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        audioEcManager_.ActivateArmDevice(deviceDesc->macAddress_, deviceDesc->deviceRole_);
+    }
+    
     return SUCCESS;
 }
 
@@ -2703,7 +2711,9 @@ void AudioCoreService::WriteCapturerConcurrentMsg(std::shared_ptr<AudioStreamDes
     std::vector<bool> existingFastFlag{};
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = pipeManager_->GetPipeList();
     for (auto &pipeInfo : pipeInfoList) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         for (auto &streamDescInPipe : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(streamDescInPipe != nullptr, "streamDescInPipe is nullptr");
             if (streamDescInPipe->audioMode_ != streamDesc->audioMode_) {
                 continue;
             }
