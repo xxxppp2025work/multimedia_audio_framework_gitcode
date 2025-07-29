@@ -131,26 +131,6 @@ static uint64_t CalculateFrameLen(uint32_t sampleRate, uint32_t channels, int32_
     return sampleRate * channels * GetByteSizeByFormat(format) * FRAME_DURATION_DEFAULT / MILLISECOND_PER_SECOND;
 }
 
-static struct SourceAdapterFrameDesc *AllocateFrameDesc(char *frame, uint64_t frameLen)
-{
-    struct SourceAdapterFrameDesc *fdesc = (struct SourceAdapterFrameDesc *)calloc(1,
-        sizeof(struct SourceAdapterFrameDesc));
-    if (fdesc != NULL) {
-        fdesc->frame = frame;
-        fdesc->frameLen = frameLen;
-    }
-
-    return fdesc;
-}
-
-static void FreeFrameDesc(struct SourceAdapterFrameDesc *fdesc)
-{
-    if (fdesc != NULL) {
-        // frame in desc is allocated outside, do not free here
-        free(fdesc);
-    }
-}
-
 static void InitAuxCapture(struct Userdata *u)
 {
     if (u->sourceAdapterEc != NULL) {
@@ -505,61 +485,30 @@ static void PostDataBypass(pa_source *source, pa_memchunk *chunk)
     }
 }
 
-static int32_t CheckSameAdapterEcLength(uint64_t request, uint64_t reply, uint64_t requestEc, uint64_t replyEc)
-{
-    if ((reply == 0) || (replyEc == 0) || (request != reply) || (requestEc != replyEc)) {
-        return -1;
-    }
-    return 0;
-}
-
-static int32_t CheckDiffAdapterEcLength(uint64_t request, uint64_t reply, uint64_t requestEc, uint64_t replyEc)
-{
-    if ((reply == 0) || (replyEc == 0) || (request != reply) || (requestEc != replyEc)) {
-        return -1;
-    }
-    return 0;
-}
-
 static int32_t HandleCaptureFrame(struct Userdata *u, char *buffer, uint64_t requestBytes, uint64_t *replyBytes)
 {
     uint64_t replyBytesEc = 0;
     if (u->ecType == EC_NONE) {
         u->sourceAdapter->SourceAdapterCaptureFrame(u->sourceAdapter, buffer, requestBytes, replyBytes);
-    }
-    if (u->ecType == EC_SAME_ADAPTER) {
-        struct SourceAdapterFrameDesc *fdesc = AllocateFrameDesc(buffer, requestBytes);
-        struct SourceAdapterFrameDesc *fdescEc = AllocateFrameDesc((char *)(u->bufferEc), u->requestBytesEc);
+    } else if (u->ecType == EC_SAME_ADAPTER) {
+        struct SourceAdapterFrameDesc fdesc = {buffer, requestBytes};
+        struct SourceAdapterFrameDesc fdescEc = {(char *)(u->bufferEc), u->requestBytesEc};
         u->sourceAdapter->SourceAdapterCaptureFrameWithEc(u->sourceAdapter,
             fdesc, replyBytes, fdescEc, &replyBytesEc);
-        FreeFrameDesc(fdesc);
-        FreeFrameDesc(fdescEc);
-        if (CheckSameAdapterEcLength(requestBytes, *replyBytes, u->requestBytesEc, replyBytesEc)) {
-            u->requestBytesEc = 0;
-        }
-    }
-    if (u->ecType == EC_DIFFERENT_ADAPTER) {
+    } else if (u->ecType == EC_DIFFERENT_ADAPTER) {
         u->sourceAdapter->SourceAdapterCaptureFrame(u->sourceAdapter, buffer, requestBytes, replyBytes);
         if (u->sourceAdapterEc != NULL) {
-            struct SourceAdapterFrameDesc *fdesc = AllocateFrameDesc(NULL, requestBytes);
-            struct SourceAdapterFrameDesc *fdescEc = AllocateFrameDesc((char *)(u->bufferEc), u->requestBytesEc);
+            struct SourceAdapterFrameDesc fdesc = {NULL, requestBytes};
+            struct SourceAdapterFrameDesc fdescEc = {(char *)(u->bufferEc), u->requestBytesEc};
             uint64_t replyBytesUnused = 0;
             u->sourceAdapterEc->SourceAdapterCaptureFrameWithEc(u->sourceAdapterEc,
                 fdesc, &replyBytesUnused, fdescEc, &replyBytesEc);
-            FreeFrameDesc(fdesc);
-            FreeFrameDesc(fdescEc);
-            if (CheckDiffAdapterEcLength(requestBytes, *replyBytes, u->requestBytesEc, replyBytesEc)) {
-                u->requestBytesEc = 0;
-            }
         }
     }
-    uint64_t replyBytesMicRef = 0;
     if (u->micRef == REF_ON) {
+        uint64_t replyBytesMicRef = 0;
         u->sourceAdapterMicRef->SourceAdapterCaptureFrame(u->sourceAdapterMicRef,
             (char *)(u->bufferMicRef), u->requestBytesMicRef, &replyBytesMicRef);
-        if ((replyBytesMicRef == 0) && (u->requestBytesMicRef != replyBytesMicRef)) {
-            u->bufferMicRef = 0;
-        }
     }
     return 0;
 }
