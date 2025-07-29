@@ -3071,7 +3071,11 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
     audioAffinityManager_.DelSelectCapturerDevice(uid);
     audioAffinityManager_.DelSelectRendererDevice(uid);
     if (interruptService_ != nullptr) {
-        int32_t zoneId = AudioZoneService::GetInstance().SetAppConcurrencyMode(pid, uid, 0);
+        int32_t ret = AudioZoneService::GetInstance().SetAppConcurrencyMode(pid, uid, 0);
+        if (ret == SUCCESS)  {
+            ret = audioVolumeManager_.SetAppVolumeMuted(appUid, muted);
+            AUDIO_ERR_LOG("Fail to set App Volume mute");
+        }
     }
     if (pid == lastMicMuteSettingPid_) {
         // The last app with the non-persistent microphone setting died, restore the default non-persistent value
