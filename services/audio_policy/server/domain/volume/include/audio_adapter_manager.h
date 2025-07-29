@@ -297,6 +297,7 @@ public:
     void RegisterDoNotDisturbStatusWhiteList();
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void HandleDistributedDeviceVolume();
+    void HandleDistributedDevice(AudioDeviceDescriptor deviceDescriptor);
 
 private:
     friend class PolicyCallbackImpl;
