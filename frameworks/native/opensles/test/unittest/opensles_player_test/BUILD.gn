@@ -59,10 +59,9 @@ ohos_unittest("audio_opensles_player_unit_test") {
   external_deps = [
     "hilog:libhilog",
     "opensles:libSLES",
-    "pulseaudio:pulse",
     "ipc:ipc_single",
   ]
-
+  
   resource_config_file =
       "../../../../../../test/resource/audio_renderer/ohos_test.xml"
 }

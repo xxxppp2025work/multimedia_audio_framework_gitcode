@@ -99,10 +99,8 @@ audio_ohos_library("audio_effect") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "os_account:os_account_innerkits",
-    "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]
-
   if (sensor_enable == true) {
     external_deps += [ "sensor:sensor_interface_native" ]
   }

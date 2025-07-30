@@ -80,12 +80,10 @@ ohos_unittest("audio_effect_chain_manager_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "relational_store:native_appdatafwk",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
   if (sensor_enable == true) {
     cflags += [ "-DSENSOR_ENABLE" ]
     external_deps += [ "sensor:sensor_interface_native" ]

@@ -69,10 +69,8 @@ ohos_unittest("hpae_adapter_manager_unit_test") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]
-
   defines = []
   if (audio_framework_feature_inner_capturer) {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]

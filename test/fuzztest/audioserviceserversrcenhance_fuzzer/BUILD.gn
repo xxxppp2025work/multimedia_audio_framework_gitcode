@@ -63,10 +63,10 @@ ohos_fuzztest("AudioServiceServerSrcEnhanceFuzzTest") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
 
   defines = []
   if (use_libfuzzer || use_clang_coverage) {
