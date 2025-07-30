@@ -396,7 +396,7 @@ int32_t RemoteOffloadAudioRenderSink::GetLatencyInner()
     int32_t ret = audioRender_->GetLatency(hdiLatencyMS);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "get latency fail, ret: %{public}d", ret);
 
-    hdiLatency_ = hdiLatency * MICROSECOND_TO_MILLISECOND;
+    hdiLatencyUS_ = hdiLatencyMS * MICROSECOND_TO_MILLISECOND;
     return SUCCESS;
 }
 

@@ -678,7 +678,7 @@ void RendererInClientInner::ResetFramePosition()
     CHECK_AND_RETURN_PRELOG(ret == SUCCESS, "Get position failed: %{public}d", ret);
 
     if (isHdiSpeed_.load()) {
-        ret = ipcStream_->GetSpeedPosition(lastFlushOriginReadIdx_, timestampval, latency);
+        ret = ipcStream_->GetSpeedPosition(lastFlushOriginReadIdx_, timestampval);
         CHECK_AND_RETURN_PRELOG(ret == SUCCESS, "Get speed position failed: %{public}d", ret);
     }
 

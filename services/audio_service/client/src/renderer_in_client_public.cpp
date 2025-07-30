@@ -1876,7 +1876,7 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     uint64_t framePosition = 0;
     if (isHdiSpeed_.load()) {
         uint64_t readIdx = 0;
-        ret = ipcStream_->GetSpeedPosition(readIdx, timestampVal, latency);
+        ret = ipcStream_->GetSpeedPosition(readIdx, timestampVal);
         framePosition = readIdx - lastFlushOriginReadIdx_ + lastOriginPosition_;
         AUDIO_DEBUG_LOG("RendererInClientInner::GetAudioTimestampInfo readIdx %{public}" PRId64
             ", lastFlushOriginIdx_ %{public}" PRId64 ", lastOriginPosition_ %{public}" PRId64,
