@@ -225,7 +225,9 @@ private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
 
-    void  FlushBeforeStart();
+    void FlushBeforeStart();
+    void RecordPosition();
+    int32_t GetAudioPositionInner(uint64_t &timestamp, uint64_t &latency, int32_t base, uint64_t &framePosition);
 
     int32_t DeinitIpcStream();
 
@@ -453,6 +455,9 @@ private:
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
     int64_t preWriteEndTime_ = 0;
     uint64_t lastFlushReadIndex_ = 0;
+    uint64_t lastFlushOriginReadIdx_ = 0;
+    uint64_t lastOriginPosition_ = 0;
+    uint64_t lastOriginPositionTime_ = 0;
     bool isDataLinkConnected_ = false;
 
     enum {

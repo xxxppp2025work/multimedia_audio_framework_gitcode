@@ -132,6 +132,11 @@ public:
         return 0;
     }
 
+    virtual int32_t GetSpeedPosition(uint64_t &framePos, uint64_t &timestamp) override
+    {
+        return 0;
+    }
+
     virtual int32_t GetLatency(uint64_t &latency) override { return 0; }
 
     virtual int32_t SetRate(int32_t rate) override { return 0; } // SetRenderRate

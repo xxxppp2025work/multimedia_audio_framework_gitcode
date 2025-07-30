@@ -523,7 +523,13 @@ int32_t HpaeOffloadSinkOutputNode::UpdatePresentationPosition()
     uint64_t frames;
     int64_t timeSec;
     int64_t timeNanoSec;
-    int ret = audioRendererSink_->GetPresentationPosition(frames, timeSec, timeNanoSec);
+    std::string deviceClass = GetDeviceClass();
+    int ret;
+    if (deviceClass == "remote_offload") {
+        ret = audioRendererSink_->ForceRefreshPresentationPosition(frames, timeSec, timeNanoSec);
+    } else {
+        ret = audioRendererSink_->GetPresentationPosition(frames, timeSec, timeNanoSec);
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetPresentationPosition failed, errCode is %{public}d", ret);
     auto total_ns = std::chrono::seconds(timeSec) + std::chrono::nanoseconds(timeNanoSec);
     hdiPos_ = std::make_pair(frames, TimePoint(total_ns));

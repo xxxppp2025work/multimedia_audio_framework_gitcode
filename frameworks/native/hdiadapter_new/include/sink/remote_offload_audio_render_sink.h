@@ -117,6 +117,10 @@ public:
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
 
+    int32_t GetRealPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
+    int32_t GetOriginLatency(uint32_t &latency) override;
+    int32_t ForceRefreshPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
+
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
 private:
@@ -131,6 +135,14 @@ private:
     void CheckUpdateState(char *data, uint64_t len);
     int32_t SetVolumeInner(float left, float right);
     void UpdateSinkState(bool started);
+    int32_t GetRenderPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec);
+    void AddRealLatency(uint32_t duration, uint32_t speed);
+    void RemoveRealLatency(uint32_t duration);
+    void CheckHdiTime(int64_t &timeSec, int64_t &timeNanoSec);
+    int32_t GetLatencyInner();
+    void CalcRealPosition(uint64_t frames, int64_t timeSec, int64_t timeNanoSec);
+    void ResetPosition();
+    int32_t EstimateRenderPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -185,6 +197,27 @@ private:
     std::string dumpFileName_ = "";
     uint64_t renderPos_ = 0;
     std::mutex sinkMutex_;
+
+    // sample count (before scaling to one times speed)
+    uint64_t lastHdiFramesUS_ = 0;
+    // sample count (after scaling to one times speed)
+    uint64_t lastHdiOriginFramesUS_ = 0;
+    // Audio playback rate
+    float speed_ = 1;
+    // Delay queue: pair <latency duration, speed>
+    std::deque<std::pair<uint32_t, uint32_t>> realLatencyDeque_;
+    // Delay queue real length
+    uint32_t realLatencyTotalUS_ = 0;
+    // remote offload hdi latency (us)
+    uint32_t hdiLatencyUS_ = 0;
+    // The timestamp (in microseconds) of the last HDI flush operation for frames (before scaling to one times speed)
+    uint64_t lastHdiFlushFramesUS_ = 0;
+    // The timestamp (in microseconds) of the last HDI flush operation for frames (after scaling to one times speed)
+    uint64_t lastHdiOriginFlushFramesUS_ = 0;
+    // The hdi timestamp (in nanoseconds) of the last get audio position operation
+    int64_t lastHdiTimeNS_ = 0;
+    // The system timestamp (in nanoseconds) of the last get audio position operation
+    int64_t lastSystemTimeNS_ = 0;
 };
 
 } // namespace AudioStandard

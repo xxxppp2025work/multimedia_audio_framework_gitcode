@@ -628,6 +628,15 @@ void RendererInClientInner::NotifyRouteUpdate(uint32_t routeFlag, const std::str
     CHECK_AND_RETURN(curIsHdiSpeed != isHdiSpeed_.load());
     AUDIO_INFO_LOG("need set speed to hdi: %{public}s", curIsHdiSpeed ? "true" : "false");
     isHdiSpeed_.store(curIsHdiSpeed);
+    if (curIsHdiSpeed) {
+        std::vector<uint64_t> timestampCurrent = {0};
+        ClockTime::GetAllTimeStamp(timestampCurrent);
+        if (state_ == RUNNING) {
+            uint64_t duration = timestampCurrent[Timestamp::Timestampbase::BOOTTIME] - lastOriginPositionTime_;
+            auto frames = duration * speed_ * curStreamParams_.samplingRate / AUDIO_NS_PER_SECOND;
+            lastOriginPosition_ += frames;
+        }
+    }    
     SetSpeed(speed_);
 }
 
@@ -652,6 +661,7 @@ int32_t RendererInClientInner::SetSpeed(float speed)
     speed_ = speed;
     speedEnable_ = true;
     AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
+    RecordPosition();
     return SUCCESS;
 }
 
@@ -999,6 +1009,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     UpdateTracker("RUNNING");
 
     FlushBeforeStart();
+    RecordPosition();
 
     std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);
     if (!isDataLinkConnected_) {
@@ -1037,6 +1048,14 @@ void RendererInClientInner::FlushBeforeStart()
     }
 }
 
+void RendererInClientInner::RecordPosition()
+{
+    CHECK_AND_RETURN_LOG(!isHdiSpeed_.load(), "Only normal path need record position");
+    uint64_t latency = 0;
+    (void)GetAudioPositionInner(lastOriginPositionTime_, latency, Timestamp::Timestampbase::BOOTTIME,
+        lastOriginPosition_);
+}
+
 bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
 {
     Trace trace("RendererInClientInner::PauseAudioStream " + std::to_string(sessionId_));
@@ -1066,6 +1085,8 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
 
     FutexTool::FutexWake(clientBuffer_->GetFutex());
     statusLock.unlock();
+
+    RecordPosition();
 
     // in plan: call HiSysEventWrite
     int64_t param = -1;
@@ -1804,16 +1825,11 @@ DeviceType RendererInClientInner::GetDefaultOutputDevice()
     return defaultOutputDevice_;
 }
 
-int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
+int32_t RendererInClientInner::GetAudioPositionInner(uint64_t &timestamp, uint64_t &latency, int32_t base,
+    uint64_t &framePosition)
 {
-    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Renderer stream state is not RUNNING");
-    CHECK_AND_RETURN_RET_LOG(base >= 0 && base < Timestamp::Timestampbase::BASESIZE,
-        ERR_INVALID_PARAM, "Timestampbase is not allowed");
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
     uint64_t readIdx = 0;
-    uint64_t timestampVal = 0;
-    uint64_t latency = 0;
-    int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency, base);
+    int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestamp, latency, base);
     // cal readIdx from last flush
     readIdx = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
 
@@ -1837,8 +1853,38 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     // between unprocessSamples and framesWritten there is sonic
     frameLatency += SONIC_LATENCY_IN_MS * curStreamParams_.samplingRate / AUDIO_MS_PER_SECOND;
     // real frameposition
-    uint64_t framePosition = unprocessSamples > frameLatency ? unprocessSamples - frameLatency : 0;
+    framePosition = unprocessSamples > frameLatency ? unprocessSamples - frameLatency : 0;
 
+    AUDIO_DEBUG_LOG("[CLIENT]Latency info: unprocessSamples %{public}" PRIu64 ", samplesWritten %{public}" PRIu64
+        ", lastSpeedPosition %{public}" PRIu64, unprocessSamples, samplesWritten, lastSpeedPosition);
+    AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
+        ", timestamp %{public}" PRIu64 ", totlatency %{public}" PRIu64,
+        framePosition, lastFlushReadIndex_, timestamp, frameLatency);
+
+    return ret;
+}
+
+int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
+{
+    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Renderer stream state is not RUNNING");
+    CHECK_AND_RETURN_RET_LOG(base >= 0 && base < Timestamp::Timestampbase::BASESIZE,
+        ERR_INVALID_PARAM, "Timestampbase is not allowed");
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
+    
+    uint64_t timestampVal = 0;
+    uint64_t latency = 0;
+    int32_t ret = SUCCESS;
+    uint64_t framePosition = 0;
+    if (isHdiSpeed_.load()) {
+        uint64_t readIdx = 0;
+        ret = ipcStream_->GetSpeedPosition(readIdx, timestampVal);
+        framePosition = readIdx - lastFlushOriginReadIdx_ + lastOriginPosition_;
+        AUDIO_DEBUG_LOG("RendererInClientInner::GetAudioTimestampInfo readIdx %{public}" PRId64
+            ", lastFlushOriginIdx_ %{public}" PRId64 ", lastOriginPosition_ %{public}" PRId64,
+            readIdx, lastFlushOriginReadIdx_, lastOriginPosition_);
+    } else {
+        ret = GetAudioPositionInner(timestampVal, latency, base, framePosition);
+    }
     // reset the timestamp
     if (lastFramePosAndTimePairWithSpeed_[base].first < framePosition ||
         lastFramePosAndTimePairWithSpeed_[base].second == 0) {
@@ -1848,11 +1894,6 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
         framePosition = lastFramePosAndTimePairWithSpeed_[base].first;
         timestampVal = lastFramePosAndTimePairWithSpeed_[base].second;
     }
-    AUDIO_DEBUG_LOG("[CLIENT]Latency info: unprocessSamples %{public}" PRIu64 ", samplesWritten %{public}" PRIu64
-        ", lastSpeedPosition %{public}" PRIu64, unprocessSamples, samplesWritten, lastSpeedPosition);
-    AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
-        ", timestamp %{public}" PRIu64 ", totlatency %{public}" PRIu64,
-        framePosition, lastFlushReadIndex_, timestampVal, frameLatency);
 
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);

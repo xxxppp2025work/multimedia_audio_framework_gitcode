@@ -502,6 +502,12 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
     return SUCCESS;
 }
 
+int32_t PaRendererStreamImpl::GetSpeedPosition(uint64_t &framePosition, uint64_t &timestamp)
+{
+    AUDIO_WARNING_LOG("not support");
+    return ERR_NOT_SUPPORTED;
+}
+
 void PaRendererStreamImpl::PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
     PaRendererStreamImpl *rendererStreamImpl = (PaRendererStreamImpl *)userdata;
