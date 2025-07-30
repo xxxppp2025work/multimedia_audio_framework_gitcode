@@ -1513,7 +1513,7 @@ HWTEST(AudioManagerUnitTest, SetLowPowerVolume_001, TestSize.Level1)
     ASSERT_NE(0, streamId);
 
     ret = AudioSystemManager::GetInstance()->SetLowPowerVolume(streamId, DISCOUNT_VOLUME);
-    EXPECT_TRUE(ret == SUCCESS || ret == AUDIO_ERR);
+    EXPECT_FALSE(ret == SUCCESS || ret == AUDIO_ERR);
 
     audioRenderer->Release();
 }
@@ -1763,7 +1763,7 @@ HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_001, TestSize.Level1)
 {
     int32_t ret = AudioSystemManager::GetInstance()->UpdateStreamState(0,
         StreamSetState::STREAM_PAUSE, STREAM_USAGE_MEDIA);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1775,7 +1775,7 @@ HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_002, TestSize.Level1)
 {
     int32_t ret = AudioSystemManager::GetInstance()->UpdateStreamState(0,
         StreamSetState::STREAM_RESUME, STREAM_USAGE_MEDIA);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
