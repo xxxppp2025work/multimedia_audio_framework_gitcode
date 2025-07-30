@@ -315,6 +315,12 @@ int32_t ProRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint6
     return SUCCESS;
 }
 
+int32_t ProRendererStreamImpl::GetSpeedPosition(uint64_t &framePosition, uint64_t &timestamp)
+{
+    AUDIO_WARNING_LOG("not support");
+    return ERR_NOT_SUPPORTED;
+}
+
 int32_t ProRendererStreamImpl::GetLatency(uint64_t &latency)
 {
     CHECK_AND_RETURN_RET_LOG(byteSizePerFrame_ != 0, ERR_ILLEGAL_STATE, "Error frame size");
