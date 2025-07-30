@@ -74,10 +74,4 @@ ohos_unittest("audio_param_parser_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
 }

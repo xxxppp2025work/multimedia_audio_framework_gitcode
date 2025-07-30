@@ -66,12 +66,7 @@ ohos_fuzztest("AudioServerMoreFuzzTest") {
     "samgr:samgr_proxy",
     "qos_manager:concurrent_task_client",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   defines = []
   if (use_libfuzzer || use_clang_coverage) {

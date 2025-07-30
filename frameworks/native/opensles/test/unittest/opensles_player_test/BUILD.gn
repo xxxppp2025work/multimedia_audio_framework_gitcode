@@ -61,12 +61,6 @@ ohos_unittest("audio_opensles_player_unit_test") {
     "opensles:libSLES",
     "ipc:ipc_single",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   
   resource_config_file =
       "../../../../../../test/resource/audio_renderer/ohos_test.xml"

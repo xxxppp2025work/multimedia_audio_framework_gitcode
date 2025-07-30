@@ -71,12 +71,6 @@ ohos_unittest("hpae_adapter_manager_unit_test") {
     "media_foundation:media_monitor_common",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   defines = []
   if (audio_framework_feature_inner_capturer) {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]

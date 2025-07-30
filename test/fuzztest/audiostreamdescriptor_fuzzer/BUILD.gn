@@ -99,12 +99,7 @@ ohos_fuzztest("AudioStreamDescriptorFuzzTest") {
     "safwk:system_ability_fwk",
     "qos_manager:concurrent_task_client",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
   if (sonic_enable == true && !audio_framework_feature_new_engine_flag) {
     external_deps += [ "pulseaudio:sonic" ]
   }

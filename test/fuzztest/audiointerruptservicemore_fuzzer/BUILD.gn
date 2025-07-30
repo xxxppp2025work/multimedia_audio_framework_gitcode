@@ -84,12 +84,7 @@ ohos_fuzztest("AudioInterruptServiceMoreFuzzTest") {
     "relational_store:native_appdatafwk",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-  ]  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+  ]
   if (accessibility_enable == true) {
     external_deps += [
       "accessibility:accessibility_common",

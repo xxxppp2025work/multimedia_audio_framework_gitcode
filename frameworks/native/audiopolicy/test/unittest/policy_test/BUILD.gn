@@ -50,12 +50,6 @@ ohos_unittest("audio_policy_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   sources = [
     "src/audio_policy_ext_unit_test.cpp",
     "src/audio_policy_unit_test.cpp",

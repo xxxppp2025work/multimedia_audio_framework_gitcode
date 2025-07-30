@@ -90,12 +90,7 @@ ohos_fuzztest("AudioActiveDeviceFuzzTest") {
     "samgr:samgr_proxy",
     "bluetooth:btframework"
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
   if (sonic_enable == true && !audio_framework_feature_new_engine_flag) {
     external_deps += [ "pulseaudio:sonic" ]
   }

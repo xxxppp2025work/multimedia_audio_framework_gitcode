@@ -65,12 +65,6 @@ ohos_shared_library("pulse_audio_service_adapter") {
     "media_foundation:media_monitor_common",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-
     sources += ["src/pulse_audio_service_adapter_impl.cpp"]
 
     defines += [ "SUPPORT_OLD_ENGINE" ]

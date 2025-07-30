@@ -62,12 +62,6 @@ ohos_shared_library("playback_capturer") {
     "ipc:ipc_single",
   ]
 
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
-
   version_script = "../../../audio_framework.versionscript"
 
   part_name = "audio_framework"

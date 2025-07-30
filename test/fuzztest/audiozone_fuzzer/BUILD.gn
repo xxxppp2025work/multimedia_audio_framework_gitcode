@@ -100,12 +100,7 @@ ohos_fuzztest("AudioZoneFuzzTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 

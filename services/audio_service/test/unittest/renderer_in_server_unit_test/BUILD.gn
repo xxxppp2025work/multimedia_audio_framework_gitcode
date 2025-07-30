@@ -80,12 +80,6 @@ ohos_unittest("renderer_in_server_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   defines = []
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
@@ -142,7 +136,6 @@ ohos_unittest("renderer_in_server_second_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
   defines = []
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]

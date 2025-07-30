@@ -148,12 +148,6 @@ if (!audio_framework_feature_opensl_es) {
       "hilog:libhilog",
       "opensles:libSLES",
     ]
-
-    if (!audio_framework_feature_new_engine_flag) {
-      external_deps += [
-        "pulseaudio:pulse",
-      ]
-    }
     part_name = "audio_framework"
     subsystem_name = "multimedia"
   }
@@ -182,12 +176,6 @@ if (!audio_framework_feature_opensl_es) {
       "hilog:libhilog",
       "opensles:libSLES",
     ]
-
-    if (!audio_framework_feature_new_engine_flag) {
-      external_deps += [
-        "pulseaudio:pulse",
-      ]
-    }
     part_name = "audio_framework"
     subsystem_name = "multimedia"
   }

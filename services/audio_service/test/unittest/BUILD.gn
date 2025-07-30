@@ -90,12 +90,6 @@ ohos_unittest("audio_balance_unit_test") {
     "qos_manager:concurrent_task_client",
   ]
 
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
-
   defines = []
   if (audio_framework_feature_inner_capturer) {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
@@ -138,12 +132,6 @@ ohos_unittest("none_mix_engine_unit_test") {
     "c_utils:utils",
     "hilog:libhilog",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
 }
 
 ohos_unittest("direct_playback_engine_unit_test") {
@@ -179,12 +167,6 @@ ohos_unittest("direct_playback_engine_unit_test") {
     "c_utils:utils",
     "hilog:libhilog",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
 }
 
 ohos_unittest("audio_thread_task_unit_test") {
@@ -364,12 +346,6 @@ ohos_unittest("audio_service_unit_test") {
         [ "../../../../frameworks/native/playbackcapturer:playback_capturer" ]
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
 }
 
 ohos_unittest("pa_renderer_stream_impl_unit_test") {
@@ -401,12 +377,6 @@ ohos_unittest("pa_renderer_stream_impl_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   defines = []
   if (audio_framework_feature_inner_capturer) {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
@@ -478,12 +448,6 @@ ohos_unittest("pa_renderer_stream_impl_unit_test_p2") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   defines = []
   if (audio_framework_feature_inner_capturer) {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
@@ -525,12 +489,6 @@ ohos_unittest("ipc_stream_in_server_unit_test") {
     "hilog:libhilog",
     "ipc:ipc_single",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
 }
 
 ohos_unittest("volume_tools_unit_test") {
@@ -560,12 +518,7 @@ ohos_unittest("volume_tools_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 }
 
 ohos_unittest("audio_process_in_server_unit_test") {
@@ -615,12 +568,6 @@ ohos_unittest("audio_process_in_server_unit_test") {
     "media_foundation:media_monitor_common",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   defines = []
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
@@ -682,12 +629,7 @@ ohos_unittest("capturer_in_client_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 }
 
 ohos_unittest("hpae_capturer_stream_impl_unit_test") {
@@ -757,12 +699,6 @@ ohos_unittest("pa_capturer_stream_impl_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   defines = []
   if (audio_framework_feature_inner_capturer) {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
@@ -860,12 +796,6 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "qos_manager:concurrent_task_client",
     "googletest:gmock",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   defines = []
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
@@ -983,12 +913,6 @@ ohos_unittest("capturer_in_server_unit_test") {
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   defines = []
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
@@ -1038,12 +962,7 @@ ohos_unittest("audio_dump_pcm_unit_test") {
     "googletest:gmock",
     "eventhandler:libeventhandler",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 }
 
 ohos_unittest("format_converter_unit_test") {
@@ -1063,12 +982,7 @@ ohos_unittest("format_converter_unit_test") {
     "c_utils:utils",
     "googletest:gmock",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 }
 
 ohos_unittest("futex_tool_unit_test") {
@@ -1158,12 +1072,6 @@ ohos_unittest("audio_spatial_channel_converter_unit_test") {
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
 }
 
 ohos_unittest("policy_handler_unit_test") {

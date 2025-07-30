@@ -178,12 +178,6 @@ ohos_executable("audio_voip_test") {
     "c_utils:utils",
     "hilog:libhilog",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
@@ -241,11 +235,6 @@ ohos_executable("audio_blendmode_test") {
     "ipc:ipc_single",
     "safwk:system_ability_fwk",
   ]
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   part_name = "audio_framework"
   subsystem_name = "multimedia"
 }

@@ -70,12 +70,6 @@ ohos_unittest("audio_endpoint_unit_test") {
     "samgr:samgr_proxy",
     "qos_manager:concurrent_task_client",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   defines = []
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
@@ -148,12 +142,6 @@ ohos_unittest("audio_endpoint_plus_unit_test") {
     "samgr:samgr_proxy",
     "qos_manager:concurrent_task_client",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   defines = []
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]

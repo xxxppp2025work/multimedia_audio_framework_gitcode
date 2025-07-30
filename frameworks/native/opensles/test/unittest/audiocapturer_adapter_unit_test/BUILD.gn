@@ -60,10 +60,5 @@ ohos_unittest("audio_capturer_adapter_unit_test") {
     "opensles:libSLES",
     "eventhandler:libeventhandler",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 }

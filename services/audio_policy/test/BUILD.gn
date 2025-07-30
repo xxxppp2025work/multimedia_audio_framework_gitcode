@@ -159,12 +159,6 @@ ohos_unittest("audio_zone_service_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
@@ -331,12 +325,6 @@ ohos_unittest("audio_zone_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
@@ -498,12 +486,6 @@ ohos_unittest("audio_interrupt_service_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
@@ -663,12 +645,6 @@ ohos_unittest("audio_interrupt_service_second_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
@@ -823,12 +799,6 @@ ohos_unittest("audio_policy_service_first_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
@@ -1023,12 +993,6 @@ ohos_unittest("audio_policy_service_second_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
@@ -1220,12 +1184,6 @@ ohos_unittest("audio_policy_service_third_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
@@ -1420,12 +1378,6 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
@@ -1639,12 +1591,6 @@ ohos_unittest("audio_pnp_server_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   sources = [
     "./unittest/audio_pnp_server_unit_test/src/audio_pnp_server_unit_test.cpp",
   ]
@@ -1710,12 +1656,6 @@ ohos_unittest("audio_socket_thread_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   if (audio_framework_feature_wired_audio) {
     sources = [
       "./unittest/audio_socket_thread_test/src/audio_socket_thread_test.cpp",
@@ -1767,12 +1707,6 @@ ohos_unittest("audio_offload_stream_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   sources = [ "./unittest/audio_offload_stream_unit_test/src/audio_offload_stream_unit_test.cpp" ]
 
   deps = [
@@ -1912,12 +1846,6 @@ ohos_unittest("audio_policy_server_unit_test") {
 
     "safwk:system_ability_fwk",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   sources = [
     "./unittest/audio_interrupt_service_test/src/audio_policy_server_unit_test.cpp",
     "./unittest/audio_interrupt_service_test/src/audio_policy_server_unit_test_second.cpp",
@@ -2079,12 +2007,6 @@ ohos_unittest("audio_spatialization_service_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   sources = [ "./unittest/audio_spatialization_service_unit_test/src/audio_spatialization_service_unit_test.cpp" ]
 
   deps = [
@@ -2136,12 +2058,7 @@ ohos_unittest("audio_collaborative_service_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
   sources = [ "./unittest/audio_spatialization_service_unit_test/src/audio_collaborative_service_unit_test.cpp" ]
 
   deps = [
@@ -2197,12 +2114,7 @@ ohos_unittest("stream_filter_router_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
   sources = [ "./unittest/stream_filter_router_unit_test/src/stream_filter_router_unit_test.cpp" ]
 
   deps = [
@@ -2299,12 +2211,7 @@ ohos_unittest("sle_audio_device_manager_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [ "./unittest/sle_audio_device_manager_unit_test/src/sle_audio_device_manager_unit_test.cpp" ]
 
@@ -2377,12 +2284,7 @@ ohos_unittest("audio_router_center_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [ "./unittest/audio_router_center_unit_test/src/audio_router_center_unit_test.cpp" ]
 
@@ -2484,12 +2386,7 @@ ohos_unittest("privacy_priority_router_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [ "./unittest/privacy_priority_router_unit_test/src/privacy_priority_router_unit_test.cpp" ]
 
@@ -2596,12 +2493,7 @@ ohos_unittest("audio_affinity_parser_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [
     "./unittest/audio_affinity_parser_test/src/audio_affinity_parser_test.cpp",
@@ -2667,12 +2559,7 @@ ohos_unittest("audio_global_config_manager_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [ "./unittest/audio_global_config_manager_test/src/audio_global_config_manager_test.cpp" ]
 
@@ -2803,12 +2690,7 @@ ohos_unittest("audio_stream_collector_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [ "./unittest/audio_stream_collector_unit_test/src/audio_stream_collector_unit_test.cpp" ]
 
@@ -2890,12 +2772,7 @@ ohos_unittest("audio_stream_collector_pro_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [ "./unittest/audio_stream_collector_unit_test/src/audio_stream_collector_pro_unit_test.cpp" ]
 
@@ -2964,12 +2841,7 @@ ohos_unittest("audio_effect_service_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [
     "./unittest/audio_effect_service_test/src/audio_effect_service_test.cpp",
@@ -3021,12 +2893,7 @@ ohos_unittest("audio_policy_server_handler_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [ "./unittest/audio_policy_server_handler_unit_test/src/audio_policy_server_handler_unit_test.cpp" ]
 
@@ -3137,12 +3004,7 @@ ohos_unittest("audio_policy_async_action_handler_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 }
 
 ohos_unittest("audio_interrupt_service_pro_unit_test") {
@@ -3207,12 +3069,7 @@ ohos_unittest("audio_interrupt_service_pro_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   public_external_deps = [ "ffrt:libffrt" ]
 
@@ -3371,12 +3228,7 @@ ohos_unittest("volume_data_maintainer_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [ "./unittest/volume_data_maintainer_unit_test/src/volume_data_maintainer_unit_test.cpp" ]
 
@@ -3485,12 +3337,7 @@ ohos_unittest("audio_affinity_manager_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [ "./unittest/audio_affinity_manager_unit_test/src/audio_affinity_manager_unit_test.cpp" ]
 
@@ -3559,12 +3406,7 @@ ohos_unittest("audio_device_common_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [
     "./unittest/audio_device_common_unit_test/src/audio_device_common_unit_next_test.cpp",
@@ -3636,12 +3478,7 @@ ohos_unittest("audio_effect_config_parser_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [ "./unittest/audio_effect_config_parser_unit_test/src/audio_effect_config_parser_unit_test.cpp" ]
 
@@ -3709,12 +3546,7 @@ ohos_unittest("device_status_listener_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [ "./unittest/device_status_listener_unit_test/src/device_status_listener_unit_test.cpp" ]
   deps = [
@@ -3870,12 +3702,7 @@ ohos_unittest("audio_active_device_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [ "./unittest/audio_active_device_unit_test/src/audio_active_device_unit_test.cpp" ]
 
@@ -3943,12 +3770,7 @@ ohos_unittest("audio_a2dp_offload_manager_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [ "./unittest/audio_a2dp_offload_manager_unit_test/src/audio_a2dp_offload_manager_unit_test.cpp" ]
 
@@ -4014,12 +3836,7 @@ ohos_unittest("audio_a2dp_device_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [ "./unittest/audio_a2dp_device_unit_test/src/audio_a2dp_device_unit_test.cpp" ]
 
@@ -4086,12 +3903,7 @@ ohos_unittest("audio_connected_device_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [ "./unittest/audio_connected_device_unit_test/src/audio_connected_device_unit_test.cpp" ]
 
@@ -4226,12 +4038,7 @@ ohos_unittest("audio_adapter_manager_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 }
 
 ohos_unittest("audio_pipe_selector_unit_test") {
@@ -4307,12 +4114,7 @@ ohos_unittest("audio_pipe_selector_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 }
 
 ohos_unittest("audio_recovery_device_unit_test") {
@@ -4457,12 +4259,7 @@ ohos_unittest("audio_concurrency_service_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [ "./unittest/audio_concurrency_service_unit_test/src/audio_concurrency_service_unit_test.cpp" ]
 
@@ -4675,12 +4472,7 @@ ohos_unittest("power_state_listener_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [ "./unittest/power_state_listener_unit_test/src/power_state_listener_unit_test.cpp" ]
 
@@ -4925,12 +4717,7 @@ ohos_unittest("audio_background_manager_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   public_external_deps = [ "ffrt:libffrt" ]
 
@@ -5346,12 +5133,7 @@ ohos_unittest("audio_core_service_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   public_external_deps = [ "ffrt:libffrt" ]
 
@@ -5535,12 +5317,7 @@ ohos_unittest("audio_core_service_utils_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   public_external_deps = [ "ffrt:libffrt" ]
 
@@ -5735,12 +5512,7 @@ ohos_unittest("audio_pipe_manager_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 }
 
 ohos_unittest("audio_interrupt_dfx_collector_unit_test") {
@@ -5802,12 +5574,7 @@ ohos_unittest("audio_interrupt_dfx_collector_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [ "./unittest/audio_interrupt_service_test/src/audio_interrupt_dfx_collector_unit_test.cpp" ]
 
@@ -5875,12 +5642,7 @@ ohos_unittest("dfx_msg_manager_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   sources = [
     "./unittest/audio_interrupt_service_test/src/dfx_msg_manager_unit_test.cpp",

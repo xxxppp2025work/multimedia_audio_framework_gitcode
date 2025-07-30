@@ -462,12 +462,6 @@ audio_ohos_library("audio_process_service") {
     "qos_manager:concurrent_task_client",
   ]
 
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
-
   public_external_deps = [ "bounds_checking_function:libsec_static" ]
 
   defines = []
@@ -744,12 +738,6 @@ ohos_executable("audio_hdi_device_test") {
     "c_utils:utils",
     "hilog:libhilog",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
@@ -775,12 +763,6 @@ ohos_executable("audio_faststream_playback_test") {
     "init:libbegetutil",
     "ipc:ipc_single",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   part_name = "audio_framework"
   subsystem_name = "multimedia"
 }

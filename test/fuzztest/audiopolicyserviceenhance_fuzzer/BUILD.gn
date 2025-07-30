@@ -91,12 +91,7 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   public_external_deps = [ "ffrt:libffrt" ]
 

@@ -101,12 +101,6 @@ audio_ohos_library("audio_effect") {
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
   if (sensor_enable == true) {
     external_deps += [ "sensor:sensor_interface_native" ]
   }

@@ -47,10 +47,4 @@ ohos_unittest("pro_renderer_stream_impl_unit_test") {
     "hilog:libhilog",
     "ipc:ipc_single",
   ]
-
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
 }

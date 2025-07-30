@@ -68,12 +68,7 @@ ohos_fuzztest("AudioInterruptServiceFuzzTest") {
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
-  ]  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+  ]
 
   if (accessibility_enable == true) {
     external_deps += [

@@ -111,12 +111,7 @@ ohos_fuzztest("AudioPolicyMoreFuzzTest") {
       "accessibility:accessibilityconfig",
     ]
   }
-  
-  if (!audio_framework_feature_new_engine_flag) {
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-  }
+
 
   defines = []
   if (audio_framework_feature_wired_audio) {
