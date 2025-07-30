@@ -193,6 +193,7 @@ group("audio_fuzz_test") {
     "fuzztest/audioadaptorbluetooth_fuzzer:fuzztest",
     "fuzztest/audioaffinitymanager_fuzzer:fuzztest",
     "fuzztest/audiobluetoothmanager_fuzzer:fuzztest",
+    "fuzztest/audiobundlemanager_fuzzer:fuzztest",
     "fuzztest/audioconnecteddevice_fuzzer:fuzztest",
     "fuzztest/audiocoreserviceentry_fuzzer:fuzztest",
     "fuzztest/audiocoreserviceprivate_fuzzer:fuzztest",
