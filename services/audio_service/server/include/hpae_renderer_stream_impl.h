@@ -49,6 +49,7 @@ public:
     int32_t SetPrivacyType(int32_t privacyType) override;
     int32_t GetPrivacyType(int32_t &privacyType) override;
     int32_t SetSpeed(float speed) override;
+    int32_t GetSpeedPosition(uint64_t &framePosition, uint64_t &timestamp) override;
 
     void RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback) override;
     void RegisterWriteCallback(const std::weak_ptr<IWriteCallback> &callback) override;

@@ -119,6 +119,10 @@ public:
     virtual int32_t SetDeviceConnectedFlag(bool flag) NOT_SUPPORT_RET
     // for a2dp_offload connection state
     virtual int32_t UpdatePrimaryConnectionState(uint32_t operation) NOT_SUPPORT_RET;
+    
+    virtual int32_t GetRealPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) NOT_SUPPORT_RET;
+    virtual int32_t GetOriginLatency(uint32_t &latency) NOT_SUPPORT_RET;
+    virtual int32_t ForceRefreshPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) NOT_SUPPORT_RET;
 
     virtual void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) {}
 };

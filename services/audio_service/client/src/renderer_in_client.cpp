@@ -676,6 +676,12 @@ void RendererInClientInner::ResetFramePosition()
     int32_t ret = ipcStream_->GetAudioPosition(lastFlushReadIndex_, timestampval, latency,
         Timestamp::Timestampbase::MONOTONIC);
     CHECK_AND_RETURN_PRELOG(ret == SUCCESS, "Get position failed: %{public}d", ret);
+
+    if (isHdiSpeed_.load()) {
+        ret = ipcStream_->GetSpeedPosition(lastFlushOriginReadIdx_, timestampval, latency);
+        CHECK_AND_RETURN_PRELOG(ret == SUCCESS, "Get speed position failed: %{public}d", ret);
+    }
+
     // no need to reset timestamp, only reset frameposition
     for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
         lastFramePosAndTimePair_[base].first = 0;
