@@ -338,6 +338,16 @@ void AudioZoneGetSystemVolumeLevelFuzzTest()
     zone->GetSystemVolumeLevel(volumeProxyClientPid);
 }
 
+void AudioZoneIsVolumeProxyEnableFuzzTest()
+{
+    std::string name = "testAudioZone";
+    AudioZoneContext context;
+    std::shared_ptr<AudioZoneClientManager> zoneClientManager;
+    std::shared_ptr<AudioZone> zone =
+        std::make_shared<AudioZone>(zoneClientManager, name, context);
+    zone->IsVolumeProxyEnable();
+}
+
 TestPtr g_testPtrs[] = {
     AudioZoneBindKeyAudioZoneBindKeyFuzzTest,
     AudioZoneBindKeyOperatorFuzzTest,
@@ -362,6 +372,7 @@ TestPtr g_testPtrs[] = {
     AudioZoneEnableSystemVolumeProxyFuzzTest,
     AudioZoneSetSystemVolumeLevelFuzzTest,
     AudioZoneGetSystemVolumeLevelFuzzTest,
+    AudioZoneIsVolumeProxyEnableFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)
