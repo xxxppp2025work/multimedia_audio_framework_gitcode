@@ -1087,6 +1087,8 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     FutexTool::FutexWake(clientBuffer_->GetFutex());
     statusLock.unlock();
 
+    RecordPosition();
+
     // in plan: call HiSysEventWrite
     int64_t param = -1;
     StateCmdTypeToParams(param, state_, cmdType);
