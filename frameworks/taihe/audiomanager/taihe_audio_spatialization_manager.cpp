@@ -326,13 +326,16 @@ AudioSpatializationSceneType AudioSpatializationManagerImpl::GetSpatializationSc
     return TaiheAudioEnum::ToTaiheAudioSpatializationSceneType(sceneType);
 }
 
-void AudioSpatializationManagerImpl::OnSpatializationEnabledChangeForCurrentDevice(callback_view<void(bool)> callback)
+void AudioSpatializationManagerImpl::OnSpatializationEnabledChangeForCurrentDevice(
+    ::taihe::string_view type,
+    callback_view<void(bool)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterSpatializationEnabledChangeForCurrentDeviceCallback(cacheCallback, this);
 }
 
 void AudioSpatializationManagerImpl::OnSpatializationEnabledChangeForAnyDevice(
+    ::taihe::string_view type,
     callback_view<void(AudioSpatialEnabledStateForDevice const&)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
@@ -342,6 +345,7 @@ void AudioSpatializationManagerImpl::OnSpatializationEnabledChangeForAnyDevice(
 }
 
 void AudioSpatializationManagerImpl::OnHeadTrackingEnabledChangeForAnyDevice(
+    ::taihe::string_view type,
     callback_view<void(AudioSpatialEnabledStateForDevice const&)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
@@ -351,6 +355,7 @@ void AudioSpatializationManagerImpl::OnHeadTrackingEnabledChangeForAnyDevice(
 }
 
 void AudioSpatializationManagerImpl::OffSpatializationEnabledChangeForCurrentDevice(
+    ::taihe::string_view type,
     optional_view<callback<void(bool)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
@@ -361,6 +366,7 @@ void AudioSpatializationManagerImpl::OffSpatializationEnabledChangeForCurrentDev
 }
 
 void AudioSpatializationManagerImpl::OffSpatializationEnabledChangeForAnyDevice(
+    ::taihe::string_view type,
     optional_view<callback<void(AudioSpatialEnabledStateForDevice const&)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
@@ -373,6 +379,7 @@ void AudioSpatializationManagerImpl::OffSpatializationEnabledChangeForAnyDevice(
 }
 
 void AudioSpatializationManagerImpl::OffHeadTrackingEnabledChangeForAnyDevice(
+    ::taihe::string_view type,
     optional_view<callback<void(AudioSpatialEnabledStateForDevice const&)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;

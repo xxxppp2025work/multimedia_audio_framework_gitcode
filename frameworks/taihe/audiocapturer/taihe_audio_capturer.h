@@ -52,9 +52,17 @@ public:
 
     AudioState GetState();
     void StartSync();
+    void StartWithCallback();
+    void StartReturnsPromise();
     void StopSync();
+    void StopWithCallback();
+    void StopReturnsPromise();
     void ReleaseSync();
+    void ReleaseWithCallback();
+    void ReleaseReturnsPromise();
     int64_t GetBufferSizeSync();
+    int64_t GetBufferSizeWithCallback();
+    int64_t GetBufferSizeReturnsPromise();
     AudioCapturerInfo GetCapturerInfoSync();
     AudioStreamInfo GetStreamInfoSync();
     int64_t GetAudioStreamIdSync();
@@ -64,20 +72,28 @@ public:
     taihe::array<AudioDeviceDescriptor> GetCurrentInputDevices();
     AudioCapturerChangeInfo GetCurrentAudioCapturerChangeInfo();
 
-    void OnAudioInterrupt(callback_view<void(InterruptEvent const&)> callback);
-    void OnStateChange(callback_view<void(AudioState)> callback);
-    void OnInputDeviceChange(callback_view<void(array_view<AudioDeviceDescriptor>)> callback);
-    void OnAudioCapturerChange(callback_view<void(AudioCapturerChangeInfo const&)> callback);
-    void OnReadData(callback_view<void(array_view<uint8_t>)> callback);
-    void OnPeriodReach(int64_t frame, callback_view<void(int64_t)> callback);
-    void OnMarkReach(int64_t frame, callback_view<void(int64_t)> callback);
-    void OffStateChange(optional_view<callback<void(AudioState)>> callback);
-    void OffAudioInterrupt(optional_view<callback<void(InterruptEvent const&)>> callback);
-    void OffInputDeviceChange(optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback);
-    void OffAudioCapturerChange(optional_view<callback<void(AudioCapturerChangeInfo const&)>> callback);
-    void OffReadData(optional_view<callback<void(array_view<uint8_t>)>> callback);
-    void OffPeriodReach(optional_view<callback<void(int64_t)>> callback);
-    void OffMarkReach(optional_view<callback<void(int64_t)>> callback);
+    void OnAudioInterrupt(::taihe::string_view type,
+        callback_view<void(InterruptEvent const&)> callback);
+    void OnStateChange(::taihe::string_view type,
+        callback_view<void(AudioState)> callback);
+    void OnInputDeviceChange(::taihe::string_view type,
+        callback_view<void(array_view<AudioDeviceDescriptor>)> callback);
+    void OnAudioCapturerChange(::taihe::string_view type,
+        callback_view<void(AudioCapturerChangeInfo const&)> callback);
+    void OnReadData(::taihe::string_view type, callback_view<void(array_view<uint8_t>)> callback);
+    void OnPeriodReach(::taihe::string_view type, int64_t frame, callback_view<void(int64_t)> callback);
+    void OnMarkReach(::taihe::string_view type, int64_t frame, callback_view<void(int64_t)> callback);
+    void OffStateChange(::taihe::string_view type, optional_view<callback<void(AudioState)>> callback);
+    void OffAudioInterrupt(::taihe::string_view type,
+        optional_view<callback<void(InterruptEvent const&)>> callback);
+    void OffInputDeviceChange(::taihe::string_view type,
+        optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback);
+    void OffAudioCapturerChange(::taihe::string_view type,
+        optional_view<callback<void(AudioCapturerChangeInfo const&)>> callback);
+    void OffReadData(::taihe::string_view type,
+        optional_view<callback<void(array_view<uint8_t>)>> callback);
+    void OffPeriodReach(::taihe::string_view type, optional_view<callback<void(int64_t)>> callback);
+    void OffMarkReach(::taihe::string_view type, optional_view<callback<void(int64_t)>> callback);
 
 private:
     static void RegisterCapturerCallback(std::shared_ptr<uintptr_t> &callback,

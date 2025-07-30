@@ -88,6 +88,7 @@ bool AudioSessionManagerImpl::IsAudioSessionActivated()
 }
 
 void AudioSessionManagerImpl::OnAudioSessionDeactivated(
+    ::taihe::string_view type,
     callback_view<void(AudioSessionDeactivatedEvent const&)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
@@ -95,6 +96,7 @@ void AudioSessionManagerImpl::OnAudioSessionDeactivated(
 }
 
 void AudioSessionManagerImpl::OffAudioSessionDeactivated(
+    ::taihe::string_view type,
     optional_view<callback<void(AudioSessionDeactivatedEvent const&)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;

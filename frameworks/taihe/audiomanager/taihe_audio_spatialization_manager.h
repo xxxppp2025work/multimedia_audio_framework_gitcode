@@ -45,15 +45,21 @@ public:
     void SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
     AudioSpatializationSceneType GetSpatializationSceneType();
 
-    void OnSpatializationEnabledChangeForCurrentDevice(callback_view<void(bool)> callback);
+    void OnSpatializationEnabledChangeForCurrentDevice(::taihe::string_view type,
+        callback_view<void(bool)> callback);
     void OnSpatializationEnabledChangeForAnyDevice(
+        ::taihe::string_view type,
         callback_view<void(AudioSpatialEnabledStateForDevice const&)> callback);
     void OnHeadTrackingEnabledChangeForAnyDevice(
+        ::taihe::string_view type,
         callback_view<void(AudioSpatialEnabledStateForDevice const&)> callback);
-    void OffSpatializationEnabledChangeForCurrentDevice(optional_view<callback<void(bool)>> callback);
+    void OffSpatializationEnabledChangeForCurrentDevice(::taihe::string_view type,
+        optional_view<callback<void(bool)>> callback);
     void OffSpatializationEnabledChangeForAnyDevice(
+        ::taihe::string_view type,
         optional_view<callback<void(AudioSpatialEnabledStateForDevice const&)>> callback);
     void OffHeadTrackingEnabledChangeForAnyDevice(
+        ::taihe::string_view type,
         optional_view<callback<void(AudioSpatialEnabledStateForDevice const&)>> callback);
 
 private:

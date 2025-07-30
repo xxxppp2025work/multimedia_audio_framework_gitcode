@@ -61,6 +61,16 @@ array<AudioRendererChangeInfo> AudioStreamManagerImpl::GetCurrentAudioRendererIn
     return TaiheParamUtils::SetRendererChangeInfos(audioRendererChangeInfos);
 }
 
+array<AudioRendererChangeInfo> AudioStreamManagerImpl::GetCurrentAudioRendererInfoArrayWithCallback()
+{
+    return this->GetCurrentAudioRendererInfoArraySync();
+}
+
+array<AudioRendererChangeInfo> AudioStreamManagerImpl::GetCurrentAudioRendererInfoArrayReturnsPromise()
+{
+    return this->GetCurrentAudioRendererInfoArraySync();
+}
+
 array<AudioCapturerChangeInfo> AudioStreamManagerImpl::GetCurrentAudioCapturerInfoArraySync()
 {
     std::vector<AudioCapturerChangeInfo> emptyResult;
@@ -74,6 +84,16 @@ array<AudioCapturerChangeInfo> AudioStreamManagerImpl::GetCurrentAudioCapturerIn
         return array<AudioCapturerChangeInfo>(emptyResult);
     }
     return TaiheParamUtils::SetCapturerChangeInfos(audioCapturerChangeInfos);
+}
+
+array<AudioCapturerChangeInfo> AudioStreamManagerImpl::GetCurrentAudioCapturerInfoArrayWithCallback()
+{
+    return this->GetCurrentAudioCapturerInfoArraySync();
+}
+
+array<AudioCapturerChangeInfo> AudioStreamManagerImpl::GetCurrentAudioCapturerInfoArrayReturnsPromise()
+{
+    return this->GetCurrentAudioCapturerInfoArraySync();
 }
 
 array<AudioEffectMode> AudioStreamManagerImpl::GetAudioEffectInfoArraySync(StreamUsage usage)
@@ -116,19 +136,32 @@ bool AudioStreamManagerImpl::IsActiveSync(AudioVolumeType volumeType)
     return audioStreamMngr_->IsStreamActive(TaiheAudioEnum::GetNativeAudioVolumeType(volType));
 }
 
-void AudioStreamManagerImpl::OnAudioRendererChange(callback_view<void(array_view<AudioRendererChangeInfo>)> callback)
+bool AudioStreamManagerImpl::IsActiveWithCallback(AudioVolumeType volumeType)
+{
+    return this->IsActiveSync(volumeType);
+}
+
+bool AudioStreamManagerImpl::IsActiveReturnsPromise(AudioVolumeType volumeType)
+{
+    return this->IsActiveSync(volumeType);
+}
+
+void AudioStreamManagerImpl::OnAudioRendererChange(::taihe::string_view type,
+    callback_view<void(array_view<AudioRendererChangeInfo>)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterRendererStateChangeCallback(cacheCallback, RENDERERCHANGE_CALLBACK_NAME, this);
 }
 
-void AudioStreamManagerImpl::OnAudioCapturerChange(callback_view<void(array_view<AudioCapturerChangeInfo>)> callback)
+void AudioStreamManagerImpl::OnAudioCapturerChange(::taihe::string_view type,
+    callback_view<void(array_view<AudioCapturerChangeInfo>)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterCapturerStateChangeCallback(cacheCallback, CAPTURERCHANGE_CALLBACK_NAME, this);
 }
 
 void AudioStreamManagerImpl::OffAudioRendererChange(
+    ::taihe::string_view type,
     optional_view<callback<void(array_view<AudioRendererChangeInfo>)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
@@ -138,8 +171,8 @@ void AudioStreamManagerImpl::OffAudioRendererChange(
     UnregisterRendererChangeCallback(cacheCallback, this);
 }
 
-void AudioStreamManagerImpl::OffAudioCapturerChange(optional_view<callback<void(array_view<AudioCapturerChangeInfo>)>>
-    callback)
+void AudioStreamManagerImpl::OffAudioCapturerChange(::taihe::string_view type,
+    optional_view<callback<void(array_view<AudioCapturerChangeInfo>)>> callback)
 {
     CHECK_AND_RETURN_RET_LOG(audioStreamMngr_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
         TAIHE_ERROR_INVALID_PARAM), "audioStreamMngr_ is nullptr");

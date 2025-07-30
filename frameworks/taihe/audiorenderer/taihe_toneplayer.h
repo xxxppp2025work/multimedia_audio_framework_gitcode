@@ -41,8 +41,14 @@ public:
 
     void LoadSync(ToneType type);
     void ReleaseSync();
+    void ReleaseWithCallback();
+    void ReleaseReturnsPromise();
     void StopSync();
+    void StopWithCallback();
+    void StopReturnsPromise();
     void StartSync();
+    void StartWithCallback();
+    void StartReturnsPromise();
     std::shared_ptr<OHOS::AudioStandard::TonePlayer> tonePlayer_;
 
 private:

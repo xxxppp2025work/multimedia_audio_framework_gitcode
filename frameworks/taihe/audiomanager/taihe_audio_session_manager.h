@@ -38,8 +38,10 @@ public:
     void ActivateAudioSessionSync(AudioSessionStrategy const &strategy);
     void DeactivateAudioSessionSync();
     bool IsAudioSessionActivated();
-    void OnAudioSessionDeactivated(callback_view<void(AudioSessionDeactivatedEvent const&)> callback);
-    void OffAudioSessionDeactivated(optional_view<callback<void(AudioSessionDeactivatedEvent const&)>> callback);
+    void OnAudioSessionDeactivated(::taihe::string_view type,
+        callback_view<void(AudioSessionDeactivatedEvent const&)> callback);
+    void OffAudioSessionDeactivated(::taihe::string_view type,
+        optional_view<callback<void(AudioSessionDeactivatedEvent const&)>> callback);
 
 private:
     static void RegisterAudioSessionCallback(std::shared_ptr<uintptr_t> &callback,

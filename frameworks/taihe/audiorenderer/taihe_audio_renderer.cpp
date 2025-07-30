@@ -159,6 +159,16 @@ void AudioRendererImpl::StartSync()
     }
 }
 
+void AudioRendererImpl::StartWithCallback()
+{
+    return this->StartSync();
+}
+
+void AudioRendererImpl::StartReturnsPromise()
+{
+    return this->StartSync();
+}
+
 int64_t AudioRendererImpl::GetAudioTimeSync()
 {
     if (audioRenderer_ == nullptr) {
@@ -251,6 +261,16 @@ void AudioRendererImpl::StopSync()
     }
 }
 
+void AudioRendererImpl::StopWithCallback()
+{
+    return this->StopSync();
+}
+
+void AudioRendererImpl::StopReturnsPromise()
+{
+    return this->StopSync();
+}
+
 void AudioRendererImpl::ReleaseSync()
 {
     if (audioRenderer_ == nullptr) {
@@ -262,6 +282,16 @@ void AudioRendererImpl::ReleaseSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "Release failure!");
         return;
     }
+}
+
+void AudioRendererImpl::ReleaseWithCallback()
+{
+    return this->ReleaseSync();
+}
+
+void AudioRendererImpl::ReleaseReturnsPromise()
+{
+    return this->ReleaseSync();
 }
 
 int64_t AudioRendererImpl::GetBufferSizeSync()
@@ -276,6 +306,16 @@ int64_t AudioRendererImpl::GetBufferSizeSync()
         return 0;
     }
     return static_cast<int64_t>(bufferSize);
+}
+
+int64_t AudioRendererImpl::GetBufferSizeWithCallback()
+{
+    return this->GetBufferSizeSync();
+}
+
+int64_t AudioRendererImpl::GetBufferSizeReturnsPromise()
+{
+    return this->GetBufferSizeSync();
 }
 
 int64_t AudioRendererImpl::GetAudioStreamIdSync()
@@ -314,6 +354,16 @@ void AudioRendererImpl::SetVolumeSync(double volume)
     if (ret != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
     }
+}
+
+void AudioRendererImpl::SetVolumeWithCallback(double volume)
+{
+    return this->SetVolumeSync(volume);
+}
+
+void AudioRendererImpl::SetVolumeReturnsPromise(double volume)
+{
+    return this->SetVolumeSync(volume);
 }
 
 double AudioRendererImpl::GetVolume()
@@ -903,49 +953,54 @@ void AudioRendererImpl::UnregisterRendererWriteDataCallback(std::shared_ptr<uint
     AUDIO_INFO_LOG("Unregister Callback is successful");
 }
 
-void AudioRendererImpl::OnStateChange(callback_view<void(AudioState)> callback)
+void AudioRendererImpl::OnStateChange(::taihe::string_view type, callback_view<void(AudioState)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterRendererCallback(cacheCallback, STATE_CHANGE_CALLBACK_NAME, this);
 }
 
-void AudioRendererImpl::OnAudioInterrupt(callback_view<void(InterruptEvent const&)> callback)
+void AudioRendererImpl::OnAudioInterrupt(::taihe::string_view type,
+    callback_view<void(InterruptEvent const&)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterRendererCallback(cacheCallback, AUDIO_INTERRUPT_CALLBACK_NAME, this);
 }
 
-void AudioRendererImpl::OnOutputDeviceChange(callback_view<void(array_view<AudioDeviceDescriptor>)> callback)
+void AudioRendererImpl::OnOutputDeviceChange(::taihe::string_view type,
+    callback_view<void(array_view<AudioDeviceDescriptor>)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterRendererDeviceChangeCallback(cacheCallback, this);
 }
 
-void AudioRendererImpl::OnOutputDeviceChangeWithInfo(callback_view<void(AudioStreamDeviceChangeInfo const&)> callback)
+void AudioRendererImpl::OnOutputDeviceChangeWithInfo(::taihe::string_view type,
+    callback_view<void(AudioStreamDeviceChangeInfo const&)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterRendererOutputDeviceChangeWithInfoCallback(cacheCallback, this);
 }
 
-void AudioRendererImpl::OnPeriodReach(int64_t frame, callback_view<void(int64_t)> callback)
+void AudioRendererImpl::OnPeriodReach(::taihe::string_view type, int64_t frame, callback_view<void(int64_t)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterPeriodPositionCallback(frame, cacheCallback, PERIOD_REACH_CALLBACK_NAME, this);
 }
 
-void AudioRendererImpl::OnMarkReach(int64_t frame, callback_view<void(int64_t)> callback)
+void AudioRendererImpl::OnMarkReach(::taihe::string_view type, int64_t frame, callback_view<void(int64_t)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterPositionCallback(frame, cacheCallback, MARK_REACH_CALLBACK_NAME, this);
 }
 
-void AudioRendererImpl::OnWriteData(callback_view<AudioDataCallbackResult(array_view<uint8_t>)> callback)
+void AudioRendererImpl::OnWriteData(::taihe::string_view type,
+    callback_view<AudioDataCallbackResult(array_view<uint8_t>)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterRendererWriteDataCallback(cacheCallback, WRITE_DATA_CALLBACK_NAME, this);
 }
 
-void AudioRendererImpl::OffAudioInterrupt(optional_view<callback<void(InterruptEvent const&)>> callback)
+void AudioRendererImpl::OffAudioInterrupt(::taihe::string_view type,
+    optional_view<callback<void(InterruptEvent const&)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -954,7 +1009,8 @@ void AudioRendererImpl::OffAudioInterrupt(optional_view<callback<void(InterruptE
     UnregisterRendererCallback(cacheCallback, AUDIO_INTERRUPT_CALLBACK_NAME, this);
 }
 
-void AudioRendererImpl::OffStateChange(optional_view<callback<void(AudioState)>> callback)
+void AudioRendererImpl::OffStateChange(::taihe::string_view type,
+    optional_view<callback<void(AudioState)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -963,7 +1019,8 @@ void AudioRendererImpl::OffStateChange(optional_view<callback<void(AudioState)>>
     UnregisterRendererCallback(cacheCallback, STATE_CHANGE_CALLBACK_NAME, this);
 }
 
-void AudioRendererImpl::OffOutputDeviceChange(optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback)
+void AudioRendererImpl::OffOutputDeviceChange(::taihe::string_view type,
+    optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -973,6 +1030,7 @@ void AudioRendererImpl::OffOutputDeviceChange(optional_view<callback<void(array_
 }
 
 void AudioRendererImpl::OffOutputDeviceChangeWithInfo(
+    ::taihe::string_view type,
     optional_view<callback<void(AudioStreamDeviceChangeInfo const&)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
@@ -982,7 +1040,8 @@ void AudioRendererImpl::OffOutputDeviceChangeWithInfo(
     UnregisterRendererOutputDeviceChangeWithInfoCallback(cacheCallback, this);
 }
 
-void AudioRendererImpl::OffPeriodReach(optional_view<callback<void(int64_t)>> callback)
+void AudioRendererImpl::OffPeriodReach(::taihe::string_view type,
+    optional_view<callback<void(int64_t)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -991,7 +1050,8 @@ void AudioRendererImpl::OffPeriodReach(optional_view<callback<void(int64_t)>> ca
     UnregisterPeriodPositionCallback(cacheCallback, PERIOD_REACH_CALLBACK_NAME, this);
 }
 
-void AudioRendererImpl::OffMarkReach(optional_view<callback<void(int64_t)>> callback)
+void AudioRendererImpl::OffMarkReach(::taihe::string_view type,
+    optional_view<callback<void(int64_t)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
@@ -1000,7 +1060,8 @@ void AudioRendererImpl::OffMarkReach(optional_view<callback<void(int64_t)>> call
     UnregisterPositionCallback(cacheCallback, MARK_REACH_CALLBACK_NAME, this);
 }
 
-void AudioRendererImpl::OffWriteData(optional_view<callback<AudioDataCallbackResult(array_view<uint8_t>)>> callback)
+void AudioRendererImpl::OffWriteData(::taihe::string_view type,
+    optional_view<callback<AudioDataCallbackResult(array_view<uint8_t>)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
