@@ -197,7 +197,7 @@ struct RingBufferWrapper {
             int ret = memcpy_s(dstBuffer.basicBufferDescs[0].buffer, dstBuffer.basicBufferDescs[0].bufLength,
                 srcBuffer.basicBufferDescs[0].buffer, copySize);
             if (ret != EOK) {
-                return;
+                return ERR_INVALID_PARAM;
             }
             dstBuffer.SeekFromStart(copySize);
             srcBuffer.SeekFromStart(copySize);
