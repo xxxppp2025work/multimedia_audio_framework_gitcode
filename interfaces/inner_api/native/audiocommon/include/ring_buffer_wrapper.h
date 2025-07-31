@@ -145,7 +145,10 @@ struct RingBufferWrapper {
             size_t setSize = std::min(remainSize, bufLength);
             remainSize -= setSize;
             if (buffer != nullptr && bufLength != 0 && setSize != 0) {
-                memset_s(buffer, bufLength, ch, setSize);
+                int ret = memset_s(buffer, bufLength, ch, setSize);
+                if (ret != EOK) {
+                    return;
+                }
             }
         }
     }
@@ -191,8 +194,11 @@ struct RingBufferWrapper {
                 // This branch should never be executed under any valid conditions. Consider let it crash?
                 return ERR_INVALID_PARAM;
             }
-            memcpy_s(dstBuffer.basicBufferDescs[0].buffer, dstBuffer.basicBufferDescs[0].bufLength,
+            int ret = memcpy_s(dstBuffer.basicBufferDescs[0].buffer, dstBuffer.basicBufferDescs[0].bufLength,
                 srcBuffer.basicBufferDescs[0].buffer, copySize);
+            if (ret != EOK) {
+                return;
+            }
             dstBuffer.SeekFromStart(copySize);
             srcBuffer.SeekFromStart(copySize);
         }
