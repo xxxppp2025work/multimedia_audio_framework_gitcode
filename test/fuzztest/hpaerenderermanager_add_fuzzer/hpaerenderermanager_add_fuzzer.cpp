@@ -53,7 +53,7 @@ static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm"
 const char* DEFAULT_TEST_DEVICE_CLASS = "file_io";
 const char* DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
 constexpr size_t THRESHOLD = 10;
-constexpr uint8_t TESTSIZE = 27;
+constexpr uint8_t TESTSIZE = 37;
 
 constexpr int32_t FRAME_LENGTH_960 = 960;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
@@ -412,6 +412,120 @@ void HpaeRendererManagerStartWithSyncIdFuzzTest()
     rendererManager->StartWithSyncId(sessionId, syncId);
 }
 
+void HpaeRendererManagerAddSingleNodeToSinkFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    std::shared_ptr<HpaeSinkInputNode> node = std::make_shared<HpaeSinkInputNode>();
+    node->SetNodeInfo(nodeInfo);
+    bool isConnect = false;
+    rendererManager->AddSingleNodeToSink(node, isConnect);
+}
+
+void HpaeRendererManagerCreateEffectAndConnectFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    bool isConnect = false;
+    rendererManager->CreateEffectAndConnect(nodeInfo, isConnect);
+}
+
+void HpaeRendererManagerCreateDefaultProcessClusterFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    rendererManager->CreateDefaultProcessCluster(nodeInfo);
+}
+
+void HpaeRendererManagerCreateProcessClusterInnerFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    int32_t decisions[] = 
+    {
+        NO_NEED_TO_CREATE_PROCESSCLUSTER,
+        CREATE_NEW_PROCESSCLUSTER,
+        CREATE_DEFAULT_PROCESSCLUSTER,
+        USE_DEFAULT_PROCESSCLUSTER,
+        USE_NONE_PROCESSCLUSTER,
+        CREATE_EXTRA_PROCESSCLUSTER,
+    };
+    for (int32_t decision : decisions)
+    {
+        rendererManager->CreateProcessClusterInner(nodeInfo, decision);
+    }
+}
+
+void HpaeRendererManagerGetProcessorTypeFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    uint32_t sessionId = GetData<uint32_t>();
+    rendererManager->GetProcessorType(sessionId);
+}
+
+void HpaeRendererManagerDeleteConnectInputProcessorFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    std::shared_ptr<HpaeSinkInputNode> sinkInputNode = std::make_shared<HpaeSinkInputNode>();
+    sinkInputNode->SetNodeInfo(nodeInfo);
+    rendererManager->DeleteConnectInputProcessor(sinkInputNode);
+}
+
+void HpaeRendererManagerDeleteInputSessionFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    uint32_t sessionId = GetData<uint32_t>();
+    rendererManager->DeleteInputSession(sessionId);
+}
+
+void HpaeRendererManagerDeleteInputSessionForMoveFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    uint32_t sessionId = GetData<uint32_t>();
+    rendererManager->DeleteInputSessionForMove(sessionId);
+}
+
+void HpaeRendererManagerDeleteProcessClusterFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    HpaeProcessorType sceneType = HPAE_SCENE_DEFAULT;
+    uint32_t sessionId = GetData<uint32_t>();
+    rendererManager->DeleteProcessCluster(nodeInfo, sceneType, sessionId);
+}
+
+void HpaeRendererManagerisSplitProcessorTypeFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    HpaeProcessorType sceneType = HPAE_SCENE_DEFAULT;
+    rendererManager->isSplitProcessorType(sceneType);
+}
+
 typedef void (*TestFuncs)();
 TestFuncs g_testFuncs[TESTSIZE] = {
     HpaeRendererManagerSetPrivacyTypeFuzzTest,
@@ -441,6 +555,16 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     HpaeRendererManagerConnectCoBufferNodeFuzzTest,
     HpaeRendererManagerDisConnectCoBufferNodeFuzzTest,
     HpaeRendererManagerStartWithSyncIdFuzzTest,
+    HpaeRendererManagerAddSingleNodeToSinkFuzzTest,
+    HpaeRendererManagerCreateEffectAndConnectFuzzTest,
+    HpaeRendererManagerCreateDefaultProcessClusterFuzzTest,
+    HpaeRendererManagerCreateProcessClusterInnerFuzzTest,
+    HpaeRendererManagerGetProcessorTypeFuzzTest,
+    HpaeRendererManagerDeleteConnectInputProcessorFuzzTest,
+    HpaeRendererManagerDeleteInputSessionFuzzTest,
+    HpaeRendererManagerDeleteInputSessionForMoveFuzzTest,
+    HpaeRendererManagerDeleteProcessClusterFuzzTest
+    HpaeRendererManagerisSplitProcessorTypeFuzzTest
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
