@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
-#include "audio_policy_service_fifth_unit_test.h"
-#include "audio_policy_config_manager.h"
-#include "audio_server_proxy.h"
-#include "nativetoken_kit.h"
-#include "dfx_msg_manager.h"
-#include "audio_errors.h"
-#include <thread>
-#include <memory>
-#include <vector>
-using namespace testing::ext;
+ #include "audio_policy_service_ext_unit_test.h"
+ #include "audio_policy_config_manager.h"
+ #include "audio_server_proxy.h"
+ #include "nativetoken_kit.h"
+ #include "dfx_msg_manager.h"
+ #include "audio_errors.h"
+ #include <thread>
+ #include <memory>
+ #include <vector>
+ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -40,19 +40,19 @@ const uint32_t TEST_APP_UID = 1;
 const std::string AUDIO_RESTORE_VOLUME_EVENT = "AUDIO_RESTORE_VOLUME_EVENT";
 const std::string AUDIO_INCREASE_VOLUME_EVENT = "AUDIO_INCREASE_VOLUME_EVENT";
 
-void AudioPolicyServiceFifthUnitTest::SetUpTestCase(void)
+void AudioPolicyServiceExtUnitTest::SetUpTestCase(void)
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest::SetUpTestCase start-end");
 }
-void AudioPolicyServiceFifthUnitTest::TearDownTestCase(void)
+void AudioPolicyServiceExtUnitTest::TearDownTestCase(void)
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest::TearDownTestCase start-end");
 }
-void AudioPolicyServiceFifthUnitTest::SetUp(void)
+void AudioPolicyServiceExtUnitTest::SetUp(void)
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest::SetUp start-end");
 }
-void AudioPolicyServiceFifthUnitTest::TearDown(void)
+void AudioPolicyServiceExtUnitTest::TearDown(void)
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest::TearDown start-end");
 }
@@ -110,7 +110,7 @@ static void GetPermission()
 * @tc.number: AudioPolicyServiceTest_001
 * @tc.desc  : Test LoadAudioPolicyConfig interfaces.
 */
-HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_001, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_001, TestSize.Level1)
 {
     AudioPolicyConfigManager::GetInstance().xmlHasLoaded_ = true;
     auto ret = AudioPolicyService::GetAudioPolicyService().LoadAudioPolicyConfig();
@@ -122,7 +122,7 @@ HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_001, TestSize.L
 * @tc.number: AudioPolicyServiceTest_002
 * @tc.desc  : Test Init interfaces.
 */
-HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_002, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_002, TestSize.Level1)
 {
     AudioPolicyConfigManager::GetInstance().xmlHasLoaded_ = true;
     auto ret = AudioPolicyService::GetAudioPolicyService().LoadAudioPolicyConfig();
@@ -136,7 +136,7 @@ HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_002, TestSize.L
 * @tc.number: AudioPolicyServiceTest_003
 * @tc.desc  : Test CreateRecoveryThread interfaces.
 */
-HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_003, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_003, TestSize.Level1)
 {
     AudioPolicyService::GetAudioPolicyService().CreateRecoveryThread();
     EXPECT_NE(nullptr, AudioPolicyService::GetAudioPolicyService().RecoveryDevicesThread_);
@@ -148,7 +148,7 @@ HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_003, TestSize.L
 * @tc.number: AudioPolicyServiceTest_004
 * @tc.desc  : Test Deinit interfaces.
 */
-HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_004, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_004, TestSize.Level1)
 {
     AudioPolicyService::isBtListenerRegistered = true;
     AudioPolicyService::GetAudioPolicyService().Deinit();
@@ -160,14 +160,14 @@ HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_004, TestSize.L
 * @tc.number: SafeVolumeEventSubscriber_001
 * @tc.desc  : Test OnReceiveEvent interfaces.
 */
-HWTEST_F(AudioPolicyServiceFifthUnitTest, SafeVolumeEventSubscriber_001, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, SafeVolumeEventSubscriber_001, TestSize.Level1)
 {
     EventFwk::MatchingSkills matchingSkills;
     matchingSkills.AddEvent(AUDIO_RESTORE_VOLUME_EVENT);
     matchingSkills.AddEvent(AUDIO_INCREASE_VOLUME_EVENT);
     EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
-    auto commonSubscribePtr = std::make_shared<SafeVolumeEventSubscriber>(subscribeInfo,
-        [](const EventFwk::CommonEventData&){});
+    auto commonSubscribePtr = std::make_shared<SafeVolumeEventSubscriber>(subscribeInfo, 
+        [](const EventFwk::CommonEventData& ){});
     ASSERT_NE(nullptr, commonSubscribePtr);
     const EventFwk::CommonEventData eventData;
     commonSubscribePtr->OnReceiveEvent(eventData);
@@ -181,7 +181,7 @@ HWTEST_F(AudioPolicyServiceFifthUnitTest, SafeVolumeEventSubscriber_001, TestSiz
 * @tc.number: AudioPolicyServiceTest_005
 * @tc.desc  : Test SetSourceOutputStreamMute interfaces.
 */
-HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_005, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_005, TestSize.Level1)
 {
     AudioPolicyService::GetAudioPolicyService().Init();
     int32_t uid = 123;
@@ -194,7 +194,7 @@ HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_005, TestSize.L
 * @tc.number: AudioPolicyServiceTest_006
 * @tc.desc  : Test GetSelectedDeviceInfo interfaces.
 */
-HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_006, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_006, TestSize.Level1)
 {
     int32_t uid = 123, pid = 123;
     auto ret = AudioPolicyService::GetAudioPolicyService().GetSelectedDeviceInfo(uid, pid, STREAM_MUSIC);
@@ -214,7 +214,7 @@ HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_006, TestSize.L
 * @tc.number: AudioPolicyServiceTest_007
 * @tc.desc  : Test GetFastStreamInfo interfaces.
 */
-HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_007, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_007, TestSize.Level1)
 {
     auto ret = AudioPolicyService::GetAudioPolicyService().GetFastStreamInfo();
     EXPECT_EQ(SAMPLE_RATE_48000, ret.samplingRate);
@@ -225,7 +225,7 @@ HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_007, TestSize.L
 * @tc.number: AudioPolicyServiceTest_008
 * @tc.desc  : Test GetOutputDevice interfaces.
 */
-HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_008, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_008, TestSize.Level1)
 {
     sptr<AudioRendererFilter> audioRendererFilter(new AudioRendererFilter());
     audioRendererFilter->uid = 123;
@@ -241,7 +241,7 @@ HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_008, TestSize.L
 * @tc.number: AudioPolicyServiceTest_009
 * @tc.desc  : Test GetInputDevice interfaces.
 */
-HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_009, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_009, TestSize.Level1)
 {
     sptr<AudioCapturerFilter> audioCapturerFilter(new AudioCapturerFilter());
     audioCapturerFilter->uid = 123;
@@ -257,7 +257,7 @@ HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_009, TestSize.L
 * @tc.number: AudioPolicyServiceTest_010
 * @tc.desc  : Test UpdateA2dpOffloadFlagBySpatialService interfaces.
 */
-HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_010, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_010, TestSize.Level1)
 {
     std::string macAddress = "00-15-5D-E6-DE-FC";
     std::unordered_map<uint32_t, bool> sessionIDToSpatializationEnableMap;
@@ -277,7 +277,7 @@ HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_010, TestSize.L
 * @tc.number: AudioPolicyServiceTest_011
 * @tc.desc  : Test GetCurrentCapturerChangeInfos interfaces.
 */
-HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_011, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_011, TestSize.Level1)
 {
     AudioConnectedDevice::GetInstance().AddConnectedDevice(std::make_shared<AudioDeviceDescriptor>());
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
@@ -292,7 +292,7 @@ HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_011, TestSize.L
 * @tc.number: AudioPolicyServiceTest_012
 * @tc.desc  : Test GetPreferredOutputStreamType interfaces.
 */
-HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_012, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_012, TestSize.Level1)
 {
     AudioRendererInfo rendererInfo;
     rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
@@ -317,7 +317,7 @@ HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_012, TestSize.L
 * @tc.number: AudioPolicyServiceTest_013
 * @tc.desc  : Test DynamicUnloadModule interfaces.
 */
-HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_013, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_013, TestSize.Level1)
 {
     AudioPipeType pipeType;
     pipeType = PIPE_TYPE_OFFLOAD;
@@ -336,7 +336,7 @@ HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_013, TestSize.L
 * @tc.number: AudioPolicyServiceTest_014
 * @tc.desc  : Test RegisterBluetoothListener interfaces.
 */
-HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_014, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_014, TestSize.Level1)
 {
     AudioPolicyService::GetAudioPolicyService().RegisterBluetoothListener();
     EXPECT_NE(nullptr, AudioPolicyService::GetAudioPolicyService().deviceStatusListener_);
@@ -350,7 +350,7 @@ HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_014, TestSize.L
 * @tc.number: AudioPolicyServiceTest_015
 * @tc.desc  : Test CheckSupportedAudioEffectProperty interfaces.
 */
-HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_015, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_015, TestSize.Level1)
 {
     AudioEffectPropertyArrayV3 propertyArray;
     EffectFlag flag = CAPTURE_EFFECT_FLAG;
@@ -366,7 +366,7 @@ HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_015, TestSize.L
 * @tc.number: AudioPolicyServiceTest_016
 * @tc.desc  : Test SetAudioEffectProperty interfaces.
 */
-HWTEST_F(AudioPolicyServiceFifthUnitTest, AudioPolicyServiceTest_016, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_016, TestSize.Level1)
 {
     AudioEffectPropertyArrayV3 propertyArray;
     AudioEffectPropertyV3 tmp;
