@@ -13,29 +13,29 @@
  * limitations under the License.
  */
 
- #ifndef AUDIO_POLICY_SERVICE_EXT_UNIT_TEST_H
- #define AUDIO_POLICY_SERVICE_EXT_UNIT_TEST_H
+#ifndef AUDIO_POLICY_SERVICE_EXT_UNIT_TEST_H
+#define AUDIO_POLICY_SERVICE_EXT_UNIT_TEST_H
  
 #include "gtest/gtest.h"
  
- #include "audio_policy_service.h"
- #include "audio_policy_server.h"
- #include "message_parcel.h"
- #include "token_setproc.h"
- 
- namespace OHOS {
- namespace AudioStandard {
- 
- class AudioPolicyServiceExtUnitTest : public testing::Test {
- public:
-     static void SetUpTestCase(void);
+#include "audio_policy_service.h"
+#include "audio_policy_server.h"
+#include "message_parcel.h"
+#include "token_setproc.h"
 
-     static void TearDownTestCase(void);
+namespace OHOS {
+namespace AudioStandard {
 
-     void SetUp(void);
+class AudioPolicyServiceExtUnitTest : public testing::Test {
+public:
+    static void SetUpTestCase(void);
 
-     void TearDown(void);
- };
- } // namespace AudioStandard
- } // namespace OHOS
- #endif // AUDIO_POLICY_SERVICE_FOURTH_UNIT_TEST_H
+    static void TearDownTestCase(void);
+
+    void SetUp(void);
+
+    void TearDown(void);
+};
+} // namespace AudioStandard
+} // namespace OHOS
+#endif // AUDIO_POLICY_SERVICE_EXT_UNIT_TEST_H
