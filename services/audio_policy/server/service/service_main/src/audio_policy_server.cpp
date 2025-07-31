@@ -109,13 +109,15 @@ constexpr int32_t UID_MCU = 7500;
 constexpr int32_t UID_CAAS = 5527;
 constexpr int32_t UID_TELEPHONY = 1001;
 constexpr int32_t UID_DMSDP = 7071;
+constexpr int32_t UID_TV_SERVICE = 7501;
 static const int32_t DATASHARE_SERVICE_TIMEOUT_FIVE_SECONDS = 5; // 5s is better
 const std::set<int32_t> CALLBACK_TRUST_LIST = {
     UID_MEDIA,
     UID_MCU,
     UID_CAAS,
     UID_TELEPHONY,
-    UID_DMSDP
+    UID_DMSDP,
+    UID_TV_SERVICE
 };
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
@@ -2515,6 +2517,17 @@ void AudioPolicyServer::ProcessRemoteInterrupt(std::set<int32_t> sessionIds, Int
     }
 }
 
+std::set<int32_t> AudioPolicyServer::GetStreamIdsForAudioSessionByStreamUsage(
+    const int32_t zoneId, const std::set<StreamUsage> &streamUsageSet)
+{
+    std::set<int32_t> streamIds;
+    if (interruptService_ != nullptr) {
+        streamIds = interruptService_->GetStreamIdsForAudioSessionByStreamUsage(zoneId, streamUsageSet);
+    }
+
+    return streamIds;
+}
+
 int32_t AudioPolicyServer::ActivateAudioInterrupt(
     const AudioInterrupt &audioInterruptIn, int32_t zoneID, bool isUpdatedAudioStrategy)
 {
@@ -3237,8 +3250,16 @@ void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::st
     sessionIds.insert(sessionIdGame.begin(), sessionIdGame.end());
     sessionIds.insert(sessionIdAudioBook.begin(), sessionIdAudioBook.end());
 
+    const std::set<StreamUsage> streamUsageSet = {
+        StreamUsage::STREAM_USAGE_MUSIC,
+        StreamUsage::STREAM_USAGE_MOVIE,
+        StreamUsage::STREAM_USAGE_GAME,
+        StreamUsage::STREAM_USAGE_AUDIOBOOK};
+
     InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
     if (server_ != nullptr) {
+        std::set<int32_t> fakeSessionIds = server_->GetStreamIdsForAudioSessionByStreamUsage(0, streamUsageSet);
+        sessionIds.insert(fakeSessionIds.begin(), fakeSessionIds.end());
         server_->ProcessRemoteInterrupt(sessionIds, interruptEvent);
     }
 }
@@ -4529,6 +4550,13 @@ int32_t AudioPolicyServer::InjectInterruption(const std::string &networkId, cons
     std::set<int32_t> sessionIds =
         AudioStreamCollector::GetAudioStreamCollector().GetSessionIdsOnRemoteDeviceByDeviceType(
             DEVICE_TYPE_REMOTE_CAST);
+
+    if (interruptService_ != nullptr) {
+        std::set<int32_t> fakeSessionIds =
+            interruptService_->GetStreamIdsForAudioSessionByDeviceType(0, DEVICE_TYPE_REMOTE_CAST);
+        sessionIds.insert(fakeSessionIds.begin(), fakeSessionIds.end());
+    }
+
     InterruptEventInternal interruptEvent { event.eventType, event.forceType, event.hintType, 0.2f};
     ProcessRemoteInterrupt(sessionIds, interruptEvent);
     return SUCCESS;
