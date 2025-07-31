@@ -60,14 +60,14 @@
 #include "audio_resource_service.h"
 #include "audio_manager_listener.h"
 #include "app_bundle_manager.h"
-
+#ifdef SUPPORT_OLD_ENGINE
 #define PA
 #ifdef PA
 extern "C" {
     extern int ohos_pa_main(int argc, char *argv[]);
 }
 #endif
-
+#endif // SUPPORT_OLD_ENGINE
 using namespace std;
 
 namespace OHOS {
@@ -107,12 +107,17 @@ constexpr int32_t MAX_RENDERER_STREAM_CNT_PER_UID = 128;
 const int32_t DEFAULT_MAX_RENDERER_INSTANCES = 128;
 const int32_t DEFAULT_MAX_LOOPBACK_INSTANCES = 1;
 const int32_t MCU_UID = 7500;
+const int32_t TV_SERVICE_UID = 7501;
 constexpr int32_t CHECK_ALL_RENDER_UID = -1;
 constexpr int64_t RENDER_DETECTION_CYCLE_NS = 10000000000;
 constexpr int32_t RENDER_BAD_FRAMES_RATIO = 100;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
     UID_CAMERA
+};
+static const std::set<int32_t> GENERATE_SESSIONID_UID_SET = {
+    MCU_UID,
+    TV_SERVICE_UID
 };
 const int32_t RSS_THRESHOLD = 2;
 // using pass-in appInfo for uids:
@@ -365,6 +370,7 @@ private:
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioServer, AUDIO_DISTRIBUTED_SERVICE_ID, true)
 
+#ifdef SUPPORT_OLD_ENGINE
 #ifdef PA
 constexpr int PA_ARG_COUNT = 1;
 
@@ -384,6 +390,7 @@ void *AudioServer::paDaemonThread(void *arg)
     _exit(-1);
 }
 #endif
+#endif // SUPPORT_OLD_ENGINE
 
 AudioServer::AudioServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
@@ -416,8 +423,9 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
         argQue.push(args[index]);
     }
     std::string dumpString;
-    int32_t engineFlag = GetEngineFlag();
     int32_t res = 0;
+#ifdef SUPPORT_OLD_ENGINE
+    int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         if (hpaeDumpObj_ == nullptr) {
             hpaeDumpObj_ = std::make_shared<AudioServerHpaeDump>();
@@ -433,6 +441,15 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
             "Audio Service Dump Not initialised\n");
         dumpObj.AudioDataDump(dumpString, argQue);
     }
+#else
+    if (hpaeDumpObj_ == nullptr) {
+        hpaeDumpObj_ = std::make_shared<AudioServerHpaeDump>();
+    }
+    res = hpaeDumpObj_->Initialize();
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR,
+        "Audio Service Hpae Dump Not Initialed");
+    hpaeDumpObj_->AudioDataDump(dumpString, argQue);
+#endif // SUPPORT_OLD_ENGINE
     return write(fd, dumpString.c_str(), dumpString.size());
 }
 
@@ -608,6 +625,7 @@ void AudioServer::OnStart()
     }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
+#ifdef SUPPORT_OLD_ENGINE
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         HPAE::IHpaeManager::GetHpaeManager().Init();
@@ -621,9 +639,12 @@ void AudioServer::OnStart()
             WriteServiceStartupError();
         }
         AUDIO_DEBUG_LOG("Created paDaemonThread\n");
-#endif
+#endif // PA
     }
-
+#else
+    HPAE::IHpaeManager::GetHpaeManager().Init();
+    AUDIO_INFO_LOG("IHpaeManager Init\n");
+#endif // SUPPORT_OLD_ENGINE
     RegisterAudioCapturerSourceCallback();
     RegisterAudioRendererSinkCallback();
     ParseAudioParameter();
@@ -2711,7 +2732,7 @@ int32_t AudioServer::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64
 int32_t AudioServer::GenerateSessionId(uint32_t &sessionId)
 {
     int32_t uid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(uid == MCU_UID, ERROR, "uid is %{public}d, not mcu uid", uid);
+    CHECK_AND_RETURN_RET_LOG(GENERATE_SESSIONID_UID_SET.count(uid) == 1, ERROR, "uid is %{public}d, not mcu uid", uid);
     sessionId = PolicyHandler::GetInstance().GenerateSessionId(uid);
     return SUCCESS;
 }

@@ -197,8 +197,9 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_008, TestSize.Level1)
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     uint32_t audioFlag = 0;
     uint32_t sessionId = 0;
+    std::string networkId = "";
 
-    auto ret = eventEntry->CreateRendererClient(streamDesc, audioFlag, sessionId);
+    auto ret = eventEntry->CreateRendererClient(streamDesc, audioFlag, sessionId, networkId);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -598,23 +599,6 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_026, TestSize.Level1)
 
     auto ret = eventEntry->UpdateTracker(mode, streamChangeInfo);
     EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreService_027
- * @tc.desc  : Test AudioCoreService::EventEntry::RegisteredTrackerClientDied()
- */
-HWTEST(AudioCoreServiceEntryTest, AudioCoreService_027, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
-    EXPECT_NE(eventEntry, nullptr);
-
-    pid_t uid = 0;
-    pid_t pid = 0;
-    eventEntry->RegisteredTrackerClientDied(uid, pid);
 }
 
 /**
