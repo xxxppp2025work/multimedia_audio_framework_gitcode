@@ -1319,5 +1319,67 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_062, TestSize.Level1)
     auto ret = audioVolumeManager.ResetRingerModeMute();
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_063
+* @tc.desc  : Test CheckLowerDeviceVolume interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_063, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    audioVolumeManager.audioPolicyManager_.Init();
+    audioVolumeManager.audioPolicyManager_.SetDataShareReady(true);
+    const int32_t curVolume = 10;
+    auto ret = audioVolumeManager.audioPolicyManager_.SetRestoreVolumeLevel(DEVICE_TYPE_BLUETOOTH_A2DP, curVolume);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = audioVolumeManager.audioPolicyManager_.SetRestoreVolumeLevel(DEVICE_TYPE_WIRED_HEADSET, curVolume);
+    EXPECT_EQ(ret, SUCCESS);
+
+    audioVolumeManager.CheckLowerDeviceVolume(DEVICE_TYPE_BLUETOOTH_A2DP);
+    audioVolumeManager.CheckLowerDeviceVolume(DEVICE_TYPE_WIRED_HEADSET);
+    audioVolumeManager.CheckLowerDeviceVolume(DEVICE_TYPE_SPEAKER);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_064
+* @tc.desc  : Test CheckRestoreDeviceVolume interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_064, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    audioVolumeManager.audioPolicyManager_.Init();
+    audioVolumeManager.audioPolicyManager_.SetDataShareReady(true);
+    const int32_t curVolume = 10;
+    auto ret = audioVolumeManager.audioPolicyManager_.SetRestoreVolumeLevel(DEVICE_TYPE_BLUETOOTH_A2DP, curVolume);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = audioVolumeManager.audioPolicyManager_.SetRestoreVolumeLevel(DEVICE_TYPE_WIRED_HEADSET, curVolume);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = audioVolumeManager.CheckRestoreDeviceVolume(DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = audioVolumeManager.CheckRestoreDeviceVolume(DEVICE_TYPE_WIRED_HEADSET);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = audioVolumeManager.CheckRestoreDeviceVolume(DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_065
+* @tc.desc  : Test SetRestoreVolumeLevel interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_065, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    audioVolumeManager.audioPolicyManager_.Init();
+    audioVolumeManager.audioPolicyManager_.SetDataShareReady(true);
+    const int32_t curVolume = 10;
+    audioVolumeManager.SetRestoreVolumeLevel(DEVICE_TYPE_BLUETOOTH_A2DP, curVolume);
+    EXPECT_EQ(audioVolumeManager.btRestoreVol_, 0);
+    audioVolumeManager.SetRestoreVolumeLevel(DEVICE_TYPE_WIRED_HEADSET, curVolume);
+    EXPECT_EQ(audioVolumeManager.wiredRestoreVol_, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
