@@ -35,7 +35,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 23;
+const uint8_t TESTSIZE = 8;
 static int32_t NUM_2 = 2;
 static std::string g_rootPath = "/data/";
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
@@ -459,6 +459,85 @@ void HpaeManagerEffectTest2()
     WaitForMsgProcessing(hpaeManager_);
 }
 
+
+
+void HpaeManagerOnCallbackOpenOrReloadFailedTest()
+{
+    td::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
+    hpaeManager_->Init();
+    hpaeManager_->IsInit();
+
+    std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
+    hpaeManager_->RegisterSerivceCallback(callback);
+
+    bool isReload = GetData<bool>();
+    hpaeManager_->OnCallbackOpenOrReloadFailed(isReload);
+
+    hpaeManager_->OnCallbackOpenOrReloadFailed(true);
+    hpaeManager_->OnCallbackOpenOrReloadFailed(false);
+
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+void MovingSinkStateChangeFuzzTest()
+{
+    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
+    hpaeManager_->Init();
+    hpaeManager_->IsInit();
+
+    uint32_t sessionId = GetData<uint32_t>();
+    auto sinkInput = std::make_shared<HpaeSinkInputNode>();
+  
+    hpaeManager_->MovingSinkStateChange(sessionId, sinkInput);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+void HandleMoveSinkInputFuzzTest()
+{
+    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
+    hpaeManager_->Init();
+    hpaeManager_->IsInit();
+
+    std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
+    hpaeManager_->RegisterSerivceCallback(callback);
+
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>();
+ 
+    std::string sinkName = "Speaker_File";
+    if (GetData<bool>()) {
+        sinkName = "Speaker_File1";
+    }
+
+    auto nodeInfo = sinkInputNode->GetNodeInfo();
+    nodeInfo.sessionId = GetData<uint32_t>();
+    sinkInputNode->SetNodeInfo(nodeInfo);
+
+    hpaeManager_->HandleMoveSinkInput(sinkInputNode, sinkName);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+void HandleMoveSourceOutputFuzzTest()
+{
+    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
+    hpaeManager_->Init();
+    hpaeManager_->IsInit();
+
+    std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
+    hpaeManager_->RegisterSerivceCallback(callback);
+
+    HpaeCaptureMoveInfo moveInfo;
+    moveInfo.sessionId = GetData<uint32_t>();
+    moveInfo.sessionInfo.state = GetData<int32_t>();
+
+    std::string sourceName = "Mic_File";
+    if (GetData<bool>()) {
+        sourceName = "Mic_File1";
+    }
+
+    hpaeManager_->HandleMoveSourceOutput(moveInfo, sourceName);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     HpaeManagerDumpStreamInfoTest2,
     HpaeRenderManagerReloadTest,
@@ -468,6 +547,10 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     HpaeManagerEffectLiveTest,
     HpaeManagerEffectTest,
     HpaeManagerEffectTest2,
+    paeManagerOnCallbackOpenOrReloadFailedTest,
+    MovingSinkStateChangeFuzzTest,
+    HandleMoveSinkInputFuzzTest,
+    HandleMoveSourceOutputFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
