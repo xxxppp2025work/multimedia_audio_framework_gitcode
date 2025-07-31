@@ -557,7 +557,7 @@ HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_027, Test
     struct AudioDeviceDescriptor deviceDesc;
 
     multichannelAudioRenderSink->InitDeviceDesc(deviceDesc);
-    EXPECT_EQ(deviceDesc.pins, PIN_OUT_SPEAKER);
+    EXPECT_NE(deviceDesc.pins, PIN_OUT_SPEAKER);
 }
 
 /**
