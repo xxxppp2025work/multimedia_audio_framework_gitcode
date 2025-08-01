@@ -26,7 +26,7 @@ void AudioStrategyRouterParserUnitTest::SetUp(void)
     audioStrategyRouterParser_ = std::make_shared<AudioStrategyRouterParser>();
     ASSERT_TRUE(audioStrategyRouterParser_ != nullptr);
 
-    mockAudioXmlNode_ = std::make_shared<MockAudioXmlNode>();
+    mockAudioXmlNode_ = std::make_shared<testing::NiceMock<MockAudioXmlNode>>();
     ASSERT_TRUE(mockAudioXmlNode_ != nullptr);
 }
 void AudioStrategyRouterParserUnitTest::TearDown(void)
