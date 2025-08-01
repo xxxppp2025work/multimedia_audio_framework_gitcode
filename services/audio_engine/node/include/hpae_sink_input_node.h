@@ -32,7 +32,7 @@ typedef void (*AppCallbackFunc)(void *pHndl);
 class HpaeSinkInputNode : public OutputNode<HpaePcmBuffer *> {
 public:
     HpaeSinkInputNode(HpaeNodeInfo &nodeInfo);
-    ~HpaeSinkInputNode() = default;
+    virtual ~HpaeSinkInputNode();
     virtual void DoProcess() override;
     virtual bool Reset() override;     // no implement, virtual class
     virtual bool ResetAll() override;  // no implement, virtual class
@@ -55,6 +55,8 @@ public:
     bool GetOffloadEnabled();
     int32_t SetLoudnessGain(float loudnessGain);
     float GetLoudnessGain();
+    void SetSpeed(float speed);
+    float GetSpeed();
 private:
     int32_t GetDataFromSharedBuffer();
     void CheckAndDestroyHistoryBuffer();
@@ -76,6 +78,7 @@ private:
     std::unique_ptr<HpaePcmBuffer> historyBuffer_;
     bool offloadEnable_ = false;
     float loudnessGain_ = 0.0f;
+    float speed_ = 1.0f;
 };
 
 }  // namespace HPAE

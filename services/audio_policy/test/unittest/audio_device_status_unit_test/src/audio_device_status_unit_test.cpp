@@ -101,7 +101,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_003, TestSize.Level1)
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
 
     bRet = audioDeviceStatus.NoNeedChangeUsbDevice(address);
-    EXPECT_EQ(bRet, false);
+    EXPECT_EQ(bRet, true);
 }
 
 /**
@@ -217,6 +217,20 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_006, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioDeviceStatus.
+* @tc.number: GetModuleNameByType_001
+* @tc.desc  : Test GetModuleNameByType interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, GetModuleNameByType_001, TestSize.Level1)
+{
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    auto moduleName = audioDeviceStatus.GetModuleNameByType(TYPE_PRIMARY);
+    EXPECT_NE(moduleName, string(""));
+    moduleName = audioDeviceStatus.GetModuleNameByType(TYPE_INVALID);
+    EXPECT_EQ(moduleName, string(""));
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
 * @tc.number: AudioDeviceStatus_007
 * @tc.desc  : Test OnDeviceStatusUpdated interface.
 */
@@ -239,8 +253,12 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_007, TestSize.Level1)
     EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
 
     devType = DEVICE_TYPE_USB_HEADSET;
-    role = INPUT_DEVICE;
+    role = OUTPUT_DEVICE;
     isConnected = true;
+    audioDeviceStatus.OnDeviceStatusUpdated(devType, isConnected, macAddress, deviceName, streamInfo, role, hasPair);
+    EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
+
+    isConnected = false;
     audioDeviceStatus.OnDeviceStatusUpdated(devType, isConnected, macAddress, deviceName, streamInfo, role, hasPair);
     EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
 

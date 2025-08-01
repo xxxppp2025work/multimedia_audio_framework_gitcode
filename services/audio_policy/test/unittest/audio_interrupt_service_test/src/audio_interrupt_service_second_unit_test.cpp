@@ -142,7 +142,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_002, TestSize.
     std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
     sessionService->sessionMap_[fakePid] = nullptr;
     audioInterruptService->sessionService_ = sessionService;
-
+    
     AudioSessionStrategy audioSessionStrategy;
     audioSessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
     auto ret = audioInterruptService->ActivateAudioSession(AudioInterruptService::ZONEID_DEFAULT,
@@ -818,7 +818,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_026, TestSize.
     audioInterruptService->ProcessExistInterrupt(iterActive, audioFocusEntry,
         incomingInterrupt, removeFocusInfo, interruptEvent);
     EXPECT_FALSE(removeFocusInfo);
-
+    
     incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
     incomingInterrupt.currencySources.sourcesTypes.push_back(SOURCE_TYPE_MIC);
     audioFocusEntry.hintType = INTERRUPT_HINT_STOP;

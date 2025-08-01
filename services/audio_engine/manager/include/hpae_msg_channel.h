@@ -19,7 +19,6 @@
 #include "i_stream.h"
 #include "hpae_info.h"
 #include "hpae_pcm_buffer.h"
-#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -65,8 +64,6 @@ public:
             // pack the arguments into a tuple
             auto packed = std::make_tuple(std::forward<Args>(args)...);
             callback->Invoke(cmdID, packed);
-        } else {
-            AUDIO_ERR_LOG("Hpae TriggerCallback callback is null");
         }
     }
 };
@@ -134,11 +131,6 @@ public:
     virtual void OnRewindAndFlush(uint64_t rewindTime){};
     virtual void OnNotifyQueue(){};
     virtual void OnDisConnectProcessCluster(HpaeProcessorType sceneType){};
-    // add callback
-    virtual uint32_t OnGetNodeId()
-    {
-        return 0;
-    };
     virtual void OnNotifyDfxNodeInfo(bool isConnect, uint32_t preNodeId, HpaeDfxNodeInfo &nodeInfo){};
     virtual void OnNotifyDfxNodeInfoChanged(uint32_t NodeId, const HpaeDfxNodeInfo &nodeInfo){};
 };

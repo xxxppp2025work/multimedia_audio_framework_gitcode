@@ -156,10 +156,6 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
-        // fix pop, fetch device before unload module
-        AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnDeviceStatusUpdated_1", reason);
-        result = HandleLocalDeviceDisconnected(updatedDesc);
-        CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
     }
 
     TriggerDeviceChangedCallback(descForCb, isConnected);
@@ -168,6 +164,11 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
     // fetch input&output device
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnDeviceStatusUpdated_2", reason);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnDeviceStatusUpdated_2");
+
+    if (!isConnected) {
+        result = HandleLocalDeviceDisconnected(updatedDesc);
+        CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
+    }
 
     // update a2dp offload
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
@@ -464,7 +465,7 @@ int32_t AudioDeviceStatus::HandleLocalDeviceDisconnected(const AudioDeviceDescri
             audioIOHandleMap_.ClosePortAndEraseIOHandle(BLUETOOTH_MIC);
         }
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {
-        audioIOHandleMap_.ClosePortAndEraseIOHandle(DP_SINK);
+        audioIOHandleMap_.ClosePortAndEraseIOHandle(GetModuleNameByType(TYPE_DP));
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         audioEcManager_.CloseUsbArmDevice(updatedDesc);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_ACCESSORY) {
@@ -804,6 +805,14 @@ DeviceType AudioDeviceStatus::GetDeviceTypeFromPin(AudioPin hdiPin)
             break;
     }
     return DeviceType::DEVICE_TYPE_DEFAULT;
+}
+
+string AudioDeviceStatus::GetModuleNameByType(ClassType type)
+{
+    list<AudioModuleInfo> moduleList;
+    bool ret = audioConfigManager_.GetModuleListByType(type, moduleList);
+    CHECK_AND_RETURN_RET_LOG(ret && !moduleList.empty(), "", "Get module info of type[%{public}d] failed", type);
+    return moduleList.front().name;
 }
 
 void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)

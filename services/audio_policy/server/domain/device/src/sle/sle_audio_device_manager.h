@@ -63,8 +63,8 @@ public:
     bool IsInBandRingOpen(const std::string &device) const override;
     uint32_t GetSupportStreamType(const std::string &device) const override;
     int32_t SetActiveSinkDevice(const std::string &device, uint32_t streamType) override;
-    int32_t StartPlaying(const std::string &device, uint32_t streamType) override;
-    int32_t StopPlaying(const std::string &device, uint32_t streamType) override;
+    int32_t StartPlaying(const std::string &device, uint32_t streamType, int32_t clientUid) override;
+    int32_t StopPlaying(const std::string &device, uint32_t streamType, int32_t clientUid) override;
     int32_t ConnectAllowedProfiles(const std::string &remoteAddr) const override;
     int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType) override;
     int32_t SendUserSelection(const std::string &device, uint32_t streamType) override;
@@ -73,10 +73,10 @@ public:
     // Parameter Conversion Interface
     int32_t SetActiveDevice(const std::string &device, StreamUsage streamUsage);
     int32_t SetActiveDevice(const std::string &device, SourceType sourceType);
-    int32_t StartPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage);
-    int32_t StopPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage);
-    int32_t StartPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType);
-    int32_t StopPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType);
+    int32_t StartPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage, int32_t clientUid);
+    int32_t StopPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage, int32_t clientUid);
+    int32_t StartPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType, int32_t clientUid);
+    int32_t StopPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType, int32_t clientUid);
     int32_t SendUserSelection(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage);
     int32_t SendUserSelection(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType);
     int32_t SetDeviceAbsVolume(const std::string &device, AudioStreamType streamType, int32_t volume);
@@ -85,6 +85,9 @@ public:
     int32_t AddNearlinkDevice(const AudioDeviceDescriptor &deviceDesc);
     int32_t RemoveNearlinkDevice(const AudioDeviceDescriptor &deviceDesc);
     void UpdateSleStreamTypeCount(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isRemoved = false);
+    void ResetSleStreamTypeCount(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+    std::unordered_map<uint32_t, std::unordered_set<uint32_t>> GetNearlinkStreamTypeMapByDevice(
+        const std::string &deviceAddr);
 
     // Devcice Volume Manager
     int32_t SetNearlinkDeviceMute(const std::string &device, AudioStreamType streamType, bool isMute);
@@ -113,6 +116,7 @@ private:
     std::mutex startedSleStreamTypeMutex_;
     // Maps device MAC -> (stream type ->set of session IDs)
     std::unordered_map<std::string, std::unordered_map<uint32_t, std::unordered_set<uint32_t>>> startedSleStreamType_;
+    std::unordered_map<uint32_t, int32_t> streamTypeUidInfo_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -52,6 +52,7 @@ int32_t HpaeOffloadRendererManager::CreateInputSession(const HpaeStreamInfo &str
     nodeInfo.sessionId = streamInfo.sessionId;
     nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
     nodeInfo.sceneType = TransStreamTypeToSceneType(streamInfo.streamType);
+    nodeInfo.effectInfo = streamInfo.effectInfo;
     nodeInfo.historyFrameCount = nodeInfo.frameLen ?
         HISTORY_INTERVAL_S * nodeInfo.samplingRate / nodeInfo.frameLen : 0;
     nodeInfo.statusCallback = weak_from_this();
@@ -158,6 +159,7 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
     outputNodeInfo.sessionId = sinkInputNode_->GetSessionId();
     outputNodeInfo.streamType = sinkInputNode_->GetStreamType();
     sinkOutputNode_->SetNodeInfo(outputNodeInfo);
+    sinkOutputNode_->SetSpeed(sinkInputNode_->GetSpeed());
 
     // single stream manager
     HpaeNodeInfo nodeInfo = sinkOutputNode_->GetNodeInfo();
@@ -218,7 +220,6 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId)
             sinkOutputNode_->StopStream();
         }
         sessionInfo_.state = HPAE_SESSION_PAUSED;
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionInfo_.state, OPERATION_PAUSED);
     };
     SendRequest(request);
     return SUCCESS;
@@ -234,7 +235,6 @@ int32_t HpaeOffloadRendererManager::Flush(uint32_t sessionId)
         sinkInputNode_->Flush();
         // flush sinkoutput cache
         sinkOutputNode_->FlushStream();
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionInfo_.state, OPERATION_FLUSHED);
     };
     SendRequest(request);
     return SUCCESS;
@@ -269,7 +269,6 @@ int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
         if (state == HPAE_SESSION_RUNNING) {
             sinkOutputNode_->StopStream();
         }
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionInfo_.state, OPERATION_STOPPED);
     };
     SendRequest(request);
     return SUCCESS;
@@ -609,10 +608,14 @@ int32_t HpaeOffloadRendererManager::SetOffloadRenderCallbackType(uint32_t sessio
 
 void HpaeOffloadRendererManager::SetSpeed(uint32_t sessionId, float speed)
 {
-    CHECK_AND_RETURN_LOG(sinkInputNode_ && sessionId == sinkInputNode_->GetSessionId(),
-        "SetSpeed not find sessionId %{public}u", sessionId);
-    CHECK_AND_RETURN_LOG(sinkOutputNode_, "sinkOutputNode is nullptr");
-    sinkOutputNode_->SetSpeed(speed);
+    auto request = [this, sessionId, speed]() {
+        CHECK_AND_RETURN_LOG(sinkInputNode_ && sessionId == sinkInputNode_->GetSessionId(),
+            "SetSpeed not find sessionId %{public}u", sessionId);
+        sinkInputNode_->SetSpeed(speed);
+        CHECK_AND_RETURN_LOG(sinkOutputNode_, "sinkOutputNode is nullptr");
+        sinkOutputNode_->SetSpeed(speed);
+    };
+    SendRequest(request);
 }
 
 std::vector<SinkInput> HpaeOffloadRendererManager::GetAllSinkInputsInfo()
@@ -709,6 +712,9 @@ int32_t HpaeOffloadRendererManager::GetNodeInputFormatInfo(uint32_t sessionId, A
     CHECK_AND_RETURN_RET_LOG(loudnessGainNode_, ERROR, "sessionId %{public}d, gainNode does not exist", sessionId);
     CHECK_AND_RETURN_RET_LOG(loudnessGainNode_->GetSessionId() == sessionId, ERROR, "loudness node id %{public}d,"
         "set sessionId %{public}d does not match!", loudnessGainNode_->GetSessionId(), sessionId);
+    basicFormat.audioChannelInfo.channelLayout = (AudioChannelLayout)sinkInfo_.channelLayout;
+    basicFormat.audioChannelInfo.numChannels = (uint32_t)sinkInfo_.channels;
+    basicFormat.rate = sinkInfo_.samplingRate;
     if (loudnessGainNode_->IsLoudnessAlgoOn()) {
         // has loudness gain algorithm, should convert to 48k, channels and chanellayout stay same as input
         basicFormat.rate = SAMPLE_RATE_48000;

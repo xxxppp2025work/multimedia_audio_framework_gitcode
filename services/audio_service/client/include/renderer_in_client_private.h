@@ -277,13 +277,23 @@ private:
 
     void ResetCallbackLoopTid();
 
-    bool DoHdiSetSpeed(float speed);
+    bool DoHdiSetSpeed(float speed, bool force);
+
+    int32_t SetSpeedInner(float speed);
+
+    void NotifyOffloadSpeed();
 
     void WaitForBufferNeedWrite();
 
     void UpdatePauseReadIndex();
 
     void FlushSpeedBuffer();
+
+    bool CheckBufferNeedWrite();
+
+    bool NeedStopFlush();
+
+    bool CheckBufferValid(const BufferDesc &bufDesc);
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -402,7 +412,9 @@ private:
     AudioRendererRate rendererRate_ = RENDER_RATE_NORMAL;
     AudioEffectMode effectMode_ = EFFECT_DEFAULT;
 
+    std::optional<float> realSpeed_ = std::nullopt;
     float speed_ = 1.0;
+    float hdiSpeed_ = 1.0;
     std::unique_ptr<uint8_t[]> speedBuffer_ {nullptr};
     size_t bufferSize_ = 0;
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
@@ -482,6 +494,8 @@ private:
 
     std::mutex lastCallStartByUserTidMutex_;
     std::optional<pid_t> lastCallStartByUserTid_ = std::nullopt;
+
+    std::function<uid_t()> uidGetter_ = [] { return getuid(); };
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

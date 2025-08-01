@@ -288,7 +288,6 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
 
 AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
 {
-    AUDIO_INFO_LOG("Route flag: %{public}u", flag);
     if (audioMode == AUDIO_MODE_PLAYBACK) {
         if (flag & AUDIO_OUTPUT_FLAG_FAST) {
             if (flag & AUDIO_OUTPUT_FLAG_VOIP) {
@@ -492,7 +491,7 @@ void AudioPipeSelector::SortStreamDescsByStartTime(std::vector<std::shared_ptr<A
 {
     sort(streamDescs.begin(), streamDescs.end(), [](const std::shared_ptr<AudioStreamDescriptor> &streamDesc1,
         const std::shared_ptr<AudioStreamDescriptor> &streamDesc2) {
-            return streamDesc1->startTimeStamp_ < streamDesc2->startTimeStamp_;
+            return streamDesc1->createTimeStamp_ < streamDesc2->createTimeStamp_;
         });
 }
 } // namespace AudioStandard

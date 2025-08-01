@@ -252,6 +252,8 @@ public:
 
     int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object) override;
 
+    int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object) override;
+
     int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t SetAudioVKBInfoMgrCallback(const sptr<IRemoteObject> &object) override;
@@ -279,7 +281,7 @@ public:
     int32_t GetPreferredInputStreamType(const AudioCapturerInfo &capturerInfo, int32_t &streamType) override;
 
     int32_t CreateRendererClient(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        uint32_t &flag, uint32_t &sessionId) override;
+        uint32_t &flag, uint32_t &sessionId, std::string &networkId) override;
 
     int32_t CreateCapturerClient(
         const std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, uint32_t &sessionId) override;
@@ -517,7 +519,8 @@ public:
     int32_t SetPreferredDevice(int32_t preferredType,
         const std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t uid) override;
 
-    int32_t SaveRemoteInfo(const std::string &networkId, int32_t deviceType) override;
+    int32_t SetDeviceVolumeBehavior(const std::string &networkId, int32_t deviceType,
+        const VolumeBehavior &volumeBehavior) override;
 
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) override;
 
@@ -579,6 +582,8 @@ public:
     int32_t ForceVolumeKeyControlType(int32_t volumeType, int32_t duration, int32_t &ret) override;
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
+    std::set<int32_t> GetStreamIdsForAudioSessionByStreamUsage(
+        const int32_t zoneId, const std::set<StreamUsage> &streamUsageSet);
 
     void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
         int32_t zoneId = 0);
@@ -851,6 +856,7 @@ private:
 
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     bool volumeApplyToAll_ = false;
+    bool screenOffAdjustVolumeEnable_ = false;
     bool supportVibrator_ = false;
 
     bool isHighResolutionExist_ = false;

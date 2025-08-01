@@ -64,7 +64,7 @@ struct DeviceChangeAction : public Parcelable {
 
     static DeviceChangeAction *Unmarshalling(Parcel &parcel)
     {
-        auto info = new DeviceChangeAction();
+        auto info = new(std::nothrow) DeviceChangeAction();
         if (info == nullptr) {
             return nullptr;
         }
@@ -167,6 +167,12 @@ class AudioQueryClientTypeCallback {
 public:
     virtual ~AudioQueryClientTypeCallback() = default;
     virtual bool OnQueryClientType(const std::string &bundleName, uint32_t uid) = 0;
+};
+
+class AudioQueryDeviceVolumeBehaviorCallback {
+public:
+    virtual ~AudioQueryDeviceVolumeBehaviorCallback() = default;
+    virtual VolumeBehavior OnQueryDeviceVolumeBehavior() = 0;
 };
 
 class VolumeKeyEventCallback {
@@ -298,7 +304,7 @@ public:
      * @param streamType Stream type to start.
      * @return Returns the status code for this function called.
      */
-    virtual int32_t StartPlaying(const std::string &device, uint32_t streamType) = 0;
+    virtual int32_t StartPlaying(const std::string &device, uint32_t streamType, int32_t clientUid) = 0;
 
     /**
      * @brief Stop audio streaming to a device.
@@ -306,7 +312,7 @@ public:
      * @param streamType Stream type to stop.
      * @return Returns the status code for this function called.
      */
-    virtual int32_t StopPlaying(const std::string &device, uint32_t streamType) = 0;
+    virtual int32_t StopPlaying(const std::string &device, uint32_t streamType, int32_t clientUid) = 0;
 
     /**
      * @brief Establish connection with allowed profiles for a device.

@@ -208,6 +208,8 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
             status_ = I_STATUS_INVALID;
     }
+
+    CaptureConcurrentCheck(streamIndex_);
 }
 
 void CapturerInServer::HandleOperationFlushed()
@@ -442,6 +444,7 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     UpdateBufferTimeStamp(dstBuffer.bufLength);
 
     stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
+
     return SUCCESS;
 }
 
@@ -608,7 +611,7 @@ int32_t CapturerInServer::Pause()
     std::unique_lock<std::mutex> lock(statusLock_);
 
     if (status_ != I_STATUS_STARTED) {
-        AUDIO_ERR_LOG("CapturerInServer::Pause failed, Illegal state: %{public}u", status_.load());
+        AUDIO_ERR_LOG("failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
     if (needCheckBackground_) {
@@ -642,7 +645,7 @@ int32_t CapturerInServer::Flush()
     } else if (status_ == I_STATUS_STOPPED) {
         status_ = I_STATUS_FLUSHING_WHEN_STOPPED;
     } else {
-        AUDIO_ERR_LOG("CapturerInServer::Flush failed, Illegal state: %{public}u", status_.load());
+        AUDIO_ERR_LOG("failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
 
@@ -680,7 +683,7 @@ int32_t CapturerInServer::Stop()
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED) {
-        AUDIO_ERR_LOG("CapturerInServer::Stop failed, Illegal state: %{public}u", status_.load());
+        AUDIO_ERR_LOG("failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STOPPING;
@@ -907,6 +910,16 @@ int32_t CapturerInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<
     uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame)
 {
     return ERR_NOT_SUPPORTED;
+}
+
+inline void CapturerInServer::CaptureConcurrentCheck(uint32_t streamIndex)
+{
+    if (lastStatus_ == status_) {
+        return;
+    }
+    std::atomic_store(&lastStatus_, status_);
+    int32_t ret = PolicyHandler::GetInstance().CaptureConcurrentCheck(streamIndex);
+    AUDIO_INFO_LOG("ret:%{public}d streamIndex_:%{public}d status_:%{public}u", ret, streamIndex, status_.load());
 }
 } // namespace AudioStandard
 } // namespace OHOS
