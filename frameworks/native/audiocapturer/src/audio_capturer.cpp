@@ -29,6 +29,7 @@
 
 #include "media_monitor_manager.h"
 #include "audio_stream_descriptor.h"
+#include "audio_device_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -148,6 +149,7 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         "Create failed: SOURCE_TYPE_ULTRASONIC can only be used by MSDP");
     AudioStreamType audioStreamType = FindStreamTypeBySourceType(sourceType);
     AudioCapturerParams params;
+    params.preferredInputDevice = capturerOptions.preferredInputDevice;
     params.audioSampleFormat = capturerOptions.streamInfo.format;
     params.samplingRate = capturerOptions.streamInfo.samplingRate;
     params.audioChannel = AudioChannel::CHANNEL_3 == capturerOptions.streamInfo.channels ? AudioChannel::STEREO :
@@ -288,6 +290,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 
     // Create Client
     std::shared_ptr<AudioStreamDescriptor> streamDesc = ConvertToStreamDescriptor(audioStreamParams);
+    streamDesc->preferredInputDevice = AudioDeviceDescriptor(params.preferredInputDevice);
     uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
     int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
         streamDesc, flag, audioStreamParams.originalSessionId);
