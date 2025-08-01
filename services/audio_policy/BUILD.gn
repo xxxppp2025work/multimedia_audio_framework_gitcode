@@ -615,6 +615,7 @@ group("audio_policy_test_packages") {
     ":audio_policy_test",
     "test:audio_policy_unittest_packages",
     "server/service/service_main:audio_policy_service_ext_unit_test",
+    "server/service/service_main:device_init_callback_unit_test"
   ]
 }
 
