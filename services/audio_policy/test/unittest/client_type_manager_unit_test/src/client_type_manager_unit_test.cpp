@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,11 +31,11 @@ void ClientTypeManagerUnitTest::SetUp(void) {}
 void ClientTypeManagerUnitTest::TearDown(void) {}
 
 /**
-* @tc.name  : Test VolumeDataMaintainer.
-* @tc.number: VolumeDataMaintainerUnitTest_001.
-* @tc.desc  : Test VolumeDataMaintainer API.
-*/
-HWTEST(ClientTypeManagerUnitTest, ClientTypeManagerUnitTest_001, TestSize.Level1)
+ * @tc.name  : Test VolumeDataMaintainer.
+ * @tc.number: VolumeDataMaintainerUnitTest_001.
+ * @tc.desc  : Test VolumeDataMaintainer API.
+ */
+HWTEST(ClientTypeManagerUnitTest, ClientTypeManagerUnitTest_001, TestSize.Level4)
 {
     auto manager = ClientTypeManager::GetInstance();
     EXPECT_NE(nullptr, manager);
@@ -60,6 +60,26 @@ HWTEST(ClientTypeManagerUnitTest, ClientTypeManagerUnitTest_001, TestSize.Level1
     manager->GetAndSaveClientType(TEST_CLIENT_UID_3, "");
 }
 
+/**
+ * @tc.name  : Test VolumeDataMaintainer.
+ * @tc.number: VolumeDataMaintainerUnitTest_002
+ * @tc.desc  : Test VolumeDataMaintainer API. clientTypeManagerHandler_ != nullptr
+ */
+HWTEST(ClientTypeManagerUnitTest, ClientTypeManagerUnitTest_002, TestSize.Level4)
+{
+    auto manager = ClientTypeManager::GetInstance();
+    EXPECT_NE(nullptr, manager);
+
+    manager->clientTypeManagerHandler_ = std::make_shared<ClientTypeManagerHandler>();
+
+    manager->clientTypeMap_.clear();
+    manager->OnClientTypeQueryCompleted(TEST_CLIENT_UID, TEST_CLIENT_TYPE);
+    const int32_t checkSize = 1;
+    EXPECT_EQ(checkSize, manager->clientTypeMap_.size());
+
+    manager->GetAndSaveClientType(TEST_CLIENT_UID, TEST_BUNDLE_NAME);
+    EXPECT_EQ(checkSize, manager->clientTypeMap_.size());
+}
 
 } // AudioStandardnamespace
 } // OHOSnamespace
