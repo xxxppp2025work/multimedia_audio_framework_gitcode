@@ -86,6 +86,7 @@ public:
     
     const std::string GetZoneStringDescriptor(int32_t zoneId);
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
+    int32_t GetValidZoneId(int32_t zoneId);
 
 private:
     AudioZoneService() = default;
