@@ -246,7 +246,6 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
     if (streamDesc->streamInfo_.channels <= STEREO ||
         (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_MOVIE &&
          streamDesc->rendererInfo_.originalFlag == AUDIO_FLAG_PCM_OFFLOAD)) {
-        AUDIO_INFO_LOG("normal stream beacuse channels.");
         return false;
     }
     // The multi-channel algorithm needs to be supported in the dsp
@@ -261,8 +260,6 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_WIRED_HEADSET &&
         streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_USB_HEADSET &&
         streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_NEARLINK) {
-            AUDIO_INFO_LOG("normal stream, deviceType: %{public}d",
-                streamDesc->newDeviceDescs_[0]->deviceType_);
             return false;
         }
     if (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MUSIC ||
@@ -278,18 +275,28 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
     return true;
 }
 
+bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    const auto &rendererInfo = streamDesc->rendererInfo_;
+    if (rendererInfo.originalFlag == AUDIO_FLAG_FORCED_NORMAL ||
+        rendererInfo.rendererFlags == AUDIO_FLAG_FORCED_NORMAL) {
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        return true;
+    }
+    if (rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION &&
+        rendererInfo.samplingRate != SAMPLE_RATE_48000) {
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        return true;
+    }
+    return false;
+}
+
 void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess)
 {
+    CHECK_AND_RETURN_LOG(streamDesc, "Input param error");
     AUDIO_INFO_LOG("deviceType: %{public}d", streamDesc->newDeviceDescs_.front()->deviceType_);
     // fast/normal has done in audioRendererPrivate
-    if (streamDesc->rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL ||
-        streamDesc->rendererInfo_.rendererFlags == AUDIO_FLAG_FORCED_NORMAL ||
-        (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION &&
-         streamDesc->rendererInfo_.samplingRate != SAMPLE_RATE_48000)) {
-        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-        AUDIO_INFO_LOG("Forced normal cases");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(IsForcedNormal(streamDesc) == false, "Forced normal cases");
 
     if (streamDesc->newDeviceDescs_.back()->deviceType_ == DEVICE_TYPE_REMOTE_CAST ||
         streamDesc->newDeviceDescs_.back()->networkId_ != LOCAL_NETWORK_ID) {
@@ -346,7 +353,7 @@ AudioFlag AudioCoreService::SetFlagForSpecialStream(std::shared_ptr<AudioStreamD
     if (IsStreamSupportMultiChannel(streamDesc)) {
         return AUDIO_OUTPUT_FLAG_MULTICHANNEL;
     }
-    AUDIO_INFO_LOG("StreamDesc flag use default - NORMAL");
+    AUDIO_INFO_LOG("default - NORMAL");
     return AUDIO_OUTPUT_FLAG_NORMAL;
 }
 
@@ -490,9 +497,6 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
 
 int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
-    AUDIO_INFO_LOG("[ADeviceEvent] targetScene[%{public}d] lastScene[%{public}d] from uid %{public}d pid %{public}d",
-        audioScene, audioSceneManager_.GetLastAudioScene(), uid, pid);
-
     audioSceneManager_.SetAudioScenePre(audioScene);
     audioStateManager_.SetAudioSceneOwnerUid(audioScene == 0 ? 0 : uid);
     bool isSameScene = audioSceneManager_.IsSameAudioScene();
@@ -1200,7 +1204,6 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
     UpdateModemRoute(modemDescs);
     if (IsNoRunningStream(outputStreamDescs)) {
-        AUDIO_INFO_LOG("no running stream");
         HandleFetchOutputWhenNoRunningStream(reason);
     }
     return ret;

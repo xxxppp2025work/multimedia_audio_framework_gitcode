@@ -793,7 +793,6 @@ void AudioCommonEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData 
         AUDIO_ERR_LOG("eventReceiver_ is nullptr");
         return;
     }
-    AUDIO_INFO_LOG("receive DATA_SHARE_READY action success");
     eventReceiver_(eventData);
 }
 
@@ -1083,7 +1082,6 @@ int32_t AudioPolicyServer::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLeve
 {
     AUDIO_INFO_LOG("GetAppVolumeLevel appUid : %{public}d", appUid);
     if (!PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("only for system app");
         return ERR_PERMISSION_DENIED;
     }
     return GetAppVolumeLevelInternal(appUid, volumeLevel);
