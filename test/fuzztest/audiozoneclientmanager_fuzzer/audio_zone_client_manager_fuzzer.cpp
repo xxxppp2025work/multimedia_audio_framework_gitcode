@@ -168,6 +168,14 @@ void AudioZoneClientManagerGetSystemVolumeLevelFuzzTest()
     audioZoneClientManager.GetSystemVolumeLevel(clientPid, zoneId, volumeType);
 }
 
+void AudioZoneClientManagerIsRegisterAudioZoneClientFuzzTest()
+{
+    std::shared_ptr<AudioPolicyServerHandler> handler;
+    AudioZoneClientManager audioZoneClientManager(handler);
+    pid_t clientPid = GetData<pid_t>();
+    audioZoneClientManager.IsRegisterAudioZoneClient(clientPid);
+}
+
 TestPtr g_testPtrs[] = {
     AudioZoneClientManagerGetInstanceFuzzTest,
     AudioZoneClientManagerRegisterAudioZoneClientFuzzTest,
@@ -179,6 +187,7 @@ TestPtr g_testPtrs[] = {
     AudioZoneClientManagerSendZoneInterruptEventFuzzTest,
     AudioZoneClientManagerSetSystemVolumeLevelFuzzTest,
     AudioZoneClientManagerGetSystemVolumeLevelFuzzTest,
+    AudioZoneClientManagerIsRegisterAudioZoneClientFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

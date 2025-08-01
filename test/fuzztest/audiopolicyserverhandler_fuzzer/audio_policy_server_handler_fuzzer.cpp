@@ -56,7 +56,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 16;
+const uint8_t TESTSIZE = 31;
 static int32_t NUM_2 = 2;
 std::mutex paElementsMutex_;
 
@@ -333,6 +333,175 @@ void SendCapturerRemovedEventFuzzTest()
     audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionId, isSync);
 }
 
+void RemoveExternInterruptCbsMapFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    int32_t clientId = GetData<int32_t>();
+    audioPolicyServerHandler_->RemoveExternInterruptCbsMap(clientId);
+}
+
+void RemoveDistributedRoutingRoleChangeCbsMapFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    int32_t clientId = GetData<int32_t>();
+    audioPolicyServerHandler_->RemoveDistributedRoutingRoleChangeCbsMap(clientId);
+}
+
+void SendAudioFocusInfoChangeCallbackFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    int32_t callbackCategory = GetData<int32_t>();
+    AudioInterrupt audioInterrupt;
+    AudioFocuState audioFocuState = GetData<AudioFocuState>();
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
+    focusInfoList.push_back(std::make_pair(audioInterrupt, audioFocuState));
+    audioPolicyServerHandler_->SendAudioFocusInfoChangeCallback(callbackCategory,
+        audioInterrupt, focusInfoList);
+}
+
+void SendRingerModeUpdatedCallbackFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AudioRingerMode ringMode = GetData<AudioRingerMode>();
+    audioPolicyServerHandler_->SendRingerModeUpdatedCallback(ringMode);
+}
+
+void SendAppVolumeChangeCallbackFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    int32_t appUid = GetData<int32_t>();
+    VolumeEvent volumeEvent;
+    audioPolicyServerHandler_->SendAppVolumeChangeCallback(appUid, volumeEvent);
+}
+
+void SendInterruptEventCallbackForAudioSessionFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    InterruptEventInternal interruptEvent;
+    AudioInterrupt audioInterrupt;
+    audioPolicyServerHandler_->SendInterruptEventCallbackForAudioSession(interruptEvent,
+        audioInterrupt);
+}
+
+void SendInterruptEventWithClientIdCallbackFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    int32_t clientId = GetData<int32_t>();
+    InterruptEventInternal interruptEvent;
+    audioPolicyServerHandler_->SendInterruptEventWithClientIdCallback(interruptEvent,
+        clientId);
+}
+
+void SendDistributedRoutingRoleChangeFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    CastType type = GetData<CastType>();
+    std::shared_ptr<AudioDeviceDescriptor> descriptor;
+    audioPolicyServerHandler_->SendDistributedRoutingRoleChange(descriptor, type);
+}
+
+void SendWakeupCloseEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    bool isSync = GetData<bool>();
+    audioPolicyServerHandler_->SendWakeupCloseEvent(isSync);
+}
+
+void SendSpatializatonEnabledChangeForAnyDeviceEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+
+    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice;
+    bool enabled = GetData<bool>();
+    audioPolicyServerHandler_->SendSpatializatonEnabledChangeForAnyDeviceEvent(selectedAudioDevice,
+        enabled);
+}
+
+void SendSpatializatonEnabledChangeForCurrentDeviceEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    bool enabled = GetData<bool>();
+    audioPolicyServerHandler_->SendSpatializatonEnabledChangeForCurrentDeviceEvent(enabled);
+}
+
+void SendHeadTrackingEnabledChangeForAnyDeviceEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice;
+    bool enabled = GetData<bool>();
+    audioPolicyServerHandler_->SendHeadTrackingEnabledChangeForAnyDeviceEvent(selectedAudioDevice,
+        &enabled);
+}
+
+void SendPipeStreamCleanEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AudioPipeType pipeType = GetData<AudioPipeType>();
+    audioPolicyServerHandler_->SendPipeStreamCleanEvent(pipeType);
+}
+
+void HandleVolumeChangeCallbackFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    int32_t clientId = GetData<int32_t>();
+    std::shared_ptr<AudioPolicyClientHolder> audioPolicyClient;
+    VolumeEvent volumeEvent;
+    audioPolicyServerHandler_->HandleVolumeChangeCallback(clientId, audioPolicyClient,
+        volumeEvent);
+}
+
+void HandleVolumeKeyEventToRssWhenAccountsChangeFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    std::shared_ptr<EventContextObj> eventContextObj;
+    audioPolicyServerHandler_->HandleVolumeKeyEventToRssWhenAccountsChange(eventContextObj);
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     AddAudioPolicyClientProxyMapFuzzTest,
     RemoveAudioPolicyClientProxyMapFuzzTest,
@@ -350,6 +519,21 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     SendRendererDeviceChangeEventFuzzTest,
     SendCapturerCreateEventFuzzTest,
     SendCapturerRemovedEventFuzzTest,
+    RemoveExternInterruptCbsMapFuzzTest,
+    RemoveDistributedRoutingRoleChangeCbsMapFuzzTest,
+    SendAudioFocusInfoChangeCallbackFuzzTest,
+    SendRingerModeUpdatedCallbackFuzzTest,
+    SendAppVolumeChangeCallbackFuzzTest,
+    SendInterruptEventCallbackForAudioSessionFuzzTest,
+    SendInterruptEventWithClientIdCallbackFuzzTest,
+    SendDistributedRoutingRoleChangeFuzzTest,
+    SendWakeupCloseEventFuzzTest,
+    SendSpatializatonEnabledChangeForAnyDeviceEventFuzzTest,
+    SendSpatializatonEnabledChangeForCurrentDeviceEventFuzzTest,
+    SendHeadTrackingEnabledChangeForAnyDeviceEventFuzzTest,
+    SendPipeStreamCleanEventFuzzTest,
+    HandleVolumeChangeCallbackFuzzTest,
+    HandleVolumeKeyEventToRssWhenAccountsChangeFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)
