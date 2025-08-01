@@ -396,6 +396,44 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_217, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: AudioPolicyServer_218
+ * @tc.desc  : Test OnReceiveEvent.
+ */
+HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_218, TestSize.Level1)
+{
+    int32_t systemAbilityId = 0;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
+    ASSERT_NE(audioPolicyServer, nullptr);
+
+    EventFwk::CommonEventData eventData;
+    OHOS::EventFwk::Want want;
+    want.SetAction("usual.event.LOCALE_CHANGED");
+    eventData.SetWant(want);
+    audioPolicyServer->OnReceiveEvent(eventData);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: AudioPolicyServer_219
+ * @tc.desc  : Test OnReceiveEvent.
+ */
+HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_219, TestSize.Level4)
+{
+    int32_t systemAbilityId = 0;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
+    ASSERT_NE(audioPolicyServer, nullptr);
+
+    EventFwk::CommonEventData eventData;
+    OHOS::EventFwk::Want want;
+    want.SetAction("usual.event.DATA_SHARE_READY");
+    eventData.SetWant(want);
+    audioPolicyServer->OnReceiveEvent(eventData);
+    // branch testing
+    audioPolicyServer->OnReceiveEvent(eventData);
+}
+
+/**
 * @tc.name  : IsContinueAddVolTest_001
 * @tc.number: IsContinueAddVolTest_001
 * @tc.desc  : test false case with call once
