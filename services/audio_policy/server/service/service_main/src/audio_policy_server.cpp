@@ -550,7 +550,7 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
     if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && IsContinueAddVol()) {
         std::thread([this]() { TriggerMuteCheck(); }).detach();
     }
-    int32_t zoneId = audioVolumeManager_.GetVolumeAdjustZoneId();
+    int32_t zoneId = AudioZoneService::GetInstance().GetValidZoneId(audioVolumeManager_.GetVolumeAdjustZoneId());
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
     if (volumeApplyToAll_) {
         streamInFocus = AudioStreamType::STREAM_ALL;

@@ -416,6 +416,11 @@ bool AudioZoneService::CheckIsZoneValid(int32_t zoneId)
     return FindZone(zoneId) != nullptr;
 }
 
+int32_t AudioZoneService::GetValidZoneId(int32_t zoneId)
+{
+    return CheckIsZoneValid(zoneId) ? zoneId : 0;
+}
+
 AudioZoneFocusList AudioZoneService::GetAudioInterruptForZone(int32_t zoneId, const std::string &deviceTag)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
