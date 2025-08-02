@@ -708,10 +708,10 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_029, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioDeviceStatus.
-* @tc.number: AudioDeviceStatus_030
+* @tc.number: AudioDeviceStatus_070
 * @tc.desc  : Test HandleAccessoryDevice interface.
 */
-HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_030, TestSize.Level1)
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_070, TestSize.Level1)
 {
     DeviceType deviceType = DEVICE_TYPE_NONE;
     std::string address = "00:11:22:33:44:55";
