@@ -1147,23 +1147,23 @@ public:
     int32_t InjectInterruption(const std::string networkId, InterruptEvent &event);
 
     /**
-    * @brief Load the split module for audio stream separation.
-    *
-    * @param splitArgs Specifies the types of audio to be split into different streams.
-    * @param networkId The network identifier of the output device.
-    * @return Returns {@link SUCCESS} if the module is loaded successfully; otherwise, returns an error code defined
-    * in {@link audio_errors.h}.
-    * @since 12
-    */
+     * @brief Load the split module for audio stream separation.
+     *
+     * @param splitArgs Specifies the types of audio to be split into different streams.
+     * @param networkId The network identifier of the output device.
+     * @return Returns {@link SUCCESS} if the module is loaded successfully; otherwise, returns an error code defined
+     * in {@link audio_errors.h}.
+     * @since 12
+     */
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
     /**
-    * @brief Set Custmoized Ring Back Tone mute state.
-    *
-    * @param isMute Specifies whether the Customized Ring Back Tone is muted.
-    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
-    * in {@link audio_errors.h}.
-    */
+     * @brief Set Custmoized Ring Back Tone mute state.
+     *
+     * @param isMute Specifies whether the Customized Ring Back Tone is muted.
+     * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+     * in {@link audio_errors.h}.
+     */
     int32_t SetVoiceRingtoneMute(bool isMute);
 
     /**
@@ -1177,54 +1177,54 @@ public:
     int32_t SetForegroundList(std::vector<std::string> list);
 
     /**
-    * @brief Get standby state.
-    *
-    * @param sessionId Specifies which stream to be check.
-    * @param isStandby true means the stream is in standby status.
-    * @param enterStandbyTime Specifies when the stream enter standby status, in MONOTONIC time.
-    * @return Returns {@link SUCCESS} if the operation is successfully.
-    * @return Returns {@link ERR_ILLEGAL_STATE} if the server is not available.
-    * @return Returns {@link ERR_INVALID_PARAM} if the sessionId is not exist.
-    */
+     * @brief Get standby state.
+     *
+     * @param sessionId Specifies which stream to be check.
+     * @param isStandby true means the stream is in standby status.
+     * @param enterStandbyTime Specifies when the stream enter standby status, in MONOTONIC time.
+     * @return Returns {@link SUCCESS} if the operation is successfully.
+     * @return Returns {@link ERR_ILLEGAL_STATE} if the server is not available.
+     * @return Returns {@link ERR_INVALID_PARAM} if the sessionId is not exist.
+     */
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime);
 
     /**
-    * @brief Set App AVSession state change.
-    *
-    * @param uid Specifies uid of app.
-    * @param pid Specifies pid of app.
-    * @param hasSession Specifies whether app has AVSession.
-    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
-    * in {@link audio_errors.h}.
-    */
+     * @brief Set App AVSession state change.
+     *
+     * @param uid Specifies uid of app.
+     * @param pid Specifies pid of app.
+     * @param hasSession Specifies whether app has AVSession.
+     * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+     * in {@link audio_errors.h}.
+     */
     int32_t NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession);
 
     /**
-    * @brief Set App Freeze state change.
-    *
-    * @param pidList Specifies all pid list to change state.
-    * @param isFreeze Specifies Freeze or Unfreeze state.
-    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
-    * in {@link audio_errors.h}.
-    */
+     * @brief Set App Freeze state change.
+     *
+     * @param pidList Specifies all pid list to change state.
+     * @param isFreeze Specifies Freeze or Unfreeze state.
+     * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+     * in {@link audio_errors.h}.
+     */
     int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze);
 
     /**
-    * @brief RSS reboot reset all proxy Freeze state change.
-    *
-    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
-    * in {@link audio_errors.h}.
-    */
+     * @brief RSS reboot reset all proxy Freeze state change.
+     *
+     * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+     * in {@link audio_errors.h}.
+     */
     int32_t ResetAllProxy();
 
     /**
-    * @brief Notify process background state.
-    *
-    * @param uid Specifies uid of app.
-    * @param pid Specifies pid of app.
-    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
-    * in {@link audio_errors.h}.
-    */
+     * @brief Notify process background state.
+     *
+     * @param uid Specifies uid of app.
+     * @param pid Specifies pid of app.
+     * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+     * in {@link audio_errors.h}.
+     */
     int32_t NotifyProcessBackgroundState(const int32_t uid, const int32_t pid);
 
     /**
@@ -1239,22 +1239,22 @@ public:
 
 #ifdef HAS_FEATURE_INNERCAPTURER
     /**
-    * @brief check capture limit
-    *
-    * @param AudioPlaybackCaptureConfig inner capture filter info
-    * @param innerCapId unique identifier of inner capture
-    * @return Returns {@link SUCCESS} if the operation is successfully.
-    * @test
-    */
+     * @brief check capture limit
+     *
+     * @param AudioPlaybackCaptureConfig inner capture filter info
+     * @param innerCapId unique identifier of inner capture
+     * @return Returns {@link SUCCESS} if the operation is successfully.
+     * @test
+     */
     int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId);
 
     /**
-    * @brief release capture limit
-    *
-    * @param innerCapId unique identifier of inner capture
-    * @return Returns {@link SUCCESS} if the operation is successfully.
-    * @test
-    */
+     * @brief release capture limit
+     *
+     * @param innerCapId unique identifier of inner capture
+     * @return Returns {@link SUCCESS} if the operation is successfully.
+     * @test
+     */
     int32_t ReleaseCaptureLimit(int32_t innerCapId);
 #endif
 
