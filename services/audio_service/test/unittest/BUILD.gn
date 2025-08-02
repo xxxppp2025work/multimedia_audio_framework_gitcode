@@ -731,7 +731,8 @@ ohos_unittest("pa_capturer_stream_impl_unit_test") {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
 }
-
+ohos_unittest("audio_process_in_client_unit_test") {
+}
 ohos_unittest("audio_process_in_client_unit_test") {
   testonly = true
   module_out_path = module_output_path
@@ -1154,7 +1155,7 @@ ohos_unittest("audio_engine_manager_unit_test") {
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
 
-  deps = [ "../../../audio_service:audio_process_service_static" ]
+  deps = [ "../../../audio_service:_service_static" ]
 
   external_deps = [
     "c_utils:utils",
