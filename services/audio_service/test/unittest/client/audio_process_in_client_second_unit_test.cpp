@@ -95,6 +95,7 @@ HWTEST(AudioProcessInClientUnitTest, GetPredictNextHandleTime_001, TestSize.Leve
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
     auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
     uint64_t posInFrame = 100;
     bool isIndependent = false;
@@ -118,6 +119,7 @@ HWTEST(AudioProcessInClientUnitTest, GetPredictNextHandleTime_002, TestSize.Leve
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
     auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
     uint64_t posInFrame = 100;
     bool isIndependent = true;
