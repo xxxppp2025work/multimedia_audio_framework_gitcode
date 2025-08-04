@@ -2508,10 +2508,10 @@ HWTEST(AudioRendererUnitTest, SetClientInfo_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test ActivateAudioConcurrency.
-* @tc.number: Audio_Renderer_ActivateAudioConcurrency_004
-* @tc.desc  : Test ActivateAudioConcurrency interface when pipeType is PIPE_TYPE_NORMAL_OUT
-*/
+ * @tc.name  : Test ActivateAudioConcurrency.
+ * @tc.number: Audio_Renderer_ActivateAudioConcurrency_004
+ * @tc.desc  : Test ActivateAudioConcurrency interface when pipeType is PIPE_TYPE_NORMAL_OUT
+ */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_ActivateAudioConcurrency_004, TestSize.Level1)
 {
     AppInfo appInfo = {};
