@@ -178,7 +178,7 @@ HWTEST(AudioUtilsUnitTest, ConvertToHDIAudioInputType_001, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, IsInnerCapSinkName_001, TestSize.Level1)
 {
     char pattern[MAX_MEM_MALLOC_SIZE + 1] = {0};
-    EXPECT_FALSE(IsInnerCapSinkName(pattern), false);
+    EXPECT_EQ(IsInnerCapSinkName(pattern), false);
 }
 
 /**
@@ -261,11 +261,11 @@ HWTEST(AudioUtilsUnitTest, MockPcmData_004, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test CallEndAndClear API
-* @tc.type  : FUNC
-* @tc.number: CallEndAndClear_001
-* @tc.desc  : Test CallEndAndClear when *cTrace is nullptr
-*/
+ * @tc.name  : Test CallEndAndClear API
+ * @tc.type  : FUNC
+ * @tc.number: CallEndAndClear_001
+ * @tc.desc  : Test CallEndAndClear when *cTrace is nullptr
+ */
 HWTEST(AudioUtilsUnitTest, CallEndAndClear_001, TestSize.Level0)
 {
     CTrace *cTrace = nullptr;
@@ -274,12 +274,12 @@ HWTEST(AudioUtilsUnitTest, CallEndAndClear_001, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test CallEndAndClear API
-* @tc.type  : FUNC
-* @tc.number: CallEndAndClear_002
-* @tc.desc  : Test CallEndAndClear when **cTrace is nullptr
-*/
-HWTEST(AudioUtilsUnitTest, CallEndAndClear_001, TestSize.Level0)
+ * @tc.name  : Test CallEndAndClear API
+ * @tc.type  : FUNC
+ * @tc.number: CallEndAndClear_002
+ * @tc.desc  : Test CallEndAndClear when **cTrace is nullptr
+ */
+HWTEST(AudioUtilsUnitTest, CallEndAndClear_002, TestSize.Level0)
 {
     CTrace **cTrace = nullptr;
     CallEndAndClear(cTrace);
@@ -287,12 +287,12 @@ HWTEST(AudioUtilsUnitTest, CallEndAndClear_001, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test AudioLatencyMeasurement API
-* @tc.type  : FUNC
-* @tc.number: AudioLatencyMeasurement_002
-* @tc.desc  : Test AudioLatencyMeasurement when **cTrace is nullptr
-*/
-HWTEST(AudioUtilsUnitTest, AudioLatencyMeasurement_001, TestSize.Level0)
+ * @tc.name  : Test AudioLatencyMeasurement API
+ * @tc.type  : FUNC
+ * @tc.number: AudioLatencyMeasurement_001
+ * @tc.desc  : Test AudioLatencyMeasurement when **cTrace is nullptr
+ */
+HWTEST(AudioUtilsUnitTest, AudioLatencyMeasurement_001, TestSize.Level1)
 {
     AudioLatencyMeasurement audioLatencyMeasurement(44100, 2, 16, "com.example.null", 1);
     EXPECT_EQ(audioLatencyMeasurement.sessionId_, 1);
