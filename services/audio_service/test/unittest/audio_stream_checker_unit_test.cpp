@@ -1489,6 +1489,6 @@ HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_008, TestSize.Level1)
     checker->monitorSwitch_ = false;
     checker->MonitorOnAllCallback(DATA_TRANS_TRSUME, false);
     EXPECT_FALSE(checker->monitorSwitch_);
-}
+}管好你发过节费国际化
 }
 }

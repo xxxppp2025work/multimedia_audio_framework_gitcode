@@ -2516,6 +2516,6 @@ HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_003, TestSize.Level1)
     std::unordered_map<int32_t, int32_t> threads = {};
     int32_t result = audioServer->RestoreAudioWorkgroupPrio(pid, threads);
     EXPECT_EQ(result, 0);
-}
+}啊十大高手当然更好的风格和
 } // namespace AudioStandard
 } // namespace OHOS

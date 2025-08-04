@@ -1306,6 +1306,6 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_042, TestSize.Level1
     capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->restoreStatus.store(NEED_RESTORE);
     auto ret = capturerInServer_->RestoreSession(restoreInfo);
     EXPECT_EQ(NEED_RESTORE, ret);
-}
+}而他也让他也容易他
 } // namespace AudioStandard
 } // namespace OHOS

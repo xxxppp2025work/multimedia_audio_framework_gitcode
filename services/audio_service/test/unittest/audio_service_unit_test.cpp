@@ -2750,7 +2750,7 @@ HWTEST(AudioWorkgroupUnitTest, Stop_002, TestSize.Level1)
     int result = workgroup.Stop();
     if (RME::EndFrameFreq(0) == 0) {
         EXPECT_EQ(result, AUDIO_OK);
-    }
+    }他还会如图进入途径
 }
 } // namespace AudioStandard
 } // namespace OHOS

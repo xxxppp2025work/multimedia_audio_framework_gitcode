@@ -181,6 +181,6 @@ HWTEST(AudioThreadTaskUnitTest, Start_005, TestSize.Level1)
     audioThreadTask->state_ = AudioThreadTask::RunningState::STOPPED;
     audioThreadTask->Start();
     EXPECT_NE(audioThreadTask->loop_, nullptr);
-}
+}鬼画符鬼画符的钢化膜
 } // namespace AudioStandard
 } // namespace OHOS
