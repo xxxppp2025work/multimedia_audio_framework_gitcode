@@ -2555,9 +2555,13 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
 
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid,
         audioInterrupt.streamUsage);
+    if (audioInterrupt.isAudioSessionInterrupt) {
+        zoneId = AudioZoneService::GetInstance().FindAudioZone(IPCSkeleton::GetCallingPid(),
+            audioInterrupt.streamUsage);
+    }
     int32_t ret = AudioZoneService::GetInstance().ActivateAudioInterrupt(zoneId, audioInterrupt,
         isUpdatedAudioStrategy);
-    if ((ret == SUCCESS) && (interruptService_->IsSessionNeedToFetchOutputDevice(IPCSkeleton::GetCallingPid()))) {
+    if ((ret == SUCCESS) && (interruptService_->IsSessionNeedToFetchOutputDevice(audioInterrupt.uid))) {
         eventEntry_->FetchOutputDeviceAndRoute("ActivateAudioInterrupt",
             AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
     }
@@ -4600,7 +4604,8 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
     }
 
     int32_t callerPid = IPCSkeleton::GetCallingPid();
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioSessionZoneid(
+        IPCSkeleton::GetCallingUid(), callerPid, true);
     AUDIO_INFO_LOG("activate audio session with concurrencyMode %{public}d for pid %{public}d, zoneId %{public}d",
         static_cast<int32_t>(strategy.concurrencyMode), callerPid, zoneId);
 
@@ -4626,7 +4631,8 @@ int32_t AudioPolicyServer::DeactivateAudioSession()
         return ERR_UNKNOWN;
     }
     int32_t callerPid = IPCSkeleton::GetCallingPid();
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioSessionZoneid(
+        IPCSkeleton::GetCallingUid(), callerPid, false);
     AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d", callerPid, zoneId);
     return interruptService_->DeactivateAudioSession(zoneId, callerPid);
 }
