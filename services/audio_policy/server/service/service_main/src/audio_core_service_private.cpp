@@ -1529,13 +1529,12 @@ int32_t AudioCoreService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkInp
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         std::string sinkName = localDeviceDescriptor->deviceType_ == DEVICE_TYPE_REMOTE_CAST ?
             "RemoteCastInnerCapturer" : pipeInfo->moduleInfo_.name;
-        AUDIO_INFO_LOG("Session %{public}d, sinkName %{public}s", sinkInputIds[i].streamId, sinkName.c_str());
         if (sinkName == BLUETOOTH_SPEAKER) {
             std::string activePort = BLUETOOTH_SPEAKER;
             audioPolicyManager_.SuspendAudioDevice(activePort, false);
         }
-        AUDIO_INFO_LOG("move for sinkInput [%{public}d], portName %{public}s pipeType %{public}d",
-            sinkInputIds[i].streamId, sinkName.c_str(), pipeType);
+        AUDIO_INFO_LOG("Session %{public}d, sinkName %{public}s, pipeType %{public}d", sinkInputIds[i].streamId,
+            sinkName.c_str(), pipeType);
         int32_t ret = audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, sinkName);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
             "move [%{public}d] to local failed", sinkInputIds[i].streamId);
