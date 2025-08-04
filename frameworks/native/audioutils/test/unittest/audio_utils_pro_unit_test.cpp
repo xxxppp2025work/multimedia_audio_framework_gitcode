@@ -708,11 +708,11 @@ HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_029, TestSize.Level1)
 #endif
 
 /**
-* @tc.name  : Test HandleSwitchInfoInRecord API
-* @tc.type  : FUNC
-* @tc.number: HandleSwitchInfoInRecord_030
-* @tc.desc  : Test SwitchStreamUtil::HandleSwitchInfoInRecord().
-*/
+ * @tc.name  : Test HandleSwitchInfoInRecord API
+ * @tc.type  : FUNC
+ * @tc.number: HandleSwitchInfoInRecord_030
+ * @tc.desc  : Test SwitchStreamUtil::HandleSwitchInfoInRecord().
+ */
 HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_030, TestSize.Level1)
 {
     SwitchStreamInfo info = {0, 1, 0, 0, 0, CAPTURER_STOPPED};
@@ -744,11 +744,11 @@ HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_030, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test HandleSwitchInfoInRecord API
-* @tc.type  : FUNC
-* @tc.number: HandleSwitchInfoInRecord_031
-* @tc.desc  : Test InsertSwitchStreamRecord branch when in List.
-*/
+ * @tc.name  : Test HandleSwitchInfoInRecord API
+ * @tc.type  : FUNC
+ * @tc.number: HandleSwitchInfoInRecord_031
+ * @tc.desc  : Test InsertSwitchStreamRecord branch when in List.
+ */
 HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_031, TestSize.Level1)
 {
     SwitchStreamInfo info = {0, 1041, 0, 0, 0, CAPTURER_PREPARED};
