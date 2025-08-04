@@ -550,7 +550,6 @@ HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioRoutingManager_IsMicBlockDetection
 HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioManager_GetAudioRoutingManager_001, TestSize.Level0)
 {
     OH_AudioRoutingManager **audioRoutingManager = nullptr;
-    bool supported = false;
     auto result = OH_AudioManager_GetAudioRoutingManager(audioRoutingManager);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
 }
@@ -572,39 +571,39 @@ HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioRoutingManager_GetAvailableDevices
         audioRoutingManager, deviceUsage, audioDeviceDescriptorArray);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 
-    result = OH_AudioRoutingManager_GetPreferredOutputDevices(
+    result = OH_AudioRoutingManager_GetPreferredOutputDevice(
         audioRoutingManager, streamUsage, audioDeviceDescriptorArray);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 
-    result = OH_AudioRoutingManager_GetPreferredInputDevices(
+    result = OH_AudioRoutingManager_GetPreferredInputDevice(
         audioRoutingManager, sourceType, audioDeviceDescriptorArray);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 }
 
 /**
- * @tc.name  : Test ConverDesc.
- * @tc.number: ConverDesc_001
- * @tc.desc  : Test ConverDesc the result is nullptr.
+ * @tc.name  : Test ConvertDesc.
+ * @tc.number: ConvertDesc_001
+ * @tc.desc  : Test ConvertDesc the result is nullptr.
  */
-HWTEST(OHAudioRoutingManagerUnitTest, ConverDesc_001, TestSize.Level0)
+HWTEST(OHAudioRoutingManagerUnitTest, ConvertDesc_001, TestSize.Level0)
 {
-    OH_AudioRoutingManager manager;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>>desc;
-    OH_AudioDeviceDescriptorArray *result = manager.ConverDesc(desc);
+    OHAudioRoutingManager manager;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
+    OH_AudioDeviceDescriptorArray *result = manager.ConvertDesc(desc);
     EXPECT_EQ(result, nullptr);
 }
 
 /**
- * @tc.name  : Test ConverDesc.
- * @tc.number: ConverDesc_002
- * @tc.desc  : Test ConverDesc the result is nullptr when more than max size.
+ * @tc.name  : Test ConvertDesc.
+ * @tc.number: ConvertDesc_002
+ * @tc.desc  : Test ConvertDesc the result is nullptr when more than max size.
  */
-HWTEST(OHAudioRoutingManagerUnitTest, ConverDesc_002, TestSize.Level0)
+HWTEST(OHAudioRoutingManagerUnitTest, ConvertDesc_002, TestSize.Level0)
 {
-    OH_AudioRoutingManager manager;
+    OHAudioRoutingManager manager;
     size_t MORETHAN_MAX_VALID_SIZE = 129;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>>desc(MORETHAN_MAX_VALID_SIZE);
-    OH_AudioDeviceDescriptorArray *result = manager.ConverDesc(desc);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc(MORETHAN_MAX_VALID_SIZE);
+    OH_AudioDeviceDescriptorArray *result = manager.ConvertDesc(desc);
     EXPECT_EQ(result, nullptr);
 }
 } // namespace AudioStandard
