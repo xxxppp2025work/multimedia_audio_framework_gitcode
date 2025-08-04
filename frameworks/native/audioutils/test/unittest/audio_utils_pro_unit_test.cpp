@@ -759,12 +759,12 @@ HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_031, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test HandleSwitchInfoInRecord API
-* @tc.type  : FUNC
-* @tc.number: HandleSwitchInfoInRecord_032
-* @tc.desc  : Test UpdateSwitchStreamRecordwhen case is SWITCH_STATE_STARTED.
-*/
-HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_031, TestSize.Level1)
+ * @tc.name  : Test HandleSwitchInfoInRecord API
+ * @tc.type  : FUNC
+ * @tc.number: HandleSwitchInfoInRecord_032
+ * @tc.desc  : Test UpdateSwitchStreamRecordwhen case is SWITCH_STATE_STARTED.
+ */
+HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_032, TestSize.Level1)
 {
     SwitchStreamInfo info = {0, 1, 0, 0, 0, CAPTURER_NEW};
     SwitchState targetState = SwitchState::SWITCH_STATE_WAITING;
