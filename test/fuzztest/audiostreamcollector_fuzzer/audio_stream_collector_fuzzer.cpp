@@ -660,8 +660,6 @@ void AudioStreamCollectorGetSessionIdsOnRemoteDeviceByStreamUsageFuzzTest(const 
     
     audioStreamCollector_.GetSessionIdsOnRemoteDeviceByStreamUsage(streamUsage);
     audioStreamCollector_.GetSessionIdsOnRemoteDeviceByDeviceType(deviceType);
-    audioStreamCollector_.GetSessionIdsPauseOnRemoteDeviceByRemote(
-        testInterruptHints[index % testInterruptHints.size()]);
 }
 
 void AudioStreamCollectorIsOffloadAllowedFuzzTest(const uint8_t *rawData, size_t size)
@@ -964,13 +962,6 @@ void AudioStreamCollectorUpdateCapturerInfoMuteStatusFuzzTest(const uint8_t *raw
     audioStreamCollector_.UpdateCapturerInfoMuteStatus(randIntValue, true);
 }
 
-void AudioStreamCollectorActivateAudioConcurrencyFuzzTest(const uint8_t *rawData, size_t size)
-{
-    uint32_t index = static_cast<uint32_t>(size) % g_testPipeTypes.size();
-    AudioPipeType pipeType = g_testPipeTypes[index];
-    audioStreamCollector_.ActivateAudioConcurrency(pipeType);
-}
-
 void AudioStreamCollectorIsCallStreamUsageFuzzTest(const uint8_t *rawData, size_t size)
 {
     uint32_t index = static_cast<uint32_t>(size) % g_testStreamUsages.size();
@@ -1132,6 +1123,20 @@ void AudioStreamCollectorIsVoipStreamActiveFuzzTest(const uint8_t *rawData, size
     audioStreamCollector_.IsVoipStreamActive();
 }
 
+void AudioStreamCollectorCheckVoiceCallActiveFuzzTest(const uint8_t *rawData, size_t size)
+{
+    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t clientPid = randIntValue / NUM_2;
+    uint32_t index = static_cast<uint32_t>(size);
+    auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
+    changeInfo->clientPid = clientPid;
+    changeInfo->rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
+    changeInfo->sessionId = randIntValue / NUM_2;
+    audioStreamCollector_.audioRendererChangeInfos_.clear();
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
+    audioStreamCollector_.CheckVoiceCallActive(clientPid);
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -1182,7 +1187,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioStreamCollectorUnsetOffloadModeFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorGetSingleStreamVolumeFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorUpdateCapturerInfoMuteStatusFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorActivateAudioConcurrencyFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorIsCallStreamUsageFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorGetRunningStreamUsageNoUltrasonicFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorGetRunningSourceTypeNoUltrasonicFuzzTest,
@@ -1193,6 +1197,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioStreamCollectorHasVoipRendererStreamFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorIsMediaPlayingFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorIsVoipStreamActiveFuzzTest,
+    OHOS::AudioStandard::AudioStreamCollectorCheckVoiceCallActiveFuzzTest,
 };
 
 /* Fuzzer entry point */

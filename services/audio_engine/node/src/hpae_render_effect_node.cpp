@@ -19,12 +19,12 @@
 
 #include <cinttypes>
 #include "audio_errors.h"
-#include "audio_engine_log.h"
 #include "hpae_render_effect_node.h"
 #include "hpae_pcm_buffer.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_effect_map.h"
 #include "audio_utils.h"
+#include "audio_effect_log.h"
 
 static constexpr uint32_t DEFUALT_EFFECT_RATE = 48000;
 static constexpr uint32_t DEFAULT_EFFECT_FRAMELEN = 960;
@@ -62,16 +62,23 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
     }
     AUDIO_INFO_LOG("render effect node created, scene type: %{public}s", sceneType_.c_str());
 #ifdef ENABLE_HOOK_PCM
-    inputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-        "HpaeRenderEffectNodeInput_id_" + std::to_string(GetNodeId()) + "_scene_" + sceneType_ + ".pcm");
-    outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-        "HpaeRenderEffectNodeOutput_id_" + std::to_string(GetNodeId()) + "_scene_" + sceneType_ + ".pcm");
     if (sceneType_ == "SCENE_COLLABORATIVE") {
         directPcmDumper_ = std::make_unique<HpaePcmDumper>(
             "HpaeRenderEffectNodeDirect_id_" + std::to_string(GetNodeId()) + "_scene_" + sceneType_ + ".pcm");
         collaborativePcmDumper_ = std::make_unique<HpaePcmDumper>(
             "HpaeRenderEffectNodeCollaborative_id_" + std::to_string(GetNodeId()) + "_scene_" + sceneType_ + ".pcm");
     }
+#endif
+#ifdef ENABLE_HIDUMP_DFX
+    SetNodeName("hpaeRenderEffectNode");
+#endif
+}
+
+HpaeRenderEffectNode::~HpaeRenderEffectNode()
+{
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
 #endif
 }
 
@@ -140,14 +147,6 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
         return inputs[0];
     }
 
-#ifdef ENABLE_HOOK_PCM
-    if (inputPcmDumper_) {
-        inputPcmDumper_->CheckAndReopenHandle();
-        inputPcmDumper_->Dump((int8_t *)inputs[0]->GetPcmDataBuffer(),
-            inputs[0]->GetFrameLen() * sizeof(float) * inputs[0]->GetChannelCount());
-    }
-#endif
-
     ReconfigOutputBuffer();
 
     auto eBufferAttr = std::make_unique<EffectBufferAttr>(
@@ -161,14 +160,6 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
 
     int32_t ret = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType_, eBufferAttr);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, inputs[0], "apply audio effect chain fail");
-
-#ifdef ENABLE_HOOK_PCM
-    if (outputPcmDumper_) {
-        outputPcmDumper_->CheckAndReopenHandle();
-        outputPcmDumper_->Dump((int8_t *)effectOutput_.GetPcmDataBuffer(),
-            effectOutput_.GetFrameLen() * sizeof(float) * effectOutput_.GetChannelCount());
-    }
-#endif
 
     effectOutput_.SetBufferState(inputs[0]->GetBufferState());
     return &effectOutput_;
@@ -320,7 +311,7 @@ void HpaeRenderEffectNode::ModifyAudioEffectChainInfo(HpaeNodeInfo &nodeInfo,
             info.channels = static_cast<uint32_t>(nodeInfo.channels);
             info.channelLayout = nodeInfo.channelLayout;
             info.streamUsage = nodeInfo.effectInfo.streamUsage;
-            info.systemVolumeType = nodeInfo.effectInfo.volumeType;
+            info.systemVolumeType = static_cast<int32_t>(nodeInfo.effectInfo.systemVolumeType);
             ret = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
             break;
         }
@@ -366,7 +357,8 @@ void HpaeRenderEffectNode::ReconfigOutputBuffer()
             "channelLayout change from %{public}" PRIu64 " to %{public}" PRIu64,
             sceneType_.c_str(), effectNodeInfo.channels, channels, effectNodeInfo.channelLayout, channelLayout);
         PcmBufferInfo pcmBufferInfo = PcmBufferInfo(channels, DEFAULT_EFFECT_FRAMELEN,
-            DEFUALT_EFFECT_RATE, channelLayout, effectOutput_.GetFrames(), effectOutput_.IsMultiFrames());
+            DEFUALT_EFFECT_RATE, channelLayout, effectOutput_.GetFrames());
+        pcmBufferInfo.isMultiFrames = effectOutput_.IsMultiFrames();
         effectOutput_.ReConfig(pcmBufferInfo);
         effectNodeInfo.channels = static_cast<AudioChannel>(channels);
         effectNodeInfo.channelLayout = static_cast<AudioChannelLayout>(channelLayout);

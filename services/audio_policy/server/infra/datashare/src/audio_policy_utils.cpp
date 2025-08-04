@@ -28,7 +28,6 @@
 #include "audio_policy_manager_factory.h"
 #include "device_init_callback.h"
 #include "audio_recovery_device.h"
-#include "audio_config_manager.h"
 
 #include "audio_server_proxy.h"
 
@@ -59,7 +58,9 @@ std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
     {REMOTE_CLASS, TYPE_REMOTE_AUDIO},
 };
 
-static std::string GetEncryptAddr(const std::string &addr)
+int32_t AudioPolicyUtils::startDeviceId = 1;
+
+std::string AudioPolicyUtils::GetEncryptAddr(const std::string &addr)
 {
     const int32_t START_POS = 6;
     const int32_t END_POS = 13;
@@ -74,8 +75,6 @@ static std::string GetEncryptAddr(const std::string &addr)
     }
     return out;
 }
-
-int32_t AudioPolicyUtils::startDeviceId = 1;
 
 void AudioPolicyUtils::WriteServiceStartupError(std::string reason)
 {
@@ -233,6 +232,9 @@ std::string AudioPolicyUtils::GetNewSinkPortName(DeviceType deviceType)
             break;
         case DeviceType::DEVICE_TYPE_ACCESSORY:
             portName = ACCESSORY_SOURCE;
+            break;
+        case DeviceType::DEVICE_TYPE_HEARING_AID:
+            portName = HEARING_AID_SPEAKER;
             break;
         default:
             portName = PORT_NONE;
@@ -457,7 +459,7 @@ int32_t AudioPolicyUtils::GetDeviceNameFromDataShareHelper(std::string &deviceNa
     resultSet->GoToFirstRow();
     resultSet->GetColumnIndex(SETTINGS_DATA_FIELD_VALUE, columnIndex);
     resultSet->GetString(columnIndex, deviceName);
-    AUDIO_INFO_LOG("GetDeviceNameFromDataShareHelper deviceName[%{public}s]", deviceName.c_str());
+    AUDIO_INFO_LOG("GetDeviceNameFromDataShareHelper");
 
     resultSet->Close();
     dataShareHelper->Release();
@@ -658,7 +660,9 @@ std::string AudioPolicyUtils::GetDevicesStr(const vector<shared_ptr<AudioDeviceD
         devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
         devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceId_)));
         if (iter->getType() == DEVICE_TYPE_BLUETOOTH_A2DP ||
-            iter->getType() == DEVICE_TYPE_BLUETOOTH_SCO) {
+            iter->getType() == DEVICE_TYPE_BLUETOOTH_SCO ||
+            iter->getType() == DEVICE_TYPE_NEARLINK ||
+            iter->getType() == DEVICE_TYPE_NEARLINK_IN) {
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceCategory_)));
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->connectState_)));
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->isEnable_)));

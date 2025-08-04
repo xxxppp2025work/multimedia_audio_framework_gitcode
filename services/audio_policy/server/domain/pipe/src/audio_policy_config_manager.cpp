@@ -47,6 +47,10 @@ const std::set<AudioSampleFormat> FAST_OUTPUT_SUPPORTED_FORMATS = {
     SAMPLE_F32LE
 };
 
+const std::map<DeviceType, ClassType> dynamicCaptureConfigMap = {
+    { DEVICE_TYPE_USB_ARM_HEADSET, ClassType::TYPE_USB },
+};
+
 bool AudioPolicyConfigManager::Init(bool isRefresh)
 {
     if (xmlHasLoaded_ && !isRefresh) {
@@ -237,6 +241,11 @@ bool AudioPolicyConfigManager::GetModuleListByType(ClassType type, std::list<Aud
     return false;
 }
 
+void AudioPolicyConfigManager::UpdateDynamicCapturerConfig(ClassType type, const AudioModuleInfo moduleInfo)
+{
+    dynamicCapturerConfig_[type] = moduleInfo;
+}
+
 void AudioPolicyConfigManager::GetDeviceClassInfo(
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> &deviceClassInfo)
 {
@@ -267,7 +276,7 @@ int32_t AudioPolicyConfigManager::GetMaxRendererInstances()
             continue;
         }
         int32_t convertValue = 0;
-        AUDIO_INFO_LOG("Max output normal instance is %{public}s", commonConfig.value_.c_str());
+        AUDIO_INFO_LOG("Max instance is %{public}s", commonConfig.value_.c_str());
         CHECK_AND_RETURN_RET_LOG(StringConverter(commonConfig.value_, convertValue),
             DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES,
             "convert invalid configInfo.value_: %{public}s", commonConfig.value_.c_str());
@@ -500,9 +509,36 @@ void AudioPolicyConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType sou
         case SOURCE_TYPE_CAMCORDER:
             break;
         case SOURCE_TYPE_UNPROCESSED:
+            useMatchingPropInfo = true;
             break;
         default:
             break;
+    }
+}
+
+AudioSampleFormat AudioPolicyConfigManager::ParseFormat(std::string format)
+{
+    auto it = AudioDefinitionPolicyUtils::formatStrToEnum.find(format);
+    if (it != AudioDefinitionPolicyUtils::formatStrToEnum.end()) {
+        return AudioDefinitionPolicyUtils::formatStrToEnum[format];
+    }
+    AUDIO_WARNING_LOG("invalid format:%{public}s, use default SAMPLE_S16LE", format.c_str());
+    return SAMPLE_S16LE;
+}
+void AudioPolicyConfigManager::CheckDynamicCapturerConfig(std::shared_ptr<AudioStreamDescriptor> desc,
+    std::shared_ptr<PipeStreamPropInfo> &info)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr && desc->newDeviceDescs_.size() > 0 &&
+        desc->newDeviceDescs_[0] != nullptr, "invalid streamDesc");
+    auto it = dynamicCaptureConfigMap.find(desc->newDeviceDescs_.front()->deviceType_);
+    if (it != dynamicCaptureConfigMap.end()) {
+        auto config = dynamicCapturerConfig_.find(it->second);
+        if (config != dynamicCapturerConfig_.end()) {
+            AUDIO_INFO_LOG("use dynamic config for %{public}d", it->first);
+            CHECK_AND_RETURN_LOG(StringConverter(config->second.rate, info->sampleRate_),
+                "convert invalid sampleRate_: %{public}s", config->second.rate.c_str());
+            info->format_ = ParseFormat(config->second.format);
+        }
     }
 }
 
@@ -543,6 +579,8 @@ void AudioPolicyConfigManager::GetStreamPropInfoForRecord(
             *info = *streamProp;
         }
     }
+
+    CheckDynamicCapturerConfig(desc, info);
 
     if (AudioEcManager::GetInstance().GetEcFeatureEnable()) {
         if (desc->newDeviceDescs_.front() != nullptr &&
@@ -609,7 +647,6 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     }
 
     if (SupportImplicitConversion(desc->routeFlag_)) {
-        AUDIO_INFO_LOG("Select first attribute");
         info = pipeIt->second->streamPropInfos_.front();
     }
 
@@ -676,13 +713,14 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPr
     std::shared_ptr<PipeStreamPropInfo> defaultStreamProp = nullptr;
     AUDIO_INFO_LOG("use dynamic streamProp");
     for (auto &streamProp : info->dynamicStreamPropInfos_) {
-        CHECK_AND_CONTINUE(streamProp->format_ == format && streamProp->channels_ == channels &&
-            streamProp->sampleRate_ >= sampleRate);
+        CHECK_AND_CONTINUE(streamProp && streamProp->sampleRate_ >= sampleRate);
         CHECK_AND_RETURN_RET(streamProp->sampleRate_ != sampleRate, streamProp);
         CHECK_AND_CONTINUE(defaultStreamProp != nullptr &&
             defaultStreamProp->sampleRate_ < streamProp->sampleRate_);
         defaultStreamProp = streamProp;
     }
+    CHECK_AND_RETURN_RET_LOG(defaultStreamProp != nullptr, info->dynamicStreamPropInfos_.back(),
+        "not match any streamProp");
     return defaultStreamProp;
 }
 

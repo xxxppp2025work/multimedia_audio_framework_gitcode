@@ -176,27 +176,6 @@ void AudioEcManager::Init(int32_t ecEnableState, int32_t micRefEnableState)
     isMicRefFeatureEnable_ = micRefEnableState != 0;
 }
 
-void AudioEcManager::PrepareAndOpenNormalSource(SessionInfo &sessionInfo,
-    PipeStreamPropInfo &targetInfo, SourceType targetSource)
-{
-    AudioModuleInfo moduleInfo;
-    UpdateEnhanceEffectState(targetSource);
-    UpdateStreamCommonInfo(moduleInfo, targetInfo, targetSource);
-    UpdateStreamEcInfo(moduleInfo, targetSource);
-    UpdateStreamMicRefInfo(moduleInfo, targetSource);
-
-    AUDIO_INFO_LOG("rate:%{public}s, channels:%{public}s, bufferSize:%{public}s format:%{public}s, "
-        "sourceType: %{public}s",
-        moduleInfo.rate.c_str(), moduleInfo.channels.c_str(), moduleInfo.bufferSize.c_str(),
-        moduleInfo.format.c_str(), moduleInfo.sourceType.c_str());
-
-    audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-    audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(), moduleInfo.name,
-        true, INPUT_DEVICES_FLAG);
-
-    normalSourceOpened_ = targetSource;
-}
-
 void AudioEcManager::CloseNormalSource()
 {
     AUDIO_INFO_LOG("close all sources");
@@ -280,7 +259,7 @@ void AudioEcManager::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType 
     }
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDesc =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1);
+        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1, "UpdateStreamEcInfo");
     std::shared_ptr<AudioDeviceDescriptor> inputDesc =
         audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
 
@@ -400,11 +379,8 @@ int32_t AudioEcManager::GetPipeInfoByDeviceTypeForEc(const std::string &role, co
     std::shared_ptr<PolicyAdapterInfo> info;
     bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AudioAdapterType>(
         AudioPolicyUtils::portStrToEnum[portName]), info);
-    if (!ret) {
-        AUDIO_ERR_LOG("no adapter found for deviceType: %{public}d, portName: %{public}s",
-            deviceType, portName.c_str());
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret && info != nullptr, ERR_NOT_SUPPORTED,
+        "no adapter found for deviceType: %{public}d, portName: %{public}s", deviceType, portName.c_str());
     std::string pipeName = GetPipeNameByDeviceForEc(role, deviceType);
     pipeInfo = info->GetPipeInfoByName(pipeName);
     if (pipeInfo == nullptr) {
@@ -524,6 +500,7 @@ void AudioEcManager::PresetArmIdleInput(const string& address)
         if (isEcFeatureEnable_) {
             usbSourceModuleInfo_ = moduleInfo;
         }
+        audioConfigManager_.UpdateDynamicCapturerConfig(ClassType::TYPE_USB, moduleInfo);
     }
 }
 
@@ -625,6 +602,7 @@ void AudioEcManager::GetTargetSourceTypeAndMatchingFlag(SourceType source,
             break;
         case SOURCE_TYPE_UNPROCESSED:
             targetSource = SOURCE_TYPE_UNPROCESSED;
+            useMatchingPropInfo = true;
             break;
         case SOURCE_TYPE_LIVE:
             targetSource = SOURCE_TYPE_LIVE;
@@ -637,7 +615,7 @@ void AudioEcManager::GetTargetSourceTypeAndMatchingFlag(SourceType source,
 
 void AudioEcManager::ReloadSourceForSession(SessionInfo sessionInfo)
 {
-    AUDIO_INFO_LOG("reload source for session");
+    AUDIO_INFO_LOG("reload session for source: %{public}d", sessionInfo.sourceType);
 
     PipeStreamPropInfo targetInfo;
     SourceType targetSource = sessionInfo.sourceType;
@@ -647,7 +625,8 @@ void AudioEcManager::ReloadSourceForSession(SessionInfo sessionInfo)
     ReloadNormalSource(sessionInfo, targetInfo, targetSource);
 
     audioActiveDevice_.UpdateActiveDeviceRoute(audioActiveDevice_.GetCurrentInputDeviceType(),
-        DeviceFlag::INPUT_DEVICES_FLAG);
+        DeviceFlag::INPUT_DEVICES_FLAG, audioActiveDevice_.GetCurrentInputDevice().deviceName_,
+        audioActiveDevice_.GetCurrentInputDevice().networkId_);
 }
 
 int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, PipeStreamPropInfo &targetInfo,
@@ -759,12 +738,7 @@ std::string AudioEcManager::GetHalNameForDevice(const std::string &role, const D
 
 void AudioEcManager::SetOpenedNormalSource(SourceType sourceType)
 {
-    SourceType targetSourceType = SOURCE_TYPE_MIC;
-    // useMatchingPropInfo is used when selecting route parameters.
-    // Here only need to get the targetSourceType, useMatchingDropInfo is not required.
-    bool useMatchingPropInfo = false;
-    GetTargetSourceTypeAndMatchingFlag(sourceType, targetSourceType, useMatchingPropInfo);
-    normalSourceOpened_ = targetSourceType;
+    normalSourceOpened_ = sourceType;
 }
 
 void AudioEcManager::PrepareNormalSource(AudioModuleInfo &moduleInfo,

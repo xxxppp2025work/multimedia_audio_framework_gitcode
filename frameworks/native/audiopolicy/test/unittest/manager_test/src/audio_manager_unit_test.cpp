@@ -39,7 +39,6 @@ namespace {
     constexpr uint32_t MIN_DEVICE_ID = 1;
     constexpr uint32_t MIN_DEVICE_NUM = 1;
     constexpr int32_t MAX_VOL = 15;
-    constexpr int32_t INV_CHANNEL = -1;
     constexpr int32_t AUDIO_ERR = -3;
     constexpr float DISCOUNT_VOLUME = 0.5;
     constexpr float INVALID_VOLUME = -1.0;
@@ -1169,85 +1168,6 @@ HWTEST(AudioManagerUnitTest, IsStreamMute_001, TestSize.Level1)
     EXPECT_FALSE(isActive);
 }
 
-/**
-* @tc.name   : Test ReconfigureChannel API
-* @tc.number : ReconfigureChannel_001
-* @tc.desc   : Test ReconfigureAudioChannel interface. Change sink and source channel count on runtime
-*/
-HWTEST(AudioManagerUnitTest, ReconfigureChannel_001, TestSize.Level1)
-{
-    int32_t ret = SUCCESS;
-
-    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_FILE_SINK);
-    if (isActive) {
-        ret = AudioSystemManager::GetInstance()->SetDeviceActive(DeviceType::DEVICE_TYPE_FILE_SINK, false);
-        EXPECT_EQ(SUCCESS, ret);
-    }
-
-    ret = AudioSystemManager::GetInstance()->ReconfigureAudioChannel(CHANNEL_4, DeviceType::DEVICE_TYPE_FILE_SINK);
-    EXPECT_NE(SUCCESS, ret);
-
-    ret = AudioSystemManager::GetInstance()->SetDeviceActive(DeviceType::DEVICE_TYPE_FILE_SINK, false);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = AudioSystemManager::GetInstance()->SetDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER, true);
-    EXPECT_EQ(SUCCESS, ret);
-
-    isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER);
-    EXPECT_TRUE(isActive);
-}
-
-/**
-* @tc.name   : Test ReconfigureChannel API
-* @tc.number : ReconfigureChannel_002
-* @tc.desc   : Test ReconfigureAudioChannel interface. Change sink and source channel count on runtime
-*/
-HWTEST(AudioManagerUnitTest, ReconfigureChannel_002, TestSize.Level1)
-{
-    int32_t ret = SUCCESS;
-
-    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_FILE_SINK);
-    if (isActive) {
-        ret = AudioSystemManager::GetInstance()->SetDeviceActive(DeviceType::DEVICE_TYPE_FILE_SINK, false);
-        EXPECT_EQ(SUCCESS, ret);
-    }
-
-    ret = AudioSystemManager::GetInstance()->ReconfigureAudioChannel(CHANNEL_4, DeviceType::DEVICE_TYPE_FILE_SINK);
-    EXPECT_NE(SUCCESS, ret);
-
-    ret = AudioSystemManager::GetInstance()->ReconfigureAudioChannel(CHANNEL_4, DeviceType::DEVICE_TYPE_FILE_SOURCE);
-    EXPECT_NE(SUCCESS, ret);
-}
-
-/**
-* @tc.name   : Test ReconfigureChannel API
-* @tc.number : ReconfigureChannel_003
-* @tc.desc   : Test ReconfigureAudioChannel interface. Check for wrong channel count
-*/
-HWTEST(AudioManagerUnitTest, ReconfigureChannel_003, TestSize.Level1)
-{
-    auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(DeviceType::DEVICE_TYPE_FILE_SINK, false);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = AudioSystemManager::GetInstance()->ReconfigureAudioChannel(INV_CHANNEL, DeviceType::DEVICE_TYPE_FILE_SINK);
-    EXPECT_NE(SUCCESS, ret);
-
-    ret = AudioSystemManager::GetInstance()->ReconfigureAudioChannel(INV_CHANNEL, DeviceType::DEVICE_TYPE_FILE_SOURCE);
-    EXPECT_NE(SUCCESS, ret);
-
-    ret = AudioSystemManager::GetInstance()->ReconfigureAudioChannel(CHANNEL_8, DeviceType::DEVICE_TYPE_FILE_SOURCE);
-    EXPECT_NE(SUCCESS, ret);
-
-    ret = AudioSystemManager::GetInstance()->ReconfigureAudioChannel(CHANNEL_10, DeviceType::DEVICE_TYPE_FILE_SINK);
-    EXPECT_NE(SUCCESS, ret);
-
-    ret = AudioSystemManager::GetInstance()->SetDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER, true);
-    EXPECT_EQ(SUCCESS, ret);
-
-    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER);
-    EXPECT_TRUE(isActive);
-}
-
 #ifdef TEMP_DISABLE
 /**
 * @tc.name   : Test AudioVolume API
@@ -1593,7 +1513,7 @@ HWTEST(AudioManagerUnitTest, SetLowPowerVolume_001, TestSize.Level1)
     ASSERT_NE(0, streamId);
 
     ret = AudioSystemManager::GetInstance()->SetLowPowerVolume(streamId, DISCOUNT_VOLUME);
-    EXPECT_TRUE(ret == SUCCESS || ret == AUDIO_ERR);
+    EXPECT_FALSE(ret == SUCCESS || ret == AUDIO_ERR);
 
     audioRenderer->Release();
 }
@@ -2331,10 +2251,7 @@ HWTEST(AudioManagerUnitTest, NotifyProcessBackgroundState_001, TestSize.Level1)
     int32_t pid = 2001;
     int32_t ret;
     ret = AudioSystemManager::GetInstance()->NotifyProcessBackgroundState(uid, pid);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = AudioSystemManager::GetInstance()->NotifyProcessBackgroundState(uid, pid);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -32,6 +32,7 @@ enum class FadeOutState {
 class HpaeGainNode : public HpaePluginNode {
 public:
     HpaeGainNode(HpaeNodeInfo &nodeInfo);
+    virtual ~HpaeGainNode();
     bool SetClientVolume(float gain);
     float GetClientVolume();
     void SetFadeState(IOperation operation);
@@ -52,7 +53,6 @@ private:
     bool IsSilentData(HpaePcmBuffer *pcmBuffer);
     void GetFadeLength(uint32_t &byteLength, HpaePcmBuffer *input);
 #ifdef ENABLE_HOOK_PCM
-    std::unique_ptr<HpaePcmDumper> inputPcmDumper_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_;
 #endif
 };

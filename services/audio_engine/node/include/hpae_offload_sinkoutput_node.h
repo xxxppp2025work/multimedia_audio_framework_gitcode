@@ -33,6 +33,7 @@ typedef void(*AppCallbackFunc)(void* pHndl);
 class HpaeOffloadSinkOutputNode : public InputNode<HpaePcmBuffer*> {
 public:
     HpaeOffloadSinkOutputNode(HpaeNodeInfo& nodeInfo);
+    virtual ~HpaeOffloadSinkOutputNode();
     virtual void DoProcess() override;
     virtual bool Reset() override;
     virtual bool ResetAll() override;
@@ -60,6 +61,7 @@ public:
     int32_t SetTimeoutStopThd(uint32_t timeoutThdMs);
     // set offload render callback type in hdi
     int32_t SetOffloadRenderCallbackType(int32_t type);
+    void SetSpeed(float speed);
 
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
 private:
@@ -112,6 +114,8 @@ private:
     uint32_t timeoutThdFrames_ = 0;
     // first stand for pos(in us), second stand for time
     std::pair<uint64_t, TimePoint> hdiPos_;
+    uint32_t suspendCount_ = 0;
+    float speed_ = 1.0f;
 };
 
 }  // namespace HPAE

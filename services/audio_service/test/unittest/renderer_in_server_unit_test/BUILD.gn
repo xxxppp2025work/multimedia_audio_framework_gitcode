@@ -61,7 +61,7 @@ ohos_unittest("renderer_in_server_unit_test") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../../../services/audio_service/idl:audio_framework_interface",
     "../../../../../frameworks/native/audioclock:audio_clock",
     "../../../../../services/audio_service:audio_service",
     "../../../../audio_service:audio_process_service_static",
@@ -76,7 +76,6 @@ ohos_unittest("renderer_in_server_unit_test") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
-    "pulseaudio:pulse",
     "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
@@ -119,7 +118,7 @@ ohos_unittest("renderer_in_server_second_unit_test") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../../../services/audio_service/idl:audio_framework_interface",
     "../../../../../frameworks/native/audioclock:audio_clock",
     "../../../../../services/audio_service:audio_service",
     "../../../../audio_service:audio_process_service_static",
@@ -134,7 +133,6 @@ ohos_unittest("renderer_in_server_second_unit_test") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
-    "pulseaudio:pulse",
     "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",

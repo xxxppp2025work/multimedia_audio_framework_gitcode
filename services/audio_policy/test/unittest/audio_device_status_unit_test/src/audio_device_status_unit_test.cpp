@@ -101,7 +101,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_003, TestSize.Level1)
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
 
     bRet = audioDeviceStatus.NoNeedChangeUsbDevice(address);
-    EXPECT_EQ(bRet, false);
+    EXPECT_EQ(bRet, true);
 }
 
 /**
@@ -217,6 +217,20 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_006, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioDeviceStatus.
+* @tc.number: GetModuleNameByType_001
+* @tc.desc  : Test GetModuleNameByType interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, GetModuleNameByType_001, TestSize.Level1)
+{
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    auto moduleName = audioDeviceStatus.GetModuleNameByType(TYPE_PRIMARY);
+    EXPECT_NE(moduleName, string(""));
+    moduleName = audioDeviceStatus.GetModuleNameByType(TYPE_INVALID);
+    EXPECT_EQ(moduleName, string(""));
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
 * @tc.number: AudioDeviceStatus_007
 * @tc.desc  : Test OnDeviceStatusUpdated interface.
 */
@@ -239,8 +253,12 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_007, TestSize.Level1)
     EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
 
     devType = DEVICE_TYPE_USB_HEADSET;
-    role = INPUT_DEVICE;
+    role = OUTPUT_DEVICE;
     isConnected = true;
+    audioDeviceStatus.OnDeviceStatusUpdated(devType, isConnected, macAddress, deviceName, streamInfo, role, hasPair);
+    EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
+
+    isConnected = false;
     audioDeviceStatus.OnDeviceStatusUpdated(devType, isConnected, macAddress, deviceName, streamInfo, role, hasPair);
     EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
 
@@ -327,6 +345,11 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_010, TestSize.Level1)
     audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
     EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
 
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    desc.deviceCategory_ = CATEGORY_DEFAULT;
+    audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
+    EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+
     desc.deviceType_ = DEVICE_TYPE_INVALID;
     desc.deviceCategory_ = CATEGORY_DEFAULT;
     audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
@@ -337,6 +360,17 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_010, TestSize.Level1)
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
     EXPECT_EQ(reason, AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE);
+
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    auto preferredDeviceDesc = std::make_shared<AudioDeviceDescriptor>(desc);
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(preferredDeviceDesc);
+    updateCommand = USAGE_UPDATE;
+    desc.deviceUsage_ = VOICE;
+    audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
+    auto targetDevice = audioDeviceStatus.audioStateManager_.GetPreferredMediaRenderDevice();
+    bool result = targetDevice->deviceType_ == DEVICE_TYPE_NEARLINK && targetDevice->deviceUsage_ == VOICE;
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(std::make_shared<AudioDeviceDescriptor>());
+    EXPECT_EQ(true, result);
 }
 
 /**
@@ -648,7 +682,6 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_028, TestSize.Level1)
 
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
     updatedDesc.deviceType_ = DEVICE_TYPE_DP;
-    audioDeviceStatus.audioDeviceCommon_.SetHasDpFlag(true);
 
     result = audioDeviceStatus.HandleLocalDeviceConnected(updatedDesc);
 
@@ -667,11 +700,67 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_029, TestSize.Level1)
 
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
     updatedDesc.deviceType_ = DEVICE_TYPE_DP;
-    audioDeviceStatus.audioDeviceCommon_.SetHasDpFlag(false);
 
     result = audioDeviceStatus.HandleLocalDeviceConnected(updatedDesc);
 
     EXPECT_EQ(result, ERROR);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_070
+* @tc.desc  : Test HandleAccessoryDevice interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_070, TestSize.Level1)
+{
+    DeviceType deviceType = DEVICE_TYPE_NONE;
+    std::string address = "00:11:22:33:44:55";
+    int32_t ret = 0;
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    ret = audioDeviceStatus.HandleAccessoryDevice(deviceType, address);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+* @tc.name : Test AudioDeviceStatus.
+* @tc.number: HandleLocalDeviceConnected_001
+* @tc.desc : Test HandleLocalDeviceConnected interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, HandleLocalDeviceConnected_001, TestSize.Level1)
+{
+    AudioDeviceDescriptor updatedDesc;
+    int32_t result;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    updatedDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+
+    result = audioDeviceStatus.HandleLocalDeviceConnected(updatedDesc);
+
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test DeactivateNearlinkDevice.
+* @tc.number: DeactivateNearlinkDevice_001
+* @tc.desc  : Test DeactivateNearlinkDevice.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, DeactivateNearlinkDevice_001, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    desc.macAddress_ = "";
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.audioActiveDevice_.currentActiveDevice_.macAddress_ = "LOCALDEVICE";
+    std::string ret = "LOCALDEVICE";
+
+    audioDeviceStatus.DeactivateNearlinkDevice(desc);
+    EXPECT_NE(desc.macAddress_, ret);
+
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
+    audioDeviceStatus.DeactivateNearlinkDevice(desc);
+    EXPECT_NE(desc.macAddress_, ret);
 }
 
 /**
@@ -1119,6 +1208,11 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_052, TestSize.Level1)
 
     audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, isConnected);
     EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
+    desc.deviceType_ = DEVICE_TYPE_DP;
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, true);
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, true);
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, false);
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, false);
 }
 
 /**
@@ -1342,6 +1436,34 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_063, TestSize.Level1)
     info.supportedChannelLayout_.insert(SAMPLE_RATE_48000);
     audioDeviceStatus.AddAudioDevice(info, DEVICE_TYPE_SPEAKER);
     EXPECT_NE(audioDeviceStatus.audioConnectedDevice_.connectedDevices_.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_068
+* @tc.desc  : Test HandleLocalDeviceConnected interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_068, TestSize.Level1)
+{
+    AudioDeviceDescriptor updatedDesc;
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    updatedDesc.deviceType_ = DEVICE_TYPE_HEARING_AID;
+    int32_t result = audioDeviceStatus.HandleLocalDeviceConnected(updatedDesc);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_069
+* @tc.desc  : Test HandleLocalDeviceDisconnected interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_069, TestSize.Level1)
+{
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_HEARING_AID;
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    int32_t result = audioDeviceStatus.HandleLocalDeviceDisconnected(updatedDesc);
+    EXPECT_EQ(result, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

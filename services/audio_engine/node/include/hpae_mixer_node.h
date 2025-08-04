@@ -19,9 +19,6 @@
 #include "hpae_node.h"
 #include "hpae_plugin_node.h"
 #include "audio_limiter.h"
-#ifdef ENABLE_HOOK_PCM
-#include "hpae_pcm_dumper.h"
-#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -30,6 +27,7 @@ namespace HPAE {
 class HpaeMixerNode : public HpaePluginNode {
 public:
     HpaeMixerNode(HpaeNodeInfo &nodeInfo);
+    virtual ~HpaeMixerNode();
     virtual bool Reset() override;
     int32_t SetupAudioLimiter();
     int32_t InitAudioLimiter();
@@ -45,9 +43,6 @@ private:
     HpaePcmBuffer tmpOutput_;
     std::unique_ptr<AudioLimiter> limiter_ = nullptr;
     uint32_t waitFrames_ = 0;
-#ifdef ENABLE_HOOK_PCM
-    std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;;
-#endif
 };
 
 }  // namespace HPAE

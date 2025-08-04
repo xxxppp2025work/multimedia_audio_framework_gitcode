@@ -132,7 +132,7 @@ public:
 
     static ToneSegment *Unmarshalling(Parcel &parcel)
     {
-        auto info = new ToneSegment();
+        auto info = new(std::nothrow) ToneSegment();
         if (info == nullptr) {
             return nullptr;
         }
@@ -164,7 +164,7 @@ public:
     }
     static ToneInfo *Unmarshalling(Parcel &parcel)
     {
-        auto info = new ToneInfo();
+        auto info = new(std::nothrow) ToneInfo();
         if (info == nullptr) {
             return nullptr;
         }
@@ -341,6 +341,7 @@ enum CallbackChange : int32_t {
     CALLBACK_STREAM_VOLUME_CHANGE,
     CALLBACK_SYSTEM_VOLUME_CHANGE,
     CALLBACK_AUDIO_SESSION_STATE,
+    CALLBACK_AUDIO_SESSION_DEVICE,
     CALLBACK_MAX,
 };
 
@@ -396,6 +397,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_STREAM_VOLUME_CHANGE,
     CALLBACK_SYSTEM_VOLUME_CHANGE,
     CALLBACK_AUDIO_SESSION_STATE,
+    CALLBACK_AUDIO_SESSION_DEVICE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -437,7 +439,7 @@ struct VolumeEvent : public Parcelable {
 
     static VolumeEvent *Unmarshalling(Parcel &parcel)
     {
-        auto event = new VolumeEvent();
+        auto event = new(std::nothrow) VolumeEvent();
         if (event == nullptr) {
             return nullptr;
         }
@@ -474,7 +476,7 @@ struct StreamVolumeEvent : public Parcelable {
 
     static StreamVolumeEvent *Unmarshalling(Parcel &parcel)
     {
-        auto event = new StreamVolumeEvent();
+        auto event = new(std::nothrow) StreamVolumeEvent();
         if (event == nullptr) {
             return nullptr;
         }
@@ -641,7 +643,7 @@ struct AudioRendererInfo : public Parcelable {
 
     static AudioRendererInfo *Unmarshalling(Parcel &parcel)
     {
-        auto info = new AudioRendererInfo();
+        auto info = new(std::nothrow) AudioRendererInfo();
         if (info == nullptr) {
             return nullptr;
         }
@@ -704,7 +706,7 @@ public:
 
     static AudioCapturerInfo *Unmarshalling(Parcel &parcel)
     {
-        auto audioCapturerInfo = new AudioCapturerInfo();
+        auto audioCapturerInfo = new(std::nothrow) AudioCapturerInfo();
         if (audioCapturerInfo == nullptr) {
             return nullptr;
         }
@@ -735,7 +737,7 @@ struct MicStateChangeEvent : public Parcelable {
 
     static MicStateChangeEvent *Unmarshalling(Parcel &parcel)
     {
-        auto event = new MicStateChangeEvent();
+        auto event = new(std::nothrow) MicStateChangeEvent();
         if (event == nullptr) {
             return nullptr;
         }
@@ -865,14 +867,6 @@ struct CaptureFilterOptions {
         this->pidFilterMode = pFilterMode;
     }
 
-    CaptureFilterOptions(const CaptureFilterOptions &filter)
-    {
-        usages = filter.usages;
-        usageFilterMode = filter.usageFilterMode;
-        pids = filter.pids;
-        pidFilterMode = filter.pidFilterMode;
-    }
-
     bool operator ==(CaptureFilterOptions& filter)
     {
         std::sort(filter.usages.begin(), filter.usages.end());
@@ -892,13 +886,8 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
     bool silentCapture {false}; // To be deprecated since 12
 
     AudioPlaybackCaptureConfig() = default;
-    AudioPlaybackCaptureConfig(const CaptureFilterOptions &filter, const bool slient)
-        : filterOptions(filter), silentCapture(slient)
-    {
-    }
-
-    AudioPlaybackCaptureConfig(const AudioPlaybackCaptureConfig &capturerConfig)
-        : filterOptions(capturerConfig.filterOptions), silentCapture(capturerConfig.silentCapture)
+    AudioPlaybackCaptureConfig(const CaptureFilterOptions &filter, const bool silent)
+        : filterOptions(filter), silentCapture(silent)
     {
     }
 
@@ -938,7 +927,7 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
 
     static AudioPlaybackCaptureConfig *Unmarshalling(Parcel &parcel)
     {
-        auto config = new AudioPlaybackCaptureConfig();
+        auto config = new(std::nothrow) AudioPlaybackCaptureConfig();
         if (config == nullptr) return nullptr;
         // filterOptions.usages
         uint32_t usageSize = parcel.ReadUint32();
@@ -1056,7 +1045,7 @@ struct SinkInput : public Parcelable {
 
     static SinkInput *Unmarshalling(Parcel &parcel)
     {
-        auto sinkInput = new SinkInput();
+        auto sinkInput = new(std::nothrow) SinkInput();
         if (sinkInput == nullptr) {
             return nullptr;
         }
@@ -1309,7 +1298,7 @@ struct AudioProcessConfig : public Parcelable {
 
     static AudioProcessConfig *Unmarshalling(Parcel &parcel)
     {
-        auto config = new AudioProcessConfig();
+        auto config = new(std::nothrow) AudioProcessConfig();
         if (config == nullptr) {
             return nullptr;
         }
@@ -1464,7 +1453,7 @@ struct StreamSetStateEventInternal : public Parcelable {
     }
     static StreamSetStateEventInternal *Unmarshalling(Parcel &parcel)
     {
-        auto event = new StreamSetStateEventInternal();
+        auto event = new(std::nothrow) StreamSetStateEventInternal();
         if (event == nullptr) {
             return nullptr;
         }
@@ -1490,6 +1479,7 @@ enum AudioPin {
     AUDIO_PIN_OUT_BLUETOOTH_A2DP = 1 << 10,  // Bluetooth A2dp output pin
     AUDIO_PIN_OUT_DP = 1 << 11,
     AUDIO_PIN_OUT_NEARLINK = 1 << 12, // Nearlink output pin
+    AUDIO_PIN_OUT_HEARING_AID = 1 << 13, // HearingAid output pin
     AUDIO_PIN_IN_MIC = 1 << 27 | 1 << 0, // Microphone input pin
     AUDIO_PIN_IN_HS_MIC = 1 << 27 | 1 << 1, // Wired headset microphone pin for input
     AUDIO_PIN_IN_LINEIN = 1 << 27 | 1 << 2, // Line-in pin
@@ -1641,6 +1631,8 @@ enum DeviceGroup {
     DEVICE_GROUP_REMOTE_CAST,
     /* earpiece device*/
     DEVICE_GROUP_EARPIECE,
+    /** Dp device */
+    DEVICE_GROUP_DP,
 };
 
 static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
@@ -1650,8 +1642,8 @@ static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
         {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED},
         {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
         {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
-        {DEVICE_TYPE_HDMI, DEVICE_GROUP_BUILT_IN}, {DEVICE_TYPE_ACCESSORY, DEVICE_GROUP_WIRELESS},
-        {DEVICE_TYPE_NEARLINK, DEVICE_GROUP_WIRELESS},
+        {DEVICE_TYPE_ACCESSORY, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_NEARLINK, DEVICE_GROUP_WIRELESS},
+        {DEVICE_TYPE_DP, DEVICE_GROUP_DP}, {DEVICE_TYPE_HDMI, DEVICE_GROUP_DP},
     };
     auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
     return it == DEVICE_GROUP_FOR_VOLUME.end() ? DEVICE_GROUP_INVALID : it->second;
@@ -1877,7 +1869,7 @@ struct RestoreInfoIpc : public Parcelable {
 
     static RestoreInfoIpc *Unmarshalling(Parcel &parcel)
     {
-        auto info = new RestoreInfoIpc();
+        auto info = new(std::nothrow) RestoreInfoIpc();
         if (info == nullptr) {
             return nullptr;
         }

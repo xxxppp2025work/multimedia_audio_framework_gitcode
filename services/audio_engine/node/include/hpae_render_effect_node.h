@@ -32,6 +32,7 @@ enum ModifyAudioEffectChainInfoReason {
 class HpaeRenderEffectNode : public HpaePluginNode {
 public:
     HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo);
+    virtual ~HpaeRenderEffectNode();
     void DoProcess() override;
     int32_t AudioRendererCreate(HpaeNodeInfo &nodeInfo);
     int32_t AudioRendererStart(HpaeNodeInfo &nodeInfo);
@@ -57,8 +58,6 @@ private:
     bool isByPassEffect_ = false;
     bool isDisplayEffectZeroVolume_ = false;
 #ifdef ENABLE_HOOK_PCM
-    std::unique_ptr<HpaePcmDumper> inputPcmDumper_;
-    std::unique_ptr<HpaePcmDumper> outputPcmDumper_;
     std::unique_ptr<HpaePcmDumper> directPcmDumper_;
     std::unique_ptr<HpaePcmDumper> collaborativePcmDumper_;
 #endif

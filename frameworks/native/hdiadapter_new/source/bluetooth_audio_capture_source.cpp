@@ -48,6 +48,8 @@ BluetoothAudioCaptureSource::~BluetoothAudioCaptureSource()
     if (sourceInited_) {
         DeInit();
     }
+
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
     AUDIO_INFO_LOG("[%{public}s] volumeDataCount: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
     CapturerClockManager::GetInstance().DeleteAudioSourceClock(captureId_);
 }
@@ -89,7 +91,6 @@ void BluetoothAudioCaptureSource::DeInit(void)
     }
     audioCapture_ = nullptr;
     validState_ = true;
-    DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
 bool BluetoothAudioCaptureSource::IsInited(void)
@@ -340,10 +341,11 @@ float BluetoothAudioCaptureSource::GetMaxAmplitude(void)
     return maxAmplitude_;
 }
 
-int32_t BluetoothAudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice, bool scoExcludeFlag)
+int32_t BluetoothAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
+    AUDIO_INFO_LOG("in");
+    validState_ = (audioScene == AUDIO_SCENE_DEFAULT);
+    return SUCCESS;
 }
 
 int32_t BluetoothAudioCaptureSource::UpdateActiveDevice(DeviceType inputDevice)
@@ -382,6 +384,8 @@ void BluetoothAudioCaptureSource::SetInvalidState(void)
 {
     AUDIO_INFO_LOG("in");
     validState_ = false;
+    sourceInited_ = false;
+    started_ = false;
 }
 
 void BluetoothAudioCaptureSource::DumpInfo(std::string &dumpString)
@@ -573,7 +577,7 @@ bool BluetoothAudioCaptureSource::IsValidState(void)
     return validState_;
 }
 
-void BluetoothAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+void BluetoothAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
 {
     AUDIO_INFO_LOG("not support");
 }

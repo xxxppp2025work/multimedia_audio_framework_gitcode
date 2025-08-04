@@ -23,9 +23,7 @@
 #include "audio_info.h"
 #include "i_renderer_stream.h"
 #include "linear_pos_time_model.h"
-#ifdef ENABLE_HOOK_PCM
-#include "hpae_pcm_dumper.h"
-#endif
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -34,7 +32,7 @@ typedef void (*AppCallbackFunc)(void *pHndl);
 class HpaeSinkInputNode : public OutputNode<HpaePcmBuffer *> {
 public:
     HpaeSinkInputNode(HpaeNodeInfo &nodeInfo);
-    ~HpaeSinkInputNode();
+    virtual ~HpaeSinkInputNode();
     virtual void DoProcess() override;
     virtual bool Reset() override;     // no implement, virtual class
     virtual bool ResetAll() override;  // no implement, virtual class
@@ -57,6 +55,8 @@ public:
     bool GetOffloadEnabled();
     int32_t SetLoudnessGain(float loudnessGain);
     float GetLoudnessGain();
+    void SetSpeed(float speed);
+    float GetSpeed();
 private:
     int32_t GetDataFromSharedBuffer();
     void CheckAndDestroyHistoryBuffer();
@@ -78,9 +78,7 @@ private:
     std::unique_ptr<HpaePcmBuffer> historyBuffer_;
     bool offloadEnable_ = false;
     float loudnessGain_ = 0.0f;
-#ifdef ENABLE_HOOK_PCM
-    std::unique_ptr<HpaePcmDumper> inputPcmDumper_ = nullptr;
-#endif
+    float speed_ = 1.0f;
 };
 
 }  // namespace HPAE

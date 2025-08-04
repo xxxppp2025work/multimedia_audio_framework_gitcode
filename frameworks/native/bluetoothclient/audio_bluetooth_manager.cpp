@@ -108,7 +108,7 @@ static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioSt
 // LCOV_EXCL_START
 void AudioA2dpManager::RegisterBluetoothA2dpListener()
 {
-    AUDIO_INFO_LOG("AudioA2dpManager::RegisterBluetoothA2dpListener");
+    AUDIO_INFO_LOG("in");
     std::lock_guard<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
     a2dpInstance_ = A2dpSource::GetProfile();
     CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "Failed to obtain A2DP profile instance");
@@ -117,7 +117,7 @@ void AudioA2dpManager::RegisterBluetoothA2dpListener()
 
 void AudioA2dpManager::UnregisterBluetoothA2dpListener()
 {
-    AUDIO_INFO_LOG("AudioA2dpManager::UnregisterBluetoothA2dpListener");
+    AUDIO_INFO_LOG("in");
     std::lock_guard<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
     CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "A2DP profile instance unavailable");
 
@@ -419,13 +419,13 @@ void AudioA2dpListener::OnCaptureConnectionStateChanged(const BluetoothRemoteDev
 void AudioHfpManager::RegisterBluetoothScoListener()
 {
     HfpBluetoothDeviceManager::RegisterDisconnectScoFunc(&DisconnectScoForDevice);
-    AUDIO_INFO_LOG("AudioHfpManager::RegisterBluetoothScoListener");
+    AUDIO_INFO_LOG("in");
     BluetoothHfpInterface::GetInstance().RegisterObserver(hfpListener_);
 }
 
 void AudioHfpManager::UnregisterBluetoothScoListener()
 {
-    AUDIO_INFO_LOG("AudioHfpManager::UnregisterBluetoothScoListene");
+    AUDIO_INFO_LOG("in");
     BluetoothHfpInterface::GetInstance().DeregisterObserver(hfpListener_);
 }
 
@@ -538,7 +538,7 @@ void AudioHfpManager::ClearCurrentActiveHfpDevice(const BluetoothRemoteDevice &d
     }
     AUDIO_INFO_LOG("clear current active hfp device:%{public}s",
         GetEncryptAddr(device.GetDeviceAddr()).c_str());
-    DisconnectScoWrapper();
+    BluetoothScoManager::GetInstance().ResetScoState(activeHfpDevice_);
     activeHfpDevice_ = BluetoothRemoteDevice();
 }
 
@@ -603,6 +603,7 @@ bool AudioHfpManager::IsRecognitionStatus()
 int32_t AudioHfpManager::SetVirtualCall(const std::string &name, const bool isVirtual)
 {
     {
+        CHECK_AND_RETURN_RET(virtualCalls_[name] != isVirtual, SUCCESS);
         std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
         virtualCalls_[name] = isVirtual;
     }

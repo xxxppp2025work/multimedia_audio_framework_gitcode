@@ -186,7 +186,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_004, TestSize.Level1)
     uint32_t flag = AUDIO_OUTPUT_FLAG_DIRECT;
     AudioMode audioMode = AUDIO_MODE_PLAYBACK;
     AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
-    EXPECT_EQ(result, PIPE_TYPE_DIRECT_OUT);
+    EXPECT_EQ(result, PIPE_TYPE_DIRECT_MUSIC);
 }
 
 /**
@@ -530,7 +530,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdataDeviceStreamInfo_001, TestSize.Level1)
     streamPropInfo = std::make_shared<PipeStreamPropInfo>();
     audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
 
-    temp = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->newDeviceDescs_.front() = std::make_shared<AudioDeviceDescriptor>();
     audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
 
     // test nullptr

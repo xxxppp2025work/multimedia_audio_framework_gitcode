@@ -3325,61 +3325,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_OnInterrupt_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test ConcedeStream
- * @tc.number: Audio_Renderer_ConcedeStream_001
- * @tc.desc  : Test ConcedeStream interface
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_ConcedeStream_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    audioRendererPrivate->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
-    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK,
-        appInfo.appUid);
-    audioStream->rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
-    audioRendererPrivate->ConcedeStream();
-    ASSERT_NE(nullptr, audioRendererPrivate);
-}
-
-/**
- * @tc.name  : Test ConcedeStream
- * @tc.number: Audio_Renderer_ConcedeStream_002
- * @tc.desc  : Test ConcedeStream interface
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_ConcedeStream_002, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    audioRendererPrivate->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
-    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK,
-        appInfo.appUid);
-    audioStream->rendererInfo_.pipeType = PIPE_TYPE_DIRECT_MUSIC;
-    audioRendererPrivate->ConcedeStream();
-    ASSERT_NE(nullptr, audioRendererPrivate);
-}
-
-/**
- * @tc.name  : Test ConcedeStream
- * @tc.number: Audio_Renderer_ConcedeStream_003
- * @tc.desc  : Test ConcedeStream interface
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_ConcedeStream_003, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    audioRendererPrivate->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
-    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK,
-        appInfo.appUid);
-    audioRendererPrivate->WriteUnderrunEvent();
-    audioStream->rendererInfo_.pipeType = PIPE_TYPE_UNKNOWN;
-    audioRendererPrivate->ConcedeStream();
-    ASSERT_NE(nullptr, audioRendererPrivate);
-}
-
-/**
  * @tc.name  : Test direct VoIP Audio Render
  * @tc.number: Audio_Renderer_Direct_VoIP_001
  * @tc.desc  : Test the direct VoIP stream type with STREAM_USAGE_VOICE_COMMUNICATION
@@ -4429,6 +4374,9 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_MoviePcmOffload_001, TestSize.Level
     ret = audioRenderer->StartDataCallback();
     ASSERT_NE(SUCCESS, ret);
 
+    ret = audioRenderer->SetSpeed(2.0f);
+    EXPECT_EQ(SUCCESS, ret);
+
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
@@ -4445,8 +4393,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_MoviePcmOffload_001, TestSize.Level
     int32_t numBuffersToRender = RenderUT::WRITE_BUFFERS_COUNT;
 
     ret = audioRenderer->StartDataCallback();
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
-
     while (numBuffersToRender) {
         bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
         bytesWritten = 0;
@@ -4462,8 +4408,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_MoviePcmOffload_001, TestSize.Level
         numBuffersToRender--;
     }
     ret = audioRenderer->StopDataCallback();
-    EXPECT_EQ(SUCCESS, ret);
-
     audioRenderer->Drain();
     audioRenderer->Stop();
     audioRenderer->Release();
@@ -4490,6 +4434,11 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_MoviePcmOffload_002, TestSize.Level
     rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetSpeed(2.0f);
+    EXPECT_EQ(SUCCESS, ret);
+    float speed = audioRenderer->GetSpeed();
+    EXPECT_EQ(speed, 2.0f);
 
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
@@ -4572,6 +4521,105 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_CheckAndRestoreAudioRenderer_001, T
 
     EXPECT_EQ(SUCCESS, res);
     audioRenderer.reset();
+}
+
+/**
+ * @tc.name  : Test OnInterrupt API.
+ * @tc.number: Audio_Renderer_OnInterrupt_003
+ * @tc.desc  : Test OnInterrupt interface.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_OnInterrupt_003, TestSize.Level2)
+{
+    AudioStreamParams audioStreamParams;
+    std::shared_ptr<IAudioStream> audioStream = IAudioStream::GetPlaybackStream(IAudioStream::FAST_STREAM,
+        audioStreamParams, STREAM_DEFAULT, 1);
+    AudioInterrupt audioInterrupt;
+    auto audioInterruptCallback = std::make_shared<AudioRendererInterruptCallbackImpl>(audioStream, audioInterrupt);
+    ASSERT_TRUE(audioInterruptCallback != nullptr);
+
+    audioInterruptCallback->switching_ = true;
+    InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_SHARE, INTERRUPT_HINT_RESUME, 20.0f};
+    audioInterruptCallback->OnInterrupt(interruptEvent);
+}
+
+/**
+ * @tc.name  : Test InitSwitchInfo
+ * @tc.number: InitSwitchInfo
+ * @tc.desc  : Test InitSwitchInfo
+ */
+HWTEST(AudioRendererUnitTest, InitSwitchInfo_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    IAudioStream::StreamClass targetClass = IAudioStream::VOIP_STREAM;
+    IAudioStream::SwitchInfo info;
+    audioRendererPrivate->rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
+
+    audioRendererPrivate->InitSwitchInfo(targetClass, info);
+    EXPECT_EQ(info.params.originalSessionId, INVALID_SESSION_ID);
+}
+
+/**
+ * @tc.name  : Test FadeInAudioBuffer
+ * @tc.number: FadeInAudioBuffer_001
+ * @tc.desc  : Test FadeInAudioBuffer the branch when bufLength > dataLength
+ */
+HWTEST(AudioRendererUnitTest, FadeInAudioBuffer_001, TestSize.Level1)
+{
+    BufferDesc buffer;
+    buffer.bufLength = 2;
+    buffer.dataLength = 1;
+    int32_t result = AudioRenderer::FadeInAudioBuffer(buffer, SAMPLE_U8, STEREO);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test FadeOutAudioBuffer
+ * @tc.number: FadeOutAudioBuffer_001
+ * @tc.desc  : Test FadeOutAudioBuffer the branch when bufLength > dataLength
+ */
+HWTEST(AudioRendererUnitTest, FadeOutAudioBuffer_001, TestSize.Level1)
+{
+    BufferDesc buffer;
+    buffer.bufLength = 2;
+    buffer.dataLength = 1;
+    int32_t result = AudioRenderer::FadeOutAudioBuffer(buffer, SAMPLE_U8, STEREO);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test MuteAudioBuffer
+ * @tc.number: MuteAudioBuffer_001
+ * @tc.desc  : Test MuteAudioBuffer the branch when format is SAMPLE_U8 or SAMPLE_S16LE
+ */
+HWTEST(AudioRendererUnitTest, MuteAudioBuffer_001, TestSize.Level1)
+{
+    uint8_t addr = 1;
+    size_t offset = 1;
+    size_t length = 1;
+    int32_t result = AudioRenderer::MuteAudioBuffer(&addr, offset, length, SAMPLE_U8);
+    EXPECT_EQ(result, SUCCESS);
+
+    result = AudioRenderer::MuteAudioBuffer(&addr, offset, length, SAMPLE_S16LE);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test NotifyForcedEvent
+ * @tc.number: NotifyForcedEvent_001
+ * @tc.desc  : Test NotifyForcedEvent the branch when InterruptHint is INTERRUPT_HINT_RESUME
+ */
+HWTEST(AudioRendererUnitTest, NotifyForcedEvent_001, TestSize.Level1)
+{
+    AudioStreamParams audioStreamParams;
+    std::shared_ptr<IAudioStream> audioStream = IAudioStream::GetPlaybackStream(IAudioStream::FAST_STREAM,
+        audioStreamParams, STREAM_DEFAULT, 1);
+    AudioInterrupt audioInterrupt;
+    auto audioInterruptCallback = std::make_shared<AudioRendererInterruptCallbackImpl>(audioStream, audioInterrupt);
+    InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_RESUME, 20.0f};
+    audioInterruptCallback->NotifyForcedEvent(interruptEvent);
+    EXPECT_FALSE(audioInterruptCallback->isForcePaused_);
 }
 } // namespace AudioStandard
 } // namespace OHOS

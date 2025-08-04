@@ -104,11 +104,12 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateRenderClient_001, TestSize.Level1)
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
 
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->callerUid_ = getuid();
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
     uint32_t originalSessionId = 0;
-    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId);
+    std::string networkId = LOCAL_NETWORK_ID;
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -130,10 +131,11 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateRenderClient_002, TestSize.Level1)
 
     streamDesc->callerUid_ = getuid();
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     uint32_t originalSessionId = 0;
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
-    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId);
+    std::string networkId = LOCAL_NETWORK_ID;
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -154,7 +156,7 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_001, TestSize.Level1)
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
 
     streamDesc->audioMode_ = AUDIO_MODE_RECORD;
-    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->callerUid_ = getuid();
     uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
     uint32_t originalSessionId = 0;
@@ -287,7 +289,7 @@ HWTEST_F(AudioCoreServiceUnitTest, RegisterTracker_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest RegisterTracker_001 start");
     AudioMode mode = AUDIO_MODE_PLAYBACK;
-    AudioStreamChangeInfo streamChangeInfo;
+    AudioStreamChangeInfo streamChangeInfo = {};
     int32_t apiVersion = 1;
     auto result = GetServerPtr()->eventEntry_->RegisterTracker(mode, streamChangeInfo, nullptr, apiVersion);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
@@ -302,7 +304,7 @@ HWTEST_F(AudioCoreServiceUnitTest, RegisterTracker_002, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest RegisterTracker_002 start");
     AudioMode mode = AUDIO_MODE_RECORD;
-    AudioStreamChangeInfo streamChangeInfo;
+    AudioStreamChangeInfo streamChangeInfo = {};
     int32_t apiVersion = 1;
     auto result = GetServerPtr()->eventEntry_->RegisterTracker(mode, streamChangeInfo, nullptr, apiVersion);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
@@ -317,7 +319,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateTracker_001 start");
     AudioMode mode = AUDIO_MODE_RECORD;
-    AudioStreamChangeInfo streamChangeInfo;
+    AudioStreamChangeInfo streamChangeInfo = {};
     streamChangeInfo.audioCapturerChangeInfo.capturerState = CAPTURER_NEW;
     auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
     EXPECT_EQ(result, SUCCESS);
@@ -332,7 +334,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_002, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateTracker_002 start");
     AudioMode mode = AUDIO_MODE_RECORD;
-    AudioStreamChangeInfo streamChangeInfo;
+    AudioStreamChangeInfo streamChangeInfo = {};
     streamChangeInfo.audioCapturerChangeInfo.capturerState = CAPTURER_RELEASED;
     auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
     EXPECT_EQ(result, SUCCESS);
@@ -347,7 +349,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_003, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateTracker_003 start");
     AudioMode mode = AUDIO_MODE_PLAYBACK;
-    AudioStreamChangeInfo streamChangeInfo;
+    AudioStreamChangeInfo streamChangeInfo = {};
     streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_NEW;
     auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
     EXPECT_EQ(result, SUCCESS);
@@ -362,7 +364,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_004, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateTracker_004 start");
     AudioMode mode = AUDIO_MODE_PLAYBACK;
-    AudioStreamChangeInfo streamChangeInfo;
+    AudioStreamChangeInfo streamChangeInfo = {};
     streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_RELEASED;
     auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
     EXPECT_EQ(result, SUCCESS);
@@ -377,7 +379,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_005, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateTracker_005 start");
     AudioMode mode = AUDIO_MODE_PLAYBACK;
-    AudioStreamChangeInfo streamChangeInfo;
+    AudioStreamChangeInfo streamChangeInfo = {};
     streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
     streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_PAUSED;
     auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
@@ -874,7 +876,7 @@ HWTEST_F(AudioCoreServiceUnitTest, AddAudioCapturerMicrophoneDescriptor_001, Tes
 /**
 * @tc.name  : Test AudioCoreServiceUnit
 * @tc.number: GetCurrentRendererChangeInfos_001
-* @tc.desc  : Test GetHasDpFlag interface.
+* @tc.desc  : Test GetCurrentRendererChangeInfos interface.
 */
 HWTEST_F(AudioCoreServiceUnitTest, GetCurrentRendererChangeInfos_001, TestSize.Level1)
 {
@@ -1135,6 +1137,41 @@ HWTEST_F(AudioCoreServiceUnitTest, DumpSelectHistory_002, TestSize.Level1)
     std::string expectedDump = "Select device history infos\n - TotalPipeNums: 2\n\nHistory Record1\n"
                                "HistoryRecord2\n\n";
     EXPECT_EQ(dumpString, expectedDump);
+}
+
+/**
+* @tc.name  : Test CaptureConcurrentCheck.
+* @tc.number: CaptureConcurrentCheck_001
+* @tc.desc  : Test interface CaptureConcurrentCheck
+*/
+HWTEST_F(AudioCoreServiceUnitTest, CaptureConcurrentCheck_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest CaptureConcurrentCheck start");
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs = {
+        std::make_shared<AudioStreamDescriptor>(),
+        std::make_shared<AudioStreamDescriptor>()
+    };
+    uint32_t flag[2] = {AUDIO_INPUT_FLAG_NORMAL, AUDIO_INPUT_FLAG_FAST};
+    uint32_t originalSessionId[2] = {0};
+    for (int i = 0; i < 2; i++) {
+        streamDescs[i]->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
+        streamDescs[i]->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+        streamDescs[i]->streamInfo_.channels = AudioChannel::STEREO;
+        streamDescs[i]->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+        streamDescs[i]->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+        streamDescs[i]->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
+ 
+        streamDescs[i]->audioMode_ = AUDIO_MODE_RECORD;
+        streamDescs[i]->createTimeStamp_ = ClockTime::GetCurNano();
+        streamDescs[i]->startTimeStamp_ = streamDescs[i]->createTimeStamp_ + 1;
+        streamDescs[i]->callerUid_ = getuid();
+        auto result = audioCoreService->CreateCapturerClient(streamDescs[i], flag[i], originalSessionId[i]);
+        EXPECT_EQ(result, SUCCESS);
+    }
+    audioCoreService->CaptureConcurrentCheck(originalSessionId[1]);
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest CaptureConcurrentCheck end");
 }
 } // namespace AudioStandard
 } // namespace OHOS

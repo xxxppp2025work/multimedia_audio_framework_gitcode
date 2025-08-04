@@ -62,7 +62,7 @@ struct AudioRendererDataTransferStateChangeInfo : public Parcelable {
     }
     static AudioRendererDataTransferStateChangeInfo *Unmarshalling(Parcel &parcel)
     {
-        auto info = new AudioRendererDataTransferStateChangeInfo();
+        auto info = new(std::nothrow) AudioRendererDataTransferStateChangeInfo();
         if (info == nullptr) {
             return nullptr;
         }
@@ -99,19 +99,19 @@ struct DataTransferMonitorParam : public Parcelable {
     {
         return parcel.WriteInt32(clientUID) &&
             parcel.WriteInt32(badDataTransferTypeBitMap) &&
-            parcel.WriteInt32(timeInterval) &&
+            parcel.WriteInt64(timeInterval) &&
             parcel.WriteInt32(badFramesRatio);
     }
 
     static DataTransferMonitorParam *Unmarshalling(Parcel &parcel)
     {
-        auto param = new DataTransferMonitorParam();
+        auto param = new(std::nothrow) DataTransferMonitorParam();
         if (param == nullptr) {
             return nullptr;
         }
         param->clientUID = parcel.ReadInt32();
         param->badDataTransferTypeBitMap = parcel.ReadInt32();
-        param->timeInterval = parcel.ReadInt32();
+        param->timeInterval = parcel.ReadInt64();
         param->badFramesRatio = parcel.ReadInt32();
         return param;
     }

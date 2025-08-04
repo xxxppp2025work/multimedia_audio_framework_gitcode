@@ -54,10 +54,10 @@ void CollaborativePlaybackDequeue(BufferAttr *bufferAttr)
     return;
 }
 
-bool IsCollaborativeFirstChanged(int32_t sessionID, int32_t collaborationEnabled)
+bool IsCollaborativeChanged(int32_t sessionID, int32_t collaborationEnabled)
 {
     // check if collaborative is first changed for the session
-    return CollaborativePlaybackManager::GetInstance().IsCollaborativeFirstChanged(sessionID, collaborationEnabled);
+    return CollaborativePlaybackManager::GetInstance().IsCollaborativeChanged(sessionID, collaborationEnabled);
 }
 
 void CollaborativePlaybackReset()

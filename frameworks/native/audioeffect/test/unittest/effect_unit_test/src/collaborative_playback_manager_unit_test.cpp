@@ -85,35 +85,20 @@ HWTEST(CollaborativePlaybackManagerUnitTest, UpdateCollaborativeState_001, TestS
 }
 
 /**
-* @tc.name   : Test UpdateCollaborativeState API
-* @tc.number : UpdateCollaborativeState_001
-* @tc.desc   : Test UpdateCollaborativeState interface.
+* @tc.name   : Test IsCollaborativeChanged API
+* @tc.number : IsCollaborativeChanged_001
+* @tc.desc   : Test IsCollaborativeChanged interface.
 */
-HWTEST(CollaborativePlaybackManagerUnitTest, UpdateCollaborativeState_001, TestSize.Level1)
-{
-    bool isCollaborative = true;
-    int32_t ret = CollaborativePlaybackManager::GetInstance().UpdateCollaborativeState(isCollaborative);
-    EXPECT_EQ(SUCCESS, ret);
-    isCollaborative = false;
-    ret = CollaborativePlaybackManager::GetInstance().UpdateCollaborativeState(isCollaborative);
-    EXPECT_EQ(SUCCESS, ret); 
-}
-
-/**
-* @tc.name   : Test IsCollaborativeFirstChanged API
-* @tc.number : IsCollaborativeFirstChanged_001
-* @tc.desc   : Test IsCollaborativeFirstChanged interface.
-*/
-HWTEST(CollaborativePlaybackManagerUnitTest, IsCollaborativeFirstChanged_001, TestSize.Level1)
+HWTEST(CollaborativePlaybackManagerUnitTest, IsCollaborativeChanged_001, TestSize.Level1)
 {
     int32_t sessionId = 123;
     int32_t collaborationEnabled = 1;
-    bool ret = CollaborativePlaybackManager::GetInstance().IsCollaborativeFirstChanged(sessionId, collaborationEnabled);
+    bool ret = CollaborativePlaybackManager::GetInstance().IsCollaborativeChanged(sessionId, collaborationEnabled);
     EXPECT_EQ(true, ret);
-    ret = CollaborativePlaybackManager::GetInstance().IsCollaborativeFirstChanged(sessionId, collaborationEnabled);
+    ret = CollaborativePlaybackManager::GetInstance().IsCollaborativeChanged(sessionId, collaborationEnabled);
     EXPECT_EQ(false, ret);
     collaborationEnabled = 0;
-    ret = CollaborativePlaybackManager::GetInstance().IsCollaborativeFirstChanged(sessionId, collaborationEnabled);
+    ret = CollaborativePlaybackManager::GetInstance().IsCollaborativeChanged(sessionId, collaborationEnabled);
     EXPECT_EQ(true, ret);
 }
 

@@ -18,6 +18,7 @@
 
 #include "hpae_co_buffer_node.h"
 #include "hpae_define.h"
+#include "audio_effect_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,11 +37,25 @@ HpaeCoBufferNode::HpaeCoBufferNode()
       coBufferOut_(pcmBufferInfo_),
       silenceData_(pcmBufferInfo_)
 {
-    const size_t size = SAMPLE_RATE_48000 * static_cast<int32_t>(STEREO) *
-        sizeof(float) * MAX_CACHE_SIZE / MS_PER_SECOND;
+#ifdef ENABLE_HIDUMP_DFX
+    SetNodeName("HpaeCoBufferNode");
+#endif
+    const size_t size = static_cast<size_t>(SAMPLE_RATE_48000) *
+                        static_cast<size_t>(STEREO) *
+                        sizeof(float) *
+                        static_cast<size_t>(MAX_CACHE_SIZE) /
+                        static_cast<size_t>(MS_PER_SECOND);
     AUDIO_INFO_LOG("Created ring cache, size: %{public}zu", size);
     ringCache_ = AudioRingCache::Create(size);
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
+}
+
+HpaeCoBufferNode::~HpaeCoBufferNode()
+{
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
+#endif
 }
 
 void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
@@ -76,6 +91,7 @@ void HpaeCoBufferNode::DoProcess()
     // write silence data if enqueue is not running
     if (!enqueueRunning_) {
         outputStream_.WriteDataToOutput(&silenceData_);
+        return;
     }
     
     // process output buffer
@@ -127,7 +143,8 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>
     HpaeNodeInfo nodeInfo = preNode->GetNodeInfo();
     if (connectedProcessCluster_.find(nodeInfo.sceneType) == connectedProcessCluster_.end()) {
         connectedProcessCluster_.insert(nodeInfo.sceneType);
-        nodeInfo.nodeName = "HpaeCoBufferNode";
+        nodeInfo.nodeId = GetNodeId();
+        nodeInfo.nodeName = GetNodeName();
         SetNodeInfo(nodeInfo);
         inputStream_.Connect(shared_from_this(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
         AUDIO_INFO_LOG("HpaeCoBufferNode connect to preNode");
@@ -209,8 +226,11 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
 {
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Ring cache is null");
     
-    const size_t requestDataLen = SAMPLE_RATE_48000 * static_cast<int32_t>(STEREO) *
-                                sizeof(float) * DEFAULT_FRAME_LEN_MS / MS_PER_SECOND;
+    const size_t requestDataLen = static_cast<size_t>(SAMPLE_RATE_48000) *
+                                  static_cast<size_t>(STEREO) *
+                                  sizeof(float) *
+                                  static_cast<size_t>(DEFAULT_FRAME_LEN_MS) /
+                                  static_cast<size_t>(MS_PER_SECOND);
     
     // check readable size
     OptResult result = ringCache_->GetReadableSize();

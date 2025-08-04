@@ -15,7 +15,7 @@
 #ifndef LOG_TAG
 #define LOG_TAG "PaAdapterManager"
 #endif
-
+#ifdef SUPPORT_OLD_ENGINE
 #include "pa_adapter_manager.h"
 #include <sstream>
 #include <atomic>
@@ -108,9 +108,9 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
     // PaAdapterManager is solely responsible for creating paStream objects
     // while the PaRendererStreamImpl has full authority over the subsequent management of the paStream
     pa_stream *paStream = InitPaStream(processConfig, sessionId, false);
-    CHECK_AND_RETURN_RET_LOG(paStream != nullptr, ERR_OPERATION_FAILED, "Failed to init render");
+    CHECK_AND_RETURN_RET_LOG(paStream != nullptr, ERR_OPERATION_FAILED, "Failed to init render!");
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, paStream);
-    CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
+    CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream!");
     rendererStream->SetStreamIndex(sessionId);
     std::lock_guard<std::mutex> lock(streamMapMutex_);
     rendererStreamMap_[sessionId] = rendererStream;
@@ -387,7 +387,7 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
     deviceName = "";
     if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         if (processConfig.isWakeupCapturer) {
-            int32_t ret = PolicyHandler::GetInstance().SetWakeUpAudioCapturerFromAudioServer(processConfig);
+            int32_t ret = CoreServiceHandler::GetInstance().SetWakeUpAudioCapturerFromAudioServer(processConfig);
             if (ret < 0) {
                 AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
                 return ERROR;
@@ -462,7 +462,7 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     int32_t ret = ConnectStreamToPA(paStream, sampleSpec, processConfig.capturerInfo.sourceType,
         processConfig.innerCapId, adapterName, deviceName);
     if (ret < 0) {
-        AUDIO_ERR_LOG("ConnectStreamToPA Failed");
+        AUDIO_ERR_LOG("ConnectStreamToPA failed!");
         ReleasePaStream(paStream);
         PolicyHandler::GetInstance().NotifyCapturerRemoved(sessionId);
         return nullptr;
@@ -601,7 +601,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
     map.channels = processConfig.streamInfo.channels;
     uint32_t channelsInLayout = ConvertChLayoutToPaChMap(processConfig.streamInfo.channelLayout, map);
     CHECK_AND_RETURN_RET_LOG(channelsInLayout == processConfig.streamInfo.channels && channelsInLayout != 0,
-        ERR_INVALID_PARAM, "Invalid channel Layout");
+        ERR_INVALID_PARAM, "Invalid channel Layout!");
     return SUCCESS;
 }
 
@@ -929,3 +929,4 @@ std::string PaAdapterManager::AppendDeviceName(int32_t innerCapId, AppendType ty
 
 } // namespace AudioStandard
 } // namespace OHOS
+#endif // SUPPORT_OLD_ENGINE

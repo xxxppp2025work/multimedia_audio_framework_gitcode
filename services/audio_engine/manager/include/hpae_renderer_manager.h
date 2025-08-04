@@ -24,8 +24,7 @@
 #include "hpae_signal_process_thread.h"
 #include "hpae_sink_input_node.h"
 #include "hpae_process_cluster.h"
-#include "hpae_output_cluster.h"
-#include "hpae_remote_output_cluster.h"
+#include "i_hpae_output_cluster.h"
 #include "hpae_msg_channel.h"
 #include "hpae_no_lock_queue.h"
 #include "i_hpae_renderer_manager.h"
@@ -43,6 +42,7 @@ public:
     int32_t DestroyStream(uint32_t sessionId) override;
 
     int32_t Start(uint32_t sessionId) override;
+    int32_t StartWithSyncId(uint32_t sessionId, int32_t syncId) override;
     int32_t Pause(uint32_t sessionId) override;
     int32_t Flush(uint32_t sessionId) override;
     int32_t Drain(uint32_t sessionId) override;
@@ -73,6 +73,7 @@ public:
     int32_t UpdateSpatializationState(
         uint32_t sessionId, bool spatializationEnabled, bool headTrackingEnabled) override;
     int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) override;
+    void SetSpeed(uint32_t sessionId, float speed) override;
     std::vector<SinkInput> GetAllSinkInputsInfo() override;
     int32_t GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo) override;
     HpaeSinkInfo GetSinkInfo() override;
@@ -87,16 +88,15 @@ public:
     void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
-    void DumpSinkInfo() override;
+    int32_t DumpSinkInfo() override;
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload = false) override;
     int32_t SetOffloadPolicy(uint32_t sessionId, int32_t state) override;
     std::string GetDeviceHDFDumpInfo() override;
-
+    int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
+    void OnDisConnectProcessCluster(HpaeProcessorType sceneType) override;
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
     int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
     int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
-    int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
-    void OnDisConnectProcessCluster(HpaeProcessorType sceneType) override;
 
 private:
     void SendRequest(Request &&request, bool isInit = false);
@@ -133,12 +133,13 @@ private:
     void ReConnectNodeForCollaboration(uint32_t sessionID);
     void EnableCollaboration();
     void DisableCollaboration();
+    int32_t HandleSyncId(uint32_t sessionId, int32_t syncId);
 
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeProcessCluster>> sceneClusterMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;
-    std::unique_ptr<HpaeOutputCluster> outputCluster_ = nullptr;
+    std::unique_ptr<IHpaeOutputCluster> outputCluster_ = nullptr;
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::atomic<bool> isInit_ = false;

@@ -210,13 +210,15 @@ HWTEST_F(AudioOffloadStreamTest, CheckStreamOffloadMode_004, TestSize.Level3)
     AudioOffloadStream audioOffloadStream;
     AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
     int64_t activateSessionId = 10;
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioRendererChangeInfo.clientUID = 1;
-    streamChangeInfo.audioRendererChangeInfo.sessionId = activateSessionId;
-    streamChangeInfo.audioRendererChangeInfo.channelCount = AudioChannel::STEREO;
-    streamChangeInfo.audioRendererChangeInfo.createrUID = 2;
-    streamChangeInfo.audioRendererChangeInfo.rendererState = RendererState::RENDERER_NEW;
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType = PIPE_TYPE_DIRECT_VOIP;
+    AudioStreamChangeInfo streamChangeInfo{};
+    auto& audioRendererChangeInfo = streamChangeInfo.audioRendererChangeInfo;
+    audioRendererChangeInfo = {};
+    audioRendererChangeInfo.clientUID = 1;
+    audioRendererChangeInfo.sessionId = activateSessionId;
+    audioRendererChangeInfo.channelCount = AudioChannel::STEREO;
+    audioRendererChangeInfo.createrUID = 2;
+    audioRendererChangeInfo.rendererState = RendererState::RENDERER_NEW;
+    audioRendererChangeInfo.rendererInfo.pipeType = PIPE_TYPE_DIRECT_VOIP;
     audioOffloadStream.isOffloadAvailable_ = true;
 
     audioOffloadStream.streamCollector_.AddRendererStream(streamChangeInfo);
@@ -248,9 +250,11 @@ HWTEST_F(AudioOffloadStreamTest, CheckStreamOffloadMode_004, TestSize.Level3)
 HWTEST_F(AudioOffloadStreamTest, MoveToNewPipe_ShouldReturnError_WhenStreamIsIllegal, TestSize.Level3)
 {
     AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioRendererChangeInfo.clientUID = 1;
-    streamChangeInfo.audioRendererChangeInfo.sessionId = 1;
-    streamChangeInfo.audioRendererChangeInfo.rendererState = RendererState::RENDERER_NEW;
+    auto& audioRendererChangeInfo = streamChangeInfo.audioRendererChangeInfo;
+    audioRendererChangeInfo = {};
+    audioRendererChangeInfo.clientUID = 1;
+    audioRendererChangeInfo.sessionId = 1;
+    audioRendererChangeInfo.rendererState = RendererState::RENDERER_NEW;
     int32_t ret = audioOffloadStream_->streamCollector_.AddRendererStream(streamChangeInfo);
     EXPECT_EQ(ret, SUCCESS);
     uint32_t sessionId = 1;
@@ -326,33 +330,6 @@ HWTEST_F(AudioOffloadStreamTest, ReleaseOffloadStream_WhenSessionIdDoesNotMatch,
     audioOffloadStream_->RemoteOffloadStreamRelease(sessionId);
     EXPECT_FALSE(audioOffloadStream_->offloadSessionID_.has_value());
     audioOffloadStream_->offloadSessionID_ = sessionId;
-}
-
-/**
- * @tc.name  : AudioOffloadStreamTest_013
- * @tc.number: AudioOffloadStreamTest_013
- * @tc.desc  : Test FilterSinkInputs function
- */
-HWTEST_F(AudioOffloadStreamTest, FilterSinkInputs_ShouldReturnEmpty_WhenSinkInputsIsEmpty, TestSize.Level0)
-{
-    AudioOffloadStream audioOffloadStream;
-    int64_t activateSessionId = 1;
-    audioOffloadStream_->CheckStreamMode(activateSessionId);
-    std::vector<SinkInput> sinkInputs;
-    std::vector<SinkInput> result = audioOffloadStream.FilterSinkInputs(1, sinkInputs);
-    EXPECT_TRUE(result.empty());
-    SinkInput sinkInput;
-    sinkInput.uid = 123;
-    sinkInput.streamType = AudioStreamType::STREAM_DEFAULT;
-    sinkInputs.push_back(sinkInput);
-
-    result = audioOffloadStream.FilterSinkInputs(1, sinkInputs);
-    EXPECT_TRUE(result.empty());
-    sinkInput.streamId = 1;
-    sinkInputs.push_back(sinkInput);
-
-    result = audioOffloadStream.FilterSinkInputs(1, sinkInputs);
-    EXPECT_EQ(result.size(), 0);
 }
 
 /**
@@ -476,21 +453,6 @@ HWTEST_F(AudioOffloadStreamTest, AudioOffloadStreamTest_020, TestSize.Level0)
 
 /**
  * @tc.name  : SpatializationEnabledAndEffectOffloadEnabled
- * @tc.number: AudioOffloadStreamTest_021
- * @tc.desc  : Test ActivateConcurrencyFromServer Interface.
- */
-HWTEST_F(AudioOffloadStreamTest, AudioOffloadStreamTest_021, TestSize.Level0)
-{
-    AudioPipeType incomingPipe = PIPE_TYPE_UNKNOWN;
-    AudioOffloadStream audioOffloadStream;
-    int32_t ret;
-
-    ret = audioOffloadStream.ActivateConcurrencyFromServer(incomingPipe);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : SpatializationEnabledAndEffectOffloadEnabled
  * @tc.number: AudioOffloadStreamTest_022
  * @tc.desc  : Test OffloadStreamSetCheck Interface.
  */
@@ -500,11 +462,13 @@ HWTEST_F(AudioOffloadStreamTest, AudioOffloadStreamTest_022, TestSize.Level0)
     AudioOffloadStream audioOffloadStream;
     AudioStreamChangeInfo streamChangeInfo;
     audioOffloadStream.isOffloadAvailable_ = true;
-    streamChangeInfo.audioRendererChangeInfo.clientUID = 1;
-    streamChangeInfo.audioRendererChangeInfo.sessionId = sessionId;
-    streamChangeInfo.audioRendererChangeInfo.channelCount = AudioChannel::STEREO;
-    streamChangeInfo.audioRendererChangeInfo.rendererState = RendererState::RENDERER_NEW;
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType = PIPE_TYPE_DIRECT_VOIP;
+    auto& audioRendererChangeInfo = streamChangeInfo.audioRendererChangeInfo;
+    audioRendererChangeInfo = {};
+    audioRendererChangeInfo.clientUID = 1;
+    audioRendererChangeInfo.sessionId = sessionId;
+    audioRendererChangeInfo.channelCount = AudioChannel::STEREO;
+    audioRendererChangeInfo.rendererState = RendererState::RENDERER_NEW;
+    audioRendererChangeInfo.rendererInfo.pipeType = PIPE_TYPE_DIRECT_VOIP;
 
     audioOffloadStream.streamCollector_.AddRendererStream(streamChangeInfo);
     audioOffloadStream.audioActiveDevice_.currentActiveDevice_.networkId_ = LOCAL_NETWORK_ID;

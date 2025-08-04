@@ -27,13 +27,26 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+static constexpr uint32_t MIN_START_NODE_ID = 100;
 
 class HpaeNode : public std::enable_shared_from_this<HpaeNode> {
 public:
-    HpaeNode(){};
-    virtual ~HpaeNode(){};
+    HpaeNode()
+    {
+#ifdef ENABLE_HIDUMP_DFX
+        nodeInfo_.nodeId = GenerateHpaeNodeId();
+#endif
+    }
+
+    virtual ~HpaeNode() {};
+
     HpaeNode(HpaeNodeInfo& nodeInfo) : nodeInfo_(nodeInfo)
-    {}
+    {
+#ifdef ENABLE_HIDUMP_DFX
+        nodeInfo_.nodeId = GenerateHpaeNodeId();
+#endif
+    }
+
     virtual void DoProcess() = 0;
     virtual void Enqueue(HpaePcmBuffer* buffer) {};
     // for process node
@@ -48,6 +61,16 @@ public:
     virtual void SetNodeInfo(HpaeNodeInfo& nodeInfo)
     {
         nodeInfo_ = nodeInfo;
+    }
+
+    virtual void SetNodeId(uint32_t nodeId)
+    {
+        nodeInfo_.nodeId = nodeId;
+    }
+
+    virtual void SetNodeName(std::string nodeName)
+    {
+        nodeInfo_.nodeName = nodeName;
     }
 
     virtual AudioSamplingRate GetSampleRate()
@@ -125,7 +148,21 @@ public:
         return oss.str();
     }
 private:
+    static uint32_t GenerateHpaeNodeId()
+    {
+        std::lock_guard<std::mutex> lock(nodeIdCounterMutex_);
+        if (nodeIdCounter_ == std::numeric_limits<uint32_t>::max()) {
+            nodeIdCounter_ = MIN_START_NODE_ID;
+        } else {
+            ++nodeIdCounter_;
+        }
+        return nodeIdCounter_;
+    }
+
+private:
     HpaeNodeInfo nodeInfo_;
+    inline static std::mutex nodeIdCounterMutex_;
+    inline static uint32_t nodeIdCounter_ = MIN_START_NODE_ID;
 };
 
 template <typename T>

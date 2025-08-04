@@ -17,12 +17,12 @@
 #define LOG_TAG "HpaeSourceOutputNode"
 #endif
 
-#include <hpae_source_output_node.h>
-#include "audio_engine_log.h"
+#include "hpae_source_output_node.h"
 #include "hpae_format_convert.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "hpae_node_common.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,18 +33,25 @@ HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
       sourceOutputData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
       interleveData_(nodeInfo.frameLen * nodeInfo.channels),
-      framesRead_(0), totalFrames_(0)
+      framesRead_(0), totalFrames_(0), isMute_(false)
 {
-#ifdef ENABLE_HOOK_PCM
-    outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-        "HpaeSourceOutputNode_id_" + std::to_string(GetSessionId()) + "_ch_" + std::to_string(GetChannelCount()) +
-        "_rate_" + std::to_string(GetSampleRate()) + "_bit_" + std::to_string(GetBitWidth()) + ".pcm");
+#ifdef ENABLE_HIDUMP_DFX
+    SetNodeName("hpaeSourceOutputNode");
+#endif
+}
+
+HpaeSourceOutputNode::~HpaeSourceOutputNode()
+{
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
 #endif
 }
 
 void HpaeSourceOutputNode::DoProcess()
 {
-    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSourceOutputNode::DoProcess " + GetTraceInfo());
+    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSourceOutputNode::DoProcess " + GetTraceInfo() +
+        (isMute_ ? "_[Mute]" : "_[unMute]"));
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
     if (outputVec.empty()) {
         AUDIO_WARNING_LOG("sessionId %{public}u DoProcess(), data read is empty", GetSessionId());
@@ -56,14 +63,14 @@ void HpaeSourceOutputNode::DoProcess()
         GetNodeInfo().sourceType != SOURCE_TYPE_REMOTE_CAST) {
         return;
     }
-    ConvertFromFloat(
-        GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), sourceOutputData_.data());
-#ifdef ENABLE_HOOK_PCM
-    if (outputPcmDumper_) {
-        outputPcmDumper_->Dump(
-            (int8_t *)sourceOutputData_.data(), GetChannelCount() * GetFrameLen() * GetSizeFromFormat(GetBitWidth()));
+    int32_t ret = ERROR;
+    if (isMute_) {
+        ret = memset_s(sourceOutputData_.data(), sourceOutputData_.size(), 0, sourceOutputData_.size());
+        CHECK_AND_RETURN_LOG(ret == EOK, "memset_s failed with error:%{public}d", ret);
+    } else {
+        ConvertFromFloat(GetBitWidth(), GetChannelCount() * GetFrameLen(),
+            outputData->GetPcmDataBuffer(), sourceOutputData_.data());
     }
-#endif
     auto nodeCallback = GetNodeStatusCallback().lock();
     if (nodeCallback) {
         nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);
@@ -74,8 +81,12 @@ void HpaeSourceOutputNode::DoProcess()
         .outputData = (int8_t *)sourceOutputData_.data(),
         .requestDataLen = sourceOutputData_.size(),
     };
-    CHECK_AND_RETURN_LOG(readCallback_.lock(), "sessionId %{public}u, readCallback_ is nullptr", GetSessionId());
-    int32_t ret = readCallback_.lock()->OnStreamData(streamInfo_);
+    if (auto readCallback = readCallback_.lock()) {
+        ret = readCallback->OnStreamData(streamInfo_);
+    } else {
+        AUDIO_ERR_LOG("sessionId %{public}u, readCallback_ is nullptr", GetSessionId());
+        return;
+    }
     if (ret == ERR_WRITE_FAILED) {
         AUDIO_DEBUG_LOG("sessionId %{public}u, readCallback_ write read data overflow", GetSessionId());
         return;
@@ -128,6 +139,11 @@ bool HpaeSourceOutputNode::RegisterReadCallback(const std::weak_ptr<ICapturerStr
 void HpaeSourceOutputNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(true, preNode->GetSharedInstance()->GetNodeId(), GetNodeInfo());
+    }
+#endif
 }
 
 void HpaeSourceOutputNode::ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode,
@@ -146,6 +162,11 @@ void HpaeSourceOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBu
 {
     CHECK_AND_RETURN_LOG(preNode != nullptr, "preNode is nullptr");
     inputStream_.DisConnect(preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(false, GetNodeId(), GetNodeInfo());
+    }
+#endif
 }
 
 void HpaeSourceOutputNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode,
@@ -183,6 +204,14 @@ void HpaeSourceOutputNode::SetAppUid(int32_t appUid)
 int32_t HpaeSourceOutputNode::GetAppUid()
 {
     return appUid_;
+}
+
+void HpaeSourceOutputNode::SetMute(bool isMute)
+{
+    if (isMute_ != isMute) {
+        isMute_ = isMute;
+        AUDIO_INFO_LOG("SetMute:%{public}d", isMute);
+    }
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

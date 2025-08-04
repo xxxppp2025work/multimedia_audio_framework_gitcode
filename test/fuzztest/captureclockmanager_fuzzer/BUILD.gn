@@ -39,7 +39,7 @@ ohos_fuzztest("CaptureClockManagerFuzzTest") {
   sources = [ "capture_clock_manager_fuzzer.cpp" ]
 
   deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../services/audio_service/idl:audio_framework_interface",
     "../../../frameworks/native/audioclock:audio_clock",
     "../../../frameworks/native/audioutils:audio_utils",
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
@@ -79,7 +79,6 @@ ohos_fuzztest("CaptureClockManagerFuzzTest") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "relational_store:native_appdatafwk",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",

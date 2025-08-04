@@ -162,6 +162,9 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, DeInit_001, TestSize.Level1)
     EXPECT_EQ(hpaeInnerCapturerManager_->DeInit(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), false);
+    EXPECT_EQ(hpaeInnerCapturerManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), false);
 }
 
 /**
@@ -266,6 +269,10 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartPauseFlushChange_001, Test
     std::shared_ptr<WriteFixedDataCb> writeInPlayDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
     EXPECT_EQ(hpaeInnerCapturerManager_->RegisterWriteCallback(playStreamInfo.sessionId, writeInPlayDataCb), SUCCESS);
     EXPECT_EQ(hpaeInnerCapturerManager_->Start(playStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->SetOffloadPolicy(playStreamInfo.sessionId, 0), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    hpaeInnerCapturerManager_->SetSpeed(playStreamInfo.sessionId, 2.0f); // 2.0f test
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     HpaeSinkInputInfo sinkInputInfo;
 
@@ -468,12 +475,20 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, GetThreadName_001, TestSize.Level1)
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     std::string threadName = hpaeInnerCapturerManager_->GetThreadName();
     EXPECT_EQ(threadName, "InnerCap1");
+
     sinkInfo.deviceName = "InnerCap";
     hpaeInnerCapturerManager_ = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     threadName = hpaeInnerCapturerManager_->GetThreadName();
     EXPECT_EQ(threadName, "InnerCap");
+
+    sinkInfo.deviceName = "RemoteCastInnerCapturer";
+    hpaeInnerCapturerManager_ = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    threadName = hpaeInnerCapturerManager_->GetThreadName();
+    EXPECT_EQ(threadName, "RemoteCast");
 }
 
 /**

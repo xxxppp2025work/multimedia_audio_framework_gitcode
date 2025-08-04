@@ -74,11 +74,10 @@ void AudioCoreService::EventEntry::RegistCoreService()
 }
 
 int32_t AudioCoreService::EventEntry::CreateRendererClient(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock flag %{public}u, sessionId %{public}u", flag, sessionId);
-    coreService_->CreateRendererClient(streamDesc, flag, sessionId);
+    coreService_->CreateRendererClient(streamDesc, flag, sessionId, networkId);
     return SUCCESS;
 }
 
@@ -86,7 +85,6 @@ int32_t AudioCoreService::EventEntry::CreateCapturerClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock flag %{public}u, sessionId %{public}u", flag, sessionId);
     coreService_->CreateCapturerClient(streamDesc, flag, sessionId);
     return SUCCESS;
 }
@@ -147,6 +145,12 @@ int32_t AudioCoreService::EventEntry::SetDefaultOutputDevice(const DeviceType de
         deviceType, sessionID, streamUsage, isRunning);
     int32_t ret = coreService_->SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
     return ret;
+}
+
+int32_t AudioCoreService::EventEntry::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->LoadSplitModule(splitArgs, networkId);
 }
 
 // device status listener
@@ -237,7 +241,6 @@ void AudioCoreService::EventEntry::OnForcedDeviceSelected(DeviceType devType, co
 int32_t AudioCoreService::EventEntry::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock");
     coreService_->SetAudioScene(audioScene, uid, pid);
     return SUCCESS;
 }
@@ -273,6 +276,17 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry
 {
     std::shared_lock<std::shared_mutex> lock(eventMutex_);
     return coreService_->GetPreferredInputDeviceDescInner(captureInfo, networkId);
+}
+
+int32_t AudioCoreService::EventEntry::FetchOutputDeviceAndRoute(std::string caller,
+    const AudioStreamDeviceChangeReasonExt reason)
+{
+    if (coreService_ == nullptr) {
+        return ERR_UNKNOWN;
+    }
+
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->FetchOutputDeviceAndRoute(caller, reason);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::EventEntry::GetActiveBluetoothDevice()
@@ -311,14 +325,12 @@ int32_t AudioCoreService::EventEntry::RegisterTracker(AudioMode &mode, AudioStre
     const sptr<IRemoteObject> &object, const int32_t apiVersion)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock mode %{public}d", mode);
     return coreService_->RegisterTracker(mode, streamChangeInfo, object, apiVersion);
 }
 
 int32_t AudioCoreService::EventEntry::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock mode %{public}d", mode);
     return coreService_->UpdateTracker(mode, streamChangeInfo);
 }
 
@@ -414,6 +426,12 @@ void AudioCoreService::EventEntry::OnCapturerSessionRemoved(uint64_t sessionID)
     coreService_->OnCapturerSessionRemoved(sessionID);
 }
 
+void AudioCoreService::EventEntry::CloseWakeUpAudioCapturer()
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    coreService_->CloseWakeUpAudioCapturer();
+}
+
 int32_t AudioCoreService::EventEntry::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
@@ -440,12 +458,10 @@ std::vector<sptr<VolumeGroupInfo>> AudioCoreService::EventEntry::GetVolumeGroupI
 void AudioCoreService::EventEntry::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
     const AudioStreamDeviceChangeReasonExt reason)
 {
-    AUDIO_INFO_LOG("Not support");
 }
 
 void AudioCoreService::EventEntry::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
 {
-    AUDIO_INFO_LOG("Not support");
 }
 
 int32_t AudioCoreService::EventEntry::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
@@ -477,10 +493,43 @@ int32_t AudioCoreService::EventEntry::GetPreferredOutputStreamType(AudioRenderer
     return coreService_->GetPreferredOutputStreamType(rendererInfo, bundleName);
 }
 
+int32_t AudioCoreService::EventEntry::SetSessionDefaultOutputDevice(
+    const int32_t callerPid, const DeviceType &deviceType)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->SetSessionDefaultOutputDevice(callerPid, deviceType);
+}
+
+int32_t AudioCoreService::EventEntry::GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->GetSessionDefaultOutputDevice(callerPid, deviceType);
+}
+
 int32_t AudioCoreService::EventEntry::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->GetPreferredInputStreamType(capturerInfo);
+}
+
+int32_t AudioCoreService::EventEntry::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->SetWakeUpAudioCapturerFromAudioServer(config);
+}
+
+int32_t AudioCoreService::EventEntry::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type)
+{
+    CHECK_AND_RETURN_RET_LOG(coreService_, ERR_INVALID_PARAM, "coreService_ is nullptr");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("After wait, isOffloadOpened: %{public}d", coreService_->isOffloadOpened_[type].load());
+    CHECK_AND_RETURN_RET_LOG(!coreService_->isOffloadOpened_[type].load(), ERROR, "offload restart");
+    AUDIO_INFO_LOG("Close hdi port id: %{public}u, index %{public}u", id, paIndex);
+    coreService_->audioPolicyManager_.CloseAudioPort(id, paIndex);
+    CHECK_AND_RETURN_RET_LOG(coreService_->pipeManager_, ERROR, "pipeManager_ is nullptr");
+    coreService_->pipeManager_->RemoveAudioPipeInfo(id);
+    coreService_->audioIOHandleMap_.DelIOHandleInfo(OFFLOAD_PRIMARY_SPEAKER);
+    return SUCCESS;
 }
 }
 }

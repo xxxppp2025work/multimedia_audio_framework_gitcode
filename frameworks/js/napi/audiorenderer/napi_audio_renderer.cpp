@@ -47,6 +47,16 @@ static constexpr double MAX_LOUDNESS_GAIN_IN_DOUBLE = 24.0;
 NapiAudioRenderer::NapiAudioRenderer()
     : audioRenderer_(nullptr), contentType_(CONTENT_TYPE_MUSIC), streamUsage_(STREAM_USAGE_MEDIA), env_(nullptr) {}
 
+NapiAudioRenderer::~NapiAudioRenderer()
+{
+    if (audioRenderer_ != nullptr) {
+        bool ret = audioRenderer_->Release();
+        CHECK_AND_RETURN_LOG(ret, "AudioRenderer release fail");
+        audioRenderer_ = nullptr;
+        AUDIO_INFO_LOG("Proactively release audioRenderer");
+    }
+}
+
 void NapiAudioRenderer::Destructor(napi_env env, void *nativeObject, void *finalizeHint)
 {
     if (nativeObject == nullptr) {
@@ -1113,14 +1123,7 @@ napi_value NapiAudioRenderer::GetLoudnessGain(napi_env env, napi_callback_info i
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
-    AudioRendererInfo rendererInfo = {};
-    napiAudioRenderer->audioRenderer_->GetRendererInfo(rendererInfo);
-    StreamUsage streamUsage = rendererInfo.streamUsage;
-    if (!(streamUsage == STREAM_USAGE_MUSIC || streamUsage == STREAM_USAGE_MOVIE ||
-        streamUsage == STREAM_USAGE_AUDIOBOOK)) {
-        NapiParamUtils::SetValueDouble(env, 0.0f, result);
-        return result;
-    }
+
     double loudnessGain = napiAudioRenderer->audioRenderer_->GetLoudnessGain();
     NapiParamUtils::SetValueDouble(env, loudnessGain, result);
     return result;

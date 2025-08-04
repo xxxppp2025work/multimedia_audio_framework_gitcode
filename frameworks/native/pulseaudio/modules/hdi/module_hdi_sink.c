@@ -39,8 +39,8 @@ static void SinkInputUnlinkForCollaboration(pa_sink_input *si, const char *scene
 static void SinkInputRunningForCollaboration(pa_sink_input *si, const char *sceneType, const char *sessionID,
     const SessionInfoPack pack);
 static void SinkInputCorkedForCollaboration(pa_sink_input *si, const char *sceneType, const char *sessionID);
-static void DeleteSessionInfoForCollaboration(const char *sceneType, const char *sessionID);
-static void AddSessionInfoForCollaboration(const char *sceneType, const char *sessionID, const SessionInfoPack pack);
+static void DeleteSessionInfoForEffect(const char *sceneType, const char *sessionID);
+static void AddSessionInfoForEffect(const char *sceneType, const char *sessionID, const SessionInfoPack pack);
 static const char *GetSceneTypeForCollaboration(pa_sink_input *si, const char *sceneType);
 
 PA_MODULE_AUTHOR("OpenHarmony");
@@ -224,7 +224,7 @@ static void ProplistChangedForCollaboration(pa_sink_input *si, const char *scene
     if (!collaborationEnabled || strcmp(si->sink->name, "Bt_Speaker")) {
         EffectChainManagerCreateCb(sceneType, sessionID);
         if (si->thread_info.state == PA_SINK_INPUT_RUNNING) {
-            AddSessionInfoForCollaboration(sceneType, sessionID, pack);
+            AddSessionInfoForEffect(sceneType, sessionID, pack);
         }
         return;
     }
@@ -242,13 +242,13 @@ static void ProplistChangedForCollaboration(pa_sink_input *si, const char *scene
         // release old sceneType effect chain
         EffectChainManagerReleaseCb(oldSceneType, sessionID);
         if (si->thread_info.state == PA_SINK_INPUT_RUNNING) {
-            DeleteSessionInfoForCollaboration(oldSceneType, sessionID);
+            DeleteSessionInfoForEffect(oldSceneType, sessionID);
         }
     }
     // create new sceneType effect chain
     EffectChainManagerCreateCb(newSceneType, sessionID);
     if (si->thread_info.state == PA_SINK_INPUT_RUNNING) {
-        AddSessionInfoForCollaboration(newSceneType, sessionID, pack);
+        AddSessionInfoForEffect(newSceneType, sessionID, pack);
     }
 }
 
@@ -264,7 +264,7 @@ static void SinkInputUnlinkForCollaboration(pa_sink_input *si, const char *scene
     }
     EffectChainManagerReleaseCb(newSceneType, sessionID);
     if (si->thread_info.state == PA_SINK_INPUT_RUNNING) {
-        DeleteSessionInfoForCollaboration(newSceneType, sessionID);
+        DeleteSessionInfoForEffect(newSceneType, sessionID);
     }
 }
 
@@ -275,16 +275,16 @@ static void SinkInputRunningForCollaboration(pa_sink_input *si, const char *scen
     if (!strcmp(realSceneType, "SCENE_COLLABORATIVE")) {
         CollaborativePlaybackReset();
     }
-    AddSessionInfoForCollaboration(realSceneType, sessionID, pack);
+    AddSessionInfoForEffect(realSceneType, sessionID, pack);
 }
 
 static void SinkInputCorkedForCollaboration(pa_sink_input *si, const char *sceneType, const char *sessionID)
 {
     const char *realSceneType = GetSceneTypeForCollaboration(si, sceneType);
-    DeleteSessionInfoForCollaboration(realSceneType, sessionID);
+    DeleteSessionInfoForEffect(realSceneType, sessionID);
 }
 
-static void DeleteSessionInfoForCollaboration(const char *sceneType, const char *sessionID)
+static void DeleteSessionInfoForEffect(const char *sceneType, const char *sessionID)
 {
     if (!EffectChainManagerDeleteSessionInfo(sceneType, sessionID)) {
         EffectChainManagerMultichannelUpdate(sceneType);
@@ -293,7 +293,7 @@ static void DeleteSessionInfoForCollaboration(const char *sceneType, const char 
     }
 }
 
-static void AddSessionInfoForCollaboration(const char *sceneType, const char *sessionID, const SessionInfoPack pack)
+static void AddSessionInfoForEffect(const char *sceneType, const char *sessionID, const SessionInfoPack pack)
 {
     if (!EffectChainManagerAddSessionInfo(sceneType, sessionID, pack)) {
         EffectChainManagerMultichannelUpdate(sceneType);

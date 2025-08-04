@@ -20,6 +20,8 @@
 #include "hpae_renderer_manager.h"
 #include "hpae_offload_renderer_manager.h"
 #include "hpae_inner_capturer_manager.h"
+#include "audio_engine_log.h"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -61,16 +63,6 @@ void IHpaeRendererManager::OnNotifyDfxNodeInfo(bool isConnect, uint32_t preNodeI
         dfxTree_.Remove(nodeInfo.nodeId);
     }
 #endif
-};
-
-uint32_t IHpaeRendererManager::OnGetNodeId()
-{
-    if (nodeIdCounter_.load() == std::numeric_limits<uint32_t>::max()) {
-        nodeIdCounter_.store(MIN_START_NODE_ID);
-    } else {
-        nodeIdCounter_.fetch_add(1);
-    }
-    return nodeIdCounter_.load();
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

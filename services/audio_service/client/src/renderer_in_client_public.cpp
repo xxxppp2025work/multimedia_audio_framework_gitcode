@@ -73,6 +73,7 @@ static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000; // ms
 static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 constexpr uint32_t SONIC_LATENCY_IN_MS = 20; // cache in sonic
+const std::vector<int32_t> STOP_FLUSH_UIDS = {1013}; // MEDIA_SERVICE_UID
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -89,7 +90,6 @@ RendererInClientInner::RendererInClientInner(AudioStreamType eStreamType, int32_
 
 RendererInClientInner::~RendererInClientInner()
 {
-    AUDIO_INFO_LOG("~RendererInClientInner()");
     DumpFileUtil::CloseDumpFile(&dumpOutFd_);
     RendererInClientInner::ReleaseAudioStream(true);
     std::lock_guard<std::mutex> runnerlock(runnerMutex_);
@@ -115,6 +115,7 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         }
         offloadEnable_ = static_cast<bool>(result);
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
+        NotifyOffloadSpeed();
         return SUCCESS;
     } else if (operation == DATA_LINK_CONNECTING) {
         UpdateDataLinkState(false, false);
@@ -201,7 +202,7 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
         rendererInfo_.effectMode = EFFECT_NONE;
     }
 
-    AUDIO_PRERELEASE_LOGI("SetRendererInfo with flag %{public}d, sceneType %{public}s", rendererInfo_.rendererFlags,
+    AUDIO_PRERELEASE_LOGI("flag %{public}d, sceneType %{public}s", rendererInfo_.rendererFlags,
         rendererInfo_.sceneType.c_str());
     AudioSpatializationState spatializationState =
         AudioPolicyManager::GetInstance().GetSpatializationState(rendererInfo_.streamUsage);
@@ -588,7 +589,7 @@ int32_t RendererInClientInner::SetStreamCallback(const std::shared_ptr<AudioStre
 int32_t RendererInClientInner::SetRendererFirstFrameWritingCallback(
     const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback)
 {
-    AUDIO_INFO_LOG("SetRendererFirstFrameWritingCallback in.");
+    AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(callback, ERR_INVALID_PARAM, "callback is nullptr");
     std::lock_guard lock(firstFrameWritingMutex_);
     firstFrameWritingCb_ = callback;
@@ -603,35 +604,54 @@ void RendererInClientInner::OnFirstFrameWriting()
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> cb = nullptr;
     {
         std::lock_guard lock(firstFrameWritingMutex_);
-        CHECK_AND_RETURN_LOG(firstFrameWritingCb_!= nullptr, "firstFrameWritingCb_ is null.");
+        CHECK_AND_RETURN(firstFrameWritingCb_!= nullptr);
         cb = firstFrameWritingCb_;
     }
     AUDIO_DEBUG_LOG("OnFirstFrameWriting: latency %{public}" PRIu64 "", latency);
     cb->OnFirstFrameWriting(latency);
 }
 
+bool RendererInClientInner::DoHdiSetSpeed(float speed, bool force)
+{
+    AUDIO_INFO_LOG("set speed to hdi, sessionId: %{public}d, speed: %{public}f", sessionId_, speed);
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, true, "ipcStream is not inited!");
+    CHECK_AND_RETURN_RET_LOG(force || !isEqual(speed, hdiSpeed_), true, "forbid duplicate set speed");
+    ipcStream_->SetSpeed(speed);
+    hdiSpeed_ = speed;
+    return true;
+}
+
+void RendererInClientInner::NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId)
+{
+    std::lock_guard lock(speedMutex_);
+    bool isOffload = routeFlag & (AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD | AUDIO_OUTPUT_FLAG_LOWPOWER);
+    bool curIsHdiSpeed = isOffload && (networkId != LOCAL_NETWORK_ID || (eStreamType_ == STREAM_MOVIE &&
+        rendererInfo_.originalFlag == AUDIO_FLAG_PCM_OFFLOAD));
+    CHECK_AND_RETURN(curIsHdiSpeed != isHdiSpeed_.load());
+    AUDIO_INFO_LOG("need set speed to hdi: %{public}s", curIsHdiSpeed ? "true" : "false");
+    isHdiSpeed_.store(curIsHdiSpeed);
+    if (curIsHdiSpeed) {
+        if (realSpeed_.has_value()) {
+            DoHdiSetSpeed(realSpeed_.value(), true);
+            SetSpeedInner(1.0);
+        }
+    } else {
+        if (realSpeed_.has_value()) {
+            SetSpeedInner(realSpeed_.value());
+        }
+    }
+}
+
 int32_t RendererInClientInner::SetSpeed(float speed)
 {
     std::lock_guard lock(speedMutex_);
-    // set the speed to 1.0 and the speed has never been turned on, no actual sonic stream is created.
-    if (isEqual(speed, SPEED_NORMAL) && !speedEnable_) {
-        speed_ = speed;
-        return SUCCESS;
+    realSpeed_ = speed;
+    if (isHdiSpeed_.load()) {
+        DoHdiSetSpeed(speed, false);
+        SetSpeedInner(1.0);
+    } else {
+        SetSpeedInner(speed);
     }
-
-    if (audioSpeed_ == nullptr) {
-        audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
-            curStreamParams_.channels);
-        GetBufferSize(bufferSize_);
-        speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
-    }
-    audioSpeed_->SetSpeed(speed);
-    if (std::abs(speed - writtenAtSpeedChange_.load().speed) > std::numeric_limits<float>::epsilon()) {
-        writtenAtSpeedChange_.store(WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load(), speed_});
-    }
-    speed_ = speed;
-    speedEnable_ = true;
-    AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
     return SUCCESS;
 }
 
@@ -652,7 +672,7 @@ int32_t RendererInClientInner::SetPitch(float pitch)
 float RendererInClientInner::GetSpeed()
 {
     std::lock_guard lock(speedMutex_);
-    return speed_;
+    return realSpeed_.has_value() ? realSpeed_.value() : 1.0f;
 }
 
 void RendererInClientInner::InitCallbackLoop()
@@ -691,7 +711,7 @@ void RendererInClientInner::InitCallbackLoop()
 
 int32_t RendererInClientInner::SetRenderMode(AudioRenderMode renderMode)
 {
-    AUDIO_INFO_LOG("SetRenderMode to %{public}s", renderMode == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" :
+    AUDIO_INFO_LOG("to %{public}s", renderMode == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" :
         "RENDER_MODE_CALLBACK");
     if (renderMode_ == renderMode) {
         return SUCCESS;
@@ -791,6 +811,19 @@ int32_t RendererInClientInner::GetBufQueueState(BufferQueueState &bufState)
     return SUCCESS;
 }
 
+bool RendererInClientInner::CheckBufferValid(const BufferDesc &bufDesc)
+{
+    if (bufDesc.bufLength > cbBufferSize_) {
+        return false;
+    }
+
+    if (bufDesc.dataLength > cbBufferSize_) {
+        return false;
+    }
+
+    return true;
+}
+
 int32_t RendererInClientInner::Enqueue(const BufferDesc &bufDesc)
 {
     Trace trace("RendererInClientInner::Enqueue " + std::to_string(bufDesc.bufLength));
@@ -802,7 +835,8 @@ int32_t RendererInClientInner::Enqueue(const BufferDesc &bufDesc)
     CHECK_AND_RETURN_RET_LOG(curStreamParams_.encoding != ENCODING_AUDIOVIVID ||
             converter_ != nullptr && converter_->CheckInputValid(bufDesc),
         ERR_INVALID_PARAM, "Invalid buffer desc");
-    if (bufDesc.bufLength > cbBufferSize_ || bufDesc.dataLength > cbBufferSize_) {
+    // allow opensles enqueue self buffer
+    if ((rendererInfo_.playerType != PLAYER_TYPE_OPENSL_ES) && !CheckBufferValid(bufDesc)) {
         AUDIO_WARNING_LOG("Invalid bufLength:%{public}zu or dataLength:%{public}zu, should be %{public}zu",
             bufDesc.bufLength, bufDesc.dataLength, cbBufferSize_);
     }
@@ -922,7 +956,7 @@ void RendererInClientInner::SetCapturerSource(int capturerSource)
 void RendererInClientInner::SetPrivacyType(AudioPrivacyType privacyType)
 {
     if (privacyType_ == privacyType) {
-        AUDIO_INFO_LOG("Set same privacy type");
+        AUDIO_INFO_LOG("same type");
         return;
     }
     privacyType_ = privacyType;
@@ -1014,7 +1048,6 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     }
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    UpdatePauseReadIndex();
     int32_t ret = ipcStream_->Pause();
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("call server failed:%{public}u", ret);
@@ -1073,7 +1106,6 @@ bool RendererInClientInner::StopAudioStream()
     }
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    UpdatePauseReadIndex();
     int32_t ret = ipcStream_->Stop();
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Stop call server failed:%{public}u", ret);
@@ -1123,7 +1155,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     MonitorMutePlay(true);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
-        AUDIO_WARNING_LOG("Already released, do nothing");
+        AUDIO_WARNING_LOG("Already released");
         return true;
     }
     state_ = RELEASED;
@@ -1152,7 +1184,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     std::unique_lock<std::mutex> lock(streamCbMutex_);
     std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
     if (streamCb != nullptr) {
-        AUDIO_INFO_LOG("Notify client the state is released");
+        AUDIO_INFO_LOG("Notify client");
         streamCb->OnStateChange(RELEASED, CMD_FROM_CLIENT);
     }
     lock.unlock();
@@ -1185,6 +1217,8 @@ bool RendererInClientInner::FlushAudioStream()
         }
     }
 
+    FlushSpeedBuffer();
+
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Flush();
     if (ret != SUCCESS) {
@@ -1214,7 +1248,7 @@ bool RendererInClientInner::FlushAudioStream()
     waitLock.unlock();
     ResetFramePosition();
 
-    if (state_ == STOPPED) {
+    if (NeedStopFlush() && state_ == STOPPED) {
         flushAfterStop_ = true;
     }
     
@@ -1380,7 +1414,7 @@ int32_t RendererInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
 {
     // bufferSizeInMsec is checked between 5ms and 20ms.
     bufferSizeInMsec_ = static_cast<uint32_t>(bufferSizeInMsec);
-    AUDIO_INFO_LOG("SetBufferSizeInMsec to %{public}d", bufferSizeInMsec_);
+    AUDIO_INFO_LOG("to %{public}d", bufferSizeInMsec_);
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         uint64_t bufferDurationInUs = bufferSizeInMsec_ * AUDIO_US_PER_MS;
         InitCallbackBuffer(bufferDurationInUs);
@@ -1452,6 +1486,7 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.clientPid = clientPid_;
     info.clientUid = clientUid_;
     info.volume = clientVolume_;
+    info.duckVolume = duckVolume_;
     info.silentModeAndMixWithOthers = silentModeAndMixWithOthers_;
 
     info.frameMarkPosition = static_cast<uint64_t>(rendererMarkPosition_);
@@ -1497,7 +1532,7 @@ void RendererInClientInner::InitCallbackHandler()
 void RendererInClientInner::SafeSendCallbackEvent(uint32_t eventCode, int64_t data)
 {
     std::lock_guard<std::mutex> lock(runnerMutex_);
-    AUDIO_INFO_LOG("Send callback event, code: %{public}u, data: %{public}" PRId64 "", eventCode, data);
+    AUDIO_INFO_LOG("code: %{public}u, data: %{public}" PRId64 "", eventCode, data);
     CHECK_AND_RETURN_LOG(callbackHandler_ != nullptr && runnerReleased_ == false, "Runner is Released");
     callbackHandler_->SendCallbackEvent(eventCode, data);
 }
@@ -1577,7 +1612,6 @@ void RendererInClientInner::SendRenderPeriodReachedEvent(int64_t rendererPeriodS
 void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
 {
     totalBytesWritten_ += static_cast<int64_t>(bytesWritten);
-    totalBytesWrittenAfterFlush_.fetch_add(bytesWritten);
     if (sizePerFrameInByte_ == 0) {
         AUDIO_ERR_LOG("HandleRendererPositionChanges: sizePerFrameInByte_ is 0");
         return;
@@ -1688,7 +1722,7 @@ bool RendererInClientInner::GetHighResolutionEnabled()
 
 void RendererInClientInner::SetSilentModeAndMixWithOthers(bool on)
 {
-    AUDIO_PRERELEASE_LOGI("SetSilentModeAndMixWithOthers %{public}d", on);
+    AUDIO_PRERELEASE_LOGI("%{public}d", on);
     silentModeAndMixWithOthers_ = on;
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "Object ipcStream is nullptr");
     ipcStream_->SetSilentModeAndMixWithOthers(on);
@@ -1784,9 +1818,9 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     // cal readIdx from last flush
     readIdx = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
 
-    uint64_t unprocessSamples = unprocessedFramesBytes_.load() / sizePerFrameInByte_;
+    uint64_t unprocessSamples = unprocessedFramesBytes_.load();
     // cal latency between readIdx and framesWritten
-    uint64_t samplesWritten = totalBytesWrittenAfterFlush_.load() / sizePerFrameInByte_;
+    uint64_t samplesWritten = totalBytesWrittenAfterFlush_.load();
     uint64_t deepLatency = samplesWritten > readIdx ? samplesWritten - readIdx : 0;
     // get position and speed since last change
     WrittenFramesWithSpeed fsPair = writtenAtSpeedChange_.load();
@@ -1923,6 +1957,11 @@ void RendererInClientInner::SetAudioHapticsSyncId(const int32_t &audioHapticsSyn
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
     int32_t ret = ipcStream_->SetAudioHapticsSyncId(audioHapticsSyncId);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Set sync id failed");
+}
+
+bool RendererInClientInner::NeedStopFlush()
+{
+    return std::find(STOP_FLUSH_UIDS.begin(), STOP_FLUSH_UIDS.end(), uidGetter_()) != STOP_FLUSH_UIDS.end();
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -19,12 +19,12 @@
 
 #include "hpae_capturer_manager.h"
 #include "audio_info.h"
-#include "audio_engine_log.h"
 #include "audio_errors.h"
 #include "hpae_node_common.h"
 #include "audio_utils.h"
 #include "audio_effect_map.h"
 #include "hpae_policy_manager.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -76,8 +76,6 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
 {
     AUDIO_INFO_LOG("Create output node:%{public}d", streamInfo.sessionId);
     HpaeNodeInfo nodeInfo;
-    nodeInfo.nodeId = OnGetNodeId();
-    nodeInfo.nodeName = "HpaeSourceOutputNode";
     nodeInfo.channels = streamInfo.channels;
     nodeInfo.format = streamInfo.format;
     nodeInfo.frameLen = streamInfo.frameLen;
@@ -315,8 +313,6 @@ int32_t HpaeCapturerManager::Start(uint32_t sessionId)
         CHECK_AND_RETURN_LOG(ConnectOutputSession(sessionId) == SUCCESS, "Connect node error.");
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
         CHECK_AND_RETURN_LOG(CapturerSourceStart() == SUCCESS, "CapturerSourceStart error.");
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
-            sessionNodeMap_[sessionId].state, OPERATION_STARTED);
     };
     SendRequest(request);
     return SUCCESS;
@@ -353,8 +349,6 @@ int32_t HpaeCapturerManager::Pause(uint32_t sessionId)
             "Pause not find sessionId %{public}u", sessionId);
         DisConnectOutputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_PAUSED);
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
-            sessionNodeMap_[sessionId].state, OPERATION_PAUSED);
     };
     SendRequest(request);
     return SUCCESS;
@@ -371,8 +365,6 @@ int32_t HpaeCapturerManager::Flush(uint32_t sessionId)
         CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
             "Flush not find sessionId %{public}u", sessionId);
         // no cache data need to flush
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
-            sessionNodeMap_[sessionId].state, OPERATION_FLUSHED);
     };
     SendRequest(request);
     return SUCCESS;
@@ -396,10 +388,23 @@ int32_t HpaeCapturerManager::Drain(uint32_t sessionId)
     return SUCCESS;
 }
 
+void HpaeCapturerManager::CapturerSourceStopForRemote()
+{
+    CHECK_AND_RETURN_LOG(sourceInfo_.deviceClass == "remote", "not remote source");
+    CHECK_AND_RETURN_LOG(SafeGetMap(sourceInputClusterMap_, mainMicType_),
+        "sourceInputClusterMap_[%{public}d] is nullptr", mainMicType_);
+    CHECK_AND_RETURN_LOG(sourceInputClusterMap_[mainMicType_]->GetOutputPortNum() == 0, "source has running stream");
+    sourceInputClusterMap_[mainMicType_]->CapturerSourceStop();
+}
+
 int32_t HpaeCapturerManager::CapturerSourceStop()
 {
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sourceInputClusterMap_, mainMicType_), ERR_ILLEGAL_STATE,
         "sourceInputClusterMap_[%{public}d] is nullptr", mainMicType_);
+
+    // If remote source has no running stream, stop source
+    CapturerSourceStopForRemote();
+
     CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[mainMicType_]->GetSourceState() != STREAM_MANAGER_SUSPENDED,
         SUCCESS, "capturer source is already stopped");
     sourceInputClusterMap_[mainMicType_]->CapturerSourceStop();
@@ -423,8 +428,6 @@ int32_t HpaeCapturerManager::Stop(uint32_t sessionId)
             "Stop not find sessionId %{public}u", sessionId);
         DisConnectOutputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_STOPPED);
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
-            sessionNodeMap_[sessionId].state, OPERATION_STOPPED);
     };
     SendRequest(request);
     return SUCCESS;
@@ -434,6 +437,17 @@ int32_t HpaeCapturerManager::Release(uint32_t sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeCapturerManager::Release");
     return DestroyStream(sessionId);
+}
+
+int32_t HpaeCapturerManager::SetStreamMute(uint32_t sessionId, bool isMute)
+{
+    auto request = [this, sessionId, isMute]() {
+        CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
+            "Mute not find sessionId %{public}u", sessionId);
+        sourceOutputNodeMap_[sessionId]->SetMute(isMute);
+    };
+    SendRequest(request);
+    return SUCCESS;
 }
 
 int32_t HpaeCapturerManager::SetMute(bool isMute)
@@ -525,7 +539,7 @@ int32_t HpaeCapturerManager::PrepareCapturerMicRef(HpaeNodeInfo &micRefNodeInfo)
 
 void HpaeCapturerManager::CreateSourceAttr(IAudioSourceAttr &attr)
 {
-    attr.adapterName = sourceInfo_.adapterName.c_str();
+    attr.adapterName = sourceInfo_.adapterName;
     attr.sampleRate = sourceInfo_.samplingRate;
     attr.channel = sourceInfo_.channels;
     attr.format = sourceInfo_.format;
@@ -556,7 +570,7 @@ int32_t HpaeCapturerManager::InitCapturer()
     if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_EC)) {
         IAudioSourceAttr attrEc;
         attrEc.sourceType = SOURCE_TYPE_EC;
-        attrEc.adapterName = sourceInfo_.ecAdapterName.c_str();
+        attrEc.adapterName = sourceInfo_.ecAdapterName;
         attrEc.deviceType = DEVICE_TYPE_MIC;
         attrEc.sampleRate = sourceInfo_.ecSamplingRate;
         attrEc.channel = sourceInfo_.ecChannels;
@@ -829,8 +843,6 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
         sessionId, sourceInfo_.sourceName.c_str());
     CHECK_AND_RETURN_LOG(moveInfo.sourceOutputNode != nullptr, "move fail, sourceoutputnode is null");
     HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
-    nodeInfo.nodeId = OnGetNodeId(); // new node id for dfx
-    moveInfo.sourceOutputNode->SetNodeInfo(nodeInfo);
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;
     HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
@@ -880,9 +892,7 @@ void HpaeCapturerManager::MoveAllStreamToNewSource(const std::string &sourceName
             HpaeCaptureMoveInfo moveInfo;
             moveInfo.sessionId = it.first;
             moveInfo.sourceOutputNode = it.second;
-            idStr.append("[");
-            idStr.append(std::to_string(it.first));
-            idStr.append("],");
+            idStr.append("[").append(std::to_string(it.first)).append("],");
             if (sessionNodeMap_.find(it.first) != sessionNodeMap_.end()) {
                 moveInfo.sessionInfo = sessionNodeMap_[it.first];
                 moveInfos.emplace_back(moveInfo);
@@ -933,6 +943,7 @@ int32_t HpaeCapturerManager::MoveStream(uint32_t sessionId, const std::string& s
 
 void HpaeCapturerManager::OnNotifyQueue()
 {
+    CHECK_AND_RETURN_LOG(hpaeSignalProcessThread_, "hpaeSignalProcessThread_ is nullptr");
     hpaeSignalProcessThread_->Notify();
 }
 
@@ -948,12 +959,14 @@ std::string HpaeCapturerManager::GetThreadName()
     return sourceInfo_.deviceName;
 }
 
-void HpaeCapturerManager::DumpSourceInfo()
+int32_t HpaeCapturerManager::DumpSourceInfo()
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "HpaeCapturerManager not init");
     SendRequest([this]() {
         AUDIO_INFO_LOG("DumpSourceInfo deviceName %{public}s", sourceInfo_.deviceName.c_str());
         UploadDumpSourceInfo(sourceInfo_.deviceName);
     });
+    return SUCCESS;
 }
 
 void HpaeCapturerManager::CheckIfAnyStreamRunning()

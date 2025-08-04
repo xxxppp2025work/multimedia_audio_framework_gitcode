@@ -29,7 +29,7 @@ public:
     virtual bool IsStreamSupportCollaborative(StreamUsage usage) const = 0;
     virtual int32_t UpdateCollaborativeState(bool collaborationEnabled) = 0;
     virtual int32_t RegisterCollaborativeListener(ICollaborativeListener* listener) = 0;
-    virtual bool IsCollaborativeFirstChanged(int32_t sessionId, int32_t collaborationEnabled) = 0;
+    virtual bool IsCollaborativeChanged(int32_t sessionId, int32_t collaborationEnabled) = 0;
     virtual void Enqueue(BufferAttr* buffer) = 0;
     virtual void Dequeue(BufferAttr* buffer) = 0;
     virtual void ResetBuffer() = 0;

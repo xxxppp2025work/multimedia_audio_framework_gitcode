@@ -53,6 +53,7 @@ const std::vector<DeviceType> DEVICE_TYPE_SET = {
     DEVICE_TYPE_LINE_DIGITAL,
     DEVICE_TYPE_ACCESSORY,
     DEVICE_TYPE_NEARLINK,
+    DEVICE_TYPE_HEARING_AID,
     DEVICE_TYPE_DEFAULT
 };
 
@@ -457,11 +458,12 @@ napi_status NapiParamUtils::SetTimeStampInfo(const napi_env &env, const Timestam
 {
     napi_status status = napi_create_object(env, &result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetTimeStampInfo napi_create_object failed");
-    SetValueInt32(env, "framePos", static_cast<int64_t>(timestamp.framePosition), result);
+    status = SetValueInt64(env, "framePos", static_cast<int64_t>(timestamp.framePosition), result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set framePos SetValueInt64 failed");
     static const int64_t secToNano = 1000000000;
     int64_t time = timestamp.time.tv_sec * secToNano + timestamp.time.tv_nsec;
-    SetValueInt32(env, "timestamp", time, result);
-
+    status = SetValueInt64(env, "timestamp", time, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set timestamp SetValueInt64 failed");
     return napi_ok;
 }
 

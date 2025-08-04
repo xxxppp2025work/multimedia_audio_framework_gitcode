@@ -45,12 +45,6 @@ int32_t PolicyProviderWrapper::InitSharedVolume(std::shared_ptr<AudioSharedMemor
     return policyWorker_->InitSharedVolume(buffer);
 }
 
-int32_t PolicyProviderWrapper::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
-{
-    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
-    return policyWorker_->SetWakeUpAudioCapturerFromAudioServer(config);
-}
-
 int32_t PolicyProviderWrapper::NotifyCapturerAdded(const AudioCapturerInfo &capturerInfo,
     const AudioStreamInfo &streamInfo, uint32_t sessionId)
 {
@@ -97,12 +91,6 @@ int32_t PolicyProviderWrapper::GetMaxRendererInstances(int32_t &maxInstances)
     return SUCCESS;
 }
 
-int32_t PolicyProviderWrapper::ActivateConcurrencyFromServer(int32_t incomingPipe)
-{
-    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
-    return policyWorker_->ActivateConcurrencyFromServer(static_cast<AudioPipeType>(incomingPipe));
-}
-
 int32_t PolicyProviderWrapper::NotifyCapturerRemoved(uint64_t sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
@@ -135,6 +123,12 @@ int32_t PolicyProviderWrapper::ClearAudioFocusBySessionID(int32_t sessionID)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->ClearAudioFocusBySessionID(sessionID);
+}
+
+int32_t PolicyProviderWrapper::CaptureConcurrentCheck(const uint32_t sessionID)
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->CaptureConcurrentCheck(sessionID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

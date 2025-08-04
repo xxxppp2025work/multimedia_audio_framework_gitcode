@@ -37,7 +37,7 @@ ohos_fuzztest("AudioBluetoothManagerFuzzTest") {
   sources = [ "audiobluetoothmanager_fuzzer.cpp" ]
 
   deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../services/audio_service/idl:audio_framework_interface",
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client_static",
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_client",
@@ -67,7 +67,6 @@ ohos_fuzztest("AudioBluetoothManagerFuzzTest") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]

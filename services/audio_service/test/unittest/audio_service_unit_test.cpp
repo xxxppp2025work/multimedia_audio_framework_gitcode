@@ -27,6 +27,10 @@
 #include "fast_audio_stream.h"
 #include "audio_endpoint_private.h"
 #include "pro_renderer_stream_impl.h"
+#include "core_service_handler.h"
+#include "audio_workgroup.h"
+#include "rtg_interface.h"
+#include "concurrent_task_client.h"
 
 using namespace testing::ext;
 
@@ -104,6 +108,314 @@ HWTEST(AudioServiceUnitTest, AudioProcessInClientInner_001, TestSize.Level1)
     fastAudioStream_ = std::make_shared<FastAudioStream>(config.streamType,
         AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
     processClient_ = AudioProcessInClient::Create(config, fastAudioStream_);
+    EXPECT_EQ(processClient_, nullptr);
+}
+/**
+ * @tc.name  : Test RegisterThreadPriorityOnStart API
+ * @tc.type  : FUNC
+ * @tc.number: RegisterThreadPriorityOnStart_001
+ * @tc.desc  : Test RegisterThreadPriorityOnStart interface using unsupported parameters.
+ */
+HWTEST(AudioServiceUnitTest, RegisterThreadPriorityOnStart_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+    StateChangeCmdType cmdType = CMD_FROM_CLIENT;
+    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    fastAudioStream->RegisterThreadPriorityOnStart(cmdType);
+    EXPECT_NE(fastAudioStream, nullptr);
+
+    cmdType = CMD_FROM_SYSTEM;
+    fastAudioStream->RegisterThreadPriorityOnStart(cmdType);
+
+    cmdType = static_cast<StateChangeCmdType>(2);
+    fastAudioStream->RegisterThreadPriorityOnStart(cmdType);
+}
+/**
+ * @tc.name  : Test RegisterThreadPriorityOnStart API
+ * @tc.type  : FUNC
+ * @tc.number: RegisterThreadPriorityOnStart_001
+ * @tc.desc  : Test RegisterThreadPriorityOnStart interface using unsupported parameters.
+ */
+HWTEST(AudioServiceUnitTest, StartAudioStream_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+    StateChangeCmdType cmdType = CMD_FROM_SYSTEM;
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReasonExt::ExtEnum::NEW_DEVICE_AVAILABLE);
+    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    int ret = fastAudioStream->StartAudioStream(cmdType, reason);
+    EXPECT_EQ(ret, 0);
+
+    cmdType = CMD_FROM_CLIENT;
+    ret = fastAudioStream->StartAudioStream(cmdType, reason);
+    EXPECT_EQ(ret, 0);
+
+    cmdType = static_cast<StateChangeCmdType>(2);
+    fastAudioStream->StartAudioStream(cmdType, reason);
+    EXPECT_EQ(ret, 0);
+}
+/**
+ * @tc.name  : Test StopAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: StopAudioStream_001
+ * @tc.desc  : Test StopAudioStream interface using unsupported parameters.
+ */
+HWTEST(AudioServiceUnitTest, StopAudioStream_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    int ret = fastAudioStream->StopAudioStream();
+    EXPECT_EQ(ret, 0);
+}
+/**
+ * @tc.name  : Test FetchDeviceForSplitStream API
+ * @tc.type  : FUNC
+ * @tc.number: FetchDeviceForSplitStream
+ * @tc.desc  : Test FetchDeviceForSplitStream interface using unsupported parameters.
+ */
+HWTEST(AudioServiceUnitTest, FetchDeviceForSplitStream_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    fastAudioStream->FetchDeviceForSplitStream();
+    EXPECT_NE(fastAudioStream, nullptr);
+}
+/**
+ * @tc.name  : Test SetCallbacksWhenRestore API
+ * @tc.type  : FUNC
+ * @tc.number: SetCallbacksWhenRestore_001
+ * @tc.desc  : Test SetCallbacksWhenRestore interface using unsupported parameters.
+ */
+HWTEST(AudioServiceUnitTest, SetCallbacksWhenRestore_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    int ret = fastAudioStream->SetCallbacksWhenRestore();
+    EXPECT_NE(ret, 0);
+}
+/**
+ * @tc.name  : Test RestoreAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: RestoreAudioStream_001
+ * @tc.desc  : Test RestoreAudioStream interface using unsupported parameters.
+ */
+HWTEST(AudioServiceUnitTest, RestoreAudioStream_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    bool needStoreState = true;
+    int ret = fastAudioStream->RestoreAudioStream(needStoreState);
+    EXPECT_EQ(ret, 0);
+
+    needStoreState = false;
+    ret = fastAudioStream->RestoreAudioStream(needStoreState);
+    EXPECT_EQ(ret, 0);
+}
+/**
+ * @tc.name  : Test JoincallbackLoop API
+ * @tc.type  : FUNC
+ * @tc.number: JoincallbackLoop_001
+ * @tc.desc  : Test JoincallbackLoop interface using unsupported parameters.
+ */
+HWTEST(AudioServiceUnitTest, JoinCallbackLoop_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    fastAudioStream->JoinCallbackLoop();
+    EXPECT_NE(fastAudioStream, nullptr);
+}
+/**
+ * @tc.name  : Test SetDefaultoutputDevice API
+ * @tc.type  : FUNC
+ * @tc.number: SetDefaultoutputDevice_001
+ * @tc.desc  : Test SetDefaultoutputDevice interface using unsupported parameters.
+ */
+HWTEST(AudioServiceUnitTest, SetDefaultOutputDevice_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    DeviceType expectedDevice = static_cast<DeviceType>(1);
+    int ret = fastAudioStream->SetDefaultOutputDevice(expectedDevice);
+    EXPECT_NE(ret, 0);
+
+    expectedDevice = static_cast<DeviceType>(2);
+    ret = fastAudioStream->SetDefaultOutputDevice(expectedDevice);
+    EXPECT_NE(ret, 0);
+}
+/**
+ * @tc.name  : Test PauseAudiStream API
+ * @tc.type  : FUNC
+ * @tc.number: PauseAudiStream
+ * @tc.desc  : Test PauseAudiStream interface using unsupported parameters.
+ */
+HWTEST(AudioServiceUnitTest, PauseAudioStream_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+    StateChangeCmdType cmdType = static_cast<StateChangeCmdType>(2);
+    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    int ret = fastAudioStream->PauseAudioStream(cmdType);
+    EXPECT_EQ(ret, 0);
+
+    cmdType = CMD_FROM_CLIENT;
+    ret = fastAudioStream->PauseAudioStream(cmdType);
+    EXPECT_EQ(ret, 0);
+
+    cmdType = CMD_FROM_SYSTEM;
+    ret = fastAudioStream->PauseAudioStream(cmdType);
+    EXPECT_EQ(ret, 0);
+}
+/**
+ * @tc.name  : Test JoinCallbackLoop
+ * @tc.number: Audio_Renderer_JoinCallbackLoop_001
+ * @tc.desc  : Test JoinCallbackLoop interface
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_JoinCallbackLoop_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+
+    std::shared_ptr<FastAudioStream> fastAudioStream = std::make_shared<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    fastAudioStream->JoinCallbackLoop();
+    std::shared_ptr<AudioProcessInClient> processClient = AudioProcessInClient::Create(config, fastAudioStream_);
+    fastAudioStream->JoinCallbackLoop();
     EXPECT_EQ(processClient_, nullptr);
 }
 
@@ -214,7 +526,9 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     int32_t floatRet = 0;
 
     AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->InitAllDupBuffer(1);
     AudioService::GetInstance()->ResetAudioEndpoint();
+    AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(1);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
 
@@ -222,11 +536,15 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
     AudioService::GetInstance()->GetAudioProcess(config);
     AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->InitAllDupBuffer(1);
+    AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(1);
     AudioService::GetInstance()->workingConfig_.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
     AudioService::GetInstance()->OnInitInnerCapList(1);
 
     AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
     AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->InitAllDupBuffer(1);
+    AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(1);
     AudioService::GetInstance()->OnUpdateInnerCapList(1);
     EXPECT_EQ(0, floatRet);
     config = {};
@@ -383,6 +701,8 @@ HWTEST(AudioServiceUnitTest, AudioServiceDump_001, TestSize.Level1)
     int32_t floatRet = 0;
     AudioService::GetInstance()->FilterAllFastProcess();
     AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->InitAllDupBuffer(1);
+    AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(1);
     AudioService::GetInstance()->ResetAudioEndpoint();
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
@@ -396,6 +716,8 @@ HWTEST(AudioServiceUnitTest, AudioServiceDump_001, TestSize.Level1)
 
     AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
     AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->InitAllDupBuffer(1);
+    AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(1);
     AudioService::GetInstance()->OnUpdateInnerCapList(1);
     EXPECT_EQ(0, floatRet);
     std::string dumpString = "This is Dump string";
@@ -557,20 +879,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_003, TestSize.Level1)
     int32_t ret = 0;
     ret = AudioService::GetInstance()->OnProcessRelease(audioprocess, isSwitchStream);
     EXPECT_EQ(ret, 0);
-}
-
-/**
- * @tc.name  : Test DelayCallReleaseEndpoint API
- * @tc.type  : FUNC
- * @tc.number: DelayCallReleaseEndpoint_001
- * @tc.desc  : Test DelayCallReleaseEndpoint interface.
- */
-HWTEST(AudioServiceUnitTest, DelayCallReleaseEndpoint_001, TestSize.Level1)
-{
-    std::string endpointName;
-    int32_t delayInMs = 1;
-    AudioService *audioService = AudioService::GetInstance();
-    audioService->DelayCallReleaseEndpoint(endpointName, delayInMs);
 }
 
 /**
@@ -900,30 +1208,6 @@ HWTEST(AudioServiceUnitTest, ShouldBeInnerCap_001, TestSize.Level1)
 }
 #endif
 
-/**
- * @tc.name  : Test DelayCallReleaseEndpoint API
- * @tc.type  : FUNC
- * @tc.number: DelayCallReleaseEndpoint_002
- * @tc.desc  : Test DelayCallReleaseEndpoint interface.
- */
-HWTEST(AudioServiceUnitTest, DelayCallReleaseEndpoint_002, TestSize.Level1)
-{
-    AudioService *audioService = AudioService::GetInstance();
-    std::string endpointName = "endpoint";
-    std::shared_ptr<AudioEndpoint> audioEndpoint = nullptr;
-    int32_t delayInMs = 1;
-    audioService->endpointList_[endpointName] = audioEndpoint;
-    audioService->DelayCallReleaseEndpoint(endpointName, delayInMs);
-    EXPECT_EQ(audioService->endpointList_.count(endpointName), 1);
-    audioService->endpointList_.erase(endpointName);
-
-    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
-    audioService->SetIncMaxRendererStreamCnt(audioMode);
-
-    audioService->currentRendererStreamCnt_ = 0;
-    int32_t res = audioService->GetCurrentRendererStreamCnt();
-    EXPECT_EQ(res, 0);
-}
 
 /**
  * @tc.name  : Test CheckRenderSessionMuteState API
@@ -1121,41 +1405,7 @@ HWTEST(AudioServiceUnitTest, OnUpdateInnerCapList_001, TestSize.Level1)
     int32_t ret = audioService->OnUpdateInnerCapList(innerCapId);
     EXPECT_EQ(ret, SUCCESS);
 }
-/**
- * @tc.name  : Test DelayCallReleaseEndpoint API
- * @tc.type  : FUNC
- * @tc.number: DelayCallReleaseEndpoint_003
- * @tc.desc  : Test DelayCallReleaseEndpoint interface.
- */
-HWTEST(AudioServiceUnitTest, DelayCallReleaseEndpoint_003, TestSize.Level1)
-{
-    AudioService *audioService = AudioService::GetInstance();
-    audioService->currentRendererStreamCnt_ = 0;
-    audioService->DelayCallReleaseEndpoint("endponit", 0);
 
-    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
-    audioService->SetIncMaxRendererStreamCnt(audioMode);
-    int32_t res = audioService->GetCurrentRendererStreamCnt();
-    EXPECT_EQ(res, 1);
-}
-/**
- * @tc.name  : Test DelayCallReleaseEndpoint API
- * @tc.type  : FUNC
- * @tc.number: DelayCallReleaseEndpoint_004
- * @tc.desc  : Test DelayCallReleaseEndpoint interface.
- */
-HWTEST(AudioServiceUnitTest, DelayCallReleaseEndpoint_004, TestSize.Level1)
-{
-    AudioService *audioService = AudioService::GetInstance();
-    audioService->currentRendererStreamCnt_ = 0;
-    audioService->releasingEndpointSet_.insert("endponit");
-    audioService->DelayCallReleaseEndpoint("endponit", 1);
-
-    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
-    audioService->SetIncMaxRendererStreamCnt(audioMode);
-    int32_t res = audioService->GetCurrentRendererStreamCnt();
-    EXPECT_EQ(res, 1);
-}
 /**
  * @tc.name  : Test EnableDualToneList API
  * @tc.type  : FUNC
@@ -1305,6 +1555,32 @@ HWTEST(AudioServiceUnitTest, UnsetOffloadMode_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test DelayCallReleaseEndpoint API
+ * @tc.type  : FUNC
+ * @tc.number: DelayCallReleaseEndpoint_001
+ * @tc.desc  : Test DelayCallReleaseEndpoint interface.
+ */
+HWTEST(AudioServiceUnitTest, DelayCallReleaseEndpoint_001, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    AudioProcessConfig clientConfig = {};
+    std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_MMAP,
+        123, clientConfig);
+    EXPECT_NE(nullptr, endpoint);
+    string endpointName = endpoint->GetEndpointName();
+    audioService->endpointList_[endpointName] = endpoint;
+
+    audioService->releasingEndpointSet_.insert(endpointName);
+    audioService->DelayCallReleaseEndpoint(endpointName);
+    EXPECT_EQ(audioService->endpointList_.count(endpointName), 1);
+
+    audioService->releasingEndpointSet_.insert(endpointName);
+    endpoint->endpointStatus_ = AudioEndpoint::EndpointStatus::UNLINKED;
+    audioService->DelayCallReleaseEndpoint(endpointName);
+    EXPECT_EQ(audioService->endpointList_.count(endpointName), 0);
+}
+
+/**
  * @tc.name  : Test ReleaseProcess API
  * @tc.type  : FUNC
  * @tc.number: ReleaseProcess_001
@@ -1316,8 +1592,69 @@ HWTEST(AudioServiceUnitTest, ReleaseProcess_001, TestSize.Level1)
     EXPECT_NE(audioService, nullptr);
 
     std::string endpointName = "invalid_endpoint";
-    int32_t delayTime = 0;
-    audioService->ReleaseProcess(endpointName, delayTime);
+    audioService->ReleaseProcess(endpointName, 0);
+}
+
+/**
+ * @tc.name  : Test ReleaseProcess API
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseProcess_002
+ * @tc.desc  : Test ReleaseProcess interface.
+ */
+HWTEST(AudioServiceUnitTest, ReleaseProcess_002, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    std::string endpointName = "endpoint";
+    std::shared_ptr<AudioEndpoint> audioEndpoint = nullptr;
+    int32_t delayInMs = 1;
+    audioService->endpointList_[endpointName] = audioEndpoint;
+    audioService->ReleaseProcess(endpointName, delayInMs);
+    EXPECT_EQ(audioService->endpointList_.count(endpointName), 1);
+    audioService->endpointList_.erase(endpointName);
+
+    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
+    audioService->SetIncMaxRendererStreamCnt(audioMode);
+
+    audioService->currentRendererStreamCnt_ = 0;
+    int32_t res = audioService->GetCurrentRendererStreamCnt();
+    EXPECT_EQ(res, 0);
+}
+
+/**
+ * @tc.name  : Test ReleaseProcess API
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseProcess_003
+ * @tc.desc  : Test ReleaseProcess interface.
+ */
+HWTEST(AudioServiceUnitTest, ReleaseProcess_003, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->currentRendererStreamCnt_ = 0;
+    audioService->ReleaseProcess("endponit", 0);
+
+    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
+    audioService->SetIncMaxRendererStreamCnt(audioMode);
+    int32_t res = audioService->GetCurrentRendererStreamCnt();
+    EXPECT_EQ(res, 1);
+}
+
+/**
+ * @tc.name  : Test ReleaseProcess API
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseProcess_004
+ * @tc.desc  : Test ReleaseProcess interface.
+ */
+HWTEST(AudioServiceUnitTest, ReleaseProcess_004, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->currentRendererStreamCnt_ = 0;
+    audioService->releasingEndpointSet_.insert("endponit");
+    audioService->ReleaseProcess("endponit", 1);
+
+    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
+    audioService->SetIncMaxRendererStreamCnt(audioMode);
+    int32_t res = audioService->GetCurrentRendererStreamCnt();
+    EXPECT_EQ(res, 1);
 }
 
 /**
@@ -1687,6 +2024,8 @@ HWTEST(AudioServiceUnitTest, OnInitInnerCapList_001, TestSize.Level1)
 
     int32_t innerCapId = 0;
     int32_t ret = audioService->OnInitInnerCapList(innerCapId);
+    AudioService::GetInstance()->InitAllDupBuffer(1);
+    AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(1);
     EXPECT_EQ(ret, SUCCESS);
 
     audioService->allRendererMap_.clear();
@@ -2273,6 +2612,7 @@ HWTEST(AudioServiceUnitTest, ForceStopAudioStream_002, TestSize.Level1)
 }
 #endif
 
+<<<<<<< HEAD
 #ifdef HAS_FEATURE_COLLABORATION
 class CollaborativePlaybackManagerMock : public ICollaborativePlaybackManager {
 public:
@@ -2372,5 +2712,393 @@ HWTEST(AudioServiceUnitTest, CheckCollaborationForRendererInner_001, TestSize.Le
     AudioService::GetInstance().collaborativePlaybackManager_ = &CollaborativePlaybakManager::GetInstance();
 }
 #endif
+=======
+/**
+ * @tc.name  : Test ConfigCoreServiceProvider API
+ * @tc.type  : FUNC
+ * @tc.number: ConfigCoreServiceProvider_001
+ * @tc.desc  : Test ConfigCoreServiceProvider interface.
+ */
+HWTEST(AudioServiceUnitTest, ConfigCoreServiceProvider_001, TestSize.Level1)
+{
+    auto coreServiceHandler = CoreServiceHandler::GetInstance();
+    sptr<ICoreServiceProviderIpc> provider = nullptr;
+    auto result = coreServiceHandler.ConfigCoreServiceProvider(provider);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test AddThread API
+ * @tc.type  : FUNC
+ * @tc.number: AddThread_001
+ * @tc.desc  : Test AddThread interface.
+ */
+HWTEST(AudioServiceUnitTest, AddThread_001, TestSize.Level1)
+{
+    AudioWorkgroup workgroup(1);
+    int32_t tid = 10;
+    ConcurrentTask::IntervalReply reply;
+    reply.paramA = 1;
+    int32_t result = workgroup.AddThread(tid);
+    EXPECT_EQ(result, AUDIO_OK);
+}
+
+/**
+ * @tc.name  : Test AddThread API
+ * @tc.type  : FUNC
+ * @tc.number: AddThread_002
+ * @tc.desc  : Test AddThread interface.
+ */
+HWTEST(AudioServiceUnitTest, AddThread_002, TestSize.Level1)
+{
+    AudioWorkgroup workgroup(1);
+    int32_t tid = 10;
+    ConcurrentTask::IntervalReply reply;
+    reply.paramA = -1;
+    int32_t result = workgroup.AddThread(tid);
+    EXPECT_NE(result, AUDIO_ERR);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroup API
+ * @tc.type  : FUNC
+ * @tc.number: RemoveThread_001
+ * @tc.desc  : Test AudioWorkgroup interface.
+ */
+HWTEST(AudioServiceUnitTest, RemoveThread_001, TestSize.Level1)
+{
+    AudioWorkgroup workgroup(1);
+    int32_t tid = -1;
+    ConcurrentTask::IntervalReply reply;
+    reply.paramA = -1;
+    int32_t result = workgroup.AddThread(tid);
+    EXPECT_NE(result, AUDIO_ERR);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroup API
+ * @tc.type  : FUNC
+ * @tc.number: RemoveThread_002
+ * @tc.desc  : Test AudioWorkgroup interface.
+ */
+HWTEST(AudioServiceUnitTest, RemoveThread_002, TestSize.Level1)
+{
+    AudioWorkgroup workgroup(1);
+    int32_t tid = -1;
+    ConcurrentTask::IntervalReply reply;
+    reply.paramA = 1;
+    int32_t result = workgroup.AddThread(tid);
+    EXPECT_NE(result, AUDIO_OK);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroup API
+ * @tc.type  : FUNC
+ * @tc.number: Start_001
+ * @tc.desc  : Test AudioWorkgroup interface.
+ */
+HWTEST(AudioServiceUnitTest, Start_001, TestSize.Level1)
+{
+    AudioWorkgroup workgroup(1);
+    int32_t result = workgroup.Start(100, 100);
+    EXPECT_EQ(result, AUDIO_ERR);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroup API
+ * @tc.type  : FUNC
+ * @tc.number: Start_002
+ * @tc.desc  : Test AudioWorkgroup interface.
+ */
+HWTEST(AudioServiceUnitTest, Start_002, TestSize.Level1)
+{
+    AudioWorkgroup workgroup(1);
+    int32_t result = workgroup.Start(100, 200);
+    EXPECT_NE(result, AUDIO_OK);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroup API
+ * @tc.type  : FUNC
+ * @tc.number: Start_003
+ * @tc.desc  : Test AudioWorkgroup interface.
+ */
+HWTEST(AudioServiceUnitTest, Start_003, TestSize.Level1)
+{
+    AudioWorkgroup workgroup(1);
+    int32_t result = workgroup.Start(200, 100);
+    EXPECT_EQ(result, AUDIO_ERR);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroup API
+ * @tc.type  : FUNC
+ * @tc.number: Stop_003
+ * @tc.desc  : Test AudioWorkgroup interface.
+ */
+HWTEST(AudioServiceUnitTest, Stop_001, TestSize.Level1)
+{
+    AudioWorkgroup workgroup(1);
+    int result = workgroup.Stop();
+    if (RME::EndFrameFreq(0) != 0) {
+        EXPECT_EQ(result, AUDIO_ERR);
+    }
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroup API
+ * @tc.type  : FUNC
+ * @tc.number: Stop_002
+ * @tc.desc  : Test AudioWorkgroup interface.
+ */
+HWTEST(AudioServiceUnitTest, Stop_002, TestSize.Level1)
+{
+    AudioWorkgroup workgroup(1);
+    int result = workgroup.Stop();
+    if (RME::EndFrameFreq(0) == 0) {
+        EXPECT_EQ(result, AUDIO_OK);
+    }
+}
+
+/**
+ * @tc.name  : Test InRenderWhitelist API
+ * @tc.type  : FUNC
+ * @tc.number: InRenderWhitelist_001,
+ * @tc.desc  : Test InRenderWhitelist interface.
+ */
+HWTEST(AudioServiceUnitTest, InRenderWhitelist_001, TestSize.Level1)
+{
+    std::string bundleName = "com.test";
+    AudioService::GetInstance()->renderWhitelist_.clear();
+    bool ret = AudioService::GetInstance()->InRenderWhitelist(bundleName);
+    EXPECT_FALSE(ret);
+
+    AudioService::GetInstance()->renderWhitelist_.insert(bundleName);
+    ret = AudioService::GetInstance()->InRenderWhitelist(bundleName);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test SaveRenderWhitelist API
+ * @tc.type  : FUNC
+ * @tc.number: SaveRenderWhitelist_001,
+ * @tc.desc  : Test SaveRenderWhitelist interface.
+ */
+HWTEST(AudioServiceUnitTest, SaveRenderWhitelist_001, TestSize.Level1)
+{
+    std::vector<std::string> list;
+    list.resize(5);
+    EXPECT_EQ(list.size(), 5);
+    AudioService::GetInstance()->SaveRenderWhitelist(list);
+    EXPECT_EQ(AudioService::GetInstance()->renderWhitelist_.size(), 5);
+}
+
+/**
+ * @tc.name  : Test UpdateSystemVolume API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateSystemVolume_001,
+ * @tc.desc  : Test UpdateSystemVolume interface.
+ */
+HWTEST(AudioServiceUnitTest, UpdateSystemVolume_001, TestSize.Level1)
+{
+    AudioStreamType streamType = STREAM_ALARM;
+    float volume = 0.5;
+
+    // Act
+    AudioService::GetInstance()->UpdateSystemVolume(streamType, volume);
+
+    // Assert
+    float expectedVolume = 0.0;
+    EXPECT_NE(expectedVolume, AudioService::GetInstance()->musicOrVoipSystemVolume_);
+}
+
+/**
+ * @tc.name  : Test UpdateSystemVolume API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateSystemVolume_002,
+ * @tc.desc  : Test UpdateSystemVolume interface.
+ */
+HWTEST(AudioServiceUnitTest, UpdateSystemVolume_002, TestSize.Level1)
+{
+    AudioStreamType streamType = STREAM_MUSIC;
+    float volume = 0.5;
+
+    AudioService::GetInstance()->UpdateSystemVolume(streamType, volume);
+
+    EXPECT_EQ(volume, AudioService::GetInstance()->musicOrVoipSystemVolume_);
+}
+
+/**
+ * @tc.name  : Test UpdateSystemVolume API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateSystemVolume_003,
+ * @tc.desc  : Test UpdateSystemVolume interface.
+ */
+HWTEST(AudioServiceUnitTest, UpdateSystemVolume_003, TestSize.Level1)
+{
+    AudioStreamType streamType = STREAM_VOICE_COMMUNICATION;
+    float volume = 0.5;
+
+    AudioService::GetInstance()->UpdateSystemVolume(streamType, volume);
+
+    EXPECT_EQ(volume, AudioService::GetInstance()->musicOrVoipSystemVolume_);
+}
+
+/**
+ * @tc.name  : Test SetSessionMuteState API
+ * @tc.type  : FUNC
+ * @tc.number: SetSessionMuteState_001,
+ * @tc.desc  : Test SetSessionMuteState interface.
+ */
+HWTEST(AudioServiceUnitTest, SetSessionMuteState_001, TestSize.Level1)
+{
+    uint32_t sessionId = 1;
+    bool insert = true;
+    bool muteFlag = true;
+
+    AudioService::GetInstance()->SetSessionMuteState(sessionId, insert, muteFlag);
+
+    std::unique_lock<std::mutex> lock(AudioService::GetInstance()->muteStateMapMutex_);
+    EXPECT_EQ(AudioService::GetInstance()->muteStateMap_[sessionId], muteFlag);
+}
+
+/**
+ * @tc.name  : Test CleanAppUseNumMap API
+ * @tc.type  : FUNC
+ * @tc.number: CleanAppUseNumMap_001,
+ * @tc.desc  : Test CleanAppUseNumMap interface.
+ */
+HWTEST(AudioServiceUnitTest, CleanAppUseNumMap_001, TestSize.Level1)
+{
+    int32_t appUid = 12345;
+    AudioService::GetInstance()->appUseNumMap_[appUid] = 5;
+
+    AudioService::GetInstance()->CleanAppUseNumMap(appUid);
+
+    EXPECT_EQ(AudioService::GetInstance()->appUseNumMap_[appUid], 4);
+}
+
+/**
+ * @tc.name  : Test CleanAppUseNumMap API
+ * @tc.type  : FUNC
+ * @tc.number: CleanAppUseNumMap_002,
+ * @tc.desc  : Test CleanAppUseNumMap interface.
+ */
+HWTEST(AudioServiceUnitTest, CleanAppUseNumMap_002, TestSize.Level1)
+{
+    int32_t appUid = 12345;
+
+    AudioService::GetInstance()->CleanAppUseNumMap(appUid);
+
+    EXPECT_NE(AudioService::GetInstance()->appUseNumMap_.find(appUid),
+              AudioService::GetInstance()->appUseNumMap_.end());
+}
+
+/**
+ * @tc.name  : Test SetIncMaxRendererStreamCnt API
+ * @tc.type  : FUNC
+ * @tc.number: SetIncMaxRendererStreamCnt_001,
+ * @tc.desc  : Test SetIncMaxRendererStreamCnt interface.
+ */
+HWTEST(AudioServiceUnitTest, SetIncMaxRendererStreamCnt_001, TestSize.Level1)
+{
+    int32_t initialCount = AudioService::GetInstance()->currentRendererStreamCnt_;
+
+    AudioService::GetInstance()->SetIncMaxRendererStreamCnt(AUDIO_MODE_PLAYBACK);
+
+    EXPECT_EQ(AudioService::GetInstance()->currentRendererStreamCnt_, initialCount + 1);
+}
+
+/**
+ * @tc.name  : Test ShouldBeDualTone API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldBeDualTone_001,
+ * @tc.desc  : Test ShouldBeDualTone interface.
+ */
+HWTEST(AudioServiceUnitTest, ShouldBeDualTone_001, TestSize.Level1)
+{
+    AudioProcessConfig config = {};
+    config.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+
+    EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config));
+
+    config.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config));
+}
+
+/**
+ * @tc.name  : Test ShouldBeDualTone API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldBeDualTone_002,
+ * @tc.desc  : Test ShouldBeDualTone interface.
+ */
+HWTEST(AudioServiceUnitTest, ShouldBeDualTone_002, TestSize.Level1)
+{
+    AudioProcessConfig config = {};
+    config.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
+    config.audioMode = AUDIO_MODE_RECORD;
+
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config));
+}
+
+/**
+ * @tc.name  : Test ShouldBeDualTone API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldBeDualTone_003,
+ * @tc.desc  : Test ShouldBeDualTone interface.
+ */
+HWTEST(AudioServiceUnitTest, ShouldBeDualTone_003, TestSize.Level1)
+{
+    AudioProcessConfig config = {};
+    config.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+
+    EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config));
+}
+
+/**
+ * @tc.name  : Test ShouldBeDualTone API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldBeDualTone_004,
+ * @tc.desc  : Test ShouldBeDualTone interface.
+ */
+HWTEST(AudioServiceUnitTest, ShouldBeDualTone_004, TestSize.Level1)
+{
+    AudioProcessConfig config = {};
+    config.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceType_ = static_cast<DeviceType>(999); // 未知设备类型
+
+    EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config));
+}
+
+/**
+ * @tc.name  : Test GetDeviceInfoForProcess API
+ * @tc.type  : FUNC
+ * @tc.number: GetDeviceInfoForProcess_001,
+ * @tc.desc  : Test GetDeviceInfoForProcess interface.
+ */
+HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_001, TestSize.Level1)
+{
+    AudioProcessConfig config = {};
+    config.originalSessionId = 1;
+    config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    config.streamInfo.samplingRate = SAMPLE_RATE_16000;
+    bool isReloadProcess = false;
+
+    AudioDeviceDescriptor deviceInfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, isReloadProcess);
+
+    EXPECT_NE(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
+    EXPECT_EQ(deviceInfo.isLowLatencyDevice_, false);
+    EXPECT_EQ(deviceInfo.audioStreamInfo_.size(), 1);
+}
+>>>>>>> upstream/master
 } // namespace AudioStandard
 } // namespace OHOS

@@ -12,11 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef LOG_TAG
+#define LOG_TAG "HpaeNodeCommon"
+#endif
 
+#include <cinttypes>
 #include "hpae_node_common.h"
 #include "audio_errors.h"
 #include "audio_engine_log.h"
-#include "cinttypes"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -118,17 +121,17 @@ static std::unordered_map<std::string, AudioPipeType> g_deviceClassToPipeMap = {
     {"primary", PIPE_TYPE_NORMAL_OUT},
     {"a2dp", PIPE_TYPE_NORMAL_OUT},
     {"remote", PIPE_TYPE_NORMAL_OUT},
-    {"offload", PIPE_TYPE_OFFLOAD},
     {"dp", PIPE_TYPE_NORMAL_OUT},
     {"multichannel", PIPE_TYPE_MULTICHANNEL},
 };
 
-AudioPipeType ConvertDeviceClassToPipe(std::string deviceClass)
+AudioPipeType ConvertDeviceClassToPipe(const std::string &deviceClass)
 {
-    if (g_deviceClassToPipeMap.find(deviceClass) == g_deviceClassToPipeMap.end()) {
+    auto item = g_deviceClassToPipeMap.find(deviceClass);
+    if (item == g_deviceClassToPipeMap.end()) {
         return PIPE_TYPE_UNKNOWN;
     }
-    return g_deviceClassToPipeMap[deviceClass];
+    return item->second;
 }
 
 std::string ConvertSessionState2Str(HpaeSessionState state)
@@ -246,8 +249,7 @@ AudioEnhanceScene TransProcessType2EnhanceScene(const HpaeProcessorType &process
 
 size_t ConvertUsToFrameCount(uint64_t usTime, const HpaeNodeInfo &nodeInfo)
 {
-    return usTime * nodeInfo.samplingRate / TIME_US_PER_S /
-        (nodeInfo.frameLen * nodeInfo.channels * static_cast<uint32_t>(GetSizeFromFormat(nodeInfo.format)));
+    return usTime * nodeInfo.samplingRate / TIME_US_PER_S / nodeInfo.frameLen;
 }
 
 uint64_t ConvertDatalenToUs(size_t bufferSize, const HpaeNodeInfo &nodeInfo)
@@ -272,6 +274,10 @@ AudioSampleFormat TransFormatFromStringToEnum(std::string format)
 
 void AdjustMchSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo)
 {
+    if (sinkInfo.deviceName == "DP_MCH_speaker") {
+        sinkInfo.channelLayout = static_cast<uint64_t>(std::atol(audioModuleInfo.channelLayout.c_str()));
+        return;
+    }
     if (sinkInfo.deviceName != "MCH_Speaker") {
         return;
     }
@@ -311,7 +317,7 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
                                 static_cast<size_t>(GetSizeFromFormat(sinkInfo.format)));
     sinkInfo.channelLayout = 0ULL;
     sinkInfo.deviceType = static_cast<int32_t>(std::atol(audioModuleInfo.deviceType.c_str()));
-    sinkInfo.volume = static_cast<uint32_t>(std::atol(audioModuleInfo.deviceType.c_str()));
+    sinkInfo.volume = MAX_SINK_VOLUME_LEVEL;
     sinkInfo.openMicSpeaker = static_cast<uint32_t>(std::atol(audioModuleInfo.OpenMicSpeaker.c_str()));
     sinkInfo.renderInIdleState = static_cast<uint32_t>(std::atol(audioModuleInfo.renderInIdleState.c_str()));
     sinkInfo.offloadEnable = static_cast<uint32_t>(std::atol(audioModuleInfo.offloadEnable.c_str()));
@@ -319,6 +325,9 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.fixedLatency = static_cast<uint32_t>(std::atol(audioModuleInfo.fixedLatency.c_str()));
     sinkInfo.deviceName = audioModuleInfo.name;
     AdjustMchSinkInfo(audioModuleInfo, sinkInfo);
+    if (audioModuleInfo.needEmptyChunk) {
+        sinkInfo.needEmptyChunk = audioModuleInfo.needEmptyChunk.value();
+    }
     return SUCCESS;
 }
 
@@ -343,7 +352,7 @@ int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, 
     sourceInfo.samplingRate = static_cast<AudioSamplingRate>(std::atol(audioModuleInfo.rate.c_str()));
     sourceInfo.channelLayout = 0ULL;
     sourceInfo.deviceType = static_cast<int32_t>(std::atol(audioModuleInfo.deviceType.c_str()));
-    sourceInfo.volume = static_cast<uint32_t>(std::atol(audioModuleInfo.deviceType.c_str()));  // 1.0f;
+    sourceInfo.volume = MAX_SINK_VOLUME_LEVEL;  // 1.0f;
 
     sourceInfo.ecType = static_cast<HpaeEcType>(std::atol(audioModuleInfo.ecType.c_str()));
     sourceInfo.ecAdapterName = audioModuleInfo.ecAdapter;
@@ -394,6 +403,34 @@ bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo
     return getKey(info) != getKey(oldInfo);
 }
 
+void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo)
+{
+    AUDIO_INFO_LOG("rate: %{public}s ch: %{public}s buffersize: %{public}s ",
+        audioModuleInfo.rate.c_str(),
+        audioModuleInfo.channels.c_str(),
+        audioModuleInfo.bufferSize.c_str());
+    AUDIO_INFO_LOG("format: %{public}s name: %{public}s  lib: %{public}s ",
+        audioModuleInfo.format.c_str(),
+        audioModuleInfo.name.c_str(),
+        audioModuleInfo.lib.c_str());
+    AUDIO_INFO_LOG("deviceType: %{public}s  className: %{public}s  adapterName: %{public}s ",
+        audioModuleInfo.deviceType.c_str(),
+        audioModuleInfo.className.c_str(),
+        audioModuleInfo.adapterName.c_str());
+    AUDIO_INFO_LOG("OpenMicSpeaker: %{public}s networkId: %{public}s fileName: %{public}s ",
+        audioModuleInfo.OpenMicSpeaker.c_str(),
+        audioModuleInfo.networkId.c_str(),
+        audioModuleInfo.fileName.c_str());
+    AUDIO_INFO_LOG("fixedLatency: %{public}s sinkLatency: %{public}s renderInIdleState: %{public}s ",
+        audioModuleInfo.fixedLatency.c_str(),
+        audioModuleInfo.sinkLatency.c_str(),
+        audioModuleInfo.renderInIdleState.c_str());
+    AUDIO_INFO_LOG("sceneName: %{public}s sourceType: %{public}s offloadEnable: %{public}s ",
+        audioModuleInfo.sceneName.c_str(),
+        audioModuleInfo.sourceType.c_str(),
+        audioModuleInfo.offloadEnable.c_str());
+}
+
 std::string TransFormatFromEnumToString(AudioSampleFormat format)
 {
     CHECK_AND_RETURN_RET_LOG(g_formatFromParserEnumToStr.find(format) != g_formatFromParserEnumToStr.end(),
@@ -409,6 +446,29 @@ void RecoverNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo)
         AUDIO_INFO_LOG("collaboration disabled, effectScene changed to %{public}d, sceneType changed to %{public}d",
             nodeInfo.effectInfo.effectScene, nodeInfo.sceneType);
     }
+}
+
+void TransStreamInfoToStreamDumpInfo(const std::unordered_map<uint32_t, HpaeSessionInfo> &streamInfoMap,
+    std::vector<HpaeInputOutputInfo> &dumpInfo)
+{
+    std::transform(streamInfoMap.begin(), streamInfoMap.end(), std::back_inserter(dumpInfo),
+        [](const auto &pair) {
+            const HpaeSessionInfo &sessionInfo = pair.second;
+            std::string config;
+            TransDeviceInfoToString(sessionInfo.streamInfo, config);
+            return HpaeInputOutputInfo {
+                .sessionId = sessionInfo.streamInfo.sessionId,
+                .deviceName = sessionInfo.streamInfo.deviceName,
+                .uid = sessionInfo.streamInfo.uid,
+                .pid = sessionInfo.streamInfo.pid,
+                .tokenId = sessionInfo.streamInfo.tokenId,
+                .offloadEnable = sessionInfo.offloadEnable,
+                .privacyType = sessionInfo.streamInfo.privacyType,
+                .config = config,
+                .state = sessionInfo.state,
+                .startTime = sessionInfo.startTime
+            };
+        });
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

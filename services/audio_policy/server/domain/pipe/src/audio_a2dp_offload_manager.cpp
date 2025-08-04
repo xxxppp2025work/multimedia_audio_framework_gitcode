@@ -174,11 +174,11 @@ bool AudioA2dpOffloadManager::IsA2dpOffloadConnected()
 int32_t AudioA2dpOffloadManager::OffloadStartPlaying(const std::vector<int32_t> &sessionIds)
 {
 #ifdef BLUETOOTH_ENABLE
-    AUDIO_INFO_LOG("OffloadStartPlaying, a2dpOffloadFlag_: %{public}d, sessionIds: %{public}zu",
-        GetA2dpOffloadFlag(), sessionIds.size());
     if (GetA2dpOffloadFlag() != A2DP_OFFLOAD || sessionIds.size() == 0) {
         return SUCCESS;
     }
+    AUDIO_INFO_LOG("a2dpOffloadFlag: %{public}d, sessionCnt: %{public}zu",
+        GetA2dpOffloadFlag(), sessionIds.size());
     int32_t ret = audioA2dpOffloadFlag_.OffloadStartPlaying(sessionIds);
     A2dpOffloadConnectionState state = audioA2dpOffloadFlag_.GetCurrentOffloadConnectedState();
     if (ret == SUCCESS && (state != CONNECTION_STATUS_CONNECTED)) {
@@ -193,11 +193,11 @@ int32_t AudioA2dpOffloadManager::OffloadStartPlaying(const std::vector<int32_t> 
 int32_t AudioA2dpOffloadManager::OffloadStopPlaying(const std::vector<int32_t> &sessionIds)
 {
 #ifdef BLUETOOTH_ENABLE
-    AUDIO_PRERELEASE_LOGI("OffloadStopPlaying, a2dpOffloadFlag_: %{public}d, sessionIds: %{public}zu",
-        GetA2dpOffloadFlag(), sessionIds.size());
     if (GetA2dpOffloadFlag() != A2DP_OFFLOAD || sessionIds.size() == 0) {
         return SUCCESS;
     }
+    AUDIO_PRERELEASE_LOGI("a2dpOffloadFlag: %{public}d, sessionCnt: %{public}zu",
+        GetA2dpOffloadFlag(), sessionIds.size());
     return audioA2dpOffloadFlag_.OffloadStopPlaying(sessionIds);
 #else
     return SUCCESS;
@@ -300,7 +300,6 @@ void AudioA2dpOffloadManager::UpdateA2dpOffloadFlag(const std::vector<Bluetooth:
     DeviceType deviceType)
 {
     if (allActiveSessions.size() == 0) {
-        AUDIO_PRERELEASE_LOGI("no active sessions");
         return;
     }
     auto receiveOffloadFlag = NO_A2DP_DEVICE;
@@ -443,7 +442,8 @@ int32_t AudioA2dpOffloadManager::HandleActiveDevice(AudioDeviceDescriptor device
         audioVolumeManager_.SetVolumeForSwitchDevice(deviceDescriptor);
     }
     if (audioConfigManager_.GetUpdateRouteSupport()) {
-        audioActiveDevice_.UpdateActiveDeviceRoute(deviceDescriptor.deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
+        audioActiveDevice_.UpdateActiveDeviceRoute(deviceDescriptor.deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG,
+            deviceDescriptor.deviceName_, deviceDescriptor.networkId_);
     }
     std::string sinkPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceDescriptor.deviceType_);
     std::string sourcePortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceDescriptor.deviceType_);
@@ -474,7 +474,7 @@ void AudioA2dpOffloadManager::FetchStreamForA2dpOffload(const bool &requireReset
         }
         vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
             audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
-            rendererChangeInfo->clientUID);
+            rendererChangeInfo->clientUID, "FetchStreamForA2dpOffload");
 
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             if (requireReset) {
