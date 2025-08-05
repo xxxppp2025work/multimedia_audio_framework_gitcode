@@ -116,7 +116,7 @@ napi_value NapiAudioLoopback::Construct(napi_env env, napi_callback_info info)
         }
     } else {
         AUDIO_ERR_LOG("AudioLoopback not supported");
-        NapiAudioLoopback::isConstructSuccess_ = NAPI_ERR_UNSUPPORTED;
+        NapiAudioLoopback::isConstructSuccess_ = NAPI_ERR_UNAVAILABLE_ON_DEVICE;
     }
 
     if (napiLoopback->loopback_ != nullptr && napiLoopback->callbackNapi_ == nullptr) {
